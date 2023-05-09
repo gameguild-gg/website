@@ -1,0 +1,42 @@
+version: "3"
+services:
+  app:
+    env_file:
+      - .env
+    container_name: awesome_nest_boilerplate
+    restart: always
+    build: .
+    ports:
+      - "$PORT:$PORT"
+    links:
+      - postgres
+  postgres:
+    image: postgres
+    container_name: postgres
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: postgres
+      TZ: 'GMT'
+      PGTZ: 'GMT'
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres:/data/postgres
+      - ./init-data.sh:/docker-entrypoint-initdb.d/init-data.sh
+    env_file:
+      - .env
+  pgadmin:
+    container_name: pgadmin
+    image: dpage/pgadmin4
+    ports:
+      - "8080:80"
+    volumes:
+      - /data/pgadmin:/root/.pgadmin
+    env_file:
+      - .env
+    links:
+      - postgres
+
+volumes:
+  postgres:
+    driver: local
