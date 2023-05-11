@@ -1,29 +1,45 @@
 {
   "compilerOptions": {
-    "rootDir": "src",
-    "module": "commonjs",
-    "declaration": false,
-    "noImplicitAny": false,
-    "skipLibCheck": true,
-    "removeComments": true,
-    "noLib": false,
+    "target": "esnext",
+    "module": "esnext",
+    "jsx": "preserve",
+    "strict": true,
+    "pretty": true,
+    "noImplicitAny": true,
+    "alwaysStrict": true,
+    "noImplicitReturns": true,
+    "noImplicitThis": true,
+    "outDir": ".next",
+    "moduleResolution": "node",
     "allowSyntheticDefaultImports": true,
-    "emitDecoratorMetadata": true,
-    "experimentalDecorators": true,
-    "resolveJsonModule": true,
     "esModuleInterop": true,
-    "target": "ES2017",
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
     "sourceMap": true,
-    "outDir": "./dist",
-    "baseUrl": "./src",
-    "incremental": true,
-    "strictNullChecks": true
+    "skipLibCheck": true,
+    "lib": [
+      "es2017",
+      "dom"
+    ],
+    "baseUrl": ".",
+    "typeRoots": [
+      "node_modules/@types",
+      "./typings"
+    ],
+    "allowJs": true,
+    "forceConsistentCasingInFileNames": true,
+    "noEmit": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "incremental": true
   },
   "include": [
-    "src/**/*"
+    "./pages/**/*",
+    "./src/**/*",
+    "./ui/**/*",
+    "types.ts"
   ],
   "exclude": [
-    "node_modules",
-    "**/*.spec.ts"
+    "node_modules"
   ]
 }
