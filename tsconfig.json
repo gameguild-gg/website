@@ -1,7 +1,8 @@
 {
   "compilerOptions": {
+    "strictPropertyInitialization": false,
     "target": "esnext",
-    "module": "esnext",
+    "module": "commonjs",
     "jsx": "preserve",
     "strict": true,
     "pretty": true,

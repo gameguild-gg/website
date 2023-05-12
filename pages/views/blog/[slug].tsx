@@ -1,6 +1,6 @@
 import { NextPage, NextPageContext } from 'next';
 import { IPost } from '../../../types';
-import { BlogService } from '../../../src/blog/blog.service';
+import { BlogService } from '../../../src/common/blog/blog.service';
 
 interface Props {
   post: IPost;

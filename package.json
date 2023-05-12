@@ -9,25 +9,35 @@
     "build:ui": "npx next build",
     "build:server": "npx tsc --project tsconfig.server.json && npx babel .next/production-server -d .next/production-server --extensions \".js\"",
     "build": "npm run build:clean && npm run build:ui && npm run build:server",
-    "start": "cross-env NODE_ENV=production node .next/production-server/src/main.js"
+    "start": "cross-env NODE_ENV=production node .next/production-server/src/main.js",
+    "typeorm": "typeorm-ts-node-commonjs -d ./ormconfig.ts",
+    "migration:generate": "cd src/migrations && npx typeorm-ts-node-commonjs migration:generate -d ../../ormconfig.ts",
+    "migration:revert": "npm run typeorm -- migration:revert",
+    "schema:drop": "npm run typeorm -- schema:drop"
   },
   "dependencies": {
     "@nestjs/common": "^8.4.7",
+    "@nestjs/config": "^2.3.1",
     "@nestjs/core": "^8.4.7",
     "@nestjs/platform-express": "8.4.7",
+    "@nestjs/swagger": "^5.2.1",
+    "@nestjs/typeorm": "^9.0.1",
     "cross-env": "7.0.3",
+    "lodash": "^4.17.21",
     "nest-next": "10.1.0",
     "next": "12.3.4",
+    "pg": "^8.10.0",
     "react": "17.0.2",
     "react-dom": "17.0.2",
     "reflect-metadata": "0.1.13",
     "rxjs": "7.5.5",
     "typeorm": "0.3.16",
-    "@nestjs/swagger": "^5.2.1"
+    "typeorm-transactional": "^0.4.1"
   },
   "devDependencies": {
     "@babel/cli": "^7.17.6",
     "@babel/core": "^7.17.9",
+    "@types/lodash": "^4.14.194",
     "@types/node": "^17.0.23",
     "@types/react": "^18.0.4",
     "@typescript-eslint/eslint-plugin": "^5.19.0",

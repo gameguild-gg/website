@@ -2,7 +2,7 @@ import * as React from 'react';
 import { NextPage, NextPageContext } from 'next';
 import { IPost } from '../../../types';
 import PostPreview from '../../../components/post-preview';
-import { BlogService } from '../../../src/blog/blog.service';
+import { BlogService } from '../../../src/common/blog/blog.service';
 
 interface Props {
   posts: IPost[];
