@@ -14,7 +14,7 @@ RUN npm install
 
 FROM node:lts
 
-ARG PORT=3000
+ARG PORT=8080
 
 RUN mkdir -p /usr/src/app
 

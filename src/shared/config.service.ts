@@ -71,7 +71,7 @@ export class ApiConfigService {
             dropSchema: this.isTest,
             type: 'postgres',
             name: 'default',
-            host: this.getString('DB_HOST') || 'localhost',
+            host: this.getString('DB_HOST') || 'postgres',
             port: this.getNumber('DB_PORT') || 5432,
             username: this.getString('DB_USERNAME') || 'postgres',
             password: this.getString('DB_PASSWORD') || 'postgres',
@@ -116,7 +116,7 @@ export class ApiConfigService {
 
     get appConfig() {
         return {
-            port: this.getString('PORT', "3000"),
+            port: this.getString('PORT', "8080"),
         };
     }
 
