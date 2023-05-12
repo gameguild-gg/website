@@ -1,3 +1,5 @@
 .next
 .idea
 node_modules
+.env
+package-lock.json
