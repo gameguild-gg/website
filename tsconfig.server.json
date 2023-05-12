@@ -12,6 +12,10 @@
     "noEmit": false,
     "allowJs": false
   },
+  "paths": {
+    "@/*": ["./src/*"],
+    "@/styles": ["./src/styles"]
+  },
   "include": ["./src/**/*"],
   "exclude": ["node_modules"]
 }
