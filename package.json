@@ -16,12 +16,18 @@
     "schema:drop": "npm run typeorm -- schema:drop"
   },
   "dependencies": {
+    "@dataui/crud": "^5.2.3",
+    "@dataui/crud-request": "^5.2.3",
+    "@dataui/crud-typeorm": "^5.2.3",
+    "@dataui/crud-util": "^5.2.3",
     "@nestjs/common": "^8.4.7",
     "@nestjs/config": "^2.3.1",
     "@nestjs/core": "^8.4.7",
     "@nestjs/platform-express": "8.4.7",
     "@nestjs/swagger": "^5.2.1",
     "@nestjs/typeorm": "^9.0.1",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.13.2",
     "cross-env": "7.0.3",
     "express-ctx": "^0.1.1",
     "lodash": "^4.17.21",
