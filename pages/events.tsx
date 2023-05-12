@@ -1,5 +1,5 @@
-import EventCard from "@/components/event";
-import styles from "../styles/Events.module.css"
+import EventCard from "../components/event";
+import styles from "@/styles/Events.module.css"
 
 const EventsPage = () => {
     const events = [
