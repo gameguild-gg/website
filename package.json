@@ -23,6 +23,7 @@
     "@nestjs/swagger": "^5.2.1",
     "@nestjs/typeorm": "^9.0.1",
     "cross-env": "7.0.3",
+    "express-ctx": "^0.1.1",
     "lodash": "^4.17.21",
     "nest-next": "10.1.0",
     "next": "12.3.4",
@@ -31,6 +32,7 @@
     "react-dom": "17.0.2",
     "reflect-metadata": "0.1.13",
     "rxjs": "7.5.5",
+    "swagger-ui-express": "^4.6.3",
     "typeorm": "0.3.16",
     "typeorm-transactional": "^0.4.1"
   },

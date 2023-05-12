@@ -1,5 +1,7 @@
 import type { INestApplication } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import {SharedModule} from "./shared/shared.module";
+import {ApiConfigService} from "./shared/config.service";
 
 export function setupSwagger(app: INestApplication): void {
     const documentBuilder = new DocumentBuilder()
@@ -60,8 +62,9 @@ Routes is following REST standard (Richardson level 3)
             persistAuthorization: true,
         },
     });
+    const configService = app.select(SharedModule).get(ApiConfigService);
 
     console.info(
-        `Documentation: http://localhost:${process.env.PORT}/documentation`,
+        `Documentation: http://localhost:${configService.appConfig.port}/documentation`,
     );
 }

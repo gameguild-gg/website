@@ -43,8 +43,8 @@ export class ApiConfigService {
         }
     }
 
-    private getString(key: string): string {
-        const value = this.get(key);
+    private getString(key: string, defaultValue: string = ''): string {
+        const value = this.get(key, defaultValue);
 
         return value.replace(/\\n/g, '\n');
     }
@@ -116,7 +116,7 @@ export class ApiConfigService {
 
     get appConfig() {
         return {
-            port: this.getString('PORT'),
+            port: this.getString('PORT', "3000"),
         };
     }
 
