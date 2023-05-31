@@ -1,9 +1,10 @@
 import {Column, Entity, Index, OneToMany} from "typeorm";
 import {EntityBase} from "../../common/entity.base";
-import {ProposalCategory, ProposalType} from "../../constants/proposal.enum";
+import {ProposalCategory} from "../../constants/proposal.enum";
 import {VoteEntity} from "../vote/vote.entity";
 import {ApiProperty} from "@nestjs/swagger";
 import {IsEnum, IsOptional} from "class-validator";
+import { EEventType } from "../../constants/event.enum";
 
 @Entity({ name: 'proposal' })
 export class ProposalEntity extends EntityBase {
@@ -21,11 +22,11 @@ export class ProposalEntity extends EntityBase {
     @ApiProperty({required: true})
     description: string;
 
-    @Column({enum: ProposalType, type: "enum", nullable: false })
+    @Column({enum: EEventType, type: "enum", nullable: false })
     @Index({unique: false})
-    @ApiProperty({required: true, enum: ProposalType})
-    @IsEnum(ProposalType, {message: 'type must be one of the following values: ' + Object.values(ProposalType).join(', ')} )
-    type: ProposalType;
+    @ApiProperty({required: true, enum: EEventType})
+    @IsEnum(EEventType, {message: 'type must be one of the following values: ' + Object.values(EEventType).join(', ')} )
+    type: EEventType;
 
     @Column({type: "enum", enum: ProposalCategory, nullable: false })
     @Index({unique: false})

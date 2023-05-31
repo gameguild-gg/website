@@ -4,7 +4,7 @@ import {ProposalService} from "./proposal.service";
 import {Crud, CrudController} from "@dataui/crud";
 import {ProposalEntity} from "./proposal.entity";
 import {ProposalCategory} from "../../constants/proposal.enum";
-import { EEventType } from "src/constants/event.enum";
+import { EEventType } from "../../constants/event.enum";
 
 @Crud({
     model: {
