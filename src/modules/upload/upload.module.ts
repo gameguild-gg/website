@@ -1,4 +1,6 @@
 import { Module } from '@nestjs/common';
 
-@Module({})
+@Module({
+  providers: []
+})
 export class UploadModule {}
