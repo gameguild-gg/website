@@ -1,6 +1,6 @@
 import {Column, Entity, Index, OneToMany} from "typeorm";
 import {EntityBase} from "../../common/entity.base";
-import {ProposalCategory, ProposalType} from "./proposal.enum";
+import {ProposalCategory, ProposalType} from "../../constants/proposal.enum";
 import {VoteEntity} from "../vote/vote.entity";
 import {ApiProperty} from "@nestjs/swagger";
 import {IsEnum, IsOptional} from "class-validator";
