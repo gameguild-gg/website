@@ -4,4 +4,8 @@ This example demonstrates how to use nest-next to add server side rendering to [
 
 All needed components are expected to be under one project, one repo, with this folder being the root of the repo.
 
-> You need to build the project first
+> What you need to build the project first
+> Node
+> Docker + Compose
+
+Steps to reproduce the project
