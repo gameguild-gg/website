@@ -1,18 +1,11 @@
-import { FC } from 'react';
-import type { AppProps /*, AppContext */ } from 'next/app';
-import Sidebar from '../components/sidebar';
+import "../styles/globals.css"
+import type { AppProps } from 'next/app'
+import DefaultLayout from './../components/defaultlayout'
 
-const MyApp: FC<AppProps> = ({ Component, pageProps }) => {
+export default function App({ Component, pageProps }: AppProps) {
   return (
-    <div style={{ display: 'flex', maxWidth: 1100 }}>
-      <div style={{ flexBasis: '30%', margin: 25 }}>
-        <Sidebar />
-      </div>
-      <div style={{ flexBasis: '70%', margin: 25 }}>
-        <Component {...pageProps} />
-      </div>
-    </div>
+    <DefaultLayout { ...pageProps }>
+      <Component {...pageProps} />
+    </DefaultLayout>
   );
-};
-
-export default MyApp;
+}
