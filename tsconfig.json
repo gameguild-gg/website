@@ -18,6 +18,10 @@
     "emitDecoratorMetadata": true,
     "sourceMap": true,
     "skipLibCheck": true,
+    "paths": {
+      "@/*": ["./*"],
+      "@/styles/*": ["./styles/*"]
+    },
     "lib": [
       "es2017",
       "dom"
