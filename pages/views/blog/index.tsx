@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { NextPage, NextPageContext } from 'next';
-import { IPost } from '../../../types';
+import { IPost } from '../../../dtos/types';
 import PostPreview from '../../../components/post-preview';
 import { BlogService } from '../../../src/common/blog/blog.service';
 

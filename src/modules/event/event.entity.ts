@@ -1,7 +1,7 @@
 import { EntityBase } from '../../common/entity.base';
 import { Column, Entity, ManyToOne } from 'typeorm';
 import { UserEntity } from '../user/user.entity';
-import { EEventType } from '../../constants/event.enum';
+import { EventTypeEnum } from './event.enum';
 
 @Entity({ name: 'event' })
 export class EventEntity extends EntityBase {
@@ -15,7 +15,7 @@ export class EventEntity extends EntityBase {
     time: Date;
 
     @Column()
-    type: EEventType;
+    type: EventTypeEnum;
 
     // relations
     @ManyToOne(() => UserEntity, (user) => user.events)

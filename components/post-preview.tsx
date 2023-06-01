@@ -1,5 +1,5 @@
 import { FC } from 'react';
-import { IPost } from '../types';
+import { IPost } from '../dtos/types';
 import Link from 'next/link';
 
 interface Props {

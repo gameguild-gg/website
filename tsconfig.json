@@ -2,7 +2,7 @@
   "compilerOptions": {
     "strictPropertyInitialization": false,
     "target": "esnext",
-    "module": "esnext",
+    "module": "commonjs",
     "jsx": "preserve",
     "strict": true,
     "pretty": true,
@@ -38,7 +38,7 @@
     "./pages/**/*",
     "./src/**/*",
     "./ui/**/*",
-    "types.ts"
+    "./dtos/**/*",
   ],
   "exclude": [
     "node_modules"
