@@ -1,4 +1,4 @@
-export enum ProposalCategory {
+export enum ProposalTypeEnum {
     CODING = 'coding',
     DESIGN = 'design',
     ART = 'art',

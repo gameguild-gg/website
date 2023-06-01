@@ -1,4 +1,4 @@
-export enum EEventType {
+export enum EventTypeEnum {
     RFC = 'rfc',
     DOJO = 'codingdojo',
     WORKSHOP = 'workshop',
