@@ -9,6 +9,13 @@ import {TypeOrmModule} from "@nestjs/typeorm";
 import {SharedModule} from "./shared/shared.module";
 import {ApiConfigService} from "./shared/config.service";
 import {ConfigModule} from "@nestjs/config";
+import { UserModule } from './modules/user/user.module';
+import { AuthModule } from './modules/auth/auth.module';
+import { UploadModule } from './modules/upload/upload.module';
+import { ChapterModule } from './modules/chapter/chapter.module';
+import { CourseModule } from './modules/course/course.module';
+import { PostModule } from './modules/post/post.module';
+import { EventModule } from './modules/event/event.module';
 
 @Module({
   imports: [
@@ -26,6 +33,13 @@ import {ConfigModule} from "@nestjs/config";
       }),
     ),
     ProposalModule,
+    UserModule,
+    AuthModule,
+    UploadModule,
+    ChapterModule,
+    CourseModule,
+    PostModule,
+    EventModule,
   ],
   controllers: [AppController, BlogController],
   providers: [BlogService],

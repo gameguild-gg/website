@@ -1,14 +1,4 @@
-export enum ProposalType {
-    RFC = 'rfc',
-    DOJO = 'codingdojo',
-    WORKSHOP = 'workshop',
-    JAM = 'jam',
-    LECTURE = 'lecture',
-    BOOTCAMP = 'bootcamp',
-    CONTEST = 'contest',
-}
-
-export enum ProposalCategory {
+export enum ProposalTypeEnum {
     CODING = 'coding',
     DESIGN = 'design',
     ART = 'art',
