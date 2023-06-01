@@ -38,7 +38,7 @@
     "./pages/**/*",
     "./src/**/*",
     "./ui/**/*",
-    "./dtos/**/*",
+    "./dtos/**/*"
   ],
   "exclude": [
     "node_modules"
