@@ -3,8 +3,8 @@ import { EventService } from './event.service';
 import { Crud, CrudController } from '@dataui/crud';
 import { EventEntity } from './event.entity';
 import { ApiTags } from '@nestjs/swagger';
-import { EEventType } from '../../constants/event.enum';
-import { ProposalCategory } from '../../constants/proposal.enum';
+import { EventTypeEnum } from './event.enum';
+import { ProposalTypeEnum } from '../proposal/proposal.enum';
 
 @Crud({
     model: {
@@ -18,11 +18,11 @@ import { ProposalCategory } from '../../constants/proposal.enum';
         },
         type: {
             field: 'type',
-            enum: EEventType,
+            enum: EventTypeEnum,
         },
         category: {
             field: 'category',
-            enum: ProposalCategory,
+            enum: ProposalTypeEnum,
         }
     }
 })
