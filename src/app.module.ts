@@ -9,13 +9,14 @@ import {TypeOrmModule} from "@nestjs/typeorm";
 import {SharedModule} from "./shared/shared.module";
 import {ApiConfigService} from "./shared/config.service";
 import {ConfigModule} from "@nestjs/config";
-import { UserDataModule } from './modules/user/user-data.module';
+import { UserProfileModule } from './modules/user/user-profile.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UploadModule } from './modules/upload/upload.module';
 import { ChapterModule } from './modules/chapter/chapter.module';
 import { CourseModule } from './modules/course/course.module';
 import { PostModule } from './modules/post/post.module';
 import { EventModule } from './modules/event/event.module';
+import {UserModule} from "./modules/user/user.module";
 
 @Module({
   imports: [
@@ -33,7 +34,8 @@ import { EventModule } from './modules/event/event.module';
       }),
     ),
     ProposalModule,
-    UserDataModule,
+    UserModule,
+    UserProfileModule,
     AuthModule,
     UploadModule,
     ChapterModule,

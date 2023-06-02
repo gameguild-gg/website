@@ -17,10 +17,10 @@
     "schema:drop": "npm run typeorm -- schema:drop"
   },
   "dependencies": {
-    "@dataui/crud": "^5.2.3",
-    "@dataui/crud-request": "^5.2.3",
-    "@dataui/crud-typeorm": "^5.2.3",
-    "@dataui/crud-util": "^5.2.3",
+    "@dataui/crud": "^5.2.4",
+    "@dataui/crud-request": "^5.2.4",
+    "@dataui/crud-typeorm": "^5.2.4",
+    "@dataui/crud-util": "^5.2.4",
     "@emotion/react": "^11.11.0",
     "@emotion/styled": "^11.11.0",
     "@mui/material": "^5.13.3",
