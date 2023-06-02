@@ -2,10 +2,9 @@ import { EntityBase } from '../../common/entity.base';
 import { Column, Entity, OneToMany } from 'typeorm';
 import { EventEntity } from '../event/event.entity';
 import { UserRoleEnum } from './user-role.enum';
-import { CourseEntity } from '../course/course.entity';
 
-@Entity({ name: 'user' })
-export class UserEntity extends EntityBase {
+@Entity({ name: 'user-data' })
+export class UserDataEntity extends EntityBase {
     @Column()
     username: string;
     

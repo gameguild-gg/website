@@ -19,7 +19,8 @@
     "sourceMap": true,
     "skipLibCheck": true,
     "paths": {
-      "@/*": ["./*"],
+      "@/components/*": ["./components/*"],
+      "@/pages/*": ["./pages/*"],
       "@/styles/*": ["./styles/*"]
     },
     "lib": [

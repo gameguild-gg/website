@@ -1,7 +1,8 @@
 import { EntityBase } from '../../common/entity.base';
 import { Column, Entity, ManyToOne } from 'typeorm';
-import { UserEntity } from '../user/user.entity';
+
 import { EventTypeEnum } from './event.enum';
+import {UserDataEntity} from "../user/user-data.entity";
 
 @Entity({ name: 'event' })
 export class EventEntity extends EntityBase {
@@ -18,6 +19,6 @@ export class EventEntity extends EntityBase {
     type: EventTypeEnum;
 
     // relations
-    @ManyToOne(() => UserEntity, (user) => user.events)
-    creator: UserEntity;
+    @ManyToOne(() => UserDataEntity, (user) => user.events)
+    creator: UserDataEntity;
 }
