@@ -4,7 +4,6 @@ import Next from 'next';
 import { AppController } from './app.controller';
 import { BlogController } from './common/blog/blog.controller';
 import { BlogService } from './common/blog/blog.service';
-import {ProposalModule} from "./modules/proposal/proposal.module";
 import {TypeOrmModule} from "@nestjs/typeorm";
 import {SharedModule} from "./shared/shared.module";
 import {ApiConfigService} from "./shared/config.service";
@@ -33,7 +32,6 @@ import {UserModule} from "./modules/user/user.module";
         conf: { useFilesystemPublicRoutes: false },
       }),
     ),
-    ProposalModule,
     UserModule,
     UserProfileModule,
     AuthModule,

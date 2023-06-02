@@ -4,7 +4,6 @@ import { Crud, CrudController } from '@dataui/crud';
 import { EventEntity } from './event.entity';
 import { ApiTags } from '@nestjs/swagger';
 import { EventTypeEnum } from './event.enum';
-import { ProposalTypeEnum } from '../proposal/proposal.enum';
 
 @Crud({
     model: {
@@ -20,10 +19,6 @@ import { ProposalTypeEnum } from '../proposal/proposal.enum';
             field: 'type',
             enum: EventTypeEnum,
         },
-        category: {
-            field: 'category',
-            enum: ProposalTypeEnum,
-        }
     }
 })
 @Controller('event')

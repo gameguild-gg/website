@@ -48,7 +48,7 @@
     "styled-components": "^5.3.11",
     "swagger-ui-express": "^4.6.3",
     "typeorm": "0.3.16",
-    "typeorm-transactional": "^0.4.1"
+    "typeorm-transactional": "0.4.1"
   },
   "devDependencies": {
     "@babel/cli": "^7.17.6",
