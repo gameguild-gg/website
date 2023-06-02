@@ -1,19 +1,9 @@
 .container {
     display: flex;
-    align-items: center;
+    flex-direction: column;
     justify-content: flex-start;
-    width: 100vw;
+    align-items: center;
     height: 100vh;
 }
 
-.content {
-    display: flex;
-    flex: 1;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-    min-height: 90vh;
-    border-radius: 45px;
-    padding: 25px;
-    background-color: #a5a5a5;
-}
+.content {}

@@ -1,0 +1,28 @@
+.navbar {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    height: 120px;
+    width: 100%;
+}
+
+.logo {
+    padding-left: 35px;
+    width: 20vw;
+}
+
+.links {
+    display: flex;
+    align-items: center;
+    justify-content: space-evenly;
+    width: 100%;
+}
+
+.loginBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 12vw;
+    height: 3vw;
+    background-color: #0EB50E;
+}
