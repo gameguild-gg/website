@@ -12,10 +12,6 @@ export class UserProfileEntity extends EntityBase {
     
     @Column()
     @ApiProperty()
-    email: string;
-    
-    @Column()
-    @ApiProperty()
     cpf: string;
 
     // relations
