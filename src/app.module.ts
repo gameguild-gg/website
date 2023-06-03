@@ -16,6 +16,7 @@ import { CourseModule } from './modules/course/course.module';
 import { PostModule } from './modules/post/post.module';
 import { EventModule } from './modules/event/event.module';
 import {UserModule} from "./modules/user/user.module";
+import {ProposalModule} from "./modules/proposal/proposal.module";
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import {UserModule} from "./modules/user/user.module";
     CourseModule,
     PostModule,
     EventModule,
+    ProposalModule,
   ],
   controllers: [AppController, BlogController],
   providers: [BlogService],
