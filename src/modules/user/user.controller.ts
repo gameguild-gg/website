@@ -14,6 +14,9 @@ import {UserService} from "./user.service";
             type: 'uuid',
             primary: true,
         }
+    },
+    routes: {
+        only: ['getOneBase'],
     }
 })
 @Controller('user')

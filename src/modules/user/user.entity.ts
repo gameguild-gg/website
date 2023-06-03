@@ -3,6 +3,7 @@ import {Column, Entity, Index, JoinColumn, OneToMany, OneToOne} from 'typeorm';
 import { UserRoleEnum } from './user-role.enum';
 import {ApiProperty} from "@nestjs/swagger";
 import {UserProfileEntity} from "./user-profile.entity";
+import {Exclude} from "class-transformer";
 
 @Entity({ name: 'user' })
 export class UserEntity extends EntityBase {
@@ -10,6 +11,7 @@ export class UserEntity extends EntityBase {
     @ApiProperty()
     username: string;
 
+    // todo: make it have multiple roles
     @Column({ enum: UserRoleEnum, default: UserRoleEnum.COMMON })
     @ApiProperty({enum: UserRoleEnum})
     role: UserRoleEnum;
@@ -26,6 +28,7 @@ export class UserEntity extends EntityBase {
 
     @Column({nullable: true})
     @ApiProperty()
+    @Exclude()
     password: string;
 
     // For social login
