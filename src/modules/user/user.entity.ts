@@ -7,7 +7,7 @@ import {Exclude} from "class-transformer";
 
 @Entity({ name: 'user' })
 export class UserEntity extends EntityBase {
-    @Column({nullable: true})
+    @Column({nullable: true, default: null})
     @ApiProperty()
     username: string;
 
@@ -17,7 +17,7 @@ export class UserEntity extends EntityBase {
     role: UserRoleEnum;
 
     // For email/pass login
-    @Column()
+    @Column({nullable: false, default: null})
     @ApiProperty()
     @Index()
     email: string;
@@ -26,43 +26,48 @@ export class UserEntity extends EntityBase {
     @ApiProperty()
     emailValidated: boolean;
 
-    @Column({nullable: true})
+    @Column({nullable: true, default: null})
     @ApiProperty()
     @Exclude()
     password: string;
 
+    @Column({nullable: true, default: null})
+    @ApiProperty()
+    @Exclude()
+    passwordSalt: string;
+
     // For social login
-    @Column({nullable: true})
+    @Column({nullable: true, default: null})
     @ApiProperty()
     @Index()
     facebookId: string;
 
-    @Column({nullable: true})
+    @Column({nullable: true, default: null})
     @ApiProperty()
     @Index()
     googleId: string;
 
-    @Column({nullable: true})
+    @Column({nullable: true, default: null})
     @ApiProperty()
     @Index()
     githubId: string;
 
-    @Column({nullable: true})
+    @Column({nullable: true, default: null})
     @ApiProperty()
     @Index()
     appleId: string;
 
-    @Column({nullable: true})
+    @Column({nullable: true, default: null})
     @ApiProperty()
     @Index()
     linkedinId: string;
 
-    @Column({nullable: true})
+    @Column({nullable: true, default: null})
     @ApiProperty()
     @Index()
     twitterId: string;
 
-    @Column({nullable: true})
+    @Column({nullable: true, default: null})
     @ApiProperty()
     @Index()
     walletAddress: string;
