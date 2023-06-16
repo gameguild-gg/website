@@ -21,7 +21,7 @@ import { EventTypeEnum } from './event.enum';
         },
     }
 })
-@Controller('event')
+@Controller('api/event')
 @ApiTags('event')
 export class EventController implements CrudController<EventEntity> {
     constructor(public service: EventService) {}

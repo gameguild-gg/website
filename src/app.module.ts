@@ -25,6 +25,7 @@ import {ProposalModule} from "./modules/proposal/proposal.module";
           dev: process.env.NODE_ENV !== 'production',
           conf: { useFilesystemPublicRoutes: true },
         }),
+        {passthrough404: false}
     ),
     ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRootAsync({

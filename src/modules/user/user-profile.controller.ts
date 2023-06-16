@@ -16,7 +16,7 @@ import {UserProfileService} from "./user-profile.service";
         }
     }
 })
-@Controller('user-profile')
+@Controller('api/user-profile')
 @ApiTags('user-profile')
 export class UserProfileController implements CrudController<UserProfileEntity>{
     constructor(public service: UserProfileService) {}

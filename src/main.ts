@@ -8,6 +8,9 @@ import { ExpressAdapter } from '@nestjs/platform-express';
 import { middleware as expressCtx } from 'express-ctx';
 import {ClassSerializerInterceptor, HttpStatus, UnprocessableEntityException, ValidationPipe} from "@nestjs/common";
 import {RenderService} from "nest-next";
+import {ParsedUrlQuery} from "querystring";
+
+
 
 async function bootstrap(): Promise<NestExpressApplication> {
   const app = await NestFactory.create<NestExpressApplication>(
@@ -22,9 +25,9 @@ async function bootstrap(): Promise<NestExpressApplication> {
     setupSwagger(app);
   }
 
+
   // app.enable('trust proxy'); // only if you're behind a reverse proxy (Heroku, Bluemix, AWS ELB, Nginx, etc)
   // app.use(helmet());
-  //app.setGlobalPrefix('/api'); // use api as global prefix if you don't have subdomain
   // app.use(
   //     rateLimit({
   //       windowMs: 15 * 60 * 1000, // 15 minutes
@@ -87,9 +90,9 @@ async function bootstrap(): Promise<NestExpressApplication> {
 
   const service = app.get(RenderService);
 
-  service.setErrorHandler(async (err, req, res) => {
-    // send JSON response
-    res.send(err.response);
+  service.setErrorHandler(async (err: any, req: any, res: any, pathname: string, query: ParsedUrlQuery) => {
+    if(pathname.startsWith('/api'))
+      res.send(err.response);
   });
 
   const port = configService.appConfig.port;

@@ -19,7 +19,7 @@ import {UserService} from "./user.service";
         only: ['getOneBase'],
     }
 })
-@Controller('user')
+@Controller('api/user')
 @ApiTags('user')
 export class UserController implements CrudController<UserEntity>{
     constructor(public service: UserService) {}
