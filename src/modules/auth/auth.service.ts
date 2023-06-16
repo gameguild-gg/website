@@ -1,14 +1,8 @@
-import { Injectable } from '@nestjs/common';
-
-@Injectable()
-export class AuthService {}
-
-
 // import { Injectable } from '@nestjs/common';
 // import { JwtService } from '@nestjs/jwt';
 //
 // import { validateHash } from '../../common/utils';
-// import type { RoleType } from '../../constants';
+// import type { UserRoleEnum } from '../user/user-role.enum';
 // import { TokenType } from '../../constants';
 // import { UserNotFoundException } from '../../exceptions';
 // import { ApiConfigService } from '../../shared/services/api-config.service';
@@ -25,9 +19,23 @@ export class AuthService {}
 //         private userService: UserService,
 //     ) {}
 //
+//     async emailExists(email: string): Promise<boolean> {
+//         return !!(await this.userService.findOne({
+//             where: {
+//                 email,
+//             },
+//         }));
+//     }
+//
+//     async registerEmailPass(email: string, password: string): Promise<TokenPayloadDto> {
+//         if(await this.emailExists(email)) {
+//             throw new Error('Email already exists');
+//         }
+//     }
+//
 //     async createAccessToken(data: {
-//         role: RoleType;
-//         userId: Uuid;
+//         role: UserRoleEnum;
+//         userId: string;
 //     }): Promise<TokenPayloadDto> {
 //         return new TokenPayloadDto({
 //             expiresIn: this.configService.authConfig.jwtExpirationTime,
@@ -39,13 +47,16 @@ export class AuthService {}
 //         });
 //     }
 //
-//     async validateUser(userLoginDto: UserLoginDto): Promise<UserEntity> {
+//     async validateUser(userLogin: Partial<UserEntity>): Promise<UserEntity> {
+//
 //         const user = await this.userService.findOne({
-//             email: userLoginDto.email,
+//             where: {
+//                 email: userLogin.email,
+//             }
 //         });
 //
 //         const isPasswordValid = await validateHash(
-//             userLoginDto.password,
+//             userLogin.password,
 //             user?.password,
 //         );
 //
