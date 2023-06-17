@@ -2,6 +2,7 @@ import type { Provider } from '@nestjs/common';
 import { Global, Module } from '@nestjs/common';
 
 import { ApiConfigService } from './config.service';
+import {MailSenderService} from "./mail-sender.service";
 // import { AwsS3Service } from './services/aws-s3.service';
 // import { GeneratorService } from './services/generator.service';
 // import { TranslationService } from './services/translation.service';
@@ -17,7 +18,7 @@ import { ApiConfigService } from './config.service';
 
 @Global()
 @Module({
-    providers: [ApiConfigService],
-    exports: [ApiConfigService],
+    providers: [ApiConfigService, MailSenderService],
+    exports: [ApiConfigService, MailSenderService],
 })
 export class SharedModule {}

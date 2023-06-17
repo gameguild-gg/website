@@ -20,6 +20,41 @@ services:
       - "5432:5432"
     volumes:
       - postgres:/data/postgres
+
+
+
+# POSTAL
+#  postal:
+#    image: ghcr.io/postalserver/postal:2.1.4
+#    depends_on:
+#      - mariadb
+#      - rabbitmq
+#    entrypoint: [ "/docker-entrypoint.sh" ]
+#    ports:
+#      - "6000:6000"
+#      - "25:25"
+#      - "2525:2525"
+#      - "587:587"
+##    volumes:
+##      - "./config:/config"
+#    environment:
+#      POSTAL_CONFIG_ROOT: /config
+#      KATAPULT_CONFIG_FILE: /ci-config.yml
+#      WAIT_FOR_TIMEOUT: 90
+#      WAIT_FOR_TARGETS: |-
+#        mariadb:3306
+#        rabbitmq:5672
+#  mariadb:
+#    image: mariadb
+#    restart: always
+#    environment:
+#      MARIADB_DATABASE: postal
+#      MARIADB_ROOT_PASSWORD: postal
+#      MARIADB_ALLOW_EMPTY_PASSWORD: 'yes'
+#      MARIADB_ALLOW_EMPTY_ROOT_PASSWORD: 'yes'
+#  rabbitmq:
+#    image: rabbitmq:3
+#    restart: always
 #  adminer:
 #    image: adminer
 #    restart: always

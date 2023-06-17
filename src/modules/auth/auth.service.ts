@@ -1,16 +1,17 @@
 import {Injectable, NotImplementedException} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 
-import { validateHash } from '../../common/utils';
+import {generateHash, generateRandomSalt, validateHash} from '../../common/utils';
 import type { UserRoleEnum } from '../user/user-role.enum';
 import type { UserEntity } from '../user/user.entity';
 import { UserService } from '../user/user.service';
 import type { UserLoginDto } from './user-login.dto';
 import {TokenType} from "./token-type.enum";
-import {UserNotFoundException} from "./user-not-found.exception";
+import {UserNotFoundException} from "../../exceptions/user-not-found.exception";
 import {ApiConfigService} from "../../shared/config.service";
 import {TokenPayloadDto} from "./token-payload.dto";
-import {UserExistsException} from "./user-exists.exception";
+import {MailSenderService} from "../../shared/mail-sender.service";
+import {UserUnauthorizedException} from "../../exceptions/unauthorized.exception";
 
 @Injectable()
 export class AuthService {
@@ -18,19 +19,14 @@ export class AuthService {
         private jwtService: JwtService,
         private configService: ApiConfigService,
         private userService: UserService,
+        private mailSenderService: MailSenderService,
     ) {}
 
-    async emailExists(email: string): Promise<boolean> {
-        return !!(await this.userService.findOne({
-            where: {
-                email,
-            },
-        }));
-    }
+    async registerEmailPass(data: UserLoginDto): Promise<TokenPayloadDto> {
+        var salt = generateRandomSalt();
+        var passwordHash = generateHash(data.password, salt);
 
-    async registerEmailPass(email: string, password: string): Promise<TokenPayloadDto> {
-        if(await this.emailExists(email))
-            throw new UserExistsException('Email already exists');
+        await this.userService.createOneEmailPass({email: data.email, passwordHashed: passwordHash, passwordSalt: salt});
 
         throw new NotImplementedException();
     }
@@ -49,22 +45,32 @@ export class AuthService {
         });
     }
 
-    async validateUser(userLogin: Partial<UserEntity>): Promise<UserEntity> {
-
+    async validateUserEmailPass(userLogin: {email:string, password: string}): Promise<UserEntity> {
         const user = await this.userService.findOne({
             where: {
                 email: userLogin.email,
             }
         });
+        if(!user)
+            throw new UserNotFoundException("User not found with email: " + userLogin.email);
 
-        const isPasswordValid = await validateHash(
+        if(!user.emailValidated)
+            throw new UserUnauthorizedException("Email not validated.");
+
+        if(!user.passwordHash || !user.passwordSalt)
+            throw new UserUnauthorizedException("User has no password. Use social login instead or recover password.");
+
+        var salt = user?.passwordSalt;
+        var passwordHash = generateHash(userLogin.password, salt);
+
+        const isPasswordValid = validateHash(
             userLogin.password,
-            user?.password,
+            user.passwordHash,
+            user.passwordSalt,
         );
 
-        if (!isPasswordValid) {
-            throw new UserNotFoundException();
-        }
+        if (!isPasswordValid)
+            throw new UserUnauthorizedException("Invalid password");
 
         return user!;
     }

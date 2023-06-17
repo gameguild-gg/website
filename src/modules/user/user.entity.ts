@@ -29,7 +29,7 @@ export class UserEntity extends EntityBase {
     @Column({nullable: true, default: null})
     @ApiProperty()
     @Exclude()
-    password: string;
+    passwordHash: string;
 
     @Column({nullable: true, default: null})
     @ApiProperty()
