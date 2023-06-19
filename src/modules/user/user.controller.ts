@@ -1,8 +1,9 @@
 import {Crud, CrudController} from "@dataui/crud";
-import {Controller} from "@nestjs/common";
+import {Controller, Post} from "@nestjs/common";
 import {ApiTags} from "@nestjs/swagger";
 import {UserEntity} from "./user.entity";
 import {UserService} from "./user.service";
+import {UserLoginDto} from "../auth/user-login.dto";
 
 @Crud({
     model: {

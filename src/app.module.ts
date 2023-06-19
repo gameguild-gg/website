@@ -1,9 +1,8 @@
 import { Module } from '@nestjs/common';
 import { RenderModule } from 'nest-next';
 import Next from 'next';
-import { AppController } from './app.controller';
-import { BlogController } from './common/blog/blog.controller';
-import { BlogService } from './common/blog/blog.service';
+import { BlogController } from './modules/blog/blog.controller';
+import { BlogService } from './modules/blog/blog.service';
 import {TypeOrmModule} from "@nestjs/typeorm";
 import {SharedModule} from "./shared/shared.module";
 import {ApiConfigService} from "./shared/config.service";
@@ -44,7 +43,7 @@ import {ProposalModule} from "./modules/proposal/proposal.module";
     EventModule,
     ProposalModule,
   ],
-  controllers: [AppController, BlogController],
+  controllers: [BlogController],
   providers: [BlogService],
 })
 export class AppModule {}

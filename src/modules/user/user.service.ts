@@ -5,6 +5,7 @@ import {Repository} from "typeorm";
 import {UserEntity} from "./user.entity";
 import {UserExistsException} from "../../exceptions/user-exists.exception";
 import {UserRoleEnum} from "./user-role.enum";
+import {UserNotFoundException} from "../../exceptions/user-not-found.exception";
 
 @Injectable()
 export class UserService extends TypeOrmCrudService<UserEntity> {
@@ -36,7 +37,19 @@ export class UserService extends TypeOrmCrudService<UserEntity> {
         });
 
 
-
         return user;
+    }
+
+    async markEmailAsValid(id: string) {
+        var user = await this.findOne({
+            where: {id}
+        });
+        if(user){
+            user.emailValidated = true;
+            await this.repository.save(user);
+            return true;
+        }
+        else
+            throw new UserNotFoundException("User not found with id: " + id);
     }
 }

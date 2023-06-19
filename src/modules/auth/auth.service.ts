@@ -1,4 +1,4 @@
-import {Injectable, NotImplementedException} from '@nestjs/common';
+import {Injectable, NotImplementedException, UnauthorizedException} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 
 import {generateHash, generateRandomSalt, validateHash} from '../../common/utils';
@@ -22,30 +22,46 @@ export class AuthService {
         private mailSenderService: MailSenderService,
     ) {}
 
-    async registerEmailPass(data: UserLoginDto): Promise<TokenPayloadDto> {
+    async registerEmailPass(data: UserLoginDto): Promise<UserEntity> {
         var salt = generateRandomSalt();
         var passwordHash = generateHash(data.password, salt);
 
-        await this.userService.createOneEmailPass({email: data.email, passwordHashed: passwordHash, passwordSalt: salt});
+        var user = await this.userService.createOneEmailPass({email: data.email, passwordHashed: passwordHash, passwordSalt: salt});
 
-        throw new NotImplementedException();
+        if(user){
+            var token = await this.createAccessToken({
+                role: user.role,
+                id: user.id,
+            })
+           await this.mailSenderService.sendEmailVerification(user, token, "/verify-email");
+        }
+
+        return user
     }
 
     async createAccessToken(data: {
         role: UserRoleEnum;
-        userId: string;
+        id: string;
     }): Promise<TokenPayloadDto> {
         return new TokenPayloadDto({
             expiresIn: this.configService.authConfig.jwtExpirationTime,
             accessToken: await this.jwtService.signAsync({
-                userId: data.userId,
+                id: data.id,
                 type: TokenType.ACCESS_TOKEN,
                 role: data.role,
             }),
         });
     }
 
-    async validateUserEmailPass(userLogin: {email:string, password: string}): Promise<UserEntity> {
+    async validadeEmailToken(token: string): Promise<boolean> {
+        var isvalid = await this.jwtService.verifyAsync(token);
+        if(isvalid)
+            return await this.userService.markEmailAsValid(isvalid.userId);
+        else
+            throw new UserUnauthorizedException("Invalid token");
+    }
+
+    async loginUserEmailPass(userLogin: {email:string, password: string}): Promise<TokenPayloadDto> {
         const user = await this.userService.findOne({
             where: {
                 email: userLogin.email,
@@ -72,6 +88,6 @@ export class AuthService {
         if (!isPasswordValid)
             throw new UserUnauthorizedException("Invalid password");
 
-        return user!;
+        return this.createAccessToken(user);
     }
 }
