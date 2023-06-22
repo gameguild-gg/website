@@ -20,7 +20,7 @@ const Navbar = (children: any) => {
                 Evento da semana
             </Link>
             <div className={ styles.loginBtn }>
-                <Link href="#">
+                <Link href="/auth/login">
                     Login
                 </Link>
             </div>

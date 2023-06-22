@@ -20,6 +20,7 @@
     "skipLibCheck": true,
     "paths": {
       "@/components/*": ["./components/*"],
+      "@/theme/*": ["./theme/*"],
       "@/pages/*": ["./pages/*"],
       "@/styles/*": ["./styles/*"]
     },
@@ -41,6 +42,7 @@
   },
   "include": [
     "./pages/**/*",
+    "./theme/**/*",
     "./src/**/*",
     "./ui/**/*",
     "./dtos/**/*"
