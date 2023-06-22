@@ -20,6 +20,12 @@ import {ProposalModule} from "./modules/proposal/proposal.module";
 
 @Module({
   imports: [
+    RenderModule.forRootAsync(
+        Next({
+          dev: process.env.NODE_ENV !== 'production',
+          conf: { useFilesystemPublicRoutes: true },
+        }),
+    ),
     ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRootAsync({
       imports: [SharedModule],
@@ -27,12 +33,6 @@ import {ProposalModule} from "./modules/proposal/proposal.module";
           configService.postgresConfig,
       inject: [ApiConfigService],
     }),
-    RenderModule.forRootAsync(
-      Next({
-        dev: process.env.NODE_ENV !== 'production',
-        conf: { useFilesystemPublicRoutes: false },
-      }),
-    ),
     UserModule,
     UserProfileModule,
     AuthModule,

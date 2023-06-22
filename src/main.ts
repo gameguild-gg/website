@@ -7,6 +7,7 @@ import {ApiConfigService} from "./shared/config.service";
 import { ExpressAdapter } from '@nestjs/platform-express';
 import { middleware as expressCtx } from 'express-ctx';
 import {ClassSerializerInterceptor, HttpStatus, UnprocessableEntityException, ValidationPipe} from "@nestjs/common";
+import {RenderService} from "nest-next";
 
 async function bootstrap(): Promise<NestExpressApplication> {
   const app = await NestFactory.create<NestExpressApplication>(
@@ -83,6 +84,13 @@ async function bootstrap(): Promise<NestExpressApplication> {
   if (!configService.isDevelopment) {
     app.enableShutdownHooks();
   }
+
+  const service = app.get(RenderService);
+
+  service.setErrorHandler(async (err, req, res) => {
+    // send JSON response
+    res.send(err.response);
+  });
 
   const port = configService.appConfig.port;
   await app.listen(port);

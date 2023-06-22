@@ -10,6 +10,7 @@
     "build:ui": "npx next build",
     "build:server": "npx tsc --project tsconfig.server.json && npx babel .next/production-server -d .next/production-server --extensions \".js\"",
     "build": "npm run build:clean && npm run build:ui && npm run build:server",
+    "prebuild": "rimraf dist .next",
     "start": "cross-env NODE_ENV=production node .next/production-server/src/main.js",
     "typeorm": "typeorm-ts-node-commonjs -d ./ormconfig.ts",
     "migration:generate": "cd src/migrations && npx typeorm-ts-node-commonjs migration:generate -d ../../ormconfig.ts",
@@ -74,7 +75,7 @@
     "eslint-plugin-prettier": "^4.0.0",
     "nodemon": "^2.0.15",
     "prettier": "^2.6.2",
-    "rimraf": "^3.0.0",
+    "rimraf": "^3.0.2",
     "ts-node": "^10.7.0",
     "typescript": "^4.6.3"
   }

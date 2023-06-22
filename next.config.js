@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
-
-module.exports = {
-	reactStrictMode: false,
+const nextConfig = {
+    reactStrictMode: true,
+    basePath: process.env.BASE_PATH
 	swcMinify: true,
 	experimental: {
 	  esmExternals: false

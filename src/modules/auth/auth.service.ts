@@ -10,6 +10,7 @@ import {TokenType} from "./token-type.enum";
 import {UserNotFoundException} from "./user-not-found.exception";
 import {ApiConfigService} from "../../shared/config.service";
 import {TokenPayloadDto} from "./token-payload.dto";
+import {UserExistsException} from "./user-exists.exception";
 
 @Injectable()
 export class AuthService {
@@ -28,9 +29,9 @@ export class AuthService {
     }
 
     async registerEmailPass(email: string, password: string): Promise<TokenPayloadDto> {
-        if(await this.emailExists(email)) {
-            throw new Error('Email already exists');
-        }
+        if(await this.emailExists(email))
+            throw new UserExistsException('Email already exists');
+
         throw new NotImplementedException();
     }
 
