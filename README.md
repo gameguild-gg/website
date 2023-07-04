@@ -9,3 +9,24 @@ All needed components are expected to be under one project, one repo, with this 
 > Docker + Compose
 
 Steps to reproduce the project
+
+## Installing dependencies
+
+### Install Docker Image
+
+Install Docker and then Docker Image with:
+ˋˋˋ
+docker-compose up -d postgres
+ˋˋˋ
+
+### Install NPM dependencies    
+
+ˋˋˋ
+npm install
+ˋˋˋ
+
+## Running the website
+
+ˋˋˋ
+npm run dev
+ˋˋˋ
