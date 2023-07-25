@@ -1,6 +1,7 @@
 import styles from "../styles/DefaultLayout.module.css";
 import Navbar from "./navbar";
 import Footer from "./footer";
+import Grid from '@mui/material/Unstable_Grid2';
 
 interface DefaultLayoutProps {
     children: JSX.Element;
@@ -9,13 +10,17 @@ interface DefaultLayoutProps {
 const DefaultLayout = ({ children }: DefaultLayoutProps) => {
     return (
         <>
-            <div className={styles.container}>
-                <Navbar />
-                <div className={styles.content}>
-                    { children }
-                </div>
-                <Footer />
-            </div>
+          <Grid container className={styles.container}>
+            <Grid xs={2}>
+             <Navbar />
+            </Grid>
+            <Grid xs={8} xsOffset={2}>
+              <div>{children}</div>
+            </Grid>
+            <Grid xs={12}>
+              <Footer />
+            </Grid>
+          </Grid>
         </>
     );
 };
