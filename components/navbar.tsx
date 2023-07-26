@@ -20,10 +20,10 @@ import Dns from '@mui/icons-material/Dns';
 import Public from '@mui/icons-material/Public';
 
 const data = [
-    { icon: <People />, label: 'Authentication' },
-    { icon: <Dns />, label: 'Database' },
-    { icon: <PermMedia />, label: 'Storage' },
-    { icon: <Public />, label: 'Hosting' },
+    { icon: <People />, label: 'Frontend' },
+    { icon: <Dns />, label: 'Backend' },
+    { icon: <PermMedia />, label: 'Art' },
+    { icon: <Public />, label: 'Design' },
 ];
 
 const FireNav = styled(List)<{ component?: React.ElementType }>({
@@ -63,7 +63,7 @@ export default function CustomizedList() {
               <Paper elevation={0} sx={{ maxWidth: 256 }}>
                   <FireNav component="nav" disablePadding>
                       <ListItemButton component="a" href="#customized-list">
-                          <ListItemIcon sx={{ fontSize: 20 }}>🔥</ListItemIcon>
+                          <ListItemIcon><img style={{ width: '48px' }} src={'/icon.png'}/></ListItemIcon>
                           <ListItemText
                             sx={{ my: 0 }}
                             primary="AGG"
@@ -81,7 +81,7 @@ export default function CustomizedList() {
                                   <Home color="primary" />
                               </ListItemIcon>
                               <ListItemText
-                                primary="Project Overview"
+                                primary="Home"
                                 primaryTypographyProps={{
                                     color: 'primary',
                                     fontWeight: 'medium',
@@ -89,41 +89,26 @@ export default function CustomizedList() {
                                 }}
                               />
                           </ListItemButton>
-                          <Tooltip title="Project Settings">
-                              <IconButton
-                                size="large"
-                                sx={{
-                                    '& svg': {
-                                        color: 'rgba(255,255,255,0.8)',
-                                        transition: '0.2s',
-                                        transform: 'translateX(0) rotate(0)',
-                                    },
-                                    '&:hover, &:focus': {
-                                        bgcolor: 'unset',
-                                        '& svg:first-of-type': {
-                                            transform: 'translateX(-4px) rotate(-20deg)',
-                                        },
-                                        '& svg:last-of-type': {
-                                            right: 0,
-                                            opacity: 1,
-                                        },
-                                    },
-                                    '&:after': {
-                                        content: '""',
-                                        position: 'absolute',
-                                        height: '80%',
-                                        display: 'block',
-                                        left: 0,
-                                        width: '1px',
-                                        bgcolor: 'divider',
-                                    },
-                                }}
-                              >
-                                  <Settings />
-                                  <ArrowRight sx={{ position: 'absolute', right: 4, opacity: 0 }} />
-                              </IconButton>
-                          </Tooltip>
                       </ListItem>
+
+                    <Divider />
+
+                      <ListItem component="div" disablePadding>
+                        <ListItemButton sx={{ height: 56 }}>
+                          <ListItemIcon>
+                            <People color="primary" />
+                          </ListItemIcon>
+                          <ListItemText
+                            primary="Authentication"
+                            primaryTypographyProps={{
+                              color: 'primary',
+                              fontWeight: 'medium',
+                              variant: 'body2',
+                            }}
+                          />
+                        </ListItemButton>
+                      </ListItem>
+
                       <Divider />
                       <Box
                         sx={{
@@ -142,14 +127,14 @@ export default function CustomizedList() {
                             }}
                           >
                               <ListItemText
-                                primary="Build"
+                                primary="Community"
                                 primaryTypographyProps={{
                                     fontSize: 15,
                                     fontWeight: 'medium',
                                     lineHeight: '20px',
                                     mb: '2px',
                                 }}
-                                secondary="Authentication, Firestore Database, Realtime Database, Storage, Hosting, Functions, and Machine Learning"
+                                secondary="All about game dev, art and more."
                                 secondaryTypographyProps={{
                                     noWrap: true,
                                     fontSize: 12,

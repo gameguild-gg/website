@@ -11,10 +11,10 @@ const DefaultLayout = ({ children }: DefaultLayoutProps) => {
     return (
         <>
           <Grid container className={styles.container}>
-            <Grid xs={2}>
+            <Grid xs={3}>
              <Navbar />
             </Grid>
-            <Grid xs={8} xsOffset={2}>
+            <Grid xs={8} xsOffset={1}>
               <div>{children}</div>
             </Grid>
             <Grid xs={12}>
