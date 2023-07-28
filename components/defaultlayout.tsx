@@ -14,7 +14,7 @@ const DefaultLayout = ({ children }: DefaultLayoutProps) => {
             <Grid xs={3}>
              <Navbar />
             </Grid>
-            <Grid xs={8} xsOffset={1}>
+            <Grid xs={8}>
               <div>{children}</div>
             </Grid>
             <Grid xs={12}>

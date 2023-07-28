@@ -1,2 +1,8 @@
 .main {
 }
+
+.mainArticle{
+    background: white;
+    border-radius: 40px;
+    padding: 20px;
+}

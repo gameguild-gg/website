@@ -12,7 +12,7 @@ export default function Home() {
       </Head>
       <main className={styles.main}>
         <div className={styles.mainArticle}>
-          <h2>Index page</h2>
+          <h2>Autentication</h2>
           <br />
           <p>
             Nulla ut sagittis sapien, molestie mollis nibh. Suspendisse placerat massa id massa iaculis molestie. Nunc porttitor quam ac lectus tempor, at vestibulum sapien vulputate. Etiam non quam est. Duis id consequat mauris. Maecenas vitae odio libero. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Aliquam enim turpis, dignissim non ante dignissim, facilisis accumsan lorem
