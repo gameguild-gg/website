@@ -1,5 +1,6 @@
 import Head from 'next/head'
 import styles from '@/styles/Home.module.css'
+import Grid from "@mui/material/Unstable_Grid2"
 
 export default function Home() {
   return (
@@ -10,6 +11,14 @@ export default function Home() {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
+      <Grid container className={styles.searchBar}>
+        <Grid md={7} className={styles.navTitle}>
+          <h3>Home</h3>
+        </Grid>
+        <Grid md={5}>
+          <input type="text" placeholder={"Search"}/>
+        </Grid>
+      </Grid>
       <main className={styles.main}>
         <div className={styles.mainArticle}>
           <h2>Index page</h2>

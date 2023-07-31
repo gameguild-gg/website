@@ -10,7 +10,7 @@ const Symbol = ({ icon, size }: IProps) => {
 
   return (
     <div>
-		<Icon sx={{ fontSize: size + 'px' }} >{icon}</Icon>;
+		  <Icon sx={{ fontSize: size + 'px' }} >{icon}</Icon>
     </div>
   );
 
