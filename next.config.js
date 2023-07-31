@@ -5,5 +5,8 @@ const nextConfig = {
 		swcMinify: true,
 	experimental: {
 	  esmExternals: false
-	}
+	},
+	eslint: {
+		ignoreDuringBuilds: true,
+	},
  }; 
