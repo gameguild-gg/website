@@ -16,13 +16,14 @@ import { PostModule } from './modules/post/post.module';
 import { EventModule } from './modules/event/event.module';
 import {UserModule} from "./modules/user/user.module";
 import {ProposalModule} from "./modules/proposal/proposal.module";
+const nextConfig = require('../next.config');
 
 @Module({
   imports: [
     RenderModule.forRootAsync(
         Next({
           dev: process.env.NODE_ENV !== 'production',
-          conf: { useFilesystemPublicRoutes: true },
+          conf: nextConfig,
         }),
         {passthrough404: false}
     ),

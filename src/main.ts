@@ -21,10 +21,6 @@ async function bootstrap(): Promise<NestExpressApplication> {
 
   const configService = app.select(SharedModule).get(ApiConfigService);
 
-  if (configService.documentationEnabled) {
-    setupSwagger(app);
-  }
-
 
   // app.enable('trust proxy'); // only if you're behind a reverse proxy (Heroku, Bluemix, AWS ELB, Nginx, etc)
   // app.use(helmet());
