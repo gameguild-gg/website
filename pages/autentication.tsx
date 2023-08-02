@@ -1,28 +1,116 @@
-import Head from 'next/head'
-import styles from '@/styles/Home.module.css'
+import Avatar from "@mui/material/Avatar";
+import Button from "@mui/material/Button";
+import CssBaseline from "@mui/material/CssBaseline";
+import TextField from "@mui/material/TextField";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import Checkbox from "@mui/material/Checkbox";
+import Link from "@mui/material/Link";
+import Grid from "@mui/material/Grid";
+import Box from "@mui/material/Box";
+import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
+import Typography from "@mui/material/Typography";
+import Container from "@mui/material/Container";
+import { createTheme, ThemeProvider } from "@mui/material/styles";
+import styles from "@/styles/Home.module.css";
 
-export default function Home() {
+
+const theme = createTheme();
+
+export default function SignUp() {
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const data = new FormData(event.currentTarget);
+    console.log({
+      email: data.get("email"),
+      password: data.get("password"),
+    });
+  };
+
   return (
-    <>
-      <Head>
-        <title>Create Next App</title>
-        <meta name="description" content="An awesome site for our community" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
-      <main className={styles.main}>
-        <div className={styles.mainArticle}>
-          <h2>Autentication</h2>
-          <br />
-          <p>
-            Nulla ut sagittis sapien, molestie mollis nibh. Suspendisse placerat massa id massa iaculis molestie. Nunc porttitor quam ac lectus tempor, at vestibulum sapien vulputate. Etiam non quam est. Duis id consequat mauris. Maecenas vitae odio libero. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Aliquam enim turpis, dignissim non ante dignissim, facilisis accumsan lorem
-          </p>
-          <br />
-          <p>
-              Aenean ut massa id tellus pulvinar suscipit. Curabitur sodales, libero eget finibus feugiat, felis lorem luctus erat, pellentesque hendrerit turpis diam et odio. Nam bibendum a nisl ut mattis. Maecenas venenatis, elit fermentum luctus mollis, arcu mauris tincidunt arcu, nec lacinia nibh eros non velit. Vestibulum luctus dapibus tortor vitae tristique. Pellentesque finibus sem sed venenatis aliquam. Sed quam lorem, luctus eu justo a, fringilla venenatis mauris. Integer bibendum blandit tellus, et accumsan nulla laoreet a. Cras tempor id elit lobortis efficitur. Vivamus molestie dolor nec egestas tempus. Fusce non lobortis lorem. Mauris quis magna justo. Suspendisse placerat fringilla blandit. Aliquam erat volutpat. Etiam congue massa sed sollicitudin porta. Suspendisse ut porta dolor.
-          </p>
-        </div>
-      </main>
-    </>
-  )
+      <div className={styles.mainArticle}>
+      <ThemeProvider theme={theme}>
+        <Container component="main" maxWidth="xs">
+          <CssBaseline />
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+            }}
+          >
+            <Avatar sx={{ m: 1, bgcolor: "secondary.main" }}>
+              <LockOutlinedIcon />
+            </Avatar>
+            <Typography component="h1" variant="h5">
+              Sign up
+            </Typography>
+            <Box
+              component="form"
+              noValidate
+              onSubmit={handleSubmit}
+              sx={{ mt: 3 }}
+            >
+              <Grid container spacing={2}>
+                <Grid item xs={12}>
+                  <TextField
+                    autoComplete="given-name"
+                    name="firstName"
+                    required
+                    fullWidth
+                    id="firstName"
+                    label="Name"
+                    autoFocus
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField
+                    required
+                    fullWidth
+                    id="email"
+                    label="Email Address"
+                    name="email"
+                    autoComplete="email"
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField
+                    required
+                    fullWidth
+                    name="password"
+                    label="Password"
+                    type="password"
+                    id="password"
+                    autoComplete="new-password"
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <FormControlLabel
+                    control={
+                      <Checkbox value="allowExtraEmails" color="primary" />
+                    }
+                    label="I want to receive inspiration, marketing promotions and updates via email."
+                  />
+                </Grid>
+              </Grid>
+              <Button
+                type="submit"
+                fullWidth
+                variant="contained"
+                sx={{ mt: 3, mb: 2 }}
+              >
+                Sign Up
+              </Button>
+              <Grid container justifyContent="flex-end">
+                <Grid item>
+                  <Link href="#" variant="body2">
+                    Already have an account? Sign in
+                  </Link>
+                </Grid>
+              </Grid>
+            </Box>
+          </Box>
+        </Container>
+      </ThemeProvider>
+    </div>
+  );
 }
