@@ -89,9 +89,9 @@ export default function SignUp() {
                 </Link>
               </Grid>
               <Grid md={6}>
-                <Link href="autentication" sx={'float:right'}>
-                  Recovery key.
-                </Link>
+                {/*<Link href="autentication" sx={'float:right'}>*/}
+                {/*  Recovery key.*/}
+                {/*</Link>*/}
               </Grid>
             </Grid>
           </Box>

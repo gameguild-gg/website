@@ -20,13 +20,6 @@ const nextConfig = require('../next.config');
 
 @Module({
   imports: [
-    RenderModule.forRootAsync(
-        Next({
-          dev: process.env.NODE_ENV !== 'production',
-          conf: nextConfig,
-        }),
-        {passthrough404: false}
-    ),
     ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRootAsync({
       imports: [SharedModule],
