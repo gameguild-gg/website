@@ -4,20 +4,21 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
+    "local": "concurrently \"npm run local:front\" \"npm run local:back\"",
+
     "local:front": "next dev",
-    "prelocal:front:build": "rimraf .next",
-    "local:front:build": "npx next build",
-    "local:front:build:run": "npx next start -p 3000",
+    "prebuild:local:front": "rimraf .next",
+    "build:local:front": "npx next build",
+    "start:local:front": "npx next start -p 3000",
 
     "local:back": "nodemon src/main.ts",
-    "local:build:back": "npx tsc --project tsconfig.server.json && npx babel .next/production-server -d .next/production-server --extensions \".js\"",
-    "local": "concurrently \"npm run local:front\" \"npm run local:back\"",
-    "build:clean": "rimraf .next",
-    "build:ui": "npx next build",
-    "build:server": "npx tsc --project tsconfig.server.json && npx babel .next/production-server -d .next/production-server --extensions \".js\"",
-    "build": "npm run build:clean && npm run build:ui && npm run build:server",
-    "prebuild": "rimraf dist .next",
-    "start": "cross-env NODE_ENV=production node .next/production-server/src/main.js",
+    "prebuild:local:back": "rimraf dist",
+    "build:local:back": "npx tsc --project tsconfig.server.json",
+    "start:local:back": "node dist/main.js",
+
+    "start": "concurrently \"npm run start:local:front\" \"npm run start:local:back\"",
+    "build:local": "npm run build:local:front && npm run build:local:back",
+
     "typeorm": "typeorm-ts-node-commonjs -d ./ormconfig.ts",
     "migration:generate": "cd src/migrations && npx typeorm-ts-node-commonjs migration:generate -d ../../ormconfig.ts",
     "migration:revert": "npm run typeorm -- migration:revert",

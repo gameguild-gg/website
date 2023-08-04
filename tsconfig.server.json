@@ -1,7 +1,7 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "outDir": ".next/production-server",
+    "outDir": "./dist/",
     "declaration": true,
     "target": "es6",
     "module": "commonjs",
