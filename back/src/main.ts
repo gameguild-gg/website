@@ -1,26 +1,28 @@
-import {NestFactory, Reflector} from '@nestjs/core';
+import { NestFactory, Reflector } from '@nestjs/core';
 import { AppModule } from './app.module';
-import {setupSwagger} from "./setup-swagger";
-import {NestExpressApplication} from "@nestjs/platform-express";
-import {SharedModule} from "./shared/shared.module";
-import {ApiConfigService} from "./shared/config.service";
+import { setupSwagger } from './setup-swagger';
+import { NestExpressApplication } from '@nestjs/platform-express';
+import { SharedModule } from './shared/shared.module';
+import { ApiConfigService } from './shared/config.service';
 import { ExpressAdapter } from '@nestjs/platform-express';
-import { middleware as expressCtx } from 'express-ctx';
-import {ClassSerializerInterceptor, HttpStatus, UnprocessableEntityException, ValidationPipe} from "@nestjs/common";
-import {RenderService} from "nest-next";
-import {ParsedUrlQuery} from "querystring";
 
+import {
+  ClassSerializerInterceptor,
+  HttpStatus,
+  UnprocessableEntityException,
+  ValidationPipe,
+} from '@nestjs/common';
 
+import { ParsedUrlQuery } from 'querystring';
 
 async function bootstrap(): Promise<NestExpressApplication> {
   const app = await NestFactory.create<NestExpressApplication>(
-      AppModule,
-      new ExpressAdapter(),
-      { cors: false }
+    AppModule,
+    new ExpressAdapter(),
+    { cors: false },
   );
 
   const configService = app.select(SharedModule).get(ApiConfigService);
-
 
   // app.enable('trust proxy'); // only if you're behind a reverse proxy (Heroku, Bluemix, AWS ELB, Nginx, etc)
   // app.use(helmet());
@@ -42,10 +44,10 @@ async function bootstrap(): Promise<NestExpressApplication> {
   // );
 
   app.useGlobalInterceptors(
-      new ClassSerializerInterceptor(app.get(Reflector)),
-      // new TranslationInterceptor(
-      //     app.select(SharedModule).get(TranslationService),
-      // ),
+    new ClassSerializerInterceptor(app.get(Reflector)),
+    // new TranslationInterceptor(
+    //     app.select(SharedModule).get(TranslationService),
+    // ),
   );
 
   // app.useGlobalPipes(
@@ -57,7 +59,6 @@ async function bootstrap(): Promise<NestExpressApplication> {
   //       exceptionFactory: (errors) => new UnprocessableEntityException(errors),
   //     }),
   // );
-
 
   // only start nats if it is enabled
   // if (configService.natsEnabled) {
@@ -77,30 +78,19 @@ async function bootstrap(): Promise<NestExpressApplication> {
     setupSwagger(app);
   }
 
-  app.use(expressCtx);
-
   // Starts listening for shutdown hooks
   if (!configService.isDevelopment) {
     app.enableShutdownHooks();
   }
-
-  const service = app.get(RenderService);
-
-  service.setErrorHandler(async (err: any, req: any, res: any, pathname: string, query: ParsedUrlQuery) => {
-    if(pathname.startsWith('/api'))
-      res.send(err.response);
-  });
 
   const port = configService.appConfig.port;
   await app.listen(port);
 
   console.info(`server running on ${await app.getUrl()}`);
   console.info(
-        `Documentation: http://localhost:${configService.appConfig.port}/documentation`,
+    `Documentation: http://localhost:${configService.appConfig.port}/documentation`,
   );
-  console.info(
-      `Frontend: http://localhost:${configService.appConfig.port}/`,
-  );
+  console.info(`Frontend: http://localhost:${configService.appConfig.port}/`);
 
   return app;
 }

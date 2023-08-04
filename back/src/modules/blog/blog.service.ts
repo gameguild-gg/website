@@ -1,5 +1,5 @@
 import { Injectable, Inject } from '@nestjs/common';
-import { IPost } from '../../../dtos/types';
+import { IPost } from '../../dtos/types';
 
 const POSTS: Record<string, IPost> = {
   'first-post': {

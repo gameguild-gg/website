@@ -3,7 +3,7 @@ services:
   app:
     container_name: infinibrains
     restart: always
-    build: .
+    build: back
     ports:
       - "8080:8080"
     links:

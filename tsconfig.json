@@ -45,7 +45,7 @@
     "./theme/**/*",
     "./src/**/*",
     "./ui/**/*",
-    "./dtos/**/*"
+    "./back/src/dtos/**/*"
   ],
   "exclude": [
     "node_modules"

@@ -3,7 +3,14 @@
   "version": "1.0.0",
   "main": "index.js",
   "license": "MIT",
+  "workspaces": [
+    "back",
+    "front"
+  ],
   "scripts": {
+    "postinstall": "npm install --prefix back",
+    "local:back": "npm run start:nodemon --prefix back",
+
     "local": "concurrently \"npm run local:front\" \"npm run local:back\"",
 
     "local:front": "next dev",
@@ -11,24 +18,13 @@
     "build:local:front": "npx next build",
     "start:local:front": "npx next start -p 3000",
 
-    "local:back": "nodemon src/main.ts",
-    "prebuild:local:back": "rimraf dist",
-    "build:local:back": "npx tsc --project tsconfig.server.json",
+    "build:local:back": "npx tsc --project back/tsconfig.server.json",
     "start:local:back": "node dist/main.js",
 
-    "start": "concurrently \"npm run start:local:front\" \"npm run start:local:back\"",
-    "build:local": "npm run build:local:front && npm run build:local:back",
-
-    "typeorm": "typeorm-ts-node-commonjs -d ./ormconfig.ts",
-    "migration:generate": "cd src/migrations && npx typeorm-ts-node-commonjs migration:generate -d ../../ormconfig.ts",
-    "migration:revert": "npm run typeorm -- migration:revert",
-    "schema:drop": "npm run typeorm -- schema:drop"
+    "start:local": "concurrently \"npm run start:local:front\" \"npm run start:local:back\"",
+    "build:local": "npm run build:local:front && npm run build:local:back"
   },
   "dependencies": {
-    "@dataui/crud": "^5.2.4",
-    "@dataui/crud-request": "^5.2.4",
-    "@dataui/crud-typeorm": "^5.2.4",
-    "@dataui/crud-util": "^5.2.4",
     "@emotion/react": "^11.11.0",
     "@emotion/styled": "^11.11.0",
     "@fontsource/roboto": "^5.0.2",
@@ -37,56 +33,27 @@
     "@mui/styled-engine-sc": "^5.12.0",
     "@mui/styles": "^5.6.1",
     "@mui/system": "^5.10.0",
-    "@nestjs/common": "^8.4.7",
-    "@nestjs/config": "^2.3.1",
-    "@nestjs/core": "^8.4.7",
-    "@nestjs/jwt": "^10.0.3",
-    "@nestjs/passport": "^9.0.3",
-    "@nestjs/platform-express": "8.4.7",
-    "@nestjs/swagger": "^5.2.1",
-    "@nestjs/typeorm": "^9.0.1",
-    "@sendgrid/client": "^7.7.0",
-    "@sendgrid/mail": "^7.7.0",
-    "@types/passport-jwt": "^3.0.8",
-    "class-transformer": "^0.5.1",
-    "class-validator": "^0.14.0",
     "concurrently": "^8.2.0",
     "cross-env": "7.0.3",
-    "crypto-js": "^4.1.1",
-    "ethers": "^6.4.1",
     "express-ctx": "^0.1.1",
     "lodash": "^4.17.21",
     "nest-next": "10.1.0",
     "next": "12.3.4",
-    "passport-jwt": "^4.0.1",
-    "pg": "^8.10.0",
     "react": "17.0.2",
     "react-dom": "17.0.2",
     "react-draggable": "^4.4.5",
     "reflect-metadata": "0.1.13",
     "rxjs": "7.5.5",
-    "styled-components": "^5.3.11",
-    "swagger-ui-express": "^4.6.3",
-    "typeorm": "0.3.16",
-    "typeorm-transactional": "0.4.1"
+    "styled-components": "^5.3.11"
   },
   "devDependencies": {
     "@babel/cli": "^7.17.6",
     "@babel/core": "^7.17.9",
-    "@nestjs/testing": "^8.4.7",
-    "@types/jest": "^29.5.2",
-    "@types/lodash": "^4.14.194",
-    "@types/node": "^17.0.23",
     "@types/react": "^18.0.4",
     "@typescript-eslint/eslint-plugin": "^5.19.0",
     "@typescript-eslint/parser": "^5.19.0",
     "eslint": "^8.13.0",
     "eslint-config-prettier": "^8.5.0",
-    "eslint-plugin-prettier": "^4.0.0",
-    "nodemon": "^2.0.15",
-    "prettier": "^2.6.2",
-    "rimraf": "^3.0.2",
-    "ts-node": "^10.7.0",
-    "typescript": "^4.6.3"
+    "eslint-plugin-prettier": "^4.0.0"
   }
 }
