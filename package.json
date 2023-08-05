@@ -1,59 +1,32 @@
 {
-  "name": "nestnext8",
-  "version": "1.0.0",
+  "name": "infinibrains-website",
+  "version": "0.0.1",
+  "description": "",
   "main": "index.js",
-  "license": "MIT",
+  "private": true,
   "workspaces": [
-    "back",
-    "front"
+    "front",
+    "back"
   ],
   "scripts": {
     "postinstall": "npm install --prefix back",
     "local:back": "npm run start:nodemon --prefix back",
-
     "local": "concurrently \"npm run local:front\" \"npm run local:back\"",
-
     "local:front": "next dev",
-    "prebuild:local:front": "rimraf .next",
+    "prebuild:local:front": "../node_modules/.bin/rimraf .next",
     "build:local:front": "npx next build",
     "start:local:front": "npx next start -p 3000",
-
     "build:local:back": "npx tsc --project back/tsconfig.server.json",
     "start:local:back": "node dist/main.js",
-
     "start:local": "concurrently \"npm run start:local:front\" \"npm run start:local:back\"",
     "build:local": "npm run build:local:front && npm run build:local:back"
   },
+  "author": "",
+  "license": "ISC",
   "dependencies": {
-    "@emotion/react": "^11.11.0",
-    "@emotion/styled": "^11.11.0",
-    "@fontsource/roboto": "^5.0.2",
-    "@mui/icons-material": "^5.11.16",
-    "@mui/material": "^5.13.3",
-    "@mui/styled-engine-sc": "^5.12.0",
-    "@mui/styles": "^5.6.1",
-    "@mui/system": "^5.10.0",
-    "concurrently": "^8.2.0",
-    "cross-env": "7.0.3",
-    "express-ctx": "^0.1.1",
-    "lodash": "^4.17.21",
-    "nest-next": "10.1.0",
-    "next": "12.3.4",
-    "react": "17.0.2",
-    "react-dom": "17.0.2",
-    "react-draggable": "^4.4.5",
-    "reflect-metadata": "0.1.13",
-    "rxjs": "7.5.5",
-    "styled-components": "^5.3.11"
+    "concurrently": "^8.2.0"
   },
   "devDependencies": {
-    "@babel/cli": "^7.17.6",
-    "@babel/core": "^7.17.9",
-    "@types/react": "^18.0.4",
-    "@typescript-eslint/eslint-plugin": "^5.19.0",
-    "@typescript-eslint/parser": "^5.19.0",
-    "eslint": "^8.13.0",
-    "eslint-config-prettier": "^8.5.0",
-    "eslint-plugin-prettier": "^4.0.0"
+    "rimraf": "^5.0.1"
   }
 }

@@ -1,6 +1,6 @@
+.next
+.idea
 node_modules
-.idea/
-
+.env
 package-lock.json
-
-yarn.lock
+.DS_Store

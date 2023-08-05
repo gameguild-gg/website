@@ -1,5 +1,5 @@
 import Head from 'next/head'
-import styles from '@/styles/Home.module.css'
+import styles from '../styles/Home.module.css'
 import Grid from "@mui/material/Unstable_Grid2"
 
 export default function Home() {
