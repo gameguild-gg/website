@@ -2,10 +2,9 @@ import * as dotenv from 'dotenv';
 import { DataSource } from 'typeorm';
 
 import { SnakeNamingStrategy } from './src/snake-naming.strategy';
-import * as path from "path";
+import * as path from 'path';
 
 dotenv.config();
-
 export const dataSource: DataSource = new DataSource({
     type: 'postgres',
     host: process.env.DB_HOST || 'localhost',

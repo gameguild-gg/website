@@ -28,7 +28,7 @@
       "es2017",
       "dom"
     ],
-    "baseUrl": ".",
+    "baseUrl": "..",
     "typeRoots": [
       "node_modules/@types",
       "./typings"
@@ -45,9 +45,9 @@
     "./theme/**/*",
     "./src/**/*",
     "./ui/**/*",
-    "./dtos/**/*"
+    "./back/src/dtos/**/*"
   ],
   "exclude": [
-    "node_modules"
+    "../node_modules"
   ]
 }

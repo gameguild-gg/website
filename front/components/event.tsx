@@ -1,4 +1,4 @@
-import styles from "../styles/EventCard.module.css"
+import styles from "@/styles/EventCard.module.css"
 
 interface EventProps {
     type: string;

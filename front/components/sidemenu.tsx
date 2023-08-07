@@ -9,9 +9,9 @@ const SideMenu = (children: any) => {
           <div className={ styles.sidemenuTitle }>Awesome <br/>GameDev <br/>Guild</div>
         </div>
         <div className={ styles.menu }>
-          <div className={ styles.menulinks }><Link href="/courses">Courses</Link></div>
-          <div className={ styles.menulinks }><Link href="/projects">Projects</Link></div>
-          <div className={ styles.menulinks }><Link href="/events">Week Event</Link></div>
+          <div className={ styles.menulinks }><Link href="/front/pages/courses">Courses</Link></div>
+          <div className={ styles.menulinks }><Link href="/front/pages/projects">Projects</Link></div>
+          <div className={ styles.menulinks }><Link href="/front/pages/events">Week Event</Link></div>
         </div>
 
         <div className={ styles.supportus }>
