@@ -22,7 +22,7 @@
     "storybook:serve": "http-server storybook-static --port 6006 --silent",
     "serve-storybook": "run-s storybook:*",
     "test-storybook:ci": "start-server-and-test serve-storybook http://localhost:6006 test-storybook",
-    "_prepare": "echo \"husky romeved\" || true # husky install",
+    "_prepare": "husky install",
     "postbuild": "next-sitemap"
   },
   "dependencies": {
@@ -67,7 +67,7 @@
     "eslint-config-airbnb-typescript": "^17.1.0",
     "eslint-config-next": "^13.4.13",
     "eslint-config-prettier": "^9.0.0",
-    "eslint-plugin-cypress": "^2.13.4",
+    "eslint-plugin-cypress": "^2.13.3",
     "eslint-plugin-import": "^2.28.0",
     "eslint-plugin-jest": "^27.2.3",
     "eslint-plugin-jest-dom": "^5.0.2",

@@ -32,7 +32,7 @@ const Main = (props: IMainProps) => (
             </li>
             <li className="mr-6">
               <Link
-                href="/Users/tolstenko/projects/infinibrains-website/front/src/templates/Main"
+                href="/about/"
                 className="border-none text-gray-700 hover:text-gray-900"
               >
                 About
@@ -40,7 +40,7 @@ const Main = (props: IMainProps) => (
             </li>
             <li className="mr-6">
               <Link
-                href="/Users/tolstenko/projects/infinibrains-website/front/src/templates/Main"
+                href="/new-router/"
                 className="border-none text-gray-700 hover:text-gray-900"
               >
                 New Router
@@ -48,7 +48,7 @@ const Main = (props: IMainProps) => (
             </li>
             <li className="mr-6">
               <Link
-                href="/Users/tolstenko/projects/infinibrains-website/front/src/templates/Main"
+                href="/portfolio/"
                 className="border-none text-gray-700 hover:text-gray-900"
               >
                 Portfolio
@@ -64,7 +64,7 @@ const Main = (props: IMainProps) => (
             </li>
             <li className="mr-6">
               <Link
-                href="/Users/tolstenko/projects/infinibrains-website/front/src/pages/blog"
+                href="/blog/"
                 className="border-none text-gray-700 hover:text-gray-900"
               >
                 Blog
