@@ -12,7 +12,7 @@ RUN npm install -g pnpm
 RUN NODE_ENV=production pnpm install --production
 RUN NODE_ENV=production pnpm run build
 
-ARG PORT=3000
+ARG PORT=8081
 
 EXPOSE $PORT
 

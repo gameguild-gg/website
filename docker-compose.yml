@@ -13,7 +13,7 @@ services:
     restart: always
     build: ./front
     ports:
-      - "3000:3000"
+      - "8081:8081"
     links:
       - back
   postgres:

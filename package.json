@@ -15,7 +15,7 @@
     "_local:front": "next dev",
     "_prebuild:local:front": "../node_modules/.bin/rimraf .next",
     "_build:local:front": "npx next build",
-    "_start:local:front": "npx next start -p 3000",
+    "_start:local:front": "npx next start -p 8081",
     "_build:local:back": "npx tsc --project back/tsconfig.server.json",
     "_start:local:back": "node dist/main.js",
     "_start:local": "concurrently \"npm run start:local:front\" \"npm run start:local:back\"",
