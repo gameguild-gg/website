@@ -6,3 +6,5 @@ package-lock.json
 yarn.lock
 
 back/.env
+
+front/pnpm-lock.yaml
