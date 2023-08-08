@@ -8,6 +8,14 @@ services:
       - "8080:8080"
     depends_on:
       - postgres
+  front:
+    container_name: frontend
+    restart: always
+    build: ./front
+    ports:
+      - "3000:3000"
+    links:
+      - back
   postgres:
     image: postgres
     container_name: postgres
