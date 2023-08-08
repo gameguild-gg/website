@@ -7,7 +7,7 @@ import * as path from 'path';
 dotenv.config();
 export const dataSource: DataSource = new DataSource({
     type: 'postgres',
-    host: process.env.DB_HOST || 'localhost',
+    host: process.env.DB_HOST || 'postgres',
     port: Number(process.env.DB_PORT) || 5432,
     username: process.env.DB_USERNAME || 'postgres',
     password: process.env.DB_PASSWORD || 'postgres',

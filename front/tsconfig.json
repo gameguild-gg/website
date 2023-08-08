@@ -1,53 +1,57 @@
 {
   "compilerOptions": {
-    "strictPropertyInitialization": false,
-    "target": "esnext",
-    "module": "commonjs",
-    "jsx": "preserve",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "module": "esnext",
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "removeComments": true,
+    "preserveConstEnums": true,
     "strict": true,
-    "pretty": true,
-    "noImplicitAny": true,
     "alwaysStrict": true,
+    "strictNullChecks": true,
+    "noUncheckedIndexedAccess": true,
+
+    "noImplicitAny": true,
     "noImplicitReturns": true,
     "noImplicitThis": true,
-    "outDir": ".next",
-    "moduleResolution": "node",
-    "allowSyntheticDefaultImports": true,
-    "esModuleInterop": true,
-    "experimentalDecorators": true,
-    "emitDecoratorMetadata": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "allowUnreachableCode": false,
+    "noFallthroughCasesInSwitch": true,
+
+    "target": "es5",
+    "outDir": "out",
+    "declaration": true,
     "sourceMap": true,
+
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "allowJs": false,
     "skipLibCheck": true,
-    "paths": {
-      "@/components/*": ["./components/*"],
-      "@/theme/*": ["./theme/*"],
-      "@/pages/*": ["./pages/*"],
-      "@/styles/*": ["./styles/*"]
-    },
-    "lib": [
-      "es2017",
-      "dom"
-    ],
-    "baseUrl": "..",
-    "typeRoots": [
-      "node_modules/@types",
-      "./typings"
-    ],
-    "allowJs": true,
     "forceConsistentCasingInFileNames": true,
+
+    "jsx": "preserve",
     "noEmit": true,
-    "resolveJsonModule": true,
     "isolatedModules": true,
-    "incremental": true
+    "incremental": true,
+
+    "baseUrl": "./",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@/public/*": ["./public/*"]
+    },
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ]
   },
+  "exclude": ["./out/**/*", "./node_modules/**/*", "cypress/**/*.ts"],
   "include": [
-    "./pages/**/*",
-    "./theme/**/*",
-    "./src/**/*",
-    "./ui/**/*",
-    "./back/src/dtos/**/*"
-  ],
-  "exclude": [
-    "../node_modules"
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".storybook/*.ts",
+    ".next/types/**/*.ts"
   ]
 }
