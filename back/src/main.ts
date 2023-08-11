@@ -1,42 +1,35 @@
 import { NestFactory, Reflector } from '@nestjs/core';
-import { AppModule } from './app.module';
-import { setupSwagger } from './setup-swagger';
-import { NestExpressApplication } from '@nestjs/platform-express';
-import { SharedModule } from './shared/shared.module';
-import { ApiConfigService } from './shared/config.service';
-import { ExpressAdapter } from '@nestjs/platform-express';
-
 import {
   ClassSerializerInterceptor,
-  HttpStatus,
-  UnprocessableEntityException,
+  INestApplication,
   ValidationPipe,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { AppModule } from './app.module';
 
-import { ParsedUrlQuery } from 'querystring';
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule, { cors: false });
+  const configService = app.get(ConfigService);
+  const reflector = app.get(Reflector);
 
-async function bootstrap(): Promise<NestExpressApplication> {
-  const app = await NestFactory.create<NestExpressApplication>(
-    AppModule,
-    new ExpressAdapter(),
-    { cors: false },
-  );
-
-  const configService = app.select(SharedModule).get(ApiConfigService);
-
-  // app.enable('trust proxy'); // only if you're behind a reverse proxy (Heroku, Bluemix, AWS ELB, Nginx, etc)
+  // Set global prefix for all routes.
+  app.setGlobalPrefix('api');
   // app.use(helmet());
-  // app.use(
-  //     rateLimit({
-  //       windowMs: 15 * 60 * 1000, // 15 minutes
-  //       max: 100, // limit each IP to 100 requests per windowMs
-  //     }),
-  // );
-  // app.use(compression());
   // app.use(morgan('combined'));
+  // app.use(compression());
+
+  // app.use(rateLimit({ windowMs: 15 * 60 * 1000, max: 100 }));
+
+  // app.enable('trust proxy'); // only if you're behind a reverse proxy (Heroku, Bluemix, AWS ELB, Nginx, etc).
   // app.enableVersioning();
 
-  // const reflector = app.get(Reflector);
+  // Starts listening for shutdown hooks.
+  // if (!configService.isDevelopment) {
+  //   app.enableShutdownHooks();
+  // }
+
+  // const configService = app.select(CommonModule).get();
 
   // app.useGlobalFilters(
   //     new HttpExceptionFilter(reflector),
@@ -44,23 +37,23 @@ async function bootstrap(): Promise<NestExpressApplication> {
   // );
 
   app.useGlobalInterceptors(
-    new ClassSerializerInterceptor(app.get(Reflector)),
-    // new TranslationInterceptor(
-    //     app.select(SharedModule).get(TranslationService),
-    // ),
+    new ClassSerializerInterceptor(reflector),
+    //
   );
 
+  app.useGlobalPipes(new ValidationPipe());
+
   // app.useGlobalPipes(
-  //     new ValidationPipe({
-  //       whitelist: true,
-  //       errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
-  //       transform: true,
-  //       dismissDefaultMessages: false,
-  //       exceptionFactory: (errors) => new UnprocessableEntityException(errors),
-  //     }),
+  //   new ValidationPipe({
+  //     whitelist: true,
+  //     errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+  //     transform: true,
+  //     dismissDefaultMessages: false,
+  //     exceptionFactory: (errors) => new UnprocessableEntityException(errors),
+  //   }),
   // );
 
-  // only start nats if it is enabled
+  // only start nats if it is enabled.
   // if (configService.natsEnabled) {
   //   const natsConfig = configService.natsConfig;
   //   app.connectMicroservice({
@@ -70,29 +63,33 @@ async function bootstrap(): Promise<NestExpressApplication> {
   //       queue: 'main_service',
   //     },
   //   });
-  //
-  //   await app.startAllMicroservices();
   // }
 
-  if (configService.documentationEnabled) {
-    setupSwagger(app);
+  // await app.startAllMicroservices();
+
+  // if(configService.IsDocumentationEnabled){
+  if (configService.get<string>('DOCUMENTATION_ENABLED')) {
+    const documentBuilder = new DocumentBuilder();
+
+    documentBuilder.setTitle('API');
+
+    if (configService.get<string>('API_VERSION')) {
+      documentBuilder.setVersion(configService.get<string>('API_VERSION'));
+    }
+
+    const document = SwaggerModule.createDocument(app, documentBuilder.build());
+
+    SwaggerModule.setup('documentation', app, document);
   }
 
-  // Starts listening for shutdown hooks
-  if (!configService.isDevelopment) {
-    app.enableShutdownHooks();
-  }
+  // const port = configService.api.port;
+  //const port = configService.get<string>('PORT');
 
-  const port = configService.appConfig.port;
-  await app.listen(port);
+  await app.listen(3000);
 
-  console.info(`server running on ${await app.getUrl()}`);
-  console.info(
-    `Documentation: http://localhost:${configService.appConfig.port}/documentation`,
-  );
-  console.info(`Frontend: http://localhost:${configService.appConfig.port}/`);
-
-  return app;
+  // console.info(`Web server running on ${await app.getUrl()}`);
+  // console.info(`API Documentation: ${await app.get}/documentation`);
+  // console.info(``);
 }
 
 bootstrap();

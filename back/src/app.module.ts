@@ -1,41 +1,24 @@
 import { Module } from '@nestjs/common';
-
-import { BlogController } from './modules/blog/blog.controller';
-import { BlogService } from './modules/blog/blog.service';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { SharedModule } from './shared/shared.module';
-import { ApiConfigService } from './shared/config.service';
 import { ConfigModule } from '@nestjs/config';
-import { UserProfileModule } from './modules/user/user-profile.module';
-import { AuthModule } from './modules/auth/auth.module';
-import { UploadModule } from './modules/upload/upload.module';
-import { ChapterModule } from './modules/chapter/chapter.module';
-import { CourseModule } from './modules/course/course.module';
-import { PostModule } from './modules/post/post.module';
-import { EventModule } from './modules/event/event.module';
-import { UserModule } from './modules/user/user.module';
-import { ProposalModule } from './modules/proposal/proposal.module';
+
+import { CommonModule } from './common/common.module';
+import { AuthModule } from './auth/auth.module';
+import { UsersModule } from './users/users.module';
+import { ProfilesModule } from './profiles/profiles.module';
+import { EventsModule } from './events/events.module';
+import { CoursesModule } from './courses/courses.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
-    TypeOrmModule.forRootAsync({
-      imports: [SharedModule],
-      useFactory: (configService: ApiConfigService) =>
-        configService.postgresConfig,
-      inject: [ApiConfigService],
-    }),
-    UserModule,
-    UserProfileModule,
+    CommonModule,
     AuthModule,
-    UploadModule,
-    ChapterModule,
-    CourseModule,
-    PostModule,
-    EventModule,
-    ProposalModule,
+    UsersModule,
+    ProfilesModule,
+    EventsModule,
+    CoursesModule,
   ],
-  controllers: [BlogController],
-  providers: [BlogService],
+  controllers: [],
+  providers: [],
 })
 export class AppModule {}
