@@ -39,24 +39,27 @@ export class AuthService {
     return user;
   }
 
-  async signJwt(data: UserEmailAndPassword): Promise<any> {
-    return;
+  async signJwt(data: User): Promise<any> {
+    const payload = { email: data.email, sub: data.id };
+    return {
+      access_token: this.jwtService.sign(payload),
+    };
   }
 
   async validateUser(
     data: UserEmailAndPassword,
   ): Promise<Omit<User, 'passwordHash' | 'passwordSalt'>> {
     const user = await this.usersService.findOne({ email: data.email });
-
+    console.log(user);
     // I'm not sure if we really need to check if the passwordHash and passwordSalt exist. Once the user is created, they should always exist.
     // Check later.
     if (user && user.passwordHash && user.passwordSalt) {
-      const salt = user.passwordSalt;
-      const hash = user.passwordHash;
+      const userSalt = user.passwordSalt;
+      const userHash = user.passwordHash;
 
       const isPAsswordValid = this.validateHash(data.password, {
-        data: hash,
-        salt,
+        data: userHash,
+        salt: userSalt,
       });
 
       if (isPAsswordValid) {
@@ -75,7 +78,7 @@ export class AuthService {
   }
 
   private validateHash(hash: string, keys: HashAndSalt): boolean {
-    return this.generateHash({ data: keys.data, salt: keys.salt }) === hash;
+    return this.generateHash({ data: hash, salt: keys.salt }) === keys.data;
   }
 
   private generateRandomSalt(): string {
