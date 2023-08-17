@@ -42,7 +42,10 @@ export class AuthService {
   async signJwt(data: User): Promise<any> {
     const payload = { email: data.email, sub: data.id };
     return {
-      access_token: this.jwtService.sign(payload),
+      access_token: this.jwtService.sign(payload, {
+        privateKey: process.env.PRIVATE_KEY,
+        algorithm: 'RS256',
+      }),
     };
   }
 
@@ -50,7 +53,6 @@ export class AuthService {
     data: UserEmailAndPassword,
   ): Promise<Omit<User, 'passwordHash' | 'passwordSalt'>> {
     const user = await this.usersService.findOne({ email: data.email });
-    console.log(user);
     // I'm not sure if we really need to check if the passwordHash and passwordSalt exist. Once the user is created, they should always exist.
     // Check later.
     if (user && user.passwordHash && user.passwordSalt) {

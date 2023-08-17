@@ -10,7 +10,10 @@ import { CoursesModule } from './courses/courses.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
+    ConfigModule.forRoot({
+      envFilePath: '.env',
+      isGlobal: true,
+    }),
     CommonModule,
     AuthModule,
     UsersModule,

@@ -15,16 +15,11 @@ import { SignUpValidationMiddleware } from './middlewares/SignUpValidation.middl
     PassportModule, // PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       useFactory: (configService: ConfigService) => ({
-        secret: `${process.env.TOKEN_SECRET}`,
-        privateKey: 'privateKey',
-        publicKey: 'publicKey',
+        privateKey: process.env.PRIVATE_KEY,
+        publicKey: process.env.PUBLIC_KEY,
         signOptions: {
-          algorithm: 'HS256',
-          expiresIn: '60s',
-        },
-        verifyOptions: {
-          algorithms: ['HS256'],
-          ignoreExpiration: false,
+          algorithm: 'RS256',
+          expiresIn: '30d',
         },
       }),
       inject: [ConfigService],
