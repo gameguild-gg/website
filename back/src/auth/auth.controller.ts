@@ -1,26 +1,31 @@
 import {
-  Controller,
-  Request,
-  Post,
-  UseGuards,
-  Get,
   Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Post,
+  Request,
+  UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { AuthService } from './auth.service';
+import { UserEmailAndPassword } from './interfaces/UserEmailAndPassword.interface';
 
 @Controller('auth')
 export class AuthController {
   constructor(private authService: AuthService) {}
 
-  @UseGuards(AuthGuard('local'))
   @Post('sign-in')
+  @UseGuards(AuthGuard('local'))
   async signInWithEmailAndPassword(@Request() req) {
-    return this.authService.signInWithEmailAndPassword(req.user);
+    return this.authService.signJwt(req.user);
   }
 
+  // Still missing the correct dto. Using interfaces for now.
   @Post('sign-up')
-  async signUpWithEmailAndPassword(@Body() data: Record<string, string>) {
+  @HttpCode(HttpStatus.CREATED)
+  async signUpWithEmailAndPassword(@Body() data: UserEmailAndPassword) {
     return this.authService.signUpWithEmailAndPassword({
       email: data.email,
       password: data.password,

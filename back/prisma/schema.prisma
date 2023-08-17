@@ -34,9 +34,3 @@ model User {
 
   @@map("users")
 }
-
-enum UserRole {
-  COMMON
-  CONTENT_CREATOR
-  ADMINISTRATOR
-}

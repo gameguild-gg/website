@@ -2,6 +2,9 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ethers } from 'ethers';
 import { UsersService } from '../users/users.service';
+import { UserEmailAndPassword } from './interfaces/UserEmailAndPassword.interface';
+import { HashAndSalt } from './interfaces/HashAndSalt.interface';
+import { Prisma, User } from '@prisma/client';
 
 @Injectable()
 export class AuthService {
@@ -10,77 +13,72 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  async signUpWithEmailAndPassword(data: any) {
-    //
-    const salt = generateRandomSalt();
-    const hash = generateHash(data.password, salt);
+  public async signUpWithEmailAndPassword(data: UserEmailAndPassword) {
+    const salt = this.generateRandomSalt();
 
-    const user = await this.usersService.create(data.email, hash, salt);
-
-    // if (!user) {
-    // }
-
-    // send email.
-
-    return user;
-    // return this.generateAccessToken(user);
-  }
-
-  async signInWithEmailAndPassword(user: any) {
-    const payload = { email: user.email, sub: user.userId };
-    return {
-      access_token: this.jwtService.sign(payload),
+    const keys: HashAndSalt = {
+      data: data.password,
+      salt: salt,
     };
-  }
 
-  async validateUser(data: { email: string; password: string }): Promise<any> {
-    const user = await this.usersService.findByEmail(data.email);
-    console.log('user', user);
-    if (!user) {
-      throw new UnauthorizedException();
-    }
+    const hash = this.generateHash(keys);
 
-    if (!user.passwordHash || !user.passwordSalt) {
-      throw new UnauthorizedException();
-    }
+    const userCreationData: Pick<
+      Prisma.UserCreateInput,
+      'email' | 'passwordHash' | 'passwordSalt'
+    > = {
+      email: data.email,
+      passwordHash: hash,
+      passwordSalt: salt,
+    };
 
-    const salt = user.passwordSalt;
-    const hash = generateHash(data.password, user.passwordSalt);
+    const user = await this.usersService.create(userCreationData);
 
-    const isPAsswordValid = validateHash(data.password, hash, salt);
+    // Still needs to create a method to send email verification.
 
-    if (!isPAsswordValid) {
-      throw new UnauthorizedException();
-    }
-
-    // return this.generateAccessToken(user);
     return user;
   }
 
-  async generateAccessToken(data: any): Promise<any> {
-    const payload = { role: data.role, email: data.email, sub: data.userId };
-    return {
-      access_token: this.jwtService.sign(payload),
-    };
+  async signJwt(data: UserEmailAndPassword): Promise<any> {
+    return;
   }
-}
 
-//---------------------------------------------------------------------
+  async validateUser(
+    data: UserEmailAndPassword,
+  ): Promise<Omit<User, 'passwordHash' | 'passwordSalt'>> {
+    const user = await this.usersService.findOne({ email: data.email });
 
-export function generateHash(data: string, salt?: string): string {
-  if (!salt) salt = '';
+    // I'm not sure if we really need to check if the passwordHash and passwordSalt exist. Once the user is created, they should always exist.
+    // Check later.
+    if (user && user.passwordHash && user.passwordSalt) {
+      const salt = user.passwordSalt;
+      const hash = user.passwordHash;
 
-  return ethers.keccak256(ethers.toUtf8Bytes(data + salt));
-}
+      const isPAsswordValid = this.validateHash(data.password, {
+        data: hash,
+        salt,
+      });
 
-export function validateHash(
-  data: string,
-  hash: string,
-  salt?: string,
-): boolean {
-  return generateHash(data, salt) === hash;
-}
+      if (isPAsswordValid) {
+        const { passwordHash, passwordSalt, ...result } = user;
+        return result;
+      }
+    }
 
-export function generateRandomSalt(): string {
-  return ethers.hexlify(ethers.randomBytes(32));
+    throw new UnauthorizedException();
+  }
+
+  private generateHash(keys: HashAndSalt): string {
+    const { data, salt } = keys;
+    salt ? salt : '';
+    return ethers.id(salt + data);
+  }
+
+  private validateHash(hash: string, keys: HashAndSalt): boolean {
+    return this.generateHash({ data: keys.data, salt: keys.salt }) === hash;
+  }
+
+  private generateRandomSalt(): string {
+    return ethers.hexlify(ethers.randomBytes(32));
+  }
 }

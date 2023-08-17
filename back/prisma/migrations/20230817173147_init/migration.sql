@@ -1,6 +1,3 @@
--- CreateEnum
-CREATE TYPE "UserRole" AS ENUM ('COMMON', 'CONTENT_CREATOR', 'ADMINISTRATOR');
-
 -- CreateTable
 CREATE TABLE "users" (
     "id" SERIAL NOT NULL,
