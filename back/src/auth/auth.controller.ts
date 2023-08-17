@@ -22,7 +22,6 @@ export class AuthController {
     return this.authService.signJwt(req.user);
   }
 
-  // Still missing the correct dto. Using interfaces for now.
   @Post('sign-up')
   @HttpCode(HttpStatus.CREATED)
   async signUpWithEmailAndPassword(@Body() data: UserEmailAndPassword) {
