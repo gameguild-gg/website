@@ -1,8 +1,8 @@
-import { Strategy } from 'passport-local';
+import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { User } from '@prisma/client';
+import { Strategy } from 'passport-local';
 import { AuthService } from '../auth.service';
-import { UserEmailAndPassword } from '../interfaces/UserEmailAndPassword.interface';
 
 @Injectable()
 export class LocalStrategy extends PassportStrategy(Strategy) {
@@ -10,7 +10,10 @@ export class LocalStrategy extends PassportStrategy(Strategy) {
     super({ usernameField: 'email' });
   }
 
-  async validate(email: string, password: string): Promise<any> {
+  async validate(
+    email: string,
+    password: string,
+  ): Promise<Omit<User, 'passwordHash' | 'passwordSalt'>> {
     return this.authService.validateUser({ email, password });
   }
 }

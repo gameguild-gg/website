@@ -1,18 +1,17 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
-import { AuthService } from './auth.service';
+import { PassportModule } from '@nestjs/passport';
 import { UsersModule } from '../users/users.module';
 import { AuthController } from './auth.controller';
-import { LocalStrategy } from './strategies/local.strategy';
-import { PassportModule } from '@nestjs/passport';
-import { JwtStrategy } from './strategies/jwt.strategy';
-import { ConfigService } from '@nestjs/config';
+import { AuthService } from './auth.service';
 import { SignUpValidationMiddleware } from './middlewares/SignUpValidation.middleware';
+import { JwtStrategy } from './strategies/jwt.strategy';
+import { LocalStrategy } from './strategies/local.strategy';
 
 @Module({
   imports: [
-    UsersModule, // forwardRef(() => UserModule),
-    PassportModule, // PassportModule.register({ defaultStrategy: 'jwt' }),
+    UsersModule,
+    PassportModule,
     JwtModule.register({
       privateKey: process.env.PRIVATE_KEY,
       publicKey: process.env.PUBLIC_KEY,
@@ -28,6 +27,6 @@ import { SignUpValidationMiddleware } from './middlewares/SignUpValidation.middl
 })
 export class AuthModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer.apply(SignUpValidationMiddleware).forRoutes('auth/sign-up');
+    consumer.apply(SignUpValidationMiddleware).forRoutes('/sign-up');
   }
 }

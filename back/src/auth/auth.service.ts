@@ -5,6 +5,8 @@ import { UsersService } from '../users/users.service';
 import { UserEmailAndPassword } from './interfaces/UserEmailAndPassword.interface';
 import { HashAndSalt } from './interfaces/HashAndSalt.interface';
 import { Prisma, User } from '@prisma/client';
+import { JwtToken } from './interfaces/JwtToken.interface';
+import { UserRole } from 'src/users/user-role.enum';
 
 @Injectable()
 export class AuthService {
@@ -15,7 +17,6 @@ export class AuthService {
 
   public async signUpWithEmailAndPassword(data: UserEmailAndPassword) {
     const salt = this.generateRandomSalt();
-
     const keys: HashAndSalt = {
       data: data.password,
       salt: salt,
@@ -39,7 +40,7 @@ export class AuthService {
     return user;
   }
 
-  async signJwt(data: User): Promise<any> {
+  public async signJwt(data: User): Promise<JwtToken> {
     const payload = { email: data.email, sub: data.id };
     return {
       access_token: this.jwtService.sign(payload, {
@@ -49,7 +50,7 @@ export class AuthService {
     };
   }
 
-  async validateUser(
+  public async validateUser(
     data: UserEmailAndPassword,
   ): Promise<Omit<User, 'passwordHash' | 'passwordSalt'>> {
     const user = await this.usersService.findOne({ email: data.email });
@@ -70,6 +71,17 @@ export class AuthService {
       }
     }
 
+    throw new UnauthorizedException();
+  }
+
+  public async getProfileOfCurrentUser(
+    userId: number,
+  ): Promise<Omit<User, 'passwordHash' | 'passwordSalt'>> {
+    const user = await this.usersService.findOne({ id: userId });
+    if (user) {
+      const { passwordHash, passwordSalt, ...result } = user;
+      return result;
+    }
     throw new UnauthorizedException();
   }
 

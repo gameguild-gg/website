@@ -11,17 +11,20 @@ import {
 import { AuthGuard } from '@nestjs/passport';
 import { AuthService } from './auth.service';
 import { UserEmailAndPassword } from './interfaces/UserEmailAndPassword.interface';
+import { IsPublic } from './decorators/isPublic.decorator';
 
-@Controller('auth')
+@Controller()
 export class AuthController {
   constructor(private authService: AuthService) {}
 
+  @IsPublic()
   @Post('sign-in')
   @UseGuards(AuthGuard('local'))
   async signInWithEmailAndPassword(@Request() req) {
     return this.authService.signJwt(req.user);
   }
 
+  @IsPublic()
   @Post('sign-up')
   @HttpCode(HttpStatus.CREATED)
   async signUpWithEmailAndPassword(@Body() data: UserEmailAndPassword) {
@@ -31,9 +34,9 @@ export class AuthController {
     });
   }
 
-  @UseGuards(AuthGuard('jwt'))
   @Get('profile')
   async getProfile(@Request() req) {
-    return req.user;
+    const id = Number(req.user.userId);
+    return await this.authService.getProfileOfCurrentUser(id);
   }
 }

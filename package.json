@@ -27,6 +27,7 @@
     "concurrently": "^8.2.0"
   },
   "devDependencies": {
-    "rimraf": "^5.0.1"
+    "rimraf": "^5.0.1",
+    "ts-node": "^10.9.1"
   }
 }
