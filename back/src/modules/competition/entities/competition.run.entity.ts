@@ -1,4 +1,4 @@
-import { EntityBase } from '../../common/entity.base';
+import { EntityBase } from '../../../common/entity.base';
 import {Column, OneToMany} from "typeorm";
 import {CompetitionMatchEntity} from "./competition.match.entity";
 

@@ -11,7 +11,7 @@ import { UserNotFoundException } from '../../exceptions/user-not-found.exception
 export class UserService extends TypeOrmCrudService<UserEntity> {
   constructor(
     @InjectRepository(UserEntity)
-    private repository: Repository<UserEntity>,
+    public repository: Repository<UserEntity>, // todo: make it private!!!
   ) {
     super(repository);
   }
@@ -26,31 +26,31 @@ export class UserService extends TypeOrmCrudService<UserEntity> {
 
   async createOneEmailPass(data: {
     email: string;
-    passwordHashed: string;
+    passwordHash: string;
     passwordSalt: string;
-  }) {
+  }): Promise<UserEntity> {
     if (await this.emailExists(data.email))
       throw new UserExistsException('Email already exists');
 
     const user = this.repository.save({
       email: data.email,
-      passwordHashed: data.passwordHashed,
+      passwordHash: data.passwordHash,
       passwordSalt: data.passwordSalt,
       role: UserRoleEnum.COMMON,
-      emailVerified: false,
+      emailValidated: false,
     });
 
     return user;
   }
 
-  async markEmailAsValid(id: string) {
-    const user = await this.findOne({
+  async markEmailAsValid(id: string): Promise<UserEntity> {
+    let user = await this.findOne({
       where: { id },
     });
     if (user) {
       user.emailValidated = true;
-      await this.repository.save(user);
-      return true;
+      user = await this.repository.save(user);
+      return user;
     } else throw new UserNotFoundException('User not found with id: ' + id);
   }
 }

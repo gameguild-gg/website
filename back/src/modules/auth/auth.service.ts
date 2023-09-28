@@ -30,13 +30,27 @@ export class AuthService {
     private mailSenderService: MailSenderService,
   ) {}
 
+  async simpleRegister(data: UserLoginDto): Promise<UserEntity> {
+    const salt = generateRandomSalt();
+    const passwordHash = generateHash(data.password, salt);
+    let user = await this.userService.createOneEmailPass({
+      email: data.email,
+      passwordHash: passwordHash,
+      passwordSalt: salt,
+    });
+
+    user = await this.userService.markEmailAsValid(user.id);
+
+    return user;
+  }
+
   async registerEmailPass(data: UserLoginDto): Promise<UserEntity> {
     const salt = generateRandomSalt();
     const passwordHash = generateHash(data.password, salt);
 
     const user = await this.userService.createOneEmailPass({
       email: data.email,
-      passwordHashed: passwordHash,
+      passwordHash: passwordHash,
       passwordSalt: salt,
     });
 
@@ -69,7 +83,7 @@ export class AuthService {
     });
   }
 
-  async validadeEmailToken(token: string): Promise<boolean> {
+  async validadeEmailToken(token: string): Promise<UserEntity> {
     const isvalid = await this.jwtService.verifyAsync(token);
     if (isvalid) return await this.userService.markEmailAsValid(isvalid.userId);
     else throw new UserUnauthorizedException('Invalid token');

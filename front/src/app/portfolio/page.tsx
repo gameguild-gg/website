@@ -23,7 +23,7 @@ const Portfolio = () => (
           <div className="overflow-hidden rounded-lg">
             <img
               className="h-full w-full object-cover object-center"
-              src="/assets/images/nextjs-starter-banner.png"
+              src="/back/assets/images/nextjs-starter-banner.png"
               alt="Portfolio project"
             />
 

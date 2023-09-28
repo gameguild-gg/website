@@ -1,6 +1,6 @@
 import { Column, ManyToOne, OneToMany } from 'typeorm';
 import { CompetitionRunEntity } from './competition.run.entity';
-import { UserEntity } from '../user/user.entity';
+import { UserEntity } from '../../user/user.entity';
 import { CompetitionSubmissionEntity } from './competition.submission.entity';
 
 export class CompetitionMatchEntity {

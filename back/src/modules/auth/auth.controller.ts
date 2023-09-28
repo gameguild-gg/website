@@ -15,6 +15,10 @@ import { UserEntity } from '../user/user.entity';
 export class AuthController {
   constructor(public service: AuthService) {}
 
+  @Post('register/simple-register')
+  public async simpleRegister(@Body() data: UserLoginDto): Promise<UserEntity> {
+    return await this.service.simpleRegister(data);
+  }
   @Post('register/email-password')
   public async registerEmailPassword(
     @Body() data: UserLoginDto,
@@ -23,7 +27,7 @@ export class AuthController {
   }
 
   @Post('validate-email')
-  public async validadeEmail(token: string): Promise<boolean> {
+  public async validadeEmail(token: string): Promise<UserEntity> {
     return await this.service.validadeEmailToken(token);
   }
 
