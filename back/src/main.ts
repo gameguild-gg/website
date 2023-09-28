@@ -90,7 +90,6 @@ async function bootstrap(): Promise<NestExpressApplication> {
   console.info(
     `Documentation: http://localhost:${configService.appConfig.port}/documentation`,
   );
-  console.info(`Frontend: http://localhost:${configService.appConfig.port}/`);
 
   return app;
 }

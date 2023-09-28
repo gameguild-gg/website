@@ -1,10 +1,6 @@
 node_modules
 .idea/
-
-package-lock.json
-
-yarn.lock
-
-back/.env
-
-front/pnpm-lock.yaml
+**/package-lock.json
+**/yarn.lock
+**/.env
+**/pnpm-lock.yaml

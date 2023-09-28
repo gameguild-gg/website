@@ -1,7 +1,5 @@
 import { Module } from '@nestjs/common';
 
-import { BlogController } from './modules/blog/blog.controller';
-import { BlogService } from './modules/blog/blog.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { SharedModule } from './shared/shared.module';
 import { ApiConfigService } from './shared/config.service';
@@ -15,6 +13,7 @@ import { PostModule } from './modules/post/post.module';
 import { EventModule } from './modules/event/event.module';
 import { UserModule } from './modules/user/user.module';
 import { ProposalModule } from './modules/proposal/proposal.module';
+import { RootModule } from './modules/root/root.module';
 
 @Module({
   imports: [
@@ -25,17 +24,18 @@ import { ProposalModule } from './modules/proposal/proposal.module';
         configService.postgresConfig,
       inject: [ApiConfigService],
     }),
+    AuthModule,
     UserModule,
     UserProfileModule,
-    AuthModule,
     UploadModule,
     ChapterModule,
     CourseModule,
     PostModule,
     EventModule,
     ProposalModule,
+    RootModule,
   ],
-  controllers: [BlogController],
-  providers: [BlogService],
+  controllers: [],
+  providers: [],
 })
 export class AppModule {}

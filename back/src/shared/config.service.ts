@@ -116,7 +116,7 @@ export class ApiConfigService {
 
   get appConfig() {
     return {
-      port: this.getString('PORT', '8080'),
+      port: this.getString('PORT', '3000'),
     };
   }
 

@@ -4,6 +4,8 @@ import { UserRoleEnum } from './user-role.enum';
 import {ApiProperty} from "@nestjs/swagger";
 import {UserProfileEntity} from "./user-profile.entity";
 import {Exclude} from "class-transformer";
+import {CompetitionMatchEntity} from "../competition/competition.match.entity";
+import {CompetitionSubmissionEntity} from "../competition/competition.submission.entity";
 
 @Entity({ name: 'user' })
 export class UserEntity extends EntityBase {
@@ -76,4 +78,7 @@ export class UserEntity extends EntityBase {
     @OneToOne(() => UserProfileEntity, (profile) => profile.user) // specify inverse side as a second parameter
     @JoinColumn()
     profile: UserProfileEntity
+
+    @OneToMany(() => CompetitionSubmissionEntity, (submission) => submission.user)
+    competitionSubmissions: CompetitionSubmissionEntity[];
 }

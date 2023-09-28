@@ -7,7 +7,7 @@ COPY . /app
 RUN npm install
 RUN npm run build
 
-ARG PORT=8080
+ARG PORT=3000
 
 EXPOSE $PORT
 

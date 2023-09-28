@@ -19,8 +19,8 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "typeorm": "typeorm-ts-node-commonjs -d back/ormconfig.ts",
-    "migration:generate": "cd back/src/migrations && npx typeorm-ts-node-commonjs migration:generate -d ../../ormconfig.ts",
+    "typeorm": "typeorm-ts-node-commonjs -d ormconfig.ts",
+    "migration:generate": "cd src/migrations && npx typeorm-ts-node-commonjs migration:generate -d ormconfig.ts",
     "migration:revert": "npm run typeorm -- migration:revert",
     "schema:drop": "npm run typeorm -- schema:drop"
   },
@@ -39,6 +39,7 @@
     "@nestjs/typeorm": "^9.0.1",
     "@sendgrid/client": "^7.7.0",
     "@sendgrid/mail": "^7.7.0",
+    "@types/multer": "^1.4.8",
     "@types/passport-jwt": "^3.0.9",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.0",
