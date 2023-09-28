@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  PayloadTooLargeException,
   Post,
   UnauthorizedException,
   UploadedFile,
@@ -29,7 +30,10 @@ export class CompetitionController {
     @Body() data: CompetitionSubmissionDto,
     @UploadedFile() file: Express.Multer.File,
   ): Promise<TerminalDto[]> {
-    data.file = file;
+    if (file.size > 1024 * 10)
+      throw new PayloadTooLargeException(
+        'File too large. It should be < 100kb',
+      );
 
     const login = await this.service.authService.loginUsernamePass({
       username: data.username,
@@ -40,6 +44,9 @@ export class CompetitionController {
     const user = await this.service.authService.userService.findOne({
       where: { username: data.username },
     });
+
+    // store the submission in the database
+    await this.service.storeSubmission({ user, file: data.file.buffer });
 
     if (file.mimetype !== 'application/zip')
       throw new Error('Invalid file type');
