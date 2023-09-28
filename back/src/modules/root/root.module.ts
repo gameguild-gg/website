@@ -4,6 +4,6 @@ import { RootController } from './root.controller';
 
 @Module({
   controllers: [RootController],
-  providers: [RootService]
+  providers: [RootService],
 })
 export class RootModule {}

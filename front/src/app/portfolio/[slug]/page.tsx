@@ -1,6 +1,6 @@
-import type { Metadata } from 'next';
+import type { Metadata } from "next";
 
-import { Main } from '@/templates/Main';
+import { Main } from "@/templates/Main";
 
 type IPortfolioDetailProps = {
   params: { slug: string };

@@ -1,17 +1,21 @@
-import {CreateDateColumn, PrimaryGeneratedColumn, UpdateDateColumn} from "typeorm";
-import {EntityDto} from "./entity.dto";
+import {
+  CreateDateColumn,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from 'typeorm';
+import { EntityDto } from './entity.dto';
 
 export abstract class EntityBase implements EntityDto {
-    @PrimaryGeneratedColumn('uuid')
-    id: string;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
-    @CreateDateColumn({
-        type: 'timestamp',
-    })
-    createdAt: Date;
+  @CreateDateColumn({
+    type: 'timestamp',
+  })
+  createdAt: Date;
 
-    @UpdateDateColumn({
-        type: 'timestamp',
-    })
-    updatedAt: Date;
+  @UpdateDateColumn({
+    type: 'timestamp',
+  })
+  updatedAt: Date;
 }

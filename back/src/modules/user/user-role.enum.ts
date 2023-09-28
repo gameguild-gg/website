@@ -1,5 +1,5 @@
 export enum UserRoleEnum {
-    ADMIN = "Admin",
-    CONTENTCREATOR = "Content creator",
-    COMMON = "User",
+  ADMIN = 'Admin',
+  CONTENTCREATOR = 'Content creator',
+  COMMON = 'User',
 }

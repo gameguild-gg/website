@@ -1,7 +1,7 @@
-import {ConflictException, UnauthorizedException} from '@nestjs/common';
+import { ConflictException, UnauthorizedException } from '@nestjs/common';
 
 export class UserUnauthorizedException extends UnauthorizedException {
-    constructor(description?: string) {
-        super('error.userUnauthorized', description);
-    }
+  constructor(description?: string) {
+    super('error.userUnauthorized', description);
+  }
 }

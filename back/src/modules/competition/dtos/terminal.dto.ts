@@ -1,6 +1,6 @@
 export class TerminalDto {
-    date: string;
-    command: string;
-    stdout: string;
-    stderr: string;
+  date: string;
+  command: string;
+  stdout: string;
+  stderr: string;
 }

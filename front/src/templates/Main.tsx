@@ -1,7 +1,7 @@
-import Link from 'next/link';
-import type { ReactNode } from 'react';
+import Link from "next/link";
+import type { ReactNode } from "react";
 
-import { AppConfig } from '@/utils/AppConfig';
+import { AppConfig } from "@/utils/AppConfig";
 
 type IMainProps = {
   meta?: ReactNode;
@@ -77,7 +77,7 @@ const Main = (props: IMainProps) => (
       <main className="content py-5 text-xl">{props.children}</main>
 
       <footer className="border-t border-gray-300 py-8 text-center text-sm">
-        © Copyright {new Date().getFullYear()} {AppConfig.title}. Made with{' '}
+        © Copyright {new Date().getFullYear()} {AppConfig.title}. Made with{" "}
         <a href="https://creativedesignsguru.com">CreativeDesignsGuru</a>.
         {/*
          * PLEASE READ THIS SECTION

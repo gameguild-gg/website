@@ -1,16 +1,16 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen } from "@testing-library/react";
 
-import Blog from '@/pages/blog';
+import Blog from "@/pages/blog";
 
 // The easiest solution to mock `next/router`: https://github.com/vercel/next.js/issues/7479
 // The mock has been moved to `__mocks__` folder to avoid duplication
 
-describe('Blog page', () => {
-  describe('Render method', () => {
-    it('should display the last 10 posts', () => {
+describe("Blog page", () => {
+  describe("Render method", () => {
+    it("should display the last 10 posts", () => {
       render(<Blog />);
 
-      const link = screen.getAllByRole('link', {
+      const link = screen.getAllByRole("link", {
         name: /Blog -/,
       });
 

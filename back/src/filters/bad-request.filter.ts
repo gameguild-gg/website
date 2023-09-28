@@ -7,49 +7,49 @@ import _ from 'lodash';
 
 @Catch(UnprocessableEntityException)
 export class HttpExceptionFilter
-    implements ExceptionFilter<UnprocessableEntityException>
+  implements ExceptionFilter<UnprocessableEntityException>
 {
-    constructor(public reflector: Reflector) {}
+  constructor(public reflector: Reflector) {}
 
-    catch(exception: UnprocessableEntityException, host: ArgumentsHost): void {
-        const ctx = host.switchToHttp();
-        const response = ctx.getResponse<Response>();
-        const statusCode = exception.getStatus();
-        const r = exception.getResponse() as { message: ValidationError[] };
+  catch(exception: UnprocessableEntityException, host: ArgumentsHost): void {
+    const ctx = host.switchToHttp();
+    const response = ctx.getResponse<Response>();
+    const statusCode = exception.getStatus();
+    const r = exception.getResponse() as { message: ValidationError[] };
 
-        const validationErrors = r.message;
-        this.validationFilter(validationErrors);
+    const validationErrors = r.message;
+    this.validationFilter(validationErrors);
 
-        response.status(statusCode).json(r);
-    }
+    response.status(statusCode).json(r);
+  }
 
-    private validationFilter(validationErrors: ValidationError[]): void {
-        for (const validationError of validationErrors) {
-            const children = validationError.children;
+  private validationFilter(validationErrors: ValidationError[]): void {
+    for (const validationError of validationErrors) {
+      const children = validationError.children;
 
-            if (children && !_.isEmpty(children)) {
-                this.validationFilter(children);
+      if (children && !_.isEmpty(children)) {
+        this.validationFilter(children);
 
-                return;
-            }
+        return;
+      }
 
-            delete validationError.children;
+      delete validationError.children;
 
-            const constraints = validationError.constraints;
+      const constraints = validationError.constraints;
 
-            if (!constraints) {
-                return;
-            }
+      if (!constraints) {
+        return;
+      }
 
-            for (const [constraintKey, constraint] of Object.entries(constraints)) {
-                // convert default messages
-                if (!constraint) {
-                    // convert error message to error.fields.{key} syntax for i18n translation
-                    constraints[constraintKey] = `error.fields.${_.snakeCase(
-                        constraintKey,
-                    )}`;
-                }
-            }
+      for (const [constraintKey, constraint] of Object.entries(constraints)) {
+        // convert default messages
+        if (!constraint) {
+          // convert error message to error.fields.{key} syntax for i18n translation
+          constraints[constraintKey] = `error.fields.${_.snakeCase(
+            constraintKey,
+          )}`;
         }
+      }
     }
+  }
 }

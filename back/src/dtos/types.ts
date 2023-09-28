@@ -1,5 +1,5 @@
 export interface IPost {
-  title: string,
-  slug: string,
-  content: string[]
+  title: string;
+  slug: string;
+  content: string[];
 }

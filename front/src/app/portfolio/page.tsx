@@ -1,11 +1,11 @@
-import type { Metadata } from 'next';
-import Link from 'next/link';
+import type { Metadata } from "next";
+import Link from "next/link";
 
-import { Main } from '@/templates/Main';
+import { Main } from "@/templates/Main";
 
 export const metadata: Metadata = {
-  title: 'Portfolio',
-  description: 'Welcome to my portfolio page!',
+  title: "Portfolio",
+  description: "Welcome to my portfolio page!",
 };
 
 const Portfolio = () => (
