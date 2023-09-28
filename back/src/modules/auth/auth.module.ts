@@ -1,10 +1,10 @@
-import {forwardRef, Module} from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { AuthController } from './auth.controller';
-import {AuthService} from "./auth.service";
-import {UserModule} from "../user/user.module";
-import {PassportModule} from "@nestjs/passport";
-import {JwtModule} from "@nestjs/jwt";
-import {ApiConfigService} from "../../shared/config.service";
+import { AuthService } from './auth.service';
+import { UserModule } from '../user/user.module';
+import { PassportModule } from '@nestjs/passport';
+import { JwtModule } from '@nestjs/jwt';
+import { ApiConfigService } from '../../shared/config.service';
 
 @Module({
   imports: [
@@ -30,6 +30,7 @@ import {ApiConfigService} from "../../shared/config.service";
     }),
   ],
   providers: [AuthService],
-  controllers: [AuthController]
+  controllers: [AuthController],
+  exports: [AuthService],
 })
 export class AuthModule {}

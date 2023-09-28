@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CompetitionMatchEntity } from './entities/competition.match.entity';
 import { CompetitionRunEntity } from './entities/competition.run.entity';
@@ -15,11 +15,11 @@ import { AuthModule } from '../auth/auth.module';
       CompetitionRunEntity,
       CompetitionSubmissionEntity,
     ]),
-    UserModule,
-    AuthModule,
+    forwardRef(() => UserModule),
+    forwardRef(() => AuthModule),
   ],
   controllers: [CompetitionController],
   exports: [CompetitionService],
   providers: [CompetitionService],
 })
-export class ProposalModule {}
+export class CompetitionModule {}

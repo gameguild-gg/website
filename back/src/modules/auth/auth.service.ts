@@ -27,7 +27,7 @@ export class AuthService {
   constructor(
     private jwtService: JwtService,
     private configService: ApiConfigService,
-    private userService: UserService,
+    public userService: UserService, // todo: make it private!!!
     private mailSenderService: MailSenderService,
   ) {}
 
@@ -118,6 +118,43 @@ export class AuthService {
 
     const isPasswordValid = validateHash(
       userLogin.password,
+      user.passwordHash,
+      user.passwordSalt,
+    );
+
+    if (!isPasswordValid)
+      throw new UserUnauthorizedException('Invalid password');
+
+    return this.createAccessToken(user);
+  }
+
+  async loginUsernamePass(param: {
+    password: string;
+    username: string;
+  }): Promise<TokenPayloadDto> {
+    const user = await this.userService.findOne({
+      where: {
+        username: param.username,
+      },
+    });
+    if (!user)
+      throw new UserNotFoundException(
+        'User not found with username: ' + user.username,
+      );
+
+    if (!user.emailValidated)
+      throw new UserUnauthorizedException('Email not validated.');
+
+    if (!user.passwordHash || !user.passwordSalt)
+      throw new UserUnauthorizedException(
+        'User has no password. Use social login instead or recover password.',
+      );
+
+    const salt = user?.passwordSalt;
+    const passwordHash = generateHash(param.password, salt);
+
+    const isPasswordValid = validateHash(
+      param.password,
       user.passwordHash,
       user.passwordSalt,
     );

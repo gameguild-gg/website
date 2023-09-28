@@ -12,9 +12,9 @@ import fs from 'fs/promises';
 import process from 'process';
 import * as fse from 'fs-extra';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { StorageObjectDto } from './dtos/storage-object.dto';
 import { TerminalDto } from './dtos/terminal.dto';
 import extract from 'extract-zip';
+import { CompetitionSubmissionDto } from './dtos/competition.submission.dto';
 const util = require('util');
 
 @Controller('Competitions')
@@ -26,19 +26,19 @@ export class CompetitionController {
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(FileInterceptor('file'))
   async submit(
-    @Body() data: StorageObjectDto,
+    @Body() data: CompetitionSubmissionDto,
     @UploadedFile() file: Express.Multer.File,
   ): Promise<TerminalDto[]> {
     data.file = file;
 
-    const login = await this.service.authService.loginUserEmailPass({
-      email: data.email,
+    const login = await this.service.authService.loginUsernamePass({
+      username: data.username,
       password: data.password,
     });
     if (!login) throw new UnauthorizedException('Invalid credentials');
 
-    const user = await this.service.userService.findOne({
-      where: { email: data.email },
+    const user = await this.service.authService.userService.findOne({
+      where: { username: data.username },
     });
 
     if (file.mimetype !== 'application/zip')
@@ -46,13 +46,18 @@ export class CompetitionController {
 
     // rename the file as datetime.zip
     // store the zip file in the user's folder username/zips
-    await fs.mkdir('submissions/' + data.email + '/zips', {
+    await fs.mkdir('submissions/' + data.username + '/zips', {
       recursive: true,
     });
     const zipPath =
-      'submissions/' + data.email + '/zips/' + this.service.getDate() + '.zip';
+      'submissions/' +
+      data.username +
+      '/zips/' +
+      this.service.getDate() +
+      '.zip';
     await fs.writeFile(zipPath, data.file.buffer);
-    const sourceFolder = process.cwd() + '/submissions/' + data.email + '/src';
+    const sourceFolder =
+      process.cwd() + '/submissions/' + data.username + '/src';
 
     // clear the user's folder username/src
     await fs.rm(sourceFolder, { recursive: true, force: true });

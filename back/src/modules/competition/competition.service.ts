@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { UserService } from '../user/user.service';
 import { AuthService } from '../auth/auth.service';
 import { TerminalDto } from './dtos/terminal.dto';
 import * as util from 'util';
@@ -8,10 +7,7 @@ import * as fs from 'fs/promises';
 
 @Injectable()
 export class CompetitionService {
-  constructor(
-    public userService: UserService,
-    public authService: AuthService,
-  ) {}
+  constructor(public authService: AuthService) {}
 
   getDate(): string {
     return new Date().toISOString();

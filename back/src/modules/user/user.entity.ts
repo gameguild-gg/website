@@ -18,6 +18,7 @@ import { CompetitionSubmissionEntity } from '../competition/entities/competition
 export class UserEntity extends EntityBase {
   @Column({ nullable: true, default: null })
   @ApiProperty()
+  @Index()
   username: string;
 
   // todo: make it have multiple roles
