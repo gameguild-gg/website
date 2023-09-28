@@ -24,19 +24,32 @@ export class UserService extends TypeOrmCrudService<UserEntity> {
     }));
   }
 
+  async usernameExists(username: string): Promise<boolean> {
+    return !!(await this.findOne({
+      where: {
+        username: username,
+      },
+    }));
+  }
+
   async createOneEmailPass(data: {
     email: string;
     passwordHash: string;
     passwordSalt: string;
+    username?: string;
   }): Promise<UserEntity> {
     if (await this.emailExists(data.email))
       throw new UserExistsException('Email already exists');
+
+    if (data.username && (await this.usernameExists(data.username)))
+      throw new UserExistsException('username already exists');
 
     const user = this.repository.save({
       email: data.email,
       passwordHash: data.passwordHash,
       passwordSalt: data.passwordSalt,
       role: UserRoleEnum.COMMON,
+      username: data.username,
       emailValidated: false,
     });
 

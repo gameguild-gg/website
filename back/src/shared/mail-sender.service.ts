@@ -5,7 +5,7 @@ import { MailDataRequired } from '@sendgrid/helpers/classes/mail';
 import { ClientResponse } from '@sendgrid/client/src/response';
 import { UserEntity } from '../modules/user/user.entity';
 import { InternalServerErrorServerMisconfigurationException } from '../exceptions/internal-server-error-server-misconfiguration.exception';
-import { TokenPayloadDto } from '../modules/auth/token-payload.dto';
+import { TokenPayloadDto } from '../modules/auth/dtos/token-payload.dto';
 
 @Injectable()
 export class MailSenderService {

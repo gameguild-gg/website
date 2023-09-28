@@ -6,9 +6,10 @@ import {
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { ApiTags } from '@nestjs/swagger';
-import { UserLoginDto } from './user-login.dto';
-import { TokenPayloadDto } from './token-payload.dto';
+import { UserLoginDto } from './dtos/user-login.dto';
+import { TokenPayloadDto } from './dtos/token-payload.dto';
 import { UserEntity } from '../user/user.entity';
+import { SimpleUserRegisterDto } from './dtos/simple-user-register.dto';
 
 @Controller('auth')
 @ApiTags('auth')
@@ -16,7 +17,9 @@ export class AuthController {
   constructor(public service: AuthService) {}
 
   @Post('register/simple-register')
-  public async simpleRegister(@Body() data: UserLoginDto): Promise<UserEntity> {
+  public async simpleRegister(
+    @Body() data: SimpleUserRegisterDto,
+  ): Promise<UserEntity> {
     return await this.service.simpleRegister(data);
   }
   @Post('register/email-password')

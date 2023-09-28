@@ -13,13 +13,14 @@ import {
 import type { UserRoleEnum } from '../user/user-role.enum';
 import type { UserEntity } from '../user/user.entity';
 import { UserService } from '../user/user.service';
-import type { UserLoginDto } from './user-login.dto';
+import type { UserLoginDto } from './dtos/user-login.dto';
 import { TokenType } from './token-type.enum';
 import { UserNotFoundException } from '../../exceptions/user-not-found.exception';
 import { ApiConfigService } from '../../shared/config.service';
-import { TokenPayloadDto } from './token-payload.dto';
+import { TokenPayloadDto } from './dtos/token-payload.dto';
 import { MailSenderService } from '../../shared/mail-sender.service';
 import { UserUnauthorizedException } from '../../exceptions/unauthorized.exception';
+import { SimpleUserRegisterDto } from './dtos/simple-user-register.dto';
 
 @Injectable()
 export class AuthService {
@@ -30,11 +31,12 @@ export class AuthService {
     private mailSenderService: MailSenderService,
   ) {}
 
-  async simpleRegister(data: UserLoginDto): Promise<UserEntity> {
+  async simpleRegister(data: SimpleUserRegisterDto): Promise<UserEntity> {
     const salt = generateRandomSalt();
     const passwordHash = generateHash(data.password, salt);
     let user = await this.userService.createOneEmailPass({
       email: data.email,
+      username: data.username,
       passwordHash: passwordHash,
       passwordSalt: salt,
     });
