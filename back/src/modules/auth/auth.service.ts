@@ -128,10 +128,10 @@ export class AuthService {
     return this.createAccessToken(user);
   }
 
-  async loginUsernamePass(param: {
+  async loginGetUserFromUsernamePassword(param: {
     password: string;
     username: string;
-  }): Promise<TokenPayloadDto> {
+  }): Promise<UserEntity> {
     const user = await this.userService.findOne({
       where: {
         username: param.username,
@@ -150,9 +150,6 @@ export class AuthService {
         'User has no password. Use social login instead or recover password.',
       );
 
-    const salt = user?.passwordSalt;
-    const passwordHash = generateHash(param.password, salt);
-
     const isPasswordValid = validateHash(
       param.password,
       user.passwordHash,
@@ -162,6 +159,15 @@ export class AuthService {
     if (!isPasswordValid)
       throw new UserUnauthorizedException('Invalid password');
 
-    return this.createAccessToken(user);
+    return user;
+  }
+
+  async loginUsernamePass(param: {
+    password: string;
+    username: string;
+  }): Promise<TokenPayloadDto> {
+    return this.createAccessToken(
+      await this.loginGetUserFromUsernamePassword(param),
+    );
   }
 }

@@ -33,22 +33,21 @@ export class CompetitionController {
     if (file.size > 1024 * 10)
       throw new PayloadTooLargeException('File too large. It should be < 10kb');
 
-    const login = await this.service.authService.loginUsernamePass({
-      username: data.username,
-      password: data.password,
-    });
-    if (!login) throw new UnauthorizedException('Invalid credentials');
-
-    const user = await this.service.authService.userService.findOne({
-      where: { username: data.username },
-    });
-
-    // store the submission in the database.
-    await this.service.storeSubmission({ user, file: data.file.buffer });
+    const user =
+      await this.service.authService.loginGetUserFromUsernamePassword({
+        username: data.username,
+        password: data.password,
+      });
+    if (!user) throw new UnauthorizedException('Invalid credentials');
 
     // From here to below, it is not working.
     if (file.mimetype !== 'application/zip')
       throw new Error('Invalid file type');
+
+    // store the submission in the database.
+    await this.service.storeSubmission({ user: user, file: file.buffer });
+
+    data.file = file;
 
     // rename the file as datetime.zip
     // store the zip file in the user's folder username/zips
@@ -73,17 +72,27 @@ export class CompetitionController {
     await extract(zipPath, { dir: sourceFolder });
 
     // copy the tests folder, main.cpp, cmakefile, functions.h, functions.cpp to the user's folder username/src
-    await fse.copy('../tests', sourceFolder + '/tests', { overwrite: true });
-    await fse.copy('../main.cpp', sourceFolder + '/main.cpp', {
+    await fse.copy('assets/catchthecat/tests', sourceFolder + '/tests', {
       overwrite: true,
     });
-    await fse.copy('../CMakeLists.txt', sourceFolder + '/CMakeLists.txt', {
+    await fse.copy('assets/catchthecat/main.cpp', sourceFolder + '/main.cpp', {
       overwrite: true,
     });
-    await fse.copy('../functions.h', sourceFolder + '/functions.h', {
-      overwrite: true,
-    });
-    await fse.copy('../IAgent.h', sourceFolder + '/IAgent.h', {
+    await fse.copy(
+      'assets/catchthecat/CMakeLists.txt',
+      sourceFolder + '/CMakeLists.txt',
+      {
+        overwrite: true,
+      },
+    );
+    await fse.copy(
+      'assets/catchthecat/functions.h',
+      sourceFolder + '/functions.h',
+      {
+        overwrite: true,
+      },
+    );
+    await fse.copy('assets/catchthecat/IAgent.h', sourceFolder + '/IAgent.h', {
       overwrite: true,
     });
     const outs: TerminalDto[] = [];
@@ -105,7 +114,7 @@ export class CompetitionController {
       ),
     );
     // store the compiled code in the user's folder username/
-    if (await fse.existsSync(sourceFolder + '/build/StudentSimulation'))
+    if (fse.existsSync(sourceFolder + '/build/StudentSimulation'))
       await fse.copy(
         sourceFolder + '/build/StudentSimulation',
         sourceFolder + '/../StudentSimulation',
