@@ -31,9 +31,7 @@ export class CompetitionController {
     @UploadedFile() file: Express.Multer.File,
   ): Promise<TerminalDto[]> {
     if (file.size > 1024 * 10)
-      throw new PayloadTooLargeException(
-        'File too large. It should be < 100kb',
-      );
+      throw new PayloadTooLargeException('File too large. It should be < 10kb');
 
     const login = await this.service.authService.loginUsernamePass({
       username: data.username,
@@ -45,9 +43,10 @@ export class CompetitionController {
       where: { username: data.username },
     });
 
-    // store the submission in the database
+    // store the submission in the database.
     await this.service.storeSubmission({ user, file: data.file.buffer });
 
+    // From here to below, it is not working.
     if (file.mimetype !== 'application/zip')
       throw new Error('Invalid file type');
 
