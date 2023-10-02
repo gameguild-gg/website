@@ -4,7 +4,7 @@ function CatchTheCat() {
   return (
     <div className="bg-gray-100 min-h-screen flex items-center justify-center">
       <form className="max-w-sm rounded overflow-hidden shadow-lg px-8 pt-6 pb-8 mb-4 border border-gray-200 bg-white">
-        <div className="font-bold text-xl p-0">Catch The Cat</div>
+        <div className="font-bold text-2xl p-0">Catch The Cat</div>
         <p className="text-gray-700 text-base mb-1">
           Enter your password, upload your zip file, and press Submit:
         </p>
