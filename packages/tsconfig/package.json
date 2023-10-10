@@ -1,0 +1,9 @@
+{
+  "name": "@game-guild/tsconfig",
+  "version": "1.0.0",
+  "description": "",
+  "license": "ISC",
+  "author": "",
+  "main": "defaults.json",
+  "private": true
+}
