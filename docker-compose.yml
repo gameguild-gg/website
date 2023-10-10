@@ -1,28 +1,37 @@
-version: "3"
+version: "3.8"
+
+name: game-guild
+
 services:
-  back:
-    container_name: backend
+  api:
+    build:
+      context: ./services/api
+    container_name: api
+    image: game-guild-api
     restart: always
-    build: ./back
     ports:
       - "3000:3000"
     depends_on:
       - postgres
-  front:
-    container_name: frontend
+
+  web:
+    build:
+      context: ./services/web
+    container_name: web
+    image: game-guild-api
     restart: always
-    build: ./front
-    environment:
-      PORT: 8081
     ports:
-      - "8081:8081"
-    links:
-      - back
+      - "8081:3000"
+    depends_on:
+      - postgres
+
   postgres:
     image: postgres
     container_name: postgres
     restart: always
     environment:
+      POSTGRES_DB: game-guild
+      POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       TZ: 'GMT'
       PGTZ: 'GMT'
