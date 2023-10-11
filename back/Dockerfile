@@ -4,11 +4,13 @@ WORKDIR /app
 
 COPY . /app
 
-RUN npm install
-RUN npm run build
+RUN npm install -g pnpm
+
+RUN pnpm install
+RUN pnpm run build
 
 ARG PORT=3000
 
 EXPOSE $PORT
 
-CMD [ "npm", "run", "start" ]
+CMD [ "pnpm", "run", "start:prod" ]

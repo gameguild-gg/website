@@ -9,12 +9,9 @@ import {
 } from '@nestjs/common';
 import { ApiConsumes, ApiTags } from '@nestjs/swagger';
 import { CompetitionService } from './competition.service';
-import fs from 'fs/promises';
-import process from 'process';
-import * as fse from 'fs-extra';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { TerminalDto } from './dtos/terminal.dto';
-import extract from 'extract-zip';
+
 import { CompetitionSubmissionDto } from './dtos/competition.submission.dto';
 const util = require('util');
 
@@ -47,80 +44,7 @@ export class CompetitionController {
     // store the submission in the database.
     await this.service.storeSubmission({ user: user, file: file.buffer });
 
-    data.file = file;
-
-    // rename the file as datetime.zip
-    // store the zip file in the user's folder username/zips
-    await fs.mkdir('submissions/' + data.username + '/zips', {
-      recursive: true,
-    });
-    const zipPath =
-      'submissions/' +
-      data.username +
-      '/zips/' +
-      this.service.getDate() +
-      '.zip';
-    await fs.writeFile(zipPath, data.file.buffer);
-    const sourceFolder =
-      process.cwd() + '/submissions/' + data.username + '/src';
-
-    // clear the user's folder username/src
-    await fs.rm(sourceFolder, { recursive: true, force: true });
-    await fs.mkdir(sourceFolder, { recursive: true });
-
-    // unzip the file into the user's folder username/src
-    await extract(zipPath, { dir: sourceFolder });
-
-    // copy the tests folder, main.cpp, cmakefile, functions.h, functions.cpp to the user's folder username/src
-    await fse.copy('assets/catchthecat/tests', sourceFolder + '/tests', {
-      overwrite: true,
-    });
-    await fse.copy('assets/catchthecat/main.cpp', sourceFolder + '/main.cpp', {
-      overwrite: true,
-    });
-    await fse.copy(
-      'assets/catchthecat/CMakeLists.txt',
-      sourceFolder + '/CMakeLists.txt',
-      {
-        overwrite: true,
-      },
-    );
-    await fse.copy(
-      'assets/catchthecat/functions.h',
-      sourceFolder + '/functions.h',
-      {
-        overwrite: true,
-      },
-    );
-    await fse.copy('assets/catchthecat/IAgent.h', sourceFolder + '/IAgent.h', {
-      overwrite: true,
-    });
-    const outs: TerminalDto[] = [];
-    // compile the users code
-    outs.push(
-      await this.service.runCommand(
-        'cmake -S ' + sourceFolder + ' -B ' + sourceFolder + '/build',
-      ),
-    );
-    outs.push(
-      await this.service.runCommand('cmake --build ' + sourceFolder + '/build'),
-    );
-    // run automated tests
-    outs.push(
-      await this.service.runCommand(
-        'cmake --build ' +
-          sourceFolder +
-          '/build --target StudentSimulation-test',
-      ),
-    );
-    // store the compiled code in the user's folder username/
-    if (fse.existsSync(sourceFolder + '/build/StudentSimulation'))
-      await fse.copy(
-        sourceFolder + '/build/StudentSimulation',
-        sourceFolder + '/../StudentSimulation',
-        { overwrite: true },
-      );
     // return error or success
-    return outs;
+    return this.service.prepareLastUserSubmission(user);
   }
 }

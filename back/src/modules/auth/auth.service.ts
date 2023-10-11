@@ -21,6 +21,7 @@ import { TokenPayloadDto } from './dtos/token-payload.dto';
 import { MailSenderService } from '../../shared/mail-sender.service';
 import { UserUnauthorizedException } from '../../exceptions/unauthorized.exception';
 import { SimpleUserRegisterDto } from './dtos/simple-user-register.dto';
+import { NotFoundException } from '@nestjs/common/exceptions/not-found.exception';
 
 @Injectable()
 export class AuthService {
@@ -138,8 +139,8 @@ export class AuthService {
       },
     });
     if (!user)
-      throw new UserNotFoundException(
-        'User not found with username: ' + user.username,
+      throw new NotFoundException(
+        'User not found with username: ' + param.username,
       );
 
     if (!user.emailValidated)
