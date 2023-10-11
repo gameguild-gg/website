@@ -1,8 +1,10 @@
 node_modules
+build
 .idea/
 **/package-lock.json
 **/yarn.lock
 **/.env
 **/pnpm-lock.yaml
+.vscode
 
 .DS_Store
