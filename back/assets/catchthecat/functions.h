@@ -5,11 +5,21 @@
 #include <vector>
 #include <string>
 #include <random>
+#include <queue>
+#include <unordered_set>
+#include <unordered_map>
+#include <algorithm>
 
 using namespace std;
 
 struct Board;
 struct Position;
+
+void shuffleVector(vector<Position>& v){
+    static std::random_device rd;
+    static std::mt19937 rng(rd());
+    std::shuffle(v.begin(), v.end(), rng);
+}
 
 int Range(int start, int end) {
     if (start == end) return start;
@@ -74,19 +84,42 @@ struct Position {
         return vector<Position>{NW(), NE(), E(), W(), SW(), SE()};
     }
     std::pair<int,int> toPair(){return {x,y};}
+
+    uint64_t hash() const noexcept { return ((uint64_t)x) << 32 | (uint64_t)y; }
 };
+
+namespace std {
+    template <> struct hash<Position> {
+        std::size_t operator()(const Position& p) const noexcept { return p.hash(); }
+    };
+}  // namespace std
 
 struct Board {
     vector<bool> blocked;
     int sideSize;
+    Position catPos;
 
-    explicit Board(): sideSize() {
-        blocked.reserve(sideSize*sideSize);
-        for(int i=0; i<sideSize*sideSize; i++)
-            blocked.push_back(false);
-    }
     Board(const Board& b) = default;
-    Board(const vector<bool>& blocked, int sideSize): blocked(blocked), sideSize(sideSize) {}
+    Board(const vector<bool>& blocked, int sideSize, Position catPosition): blocked(blocked), sideSize(sideSize), catPos(catPosition) {}
+
+    inline vector<Position> NeighborsInsideBoundaries(const Position& p) const{
+        // filter Neighbors to only keep the ones inside the board boundaries
+        vector<Position> neighbors = p.Neighbors();
+        vector<Position> result;
+        for(auto& neighbor : neighbors)
+            if(neighbor.IsInsideBoardBoundaries(sideSize))
+               result.push_back(neighbor);
+        shuffleVector(result);
+        return result;
+    }
+    vector<Position> NeighborsInsideBoundariesNotBlocked(const Position& p){
+        vector<Position> neighbors = NeighborsInsideBoundaries(p);
+        vector<Position> result;
+        for(auto& neighbor : neighbors)
+            if(!blocked[(neighbor.y + sideSize/2) * sideSize + neighbor.x + sideSize/2])
+                result.push_back(neighbor);
+        return result;
+    }
 };
 
 std::vector<bool> readBoard(int sideSize) {
@@ -156,9 +189,8 @@ void printWithoutTime(const std::vector<bool>& state, int sideSize, Position cat
     }
 }
 
-bool CatWon(const Board& board, const Position& catPos){
-    return (catPos.x == -board.sideSize/2 || catPos.x == board.sideSize/2 ||
-            catPos.y == -board.sideSize/2 || catPos.y == board.sideSize/2);
+bool CatWon(const Board& board, const Position& catPos) {
+    return abs(catPos.x) == board.sideSize/2 || abs(catPos.y) == board.sideSize/2;
 }
 
 bool CatcherWon(const Board& board, const Position& catPos) {
@@ -167,4 +199,45 @@ bool CatcherWon(const Board& board, const Position& catPos) {
             return false;
     return true;
 }
+
+vector<Position> buildPath(Board& board){
+    auto cat = board.catPos;
+
+    vector<Position> path;
+    queue<Position> frontier;
+    unordered_set<Position> visited; // include the frontier too
+    unordered_map<Position, Position> cameFrom;
+
+    frontier.push(cat);
+    visited.insert(cat);
+
+    Position Exit = cat;
+
+    while (frontier.size() > 0) {
+        auto current = frontier.front();
+        frontier.pop();
+
+        if(CatWon(board, current)){
+            Exit = current;
+            break;
+        }
+
+        auto neighbors = board.NeighborsInsideBoundariesNotBlocked(current);
+        for (auto& n : neighbors) {
+            if (n != cat && !visited.contains(n)) {
+                frontier.push(n);
+                visited.insert(n);
+                cameFrom[n] = current;
+            }
+        }
+    }
+
+    while (Exit != cat) {
+        path.push_back(Exit);
+        Exit = cameFrom[Exit];
+    }
+
+    return path;
+}
+
 #endif

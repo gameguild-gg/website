@@ -5,10 +5,12 @@
 
 struct Cat : public IAgent {
   std::pair<int,int> move(const std::vector<bool>& world, std::pair<int,int> catPos, int sideSize ) override{
-      Position inputPos = catPos;
-      auto options = emptyNeighbors(world, sideSize, inputPos);
-      auto random = Range(0, options.size()-1);
-        return options[random].toPair();
+      Board board(world, sideSize, catPos);
+      auto path = buildPath(board);
+      if(path.empty())
+          return board.NeighborsInsideBoundariesNotBlocked(catPos)[0].toPair();
+      else
+          return path.back().toPair();
   }
 };
 #endif

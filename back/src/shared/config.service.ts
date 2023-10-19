@@ -78,7 +78,7 @@ export class ApiConfigService {
       database: this.getString('DB_DATABASE') || 'postgres',
       // subscribers: [UserSubscriber],
       migrationsRun: true,
-      logging: this.getBoolean('ENABLE_ORM_LOGS', true),
+      logging: this.getBoolean('ENABLE_ORM_LOGS', false),
       namingStrategy: new SnakeNamingStrategy(),
     };
   }

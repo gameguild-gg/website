@@ -6,7 +6,7 @@ export class CompetitionSubmissionDto {
   @IsString()
   username: string;
 
-  @ApiProperty({ type: 'string', format: 'number', required: false })
+  @ApiProperty({ type: 'string', required: false })
   @IsString()
   password: string;
 
