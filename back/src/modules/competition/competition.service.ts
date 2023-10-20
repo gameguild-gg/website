@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { ConflictException, HttpException, Injectable } from '@nestjs/common';
 import { AuthService } from '../auth/auth.service';
 import { TerminalDto } from './dtos/terminal.dto';
 import * as util from 'util';
@@ -142,5 +142,18 @@ export class CompetitionService {
       );
 
     return outs;
+  }
+
+  async run() {
+    // todo: wrap inside a transaction to avoid starting a competition while another is running
+    const lastCompetition = await this.runRepository.findOne({
+      order: { updatedAt: 'DESC' },
+    });
+    if (lastCompetition && lastCompetition.isRunning)
+      throw new ConflictException('There is already a competition running');
+    const competition = await this.runRepository.save({});
+
+    // get the last submission of each user
+    const submissions = await this.submissionRepository.find({});
   }
 }
