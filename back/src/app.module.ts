@@ -14,7 +14,6 @@ import { EventModule } from './modules/event/event.module';
 import { UserModule } from './modules/user/user.module';
 import { ProposalModule } from './modules/proposal/proposal.module';
 import { RootModule } from './modules/root/root.module';
-import { CompetitionRunEntity } from './modules/competition/entities/competition.run.entity';
 import { CompetitionModule } from './modules/competition/competition.module';
 
 @Module({

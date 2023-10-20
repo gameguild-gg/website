@@ -17,6 +17,7 @@ export const dataSource: DataSource = new DataSource({
   entities: [
     path.join(__dirname, 'src/**/*.entity{.ts,.js}'),
     path.join(__dirname, 'src/**/*.view-entity{.ts,.js}'),
+
   ],
   migrations: [path.join(__dirname, 'src/migrations/*{.ts,.js}')],
 });

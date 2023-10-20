@@ -12,6 +12,7 @@
 
 using namespace std;
 
+// forward declarations
 struct Board;
 struct Position;
 
@@ -30,16 +31,16 @@ int Range(int start, int end) {
 }
 
 struct Position {
-    int x;
-    int y;
+    int32_t x;
+    int32_t y;
 
-    Position(int x, int y): x(x), y(y) {}
+    Position(int32_t x, int32_t y): x(x), y(y) {}
     Position(): x(0), y(0) {}
     Position(const Position& p): x(p.x), y(p.y) {}
     Position(Position&& p) noexcept: x(p.x), y(p.y) {}
-    Position(const pair<int, int>& p): x(p.first), y(p.second) {}
+    Position(const pair<int32_t, int32_t>& p): x(p.first), y(p.second) {}
     Position& operator=(const Position& p)= default;
-    Position& operator=(const pair<int, int>& p){
+    Position& operator=(const pair<int32_t, int32_t>& p){
         x = p.first;
         y = p.second;
         return *this;
@@ -49,6 +50,9 @@ struct Position {
     }
     bool operator!=(const Position& p) const{
         return x != p.x || y != p.y;
+    }
+    bool operator < (const Position& p) const{
+        return x < p.x || (x == p.x && y < p.y);
     }
     inline Position NW() const{
         return (y % 2 == 0) ?
@@ -76,7 +80,7 @@ struct Position {
                Position(x, y+1) :
                Position(x+1, y+1);
     }
-    inline bool IsInsideBoardBoundaries(int sideSize) const {
+    inline bool IsInsideBoardBoundaries(int32_t sideSize) const {
         return x >= -sideSize/2 && x <= sideSize/2 &&
                y >= -sideSize/2 && y <= sideSize/2;
     }
@@ -86,13 +90,24 @@ struct Position {
     std::pair<int,int> toPair(){return {x,y};}
 
     uint64_t hash() const noexcept { return ((uint64_t)x) << 32 | (uint64_t)y; }
-};
+
+
+}; // end of Position
 
 namespace std {
     template <> struct hash<Position> {
         std::size_t operator()(const Position& p) const noexcept { return p.hash(); }
     };
-}  // namespace std
+}
+
+struct AStarNode {
+    Position pos;
+    float accumulatedCost;
+    float heuristic;
+    bool operator < (const AStarNode& n) const{
+        return this->accumulatedCost + this->heuristic < n.accumulatedCost + n.heuristic;
+    }
+};
 
 struct Board {
     vector<bool> blocked;
@@ -202,26 +217,20 @@ bool CatcherWon(const Board& board, const Position& catPos) {
 
 vector<Position> buildPath(Board& board){
     auto cat = board.catPos;
-
     vector<Position> path;
     queue<Position> frontier;
     unordered_set<Position> visited; // include the frontier too
     unordered_map<Position, Position> cameFrom;
-
     frontier.push(cat);
     visited.insert(cat);
-
     Position Exit = cat;
-
     while (frontier.size() > 0) {
         auto current = frontier.front();
         frontier.pop();
-
         if(CatWon(board, current)){
             Exit = current;
             break;
         }
-
         auto neighbors = board.NeighborsInsideBoundariesNotBlocked(current);
         for (auto& n : neighbors) {
             if (n != cat && !visited.contains(n)) {

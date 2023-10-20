@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Get,
   PayloadTooLargeException,
   Post,
   UnauthorizedException,
@@ -13,7 +14,6 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { TerminalDto } from './dtos/terminal.dto';
 
 import { CompetitionSubmissionDto } from './dtos/competition.submission.dto';
-const util = require('util');
 
 @Controller('Competitions')
 @ApiTags('competitions')
@@ -46,5 +46,10 @@ export class CompetitionController {
 
     // return error or success
     return this.service.prepareLastUserSubmission(user);
+  }
+
+  @Get('/run')
+  async run() {
+    return this.service.run();
   }
 }

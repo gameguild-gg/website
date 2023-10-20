@@ -1,23 +1,26 @@
-import { ConflictException, HttpException, Injectable } from '@nestjs/common';
-import { AuthService } from '../auth/auth.service';
-import { TerminalDto } from './dtos/terminal.dto';
-import * as util from 'util';
+import { ConflictException, Injectable } from "@nestjs/common";
+import { AuthService } from "../auth/auth.service";
+import { TerminalDto } from "./dtos/terminal.dto";
+import * as util from "util";
+import { UserEntity } from "../user/user.entity";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository } from "typeorm";
+import { CompetitionSubmissionEntity } from "./entities/competition.submission.entity";
+import { CompetitionRunEntity, CompetitionRunState } from "./entities/competition.run.entity";
+import { CompetitionMatchEntity } from "./entities/competition.match.entity";
+import extract from "extract-zip";
+import fs from "fs/promises";
+import process from "process";
+import * as fse from "fs-extra";
+import { UserService } from "../user/user.service";
+
 const exec = util.promisify(require('child_process').exec);
-import { UserEntity } from '../user/user.entity';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { CompetitionSubmissionEntity } from './entities/competition.submission.entity';
-import { CompetitionRunEntity } from './entities/competition.run.entity';
-import { CompetitionMatchEntity } from './entities/competition.match.entity';
-import extract from 'extract-zip';
-import fs from 'fs/promises';
-import process from 'process';
-import * as fse from 'fs-extra';
 
 @Injectable()
 export class CompetitionService {
   constructor(
     public authService: AuthService,
+    public userService: UserService,
     @InjectRepository(CompetitionSubmissionEntity)
     public submissionRepository: Repository<CompetitionSubmissionEntity>,
     @InjectRepository(CompetitionRunEntity)
@@ -147,13 +150,42 @@ export class CompetitionService {
   async run() {
     // todo: wrap inside a transaction to avoid starting a competition while another is running
     const lastCompetition = await this.runRepository.findOne({
+      where: {},
       order: { updatedAt: 'DESC' },
     });
-    if (lastCompetition && lastCompetition.isRunning)
-      throw new ConflictException('There is already a competition running');
-    const competition = await this.runRepository.save({});
+    //todo: uncomment this
+    // if (lastCompetition && lastCompetition.state == CompetitionRunState.RUNNING)
+    //   throw new ConflictException('There is already a competition running');
+    let competition = this.runRepository.create();
+    competition.state = CompetitionRunState.RUNNING;
+    competition = await this.runRepository.save(competition);
 
-    // get the last submission of each user
-    const submissions = await this.submissionRepository.find({});
+    try {
+      // todo: optimize this query
+      // get the last submission of each user
+      const allUsers = await this.userService.find({ select: ['id'] });
+      const lastSubmissions = (
+        await Promise.all(
+          allUsers.map(async (user) => {
+            return await this.submissionRepository.findOne({
+              where: { user: { id: user.id } },
+              order: { updatedAt: 'DESC' },
+            });
+          }),
+        )
+      ).filter((submission) => submission !== null);
+
+      // compile all submissions
+      // create 100 boards
+      // run 100 matches for every combination of 2 submissions
+      // generate report
+
+      competition.state = CompetitionRunState.FINISHED;
+      competition = await this.runRepository.save(competition);
+    } catch (err) {
+      competition.state = CompetitionRunState.FAILED;
+      competition = await this.runRepository.save(competition);
+      throw err;
+    }
   }
 }

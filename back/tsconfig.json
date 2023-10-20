@@ -20,5 +20,5 @@
     "esModuleInterop": true,
     "types": ["node", "Multer"],
   },
-  "exclude": ["submissions/**", "node_modules", "dist"]
+  "exclude": ["submissions/**", "node_modules"]
 }
