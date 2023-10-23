@@ -37,9 +37,9 @@ export class CompetitionController {
       });
     if (!user) throw new UnauthorizedException('Invalid credentials');
 
-    // From here to below, it is not working.
-    if (file.mimetype !== 'application/zip')
-      throw new Error('Invalid file type');
+    // // From here to below, it is not working.
+    // if (file.mimetype !== 'application/zip')
+    //   throw new Error('Invalid file type');
 
     // store the submission in the database.
     await this.service.storeSubmission({ user: user, file: file.buffer });
