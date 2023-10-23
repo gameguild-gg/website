@@ -1,6 +1,8 @@
 #include "functions.h"
 #include "Cat.h"
 #include "Catcher.h"
+#include <chrono>
+#include <iostream>
 
 int main() {
     string turn;
