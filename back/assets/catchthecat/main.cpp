@@ -30,10 +30,10 @@ int main() {
         auto elapsed = std::chrono::high_resolution_clock::now() - start;
         blocked[(catcherMove.y + sideSize/2) * sideSize + catcherMove.x+sideSize/2] = true;
         if(CatcherWon(Board(blocked, sideSize, {catX, catY}), catcherMove))
-            printWithoutTime(blocked, sideSize, catcherMove, "CATHERWIN");
+            printWithoutTime(blocked, sideSize, catPos, "CATHERWIN");
         // test againt bad move
         else
-            printWithoutTime(blocked, sideSize, catcherMove, "CAT");
+            printWithoutTime(blocked, sideSize, catPos, "CAT");
     } else {
         cout << "Invalid turn" << endl;
     }
