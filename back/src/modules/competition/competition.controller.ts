@@ -4,10 +4,10 @@ import {
   Get,
   PayloadTooLargeException,
   Post,
-  UnauthorizedException,
+  UnauthorizedException, UnsupportedMediaTypeException,
   UploadedFile,
-  UseInterceptors,
-} from '@nestjs/common';
+  UseInterceptors
+} from "@nestjs/common";
 import { ApiConsumes, ApiTags } from '@nestjs/swagger';
 import { CompetitionService } from './competition.service';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -27,7 +27,7 @@ export class CompetitionController {
     @Body() data: CompetitionSubmissionDto,
     @UploadedFile() file: Express.Multer.File,
   ): Promise<TerminalDto[]> {
-    if (file.size > 1024 * 10)
+    if (file.size > 1024 * 50)
       throw new PayloadTooLargeException('File too large. It should be < 10kb');
 
     const user =
@@ -39,7 +39,11 @@ export class CompetitionController {
 
     // // From here to below, it is not working.
     // if (file.mimetype !== 'application/zip')
-    //   throw new Error('Invalid file type');
+    //   throw new ('Invalid file type');
+    if (file.filename.split('.').pop() !== 'zip')
+      throw new UnsupportedMediaTypeException(
+        'Invalid file type. Submit zip file.',
+      );
 
     // store the submission in the database.
     await this.service.storeSubmission({ user: user, file: file.buffer });
@@ -51,5 +55,10 @@ export class CompetitionController {
   @Get('/run')
   async run() {
     return this.service.run();
+  }
+
+  @Get('/RandomMap')
+  async RandomMap(): Promise<string> {
+    return this.service.generateInitialMap();
   }
 }

@@ -1,20 +1,28 @@
-import { ConflictException, Injectable } from "@nestjs/common";
-import { AuthService } from "../auth/auth.service";
-import { TerminalDto } from "./dtos/terminal.dto";
-import * as util from "util";
-import { UserEntity } from "../user/user.entity";
-import { InjectRepository } from "@nestjs/typeorm";
-import { Repository } from "typeorm";
-import { CompetitionSubmissionEntity } from "./entities/competition.submission.entity";
-import { CompetitionRunEntity, CompetitionRunState } from "./entities/competition.run.entity";
-import { CompetitionMatchEntity } from "./entities/competition.match.entity";
-import extract from "extract-zip";
-import fs from "fs/promises";
-import process from "process";
-import * as fse from "fs-extra";
-import { UserService } from "../user/user.service";
+import { ConflictException, Injectable } from '@nestjs/common';
+import { AuthService } from '../auth/auth.service';
+import { TerminalDto } from './dtos/terminal.dto';
+import * as util from 'util';
+import { UserEntity } from '../user/user.entity';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { CompetitionSubmissionEntity } from './entities/competition.submission.entity';
+import {
+  CompetitionRunEntity,
+  CompetitionRunState,
+} from './entities/competition.run.entity';
+import { CompetitionMatchEntity } from './entities/competition.match.entity';
+import extract from 'extract-zip';
+import fs from 'fs/promises';
+import process from 'process';
+import * as fse from 'fs-extra';
+import { UserService } from '../user/user.service';
 
 const exec = util.promisify(require('child_process').exec);
+
+class Point2D {
+  x: number;
+  y: number;
+}
 
 @Injectable()
 export class CompetitionService {
@@ -147,6 +155,67 @@ export class CompetitionService {
     return outs;
   }
 
+  randomMapSide(): number {
+    const min = 0;
+    const max = 6;
+    const rand = Math.floor(Math.random() * (max - min + 1) + min);
+    return rand * 4 + 9;
+  }
+
+  randomBlock(n: number) {
+    const min = n * 0.5;
+    const max = n / 0.5;
+    const rand = Math.floor(Math.random() * (max - min + 1) + min);
+    return rand;
+  }
+
+  randomPoint(n: number): Point2D {
+    const min = 0;
+    const max = n - 1;
+    const randX = Math.floor(Math.random() * (max - min + 1) + min);
+    const randY = Math.floor(Math.random() * (max - min + 1) + min);
+    return { x: randX, y: randY };
+  }
+
+  generateInitialMap(): string {
+    const sideSize = this.randomMapSide();
+    const blocks = this.randomBlock(sideSize);
+    const sideOver2 = Math.floor(sideSize / 2);
+    const level: string[][] = [];
+    const center: Point2D = { x: sideOver2, y: sideOver2 };
+    for (let line = 0; line < sideSize; line++) {
+      level.push([]);
+      for (let col = 0; col < sideSize; col++) {
+        level[line].push('.');
+      }
+    }
+    for (let i = 0; i < blocks; i++) {
+      const point = this.randomPoint(sideSize);
+      if (
+        (Math.abs(point.x - center.x) <= 2 &&
+          Math.abs(point.y - center.y) <= 2) ||
+        level[point.y][point.x] === '#'
+      )
+        i--;
+      else level[point.y][point.x] = '#';
+    }
+    let result = 'CAT ' + sideSize + ' 0 0\n';
+    for (let line = 0; line < sideSize; line++) {
+      if (line % 2 === 1) result += ' ';
+      for (let col = 0; col < sideSize; col++) {
+        if (col === center.x && line === center.y) result += 'C';
+        else result += level[line][col];
+        if (col < sideSize - 1) result += ' ';
+      }
+      result += '\n';
+    }
+    return result;
+  }
+
+  async runMatch(cat: string, catcher: string, initialMap: string) {
+
+  }
+
   async run() {
     // todo: wrap inside a transaction to avoid starting a competition while another is running
     const lastCompetition = await this.runRepository.findOne({
@@ -176,8 +245,27 @@ export class CompetitionService {
       ).filter((submission) => submission !== null);
 
       // compile all submissions
+      console.log('preparing all submissions');
+      let usernames: string[];
+      for (const submission of lastSubmissions) {
+        try {
+          await this.prepareLastUserSubmission(submission.user);
+          usernames.push(submission.user.username);
+        } catch (err) {
+          console.log(err);
+        }
+      }
       // create 100 boards
       // run 100 matches for every combination of 2 submissions
+      for(let i = 0; i < 100; i++) {
+        const initialMap = this.generateInitialMap();
+        for (let catUser of usernames) {
+          for (let catcherUser of usernames) {
+            if (catUser == catcherUser) continue;
+            await this.runMatch(catUser, catcherUser, initialMap);
+          }
+        }
+      }
       // generate report
 
       competition.state = CompetitionRunState.FINISHED;

@@ -4,36 +4,47 @@
 #include <chrono>
 #include <iostream>
 
-int main() {
-    string turn;
+int main(int argc, char** argv) {
+    string turnInput;
     int sideSize;
     int catX, catY;
-    vector<bool> blocked;
-    cin >> turn >> sideSize >> catX >> catY;
-    blocked = readBoard(sideSize);
-    if(turn == "CAT") {
+    cin >> turnInput >> sideSize >> catX >> catY;
+    auto turn = getTurn(turnInput);
+    pair catPos(catX, catY);
+    auto board = Board(readBoard(sideSize), sideSize, catPos);
+    if(turn == Turn::CAT) {
         Cat cat;
-        pair catPos(catX, catY);
+
         auto start = std::chrono::high_resolution_clock::now();
-        Position catMove = cat.move(blocked, catPos, sideSize);
+        Position catMove = cat.move(board.blocked, board.catPos.toPair(), board.sideSize);
         auto elapsed = std::chrono::high_resolution_clock::now() - start;
-        if(CatWon(Board(blocked, sideSize, catPos), catMove))
-            printWithoutTime(blocked, sideSize, catMove, "CATWIN");
-        // test againt bad move
+
+        if(!board.CatCanMoveToPosition(catMove)){
+            cout << "CATHERWIN - CAT made invalid Move" << endl;
+            exit(-1);
+        }
+        board.catPos = catMove;
+        board.turn = Turn::CATCHER;
+        if(board.CatWon())
+            printWithoutTime(board, "CATWIN");
         else
-            printWithoutTime(blocked, sideSize, catMove, "CATCHER");
-    } else if (turn == "CATCHER") {
+            printWithoutTime(board, "CATCHER");
+    } else if (turn == Turn::CATCHER) {
         Catcher catcher;
         pair catPos(catX, catY);
         auto start = std::chrono::high_resolution_clock::now();
-        Position catcherMove = catcher.move(blocked, catPos, sideSize);
+        Position catcherMove = catcher.move(board.blocked, board.catPos.toPair(), board.sideSize);
         auto elapsed = std::chrono::high_resolution_clock::now() - start;
-        blocked[(catcherMove.y + sideSize/2) * sideSize + catcherMove.x+sideSize/2] = true;
-        if(CatcherWon(Board(blocked, sideSize, {catX, catY}), catcherMove))
-            printWithoutTime(blocked, sideSize, catPos, "CATHERWIN");
-        // test againt bad move
+        if(!board.CatcherCanMoveToPosition(catcherMove)){
+            cout << "CATWIN - CATCHER made invalid Move" << endl;
+            exit(-1);
+        }
+        board.blocked[(catcherMove.y + sideSize/2) * sideSize + catcherMove.x+sideSize/2] = true;
+        board.turn = Turn::CAT;
+        if(board.CatcherWon())
+            printWithoutTime(board, "CATHERWIN");
         else
-            printWithoutTime(blocked, sideSize, catPos, "CAT");
+            printWithoutTime(board, "CAT");
     } else {
         cout << "Invalid turn" << endl;
     }
