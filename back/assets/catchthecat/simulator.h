@@ -208,25 +208,6 @@ std::vector<bool> readBoard(int sideSize) {
     return board;
 }
 
-void printWithTime(const std::vector<bool>& state, int sideSize, Position catPos, const std::string& turn, long long time){
-    std::cout << turn << " " << sideSize << " " << catPos.x << " " << catPos.y << std::endl;
-    catPos.x += sideSize/2;
-    catPos.y += sideSize/2;
-    auto catPosIndex = catPos.y * sideSize + catPos.x;
-    for(int y=0; y<sideSize; y++) {
-        if (y % 2 == 1) std::cout << ' ';
-        for (int x = 0; x < sideSize; x++) {
-            if(y * sideSize + x == catPosIndex) {
-                std::cout << 'C';
-            } else
-                std::cout << (state[y * sideSize + x] ? '#' : '.');
-            if (x < sideSize - 1) std::cout << ' ';
-        }
-        std::cout << std::endl;
-    }
-    cout << time << endl;
-}
-
 void printWithoutTime(const Board& b, const std::string& message){
     std::cout << message << " " << b.sideSize << " " << b.catPos.x << " " << b.catPos.y << std::endl;
     auto catPos = b.catPos;
@@ -244,6 +225,11 @@ void printWithoutTime(const Board& b, const std::string& message){
         }
         std::cout << std::endl;
     }
+}
+
+void printWithTime(const Board& b, const std::string& message, long long time){
+    printWithoutTime(b,message);
+    cout << time << endl;
 }
 
 // Build Path Algorithm for A*
