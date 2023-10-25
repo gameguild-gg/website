@@ -117,8 +117,8 @@ export class CompetitionService {
       },
     );
     await fse.copy(
-      'assets/catchthecat/functions.h',
-      sourceFolder + '/functions.h',
+      'assets/catchthecat/simulator.h',
+      sourceFolder + '/simulator.h',
       {
         overwrite: true,
       },

@@ -1,4 +1,4 @@
-#include "functions.h"
+#include "simulator.h"
 #include "Cat.h"
 #include "Catcher.h"
 #include <chrono>
