@@ -40,7 +40,7 @@ export class CompetitionController {
     // // From here to below, it is not working.
     // if (file.mimetype !== 'application/zip')
     //   throw new ('Invalid file type');
-    if (file.filename.split('.').pop() !== 'zip')
+    if (file.originalname.split('.').pop() !== 'zip')
       throw new UnsupportedMediaTypeException(
         'Invalid file type. Submit zip file.',
       );

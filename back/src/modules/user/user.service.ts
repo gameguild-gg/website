@@ -6,14 +6,23 @@ import { UserEntity } from './user.entity';
 import { UserExistsException } from '../../exceptions/user-exists.exception';
 import { UserRoleEnum } from './user-role.enum';
 import { UserNotFoundException } from '../../exceptions/user-not-found.exception';
+import { LinqRepository } from 'typeorm-linq-repository';
 
 @Injectable()
 export class UserService extends TypeOrmCrudService<UserEntity> {
+  repositoryLinq: LinqRepository<UserEntity>;
   constructor(
     @InjectRepository(UserEntity)
     public repository: Repository<UserEntity>, // todo: make it private!!!
   ) {
     super(repository);
+    this.repositoryLinq = new LinqRepository(
+      repository.manager.connection,
+      UserEntity,
+      {
+        primaryKey: (entity) => entity.id,
+      },
+    );
   }
 
   async emailExists(email: string): Promise<boolean> {

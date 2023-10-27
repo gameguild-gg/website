@@ -19,15 +19,15 @@ int main(int argc, char** argv) {
         auto elapsed = duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start);
 
         if(!board.CatCanMoveToPosition(catMove)){
-            std::cout << "CATHERWIN - CAT made invalid Move" << std::endl;
-            exit(-1);
+            std::cout << "CATERROR - CAT made invalid Move: " << catMove.x << " " << catMove.y << std::endl;
+            return 0;
         }
         board.catPos = catMove;
         board.turn = Simulator::Turn::CATCHER;
         if(board.CatWon())
-            printWithTime(board, "CATWIN", elapsed.count());
+            printWithTime(board, "CATWIN", elapsed.count(), "CAT MOVE: " + std::to_string(catMove.x) + " " + std::to_string(catMove.y));
         else
-            printWithTime(board, "CATCHER", elapsed.count());
+            printWithTime(board, "CATCHER", elapsed.count(), "CAT MOVE: " + std::to_string(catMove.x) + " " + std::to_string(catMove.y));
     } else if (turn == Simulator::Turn::CATCHER) {
         Catcher catcher;
         std::pair catPos(catX, catY);
@@ -35,15 +35,15 @@ int main(int argc, char** argv) {
         Simulator::Position catcherMove = catcher.move(board.blocked, board.catPos.toPair(), board.sideSize);
         auto elapsed = duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start);
         if(!board.CatcherCanMoveToPosition(catcherMove)){
-            std::cout << "CATWIN - CATCHER made invalid Move" << std::endl;
-            exit(-1);
+            std::cout << "CATCHERERROR - CATCHER made invalid Move: " << catcherMove.x << " " << catcherMove.y << std::endl;
+            return 0;
         }
         board.blocked[(catcherMove.y + sideSize/2) * sideSize + catcherMove.x+sideSize/2] = true;
         board.turn = Simulator::Turn::CAT;
         if(board.CatcherWon())
-            printWithTime(board, "CATHERWIN", elapsed.count());
+            printWithTime(board, "CATHERWIN", elapsed.count(), "CATCHER MOVE: " + std::to_string(catcherMove.x) + " " + std::to_string(catcherMove.y));
         else
-            printWithTime(board, "CAT", elapsed.count());
+            printWithTime(board, "CAT", elapsed.count(), "CATCHER MOVE: " + std::to_string(catcherMove.x) + " " + std::to_string(catcherMove.y));
     } else {
         std::cout << "Invalid turn" << std::endl;
     }

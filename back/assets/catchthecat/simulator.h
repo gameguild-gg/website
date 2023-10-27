@@ -259,9 +259,10 @@ namespace Simulator {
         }
     }
 
-    void printWithTime(const Board &b, const std::string &message, long long time) {
+    void printWithTime(const Board &b, const std::string &message, long long time, std::string endTurnMessage) {
         printWithoutTime(b, message);
         std::cout << time << std::endl;
+        std::cout << endTurnMessage << std::endl;
     }
 
 // Build Path Algorithm for A*

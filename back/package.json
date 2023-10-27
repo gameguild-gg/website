@@ -58,6 +58,7 @@
     "rxjs": "^7.8.1",
     "swagger-ui-express": "^4.6.3",
     "typeorm": "0.3.16",
+    "typeorm-linq-repository": "^2.0.0",
     "typeorm-transactional": "0.4.1"
   },
   "devDependencies": {
