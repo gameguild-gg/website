@@ -449,10 +449,21 @@ export class CompetitionService {
       // run 100 matches for every combination of 2 submissions
       for (let i = 0; i < 1; i++) {
         const initialMap = this.generateInitialMap();
-        for (const catUser of lastSubmissions) {
-          for (const catcherUser of lastSubmissions) {
+        for (let i = 0; i < lastSubmissions.length; i++) {
+          for (let j = 0; j < lastSubmissions.length; j++) {
             // if (catUser == catcherUser) continue; // todo: add this again
-            await this.runMatch(catUser, catcherUser, initialMap, competition);
+            await this.runMatch(
+              lastSubmissions[i],
+              lastSubmissions[j],
+              initialMap,
+              competition,
+            );
+            await this.runMatch(
+              lastSubmissions[j],
+              lastSubmissions[i],
+              initialMap,
+              competition,
+            );
           }
         }
       }
