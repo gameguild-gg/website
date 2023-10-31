@@ -4,5 +4,10 @@
   "description": "",
   "license": "ISC",
   "author": "",
-  "private": true
+  "private": true,
+  "devDependencies": {
+    "@game-guild/eslint-config": "*",
+    "@game-guild/prettier-config": "*",
+    "@game-guild/jest-config": "*"
+  }
 }
