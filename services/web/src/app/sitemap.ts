@@ -1,4 +1,4 @@
-import { MetadataRoute } from "next";
+import { MetadataRoute } from 'next';
 
 async function sitemap(): Promise<MetadataRoute.Sitemap> {
   return [];

@@ -3,15 +3,15 @@ type IBlogUrl = {
 };
 
 export async function generateStaticParams() {
-  return Array.from(
-    Array(10).keys())
-    .map((elt) => ({ params: { slug: `blog-${ elt }` } }));
+  return Array.from(Array(10).keys()).map((elt) => ({
+    params: { slug: `blog-${elt}` },
+  }));
 }
 
 function Post({ params }: { params: { slug: string } }) {
   return (
     <main>
-      <h1 className="capitalize">{ params.slug }</h1>
+      <h1 className="capitalize">{params.slug}</h1>
       <p>
         Lorem ipsum dolor sit amet consectetur adipisicing elit. Inventore eos
         earum doloribus, quibusdam magni accusamus vitae! Nisi, sunt! Aliquam
@@ -19,7 +19,7 @@ function Post({ params }: { params: { slug: string } }) {
         ipsum!
       </p>
     </main>
-  )
+  );
 }
 
 export default Post;

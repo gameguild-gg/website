@@ -1,6 +1,6 @@
-import { Metadata } from 'next'
-import React from "react";
-import "./globals.css";
+import { Metadata } from 'next';
+import React from 'react';
+import './globals.css';
 
 export const metadata: Metadata = {
   title: {
@@ -8,7 +8,7 @@ export const metadata: Metadata = {
     default: 'Game Guild',
   },
   description: 'A awesome game development community',
-}
+};
 
 type Props = {
   children: React.ReactNode;
@@ -16,9 +16,7 @@ type Props = {
 export default async function RootLayout({ children }: Props) {
   return (
     <html lang="en">
-    <body>
-    { children }
-    </body>
+      <body>{children}</body>
     </html>
   );
 }

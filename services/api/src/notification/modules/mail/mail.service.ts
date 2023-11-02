@@ -8,6 +8,4 @@ export class MailService {
   constructor() {
     sendGridEmail.setApiKey(process.env.SENDGRID_API_KEY);
   }
-
-
 }

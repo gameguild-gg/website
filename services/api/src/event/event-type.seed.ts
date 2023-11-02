@@ -8,36 +8,36 @@ export const EventSeedData: IEventTypeSeed[] = [
   {
     title: 'Bootcamp',
     slug: 'bootcamp',
-    description: ''
+    description: '',
   },
   {
     title: 'Dojo',
     slug: 'dojo',
-    description: ''
+    description: '',
   },
   {
     title: 'Game Jam',
     slug: 'game-jam',
-    description: ''
+    description: '',
   },
   {
     title: 'Lecture',
     slug: 'lecture',
-    description: ''
+    description: '',
   },
   {
     title: 'Meeting',
     slug: 'meeting',
-    description: ''
+    description: '',
   },
   {
     title: 'RFC',
     slug: 'rfc',
-    description: ''
+    description: '',
   },
   {
     title: 'Workshop',
     slug: 'workshop',
-    description: ''
-  }
+    description: '',
+  },
 ];

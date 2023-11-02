@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { APP_GUARD } from "@nestjs/core";
+import { APP_GUARD } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
-import { AppController } from "./app.controller";
+import { AppController } from './app.controller';
 import { AuthModule } from './auth/auth.module';
-import { JwtGuard } from "./auth/guards/jwt.guard";
+import { JwtGuard } from './auth/guards/jwt.guard';
 import { CommonModule } from './common/common.module';
 import { ApiConfigService } from './common/config.service';
 import { CourseModule } from './course/course.module';
@@ -20,7 +20,8 @@ import { UserModule } from './user/user.module';
     TypeOrmModule.forRootAsync({
       imports: [CommonModule],
       inject: [ApiConfigService],
-      useFactory: (configService: ApiConfigService) => configService.postgresConfig,
+      useFactory: (configService: ApiConfigService) =>
+        configService.postgresConfig,
     }),
     CommonModule,
     AuthModule,

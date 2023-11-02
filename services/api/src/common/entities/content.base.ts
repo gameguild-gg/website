@@ -1,4 +1,4 @@
-import { EntityBase } from "./entity.base";
+import { EntityBase } from './entity.base';
 
 export abstract class ContentBase extends EntityBase {
   title: string;

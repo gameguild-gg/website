@@ -1,6 +1,6 @@
 import type { INestApplication } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { CommonModule } from "./common/common.module";
+import { CommonModule } from './common/common.module';
 
 import { ApiConfigService } from './common/config.service';
 
@@ -20,6 +20,6 @@ export function setupSwagger(app: INestApplication): void {
   const configService = app.select(CommonModule).get(ApiConfigService);
 
   console.info(
-    `Documentation: http://localhost:${ configService.appConfig.port }/documentation`,
+    `Documentation: http://localhost:${configService.appConfig.port}/documentation`,
   );
 }

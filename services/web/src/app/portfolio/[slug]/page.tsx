@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata } from 'next';
 
 type IPortfolioDetailProps = {
   params: { slug: string };
@@ -6,19 +6,19 @@ type IPortfolioDetailProps = {
 
 export async function generateStaticParams() {
   return Array.from(Array(6).keys()).map((elt) => ({
-    slug: `${ elt }`,
+    slug: `${elt}`,
   }));
 }
 
 export function generateMetadata(props: IPortfolioDetailProps): Metadata {
   return {
-    title: `Porfolio ${ props.params.slug }`,
+    title: `Porfolio ${props.params.slug}`,
   };
 }
 
 const PortfolioDetail = (props: IPortfolioDetailProps) => (
   <main>
-    <h1 className="capitalize">Portfolio { props.params.slug }</h1>
+    <h1 className="capitalize">Portfolio {props.params.slug}</h1>
     <p>
       Created a set of promotional materials and branding elements for a
       corporate event. Crafted a visually unified theme, encompassing a logo,

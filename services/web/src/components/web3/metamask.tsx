@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { ethers } from "ethers";
-import React, { useState } from "react";
+import { ethers } from 'ethers';
+import React, { useState } from 'react';
 
 function MetamaskSignIn() {
   const [provider, setProvider] = useState<ethers.BrowserProvider | null>(null);
@@ -13,7 +13,7 @@ function MetamaskSignIn() {
         // @ts-ignore
         const ethereum = window.ethereum;
 
-        await ethereum.request({ method: "eth_requestAccounts" });
+        await ethereum.request({ method: 'eth_requestAccounts' });
         // @ts-ignore
         const provider = new ethers.BrowserProvider(window.ethereum);
         const signer = await provider.getSigner();
@@ -22,10 +22,10 @@ function MetamaskSignIn() {
         setProvider(provider);
         setAccount(account);
       } else {
-        console.error("Metamask not detected.");
+        console.error('Metamask not detected.');
       }
     } catch (error) {
-      console.error("Error connecting to Metamask:", error);
+      console.error('Error connecting to Metamask:', error);
     }
   };
 
@@ -33,13 +33,13 @@ function MetamaskSignIn() {
     // <div className="flex h-screen justify-center items-center">
     <div className="max-w-md w-full p-6 bg-white border rounded-lg shadow">
       <h1 className="text-2xl font-semibold mb-4">Login with Metamask</h1>
-      { account ? (
+      {account ? (
         <div>
-          <p className="mb-2">Hello, user with wallet: { account }</p>
+          <p className="mb-2">Hello, user with wallet: {account}</p>
           <button
-            onClick={ () => {
+            onClick={() => {
               // Implement your login logic here
-            } }
+            }}
             className="w-full bg-green-500 text-white p-2 rounded-md"
           >
             Log in
@@ -49,13 +49,13 @@ function MetamaskSignIn() {
         <div>
           <p>Please connect your Metamask wallet to continue.</p>
           <button
-            onClick={ connectToMetamask }
+            onClick={connectToMetamask}
             className="w-full bg-blue-500 text-white p-2 rounded-md mt-2"
           >
             Connect with Metamask
           </button>
         </div>
-      ) }
+      )}
     </div>
     // </div>
   );

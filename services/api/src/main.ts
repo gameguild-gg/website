@@ -1,10 +1,9 @@
-import { ClassSerializerInterceptor, Logger, } from '@nestjs/common';
+import { ClassSerializerInterceptor, Logger } from '@nestjs/common';
 import { NestFactory, Reflector } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { CommonModule } from "./common/common.module";
+import { CommonModule } from './common/common.module';
 import { ApiConfigService } from './common/config.service';
 import { setupSwagger } from './setup-swagger';
-
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { cors: false });
@@ -75,9 +74,9 @@ async function bootstrap() {
   const port = configService.appConfig.port;
   await app.listen(port);
 
-  console.info(`server running on ${ await app.getUrl() }`);
+  console.info(`server running on ${await app.getUrl()}`);
   console.info(
-    `Documentation: http://localhost:${ configService.appConfig.port }/documentation`,
+    `Documentation: http://localhost:${configService.appConfig.port}/documentation`,
   );
 
   // return app;

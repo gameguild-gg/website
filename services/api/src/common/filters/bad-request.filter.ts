@@ -7,9 +7,9 @@ import _ from 'lodash';
 
 @Catch(UnprocessableEntityException)
 export class HttpExceptionFilter
-  implements ExceptionFilter<UnprocessableEntityException> {
-  constructor(public reflector: Reflector) {
-  }
+  implements ExceptionFilter<UnprocessableEntityException>
+{
+  constructor(public reflector: Reflector) {}
 
   catch(exception: UnprocessableEntityException, host: ArgumentsHost): void {
     const ctx = host.switchToHttp();
@@ -45,9 +45,9 @@ export class HttpExceptionFilter
         // convert default messages
         if (!constraint) {
           // convert error message to error.fields.{key} syntax for i18n translation
-          constraints[constraintKey] = `error.fields.${ _.snakeCase(
+          constraints[constraintKey] = `error.fields.${_.snakeCase(
             constraintKey,
-          ) }`;
+          )}`;
         }
       }
     }

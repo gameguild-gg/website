@@ -1,12 +1,12 @@
-import NextAuth from "next-auth";
-import CredentialsProvider from "next-auth/providers/credentials"
+import NextAuth from 'next-auth';
+import CredentialsProvider from 'next-auth/providers/credentials';
 
 const handler = NextAuth({
   providers: [
     CredentialsProvider({
       credentials: {
-        username: { label: "Email", type: "text" },
-        password: { label: "Password", type: "password" }
+        username: { label: 'Email', type: 'text' },
+        password: { label: 'Password', type: 'password' },
       },
       async authorize(credentials, req) {
         if (!credentials?.username || !credentials?.password) return null;
@@ -16,11 +16,11 @@ const handler = NextAuth({
         const res = await fetch('', {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
           },
           body: JSON.stringify({
             username,
-            password
+            password,
           }),
         });
 
@@ -35,9 +35,9 @@ const handler = NextAuth({
         } else {
           return null;
         }
-      }
-    })
-  ]
+      },
+    }),
+  ],
 });
 
-export { handler as GET, handler as POST }
+export { handler as GET, handler as POST };

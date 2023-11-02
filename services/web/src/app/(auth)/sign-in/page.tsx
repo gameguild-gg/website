@@ -1,7 +1,7 @@
 'use client';
 
-import { signIn } from "next-auth/react";
-import { useState } from "react";
+import { signIn } from 'next-auth/react';
+import { useState } from 'react';
 
 export default function SignIn() {
   const [email, setEmail] = useState('');
@@ -16,7 +16,7 @@ export default function SignIn() {
             name="email"
             type="email"
             autoComplete="email"
-            onChange={ (e) => setEmail(e.target.value) }
+            onChange={(e) => setEmail(e.target.value)}
             required
           />
 
@@ -25,13 +25,20 @@ export default function SignIn() {
             name="password"
             type="password"
             autoComplete="current-password"
-            onChange={ (e) => setPassword(e.target.value) }
+            onChange={(e) => setPassword(e.target.value)}
             required
           />
           <button
             type="submit"
-            disabled={ !email || !password }
-            onClick={ () => signIn('credentials', { email, password, redirect: true, callbackUrl: '/' }) }
+            disabled={!email || !password}
+            onClick={() =>
+              signIn('credentials', {
+                email,
+                password,
+                redirect: true,
+                callbackUrl: '/',
+              })
+            }
           />
         </form>
       </div>

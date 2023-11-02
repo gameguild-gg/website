@@ -1,17 +1,17 @@
-import { MetadataRoute } from "next";
+import { MetadataRoute } from 'next';
 
 async function robots(): Promise<MetadataRoute.Robots> {
-  const host = "";
+  const host = '';
 
   return {
     rules: [
       {
-        userAgent: "*",
-        allow: "/",
-        disallow: "/dashboard/",
+        userAgent: '*',
+        allow: '/',
+        disallow: '/dashboard/',
       },
     ],
-    sitemap: `https://${ host }/sitemap.xml`,
+    sitemap: `https://${host}/sitemap.xml`,
   };
 }
 

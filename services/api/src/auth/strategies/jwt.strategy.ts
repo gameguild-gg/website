@@ -1,7 +1,7 @@
-import { Injectable } from "@nestjs/common";
-import { PassportStrategy } from "@nestjs/passport";
+import { Injectable } from '@nestjs/common';
+import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
-import { AccessTokenPayloadDto } from "../dtos/access-token-payload.dto";
+import { AccessTokenPayloadDto } from '../dtos';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -13,7 +13,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       algorithms: ['HS512'],
       secretOrKey: 'secret',
       // secretOrKey: process.env.PUBLIC_KEY,
-    })
+    });
   }
 
   async validate(payload: AccessTokenPayloadDto) {

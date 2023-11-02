@@ -1,16 +1,19 @@
 import { TypeOrmCrudService } from '@dataui/crud-typeorm';
 import { Injectable, Logger } from '@nestjs/common';
-import { InjectRepository } from "@nestjs/typeorm";
-import { Repository } from "typeorm";
-import { CreateLocalUserDto } from "./dtos/create-local-user.dto";
-import { UserEntity } from "./entities/user.entity";
-import { UserAlreadyExistsException } from "./exceptions/user-already-exists.exception";
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { CreateLocalUserDto } from './dtos/create-local-user.dto';
+import { UserEntity } from './entities/user.entity';
+import { UserAlreadyExistsException } from './exceptions/user-already-exists.exception';
 
 @Injectable()
 export class UserService extends TypeOrmCrudService<UserEntity> {
   private readonly logger = new Logger(UserService.name);
 
-  constructor(@InjectRepository(UserEntity) private readonly repository: Repository<UserEntity>) {
+  constructor(
+    @InjectRepository(UserEntity)
+    private readonly repository: Repository<UserEntity>,
+  ) {
     super(repository);
   }
 
@@ -22,13 +25,19 @@ export class UserService extends TypeOrmCrudService<UserEntity> {
     return !!(await this.findOne({ where: { username: username } }));
   }
 
-  async createOneWithEmailAndPassword(data: CreateLocalUserDto): Promise<UserEntity> {
+  async createOneWithEmailAndPassword(
+    data: CreateLocalUserDto,
+  ): Promise<UserEntity> {
     if (await this.isEmailTaken(data.email)) {
-      throw new UserAlreadyExistsException(`The email '${ data.email }' is already associated with an existing user.`);
+      throw new UserAlreadyExistsException(
+        `The email '${data.email}' is already associated with an existing user.`,
+      );
     }
 
     if (data.username && (await this.isUsernameTaken(data.username))) {
-      throw new UserAlreadyExistsException(`The username '${ data.username }' is already associated with an existing user.`);
+      throw new UserAlreadyExistsException(
+        `The username '${data.username}' is already associated with an existing user.`,
+      );
     }
 
     return this.repository.save({

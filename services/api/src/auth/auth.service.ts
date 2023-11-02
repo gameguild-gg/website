@@ -1,9 +1,13 @@
 import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
-import { JwtService } from "@nestjs/jwt";
-import { generateHash, generateRandomSalt, validateHash } from "../common/utils/hash";
-import { UserEntity } from "../user/entities/user.entity";
-import { UserService } from "../user/user.service";
-import { LocalSignInDto, LocalSignUpDto } from "./dtos";
+import { JwtService } from '@nestjs/jwt';
+import {
+  generateHash,
+  generateRandomSalt,
+  validateHash,
+} from '../common/utils/hash';
+import { UserEntity } from '../user/entities/user.entity';
+import { UserService } from '../user/user.service';
+import { LocalSignInDto, LocalSignUpDto } from './dtos';
 
 @Injectable()
 export class AuthService {
@@ -15,7 +19,6 @@ export class AuthService {
   ) {}
 
   public async signIn(user: UserEntity) {
-
     const accessToken = await this.generateAccessToken(user);
     const refreshToken = await this.generateRefreshToken(user);
 
@@ -35,7 +38,7 @@ export class AuthService {
         // username: data.username,
         email: data.email,
         passwordHash: passwordHash,
-        passwordSalt: passwordSalt
+        passwordSalt: passwordSalt,
       });
 
       this.sendEmailVerification(user);
@@ -47,7 +50,7 @@ export class AuthService {
   }
 
   public async sendEmailVerification(user: UserEntity) {
-    // TODO: Send email verification for the user. 
+    // TODO: Send email verification for the user.
   }
 
   public async validateLocalSignIn(data: LocalSignInDto) {
@@ -140,6 +143,4 @@ export class AuthService {
   //
   //   throw new UserNotFoundException();
   // }
-
-
 }

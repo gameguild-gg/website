@@ -1,5 +1,5 @@
 import { Global, Module } from '@nestjs/common';
-import { ApiConfigService } from "./config.service";
+import { ApiConfigService } from './config.service';
 
 @Global()
 @Module({

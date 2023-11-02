@@ -1,1 +1,1 @@
-export * from './create-local-user.dto'
+export * from './create-local-user.dto';

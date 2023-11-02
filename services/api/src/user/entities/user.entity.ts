@@ -1,12 +1,11 @@
-import { ApiProperty } from "@nestjs/swagger";
+import { ApiProperty } from '@nestjs/swagger';
 import { Exclude } from 'class-transformer';
-import { Column, Entity, Index, OneToOne } from "typeorm";
-import { EntityBase } from "../../common/entities/entity.base";
-import { UserProfileEntity } from "../modules/user-profile/entities/user-profile.entity";
+import { Column, Entity, Index, OneToOne } from 'typeorm';
+import { EntityBase } from '../../common/entities/entity.base';
+import { UserProfileEntity } from '../modules/user-profile/entities/user-profile.entity';
 
 @Entity({ name: 'user' })
 export class UserEntity extends EntityBase {
-
   // Local Sign-in
   @ApiProperty()
   @Column({ unique: true, nullable: true, default: null })

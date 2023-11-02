@@ -1,10 +1,9 @@
-import type { Metadata } from "next";
-import Link from "next/link";
-
+import type { Metadata } from 'next';
+import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: "Portfolio",
-  description: "Welcome to my portfolio page!",
+  title: 'Portfolio',
+  description: 'Welcome to my portfolio page!',
 };
 
 const Portfolio = () => (
@@ -17,8 +16,8 @@ const Portfolio = () => (
     </p>
 
     <div className="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3">
-      { Array.from(Array(6).keys()).map((elt) => (
-        <Link className="border-none" key={ elt } href={ `/portfolio/${ elt }` }>
+      {Array.from(Array(6).keys()).map((elt) => (
+        <Link className="border-none" key={elt} href={`/portfolio/${elt}`}>
           <div className="overflow-hidden rounded-lg">
             <img
               className="h-full w-full object-cover object-center"
@@ -27,11 +26,11 @@ const Portfolio = () => (
             />
 
             <div className="bg-blue-200 p-3 text-xl font-bold">
-              Portfolio { elt }
+              Portfolio {elt}
             </div>
           </div>
         </Link>
-      )) }
+      ))}
     </div>
   </main>
 );

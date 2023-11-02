@@ -4,6 +4,9 @@
   "description": "",
   "license": "ISC",
   "author": "",
-  "main": "./src/prettier.config.js",
-  "private": true
+  "main": "src/index.js",
+  "private": true,
+  "devDependencies": {
+    "prettier": "^3.0.3"
+  }
 }

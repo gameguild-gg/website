@@ -1,4 +1,4 @@
-import { ethers } from "ethers";
+import { ethers } from 'ethers';
 
 export function generateHash(data: string, salt?: string): string {
   if (!salt) salt = '';
@@ -6,7 +6,11 @@ export function generateHash(data: string, salt?: string): string {
   return ethers.id(data + salt);
 }
 
-export function validateHash(data: string, hash: string, salt?: string): boolean {
+export function validateHash(
+  data: string,
+  hash: string,
+  salt?: string,
+): boolean {
   return generateHash(data, salt) === hash;
 }
 
