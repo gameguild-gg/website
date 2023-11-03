@@ -8,4 +8,14 @@ export class MailService {
   constructor() {
     sendGridEmail.setApiKey(process.env.SENDGRID_API_KEY);
   }
+
+  public async send() {
+    // await sendGridEmail.send({
+    //   to: data.to,
+    //   from: data.from,
+    //   subject: data.subject,
+    //   text: data.text,
+    //   html: data.html,
+    // });
+  }
 }

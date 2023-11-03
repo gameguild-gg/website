@@ -1,11 +1,8 @@
 import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import {
-  generateHash,
-  generateRandomSalt,
-  validateHash,
-} from '../common/utils/hash';
-import { UserEntity } from '../user/entities/user.entity';
+import { generateHash, generateRandomSalt, validateHash, } from '../common/utils/hash';
+import { NotificationService } from "../notification/notification.service";
+import { UserEntity } from '../user/entities';
 import { UserService } from '../user/user.service';
 import { LocalSignInDto, LocalSignUpDto } from './dtos';
 
@@ -16,6 +13,7 @@ export class AuthService {
   constructor(
     private readonly jwtService: JwtService,
     private readonly userService: UserService,
+    private readonly notificationService: NotificationService,
   ) {}
 
   public async signIn(user: UserEntity) {
@@ -53,7 +51,7 @@ export class AuthService {
     // TODO: Send email verification for the user.
   }
 
-  public async validateLocalSignIn(data: LocalSignInDto) {
+    public async validateLocalSignIn(data: LocalSignInDto) {
     const { email, password } = data;
 
     const user = await this.userService.findOne({ where: { email: email } });
@@ -107,7 +105,7 @@ export class AuthService {
     //   };
   }
 
-  async generateRefreshToken(data: any): Promise<any> {
+  public async generateRefreshToken(data: any): Promise<any> {
     //   const payload = {};
     //
     //   return {
@@ -129,6 +127,7 @@ export class AuthService {
   // async revokeRefreshToken(data: any) {
   //   // TODO: Implement refresh token validation.
   // }
+
 
   // TODO: Move to auth module because is more related.
   // async markEmailAsVerified(id: string): Promise<UserEntity> {
