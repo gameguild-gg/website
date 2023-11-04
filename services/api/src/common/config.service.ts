@@ -63,9 +63,14 @@ export class ApiConfigService {
 
   get authConfig() {
     return {
-      privateKey: this.getString('JWT_PRIVATE_KEY'),
-      publicKey: this.getString('JWT_PUBLIC_KEY'),
-      jwtExpirationTime: this.getNumber('JWT_EXPIRATION_TIME'),
+      accessTokenPrivateKey: this.getString('ACCESS_TOKEN_PRIVATE_KEY'),
+      accessTokenPublicKey: this.getString('ACCESS_TOKEN_PUBLIC_KEY'),
+      accessTokenAlgorithm: this.getString('ACCESS_TOKEN_ALGORITHM'),
+      accessTokenExpiresIn: this.getString('ACCESS_TOKEN_EXPIRATION_TIME'),
+      refreshTokenPrivateKey: this.getString('REFRESH_TOKEN_PRIVATE_KEY'),
+      refreshTokenPublicKey: this.getString('REFRESH_TOKEN_PUBLIC_KEY'),
+      refreshTokenAlgorithm: this.getString('REFRESH_TOKEN_ALGORITHM'),
+      refreshTokenExpiresIn: this.getString('REFRESH_TOKEN_EXPIRATION_TIME'),
     };
   }
 

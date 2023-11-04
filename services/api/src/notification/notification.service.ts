@@ -22,6 +22,6 @@ export class NotificationService {
 
   public async sendPhoneNotification() {
     // TODO: Implement this method.
-    await this.sendPhoneNotification();
+    await this.phoneService.send();
   }
 }
