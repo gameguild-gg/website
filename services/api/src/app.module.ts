@@ -5,7 +5,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { AppController } from './app.controller';
 import { AuthModule } from './auth/auth.module';
-import { JwtGuard } from './auth/guards/jwt.guard';
+import { JwtAccessTokenGuard } from './auth/guards/jwt-access-token-guard.service';
 import { CommonModule } from './common/common.module';
 import { ApiConfigService } from './common/config.service';
 import { CourseModule } from './course/course.module';
@@ -35,7 +35,7 @@ import { UserModule } from './user/user.module';
   providers: [
     {
       provide: APP_GUARD,
-      useClass: JwtGuard,
+      useClass: JwtAccessTokenGuard,
     },
   ],
 })

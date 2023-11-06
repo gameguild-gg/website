@@ -7,7 +7,7 @@ import { NotificationModule } from '../notification/notification.module';
 import { UserModule } from '../user/user.module';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
-import { JwtStrategy, LocalStrategy } from './strategies';
+import { JwtAccessTokenStrategy, LocalStrategy } from './strategies';
 
 @Module({
   imports: [
@@ -26,12 +26,12 @@ import { JwtStrategy, LocalStrategy } from './strategies';
         };
       }
     }),
-    PassportModule.register({ defaultStrategy: 'jwt' }),
+    PassportModule.register({ defaultStrategy: 'jwt-access-token' }),
     NotificationModule,
     UserModule, // forwardRef(() => UserModule),
   ],
   controllers: [AuthController],
-  providers: [AuthService, LocalStrategy, JwtStrategy],
+  providers: [AuthService, LocalStrategy, JwtAccessTokenStrategy],
   exports: [AuthService],
 })
 export class AuthModule {}

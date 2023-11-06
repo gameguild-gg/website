@@ -2,8 +2,8 @@ import { TypeOrmCrudService } from '@dataui/crud-typeorm';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { CreateLocalUserDto } from './dtos/create-local-user.dto';
-import { UserEntity } from './entities/user.entity';
+import { CreateLocalUserDto } from './dtos';
+import { UserEntity } from './entities';
 import { UserAlreadyExistsException } from './exceptions/user-already-exists.exception';
 
 @Injectable()
@@ -30,13 +30,13 @@ export class UserService extends TypeOrmCrudService<UserEntity> {
   ): Promise<UserEntity> {
     if (await this.isEmailTaken(data.email)) {
       throw new UserAlreadyExistsException(
-        `The email '${data.email}' is already associated with an existing user.`,
+        `The email '${ data.email }' is already associated with an existing user.`,
       );
     }
 
     if (data.username && (await this.isUsernameTaken(data.username))) {
       throw new UserAlreadyExistsException(
-        `The username '${data.username}' is already associated with an existing user.`,
+        `The username '${ data.username }' is already associated with an existing user.`,
       );
     }
 
@@ -47,5 +47,9 @@ export class UserService extends TypeOrmCrudService<UserEntity> {
       passwordHash: data.passwordHash,
       passwordSalt: data.passwordSalt,
     });
+  }
+
+  public async save(user: Partial<UserEntity>) {
+    return this.repository.save(user);
   }
 }

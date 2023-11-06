@@ -15,7 +15,7 @@ export class NotificationService {
     // TODO: Implement this method.
   }
 
-  public async sendEmailNotification() {
+  public async sendEmailNotification(email: string, subject: string, message: string) {
     // TODO: Implement this method.
     await this.mailService.send();
   }

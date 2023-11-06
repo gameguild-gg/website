@@ -9,13 +9,13 @@ export class MailService {
     sendGridEmail.setApiKey(process.env.SENDGRID_API_KEY);
   }
 
-  public async send() {
-    // await sendGridEmail.send({
-    //   to: data.to,
-    //   from: data.from,
-    //   subject: data.subject,
-    //   text: data.text,
-    //   html: data.html,
-    // });
+  public async send(data) {
+    await sendGridEmail.send({
+      to: data.to,
+      from: data.from,
+      subject: data.subject,
+      text: data.text,
+      html: data.html,
+    });
   }
 }

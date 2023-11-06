@@ -1,5 +1,5 @@
 import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
-import { JwtService, JwtSignOptions } from '@nestjs/jwt';
+import { JwtService } from '@nestjs/jwt';
 import { ApiConfigService } from "../common/config.service";
 import { generateHash, generateRandomSalt, validateHash, } from '../common/utils/hash';
 import { NotificationService } from "../notification/notification.service";
@@ -22,8 +22,10 @@ export class AuthService {
     const payload = {
       sub: user.id,
       email: user.email,
+      // TODO: Add more claims.
     };
-
+    
+    // TODO: Make keys rotative.
     return this.jwtService.sign(
       payload,
       {
@@ -36,9 +38,12 @@ export class AuthService {
 
   public async generateRefreshToken(user: UserEntity): Promise<any> {
     const payload = {
+      sub: user.id,
+      email: user.email,
       // TODO: Add more claims.
     };
-
+    
+    // TODO: Make keys rotative.
     return this.jwtService.sign(
       payload,
       {
@@ -47,6 +52,27 @@ export class AuthService {
         privateKey: this.configService.authConfig.refreshTokenPrivateKey,
       }
     );
+  }
+
+  public async generateEmailVerificationToken(user: UserEntity): Promise<any> {
+    const payload = {
+      sub: user.id,
+      email: user.email,
+      // TODO: Add more claims.
+    };
+
+    return this.jwtService.sign(
+      payload,
+      {
+        algorithm: 'RS256',
+        expiresIn: this.configService.authConfig.emailVerificationTokenExpiresIn,
+        privateKey: this.configService.authConfig.emailVerificationTokenPrivateKey,
+      }
+    );
+  }
+
+  public async refreshAccessToken(user: UserEntity) {
+    return this.generateAccessToken(user);
   }
 
   public async signIn(user: UserEntity) {
@@ -81,24 +107,12 @@ export class AuthService {
   }
 
   public async sendEmailVerification(user: UserEntity) {
-    // TODO: Send email verification for the user.
-  }
+    const token = await this.generateEmailVerificationToken(user);
+    const url = `${ this.configService.authConfig.emailVerificationUrl }?token=${ token }`;
+    const subject = 'Verify your email';
+    const message = `Please verify your email by clicking on the link: ${ url }`;
 
-  public async validateEmailVerificationToken(token: string) {
-    // TODO: Validate email verification token.
-    // TODO: Move to auth module because is more related.
-    // async markEmailAsVerified(id: string): Promise<UserEntity> {
-    //   let user = await this.findOne({ where: { id: id } });
-    //
-    //   if (user) {
-    //     user.emailVerified = true;
-    //     return = await this.repository.save(user);
-    //
-    //     return user;
-    //   }
-    //
-    //   throw new UserNotFoundException();
-    // }
+    await this.notificationService.sendEmailNotification(user.email, subject, message);
   }
 
   public async validateLocalSignIn(data: LocalSignInDto) {
@@ -133,5 +147,25 @@ export class AuthService {
     // }
 
     return user;
+  }
+
+  public async validateEmailVerificationToken(token: string) {
+    // TODO: Validate email verification token.
+    try {
+      const decodedToken = this.jwtService.verify(
+        token,
+        {
+          publicKey: this.configService.authConfig.emailVerificationTokenPublicKey,
+        }
+      );
+
+      const user = await this.userService.findOne({ where: { id: decodedToken.sub } });
+
+      user.emailVerified = true;
+      await this.userService.save(user);
+
+    } catch (exception) {
+      throw new UnauthorizedException('Invalid or expired token');
+    }
   }
 }

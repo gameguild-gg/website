@@ -1,9 +1,10 @@
-import { Body, Controller, Logger, Post, Request, UseGuards, } from '@nestjs/common';
+import { Body, Controller, Get, Logger, Post, Query, Request, UseGuards, } from '@nestjs/common';
 import { ApiBody, ApiTags } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { Public } from './decorators';
 import { LocalSignInDto, LocalSignUpDto } from './dtos';
 import { LocalGuard } from './guards';
+import { JwtRefreshTokenGuard } from "./guards/jwt-refresh-token-guard.service";
 import { RequestWithUser } from './types';
 
 @Controller('auth')
@@ -42,9 +43,15 @@ export class AuthController {
     return this.authService.signUpWithEmailAndPassword(data);
   }
 
-  // TODO: Implement this endpoint.
-  // @Post('/refresh-token')
-  // public async refreshToken(@Request() request) {
-  //  
-  // }
+  @Post('/refresh-token')
+  @Public()
+  @UseGuards(JwtRefreshTokenGuard)
+  public async refreshToken(@Request() request: RequestWithUser) {
+    return await this.authService.refreshAccessToken(request.user);
+  }
+
+  @Get('verify-email')
+  public async verifyEmail(@Query('token') token: string): Promise<any> {
+    return await this.authService.validateEmailVerificationToken(token);
+  }
 }
