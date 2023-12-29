@@ -40,7 +40,6 @@ services:
     volumes:
       - postgres:/data/postgres
   
-  
   adminer:
     image: adminer
     restart: always

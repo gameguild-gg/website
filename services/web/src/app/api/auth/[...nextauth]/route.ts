@@ -1,8 +1,20 @@
 import NextAuth from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
+import GoogleProvider from "next-auth/providers/google";
 
 const handler = NextAuth({
   providers: [
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID?process.env.GOOGLE_CLIENT_ID:"",
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET?process.env.GOOGLE_CLIENT_SECRET:"",
+      authorization: {
+        params: {
+          prompt: "consent",
+          access_type: "offline",
+          response_type: "code"
+        }
+      },
+    }, ),
     CredentialsProvider({
       credentials: {
         username: { label: 'Email', type: 'text' },

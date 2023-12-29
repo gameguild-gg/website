@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 import React from 'react';
 import './globals.css';
+import { GoogleOAuthProvider } from '@react-oauth/google';
 
 export const metadata: Metadata = {
   title: {
@@ -13,10 +14,12 @@ export const metadata: Metadata = {
 type Props = {
   children: React.ReactNode;
 };
-export default async function RootLayout({ children }: Props) {
+export default function RootLayout({ children }: Props) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        {children}
+      </body>
     </html>
   );
 }

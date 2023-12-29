@@ -11,13 +11,16 @@
     "lint": "next lint --fix"
   },
   "dependencies": {
+    "@react-oauth/google": "^0.12.1",
     "@types/node": "20.5.6",
     "@types/react": "18.2.21",
     "@types/react-dom": "18.2.7",
+    "antd": "^5.12.5",
     "autoprefixer": "10.4.15",
     "eslint": "8.48.0",
     "eslint-config-next": "13.4.19",
     "ethers": "^6.7.1",
+    "jwt-decode": "^4.0.0",
     "next": "13.4.19",
     "next-auth": "^4.23.2",
     "postcss": "8.4.28",
@@ -28,7 +31,7 @@
   },
   "devDependencies": {
     "@game-guild/eslint-config": "*",
-    "@game-guild/prettier-config": "*",
-    "@game-guild/jest-config": "*"
+    "@game-guild/jest-config": "*",
+    "@game-guild/prettier-config": "*"
   }
 }
