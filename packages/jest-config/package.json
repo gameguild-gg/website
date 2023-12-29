@@ -1,0 +1,12 @@
+{
+  "name": "@game-guild/jest-config",
+  "version": "1.0.0",
+  "description": "",
+  "license": "ISC",
+  "author": "",
+  "main": "src/index.js",
+  "private": true,
+  "devDependencies": {
+    "@types/jest": "^29.5.7"
+  }
+}

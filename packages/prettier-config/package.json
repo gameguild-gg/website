@@ -1,0 +1,12 @@
+{
+  "name": "@game-guild/prettier-config",
+  "version": "1.0.0",
+  "description": "",
+  "license": "ISC",
+  "author": "",
+  "main": "src/index.js",
+  "private": true,
+  "devDependencies": {
+    "prettier": "^3.0.3"
+  }
+}

@@ -1,0 +1,5 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "extends": "@game-guild/tsconfig/defaults.json",
+  "compilerOptions": {}
+}

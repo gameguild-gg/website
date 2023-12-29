@@ -1,0 +1,13 @@
+{
+  "name": "@game-guild/common",
+  "version": "1.0.0",
+  "description": "",
+  "license": "ISC",
+  "author": "",
+  "private": true,
+  "devDependencies": {
+    "@game-guild/eslint-config": "*",
+    "@game-guild/prettier-config": "*",
+    "@game-guild/jest-config": "*"
+  }
+}

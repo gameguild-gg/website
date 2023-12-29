@@ -1,0 +1,6 @@
+{
+  "extends": [
+    "@game-guild",
+    "next/core-web-vitals"
+  ]
+}
