@@ -14,17 +14,17 @@ export class CompetitionMatchEntity extends EntityBase {
   // competition run
   @ManyToOne(
     () => CompetitionRunEntity,
-    (competitionRun) => competitionRun.competitionMatches,
+    (competitionRun) => competitionRun.matches,
   )
-  competitionRun: CompetitionRunEntity;
-
-  // cather. relation with competition submission
-  @ManyToOne(() => CompetitionSubmissionEntity, (s) => s.matchesAsCatcher)
-  catcher: CompetitionSubmissionEntity;
+  run: CompetitionRunEntity;
 
   // cat. relation with competition submission
   @ManyToOne(() => CompetitionSubmissionEntity, (s) => s.matchesAsCat)
   cat: CompetitionSubmissionEntity;
+
+  // cather. relation with competition submission
+  @ManyToOne(() => CompetitionSubmissionEntity, (s) => s.matchesAsCatcher)
+  catcher: CompetitionSubmissionEntity;
 
   @Column({ type: 'enum', enum: CompetitionWinner, nullable: true })
   winner: CompetitionWinner;

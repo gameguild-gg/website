@@ -1,6 +1,7 @@
 import { EntityBase } from '../../../common/entity.base';
-import { Column, Entity, OneToMany } from "typeorm";
+import { Column, Entity, OneToMany } from 'typeorm';
 import { CompetitionMatchEntity } from './competition.match.entity';
+import { CompetitionRunSubmissionReportEntity } from './competition.run.submission.report.entity';
 
 export enum CompetitionRunState {
   NOT_STARTED = 'NOT_STARTED',
@@ -11,12 +12,18 @@ export enum CompetitionRunState {
 
 @Entity()
 export class CompetitionRunEntity extends EntityBase {
-  @Column({ enum: CompetitionRunState, default: CompetitionRunState.NOT_STARTED })
+  @Column({
+    enum: CompetitionRunState,
+    default: CompetitionRunState.NOT_STARTED,
+  })
   state: CompetitionRunState;
 
   @OneToMany(
     () => CompetitionMatchEntity,
-    (competitionMatch) => competitionMatch.competitionRun,
+    (competitionMatch) => competitionMatch.run,
   )
-  competitionMatches: CompetitionMatchEntity[];
+  matches: CompetitionMatchEntity[];
+
+  @OneToMany(() => CompetitionRunSubmissionReportEntity, (c) => c.run)
+  reports: CompetitionRunSubmissionReportEntity[];
 }

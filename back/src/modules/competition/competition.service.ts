@@ -1,4 +1,8 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  UnprocessableEntityException,
+} from '@nestjs/common';
 import { AuthService } from '../auth/auth.service';
 import { TerminalDto } from './dtos/terminal.dto';
 import * as util from 'util';
@@ -21,6 +25,7 @@ import * as fse from 'fs-extra';
 import { UserService } from '../user/user.service';
 import { LinqRepository } from 'typeorm-linq-repository';
 import { id } from 'ethers';
+import { CompetitionRunSubmissionReportEntity } from './entities/competition.run.submission.report.entity';
 
 const exec = util.promisify(require('child_process').exec);
 
@@ -98,6 +103,7 @@ export class CompetitionService {
   submissionRepositoryLinq: LinqRepository<CompetitionSubmissionEntity>;
   runRepositoryLinq: LinqRepository<CompetitionRunEntity>;
   matchRepositoryLinq: LinqRepository<CompetitionMatchEntity>;
+  submissionReportLinq: LinqRepository<CompetitionRunSubmissionReportEntity>;
 
   constructor(
     public authService: AuthService,
@@ -108,6 +114,8 @@ export class CompetitionService {
     public runRepository: Repository<CompetitionRunEntity>,
     @InjectRepository(CompetitionMatchEntity)
     public matchRepository: Repository<CompetitionMatchEntity>,
+    @InjectRepository(CompetitionRunSubmissionReportEntity)
+    public submissionReportRepository: Repository<CompetitionRunSubmissionReportEntity>,
   ) {
     this.submissionRepositoryLinq = new LinqRepository(
       submissionRepository.manager.connection,
@@ -242,11 +250,18 @@ export class CompetitionService {
       await this.runCommand('cmake --build ' + sourceFolder + '/build'),
     );
     // store the compiled code in the user's folder username/
-    await fse.copy(
-      sourceFolder + '/build/StudentSimulation',
-      sourceFolder + '/../StudentSimulation',
-      { overwrite: true },
-    );
+    try {
+      await fse.copy(
+        sourceFolder + '/build/StudentSimulation',
+        sourceFolder + '/../StudentSimulation',
+        { overwrite: true },
+      );
+    } catch (err) {
+      throw new UnprocessableEntityException(
+        'Server failed to compile code. ',
+        JSON.stringify(outs),
+      );
+    }
 
     return outs;
   }
@@ -321,6 +336,7 @@ export class CompetitionService {
     match.catcherPoints = 0;
     match.catTurns = 0;
     match.catcherTurns = 0;
+    match.run = competition;
 
     let level = new LevelMap(initialMap);
 
@@ -391,16 +407,16 @@ export class CompetitionService {
     }
 
     // save the match
-    match.competitionRun = competition;
+    match.run = competition;
     return await this.matchRepository.save(match);
   }
 
   async run(): Promise<CompetitionRunEntity> {
     // todo: wrap inside a transaction to avoid starting a competition while another is running
-    const lastCompetition = await this.runRepository.findOne({
-      where: {},
-      order: { updatedAt: 'DESC' },
-    });
+    // const lastCompetition = await this.runRepository.findOne({
+    //   where: {},
+    //   order: { updatedAt: 'DESC' },
+    // });
     //todo: uncomment this
     // if (lastCompetition && lastCompetition.state == CompetitionRunState.RUNNING)
     //   throw new ConflictException('There is already a competition running');
@@ -418,7 +434,6 @@ export class CompetitionService {
       //   .thenGroupBy((c) => c.id)
       //   .orderByDescending((c) => c.updatedAt)
       //   .take(1);
-      //
       // return users;
 
       const allUsers = await this.userService.find({ select: ['id'] });
@@ -444,38 +459,86 @@ export class CompetitionService {
         }
       }
 
-      competition.competitionMatches = [];
       // create 100 boards
       // run 100 matches for every combination of 2 submissions
-      for (let i = 0; i < 1; i++) {
+      for (let m = 0; m < 1; m++) {
         const initialMap = this.generateInitialMap();
-        for (let i = 0; i < lastSubmissions.length; i++) {
-          for (let j = 0; j < lastSubmissions.length; j++) {
+        for (const cat of lastSubmissions) {
+          for (const catcher of lastSubmissions) {
             // if (catUser == catcherUser) continue; // todo: add this again
-            await this.runMatch(
-              lastSubmissions[i],
-              lastSubmissions[j],
+            const match = await this.runMatch(
+              cat,
+              catcher,
               initialMap,
               competition,
             );
-            await this.runMatch(
-              lastSubmissions[j],
-              lastSubmissions[i],
-              initialMap,
-              competition,
-            );
+
+            // find submission report. if dont exists, create it
+            // CAT
+            let catReport: CompetitionRunSubmissionReportEntity =
+              await this.submissionReportRepository.findOne({
+                where: {
+                  run: { id: competition.id },
+                  submission: { id: cat.id },
+                },
+              });
+            if (!catReport) {
+              catReport = this.submissionReportRepository.create();
+              catReport.run = competition;
+              catReport.submission = cat;
+              catReport.winsAsCat = 0;
+              catReport.winsAsCatcher = 0;
+              catReport.catPoints = 0;
+              catReport.catcherPoints = 0;
+              catReport.totalPoints = 0;
+              catReport = await this.submissionReportRepository.save(catReport);
+            }
+            catReport.totalPoints += match.catPoints;
+            catReport.catPoints += match.catPoints;
+            if (match.winner === CompetitionWinner.CAT) catReport.winsAsCat++;
+            await this.submissionReportRepository.save(catReport);
+
+            // CATCHER
+            let catcherReport: CompetitionRunSubmissionReportEntity =
+              await this.submissionReportRepository.findOne({
+                where: {
+                  run: { id: competition.id },
+                  submission: { id: catcher.id },
+                },
+              });
+            if (!catcherReport) {
+              catcherReport = this.submissionReportRepository.create();
+              catcherReport.run = competition;
+              catcherReport.submission = catcher;
+              catcherReport.winsAsCat = 0;
+              catcherReport.winsAsCatcher = 0;
+              catcherReport.catPoints = 0;
+              catcherReport.catcherPoints = 0;
+              catcherReport.totalPoints = 0;
+              catcherReport = await this.submissionReportRepository.save(
+                catcherReport,
+              );
+            }
+            catcherReport.totalPoints += match.catcherPoints;
+            catcherReport.catcherPoints += match.catcherPoints;
+            if (match.winner === CompetitionWinner.CATCHER)
+              catcherReport.winsAsCatcher++;
+            await this.submissionReportRepository.save(catcherReport);
           }
         }
       }
-      // generate report
-      await this.runRepository.update(competition.id, {
-        state: CompetitionRunState.FINISHED,
-      });
-      return await this.runRepository.findOne({
+
+      await this.runRepository.update(
+        { id: competition.id },
+        {
+          state: CompetitionRunState.FINISHED,
+        },
+      );
+      competition = await this.runRepository.findOne({
         where: { id: competition.id },
-        relations: ['competitionMatches'],
       });
-    } catch (err) {
+      competition.reports = await this.submissionReportRepository.find({ where: { run: { id: competition.id } }});
+
       competition.state = CompetitionRunState.FAILED;
       competition = await this.runRepository.save(competition);
       throw err;

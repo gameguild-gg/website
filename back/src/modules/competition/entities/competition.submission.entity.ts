@@ -1,7 +1,10 @@
-import { Entity, ManyToOne, Column, OneToMany } from "typeorm";
+import { Entity, ManyToOne, Column, OneToMany } from 'typeorm';
 import { EntityBase } from '../../../common/entity.base';
 import { UserEntity } from '../../user/user.entity';
-import { CompetitionMatchEntity } from "./competition.match.entity";
+import { CompetitionMatchEntity } from './competition.match.entity';
+import { ApiProperty } from '@nestjs/swagger';
+import { CompetitionRunEntity } from './competition.run.entity';
+import { CompetitionRunSubmissionReportEntity } from './competition.run.submission.report.entity';
 
 @Entity()
 export class CompetitionSubmissionEntity extends EntityBase {
@@ -14,8 +17,12 @@ export class CompetitionSubmissionEntity extends EntityBase {
   sourceCodeZip: Uint8Array;
 
   @OneToMany(() => CompetitionMatchEntity, (m) => m.cat)
-  matchesAsCat: CompetitionSubmissionEntity[];
+  matchesAsCat: CompetitionMatchEntity[];
 
   @OneToMany(() => CompetitionMatchEntity, (m) => m.catcher)
-  matchesAsCatcher: CompetitionSubmissionEntity[];
+  matchesAsCatcher: CompetitionMatchEntity[];
+
+  // link to reports in runs
+  @OneToMany(() => CompetitionRunSubmissionReportEntity, (r) => r.submission)
+  submissionReports: CompetitionRunSubmissionReportEntity[];
 }
