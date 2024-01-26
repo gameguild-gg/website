@@ -9,7 +9,7 @@ export class MailService {
     sendGridEmail.setApiKey(process.env.SENDGRID_API_KEY);
   }
 
-  public async send(data) {
+  public async send(data: {to:string, from:string, subject:string, text:string, html:string}): Promise<void> {
     await sendGridEmail.send({
       to: data.to,
       from: data.from,

@@ -18,7 +18,7 @@ services:
     build:
       context: ./services/web
     container_name: web
-    image: game-guild-api
+    image: game-guild-web
     restart: always
     ports:
       - "8081:3000"
