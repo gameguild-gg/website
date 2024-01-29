@@ -1,27 +1,43 @@
 'use client';
 import MetamaskSignIn from '@/components/web3/metamask';
 import { useRouter } from 'next/navigation';
+import {notification, NotificationArgsProps} from "antd";
+import React from "react";
+import {NotificationProvider} from "@/app/NotificationContext";
+
 
 function Home() {
+  const [api, contextHolder] = notification.useNotification();
   const router = useRouter();
 
+  const openNotification = (description:string, message:string="info", placement: NotificationArgsProps['placement'] = 'topRight') => {
+    notification.info({
+      message,
+      description: description,
+      placement,
+    });
+  };
+
   const handleLoginGoogle = async () => {
+    openNotification('You just found a WiP feature. Help us finish by coding it for us, or you can pay us a beer or more.');
     async function signInWithGoogle() {}
 
     try {
       await signInWithGoogle();
-      router.push('/dashboard'); // Redirecionar após o login
+      // router.push('/dashboard'); // Redirecionar após o login
     } catch (error) {
       console.error('Error logging in with Google:', error);
     }
   };
 
   const handleLoginGitHub = async () => {
+    openNotification('You just found a WiP feature. Help us finish by coding it for us, or you can pay us a beer or more.');
     async function signInWithGitHub() {}
 
     try {
       await signInWithGitHub();
-      await router.push('/dashboard'); // Redirecionar após o login
+
+      // await router.push('/dashboard'); // Redirecionar após o login
     } catch (error) {
       console.error('Error logging in with GitHub:', error);
     }
@@ -29,7 +45,8 @@ function Home() {
 
   return (
     <main>
-      <div className="flex h-screen justify-center items-center">
+      <NotificationProvider>
+        <div className="flex h-screen justify-center items-center">
         <div className="max-w-md w-full p-6 bg-white border rounded-lg shadow">
           <h1 className="text-2xl font-semibold mb-4">Login</h1>
           <form className="space-y-4">
@@ -79,6 +96,7 @@ function Home() {
           </div>
         </div>
       </div>
+      </NotificationProvider>  
     </main>
   );
 }

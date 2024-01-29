@@ -2,6 +2,7 @@ import { Metadata } from 'next';
 import React from 'react';
 import './globals.css';
 import { GoogleOAuthProvider } from '@react-oauth/google';
+import {NotificationArgsProps} from "antd";
 
 export const metadata: Metadata = {
   title: {
