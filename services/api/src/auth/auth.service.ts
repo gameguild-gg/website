@@ -115,7 +115,7 @@ export class AuthService {
     await this.notificationService.sendEmailNotification(user.email, subject, message);
   }
 
-  public async validateLocalSignIn(data: LocalSignInDto) {
+  public async validateLocalSignIn(data: LocalSignInDto): Promise<UserEntity> {
     const { email, password } = data;
 
     const user = await this.userService.findOne({ where: { email: email } });
