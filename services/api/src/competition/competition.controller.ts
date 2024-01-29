@@ -20,7 +20,7 @@ import { CompetitionSubmissionDto } from './dtos/competition.submission.dto';
 export class CompetitionController {
   constructor(public service: CompetitionService) {}
 
-  @Post('/submit/:username/:password')
+  @Post('/submit')
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(FileInterceptor('file'))
   async submit(
@@ -31,8 +31,8 @@ export class CompetitionController {
       throw new PayloadTooLargeException('File too large. It should be < 10kb');
 
     const user =
-      await this.service.authService.loginGetUserFromUsernamePassword({
-        username: data.username,
+      await this.service.authService.validateLocalSignIn({
+        email: data.username,
         password: data.password,
       });
     if (!user) throw new UnauthorizedException('Invalid credentials');

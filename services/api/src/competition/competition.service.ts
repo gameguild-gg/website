@@ -6,7 +6,6 @@ import {
 import { AuthService } from '../auth/auth.service';
 import { TerminalDto } from './dtos/terminal.dto';
 import * as util from 'util';
-import { UserEntity } from '../user/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { CompetitionSubmissionEntity } from './entities/competition.submission.entity';
@@ -24,8 +23,8 @@ import process from 'process';
 import * as fse from 'fs-extra';
 import { UserService } from '../user/user.service';
 import { LinqRepository } from 'typeorm-linq-repository';
-import { id } from 'ethers';
 import { CompetitionRunSubmissionReportEntity } from './entities/competition.run.submission.report.entity';
+import {UserEntity} from "../user/entities";
 
 const exec = util.promisify(require('child_process').exec);
 
@@ -411,7 +410,7 @@ export class CompetitionService {
     return await this.matchRepository.save(match);
   }
 
-  async run(): Promise<CompetitionRunEntity> {
+  async run(): Promise<void> {
     // todo: wrap inside a transaction to avoid starting a competition while another is running
     // const lastCompetition = await this.runRepository.findOne({
     //   where: {},
@@ -541,7 +540,8 @@ export class CompetitionService {
 
       competition.state = CompetitionRunState.FAILED;
       competition = await this.runRepository.save(competition);
-      throw err;
+    } catch (e){
+      
     }
   }
 }

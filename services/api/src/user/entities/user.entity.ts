@@ -1,8 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Exclude } from 'class-transformer';
-import { Column, Entity, Index, OneToOne } from 'typeorm';
+import {Column, Entity, Index, OneToMany, OneToOne} from 'typeorm';
 import { EntityBase } from '../../common/entities/entity.base';
 import { UserProfileEntity } from '../modules/user-profile/entities/user-profile.entity';
+import {CompetitionSubmissionEntity} from "../../competition/entities/competition.submission.entity";
 
 @Entity({ name: 'user' })
 export class UserEntity extends EntityBase {
@@ -71,4 +72,8 @@ export class UserEntity extends EntityBase {
   // Profile
   @OneToOne(() => UserProfileEntity, (profile) => profile.user)
   profile: UserProfileEntity;
+  
+  @OneToMany(() => CompetitionSubmissionEntity, (s) => s.user)
+  competitionSubmissions: CompetitionSubmissionEntity[];
+  
 }
