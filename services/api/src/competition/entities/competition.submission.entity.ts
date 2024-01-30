@@ -19,6 +19,10 @@ export class CompetitionSubmissionEntity extends EntityBase {
   // zip file with the source code
   @Column({ type: 'bytea', nullable: false })
   sourceCodeZip: Uint8Array;
+
+  // executable file staticly compiled without any dependencies
+  @Column({ type: 'bytea', nullable: false })
+  executable: Uint8Array;
   
   @Column({ type: 'enum', enum: CompetitionGame, nullable: false })
   gameType: CompetitionGame;

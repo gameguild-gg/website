@@ -1,30 +1,23 @@
-import {
-  ConflictException,
-  Injectable,
-  UnprocessableEntityException,
-} from '@nestjs/common';
-import { AuthService } from '../auth/auth.service';
-import { TerminalDto } from './dtos/terminal.dto';
+import {Injectable, NotImplementedException, UnprocessableEntityException,} from '@nestjs/common';
+import {AuthService} from '../auth/auth.service';
+import {TerminalDto} from './dtos/terminal.dto';
 import * as util from 'util';
-import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
-import { CompetitionSubmissionEntity } from './entities/competition.submission.entity';
-import {
-  CompetitionRunEntity,
-  CompetitionRunState,
-} from './entities/competition.run.entity';
-import {
-  CompetitionMatchEntity,
-  CompetitionWinner,
-} from './entities/competition.match.entity';
+import {InjectRepository} from '@nestjs/typeorm';
+import {Repository} from 'typeorm';
+import {CompetitionGame, CompetitionSubmissionEntity} from './entities/competition.submission.entity';
+import {CompetitionRunEntity, CompetitionRunState,} from './entities/competition.run.entity';
+import {CompetitionMatchEntity, CompetitionWinner,} from './entities/competition.match.entity';
 import extract from 'extract-zip';
-import fs from 'fs/promises';
+import fsp from 'fs/promises';
+import fs from 'fs';
 import process from 'process';
 import * as fse from 'fs-extra';
-import { UserService } from '../user/user.service';
-import { LinqRepository } from 'typeorm-linq-repository';
-import { CompetitionRunSubmissionReportEntity } from './entities/competition.run.submission.report.entity';
+import {UserService} from '../user/user.service';
+import {LinqRepository} from 'typeorm-linq-repository';
+import {CompetitionRunSubmissionReportEntity} from './entities/competition.run.submission.report.entity';
 import {UserEntity} from "../user/entities";
+import {simpleGit} from 'simple-git';
+import {CleanOptions} from "simple-git";
 
 const exec = util.promisify(require('child_process').exec);
 
@@ -145,10 +138,11 @@ export class CompetitionService {
     return new Date().toISOString();
   }
 
-  async storeSubmission(data: { user: UserEntity; file: Buffer }) {
+  async storeSubmission(data: { user: UserEntity; file: Buffer, gameType: CompetitionGame }) {
     const submission = this.submissionRepository.save({
       user: data.user,
       sourceCodeZip: data.file,
+      gameType: data.gameType
     });
     return submission;
   }
@@ -189,7 +183,7 @@ export class CompetitionService {
     }
   }
   async appendLog(data: TerminalDto): Promise<void> {
-    await fs.appendFile('log.txt', JSON.stringify(data) + '\n', 'utf8');
+    await fsp.appendFile('log.txt', JSON.stringify(data) + '\n', 'utf8');
   }
 
   async prepareLastUserSubmission(user: UserEntity): Promise<TerminalDto[]> {
@@ -198,22 +192,22 @@ export class CompetitionService {
       order: { createdAt: 'DESC' },
     });
     const userFolder = process.cwd() + '/submissions/' + user.username;
-    await fs.rm(userFolder, { recursive: true, force: true });
+    await fsp.rm(userFolder, { recursive: true, force: true });
 
     // rename the file as datetime.zip
     // store the zip file in the user's folder username/zips
-    await fs.mkdir('submissions/' + user.username + '/zips', {
+    await fsp.mkdir('submissions/' + user.username + '/zips', {
       recursive: true,
     });
     const zipPath =
       'submissions/' + user.username + '/zips/' + this.getDate() + '.zip';
-    await fs.writeFile(zipPath, submission.sourceCodeZip);
+    await fsp.writeFile(zipPath, submission.sourceCodeZip);
     const sourceFolder =
       process.cwd() + '/submissions/' + user.username + '/src';
 
     // clear the user's folder username/src
-    await fs.rm(sourceFolder, { recursive: true, force: true });
-    await fs.mkdir(sourceFolder, { recursive: true });
+    await fsp.rm(sourceFolder, { recursive: true, force: true });
+    await fsp.mkdir(sourceFolder, { recursive: true });
 
     // unzip the file into the user's folder username/src
     await extract(zipPath, { dir: sourceFolder });
@@ -545,7 +539,51 @@ export class CompetitionService {
     }
   }
 
-  listChessAgents() {
-    return [];
+  listChessAgents(): Promise<string[]> {
+    throw new NotImplementedException();
+  }
+
+  async prepareLastChessSubmission(user: UserEntity): Promise<TerminalDto[]> {
+    const submission = await this.submissionRepository.findOne({
+      where: { user: { id: user.id }, gameType: CompetitionGame.Chess },
+      order: { createdAt: 'DESC' },
+    });
+    const userFolder = process.cwd() + '/chessSubmissions/' + user.username;
+    const srcFolder = userFolder + '/git'
+    const botFolder = srcFolder + '/chess-bot'
+    const unzipFolder = userFolder + '/unzip'
+    const zipFilePath = userFolder + '/' + this.getDate() + '.zip';
+    const buildFolder = userFolder + '/build';
+    
+    // name the file as datetime.zip
+    // store the zip file in the user's folder username/zips
+    await fsp.mkdir(userFolder, {recursive: true});
+    await fsp.writeFile(zipFilePath, submission.sourceCodeZip);
+
+    // download the chess engine
+    const chessEngineGitUrl = 'https://github.com/InfiniBrains/chess-competition.git';
+    // if chess engine folder is there, just run git pull, otherwise just run git clone 
+    if(!fs.existsSync(srcFolder)) {
+      await simpleGit().clone(chessEngineGitUrl, srcFolder);
+    } else {
+      await simpleGit(srcFolder).pull().clean(CleanOptions.FORCE + CleanOptions.RECURSIVE + CleanOptions.IGNORED_INCLUDED);
+    }
+    
+    // clear the contents of bot folder
+    await fsp.rm(botFolder, { recursive: true, force: true });
+    await fsp.mkdir(botFolder, { recursive: true });
+    
+    // unzip the zip contents into the bot folder
+    await extract(zipFilePath, { dir: botFolder });
+    
+    // generate cmake project folder and build
+    let out: TerminalDto[]  = [];
+    await this.runCommand('cmake -S ' + srcFolder + ' -B ' + buildFolder + ' -DCMAKE_BUILD_TYPE=MinSizeRel -DCHESS_VALIDATOR_ONLY=ON');
+    await this.runCommand('cmake --build ' + buildFolder + ' --target chessvalidator');
+    
+    // get the bytes of the executable
+    submission.executable = await fsp.readFile(buildFolder + '/chessvalidator');
+    await this.submissionRepository.save(submission);
+    return;
   }
 }

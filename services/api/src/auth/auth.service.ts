@@ -94,6 +94,7 @@ export class AuthService {
       const user = await this.userService.createOneWithEmailAndPassword({
         // username: data.username,
         email: data.email,
+        username: data.username,
         passwordHash: passwordHash,
         passwordSalt: passwordSalt,
       });

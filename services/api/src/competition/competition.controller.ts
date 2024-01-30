@@ -14,53 +14,54 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { TerminalDto } from './dtos/terminal.dto';
 
 import { CompetitionSubmissionDto } from './dtos/competition.submission.dto';
+import {CompetitionGame} from "./entities/competition.submission.entity";
 
 @Controller('Competitions')
 @ApiTags('competitions')
 export class CompetitionController {
   constructor(public service: CompetitionService) {}
 
-  @Post('/CTC/submit')
-  @ApiConsumes('multipart/form-data')
-  @UseInterceptors(FileInterceptor('file'))
-  async submit(
-    @Body() data: CompetitionSubmissionDto,
-    @UploadedFile() file: Express.Multer.File,
-  ): Promise<TerminalDto[]> {
-    if (file.size > 1024 * 50)
-      throw new PayloadTooLargeException('File too large. It should be < 10kb');
-
-    const user =
-      await this.service.authService.validateLocalSignIn({
-        email: data.username,
-        password: data.password,
-      });
-    if (!user) throw new UnauthorizedException('Invalid credentials');
-
-    // // From here to below, it is not working.
-    // if (file.mimetype !== 'application/zip')
-    //   throw new ('Invalid file type');
-    if (file.originalname.split('.').pop() !== 'zip')
-      throw new UnsupportedMediaTypeException(
-        'Invalid file type. Submit zip file.',
-      );
-
-    // store the submission in the database.
-    await this.service.storeSubmission({ user: user, file: file.buffer });
-
-    // return error or success
-    return this.service.prepareLastUserSubmission(user);
-  }
-
-  @Get('/CTC/run')
-  async run() {
-    return this.service.run();
-  }
-
-  @Get('/CTC/RandomMap')
-  async RandomMap(): Promise<string> {
-    return this.service.generateInitialMap();
-  }
+  // @Post('/CTC/submit')
+  // @ApiConsumes('multipart/form-data')
+  // @UseInterceptors(FileInterceptor('file'))
+  // async submit(
+  //   @Body() data: CompetitionSubmissionDto,
+  //   @UploadedFile() file: Express.Multer.File,
+  // ): Promise<TerminalDto[]> {
+  //   if (file.size > 1024 * 50)
+  //     throw new PayloadTooLargeException('File too large. It should be < 10kb');
+  //
+  //   const user =
+  //     await this.service.authService.validateLocalSignIn({
+  //       email: data.username,
+  //       password: data.password,
+  //     });
+  //   if (!user) throw new UnauthorizedException('Invalid credentials');
+  //
+  //   // // From here to below, it is not working.
+  //   // if (file.mimetype !== 'application/zip')
+  //   //   throw new ('Invalid file type');
+  //   if (file.originalname.split('.').pop() !== 'zip')
+  //     throw new UnsupportedMediaTypeException(
+  //       'Invalid file type. Submit zip file.',
+  //     );
+  //
+  //   // store the submission in the database.
+  //   await this.service.storeSubmission({ user: user, file: file.buffer, gameType: CompetitionGame.CatchTheCat });
+  //
+  //   // return error or success
+  //   return this.service.prepareLastUserSubmission(user);
+  // }
+  //
+  // @Get('/CTC/run')
+  // async run() {
+  //   return this.service.run();
+  // }
+  //
+  // @Get('/CTC/RandomMap')
+  // async RandomMap(): Promise<string> {
+  //   return this.service.generateInitialMap();
+  // }
 
   // todo: Add login protections here and remove the password requirement.
   @Post('/Chess/submit')
@@ -89,7 +90,7 @@ export class CompetitionController {
       );
 
     // store the submission in the database.
-    await this.service.storeSubmission({ user: user, file: file.buffer });
+    await this.service.storeSubmission({ user: user, file: file.buffer, gameType: CompetitionGame.Chess });
 
     // return error or success
     return this.service.prepareLastUserSubmission(user);

@@ -1,28 +1,30 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
-  IsEmail,
+  IsAlphanumeric,
+  IsEmail, IsLowercase,
   IsNotEmpty,
   IsString,
-  IsStrongPassword,
+  IsStrongPassword, MaxLength,
 } from 'class-validator';
 
 export class LocalSignUpDto {
   // TODO: Add a username field.
-  // @ApiProperty()
-  // @IsString()
-  // // TODO: Add a max length for the username.
-  // // @MaxLength()
-  // @IsAlphanumeric(
-  //   'en-US',
-  //   {
-  //     message: 'error.invalidUsername: Username must be alphanumeric without any special characters.'
-  //   }
-  // )
-  // readonly username: string;
+  @ApiProperty()
+  @IsString({ message: 'error.invalidUsername: Username must be a string.'})
+  @IsNotEmpty({ message: 'error.invalidUsername: Username must not be empty.'})
+  @MaxLength(32, { message: 'error.invalidUsername: Username must be shorter than or equal to 32 characters.'})
+  @IsAlphanumeric(
+    'en-US',
+    {
+      message: 'error.invalidUsername: Username must be alphanumeric without any special characters.'
+    }
+  )
+  readonly username: string;
 
   @ApiProperty()
-  @IsString()
-  @IsNotEmpty()
+  @IsString({ message: 'error.invalidEmail: Email must be a string.'})
+  @IsNotEmpty({ message: 'error.invalidEmail: Email must not be empty.'})
+  @IsLowercase({ message: 'error.invalidEmail: Email must be lowercase.'})
   @IsEmail(
     {},
     {
@@ -30,7 +32,7 @@ export class LocalSignUpDto {
     },
   )
   readonly email: string;
-
+  
   @ApiProperty()
   @IsString()
   @IsNotEmpty()
