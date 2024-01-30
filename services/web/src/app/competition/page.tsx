@@ -14,6 +14,8 @@ import SubmitBot from "@/app/competition/SubmitBot";
 import PlayGame from "@/app/competition/PlayGame";
 import Summary from "@/app/competition/Summary";
 import RePlayGame from "@/app/competition/RePlayGame";
+import { CookiesProvider, useCookies } from "react-cookie";
+
 
 const { Header, Content, Footer, Sider } = Layout;
 
@@ -56,6 +58,7 @@ const items: MenuItemProps[] = [
 ];
 
 const Competition: React.FC = () => {
+  const [cookies, setCookie] = useCookies(["user"]);
   const [collapsed, setCollapsed] = useState(false);
   const {
     token: { colorBgContainer, borderRadiusLG },
@@ -63,6 +66,8 @@ const Competition: React.FC = () => {
   const [selectedKeys, setSelectedKeys] = useState([MenuKeys.Summary]);
 
   return (
+    <CookiesProvider>
+      
     <Layout style={{ minHeight: '100vh' }}>
       <Sider collapsible collapsed={collapsed} onCollapse={(value) => setCollapsed(value)}>
         <div className="demo-logo-vertical" />
@@ -96,6 +101,7 @@ const Competition: React.FC = () => {
         </Footer>
       </Layout>
     </Layout>
+    </CookiesProvider>
   );
 };
 

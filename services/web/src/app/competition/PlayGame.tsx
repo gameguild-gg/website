@@ -10,16 +10,27 @@ import {ChessboardProps} from "react-chessboard/dist/chessboard/types";
 
 const PlayGame: React.FC = () => {
   // dropdown menu for the agents
-  const [selectedAgent, setSelectedAgent] = useState<string>('');
+  const [selectedAgentWhite, setSelectedAgentWhite] = useState<string>('human');
+  const [selectedAgentBlack, setSelectedAgentBlack] = useState<string>('human');
   const [game, setGame] = useState(new Chess());
   const [fen, setFen] = useState(game.fen());
 
   const makeAMove = (move: {from: string, to: string, promotion?: string}|string) => {
-    const result = game.move(move);
-    setGame(game);
-    console.log(game.ascii());
-    setFen(game.fen());
-    return result;
+    try {
+      const result = game.move(move);
+      if(result === null && game.isGameOver())
+        message.info('Game over');
+      else if(result === null && game.isDraw())
+        message.info('Game draw');
+      else if(result === null)
+        message.error('Illegal move');
+      setGame(game);
+      setFen(game.fen());
+      return result;
+    } catch (error: any) {
+      message.error(error.message);
+      return null;
+    }
   }
 
   const makeRandomMove = () => {
@@ -32,16 +43,37 @@ const PlayGame: React.FC = () => {
 
 
   const onDrop = (sourceSquare: string, targetSquare:string) => {
-    const move = makeAMove({
-      from: sourceSquare,
-      to: targetSquare,
-      promotion: "q", // always promote to a queen for example simplicity
-    });
+    
+    if(!((game.turn() === 'w' && selectedAgentWhite == 'human') || (game.turn() === 'b' && selectedAgentBlack == 'human')))
+    {
+      message.error('It is not your turn');
+      return false;
+    }
+    if(selectedAgentWhite == 'human' && selectedAgentBlack == 'human'){
+      const move = makeAMove({
+        from: sourceSquare,
+        to: targetSquare,
+        promotion: "q", // always promote to a queen for example simplicity
+      });
 
-    // illegal move
-    if (move === null) return false;
-    setTimeout(makeRandomMove, 1000);
-    return true;
+      // illegal move
+      return move !== null;
+    }
+    if((selectedAgentWhite == 'human' && selectedAgentBlack != 'human') || (selectedAgentWhite != 'human' && selectedAgentBlack == 'human')){
+      const move = makeAMove({
+        from: sourceSquare,
+        to: targetSquare,
+        promotion: "q", // always promote to a queen for example simplicity
+      });
+      if(move !== null){
+        makeRandomMove();
+      }
+      // illegal move
+      return move !== null;
+    }
+    
+    
+    return false;
   }
   
   const handleButtonClick = (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -49,17 +81,25 @@ const PlayGame: React.FC = () => {
     console.log('click left button', e);
   };
 
-  const handleMenuClick: MenuProps['onClick'] = (e) => {
-    setSelectedAgent(e.key.toString());
-    message.info('Click on menu item.');
-    console.log('click', e);
+  // todo: combine both functions below into one 
+  const handleMenuClickWhite: MenuProps['onClick'] = (e) => {
+    let agent = e.key.toString();
+    setSelectedAgentWhite(agent);
+    if(agent != 'human' && game.turn() === 'w')
+      makeRandomMove();
+  };
+  const handleMenuClickBlack: MenuProps['onClick'] = (e) => {
+    let agent = e.key.toString();
+    setSelectedAgentBlack(agent);
+    if(agent != 'human' && game.turn() === 'b')
+      makeRandomMove();
   };
 
   // todo: build this menu dynamically from the api response
   const items: MenuProps['items'] = [
     {
-      label: 'Agent 1',
-      key: '1',
+      label: 'Human',
+      key: 'human',
       icon: <UserOutlined />,
     },
     {
@@ -79,9 +119,13 @@ const PlayGame: React.FC = () => {
     },
   ];
 
-  const menuProps = {
+  const menuPropsWhite = {
     items,
-    onClick: handleMenuClick,
+    onClick: handleMenuClickWhite,
+  };
+  const menuPropsBlack = {
+    items,
+    onClick: handleMenuClickBlack,
   };
 
   // todo: list all agents
@@ -93,8 +137,12 @@ const PlayGame: React.FC = () => {
   return (
     <Flex gap="middle" vertical={false}>
       <div key="1">
-        <Dropdown.Button menu={menuProps} placement="bottom" icon={<UserOutlined />}>
-          {selectedAgent ? selectedAgent : 'Select the agent'}
+        <p>Select the agent</p>
+        <Dropdown.Button type='default' menu={menuPropsWhite} placement="topLeft" arrow style={{ borderColor: "black", color: "black" }}>
+          {selectedAgentWhite ? selectedAgentWhite : 'White'}
+        </Dropdown.Button>
+        <Dropdown.Button type='default' menu={menuPropsBlack} placement="topLeft" arrow style={{ borderColor: "red", color: "red" } } >
+          {selectedAgentBlack ? selectedAgentBlack : 'Black'}
         </Dropdown.Button>
       </div>
       <div key="2">
