@@ -13,6 +13,7 @@ import Leaderboard from "@/app/competition/Leaderboard";
 import SubmitBot from "@/app/competition/SubmitBot";
 import PlayGame from "@/app/competition/PlayGame";
 import Summary from "@/app/competition/Summary";
+import RePlayGame from "@/app/competition/RePlayGame";
 
 const { Header, Content, Footer, Sider } = Layout;
 
@@ -36,7 +37,8 @@ enum MenuKeys {
   Summary = 'Summary',
   Leaderboard = 'Leaderboard',
   Submit = 'Submit',
-  Play = 'Play'
+  Play = 'Play',
+  Replay = 'Replay',
 }
 
 interface MenuItemProps {
@@ -50,6 +52,7 @@ const items: MenuItemProps[] = [
   {key: MenuKeys.Leaderboard, icon: <OrderedListOutlined />, content: <Leaderboard />},
   {key: MenuKeys.Submit, icon: <FileAddOutlined />, content: <SubmitBot />},
   {key: MenuKeys.Play, icon: <PlayCircleOutlined />, content: <PlayGame />},
+  {key: MenuKeys.Replay, icon: <PlayCircleOutlined />, content: <RePlayGame />},
 ];
 
 const Competition: React.FC = () => {
@@ -76,9 +79,6 @@ const Competition: React.FC = () => {
         </Menu>
       </Sider>
       <Layout>
-        <Header style={{ padding: 0, background: colorBgContainer }} >
-          Add some header here
-        </Header>
         <Content style={{ margin: '0 16px' }}>
           <div
             style={{
