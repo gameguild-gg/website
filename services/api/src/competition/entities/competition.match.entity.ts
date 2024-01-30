@@ -4,8 +4,8 @@ import { CompetitionSubmissionEntity } from './competition.submission.entity';
 import {EntityBase} from "../../common/entities/entity.base";
 
 export enum CompetitionWinner {
-  CAT = 'CAT',
-  CATCHER = 'CATCHER',
+  Player1 = 'Player1',
+  Player2 = 'Player2',
 }
 
 @Entity()
@@ -18,29 +18,29 @@ export class CompetitionMatchEntity extends EntityBase {
   run: CompetitionRunEntity;
 
   // cat. relation with competition submission
-  @ManyToOne(() => CompetitionSubmissionEntity, (s) => s.matchesAsCat)
-  cat: CompetitionSubmissionEntity;
+  @ManyToOne(() => CompetitionSubmissionEntity, (s) => s.matchesAsP1)
+  p1submission: CompetitionSubmissionEntity;
 
   // cather. relation with competition submission
-  @ManyToOne(() => CompetitionSubmissionEntity, (s) => s.matchesAsCatcher)
-  catcher: CompetitionSubmissionEntity;
+  @ManyToOne(() => CompetitionSubmissionEntity, (s) => s.matchesAsP2)
+  p2submission: CompetitionSubmissionEntity;
 
   @Column({ type: 'enum', enum: CompetitionWinner, nullable: true })
   winner: CompetitionWinner;
 
   // cat points
   @Column({ type: 'float' })
-  catPoints: number;
+  p1Points: number;
 
   // catcher points
   @Column({ type: 'float' })
-  catcherPoints: number;
+  p2Points: number;
 
   @Column({ type: 'integer' })
-  catTurns: number;
+  p1Turns: number;
 
   @Column({ type: 'integer' })
-  catcherTurns: number;
+  p2Turns: number;
 
   @Column({ type: 'text' })
   logs: string;

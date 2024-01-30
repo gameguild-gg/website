@@ -329,28 +329,28 @@ export class CompetitionService {
     competition: CompetitionRunEntity,
   ): Promise<CompetitionMatchEntity> {
     const match = this.matchRepository.create();
-    match.cat = cat;
-    match.catcher = catcher;
-    match.catPoints = 0;
-    match.catcherPoints = 0;
-    match.catTurns = 0;
-    match.catcherTurns = 0;
+    match.p1submission = cat;
+    match.p2submission = catcher;
+    match.p1Points = 0;
+    match.p2Points = 0;
+    match.p1Turns = 0;
+    match.p2Turns = 0;
     match.run = competition;
 
     let level = new LevelMap(initialMap);
 
     const levelsize = level.size;
-    match.logs = 'Cat: ' + match.cat.user.username + '\n';
-    match.logs += 'Catcher: ' + match.catcher.user.username + '\n';
+    match.logs = 'Cat: ' + match.p1submission.user.username + '\n';
+    match.logs += 'Catcher: ' + match.p2submission.user.username + '\n';
     match.logs += 'InitialMap: \n';
     match.logs += level.board;
     match.logs += '\n';
 
     while (level.turn === Turn.CAT || level.turn === Turn.CATCHER) {
       match.logs += level.turn + ': ';
-      if (level.turn === Turn.CAT) match.logs += match.cat.user.username + '\n';
+      if (level.turn === Turn.CAT) match.logs += match.p1submission.user.username + '\n';
       else if (level.turn === Turn.CATCHER)
-        match.logs += match.catcher.user.username + '\n';
+        match.logs += match.p2submission.user.username + '\n';
 
       // call the turn
       const result = await this.runCommand(
@@ -372,11 +372,11 @@ export class CompetitionService {
       // extract output
       level = new LevelMap(result.stdout);
       if (level.turn === Turn.CATCHER) {
-        match.catTurns++;
-        match.catPoints -= level.time / 1000000;
+        match.p1Turns++;
+        match.p1Points -= level.time / 1000000;
       } else if (level.turn === Turn.CAT) {
-        match.catcherTurns++;
-        match.catcherPoints -= level.time / 1000000;
+        match.p2Turns++;
+        match.p2Points -= level.time / 1000000;
       } else if (
         level.turn === Turn.CATCHERERROR ||
         level.turn === Turn.CATERROR
@@ -390,19 +390,19 @@ export class CompetitionService {
     }
 
     if (level.turn === Turn.CATCHERWIN) {
-      match.winner = CompetitionWinner.CATCHER;
-      match.catcherPoints += levelsize * levelsize - match.catcherTurns;
-      match.catPoints += match.catTurns;
+      match.winner = CompetitionWinner.Player2;
+      match.p2Points += levelsize * levelsize - match.p2Turns;
+      match.p1Points += match.p1Turns;
     } else if (level.turn === Turn.CATWIN) {
-      match.winner = CompetitionWinner.CAT;
-      match.catPoints += levelsize * levelsize - match.catTurns;
-      match.catcherPoints += match.catcherTurns;
+      match.winner = CompetitionWinner.Player1;
+      match.p1Points += levelsize * levelsize - match.p1Turns;
+      match.p2Points += match.p2Turns;
     } else if (level.turn === Turn.CATCHERERROR) {
-      match.winner = CompetitionWinner.CAT;
-      match.catPoints += levelsize * levelsize - match.catTurns;
+      match.winner = CompetitionWinner.Player1;
+      match.p1Points += levelsize * levelsize - match.p1Turns;
     } else if (level.turn === Turn.CATERROR) {
-      match.winner = CompetitionWinner.CATCHER;
-      match.catcherPoints += levelsize * levelsize - match.catcherTurns;
+      match.winner = CompetitionWinner.Player2;
+      match.p2Points += levelsize * levelsize - match.p2Turns;
     }
 
     // save the match
@@ -485,16 +485,16 @@ export class CompetitionService {
               catReport = this.submissionReportRepository.create();
               catReport.run = competition;
               catReport.submission = cat;
-              catReport.winsAsCat = 0;
-              catReport.winsAsCatcher = 0;
-              catReport.catPoints = 0;
-              catReport.catcherPoints = 0;
+              catReport.winsAsP1 = 0;
+              catReport.winsAsP2 = 0;
+              catReport.p1Points = 0;
+              catReport.p2Points = 0;
               catReport.totalPoints = 0;
               catReport = await this.submissionReportRepository.save(catReport);
             }
-            catReport.totalPoints += match.catPoints;
-            catReport.catPoints += match.catPoints;
-            if (match.winner === CompetitionWinner.CAT) catReport.winsAsCat++;
+            catReport.totalPoints += match.p1Points;
+            catReport.p1Points += match.p1Points;
+            if (match.winner === CompetitionWinner.Player1) catReport.winsAsP1++;
             await this.submissionReportRepository.save(catReport);
 
             // CATCHER
@@ -509,19 +509,19 @@ export class CompetitionService {
               catcherReport = this.submissionReportRepository.create();
               catcherReport.run = competition;
               catcherReport.submission = catcher;
-              catcherReport.winsAsCat = 0;
-              catcherReport.winsAsCatcher = 0;
-              catcherReport.catPoints = 0;
-              catcherReport.catcherPoints = 0;
+              catcherReport.winsAsP1 = 0;
+              catcherReport.winsAsP2 = 0;
+              catcherReport.p1Points = 0;
+              catcherReport.p2Points = 0;
               catcherReport.totalPoints = 0;
               catcherReport = await this.submissionReportRepository.save(
                 catcherReport,
               );
             }
-            catcherReport.totalPoints += match.catcherPoints;
-            catcherReport.catcherPoints += match.catcherPoints;
-            if (match.winner === CompetitionWinner.CATCHER)
-              catcherReport.winsAsCatcher++;
+            catcherReport.totalPoints += match.p2Points;
+            catcherReport.p2Points += match.p2Points;
+            if (match.winner === CompetitionWinner.Player2)
+              catcherReport.winsAsP2++;
             await this.submissionReportRepository.save(catcherReport);
           }
         }
@@ -543,5 +543,9 @@ export class CompetitionService {
     } catch (e){
       
     }
+  }
+
+  listChessAgents() {
+    return [];
   }
 }

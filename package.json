@@ -29,7 +29,8 @@
     "test:web": "npm run test --workspace=services/web",
     "start": "npm run start --workspaces --if-present",
     "start:api": "npm run start --workspace=services/api",
-    "start:web": "npm run start --workspace=services/web"
+    "start:web": "npm run start --workspace=services/web",
+    "start:both": "concurrently \"npm:dev:api\" \"npm:dev:web\"" 
   },
   "devDependencies": {
     "@game-guild/eslint-config": "*",
@@ -42,6 +43,7 @@
   },
   "dependencies": {
     "bufferutil": "^4.0.8",
+    "concurrently": "^8.2.2",
     "utf-8-validate": "^5.0.10",
     "ws": "^8.16.0"
   }

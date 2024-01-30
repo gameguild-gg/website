@@ -10,19 +10,19 @@ import {EntityBase} from "../../common/entities/entity.base";
 export class CompetitionRunSubmissionReportEntity extends EntityBase {
   @Column({ type: 'integer' })
   @ApiProperty()
-  winsAsCat: number;
+  winsAsP1: number;
 
   @Column({ type: 'integer' })
   @ApiProperty()
-  winsAsCatcher: number;
+  winsAsP2: number;
 
   @Column({ type: 'float8' })
   @ApiProperty()
-  catPoints: number;
+  p1Points: number;
 
   @Column({ type: 'float8' })
   @ApiProperty()
-  catcherPoints: number;
+  p2Points: number;
 
   @Column({ type: 'float8' })
   @ApiProperty()

@@ -20,7 +20,7 @@ import { CompetitionSubmissionDto } from './dtos/competition.submission.dto';
 export class CompetitionController {
   constructor(public service: CompetitionService) {}
 
-  @Post('/submit')
+  @Post('/CTC/submit')
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(FileInterceptor('file'))
   async submit(
@@ -52,13 +52,51 @@ export class CompetitionController {
     return this.service.prepareLastUserSubmission(user);
   }
 
-  @Get('/run')
+  @Get('/CTC/run')
   async run() {
     return this.service.run();
   }
 
-  @Get('/RandomMap')
+  @Get('/CTC/RandomMap')
   async RandomMap(): Promise<string> {
     return this.service.generateInitialMap();
+  }
+
+  // todo: Add login protections here and remove the password requirement.
+  @Post('/Chess/submit')
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(FileInterceptor('file'))
+  async submitChessAgent(
+    @Body() data: CompetitionSubmissionDto,
+    @UploadedFile() file: Express.Multer.File,
+  ): Promise<TerminalDto[]> {
+    if (file.size > 1024 * 1024 * 10)
+      throw new PayloadTooLargeException('File too large. It should be < 10mb');
+
+    const user =
+      await this.service.authService.validateLocalSignIn({
+        email: data.username,
+        password: data.password,
+      });
+    if (!user) throw new UnauthorizedException('Invalid credentials');
+
+    // // From here to below, it is not working.
+    // if (file.mimetype !== 'application/zip')
+    //   throw new ('Invalid file type');
+    if (file.originalname.split('.').pop() !== 'zip')
+      throw new UnsupportedMediaTypeException(
+        'Invalid file type. Submit zip file.',
+      );
+
+    // store the submission in the database.
+    await this.service.storeSubmission({ user: user, file: file.buffer });
+
+    // return error or success
+    return this.service.prepareLastUserSubmission(user);
+  }
+  
+  @Get('/Chess/ListAgents')
+  async ListChessAgents(): Promise<string[]> {
+    return this.service.listChessAgents();
   }
 }
