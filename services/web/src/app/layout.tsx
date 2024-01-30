@@ -10,6 +10,11 @@ export const metadata: Metadata = {
     default: 'Game Guild',
   },
   description: 'A awesome game development community',
+  icons:{
+    icon: 'favicon-32x32.png',
+    shortcut: 'favicon-32x32.png',
+    apple: 'apple-touch-icon.png'
+  }
 };
 
 type Props = {

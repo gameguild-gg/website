@@ -11,40 +11,38 @@
   ],
   "scripts": {
     "clean": "rimraf \"**/node_modules\"",
-    
     "prepare": "husky install",
-    
     "format": "npm run format --workspaces --if-present",
     "format:api": "npm run format --workspace=services/api",
     "format:web": "npm run format --workspace=services/web",
-    
     "lint": "npm run lint --fix --workspaces --if-present",
     "lint:api": "npm run lint --workspace=services/api",
     "lint:web": "npm run lint --workspace=services/web",
-    
     "build": "npm run build --workspaces --if-present",
     "build:api": "npm run build --workspace=services/api",
     "build:web": "npm run build --workspace=services/web",
-    
     "dev": "npm run start --workspaces --if-present",
     "dev:api": "npm run start:dev --workspace=services/api",
     "dev:web": "npm run dev --workspace=services/web",
-    
     "test": "npm run test --workspaces --if-present",
     "test:api": "npm run test --workspace=services/api",
     "test:web": "npm run test --workspace=services/web",
-    
     "start": "npm run start --workspaces --if-present",
     "start:api": "npm run start --workspace=services/api",
     "start:web": "npm run start --workspace=services/web"
   },
   "devDependencies": {
     "@game-guild/eslint-config": "*",
-    "@game-guild/prettier-config": "*",
     "@game-guild/jest-config": "*",
+    "@game-guild/prettier-config": "*",
     "@game-guild/tsconfig": "*",
     "husky": "^8.0.3",
     "rimraf": "^3.0.2",
     "typescript": "^5.2.2"
+  },
+  "dependencies": {
+    "bufferutil": "^4.0.8",
+    "utf-8-validate": "^5.0.10",
+    "ws": "^8.16.0"
   }
 }
