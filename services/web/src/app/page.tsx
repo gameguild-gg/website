@@ -57,6 +57,7 @@ function Home() {
                 <a href='/'><span style={{paddingLeft: '15px', paddingRight: '15px', color:'#ffffff'}}>Courses</span></a>
                 <a href='/'><span style={{paddingLeft: '15px', paddingRight: '15px', color:'#ffffff'}}>Jobs</span></a>
                 <a href='/'><span style={{paddingLeft: '15px', paddingRight: '15px', color:'#ffffff'}}>Blog</span></a>
+                <a href='/competition'><span style={{paddingLeft: '15px', paddingRight: '15px', color:'#ffffff'}}>Competition</span></a>
               </Col>
               <Col style={{display: 'flex'}}>
                 <a href='/login'><span style={{paddingLeft: '15px', paddingRight: '15px', color:'#ffffff', lineHeight: '64px', border: '0px'}}>Login</span></a>
