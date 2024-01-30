@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import { Chessboard } from "react-chessboard";
 import {Chess, Move} from 'chess.js'
 
@@ -14,6 +14,12 @@ const PlayGame: React.FC = () => {
   const [selectedAgentBlack, setSelectedAgentBlack] = useState<string>('human');
   const [game, setGame] = useState(new Chess());
   const [fen, setFen] = useState(game.fen());
+  
+  useEffect(() => {
+    if(selectedAgentWhite != 'human' && selectedAgentBlack != 'human'){
+      makeRandomMove();
+    }
+  });
 
   const makeAMove = (move: {from: string, to: string, promotion?: string}|string) => {
     try {
@@ -65,9 +71,8 @@ const PlayGame: React.FC = () => {
         to: targetSquare,
         promotion: "q", // always promote to a queen for example simplicity
       });
-      if(move !== null){
+      if(move !== null)
         makeRandomMove();
-      }
       // illegal move
       return move !== null;
     }
@@ -75,18 +80,11 @@ const PlayGame: React.FC = () => {
     
     return false;
   }
-  
-  const handleButtonClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-    message.info('Click on left button.');
-    console.log('click left button', e);
-  };
 
   // todo: combine both functions below into one 
   const handleMenuClickWhite: MenuProps['onClick'] = (e) => {
     let agent = e.key.toString();
     setSelectedAgentWhite(agent);
-    if(agent != 'human' && game.turn() === 'w')
-      makeRandomMove();
   };
   const handleMenuClickBlack: MenuProps['onClick'] = (e) => {
     let agent = e.key.toString();
@@ -138,18 +136,29 @@ const PlayGame: React.FC = () => {
     <Flex gap="middle" vertical={false}>
       <div key="1">
         <p>Select the agent</p>
-        <Dropdown.Button type='default' menu={menuPropsWhite} placement="topLeft" arrow style={{ borderColor: "black", color: "black" }}>
+        <Dropdown.Button type='default' menu={menuPropsWhite} placement="topLeft" arrow
+                         style={{borderColor: "black", color: "black"}}>
           {selectedAgentWhite ? selectedAgentWhite : 'White'}
         </Dropdown.Button>
-        <Dropdown.Button type='default' menu={menuPropsBlack} placement="topLeft" arrow style={{ borderColor: "red", color: "red" } } >
+        <Dropdown.Button type='default' menu={menuPropsBlack} placement="topLeft" arrow
+                         style={{borderColor: "red", color: "red"}}>
           {selectedAgentBlack ? selectedAgentBlack : 'Black'}
         </Dropdown.Button>
       </div>
       <div key="2">
-        <Chessboard id="BasicBoard" boardWidth={Math.min(window.innerWidth, window.innerHeight)*0.8} position={fen} onPieceDrop={onDrop} />
+        <Chessboard id="BasicBoard" boardWidth={Math.min(window.innerWidth, window.innerHeight) * 0.8} position={fen}
+                    onPieceDrop={onDrop}/>
+      </div>
+      <div key="3">
+        <p>Current turn: {game.turn() === 'w' ? 'White' : 'Black'}</p>
+        <p>Current FEN: {game.fen()}</p>
+        <p>In Check: {game.inCheck() ? 'Yes' : 'No'}</p>
+        <p>Game status: {game.isGameOver() ? 'Game over' : (game.isDraw() ? 'Game draw' : 'Game in progress')}</p>
+        <p>Game
+          result: {game.isGameOver() ? (game.isCheckmate() ? (game.turn() === 'w' ? 'Black wins' : 'White wins') : 'Draw') : 'In progress'}</p>
       </div>
     </Flex>
-  )
+)
 }
 
 export default PlayGame;
