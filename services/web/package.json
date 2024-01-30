@@ -20,6 +20,7 @@
     "eslint": "8.48.0",
     "eslint-config-next": "13.4.19",
     "ethers": "^6.7.1",
+    "jszip": "^3.10.1",
     "jwt-decode": "^4.0.0",
     "next": "13.4.19",
     "next-auth": "^4.23.2",
