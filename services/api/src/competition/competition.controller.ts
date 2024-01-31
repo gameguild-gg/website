@@ -16,6 +16,7 @@ import { TerminalDto } from './dtos/terminal.dto';
 import { CompetitionSubmissionDto } from './dtos/competition.submission.dto';
 import {CompetitionGame} from "./entities/competition.submission.entity";
 import {Public} from "../auth";
+import {ChessMoveRequestDto} from "./dtos/chess-move-request.dto";
 
 @Controller('Competitions')
 @ApiTags('competitions')
@@ -100,7 +101,14 @@ export class CompetitionController {
   }
   
   @Get('/Chess/ListAgents')
+  @Public()
   async ListChessAgents(): Promise<string[]> {
     return this.service.listChessAgents();
+  }
+  
+  @Post('/Chess/Move')
+  @Public()
+  async RequestChessMove(@Body() data: ChessMoveRequestDto): Promise<string> {
+    return this.service.RequestChessMove(data);
   }
 }

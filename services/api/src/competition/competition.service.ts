@@ -19,9 +19,12 @@ import {CleanOptions} from "simple-git";
 import * as process from "process";
 import extract from "extract-zip";
 import * as decompress from "decompress";
+import {ChessMoveRequestDto} from "./dtos/chess-move-request.dto";
 const execShPromise = require("exec-sh").promise;
 
 const exec = util.promisify(require('child_process').exec);
+
+import ExecuteCommand from '../common/execute-command';
 
 class Point2D {
   x: number;
@@ -553,8 +556,12 @@ export class CompetitionService {
     }
   }
 
-  listChessAgents(): Promise<string[]> {
-    throw new NotImplementedException();
+  async listChessAgents(): Promise<string[]> {
+    // find users who have submitted chess agents
+    let users = this.userService.find({where: {competitionSubmissions: {gameType: CompetitionGame.Chess}}});
+    // return their usernames
+    const users_1 = await users;
+    return users_1.map((user) => user.username);
   }
 
   async prepareLastChessSubmission(user: UserEntity): Promise<TerminalDto[]> {
@@ -601,5 +608,29 @@ export class CompetitionService {
     submission.executable = await fsp.readFile(buildFolder + '/chesscli');
     await this.submissionRepository.save(submission);
     return;
+  }
+
+  async RequestChessMove(data: ChessMoveRequestDto): Promise<string> {
+    // find last submission of the user
+    const submission = await this.submissionRepository.findOne({
+      where: { user: { username: data.username }, gameType: CompetitionGame.Chess },
+      order: { createdAt: 'DESC' },
+    });
+    
+    if(!submission) throw new UnprocessableEntityException('No submission found for this user');
+
+    const userFolder = process.cwd() + '/chessSubmissions/' + data.username;
+    const buildFolder = userFolder + '/build';
+    const executablePath = buildFolder + '/chesscli'
+    
+    if(!fse.existsSync(executablePath)) {
+      // create build folder
+      await fsp.mkdir(buildFolder, {recursive: true});
+      await fsp.writeFile(executablePath, submission.executable);
+      await this.runCommandSpawn('chmod +x ' + executablePath);
+    }
+    let output = await ExecuteCommand({command: executablePath, stdin: data.fen, timeout: 10000});
+    if(output.stderr) throw new UnprocessableEntityException('Error running the executable: '+ output.stderr);
+    return output.stdout;
   }
 }
