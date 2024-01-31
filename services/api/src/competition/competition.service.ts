@@ -708,6 +708,10 @@ export class CompetitionService {
         result.draw = false;
         break;
       }
+      
+      // remove empty spaces
+      move.stdout = move.stdout.replace(/\s/g, '');
+      
       // from is the first 2 chars of the stdout
       let from = move.stdout.slice(0, 2);
       // to is the next 2 chars of the stdout
@@ -719,7 +723,7 @@ export class CompetitionService {
       let moveResult = board.move({from: from, to: to, promotion: promotion});
 
       // add the move to the moves array
-      result.moves.push(move.stdout);
+      result.moves.push(moveResult.lan);
       
       // if the move is invalid, the other player wins
       if(!moveResult) {
