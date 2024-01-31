@@ -7,10 +7,8 @@ import {Repository} from 'typeorm';
 import {CompetitionGame, CompetitionSubmissionEntity} from './entities/competition.submission.entity';
 import {CompetitionRunEntity, CompetitionRunState,} from './entities/competition.run.entity';
 import {CompetitionMatchEntity, CompetitionWinner,} from './entities/competition.match.entity';
-import extract from 'extract-zip';
-import fsp from 'fs/promises';
+import {promises as fsp} from 'fs';
 import fs from 'fs';
-import process from 'process';
 import * as fse from 'fs-extra';
 import {UserService} from '../user/user.service';
 import {LinqRepository} from 'typeorm-linq-repository';
@@ -18,6 +16,10 @@ import {CompetitionRunSubmissionReportEntity} from './entities/competition.run.s
 import {UserEntity} from "../user/entities";
 import {simpleGit} from 'simple-git';
 import {CleanOptions} from "simple-git";
+import * as process from "process";
+import extract from "extract-zip";
+import * as decompress from "decompress";
+const execShPromise = require("exec-sh").promise;
 
 const exec = util.promisify(require('child_process').exec);
 
@@ -147,6 +149,10 @@ export class CompetitionService {
     return submission;
   }
 
+  async runCommandSpawn(command: string): Promise<{stdout: string, stderr: string}> {
+    return await execShPromise(command, {maxBuffer: 1024 * 1024 * 50, });
+  }
+  
   async runCommand(
     command: string,
     log = true,
@@ -155,11 +161,19 @@ export class CompetitionService {
     let stdout: string, stderr: string;
     try {
       if (timeout === null) {
-        const out = await exec(command);
+        const outExec = exec(command);
+        outExec.stdout.on('data', (data) => {
+          console.log(data);
+        });
+        const out = await outExec;
         stdout = out.stdout;
         stderr = out.stderr;
       } else {
-        const out = await exec(command, { timeout: timeout });
+        const outExec = exec(command, { timeout: timeout });
+        outExec.stdout.on('data', (data) => {
+          console.log(data);
+        });
+        const out = await outExec;
         stdout = out.stdout;
         stderr = out.stderr;
       }
@@ -563,8 +577,9 @@ export class CompetitionService {
     // download the chess engine
     const chessEngineGitUrl = 'https://github.com/InfiniBrains/chess-competition.git';
     // if chess engine folder is there, just run git pull, otherwise just run git clone 
-    if(!fs.existsSync(srcFolder)) {
-      await simpleGit().clone(chessEngineGitUrl, srcFolder);
+    if(!fse.existsSync(srcFolder)) {
+      let gitReponse = await simpleGit().clone(chessEngineGitUrl, srcFolder);
+      console.log(gitReponse);
     } else {
       await simpleGit(srcFolder).pull().clean(CleanOptions.FORCE + CleanOptions.RECURSIVE + CleanOptions.IGNORED_INCLUDED);
     }
@@ -574,15 +589,16 @@ export class CompetitionService {
     await fsp.mkdir(botFolder, { recursive: true });
     
     // unzip the zip contents into the bot folder
-    await extract(zipFilePath, { dir: botFolder });
+    await decompress(zipFilePath, botFolder);
     
     // generate cmake project folder and build
-    let out: TerminalDto[]  = [];
-    await this.runCommand('cmake -S ' + srcFolder + ' -B ' + buildFolder + ' -DCMAKE_BUILD_TYPE=MinSizeRel -DCHESS_VALIDATOR_ONLY=ON');
-    await this.runCommand('cmake --build ' + buildFolder + ' --target chessvalidator');
+    await this.runCommandSpawn('cmake -S' + srcFolder + ' -B' + buildFolder + ' -DCMAKE_BUILD_TYPE=MinSizeRel -DCHESS_VALIDATOR_ONLY=ON');
+    await this.runCommandSpawn('cmake --build ' + buildFolder + ' --target chesscli --config MinSizeRel');
+    
+    // todo: compress the executable built to save space
     
     // get the bytes of the executable
-    submission.executable = await fsp.readFile(buildFolder + '/chessvalidator');
+    submission.executable = await fsp.readFile(buildFolder + '/chesscli');
     await this.submissionRepository.save(submission);
     return;
   }

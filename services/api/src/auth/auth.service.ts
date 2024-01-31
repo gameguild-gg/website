@@ -117,9 +117,9 @@ export class AuthService {
   }
 
   public async validateLocalSignIn(data: LocalSignInDto): Promise<UserEntity> {
-    const { email, password } = data;
+    const { email, username, password } = data;
 
-    const user = await this.userService.findOne({ where: { email: email } });
+    const user = await this.userService.findOne({ where: [{ email }, {username}] });
 
     if (!user) {
       throw new UnauthorizedException();

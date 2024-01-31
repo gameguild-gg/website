@@ -15,6 +15,7 @@ import { TerminalDto } from './dtos/terminal.dto';
 
 import { CompetitionSubmissionDto } from './dtos/competition.submission.dto';
 import {CompetitionGame} from "./entities/competition.submission.entity";
+import {Public} from "../auth";
 
 @Controller('Competitions')
 @ApiTags('competitions')
@@ -67,6 +68,7 @@ export class CompetitionController {
   @Post('/Chess/submit')
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(FileInterceptor('file'))
+  @Public()
   async submitChessAgent(
     @Body() data: CompetitionSubmissionDto,
     @UploadedFile() file: Express.Multer.File,
@@ -78,6 +80,7 @@ export class CompetitionController {
       await this.service.authService.validateLocalSignIn({
         email: data.username,
         password: data.password,
+        username: data.username,
       });
     if (!user) throw new UnauthorizedException('Invalid credentials');
 
@@ -93,7 +96,7 @@ export class CompetitionController {
     await this.service.storeSubmission({ user: user, file: file.buffer, gameType: CompetitionGame.Chess });
 
     // return error or success
-    return this.service.prepareLastUserSubmission(user);
+    return this.service.prepareLastChessSubmission(user);
   }
   
   @Get('/Chess/ListAgents')
