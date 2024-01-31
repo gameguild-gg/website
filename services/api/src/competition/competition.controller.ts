@@ -17,6 +17,7 @@ import { CompetitionSubmissionDto } from './dtos/competition.submission.dto';
 import {CompetitionGame} from "./entities/competition.submission.entity";
 import {Public} from "../auth";
 import {ChessMoveRequestDto} from "./dtos/chess-move-request.dto";
+import {ChessMatchRequestDto} from "./dtos/chess-match-request.dto";
 
 @Controller('Competitions')
 @ApiTags('competitions')
@@ -110,5 +111,11 @@ export class CompetitionController {
   @Public()
   async RequestChessMove(@Body() data: ChessMoveRequestDto): Promise<string> {
     return this.service.RequestChessMove(data);
+  }
+  
+  @Post('/Chess/RunMatch')
+  @Public()
+  async RunChessMatch(@Body() data: ChessMatchRequestDto): Promise<string> {
+    return this.service.RunChessMatch(ChessMatchRequestDto);
   }
 }

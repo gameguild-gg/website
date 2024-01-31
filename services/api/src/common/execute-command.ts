@@ -10,10 +10,13 @@ class ExecuteCommandOptions {
 class ExecuteCommandResult {
   stdout?: string;
   stderr?: string;
+  duration?: number; // nanoseconds
 }
 
 async function ExecuteCommand(data: ExecuteCommandOptions): Promise<ExecuteCommandResult> {
   const { timeout, logoutput, command, stdin } = data;
+  const startTime = process.hrtime();
+
   return new Promise<ExecuteCommandResult>((resolve, reject) => {
     const childProcess = spawn(command, {
       shell: true,
@@ -46,8 +49,11 @@ async function ExecuteCommand(data: ExecuteCommandOptions): Promise<ExecuteComma
     });
 
     childProcess.on('close', (code) => {
+      const endTime = process.hrtime(startTime);
+      const durationInNano = endTime[0] * 1e9 + endTime[1];
+
       if (code === 0) {
-        resolve({ stdout: stdoutData, stderr: stderrData });
+        resolve({ stdout: stdoutData, stderr: stderrData, duration: durationInNano });
       } else {
         reject(new Error(`Command failed with code ${code}\n${stderrData}`));
       }

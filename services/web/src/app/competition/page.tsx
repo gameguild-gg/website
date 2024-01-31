@@ -8,7 +8,7 @@ import {
   PlayCircleOutlined
 } from '@ant-design/icons';
 import type { MenuProps } from 'antd';
-import { Breadcrumb, Layout, Menu, theme } from 'antd';
+import { Layout, Menu, theme } from 'antd';
 import Leaderboard from "@/app/competition/Leaderboard";
 import SubmitBot from "@/app/competition/SubmitBot";
 import PlayGame from "@/app/competition/PlayGame";

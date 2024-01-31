@@ -1,30 +1,32 @@
-import {Injectable, NotImplementedException, UnprocessableEntityException,} from '@nestjs/common';
+import {Injectable, UnprocessableEntityException,} from '@nestjs/common';
 import {AuthService} from '../auth/auth.service';
 import {TerminalDto} from './dtos/terminal.dto';
 import * as util from 'util';
 import {InjectRepository} from '@nestjs/typeorm';
-import {Repository} from 'typeorm';
+import {IsNull, Not, Repository} from 'typeorm';
 import {CompetitionGame, CompetitionSubmissionEntity} from './entities/competition.submission.entity';
 import {CompetitionRunEntity, CompetitionRunState,} from './entities/competition.run.entity';
 import {CompetitionMatchEntity, CompetitionWinner,} from './entities/competition.match.entity';
 import {promises as fsp} from 'fs';
-import fs from 'fs';
 import * as fse from 'fs-extra';
 import {UserService} from '../user/user.service';
 import {LinqRepository} from 'typeorm-linq-repository';
 import {CompetitionRunSubmissionReportEntity} from './entities/competition.run.submission.report.entity';
 import {UserEntity} from "../user/entities";
-import {simpleGit} from 'simple-git';
-import {CleanOptions} from "simple-git";
+import {CleanOptions, simpleGit} from 'simple-git';
 import * as process from "process";
 import extract from "extract-zip";
 import * as decompress from "decompress";
 import {ChessMoveRequestDto} from "./dtos/chess-move-request.dto";
+import ExecuteCommand from '../common/execute-command';
+import {ChessMatchRequestDto} from "./dtos/chess-match-request.dto";
+
+import {Chess} from 'chess.js';
+import {ChessGameResult, ChessGameResultReason, ChessMatchResultDto} from "./dtos/chess-match-result.dto";
+
 const execShPromise = require("exec-sh").promise;
 
 const exec = util.promisify(require('child_process').exec);
-
-import ExecuteCommand from '../common/execute-command';
 
 class Point2D {
   x: number;
@@ -632,5 +634,166 @@ export class CompetitionService {
     let output = await ExecuteCommand({command: executablePath, stdin: data.fen, timeout: 10000});
     if(output.stderr) throw new UnprocessableEntityException('Error running the executable: '+ output.stderr);
     return output.stdout;
+  }
+
+  async RunChessMatch(ChessMatchRequestDto: ChessMatchRequestDto): Promise<ChessMatchResultDto> {
+    let usernames = [ChessMatchRequestDto.player1username, ChessMatchRequestDto.player2username]
+    
+    // find the last submission from both players
+    const submissions: CompetitionSubmissionEntity[] = await Promise.all(usernames.map(async (username) => {
+      return await this.submissionRepository.findOne({
+        where: { user: { username: username }, gameType: CompetitionGame.Chess, executable: Not(IsNull()) },
+        order: { createdAt: 'DESC' },
+      });
+    }));
+    
+    // report error if any of the submissions is not found
+    for(let i = 0; i < submissions.length; i++) 
+      if(!submissions[i]) throw new UnprocessableEntityException('No submission found for player ' + (i+1));
+    
+    
+    // place both executables in their respective folders
+    // path for the executable and folder
+    const executableFolder: string[] = usernames.map((username) => {
+      return process.cwd() + '/chessSubmissions/' + username + '/build';
+    });
+    const executablePath: string[] = usernames.map((username) => {
+      return process.cwd() + '/chessSubmissions/' + username + '/build/chesscli';
+    });
+    
+    // create folder if doesn't exist
+    for(let i = 0; i < executableFolder.length; i++) {
+      if(!fse.existsSync(executableFolder[i])) 
+        await fsp.mkdir(executableFolder[i], {recursive: true});
+    }
+    
+    // delete the old files and write the new ones, set the permissions
+    for(let i = 0; i < executablePath.length; i++) {
+      await fsp.rm(executablePath[i], { recursive: true, force: true });
+      await fsp.writeFile(executablePath[i], submissions[i].executable);
+      await this.runCommandSpawn('chmod +x ' + executablePath[i]);
+    }
+    
+    // the board management settings
+    const board = new Chess();
+    let userIdx = 0;
+    let result : ChessMatchResultDto = {
+      players: usernames,
+      moves: [],
+      winner: '',
+      draw: false,
+      result: ChessGameResult.NONE,
+      reason: ChessGameResultReason.NONE,
+    };
+    
+    // run the match while they are both reporting moves and accumulate all the moves into an array of strings
+    while(true) {
+      let fen = board.fen();
+      let move = await ExecuteCommand({command: executablePath[userIdx], stdin: fen, timeout: 10000});
+      
+      // if the exe breaks, the other player wins
+      if(!move || move.stderr) {
+        result.winner = usernames[1 - userIdx];
+        result.result = ChessGameResult.GAME_OVER;
+        result.reason = ChessGameResultReason.INVALID_MOVE;
+        result.draw = false;
+        break;
+      }
+      
+      // if the stdout is empty, something went wrong
+      if(!move.stdout) {
+        result.winner = usernames[1 - userIdx];
+        result.result = ChessGameResult.GAME_OVER;
+        result.reason = ChessGameResultReason.INVALID_MOVE;
+        result.draw = false;
+        break;
+      }
+      // from is the first 2 chars of the stdout
+      let from = move.stdout.slice(0, 2);
+      // to is the next 2 chars of the stdout
+      let to = move.stdout.slice(2, 4);
+      // promotion is the next char of the stdout, use Q if not specified
+      let promotion = move.stdout.slice(4, 5) || 'q';
+      
+      // check if the move is valid
+      let moveResult = board.move({from: from, to: to, promotion: promotion});
+
+      // add the move to the moves array
+      result.moves.push(move.stdout);
+      
+      // if the move is invalid, the other player wins
+      if(!moveResult) {
+        result.draw = false;
+        result.result = ChessGameResult.GAME_OVER;
+        result.reason = ChessGameResultReason.INVALID_MOVE;
+        result.winner = usernames[1 - userIdx];
+        break;
+      }
+      
+      // insufficient material
+      if(board.isInsufficientMaterial()) {
+        result.draw = true;
+        result.result = ChessGameResult.DRAW;
+        result.reason = ChessGameResultReason.INSUFFICIENT_MATERIAL;
+        break;
+      }
+      // threefold repetition
+      if(board.isThreefoldRepetition()) {
+        result.draw = true;
+        result.result = ChessGameResult.DRAW;
+        result.reason = ChessGameResultReason.THREEFOLD_REPETITION;
+        break;
+      }
+      // checkmate
+      if(board.isCheckmate()) {
+        result.draw = false;
+        result.winner = usernames[1-userIdx];
+        result.reason = ChessGameResultReason.CHECKMATE;
+        result.result = ChessGameResult.GAME_OVER;
+      }
+      // stalemate
+      if(board.isStalemate()) {
+        result.draw = true;
+        result.result = ChessGameResult.DRAW;
+        result.reason = ChessGameResultReason.STALEMATE;
+        break;
+      }
+      // draw by 1000 moves
+      if(result.moves.length >= 1000) {
+        result.draw = true;
+        result.result = ChessGameResult.DRAW;
+        result.reason = ChessGameResultReason.FIFTY_MOVE_RULE; // todo: fifty move rule properly
+        break;
+      }
+      // any other reason
+      if(board.isDraw()) {
+        result.draw = true;
+        result.result = ChessGameResult.DRAW;
+        result.reason = ChessGameResultReason.NONE;
+        break;
+      }
+     
+      // todo apply ELO rank change
+      
+      // switch the user
+      userIdx = 1 - userIdx;
+    }
+    return result;
+  }
+
+  calculateNewElo(data: {winner: number, loser: number}): { winner: number, loser: number } {
+    let [winner, loser] = [data.winner, data.loser];
+    // Constants
+    const K = 32;
+
+    // Calculate expected results
+    const expectedWinner = 1 / (1 + Math.pow(10, (loser - winner) / 400));
+    const expectedLoser = 1 / (1 + Math.pow(10, (winner - loser) / 400));
+
+    // Update ratings
+    const newWinner = Math.round(winner + K * (1 - expectedWinner));
+    const newLoser = Math.round(loser + K * (0 - expectedLoser));
+
+    return { winner: newWinner, loser: newLoser };
   }
 }
