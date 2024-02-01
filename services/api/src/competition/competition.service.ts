@@ -3,7 +3,7 @@ import {AuthService} from '../auth/auth.service';
 import {TerminalDto} from './dtos/terminal.dto';
 import * as util from 'util';
 import {InjectRepository} from '@nestjs/typeorm';
-import {IsNull, Not, Repository} from 'typeorm';
+import {In, IsNull, Not, Repository} from 'typeorm';
 import {CompetitionGame, CompetitionSubmissionEntity} from './entities/competition.submission.entity';
 import {CompetitionRunEntity, CompetitionRunState,} from './entities/competition.run.entity';
 import {CompetitionMatchEntity, CompetitionWinner,} from './entities/competition.match.entity';
@@ -21,8 +21,10 @@ import {ChessMoveRequestDto} from "./dtos/chess-move-request.dto";
 import ExecuteCommand from '../common/execute-command';
 import {ChessMatchRequestDto} from "./dtos/chess-match-request.dto";
 
-import {Chess} from 'chess.js';
+import {Chess, Move} from 'chess.js';
 import {ChessGameResult, ChessGameResultReason, ChessMatchResultDto} from "./dtos/chess-match-result.dto";
+import {UserProfileService} from "../user/modules/user-profile/user-profile.service";
+import {FindManyOptions} from "typeorm/find-options/FindManyOptions";
 
 const execShPromise = require("exec-sh").promise;
 
@@ -107,6 +109,7 @@ export class CompetitionService {
   constructor(
     public authService: AuthService,
     public userService: UserService,
+    public userProfileService: UserProfileService,
     @InjectRepository(CompetitionSubmissionEntity)
     public submissionRepository: Repository<CompetitionSubmissionEntity>,
     @InjectRepository(CompetitionRunEntity)
@@ -639,6 +642,17 @@ export class CompetitionService {
   async RunChessMatch(ChessMatchRequestDto: ChessMatchRequestDto): Promise<ChessMatchResultDto> {
     let usernames = [ChessMatchRequestDto.player1username, ChessMatchRequestDto.player2username]
     
+    // find users to be able to get their elo
+    // todo: move elo to user profile
+    const users = await Promise.all(usernames.map(async (username) => {
+      return await this.userService.findOne({where: {username: username}});
+    }));
+    
+    // users should be found
+    for(let i = 0; i < users.length; i++) {
+      if(!users[i]) throw new UnprocessableEntityException('User ' + usernames[i] + ' not found');
+    }
+    
     // find the last submission from both players
     const submissions: CompetitionSubmissionEntity[] = await Promise.all(usernames.map(async (username) => {
       return await this.submissionRepository.findOne({
@@ -650,7 +664,6 @@ export class CompetitionService {
     // report error if any of the submissions is not found
     for(let i = 0; i < submissions.length; i++) 
       if(!submissions[i]) throw new UnprocessableEntityException('No submission found for player ' + (i+1));
-    
     
     // place both executables in their respective folders
     // path for the executable and folder
@@ -679,11 +692,16 @@ export class CompetitionService {
     let userIdx = 0;
     let result : ChessMatchResultDto = {
       players: usernames,
-      moves: [],
       winner: '',
       draw: false,
       result: ChessGameResult.NONE,
       reason: ChessGameResultReason.NONE,
+      cpuTime: [0, 0],
+      eloChange: [0, 0],
+      elo: [0, 0],
+      finalFen: board.fen(),
+      moves: [],
+      createdAt: new Date(),
     };
     
     // run the match while they are both reporting moves and accumulate all the moves into an array of strings
@@ -691,12 +709,15 @@ export class CompetitionService {
       let fen = board.fen();
       let move = await ExecuteCommand({command: executablePath[userIdx], stdin: fen, timeout: 10000});
       
+      result.cpuTime[userIdx] += move.duration / 1e9;
+      
       // if the exe breaks, the other player wins
       if(!move || move.stderr) {
         result.winner = usernames[1 - userIdx];
         result.result = ChessGameResult.GAME_OVER;
         result.reason = ChessGameResultReason.INVALID_MOVE;
         result.draw = false;
+        result.finalFen = board.fen();
         break;
       }
       
@@ -706,24 +727,20 @@ export class CompetitionService {
         result.result = ChessGameResult.GAME_OVER;
         result.reason = ChessGameResultReason.INVALID_MOVE;
         result.draw = false;
+        result.finalFen = board.fen();
         break;
       }
       
       // remove empty spaces
       move.stdout = move.stdout.replace(/\s/g, '');
       
-      // from is the first 2 chars of the stdout
-      let from = move.stdout.slice(0, 2);
-      // to is the next 2 chars of the stdout
-      let to = move.stdout.slice(2, 4);
-      // promotion is the next char of the stdout, use Q if not specified
-      let promotion = move.stdout.slice(4, 5) || 'q';
-      
       // check if the move is valid
-      let moveResult = board.move({from: from, to: to, promotion: promotion});
-
-      // add the move to the moves array
-      result.moves.push(moveResult.lan);
+      let moveResult: Move;
+      try {
+        moveResult = board.move(move.stdout);
+      } catch (e) {
+        moveResult = null;
+      }
       
       // if the move is invalid, the other player wins
       if(!moveResult) {
@@ -731,60 +748,130 @@ export class CompetitionService {
         result.result = ChessGameResult.GAME_OVER;
         result.reason = ChessGameResultReason.INVALID_MOVE;
         result.winner = usernames[1 - userIdx];
+        result.finalFen = board.fen();
         break;
+      }
+
+      // add the move to the moves array
+      result.moves.push(moveResult.lan);
+      
+      // isGameOver Returns true if the game has ended via checkmate, stalemate, draw, threefold repetition, or insufficient material. Otherwise, returns false.
+      
+      if(board.isGameOver()){
+        // checkmate
+        if(board.isCheckmate()) {
+          result.draw = false;
+          result.winner = usernames[1-userIdx];
+          result.reason = ChessGameResultReason.CHECKMATE;
+          result.result = ChessGameResult.GAME_OVER;
+          result.finalFen = board.fen();
+          break;
+        }
+
+        // stalemate
+        else if(board.isStalemate()) {
+          result.draw = true;
+          result.result = ChessGameResult.DRAW;
+          result.reason = ChessGameResultReason.STALEMATE;
+          result.finalFen = board.fen();
+          break;
+        }
+
+        // threefold repetition
+        else if(board.isThreefoldRepetition()) {
+          result.draw = true;
+          result.result = ChessGameResult.DRAW;
+          result.reason = ChessGameResultReason.THREEFOLD_REPETITION;
+          result.finalFen = board.fen();
+          break;
+        }
+
+        // insufficient material
+        else if(board.isInsufficientMaterial()) {
+          result.draw = true;
+          result.result = ChessGameResult.DRAW;
+          result.reason = ChessGameResultReason.INSUFFICIENT_MATERIAL;
+          result.finalFen = board.fen();
+          break;
+        }
+
+        // isdraw Returns true or false if the game is drawn (50-move rule or insufficient material).
+        // insufficient material is already checked so it will be 50-move rule  
+        else if(board.isDraw()) {
+          result.draw = true;
+          result.result = ChessGameResult.DRAW;
+          result.reason = ChessGameResultReason.FIFTY_MOVE_RULE;
+          result.finalFen = board.fen();
+          break;
+        }
+
+        else { // this should never happen
+          result.result = ChessGameResult.GAME_OVER;
+          result.reason = ChessGameResultReason.NONE;
+          result.draw = false;
+          result.winner = usernames[1 - userIdx];
+          result.finalFen = board.fen();
+          break;
+        }
       }
       
-      // insufficient material
-      if(board.isInsufficientMaterial()) {
+      // draw by 5000 moves
+      if(result.moves.length >= 5000) { // this should never happen. added for safety reasons
         result.draw = true;
         result.result = ChessGameResult.DRAW;
-        result.reason = ChessGameResultReason.INSUFFICIENT_MATERIAL;
+        result.reason = ChessGameResultReason.FIFTY_MOVE_RULE;
+        result.finalFen = board.fen();
         break;
       }
-      // threefold repetition
-      if(board.isThreefoldRepetition()) {
-        result.draw = true;
-        result.result = ChessGameResult.DRAW;
-        result.reason = ChessGameResultReason.THREEFOLD_REPETITION;
-        break;
-      }
-      // checkmate
-      if(board.isCheckmate()) {
-        result.draw = false;
-        result.winner = usernames[1-userIdx];
-        result.reason = ChessGameResultReason.CHECKMATE;
-        result.result = ChessGameResult.GAME_OVER;
-      }
-      // stalemate
-      if(board.isStalemate()) {
-        result.draw = true;
-        result.result = ChessGameResult.DRAW;
-        result.reason = ChessGameResultReason.STALEMATE;
-        break;
-      }
-      // draw by 1000 moves
-      if(result.moves.length >= 1000) {
-        result.draw = true;
-        result.result = ChessGameResult.DRAW;
-        result.reason = ChessGameResultReason.FIFTY_MOVE_RULE; // todo: fifty move rule properly
-        break;
-      }
-      // any other reason
-      if(board.isDraw()) {
-        result.draw = true;
-        result.result = ChessGameResult.DRAW;
-        result.reason = ChessGameResultReason.NONE;
-        break;
-      }
-     
-      // todo apply ELO rank change
       
       // switch the user
       userIdx = 1 - userIdx;
     }
+    
+    // update the elo of the users
+    // todo: @joel check this please!
+    if(result.winner) {
+      let winner = users[1 - userIdx];
+      let loser = users[userIdx];
+      let newElo = this.calculateNewElo({winner: winner.elo, loser: loser.elo});
+      // update the elo of the users
+      if(result.winner === usernames[0]) {
+        result.eloChange[0] = newElo.winner - winner.elo;
+        result.eloChange[1] = newElo.loser - loser.elo;
+        result.elo = [newElo.winner, newElo.loser];
+      }
+      else if(result.winner === usernames[1]) {
+        result.eloChange[1] = newElo.winner - winner.elo;
+        result.eloChange[0] = newElo.loser - loser.elo;
+        result.elo = [newElo.loser, newElo.winner];
+      }
+      await this.userService.updateOneTypeorm(winner.id, {elo: newElo.winner});
+      await this.userService.updateOneTypeorm(loser.id, {elo: newElo.loser});
+    }
+    
+    // create a matchentity and save it
+    let match = this.matchRepository.create();
+    match = {
+      ...match,
+      p1submission: submissions[0],
+      p2submission: submissions[1],
+      p1Points: result.eloChange[0], // todo: take time in consideration
+      p2Points: result.eloChange[1],
+      p1Turns: 0,
+      p2Turns: 0,
+      run: null,
+      winner: result.winner ? CompetitionWinner.Player1 : null, // todo: is it better to use a reference to the submission? the user? the username? or just use player1 and player2? or use boolen to store firstPlayerWon?
+      logs: JSON.stringify(result),
+      lastState: result.finalFen,
+    };
+    
+    // save the match
+    await this.matchRepository.save(match);
+    
     return result;
   }
 
+  // todo: @joel check this please!
   calculateNewElo(data: {winner: number, loser: number}): { winner: number, loser: number } {
     let [winner, loser] = [data.winner, data.loser];
     // Constants
@@ -795,9 +882,13 @@ export class CompetitionService {
     const expectedLoser = 1 / (1 + Math.pow(10, (winner - loser) / 400));
 
     // Update ratings
-    const newWinner = Math.round(winner + K * (1 - expectedWinner));
-    const newLoser = Math.round(loser + K * (0 - expectedLoser));
+    const newWinner = winner + K * (1 - expectedWinner);
+    const newLoser = loser + K * (0 - expectedLoser);
 
     return { winner: newWinner, loser: newLoser };
+  }
+  
+  async findMatchesByCriteria(criteria: FindManyOptions<CompetitionMatchEntity>): Promise<CompetitionMatchEntity[]> {
+    return await this.matchRepository.find(criteria);
   }
 }

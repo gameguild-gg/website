@@ -42,6 +42,9 @@ export class CompetitionMatchEntity extends EntityBase {
   @Column({ type: 'integer' })
   p2Turns: number;
 
-  @Column({ type: 'text' })
+  @Column({ type: 'text', nullable: true, default: null })
   logs: string;
+
+  @Column({ type: 'text', nullable: true, default: null })
+  lastState: string;
 }

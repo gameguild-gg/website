@@ -1,10 +1,11 @@
 import { TypeOrmCrudService } from '@dataui/crud-typeorm';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import {Repository, UpdateResult} from 'typeorm';
 import { CreateLocalUserDto } from './dtos';
 import { UserEntity } from './entities';
 import { UserAlreadyExistsException } from './exceptions/user-already-exists.exception';
+import {UserProfileEntity} from "./modules/user-profile/entities/user-profile.entity";
 
 @Injectable()
 export class UserService extends TypeOrmCrudService<UserEntity> {
@@ -15,6 +16,11 @@ export class UserService extends TypeOrmCrudService<UserEntity> {
     private readonly repository: Repository<UserEntity>,
   ) {
     super(repository);
+  }
+  
+  // update
+  async updateOneTypeorm(id: string, user: Partial<UserEntity>): Promise<UpdateResult>  {
+    return this.repository.update(id, user);
   }
 
   async isEmailTaken(email: string): Promise<boolean> {

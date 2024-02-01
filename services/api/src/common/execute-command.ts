@@ -55,7 +55,7 @@ async function ExecuteCommand(data: ExecuteCommandOptions): Promise<ExecuteComma
       if (code === 0) {
         resolve({ stdout: stdoutData, stderr: stderrData, duration: durationInNano });
       } else {
-        reject(new Error(`Command failed with code ${code}\n${stderrData}`));
+        reject(new Error(`Command failed with code ${code}:\n"${stderrData}"\noutput:\n"${stdoutData}"\nstdin:\n"${stdin}"\n`));
       }
     });
 

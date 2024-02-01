@@ -29,4 +29,14 @@ export class ChessMatchResultDto {
   result: ChessGameResult;
   @ApiProperty({ enum: ChessGameResultReason })
   reason: ChessGameResultReason;
+  @ApiProperty({type: 'array', items: {type: 'number'}})
+  cpuTime: number[];
+  @ApiProperty()
+  finalFen: string;
+  @ApiProperty({type: 'array', items: {type: 'number'}})
+  eloChange: number[];
+  @ApiProperty({type: 'array', items: {type: 'number'}})
+  elo: number[];
+  @ApiProperty()
+  createdAt: Date;
 }

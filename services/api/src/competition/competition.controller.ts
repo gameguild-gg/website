@@ -1,10 +1,10 @@
 import {
   Body,
   Controller,
-  Get,
+  Get, Param, ParseIntPipe,
   PayloadTooLargeException,
   Post,
-  UnauthorizedException, UnsupportedMediaTypeException,
+  UnauthorizedException, UnprocessableEntityException, UnsupportedMediaTypeException,
   UploadedFile,
   UseInterceptors
 } from "@nestjs/common";
@@ -19,6 +19,7 @@ import {Public} from "../auth";
 import {ChessMoveRequestDto} from "./dtos/chess-move-request.dto";
 import {ChessMatchRequestDto} from "./dtos/chess-match-request.dto";
 import {ChessMatchResultDto} from "./dtos/chess-match-result.dto";
+import {CompetitionMatchEntity} from "./entities/competition.match.entity";
 
 @Controller('Competitions')
 @ApiTags('competitions')
@@ -118,5 +119,15 @@ export class CompetitionController {
   @Public()
   async RunChessMatch(@Body() data: ChessMatchRequestDto): Promise<ChessMatchResultDto> {
     return this.service.RunChessMatch(data);
+  }
+  
+  @Get('/Chess/FindMatch/user/:username/take/:take/skip/:skip')
+  @Public()
+  async FindChessMatchResult(@Param('username') username: string, @Param('take', ParseIntPipe) take: number, @Param('skip', ParseIntPipe) skip: number): Promise<ChessMatchResultDto[]> {
+    if(take > 100)
+      throw new UnprocessableEntityException('You can only take 100 matches at a time');
+    let result = await this.service.findMatchesByCriteria({where: [{p1submission: {user:{username}}}, {p2submission: {user:{username}}}], take: take, skip: skip});
+    
+    return result.map(r => JSON.parse(r.logs));
   }
 }
