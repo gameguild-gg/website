@@ -2,8 +2,8 @@ import { Entity, ManyToOne, Column, OneToMany } from 'typeorm';
 import { CompetitionMatchEntity } from './competition.match.entity';
 
 import { CompetitionRunSubmissionReportEntity } from './competition.run.submission.report.entity';
-import {EntityBase} from "../../common/entities/entity.base";
-import {UserEntity} from "../../user/entities";
+import { EntityBase } from '../../common/entities/entity.base';
+import { UserEntity } from '../../user/entities';
 
 export enum CompetitionGame {
   CatchTheCat = 'CatchTheCat',
@@ -23,7 +23,7 @@ export class CompetitionSubmissionEntity extends EntityBase {
   // executable file staticly compiled without any dependencies
   @Column({ type: 'bytea', nullable: true, default: null })
   executable: Uint8Array;
-  
+
   @Column({ type: 'enum', enum: CompetitionGame, nullable: false })
   gameType: CompetitionGame;
 

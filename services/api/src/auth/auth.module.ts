@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
-import { CommonModule } from "../common/common.module";
-import { ApiConfigService } from "../common/config.service";
+import { CommonModule } from '../common/common.module';
+import { ApiConfigService } from '../common/config.service';
 import { NotificationModule } from '../notification/notification.module';
 import { UserModule } from '../user/user.module';
 import { AuthController } from './auth.controller';
@@ -24,7 +24,7 @@ import { JwtAccessTokenStrategy, LocalStrategy } from './strategies';
             expiresIn: configService.authConfig.accessTokenExpiresIn,
           },
         };
-      }
+      },
     }),
     PassportModule.register({ defaultStrategy: 'jwt-access-token' }),
     NotificationModule,

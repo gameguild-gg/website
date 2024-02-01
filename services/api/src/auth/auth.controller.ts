@@ -1,10 +1,19 @@
-import { Body, Controller, Get, Logger, Post, Query, Request, UseGuards, } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Logger,
+  Post,
+  Query,
+  Request,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiBody, ApiTags } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { Public } from './decorators';
 import { LocalSignInDto, LocalSignUpDto } from './dtos';
 import { LocalGuard } from './guards';
-import { JwtRefreshTokenGuard } from "./guards/jwt-refresh-token-guard.service";
+import { JwtRefreshTokenGuard } from './guards/jwt-refresh-token-guard.service';
 import { RequestWithUser } from './types';
 
 @Controller('auth')

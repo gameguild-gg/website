@@ -4,7 +4,8 @@ import {
   IsEmail,
   IsNotEmpty,
   IsString,
-  IsStrongPassword, MaxLength,
+  IsStrongPassword,
+  MaxLength,
 } from 'class-validator';
 
 export class LocalSignInDto {
@@ -40,14 +41,15 @@ export class LocalSignInDto {
   readonly password: string;
 
   @ApiProperty()
-  @IsString({ message: 'error.invalidUsername: Username must be a string.'})
-  @IsNotEmpty({ message: 'error.invalidUsername: Username must not be empty.'})
-  @MaxLength(32, { message: 'error.invalidUsername: Username must be shorter than or equal to 32 characters.'})
-  @IsAlphanumeric(
-    'en-US',
-    {
-      message: 'error.invalidUsername: Username must be alphanumeric without any special characters.'
-    }
-  )
+  @IsString({ message: 'error.invalidUsername: Username must be a string.' })
+  @IsNotEmpty({ message: 'error.invalidUsername: Username must not be empty.' })
+  @MaxLength(32, {
+    message:
+      'error.invalidUsername: Username must be shorter than or equal to 32 characters.',
+  })
+  @IsAlphanumeric('en-US', {
+    message:
+      'error.invalidUsername: Username must be alphanumeric without any special characters.',
+  })
   readonly username: string;
 }

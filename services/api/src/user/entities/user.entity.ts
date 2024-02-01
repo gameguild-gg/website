@@ -1,10 +1,16 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Exclude } from 'class-transformer';
-import {Column, Entity, Index, JoinColumn, OneToMany, OneToOne} from 'typeorm';
+import {
+  Column,
+  Entity,
+  Index,
+  JoinColumn,
+  OneToMany,
+  OneToOne,
+} from 'typeorm';
 import { EntityBase } from '../../common/entities/entity.base';
 import { UserProfileEntity } from '../modules/user-profile/entities/user-profile.entity';
-import {CompetitionSubmissionEntity} from "../../competition/entities/competition.submission.entity";
-
+import { CompetitionSubmissionEntity } from '../../competition/entities/competition.submission.entity';
 
 // todo: move to user-profile lots of fields from here
 
@@ -73,10 +79,14 @@ export class UserEntity extends EntityBase {
   walletAddress: string;
 
   // Profile
-  @OneToOne(() => UserProfileEntity, (profile) => profile.user, { cascade: true, onDelete: 'CASCADE', onUpdate: 'CASCADE' })
+  @OneToOne(() => UserProfileEntity, (profile) => profile.user, {
+    cascade: true,
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
+  })
   @JoinColumn()
   profile: UserProfileEntity;
-  
+
   @OneToMany(() => CompetitionSubmissionEntity, (s) => s.user)
   competitionSubmissions: CompetitionSubmissionEntity[];
 

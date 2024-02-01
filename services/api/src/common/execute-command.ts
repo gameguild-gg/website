@@ -13,7 +13,9 @@ class ExecuteCommandResult {
   duration?: number; // nanoseconds
 }
 
-async function ExecuteCommand(data: ExecuteCommandOptions): Promise<ExecuteCommandResult> {
+async function ExecuteCommand(
+  data: ExecuteCommandOptions,
+): Promise<ExecuteCommandResult> {
   const { timeout, logoutput, command, stdin } = data;
   const startTime = process.hrtime();
 
@@ -53,9 +55,17 @@ async function ExecuteCommand(data: ExecuteCommandOptions): Promise<ExecuteComma
       const durationInNano = endTime[0] * 1e9 + endTime[1];
 
       if (code === 0) {
-        resolve({ stdout: stdoutData, stderr: stderrData, duration: durationInNano });
+        resolve({
+          stdout: stdoutData,
+          stderr: stderrData,
+          duration: durationInNano,
+        });
       } else {
-        reject(new Error(`Command failed with code ${code}:\n"${stderrData}"\noutput:\n"${stdoutData}"\nstdin:\n"${stdin}"\n`));
+        reject(
+          new Error(
+            `Command failed with code ${code}:\n"${stderrData}"\noutput:\n"${stdoutData}"\nstdin:\n"${stdin}"\n`,
+          ),
+        );
       }
     });
 

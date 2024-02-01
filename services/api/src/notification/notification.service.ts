@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { MailService } from "./modules/mail/mail.service";
-import { PhoneService } from "./modules/phone/phone.service";
+import { MailService } from './modules/mail/mail.service';
+import { PhoneService } from './modules/phone/phone.service';
 
 @Injectable()
 export class NotificationService {
@@ -8,16 +8,26 @@ export class NotificationService {
 
   constructor(
     private readonly mailService: MailService,
-    private readonly phoneService: PhoneService
+    private readonly phoneService: PhoneService,
   ) {}
 
   public async sendLocalNotification() {
     // TODO: Implement this method.
   }
 
-  public async sendEmailNotification(email: string, subject: string, message: string) {
+  public async sendEmailNotification(
+    email: string,
+    subject: string,
+    message: string,
+  ) {
     // TODO: Implement this method.
-    await this.mailService.send({to: email, from: undefined, subject: subject, text: message, html: message});
+    await this.mailService.send({
+      to: email,
+      from: undefined,
+      subject: subject,
+      text: message,
+      html: message,
+    });
   }
 
   public async sendPhoneNotification() {

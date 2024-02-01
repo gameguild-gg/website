@@ -4,7 +4,7 @@ import { Column, Entity, ManyToOne, OneToMany } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { CompetitionRunEntity } from './competition.run.entity';
 import { CompetitionSubmissionEntity } from './competition.submission.entity';
-import {EntityBase} from "../../common/entities/entity.base";
+import { EntityBase } from '../../common/entities/entity.base';
 
 @Entity()
 export class CompetitionRunSubmissionReportEntity extends EntityBase {

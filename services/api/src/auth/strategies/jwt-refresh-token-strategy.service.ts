@@ -1,11 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
-import { ApiConfigService } from "../../common/config.service";
+import { ApiConfigService } from '../../common/config.service';
 import { AccessTokenPayloadDto } from '../dtos';
 
 @Injectable()
-export class JwtRefreshTokenStrategy extends PassportStrategy(Strategy, 'jwt-refresh-token') {
+export class JwtRefreshTokenStrategy extends PassportStrategy(
+  Strategy,
+  'jwt-refresh-token',
+) {
   constructor(configService: ApiConfigService) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),

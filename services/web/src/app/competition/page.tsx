@@ -5,7 +5,8 @@ import {
   PieChartOutlined,
   OrderedListOutlined,
   FileAddOutlined,
-  PlayCircleOutlined
+  PlayCircleOutlined,
+  HistoryOutlined
 } from '@ant-design/icons';
 import type { MenuProps } from 'antd';
 import { Layout, Menu, theme } from 'antd';
@@ -15,6 +16,7 @@ import PlayGame from "@/app/competition/PlayGame";
 import Summary from "@/app/competition/Summary";
 import RePlayGame from "@/app/competition/RePlayGame";
 import { CookiesProvider, useCookies } from "react-cookie";
+import MatchesListUI from "@/app/competition/Matches";
 
 
 const { Header, Content, Footer, Sider } = Layout;
@@ -39,6 +41,7 @@ enum MenuKeys {
   Summary = 'Summary',
   Leaderboard = 'Leaderboard',
   Submit = 'Submit',
+  Matches = 'Matches',
   Play = 'Play',
   Replay = 'Replay',
 }
@@ -53,6 +56,7 @@ const items: MenuItemProps[] = [
   {key: MenuKeys.Summary,  icon: <PieChartOutlined />, content: <Summary /> },
   {key: MenuKeys.Leaderboard, icon: <OrderedListOutlined />, content: <Leaderboard />},
   {key: MenuKeys.Submit, icon: <FileAddOutlined />, content: <SubmitBot />},
+  {key: MenuKeys.Matches, icon: <HistoryOutlined />, content: <MatchesListUI />},
   {key: MenuKeys.Play, icon: <PlayCircleOutlined />, content: <PlayGame />},
   {key: MenuKeys.Replay, icon: <PlayCircleOutlined />, content: <RePlayGame />},
 ];

@@ -1,11 +1,11 @@
 import { TypeOrmCrudService } from '@dataui/crud-typeorm';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import {Repository, UpdateResult} from 'typeorm';
+import { Repository, UpdateResult } from 'typeorm';
 import { CreateLocalUserDto } from './dtos';
 import { UserEntity } from './entities';
 import { UserAlreadyExistsException } from './exceptions/user-already-exists.exception';
-import {UserProfileEntity} from "./modules/user-profile/entities/user-profile.entity";
+import { UserProfileEntity } from './modules/user-profile/entities/user-profile.entity';
 
 @Injectable()
 export class UserService extends TypeOrmCrudService<UserEntity> {
@@ -17,9 +17,12 @@ export class UserService extends TypeOrmCrudService<UserEntity> {
   ) {
     super(repository);
   }
-  
+
   // update
-  async updateOneTypeorm(id: string, user: Partial<UserEntity>): Promise<UpdateResult>  {
+  async updateOneTypeorm(
+    id: string,
+    user: Partial<UserEntity>,
+  ): Promise<UpdateResult> {
     return this.repository.update(id, user);
   }
 
@@ -36,13 +39,13 @@ export class UserService extends TypeOrmCrudService<UserEntity> {
   ): Promise<UserEntity> {
     if (await this.isEmailTaken(data.email)) {
       throw new UserAlreadyExistsException(
-        `The email '${ data.email }' is already associated with an existing user.`,
+        `The email '${data.email}' is already associated with an existing user.`,
       );
     }
 
     if (data.username && (await this.isUsernameTaken(data.username))) {
       throw new UserAlreadyExistsException(
-        `The username '${ data.username }' is already associated with an existing user.`,
+        `The username '${data.username}' is already associated with an existing user.`,
       );
     }
 

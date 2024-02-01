@@ -71,13 +71,20 @@ export class ApiConfigService {
       refreshTokenPublicKey: this.getString('REFRESH_TOKEN_PUBLIC_KEY'),
       refreshTokenAlgorithm: this.getString('REFRESH_TOKEN_ALGORITHM'),
       refreshTokenExpiresIn: this.getString('REFRESH_TOKEN_EXPIRATION_TIME'),
-      emailVerificationTokenPrivateKey: this.getString('EMAIL_VERIFICATION_TOKEN_PRIVATE_KEY',),
-      emailVerificationTokenPublicKey: this.getString('EMAIL_VERIFICATION_TOKEN_PUBLIC_KEY',),
-      emailVerificationTokenAlgorithm: this.getString('EMAIL_VERIFICATION_TOKEN_ALGORITHM',),
-      emailVerificationTokenExpiresIn: this.getString('EMAIL_VERIFICATION_TOKEN_EXPIRATION_TIME',),
+      emailVerificationTokenPrivateKey: this.getString(
+        'EMAIL_VERIFICATION_TOKEN_PRIVATE_KEY',
+      ),
+      emailVerificationTokenPublicKey: this.getString(
+        'EMAIL_VERIFICATION_TOKEN_PUBLIC_KEY',
+      ),
+      emailVerificationTokenAlgorithm: this.getString(
+        'EMAIL_VERIFICATION_TOKEN_ALGORITHM',
+      ),
+      emailVerificationTokenExpiresIn: this.getString(
+        'EMAIL_VERIFICATION_TOKEN_EXPIRATION_TIME',
+      ),
       emailVerificationUrl: this.getString('EMAIL_VERIFICATION_URL'),
     };
-
   }
 
   get appConfig() {

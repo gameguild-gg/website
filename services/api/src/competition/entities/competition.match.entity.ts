@@ -1,7 +1,7 @@
 import { Column, Entity, ManyToOne, OneToMany } from 'typeorm';
 import { CompetitionRunEntity } from './competition.run.entity';
 import { CompetitionSubmissionEntity } from './competition.submission.entity';
-import {EntityBase} from "../../common/entities/entity.base";
+import { EntityBase } from '../../common/entities/entity.base';
 
 export enum CompetitionWinner {
   Player1 = 'Player1',

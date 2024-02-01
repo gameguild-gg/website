@@ -1,8 +1,7 @@
-
 import { Column, Entity, OneToMany } from 'typeorm';
 import { CompetitionMatchEntity } from './competition.match.entity';
 import { CompetitionRunSubmissionReportEntity } from './competition.run.submission.report.entity';
-import {EntityBase} from "../../common/entities/entity.base";
+import { EntityBase } from '../../common/entities/entity.base';
 
 export enum CompetitionRunState {
   NOT_STARTED = 'NOT_STARTED',

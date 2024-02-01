@@ -13,7 +13,7 @@ import { EventModule } from './event/event.module';
 import { NotificationModule } from './notification/notification.module';
 import { ProposalModule } from './proposal/proposal.module';
 import { UserModule } from './user/user.module';
-import {CompetitionModule} from "./competition/competition.module";
+import { CompetitionModule } from './competition/competition.module';
 
 @Module({
   imports: [
@@ -31,7 +31,7 @@ import {CompetitionModule} from "./competition/competition.module";
     CourseModule,
     ProposalModule,
     EventModule,
-    CompetitionModule
+    CompetitionModule,
   ],
   controllers: [AppController],
   providers: [
