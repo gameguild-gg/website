@@ -2,16 +2,15 @@ import {
   Body,
   Controller,
   Get,
-  Param,
-  ParseIntPipe,
+  Param, ParseUUIDPipe,
   PayloadTooLargeException,
   Post,
   UnauthorizedException,
   UnprocessableEntityException,
   UnsupportedMediaTypeException,
   UploadedFile,
-  UseInterceptors,
-} from '@nestjs/common';
+  UseInterceptors
+} from "@nestjs/common";
 import { ApiConsumes, ApiTags } from '@nestjs/swagger';
 import { CompetitionService } from './competition.service';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -130,7 +129,7 @@ export class CompetitionController {
   ): Promise<ChessMatchResultDto> {
     return this.service.RunChessMatch(data);
   }
-  
+
   @Post('/Chess/FindMatches')
   @Public()
   async FindChessMatchResult(
@@ -141,7 +140,7 @@ export class CompetitionController {
         'You can only take 100 matches at a time',
       );
 
-    const result = await this.service.findMatchesByCriteria({
+    const ret = await this.service.findMatchesByCriteria({
       where: [
         {
           p1submission: {
@@ -158,12 +157,32 @@ export class CompetitionController {
           },
         },
       ],
+      order: {
+        createdAt: 'DESC',
+      },
       take: data.pageSize,
       skip: data.pageId * data.pageSize,
-      select: ['id', 'winner', 'lastState', 'run', "createdAt"],
+      relations: {
+        p1submission: { user: true },
+        p2submission: { user: true },
+      },
+      select: {
+        id: true,
+        winner: true,
+        lastState: true,
+        createdAt: true,
+        p1submission: { id: true, user: { username: true } },
+        p2submission: { id: true, user: { username: true } },
+      },
     });
+    return ret;
+  }
 
-    return result;
-    // return result.map((r) => JSON.parse(r.logs));
+  @Get('/Chess/Match/:id')
+  @Public()
+  async GetChessMatchResult(
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<ChessMatchResultDto> {
+    return JSON.parse((await this.service.findMatchById(id)).logs);
   }
 }

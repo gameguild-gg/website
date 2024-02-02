@@ -789,17 +789,7 @@ export class CompetitionService {
       result.cpuTime[userIdx] += move.duration / 1e9;
 
       // if the exe breaks, the other player wins
-      if (!move || move.stderr) {
-        result.winner = usernames[1 - userIdx];
-        result.result = ChessGameResult.GAME_OVER;
-        result.reason = ChessGameResultReason.INVALID_MOVE;
-        result.draw = false;
-        result.finalFen = board.fen();
-        break;
-      }
-
-      // if the stdout is empty, something went wrong
-      if (!move.stdout) {
+      if (!move || !move.stdout || move.stderr) {
         result.winner = usernames[1 - userIdx];
         result.result = ChessGameResult.GAME_OVER;
         result.reason = ChessGameResultReason.INVALID_MOVE;
@@ -976,5 +966,9 @@ export class CompetitionService {
     criteria: FindManyOptions<CompetitionMatchEntity>,
   ): Promise<CompetitionMatchEntity[]> {
     return await this.matchRepository.find(criteria);
+  }
+
+  async findMatchById(id: string): Promise<CompetitionMatchEntity> {
+    return await this.matchRepository.findOne({ where: { id } });
   }
 }
