@@ -2,16 +2,23 @@ import {
   Body,
   Controller,
   Get,
-  Param, ParseUUIDPipe,
+  Param,
+  ParseUUIDPipe,
   PayloadTooLargeException,
   Post,
   UnauthorizedException,
   UnprocessableEntityException,
   UnsupportedMediaTypeException,
   UploadedFile,
-  UseInterceptors
-} from "@nestjs/common";
-import { ApiConsumes, ApiTags } from '@nestjs/swagger';
+  UseInterceptors,
+} from '@nestjs/common';
+import {
+  ApiConsumes,
+  ApiOkResponse,
+  ApiProduces,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { CompetitionService } from './competition.service';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { TerminalDto } from './dtos/terminal.dto';
@@ -24,6 +31,7 @@ import { ChessMatchRequestDto } from './dtos/chess-match-request.dto';
 import { ChessMatchResultDto } from './dtos/chess-match-result.dto';
 import { CompetitionMatchEntity } from './entities/competition.match.entity';
 import { MatchSearchRequestDto } from './dtos/match-search-request.dto';
+import { MatchSearchResponseDto } from './dtos/match-search-response.dto';
 
 @Controller('Competitions')
 @ApiTags('competitions')
@@ -132,9 +140,14 @@ export class CompetitionController {
 
   @Post('/Chess/FindMatches')
   @Public()
+  @ApiOkResponse({
+    type: MatchSearchResponseDto,
+    isArray: true,
+  })
   async FindChessMatchResult(
     @Body() data: MatchSearchRequestDto,
-  ): Promise<CompetitionMatchEntity[]> {
+  ): Promise<MatchSearchResponseDto[]> {
+    // todo: return the result state and reason for the match ending.
     if (data.pageSize > 100)
       throw new UnprocessableEntityException(
         'You can only take 100 matches at a time',
@@ -175,7 +188,24 @@ export class CompetitionController {
         p2submission: { id: true, user: { username: true } },
       },
     });
-    return ret;
+
+    // convert array of CompetitionMatchEntity to MatchSearchResponseDto
+    const converted: MatchSearchResponseDto[] = ret.map(
+      (match: CompetitionMatchEntity) => {
+        const convertedMatch: MatchSearchResponseDto =
+          new MatchSearchResponseDto();
+        convertedMatch.id = match.id;
+        convertedMatch.winner = match.winner;
+        convertedMatch.lastState = match.lastState;
+        convertedMatch.players = [
+          match.p1submission.user.username,
+          match.p2submission.user.username,
+        ];
+        return convertedMatch;
+      },
+    );
+
+    return converted;
   }
 
   @Get('/Chess/Match/:id')
