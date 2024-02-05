@@ -6,6 +6,7 @@
   "private": false,
   "license": "UNLICENSED",
   "scripts": {
+    "install:deps:ubuntu": "apt update ; apt install -y build-essential cmake git ; npm install",
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
