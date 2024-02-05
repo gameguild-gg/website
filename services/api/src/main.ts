@@ -6,7 +6,13 @@ import { ApiConfigService } from './common/config.service';
 import { setupSwagger } from './setup-swagger';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, { cors: false });
+  const app = await NestFactory.create(AppModule, { cors: true });
+  app.enableCors({
+    origin: ['http://localhost:3000', "https://web.gameguild.gg"],
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    preflightContinue: false,
+    optionsSuccessStatus: 204,
+  })
   const logger = new Logger();
 
   const configService = app.select(CommonModule).get(ApiConfigService);
