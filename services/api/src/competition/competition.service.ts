@@ -38,6 +38,7 @@ import {
 } from './dtos/chess-match-result.dto';
 import { UserProfileService } from '../user/modules/user-profile/user-profile.service';
 import { FindManyOptions } from 'typeorm/find-options/FindManyOptions';
+import { ChessLeaderboardResponseDto } from "./dtos/chess-leaderboard-response.dto";
 
 const execShPromise = require('exec-sh').promise;
 
@@ -970,5 +971,20 @@ export class CompetitionService {
 
   async findMatchById(id: string): Promise<CompetitionMatchEntity> {
     return await this.matchRepository.findOne({ where: { id } });
+  }
+
+  async getLeaderboard(): Promise<ChessLeaderboardResponseDto> {
+    const users = await this.userService.find({ 
+      select: {
+        username: true,
+        elo: true
+      },
+      order: {
+        elo: "DESC"
+      },
+      take: 3,
+    });
+    
+    return users;
   }
 }

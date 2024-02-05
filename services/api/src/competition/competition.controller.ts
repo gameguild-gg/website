@@ -32,6 +32,7 @@ import { ChessMatchResultDto } from './dtos/chess-match-result.dto';
 import { CompetitionMatchEntity } from './entities/competition.match.entity';
 import { MatchSearchRequestDto } from './dtos/match-search-request.dto';
 import { MatchSearchResponseDto } from './dtos/match-search-response.dto';
+import { ChessLeaderboardResponseDto, ChessLeaderboardResponseEntryDto } from "./dtos/chess-leaderboard-response.dto";
 
 @Controller('Competitions')
 @ApiTags('competitions')
@@ -214,5 +215,15 @@ export class CompetitionController {
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<ChessMatchResultDto> {
     return JSON.parse((await this.service.findMatchById(id)).logs);
+  }
+  
+  @Get('/Chess/Leaderboard')
+  @Public()
+  @ApiOkResponse({
+    type: ChessLeaderboardResponseEntryDto,
+    isArray: true,
+  })
+  async GetChessLeaderboard(): Promise<ChessLeaderboardResponseEntryDto[]> {
+    return this.service.getLeaderboard();
   }
 }
