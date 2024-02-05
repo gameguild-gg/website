@@ -11,6 +11,8 @@
   ],
   "scripts": {
     "install:api": "npm install --workspace=services/api",
+    "install:api:deps:ubuntu": "npm install:deps:ubuntu --workspace=services/api",
+    "postinstall:api:deps:ubuntu": "npm run install:api",
     "install:web": "npm install --workspace=services/web",
     "clean": "rimraf \"**/node_modules\"",
     "prepare_": "husky install",
