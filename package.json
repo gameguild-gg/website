@@ -10,8 +10,10 @@
     "services/*"
   ],
   "scripts": {
+    "install:api": "npm install --workspace=services/api",
+    "install:web": "npm install --workspace=services/web",
     "clean": "rimraf \"**/node_modules\"",
-    "prepare": "husky install",
+    "prepare_": "husky install",
     "format": "npm run format --workspaces --if-present",
     "format:api": "npm run format --workspace=services/api",
     "format:web": "npm run format --workspace=services/web",
