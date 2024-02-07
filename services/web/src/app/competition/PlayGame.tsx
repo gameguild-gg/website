@@ -5,17 +5,33 @@ import {Chess, Move} from 'chess.js'
 import { DownOutlined, UserOutlined } from '@ant-design/icons';
 import {Flex, MenuProps} from 'antd';
 import { Button, Dropdown, message, Space, Tooltip } from 'antd';
-import {ChessboardProps} from "react-chessboard/dist/chessboard/types";
 
 
 const PlayGame: React.FC = () => {
+  const [agentList, setAgentList] = useState<string[]>(["human"]);
+  
   // dropdown menu for the agents
   const [selectedAgentWhite, setSelectedAgentWhite] = useState<string>('human');
   const [selectedAgentBlack, setSelectedAgentBlack] = useState<string>('human');
   const [game, setGame] = useState(new Chess());
   const [fen, setFen] = useState(game.fen());
   
+  const getAgentList = async () => {
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+    const response = await fetch(baseUrl + "/Competitions/Chess/ListAgents");
+    let data = await response.json() as string[];
+    
+    // add human to the front of the list
+    data.unshift("human");
+    setAgentList(data);
+    console.log(data);
+  }
+  
+  
   useEffect(() => {
+    if(agentList.length <= 1)
+      getAgentList();
+    
     if(selectedAgentWhite != 'human' && selectedAgentBlack != 'human'){
       makeRandomMove();
     }
@@ -92,40 +108,7 @@ const PlayGame: React.FC = () => {
     if(agent != 'human' && game.turn() === 'b')
       makeRandomMove();
   };
-
-  // todo: build this menu dynamically from the api response
-  const items: MenuProps['items'] = [
-    {
-      label: 'Human',
-      key: 'human',
-      icon: <UserOutlined />,
-    },
-    {
-      label: '2nd agent',
-      key: '2',
-      icon: <UserOutlined />,
-    },
-    {
-      label: '3rd agent',
-      key: '3',
-      icon: <UserOutlined />,
-    },
-    {
-      label: '4rd agent',
-      key: '4',
-      icon: <UserOutlined />,
-    },
-  ];
-
-  const menuPropsWhite = {
-    items,
-    onClick: handleMenuClickWhite,
-  };
-  const menuPropsBlack = {
-    items,
-    onClick: handleMenuClickBlack,
-  };
-
+  
   // todo: list all agents
   // todo: allow user to select agent as opponent
   // todo: allow user to select the color
@@ -136,11 +119,33 @@ const PlayGame: React.FC = () => {
     <Flex gap="middle" vertical={false}>
       <div key="1">
         <p>Select the agent</p>
-        <Dropdown.Button type='default' menu={menuPropsWhite} placement="topLeft" arrow
+        <Dropdown.Button type='default' menu={
+          {
+            items: agentList.map((agent) => {
+              return {
+                key: agent,
+                label: agent,
+                icon: <UserOutlined/>
+              }
+            }),
+            onClick: handleMenuClickWhite
+          }
+        } placement="topLeft" arrow
                          style={{borderColor: "black", color: "black"}}>
           {selectedAgentWhite ? selectedAgentWhite : 'White'}
         </Dropdown.Button>
-        <Dropdown.Button type='default' menu={menuPropsBlack} placement="topLeft" arrow
+        <Dropdown.Button type='default' menu={
+          {
+            items: agentList.map((agent) => {
+              return {
+                key: agent,
+                label: agent,
+                icon: <UserOutlined/>
+              }
+            }),
+            onClick: handleMenuClickBlack
+          }
+        } placement="topLeft" arrow
                          style={{borderColor: "red", color: "red"}}>
           {selectedAgentBlack ? selectedAgentBlack : 'Black'}
         </Dropdown.Button>

@@ -9,12 +9,10 @@ import { MatchSearchResponseDto } from "@/dtos/competition/match-search-response
 // ALLOW USER TO FILTER MATCHES BY DATE, BY PLAYER, BY TOURNAMENT
 // IF THE USER CLICKS ON A MATCH, IT WILL REDIRECT TO THE REPLAY PAGE WITH THE CORRECT PARAMETERS TO RENDER
 const MatchesListUI: React.FC = () => {
-  // todo: properly type the matchesData using the dto from the backend
   const [matchesData, setMatchesData] = React.useState<MatchSearchResponseDto[]>([]);
   
   const getMatchesData = async () => {
     const baseUrl = process.env.NEXT_PUBLIC_API_URL;
-    // todo: use the dto from the backend
     const response = await fetch(baseUrl + "/Competitions/Chess/FindMatches", {
       method: 'POST',
       headers: {
