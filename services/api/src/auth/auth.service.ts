@@ -9,7 +9,8 @@ import {
 import { NotificationService } from '../notification/notification.service';
 import { UserEntity } from '../user/entities';
 import { UserService } from '../user/user.service';
-import { LocalSignInDto, LocalSignUpDto } from './dtos';
+import { LocalSignUpDto } from "../dtos/auth/local-sign-up.dto";
+import { LocalSignInDto } from "../dtos/auth/local-sign-in.dto";
 
 @Injectable()
 export class AuthService {

@@ -2,13 +2,15 @@ import React, { useEffect } from "react";
 import { Chessboard } from 'react-chessboard';
 import { Chess } from 'chess.js';
 import { Col, Row } from "antd";
+import { MatchSearchRequestDto } from "@/dtos/competition/match-search-request.dto";
+import { MatchSearchResponseDto } from "@/dtos/competition/match-search-response.dto";
 
 // LEST MATCHES
 // ALLOW USER TO FILTER MATCHES BY DATE, BY PLAYER, BY TOURNAMENT
 // IF THE USER CLICKS ON A MATCH, IT WILL REDIRECT TO THE REPLAY PAGE WITH THE CORRECT PARAMETERS TO RENDER
 const MatchesListUI: React.FC = () => {
   // todo: properly type the matchesData using the dto from the backend
-  const [matchesData, setMatchesData] = React.useState([]);
+  const [matchesData, setMatchesData] = React.useState<MatchSearchResponseDto[]>([]);
   
   const getMatchesData = async () => {
     const baseUrl = process.env.NEXT_PUBLIC_API_URL;
@@ -21,9 +23,9 @@ const MatchesListUI: React.FC = () => {
       body: JSON.stringify({
         pageSize: 100,
         pageId: 0
-      })
+      } as MatchSearchRequestDto)
     });
-    let data = await response.json();
+    let data = await response.json() as MatchSearchResponseDto[];
     console.log(data);
     setMatchesData(data);
   }
@@ -48,7 +50,7 @@ const MatchesListUI: React.FC = () => {
             </tr>
           </thead>
           <tbody>
-            {matchesData.map((entry: any, index: number) => {
+            {matchesData.map((entry: MatchSearchResponseDto, index: number) => {
               return (
                 <tr key={index}>
                   <td>{entry.id}</td>

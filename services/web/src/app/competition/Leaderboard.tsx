@@ -1,15 +1,16 @@
 import React, { useEffect } from "react";
 import { message } from "antd";
+import { ChessLeaderboardResponseEntryDto } from "@/dtos/competition/chess-leaderboard-response.dto";
 
 const Leaderboard: React.FC = () => {
-  const [leaderboardData, setLeaderboardData] = React.useState([]);
+  const [leaderboardData, setLeaderboardData] = React.useState<ChessLeaderboardResponseEntryDto[]>([]);
   
   const getLeaderboardData = async () => {
     // todo: use env var properly
     // todo: process.env.REACT_APP_API_URL is undefined here and I dont know how to fix it
     const baseUrl = process.env.NEXT_PUBLIC_API_URL;
     const response = await fetch(baseUrl + "/Competitions/Chess/Leaderboard");
-    let data = await response.json();
+    let data = await response.json() as ChessLeaderboardResponseEntryDto[];
     console.log(data);
     setLeaderboardData(data);
   }

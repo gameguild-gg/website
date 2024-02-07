@@ -21,18 +21,18 @@ import {
 } from '@nestjs/swagger';
 import { CompetitionService } from './competition.service';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { TerminalDto } from './dtos/terminal.dto';
-
-import { CompetitionSubmissionDto } from './dtos/competition.submission.dto';
 import { CompetitionGame } from './entities/competition.submission.entity';
 import { Public } from '../auth';
-import { ChessMoveRequestDto } from './dtos/chess-move-request.dto';
-import { ChessMatchRequestDto } from './dtos/chess-match-request.dto';
-import { ChessMatchResultDto } from './dtos/chess-match-result.dto';
-import { CompetitionMatchEntity } from './entities/competition.match.entity';
-import { MatchSearchRequestDto } from './dtos/match-search-request.dto';
-import { MatchSearchResponseDto } from './dtos/match-search-response.dto';
-import { ChessLeaderboardResponseDto, ChessLeaderboardResponseEntryDto } from "./dtos/chess-leaderboard-response.dto";
+import { CompetitionSubmissionDto } from "../dtos/competition/competition.submission.dto";
+import { TerminalDto } from "../dtos/competition/terminal.dto";
+import { ChessMoveRequestDto } from "../dtos/competition/chess-move-request.dto";
+import { ChessMatchRequestDto } from "../dtos/competition/chess-match-request.dto";
+import { ChessMatchResultDto } from "../dtos/competition/chess-match-result.dto";
+import { MatchSearchResponseDto } from "../dtos/competition/match-search-response.dto";
+import { MatchSearchRequestDto } from "../dtos/competition/match-search-request.dto";
+import { CompetitionMatchEntity } from "./entities/competition.match.entity";
+import { ChessLeaderboardResponseEntryDto } from "../dtos/competition/chess-leaderboard-response.dto";
+
 
 @Controller('Competitions')
 @ApiTags('competitions')

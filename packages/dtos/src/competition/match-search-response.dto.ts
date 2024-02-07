@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { EntityDto } from '../../common/dtos/entity.dto';
+import { EntityDto } from "../entity.dto";
 
 export class MatchSearchResponseDto extends EntityDto {
   @ApiProperty()
