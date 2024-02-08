@@ -61,6 +61,7 @@ async function ExecuteCommand(
           duration: durationInNano,
         });
       } else {
+        let x = stderrData.split('\n');
         reject(
           new Error(
             `Command failed with code ${code}:\n"${stderrData}"\noutput:\n"${stdoutData}"\nstdin:\n"${stdin}"\n`,

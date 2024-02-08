@@ -126,6 +126,7 @@ export class CompetitionController {
   }
 
   @Post('/Chess/Move')
+  @ApiOkResponse({ type: String })
   @Public()
   async RequestChessMove(@Body() data: ChessMoveRequestDto): Promise<string> {
     return this.service.RequestChessMove(data);
