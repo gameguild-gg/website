@@ -4,6 +4,8 @@ import { ChessLeaderboardResponseEntryDto } from "@/dtos/competition/chess-leade
 
 const Leaderboard: React.FC = () => {
   const [leaderboardData, setLeaderboardData] = React.useState<ChessLeaderboardResponseEntryDto[]>([]);
+  // flag for leaderboard fetched
+  const [leaderboardFetched, setLeaderboardFetched] = React.useState<boolean>(false);
   
   const getLeaderboardData = async () => {
     // todo: use env var properly
@@ -13,10 +15,11 @@ const Leaderboard: React.FC = () => {
     let data = await response.json() as ChessLeaderboardResponseEntryDto[];
     console.log(data);
     setLeaderboardData(data);
+    setLeaderboardFetched(true);
   }
   
   useEffect(() => {
-    if(leaderboardData.length === 0)
+    if(!leaderboardFetched)
       getLeaderboardData();
   });
   

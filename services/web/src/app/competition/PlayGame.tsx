@@ -9,6 +9,8 @@ import { Button, Dropdown, message, Space, Tooltip } from 'antd';
 
 const PlayGame: React.FC = () => {
   const [agentList, setAgentList] = useState<string[]>(["human"]);
+  // flag for agent list fetched
+  const [agentListFetched, setAgentListFetched] = useState<boolean>(false);
   
   // dropdown menu for the agents
   const [selectedAgentWhite, setSelectedAgentWhite] = useState<string>('human');
@@ -24,12 +26,13 @@ const PlayGame: React.FC = () => {
     // add human to the front of the list
     data.unshift("human");
     setAgentList(data);
+    setAgentListFetched(true);
     console.log(data);
   }
   
   
   useEffect(() => {
-    if(agentList.length <= 1)
+    if(!agentListFetched)
       getAgentList();
     
     if(selectedAgentWhite != 'human' && selectedAgentBlack != 'human'){
@@ -114,7 +117,6 @@ const PlayGame: React.FC = () => {
   // todo: allow user to select the color
   // todo: when the user make a move, send the move to the server and request a move from the opponent agent
   // todo: render the move from the opponent agent locally and wait
-  
   return (
     <Flex gap="middle" vertical={false}>
       <div key="1">
@@ -151,7 +153,7 @@ const PlayGame: React.FC = () => {
         </Dropdown.Button>
       </div>
       <div key="2">
-        <Chessboard id="BasicBoard" boardWidth={Math.min(window.innerWidth, window.innerHeight) * 0.8} position={fen}
+        <Chessboard id="BasicBoard" boardWidth={512} position={fen}
                     onPieceDrop={onDrop}/>
       </div>
       <div key="3">

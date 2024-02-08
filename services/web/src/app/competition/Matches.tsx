@@ -10,6 +10,7 @@ import { MatchSearchResponseDto } from "@/dtos/competition/match-search-response
 // IF THE USER CLICKS ON A MATCH, IT WILL REDIRECT TO THE REPLAY PAGE WITH THE CORRECT PARAMETERS TO RENDER
 const MatchesListUI: React.FC = () => {
   const [matchesData, setMatchesData] = React.useState<MatchSearchResponseDto[]>([]);
+  const [matchesFetched, setMatchesFetched] = React.useState<boolean>(false);
   
   const getMatchesData = async () => {
     const baseUrl = process.env.NEXT_PUBLIC_API_URL;
@@ -26,10 +27,11 @@ const MatchesListUI: React.FC = () => {
     let data = await response.json() as MatchSearchResponseDto[];
     console.log(data);
     setMatchesData(data);
+    setMatchesFetched(true);
   }
   
   useEffect(() => {
-    if(matchesData.length === 0)
+    if(!matchesFetched)
       getMatchesData();
   });
   
