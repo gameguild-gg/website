@@ -83,6 +83,7 @@ const SubmitBot: React.FC = () => {
     setFiles([]);
     setUsername('');
     setPassword('');
+    message.info('done');
   };
   
   const uploadProps: UploadProps = {
