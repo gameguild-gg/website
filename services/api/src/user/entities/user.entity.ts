@@ -91,6 +91,6 @@ export class UserEntity extends EntityBase {
   competitionSubmissions: CompetitionSubmissionEntity[];
 
   // chess elo rank
-  @Column({ type: 'float', default: 1000 })
+  @Column({ type: 'float', default: 400 })
   elo: number;
 }
