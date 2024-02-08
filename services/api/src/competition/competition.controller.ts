@@ -84,6 +84,7 @@ export class CompetitionController {
   // todo: Add login protections here and remove the password requirement.
   @Post('/Chess/submit')
   @ApiConsumes('multipart/form-data')
+  @ApiOkResponse({ type: TerminalDto, isArray: true })
   @UseInterceptors(FileInterceptor('file'))
   @Public()
   async submitChessAgent(

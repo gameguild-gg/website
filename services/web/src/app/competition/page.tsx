@@ -17,6 +17,7 @@ import Summary from "@/app/competition/Summary";
 import RePlayGame from "@/app/competition/RePlayGame";
 import { CookiesProvider, useCookies } from "react-cookie";
 import MatchesListUI from "@/app/competition/Matches";
+import ChallengeABot from "@/app/competition/ChallengeABot";
 
 
 const { Header, Content, Footer, Sider } = Layout;
@@ -44,6 +45,7 @@ enum MenuKeys {
   Matches = 'Matches',
   Play = 'Play',
   Replay = 'Replay',
+  Challenge = 'Challenge',
 }
 
 interface MenuItemProps {
@@ -59,6 +61,7 @@ const items: MenuItemProps[] = [
   {key: MenuKeys.Matches, icon: <HistoryOutlined />, content: <MatchesListUI />},
   {key: MenuKeys.Play, icon: <PlayCircleOutlined />, content: <PlayGame />},
   {key: MenuKeys.Replay, icon: <PlayCircleOutlined />, content: <RePlayGame />},
+  {key: MenuKeys.Challenge, icon: <PlayCircleOutlined />, content: <ChallengeABot />},
 ];
 
 const Competition: React.FC = () => {

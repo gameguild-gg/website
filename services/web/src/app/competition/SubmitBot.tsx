@@ -1,10 +1,12 @@
 import React from 'react';
 
-import { InboxOutlined, UploadOutlined } from '@ant-design/icons';
+import { InboxOutlined, UploadOutlined, EyeInvisibleOutlined, EyeTwoTone, UserOutlined, KeyOutlined } from "@ant-design/icons";
+import { Input, Tooltip } from "antd";
 
 import {Button, Space, UploadProps} from 'antd';
 import { message, Upload } from 'antd';
 import JSZip from "jszip";
+import { TerminalDto } from "@/dtos/competition/terminal.dto";
 
 const { Dragger } = Upload;
 
@@ -22,6 +24,10 @@ const canUpload = function (file: any, fileList: any[] = []) {
 const SubmitBot: React.FC = () => {
   // store all files in state
   const [files, setFiles] = React.useState<File[]>([]);
+  // state for username
+  const [username, setUsername] = React.useState<string>('');
+  // state for password
+  const [password, setPassword] = React.useState<string>('');
   
   // upload functionality
   const doUpload = async () => {
@@ -62,9 +68,21 @@ const SubmitBot: React.FC = () => {
     
     message.info("uploading files");
     
-    // todo: call api to upload
-    
-    console.log(files);
+    // upload the zip file
+    const formData = new FormData();
+    formData.append('username', username);
+    formData.append('password', password);
+    formData.append('file', new Blob([zipData as ArrayBuffer], {type: 'application/zip'}), 'bot.zip');
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+    const response = await fetch(baseUrl + '/Competitions/Chess/submit', {
+      method: 'POST',
+      body: formData
+    });
+    const data = await response.text();
+    message.info(data);
+    setFiles([]);
+    setUsername('');
+    setPassword('');
   };
   
   const uploadProps: UploadProps = {
@@ -97,7 +115,7 @@ const SubmitBot: React.FC = () => {
       <p>You can either select all .h and .cpp files or zip them all together.</p>
       <p>If you submit via zip, all files should be in the root of the zip file.</p>
       <p>Hit submit button and wait for the submission to be validated.</p>
-      <Space direction="vertical" size={12}></Space>
+      <p>ToDo: should be protected and not require password</p>
       <Dragger {...uploadProps}>
         <p className="ant-upload-drag-icon">
           <InboxOutlined/>
@@ -109,6 +127,21 @@ const SubmitBot: React.FC = () => {
           always listening. I am always waiting. I might even be watching you from behind. Look behind yourself. NOW!
         </p>
       </Dragger>
+      <Input
+        value={username}
+        defaultValue=""
+        placeholder="Enter your username"
+        prefix={<UserOutlined className="site-form-item-icon" />}
+        onChange={(e) => setUsername(e.target.value)}
+      />
+      <Input.Password
+        value={password}
+        defaultValue=""
+        placeholder=""
+        prefix={<KeyOutlined  className="site-form-item-icon" />}
+        iconRender={(visible) => (visible ? <EyeTwoTone /> : <EyeInvisibleOutlined />)}
+        onChange={(e) => setPassword(e.target.value)}
+      />
       <Button icon={<UploadOutlined/>} type="primary" block danger size="large" onClick={() => doUpload()}>Submit</Button>
       {files.map((file) => (
         <tr key={file.name}>

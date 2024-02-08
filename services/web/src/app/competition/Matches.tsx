@@ -39,6 +39,7 @@ const MatchesListUI: React.FC = () => {
     <Row>
       <Col span={24}>
         <h1>Matches</h1>
+        <p>todo: link this ids to the replay feature</p>
         <table>
           <thead>
             <tr>
