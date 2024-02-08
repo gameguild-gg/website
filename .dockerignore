@@ -1,0 +1,8 @@
+node_modules
+services/api/node_modules
+services/api/dist
+services/api/ChessSubmissions
+services/web/node_modules
+services/web/.next
+packages/dto/node_modules
+.git

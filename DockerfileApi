@@ -1,0 +1,27 @@
+# platform 
+
+# Base Image.
+FROM node:lts AS base
+
+# Update system image.
+RUN apt update
+
+# Install system image dependencies.
+RUN apt install -y build-essential cmake build-essential cmake git
+
+# copy all files to the container
+COPY . /app
+
+# set the working directory
+WORKDIR /app
+
+# install dependencies
+RUN npm install
+
+RUN npm run install:api
+
+# build
+RUN npm run build:api
+
+# start the app
+CMD ["npm", "run", "start:api"]
