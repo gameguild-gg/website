@@ -9,6 +9,9 @@ import {NotificationProvider} from "@/app/NotificationContext";
 function Home() {
   const [api, contextHolder] = notification.useNotification();
   const router = useRouter();
+  
+  const [emailOrUsername, setEmailOrUsername] = React.useState('');
+  const [password, setPassword] = React.useState('');
 
   const openNotification = (description:string, message:string="info", placement: NotificationArgsProps['placement'] = 'topRight') => {
     notification.info({
@@ -55,7 +58,7 @@ function Home() {
                 Email
               </label>
               <input
-                type="email"
+                type="text"
                 id="email"
                 className="mt-1 p-2 w-full border rounded-md"
               />
@@ -77,23 +80,23 @@ function Home() {
               Log in
             </button>
           </form>
-          <div className="mt-4">
-            <button
-              onClick={handleLoginGoogle}
-              className="w-full bg-red-500 text-white p-2 rounded-md"
-            >
-              Log in with Google
-            </button>
-            <button
-              onClick={handleLoginGitHub}
-              className="w-full bg-gray-800 text-white p-2 rounded-md mt-2"
-            >
-              Log in with GitHub
-            </button>
-          </div>
-          <div className="mt-4">
-            <MetamaskSignIn />
-          </div>
+          {/*<div className="mt-4">*/}
+          {/*  <button*/}
+          {/*    onClick={handleLoginGoogle}*/}
+          {/*    className="w-full bg-red-500 text-white p-2 rounded-md"*/}
+          {/*  >*/}
+          {/*    Log in with Google*/}
+          {/*  </button>*/}
+          {/*  <button*/}
+          {/*    onClick={handleLoginGitHub}*/}
+          {/*    className="w-full bg-gray-800 text-white p-2 rounded-md mt-2"*/}
+          {/*  >*/}
+          {/*    Log in with GitHub*/}
+          {/*  </button>*/}
+          {/*</div>*/}
+          {/*<div className="mt-4">*/}
+          {/*  <MetamaskSignIn />*/}
+          {/*</div>*/}
         </div>
       </div>
       </NotificationProvider>  

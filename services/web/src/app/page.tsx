@@ -61,7 +61,7 @@ function Home() {
               </Col>
               <Col style={{display: 'flex'}}>
                 <a href='/login'><span style={{paddingLeft: '15px', paddingRight: '15px', color:'#ffffff', lineHeight: '64px', border: '0px'}}>Login</span></a>
-                <a href='/'><span style={{padding: '15px', paddingTop: '10px', paddingBottom: '10px', color:'#000000', borderRadius:'30px', backgroundColor:'#ffffff'}}>Register</span></a>
+                <a href='/login'><span style={{padding: '15px', paddingTop: '10px', paddingBottom: '10px', color:'#000000', borderRadius:'30px', backgroundColor:'#ffffff'}}>Register</span></a>
                 <img width={25} src='assets/images/language.svg' style={{margin: '5px'}}/>
               </Col>
             </Row>
