@@ -137,7 +137,7 @@ const PlayGame: React.FC = () => {
     <>
       <Space direction="vertical" size={12}>
         <Space>
-          Whites:
+          White:
           <Dropdown.Button type='default' menu={
             {
               items: agentList.map((agent) => {
@@ -153,7 +153,7 @@ const PlayGame: React.FC = () => {
                            style={{ borderColor: "black", color: "black" }}>
             {selectedAgentWhite ? selectedAgentWhite : 'White'}
           </Dropdown.Button>
-          Blacks:
+          Black:
           <Dropdown.Button type='default' menu={
             {
               items: agentList.map((agent) => {
