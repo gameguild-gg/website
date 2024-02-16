@@ -34,7 +34,7 @@
     "start": "npm run start --workspaces --if-present",
     "start:api": "npm run start --workspace=services/api",
     "start:web": "npm run start --workspace=services/web",
-    "start:both": "concurrently \"npm:dev:api\" \"npm:dev:web\"" 
+    "start:both": "concurrently \"npm:dev:api\" \"npm:dev:web\""
   },
   "devDependencies": {
     "@game-guild/eslint-config": "*",

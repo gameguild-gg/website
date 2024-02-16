@@ -11,11 +11,12 @@ import {
 import { EntityBase } from '../../common/entities/entity.base';
 import { UserProfileEntity } from '../modules/user-profile/entities/user-profile.entity';
 import { CompetitionSubmissionEntity } from '../../competition/entities/competition.submission.entity';
+import { UserDto } from "../../dtos/user/user.dto";
 
 // todo: move to user-profile lots of fields from here
 
 @Entity({ name: 'user' })
-export class UserEntity extends EntityBase {
+export class UserEntity extends EntityBase implements UserDto {
   // Local Sign-in
   @ApiProperty()
   @Column({ unique: true, nullable: true, default: null })
@@ -92,5 +93,6 @@ export class UserEntity extends EntityBase {
 
   // chess elo rank
   @Column({ type: 'float', default: 400 })
+  @ApiProperty()
   elo: number;
 }

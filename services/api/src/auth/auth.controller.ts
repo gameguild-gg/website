@@ -2,12 +2,12 @@ import {
   Body,
   Controller,
   Get,
-  Logger,
+  Logger, Param,
   Post,
   Query,
   Request,
-  UseGuards,
-} from '@nestjs/common';
+  UseGuards
+} from "@nestjs/common";
 import { ApiBody, ApiTags } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { Public } from './decorators';
@@ -24,13 +24,19 @@ export class AuthController {
 
   constructor(private readonly authService: AuthService) {}
 
-  @Post('sign-in')
+  // @Post('sign-in')
+  // @Public()
+  // @UseGuards(LocalGuard)
+  // @ApiBody({ type: LocalSignInDto })
+  // public async signInWithEmailAndPassword(@Request() request: RequestWithUser) {
+  //   // TODO: Implement this endpoint.
+  //   return await this.authService.signIn(request.user);
+  // }
+  
+  @Post('local/sign-in')
   @Public()
-  @UseGuards(LocalGuard)
-  @ApiBody({ type: LocalSignInDto })
-  public async signInWithEmailAndPassword(@Request() request: RequestWithUser) {
-    // TODO: Implement this endpoint.
-    return await this.authService.signIn(request.user);
+  public async localSignWithEmailOrUsername(@Body() data: LocalSignInDto) {
+    return await this.authService.signInWithEmailOrPassword(data);
   }
 
   // TODO: Implement this endpoint.
@@ -47,13 +53,13 @@ export class AuthController {
   //   return await this.authService.signIn(request.user);
   // }
 
-  @Post('sign-up')
+  @Post('local/sign-up')
   @Public()
   public async signUpWithEmailAndPassword(@Body() data: LocalSignUpDto) {
     return this.authService.signUpWithEmailAndPassword(data);
   }
 
-  @Post('/refresh-token')
+  @Post('refresh-token')
   @Public()
   @UseGuards(JwtRefreshTokenGuard)
   public async refreshToken(@Request() request: RequestWithUser) {
@@ -63,5 +69,11 @@ export class AuthController {
   @Get('verify-email')
   public async verifyEmail(@Query('token') token: string): Promise<any> {
     return await this.authService.validateEmailVerificationToken(token);
+  }
+  
+  @Get('userExists/:user')
+  @Public()
+  public async userExists(@Param('user') user: string): Promise<boolean> {
+    return await this.authService.userExists(user);
   }
 }

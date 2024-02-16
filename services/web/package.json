@@ -22,6 +22,7 @@
     "autoprefixer": "10.4.15",
     "chess.js": "^1.0.0-beta.7",
     "class-validator": "^0.14.1",
+    "cookies-next": "^4.1.1",
     "eslint": "8.48.0",
     "eslint-config-next": "13.4.19",
     "ethers": "^6.7.1",

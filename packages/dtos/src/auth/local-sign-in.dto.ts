@@ -18,7 +18,7 @@ export class LocalSignInDto {
       message: 'error.invalidEmail: It must be a valid email address.',
     },
   )
-  readonly email: string;
+  readonly email?: string;
 
   @ApiProperty()
   @IsString()
@@ -51,5 +51,5 @@ export class LocalSignInDto {
     message:
       'error.invalidUsername: Username must be alphanumeric without any special characters.',
   })
-  readonly username: string;
+  readonly username?: string;
 }

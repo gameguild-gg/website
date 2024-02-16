@@ -11,6 +11,7 @@ import { UserEntity } from '../user/entities';
 import { UserService } from '../user/user.service';
 import { LocalSignUpDto } from "../dtos/auth/local-sign-up.dto";
 import { LocalSignInDto } from "../dtos/auth/local-sign-in.dto";
+import { LocalSignInResponseDto } from "../dtos/auth/local-sign-in.response.dto";
 
 @Injectable()
 export class AuthService {
@@ -23,10 +24,11 @@ export class AuthService {
     private readonly notificationService: NotificationService,
   ) {}
 
-  public async generateAccessToken(user: UserEntity): Promise<any> {
+  public async generateAccessToken(user: UserEntity): Promise<string> {
     const payload = {
       sub: user.id,
       email: user.email,
+      username: user.username,
       // TODO: Add more claims.
     };
 
@@ -38,10 +40,11 @@ export class AuthService {
     });
   }
 
-  public async generateRefreshToken(user: UserEntity): Promise<any> {
+  public async generateRefreshToken(user: UserEntity): Promise<string> {
     const payload = {
       sub: user.id,
       email: user.email,
+      username: user.username,
       // TODO: Add more claims.
     };
 
@@ -57,6 +60,7 @@ export class AuthService {
     const payload = {
       sub: user.id,
       email: user.email,
+      username: user.username,
       // TODO: Add more claims.
     };
 
@@ -75,7 +79,7 @@ export class AuthService {
   public async signIn(user: UserEntity) {
     const accessToken = await this.generateAccessToken(user);
     const refreshToken = await this.generateRefreshToken(user);
-
+    
     return {
       user: user,
       accessToken: accessToken,
@@ -170,5 +174,28 @@ export class AuthService {
     } catch (exception) {
       throw new UnauthorizedException('Invalid or expired token');
     }
+  }
+  
+  public async userExists(user: string): Promise<boolean> {
+    const foundUser = await this.userService.findOne({
+      where: [{ email: user }, { username: user }],
+      select: ['id'], // Only select the id to reduce payload size.
+    });
+
+    return !!foundUser;
+  }
+
+  async signInWithEmailOrPassword(data: LocalSignInDto): Promise<LocalSignInResponseDto> {
+    const user = await this.validateLocalSignIn(data);
+    let response = await this.signIn(user);
+    var today = new Date();
+    var expiresOn = new Date(new Date().setDate(today.getDate() + 30));
+    return {
+      accessToken: response.accessToken,
+      refreshToken: response.refreshToken,
+      expiresOn: expiresOn,
+      tokenType: 'Bearer',
+      user: user,
+    };
   }
 }
