@@ -6,10 +6,6 @@ export class LocalSignInResponseDto {
   accessToken: string;
   @ApiProperty()
   refreshToken: string;
-  @ApiProperty()
-  expiresOn: Date;
-  @ApiProperty()
-  tokenType: string;
   @ApiProperty({ type: UserDto})
   user: UserDto;
 }

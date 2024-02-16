@@ -87,7 +87,7 @@ export class AuthService {
     };
   }
 
-  public async signUpWithEmailAndPassword(data: LocalSignUpDto) {
+  public async signUpWithEmailUsernamePassword(data: LocalSignUpDto): Promise<LocalSignInResponseDto> {
     const passwordSalt = generateRandomSalt();
     const passwordHash = generateHash(data.password, passwordSalt);
 
@@ -100,11 +100,11 @@ export class AuthService {
         passwordSalt: passwordSalt,
       });
 
-      this.sendEmailVerification(user);
+      // this.sendEmailVerification(user);
 
-      return user;
+      return await this.signIn(user);
     } catch (exception) {
-      throw exception;
+      throw exception; // todo: fix this. useless.
     }
   }
 
@@ -193,8 +193,6 @@ export class AuthService {
     return {
       accessToken: response.accessToken,
       refreshToken: response.refreshToken,
-      expiresOn: expiresOn,
-      tokenType: 'Bearer',
       user: user,
     };
   }

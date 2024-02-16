@@ -7,6 +7,11 @@ import * as path from 'path';
 // import { UserSubscriber } from '../../entity-subscribers/user-subscriber';
 import { SnakeNamingStrategy } from '../snake-naming.strategy';
 
+// dotenv
+// todo: remove dotenv 
+import dotenv = require('dotenv');
+import * as process from "process";
+
 @Injectable()
 export class ApiConfigService {
   constructor(@Inject(ConfigService) private service: ConfigService) {}
@@ -139,7 +144,10 @@ export class ApiConfigService {
   }
 
   private get(key: string, defaultValue = ''): string {
-    const value = this.service.get<string>(key, defaultValue);
+    // todo: return to use the nest service. it is broken!!!
+    // detenv can be unsafe
+    //const value = this.service.get<string>(key, defaultValue);
+    const value = process.env[key] || defaultValue;
 
     if (isNil(value)) {
       throw new Error(key + ' environment variable does not set'); // probably we should call process.exit() too to avoid locking the service

@@ -8,7 +8,7 @@ import {
   Request,
   UseGuards
 } from "@nestjs/common";
-import { ApiBody, ApiTags } from '@nestjs/swagger';
+import { ApiBody, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { AuthService } from './auth.service';
 import { Public } from './decorators';
 import { LocalGuard } from './guards';
@@ -16,6 +16,7 @@ import { JwtRefreshTokenGuard } from './guards/jwt-refresh-token-guard.service';
 import { RequestWithUser } from './types';
 import { LocalSignInDto } from "../dtos/auth/local-sign-in.dto";
 import { LocalSignUpDto } from "../dtos/auth/local-sign-up.dto";
+import { LocalSignInResponseDto } from "../dtos/auth/local-sign-in.response.dto";
 
 @Controller('auth')
 @ApiTags('auth')
@@ -35,7 +36,7 @@ export class AuthController {
   
   @Post('local/sign-in')
   @Public()
-  public async localSignWithEmailOrUsername(@Body() data: LocalSignInDto) {
+  public async localSignWithEmailOrUsername(@Body() data: LocalSignInDto): Promise<LocalSignInResponseDto> {
     return await this.authService.signInWithEmailOrPassword(data);
   }
 
@@ -55,8 +56,9 @@ export class AuthController {
 
   @Post('local/sign-up')
   @Public()
-  public async signUpWithEmailAndPassword(@Body() data: LocalSignUpDto) {
-    return this.authService.signUpWithEmailAndPassword(data);
+  @ApiResponse({ type: LocalSignInResponseDto })
+  public async signUpWithEmailUsernamePassword(@Body() data: LocalSignUpDto): Promise<LocalSignInResponseDto> {
+    return this.authService.signUpWithEmailUsernamePassword(data);
   }
 
   @Post('refresh-token')

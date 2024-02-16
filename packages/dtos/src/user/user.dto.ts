@@ -1,6 +1,6 @@
-import { EntityDto } from "../../../../../packages/dtos/src/entity.dto";
 import { ApiProperty } from "@nestjs/swagger";
 import { Exclude } from "class-transformer";
+import { EntityDto } from "../entity.dto";
 
 export class UserDto extends EntityDto {
   // Local Sign-in
