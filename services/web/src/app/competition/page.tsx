@@ -1,24 +1,27 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   PieChartOutlined,
   OrderedListOutlined,
   FileAddOutlined,
   PlayCircleOutlined,
-  HistoryOutlined
+  HistoryOutlined,
+  UserSwitchOutlined,
 } from '@ant-design/icons';
-import type { MenuProps } from 'antd';
+import { FloatButton, MenuProps } from 'antd';
 import { Layout, Menu, theme } from 'antd';
-import Leaderboard from "@/app/competition/Leaderboard";
-import SubmitBot from "@/app/competition/SubmitBot";
-import PlayGame from "@/app/competition/PlayGame";
-import Summary from "@/app/competition/Summary";
-import RePlayGame from "@/app/competition/RePlayGame";
-import { CookiesProvider, useCookies } from "react-cookie";
-import MatchesListUI from "@/app/competition/Matches";
-import ChallengeABot from "@/app/competition/ChallengeABot";
-
+import Leaderboard from '@/app/competition/Leaderboard';
+import SubmitBot from '@/app/competition/SubmitBot';
+import PlayGame from '@/app/competition/PlayGame';
+import Summary from '@/app/competition/Summary';
+import RePlayGame from '@/app/competition/RePlayGame';
+import MatchesListUI from '@/app/competition/Matches';
+import ChallengeABot from '@/app/competition/ChallengeABot';
+import { deleteCookie, getCookie } from 'cookies-next';
+import { UserDto } from '@/dtos/user/user.dto';
+import { router } from 'next/client';
+import { useRouter } from 'next/navigation';
 
 const { Header, Content, Footer, Sider } = Layout;
 
@@ -55,30 +58,85 @@ interface MenuItemProps {
 }
 
 const items: MenuItemProps[] = [
-  {key: MenuKeys.Summary,  icon: <PieChartOutlined />, content: <Summary /> },
-  {key: MenuKeys.Leaderboard, icon: <OrderedListOutlined />, content: <Leaderboard />},
-  {key: MenuKeys.Submit, icon: <FileAddOutlined />, content: <SubmitBot />},
-  {key: MenuKeys.Matches, icon: <HistoryOutlined />, content: <MatchesListUI />},
-  {key: MenuKeys.Play, icon: <PlayCircleOutlined />, content: <PlayGame />},
-  {key: MenuKeys.Replay, icon: <PlayCircleOutlined />, content: <RePlayGame />},
-  {key: MenuKeys.Challenge, icon: <PlayCircleOutlined />, content: <ChallengeABot />},
+  { key: MenuKeys.Summary, icon: <PieChartOutlined />, content: <Summary /> },
+  {
+    key: MenuKeys.Leaderboard,
+    icon: <OrderedListOutlined />,
+    content: <Leaderboard />,
+  },
+  { key: MenuKeys.Submit, icon: <FileAddOutlined />, content: <SubmitBot /> },
+  {
+    key: MenuKeys.Matches,
+    icon: <HistoryOutlined />,
+    content: <MatchesListUI />,
+  },
+  { key: MenuKeys.Play, icon: <PlayCircleOutlined />, content: <PlayGame /> },
+  {
+    key: MenuKeys.Replay,
+    icon: <PlayCircleOutlined />,
+    content: <RePlayGame />,
+  },
+  {
+    key: MenuKeys.Challenge,
+    icon: <PlayCircleOutlined />,
+    content: <ChallengeABot />,
+  },
 ];
 
 const Competition: React.FC = () => {
-  const [cookies, setCookie] = useCookies(["user"]);
+  const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
   const [selectedKeys, setSelectedKeys] = useState([MenuKeys.Summary]);
 
+  const [user, setUser] = useState(null as UserDto | null);
+
+  const [accessToken, setAccessToken] = useState('');
+  const [refreshToken, setRefreshToken] = useState('');
+
+  const logout = () => {
+    deleteCookie('accessToken');
+    deleteCookie('refreshToken');
+    deleteCookie('user');
+    router.push('/login');
+  };
+
+  useEffect(() => {
+    // get the user from the cookie
+    if (!user) {
+      const userCookie = getCookie('user');
+      if (userCookie) {
+        setUser(JSON.parse(userCookie) as UserDto);
+        setAccessToken(getCookie('accessToken') as string);
+        setRefreshToken(getCookie('refreshToken') as string);
+      } else {
+        router.push('/login');
+      }
+    }
+  }, []);
+
   return (
-    <CookiesProvider>
-      
     <Layout style={{ minHeight: '100vh' }}>
-      <Sider collapsible collapsed={collapsed} onCollapse={(value) => setCollapsed(value)}>
+      <FloatButton
+        shape="circle"
+        type="primary"
+        style={{ bottom: 50, left: 20 }}
+        icon={<UserSwitchOutlined />}
+        onClick={logout}
+      />
+      <Sider
+        collapsible
+        collapsed={collapsed}
+        onCollapse={(value) => setCollapsed(value)}
+      >
         <div className="demo-logo-vertical" />
-        <Menu theme="dark" defaultSelectedKeys={[MenuKeys.Summary]} mode="inline">
+        <Menu
+          theme="dark"
+          defaultSelectedKeys={[MenuKeys.Summary]}
+          mode="inline"
+        >
           {items.map((item) => (
             <Menu.Item
               key={item.key}
@@ -104,11 +162,12 @@ const Competition: React.FC = () => {
           </div>
         </Content>
         <Footer style={{ textAlign: 'center' }}>
-          Chess AI competition engine ©{new Date().getFullYear()} Created by GameGuild, for Game AI classes at Champlain College. Feel free to use and contribute to this project.
+          Chess AI competition engine ©{new Date().getFullYear()} Created by
+          GameGuild, for Game AI classes at Champlain College. Feel free to use
+          and contribute to this project.
         </Footer>
       </Layout>
     </Layout>
-    </CookiesProvider>
   );
 };
 

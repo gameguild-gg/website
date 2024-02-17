@@ -203,6 +203,9 @@ function Home() {
                 id="emailOrUsername"
                 readOnly={emailOrUsernameLocked}
                 className="mt-1 p-2 w-full border rounded-md"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') onButtonClick();
+                }}
               />
             </div>
             <div hidden={usernameHidden}>
@@ -240,6 +243,9 @@ function Home() {
                 id="password"
                 onChange={(e) => setPassword(e.target.value)}
                 className="mt-1 p-2 w-full border rounded-md"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') onButtonClick();
+                }}
               />
             </div>
             <button
