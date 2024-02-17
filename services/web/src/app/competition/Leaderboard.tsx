@@ -1,28 +1,42 @@
-import React, { useEffect } from "react";
-import { message } from "antd";
-import { ChessLeaderboardResponseEntryDto } from "@/dtos/competition/chess-leaderboard-response.dto";
+import React, { useEffect, useState } from 'react';
+import { message } from 'antd';
+import { ChessLeaderboardResponseEntryDto } from '@/dtos/competition/chess-leaderboard-response.dto';
+import { getCookie } from 'cookies-next';
+import { useRouter } from "next/navigation";
 
 const Leaderboard: React.FC = () => {
-  const [leaderboardData, setLeaderboardData] = React.useState<ChessLeaderboardResponseEntryDto[]>([]);
+  const router = useRouter();
+  const [leaderboardData, setLeaderboardData] = React.useState<
+    ChessLeaderboardResponseEntryDto[]
+  >([]);
   // flag for leaderboard fetched
-  const [leaderboardFetched, setLeaderboardFetched] = React.useState<boolean>(false);
-  
+  const [leaderboardFetched, setLeaderboardFetched] =
+    React.useState<boolean>(false);
+
+  useEffect(() => {
+    if (!leaderboardFetched) getLeaderboardData();
+  }, []);
+
   const getLeaderboardData = async () => {
     // todo: use env var properly
     // todo: process.env.REACT_APP_API_URL is undefined here and I dont know how to fix it
     const baseUrl = process.env.NEXT_PUBLIC_API_URL;
-    const response = await fetch(baseUrl + "/Competitions/Chess/Leaderboard");
-    let data = await response.json() as ChessLeaderboardResponseEntryDto[];
+    const headers = new Headers();
+    const accessToken = getCookie('access_token');
+    headers.append('Authorization', `Bearer ${accessToken}`);
+    const response = await fetch(baseUrl + '/Competitions/Chess/Leaderboard', {
+      headers: headers,
+    });
+    if (!response.ok) {
+      router.push('/login');
+      return;
+    }
+    const data = (await response.json()) as ChessLeaderboardResponseEntryDto[];
     console.log(data);
     setLeaderboardData(data);
     setLeaderboardFetched(true);
-  }
-  
-  useEffect(() => {
-    if(!leaderboardFetched)
-      getLeaderboardData();
-  });
-  
+  };
+
   return (
     <div>
       <h1>Leaderboard</h1>
@@ -47,7 +61,7 @@ const Leaderboard: React.FC = () => {
         </tbody>
       </table>
     </div>
-  )
-}
+  );
+};
 
-export default Leaderboard
+export default Leaderboard;

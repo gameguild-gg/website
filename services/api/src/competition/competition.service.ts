@@ -763,7 +763,8 @@ export class CompetitionService {
     // the board management settings
     const board = new Chess();
     let userIdx = 0;
-    const result: ChessMatchResultDto = {
+    let result: ChessMatchResultDto = {
+      id: '',
       players: usernames,
       winner: '',
       draw: false,
@@ -937,8 +938,9 @@ export class CompetitionService {
     };
 
     // save the match
-    await this.matchRepository.save(match);
-
+    
+    let matchSaved = await this.matchRepository.save(match);
+    result.id = matchSaved.id;
     return result;
   }
 

@@ -22,6 +22,7 @@ import { deleteCookie, getCookie } from 'cookies-next';
 import { UserDto } from '@/dtos/user/user.dto';
 import { router } from 'next/client';
 import { useRouter } from 'next/navigation';
+import Tournament from '@/app/competition/Tournament';
 
 const { Header, Content, Footer, Sider } = Layout;
 
@@ -49,6 +50,7 @@ enum MenuKeys {
   Play = 'Play',
   Replay = 'Replay',
   Challenge = 'Challenge',
+  Tournament = 'Tournament',
 }
 
 interface MenuItemProps {
@@ -81,6 +83,11 @@ const items: MenuItemProps[] = [
     icon: <PlayCircleOutlined />,
     content: <ChallengeABot />,
   },
+  {
+    key: MenuKeys.Tournament,
+    icon: <PlayCircleOutlined />,
+    content: <Tournament />,
+  },
 ];
 
 const Competition: React.FC = () => {
@@ -109,8 +116,8 @@ const Competition: React.FC = () => {
       const userCookie = getCookie('user');
       if (userCookie) {
         setUser(JSON.parse(userCookie) as UserDto);
-        setAccessToken(getCookie('accessToken') as string);
-        setRefreshToken(getCookie('refreshToken') as string);
+        setAccessToken(getCookie('access_token') as string);
+        setRefreshToken(getCookie('refresh_token') as string);
       } else {
         router.push('/login');
       }

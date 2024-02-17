@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { EntityDto } from "../entity.dto";
 
 export enum ChessGameResultReason {
   CHECKMATE = 'CHECKMATE',
@@ -17,6 +18,8 @@ export enum ChessGameResult {
 }
 
 export class ChessMatchResultDto {
+  @ApiProperty()
+  id: string;
   @ApiProperty({ type: 'array', items: { type: 'string' } })
   players: string[];
   @ApiProperty({ type: 'array', items: { type: 'string' } })

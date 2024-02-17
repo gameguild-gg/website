@@ -32,6 +32,9 @@ import { MatchSearchRequestDto } from "../dtos/competition/match-search-request.
 import { CompetitionMatchEntity } from "./entities/competition.match.entity";
 import { ChessLeaderboardResponseEntryDto } from "../dtos/competition/chess-leaderboard-response.dto";
 import { Public } from "../auth/decorators/public.decorator";
+import { Auth } from "../auth/decorators/http.decorator";
+import { AuthUser } from "../auth";
+import { UserEntity } from "../user/entities";
 
 
 @Controller('Competitions')
@@ -86,19 +89,15 @@ export class CompetitionController {
   @ApiConsumes('multipart/form-data')
   @ApiOkResponse({ type: TerminalDto, isArray: true })
   @UseInterceptors(FileInterceptor('file'))
-  @Public()
+  @Auth()
   async submitChessAgent(
     @Body() data: CompetitionSubmissionDto,
     @UploadedFile() file: Express.Multer.File,
+    @AuthUser() user: UserEntity,
   ): Promise<TerminalDto[]> {
     if (file.size > 1024 * 1024 * 10)
       throw new PayloadTooLargeException('File too large. It should be < 10mb');
-
-    const user = await this.service.authService.validateLocalSignIn({
-      email: data.username,
-      password: data.password,
-      username: data.username,
-    });
+    
     if (!user) throw new UnauthorizedException('Invalid credentials');
 
     // // From here to below, it is not working.
@@ -121,35 +120,41 @@ export class CompetitionController {
   }
 
   @Get('/Chess/ListAgents')
-  @Public()
-  async ListChessAgents(): Promise<string[]> {
+  @Auth()
+  async ListChessAgents(@AuthUser() user: UserEntity): Promise<string[]> {
+    if(!user) throw new UnauthorizedException('Invalid credentials');
     return this.service.listChessAgents();
   }
 
   @Post('/Chess/Move')
   @ApiOkResponse({ type: String })
-  @Public()
-  async RequestChessMove(@Body() data: ChessMoveRequestDto): Promise<string> {
+  @Auth()
+  async RequestChessMove(@Body() data: ChessMoveRequestDto, @AuthUser() user: UserEntity): Promise<string> {
+    if(!user) throw new UnauthorizedException('Invalid credentials');
     return this.service.RequestChessMove(data);
   }
 
   @Post('/Chess/RunMatch')
-  @Public()
+  @Auth()
   async RunChessMatch(
     @Body() data: ChessMatchRequestDto,
+    @AuthUser() user: UserEntity
   ): Promise<ChessMatchResultDto> {
+    if(!user) throw new UnauthorizedException('Invalid credentials');
     return this.service.RunChessMatch(data);
   }
 
   @Post('/Chess/FindMatches')
-  @Public()
+  @Auth()
   @ApiOkResponse({
     type: MatchSearchResponseDto,
     isArray: true,
   })
   async FindChessMatchResult(
     @Body() data: MatchSearchRequestDto,
+    @AuthUser() user: UserEntity
   ): Promise<MatchSearchResponseDto[]> {
+    if(!user) throw new UnauthorizedException('Invalid credentials');
     // todo: return the result state and reason for the match ending.
     if (data.pageSize > 100)
       throw new UnprocessableEntityException(
@@ -212,20 +217,23 @@ export class CompetitionController {
   }
 
   @Get('/Chess/Match/:id')
-  @Public()
+  @Auth()
   async GetChessMatchResult(
     @Param('id', ParseUUIDPipe) id: string,
+    @AuthUser() user: UserEntity
   ): Promise<ChessMatchResultDto> {
+    if(!user) throw new UnauthorizedException('Invalid credentials');
     return JSON.parse((await this.service.findMatchById(id)).logs);
   }
   
   @Get('/Chess/Leaderboard')
-  @Public()
+  @Auth()
   @ApiOkResponse({
     type: ChessLeaderboardResponseEntryDto,
     isArray: true,
   })
-  async GetChessLeaderboard(): Promise<ChessLeaderboardResponseEntryDto[]> {
+  async GetChessLeaderboard(@AuthUser() user: UserEntity): Promise<ChessLeaderboardResponseEntryDto[]> {
+    if(!user) throw new UnauthorizedException('Invalid credentials');
     return this.service.getLeaderboard();
   }
 }
