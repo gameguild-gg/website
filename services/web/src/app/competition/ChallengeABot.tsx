@@ -65,6 +65,11 @@ const ChallengeABot: React.FC = () => {
       message.error("Please select agents to challenge.");
       return;
     }
+    const userAgent = (JSON.parse(getCookie('user') as string) as UserDto).username;
+    if(selectedAgentWhite !== userAgent && selectedAgentBlack !== userAgent){
+      message.error("You must be one of the players.");
+      return;
+    }
     setRequestInProgress(true);
     const baseUrl = process.env.NEXT_PUBLIC_API_URL;
     const headers = new Headers();
