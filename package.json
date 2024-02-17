@@ -41,7 +41,6 @@
     "@game-guild/jest-config": "*",
     "@game-guild/prettier-config": "*",
     "@game-guild/tsconfig": "*",
-    "husky": "^8.0.3",
     "rimraf": "^3.0.2",
     "typescript": "^5.2.2"
   },

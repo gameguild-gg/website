@@ -5,7 +5,6 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { AppController } from './app.controller';
 import { AuthModule } from './auth/auth.module';
-import { JwtAccessTokenGuard } from './auth/guards/jwt-access-token-guard.service';
 import { CommonModule } from './common/common.module';
 import { ApiConfigService } from './common/config.service';
 import { CourseModule } from './course/course.module';
@@ -14,9 +13,17 @@ import { NotificationModule } from './notification/notification.module';
 import { ProposalModule } from './proposal/proposal.module';
 import { UserModule } from './user/user.module';
 import { CompetitionModule } from './competition/competition.module';
+import { HttpAdapterHost } from '@nestjs/core';
+import { ClsModule } from "nestjs-cls";
 
 @Module({
   imports: [
+    ClsModule.forRoot({
+      global: true,
+      middleware: {
+        mount: true,
+      },
+    }),
     ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRootAsync({
       imports: [CommonModule],
@@ -35,10 +42,10 @@ import { CompetitionModule } from './competition/competition.module';
   ],
   controllers: [AppController],
   providers: [
-    {
-      provide: APP_GUARD,
-      useClass: JwtAccessTokenGuard,
-    },
+    // {
+    //   provide: APP_GUARD,
+    //   useClass: JwtAccessTokenGuard,
+    // },
   ],
 })
 export class AppModule {}

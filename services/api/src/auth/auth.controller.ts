@@ -8,15 +8,17 @@ import {
   Request,
   UseGuards
 } from "@nestjs/common";
-import { ApiBody, ApiResponse, ApiTags } from "@nestjs/swagger";
+import { ApiBody, ApiOkResponse, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { AuthService } from './auth.service';
-import { Public } from './decorators';
+import { AuthUser, Public } from "./decorators";
 import { LocalGuard } from './guards';
-import { JwtRefreshTokenGuard } from './guards/jwt-refresh-token-guard.service';
 import { RequestWithUser } from './types';
 import { LocalSignInDto } from "../dtos/auth/local-sign-in.dto";
 import { LocalSignUpDto } from "../dtos/auth/local-sign-up.dto";
 import { LocalSignInResponseDto } from "../dtos/auth/local-sign-in.response.dto";
+import { UserDto } from "../dtos/user/user.dto";
+import { UserEntity } from "../user/entities";
+import { Auth } from "./decorators/http.decorator";
 
 @Controller('auth')
 @ApiTags('auth')
@@ -24,7 +26,7 @@ export class AuthController {
   private readonly logger = new Logger(AuthController.name);
 
   constructor(private readonly authService: AuthService) {}
-
+  
   // @Post('sign-in')
   // @Public()
   // @UseGuards(LocalGuard)
@@ -35,7 +37,7 @@ export class AuthController {
   // }
   
   @Post('local/sign-in')
-  @Public()
+  @Public(true)
   public async localSignWithEmailOrUsername(@Body() data: LocalSignInDto): Promise<LocalSignInResponseDto> {
     return await this.authService.signInWithEmailOrPassword(data);
   }
@@ -60,13 +62,21 @@ export class AuthController {
   public async signUpWithEmailUsernamePassword(@Body() data: LocalSignUpDto): Promise<LocalSignInResponseDto> {
     return this.authService.signUpWithEmailUsernamePassword(data);
   }
-
-  @Post('refresh-token')
-  @Public()
-  @UseGuards(JwtRefreshTokenGuard)
-  public async refreshToken(@Request() request: RequestWithUser) {
-    return await this.authService.refreshAccessToken(request.user);
+  
+  @Get('current-user')
+  @Auth()
+  @ApiOkResponse({ type: UserDto })
+  public async getCurrentUser(@AuthUser() user : UserEntity): Promise<UserDto> {
+    return user;
   }
+  
+
+  // @Post('refresh-token')
+  // @Public()
+  // @UseGuards(JwtRefreshTokenGuard)
+  // public async refreshToken(@Request() request: RequestWithUser) {
+  //   return await this.authService.refreshAccessToken(request.user);
+  // }
 
   @Get('verify-email')
   public async verifyEmail(@Query('token') token: string): Promise<any> {

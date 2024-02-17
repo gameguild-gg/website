@@ -12,6 +12,8 @@ import { UserService } from '../user/user.service';
 import { LocalSignUpDto } from "../dtos/auth/local-sign-up.dto";
 import { LocalSignInDto } from "../dtos/auth/local-sign-in.dto";
 import { LocalSignInResponseDto } from "../dtos/auth/local-sign-in.response.dto";
+import { AccessTokenPayloadDto } from "../dtos/auth/access-token-payload.dto";
+import { TokenType } from "../dtos/auth/token-type.enum";
 
 @Injectable()
 export class AuthService {
@@ -25,10 +27,11 @@ export class AuthService {
   ) {}
 
   public async generateAccessToken(user: UserEntity): Promise<string> {
-    const payload = {
+    const payload: AccessTokenPayloadDto = {
       sub: user.id,
       email: user.email,
       username: user.username,
+      type: TokenType.AccessToken,
       // TODO: Add more claims.
     };
 
@@ -41,10 +44,11 @@ export class AuthService {
   }
 
   public async generateRefreshToken(user: UserEntity): Promise<string> {
-    const payload = {
+    const payload: AccessTokenPayloadDto = {
       sub: user.id,
       email: user.email,
       username: user.username,
+      type: TokenType.RefreshToken
       // TODO: Add more claims.
     };
 
@@ -57,10 +61,11 @@ export class AuthService {
   }
 
   public async generateEmailVerificationToken(user: UserEntity): Promise<any> {
-    const payload = {
+    const payload: AccessTokenPayloadDto = {
       sub: user.id,
       email: user.email,
       username: user.username,
+      type: TokenType.EmailConfirmationToken,
       // TODO: Add more claims.
     };
 

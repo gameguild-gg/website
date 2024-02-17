@@ -22,7 +22,6 @@ import {
 import { CompetitionService } from './competition.service';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { CompetitionGame } from './entities/competition.submission.entity';
-import { Public } from '../auth';
 import { CompetitionSubmissionDto } from "../dtos/competition/competition.submission.dto";
 import { TerminalDto } from "../dtos/competition/terminal.dto";
 import { ChessMoveRequestDto } from "../dtos/competition/chess-move-request.dto";
@@ -32,6 +31,7 @@ import { MatchSearchResponseDto } from "../dtos/competition/match-search-respons
 import { MatchSearchRequestDto } from "../dtos/competition/match-search-request.dto";
 import { CompetitionMatchEntity } from "./entities/competition.match.entity";
 import { ChessLeaderboardResponseEntryDto } from "../dtos/competition/chess-leaderboard-response.dto";
+import { Public } from "../auth/decorators/public.decorator";
 
 
 @Controller('Competitions')
