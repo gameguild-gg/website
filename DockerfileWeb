@@ -1,0 +1,15 @@
+# Base Image.
+FROM node:latest
+
+WORKDIR /app
+
+RUN apt-get clean && apt-get update
+
+COPY . /app
+
+# install dependencies
+RUN NODE_ENV=development npm install
+RUN NODE_ENV=development npm run install:web
+
+# start the app
+CMD ["npm", "run", "dev:web"]

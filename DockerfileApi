@@ -1,5 +1,3 @@
-# platform 
-
 # Base Image.
 FROM node:latest
 
@@ -10,21 +8,6 @@ RUN apt-get clean && apt-get update
 
 RUN apt install -y build-essential cmake git unzip wget
 
-# Install system image dependencies.
-RUN wget -q https://github.com/official-stockfish/Stockfish/archive/refs/tags/stockfish-dev-20240217-fc41f64d.zip
-
-RUN unzip stockfish-dev-20240217-fc41f64d.zip
-
-RUN rm stockfish-dev-20240217-fc41f64d.zip
-
-RUN cd Stockfish-stockfish-dev-20240217-fc41f64d/src && make build
-
-RUN mv Stockfish-stockfish-dev-20240217-fc41f64d/src/stockfish /app/stockfish
-
-RUN rm -rf Stockfish-stockfish-dev-20240217-fc41f64d
-
-RUN /app/stockfish --help
-
 # copy all files to the container
 COPY . /app
 
@@ -34,6 +17,16 @@ RUN NODE_ENV=development npm run install:api
 
 # build
 RUN npm run build:api
+
+# Install system image dependencies.
+RUN wget -q https://github.com/official-stockfish/Stockfish/archive/refs/tags/stockfish-dev-20240217-fc41f64d.zip
+RUN unzip stockfish-dev-20240217-fc41f64d.zip
+RUN rm stockfish-dev-20240217-fc41f64d.zip
+RUN cd Stockfish-stockfish-dev-20240217-fc41f64d/src && make build
+RUN mv Stockfish-stockfish-dev-20240217-fc41f64d/src/stockfish /app/stockfish
+RUN rm -rf Stockfish-stockfish-dev-20240217-fc41f64d
+RUN /app/stockfish --help
+RUN cp /app/stockfish /usr/local/bin/stockfish
 
 # start the app
 CMD ["npm", "run", "start:api"]
