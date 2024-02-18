@@ -16,8 +16,6 @@ COPY . /app
 WORKDIR /app
 
 # install dependencies
-RUN npm install
-
 RUN npm run install:api
 
 # build
