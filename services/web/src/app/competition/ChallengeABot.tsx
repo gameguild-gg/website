@@ -6,7 +6,7 @@ import { UserDto } from "@/dtos/user/user.dto";
 import { ChessMatchRequestDto } from "@/dtos/competition/chess-match-request.dto";
 import { MatchSearchResponseDto } from "@/dtos/competition/match-search-response.dto";
 import { useRouter } from "next/navigation";
-import { ChessMatchResultDto } from "../../../../../packages/dtos/src/competition/chess-match-result.dto";
+import { ChessMatchResultDto } from "@/dtos/competition/chess-match-result.dto";
 
 const ChallengeABot: React.FC = () => {
   const router = useRouter();

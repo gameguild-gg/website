@@ -12,7 +12,6 @@ import {
 import { Button, UploadProps, message, Upload, Input } from 'antd';
 import JSZip from 'jszip';
 import { getCookie } from 'cookies-next';
-import { UserDto } from '../../../../../packages/dtos/src/user/user.dto';
 
 const { Dragger } = Upload;
 
