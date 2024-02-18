@@ -6,8 +6,22 @@ FROM node:lts AS base
 # Update system image.
 RUN apt update
 
+RUN apt install -y build-essential cmake git unzip wget
+
 # Install system image dependencies.
-RUN apt install -y build-essential cmake build-essential cmake git stockfish
+RUN wget -q https://github.com/official-stockfish/Stockfish/archive/refs/tags/stockfish-dev-20240217-fc41f64d.zip
+
+RUN unzip stockfish-dev-20240217-fc41f64d.zip
+
+RUN rm stockfish-dev-20240217-fc41f64d.zip
+
+RUN cd Stockfish-stockfish-dev-20240217-fc41f64d/src && make build
+
+RUN mv Stockfish-stockfish-dev-20240217-fc41f64d/src/stockfish /usr/bin/stockfish
+
+RUN rm -rf Stockfish-stockfish-dev-20240217-fc41f64d
+
+RUN stockfish --help
 
 # copy all files to the container
 COPY . /app
