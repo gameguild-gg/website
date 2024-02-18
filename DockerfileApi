@@ -7,7 +7,7 @@ FROM node:lts AS base
 RUN apt update
 
 # Install system image dependencies.
-RUN apt install -y build-essential cmake build-essential cmake git
+RUN apt install -y build-essential cmake build-essential cmake git stockfish
 
 # copy all files to the container
 COPY . /app
