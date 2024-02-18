@@ -1,10 +1,12 @@
 # platform 
 
 # Base Image.
-FROM node:lts AS base
+FROM node:latest
 
-# Update system image.
-RUN apt update
+# set the working directory
+WORKDIR /app
+
+RUN apt-get clean && apt-get update
 
 RUN apt install -y build-essential cmake git unzip wget
 
@@ -17,17 +19,14 @@ RUN rm stockfish-dev-20240217-fc41f64d.zip
 
 RUN cd Stockfish-stockfish-dev-20240217-fc41f64d/src && make build
 
-RUN mv Stockfish-stockfish-dev-20240217-fc41f64d/src/stockfish /usr/bin/stockfish
+RUN mv Stockfish-stockfish-dev-20240217-fc41f64d/src/stockfish /app/stockfish
 
 RUN rm -rf Stockfish-stockfish-dev-20240217-fc41f64d
 
-RUN stockfish --help
+RUN /app/stockfish --help
 
 # copy all files to the container
 COPY . /app
-
-# set the working directory
-WORKDIR /app
 
 # install dependencies
 RUN NODE_ENV=development npm install
