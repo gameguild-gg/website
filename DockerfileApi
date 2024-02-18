@@ -16,7 +16,7 @@ COPY . /app
 WORKDIR /app
 
 # install dependencies
-RUN npm run install:api
+RUN NODE_ENV=development npm install:api
 
 # build
 RUN npm run build:api
