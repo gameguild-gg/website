@@ -5,12 +5,18 @@ name: game-guild
 services:
   api:
     build:
-      context: ./services/api
+      dockerfile: DockerfileApi
     container_name: api
     image: game-guild-api
     restart: always
     ports:
-      - "3000:3000"
+      - "8080:8080"
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_DATABASE=postgres
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=postgres
     depends_on:
       - postgres
 
