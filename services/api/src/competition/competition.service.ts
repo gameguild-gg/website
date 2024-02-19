@@ -25,7 +25,7 @@ import { CleanOptions, simpleGit } from 'simple-git';
 import * as process from 'process';
 import extract from 'extract-zip';
 import * as decompress from 'decompress';
-import ExecuteCommand from '../common/execute-command';
+import ExecuteCommand, { ExecuteCommandResult } from "../common/execute-command";
 import { Chess, Move } from 'chess.js';
 import { UserProfileService } from '../user/modules/user-profile/user-profile.service';
 import { FindManyOptions } from 'typeorm/find-options/FindManyOptions';
@@ -733,7 +733,7 @@ export class CompetitionService {
     for (let i = 0; i < submissions.length; i++)
       if (!submissions[i])
         throw new UnprocessableEntityException(
-          'No submission found for player ' + (i + 1),
+          'No submission found for player ' + usernames[i],
         );
 
     // place both executables in their respective folders
@@ -762,7 +762,7 @@ export class CompetitionService {
 
     // the board management settings
     const board = new Chess();
-    let userIdx = 0;
+    let userIdx:number = 0;
     let result: ChessMatchResultDto = {
       id: '',
       players: usernames,
@@ -781,13 +781,15 @@ export class CompetitionService {
     // run the match while they are both reporting moves and accumulate all the moves into an array of strings
     while (true) {
       const fen = board.fen();
-      const move = await ExecuteCommand({
+      let move: ExecuteCommandResult;
+      try{
+        move = await ExecuteCommand({
         command: executablePath[userIdx],
         stdin: fen,
         timeout: 10000,
-      });
-
-      result.cpuTime[userIdx] += move.duration / 1e9;
+      });}catch(e){
+        move = null;
+      }
 
       // if the exe breaks, the other player wins
       if (!move || !move.stdout || move.stderr) {
@@ -798,6 +800,8 @@ export class CompetitionService {
         result.finalFen = board.fen();
         break;
       }
+
+      result.cpuTime[userIdx] += move.duration / 1e9;
 
       // remove empty spaces
       move.stdout = move.stdout.replace(/\s/g, '');
@@ -829,7 +833,7 @@ export class CompetitionService {
         // checkmate
         if (board.isCheckmate()) {
           result.draw = false;
-          result.winner = usernames[1 - userIdx];
+          result.winner = usernames[userIdx];
           result.reason = ChessGameResultReason.CHECKMATE;
           result.result = ChessGameResult.GAME_OVER;
           result.finalFen = board.fen();
@@ -876,7 +880,6 @@ export class CompetitionService {
           result.result = ChessGameResult.GAME_OVER;
           result.reason = ChessGameResultReason.NONE;
           result.draw = false;
-          result.winner = usernames[1 - userIdx];
           result.finalFen = board.fen();
           break;
         }
@@ -899,30 +902,35 @@ export class CompetitionService {
     // update the elo of the users
     // todo: @joel check this please!
     if (result.winner) {
-      const winner = users[1 - userIdx];
-      const loser = users[userIdx];
+      const winnerEntity = users.find( (user) => user.username === result.winner);
+      const loserEntity = users.find( (user) => user.username !== result.winner);
       const newElo = this.calculateNewElo({
-        winner: winner.elo,
-        loser: loser.elo,
+        winner: winnerEntity.elo,
+        loser: loserEntity.elo,
       });
       // update the elo of the users
       if (result.winner === usernames[0]) {
-        result.eloChange[0] = newElo.winner - winner.elo;
-        result.eloChange[1] = newElo.loser - loser.elo;
+        result.eloChange[0] = newElo.winner - winnerEntity.elo;
+        result.eloChange[1] = newElo.loser - loserEntity.elo;
         result.elo = [newElo.winner, newElo.loser];
       } else if (result.winner === usernames[1]) {
-        result.eloChange[1] = newElo.winner - winner.elo;
-        result.eloChange[0] = newElo.loser - loser.elo;
+        result.eloChange[1] = newElo.winner - winnerEntity.elo;
+        result.eloChange[0] = newElo.loser - loserEntity.elo;
         result.elo = [newElo.loser, newElo.winner];
       }
-      await this.userService.updateOneTypeorm(winner.id, {
+      await this.userService.updateOneTypeorm(winnerEntity.id, {
         elo: newElo.winner,
       });
-      await this.userService.updateOneTypeorm(loser.id, { elo: newElo.loser });
+      await this.userService.updateOneTypeorm(loserEntity.id, { elo: newElo.loser });
     }
 
     // create a matchentity and save it
     let match = this.matchRepository.create();
+    let playerWinner: CompetitionWinner | null;
+    if(result.winner === usernames[0]) playerWinner = CompetitionWinner.Player1;
+    else if (result.winner === usernames[1]) playerWinner = CompetitionWinner.Player2;
+    else playerWinner = null;
+    
     match = {
       ...match,
       p1submission: submissions[0],
@@ -932,7 +940,7 @@ export class CompetitionService {
       p1Turns: 0,
       p2Turns: 0,
       run: null,
-      winner: result.winner ? CompetitionWinner.Player1 : null, // todo: is it better to use a reference to the submission? the user? the username? or just use player1 and player2? or use boolen to store firstPlayerWon?
+      winner: playerWinner, // todo: is it better to use a reference to the submission? the user? the username? or just use player1 and player2? or use boolen to store firstPlayerWon?
       logs: JSON.stringify(result),
       lastState: result.finalFen,
     };

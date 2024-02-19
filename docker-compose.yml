@@ -2,6 +2,9 @@ version: "3.8"
 
 name: game-guild
 
+networks:
+  game-guild-network:
+
 services:
   api:
     build:
@@ -19,17 +22,24 @@ services:
       - DB_PASSWORD=postgres
     depends_on:
       - postgres
+    links:
+      - postgres
+    # expose postgres to api
+    networks:
+      - game-guild-network
 
   web:
     build:
-      context: ./services/web
+      dockerfile: DockerfileWeb
     container_name: web
     image: game-guild-web
     restart: always
     ports:
-      - "8081:3000"
+      - "3000:3000"
     depends_on:
-      - postgres
+      - api
+    networks:
+      - game-guild-network
 
   postgres:
     image: postgres
@@ -45,6 +55,8 @@ services:
       - "5432:5432"
     volumes:
       - postgres:/data/postgres
+    networks:
+      - game-guild-network
   
   adminer:
     image: adminer
@@ -53,6 +65,8 @@ services:
       - 9090:8080
     depends_on:
       - postgres
+    networks:
+      - game-guild-network
 
 volumes:
   postgres:

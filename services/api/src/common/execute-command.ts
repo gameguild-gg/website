@@ -7,7 +7,7 @@ class ExecuteCommandOptions {
   stdin?: string;
 }
 
-class ExecuteCommandResult {
+export class ExecuteCommandResult {
   stdout?: string;
   stderr?: string;
   duration?: number; // nanoseconds

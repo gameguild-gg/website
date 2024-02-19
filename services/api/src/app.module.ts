@@ -15,6 +15,7 @@ import { UserModule } from './user/user.module';
 import { CompetitionModule } from './competition/competition.module';
 import { HttpAdapterHost } from '@nestjs/core';
 import { ClsModule } from "nestjs-cls";
+import { HealthcheckModule } from './healthcheck/healthcheck.module';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { ClsModule } from "nestjs-cls";
     ProposalModule,
     EventModule,
     CompetitionModule,
+    HealthcheckModule,
   ],
   controllers: [AppController],
   providers: [
