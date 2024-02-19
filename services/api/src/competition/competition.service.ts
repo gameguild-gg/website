@@ -788,11 +788,18 @@ export class CompetitionService {
         stdin: fen,
         timeout: 10000,
       });}catch(e){
+        console.error(e);
         move = null;
       }
 
       // if the exe breaks, the other player wins
       if (!move || !move.stdout || move.stderr) {
+        // username of the failed player
+        console.error("user", usernames[userIdx]);
+        console.error("command", executablePath[userIdx]);
+        console.error("fen", fen);
+        if(move) console.error("stdout", move.stdout);
+        
         result.winner = usernames[1 - userIdx];
         result.result = ChessGameResult.GAME_OVER;
         result.reason = ChessGameResultReason.INVALID_MOVE;
