@@ -152,11 +152,7 @@ export default function CompetitionPage({
               icon={item.icon}
               onClick={() => {
                 setSelectedKey(item.key);
-                router.push(
-                  item.key === MenuKeys.Summary
-                    ? '/competition'
-                    : `/competition/${item.key}`,
-                );
+                router.push(`/competition/${item.key}`);
               }}
             >
               {item.key.toString()}
