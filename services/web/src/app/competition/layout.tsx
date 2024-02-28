@@ -93,14 +93,6 @@ export default function CompetitionPage({
 }: {
   children: React.ReactNode;
 }) {
-  let queryParameters: URLSearchParams;
-  let page: string | null = null;
-
-  if (typeof window !== 'undefined') {
-    queryParameters = new URLSearchParams(window.location.search);
-    page = queryParameters.get('page');
-  }
-
   const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
   const {
@@ -121,8 +113,6 @@ export default function CompetitionPage({
   };
 
   useEffect(() => {
-    if (page) setSelectedKey(page as MenuKeys);
-
     // get the user from the cookie
     if (!user) {
       const userCookie = getCookie('user');
@@ -153,7 +143,7 @@ export default function CompetitionPage({
         <div className="demo-logo-vertical" />
         <Menu
           theme="dark"
-          defaultSelectedKeys={page ? [page as MenuKeys] : [MenuKeys.Summary]}
+          defaultSelectedKeys={[MenuKeys.Summary]}
           mode="inline"
         >
           {items.map((item) => (
