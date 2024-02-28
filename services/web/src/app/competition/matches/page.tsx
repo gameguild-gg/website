@@ -47,15 +47,13 @@ export default function MatchesPage() {
     <Row>
       <Col span={24}>
         <h1>Matches</h1>
-        <p>todo: link this ids to the replay feature</p>
         <table>
           <thead>
             <tr>
               <th>Match ID</th>
               <th>Winner</th>
-              <th>Whites</th>
-              <th>Blacks</th>
-              <th>Last State</th>
+              <th>White</th>
+              <th>Black</th>
             </tr>
           </thead>
           <tbody>
@@ -80,7 +78,6 @@ export default function MatchesPage() {
                   </td>
                   <td>{entry.players[0]}</td>
                   <td>{entry.players[1]}</td>
-                  <td>{entry.lastState}</td>
                 </tr>
               );
             })}
