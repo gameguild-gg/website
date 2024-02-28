@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect } from 'react';
-import { Button, Col, Row } from 'antd';
+import { Button, Col, message, Row } from 'antd';
 import { MatchSearchRequestDto } from '@/dtos/competition/match-search-request.dto';
 import { MatchSearchResponseDto } from '@/dtos/competition/match-search-response.dto';
 import { getCookie } from 'cookies-next';
@@ -64,7 +64,9 @@ export default function MatchesPage() {
                 <tr key={index}>
                   <td>
                     <Button
-                      href={'/competition?page=Replay&matchId=' + entry.id}
+                      onClick={() => {
+                        router.push('/competition/replay?matchId=' + entry.id);
+                      }}
                     >
                       {entry.id}
                     </Button>

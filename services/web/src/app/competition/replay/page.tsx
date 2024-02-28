@@ -9,8 +9,6 @@ import { Button, message, Space, Typography } from 'antd';
 import { Chessboard } from 'react-chessboard';
 
 export default function ReplayPage() {
-  const queryParameters = new URLSearchParams(window.location.search);
-  const matchId = queryParameters.get('matchId');
   const [states, setStates] = React.useState<string[]>([]);
   const [currentStateId, setCurrentStateId] = React.useState<number>(0);
 
@@ -23,9 +21,11 @@ export default function ReplayPage() {
   const [matchFetched, setMatchFetched] = React.useState(false);
 
   async function getMatchData() {
+    const queryParameters = new URLSearchParams(window.location.search);
+    const matchId = queryParameters.get('matchId');
+    message.info('Match ID: ' + matchId);
     if (!matchId) {
-      router.push('/competition?page=Matches');
-      window.location.reload();
+      router.push('/competition/matches');
       return;
     }
     const baseUrl = process.env.NEXT_PUBLIC_API_URL;

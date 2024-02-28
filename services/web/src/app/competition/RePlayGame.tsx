@@ -10,8 +10,6 @@ import { Chess, Move, WHITE } from 'chess.js';
 // IT NEED TO RECEIVE THE WHOLE HISTORY OF THE GAME OR RECEIVE MATCH ID AND GET THE HISTORY FROM THE SERVER
 // SHOULD HAVE BUTTONS TO GO BACK AND FORTH IN THE GAME
 const RePlayGame: React.FC = () => {
-  const queryParameters = new URLSearchParams(window.location.search);
-  const matchId = queryParameters.get('matchId');
   const [states, setStates] = React.useState<string[]>([]);
   const [currentStateId, setCurrentStateId] = React.useState<number>(0);
 
@@ -24,9 +22,11 @@ const RePlayGame: React.FC = () => {
   const [matchFetched, setMatchFetched] = React.useState(false);
 
   async function getMatchData() {
+    const queryParameters = new URLSearchParams(window.location.search);
+    const matchId = queryParameters.get('matchId');
+    message.info('Match ID: ' + matchId);
     if (!matchId) {
-      router.push('/competition?page=Matches');
-      window.location.reload();
+      router.push('/competition/matches');
       return;
     }
     const baseUrl = process.env.NEXT_PUBLIC_API_URL;
