@@ -19,12 +19,12 @@ RUN NODE_ENV=development npm run install:api
 RUN npm run build:api
 
 # Install system image dependencies.
-RUN wget -q https://github.com/official-stockfish/Stockfish/archive/refs/tags/stockfish-dev-20240217-fc41f64d.zip
-RUN unzip stockfish-dev-20240217-fc41f64d.zip
-RUN rm stockfish-dev-20240217-fc41f64d.zip
-RUN cd Stockfish-stockfish-dev-20240217-fc41f64d/src && make build
-RUN mv Stockfish-stockfish-dev-20240217-fc41f64d/src/stockfish /app/stockfish
-RUN rm -rf Stockfish-stockfish-dev-20240217-fc41f64d
+RUN wget -q https://github.com/official-stockfish/Stockfish/archive/refs/tags/sf_16.1.zip
+RUN unzip sf_16.1.zip
+RUN rm sf_16.1.zip
+RUN cd Stockfish-sf_16.1/src && make build
+RUN mv Stockfish-sf_16.1/src/stockfish /app/stockfish
+RUN rm -rf Stockfish-sf_16.1
 RUN /app/stockfish --help
 RUN cp /app/stockfish /usr/local/bin/stockfish
 
