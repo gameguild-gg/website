@@ -1,12 +1,12 @@
 'use client';
 
-import { ChessMatchResultDto } from '@game-guild/common/src/competition/chess-match-result.dto';
 import { Chess } from 'chess.js';
 import { getCookie } from 'cookies-next';
 import { useRouter } from 'next/navigation';
 import React, { useEffect } from 'react';
 import { Button, message, Space, Typography } from 'antd';
 import { Chessboard } from 'react-chessboard';
+import { ChessMatchResultDto } from '../../../dtos/competition/chess-match-result.dto';
 
 export default function ReplayPage() {
   const [states, setStates] = React.useState<string[]>([]);
