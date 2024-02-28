@@ -91,12 +91,15 @@ const items: MenuItemProps[] = [
 ];
 
 const Competition: React.FC = () => {
+  const queryParameters = new URLSearchParams(window.location.search);
+  const page = queryParameters.get('page');
+
   const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
-  const [selectedKeys, setSelectedKeys] = useState([MenuKeys.Summary]);
+  const [selectedKey, setSelectedKey] = useState(MenuKeys.Summary);
 
   const [user, setUser] = useState(null as UserDto | null);
 
@@ -111,6 +114,8 @@ const Competition: React.FC = () => {
   };
 
   useEffect(() => {
+    if (page) setSelectedKey(page as MenuKeys);
+
     // get the user from the cookie
     if (!user) {
       const userCookie = getCookie('user');
@@ -141,14 +146,17 @@ const Competition: React.FC = () => {
         <div className="demo-logo-vertical" />
         <Menu
           theme="dark"
-          defaultSelectedKeys={[MenuKeys.Summary]}
+          defaultSelectedKeys={page ? [page as MenuKeys] : [MenuKeys.Summary]}
           mode="inline"
         >
           {items.map((item) => (
             <Menu.Item
               key={item.key}
               icon={item.icon}
-              onClick={() => setSelectedKeys([item.key])}
+              onClick={() => {
+                setSelectedKey(item.key);
+                router.push(`/competition?page=${item.key}`);
+              }}
             >
               {item.key.toString()}
             </Menu.Item>
@@ -165,7 +173,7 @@ const Competition: React.FC = () => {
               borderRadius: borderRadiusLG,
             }}
           >
-            {items.find((item) => item.key === selectedKeys[0])?.content}
+            {items.find((item) => item.key === selectedKey)?.content}
           </div>
         </Content>
         <Footer style={{ textAlign: 'center' }}>
