@@ -1,13 +1,13 @@
 'use client';
 
-import ChallengeABot from '@/app/competition/ChallengeABot';
-import Leaderboard from '@/app/competition/Leaderboard';
-import MatchesListUI from '@/app/competition/Matches';
-import PlayGame from '@/app/competition/PlayGame';
-import RePlayGame from '@/app/competition/RePlayGame';
-import SubmitBot from '@/app/competition/SubmitBot';
-import Summary from '@/app/competition/Summary';
-import Tournament from '@/app/competition/Tournament';
+import ChallengePage from '@/app/competition/challenge/page';
+import LeaderboardPage from '@/app/competition/leaderboard/page';
+import MatchesPage from '@/app/competition/matches/page';
+import PlayPage from '@/app/competition/play/page';
+import ReplayPage from '@/app/competition/replay/page';
+import SubmitPage from '@/app/competition/replay/page';
+import SummaryPage from '@/app/competition/summary/page';
+import TournamentPage from '@/app/competition/tournament/page';
 import { UserDto } from '@/dtos/user/user.dto';
 import {
   FileAddOutlined,
@@ -58,33 +58,37 @@ interface MenuItemProps {
 }
 
 const items: MenuItemProps[] = [
-  { key: MenuKeys.Summary, icon: <PieChartOutlined />, content: <Summary /> },
+  {
+    key: MenuKeys.Summary,
+    icon: <PieChartOutlined />,
+    content: <SummaryPage />,
+  },
   {
     key: MenuKeys.Leaderboard,
     icon: <OrderedListOutlined />,
-    content: <Leaderboard />,
+    content: <LeaderboardPage />,
   },
-  { key: MenuKeys.Submit, icon: <FileAddOutlined />, content: <SubmitBot /> },
+  { key: MenuKeys.Submit, icon: <FileAddOutlined />, content: <SubmitPage /> },
   {
     key: MenuKeys.Matches,
     icon: <HistoryOutlined />,
-    content: <MatchesListUI />,
+    content: <MatchesPage />,
   },
-  { key: MenuKeys.Play, icon: <PlayCircleOutlined />, content: <PlayGame /> },
+  { key: MenuKeys.Play, icon: <PlayCircleOutlined />, content: <PlayPage /> },
   {
     key: MenuKeys.Replay,
     icon: <PlayCircleOutlined />,
-    content: <RePlayGame />,
+    content: <ReplayPage />,
   },
   {
     key: MenuKeys.Challenge,
     icon: <PlayCircleOutlined />,
-    content: <ChallengeABot />,
+    content: <ChallengePage />,
   },
   {
     key: MenuKeys.Tournament,
     icon: <PlayCircleOutlined />,
-    content: <Tournament />,
+    content: <TournamentPage />,
   },
 ];
 
@@ -143,7 +147,10 @@ export default function CompetitionPage({
         <div className="demo-logo-vertical" />
         <Menu
           theme="dark"
-          defaultSelectedKeys={[MenuKeys.Summary]}
+          defaultSelectedKeys={() => {
+            // todo: improve this to use router to get the selected key from the path if exists
+            return [MenuKeys.Summary];
+          }}
           mode="inline"
         >
           {items.map((item) => (
@@ -171,7 +178,6 @@ export default function CompetitionPage({
             }}
           >
             {children}
-            {/*{items.find((item) => item.key === selectedKey)?.content}*/}
           </div>
         </Content>
         <Footer style={{ textAlign: 'center' }}>

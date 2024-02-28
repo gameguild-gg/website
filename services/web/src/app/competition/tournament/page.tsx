@@ -2,7 +2,7 @@
 
 import React from 'react';
 
-export default function SummaryPage() {
+export default function TournamentPage() {
   return (
     <>
       <p>

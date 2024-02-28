@@ -3,16 +3,17 @@
 import React, { useEffect, useState } from 'react';
 import { getCookie } from 'cookies-next';
 import { Button, Dropdown, MenuProps, message, Space, Typography } from 'antd';
-import { RobotFilled } from '@ant-design/icons';
+import { RobotFilled, UserOutlined } from '@ant-design/icons';
 import { UserDto } from '@/dtos/user/user.dto';
 import { ChessMatchRequestDto } from '@/dtos/competition/chess-match-request.dto';
+import { MatchSearchResponseDto } from '@/dtos/competition/match-search-response.dto';
 import { useRouter } from 'next/navigation';
 import { ChessMatchResultDto } from '@/dtos/competition/chess-match-result.dto';
-export default function ChallengePage() {
-  // flag for agent list fetched
-  const [agentList, setAgentList] = useState<string[]>([]);
 
+const ChallengePage: React.FC = () => {
   const router = useRouter();
+
+  const [agentList, setAgentList] = useState<string[]>([]);
   // flag for agent list fetched
   const [agentListFetched, setAgentListFetched] = useState<boolean>(false);
 
@@ -176,4 +177,6 @@ export default function ChallengePage() {
       </Space>
     </>
   );
-}
+};
+
+export default ChallengePage;

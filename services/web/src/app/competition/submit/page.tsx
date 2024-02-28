@@ -2,7 +2,7 @@
 
 import { InboxOutlined, UploadOutlined } from '@ant-design/icons';
 
-import { Button, message, Upload, UploadProps } from 'antd';
+import { Button, message, Space, Upload, UploadProps, Typography } from 'antd';
 import { getCookie } from 'cookies-next';
 import JSZip from 'jszip';
 import React, { useEffect, useState } from 'react';
@@ -141,17 +141,20 @@ export default function SubmitPage() {
 
   // todo: improve header and messaging
   return (
-    <div>
-      <h1>Submit Bot</h1>
-      <br />
-      <p>
+    <Space direction={'vertical'}>
+      <Typography.Title level={1}>Submit Bot</Typography.Title>
+      <Typography.Paragraph>
         You can either select all .h and .cpp files or zip them all together.
-      </p>
-      <p>
+      </Typography.Paragraph>
+      <Typography.Paragraph>
         If you submit via zip, all files should be in the root of the zip file.
-      </p>
-      <p>Hit submit button and wait for the submission to be validated.</p>
-      <p>ToDo: should be protected and not require password</p>
+      </Typography.Paragraph>
+      <Typography.Paragraph>
+        Hit submit button and wait for the submission to be validated. It might
+        take a while if the server have restarted or if it is your first
+        submission.
+      </Typography.Paragraph>
+      <Typography.Paragraph></Typography.Paragraph>
       <Dragger {...uploadProps}>
         <p className="ant-upload-drag-icon">
           <InboxOutlined />
@@ -183,6 +186,6 @@ export default function SubmitPage() {
           <td>{file.size} bytes</td>
         </tr>
       ))}
-    </div>
+    </Space>
   );
 }

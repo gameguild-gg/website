@@ -1,18 +1,76 @@
 'use client';
 
 import React, { useEffect } from 'react';
-import { Button, Col, message, Row } from 'antd';
+import {
+  Button,
+  Col,
+  message,
+  Row,
+  Table,
+  TableColumnsType,
+  Typography,
+} from 'antd';
 import { MatchSearchRequestDto } from '@/dtos/competition/match-search-request.dto';
 import { MatchSearchResponseDto } from '@/dtos/competition/match-search-response.dto';
 import { getCookie } from 'cookies-next';
 import { useRouter } from 'next/navigation';
 
 export default function MatchesPage() {
+  const router = useRouter();
+
+  interface DataType {
+    key: React.Key;
+    matchId: string;
+    winner: string;
+    white: string;
+    black: string;
+  }
+
+  const columns: TableColumnsType<DataType> = [
+    {
+      title: 'Match ID',
+      dataIndex: 'matchId',
+      render: (text) => (
+        <Button
+          type="link"
+          onClick={() => {
+            router.push('/competition/replay?matchId=' + text);
+          }}
+        >
+          {text}
+        </Button>
+      ),
+    },
+    {
+      title: 'Winner',
+      dataIndex: 'winner',
+      render: (text) => (
+        <Typography.Text
+          strong={true}
+          style={{
+            color: text === 'DRAW' ? 'gray' : 'black',
+          }}
+        >
+          {text}
+        </Typography.Text>
+      ),
+    },
+    {
+      title: 'White',
+      dataIndex: 'white',
+    },
+    {
+      title: 'Black',
+      dataIndex: 'black',
+    },
+  ];
+
+  const [matchesTable, setMatchesTable] = React.useState<DataType[]>([]);
+
   const [matchesData, setMatchesData] = React.useState<
     MatchSearchResponseDto[]
   >([]);
 
-  const router = useRouter();
   const [matchesFetched, setMatchesFetched] = React.useState<boolean>(false);
 
   const getMatchesData = async () => {
@@ -37,53 +95,29 @@ export default function MatchesPage() {
     console.log(data);
     setMatchesData(data);
     setMatchesFetched(true);
+
+    const tableData: DataType[] = [];
+    for (let i = 0; i < data.length; i++) {
+      const match = data[i];
+      tableData.push({
+        key: i,
+        matchId: match.id,
+        winner:
+          match.winner == null
+            ? 'DRAW'
+            : match.winner === 'Player1'
+              ? match.players[0]
+              : match.players[1],
+        white: match.players[0],
+        black: match.players[1],
+      });
+    }
+    setMatchesTable(tableData);
   };
 
   useEffect(() => {
     if (!matchesFetched) getMatchesData();
   });
 
-  return (
-    <Row>
-      <Col span={24}>
-        <h1>Matches</h1>
-        <table>
-          <thead>
-            <tr>
-              <th>Match ID</th>
-              <th>Winner</th>
-              <th>White</th>
-              <th>Black</th>
-            </tr>
-          </thead>
-          <tbody>
-            {matchesData.map((entry: MatchSearchResponseDto, index: number) => {
-              return (
-                <tr key={index}>
-                  <td>
-                    <Button
-                      onClick={() => {
-                        router.push('/competition/replay?matchId=' + entry.id);
-                      }}
-                    >
-                      {entry.id}
-                    </Button>
-                  </td>
-                  <td>
-                    {entry.winner == null
-                      ? 'DRAW'
-                      : entry.winner === 'Player1'
-                        ? entry.players[0]
-                        : entry.players[1]}
-                  </td>
-                  <td>{entry.players[0]}</td>
-                  <td>{entry.players[1]}</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </Col>
-    </Row>
-  );
+  return <Table columns={columns} dataSource={matchesTable} />;
 }
