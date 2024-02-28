@@ -1,13 +1,11 @@
 import React, { useEffect } from 'react';
-import { Chessboard } from 'react-chessboard';
-import { Chess } from 'chess.js';
-import { Col, Row } from 'antd';
+import { Button, Col, Row } from 'antd';
 import { MatchSearchRequestDto } from '@/dtos/competition/match-search-request.dto';
 import { MatchSearchResponseDto } from '@/dtos/competition/match-search-response.dto';
 import { getCookie } from 'cookies-next';
-import { useRouter } from "next/navigation";
+import { useRouter } from 'next/navigation';
 
-// LEST MATCHES
+// LAST MATCHES
 // ALLOW USER TO FILTER MATCHES BY DATE, BY PLAYER, BY TOURNAMENT
 // IF THE USER CLICKS ON A MATCH, IT WILL REDIRECT TO THE REPLAY PAGE WITH THE CORRECT PARAMETERS TO RENDER
 const MatchesListUI: React.FC = () => {
@@ -65,7 +63,13 @@ const MatchesListUI: React.FC = () => {
             {matchesData.map((entry: MatchSearchResponseDto, index: number) => {
               return (
                 <tr key={index}>
-                  <td>{entry.id}</td>
+                  <td>
+                    <Button
+                      href={'/competition?page=Replay&matchId=' + entry.id}
+                    >
+                      {entry.id}
+                    </Button>
+                  </td>
                   <td>
                     {entry.winner == null
                       ? 'DRAW'

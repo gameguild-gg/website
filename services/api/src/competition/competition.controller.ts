@@ -218,6 +218,7 @@ export class CompetitionController {
 
   @Get('/Chess/Match/:id')
   @Auth()
+  @ApiOkResponse({ type: ChessMatchResultDto })
   async GetChessMatchResult(
     @Param('id', ParseUUIDPipe) id: string,
     @AuthUser() user: UserEntity

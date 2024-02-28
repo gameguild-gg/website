@@ -91,8 +91,13 @@ const items: MenuItemProps[] = [
 ];
 
 const Competition: React.FC = () => {
-  const queryParameters = new URLSearchParams(window.location.search);
-  const page = queryParameters.get('page');
+  let queryParameters: URLSearchParams;
+  let page: string | null = null;
+
+  if (typeof window !== 'undefined') {
+    queryParameters = new URLSearchParams(window.location.search);
+    page = queryParameters.get('page');
+  }
 
   const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
