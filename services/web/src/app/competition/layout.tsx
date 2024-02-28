@@ -145,14 +145,7 @@ export default function CompetitionPage({
         onCollapse={(value) => setCollapsed(value)}
       >
         <div className="demo-logo-vertical" />
-        <Menu
-          theme="dark"
-          defaultSelectedKeys={() => {
-            // todo: improve this to use router to get the selected key from the path if exists
-            return [MenuKeys.Summary];
-          }}
-          mode="inline"
-        >
+        <Menu theme="dark" defaultSelectedKeys={[selectedKey]} mode="inline">
           {items.map((item) => (
             <Menu.Item
               key={item.key}
