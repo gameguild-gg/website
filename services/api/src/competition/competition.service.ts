@@ -998,7 +998,7 @@ export class CompetitionService {
       order: {
         elo: "DESC"
       },
-      take: 3,
+      take: 5,
     });
     
     return users;
