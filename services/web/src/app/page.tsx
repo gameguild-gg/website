@@ -85,7 +85,7 @@ function Home() {
                 }}
               >
                 <img
-                  style={{ width: 152, height: 54, margin: '15x' }}
+                  style={{ width: 135, height: 46, margin: "7px" }}
                   src="assets/images/logo-text.png"
                 />
                 &nbsp;
@@ -163,7 +163,7 @@ function Home() {
                 <img
                   width={25}
                   src="assets/images/language.svg"
-                  style={{ margin: '5px' }}
+                  style={{ margin: '7px'}}
                 />
               </Col>
             </Row>
@@ -176,8 +176,15 @@ function Home() {
               backgroundColor: '#101014',
               alignItems: 'center',
               alignContent: 'center',
+              overflow: 'hidden',
+              width: '100%'
             }}
           >
+            <video className=" absolute max-h-[500px] w-full object-none overflow-hidden z-3" autoPlay loop muted>
+              <source src="assets/videos/hexagon-bg.mp4" type="video/mp4" />
+            </video>
+            <div className="absolute h-[500px] w-full overflow-hidden opacity-70 z-4 bg-[#000000]" />
+
             <Row
               justify="space-around"
               style={{
@@ -187,54 +194,26 @@ function Home() {
                 alignItems: 'center',
                 alignContent: 'center',
                 overflow: 'hidden',
+                height: '500px',
               }}
             >
               <Col>
-                <Card>
-                  <Typography.Title>Crafting Games Together</Typography.Title>
-                  All-in-One Game Development community
-                </Card>
-              </Col>
-              <Col
-                style={{
-                  overflow: 'hidden',
-                  width: '280px',
-                  height: '480',
-                  verticalAlign: 'middle',
-                }}
-              >
-                <img
-                  style={{
-                    maxWidth: '520px',
-                    width: '100%',
-                    margin: '15x',
-                    scale: 1,
-                    display: 'block',
-                  }}
-                  src="assets/images/header1.jpeg"
-                />
-              </Col>
-              <Col>
-                <Card>
-                  <iframe
-                    src="https://discord.com/widget?id=956922983727915078&theme=dark"
-                    width="250px"
-                    height="480"
-                    frameBorder="0"
-                    sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts"
-                  ></iframe>
-                </Card>
+                <div>
+                  <div className="text-6xl">Building Games Together</div>
+                  <span className="text-lg">All-in-One Game Development community</span>
+                </div>
               </Col>
             </Row>
+
             <Row
-              justify="space-around"
+              justify="space-between"
               style={{
                 maxWidth: '1440px',
                 width: '100%',
                 display: 'inline-flex',
                 alignItems: 'center',
                 alignContent: 'center',
-                background: '#18181c  ',
+                background: '#18181c',//#18181c
               }}
             >
               <Col span={8}>
@@ -245,17 +224,68 @@ function Home() {
               </Col>
               <Col>
                 <Card>
-                  <Typography.Title>Learn!</Typography.Title>
-                  Take and create courses
+                  <Typography.Title>Let's talk!</Typography.Title>
+                  Join our Discord.
                 </Card>
               </Col>
+              <Col>
+                  <iframe
+                    src="https://discord.com/widget?id=956922983727915078&theme=dark"
+                    width="280px"
+                    height="480"
+                    sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts"
+                    style={{ padding: '10px'}}
+                  ></iframe>
+              </Col>
             </Row>
+
+            <Row
+              justify="space-between"
+              style={{
+                maxWidth: '1440px',
+                width: '100%',
+                display: 'inline-flex',
+                alignItems: 'center',
+                alignContent: 'center',
+                background: '#18181c',
+              }}
+            >
+              <Col>
+              </Col>
+              <Col>
+                <Card>
+                    <Typography.Title>Build!</Typography.Title>
+                    The best place to share games and game development content.
+                </Card>
+              </Col>
+                <Col
+                  style={{
+                    overflow: 'hidden',
+                    width: '480px',
+                    height: '480',
+                    verticalAlign: 'middle',
+                    zIndex: 2
+                  }}
+                >
+                  <img
+                    style={{
+                      maxWidth: '720px',
+                      width: '100%',
+                      margin: '15x',
+                      scale: 1,
+                      display: 'block',
+                    }}
+                    src="assets/images/header1.jpeg"
+                  />
+                </Col>
+              </Row>
+
           </Layout.Content>
           <Layout.Footer
             style={{
               textAlign: 'center',
               color: '#fff',
-              backgroundColor: '#18181c',
+              backgroundColor: '#2a2a2a',
             }}
           >
             <Flex justify="center" style={{ width: '100%' }} align="middle">
@@ -270,18 +300,23 @@ function Home() {
                 }}
               >
                 <Col style={{ display: 'inline-flex' }}>
-                  <img
-                    style={{ width: 30, height: 30, margin: '20x' }}
-                    src="assets/images/whatsapp-icon.svg"
-                  />
-                  <img
-                    style={{ width: 30, height: 30, margin: '20x' }}
-                    src="assets/images/discord-icon.svg"
-                  />
+                  <a href='#'>
+                    <img
+                      style={{ width: 30, height: 30, margin: 3 }}
+                      src="assets/images/whatsapp-icon.svg"
+                    />
+                  </a>
+                  <a href='#'>
+                    <img
+                      style={{ width: 30, height: 30, margin: 3 }}
+                      src="assets/images/discord-icon.svg"
+                    />
+                  </a>
                 </Col>
                 <Col>Game Guild © 2024 All Rights Reserved</Col>
-                <Col>Privacy Policy | Terms of Service</Col>
+                <Col><a href='#' style={{color: 'white'}}>Privacy Policy</a> | <a href='#' style={{color: 'white'}}>Terms of Service</a></Col>
               </Row>
+              
             </Flex>
           </Layout.Footer>
         </Layout>
