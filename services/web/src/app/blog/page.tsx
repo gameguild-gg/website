@@ -1,22 +1,14 @@
 'use client';
-import MetamaskSignIn from '@/components/web3/metamask';
-import { Row, Col, Layout, Flex, Card, Typography } from 'antd';
+//import MetamaskSignIn from '@/components/web3/metamask';
 import { useRouter } from 'next/navigation';
 import { notification, NotificationArgsProps } from 'antd';
 import React, { useEffect, useState } from 'react';
-import axios from "axios";
 // @ts-ignore
 import GhostContentAPI from '@tryghost/content-api'
-import { NotificationProvider } from '@/app/NotificationContext';
-import { UserOutlined } from '@ant-design/icons';
+//import { NotificationProvider } from '@/app/NotificationContext';
+//import { UserOutlined } from '@ant-design/icons';
 
 
-const baseURL = "https://gameguild.gg";
-const config = {
-  headers: {
-    "Content-Type": "application/json",
-  },
-};
 
 function Blog() {
   const [api, contextHolder] = notification.useNotification();
@@ -42,7 +34,6 @@ function Blog() {
   };
 
   useEffect( () => {
-    console.log(process.env.NEXT_PUBLIC_GHOST_CONTENT_API_KEY)
     console.log("useEffect()")
     async function fetchMyAPI() {
       setPosts(await ghost.posts.browse({include: 'tags,authors'})) //pega os 15 primeiros por padrão.
@@ -50,6 +41,10 @@ function Blog() {
     fetchMyAPI()
     console.log(posts)
   },[]);
+
+  const onBlogClick = (slug:string) => {
+    router.push('/blog/'+slug);
+  }
 
   return (
     <div>
@@ -64,7 +59,7 @@ function Blog() {
           width: '100%'
         }}
       >
-        <Row
+        <div
           style={{
             maxWidth: '1200px',
             width: '100%',
@@ -74,21 +69,22 @@ function Blog() {
         >
           {posts && posts.map((post:any) =>
 
-            <div className='p-[10px] align-top overflow-hidden text-white text-left' key={post.id}>
+            <div className='p-[10px] align-top overflow-hidden text-white text-left' key={post.id} onClick={() => onBlogClick(post.slug)}>
               <img src={post.feature_image} className='object-cover  w-[380px] h-[253px]'/>
 
               {post.tags && post.tags.map((tag:any)=>
-                <span className='text-neutral-500 p-1 py-0 mr-1 mt-2'>{tag.name}</span>
+                <div className='text-neutral-500 p-1 py-0 mr-1 mt-2 ml-[-4px]' key={tag.id}>{tag.name}</div>
               )}
 
               <div className='text-2xl'>{post.title}</div>
               <br />
               <div>{post.custom_excerpt || post.excerpt}</div>
+              <div className='text-neutral-500 p-1 py-0 ml-[-4px] pt-2'>{new Date(post.published_at).toLocaleDateString('pt-BR',{dateStyle:'short'})} • {post.reading_time} min. de leitura</div>
             </div>
 
           )}
           
-        </Row>
+        </div>
       </div>
     </div>
   );
