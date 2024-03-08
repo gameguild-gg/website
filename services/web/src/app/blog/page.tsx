@@ -1,22 +1,17 @@
-'use client';
 //import MetamaskSignIn from '@/components/web3/metamask';
 import { useRouter } from 'next/navigation';
 import { notification, NotificationArgsProps } from 'antd';
 import React, { useEffect, useState } from 'react';
 import GhostContentAPI from '@tryghost/content-api';
+import { fetchPost } from '@/actions/blog';
+import { router } from 'next/client';
 //import { NotificationProvider } from '@/app/NotificationContext';
 //import { UserOutlined } from '@ant-design/icons';
 
-function Blog() {
+async function Blog() {
+  const posts = await fetchPost('slug');
   const [api, contextHolder] = notification.useNotification();
-  const [posts, setPosts] = useState<any[]>([]);
-  const router = useRouter();
-
-  const ghost = new GhostContentAPI({
-    url: 'https://gameguild.gg',
-    key: process.env.NEXT_PUBLIC_GHOST_CONTENT_API_KEY ?? '',
-    version: 'v5.0',
-  });
+  const [router, setRouter] = useState(useRouter());
 
   const openNotification = (
     description: string,
@@ -30,18 +25,9 @@ function Blog() {
     });
   };
 
-  useEffect(() => {
-    console.log('useEffect()');
-    async function fetchMyAPI() {
-      setPosts(await ghost.posts.browse({ include: ['tags', 'authors'] })); //pega os 15 primeiros por padrão.
-    }
-    fetchMyAPI();
-    console.log(posts);
-  }, []);
-
-  const onBlogClick = (slug: string) => {
-    router.push('/blog/' + slug);
-  };
+  // const onBlogClick = (slug: string) => {
+  //   router.push('/blog/' + slug);
+  // };
 
   return (
     <div>
