@@ -1,0 +1,46 @@
+{
+  "name": "@game-guild/courses",
+  "version": "1.0.0",
+  "license": "MIT",
+  "scripts": {
+    "dev": "webpack serve --mode=development --stats-children",
+    "build": "webpack"
+  },
+  "dependencies": {
+    "@ant-design/icons": "^5.2.6",
+    "@monaco-editor/react": "^4.6.0",
+    "@react-buddy/ide-toolbox": "^2.4.0",
+    "@react-buddy/palette-antd": "^5.3.0",
+    "@types/react": "18.2.21",
+    "@types/react-dom": "18.2.7",
+    "antd": "^5.12.2",
+    "comlink": "^4.4.1",
+    "compression-webpack-plugin": "^10.0.0",
+    "dockview": "^1.10.1",
+    "emception": "1.0.15",
+    "flexlayout-react": "^0.7.15",
+    "golden-layout": "^2.6.0",
+    "less": "^4.2.0",
+    "less-loader": "^12.2.0",
+    "markdown-to-jsx": "^7.3.2",
+    "normalize.css": "^8.0.1",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "react-syntax-highlighter": "^15.5.0"
+  },
+  "devDependencies": {
+    "@types/copy-webpack-plugin": "^10.1.0",
+    "@types/node": "^18.11.18",
+    "@types/webpack": "^5.28.0",
+    "copy-webpack-plugin": "^11.0.0",
+    "css-loader": "^6.7.3",
+    "style-loader": "^3.3.1",
+    "ts-loader": "^9.5.1",
+    "ts-node": "^10.9.1",
+    "typescript": "^4.9.5",
+    "webpack": "^5.75.0",
+    "webpack-cli": "^5.0.1",
+    "webpack-dev-server": "^4.11.1",
+    "worker-loader": "^3.0.8"
+  }
+}
