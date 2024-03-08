@@ -11,7 +11,7 @@ import GhostContentAPI from '@tryghost/content-api'
 
 function Blog() {
   const [api, contextHolder] = notification.useNotification();
-  const [post, setPost] = useState()
+  const [post, setPost] = useState<any>()
   const router = useRouter();
   const params = useParams()
 
