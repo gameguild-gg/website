@@ -47,10 +47,5 @@
     "sass": "^1.71.1",
     "tailwindcss": "3.3.3",
     "typescript": "5.2.2"
-  },
-  "devDependencies": {
-    "@game-guild/eslint-config": "*",
-    "@game-guild/jest-config": "*",
-    "@game-guild/prettier-config": "*"
   }
 }

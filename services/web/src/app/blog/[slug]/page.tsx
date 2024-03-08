@@ -1,49 +1,18 @@
-'use client';
-//import MetamaskSignIn from '@/components/web3/metamask';
-import { useRouter, useParams } from 'next/navigation';
-import { notification, NotificationArgsProps } from 'antd';
-import React, { useEffect, useState } from 'react';
-import GhostContentAPI, { PostOrPage } from '@tryghost/content-api';
-//import { NotificationProvider } from '@/app/NotificationContext';
-//import { UserOutlined } from '@ant-design/icons';
+import React from 'react';
+import { fetchPost } from '@/actions/blog';
 
-function Blog() {
-  const [api, contextHolder] = notification.useNotification();
-  const [post, setPost] = useState<PostOrPage>();
-  const router = useRouter();
-  const params = useParams();
-
-  const ghost = new GhostContentAPI({
-    url: 'https://gameguild.gg',
-    key: process.env.NEXT_PUBLIC_GHOST_CONTENT_API_KEY ?? '',
-    version: 'v5.0',
-  });
-
-  const openNotification = (
-    description: string,
-    message: string = 'info',
-    placement: NotificationArgsProps['placement'] = 'topRight',
-  ) => {
-    notification.info({
-      message,
-      description: description,
-      placement,
-    });
+type Props = {
+  params: {
+    slug: string;
   };
+};
 
-  useEffect(() => {
-    console.log('useEffect()');
-    console.log('slug: ', params.slug);
-    async function fetchMyAPI() {
-      const slug: string = params.slug as string;
-      setPost(await ghost.posts.read({ slug }, { formats: ['html'] })); //, {include: 'tags,authors'}
-    }
-    fetchMyAPI();
-    console.log(post);
-  }, []);
+async function Post({ params: { slug } }: Readonly<Props>) {
+  const post = await fetchPost(slug);
 
   return (
     <>
+      <h2>POST</h2>
       <div
         style={{
           textAlign: 'center',
@@ -88,4 +57,4 @@ function Blog() {
   );
 }
 
-export default Blog;
+export default Post;
