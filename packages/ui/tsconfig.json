@@ -1,4 +1,7 @@
 {
   "extends": "@game-guild/tsconfig/react.json",
-  "compilerOptions": {}
+  "compilerOptions": {
+    "allowSyntheticDefaultImports": true,
+    "jsx": "react"
+  }
 }

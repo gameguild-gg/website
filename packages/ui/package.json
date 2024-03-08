@@ -5,9 +5,16 @@
   "license": "ISC",
   "author": "",
   "private": true,
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "react": "^18",
+    "react-dom": "^18"
+  },
   "devDependencies": {
-    "@game-guild/eslint-config": "*",
-    "@game-guild/prettier-config": "*",
-    "@game-guild/jest-config": "*"
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18"
   }
 }
