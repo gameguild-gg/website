@@ -43,7 +43,6 @@
     "@game-guild/prettier-config": "*",
     "@game-guild/tsconfig": "*",
     "@tryghost/content-api": "^1.11.20",
-    "@game-guild/courses": "*",
     "rimraf": "^3.0.2",
     "typescript": "^5.2.2"
   },
