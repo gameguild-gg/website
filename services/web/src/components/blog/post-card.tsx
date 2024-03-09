@@ -25,7 +25,7 @@ export function PostCard({ post }: Readonly<Props>) {
         <img
           src={post.feature_image}
           alt={post.title}
-          className="object-cover  w-[380px] h-[253px]"
+          className="object-cover w-full md:w-[380px] h-[253px]"
         />
       )}
 

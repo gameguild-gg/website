@@ -24,7 +24,7 @@ async function Blog() {
             width: '100%',
             background: '#18181c', //#18181c
           }}
-          className="grid grid-cols-3 mx-auto"
+          className="grid grid-cols-1 md:grid-cols-3 mx-auto"
         >
           {posts &&
             posts.map((post: any) => <PostCard post={post} key={post.id} />)}
