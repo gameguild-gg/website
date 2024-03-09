@@ -1,26 +1,26 @@
-'use server';
+"use server";
 
-export const fetchPosts = async () => {
+export const fetchPosts = async (page: number = 1, limit: string = "15") => {
   const admin_domain = process.env.GHOST_ADMIN_DOMAIN;
   const content_api_key = process.env.GHOST_CONTENT_API_KEY;
 
   const response = await fetch(
-    `https://${admin_domain}/ghost/api/content/posts?key=${content_api_key}`,
+    `https://${admin_domain}/ghost/api/content/posts?key=${content_api_key}${page > 1 ? `&page=${page}` : ""}${limit != '15' ? `&limit=${limit}` : ""}`,
     {
       headers: {
-        'Content-Type': 'application/json',
-        'Accept-Version': 'v5.0',
-      },
-    },
+        "Content-Type": "application/json",
+        "Accept-Version": "v5.0"
+      }
+    }
   );
 
   if (!response.ok) {
-    throw new Error('Failed to fetch posts');
+    throw new Error("Failed to fetch posts");
   }
 
-  const { posts } = await response.json();
+  const { posts, meta: { pagination } } = await response.json();
 
-  return posts;
+  return { posts, pagination };
 };
 
 export const fetchPost = async (slug: string) => {
@@ -31,14 +31,14 @@ export const fetchPost = async (slug: string) => {
     `https://${admin_domain}/ghost/api/content/posts/slug/${slug}?key=${content_api_key}`,
     {
       headers: {
-        'Content-Type': 'application/json',
-        'Accept-Version': 'v5.0',
-      },
-    },
+        "Content-Type": "application/json",
+        "Accept-Version": "v5.0"
+      }
+    }
   );
 
   if (!response.ok) {
-    throw new Error('Failed to fetch post');
+    throw new Error("Failed to fetch post");
   }
 
   const { posts } = await response.json();
