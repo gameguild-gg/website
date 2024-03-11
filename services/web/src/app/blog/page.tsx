@@ -1,50 +1,26 @@
 import React from "react";
 import { fetchPosts } from "@/actions/blog";
 import { PostCard } from "@/components/blog/post-card";
-import Link from "next/link";
+import { BlogPagination } from "@/components/blog/blog-pagination";
 
 type Props = {
   searchParams: {
-    page: number;
+    page: any;
   };
 };
 
-async function Blog({ searchParams: { page } }: Readonly<Props>) {
+async function Blog({ searchParams: { page = 1 } }: Readonly<Props>) {
   const { posts, pagination } = await fetchPosts(page);
 
-  // TODO: Should move to a BlogPagination component.
-  const pages = [];
-  for (let i = 1; i <= pagination.pages; i++) {
-    pages.push(<Link href={i == 1 ? "/blog" : `/blog?page=${i}`} key={i}>{i}</Link>);
-  }
-
   return (
-    <div>
-      <div
-        style={{
-          textAlign: "center",
-          color: "#fff",
-          backgroundColor: "#101014",
-          alignItems: "center",
-          alignContent: "center",
-          overflow: "hidden",
-          width: "100%"
-        }}
-      >
-        <div
-          style={{
-            maxWidth: "1200px",
-            width: "100%",
-            background: "#18181c" //#18181c
-          }}
-          className="grid grid-cols-1 md:grid-cols-3 mx-auto"
-        >
+    <div className='w-full min-h-screen overflow-hidden text-white bg-[#101014]'>
+      <div className='mx-auto bg-[#18181c] w-full max-w-[1200px] min-h-screen'>
+        <div className='grid grid-cols-1 md:grid-cols-3 mx-auto no-underline hover:no-underline'>
           {posts &&
             posts.map((post: any) => <PostCard post={post} key={post.id} />)}
         </div>
         <div>
-          {/* TODO: Should be a BlogPagination Component!*/}
-          {pages}
+          <BlogPagination page={parseInt(page)} pages={pagination.pages}/>
         </div>
       </div>
     </div>
