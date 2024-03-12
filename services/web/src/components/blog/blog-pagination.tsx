@@ -6,7 +6,7 @@ import { PostOrPage, Tag } from '@tryghost/content-api';
 import Link from "next/link";
 
 type Props = {
-  page: number
+  page: number;
   pages: number;
 };
 
@@ -35,7 +35,7 @@ export function BlogPagination( { page = 1, pages }: Readonly<Props>) {
       }
 
       {[...Array(3)].map((e,i) =>
-        <span>
+        <span key={i}>
           {(page-3+i > 0) &&
             <Link
               href={`/blog/page/${(page-3+i)}`}
@@ -51,7 +51,7 @@ export function BlogPagination( { page = 1, pages }: Readonly<Props>) {
       <span className='font-bold'>{page}</span>
 
       {[...Array(3)].map((e,i) =>
-        <span>
+        <span key={i}>
           &nbsp;&nbsp;
           {(page+1+i <= pages) &&
             <Link
