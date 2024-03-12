@@ -2,7 +2,8 @@
 
 import React, { useState } from 'react';
 import { BrowserProvider, Eip1193Provider, ethers } from 'ethers';
-import { Button } from '@game-guild/ui';
+import { Button } from "antd";
+// import { Button } from '@game-guild/ui';
 
 declare global {
   interface Window {
