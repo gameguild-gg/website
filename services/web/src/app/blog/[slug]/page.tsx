@@ -30,10 +30,10 @@ async function Post({ params: { slug } }: Readonly<Props>) {
             <div              
               dangerouslySetInnerHTML={{ __html: post?.html as string }}
               className="text-left max-w-[720px] mx-auto [&_img]:mx-auto [&_pre]:border
-              [&_pre]:my-3 [&_iframe]:w-full [&_iframe]:h-[404px] [&_figure]:mx-auto
+              [&_pre]:my-3 [&_pre]:p-2 [&_iframe]:w-full [&_iframe]:h-[404px] [&_figure]:mx-auto
               [&_figure]:my-3 [&_figure]:text-center [&_h3]:text-2xl [&_h3]:my-3
               [&_h2]:text-4xl [&_h2]:my-3 [&_blockquote]:border [&_p]:my-3
-              [&_ul]:list-disc [&_ul]:m-2"
+              [&_ul]:list-disc [&_ul]:m-4 [&_figure]:italic"
             />
           </div>
         )}
