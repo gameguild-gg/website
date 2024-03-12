@@ -8,17 +8,7 @@ type Props = {};
 
 async function Blog({}: Readonly<Props>) {
   const { posts, pagination } = await fetchPosts();
-
-  // TODO: Should move to a BlogPagination component.
-  const pages = [];
-  for (let i = 1; i <= pagination.pages; i++) {
-    pages.push(
-      <Link href={i == 1 ? '/blog' : `/blog/page/${i}`} key={i}>
-        {i}
-      </Link>,
-    );
-  }
-
+  
   return (
     <div>
       <div

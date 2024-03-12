@@ -12,21 +12,21 @@ type Props = {
 
 export function BlogPagination( { page = 1, pages }: Readonly<Props>) {
   
-  //console.log("page: ",page," pages: ",pages)
+  console.log("page: ",page," pages: ",pages)
 
   return (
     <div className="p-[10px] align-top overflow-hidden text-center items-end" >
       {(page != 1) &&
         <span>
           <Link
-            href={`/blog?page=${(1)}`}
+            href={`/blog/${(1)}`}
             className='text-white tracking-[-0.15 em]'
           >
             &lt;&lt;
           </Link>
           &nbsp;&nbsp;
           <Link
-            href={`/blog?page=${(page-1)}`}
+            href={`/blog/page/${(page-1)}`}
             className='text-white'
           >
             &lt;
@@ -38,7 +38,7 @@ export function BlogPagination( { page = 1, pages }: Readonly<Props>) {
         <span>
           {(page-3+i > 0) &&
             <Link
-              href={`/blog?page=${(page-3+i)}`}
+              href={`/blog/page/${(page-3+i)}`}
               className='text-white'
             >
               {(page-3+i)}
@@ -55,7 +55,7 @@ export function BlogPagination( { page = 1, pages }: Readonly<Props>) {
           &nbsp;&nbsp;
           {(page+1+i <= pages) &&
             <Link
-            href={`/blog?page=${(page+1+i)}`}
+            href={`/blog/page/${(page+1+i)}`}
             className='text-white'
           >
             { (page+1+i) }
@@ -67,14 +67,14 @@ export function BlogPagination( { page = 1, pages }: Readonly<Props>) {
       {(page != pages) &&
         <span>
           <Link
-            href={`/blog?page=${(page+1)}`}
+            href={`/blog/page/${(page+1)}`}
             className='text-white'
           >
             &gt;
           </Link>
           &nbsp;&nbsp;
           <Link
-            href={`/blog?page=${(pages)}`}
+            href={`/blog/page/${(pages)}`}
             className='text-white tracking-[-0.15em]'
           >
             &gt;&gt;

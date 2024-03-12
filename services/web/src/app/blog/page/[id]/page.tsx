@@ -2,7 +2,7 @@ import React from "react";
 import { fetchPosts } from "@/actions/blog";
 import { PostCard } from "@/components/blog/post-card";
 import Link from "next/link";
-
+import { BlogPagination } from '@/components/blog/blog-pagination';
 type Props = {
   params: {
     id: number;
@@ -11,16 +11,6 @@ type Props = {
 
 async function Blog({ params: { id } }: Readonly<Props>) {
   const { posts, pagination } = await fetchPosts(id);
-
-  // TODO: Should move to a BlogPagination component.
-  const pages = [];
-  for (let i = 1; i <= pagination.pages; i++) {
-    pages.push(
-      <Link href={i == 1 ? '/blog' : `/blog/page/${i}`} key={i}>
-        {i}
-      </Link>,
-    );
-  }
 
   return (
     <div>
@@ -47,8 +37,7 @@ async function Blog({ params: { id } }: Readonly<Props>) {
             posts.map((post: any) => <PostCard post={post} key={post.id} />)}
         </div>
         <div>
-          {/* TODO: Should be a BlogPagination Component!*/}
-          {pages}
+          <BlogPagination page={id} pages={pagination.pages} />
         </div>
       </div>
     </div>
