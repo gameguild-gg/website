@@ -1,7 +1,7 @@
 import { Column, Entity, Index, ManyToOne } from "typeorm";
 import { EntityBase } from "../common/entities/entity.base";
 
-@Entity({ name: 'asset' })
+@Entity({ name: 'ipfs' })
 export class IpfsEntity extends EntityBase {
   @Column({nullable: false})
   @Index({unique: false})

@@ -21,6 +21,7 @@ export abstract class ContentBase extends EntityBase {
   @Column({type: 'enum', enum: VisibilityEnum, default: VisibilityEnum.DRAFT})
   visibility: VisibilityEnum;
   
-  @OneToMany((type) => TagEntity, (tag) => tag.content)
-  tags: TagEntity[];
+  // todo: how to make this a generic link to any entity inherited from this class?
+  // @OneToMany((type) => TagEntity, (tag) => tag.content)
+  // tags: TagEntity[];
 }

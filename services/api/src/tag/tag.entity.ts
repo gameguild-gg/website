@@ -8,6 +8,6 @@ export class TagEntity extends EntityBase {
   @Index({unique: true})
   tag: string;
   
-  @ManyToOne((type) => ContentBase, (content) => content.tags)
-  content: ContentBase;
+  // @ManyToOne((type) => ContentBase, (content) => content.tags)
+  // content: ContentBase;
 }
