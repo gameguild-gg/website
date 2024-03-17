@@ -1,10 +1,15 @@
-/** @type {import('next').NextConfig} */
+const createNextIntlPlugin = require("next-intl/plugin");
+
+const withNextIntl = createNextIntlPlugin();
+
+/** @type {import("next").NextConfig} */
 const nextConfig = {
-  output: 'standalone',
+  output: "standalone",
   // ignoreBuildErrors: true,
   eslint: {
-    ignoreDuringBuilds: true,
-  },
+    ignoreDuringBuilds: true
+  }
 };
 
-module.exports = nextConfig;
+// module.exports = nextConfig;
+module.exports = withNextIntl(nextConfig);
