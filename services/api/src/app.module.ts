@@ -16,6 +16,8 @@ import { CompetitionModule } from './competition/competition.module';
 import { HttpAdapterHost } from '@nestjs/core';
 import { ClsModule } from "nestjs-cls";
 import { HealthcheckModule } from './healthcheck/healthcheck.module';
+import { TagModule } from './tag/tag.module';
+import { IpfsModule } from './asset/ipfs.module';
 
 @Module({
   imports: [
@@ -41,6 +43,8 @@ import { HealthcheckModule } from './healthcheck/healthcheck.module';
     EventModule,
     CompetitionModule,
     HealthcheckModule,
+    TagModule,
+    IpfsModule,
   ],
   controllers: [AppController],
   providers: [

@@ -10,6 +10,9 @@ export const fetchPosts = async (page: number = 1, limit: string = "15") => {
       headers: {
         "Content-Type": "application/json",
         "Accept-Version": "v5.0"
+      },
+      next: {
+        revalidate: 360 //cache de 1 hora
       }
     }
   );

@@ -1,5 +1,5 @@
 import { Entity } from 'typeorm';
-import { ContentBase } from '../../common/entities/content.base';
+import { ContentBase } from "../../course/entities/content.base";
 
 @Entity({ name: 'proposal' })
 export class ProposalEntity extends ContentBase {
