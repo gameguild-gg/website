@@ -4,14 +4,16 @@ import {
   Column,
   Entity,
   Index,
-  JoinColumn,
+  JoinColumn, JoinTable, ManyToMany,
   OneToMany,
-  OneToOne,
-} from 'typeorm';
+  OneToOne
+} from "typeorm";
 import { EntityBase } from '../../common/entities/entity.base';
 import { UserProfileEntity } from '../modules/user-profile/entities/user-profile.entity';
 import { CompetitionSubmissionEntity } from '../../competition/entities/competition.submission.entity';
 import { UserDto } from "../../dtos/user/user.dto";
+import { PostEntity } from "../../cms/entities/post.entity";
+import { CourseEntity } from "../../cms/entities/course.entity";
 
 // todo: move to user-profile lots of fields from here
 
@@ -95,4 +97,13 @@ export class UserEntity extends EntityBase implements UserDto {
   @Column({ type: 'float', default: 400 })
   @ApiProperty()
   elo: number;
+  
+  // relation to posts many to many
+  @ManyToMany(() => PostEntity, (post) => post.owners)
+  @JoinTable()
+  posts: PostEntity[];
+
+  // relation to courses
+  @OneToMany(() => CourseEntity, (course) => course.author)
+  courses: CourseEntity[];
 }
