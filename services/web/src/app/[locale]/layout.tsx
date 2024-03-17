@@ -8,19 +8,22 @@ import CookieConsent from "@/components/cookie/cookie-consent";
 
 type RootLayoutProps = {
   children: React.ReactNode;
+  modal: React.ReactNode;
   params: {
     locale: string;
   };
 };
 
-async function RootLayout({ children, params: { locale } }: Readonly<RootLayoutProps>) {
+async function RootLayout({ children, modal, params: { locale } }: Readonly<RootLayoutProps>) {
   return (
     <html lang={locale}>
     <body>
     <ThemeProvider>
       <Web3Provider>
         {children}
-        <CookieConsent/>
+        {modal}
+        <CookieConsent />
+        {/*<div id="modal-root" />*/}
       </Web3Provider>
     </ThemeProvider>
     </body>
