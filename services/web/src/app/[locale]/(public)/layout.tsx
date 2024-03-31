@@ -1,5 +1,6 @@
 import React from "react";
 import { Page } from "@/components/page";
+import CookieConsent from "@/components/cookie/cookie-consent";
 
 const LINKS = [
   { href: "/about", label: "About" },
@@ -23,6 +24,7 @@ export default function Layout({ children }: Readonly<Props>) {
       <Page.Footer>
 
       </Page.Footer>
+      <CookieConsent />
     </Page>
   );
 }

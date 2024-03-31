@@ -10,10 +10,10 @@ export default async function Layout({ children }: Readonly<Props>) {
       <div className="h-full backdrop-blur-md ">
         <div className="h-full bg-black/85">
           <div className="flex h-full  ">
-            <div
-              className="flex w-96 bg-center bg-cover bg-[url('https://rarible.com/public/9069a74d3116247a914c.jpg')] p-8">
+              <div
+                className="flex w-96 bg-center bg-cover bg-[url('https://rarible.com/public/9069a74d3116247a914c.jpg')] p-8">
 
-            </div>
+              </div>
             <div className="flex flex-grow p-8">
               {children}
             </div>

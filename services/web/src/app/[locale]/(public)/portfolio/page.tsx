@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 };
 
 const Portfolio = () => (
-  <main>
+  <div>
     <p>
       Welcome to my portfolio page! Here you will find a carefully curated
       collection of my work and accomplishments. Through this portfolio,
@@ -34,7 +34,7 @@ const Portfolio = () => (
         </Link>
       ))}
     </div>
-  </main>
+  </div>
 );
 
 export default Portfolio;
