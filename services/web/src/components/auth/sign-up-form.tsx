@@ -29,7 +29,9 @@ export default function SignUpForm() {
             <Input id="email" type="email" placeholder="m@example.com" required />
           </div>
           <div className="grid gap-2">
+            <div className="flex items-center h-5">
             <Label htmlFor="password">Password</Label>
+            </div>
             <Input id="password" type="password" required />
           </div>
           <SubmitButton className="w-full">Sign Up</SubmitButton>
