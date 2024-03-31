@@ -1,7 +1,9 @@
+import SignInForm from "@/components/auth/sign-in-form";
+
 function SignInModal() {
   return (
     <div>
-      <h1>Sign In</h1>
+      <SignInForm />
     </div>
   );
 }
