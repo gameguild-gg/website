@@ -2,8 +2,9 @@
 
 import React from "react";
 import { useFormStatus } from "react-dom";
+import { Button } from "@/components/ui/button";
 
-type Props = {
+type Props = React.ButtonHTMLAttributes<HTMLButtonElement> & {
   children: React.ReactNode;
 };
 
@@ -11,8 +12,8 @@ export function SubmitButton({ children = "Submit" }: Readonly<Props>) {
   const { pending } = useFormStatus();
 
   return (
-    <button type="submit" aria-disabled={pending}>
+    <Button type="submit" aria-disabled={pending}>
       {children}
-    </button>
+    </Button>
   );
 }

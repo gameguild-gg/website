@@ -6,7 +6,7 @@ export default async function Page() {
   return (
     <html lang="en">
     <body>
-    <div className="flex flex-col min-h-[100vh] items-center justify-center space-y-4 text-center">
+    <div className="flex flex-grow flex-col min-h-[100vh] items-center justify-center space-y-4 text-center">
       <Image src={"/placeholder.svg"} alt={"Acme Inc"} height="150" width="300"
              className="mx-auto aspect-[2/1] overflow-hidden rounded-lg object-contain object-center" />
 

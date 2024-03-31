@@ -8,7 +8,7 @@ const Variants = cva(
     variants: {
       size: {
         compact: "container",
-        wide: ""
+        wide: "px-8"
       }
     },
     defaultVariants: {

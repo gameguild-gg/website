@@ -15,7 +15,7 @@ export default async function Layout({ children }: Readonly<Props>) {
   return (
     <Dashboard>
       <Dashboard.Sidebar />
-      <Dashboard.Content size="compact">
+      <Dashboard.Content size="wide">
         <Dashboard.Header />
         <Dashboard.Viewport>
           {children}
