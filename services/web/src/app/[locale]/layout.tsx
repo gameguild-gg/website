@@ -13,8 +13,8 @@ type Props = {
 
 export default async function Layout({ children, modal, params: { locale } }: Readonly<Props>) {
   return (
-    <html lang={locale} className="h-full">
-    <body className="h-full">
+    <html lang={locale}>
+    <body>
     <ThemeProvider>
       <Web3Provider>
         {children}
