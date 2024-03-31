@@ -1,5 +1,3 @@
-async function Loading() {
+export default async function Loading() {
   return (<div></div>);
 }
-
-export default Loading;

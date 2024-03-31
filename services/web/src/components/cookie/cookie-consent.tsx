@@ -1,13 +1,11 @@
 "use client";
 
 import React from "react";
-
-import CookieIcon from "./cookie-icon";
-import { Button } from "@game-guild/ui";
+import { CookieIcon } from "lucide-react";
 
 type CookieConsentProps = {};
 
-function CookieConsent({}: Readonly<CookieConsentProps>) {
+export default function CookieConsent({}: Readonly<CookieConsentProps>) {
   return (
     <aside className="fixed inset-x-0 bottom-0 z-50 flex flex-col p-4 gap-2 bg-gray-50/90 dark:bg-gray-900/90">
       <div className="flex items-center space-x-4">
@@ -20,11 +18,10 @@ function CookieConsent({}: Readonly<CookieConsentProps>) {
         </div>
       </div>
       <div className="flex items-center space-x-4">
-        <Button>Accept</Button>
-        <Button>Settings</Button>
+        <button>Accept</button>
+        <button>Settings</button>
       </div>
     </aside>
   );
 }
 
-export default CookieConsent;

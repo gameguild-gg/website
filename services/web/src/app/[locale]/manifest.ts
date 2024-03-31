@@ -1,7 +1,5 @@
-import { MetadataRoute } from 'next';
+import { MetadataRoute } from "next";
 
-async function manifest(): Promise<MetadataRoute.Manifest> {
+export default async function manifest(): Promise<MetadataRoute.Manifest> {
   return {};
 }
-
-export default manifest;

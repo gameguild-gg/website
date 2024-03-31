@@ -2,18 +2,16 @@ import React from "react";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 
-type DashboardLayoutProps = {
+type Props = {
   children: React.ReactNode;
 };
 
-async function DashboardLayout({ children }: Readonly<DashboardLayoutProps>) {
+export default async function Layout({ children }: Readonly<Props>) {
   const session = await auth();
 
   if (!session?.user) {
     redirect("/sign-in");
   }
 
-  return (<div>{children}</div>);
+  return ({ children });
 }
-
-export default DashboardLayout;

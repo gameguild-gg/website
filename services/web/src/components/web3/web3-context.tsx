@@ -56,7 +56,7 @@ function web3Reducer(state: State, action: Action) {
   }
 }
 
-function Web3Provider({ children }: Readonly<Props>) {
+export function Web3Provider({ children }: Readonly<Props>) {
   const [state, dispatch] = React.useReducer(web3Reducer, InitialState);
 
   React.useEffect(() => {
@@ -71,7 +71,7 @@ function Web3Provider({ children }: Readonly<Props>) {
   );
 }
 
-function useWeb3() {
+export function useWeb3() {
   const context = React.useContext(Web3Context);
 
   if (context === undefined) {
@@ -81,7 +81,7 @@ function useWeb3() {
   return context;
 }
 
-async function connectToWallet(dispatch: Dispatch) {
+export async function connectToWallet(dispatch: Dispatch) {
   dispatch({ type: "CONNECT_TO_PROVIDER_INITIAL" });
 
   try {
@@ -107,5 +107,3 @@ async function connectToWallet(dispatch: Dispatch) {
 async function requestWeb3SignInChallenge(dispatch: Dispatch) {
 
 }
-
-export { Web3Provider, useWeb3, connectToWallet };

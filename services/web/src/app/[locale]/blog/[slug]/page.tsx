@@ -1,5 +1,5 @@
 import React from 'react';
-import { fetchPost } from '@/lib/actions/blog';
+import { fetchPost } from '@/lib/blog/actions';
 
 type Props = {
   params: {

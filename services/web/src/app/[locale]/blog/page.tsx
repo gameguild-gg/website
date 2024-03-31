@@ -1,5 +1,5 @@
 import React from 'react';
-import { fetchPosts } from '@/lib/actions/blog';
+import { fetchPosts } from '@/lib/blog/actions';
 import { PostCard } from '@/components/blog/post-card';
 import { BlogPagination } from '@/components/blog/blog-pagination';
 import Link from 'next/link';

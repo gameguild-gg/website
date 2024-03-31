@@ -1,5 +1,5 @@
-async function Page() {
+import React from "react";
+
+export default async function Page() {
   return (<div></div>);
 }
-
-export default Page;

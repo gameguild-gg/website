@@ -1,4 +1,6 @@
-function PrivacyConsent() {
+import React from "react";
+
+export default function PrivacyConsent() {
   return (
     <main>
       <p>
@@ -16,5 +18,3 @@ function PrivacyConsent() {
     </main>
   );
 }
-
-export default PrivacyConsent;

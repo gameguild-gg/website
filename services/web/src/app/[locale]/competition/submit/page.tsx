@@ -139,7 +139,7 @@ export default function SubmitPage() {
     },
   };
 
-  // todo: improve header and messaging
+  // todo: improve layout-header and messaging
   return (
     <Space direction={'vertical'}>
       <Typography.Title level={1}>Submit Bot</Typography.Title>

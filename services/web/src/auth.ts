@@ -1,5 +1,6 @@
 import NextAuth, { type NextAuthConfig, User } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
+import Google from "next-auth/providers/google";
 
 export const authConfig = {
   pages: {
@@ -22,6 +23,10 @@ export const authConfig = {
         };
         return user;
       }
+    }),
+    Google({
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET
     })
   ],
   session: {
@@ -32,4 +37,3 @@ export const authConfig = {
 export const { auth, handlers, signIn, signOut } = NextAuth({
   ...authConfig
 });
-

@@ -1,6 +1,6 @@
 import { MetadataRoute } from 'next';
 
-async function robots(): Promise<MetadataRoute.Robots> {
+export default async function robots(): Promise<MetadataRoute.Robots> {
   const host = '';
 
   return {
@@ -14,5 +14,3 @@ async function robots(): Promise<MetadataRoute.Robots> {
     sitemap: `https://${host}/sitemap.xml`,
   };
 }
-
-export default robots;

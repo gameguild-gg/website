@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import React from 'react';
-import { useFormState } from 'react-dom';
-import { SignUpFormState, signUpWithEmailAndPassword } from '@/lib/actions/auth';
-import { SubmitButton } from '../common/submit-button';
+import React from "react";
+import { useFormState } from "react-dom";
+import { SignUpFormState, signUpWithEmailAndPassword } from "@/lib/auth/actions";
+import { SubmitButton } from "../ui/submit-button";
 
 const initialState: SignUpFormState = {};
 

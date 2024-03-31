@@ -1,28 +1,28 @@
 "use client";
 
 import React from "react";
-import Card from "@game-guild/ui/src/card";
-import CookieIcon from "./cookie-icon";
-import Button from "@game-guild/ui/src/button";
-import Label from "@game-guild/ui/src/label";
-import Switch from "@game-guild/ui/src/switch";
+import { CookieIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 
 
 type CookiePreferencesProps = {};
 
-function CookiePreferences({}: Readonly<CookiePreferencesProps>) {
+export default function CookiePreferences({}: Readonly<CookiePreferencesProps>) {
   return (
     <Card key="1" className="w-full max-w-lg">
-      <Card.Header className="border-b border-dark-gray-300 pb-4">
+      <CardHeader className="border-b border-dark-gray-300 pb-4">
         <div className="flex items-center">
           <CookieIcon className="mr-2" />
-          <Card.Title>Cookie Preferences</Card.Title>
+          <CardTitle>Cookie Preferences</CardTitle>
         </div>
-        <Card.Description>
+        <CardDescription>
           Manage your cookie settings. You can enable or disable different types of cookies below.
-        </Card.Description>
-      </Card.Header>
-      <Card.Content className="space-y-4 pt-4">
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4 pt-4">
         <div className="flex justify-between items-start space-y-2">
           <div>
             <Label htmlFor="essential">Essential Cookies</Label>
@@ -51,15 +51,14 @@ function CookiePreferences({}: Readonly<CookiePreferencesProps>) {
           </div>
           <Switch className="ml-auto" id="marketing" />
         </div>
-      </Card.Content>
+      </CardContent>
       <div className="border-t border-dark-gray-300 mt-4" />
-      <Card.Footer>
+      <CardFooter>
         <Button className="ml-auto" type="submit">
           Save Preferences
         </Button>
-      </Card.Footer>
+      </CardFooter>
     </Card>
   );
 }
 
-export default CookiePreferences;

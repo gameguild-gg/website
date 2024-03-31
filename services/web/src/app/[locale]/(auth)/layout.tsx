@@ -1,15 +1,9 @@
 import React from "react";
 
-type AuthLayoutProps = {
+type Props = {
   children: React.ReactNode;
 };
 
-async function AuthLayout({ children }: Readonly<AuthLayoutProps>) {
-  return (
-    <div>
-      {children}
-    </div>
-  );
+export default async function Layout({ children }: Readonly<Props>) {
+  return ({ children });
 }
-
-export default AuthLayout;

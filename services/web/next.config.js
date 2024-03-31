@@ -4,11 +4,7 @@ const withNextIntl = createNextIntlPlugin();
 
 /** @type {import("next").NextConfig} */
 const nextConfig = {
-  output: "standalone",
-  // ignoreBuildErrors: true,
-  eslint: {
-    ignoreDuringBuilds: true
-  }
+  output: "standalone"
 };
 
 // module.exports = nextConfig;

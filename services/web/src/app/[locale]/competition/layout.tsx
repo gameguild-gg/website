@@ -1,13 +1,13 @@
 'use client';
 
-import ChallengePage from '@/app/competition/challenge/page';
-import LeaderboardPage from '@/app/competition/leaderboard/page';
-import MatchesPage from '@/app/competition/matches/page';
-import PlayPage from '@/app/competition/play/page';
-import ReplayPage from '@/app/competition/replay/page';
-import SubmitPage from '@/app/competition/replay/page';
-import SummaryPage from '@/app/competition/summary/page';
-import TournamentPage from '@/app/competition/tournament/page';
+import ChallengePage from '@/app/competition/challenge/layout';
+import LeaderboardPage from '@/app/competition/leaderboard/layout';
+import MatchesPage from '@/app/competition/matches/layout';
+import PlayPage from '@/app/competition/play/layout';
+import ReplayPage from '@/app/competition/replay/layout';
+import SubmitPage from '@/app/competition/replay/layout';
+import SummaryPage from '@/app/competition/summary/layout';
+import TournamentPage from '@/app/competition/tournament/layout';
 import { UserDto } from '@/dtos/user/user.dto';
 import {
   FileAddOutlined,

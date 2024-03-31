@@ -1,37 +1,29 @@
-"use client";
-
 import React from "react";
-import Header from "@/components/common/header";
-import Footer from "@/components/common/footer";
-import { Flex, Layout } from "antd";
+import { Page } from "@/components/page";
 
-type PublicLayoutProps = {
+const LINKS = [
+  { href: "/about", label: "About" },
+  { href: "/blog", label: "Blog" },
+  { href: "/contact", label: "Contact" }
+];
+
+type Props = {
   children: React.ReactNode;
 };
 
-function PublicLayout({ children }: Readonly<PublicLayoutProps>) {
+export default function Layout({ children }: Readonly<Props>) {
   return (
-    <Flex gap="middle" wrap="wrap">
-      <Layout style={{ overflow: "hidden", width: "100%", maxWidth: "100%" }}>
-        <Header />
-        <Layout.Content
-          style={{
-            textAlign: "center",
-            lineHeight: "120px",
-            color: "#fff",
-            backgroundColor: "#101014",
-            alignItems: "center",
-            alignContent: "center",
-            overflow: "hidden",
-            width: "100%"
-          }}
-        >
-          {children}
-        </Layout.Content>
-        <Footer />
-      </Layout>
-    </Flex>
+    <Page>
+      <Page.Header>
+        <Page.Header.Menu links={LINKS} />
+      </Page.Header>
+      <Page.Content>
+        {children}
+      </Page.Content>
+      <Page.Footer>
+
+      </Page.Footer>
+    </Page>
   );
 }
 
-export default PublicLayout;

@@ -1,4 +1,6 @@
-async function TermsOfService() {
+import React from "react";
+
+export default async function TermsOfService() {
   return (
     <main>
       <p>
@@ -16,5 +18,3 @@ async function TermsOfService() {
     </main>
   );
 }
-
-export default TermsOfService;

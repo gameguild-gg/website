@@ -1,12 +1,9 @@
 import React from "react";
-import { Metadata } from "next";
-import "@/styles/globals.css";
-
-import { ThemeProvider } from "@game-guild/ui";
+import { Metadata, ResolvingMetadata } from "next";
+import { ThemeProvider } from "@/components/theme/theme-context";
 import { Web3Provider } from "@/components/web3/web3-context";
-import CookieConsent from "@/components/cookie/cookie-consent";
 
-type RootLayoutProps = {
+type Props = {
   children: React.ReactNode;
   modal: React.ReactNode;
   params: {
@@ -14,16 +11,15 @@ type RootLayoutProps = {
   };
 };
 
-async function RootLayout({ children, modal, params: { locale } }: Readonly<RootLayoutProps>) {
+export default async function Layout({ children, modal, params: { locale } }: Readonly<Props>) {
   return (
-    <html lang={locale}>
-    <body>
+    <html lang={locale} className="h-full">
+    <body className="h-full">
     <ThemeProvider>
       <Web3Provider>
         {children}
         {modal}
-        <CookieConsent />
-        {/*<div id="modal-root" />*/}
+        <div id="modal-root" />
       </Web3Provider>
     </ThemeProvider>
     </body>
@@ -31,14 +27,12 @@ async function RootLayout({ children, modal, params: { locale } }: Readonly<Root
   );
 }
 
-const metadata: Metadata = {
-  title: {
-    template: "%s | Game Guild",
-    default: "Game Guild"
-  },
-  description: "A awesome game development community"
-};
-
-export { metadata };
-
-export default RootLayout;
+export async function generateMetadata({ params }: Props, parent: ResolvingMetadata): Promise<Metadata> {
+  return {
+    title: {
+      template: "%s | Game Guild",
+      default: "Game Guild"
+    },
+    description: "A awesome game development community"
+  };
+}

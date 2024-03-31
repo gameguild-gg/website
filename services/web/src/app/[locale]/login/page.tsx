@@ -1,9 +1,9 @@
 'use client';
-import MetamaskSignIn from '@/components/web3/metamask';
+import MetamaskSignIn from '@/components/others/web3/metamask';
 import { useRouter } from 'next/navigation';
 import { message, notification, NotificationArgsProps } from 'antd';
 import React from 'react';
-import { NotificationProvider } from '@/components/NotificationContext';
+import { NotificationProvider } from '@/components/others/common/NotificationContext';
 import { getCookies, setCookie, deleteCookie, getCookie } from 'cookies-next';
 import { LocalSignInDto } from '@/dtos/(auth)/local-sign-in.dto';
 import { LocalSignInResponseDto } from '@/dtos/(auth)/local-sign-in.response.dto';
