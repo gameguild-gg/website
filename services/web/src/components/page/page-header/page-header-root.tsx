@@ -6,11 +6,9 @@ type Props = React.HTMLAttributes<HTMLDivElement> & {
 
 function PageHeaderRoot({ children }: Readonly<Props>) {
   return (
-    <div className="w-full">
-      <div>
+    <header className="w-full">
         {children}
-      </div>
-    </div>
+    </header>
   );
 }
 
