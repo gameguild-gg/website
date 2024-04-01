@@ -2,23 +2,22 @@ import {
   Body,
   Controller,
   Get,
-  Logger, Param,
+  Logger,
+  Param,
   Post,
   Query,
   Request,
-  UseGuards
-} from "@nestjs/common";
-import { ApiBody, ApiOkResponse, ApiResponse, ApiTags } from "@nestjs/swagger";
+} from '@nestjs/common';
+import { ApiOkResponse, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
-import { AuthUser, Public } from "./decorators";
-import { LocalGuard } from './guards';
+import { AuthUser, Public } from './decorators';
 import { RequestWithUser } from './types';
-import { LocalSignInDto } from "../dtos/auth/local-sign-in.dto";
-import { LocalSignUpDto } from "../dtos/auth/local-sign-up.dto";
-import { LocalSignInResponseDto } from "../dtos/auth/local-sign-in.response.dto";
-import { UserDto } from "../dtos/user/user.dto";
-import { UserEntity } from "../user/entities";
-import { Auth } from "./decorators/http.decorator";
+import { LocalSignInDto } from '../dtos/auth/local-sign-in.dto';
+import { LocalSignUpDto } from '../dtos/auth/local-sign-up.dto';
+import { LocalSignInResponseDto } from '../dtos/auth/local-sign-in.response.dto';
+import { UserDto } from '../dtos/user/user.dto';
+import { UserEntity } from '../user/entities';
+import { Auth } from './decorators/http.decorator';
 
 @Controller('auth')
 @ApiTags('auth')
@@ -26,7 +25,7 @@ export class AuthController {
   private readonly logger = new Logger(AuthController.name);
 
   constructor(private readonly authService: AuthService) {}
-  
+
   // @Post('sign-in')
   // @Public()
   // @UseGuards(LocalGuard)
@@ -35,10 +34,12 @@ export class AuthController {
   //   // TODO: Implement this endpoint.
   //   return await this.authService.signIn(request.user);
   // }
-  
+
   @Post('local/sign-in')
   @Public(true)
-  public async localSignWithEmailOrUsername(@Body() data: LocalSignInDto): Promise<LocalSignInResponseDto> {
+  public async localSignWithEmailOrUsername(
+    @Body() data: LocalSignInDto,
+  ): Promise<LocalSignInResponseDto> {
     return await this.authService.signInWithEmailOrPassword(data);
   }
 
@@ -49,27 +50,28 @@ export class AuthController {
   //   return await this.authService.signIn(request.user);
   // }
 
-  // TODO: Implement this endpoint.
-  // @Post('google/callback')
-  // @Public()
-  // public async signInWithGoogle(@Request() request: RequestWithUser) {
-  //   return await this.authService.signIn(request.user);
-  // }
+  @Post('google/callback')
+  @Public()
+  public async signInWithGoogle(@Request() request: RequestWithUser) {
+    // return await this.authService.signIn(request.user);
+    // return await this.authService.signInWithGoogle(request);
+  }
 
   @Post('local/sign-up')
   @Public()
   @ApiResponse({ type: LocalSignInResponseDto })
-  public async signUpWithEmailUsernamePassword(@Body() data: LocalSignUpDto): Promise<LocalSignInResponseDto> {
+  public async signUpWithEmailUsernamePassword(
+    @Body() data: LocalSignUpDto,
+  ): Promise<LocalSignInResponseDto> {
     return this.authService.signUpWithEmailUsernamePassword(data);
   }
-  
+
   @Get('current-user')
   @Auth()
   @ApiOkResponse({ type: UserDto })
-  public async getCurrentUser(@AuthUser() user : UserEntity): Promise<UserDto> {
+  public async getCurrentUser(@AuthUser() user: UserEntity): Promise<UserDto> {
     return user;
   }
-  
 
   // @Post('refresh-token')
   // @Public()
@@ -82,7 +84,7 @@ export class AuthController {
   public async verifyEmail(@Query('token') token: string): Promise<any> {
     return await this.authService.validateEmailVerificationToken(token);
   }
-  
+
   @Get('userExists/:user')
   @Public()
   public async userExists(@Param('user') user: string): Promise<boolean> {

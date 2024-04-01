@@ -1,6 +1,6 @@
 import NextAuth from "next-auth";
 import createIntlMiddleware from "next-intl/middleware";
-import { locales } from "@/lib/locales";
+import { locales } from "@/data/locales";
 import { authConfig } from "@/auth";
 
 export default NextAuth(authConfig).auth((request) => {

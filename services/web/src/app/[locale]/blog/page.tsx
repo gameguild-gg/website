@@ -2,11 +2,10 @@ import React from 'react';
 import { fetchPosts } from '@/lib/blog/actions';
 import { PostCard } from '@/components/blog/post-card';
 import { BlogPagination } from '@/components/blog/blog-pagination';
-import Link from 'next/link';
 
 type Props = {};
 
-async function Blog({}: Readonly<Props>) {
+export default async function Page({}: Readonly<Props>) {
   const { posts, pagination } = await fetchPosts();
   
   return (
@@ -40,5 +39,3 @@ async function Blog({}: Readonly<Props>) {
     </div>
   );
 }
-
-export default Blog;

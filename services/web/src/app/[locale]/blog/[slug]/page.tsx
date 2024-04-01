@@ -7,7 +7,7 @@ type Props = {
   };
 };
 
-async function Post({ params: { slug } }: Readonly<Props>) {
+export default async function Page({ params: { slug } }: Readonly<Props>) {
   const post = await fetchPost(slug);
 
   return (
@@ -42,5 +42,3 @@ async function Post({ params: { slug } }: Readonly<Props>) {
     </div>
   );
 }
-
-export default Post;
