@@ -43,5 +43,9 @@ next-env.d.ts
 # submissions
 chessSubmissions
 
+# discard all package lock files
+**/package-lock.json
 
-services/cms/package-lock.json
+# ignore dtos on services
+services/api/src/dtos/**/*.ts
+services/web/src/dtos/**/*.ts
