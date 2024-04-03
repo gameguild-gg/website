@@ -6,7 +6,7 @@ type Props = React.HTMLAttributes<HTMLDivElement> & {
 
 function PageContent({ children }: Readonly<Props>) {
   return (
-    <div className="w-full">
+    <div className="w-screen p-0 m-0">
       {children}
     </div>
   );

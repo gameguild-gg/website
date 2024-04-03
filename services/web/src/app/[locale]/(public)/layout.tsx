@@ -1,12 +1,11 @@
 import React from "react";
-import { Page } from "@/components/page";
+
+import { PageContent } from "@/components/page/page-content";
+import { PageFooter } from "@/components/page/page-footer";
+import { PageHeader } from "@/components/page/page-header";
+
 import CookieConsent from "@/components/cookie/cookie-consent";
 
-const LINKS = [
-  { href: "/about", label: "About" },
-  { href: "/blog", label: "Blog" },
-  { href: "/contact", label: "Contact" }
-];
 
 type Props = {
   children: React.ReactNode;
@@ -14,18 +13,19 @@ type Props = {
 
 export default function Layout({ children }: Readonly<Props>) {
   return (
-    <Page>
-      <Page.Header>
-        <Page.Header.Menu links={LINKS} />
-      </Page.Header>
-      <Page.Content>
-        {children}
-      </Page.Content>
-      <Page.Footer>
+    <div className="h-full w-full p-0 m-0">
 
-      </Page.Footer>
-      <CookieConsent />
-    </Page>
+      <PageHeader />
+
+      <PageContent>
+        {children}
+      </PageContent>
+
+      <PageFooter />
+
+      {/*<CookieConsent />*/}
+
+    </div>
   );
 }
 

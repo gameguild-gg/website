@@ -11,7 +11,13 @@ type Props = React.HTMLAttributes<HTMLDivElement> & {
   links: HeaderMenuLink[];
 };
 
-function PageHeaderMenu({ links }: Readonly<Props>) {
+const LINKS = [
+  { href: "/about", label: "About" },
+  { href: "/blog", label: "Blog" },
+  { href: "/contact", label: "Contact" }
+];
+
+function PageHeaderMenu() {
   return (
     <nav className="">
       {/* <!-- Desktop Menu --> */}
@@ -24,10 +30,9 @@ function PageHeaderMenu({ links }: Readonly<Props>) {
             </div>
             <div className="hidden md:block">
               <div className="ml-10 flex items-baseline space-x-4">
-                {links.map((link, index) =>
-                  <Link className="px-3 py-2 text-sm font-medium" href={link.href}
-                        key={index}>{link.label}</Link>
-                )}
+                <Link className="px-3 py-2 text-sm font-medium" href="/about">About</Link>
+                <Link className="px-3 py-2 text-sm font-medium" href="/blog">Blog</Link>
+                <Link className="px-3 py-2 text-sm font-medium" href="/contact">Contact</Link>
                 {/* TODO fix the navigation link, it may should be a component?*/}
               </div>
             </div>
@@ -48,10 +53,10 @@ function PageHeaderMenu({ links }: Readonly<Props>) {
         {/* <!-- Navigation --> */}
         <div className="space-y-1 px-2 pb-3 pt-2 sm:px-3">
           {/* TODO add navigation links here */}
-          {links.map((link, index) =>
-            <Link className="text-gray-300 hover:text-white block rounded-md px-3 py-2 text-base font-medium"
-                  href={link.href} key={index}>{link.label}</Link>
-          )}
+          <Link className="px-3 py-2 text-sm font-medium" href="/about">About</Link>
+          <Link className="px-3 py-2 text-sm font-medium" href="/blog">Blog</Link>
+          <Link className="px-3 py-2 text-sm font-medium" href="/contact">Contact</Link>
+
           {/* TODO fix the navigation link, it may should be a component?*/}
         </div>
         {/* <!-- User Profile --> */}

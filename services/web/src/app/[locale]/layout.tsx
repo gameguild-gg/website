@@ -15,13 +15,13 @@ type Props = {
 export default async function Layout({ children, params: { locale } }: Readonly<Props>) {
   return (
     <html lang={locale}>
-    <body>
+    <body className="p-0 m-0">
     <GoogleAnalytics gaId={environment.GoogleAnalyticsMeasurementId} />
     <GoogleTagManager gtmId={environment.GoogleTagManagerId} />
     {/*<ThemeProvider>*/}
     <Web3Provider>
       <TooltipProvider>
-        {children}-
+        {children}
       </TooltipProvider>
     </Web3Provider>
     {/*</ThemeProvider>*/}
