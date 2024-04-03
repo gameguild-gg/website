@@ -11,6 +11,10 @@
     "services/api"
   ],
   "scripts": {
+    "syncApi": "node foldersync.js packages/dtos/src/ services/api/src/dtos/",
+    "syncWeb": "node foldersync.js packages/dtos/src/ services/web/src/dtos/",
+    "syncDtos": "npm-run-all --serial syncApi syncWeb",
+    "postinstall": "npm run syncDtos",
     "install:api": "npm install --workspace=services/api",
     "install:api:deps:ubuntu": "npm run install:deps:ubuntu --workspace=services/api",
     "postinstall:api:deps:ubuntu": "npm run install:api",
@@ -47,6 +51,8 @@
   "dependencies": {
     "bufferutil": "^4.0.8",
     "concurrently": "^8.2.2",
+    "cpx2": "^7.0.1",
+    "npm-run-all": "^4.1.5",
     "react-chessboard": "^4.5.0",
     "utf-8-validate": "^5.0.10",
     "ws": "^8.16.0"

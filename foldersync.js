@@ -4,7 +4,6 @@ const { join } = require("path");
 
 // get the parameters
 const args = process.argv.slice(2);
-console.log(args);
 
 // ensure both parameters are provided
 if (args.length !== 2) {
@@ -81,15 +80,25 @@ onlyIn2.forEach(file => {
   fs.copyFileSync(join(dir2, file), dest);
 });
 
+async function touchFile(path, time=new Date()) {
+  await fs.promises.utimes(path, time, time);
+}
+
 // update common files in both directories. If one side is more recent, copy it to the other
 common.forEach(file => {
+  const time = new Date();
   const src1 = join(dir1, file);
   const src2 = join(dir2, file);
   const src1stat = fs.statSync(src1);
   const src2stat = fs.statSync(src2);
+  // todo: allow some tolerance
   if (src1stat.mtimeMs > src2stat.mtimeMs) {
     fs.copyFileSync(src1, src2);
+    touchFile(src1, time);
+    touchFile(src2, time);
   } else if (src2stat.mtimeMs > src1stat.mtimeMs) {
     fs.copyFileSync(src2, src1);
+    touchFile(src1, time);
+    touchFile(src2, time);
   }
 });
