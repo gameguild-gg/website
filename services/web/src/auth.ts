@@ -30,7 +30,8 @@ export const authConfig = {
       clientSecret: environment.GoogleClientSecret,
       authorization: {
         params: {
-          request_uri: `${process.env.BACKEND_URL}/auth/google/callback`
+          // TODO: Research if is possible to change the api url of NextAuth.
+          request_uri: `${process.env.NEXT_JS_BACKEND_URL}/api/auth/callback/google`
         }
       }
     })
@@ -43,10 +44,10 @@ export const authConfig = {
       if (account?.provider === "google") {
 
         // TODO:
-        // After signing in with Google, check if the user is in the database.
-        // If the user is not in the database, reject the sign-in.
-        // If the user is in the database, return true to allow sign in.
-
+        //  After signing in with Google, check if the user is in the database.
+        //  If the user is not in the database, reject the sign-in.
+        //  If the user is in the database, return true to allow user to sign in.
+        // TODO: Sample code below:
         /* const dbUser = await fetch(
           `${process.env.BACKEND_URL}/auth/google/token?token=${account?.id_token}`,
           {
@@ -70,7 +71,7 @@ export const authConfig = {
         return true; */
       }
 
-      // Return true to allow sign in.
+      // Return true to allowing user sign-in with the Google OAuth Credential.
       return false;
     }
   }
