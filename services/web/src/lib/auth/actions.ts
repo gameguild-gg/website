@@ -29,6 +29,11 @@ export async function signInWithEmailAndPassword(previousState: SignInFormState,
   return Promise.resolve({});
 }
 
+export async function signInWithGoogle() {
+  await signIn('google');
+}
+
+
 export async function signUpWithEmailAndPassword(previousState: SignUpFormState, formData: FormData): Promise<SignUpFormState> {
   // TODO: Implement sign-up with email and password.
   return Promise.resolve({});
