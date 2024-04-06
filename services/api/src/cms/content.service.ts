@@ -90,7 +90,8 @@ export class ContentService {
     return await this.courseRepository.save(course);;
   }
 
-  async getCourse(id: string): Promise<CourseEntity> {
+  async getCourse(user: UserEntity, courseId: string): Promise<CourseEntity> {
+    // TODO: check if user has permission to this course
     return null;
   }
 
@@ -98,63 +99,69 @@ export class ContentService {
     return null;
   }
 
-  async updateCourse(update: UpdateCourseDto): Promise<CourseEntity> {
-    let updateCourse = await this.getCourse(update.id);
+  async updateCourse(user: UserEntity, update: UpdateCourseDto): Promise<CourseEntity> {
+    let updateCourse = await this.getCourse(user, update.id);
+    // TODO: check if user has permission to update the course
     updateCourse = { ...updateCourse, ...update };
     await this.courseRepository.update(update.id, updateCourse);
-    return await this.getCourse(update.id); 
+    return await this.getCourse(user, update.id); 
   }
 
-  async deleteCourse(id: string): Promise<CourseEntity> {
-    const deletedCourse = await this.getCourse(id);
+  async deleteCourse(user: UserEntity, id: string): Promise<CourseEntity> {
+    const deletedCourse = await this.getCourse(user, id);
+    // TODO: check if user has permission to delete the course
     await this.courseRepository.delete(deletedCourse);
     return deletedCourse;
   }
   //#endregion
 
   //#region Chapters
-  async createEmptyChapter(): Promise<ChapterEntity> {
+  async createEmptyChapter(user: UserEntity): Promise<ChapterEntity> {
     return null;
   }
 
-  async createChapter(chapter: CreateChapterDto): Promise<ChapterEntity> {
-    const course = await this.getCourse(chapter.courseId);
+  async createChapter(user: UserEntity, chapter: CreateChapterDto): Promise<ChapterEntity> {
+    const course = await this.getCourse(user, chapter.courseId);
+    // TODO: check if user is the author of the course
     let newChapter = new ChapterEntity();
     newChapter = { ...newChapter, ...chapter };
     return await this.chapterRepository.save(newChapter);
   }
 
-  async getChapter(id: string): Promise<ChapterEntity> {
-    return await this.chapterRepository.findOneBy({ id });
+  async getChapter(user: UserEntity, chapterId: string): Promise<ChapterEntity> {
+    return await this.chapterRepository.findOneBy({ id: chapterId });
   }
 
-  async getAllChapters(courseId: string): Promise<ChapterEntity[]> {
-    const course = await this.getCourse(courseId);
+  async getAllChapters(user: UserEntity, courseId: string): Promise<ChapterEntity[]> {
+    const course = await this.getCourse(user, courseId);
     return course.chapters;
   }
 
-  async updateChapter(update: UpdateChapterDto): Promise<ChapterEntity> {
-    let updateCourse = await this.getChapter(update.id);
+  async updateChapter(user: UserEntity, update: UpdateChapterDto): Promise<ChapterEntity> {
+    let updateCourse = await this.getChapter(user, update.id);
     updateCourse = { ...updateCourse, ...update };
     await this.courseRepository.update(update.id, updateCourse);
-    return await this.getChapter(update.id);
+    return await this.getChapter(user, update.id);
   }
 
-  async deleteChapter(id: string): Promise<ChapterEntity> {
-    const deleted = await this.getChapter(id);
+  async deleteChapter(user: UserEntity, id: string): Promise<ChapterEntity> {
+    const deleted = await this.getChapter(user, id);
     await this.chapterRepository.delete(deleted);
     return deleted;
   }
   //#endregion
 
   //#region Lectures
-  async createEmptyLecture(): Promise<LectureEntity> { 
+  async createEmptyLecture(user: UserEntity): Promise<LectureEntity> { 
     return null;
   }
 
-  async createLecture(lecture: CreateLectureDto): Promise<LectureEntity> { 
+  async createLecture(user: UserEntity, lecture: CreateLectureDto): Promise<LectureEntity> { 
     let newLecture = new LectureEntity();
-    newLecture = { ...newLecture, ...lecture };
+    newLecture = { 
+      ...newLecture,
+      ...lecture
+    };
     
     return null;
   }
@@ -163,8 +170,8 @@ export class ContentService {
     return await this.lectureRepository.findOneBy({ id });
   }
 
-  async getAllLectures(chapterId: string): Promise<LectureEntity[]> {
-    const chapter = await this.getChapter(chapterId);
+  async getAllLectures(user: UserEntity, chapterId: string): Promise<LectureEntity[]> {
+    const chapter = await this.getChapter(user, chapterId);
     return chapter.lectures;
   }
 
