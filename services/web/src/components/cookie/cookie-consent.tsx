@@ -1,27 +1,48 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { CookieIcon } from "lucide-react";
 
 type CookieConsentProps = {};
 
 export default function CookieConsent({}: Readonly<CookieConsentProps>) {
+  const [visible, setVisible] = useState(true);
+
+  useEffect(() => {
+    //if (localStorage.getItem('cookie_consent') == 'true'){
+    //  setVisible(false);
+    //}
+  },[]);
+
+  const AcceptCookies = ()=> {
+    localStorage.setItem('cookie_consent','true');
+    setVisible(false)
+  }
+
   return (
-    <aside className="fixed inset-x-0 bottom-0 z-50 flex flex-col p-4 gap-2 bg-gray-50/90 dark:bg-gray-900/90">
-      <div className="flex items-center space-x-4">
-        <CookieIcon className="w-6 h-6" />
-        <div className="space-y-1 text-sm">
-          <h4 className="font-semibold">Cookie consent</h4>
-          <p className="text-xs">
-            We use cookies to provide the best experience. By continuing to use our site, you agree to our cookies.
-          </p>
+    <>
+      { visible &&
+      
+      <aside className="fixed inset-x-0 bottom-0 z-50 flex flex-col p-4 gap-2 bg-gray-950 dark:bg-gray-50 text-white dark:text-black">
+        <div className="flex items-center space-x-4 mx-auto">
+          <CookieIcon className="w-8 h-8 " />
+          <div className="space-y-1 text-sm">
+            <h4 className="font-semibold">We need cookies to provide the best experience.<br />By continuing to use our site, you agree to our cookies.</h4>
+            <p className="text-xs">
+            </p>
+          </div>
         </div>
-      </div>
-      <div className="flex items-center space-x-4">
-        <button>Accept</button>
-        <button>Settings</button>
-      </div>
-    </aside>
+        <div className="flex items-center space-x-4 mx-auto">
+          <button onClick={AcceptCookies} className="border p-1 pt-0 rounded hover:text-gray-950 hover:bg-white">Accept</button>
+        </div>
+        {/*
+        <div className="flex items-center space-x-4 mx-auto">
+          <button onClick={Settings} className="border p-1 pt-0 rounded hover:text-gray-950 hover:bg-white">Settings</button>
+        </div>
+        */}
+      </aside>
+      }
+    </>
   );
 }
 
