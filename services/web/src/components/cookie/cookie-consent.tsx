@@ -22,25 +22,15 @@ export default function CookieConsent({}: Readonly<CookieConsentProps>) {
   return (
     <>
       { visible &&
-      
-      <aside className="fixed inset-x-0 bottom-0 z-50 flex flex-col p-4 gap-2 bg-gray-950 dark:bg-gray-50 text-white dark:text-black">
-        <div className="flex items-center space-x-4 mx-auto">
-          <CookieIcon className="w-8 h-8 " />
-          <div className="space-y-1 text-sm">
-            <h4 className="font-semibold">We need cookies to provide the best experience.<br />By continuing to use our site, you agree to our cookies.</h4>
-            <p className="text-xs">
-            </p>
+        <aside className="fixed inset-x-0 bottom-0 z-50 flex flex-col p-6 gap-2 bg-gray-950 text-white">
+          <div className="flex items-center space-x-4 mx-auto">
+            <CookieIcon className="w-8 h-8 " />
+            <div className="space-y-1 text-sm">
+              <h4 className="font-semibold">We need cookies to provide the best experience.<br />By continuing to use our site, you agree to our cookies.</h4>
+            </div>
+            <button onClick={AcceptCookies} className="border p-1 rounded hover:text-gray-950 hover:bg-white">Accept</button>
           </div>
-        </div>
-        <div className="flex items-center space-x-4 mx-auto">
-          <button onClick={AcceptCookies} className="border p-1 pt-0 rounded hover:text-gray-950 hover:bg-white">Accept</button>
-        </div>
-        {/*
-        <div className="flex items-center space-x-4 mx-auto">
-          <button onClick={Settings} className="border p-1 pt-0 rounded hover:text-gray-950 hover:bg-white">Settings</button>
-        </div>
-        */}
-      </aside>
+        </aside>
       }
     </>
   );
