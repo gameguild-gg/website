@@ -22,22 +22,22 @@ const PageHeader: React.FunctionComponent<Readonly<Props>> & {
             className="w-[135px] h-46px my-auto mx-[10px]"
           />
           &nbsp;
-          <a href="/about" className="flex my-0 font-semibold hover:bg-neutral-800 px-2 min-w-[80px] ">
+          <a href="/about" className="flex my-0 font-semibold hover:bg-neutral-800 px-2 min-w-[80px] hover:text-yellow-400">
             <span className="m-auto ">
               About
             </span>
           </a>
-          <a href="/courses" className="flex my-0 font-semibold hover:bg-neutral-800 px-2 min-w-[80px] ">
+          <a href="/courses" className="flex my-0 font-semibold hover:bg-neutral-800 px-2 min-w-[80px] hover:text-blue-400">
             <span className="m-auto ">
               Courses
             </span>
           </a>
-          <a href="/jobs" className="flex my-0 font-semibold hover:bg-neutral-800 px-2 min-w-[80px] ">
+          <a href="/jobs" className="flex my-0 font-semibold hover:bg-neutral-800 px-2 min-w-[80px] hover:text-green-400">
             <span className="m-auto ">
               Jobs
             </span>
           </a>
-          <a href="/blog" className="flex my-0 font-semibold hover:bg-neutral-800 px-2 min-w-[80px] ">
+          <a href="/blog" className="flex my-0 font-semibold hover:bg-neutral-800 px-2 min-w-[80px] hover:text-red-400">
             <span className="m-auto ">
               Blog
             </span>
