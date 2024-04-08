@@ -37,7 +37,13 @@ export default function SignInForm() {
           <Input id="password" type="password" required />
         </div>
         <SubmitButton className="w-full">Sign In</SubmitButton>
-        <Button variant="outline"> Sign In with Google </Button>
+        <Button variant="outline">
+          <img
+            src="assets/images/google-icon.svg"
+            className="w-[20px] h-[20px] m-2"
+          />
+          Sign In with Google
+        </Button>
       </div>
       <div className="mt-4 text-center text-sm">
         Don&apos;t have an account?{" "}

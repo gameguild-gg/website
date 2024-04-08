@@ -35,7 +35,13 @@ export default function SignUpForm() {
             <Input id="password" type="password" required />
           </div>
           <SubmitButton className="w-full">Sign Up</SubmitButton>
-          <Button variant="outline" className="w-full">Sign Up with Google</Button>
+          <Button variant="outline" className="w-full">
+            <img
+              src="assets/images/google-icon.svg"
+              className="w-[20px] h-[20px] m-2"
+            />
+            Sign Up with Google
+            </Button>
         </div>
         <div className="mt-4 text-center text-sm">
           Already have an account?{" "}
