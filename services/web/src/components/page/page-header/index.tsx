@@ -22,9 +22,9 @@ const PageHeader: React.FunctionComponent<Readonly<Props>> & {
             className="w-[135px] h-46px my-auto mx-[10px]"
           />
           &nbsp;
-          <a href="/about" className="flex my-0 font-semibold hover:bg-neutral-800 px-2 min-w-[80px] hover:text-yellow-400">
+          <a href="/competition" className="flex my-0 font-semibold hover:bg-neutral-800 px-2 min-w-[80px] hover:text-yellow-400">
             <span className="m-auto ">
-              About
+              Competition
             </span>
           </a>
           <a href="/courses" className="flex my-0 font-semibold hover:bg-neutral-800 px-2 min-w-[80px] hover:text-blue-400">
@@ -45,12 +45,12 @@ const PageHeader: React.FunctionComponent<Readonly<Props>> & {
         </div>
         {/*Right Corner of the Header*/}
         <div className="flex justify-end m-0 p-0 items-center">
-          <a href="/auth" className="flex my-0 font-semibold hover:bg-neutral-800 px-2 min-w-[80px] h-full">
+          <a href="/sign-in" className="flex my-0 font-semibold hover:bg-neutral-800 px-2 min-w-[80px] h-full">
             <span className="m-auto">
               Enter
             </span>
           </a>
-          <a href="/auth">
+          <a href="/sign-up">
             <button className="py-auto bg-white text-black border rounded-lg font-semibold p-1 hover:bg-neutral-900 hover:text-white">
               Register<br/>
             </button>
