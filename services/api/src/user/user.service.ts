@@ -6,6 +6,8 @@ import { UserEntity } from './entities';
 import { UserAlreadyExistsException } from './exceptions/user-already-exists.exception';
 import { UserProfileEntity } from './modules/user-profile/entities/user-profile.entity';
 import { CreateLocalUserDto } from "../dtos/user/create-local-user.dto";
+import { EnrollmentDto } from '../dtos/course/enrollment.dto';
+import { ContentService } from '../cms/content.service';
 
 @Injectable()
 export class UserService extends TypeOrmCrudService<UserEntity> {
@@ -14,6 +16,7 @@ export class UserService extends TypeOrmCrudService<UserEntity> {
   constructor(
     @InjectRepository(UserEntity)
     private readonly repository: Repository<UserEntity>,
+    private readonly contentService: ContentService,
   ) {
     super(repository);
   }
@@ -60,5 +63,16 @@ export class UserService extends TypeOrmCrudService<UserEntity> {
 
   public async save(user: Partial<UserEntity>) {
     return this.repository.save(user);
+  }
+
+  public async enrollCourse(user: UserEntity, courseId: string): Promise<EnrollmentDto> {
+    const course = await this.contentService.getCourse(user, courseId);
+    if (!course) {
+      // TODO: return "course does not exist" error
+      return null;
+    }
+    user.enrolledCourses = [...user.enrolledCourses, course];
+    user = await this.repository.save(user);
+    return new EnrollmentDto({ ...user, ...course });
   }
 }

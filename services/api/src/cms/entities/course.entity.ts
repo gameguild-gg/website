@@ -26,6 +26,11 @@ export class CourseEntity extends ContentBase {
   @ApiProperty({ type: () => UserEntity })
   author: UserEntity;
 
+  // appliers
+  @ManyToOne(() => UserEntity, (user) => user.courses)
+  @ApiProperty({ type: () => UserEntity })
+  applicants: UserEntity;
+
   // a course have many lectures
   @OneToMany(() => LectureEntity, (lecture) => lecture.course)
   @ApiProperty({ type: () => LectureEntity, isArray: true })

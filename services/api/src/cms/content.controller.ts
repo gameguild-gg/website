@@ -1,7 +1,7 @@
 import { Body, Controller, Delete, Get, Logger, Param, Patch, Post } from '@nestjs/common';
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { ContentService } from './content.service';
-import { AuthUser } from '../auth';
+import { AuthUser } from '../auth/decorators/auth-user.decorator';
 import { Auth } from '../auth/decorators/http.decorator';
 
 import { UserEntity } from '../user/entities';
@@ -30,7 +30,7 @@ export class ContentController {
   public async createEmptyCourse(
     @AuthUser() user: UserEntity,
   ): Promise<CourseEntity> {
-    return this.courseService.createEmptyCourse(user);
+    return await this.courseService.createEmptyCourse(user);
   }
 
   @Post('course/create')
@@ -40,7 +40,7 @@ export class ContentController {
     @AuthUser() user: UserEntity,
     @Body() course: CreateCourseDto,
   ): Promise<CourseEntity> {
-    return this.courseService.createCourse(user, course);
+    return await this.courseService.createCourse(user, course);
   }
 
   @Post('course/get-all')
@@ -48,8 +48,8 @@ export class ContentController {
   @ApiOkResponse({ type: CourseEntity })
   public async getAllCourses(
     @AuthUser() user: UserEntity,
-  ): Promise<CourseEntity> {
-    return this.courseService.getAllCourses();
+  ): Promise<CourseEntity[]> {
+    return await this.courseService.getAllCourses();
   }
 
   @Get('course/get/:id')
@@ -59,7 +59,7 @@ export class ContentController {
     @AuthUser() user: UserEntity,
     @Param('id') id: string,
   ): Promise<CourseEntity> {
-    return this.courseService.getCourse(user, id);
+    return await this.courseService.getCourse(user, id);
   }
 
   @Patch('course/update')
@@ -69,7 +69,7 @@ export class ContentController {
     @AuthUser() user: UserEntity,
     @Body() update: UpdateCourseDto,
   ): Promise<CourseEntity> {
-    return this.courseService.updateCourse(user, update);
+    return await this.courseService.updateCourse(user, update);
   }
 
   @Delete('course/delete')
@@ -79,7 +79,7 @@ export class ContentController {
     @AuthUser() user: UserEntity,
     @Body() id: string,
   ): Promise<CourseEntity> {
-    return this.courseService.deleteCourse(user, id);
+    return await this.courseService.deleteCourse(user, id);
   }
   //#endregion
   
@@ -90,7 +90,7 @@ export class ContentController {
   public async createEmptyChapter(
     @AuthUser() user: UserEntity,
   ): Promise<ChapterEntity> {
-    return this.courseService.createEmptyChapter(user);
+    return await this.courseService.createEmptyChapter(user);
   }
 
   @Post('chapter/create')
@@ -100,7 +100,7 @@ export class ContentController {
     @AuthUser() user: UserEntity,
     @Body() course: CreateChapterDto,
   ): Promise<ChapterEntity> {
-    return this.courseService.createChapter(user, course);
+    return await this.courseService.createChapter(user, course);
   }
 
   @Get('chapter/get-all/:id')
@@ -110,7 +110,7 @@ export class ContentController {
     @AuthUser() user: UserEntity,
     @Param('id') courseId: string,
   ): Promise<ChapterEntity[]> {
-    return this.courseService.getAllChapters(user, courseId);
+    return await this.courseService.getAllChapters(user, courseId);
   }
 
   @Get('chapter/get/:id')
@@ -120,7 +120,7 @@ export class ContentController {
     @AuthUser() user: UserEntity,
     @Param('id') chapterId: string,
   ): Promise<ChapterEntity> {
-    return this.courseService.getChapter(user, chapterId);
+    return await this.courseService.getChapter(user, chapterId);
   }
 
   @Patch('chapter/update')
@@ -130,7 +130,7 @@ export class ContentController {
     @AuthUser() user: UserEntity,
     @Body() update: UpdateChapterDto,
   ): Promise<ChapterEntity> {
-    return this.courseService.updateChapter(user, update);
+    return await this.courseService.updateChapter(user, update);
   }
 
   @Delete('chapter/delete')
@@ -140,7 +140,7 @@ export class ContentController {
     @AuthUser() user: UserEntity,
     @Body() id: string,
   ): Promise<ChapterEntity> {
-    return this.courseService.deleteChapter(user, id);
+    return await this.courseService.deleteChapter(user, id);
   }
   //#endregion
 
@@ -151,7 +151,7 @@ export class ContentController {
   public async createEmptyLecture(
     @AuthUser() user: UserEntity,
   ): Promise<LectureEntity> {
-    return this.courseService.createEmptyLecture(user);
+    return await this.courseService.createEmptyLecture(user);
   }
 
   @Post('lecture/create')
@@ -161,7 +161,7 @@ export class ContentController {
     @AuthUser() user: UserEntity,
     @Body() lecture: CreateLectureDto,
   ): Promise<LectureEntity> {
-    return this.courseService.createLecture(user, lecture);
+    return await this.courseService.createLecture(user, lecture);
   }
 
   @Post('lecture/get-all')
@@ -171,7 +171,7 @@ export class ContentController {
     @AuthUser() user: UserEntity,
     @Body() chapterId: string,
   ): Promise<LectureEntity[]> {
-    return this.courseService.getAllLectures(user, chapterId);
+    return await this.courseService.getAllLectures(user, chapterId);
   }
 
   @Get('lecture/get/:id')
@@ -181,7 +181,7 @@ export class ContentController {
     @AuthUser() user: UserEntity,
     @Param('id') id: string,
   ): Promise<LectureEntity> {
-    return this.courseService.getLecture(id);
+    return await this.courseService.getLecture(id);
   }
 
   @Patch('lecture/update')
@@ -191,7 +191,7 @@ export class ContentController {
     @AuthUser() user: UserEntity,
     @Body() update: UpdateLectureDto,
   ): Promise<LectureEntity> {
-    return this.courseService.updateLecture(update);
+    return await this.courseService.updateLecture(update);
   }
 
   @Delete('lecture/delete')
@@ -201,7 +201,7 @@ export class ContentController {
     @AuthUser() user: UserEntity,
     @Body() id: string,
   ): Promise<LectureEntity> {
-    return this.courseService.deleteLecture(id);
+    return await this.courseService.deleteLecture(id);
   }
   //#endregion
 }

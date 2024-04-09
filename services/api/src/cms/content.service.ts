@@ -92,11 +92,11 @@ export class ContentService {
 
   async getCourse(user: UserEntity, courseId: string): Promise<CourseEntity> {
     // TODO: check if user has permission to this course
-    return null;
+    return await this.courseRepository.findOneBy({ id: courseId });
   }
 
-  async getAllCourses(): Promise<CourseEntity> {
-    return null;
+  async getAllCourses(): Promise<CourseEntity[]> {
+    return await this.courseRepository.find();
   }
 
   async updateCourse(user: UserEntity, update: UpdateCourseDto): Promise<CourseEntity> {
