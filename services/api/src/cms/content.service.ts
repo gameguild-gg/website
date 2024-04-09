@@ -1,5 +1,5 @@
 import { TypeOrmCrudService } from '@dataui/crud-typeorm';
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CourseEntity } from './entities/course.entity';
@@ -29,6 +29,7 @@ export class ContentService {
     private readonly chapterRepository: Repository<ChapterEntity>,
     @InjectRepository(PostEntity)
     private readonly postRepository: Repository<PostEntity>,
+    @Inject(forwardRef(()=>UserService))
     private readonly userService: UserService,
   ) {}
 
