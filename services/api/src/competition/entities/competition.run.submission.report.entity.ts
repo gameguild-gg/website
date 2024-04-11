@@ -5,26 +5,31 @@ import { ApiProperty } from '@nestjs/swagger';
 import { CompetitionRunEntity } from './competition.run.entity';
 import { CompetitionSubmissionEntity } from './competition.submission.entity';
 import { EntityBase } from '../../common/entities/entity.base';
+import { UserEntity } from '../../user/entities';
 
 @Entity()
 export class CompetitionRunSubmissionReportEntity extends EntityBase {
-  @Column({ type: 'integer' })
+  @Column({ type: 'integer', default: 0 })
   @ApiProperty()
   winsAsP1: number;
 
-  @Column({ type: 'integer' })
+  @Column({ type: 'integer', default: 0 })
   @ApiProperty()
   winsAsP2: number;
 
-  @Column({ type: 'float8' })
+  @Column({ type: 'integer', default: 0 })
   @ApiProperty()
-  p1Points: number;
+  totalWins: number;
 
-  @Column({ type: 'float8' })
+  @Column({ type: 'float8', default: 0 })
   @ApiProperty()
-  p2Points: number;
+  pointsAsP1: number;
 
-  @Column({ type: 'float8' })
+  @Column({ type: 'float8', default: 0 })
+  @ApiProperty()
+  pointsAsP2: number;
+
+  @Column({ type: 'float8', default: 0 })
   @ApiProperty()
   totalPoints: number;
 
@@ -34,4 +39,8 @@ export class CompetitionRunSubmissionReportEntity extends EntityBase {
   // link to the submission
   @ManyToOne(() => CompetitionSubmissionEntity, (s) => s.submissionReports)
   submission: CompetitionSubmissionEntity;
+
+  // link to the user
+  @ManyToOne(() => UserEntity)
+  user: UserEntity;
 }

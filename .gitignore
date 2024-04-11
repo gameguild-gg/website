@@ -43,5 +43,9 @@ next-env.d.ts
 # submissions
 chessSubmissions
 
+# npm
+package-lock.json
 
-services/cms/package-lock.json
+# dtos
+services/api/src/dtos/**/*.ts
+services/web/src/dtos/**/*.ts
