@@ -1,20 +1,24 @@
-import { TypeOrmCrudService } from '@dataui/crud-typeorm';
 import { Inject, Injectable, Logger, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+
+import { ChapterEntity } from './entities/chapter.entity';
 import { CourseEntity } from './entities/course.entity';
 import { LectureEntity } from './entities/lecture.entity';
-import { ChapterEntity } from './entities/chapter.entity';
 import { PostEntity } from './entities/post.entity';
 import { UserEntity } from '../user/entities';
-import { CreateCourseDto } from '../dtos/course/create-course.dto';
+
 import { UserService } from '../user/user.service';
-import { UpdateCourseDto } from 'src/dtos/course/update-course.dto';
-import { FindCourseDto } from 'src/dtos/course/find-course.dto';
-import { UpdateChapterDto } from 'src/dtos/chapter/update-chapter.dto';
-import { CreateChapterDto } from 'src/dtos/chapter/create-chapter.dto';
-import { UpdateLectureDto } from 'src/dtos/lecture/update-lecture.dto';
-import { CreateLectureDto } from 'src/dtos/lecture/create-lecture.dto';
+
+import { CreateCourseDto } from '../dtos/course/create-course.dto';
+import { FindCourseDto } from '../dtos/course/find-course.dto';
+import { UpdateCourseDto } from '../dtos/course/update-course.dto';
+
+import { CreateChapterDto } from '../dtos/chapter/create-chapter.dto';
+import { UpdateChapterDto } from '../dtos/chapter/update-chapter.dto';
+
+import { CreateLectureDto } from '../dtos/lecture/create-lecture.dto';
+import { UpdateLectureDto } from '../dtos/lecture/update-lecture.dto';
 
 @Injectable()
 export class ContentService {
@@ -91,7 +95,7 @@ export class ContentService {
     return await this.courseRepository.save(course);;
   }
 
-  async getCourse(user: UserEntity, courseId: string): Promise<CourseEntity> {
+  async getCourse(courseId: string, user: UserEntity): Promise<CourseEntity> {
     // TODO: check if user has permission to this course
     return await this.courseRepository.findOneBy({ id: courseId });
   }
@@ -101,18 +105,25 @@ export class ContentService {
   }
 
   async updateCourse(user: UserEntity, update: UpdateCourseDto): Promise<CourseEntity> {
-    let updateCourse = await this.getCourse(user, update.id);
+    let updateCourse = await this.getCourse(update.id, user);
     // TODO: check if user has permission to update the course
     updateCourse = { ...updateCourse, ...update };
     await this.courseRepository.update(update.id, updateCourse);
-    return await this.getCourse(user, update.id); 
+    return await this.getCourse(update.id, user); 
   }
 
   async deleteCourse(user: UserEntity, id: string): Promise<CourseEntity> {
-    const deletedCourse = await this.getCourse(user, id);
+    const deletedCourse = await this.getCourse(id, user);
     // TODO: check if user has permission to delete the course
     await this.courseRepository.delete(deletedCourse);
     return deletedCourse;
+  }
+
+  async enrollCourse(id, user): Promise<CourseEntity> {
+    let course = await this.getCourse(id, user);
+    course.applicants = [...course.applicants, user];
+    await this.courseRepository.update(id, course);
+    return course;
   }
   //#endregion
 
@@ -122,7 +133,7 @@ export class ContentService {
   }
 
   async createChapter(user: UserEntity, chapter: CreateChapterDto): Promise<ChapterEntity> {
-    const course = await this.getCourse(user, chapter.courseId);
+    const course = await this.getCourse(chapter.courseId, user);
     // TODO: check if user is the author of the course
     let newChapter = new ChapterEntity();
     newChapter = { ...newChapter, ...chapter };
@@ -134,7 +145,7 @@ export class ContentService {
   }
 
   async getAllChapters(user: UserEntity, courseId: string): Promise<ChapterEntity[]> {
-    const course = await this.getCourse(user, courseId);
+    const course = await this.getCourse(courseId, user);
     return course.chapters;
   }
 

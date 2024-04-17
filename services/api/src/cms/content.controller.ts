@@ -59,7 +59,7 @@ export class ContentController {
     @AuthUser() user: UserEntity,
     @Param('id') id: string,
   ): Promise<CourseEntity> {
-    return await this.courseService.getCourse(user, id);
+    return await this.courseService.getCourse(id, user);
   }
 
   @Patch('course/update')
@@ -80,6 +80,16 @@ export class ContentController {
     @Body() id: string,
   ): Promise<CourseEntity> {
     return await this.courseService.deleteCourse(user, id);
+  }
+
+  @Get('course/enroll/:id')
+  @Auth()
+  @ApiOkResponse({ type: CourseEntity })
+  public async enrollCourse(
+    @AuthUser() user: UserEntity,
+    @Param('id') id: number,
+  ): Promise<CourseEntity> {
+    return await this.courseService.enrollCourse(id, user);
   }
   //#endregion
   

@@ -1,4 +1,4 @@
-import { Column, Entity, Index, ManyToOne, OneToMany } from 'typeorm';
+import { Column, Entity, Index, JoinTable, ManyToMany, ManyToOne, OneToMany } from 'typeorm';
 import { ContentBase } from './content.base';
 import { LectureEntity } from './lecture.entity';
 import { ChapterEntity } from './chapter.entity';
@@ -27,9 +27,9 @@ export class CourseEntity extends ContentBase {
   author: UserEntity;
 
   // appliers
-  @ManyToOne(() => UserEntity, (user) => user.courses)
+  @ManyToMany(() => UserEntity, (user) => user.courses)
   @ApiProperty({ type: () => UserEntity })
-  applicants: UserEntity;
+  applicants: UserEntity[];
 
   // a course have many lectures
   @OneToMany(() => LectureEntity, (lecture) => lecture.course)

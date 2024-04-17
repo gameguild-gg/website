@@ -102,12 +102,13 @@ export class UserEntity extends EntityBase implements UserDto {
   @ManyToMany(() => PostEntity, (post) => post.owners)
   @JoinTable()
   posts: PostEntity[];
-
+  
   // relation to courses created
   @OneToMany(() => CourseEntity, (course) => course.author)
   courses: CourseEntity[];
-
+  
   // relation to courses enrolled
-  @OneToMany(() => CourseEntity, (course) => course.author)
+  @ManyToMany(() => CourseEntity, (course) => course.author)
+  @JoinTable()
   enrolledCourses: CourseEntity[];
 }
