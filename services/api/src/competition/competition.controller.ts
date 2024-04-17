@@ -22,20 +22,19 @@ import {
 import { CompetitionService } from './competition.service';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { CompetitionGame } from './entities/competition.submission.entity';
-import { CompetitionSubmissionDto } from "../dtos/competition/competition.submission.dto";
-import { TerminalDto } from "../dtos/competition/terminal.dto";
-import { ChessMoveRequestDto } from "../dtos/competition/chess-move-request.dto";
-import { ChessMatchRequestDto } from "../dtos/competition/chess-match-request.dto";
-import { ChessMatchResultDto } from "../dtos/competition/chess-match-result.dto";
-import { MatchSearchResponseDto } from "../dtos/competition/match-search-response.dto";
-import { MatchSearchRequestDto } from "../dtos/competition/match-search-request.dto";
-import { CompetitionMatchEntity } from "./entities/competition.match.entity";
-import { ChessLeaderboardResponseEntryDto } from "../dtos/competition/chess-leaderboard-response.dto";
-import { Public } from "../auth/decorators/public.decorator";
-import { Auth } from "../auth/decorators/http.decorator";
-import { AuthUser } from "../auth";
-import { UserEntity } from "../user/entities";
-
+import { CompetitionSubmissionDto } from '../dtos/competition/competition.submission.dto';
+import { TerminalDto } from '../dtos/competition/terminal.dto';
+import { ChessMoveRequestDto } from '../dtos/competition/chess-move-request.dto';
+import { ChessMatchRequestDto } from '../dtos/competition/chess-match-request.dto';
+import { ChessMatchResultDto } from '../dtos/competition/chess-match-result.dto';
+import { MatchSearchResponseDto } from '../dtos/competition/match-search-response.dto';
+import { MatchSearchRequestDto } from '../dtos/competition/match-search-request.dto';
+import { CompetitionMatchEntity } from './entities/competition.match.entity';
+import { ChessLeaderboardResponseEntryDto } from '../dtos/competition/chess-leaderboard-response.dto';
+import { Public } from '../auth/decorators/public.decorator';
+import { Auth } from '../auth/decorators/http.decorator';
+import { AuthUser } from '../auth';
+import { UserEntity } from '../user/entities';
 
 @Controller('Competitions')
 @ApiTags('competitions')
@@ -97,7 +96,7 @@ export class CompetitionController {
   ): Promise<TerminalDto[]> {
     if (file.size > 1024 * 1024 * 10)
       throw new PayloadTooLargeException('File too large. It should be < 10mb');
-    
+
     if (!user) throw new UnauthorizedException('Invalid credentials');
 
     // // From here to below, it is not working.
@@ -122,15 +121,18 @@ export class CompetitionController {
   @Get('/Chess/ListAgents')
   @Auth()
   async ListChessAgents(@AuthUser() user: UserEntity): Promise<string[]> {
-    if(!user) throw new UnauthorizedException('Invalid credentials');
+    if (!user) throw new UnauthorizedException('Invalid credentials');
     return this.service.listChessAgents();
   }
 
   @Post('/Chess/Move')
   @ApiOkResponse({ type: String })
   @Auth()
-  async RequestChessMove(@Body() data: ChessMoveRequestDto, @AuthUser() user: UserEntity): Promise<string> {
-    if(!user) throw new UnauthorizedException('Invalid credentials');
+  async RequestChessMove(
+    @Body() data: ChessMoveRequestDto,
+    @AuthUser() user: UserEntity,
+  ): Promise<string> {
+    if (!user) throw new UnauthorizedException('Invalid credentials');
     return this.service.RequestChessMove(data);
   }
 
@@ -138,10 +140,10 @@ export class CompetitionController {
   @Auth()
   async RunChessMatch(
     @Body() data: ChessMatchRequestDto,
-    @AuthUser() user: UserEntity
+    @AuthUser() user: UserEntity,
   ): Promise<ChessMatchResultDto> {
-    if(!user) throw new UnauthorizedException('Invalid credentials');
-    return this.service.RunChessMatch(data);
+    if (!user) throw new UnauthorizedException('Invalid credentials');
+    return (await this.service.RunChessMatch(data)).result;
   }
 
   @Post('/Chess/FindMatches')
@@ -152,9 +154,9 @@ export class CompetitionController {
   })
   async FindChessMatchResult(
     @Body() data: MatchSearchRequestDto,
-    @AuthUser() user: UserEntity
+    @AuthUser() user: UserEntity,
   ): Promise<MatchSearchResponseDto[]> {
-    if(!user) throw new UnauthorizedException('Invalid credentials');
+    if (!user) throw new UnauthorizedException('Invalid credentials');
     // todo: return the result state and reason for the match ending.
     if (data.pageSize > 100)
       throw new UnprocessableEntityException(
@@ -221,20 +223,29 @@ export class CompetitionController {
   @ApiOkResponse({ type: ChessMatchResultDto })
   async GetChessMatchResult(
     @Param('id', ParseUUIDPipe) id: string,
-    @AuthUser() user: UserEntity
+    @AuthUser() user: UserEntity,
   ): Promise<ChessMatchResultDto> {
-    if(!user) throw new UnauthorizedException('Invalid credentials');
+    if (!user) throw new UnauthorizedException('Invalid credentials');
     return JSON.parse((await this.service.findMatchById(id)).logs);
   }
-  
+
   @Get('/Chess/Leaderboard')
   @Auth()
   @ApiOkResponse({
     type: ChessLeaderboardResponseEntryDto,
     isArray: true,
   })
-  async GetChessLeaderboard(@AuthUser() user: UserEntity): Promise<ChessLeaderboardResponseEntryDto[]> {
-    if(!user) throw new UnauthorizedException('Invalid credentials');
+  async GetChessLeaderboard(
+    @AuthUser() user: UserEntity,
+  ): Promise<ChessLeaderboardResponseEntryDto[]> {
+    if (!user) throw new UnauthorizedException('Invalid credentials');
     return this.service.getLeaderboard();
+  }
+
+  @Get('Chess/RunCompetition')
+  @Auth()
+  async RunCompetition(@AuthUser() user: UserEntity) {
+    if (!user) throw new UnauthorizedException('Invalid credentials');
+    return this.service.runChessCompetition();
   }
 }
