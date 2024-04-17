@@ -248,4 +248,11 @@ export class CompetitionController {
     if (!user) throw new UnauthorizedException('Invalid credentials');
     return this.service.runChessCompetition();
   }
+
+  @Get('Chess/LatestCompetitionReport')
+  @Auth()
+  async GetLatestChessCompetitionReport(@AuthUser() user: UserEntity) {
+    if (!user) throw new UnauthorizedException('Invalid credentials');
+    return this.service.getLatestChessCompetitionReport();
+  }
 }

@@ -6,7 +6,7 @@ import {
 import { AuthService } from '../auth/auth.service';
 import * as util from 'util';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, IsNull, Not, Repository } from 'typeorm';
+import { IsNull, Not, Repository } from 'typeorm';
 import {
   CompetitionGame,
   CompetitionSubmissionEntity,
@@ -44,6 +44,7 @@ import {
 } from '../dtos/competition/chess-match-result.dto';
 import { ChessLeaderboardResponseDto } from '../dtos/competition/chess-leaderboard-response.dto';
 import { ChessMatchRequestDto } from '../dtos/competition/chess-match-request.dto';
+import { CompetitionRunSubmissionReportDto } from '../dtos/competition/chess-competition-report.dto';
 
 const execShPromise = require('exec-sh').promise;
 
@@ -719,6 +720,7 @@ export class CompetitionService {
             executable: Not(IsNull()),
           },
           order: { createdAt: 'DESC' },
+          relations: { user: true },
         });
       }),
     );
@@ -930,7 +932,7 @@ export class CompetitionService {
       });
     }
 
-    // create a matchentity and save it
+    // create a match entity and save it
     let match = this.matchRepository.create();
     let playerWinner: CompetitionWinner | null;
     if (result.winner === usernames[0])
@@ -1011,12 +1013,20 @@ export class CompetitionService {
       where: { gameType: CompetitionGame.Chess },
       order: { updatedAt: 'DESC' },
     });
-    if (lastCompetition && lastCompetition.state == CompetitionRunState.RUNNING)
-      throw new ConflictException('There is already a competition running');
+    if (
+      lastCompetition &&
+      lastCompetition.state == CompetitionRunState.RUNNING
+    ) {
+      // todo: uncomment this!!
+      // throw new ConflictException('There is already a competition running');
+      // todo: remove this when commiting!
+      await this.runRepository.delete(lastCompetition);
+    }
 
     // create a new competition
     let competition = this.runRepository.create();
     competition.state = CompetitionRunState.RUNNING;
+    competition.gameType = CompetitionGame.Chess;
     competition = await this.runRepository.save(competition);
 
     // list all user ids
@@ -1027,8 +1037,8 @@ export class CompetitionService {
       },
     });
 
-    // find last valid submission for each user
-    const submissions: CompetitionSubmissionEntity[] = await Promise.all(
+    // find last valid submission for each user and remove if it is null
+    let submissions: CompetitionSubmissionEntity[] = await Promise.all(
       users.map(async (user) => {
         return await this.submissionRepository.findOne({
           where: {
@@ -1041,13 +1051,19 @@ export class CompetitionService {
         });
       }),
     );
+    // remove null submissions
+    submissions = submissions.filter((s) => s !== null);
 
     // run N*N matches between all users
     for (let i = 0; i < submissions.length; i++) {
-      for (let j = i + 1; j < submissions.length; j++) {
+      for (let j = 0; j < submissions.length; j++) {
         const p1 = submissions[i];
         const p2 = submissions[j];
-        if (!p1 || !p2) continue;
+        if (!p1 || !p2 || p1.id === p2.id) continue;
+        // print the users playing
+        console.log(
+          `Progress: ${((100 * (i * submissions.length + j)) / (submissions.length * submissions.length)).toFixed(2)}. Playing: ${submissions[i].user.username} vs ${submissions[j].user.username}`,
+        );
         const match = await this.RunChessMatch(
           {
             player1username: p1.user.username,
@@ -1059,15 +1075,35 @@ export class CompetitionService {
         await this.updateReport(match.match, competition);
       }
     }
+
+    // update competition run state to finished
+    await this.runRepository.update(competition.id, {
+      state: CompetitionRunState.FINISHED,
+    });
+    console.log('Competition finished');
   }
 
+  async getLatestChessCompetitionReport(): Promise<
+    CompetitionRunSubmissionReportDto[]
+  > {
+    // get the latest finished competition
+    const competition = await this.runRepository.findOne({
+      where: {
+        gameType: CompetitionGame.Chess,
+        state: CompetitionRunState.FINISHED,
+      },
+      order: { updatedAt: 'DESC' },
+    });
+    if (!competition) return [];
+    // get all the reports for that competition with usernames
+    return await this.submissionReportRepository.find({
+      where: { run: { id: competition.id } },
+      relations: { user: true },
+      order: { totalWins: 'DESC' },
+    });
+  }
   async updateReport(match: CompetitionMatchEntity, run: CompetitionRunEntity) {
     const winner = match.winner;
-    let winnerUsername;
-    if (winner == CompetitionWinner.Player1)
-      winnerUsername = match.p1submission.user.username;
-    else if (winner == CompetitionWinner.Player2)
-      winnerUsername = match.p2submission.user.username;
 
     // find the report for P1 and create one if it doesn't exist
     let reportP1 = await this.submissionReportRepository.findOne({
@@ -1083,10 +1119,16 @@ export class CompetitionService {
       reportP1.user = match.p1submission.user;
       reportP1.run = run;
       reportP1.submission = match.p1submission;
+      reportP1.totalWins = 0;
+      reportP1.winsAsP1 = 0;
+      reportP1.winsAsP2 = 0;
+      reportP1.pointsAsP1 = 0;
+      reportP1.pointsAsP2 = 0;
+      reportP1.totalPoints = 0;
     }
     // update the report for P1
     reportP1.winsAsP1 += winner == CompetitionWinner.Player1 ? 1 : 0;
-    reportP1.totalWins += 1;
+    reportP1.totalWins += winner == CompetitionWinner.Player1 ? 1 : 0;
     reportP1 = await this.submissionReportRepository.save(reportP1);
 
     // find the report for P2 and create one if it doesn't exist
@@ -1103,10 +1145,16 @@ export class CompetitionService {
       reportP2.user = match.p2submission.user;
       reportP2.run = run;
       reportP2.submission = match.p2submission;
+      reportP2.totalWins = 0;
+      reportP2.winsAsP1 = 0;
+      reportP2.winsAsP2 = 0;
+      reportP2.pointsAsP1 = 0;
+      reportP2.pointsAsP2 = 0;
+      reportP2.totalPoints = 0;
     }
     // update the report for P2
-    reportP2.winsAsP2 += winner == CompetitionWinner.Player2 ? 1 : 0;
-    reportP2.totalWins += 1;
+    reportP2.winsAsP2 += winner === CompetitionWinner.Player2 ? 1 : 0;
+    reportP2.totalWins += winner === CompetitionWinner.Player2 ? 1 : 0;
     reportP2 = await this.submissionReportRepository.save(reportP2);
   }
 }
