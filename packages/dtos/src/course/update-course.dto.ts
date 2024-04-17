@@ -3,7 +3,10 @@ import { ChapterEntity } from "../../cms/entities/chapter.entity";
 import { LectureEntity } from "../../cms/entities/lecture.entity";
 import { ContentBaseDto } from "../content/content-base.dto";
 
-export class CreateCourseDto extends ContentBaseDto {
+export class UpdateCourseDto extends ContentBaseDto {
+    @ApiProperty()
+    id: string;
+    
     @ApiPropertyOptional()
     price: number;
 
