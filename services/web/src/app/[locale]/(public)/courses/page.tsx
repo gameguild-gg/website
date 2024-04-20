@@ -39,10 +39,10 @@ export default async function Page() {
             {
               placeholder_courses.map(el=>
 
-                  <div className='group bg-white border-2 shadow rounded-lg w-full md:w-[335px] h-[250px] mx-auto m-3 hover:scale-125 hover:h-[305px] duration-300 ' key={el}>
+                  <div className='group bg-white border-2 shadow rounded-lg w-full md:w-[335px] h-[250px] mx-auto m-3 hover:scale-125 duration-300 ' key={el}>
                     <img
                       src='assets/images/placeholder.svg'
-                      className='w-full h-[200px]'
+                      className='w-full object-none h-[200px] group-hover:h-[150px]'
                     />
                     <div className='font-bold p-2'>My Course {el}</div>
                     <div className='p-2 hidden group-hover:block'>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor.</div>
