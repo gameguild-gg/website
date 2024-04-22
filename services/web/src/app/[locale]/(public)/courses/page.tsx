@@ -1,6 +1,6 @@
 'use client'
 import React, { useState } from 'react';
-import { Search, TextSearch } from 'lucide-react';
+import { Search, Settings2 } from 'lucide-react';
 
 const placeholder_courses = [1,2,3,4,5,6,7,8,9,10,11,12]
 
@@ -27,7 +27,7 @@ export default async function Page() {
               <Search />
             </button>
             <button  onClick={handleSearchSettingsButton}>
-              <TextSearch />
+              <Settings2 />
             </button>
           </div>
           {/*Search Settings*/}
@@ -35,17 +35,17 @@ export default async function Page() {
             [ Search Settings Here ]
           </div>
           {/*Courses List*/}
-          <div className='h-full grid grid-cols-1 md:grid-cols-4 justify-around md:-mx-[10px]'>
+          <div className='h-full grid grid-cols-1 md:grid-cols-4 justify-around md:mx-[0px]'>
             {
               placeholder_courses.map(el=>
 
-                  <div className='group bg-white border-2 shadow rounded-lg w-full md:w-[335px] h-[250px] mx-auto m-3 hover:scale-125 duration-300 ' key={el}>
+                  <div className='group bg-white border-2 shadow rounded-lg w-full md:w-[345px] h-[250px] m-2 hover:scale-125 duration-300 overflow-hidden' key={el}>
                     <img
                       src='assets/images/placeholder.svg'
-                      className='w-full object-none h-[200px] group-hover:h-[150px]'
+                      className='w-full object-none h-[200px] group-hover:h-[150px] duration-300'
                     />
                     <div className='font-bold p-2'>My Course {el}</div>
-                    <div className='p-2 hidden group-hover:block'>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor.</div>
+                    <div className='p-2 opacity-0 group-hover:opacity-100 transition delay-150'>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor.</div>
                   </div>
               )
             }
