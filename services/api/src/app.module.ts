@@ -7,7 +7,7 @@ import { AppController } from './app.controller';
 import { AuthModule } from './auth/auth.module';
 import { CommonModule } from './common/common.module';
 import { ApiConfigService } from './common/config.service';
-import { CourseModule } from './course/course.module';
+import { ContentModule } from './cms/content.module';
 import { EventModule } from './event/event.module';
 import { NotificationModule } from './notification/notification.module';
 import { ProposalModule } from './proposal/proposal.module';
@@ -38,7 +38,7 @@ import { IpfsModule } from './asset/ipfs.module';
     AuthModule,
     UserModule,
     NotificationModule,
-    CourseModule,
+    ContentModule,
     ProposalModule,
     EventModule,
     CompetitionModule,

@@ -1,8 +1,12 @@
-import { Injectable, UnprocessableEntityException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  UnprocessableEntityException,
+} from '@nestjs/common';
 import { AuthService } from '../auth/auth.service';
 import * as util from 'util';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, IsNull, Not, Repository } from 'typeorm';
+import { IsNull, Not, Repository } from 'typeorm';
 import {
   CompetitionGame,
   CompetitionSubmissionEntity,
@@ -25,19 +29,22 @@ import { CleanOptions, simpleGit } from 'simple-git';
 import * as process from 'process';
 import extract from 'extract-zip';
 import * as decompress from 'decompress';
-import ExecuteCommand, { ExecuteCommandResult } from "../common/execute-command";
+import ExecuteCommand, {
+  ExecuteCommandResult,
+} from '../common/execute-command';
 import { Chess, Move } from 'chess.js';
 import { UserProfileService } from '../user/modules/user-profile/user-profile.service';
 import { FindManyOptions } from 'typeorm/find-options/FindManyOptions';
-import { TerminalDto } from "../dtos/competition/terminal.dto";
-import { ChessMoveRequestDto } from "../dtos/competition/chess-move-request.dto";
+import { TerminalDto } from '../dtos/competition/terminal.dto';
+import { ChessMoveRequestDto } from '../dtos/competition/chess-move-request.dto';
 import {
   ChessGameResult,
   ChessGameResultReason,
-  ChessMatchResultDto
-} from "../dtos/competition/chess-match-result.dto";
-import { ChessLeaderboardResponseDto } from "../dtos/competition/chess-leaderboard-response.dto";
-import { ChessMatchRequestDto } from "../dtos/competition/chess-match-request.dto";
+  ChessMatchResultDto,
+} from '../dtos/competition/chess-match-result.dto';
+import { ChessLeaderboardResponseDto } from '../dtos/competition/chess-leaderboard-response.dto';
+import { ChessMatchRequestDto } from '../dtos/competition/chess-match-request.dto';
+import { CompetitionRunSubmissionReportDto } from '../dtos/competition/chess-competition-report.dto';
 
 const execShPromise = require('exec-sh').promise;
 
@@ -446,12 +453,9 @@ export class CompetitionService {
     return await this.matchRepository.save(match);
   }
 
-  async run(): Promise<void> {
+  async runCatCompetition(): Promise<void> {
     // todo: wrap inside a transaction to avoid starting a competition while another is running
-    // const lastCompetition = await this.runRepository.findOne({
-    //   where: {},
-    //   order: { updatedAt: 'DESC' },
-    // });
+
     //todo: uncomment this
     // if (lastCompetition && lastCompetition.state == CompetitionRunState.RUNNING)
     //   throw new ConflictException('There is already a competition running');
@@ -461,23 +465,13 @@ export class CompetitionService {
 
     try {
       // todo: optimize this query
-      // get the last submission of each user
-      // const users = await this.userService.repositoryLinq
-      //   .getAll()
-      //   .groupBy((u) => u.id)
-      //   .include((u) => u.competitionSubmissions)
-      //   .thenGroupBy((c) => c.id)
-      //   .orderByDescending((c) => c.updatedAt)
-      //   .take(1);
-      // return users;
-
-      const allUsers = await this.userService.find({ select: ['id'] });
+      const allUsers = await this.userService.find({ select: { id: true } });
       const lastSubmissions = (
         await Promise.all(
           allUsers.map(async (user) => {
             return await this.submissionRepository.findOne({
               where: { user: { id: user.id } },
-              relations: ['user'],
+              relations: { user: true },
               order: { updatedAt: 'DESC' },
             });
           }),
@@ -523,13 +517,13 @@ export class CompetitionService {
               catReport.submission = cat;
               catReport.winsAsP1 = 0;
               catReport.winsAsP2 = 0;
-              catReport.p1Points = 0;
-              catReport.p2Points = 0;
+              catReport.pointsAsP1 = 0;
+              catReport.pointsAsP2 = 0;
               catReport.totalPoints = 0;
               catReport = await this.submissionReportRepository.save(catReport);
             }
             catReport.totalPoints += match.p1Points;
-            catReport.p1Points += match.p1Points;
+            catReport.pointsAsP1 += match.p1Points;
             if (match.winner === CompetitionWinner.Player1)
               catReport.winsAsP1++;
             await this.submissionReportRepository.save(catReport);
@@ -548,14 +542,14 @@ export class CompetitionService {
               catcherReport.submission = catcher;
               catcherReport.winsAsP1 = 0;
               catcherReport.winsAsP2 = 0;
-              catcherReport.p1Points = 0;
-              catcherReport.p2Points = 0;
+              catcherReport.pointsAsP1 = 0;
+              catcherReport.pointsAsP2 = 0;
               catcherReport.totalPoints = 0;
               catcherReport =
                 await this.submissionReportRepository.save(catcherReport);
             }
             catcherReport.totalPoints += match.p2Points;
-            catcherReport.p2Points += match.p2Points;
+            catcherReport.pointsAsP2 += match.p2Points;
             if (match.winner === CompetitionWinner.Player2)
               catcherReport.winsAsP2++;
             await this.submissionReportRepository.save(catcherReport);
@@ -691,7 +685,8 @@ export class CompetitionService {
 
   async RunChessMatch(
     ChessMatchRequestDto: ChessMatchRequestDto,
-  ): Promise<ChessMatchResultDto> {
+    competitionRun: CompetitionRunEntity = null,
+  ): Promise<{ result: ChessMatchResultDto; match: CompetitionMatchEntity }> {
     const usernames = [
       ChessMatchRequestDto.player1username,
       ChessMatchRequestDto.player2username,
@@ -725,6 +720,7 @@ export class CompetitionService {
             executable: Not(IsNull()),
           },
           order: { createdAt: 'DESC' },
+          relations: { user: true },
         });
       }),
     );
@@ -762,8 +758,8 @@ export class CompetitionService {
 
     // the board management settings
     const board = new Chess();
-    let userIdx:number = 0;
-    let result: ChessMatchResultDto = {
+    let userIdx: number = 0;
+    const result: ChessMatchResultDto = {
       id: '',
       players: usernames,
       winner: '',
@@ -782,12 +778,13 @@ export class CompetitionService {
     while (true) {
       const fen = board.fen();
       let move: ExecuteCommandResult;
-      try{
+      try {
         move = await ExecuteCommand({
-        command: executablePath[userIdx],
-        stdin: fen,
-        timeout: 10000,
-      });}catch(e){
+          command: executablePath[userIdx],
+          stdin: fen,
+          timeout: 10000,
+        });
+      } catch (e) {
         console.error(e);
         move = null;
       }
@@ -795,11 +792,11 @@ export class CompetitionService {
       // if the exe breaks, the other player wins
       if (!move || !move.stdout || move.stderr) {
         // username of the failed player
-        console.error("user", usernames[userIdx]);
-        console.error("command", executablePath[userIdx]);
-        console.error("fen", fen);
-        if(move) console.error("stdout", move.stdout);
-        
+        console.error('user', usernames[userIdx]);
+        console.error('command', executablePath[userIdx]);
+        console.error('fen', fen);
+        if (move) console.error('stdout', move.stdout);
+
         result.winner = usernames[1 - userIdx];
         result.result = ChessGameResult.GAME_OVER;
         result.reason = ChessGameResultReason.INVALID_MOVE;
@@ -909,8 +906,10 @@ export class CompetitionService {
     // update the elo of the users
     // todo: @joel check this please!
     if (result.winner) {
-      const winnerEntity = users.find( (user) => user.username === result.winner);
-      const loserEntity = users.find( (user) => user.username !== result.winner);
+      const winnerEntity = users.find(
+        (user) => user.username === result.winner,
+      );
+      const loserEntity = users.find((user) => user.username !== result.winner);
       const newElo = this.calculateNewElo({
         winner: winnerEntity.elo,
         loser: loserEntity.elo,
@@ -928,16 +927,20 @@ export class CompetitionService {
       await this.userService.updateOneTypeorm(winnerEntity.id, {
         elo: newElo.winner,
       });
-      await this.userService.updateOneTypeorm(loserEntity.id, { elo: newElo.loser });
+      await this.userService.updateOneTypeorm(loserEntity.id, {
+        elo: newElo.loser,
+      });
     }
 
-    // create a matchentity and save it
+    // create a match entity and save it
     let match = this.matchRepository.create();
     let playerWinner: CompetitionWinner | null;
-    if(result.winner === usernames[0]) playerWinner = CompetitionWinner.Player1;
-    else if (result.winner === usernames[1]) playerWinner = CompetitionWinner.Player2;
+    if (result.winner === usernames[0])
+      playerWinner = CompetitionWinner.Player1;
+    else if (result.winner === usernames[1])
+      playerWinner = CompetitionWinner.Player2;
     else playerWinner = null;
-    
+
     match = {
       ...match,
       p1submission: submissions[0],
@@ -946,17 +949,17 @@ export class CompetitionService {
       p2Points: result.eloChange[1],
       p1Turns: 0,
       p2Turns: 0,
-      run: null,
+      run: competitionRun,
       winner: playerWinner, // todo: is it better to use a reference to the submission? the user? the username? or just use player1 and player2? or use boolen to store firstPlayerWon?
       logs: JSON.stringify(result),
       lastState: result.finalFen,
     };
 
     // save the match
-    
-    let matchSaved = await this.matchRepository.save(match);
+
+    const matchSaved = await this.matchRepository.save(match);
     result.id = matchSaved.id;
-    return result;
+    return { result: result, match: matchSaved };
   }
 
   // todo: @joel check this please!
@@ -990,17 +993,168 @@ export class CompetitionService {
   }
 
   async getLeaderboard(): Promise<ChessLeaderboardResponseDto> {
-    const users = await this.userService.find({ 
+    const users = await this.userService.find({
       select: {
         username: true,
-        elo: true
+        elo: true,
       },
       order: {
-        elo: "DESC"
+        elo: 'DESC',
       },
       take: 5,
     });
-    
+
     return users;
+  }
+
+  async runChessCompetition() {
+    // check if the last the competition is running
+    const lastCompetition = await this.runRepository.findOne({
+      where: { gameType: CompetitionGame.Chess },
+      order: { updatedAt: 'DESC' },
+    });
+    if (
+      lastCompetition &&
+      lastCompetition.state == CompetitionRunState.RUNNING
+    ) {
+      // todo: uncomment this!!
+      // throw new ConflictException('There is already a competition running');
+      // todo: remove this when commiting!
+      await this.runRepository.delete(lastCompetition);
+    }
+
+    // create a new competition
+    let competition = this.runRepository.create();
+    competition.state = CompetitionRunState.RUNNING;
+    competition.gameType = CompetitionGame.Chess;
+    competition = await this.runRepository.save(competition);
+
+    // list all user ids
+    const users = await this.userService.find({
+      select: {
+        id: true,
+        username: true,
+      },
+    });
+
+    // find last valid submission for each user and remove if it is null
+    let submissions: CompetitionSubmissionEntity[] = await Promise.all(
+      users.map(async (user) => {
+        return await this.submissionRepository.findOne({
+          where: {
+            user: { id: user.id },
+            gameType: CompetitionGame.Chess,
+            executable: Not(IsNull()),
+          },
+          relations: { user: true },
+          order: { createdAt: 'DESC' },
+        });
+      }),
+    );
+    // remove null submissions
+    submissions = submissions.filter((s) => s !== null);
+
+    // run N*N matches between all users
+    for (let i = 0; i < submissions.length; i++) {
+      for (let j = 0; j < submissions.length; j++) {
+        const p1 = submissions[i];
+        const p2 = submissions[j];
+        if (!p1 || !p2 || p1.id === p2.id) continue;
+        // print the users playing
+        console.log(
+          `Progress: ${((100 * (i * submissions.length + j)) / (submissions.length * submissions.length)).toFixed(2)}. Playing: ${submissions[i].user.username} vs ${submissions[j].user.username}`,
+        );
+        const match = await this.RunChessMatch(
+          {
+            player1username: p1.user.username,
+            player2username: p2.user.username,
+          },
+          competition,
+        );
+        // update / create reports
+        await this.updateReport(match.match, competition);
+      }
+    }
+
+    // update competition run state to finished
+    await this.runRepository.update(competition.id, {
+      state: CompetitionRunState.FINISHED,
+    });
+    console.log('Competition finished');
+  }
+
+  async getLatestChessCompetitionReport(): Promise<
+    CompetitionRunSubmissionReportDto[]
+  > {
+    // get the latest finished competition
+    const competition = await this.runRepository.findOne({
+      where: {
+        gameType: CompetitionGame.Chess,
+        state: CompetitionRunState.FINISHED,
+      },
+      order: { updatedAt: 'DESC' },
+    });
+    if (!competition) return [];
+    // get all the reports for that competition with usernames
+    return await this.submissionReportRepository.find({
+      where: { run: { id: competition.id } },
+      relations: { user: true },
+      order: { totalWins: 'DESC' },
+    });
+  }
+  async updateReport(match: CompetitionMatchEntity, run: CompetitionRunEntity) {
+    const winner = match.winner;
+
+    // find the report for P1 and create one if it doesn't exist
+    let reportP1 = await this.submissionReportRepository.findOne({
+      where: {
+        user: { username: match.p1submission.user.username },
+        run: { id: run.id },
+      },
+    });
+
+    // if there is no report for P1, create one
+    if (!reportP1) {
+      reportP1 = this.submissionReportRepository.create();
+      reportP1.user = match.p1submission.user;
+      reportP1.run = run;
+      reportP1.submission = match.p1submission;
+      reportP1.totalWins = 0;
+      reportP1.winsAsP1 = 0;
+      reportP1.winsAsP2 = 0;
+      reportP1.pointsAsP1 = 0;
+      reportP1.pointsAsP2 = 0;
+      reportP1.totalPoints = 0;
+    }
+    // update the report for P1
+    reportP1.winsAsP1 += winner == CompetitionWinner.Player1 ? 1 : 0;
+    reportP1.totalWins += winner == CompetitionWinner.Player1 ? 1 : 0;
+    reportP1 = await this.submissionReportRepository.save(reportP1);
+
+    // find the report for P2 and create one if it doesn't exist
+    let reportP2 = await this.submissionReportRepository.findOne({
+      where: {
+        user: { username: match.p2submission.user.username },
+        run: { id: run.id },
+      },
+    });
+
+    // if there is no report for P2, create one
+    if (!reportP2) {
+      reportP2 = this.submissionReportRepository.create();
+      reportP2.user = match.p2submission.user;
+      reportP2.run = run;
+      reportP2.submission = match.p2submission;
+      reportP2.totalWins = 0;
+      reportP2.winsAsP1 = 0;
+      reportP2.winsAsP2 = 0;
+      reportP2.pointsAsP1 = 0;
+      reportP2.pointsAsP2 = 0;
+      reportP2.totalPoints = 0;
+    }
+    // update the report for P2
+    reportP2.winsAsP2 += winner === CompetitionWinner.Player2 ? 1 : 0;
+    reportP2.totalWins += winner === CompetitionWinner.Player2 ? 1 : 0;
+    reportP2 = await this.submissionReportRepository.save(reportP2);
   }
 }

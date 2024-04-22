@@ -1,6 +1,6 @@
 import { Column, Entity, Index, ManyToOne } from "typeorm";
 import { EntityBase } from "../common/entities/entity.base";
-import { ContentBase } from "../course/entities/content.base";
+import { ContentBase } from "../cms/entities/content.base";
 
 @Entity({ name: 'tag' })
 export class TagEntity extends EntityBase {
