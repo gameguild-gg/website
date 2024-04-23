@@ -19,6 +19,7 @@
     "install:api:deps:ubuntu": "npm run install:deps:ubuntu --workspace=services/api",
     "postinstall:api:deps:ubuntu": "npm run install:api",
     "install:web": "npm install --workspace=services/web",
+    "preinstall:web": "npm install",
     "clean": "rimraf \"**/node_modules\"",
     "prepare_": "husky install",
     "format": "npm run format --workspaces --if-present",
