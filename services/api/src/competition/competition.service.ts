@@ -1,50 +1,36 @@
-import {
-  ConflictException,
-  Injectable,
-  UnprocessableEntityException,
-} from '@nestjs/common';
-import { AuthService } from '../auth/auth.service';
-import * as util from 'util';
-import { InjectRepository } from '@nestjs/typeorm';
-import { IsNull, Not, Repository } from 'typeorm';
-import {
-  CompetitionGame,
-  CompetitionSubmissionEntity,
-} from './entities/competition.submission.entity';
-import {
-  CompetitionRunEntity,
-  CompetitionRunState,
-} from './entities/competition.run.entity';
-import {
-  CompetitionMatchEntity,
-  CompetitionWinner,
-} from './entities/competition.match.entity';
-import { promises as fsp } from 'fs';
-import * as fse from 'fs-extra';
-import { UserService } from '../user/user.service';
-import { LinqRepository } from 'typeorm-linq-repository';
-import { CompetitionRunSubmissionReportEntity } from './entities/competition.run.submission.report.entity';
-import { UserEntity } from '../user/entities';
-import { CleanOptions, simpleGit } from 'simple-git';
-import * as process from 'process';
-import extract from 'extract-zip';
-import * as decompress from 'decompress';
-import ExecuteCommand, {
-  ExecuteCommandResult,
-} from '../common/execute-command';
-import { Chess, Move } from 'chess.js';
-import { UserProfileService } from '../user/modules/user-profile/user-profile.service';
-import { FindManyOptions } from 'typeorm/find-options/FindManyOptions';
-import { TerminalDto } from '../dtos/competition/terminal.dto';
-import { ChessMoveRequestDto } from '../dtos/competition/chess-move-request.dto';
+import { ConflictException, Injectable, UnprocessableEntityException } from "@nestjs/common";
+import { AuthService } from "../auth/auth.service";
+import * as util from "util";
+import { InjectRepository } from "@nestjs/typeorm";
+import { IsNull, Not, Repository } from "typeorm";
+import { CompetitionGame, CompetitionSubmissionEntity } from "./entities/competition.submission.entity";
+import { CompetitionRunEntity, CompetitionRunState } from "./entities/competition.run.entity";
+import { CompetitionMatchEntity, CompetitionWinner } from "./entities/competition.match.entity";
+import { promises as fsp } from "fs";
+import * as fse from "fs-extra";
+import { UserService } from "../user/user.service";
+import { LinqRepository } from "typeorm-linq-repository";
+import { CompetitionRunSubmissionReportEntity } from "./entities/competition.run.submission.report.entity";
+import { UserEntity } from "../user/entities";
+import { CleanOptions, simpleGit } from "simple-git";
+import * as process from "process";
+import extract from "extract-zip";
+import * as decompress from "decompress";
+import ExecuteCommand, { ExecuteCommandResult } from "../common/execute-command";
+import { Chess, Move } from "chess.js";
+import { UserProfileService } from "../user/modules/user-profile/user-profile.service";
+import { FindManyOptions } from "typeorm/find-options/FindManyOptions";
+import { TerminalDto } from "../dtos/competition/terminal.dto";
+import { ChessMoveRequestDto } from "../dtos/competition/chess-move-request.dto";
 import {
   ChessGameResult,
   ChessGameResultReason,
-  ChessMatchResultDto,
-} from '../dtos/competition/chess-match-result.dto';
-import { ChessLeaderboardResponseDto } from '../dtos/competition/chess-leaderboard-response.dto';
-import { ChessMatchRequestDto } from '../dtos/competition/chess-match-request.dto';
-import { CompetitionRunSubmissionReportDto } from '../dtos/competition/chess-competition-report.dto';
+  ChessMatchResultDto
+} from "../dtos/competition/chess-match-result.dto";
+import { ChessLeaderboardResponseDto } from "../dtos/competition/chess-leaderboard-response.dto";
+import { ChessMatchRequestDto } from "../dtos/competition/chess-match-request.dto";
+import { CompetitionRunSubmissionReportDto } from "../dtos/competition/chess-competition-report.dto";
+import * as moment from 'moment';
 
 const execShPromise = require('exec-sh').promise;
 
@@ -162,6 +148,9 @@ export class CompetitionService {
         primaryKey: (entity) => entity.id,
       },
     );
+
+    // start and delete stale competition runs
+    this.deleteStuckCompetition(CompetitionGame.Chess).then();
   }
 
   getDate(): string {
@@ -1015,74 +1004,112 @@ export class CompetitionService {
     });
     if (
       lastCompetition &&
+      lastCompetition.gameType == CompetitionGame.Chess &&
       lastCompetition.state == CompetitionRunState.RUNNING
     ) {
-      // todo: uncomment this!!
-      // throw new ConflictException('There is already a competition running');
-      // todo: remove this when commiting!
-      await this.runRepository.delete(lastCompetition);
+      // if last competition running is from less than 1h ago then throw error
+      // todo: fix 4 hours displacement between database and server
+      const previousTime = moment(lastCompetition.updatedAt).subtract(4, 'hours');
+      // less than one hour
+      if(moment().diff(previousTime) < 1000 * 60 * 60) 
+        throw new ConflictException('There is already a competition running');
+      else // unstuck the competition 
+        await this.deleteStuckCompetition(CompetitionGame.Chess);
     }
-
+    
     // create a new competition
     let competition = this.runRepository.create();
     competition.state = CompetitionRunState.RUNNING;
     competition.gameType = CompetitionGame.Chess;
     competition = await this.runRepository.save(competition);
 
-    // list all user ids
-    const users = await this.userService.find({
-      select: {
-        id: true,
-        username: true,
-      },
-    });
+    // try to run the competition
+    try {
+      // list all user ids
+      const users = await this.userService.find({
+        select: {
+          id: true,
+          username: true,
+        },
+      });
 
-    // find last valid submission for each user and remove if it is null
-    let submissions: CompetitionSubmissionEntity[] = await Promise.all(
-      users.map(async (user) => {
-        return await this.submissionRepository.findOne({
-          where: {
-            user: { id: user.id },
-            gameType: CompetitionGame.Chess,
-            executable: Not(IsNull()),
-          },
-          relations: { user: true },
-          order: { createdAt: 'DESC' },
-        });
-      }),
-    );
-    // remove null submissions
-    submissions = submissions.filter((s) => s !== null);
+      // find last valid submission for each user and remove if it is null
+      let submissions: CompetitionSubmissionEntity[] = await Promise.all(
+        users.map(async (user) => {
+          return await this.submissionRepository.findOne({
+            where: {
+              user: { id: user.id },
+              gameType: CompetitionGame.Chess,
+              executable: Not(IsNull()),
+            },
+            relations: { user: true },
+            order: { createdAt: 'DESC' },
+          });
+        }),
+      );
+      // remove null submissions
+      submissions = submissions.filter((s) => s !== null);
 
-    // run N*N matches between all users
-    for (let i = 0; i < submissions.length; i++) {
-      for (let j = 0; j < submissions.length; j++) {
-        const p1 = submissions[i];
-        const p2 = submissions[j];
-        if (!p1 || !p2 || p1.id === p2.id) continue;
-        // print the users playing
-        console.log(
-          `Progress: ${((100 * (i * submissions.length + j)) / (submissions.length * submissions.length)).toFixed(2)}. Playing: ${submissions[i].user.username} vs ${submissions[j].user.username}`,
-        );
-        const match = await this.RunChessMatch(
-          {
-            player1username: p1.user.username,
-            player2username: p2.user.username,
-          },
-          competition,
-        );
-        // update / create reports
-        await this.updateReport(match.match, competition);
+      // run N*N matches between all users
+      for (let i = 0; i < submissions.length; i++) {
+        for (let j = 0; j < submissions.length; j++) {
+          const p1 = submissions[i];
+          const p2 = submissions[j];
+          if (!p1 || !p2 || p1.id === p2.id) continue;
+          // print the users playing
+          console.log(
+            `Progress: ${((100 * (i * submissions.length + j)) / (submissions.length * submissions.length)).toFixed(2)}. Playing: ${submissions[i].user.username} vs ${submissions[j].user.username}`,
+          );
+          const match = await this.RunChessMatch(
+            {
+              player1username: p1.user.username,
+              player2username: p2.user.username,
+            },
+            competition,
+          );
+          // update / create reports
+          await this.updateReport(match.match, competition);
+        }
       }
-    }
 
-    // update competition run state to finished
-    await this.runRepository.update(competition.id, {
-      state: CompetitionRunState.FINISHED,
-    });
-    console.log('Competition finished');
+      // update competition run state to finished
+      await this.runRepository.update(competition.id, {
+        state: CompetitionRunState.FINISHED,
+      });
+      console.log('Competition finished');
+    }
+    catch (e) {
+      await this.runRepository.update(competition.id, {
+        state: CompetitionRunState.FAILED,
+      });
+      // print error
+      console.error(e);
+      throw e;
+    }
   }
 
+  async deleteStuckCompetition(gameType: CompetitionGame): Promise<void> {
+    // get last competition
+    const competition = await this.runRepository.findOne({
+      where: { gameType, state: CompetitionRunState.RUNNING },
+      order: { updatedAt: 'DESC' },
+    });
+    if (!competition) return;
+    
+    // go over all the matches and delete them
+    await this.matchRepository.delete({
+      run: { id: competition.id },
+    });
+    
+    // delete the reports
+    await this.submissionReportRepository.delete({
+      run: { id: competition.id },
+    });
+
+    // delete the competition
+    await this.runRepository.delete({ id: competition.id });
+  }
+  
   async getLatestChessCompetitionReport(): Promise<
     CompetitionRunSubmissionReportDto[]
   > {

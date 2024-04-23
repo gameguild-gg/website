@@ -1,7 +1,8 @@
 import { UserDto } from "../user/user.dto";
 import { ApiProperty } from "@nestjs/swagger";
+import { EntityDto } from "../entity.dto";
 
-export class CompetitionRunSubmissionReportDto {
+export class CompetitionRunSubmissionReportDto extends EntityDto {
   @ApiProperty()
   winsAsP1: number;
 
