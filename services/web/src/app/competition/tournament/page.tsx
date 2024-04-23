@@ -118,9 +118,11 @@ export default function TournamentPage() {
   }
 
   // todo: fix delta of 4 hours from server and database
-  const buttonEnabled = moment(lastRunDate)
-    .subtract(3, 'hours')
-    .isBefore(moment().tz('America/New_York'));
+  const buttonEnabled =
+    lastRunDate === null ||
+    moment(lastRunDate)
+      .subtract(3, 'hours')
+      .isBefore(moment().tz('America/New_York'));
   console.log(buttonEnabled);
 
   // print a table of all reports from all users from lastCompetitionState
