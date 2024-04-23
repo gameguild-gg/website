@@ -4,6 +4,7 @@ import React, { useEffect } from 'react';
 import { ChessLeaderboardResponseEntryDto } from '@/dtos/competition/chess-leaderboard-response.dto';
 import { getCookie } from 'cookies-next';
 import { useRouter } from 'next/navigation';
+import { Table, TableColumnsType, Typography } from "antd";
 
 export default function LeaderboardPage() {
   const router = useRouter();
@@ -38,29 +39,46 @@ export default function LeaderboardPage() {
     setLeaderboardFetched(true);
   };
 
+  // table for the leaderboard
+  
+  interface DataType {
+    key: React.Key;
+    rank: number;
+    username: string;
+    elo: string;
+  }
+  
+  const columns: TableColumnsType<DataType> = [
+    {
+      title: 'Rank',
+      dataIndex: 'rank',
+      key: 'rank',
+    },
+    {
+      title: 'Username',
+      dataIndex: 'username',
+      key: 'username',
+    },
+    {
+      title: 'ELO',
+      dataIndex: 'elo',
+      key: 'elo',
+    },
+  ];
+  
+  const data: DataType[] = leaderboardData.map((entry: ChessLeaderboardResponseEntryDto, index: number) => {
+    return {
+      key: index,
+      rank: index + 1,
+      username: entry.username,
+      elo: entry.elo.toFixed(2),
+    };
+  });
+  
   return (
-    <div>
-      <h1>Leaderboard</h1>
-      <table>
-        <thead>
-          <tr>
-            <th>Rank</th>
-            <th>Username</th>
-            <th>ELO</th>
-          </tr>
-        </thead>
-        <tbody>
-          {leaderboardData.map((entry: any, index: number) => {
-            return (
-              <tr key={index}>
-                <td>{index + 1}</td>
-                <td>{entry.username}</td>
-                <td>{entry.elo}</td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
+    <>
+      <Typography.Title>Leaderboard</Typography.Title>
+      <Table columns={columns} dataSource={data} />
+    </>
   );
 }

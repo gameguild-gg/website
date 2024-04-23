@@ -35,6 +35,7 @@ import { Public } from '../auth/decorators/public.decorator';
 import { Auth } from '../auth/decorators/http.decorator';
 import { AuthUser } from '../auth';
 import { UserEntity } from '../user/entities';
+import { CompetitionRunSubmissionReportDto } from "../dtos/competition/chess-competition-report.dto";
 
 @Controller('Competitions')
 @ApiTags('competitions')
@@ -250,8 +251,9 @@ export class CompetitionController {
   }
 
   @Get('Chess/LatestCompetitionReport')
+  @ApiOkResponse({ type: CompetitionRunSubmissionReportDto, isArray: true })
   @Auth()
-  async GetLatestChessCompetitionReport(@AuthUser() user: UserEntity) {
+  async GetLatestChessCompetitionReport(@AuthUser() user: UserEntity): Promise<CompetitionRunSubmissionReportDto[]> {
     if (!user) throw new UnauthorizedException('Invalid credentials');
     return this.service.getLatestChessCompetitionReport();
   }
