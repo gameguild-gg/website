@@ -95,6 +95,13 @@ function Home() {
         },
         body: JSON.stringify(data),
       });
+
+      if (!response.ok) {
+        const json = await response.json();
+        message.error(`${JSON.stringify(json)}`);
+        return;
+      }
+
       const json: LocalSignInResponseDto = await response.json();
 
       // todo: store expiration date in cookie properly
@@ -198,6 +205,7 @@ function Home() {
                 Email or Username
               </label>
               <input
+                style={{ color: 'black' }}
                 type="text"
                 onChange={(e) => setEmailOrUsername(e.target.value)}
                 id="emailOrUsername"
@@ -213,6 +221,7 @@ function Home() {
                 Username
               </label>
               <input
+                style={{ color: 'black' }}
                 type="text"
                 onChange={(e) => setUsername(e.target.value)}
                 id="username"
@@ -226,6 +235,7 @@ function Home() {
                 Email
               </label>
               <input
+                style={{ color: 'black' }}
                 type="email"
                 defaultValue={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -239,6 +249,7 @@ function Home() {
                 Password
               </label>
               <input
+                style={{ color: 'black' }}
                 type="password"
                 id="password"
                 onChange={(e) => setPassword(e.target.value)}
