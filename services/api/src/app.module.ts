@@ -15,9 +15,17 @@ import { CompetitionModule } from './competition/competition.module';
 import { HealthcheckModule } from './healthcheck/healthcheck.module';
 import { TagModule } from './tag/tag.module';
 import { IpfsModule } from './asset/ipfs.module';
+import { ClsModule } from "nestjs-cls";
 
 @Module({
   imports: [
+    // fix auth interceptor and guard to store user in context
+    ClsModule.forRoot({
+      global: true,
+      middleware: {
+        mount: true,
+      },
+    }),
     ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRootAsync({
       imports: [CommonModule],
