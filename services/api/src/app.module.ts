@@ -2,7 +2,6 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
-
 import { AppController } from './app.controller';
 import { AuthModule } from './auth/auth.module';
 import { CommonModule } from './common/common.module';
@@ -13,19 +12,12 @@ import { NotificationModule } from './notification/notification.module';
 import { ProposalModule } from './proposal/proposal.module';
 import { UserModule } from './user/user.module';
 import { CompetitionModule } from './competition/competition.module';
-import { ClsModule } from "nestjs-cls";
 import { HealthcheckModule } from './healthcheck/healthcheck.module';
 import { TagModule } from './tag/tag.module';
 import { IpfsModule } from './asset/ipfs.module';
 
 @Module({
   imports: [
-    ClsModule.forRoot({
-      global: true,
-      middleware: {
-        mount: true,
-      },
-    }),
     ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRootAsync({
       imports: [CommonModule],
