@@ -181,10 +181,9 @@ export default function SubmitPage() {
         Submit
       </Button>
       {files.map((file) => (
-        <tr key={file.name}>
-          <td>{file.name}:</td>
-          <td>{file.size} bytes</td>
-        </tr>
+        <Typography.Text style={{ color: 'black' }} key={file.name}>
+          {file.name} - {file.size} bytes;
+        </Typography.Text>
       ))}
     </Space>
   );

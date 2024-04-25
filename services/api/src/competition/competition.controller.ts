@@ -116,7 +116,13 @@ export class CompetitionController {
     });
 
     // return error or success
-    return this.service.prepareLastChessSubmission(user);
+    try {
+      return this.service.prepareLastChessSubmission(user);
+    } catch (e) {
+      console.error(e);
+      console.error(JSON.stringify(e));
+      throw e;
+    }
   }
 
   @Get('/Chess/ListAgents')

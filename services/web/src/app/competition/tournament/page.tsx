@@ -123,7 +123,6 @@ export default function TournamentPage() {
     moment(lastRunDate)
       .subtract(3, 'hours')
       .isBefore(moment().tz('America/New_York'));
-  console.log(buttonEnabled);
 
   // print a table of all reports from all users from lastCompetitionState
   return (

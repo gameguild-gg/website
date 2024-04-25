@@ -12,9 +12,8 @@ import { UserService } from "../user/user.service";
 import { LinqRepository } from "typeorm-linq-repository";
 import { CompetitionRunSubmissionReportEntity } from "./entities/competition.run.submission.report.entity";
 import { UserEntity } from "../user/entities";
-import { CleanOptions, simpleGit } from "simple-git";
+import { CleanOptions, ResetMode, simpleGit } from "simple-git";
 import * as process from "process";
-import extract from "extract-zip";
 import * as decompress from "decompress";
 import ExecuteCommand, { ExecuteCommandResult } from "../common/execute-command";
 import { Chess, Move } from "chess.js";
@@ -30,7 +29,7 @@ import {
 import { ChessLeaderboardResponseDto } from "../dtos/competition/chess-leaderboard-response.dto";
 import { ChessMatchRequestDto } from "../dtos/competition/chess-match-request.dto";
 import { CompetitionRunSubmissionReportDto } from "../dtos/competition/chess-competition-report.dto";
-import * as moment from 'moment';
+import * as moment from "moment";
 
 const execShPromise = require('exec-sh').promise;
 
@@ -223,78 +222,78 @@ export class CompetitionService {
     await fsp.appendFile('log.txt', JSON.stringify(data) + '\n', 'utf8');
   }
 
-  async prepareLastUserSubmission(user: UserEntity): Promise<TerminalDto[]> {
-    const submission = await this.submissionRepository.findOne({
-      where: { user: { id: user.id } },
-      order: { createdAt: 'DESC' },
-    });
-    const userFolder = process.cwd() + '/submissions/' + user.username;
-    await fsp.rm(userFolder, { recursive: true, force: true });
-
-    // rename the file as datetime.zip
-    // store the zip file in the user's folder username/zips
-    await fsp.mkdir('submissions/' + user.username + '/zips', {
-      recursive: true,
-    });
-    const zipPath =
-      'submissions/' + user.username + '/zips/' + this.getDate() + '.zip';
-    await fsp.writeFile(zipPath, submission.sourceCodeZip);
-    const sourceFolder =
-      process.cwd() + '/submissions/' + user.username + '/src';
-
-    // clear the user's folder username/src
-    await fsp.rm(sourceFolder, { recursive: true, force: true });
-    await fsp.mkdir(sourceFolder, { recursive: true });
-
-    // unzip the file into the user's folder username/src
-    await extract(zipPath, { dir: sourceFolder });
-
-    await fse.copy('assets/catchthecat/main.cpp', sourceFolder + '/main.cpp', {
-      overwrite: true,
-    });
-    await fse.copy(
-      'assets/catchthecat/CMakeLists.txt',
-      sourceFolder + '/CMakeLists.txt',
-      {
-        overwrite: true,
-      },
-    );
-    await fse.copy(
-      'assets/catchthecat/simulator.h',
-      sourceFolder + '/simulator.h',
-      {
-        overwrite: true,
-      },
-    );
-    await fse.copy('assets/catchthecat/IAgent.h', sourceFolder + '/IAgent.h', {
-      overwrite: true,
-    });
-    const outs: TerminalDto[] = [];
-    // compile the users code
-    outs.push(
-      await this.runCommand(
-        'cmake -S ' + sourceFolder + ' -B ' + sourceFolder + '/build',
-      ),
-    );
-    outs.push(
-      await this.runCommand('cmake --build ' + sourceFolder + '/build'),
-    );
-    // store the compiled code in the user's folder username/
-    try {
-      await fse.copy(
-        sourceFolder + '/build/StudentSimulation',
-        sourceFolder + '/../StudentSimulation',
-        { overwrite: true },
-      );
-    } catch (err) {
-      throw new UnprocessableEntityException(
-        'Server failed to compile code. ',
-        JSON.stringify(outs),
-      );
-    }
-
-    return outs;
-  }
+  // async prepareLastUserSubmission(user: UserEntity): Promise<TerminalDto[]> {
+  //   const submission = await this.submissionRepository.findOne({
+  //     where: { user: { id: user.id } },
+  //     order: { createdAt: 'DESC' },
+  //   });
+  //   const userFolder = process.cwd() + '/submissions/' + user.username;
+  //   await fsp.rm(userFolder, { recursive: true, force: true });
+  //
+  //   // rename the file as datetime.zip
+  //   // store the zip file in the user's folder username/zips
+  //   await fsp.mkdir('submissions/' + user.username + '/zips', {
+  //     recursive: true,
+  //   });
+  //   const zipPath =
+  //     'submissions/' + user.username + '/zips/' + this.getDate() + '.zip';
+  //   await fsp.writeFile(zipPath, submission.sourceCodeZip);
+  //   const sourceFolder =
+  //     process.cwd() + '/submissions/' + user.username + '/src';
+  //
+  //   // clear the user's folder username/src
+  //   await fsp.rm(sourceFolder, { recursive: true, force: true });
+  //   await fsp.mkdir(sourceFolder, { recursive: true });
+  //
+  //   // unzip the file into the user's folder username/src
+  //   await extract(zipPath, { dir: sourceFolder });
+  //
+  //   await fse.copy('assets/catchthecat/main.cpp', sourceFolder + '/main.cpp', {
+  //     overwrite: true,
+  //   });
+  //   await fse.copy(
+  //     'assets/catchthecat/CMakeLists.txt',
+  //     sourceFolder + '/CMakeLists.txt',
+  //     {
+  //       overwrite: true,
+  //     },
+  //   );
+  //   await fse.copy(
+  //     'assets/catchthecat/simulator.h',
+  //     sourceFolder + '/simulator.h',
+  //     {
+  //       overwrite: true,
+  //     },
+  //   );
+  //   await fse.copy('assets/catchthecat/IAgent.h', sourceFolder + '/IAgent.h', {
+  //     overwrite: true,
+  //   });
+  //   const outs: TerminalDto[] = [];
+  //   // compile the users code
+  //   outs.push(
+  //     await this.runCommand(
+  //       'cmake -S ' + sourceFolder + ' -B ' + sourceFolder + '/build',
+  //     ),
+  //   );
+  //   outs.push(
+  //     await this.runCommand('cmake --build ' + sourceFolder + '/build'),
+  //   );
+  //   // store the compiled code in the user's folder username/
+  //   try {
+  //     await fse.copy(
+  //       sourceFolder + '/build/StudentSimulation',
+  //       sourceFolder + '/../StudentSimulation',
+  //       { overwrite: true },
+  //     );
+  //   } catch (err) {
+  //     throw new UnprocessableEntityException(
+  //       'Server failed to compile code. ',
+  //       JSON.stringify(outs),
+  //     );
+  //   }
+  //
+  //   return outs;
+  // }
 
   randomMapSide(): number {
     const min = 0;
@@ -442,127 +441,127 @@ export class CompetitionService {
     return await this.matchRepository.save(match);
   }
 
-  async runCatCompetition(): Promise<void> {
-    // todo: wrap inside a transaction to avoid starting a competition while another is running
-
-    //todo: uncomment this
-    // if (lastCompetition && lastCompetition.state == CompetitionRunState.RUNNING)
-    //   throw new ConflictException('There is already a competition running');
-    let competition = this.runRepository.create();
-    competition.state = CompetitionRunState.RUNNING;
-    competition = await this.runRepository.save(competition);
-
-    try {
-      // todo: optimize this query
-      const allUsers = await this.userService.find({ select: { id: true } });
-      const lastSubmissions = (
-        await Promise.all(
-          allUsers.map(async (user) => {
-            return await this.submissionRepository.findOne({
-              where: { user: { id: user.id } },
-              relations: { user: true },
-              order: { updatedAt: 'DESC' },
-            });
-          }),
-        )
-      ).filter((submission) => submission !== null);
-
-      // compile all submissions
-      console.log('preparing all submissions');
-      for (const submission of lastSubmissions) {
-        try {
-          await this.prepareLastUserSubmission(submission.user);
-        } catch (err) {
-          console.log(err);
-        }
-      }
-
-      // create 100 boards
-      // run 100 matches for every combination of 2 submissions
-      for (let m = 0; m < 1; m++) {
-        const initialMap = this.generateInitialMap();
-        for (const cat of lastSubmissions) {
-          for (const catcher of lastSubmissions) {
-            // if (catUser == catcherUser) continue; // todo: add this again
-            const match = await this.runMatch(
-              cat,
-              catcher,
-              initialMap,
-              competition,
-            );
-
-            // find submission report. if dont exists, create it
-            // CAT
-            let catReport: CompetitionRunSubmissionReportEntity =
-              await this.submissionReportRepository.findOne({
-                where: {
-                  run: { id: competition.id },
-                  submission: { id: cat.id },
-                },
-              });
-            if (!catReport) {
-              catReport = this.submissionReportRepository.create();
-              catReport.run = competition;
-              catReport.submission = cat;
-              catReport.winsAsP1 = 0;
-              catReport.winsAsP2 = 0;
-              catReport.pointsAsP1 = 0;
-              catReport.pointsAsP2 = 0;
-              catReport.totalPoints = 0;
-              catReport = await this.submissionReportRepository.save(catReport);
-            }
-            catReport.totalPoints += match.p1Points;
-            catReport.pointsAsP1 += match.p1Points;
-            if (match.winner === CompetitionWinner.Player1)
-              catReport.winsAsP1++;
-            await this.submissionReportRepository.save(catReport);
-
-            // CATCHER
-            let catcherReport: CompetitionRunSubmissionReportEntity =
-              await this.submissionReportRepository.findOne({
-                where: {
-                  run: { id: competition.id },
-                  submission: { id: catcher.id },
-                },
-              });
-            if (!catcherReport) {
-              catcherReport = this.submissionReportRepository.create();
-              catcherReport.run = competition;
-              catcherReport.submission = catcher;
-              catcherReport.winsAsP1 = 0;
-              catcherReport.winsAsP2 = 0;
-              catcherReport.pointsAsP1 = 0;
-              catcherReport.pointsAsP2 = 0;
-              catcherReport.totalPoints = 0;
-              catcherReport =
-                await this.submissionReportRepository.save(catcherReport);
-            }
-            catcherReport.totalPoints += match.p2Points;
-            catcherReport.pointsAsP2 += match.p2Points;
-            if (match.winner === CompetitionWinner.Player2)
-              catcherReport.winsAsP2++;
-            await this.submissionReportRepository.save(catcherReport);
-          }
-        }
-      }
-
-      await this.runRepository.update(
-        { id: competition.id },
-        {
-          state: CompetitionRunState.FINISHED,
-        },
-      );
-      competition = await this.runRepository.findOne({
-        where: { id: competition.id },
-      });
-      competition.reports = await this.submissionReportRepository.find({
-        where: { run: { id: competition.id } },
-      });
-
-      competition.state = CompetitionRunState.FAILED;
-      competition = await this.runRepository.save(competition);
-    } catch (e) {}
-  }
+  // async runCatCompetition(): Promise<void> {
+  //   // todo: wrap inside a transaction to avoid starting a competition while another is running
+  //
+  //   //todo: uncomment this
+  //   // if (lastCompetition && lastCompetition.state == CompetitionRunState.RUNNING)
+  //   //   throw new ConflictException('There is already a competition running');
+  //   let competition = this.runRepository.create();
+  //   competition.state = CompetitionRunState.RUNNING;
+  //   competition = await this.runRepository.save(competition);
+  //
+  //   try {
+  //     // todo: optimize this query
+  //     const allUsers = await this.userService.find({ select: { id: true } });
+  //     const lastSubmissions = (
+  //       await Promise.all(
+  //         allUsers.map(async (user) => {
+  //           return await this.submissionRepository.findOne({
+  //             where: { user: { id: user.id } },
+  //             relations: { user: true },
+  //             order: { updatedAt: 'DESC' },
+  //           });
+  //         }),
+  //       )
+  //     ).filter((submission) => submission !== null);
+  //
+  //     // compile all submissions
+  //     console.log('preparing all submissions');
+  //     for (const submission of lastSubmissions) {
+  //       try {
+  //         await this.prepareLastUserSubmission(submission.user);
+  //       } catch (err) {
+  //         console.log(err);
+  //       }
+  //     }
+  //
+  //     // create 100 boards
+  //     // run 100 matches for every combination of 2 submissions
+  //     for (let m = 0; m < 1; m++) {
+  //       const initialMap = this.generateInitialMap();
+  //       for (const cat of lastSubmissions) {
+  //         for (const catcher of lastSubmissions) {
+  //           // if (catUser == catcherUser) continue; // todo: add this again
+  //           const match = await this.runMatch(
+  //             cat,
+  //             catcher,
+  //             initialMap,
+  //             competition,
+  //           );
+  //
+  //           // find submission report. if dont exists, create it
+  //           // CAT
+  //           let catReport: CompetitionRunSubmissionReportEntity =
+  //             await this.submissionReportRepository.findOne({
+  //               where: {
+  //                 run: { id: competition.id },
+  //                 submission: { id: cat.id },
+  //               },
+  //             });
+  //           if (!catReport) {
+  //             catReport = this.submissionReportRepository.create();
+  //             catReport.run = competition;
+  //             catReport.submission = cat;
+  //             catReport.winsAsP1 = 0;
+  //             catReport.winsAsP2 = 0;
+  //             catReport.pointsAsP1 = 0;
+  //             catReport.pointsAsP2 = 0;
+  //             catReport.totalPoints = 0;
+  //             catReport = await this.submissionReportRepository.save(catReport);
+  //           }
+  //           catReport.totalPoints += match.p1Points;
+  //           catReport.pointsAsP1 += match.p1Points;
+  //           if (match.winner === CompetitionWinner.Player1)
+  //             catReport.winsAsP1++;
+  //           await this.submissionReportRepository.save(catReport);
+  //
+  //           // CATCHER
+  //           let catcherReport: CompetitionRunSubmissionReportEntity =
+  //             await this.submissionReportRepository.findOne({
+  //               where: {
+  //                 run: { id: competition.id },
+  //                 submission: { id: catcher.id },
+  //               },
+  //             });
+  //           if (!catcherReport) {
+  //             catcherReport = this.submissionReportRepository.create();
+  //             catcherReport.run = competition;
+  //             catcherReport.submission = catcher;
+  //             catcherReport.winsAsP1 = 0;
+  //             catcherReport.winsAsP2 = 0;
+  //             catcherReport.pointsAsP1 = 0;
+  //             catcherReport.pointsAsP2 = 0;
+  //             catcherReport.totalPoints = 0;
+  //             catcherReport =
+  //               await this.submissionReportRepository.save(catcherReport);
+  //           }
+  //           catcherReport.totalPoints += match.p2Points;
+  //           catcherReport.pointsAsP2 += match.p2Points;
+  //           if (match.winner === CompetitionWinner.Player2)
+  //             catcherReport.winsAsP2++;
+  //           await this.submissionReportRepository.save(catcherReport);
+  //         }
+  //       }
+  //     }
+  //
+  //     await this.runRepository.update(
+  //       { id: competition.id },
+  //       {
+  //         state: CompetitionRunState.FINISHED,
+  //       },
+  //     );
+  //     competition = await this.runRepository.findOne({
+  //       where: { id: competition.id },
+  //     });
+  //     competition.reports = await this.submissionReportRepository.find({
+  //       where: { run: { id: competition.id } },
+  //     });
+  //
+  //     competition.state = CompetitionRunState.FAILED;
+  //     competition = await this.runRepository.save(competition);
+  //   } catch (e) {}
+  // }
 
   async listChessAgents(): Promise<string[]> {
     // find users who have submitted chess agents
@@ -599,13 +598,13 @@ export class CompetitionService {
       const gitReponse = await simpleGit().clone(chessEngineGitUrl, srcFolder);
       console.log(gitReponse);
     } else {
-      await simpleGit(srcFolder)
-        .pull()
+      await simpleGit(srcFolder).reset(ResetMode.HARD)
         .clean(
           CleanOptions.FORCE +
             CleanOptions.RECURSIVE +
-            CleanOptions.IGNORED_INCLUDED,
-        );
+            CleanOptions.IGNORED_INCLUDED +
+            CleanOptions.DRY_RUN,
+        ).pull();
     }
 
     // clear the contents of bot folder
@@ -680,6 +679,8 @@ export class CompetitionService {
       ChessMatchRequestDto.player1username,
       ChessMatchRequestDto.player2username,
     ];
+    
+    console.log("Match request: ", usernames);
 
     // find users to be able to get their elo
     // todo: move elo to user profile
@@ -716,10 +717,11 @@ export class CompetitionService {
 
     // report error if any of the submissions is not found
     for (let i = 0; i < submissions.length; i++)
-      if (!submissions[i])
-        throw new UnprocessableEntityException(
-          'No submission found for player ' + usernames[i],
-        );
+      if (!submissions[i]) {
+        let msg = 'No submission found for player ' + usernames[i];
+        console.log(msg);
+        throw new UnprocessableEntityException(msg);
+      }
 
     // place both executables in their respective folders
     // path for the executable and folder
