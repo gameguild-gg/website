@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, UnprocessableEntityException } from "@nestjs/common";
+import { ConflictException, HttpException, Injectable, UnprocessableEntityException } from "@nestjs/common";
 import { AuthService } from "../auth/auth.service";
 import * as util from "util";
 import { InjectRepository } from "@nestjs/typeorm";
@@ -30,6 +30,9 @@ import { ChessLeaderboardResponseDto } from "../dtos/competition/chess-leaderboa
 import { ChessMatchRequestDto } from "../dtos/competition/chess-match-request.dto";
 import { CompetitionRunSubmissionReportDto } from "../dtos/competition/chess-competition-report.dto";
 import * as moment from "moment";
+
+// nest exceptions
+import { InternalServerErrorException } from "@nestjs/common";
 
 const execShPromise = require('exec-sh').promise;
 
@@ -659,11 +662,17 @@ export class CompetitionService {
       await fsp.writeFile(executablePath, submission.executable);
       await this.runCommandSpawn('chmod +x ' + executablePath);
     }
-    const output = await ExecuteCommand({
-      command: executablePath,
-      stdin: data.fen,
-      timeout: 10000,
-    });
+    let output: ExecuteCommandResult;
+    try {
+      output = await ExecuteCommand({
+        command: executablePath,
+        stdin: data.fen,
+        timeout: 10000,
+      });
+    }
+    catch (e) {
+      throw new InternalServerErrorException('Error running the executable: '+ JSON.stringify(e), JSON.stringify(output));
+    }
     if (output.stderr)
       throw new UnprocessableEntityException(
         'Error running the executable: ' + output.stderr,

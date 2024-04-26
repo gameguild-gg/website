@@ -9,7 +9,7 @@ import { Flex, MenuProps } from 'antd';
 import { Button, Dropdown, message, Space, Tooltip } from 'antd';
 import { ChessMoveRequestDto } from '@/dtos/competition/chess-move-request.dto';
 import { getCookie } from 'cookies-next';
-import { useRouter } from "next/navigation";
+import { useRouter } from 'next/navigation';
 
 export default function PlayPage() {
   const router = useRouter();
@@ -48,8 +48,12 @@ export default function PlayPage() {
       } as ChessMoveRequestDto),
     });
     if (!response.ok) {
-      router.push('/login');
-      return;
+      if (response.status === 500) {
+        message.error(response.text());
+      } else {
+        router.push('/login');
+        return;
+      }
     }
     const move = (await response.text()) as string;
     makeAMove(move);
