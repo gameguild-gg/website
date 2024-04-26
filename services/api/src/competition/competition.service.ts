@@ -1009,14 +1009,7 @@ export class CompetitionService {
       lastCompetition.gameType == CompetitionGame.Chess &&
       lastCompetition.state == CompetitionRunState.RUNNING
     ) {
-      // if last competition running is from less than 1h ago then throw error
-      // todo: fix 4 hours displacement between database and server
-      const previousTime = moment(lastCompetition.updatedAt).subtract(4, 'hours');
-      // less than one hour
-      if(moment().diff(previousTime) < 1000 * 60 * 60) 
-        throw new ConflictException('There is already a competition running');
-      else // unstuck the competition 
-        await this.deleteStuckCompetition(CompetitionGame.Chess);
+      throw new ConflictException('There is already a competition running');
     }
     
     // create a new competition
