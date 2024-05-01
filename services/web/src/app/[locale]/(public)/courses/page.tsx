@@ -1,11 +1,29 @@
 'use client'
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, Settings2 } from 'lucide-react';
+import { fetchCourses } from '@/lib/courses/actions';
+import { CourseCard } from '@/components/courses/course-card';
+import { CoursePagination } from '@/components/courses/course-pagination';
 
 const placeholder_courses = [1,2,3,4,5,6,7,8,9,10,11,12]
 
 export default async function Page() {
   const [searchSettingsVisible, setSearchSettingsVisible] = useState(true)
+  const [courses, setCourses] = useState<any[]>([])
+  const [pages, setPages] = useState(1)
+
+  useEffect(() => {
+    const fetch = async () => {
+      const courseData = await fetchCourses()
+      console.log("useEffect() courseData:\n" ,courseData)
+      setCourses(courseData.courses)
+      console.log("useEffect() courses:\n" ,courses)
+      setPages(courseData.pages)
+    }
+    fetch()
+  }, []);
+
+ 
 
   const handleSearchButton = () => {
     console.log("Search Button")
@@ -37,22 +55,21 @@ export default async function Page() {
           {/*Courses List*/}
           <div className='h-full grid grid-cols-1 md:grid-cols-4 justify-around md:mx-[0px]'>
             {
-              placeholder_courses.map(el=>
-
-                  <div className='group bg-white border-2 shadow rounded-lg w-full md:w-[345px] h-[285px] m-2 hover:scale-105 duration-300 overflow-hidden cursor-pointer' key={el}>
-                    <img
-                      src='assets/images/placeholder.svg'
-                      className='w-full object-none h-[170px]'
-                    />
-                    <div className='font-bold p-2'>My Course {el}</div>
-                    <div className='p-2 text-neutral-700'>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor.</div>
-                  </div>
+              courses.map((c:any, i)=>
+                <div className='group bg-white border-2 shadow rounded-lg w-full md:w-[345px] h-[285px] m-2 hover:scale-105 duration-300 overflow-hidden cursor-pointer' key={i}>
+                  <img
+                    src='assets/images/placeholder.svg'
+                    className='w-full object-none h-[170px]'
+                  />
+                  <div className='font-bold p-2'>{c.name}</div>
+                  <div className='p-2 text-neutral-700'>{c.description}</div>
+                </div>
               )
             }
 
           </div>
           <div>
-            [ Pages List Here ]
+            <CoursePagination page={1} pages={pages} />
           </div>
       </div>
     </div>
