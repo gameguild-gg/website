@@ -12,16 +12,11 @@ import {
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
-import {
-  ApiConsumes,
-  ApiOkResponse,
-  ApiProduces,
-  ApiResponse,
-  ApiTags,
-} from '@nestjs/swagger';
+import { ApiConsumes, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { CompetitionService } from './competition.service';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { CompetitionGame } from './entities/competition.submission.entity';
+
 import { CompetitionSubmissionDto } from '../dtos/competition/competition.submission.dto';
 import { TerminalDto } from '../dtos/competition/terminal.dto';
 import { ChessMoveRequestDto } from '../dtos/competition/chess-move-request.dto';
@@ -31,11 +26,10 @@ import { MatchSearchResponseDto } from '../dtos/competition/match-search-respons
 import { MatchSearchRequestDto } from '../dtos/competition/match-search-request.dto';
 import { CompetitionMatchEntity } from './entities/competition.match.entity';
 import { ChessLeaderboardResponseEntryDto } from '../dtos/competition/chess-leaderboard-response.dto';
-import { Public } from '../auth/decorators/public.decorator';
 import { Auth } from '../auth/decorators/http.decorator';
 import { AuthUser } from '../auth';
 import { UserEntity } from '../user/entities';
-import { CompetitionRunSubmissionReportDto } from "../dtos/competition/chess-competition-report.dto";
+import { CompetitionRunSubmissionReportDto } from '../dtos/competition/chess-competition-report.dto';
 
 @Controller('Competitions')
 @ApiTags('competitions')
@@ -259,7 +253,9 @@ export class CompetitionController {
   @Get('Chess/LatestCompetitionReport')
   @ApiOkResponse({ type: CompetitionRunSubmissionReportDto, isArray: true })
   @Auth()
-  async GetLatestChessCompetitionReport(@AuthUser() user: UserEntity): Promise<CompetitionRunSubmissionReportDto[]> {
+  async GetLatestChessCompetitionReport(
+    @AuthUser() user: UserEntity,
+  ): Promise<CompetitionRunSubmissionReportDto[]> {
     if (!user) throw new UnauthorizedException('Invalid credentials');
     return this.service.getLatestChessCompetitionReport();
   }

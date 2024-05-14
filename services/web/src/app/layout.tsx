@@ -1,22 +1,12 @@
-import { Metadata } from 'next';
-import React from 'react';
-import './globals.css';
-
-export const metadata: Metadata = {
-  title: {
-    template: '%s | Game Guild',
-    default: 'Game Guild',
-  },
-  description: 'A awesome game development community',
-};
+import { ReactNode } from "react";
+import "@/styles/globals.css";
 
 type Props = {
-  children: React.ReactNode;
+  children: ReactNode;
 };
-export default function RootLayout({ children }: Props) {
-  return (
-    <html lang="en">
-      <body>{children}</body>
-    </html>
-  );
+
+// Since we have a `not-found.tsx` page on the root, a layout file
+// is required, even if it's just passing children through.
+export default function Layout({ children }: Props) {
+  return (children);
 }

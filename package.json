@@ -19,8 +19,7 @@
     "install:api:deps:ubuntu": "npm run install:deps:ubuntu --workspace=services/api",
     "postinstall:api:deps:ubuntu": "npm run install:api",
     "install:web": "npm install --workspace=services/web",
-    "preinstall:web": "npm install",
-    "clean": "rimraf \"**/node_modules\"",
+    "clean": "rimraf --glob ./**/node_modules",
     "prepare_": "husky install",
     "format": "npm run format --workspaces --if-present",
     "format:api": "npm run format --workspace=services/api",
@@ -46,10 +45,8 @@
     "@game-guild/eslint-config": "*",
     "@game-guild/jest-config": "*",
     "@game-guild/prettier-config": "*",
-    "@game-guild/tsconfig": "*",
-    "@tryghost/content-api": "^1.11.20",
-    "rimraf": "^3.0.2",
-    "typescript": "^5.2.2"
+    "@game-guild/typescript-config": "*",
+    "rimraf": "^5.0.5"
   },
   "dependencies": {
     "bufferutil": "^4.0.8",

@@ -12,7 +12,7 @@ type Props = {
 
 export function BlogPagination( { page = 1, pages }: Readonly<Props>) {
   
-  console.log("page: ",page," pages: ",pages)
+  console.log("layout: ",page," pages: ",pages)
 
   return (
     <div className="p-[10px] align-top overflow-hidden text-center items-end" >
