@@ -26,7 +26,8 @@
     "typeorm": "typeorm-ts-node-commonjs -d ormconfig.ts",
     "migration:generate": "cd migrations && npx typeorm-ts-node-commonjs migration:generate -d ormconfig.ts",
     "migration:revert": "npm run typeorm -- migration:revert",
-    "schema:drop": "npm run typeorm -- schema:drop"
+    "schema:drop": "npm run typeorm -- schema:drop",
+    "db:diagram": "ts-node dbml.ts"
   },
   "dependencies": {
     "@dataui/crud": "^5.2.4",
@@ -79,6 +80,7 @@
     "@game-guild/eslint-config": "*",
     "@game-guild/jest-config": "*",
     "@game-guild/prettier-config": "*",
+    "@inscreen/typeorm-uml": "^1.6.5-is1",
     "@nestjs/cli": "9.4.2",
     "@nestjs/schematics": "9.2.0",
     "@nestjs/testing": "9.4.3",

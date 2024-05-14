@@ -94,7 +94,7 @@ export default function SubmitPage() {
       return;
     }
 
-    message.info('uploading files');
+    message.info('uploading files. wait for the server to respond...');
 
     // upload the zip file
     const formData = new FormData();
@@ -114,7 +114,6 @@ export default function SubmitPage() {
     const data = await response.text();
     message.info(data);
     setFiles([]);
-    message.info('done');
   };
 
   const uploadProps: UploadProps = {

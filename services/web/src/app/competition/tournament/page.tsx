@@ -102,7 +102,7 @@ export default function TournamentPage() {
     for (let i = 0; i < lastCompetitionState.length; i++) {
       if (
         lastRunDate === null ||
-        lastCompetitionState[i].updatedAt < lastRunDate
+        lastCompetitionState[i].updatedAt > lastRunDate
       )
         lastRunDate = lastCompetitionState[i].updatedAt;
     }
@@ -111,18 +111,9 @@ export default function TournamentPage() {
   let lastRunDateString: string = 'None';
   if (lastRunDate) {
     lastRunDateString =
-      moment(lastRunDate)
-        .subtract(4, 'hours')
-        .tz('America/New_York')
-        .format('YYYY-MM-DD HH:mm:ss') + ' EST';
+      moment(lastRunDate).tz('America/New_York').format('YYYY-MM-DD HH:mm:ss') +
+      ' EST';
   }
-
-  // todo: fix delta of 4 hours from server and database
-  const buttonEnabled =
-    lastRunDate === null ||
-    moment(lastRunDate)
-      .subtract(3, 'hours')
-      .isBefore(moment().tz('America/New_York'));
 
   // print a table of all reports from all users from lastCompetitionState
   return (
@@ -139,7 +130,6 @@ export default function TournamentPage() {
         block
         danger
         size="large"
-        disabled={!buttonEnabled}
         onClick={triggerTournament}
       >
         Trigger a tournament
