@@ -16,7 +16,6 @@ import { ApiConsumes, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { CompetitionService } from './competition.service';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { CompetitionGame } from './entities/competition.submission.entity';
-
 import { CompetitionSubmissionDto } from '../dtos/competition/competition.submission.dto';
 import { TerminalDto } from '../dtos/competition/terminal.dto';
 import { ChessMoveRequestDto } from '../dtos/competition/chess-move-request.dto';
@@ -29,6 +28,7 @@ import { ChessLeaderboardResponseEntryDto } from '../dtos/competition/chess-lead
 import { Auth } from '../auth/decorators/http.decorator';
 import { AuthUser } from '../auth';
 import { UserEntity } from '../user/entities';
+
 import { CompetitionRunSubmissionReportDto } from '../dtos/competition/chess-competition-report.dto';
 
 @Controller('Competitions')

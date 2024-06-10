@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import Editor from "@/components/editor";
+import Editor from "@/lib/editor/editor";
 
 
 export default function Home() {
