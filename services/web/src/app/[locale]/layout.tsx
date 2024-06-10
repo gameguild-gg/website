@@ -4,6 +4,7 @@ import { GoogleAnalytics, GoogleTagManager } from "@next/third-parties/google";
 import { Web3Provider } from "@/components/web3/web3-context";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { environment } from "@/lib/environment";
+import { Toaster } from "@/components/ui/toaster";
 
 type Props = {
   children: React.ReactNode;
@@ -23,6 +24,7 @@ export default async function Layout({ children, params: { locale } }: Readonly<
       <TooltipProvider>
         {children}
       </TooltipProvider>
+      <Toaster />
     </Web3Provider>
     {/*</ThemeProvider>*/}
     </body>
