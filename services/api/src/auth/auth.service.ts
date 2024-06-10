@@ -9,11 +9,11 @@ import {
 import { NotificationService } from '../notification/notification.service';
 import { UserEntity } from '../user/entities';
 import { UserService } from '../user/user.service';
-import { LocalSignUpDto } from "../dtos/auth/local-sign-up.dto";
-import { LocalSignInDto } from "../dtos/auth/local-sign-in.dto";
-import { LocalSignInResponseDto } from "../dtos/auth/local-sign-in.response.dto";
-import { AccessTokenPayloadDto } from "../dtos/auth/access-token-payload.dto";
-import { TokenType } from "../dtos/auth/token-type.enum";
+import { LocalSignUpDto } from '../dtos/auth/local-sign-up.dto';
+import { LocalSignInDto } from '../dtos/auth/local-sign-in.dto';
+import { LocalSignInResponseDto } from '../dtos/auth/local-sign-in.response.dto';
+import { AccessTokenPayloadDto } from '../dtos/auth/access-token-payload.dto';
+import { TokenType } from '../dtos/auth/token-type.enum';
 
 @Injectable()
 export class AuthService {
@@ -48,7 +48,7 @@ export class AuthService {
       sub: user.id,
       email: user.email,
       username: user.username,
-      type: TokenType.RefreshToken
+      type: TokenType.RefreshToken,
       // TODO: Add more claims.
     };
 
@@ -84,7 +84,7 @@ export class AuthService {
   public async signIn(user: UserEntity) {
     const accessToken = await this.generateAccessToken(user);
     const refreshToken = await this.generateRefreshToken(user);
-    
+
     return {
       user: user,
       accessToken: accessToken,
@@ -92,7 +92,9 @@ export class AuthService {
     };
   }
 
-  public async signUpWithEmailUsernamePassword(data: LocalSignUpDto): Promise<LocalSignInResponseDto> {
+  public async signUpWithEmailUsernamePassword(
+    data: LocalSignUpDto,
+  ): Promise<LocalSignInResponseDto> {
     const passwordSalt = generateRandomSalt();
     const passwordHash = generateHash(data.password, passwordSalt);
 
@@ -180,7 +182,7 @@ export class AuthService {
       throw new UnauthorizedException('Invalid or expired token');
     }
   }
-  
+
   public async userExists(user: string): Promise<boolean> {
     const foundUser = await this.userService.findOne({
       where: [{ email: user }, { username: user }],
@@ -190,15 +192,19 @@ export class AuthService {
     return !!foundUser;
   }
 
-  async signInWithEmailOrPassword(data: LocalSignInDto): Promise<LocalSignInResponseDto> {
+  async signInWithEmailOrPassword(
+    data: LocalSignInDto,
+  ): Promise<LocalSignInResponseDto> {
     const user = await this.validateLocalSignIn(data);
-    let response = await this.signIn(user);
-    var today = new Date();
-    var expiresOn = new Date(new Date().setDate(today.getDate() + 30));
+    const response = await this.signIn(user);
+    const today = new Date();
+    const expiresOn = new Date(new Date().setDate(today.getDate() + 30));
     return {
       accessToken: response.accessToken,
       refreshToken: response.refreshToken,
       user: user,
     };
   }
+
+  async sendMagicLink(email: string) {}
 }

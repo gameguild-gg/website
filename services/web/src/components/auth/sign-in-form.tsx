@@ -14,16 +14,23 @@ import { useToast } from "@/components/ui/use-toast"
 const initialState: SignInFormState = {};
 
 export default function SignInForm() {
-  const [state, formAction] = useFormState(signInWithEmailAndPassword, initialState);
   const { toast } = useToast();
   const [sendMagicLinkClicked, setSendMagicLinkClicked] = useState(false);
 
+  // todo: move this following logic to actions.ts
   const handleSendMagicLink = async () => {
     setSendMagicLinkClicked(true);
-    toast({
+
+    const sendingToast = toast({
       title: "Sent",
       description: "We've sent you a magic link to your email."
     });
+
+    const t = toast({
+      title: "Sent",
+      description: "We've sent you a magic link to your email."
+    });
+
   }
 
   return (
