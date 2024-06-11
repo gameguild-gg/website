@@ -3,6 +3,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { CommonModule } from './common/common.module';
 
 import { ApiConfigService } from './common/config.service';
+import * as fs from 'node:fs';
 
 export function setupSwagger(app: INestApplication): void {
   const documentBuilder = new DocumentBuilder().setTitle('API').addBearerAuth();
@@ -18,6 +19,8 @@ export function setupSwagger(app: INestApplication): void {
     },
   });
   const configService = app.select(CommonModule).get(ApiConfigService);
+
+  fs.writeFileSync('./swagger-spec.json', JSON.stringify(document));
 
   console.info(
     `Documentation: http://localhost:${configService.appConfig.port}/documentation`,

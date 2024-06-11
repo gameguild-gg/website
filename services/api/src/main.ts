@@ -8,11 +8,11 @@ import { setupSwagger } from './setup-swagger';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { cors: true });
   app.enableCors({
-    origin: ['http://localhost:3000', "https://web.gameguild.gg"],
+    origin: ['http://localhost:3000', 'https://web.gameguild.gg'],
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     preflightContinue: false,
     optionsSuccessStatus: 204,
-  })
+  });
   const logger = new Logger();
 
   const configService = app.select(CommonModule).get(ApiConfigService);
@@ -68,6 +68,7 @@ async function bootstrap() {
   //   await app.startAllMicroservices();
   // }
 
+  console.warn('Todo: use nestia for swagger setup');
   if (configService.documentationEnabled) {
     setupSwagger(app);
   }

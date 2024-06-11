@@ -1,5 +1,7 @@
 "use server";
 
+import { signIn } from "@/auth";
+
 export type SignInFormState = {};
 
 export type SignUpFormState = {};
@@ -32,8 +34,6 @@ export async function signInWithEmailAndPassword(previousState: SignInFormState,
 export async function signInWithGoogle() {
   await signIn('google');
 }
-
-
 export async function signUpWithEmailAndPassword(previousState: SignUpFormState, formData: FormData): Promise<SignUpFormState> {
   // TODO: Implement sign-up with email and password.
   return Promise.resolve({});

@@ -27,7 +27,8 @@
     "migration:generate": "cd migrations && npx typeorm-ts-node-commonjs migration:generate -d ormconfig.ts",
     "migration:revert": "npm run typeorm -- migration:revert",
     "schema:drop": "npm run typeorm -- schema:drop",
-    "db:diagram": "ts-node dbml.ts"
+    "db:diagram": "ts-node dbml.ts",
+    "openapigenerator": "openapi-generator-cli generate -g typescript-axios -i swagger-spec.json -o ../web/src/api"
   },
   "dependencies": {
     "@dataui/crud": "5.2.4",
@@ -42,6 +43,7 @@
     "@nestjs/platform-express": "9.4.3",
     "@nestjs/swagger": "7.0.12",
     "@nestjs/typeorm": "9.0.1",
+    "@openapitools/openapi-generator-cli": "^2.13.4",
     "@sendgrid/client": "^7.7.0",
     "@sendgrid/helpers": "^7.7.0",
     "@sendgrid/mail": "^7.7.0",

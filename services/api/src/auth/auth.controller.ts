@@ -26,6 +26,12 @@ export class AuthController {
 
   constructor(private readonly authService: AuthService) {}
 
+  @Get('magic-link')
+  @Public()
+  public async magicLink(@Query('email') email: string) {
+    return await this.authService.sendMagicLink(email);
+  }
+
   // @Post('sign-in')
   // @Public()
   // @UseGuards(LocalGuard)
