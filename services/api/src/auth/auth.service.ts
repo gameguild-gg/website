@@ -60,7 +60,9 @@ export class AuthService {
     });
   }
 
-  public async generateEmailVerificationToken(user: UserEntity): Promise<any> {
+  public async generateEmailVerificationToken(
+    user: UserEntity,
+  ): Promise<string> {
     const payload: AccessTokenPayloadDto = {
       sub: user.id,
       email: user.email,
@@ -115,10 +117,11 @@ export class AuthService {
     }
   }
 
-  public async sendEmailVerification(user: UserEntity) {
+  public async sendEmailVerification(email: string) {
+    const user = await this.userService.findOne({ where: { email } });
     const token = await this.generateEmailVerificationToken(user);
     const url = `${this.configService.authConfig.emailVerificationUrl}?token=${token}`;
-    const subject = 'Verify your email';
+    const subject = 'One Time Password - GameGuild';
     const message = `Please verify your email by clicking on the link: ${url}`;
 
     await this.notificationService.sendEmailNotification(
@@ -206,5 +209,11 @@ export class AuthService {
     };
   }
 
-  async sendMagicLink(email: string) {}
+  async sendMagicLink(email: string) {
+    let user = await this.userService.findOne({
+      where: { email },
+    });
+
+    if (!user) user = await this.userService.findOneBy({ email });
+  }
 }

@@ -43,7 +43,7 @@
     "comlink": "^4.4.1",
     "cookies-next": "^4.1.1",
     "emception": "^1.0.15",
-    "ethers": "^6.11.1",
+    "ethers": "^6.13.0",
     "jszip": "^3.10.1",
     "jwt-decode": "^4.0.0",
     "lexical": "0.13.1",
