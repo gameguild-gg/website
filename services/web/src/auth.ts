@@ -2,6 +2,7 @@ import NextAuth, { type NextAuthConfig, User } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import Google from "next-auth/providers/google";
 import { environment } from "@/lib/environment";
+import { LocalSignInResponseDto } from "@/dtos/auth/local-sign-in.response.dto";
 
 export const authConfig = {
   pages: {
@@ -22,7 +23,7 @@ export const authConfig = {
     strategy: "jwt"
   },
   callbacks: {
-    signIn({user, account, profile, email, credentials}) {
+    async signIn({user, account, profile, email, credentials}) {
       if (account?.provider === "google") {
 
         // TODO:
@@ -32,26 +33,29 @@ export const authConfig = {
 
         // TODO: Sample code below:
 
-        //  const dbUser = await fetch(
-        //   `${process.env.BACKEND_URL}/auth/google/token?token=${account?.id_token}`,
-        //   {
-        //     method: "GET",
-        //     headers: {
-        //       "Content-Type": "application/json",
-        //     },
-        //   },
-        // ).then((r) => r.json());
-        //
-        // if (!dbUser?.data?.user) return false;
-        //
-        // user.id = dbUser?.data?.user?.id;
-        // user.email = dbUser?.data?.user?.email;
+         const dbUser = await fetch(
+          `${process.env.BACKEND_URL}/auth/google/callback/${account?.id_token}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+            },
+          },
+        ).then((r) => r.json());
+
+        const response = dbUser as LocalSignInResponseDto;
+
+        if (!response) return false;
+
+        user.id = response.user.id;
+        user.email = response.user.email;
         // user.firstName = dbUser?.data?.user?.firstName;
         // user.lastName = dbUser?.data?.user?.lastName;
         // user.avatar = dbUser?.data?.user?.avatar;
         // user.isEmailVerified = dbUser?.data?.user?.isEmailVerified;
         // user.isPhoneVerified = dbUser?.data?.user?.isPhoneVerified;
-        // user.token = dbUser?.data?.accessToken;
+        user["accessToken"] = response.accessToken;
+        user["refreshToken"] = response.refreshToken;
 
         // Return true to allowing user sign-in with the Google OAuth Credential.
         return true;

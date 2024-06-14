@@ -20,6 +20,8 @@ import { LocalSignInResponseDto } from '../dtos/auth/local-sign-in.response.dto'
 import { AccessTokenPayloadDto } from '../dtos/auth/access-token-payload.dto';
 import { TokenType } from '../dtos/auth/token-type.enum';
 import { ethers } from 'ethers';
+// OAuth2Client
+import { OAuth2Client } from 'google-auth-library';
 
 @Injectable()
 export class AuthService {
@@ -252,6 +254,37 @@ export class AuthService {
     });
     if (!user) {
       user = await this.userService.createOneWithWalletAddress(accountAddress);
+    }
+
+    // generate tokens
+    const accessToken = await this.generateAccessToken(user);
+    const refreshToken = await this.generateRefreshToken(user);
+
+    return {
+      user,
+      accessToken,
+      refreshToken,
+    };
+  }
+
+  async validateGoogleSignIn(idToken: string): Promise<LocalSignInResponseDto> {
+    const client = new OAuth2Client(
+      this.configService.authConfig.googleClientId,
+    );
+    const ticket = await client.verifyIdToken({
+      idToken: idToken,
+      audience: this.configService.authConfig.googleClientId,
+    });
+    const payload = ticket.getPayload();
+    const userid = payload['sub'];
+    const email = payload['email'];
+
+    let user = await this.userService.findOne({
+      where: { googleId: userid },
+      relations: { profile: true },
+    });
+    if (!user) {
+      user = await this.userService.createOneWithGoogleId(userid, email);
     }
 
     // generate tokens

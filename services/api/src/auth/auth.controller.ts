@@ -58,11 +58,12 @@ export class AuthController {
   //   return await this.authService.signIn(request.user);
   // }
 
-  @Post('google/callback')
+  @Post('google/callback/:token')
   @Public()
-  public async signInWithGoogle(@Request() request: RequestWithUser) {
-    // return await this.authService.signIn(request.user);
-    // return await this.authService.signInWithGoogle(request);
+  public async signInWithGoogle(
+    @Param('token') token: string,
+  ): Promise<LocalSignInResponseDto> {
+    return await this.authService.validateGoogleSignIn(token);
   }
 
   @Post('local/sign-up')

@@ -80,4 +80,34 @@ export class UserService extends TypeOrmCrudService<UserEntity> {
   public async save(user: Partial<UserEntity>) {
     return this.repository.save(user);
   }
+
+  async createOneWithGoogleId(
+    userid: string,
+    email: string,
+  ): Promise<UserEntity> {
+    let user = await this.findOne({
+      where: { googleId: userid },
+      relations: { profile: true },
+    });
+    if (user) {
+      return user;
+    } else {
+      // todo: check the border case the user have previosly signed up with email and now wants to sign in with google
+      // todo: relate to feature to merge accounts
+      if (await this.isEmailTaken(email)) {
+        throw new UserAlreadyExistsException(
+          `The email '${email}' is already associated with an existing user. Merging accounts is not supported yet. Send us a message on Discord.`,
+        );
+      }
+      user = await this.repository.save({
+        googleId: userid,
+        email: email,
+      });
+      let profile = new UserProfileEntity();
+      profile = await this.repository.save(profile);
+      user.profile = profile;
+      user = await this.repository.save(user);
+      return user;
+    }
+  }
 }

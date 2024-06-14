@@ -2,8 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { TypeOrmModuleOptions } from '@nestjs/typeorm';
 
-
-import  * as ormconfig from "../../ormconfig"; 
+import * as ormconfig from '../../ormconfig';
 
 @Injectable()
 export class ApiConfigService {
@@ -55,14 +54,21 @@ export class ApiConfigService {
 
   get authConfig() {
     return {
+      googleClientId: ormconfig.getEnvString('GOOGLE_CLIENT_ID'),
       accessTokenPrivateKey: ormconfig.getEnvString('ACCESS_TOKEN_PRIVATE_KEY'),
       accessTokenPublicKey: ormconfig.getEnvString('ACCESS_TOKEN_PUBLIC_KEY'),
       accessTokenAlgorithm: ormconfig.getEnvString('ACCESS_TOKEN_ALGORITHM'),
-      accessTokenExpiresIn: ormconfig.getEnvString('ACCESS_TOKEN_EXPIRATION_TIME'),
-      refreshTokenPrivateKey: ormconfig.getEnvString('REFRESH_TOKEN_PRIVATE_KEY'),
+      accessTokenExpiresIn: ormconfig.getEnvString(
+        'ACCESS_TOKEN_EXPIRATION_TIME',
+      ),
+      refreshTokenPrivateKey: ormconfig.getEnvString(
+        'REFRESH_TOKEN_PRIVATE_KEY',
+      ),
       refreshTokenPublicKey: ormconfig.getEnvString('REFRESH_TOKEN_PUBLIC_KEY'),
       refreshTokenAlgorithm: ormconfig.getEnvString('REFRESH_TOKEN_ALGORITHM'),
-      refreshTokenExpiresIn: ormconfig.getEnvString('REFRESH_TOKEN_EXPIRATION_TIME'),
+      refreshTokenExpiresIn: ormconfig.getEnvString(
+        'REFRESH_TOKEN_EXPIRATION_TIME',
+      ),
       emailVerificationTokenPrivateKey: ormconfig.getEnvString(
         'EMAIL_VERIFICATION_TOKEN_PRIVATE_KEY',
       ),
