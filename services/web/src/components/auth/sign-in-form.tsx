@@ -51,7 +51,7 @@ export default function SignInForm() {
     <div className="mx-auto grid w-[350px] gap-6">
       <div className="grid gap-2 text-center">
         <h1 className="text-3xl font-bold">Connect</h1>
-        <h2>{session?.user.name}</h2>
+        <h2>{session?.data?.user?.name}</h2>
       </div>
       <Button variant="outline" onClick={() => signInWithGoogle()}>
         <img
