@@ -1,4 +1,9 @@
-import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  UnauthorizedException,
+  UnprocessableEntityException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ApiConfigService } from '../common/config.service';
 import {
@@ -14,6 +19,7 @@ import { LocalSignInDto } from '../dtos/auth/local-sign-in.dto';
 import { LocalSignInResponseDto } from '../dtos/auth/local-sign-in.response.dto';
 import { AccessTokenPayloadDto } from '../dtos/auth/access-token-payload.dto';
 import { TokenType } from '../dtos/auth/token-type.enum';
+import { ethers } from 'ethers';
 
 @Injectable()
 export class AuthService {
@@ -215,5 +221,47 @@ export class AuthService {
     });
 
     if (!user) user = await this.userService.findOneBy({ email });
+    //todo: finish this
+  }
+
+  async getWeb3SignInChallenge(accountAddress: string) {
+    // todo: use class validator to validate address, signature, and others...
+    const message =
+      'I am connecting to GameGuild with my wallet:\n' + accountAddress;
+
+    return message;
+  }
+
+  async validateWeb3SignInChallenge(
+    accountAddress: string,
+    signature: string,
+    message: string,
+  ) {
+    // todo: use class validator to validate address, signature, and others...
+
+    // ensure message is signed by the account address
+    const signer = ethers.verifyMessage(message, signature);
+    if (signer !== accountAddress) {
+      throw new UnauthorizedException('Invalid signature');
+    }
+
+    // ensure the user exists
+    let user = await this.userService.findOne({
+      where: { walletAddress: accountAddress },
+      relations: ['profile'],
+    });
+    if (!user) {
+      user = await this.userService.createOneWithWalletAddress(accountAddress);
+    }
+
+    // generate tokens
+    const accessToken = await this.generateAccessToken(user);
+    const refreshToken = await this.generateRefreshToken(user);
+
+    return {
+      user,
+      accessToken,
+      refreshToken,
+    };
   }
 }
