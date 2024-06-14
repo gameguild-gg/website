@@ -14,8 +14,8 @@ import { UserModule } from './user/user.module';
 import { CompetitionModule } from './competition/competition.module';
 import { HealthcheckModule } from './healthcheck/healthcheck.module';
 import { TagModule } from './tag/tag.module';
-import { IpfsModule } from './asset/ipfs.module';
-import { ClsModule } from "nestjs-cls";
+// import { IpfsModule } from './asset/ipfs.module';
+import { ClsModule } from 'nestjs-cls';
 
 @Module({
   imports: [
@@ -43,7 +43,7 @@ import { ClsModule } from "nestjs-cls";
     CompetitionModule,
     HealthcheckModule,
     TagModule,
-    IpfsModule,
+    // IpfsModule,
   ],
   controllers: [AppController],
   providers: [

@@ -66,7 +66,6 @@
     "moment-timezone": "^0.5.45",
     "multer": "1.4.5-lts.1",
     "nestjs-cls": "^3.5.1",
-    "nft.storage": "^7.1.1",
     "passport": "^0.6.0",
     "passport-google-oauth20": "^2.0.0",
     "passport-jwt": "^4.0.1",
