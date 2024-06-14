@@ -7,6 +7,7 @@ import { UserAlreadyExistsException } from './exceptions/user-already-exists.exc
 import { UserProfileEntity } from './modules/user-profile/entities/user-profile.entity';
 import { CreateLocalUserDto } from '../dtos/user/create-local-user.dto';
 import { UserProfileService } from './modules/user-profile/user-profile.service';
+import { TokenPayload } from 'google-auth-library';
 
 @Injectable()
 export class UserService extends TypeOrmCrudService<UserEntity> {
@@ -82,35 +83,37 @@ export class UserService extends TypeOrmCrudService<UserEntity> {
     return this.repository.save(user);
   }
 
-  async createOneWithGoogleId(
-    userid: string,
-    email: string,
-  ): Promise<UserEntity> {
+  async createOneWithGoogleId(payload: TokenPayload): Promise<UserEntity> {
     let user = await this.findOne({
-      where: { googleId: userid },
+      where: { googleId: payload.sub },
       relations: { profile: true },
     });
     if (user) {
+      // todo: update user profile with new data
       return user;
     } else {
       // todo: check the border case the user have previosly signed up with email and now wants to sign in with google
       // todo: relate to feature to merge accounts
-      if (await this.isEmailTaken(email)) {
+      if (await this.isEmailTaken(payload.email)) {
         throw new UserAlreadyExistsException(
-          `The email '${email}' is already associated with an existing user. Merging accounts is not supported yet. Send us a message on Discord.`,
+          `The email '${payload.email}' is already associated with an existing user. Merging accounts is not supported yet. Send us a message on Discord.`,
         );
       }
       user = await this.repository.save({
-        googleId: userid,
-        email: email,
+        googleId: payload.sub,
+        email: payload.email,
         emailVerified: true,
       });
-      let profile = new UserProfileEntity();
+      const profile = new UserProfileEntity();
       profile.user = user;
-      profile = await this.profileService.save(profile);
+      profile.name = payload.name;
+      profile.givenName = payload.given_name;
+      profile.familyName = payload.family_name;
+      profile.picture = payload.picture;
+      await this.profileService.save(profile);
 
       return this.findOne({
-        where: { googleId: userid },
+        where: { googleId: payload.sub },
         relations: { profile: true },
       });
     }

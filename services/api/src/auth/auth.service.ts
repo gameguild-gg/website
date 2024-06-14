@@ -21,7 +21,7 @@ import { AccessTokenPayloadDto } from '../dtos/auth/access-token-payload.dto';
 import { TokenType } from '../dtos/auth/token-type.enum';
 import { ethers } from 'ethers';
 // OAuth2Client
-import { OAuth2Client } from 'google-auth-library';
+import { LoginTicket, OAuth2Client, TokenPayload } from 'google-auth-library';
 
 @Injectable()
 export class AuthService {
@@ -271,19 +271,25 @@ export class AuthService {
     const client = new OAuth2Client(
       this.configService.authConfig.googleClientId,
     );
-    const ticket = await client.verifyIdToken({
-      idToken: idToken,
-    });
-    const payload = ticket.getPayload();
-    const userid = payload['sub'];
-    const email = payload['email'];
+    let ticket: LoginTicket;
+    try {
+      ticket = await client.verifyIdToken({
+        idToken: idToken,
+      });
+    } catch (exception) {
+      throw new UnauthorizedException(
+        'Unauthorized: ' + exception,
+        'Invalid Google ID Token',
+      );
+    }
+    const payload: TokenPayload = ticket.getPayload();
 
     let user = await this.userService.findOne({
-      where: { googleId: userid },
+      where: { googleId: payload.sub },
       relations: { profile: true },
     });
     if (!user) {
-      user = await this.userService.createOneWithGoogleId(userid, email);
+      user = await this.userService.createOneWithGoogleId(payload);
     }
 
     // generate tokens
