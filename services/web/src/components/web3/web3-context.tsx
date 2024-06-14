@@ -104,6 +104,7 @@ export async function connectToWallet(dispatch: Dispatch) {
   }
 }
 
+// request api to get a web3 challenge to sign in
 async function requestWeb3SignInChallenge(dispatch: Dispatch) {
 
 }
