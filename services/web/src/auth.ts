@@ -37,8 +37,10 @@ export const authConfig = {
 
         // TODO: Sample code below:
 
+        let url = `${environment.BACKEND_URL}/auth/google/callback/${account?.id_token}`;
+
         const dbUser = await fetch(
-          `${process.env.BACKEND_URL}/auth/google/callback/${account?.id_token}`,
+          url,
           {
             method: "GET",
             headers: {

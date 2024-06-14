@@ -6,7 +6,7 @@ import { UserEntity } from './entities';
 import { UserAlreadyExistsException } from './exceptions/user-already-exists.exception';
 import { UserProfileEntity } from './modules/user-profile/entities/user-profile.entity';
 import { CreateLocalUserDto } from '../dtos/user/create-local-user.dto';
-import { promises } from 'fs-extra';
+import { UserProfileService } from './modules/user-profile/user-profile.service';
 
 @Injectable()
 export class UserService extends TypeOrmCrudService<UserEntity> {
@@ -15,6 +15,7 @@ export class UserService extends TypeOrmCrudService<UserEntity> {
   constructor(
     @InjectRepository(UserEntity)
     private readonly repository: Repository<UserEntity>,
+    private readonly profileService: UserProfileService,
   ) {
     super(repository);
   }
@@ -70,9 +71,9 @@ export class UserService extends TypeOrmCrudService<UserEntity> {
         walletAddress: walletAddress,
       });
       let profile = new UserProfileEntity();
-      profile = await this.repository.save(profile);
+      profile.user = user;
+      profile = await this.profileService.save(profile);
       user.profile = profile;
-      user = await this.repository.save(user);
       return user;
     }
   }
@@ -102,12 +103,16 @@ export class UserService extends TypeOrmCrudService<UserEntity> {
       user = await this.repository.save({
         googleId: userid,
         email: email,
+        emailVerified: true,
       });
       let profile = new UserProfileEntity();
-      profile = await this.repository.save(profile);
-      user.profile = profile;
-      user = await this.repository.save(user);
-      return user;
+      profile.user = user;
+      profile = await this.profileService.save(profile);
+
+      return this.findOne({
+        where: { googleId: userid },
+        relations: { profile: true },
+      });
     }
   }
 }

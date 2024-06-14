@@ -58,7 +58,7 @@ export class AuthController {
   //   return await this.authService.signIn(request.user);
   // }
 
-  @Post('google/callback/:token')
+  @Get('google/callback/:token')
   @Public()
   public async signInWithGoogle(
     @Param('token') token: string,

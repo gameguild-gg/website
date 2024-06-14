@@ -273,7 +273,6 @@ export class AuthService {
     );
     const ticket = await client.verifyIdToken({
       idToken: idToken,
-      audience: this.configService.authConfig.googleClientId,
     });
     const payload = ticket.getPayload();
     const userid = payload['sub'];
