@@ -18,6 +18,8 @@ import { LocalSignInResponseDto } from '../dtos/auth/local-sign-in.response.dto'
 import { UserDto } from '../dtos/user/user.dto';
 import { UserEntity } from '../user/entities';
 import { Auth } from './decorators/http.decorator';
+import { EthereumWalletDto } from '../dtos/auth/ethereum-wallet.dto';
+import { EthereumChallengeResponseDto } from '../dtos/auth/ethereum-challenge-response.dto';
 
 @Controller('auth')
 @ApiTags('auth')
@@ -95,5 +97,25 @@ export class AuthController {
   @Public()
   public async userExists(@Param('user') user: string): Promise<boolean> {
     return await this.authService.userExists(user);
+  }
+
+  @Post('web3/getConnectMessage')
+  @Public()
+  public async getConnectMessage(
+    @Body() wallet: EthereumWalletDto,
+  ): Promise<string> {
+    return await this.authService.getWeb3SignInChallenge(wallet.address);
+  }
+
+  @Post('web3/validateConnectMessage')
+  @Public()
+  public async validateWeb3SignInChallenge(
+    @Body() data: EthereumChallengeResponseDto,
+  ): Promise<LocalSignInResponseDto> {
+    return await this.authService.validateWeb3SignInChallenge(
+      data.accountAddress,
+      data.signature,
+      data.message,
+    );
   }
 }
