@@ -45,14 +45,9 @@ const PageHeader: React.FunctionComponent<Readonly<Props>> & {
         </div>
         {/*Right Corner of the Header*/}
         <div className="flex justify-end m-0 p-0 items-center">
-          <a href="/sign-in" className="flex my-0 font-semibold hover:bg-neutral-800 px-2 min-w-[80px] h-full">
-            <span className="m-auto">
-              Enter
-            </span>
-          </a>
-          <a href="/sign-up">
+          <a href="/connect">
             <button className="py-auto bg-white text-black border rounded-lg font-semibold p-1 hover:bg-neutral-900 hover:text-white">
-              Register<br/>
+              Connect<br/>
             </button>
           </a>
           <div>

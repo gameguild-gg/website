@@ -81,6 +81,9 @@ export function useWeb3() {
   return context;
 }
 
+// ensure network
+// sign a message
+
 export async function connectToWallet(dispatch: Dispatch) {
   dispatch({ type: "CONNECT_TO_PROVIDER_INITIAL" });
 
@@ -93,6 +96,7 @@ export async function connectToWallet(dispatch: Dispatch) {
       const provider = new BrowserProvider(window.ethereum);
 
       const signer = await provider.getSigner();
+      // todo: make it resilient to multiple accounts
       const accountAddress = await signer.getAddress();
 
       dispatch({ type: "CONNECT_TO_PROVIDER_SUCCESS", payload: { provider, accountAddress } });
@@ -105,6 +109,6 @@ export async function connectToWallet(dispatch: Dispatch) {
 }
 
 // request api to get a web3 challenge to sign in
-async function requestWeb3SignInChallenge(dispatch: Dispatch) {
-
+async function signMessage(dispatch: Dispatch, message: string) {
+  
 }
