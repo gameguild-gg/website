@@ -4,16 +4,18 @@ import {
   Column,
   Entity,
   Index,
-  JoinColumn, JoinTable, ManyToMany,
+  JoinColumn,
+  JoinTable,
+  ManyToMany,
   OneToMany,
-  OneToOne
-} from "typeorm";
+  OneToOne,
+} from 'typeorm';
 import { EntityBase } from '../../common/entities/entity.base';
 import { UserProfileEntity } from '../modules/user-profile/entities/user-profile.entity';
 import { CompetitionSubmissionEntity } from '../../competition/entities/competition.submission.entity';
-import { UserDto } from "../../dtos/user/user.dto";
-import { PostEntity } from "../../cms/entities/post.entity";
-import { CourseEntity } from "../../cms/entities/course.entity";
+import { UserDto } from '../../dtos/user/user.dto';
+import { PostEntity } from '../../cms/entities/post.entity';
+import { CourseEntity } from '../../cms/entities/course.entity';
 
 // todo: move to user-profile lots of fields from here
 
@@ -25,7 +27,7 @@ export class UserEntity extends EntityBase implements UserDto {
   @Index()
   username: string;
 
-  @Column({ unique: true, nullable: false, default: null })
+  @Column({ unique: true, nullable: true, default: null })
   @ApiProperty()
   @Index()
   email: string;
@@ -45,38 +47,38 @@ export class UserEntity extends EntityBase implements UserDto {
   passwordSalt: string;
 
   // Social Sign-in
-  @Column({ nullable: true, default: null })
+  @Column({ nullable: true, unique: true, default: null })
   @ApiProperty()
   @Index()
   facebookId: string;
 
-  @Column({ nullable: true, default: null })
+  @Column({ nullable: true, unique: true, default: null })
   @ApiProperty()
   @Index()
   googleId: string;
 
-  @Column({ nullable: true, default: null })
+  @Column({ nullable: true, unique: true, default: null })
   @ApiProperty()
   @Index()
   githubId: string;
 
-  @Column({ nullable: true, default: null })
+  @Column({ nullable: true, unique: true, default: null })
   @ApiProperty()
   @Index()
   appleId: string;
 
-  @Column({ nullable: true, default: null })
+  @Column({ nullable: true, unique: true, default: null })
   @ApiProperty()
   @Index()
   linkedinId: string;
 
-  @Column({ nullable: true, default: null })
+  @Column({ nullable: true, unique: true, default: null })
   @ApiProperty()
   @Index()
   twitterId: string;
 
   // Web3 Sign-in
-  @Column({ nullable: true, default: null })
+  @Column({ nullable: true, unique: true, default: null })
   @ApiProperty()
   @Index()
   walletAddress: string;
@@ -97,7 +99,7 @@ export class UserEntity extends EntityBase implements UserDto {
   @Column({ type: 'float', default: 400 })
   @ApiProperty()
   elo: number;
-  
+
   // relation to posts many to many
   @ManyToMany(() => PostEntity, (post) => post.owners)
   @JoinTable()
