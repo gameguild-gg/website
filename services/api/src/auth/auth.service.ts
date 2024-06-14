@@ -236,7 +236,7 @@ export class AuthService {
     accountAddress: string,
     signature: string,
     message: string,
-  ) {
+  ): Promise<LocalSignInResponseDto> {
     // todo: use class validator to validate address, signature, and others...
 
     // ensure message is signed by the account address
