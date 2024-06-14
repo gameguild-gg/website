@@ -1,8 +1,8 @@
-import NextAuth, { type NextAuthConfig, User } from "next-auth";
-import Credentials from "next-auth/providers/credentials";
+import NextAuth, {type NextAuthConfig, User} from "next-auth";
 import Google from "next-auth/providers/google";
-import { environment } from "@/lib/environment";
-import { LocalSignInResponseDto } from "@/dtos/auth/local-sign-in.response.dto";
+import {environment} from "@/lib/environment";
+import {LocalSignInResponseDto} from "@/dtos/auth/local-sign-in.response.dto";
+
 
 export const authConfig = {
   pages: {
@@ -15,15 +15,19 @@ export const authConfig = {
       authorization: {
         params: {
           request_uri: `${process.env.NEXT_JS_BACKEND_URL}/api/auth/callback/google`
-        }
+        },
+      },
+      account(tokens) {
+        console.log(tokens);
       }
+
     })
   ],
   session: {
     strategy: "jwt"
   },
   callbacks: {
-    async signIn({user, account, profile, email, credentials}) {
+    signIn: async ({user, account, profile, email, credentials}) => {
       if (account?.provider === "google") {
 
         // TODO:
@@ -33,7 +37,7 @@ export const authConfig = {
 
         // TODO: Sample code below:
 
-         const dbUser = await fetch(
+        const dbUser = await fetch(
           `${process.env.BACKEND_URL}/auth/google/callback/${account?.id_token}`,
           {
             method: "GET",
@@ -54,17 +58,18 @@ export const authConfig = {
         // user.avatar = dbUser?.data?.user?.avatar;
         // user.isEmailVerified = dbUser?.data?.user?.isEmailVerified;
         // user.isPhoneVerified = dbUser?.data?.user?.isPhoneVerified;
-        user["accessToken"] = response.accessToken;
-        user["refreshToken"] = response.refreshToken;
+        user.accessToken = response.accessToken;
+        user.refreshToken = response.refreshToken;
 
         // Return true to allowing user sign-in with the Google OAuth Credential.
         return true;
       }
       return false;
-    }
-  }
-} satisfies NextAuthConfig;
+    },
+  },
 
-export const { auth, handlers, signIn, signOut } = NextAuth({
+}satisfies NextAuthConfig;
+
+export const {auth, handlers, signIn, signOut} = NextAuth({
   ...authConfig
 });
