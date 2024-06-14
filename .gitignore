@@ -46,3 +46,4 @@ chessSubmissions
 # dtos
 services/api/src/dtos/**/*.ts
 services/web/src/dtos/**/*.ts
+package-lock.json

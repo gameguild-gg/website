@@ -14,7 +14,7 @@
     "syncApi": "node foldersync.js packages/dtos/src/ services/api/src/dtos/",
     "syncWeb": "node foldersync.js packages/dtos/src/ services/web/src/dtos/",
     "syncDtos": "npm-run-all --serial syncApi syncWeb",
-    "postinstall": "npm run syncDtos",
+
     "install:api": "npm install --workspace=services/api",
     "install:api:deps:ubuntu": "npm run install:deps:ubuntu --workspace=services/api",
     "postinstall:api:deps:ubuntu": "npm run install:api",
