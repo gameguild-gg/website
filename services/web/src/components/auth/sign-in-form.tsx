@@ -7,8 +7,9 @@ import {Input} from "@/components/ui/input";
 import {Button} from "@/components/ui/button";
 import {Sparkles} from "lucide-react";
 import {useToast} from "@/components/ui/use-toast"
-import {connectToWallet, useWeb3} from "@/components/web3/web3-context";
+
 import {useSession} from "next-auth/react";
+import MetaMaskSignInButton from "@/components/others/web3/meta-mask-sign-in-button";
 
 
 // import { api } from "@/api";
@@ -22,7 +23,6 @@ export default function SignInForm() {
   const [sendMagicLinkClicked, setSendMagicLinkClicked] = useState(false);
 
   // web3 provider web3-context
-  const web3 = useWeb3();
   // todo: move this following logic to actions.ts
   const handleSendMagicLink = async () => {
     setSendMagicLinkClicked(true);
@@ -42,16 +42,10 @@ export default function SignInForm() {
     });
   }
 
-  // metamask sign in
-  const handleWeb3Connect = async () => {
-    await connectToWallet(web3.dispatch);
-  }
-
   return (
     <div className="mx-auto grid w-[350px] gap-6">
       <div className="grid gap-2 text-center">
         <h1 className="text-3xl font-bold">Connect</h1>
-        <h2>{session?.data?.user?.name}</h2>
       </div>
       <Button variant="outline" onClick={() => signInWithGoogle()}>
         <img
@@ -61,13 +55,7 @@ export default function SignInForm() {
         />
         Google
       </Button>
-      <Button variant="outline" onClick={() => handleWeb3Connect()}>
-        <img alt="MetaMask"
-             src="assets/images/metamask-icon.svg"
-             loading="lazy"
-             className="w-[20px] h-[20px] m-2"/>
-        Metamask
-      </Button>
+      <MetaMaskSignInButton/>
       <div className="text-center text-sm text-muted-foreground">or</div>
       <p className="text-balance text-muted-foreground">
         Send a magic link to your email

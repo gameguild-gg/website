@@ -1,5 +1,6 @@
-import NextAuth, {type NextAuthConfig, User} from "next-auth";
+import NextAuth, {type NextAuthConfig} from "next-auth";
 import Google from "next-auth/providers/google";
+import Credentials from "next-auth/providers/credentials";
 import {environment} from "@/lib/environment";
 import {LocalSignInResponseDto} from "@/dtos/auth/local-sign-in.response.dto";
 
@@ -9,6 +10,37 @@ export const authConfig = {
     signIn: "/sign-in"
   },
   providers: [
+    Credentials({
+      id:"web-3",
+      name: "web-3",
+      credentials: {
+        message: {
+          label: "Message",
+          type: "text",
+          placeholder: "0x0",
+        },
+        signature: {
+          label: "Signature",
+          type: "text",
+          placeholder: "0x0",
+        },
+      },
+      async authorize(credentials, req) {
+        const {message, signature} = credentials;
+
+        const response = await fetch('', {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({message, signature}),
+        });
+
+
+
+        return null;
+      },
+    }),
     Google({
       clientId: environment.GoogleClientId,
       clientSecret: environment.GoogleClientSecret,
@@ -20,8 +52,7 @@ export const authConfig = {
       account(tokens) {
         console.log(tokens);
       }
-
-    })
+    }),
   ],
   session: {
     strategy: "jwt"
