@@ -11,7 +11,7 @@ export const authConfig = {
   },
   providers: [
     Credentials({
-      id:"web-3",
+      id: "web-3",
       name: "web-3",
       credentials: {
         message: {
@@ -28,16 +28,33 @@ export const authConfig = {
       async authorize(credentials, req) {
         const {message, signature} = credentials;
 
-        const response = await fetch('', {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({message, signature}),
-        });
+        const response = await fetch(
+          `${process.env.NEXT_JS_BACKEND_URL}/auth/web3/sign-in/validate`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({message, signature}),
+          }
+        );
 
-
-
+        const data = response.json();
+        
+        // TODO: send the signature to the server to verify the user's identity.
+        // It should be done using the auth.js (next-auth) library.
+        //   //       // TODO: Verify the signature on the server.
+        // const validationResponse = await fetch('api/(auth)/web3/sign-in', {
+        //   method: 'POST',
+        //   headers: {
+        //     'Content-Type': 'application/json',
+        //   },
+        //   body: JSON.stringify({
+        //     accountAddress: accountAddress,
+        //     message: message,
+        //     signature: signature,
+        //   }),
+        // });
         return null;
       },
     }),
@@ -49,9 +66,6 @@ export const authConfig = {
           request_uri: `${process.env.NEXT_JS_BACKEND_URL}/api/auth/callback/google`
         },
       },
-      account(tokens) {
-        console.log(tokens);
-      }
     }),
   ],
   session: {

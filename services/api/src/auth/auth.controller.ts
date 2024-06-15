@@ -6,20 +6,18 @@ import {
   Param,
   Post,
   Query,
-  Request,
 } from '@nestjs/common';
 import { ApiOkResponse, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { AuthUser, Public } from './decorators';
-import { RequestWithUser } from './types';
 import { LocalSignInDto } from '../dtos/auth/local-sign-in.dto';
 import { LocalSignUpDto } from '../dtos/auth/local-sign-up.dto';
 import { LocalSignInResponseDto } from '../dtos/auth/local-sign-in.response.dto';
 import { UserDto } from '../dtos/user/user.dto';
 import { UserEntity } from '../user/entities';
 import { Auth } from './decorators/http.decorator';
-import { EthereumWalletDto } from '../dtos/auth/ethereum-wallet.dto';
 import { EthereumChallengeResponseDto } from '../dtos/auth/ethereum-challenge-response.dto';
+import { EthereumChallengeRequestDto } from '../dtos/auth/ethereum-challenge-request.dto';
 
 @Controller('auth')
 @ApiTags('auth')
@@ -51,6 +49,15 @@ export class AuthController {
     return await this.authService.signInWithEmailOrPassword(data);
   }
 
+  @Post('local/sign-up')
+  @Public()
+  @ApiResponse({ type: LocalSignInResponseDto })
+  public async signUpWithEmailUsernamePassword(
+    @Body() data: LocalSignUpDto,
+  ): Promise<LocalSignInResponseDto> {
+    return this.authService.signUpWithEmailUsernamePassword(data);
+  }
+
   // TODO: Implement this endpoint.
   // @Post('github/callback')
   // @Public()
@@ -66,13 +73,20 @@ export class AuthController {
     return await this.authService.validateGoogleSignIn(token);
   }
 
-  @Post('local/sign-up')
+  @Post('web3/sign-in/challenge')
   @Public()
-  @ApiResponse({ type: LocalSignInResponseDto })
-  public async signUpWithEmailUsernamePassword(
-    @Body() data: LocalSignUpDto,
+  public async getWeb3SignInChallenge(
+    @Body() data: EthereumChallengeRequestDto,
+  ) {
+    return await this.authService.generateWeb3SignInChallenge(data);
+  }
+
+  @Post('web3/sign-in/validate')
+  @Public()
+  public async validateWeb3SignInChallenge(
+    @Body() data: EthereumChallengeResponseDto,
   ): Promise<LocalSignInResponseDto> {
-    return this.authService.signUpWithEmailUsernamePassword(data);
+    return await this.authService.validateWeb3SignInChallenge(data);
   }
 
   @Get('current-user')
@@ -98,25 +112,5 @@ export class AuthController {
   @Public()
   public async userExists(@Param('user') user: string): Promise<boolean> {
     return await this.authService.userExists(user);
-  }
-
-  @Post('web3/getConnectMessage')
-  @Public()
-  public async getConnectMessage(
-    @Body() wallet: EthereumWalletDto,
-  ): Promise<string> {
-    return await this.authService.getWeb3SignInChallenge(wallet.address);
-  }
-
-  @Post('web3/validateConnectMessage')
-  @Public()
-  public async validateWeb3SignInChallenge(
-    @Body() data: EthereumChallengeResponseDto,
-  ): Promise<LocalSignInResponseDto> {
-    return await this.authService.validateWeb3SignInChallenge(
-      data.accountAddress,
-      data.signature,
-      data.message,
-    );
   }
 }
