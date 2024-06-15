@@ -40,7 +40,7 @@ export const authConfig = {
         );
 
         const data = response.json();
-        
+
         // TODO: send the signature to the server to verify the user's identity.
         // It should be done using the auth.js (next-auth) library.
         //   //       // TODO: Verify the signature on the server.
