@@ -2,7 +2,7 @@
 
 import React from "react";
 import { useFormState } from "react-dom";
-import { SignUpFormState, signUpWithEmailAndPassword } from "@/lib/auth/actions";
+import { SignUpFormState, signUpWithEmailAndPassword } from "@/lib/auth";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";

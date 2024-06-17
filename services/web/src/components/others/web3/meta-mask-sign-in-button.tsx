@@ -2,7 +2,8 @@
 
 import {Button} from "@/components/ui/button";
 import React from "react";
-import {useSignInWithWeb3} from "@/components/web3/web3-context";
+
+import {useSignInWithWeb3} from "@/components/web3/use-sign-in-with-web3";
 
 
 export default function MetaMaskSignInButton() {

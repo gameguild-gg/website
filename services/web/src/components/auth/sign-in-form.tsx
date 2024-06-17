@@ -1,7 +1,7 @@
 "use client";
 
 import React, {useState} from "react";
-import {SignInFormState, signInWithGoogle} from "@/lib/auth/actions";
+import {SignInFormState, signInWithGoogle} from "@/lib/auth";
 import {Label} from "@/components/ui/label";
 import {Input} from "@/components/ui/input";
 import {Button} from "@/components/ui/button";
@@ -11,8 +11,6 @@ import {useToast} from "@/components/ui/use-toast"
 import {useSession} from "next-auth/react";
 import MetaMaskSignInButton from "@/components/others/web3/meta-mask-sign-in-button";
 
-
-// import { api } from "@/api";
 
 const initialState: SignInFormState = {};
 
