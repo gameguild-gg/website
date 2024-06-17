@@ -83,6 +83,7 @@
     "@game-guild/eslint-config": "*",
     "@game-guild/jest-config": "*",
     "@game-guild/prettier-config": "*",
+    "@game-guild/typescript-config": "*",
     "@inscreen/typeorm-uml": "^1.6.5-is1",
     "@nestjs/cli": "9.4.2",
     "@nestjs/schematics": "9.2.0",
