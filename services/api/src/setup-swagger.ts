@@ -20,7 +20,7 @@ export function setupSwagger(app: INestApplication): void {
   });
   const configService = app.select(CommonModule).get(ApiConfigService);
 
-  fs.writeFileSync('./swagger-spec.json', JSON.stringify(document));
+  fs.writeFileSync('./swagger-spec.json', JSON.stringify(document, null, 2));
 
   console.info(
     `Documentation: http://localhost:${configService.appConfig.port}/documentation`,

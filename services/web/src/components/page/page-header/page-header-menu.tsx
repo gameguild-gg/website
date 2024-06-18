@@ -1,6 +1,6 @@
-import React from "react";
-import Link from "next/link";
-import { UserProfile } from "@/components/page/user-profile";
+import React from 'react';
+import Link from 'next/link';
+import { UserProfile } from '@/components/page/user-profile';
 
 type HeaderMenuLink = {
   label: string;
@@ -12,9 +12,9 @@ type Props = React.HTMLAttributes<HTMLDivElement> & {
 };
 
 const LINKS = [
-  { href: "/about", label: "About" },
-  { href: "/blog", label: "Blog" },
-  { href: "/contact", label: "Contact" }
+  { href: '/about', label: 'About' },
+  { href: '/blog', label: 'Blog' },
+  { href: '/contact', label: 'Contact' },
 ];
 
 function PageHeaderMenu() {
@@ -30,9 +30,15 @@ function PageHeaderMenu() {
             </div>
             <div className="hidden md:block">
               <div className="ml-10 flex items-baseline space-x-4">
-                <Link className="px-3 py-2 text-sm font-medium" href="/about">About</Link>
-                <Link className="px-3 py-2 text-sm font-medium" href="/blog">Blog</Link>
-                <Link className="px-3 py-2 text-sm font-medium" href="/contact">Contact</Link>
+                <Link className="px-3 py-2 text-sm font-medium" href="/about">
+                  About
+                </Link>
+                <Link className="px-3 py-2 text-sm font-medium" href="/blog">
+                  Blog
+                </Link>
+                <Link className="px-3 py-2 text-sm font-medium" href="/contact">
+                  Contact
+                </Link>
                 {/* TODO fix the navigation link, it may should be a component?*/}
               </div>
             </div>
@@ -53,9 +59,15 @@ function PageHeaderMenu() {
         {/* <!-- Navigation --> */}
         <div className="space-y-1 px-2 pb-3 pt-2 sm:px-3">
           {/* TODO add navigation links here */}
-          <Link className="px-3 py-2 text-sm font-medium" href="/about">About</Link>
-          <Link className="px-3 py-2 text-sm font-medium" href="/blog">Blog</Link>
-          <Link className="px-3 py-2 text-sm font-medium" href="/contact">Contact</Link>
+          <Link className="px-3 py-2 text-sm font-medium" href="/about">
+            About
+          </Link>
+          <Link className="px-3 py-2 text-sm font-medium" href="/blog">
+            Blog
+          </Link>
+          <Link className="px-3 py-2 text-sm font-medium" href="/contact">
+            Contact
+          </Link>
 
           {/* TODO fix the navigation link, it may should be a component?*/}
         </div>

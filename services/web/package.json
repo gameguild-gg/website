@@ -6,8 +6,6 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "postdev": "npm run syncDtos",
-    "syncDtos": "npm run --prefix=../../ syncWeb",
     "build": "next build",
     "start": "next start",
     "lint": "next lint --fix",

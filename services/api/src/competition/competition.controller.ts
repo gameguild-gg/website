@@ -120,6 +120,7 @@ export class CompetitionController {
   }
 
   @Get('/Chess/ListAgents')
+  @ApiOkResponse({ type: [String] })
   @Auth()
   async ListChessAgents(@AuthUser() user: UserEntity): Promise<string[]> {
     if (!user) throw new UnauthorizedException('Invalid credentials');
@@ -138,6 +139,7 @@ export class CompetitionController {
   }
 
   @Post('/Chess/RunMatch')
+  @ApiOkResponse({ type: ChessMatchResultDto })
   @Auth()
   async RunChessMatch(
     @Body() data: ChessMatchRequestDto,

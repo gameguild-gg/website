@@ -1,6 +1,6 @@
-import React from "react";
-import SignInForm from "@/components/auth/sign-in-form";
+import React from 'react';
+import ConnectForm from '@/components/auth/connect-form';
 
 export default function SignIn() {
-  return (<SignInForm />);
+  return <ConnectForm />;
 }

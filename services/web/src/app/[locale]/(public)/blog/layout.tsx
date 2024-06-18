@@ -5,5 +5,5 @@ type Props = {
 };
 
 export default async function Layout({ children }: Readonly<Props>) {
-  return (<div>{children}</div>);
+  return <div>{children}</div>;
 }

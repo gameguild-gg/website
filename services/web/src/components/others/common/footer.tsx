@@ -1,5 +1,4 @@
-"use client";
-
+'use client';
 
 function Footer() {
   return (
@@ -22,13 +21,9 @@ function Footer() {
           </div>
           <div>Game Guild © 2024 All Rights Reserved</div>
           <div>
-            <a href="#">
-              Privacy Policy
-            </a>
-            {" | "}
-            <a href="#">
-              Terms of Service
-            </a>
+            <a href="#">Privacy Policy</a>
+            {' | '}
+            <a href="#">Terms of Service</a>
           </div>
         </div>
       </div>

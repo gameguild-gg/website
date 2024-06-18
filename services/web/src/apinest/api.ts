@@ -329,6 +329,68 @@ export interface CourseEntity {
 /**
  * 
  * @export
+ * @interface EthereumChallengeRequestDto
+ */
+export interface EthereumChallengeRequestDto {
+    /**
+     * 
+     * @type {string}
+     * @memberof EthereumChallengeRequestDto
+     */
+    'domain': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof EthereumChallengeRequestDto
+     */
+    'address': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof EthereumChallengeRequestDto
+     */
+    'uri': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof EthereumChallengeRequestDto
+     */
+    'version': string;
+    /**
+     * 
+     * @type {number}
+     * @memberof EthereumChallengeRequestDto
+     */
+    'chainId': number;
+    /**
+     * 
+     * @type {string}
+     * @memberof EthereumChallengeRequestDto
+     */
+    'nonce': string;
+}
+/**
+ * 
+ * @export
+ * @interface EthereumChallengeResponseDto
+ */
+export interface EthereumChallengeResponseDto {
+    /**
+     * 
+     * @type {string}
+     * @memberof EthereumChallengeResponseDto
+     */
+    'message': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof EthereumChallengeResponseDto
+     */
+    'signature': string;
+}
+/**
+ * 
+ * @export
  * @interface LectureEntity
  */
 export interface LectureEntity {
@@ -742,6 +804,41 @@ export const AuthApiAxiosParamCreator = function (configuration?: Configuration)
         },
         /**
          * 
+         * @param {EthereumChallengeRequestDto} ethereumChallengeRequestDto 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        authControllerGetWeb3SignInChallenge: async (ethereumChallengeRequestDto: EthereumChallengeRequestDto, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'ethereumChallengeRequestDto' is not null or undefined
+            assertParamExists('authControllerGetWeb3SignInChallenge', 'ethereumChallengeRequestDto', ethereumChallengeRequestDto)
+            const localVarPath = `/auth/web3/sign-in/challenge`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(ethereumChallengeRequestDto, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
          * @param {LocalSignInDto} localSignInDto 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -777,11 +874,14 @@ export const AuthApiAxiosParamCreator = function (configuration?: Configuration)
         },
         /**
          * 
+         * @param {string} email 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        authControllerSignInWithGoogle: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            const localVarPath = `/auth/google/callback`;
+        authControllerMagicLink: async (email: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'email' is not null or undefined
+            assertParamExists('authControllerMagicLink', 'email', email)
+            const localVarPath = `/auth/magic-link`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -789,7 +889,44 @@ export const AuthApiAxiosParamCreator = function (configuration?: Configuration)
                 baseOptions = configuration.baseOptions;
             }
 
-            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            if (email !== undefined) {
+                localVarQueryParameter['email'] = email;
+            }
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @param {string} token 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        authControllerSignInWithGoogle: async (token: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'token' is not null or undefined
+            assertParamExists('authControllerSignInWithGoogle', 'token', token)
+            const localVarPath = `/auth/google/callback/{token}`
+                .replace(`{${"token"}}`, encodeURIComponent(String(token)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
 
@@ -874,6 +1011,41 @@ export const AuthApiAxiosParamCreator = function (configuration?: Configuration)
         },
         /**
          * 
+         * @param {EthereumChallengeResponseDto} ethereumChallengeResponseDto 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        authControllerValidateWeb3SignInChallenge: async (ethereumChallengeResponseDto: EthereumChallengeResponseDto, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'ethereumChallengeResponseDto' is not null or undefined
+            assertParamExists('authControllerValidateWeb3SignInChallenge', 'ethereumChallengeResponseDto', ethereumChallengeResponseDto)
+            const localVarPath = `/auth/web3/sign-in/validate`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(ethereumChallengeResponseDto, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
          * @param {string} token 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -931,6 +1103,18 @@ export const AuthApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
+         * @param {EthereumChallengeRequestDto} ethereumChallengeRequestDto 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async authControllerGetWeb3SignInChallenge(ethereumChallengeRequestDto: EthereumChallengeRequestDto, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.authControllerGetWeb3SignInChallenge(ethereumChallengeRequestDto, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['AuthApi.authControllerGetWeb3SignInChallenge']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
          * @param {LocalSignInDto} localSignInDto 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -943,11 +1127,24 @@ export const AuthApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
+         * @param {string} email 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async authControllerSignInWithGoogle(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.authControllerSignInWithGoogle(options);
+        async authControllerMagicLink(email: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.authControllerMagicLink(email, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['AuthApi.authControllerMagicLink']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @param {string} token 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async authControllerSignInWithGoogle(token: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<LocalSignInResponseDto>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.authControllerSignInWithGoogle(token, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['AuthApi.authControllerSignInWithGoogle']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
@@ -974,6 +1171,18 @@ export const AuthApiFp = function(configuration?: Configuration) {
             const localVarAxiosArgs = await localVarAxiosParamCreator.authControllerUserExists(user, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['AuthApi.authControllerUserExists']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @param {EthereumChallengeResponseDto} ethereumChallengeResponseDto 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async authControllerValidateWeb3SignInChallenge(ethereumChallengeResponseDto: EthereumChallengeResponseDto, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.authControllerValidateWeb3SignInChallenge(ethereumChallengeResponseDto, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['AuthApi.authControllerValidateWeb3SignInChallenge']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
@@ -1008,6 +1217,15 @@ export const AuthApiFactory = function (configuration?: Configuration, basePath?
         },
         /**
          * 
+         * @param {EthereumChallengeRequestDto} ethereumChallengeRequestDto 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        authControllerGetWeb3SignInChallenge(ethereumChallengeRequestDto: EthereumChallengeRequestDto, options?: any): AxiosPromise<void> {
+            return localVarFp.authControllerGetWeb3SignInChallenge(ethereumChallengeRequestDto, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
          * @param {LocalSignInDto} localSignInDto 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -1017,11 +1235,21 @@ export const AuthApiFactory = function (configuration?: Configuration, basePath?
         },
         /**
          * 
+         * @param {string} email 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        authControllerSignInWithGoogle(options?: any): AxiosPromise<void> {
-            return localVarFp.authControllerSignInWithGoogle(options).then((request) => request(axios, basePath));
+        authControllerMagicLink(email: string, options?: any): AxiosPromise<void> {
+            return localVarFp.authControllerMagicLink(email, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {string} token 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        authControllerSignInWithGoogle(token: string, options?: any): AxiosPromise<LocalSignInResponseDto> {
+            return localVarFp.authControllerSignInWithGoogle(token, options).then((request) => request(axios, basePath));
         },
         /**
          * 
@@ -1040,6 +1268,15 @@ export const AuthApiFactory = function (configuration?: Configuration, basePath?
          */
         authControllerUserExists(user: string, options?: any): AxiosPromise<void> {
             return localVarFp.authControllerUserExists(user, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {EthereumChallengeResponseDto} ethereumChallengeResponseDto 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        authControllerValidateWeb3SignInChallenge(ethereumChallengeResponseDto: EthereumChallengeResponseDto, options?: any): AxiosPromise<void> {
+            return localVarFp.authControllerValidateWeb3SignInChallenge(ethereumChallengeResponseDto, options).then((request) => request(axios, basePath));
         },
         /**
          * 
@@ -1072,6 +1309,17 @@ export class AuthApi extends BaseAPI {
 
     /**
      * 
+     * @param {EthereumChallengeRequestDto} ethereumChallengeRequestDto 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AuthApi
+     */
+    public authControllerGetWeb3SignInChallenge(ethereumChallengeRequestDto: EthereumChallengeRequestDto, options?: RawAxiosRequestConfig) {
+        return AuthApiFp(this.configuration).authControllerGetWeb3SignInChallenge(ethereumChallengeRequestDto, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
      * @param {LocalSignInDto} localSignInDto 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
@@ -1083,12 +1331,24 @@ export class AuthApi extends BaseAPI {
 
     /**
      * 
+     * @param {string} email 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof AuthApi
      */
-    public authControllerSignInWithGoogle(options?: RawAxiosRequestConfig) {
-        return AuthApiFp(this.configuration).authControllerSignInWithGoogle(options).then((request) => request(this.axios, this.basePath));
+    public authControllerMagicLink(email: string, options?: RawAxiosRequestConfig) {
+        return AuthApiFp(this.configuration).authControllerMagicLink(email, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {string} token 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AuthApi
+     */
+    public authControllerSignInWithGoogle(token: string, options?: RawAxiosRequestConfig) {
+        return AuthApiFp(this.configuration).authControllerSignInWithGoogle(token, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -1111,6 +1371,17 @@ export class AuthApi extends BaseAPI {
      */
     public authControllerUserExists(user: string, options?: RawAxiosRequestConfig) {
         return AuthApiFp(this.configuration).authControllerUserExists(user, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {EthereumChallengeResponseDto} ethereumChallengeResponseDto 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AuthApi
+     */
+    public authControllerValidateWeb3SignInChallenge(ethereumChallengeResponseDto: EthereumChallengeResponseDto, options?: RawAxiosRequestConfig) {
+        return AuthApiFp(this.configuration).authControllerValidateWeb3SignInChallenge(ethereumChallengeResponseDto, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -1524,7 +1795,7 @@ export const CompetitionsApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async competitionControllerListChessAgents(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+        async competitionControllerListChessAgents(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<string>>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.competitionControllerListChessAgents(options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['CompetitionsApi.competitionControllerListChessAgents']?.[localVarOperationServerIndex]?.url;
@@ -1548,7 +1819,7 @@ export const CompetitionsApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async competitionControllerRunChessMatch(chessMatchRequestDto: ChessMatchRequestDto, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+        async competitionControllerRunChessMatch(chessMatchRequestDto: ChessMatchRequestDto, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ChessMatchResultDto>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.competitionControllerRunChessMatch(chessMatchRequestDto, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['CompetitionsApi.competitionControllerRunChessMatch']?.[localVarOperationServerIndex]?.url;
@@ -1626,7 +1897,7 @@ export const CompetitionsApiFactory = function (configuration?: Configuration, b
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        competitionControllerListChessAgents(options?: any): AxiosPromise<void> {
+        competitionControllerListChessAgents(options?: any): AxiosPromise<Array<string>> {
             return localVarFp.competitionControllerListChessAgents(options).then((request) => request(axios, basePath));
         },
         /**
@@ -1644,7 +1915,7 @@ export const CompetitionsApiFactory = function (configuration?: Configuration, b
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        competitionControllerRunChessMatch(chessMatchRequestDto: ChessMatchRequestDto, options?: any): AxiosPromise<void> {
+        competitionControllerRunChessMatch(chessMatchRequestDto: ChessMatchRequestDto, options?: any): AxiosPromise<ChessMatchResultDto> {
             return localVarFp.competitionControllerRunChessMatch(chessMatchRequestDto, options).then((request) => request(axios, basePath));
         },
         /**

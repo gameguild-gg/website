@@ -1,7 +1,6 @@
 'use server';
 
-import {httpClientFactory} from "@/lib/core/http";
-
+import { httpClientFactory } from '@/lib/core/http';
 
 export async function GetWeb3SignInChallenge() {
   const httpClient = httpClientFactory();
@@ -10,6 +9,4 @@ export async function GetWeb3SignInChallenge() {
     url: '/api/auth/web3/sign-in',
     method: 'GET',
   });
-
-
 }

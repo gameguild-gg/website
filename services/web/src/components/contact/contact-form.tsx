@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import React from "react";
-import { useFormState } from "react-dom";
-import { ContactFormState, submitContactForm } from "@/lib/contact/actions";
-import { SubmitButton } from "../ui/submit-button";
+import React from 'react';
+import { useFormState } from 'react-dom';
+import { SubmitButton } from '../ui/submit-button';
+import { ContactFormState, submitContactForm } from '@/lib/old/contact/actions';
 
 const initialState: ContactFormState = {};
 

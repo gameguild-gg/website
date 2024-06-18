@@ -1,7 +1,7 @@
-import React from "react";
-import { fetchPosts } from "@/lib/blog/actions";
-import { PostCard } from "@/components/blog/post-card";
-import { BlogPagination } from "@/components/blog/blog-pagination";
+import React from 'react';
+import { PostCard } from '@/components/blog/post-card';
+import { BlogPagination } from '@/components/blog/blog-pagination';
+import { fetchPosts } from '@/lib/old/blog/actions';
 
 type Props = {
   params: {

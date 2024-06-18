@@ -1,12 +1,18 @@
-"use client";
+'use client';
 
-import React from "react";
-import { CookieIcon } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-
+import React from 'react';
+import { CookieIcon } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 
 type CookiePreferencesProps = {};
 
@@ -19,7 +25,8 @@ export default function CookiePreferences({}: Readonly<CookiePreferencesProps>) 
           <CardTitle>Cookie Preferences</CardTitle>
         </div>
         <CardDescription>
-          Manage your cookie settings. You can enable or disable different types of cookies below.
+          Manage your cookie settings. You can enable or disable different types
+          of cookies below.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4 pt-4">
@@ -27,7 +34,8 @@ export default function CookiePreferences({}: Readonly<CookiePreferencesProps>) 
           <div>
             <Label htmlFor="essential">Essential Cookies</Label>
             <p className="text-dark-gray-500 text-sm">
-              These cookies are necessary for the website to function and cannot be switched off.
+              These cookies are necessary for the website to function and cannot
+              be switched off.
             </p>
           </div>
           <Switch className="ml-auto" id="essential" />
@@ -36,8 +44,8 @@ export default function CookiePreferences({}: Readonly<CookiePreferencesProps>) 
           <div>
             <Label htmlFor="analytics">Analytics Cookies</Label>
             <p className="text-dark-gray-500 text-sm">
-              These cookies allow us to count visits and traffic sources, so we can measure and improve the performance
-              of our site.
+              These cookies allow us to count visits and traffic sources, so we
+              can measure and improve the performance of our site.
             </p>
           </div>
           <Switch className="ml-auto" id="analytics" />
@@ -61,4 +69,3 @@ export default function CookiePreferences({}: Readonly<CookiePreferencesProps>) 
     </Card>
   );
 }
-

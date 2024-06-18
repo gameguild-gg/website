@@ -1,23 +1,33 @@
-import React from "react";
-import { cva, VariantProps } from "class-variance-authority";
-import Link from "next/link";
-import { Home, LifeBuoy, LineChart, Package, Package2, Settings, ShoppingCart, Users2 } from "lucide-react";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import React from 'react';
+import { cva, VariantProps } from 'class-variance-authority';
+import Link from 'next/link';
+import {
+  Home,
+  LifeBuoy,
+  LineChart,
+  Package,
+  Package2,
+  Settings,
+  ShoppingCart,
+  Users2,
+} from 'lucide-react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
-const Variants = cva(
-  "flex flex-grow",
-  {
-    variants: {
-      size: {
-        compact: "container",
-        wide: "px-8"
-      }
+const Variants = cva('flex flex-grow', {
+  variants: {
+    size: {
+      compact: 'container',
+      wide: 'px-8',
     },
-    defaultVariants: {
-      size: "compact"
-    }
-  }
-);
+  },
+  defaultVariants: {
+    size: 'compact',
+  },
+});
 
 type Props = VariantProps<typeof Variants> & {
   children?: React.ReactNode;
@@ -26,7 +36,7 @@ type Props = VariantProps<typeof Variants> & {
 export default function DashboardSidebar() {
   return (
     <aside className="flex h-full w-14 flex-col">
-    {/* <aside className="fixed inset-y-0 left-0 z-10 hidden w-14 flex-col sm:flex">*/}
+      {/* <aside className="fixed inset-y-0 left-0 z-10 hidden w-14 flex-col sm:flex">*/}
       <nav className="flex flex-col items-center gap-4 px-2 sm:py-5">
         <Link
           href="#"

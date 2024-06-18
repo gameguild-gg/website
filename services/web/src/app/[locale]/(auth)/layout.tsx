@@ -1,5 +1,5 @@
-import React from "react";
-import Image from "next/image";
+import React from 'react';
+import Image from 'next/image';
 
 type Props = {
   children: React.ReactNode;
@@ -8,9 +8,7 @@ type Props = {
 export default async function Layout({ children }: Readonly<Props>) {
   return (
     <div className="w-full lg:grid lg:min-h-[600px] lg:grid-cols-2 xl:min-h-[800px]">
-      <div className="flex items-center justify-center py-12">
-        {children}
-      </div>
+      <div className="flex items-center justify-center py-12">{children}</div>
       <div className="hidden bg-muted lg:block">
         <Image
           src="/assets/images/placeholder.svg"

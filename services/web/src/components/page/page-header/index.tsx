@@ -1,8 +1,8 @@
-import React from "react";
-import { PageHeaderRoot } from "@/components/page/page-header/page-header-root";
-import { PageHeaderMenu } from "@/components/page/page-header/page-header-menu";
+import React from 'react';
+import { PageHeaderRoot } from '@/components/page/page-header/page-header-root';
+import { PageHeaderMenu } from '@/components/page/page-header/page-header-menu';
 import { UserOutlined } from '@ant-design/icons';
-import { Globe, Sun, Moon, SunMoon } from "lucide-react";
+import { Globe, Sun, Moon, SunMoon } from 'lucide-react';
 
 type Props = React.HTMLAttributes<HTMLDivElement> & {
   children?: React.ReactNode;
@@ -22,36 +22,41 @@ const PageHeader: React.FunctionComponent<Readonly<Props>> & {
             className="w-[135px] h-46px my-auto mx-[10px]"
           />
           &nbsp;
-          <a href="/competition" className="flex my-0 font-semibold hover:bg-neutral-800 px-2 min-w-[80px] hover:text-yellow-400">
-            <span className="m-auto ">
-              Competition
-            </span>
+          <a
+            href="/competition"
+            className="flex my-0 font-semibold hover:bg-neutral-800 px-2 min-w-[80px] hover:text-yellow-400"
+          >
+            <span className="m-auto ">Competition</span>
           </a>
-          <a href="/courses" className="flex my-0 font-semibold hover:bg-neutral-800 px-2 min-w-[80px] hover:text-blue-400">
-            <span className="m-auto ">
-              Courses
-            </span>
+          <a
+            href="/courses"
+            className="flex my-0 font-semibold hover:bg-neutral-800 px-2 min-w-[80px] hover:text-blue-400"
+          >
+            <span className="m-auto ">Courses</span>
           </a>
-          <a href="/jobs" className="flex my-0 font-semibold hover:bg-neutral-800 px-2 min-w-[80px] hover:text-green-400">
-            <span className="m-auto ">
-              Jobs
-            </span>
+          <a
+            href="/jobs"
+            className="flex my-0 font-semibold hover:bg-neutral-800 px-2 min-w-[80px] hover:text-green-400"
+          >
+            <span className="m-auto ">Jobs</span>
           </a>
-          <a href="/blog" className="flex my-0 font-semibold hover:bg-neutral-800 px-2 min-w-[80px] hover:text-red-400">
-            <span className="m-auto ">
-              Blog
-            </span>
+          <a
+            href="/blog"
+            className="flex my-0 font-semibold hover:bg-neutral-800 px-2 min-w-[80px] hover:text-red-400"
+          >
+            <span className="m-auto ">Blog</span>
           </a>
         </div>
         {/*Right Corner of the Header*/}
         <div className="flex justify-end m-0 p-0 items-center">
           <a href="/connect">
             <button className="py-auto bg-white text-black border rounded-lg font-semibold p-1 hover:bg-neutral-900 hover:text-white">
-              Connect<br/>
+              Connect
+              <br />
             </button>
           </a>
           <div>
-            <Globe className="w-[35px] mx-1 my-auto"/>
+            <Globe className="w-[35px] mx-1 my-auto" />
           </div>
         </div>
       </div>

@@ -4,11 +4,9 @@ import React, { useEffect, useState } from 'react';
 import { getCookie } from 'cookies-next';
 import { Button, Dropdown, MenuProps, message, Space, Typography } from 'antd';
 import { RobotFilled, UserOutlined } from '@ant-design/icons';
-import { UserDto } from '@/dtos/user/user.dto';
-import { ChessMatchRequestDto } from '@/dtos/competition/chess-match-request.dto';
-import { MatchSearchResponseDto } from '@/dtos/competition/match-search-response.dto';
 import { useRouter } from 'next/navigation';
-import { ChessMatchResultDto } from '@/dtos/competition/chess-match-result.dto';
+import { competitionsApi } from '@/lib/apinest';
+import { ChessMatchResultDto, UserDto } from '@/apinest';
 
 const ChallengePage: React.FC = () => {
   const router = useRouter();
@@ -49,6 +47,8 @@ const ChallengePage: React.FC = () => {
 
   const handleMenuClickWhite: MenuProps['onClick'] = (e) => {
     const agent = e.key.toString();
+    // todo: fix the requirement to play chess to have a username
+    // todo: do not use cookies anymor
     const userAgent = (JSON.parse(getCookie('user') as string) as UserDto)
       .username;
     setSelectedAgentWhite(agent);
@@ -76,23 +76,22 @@ const ChallengePage: React.FC = () => {
       return;
     }
     setRequestInProgress(true);
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL;
-    const headers = new Headers();
-    const accessToken = getCookie('access_token');
-    headers.append('Authorization', `Bearer ${accessToken}`);
-    headers.append('Content-Type', 'application/json');
-    const body: ChessMatchRequestDto = {
-      player1username: selectedAgentWhite,
-      player2username: selectedAgentBlack,
-    };
-    const response = await fetch(baseUrl + '/Competitions/Chess/RunMatch', {
-      method: 'POST',
-      headers: headers,
-      body: JSON.stringify(body),
-    });
-    const data = (await response.json()) as ChessMatchResultDto;
-    console.log(data);
-    setResult(data);
+
+    const response = await competitionsApi.competitionControllerRunChessMatch(
+      {
+        player1username: selectedAgentWhite,
+        player2username: selectedAgentBlack,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${getCookie('access_token')}`,
+          'Content-Type': 'application/json',
+        },
+      },
+    );
+
+    console.log(response.data);
+    setResult(response.data);
     setRequestInProgress(false);
   };
 

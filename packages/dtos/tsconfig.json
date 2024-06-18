@@ -1,4 +1,0 @@
-{
-  "extends": "@game-guild/tsconfig/react.json",
-  "compilerOptions": {}
-}

@@ -1,8 +1,7 @@
-import NextAuth from "next-auth";
-import {authConfig} from "@/config/auth.config";
-import createIntlMiddleware from "next-intl/middleware";
-import {locales} from "@/data/locales";
-
+import NextAuth from 'next-auth';
+import { authConfig } from '@/config/auth.config';
+import createIntlMiddleware from 'next-intl/middleware';
+import { locales } from '@/data/locales';
 
 export default NextAuth(authConfig).auth((request) => {
   // TODO: Handle the request here.
@@ -12,8 +11,8 @@ export default NextAuth(authConfig).auth((request) => {
   const handleI18nRouting = createIntlMiddleware({
     locales: locales,
     localeDetection: true,
-    localePrefix: "as-needed",
-    defaultLocale: "en"
+    localePrefix: 'as-needed',
+    defaultLocale: 'en',
   });
 
   return handleI18nRouting(request);
@@ -36,6 +35,6 @@ export const config = {
     // Enable redirects that add missing locales
     // (e.g. `/pathnames` -> `/en/pathnames`)
     // '/((?!_next|.*\\..*).*)',
-    "/((?!api|_next/static|_next/image|assets|favicon.ico).*)"
-  ]
+    '/((?!api|_next/static|_next/image|assets|favicon.ico).*)',
+  ],
 };

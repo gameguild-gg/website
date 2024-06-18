@@ -1,16 +1,18 @@
-"use client";
+'use client';
 
-import React from "react";
-import {BrowserProvider} from "ethers";
-
+import React from 'react';
+import { BrowserProvider } from 'ethers';
 
 type Action =
-  | { type: "CONNECT_TO_PROVIDER_INITIAL" }
-  | { type: "CONNECT_TO_PROVIDER_SUCCESS", payload: { provider: BrowserProvider, accountAddress: string } }
-  | { type: "CONNECT_TO_PROVIDER_FAILURE", payload: { error: string } }
-  | { type: "FETCH_INITIAL" }
-  | { type: "FETCH_SUCCESS", payload: {} }
-  | { type: "FETCH_FAILURE", payload: { error: string } };
+  | { type: 'CONNECT_TO_PROVIDER_INITIAL' }
+  | {
+      type: 'CONNECT_TO_PROVIDER_SUCCESS';
+      payload: { provider: BrowserProvider; accountAddress: string };
+    }
+  | { type: 'CONNECT_TO_PROVIDER_FAILURE'; payload: { error: string } }
+  | { type: 'FETCH_INITIAL' }
+  | { type: 'FETCH_SUCCESS'; payload: {} }
+  | { type: 'FETCH_FAILURE'; payload: { error: string } };
 
 type Web3ContextData = { state: State; dispatch: Dispatch } | undefined;
 
@@ -25,22 +27,22 @@ type State = {
 
 function web3Reducer(state: State, action: Action) {
   switch (action.type) {
-    case "CONNECT_TO_PROVIDER_INITIAL": {
+    case 'CONNECT_TO_PROVIDER_INITIAL': {
       return {
-        ...state
+        ...state,
       };
     }
-    case "CONNECT_TO_PROVIDER_SUCCESS": {
+    case 'CONNECT_TO_PROVIDER_SUCCESS': {
       return {
         ...state,
         provider: action.payload.provider,
-        accountAddress: action.payload.accountAddress
+        accountAddress: action.payload.accountAddress,
       };
     }
-    case "CONNECT_TO_PROVIDER_FAILURE": {
+    case 'CONNECT_TO_PROVIDER_FAILURE': {
       return {
         ...state,
-        error: action.payload.error
+        error: action.payload.error,
       };
     }
     default: {
@@ -54,20 +56,15 @@ export const Web3Context = React.createContext<Web3ContextData>(undefined);
 
 const InitialState: State = {
   provider: undefined,
-  accountAddress: undefined
+  accountAddress: undefined,
 };
 
-export function Web3Provider({children}: Readonly<Props>) {
+export function Web3Provider({ children }: Readonly<Props>) {
   const [state, dispatch] = React.useReducer(web3Reducer, InitialState);
 
-  React.useEffect(() => {
-  }, []);
+  React.useEffect(() => {}, []);
 
-  const value = {state, dispatch};
+  const value = { state, dispatch };
 
-  return (
-    <Web3Context.Provider value={value}>
-      {children}
-    </Web3Context.Provider>
-  );
+  return <Web3Context.Provider value={value}>{children}</Web3Context.Provider>;
 }

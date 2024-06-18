@@ -1,13 +1,13 @@
 import React from 'react';
-import { fetchPosts } from '@/lib/blog/actions';
 import { PostCard } from '@/components/blog/post-card';
 import { BlogPagination } from '@/components/blog/blog-pagination';
+import { fetchPosts } from '@/lib/old/blog/actions';
 
 type Props = {};
 
 export default async function Page({}: Readonly<Props>) {
   const { posts, pagination } = await fetchPosts();
-  
+
   return (
     <div>
       <div

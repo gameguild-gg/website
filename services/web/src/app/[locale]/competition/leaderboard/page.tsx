@@ -1,10 +1,10 @@
 'use client';
 
 import React, { useEffect } from 'react';
-import { ChessLeaderboardResponseEntryDto } from '@/dtos/competition/chess-leaderboard-response.dto';
 import { getCookie } from 'cookies-next';
 import { useRouter } from 'next/navigation';
-import { Table, TableColumnsType, Typography } from "antd";
+import { Table, TableColumnsType, Typography } from 'antd';
+import { ChessLeaderboardResponseEntryDto } from '@/apinest';
 
 export default function LeaderboardPage() {
   const router = useRouter();
@@ -40,14 +40,14 @@ export default function LeaderboardPage() {
   };
 
   // table for the leaderboard
-  
+
   interface DataType {
     key: React.Key;
     rank: number;
     username: string;
     elo: string;
   }
-  
+
   const columns: TableColumnsType<DataType> = [
     {
       title: 'Rank',
@@ -65,16 +65,18 @@ export default function LeaderboardPage() {
       key: 'elo',
     },
   ];
-  
-  const data: DataType[] = leaderboardData.map((entry: ChessLeaderboardResponseEntryDto, index: number) => {
-    return {
-      key: index,
-      rank: index + 1,
-      username: entry.username,
-      elo: entry.elo.toFixed(2),
-    };
-  });
-  
+
+  const data: DataType[] = leaderboardData.map(
+    (entry: ChessLeaderboardResponseEntryDto, index: number) => {
+      return {
+        key: index,
+        rank: index + 1,
+        username: entry.username,
+        elo: entry.elo.toFixed(2),
+      };
+    },
+  );
+
   return (
     <>
       <Typography.Title>Leaderboard</Typography.Title>

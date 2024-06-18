@@ -14,7 +14,7 @@ export function CourseCard({ post }: Readonly<Props>) {
   const onClick = () => {
     router.push(`/course/${post.slug}`);
   };
-      
+
   return (
     <div
       className="p-[10px] align-top overflow-hidden text-white text-left cursor-pointer"

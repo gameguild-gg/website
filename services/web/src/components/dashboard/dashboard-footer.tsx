@@ -1,13 +1,13 @@
-import React from "react";
-import Link from "next/link";
+import React from 'react';
+import Link from 'next/link';
 import {
   Breadcrumb,
   BreadcrumbItem,
   BreadcrumbLink,
   BreadcrumbList,
   BreadcrumbPage,
-  BreadcrumbSeparator
-} from "@/components/ui/breadcrumb";
+  BreadcrumbSeparator,
+} from '@/components/ui/breadcrumb';
 
 type Props = {
   children?: React.ReactNode;

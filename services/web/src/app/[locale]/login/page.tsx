@@ -5,9 +5,11 @@ import { message, notification, NotificationArgsProps } from 'antd';
 import React from 'react';
 import { NotificationProvider } from '@/components/others/common/NotificationContext';
 import { getCookies, setCookie, deleteCookie, getCookie } from 'cookies-next';
-import { LocalSignInDto } from '@/dtos/(auth)/local-sign-in.dto';
-import { LocalSignInResponseDto } from '@/dtos/(auth)/local-sign-in.response.dto';
-import { LocalSignUpDto } from '@/dtos/(auth)/local-sign-up.dto';
+import {
+  LocalSignInDto,
+  LocalSignInResponseDto,
+  LocalSignUpDto,
+} from '@/apinest';
 
 enum UserExists {
   NotChecked = 'NotChecked',

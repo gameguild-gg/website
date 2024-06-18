@@ -13,7 +13,7 @@
     "start:nodemon": "nodemon src/main.ts",
     "start:tsnode": "ts-node src/main.ts",
     "start:dev": "nest start --watch",
-    "prestart:dev": "npm run syncDtos",
+    "prestart:dev": "npm run openapigenerator",
     "syncDtos": "npm run --prefix=../../ syncApi",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/src/main",
@@ -28,7 +28,7 @@
     "migration:revert": "npm run typeorm -- migration:revert",
     "schema:drop": "npm run typeorm -- schema:drop",
     "db:diagram": "ts-node dbml.ts",
-    "openapigenerator": "openapi-generator-cli generate -g typescript-axios -i swagger-spec.json -o ../web/src/api"
+    "openapigenerator": "openapi-generator-cli generate -g typescript-axios -i swagger-spec.json -o ../web/src/apinest"
   },
   "dependencies": {
     "@dataui/crud": "5.2.4",

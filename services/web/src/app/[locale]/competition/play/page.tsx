@@ -7,9 +7,10 @@ import { Chess, Move, WHITE } from 'chess.js';
 import { DownOutlined, UserOutlined, RobotFilled } from '@ant-design/icons';
 import { Flex, MenuProps } from 'antd';
 import { Button, Dropdown, message, Space, Tooltip } from 'antd';
-import { ChessMoveRequestDto } from '@/dtos/competition/chess-move-request.dto';
+
 import { getCookie } from 'cookies-next';
 import { useRouter } from 'next/navigation';
+import { ChessMoveRequestDto } from '@/apinest';
 
 export default function PlayPage() {
   const router = useRouter();

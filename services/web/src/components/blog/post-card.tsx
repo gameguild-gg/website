@@ -14,7 +14,7 @@ export function PostCard({ post }: Readonly<Props>) {
   const onClick = () => {
     router.push(`/blog/${post.slug}`);
   };
-      
+
   return (
     <div
       className="p-[10px] align-top overflow-hidden text-white text-left cursor-pointer"

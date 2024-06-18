@@ -1,10 +1,13 @@
-const createNextIntlPlugin = require("next-intl/plugin");
+const createNextIntlPlugin = require('next-intl/plugin');
 
 const withNextIntl = createNextIntlPlugin();
 
 /** @type {import("next").NextConfig} */
 const nextConfig = {
-  output: "standalone"
+  output: 'standalone',
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
 };
 
 // module.exports = nextConfig;

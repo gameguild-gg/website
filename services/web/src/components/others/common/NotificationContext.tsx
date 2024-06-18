@@ -5,13 +5,17 @@ type NotificationContextProps = {
   setName: (name: string) => void;
 };
 
-const NotificationContext = createContext<NotificationContextProps | undefined>(undefined);
+const NotificationContext = createContext<NotificationContextProps | undefined>(
+  undefined,
+);
 
 type NotificationProviderProps = {
   children: ReactNode;
 };
 
-export const NotificationProvider: React.FC<NotificationProviderProps> = ({ children }) => {
+export const NotificationProvider: React.FC<NotificationProviderProps> = ({
+  children,
+}) => {
   const [name, setName] = React.useState('Default');
 
   const value: NotificationContextProps = {
@@ -19,14 +23,20 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     setName,
   };
 
-  return <NotificationContext.Provider value={value}>{children}</NotificationContext.Provider>;
+  return (
+    <NotificationContext.Provider value={value}>
+      {children}
+    </NotificationContext.Provider>
+  );
 };
 
 export const useNotificationContext = () => {
   const context = useContext(NotificationContext);
 
   if (!context) {
-    throw new Error('useNotificationContext must be used within a NotificationProvider');
+    throw new Error(
+      'useNotificationContext must be used within a NotificationProvider',
+    );
   }
 
   return context;

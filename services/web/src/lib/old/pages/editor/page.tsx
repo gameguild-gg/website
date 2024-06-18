@@ -1,15 +1,15 @@
-"use client";
+'use client';
 
-import Image from "next/image";
-import Editor from "@/lib/editor/editor";
-
+import Image from 'next/image';
+// todo: make it work again
+// import Editor from '@/lib/old/editor/editor';
 
 export default function Home() {
   return (
     <div className="App">
       <h1>Rich Text Example</h1>
       <p>Note: this is an experimental build of Lexical</p>
-      <Editor />
+      {/*<Editor />*/}
       <div className="other">
         <h2>Other Examples</h2>
         <ul>

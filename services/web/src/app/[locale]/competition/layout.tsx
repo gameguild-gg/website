@@ -8,7 +8,7 @@ import ReplayPage from './replay/page';
 import SubmitPage from './replay/page';
 import SummaryPage from './summary/page';
 import TournamentPage from './tournament/page';
-import { UserDto } from '@/dtos/user/user.dto';
+
 import {
   FileAddOutlined,
   HistoryOutlined,
@@ -21,6 +21,7 @@ import { FloatButton, Layout, Menu, MenuProps, theme } from 'antd';
 import { deleteCookie, getCookie } from 'cookies-next';
 import { useRouter } from 'next/navigation';
 import React, { useEffect, useState } from 'react';
+import { UserDto } from '@/apinest';
 
 const { Content, Footer, Sider } = Layout;
 

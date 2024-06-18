@@ -8,7 +8,7 @@ import { RedoOutlined } from '@ant-design/icons';
 
 import { Moment } from 'moment';
 import moment from 'moment-timezone';
-import { CompetitionRunSubmissionReportDto } from '../../../dtos/competition/chess-competition-report.dto';
+import { CompetitionRunSubmissionReportDto } from '@/apinest';
 
 export default function TournamentPage() {
   const router = useRouter();
@@ -102,9 +102,9 @@ export default function TournamentPage() {
     for (let i = 0; i < lastCompetitionState.length; i++) {
       if (
         lastRunDate === null ||
-        lastCompetitionState[i].updatedAt > lastRunDate
+        new Date(lastCompetitionState[i].updatedAt) > lastRunDate
       )
-        lastRunDate = lastCompetitionState[i].updatedAt;
+        lastRunDate = new Date(lastCompetitionState[i].updatedAt);
     }
   }
 

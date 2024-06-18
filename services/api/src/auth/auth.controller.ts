@@ -66,6 +66,7 @@ export class AuthController {
   // }
 
   @Get('google/callback/:token')
+  @ApiOkResponse({ type: LocalSignInResponseDto })
   @Public()
   public async signInWithGoogle(
     @Param('token') token: string,

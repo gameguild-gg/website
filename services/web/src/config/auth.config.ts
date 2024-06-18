@@ -1,15 +1,14 @@
-import type {NextAuthConfig} from "next-auth";
-import Credentials from "next-auth/providers/credentials";
-import Google from "next-auth/providers/google";
-import {LocalSignInResponseDto} from "@/dtos/auth/local-sign-in.response.dto";
-import {environment} from "@/config/environment";
-
+import type { NextAuthConfig } from 'next-auth';
+import Credentials from 'next-auth/providers/credentials';
+import Google from 'next-auth/providers/google';
+import { environment } from '@/config/environment';
+import { authApi } from '@/lib/apinest';
+import { IsString } from 'class-validator';
 
 export const authConfig = {
   callbacks: {
-    signIn: async ({user, account, profile, email, credentials}) => {
-      if (account?.provider === "google") {
-
+    signIn: async ({ user, account, profile, email, credentials }) => {
+      if (account?.provider === 'google') {
         // TODO:
         //  After signing in with Google, check if the user is in the database.
         //  If the user is not in the database, reject the sign-in.
@@ -17,31 +16,22 @@ export const authConfig = {
 
         // TODO: Sample code below:
 
-        let url = `${environment.BACKEND_URL}/auth/google/callback/${account?.id_token}`;
+        if (!account?.id_token) return false;
+        const response = await authApi.authControllerSignInWithGoogle(
+          account?.id_token,
+        );
 
-        const dbUser = await fetch(
-          url,
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-            },
-          },
-        ).then((r) => r.json());
+        if (!response || response.status !== 200) return false;
 
-        const response = dbUser as LocalSignInResponseDto;
-
-        if (!response) return false;
-
-        user.id = response.user.id;
-        user.email = response.user.email;
+        user.id = response.data.user.id;
+        user.email = response.data.user.email;
         // user.firstName = dbUser?.data?.user?.firstName;
         // user.lastName = dbUser?.data?.user?.lastName;
         // user.avatar = dbUser?.data?.user?.avatar;
         // user.isEmailVerified = dbUser?.data?.user?.isEmailVerified;
         // user.isPhoneVerified = dbUser?.data?.user?.isPhoneVerified;
-        user.accessToken = response.accessToken;
-        user.refreshToken = response.refreshToken;
+        user.accessToken = response.data.accessToken;
+        user.refreshToken = response.data.refreshToken;
 
         // Return true to allowing user sign-in with the Google OAuth Credential.
         return true;
@@ -50,39 +40,33 @@ export const authConfig = {
     },
   },
   pages: {
-    signIn: "/sign-in"
+    signIn: '/sign-in',
   },
   providers: [
     Credentials({
-      id: "web-3",
-      name: "web-3",
+      id: 'web-3',
+      name: 'web-3',
       credentials: {
         message: {
-          label: "Message",
-          type: "text",
-          placeholder: "0x0",
+          label: 'Message',
+          type: 'text',
+          placeholder: '0x0',
         },
         signature: {
-          label: "Signature",
-          type: "text",
-          placeholder: "0x0",
+          label: 'Signature',
+          type: 'text',
+          placeholder: '0x0',
         },
       },
       async authorize(credentials, req) {
-        const {message, signature} = credentials;
+        const message: string = credentials?.message as string;
+        const signature: string = credentials.signature as string;
 
-        const response = await fetch(
-          `${process.env.NEXT_JS_BACKEND_URL}/auth/web3/sign-in/validate`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({message, signature}),
-          }
-        );
-
-        const data = response.json();
+        const response =
+          await authApi.authControllerValidateWeb3SignInChallenge({
+            message,
+            signature,
+          });
 
         // TODO: send the signature to the server to verify the user's identity.
         // It should be done using the auth.js (next-auth) library.
@@ -106,12 +90,12 @@ export const authConfig = {
       clientSecret: environment.GoogleClientSecret,
       authorization: {
         params: {
-          request_uri: environment.SignInGoogleCallbackUrl
-        }
-      }
+          request_uri: environment.SignInGoogleCallbackUrl,
+        },
+      },
     }),
   ],
   session: {
-    strategy: "jwt"
+    strategy: 'jwt',
   },
-}satisfies NextAuthConfig;
+} satisfies NextAuthConfig;

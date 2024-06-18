@@ -1,5 +1,5 @@
 import React from 'react';
-import { fetchPost } from '@/lib/blog/actions';
+import { fetchPost } from '@/lib/old/blog/actions';
 
 type Props = {
   params: {
@@ -11,9 +11,8 @@ export default async function Page({ params: { slug } }: Readonly<Props>) {
   const post = await fetchPost(slug);
 
   return (
-    <div className='text-center items-center overflow-hidden w-full text-white bg-[#18181c]'>
+    <div className="text-center items-center overflow-hidden w-full text-white bg-[#18181c]">
       <div className="w-full max-w-[1200px] mx-auto mh-full">
-        
         {post && (
           <div>
             <br />
@@ -27,7 +26,7 @@ export default async function Page({ params: { slug } }: Readonly<Props>) {
               />
             )}
             <br />
-            <div              
+            <div
               dangerouslySetInnerHTML={{ __html: post?.html as string }}
               className="text-left max-w-[720px] mx-auto [&_img]:mx-auto [&_pre]:border
               [&_pre]:my-3 [&_pre]:p-2 [&_iframe]:w-full [&_iframe]:h-[404px] [&_figure]:mx-auto
@@ -37,7 +36,6 @@ export default async function Page({ params: { slug } }: Readonly<Props>) {
             />
           </div>
         )}
-
       </div>
     </div>
   );

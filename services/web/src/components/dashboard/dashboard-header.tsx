@@ -1,18 +1,24 @@
-import React from "react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "../ui/button";
-import { Bell, Search } from "lucide-react";
+import React from 'react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '../ui/button';
+import { Bell, Search } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuTrigger
-} from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTrigger } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Input } from '@/components/ui/input';
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 
 type Props = {
   children?: React.ReactNode;
@@ -31,15 +37,12 @@ export default function DashboardHeader({ children }: Readonly<Props>) {
                   <div className="flex items-center justify-center gap-4">
                     <Search className="size-6 text-muted-foreground" />
 
-
                     <p className="text-muted-foreground">
-                      Search{" "}
-                      <kbd
-                        className="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100">
+                      Search{' '}
+                      <kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100">
                         <span className="text-base">⌘K</span>
                       </kbd>
                     </p>
-
                   </div>
                 </Button>
               </DialogTrigger>
@@ -94,7 +97,11 @@ export default function DashboardHeader({ children }: Readonly<Props>) {
           <div className="ml-4 flex items-center md:ml-6 gap-2">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="overflow-hidden rounded-full">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="overflow-hidden rounded-full"
+                >
                   <Bell className="size-6" />
                 </Button>
               </DropdownMenuTrigger>
@@ -111,7 +118,10 @@ export default function DashboardHeader({ children }: Readonly<Props>) {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Avatar>
-                  <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
+                  <AvatarImage
+                    src="https://github.com/shadcn.png"
+                    alt="@shadcn"
+                  />
                   <AvatarFallback>U</AvatarFallback>
                 </Avatar>
               </DropdownMenuTrigger>

@@ -1,4 +1,4 @@
-import React from "react";
+import React from 'react';
 
 type Props = React.HTMLAttributes<HTMLDivElement> & {
   children?: React.ReactNode;
@@ -19,27 +19,30 @@ function PageFooter({ children }: Readonly<Props>) {
           className="grid grid-cols-3 justify-between max-w-[1440px] w-full flex items-center"
         >
           <div className="flex">
-            <a href='#'>
+            <a href="#">
               <img
                 style={{ width: 30, height: 30, margin: 3 }}
                 src="assets/images/whatsapp-icon.svg"
               />
             </a>
-            <a href='#'>
+            <a href="#">
               <img
                 style={{ width: 30, height: 30, margin: 3 }}
                 src="assets/images/discord-icon.svg"
               />
             </a>
           </div>
+          <div>Game Guild © 2024 All Rights Reserved</div>
           <div>
-            Game Guild © 2024 All Rights Reserved
-          </div>
-          <div>
-            <a href='#' className="text-white">Privacy Policy</a> | <a href='#' className="text-white">Terms of Service</a>
+            <a href="#" className="text-white">
+              Privacy Policy
+            </a>{' '}
+            |{' '}
+            <a href="#" className="text-white">
+              Terms of Service
+            </a>
           </div>
         </div>
-        
       </div>
     </div>
   );

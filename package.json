@@ -11,13 +11,7 @@
     "services/api"
   ],
   "scripts": {
-    "syncApi": "node foldersync.js packages/dtos/src/ services/api/src/dtos/",
-    "syncWeb": "node foldersync.js packages/dtos/src/ services/web/src/dtos/",
-    "syncDtos": "npm-run-all --serial syncApi syncWeb",
-
     "install:api": "npm install --workspace=services/api",
-    "install:api:deps:ubuntu": "npm run install:deps:ubuntu --workspace=services/api",
-    "postinstall:api:deps:ubuntu": "npm run install:api",
     "install:web": "npm install --workspace=services/web",
     "clean": "rimraf --glob ./**/node_modules",
     "prepare_": "husky install",

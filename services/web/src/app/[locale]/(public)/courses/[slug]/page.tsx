@@ -8,12 +8,16 @@ type Props = {
 };
 
 export default async function Page({ params: { slug } }: Readonly<Props>) {
-  return (<div></div>);
+  return <div></div>;
 }
 
-export async function generateMetadata({ params: { slug } }: Readonly<Props>, parent: ResolvingMetadata): Promise<Metadata> {
+export async function generateMetadata(
+  { params: { slug } }: Readonly<Props>,
+  parent: ResolvingMetadata,
+): Promise<Metadata> {
   return {};
 }
 
 export async function generateStaticParams() {
+  return [];
 }

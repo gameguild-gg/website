@@ -10,10 +10,10 @@ import {
   TableColumnsType,
   Typography,
 } from 'antd';
-import { MatchSearchRequestDto } from '@/dtos/competition/match-search-request.dto';
-import { MatchSearchResponseDto } from '@/dtos/competition/match-search-response.dto';
+
 import { getCookie } from 'cookies-next';
 import { useRouter } from 'next/navigation';
+import { MatchSearchRequestDto, MatchSearchResponseDto } from '@/apinest';
 
 export default function MatchesPage() {
   const router = useRouter();

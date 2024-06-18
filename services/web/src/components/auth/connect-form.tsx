@@ -1,23 +1,22 @@
-"use client";
+'use client';
 
-import React, {useState} from "react";
-import {SignInFormState, signInWithGoogle} from "@/lib/auth";
-import {Label} from "@/components/ui/label";
-import {Input} from "@/components/ui/input";
-import {Button} from "@/components/ui/button";
-import {Sparkles} from "lucide-react";
-import {useToast} from "@/components/ui/use-toast"
+import React, { useState } from 'react';
+import { SignInFormState, signInWithGoogle } from '@/lib/auth';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Sparkles } from 'lucide-react';
+import { useToast } from '@/components/ui/use-toast';
 
-import {useSession} from "next-auth/react";
-import MetaMaskSignInButton from "@/components/others/web3/meta-mask-sign-in-button";
-
+import { useSession } from 'next-auth/react';
+import MetaMaskSignInButton from '@/components/others/web3/meta-mask-sign-in-button';
 
 const initialState: SignInFormState = {};
 
-export default function SignInForm() {
+export default function ConnectForm() {
   const session = useSession();
 
-  const {toast} = useToast();
+  const { toast } = useToast();
   const [sendMagicLinkClicked, setSendMagicLinkClicked] = useState(false);
 
   // web3 provider web3-context
@@ -26,8 +25,8 @@ export default function SignInForm() {
     setSendMagicLinkClicked(true);
 
     const sendingToast = toast({
-      title: "Sent",
-      description: "We've sent you a magic link to your email."
+      title: 'Sent',
+      description: "We've sent you a magic link to your email.",
     });
 
     // todo: send api request to send magic link
@@ -35,10 +34,10 @@ export default function SignInForm() {
     sendingToast.dismiss();
 
     const t = toast({
-      title: "Sent",
-      description: "We've sent you a magic link to your email."
+      title: 'Sent',
+      description: "We've sent you a magic link to your email.",
     });
-  }
+  };
 
   return (
     <div className="mx-auto grid w-[350px] gap-6">
@@ -53,7 +52,7 @@ export default function SignInForm() {
         />
         Google
       </Button>
-      <MetaMaskSignInButton/>
+      <MetaMaskSignInButton />
       <div className="text-center text-sm text-muted-foreground">or</div>
       <p className="text-balance text-muted-foreground">
         Send a magic link to your email
@@ -61,10 +60,21 @@ export default function SignInForm() {
       <div className="grid gap-4">
         <div className="grid gap-2">
           <Label htmlFor="email">Email</Label>
-          <Input id="email" type="email" placeholder="user@example.com" required disabled={sendMagicLinkClicked}/>
+          <Input
+            id="email"
+            type="email"
+            placeholder="user@example.com"
+            required
+            disabled={sendMagicLinkClicked}
+          />
         </div>
-        <Button disabled={sendMagicLinkClicked} className="w-full" onClick={handleSendMagicLink}>Send me the
-          link <Sparkles/></Button>
+        <Button
+          disabled={sendMagicLinkClicked}
+          className="w-full"
+          onClick={handleSendMagicLink}
+        >
+          Send me the link <Sparkles />
+        </Button>
       </div>
     </div>
   );
