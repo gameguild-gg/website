@@ -118,14 +118,21 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/EthereumChallengeRequestDto"
+                "$ref": "#/components/schemas/EthereumSigninChallengeRequestDto"
               }
             }
           }
         },
         "responses": {
-          "201": {
-            "description": ""
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EthereumSigninChallengeResponseDto"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -142,14 +149,21 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/EthereumChallengeResponseDto"
+                "$ref": "#/components/schemas/EthereumSigninValidateRequestDto"
               }
             }
           }
         },
         "responses": {
-          "201": {
-            "description": ""
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LocalSignInResponseDto"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -724,7 +738,7 @@
           "user"
         ]
       },
-      "EthereumChallengeRequestDto": {
+      "EthereumSigninChallengeRequestDto": {
         "type": "object",
         "properties": {
           "domain": {
@@ -740,8 +754,7 @@
             "type": "string"
           },
           "chainId": {
-            "format": "int64",
-            "type": "integer"
+            "type": "string"
           },
           "nonce": {
             "type": "string"
@@ -756,7 +769,18 @@
           "nonce"
         ]
       },
-      "EthereumChallengeResponseDto": {
+      "EthereumSigninChallengeResponseDto": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "message"
+        ]
+      },
+      "EthereumSigninValidateRequestDto": {
         "type": "object",
         "properties": {
           "message": {

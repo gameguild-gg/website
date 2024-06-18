@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsNotEmpty, IsString } from 'class-validator';
 
-export class EthereumChallengeResponseDto {
+export class EthereumSigninValidateRequestDto {
   @ApiProperty()
   @IsString({ message: 'error.invalidMessage: Message must be a string.' })
   @IsNotEmpty({ message: 'error.invalidMessage: Message must not be empty.' })

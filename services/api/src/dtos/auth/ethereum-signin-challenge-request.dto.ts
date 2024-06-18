@@ -1,8 +1,13 @@
-import {ApiProperty} from '@nestjs/swagger';
-import {IsEthereumAddress, IsInt, IsNotEmpty, IsString} from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
+import {
+  IsEthereumAddress,
+  IsInt,
+  IsNotEmpty,
+  IsNumberString,
+  IsString,
+} from 'class-validator';
 
-
-export class EthereumChallengeRequestDto {
+export class EthereumSigninChallengeRequestDto {
   @ApiProperty()
   @IsString({
     message: 'error.invalidSignature: Signature must be a string.',
@@ -34,10 +39,13 @@ export class EthereumChallengeRequestDto {
   version: string;
 
   @ApiProperty()
-  @IsInt({
-    message: 'error.invalidSignature: Signature must be a string.',
-  })
-  chainId: bigint;
+  @IsNumberString(
+    { no_symbols: true },
+    {
+      message: 'error.invalidChainId: Chain ID must be a number.',
+    },
+  )
+  chainId: string;
 
   @ApiProperty()
   @IsString({

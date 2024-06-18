@@ -3,7 +3,6 @@ import Credentials from 'next-auth/providers/credentials';
 import Google from 'next-auth/providers/google';
 import { environment } from '@/config/environment';
 import { authApi } from '@/lib/apinest';
-import { IsString } from 'class-validator';
 
 export const authConfig = {
   callbacks: {

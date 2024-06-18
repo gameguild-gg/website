@@ -329,62 +329,75 @@ export interface CourseEntity {
 /**
  * 
  * @export
- * @interface EthereumChallengeRequestDto
+ * @interface EthereumSigninChallengeRequestDto
  */
-export interface EthereumChallengeRequestDto {
+export interface EthereumSigninChallengeRequestDto {
     /**
      * 
      * @type {string}
-     * @memberof EthereumChallengeRequestDto
+     * @memberof EthereumSigninChallengeRequestDto
      */
     'domain': string;
     /**
      * 
      * @type {string}
-     * @memberof EthereumChallengeRequestDto
+     * @memberof EthereumSigninChallengeRequestDto
      */
     'address': string;
     /**
      * 
      * @type {string}
-     * @memberof EthereumChallengeRequestDto
+     * @memberof EthereumSigninChallengeRequestDto
      */
     'uri': string;
     /**
      * 
      * @type {string}
-     * @memberof EthereumChallengeRequestDto
+     * @memberof EthereumSigninChallengeRequestDto
      */
     'version': string;
     /**
      * 
-     * @type {number}
-     * @memberof EthereumChallengeRequestDto
+     * @type {string}
+     * @memberof EthereumSigninChallengeRequestDto
      */
-    'chainId': number;
+    'chainId': string;
     /**
      * 
      * @type {string}
-     * @memberof EthereumChallengeRequestDto
+     * @memberof EthereumSigninChallengeRequestDto
      */
     'nonce': string;
 }
 /**
  * 
  * @export
- * @interface EthereumChallengeResponseDto
+ * @interface EthereumSigninChallengeResponseDto
  */
-export interface EthereumChallengeResponseDto {
+export interface EthereumSigninChallengeResponseDto {
     /**
      * 
      * @type {string}
-     * @memberof EthereumChallengeResponseDto
+     * @memberof EthereumSigninChallengeResponseDto
+     */
+    'message': string;
+}
+/**
+ * 
+ * @export
+ * @interface EthereumSigninValidateRequestDto
+ */
+export interface EthereumSigninValidateRequestDto {
+    /**
+     * 
+     * @type {string}
+     * @memberof EthereumSigninValidateRequestDto
      */
     'message': string;
     /**
      * 
      * @type {string}
-     * @memberof EthereumChallengeResponseDto
+     * @memberof EthereumSigninValidateRequestDto
      */
     'signature': string;
 }
@@ -804,13 +817,13 @@ export const AuthApiAxiosParamCreator = function (configuration?: Configuration)
         },
         /**
          * 
-         * @param {EthereumChallengeRequestDto} ethereumChallengeRequestDto 
+         * @param {EthereumSigninChallengeRequestDto} ethereumSigninChallengeRequestDto 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        authControllerGetWeb3SignInChallenge: async (ethereumChallengeRequestDto: EthereumChallengeRequestDto, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'ethereumChallengeRequestDto' is not null or undefined
-            assertParamExists('authControllerGetWeb3SignInChallenge', 'ethereumChallengeRequestDto', ethereumChallengeRequestDto)
+        authControllerGetWeb3SignInChallenge: async (ethereumSigninChallengeRequestDto: EthereumSigninChallengeRequestDto, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'ethereumSigninChallengeRequestDto' is not null or undefined
+            assertParamExists('authControllerGetWeb3SignInChallenge', 'ethereumSigninChallengeRequestDto', ethereumSigninChallengeRequestDto)
             const localVarPath = `/auth/web3/sign-in/challenge`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -830,7 +843,7 @@ export const AuthApiAxiosParamCreator = function (configuration?: Configuration)
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(ethereumChallengeRequestDto, localVarRequestOptions, configuration)
+            localVarRequestOptions.data = serializeDataIfNeeded(ethereumSigninChallengeRequestDto, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -1011,13 +1024,13 @@ export const AuthApiAxiosParamCreator = function (configuration?: Configuration)
         },
         /**
          * 
-         * @param {EthereumChallengeResponseDto} ethereumChallengeResponseDto 
+         * @param {EthereumSigninValidateRequestDto} ethereumSigninValidateRequestDto 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        authControllerValidateWeb3SignInChallenge: async (ethereumChallengeResponseDto: EthereumChallengeResponseDto, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'ethereumChallengeResponseDto' is not null or undefined
-            assertParamExists('authControllerValidateWeb3SignInChallenge', 'ethereumChallengeResponseDto', ethereumChallengeResponseDto)
+        authControllerValidateWeb3SignInChallenge: async (ethereumSigninValidateRequestDto: EthereumSigninValidateRequestDto, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'ethereumSigninValidateRequestDto' is not null or undefined
+            assertParamExists('authControllerValidateWeb3SignInChallenge', 'ethereumSigninValidateRequestDto', ethereumSigninValidateRequestDto)
             const localVarPath = `/auth/web3/sign-in/validate`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -1037,7 +1050,7 @@ export const AuthApiAxiosParamCreator = function (configuration?: Configuration)
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(ethereumChallengeResponseDto, localVarRequestOptions, configuration)
+            localVarRequestOptions.data = serializeDataIfNeeded(ethereumSigninValidateRequestDto, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -1103,12 +1116,12 @@ export const AuthApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
-         * @param {EthereumChallengeRequestDto} ethereumChallengeRequestDto 
+         * @param {EthereumSigninChallengeRequestDto} ethereumSigninChallengeRequestDto 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async authControllerGetWeb3SignInChallenge(ethereumChallengeRequestDto: EthereumChallengeRequestDto, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.authControllerGetWeb3SignInChallenge(ethereumChallengeRequestDto, options);
+        async authControllerGetWeb3SignInChallenge(ethereumSigninChallengeRequestDto: EthereumSigninChallengeRequestDto, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<EthereumSigninChallengeResponseDto>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.authControllerGetWeb3SignInChallenge(ethereumSigninChallengeRequestDto, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['AuthApi.authControllerGetWeb3SignInChallenge']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
@@ -1175,12 +1188,12 @@ export const AuthApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
-         * @param {EthereumChallengeResponseDto} ethereumChallengeResponseDto 
+         * @param {EthereumSigninValidateRequestDto} ethereumSigninValidateRequestDto 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async authControllerValidateWeb3SignInChallenge(ethereumChallengeResponseDto: EthereumChallengeResponseDto, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.authControllerValidateWeb3SignInChallenge(ethereumChallengeResponseDto, options);
+        async authControllerValidateWeb3SignInChallenge(ethereumSigninValidateRequestDto: EthereumSigninValidateRequestDto, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<LocalSignInResponseDto>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.authControllerValidateWeb3SignInChallenge(ethereumSigninValidateRequestDto, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['AuthApi.authControllerValidateWeb3SignInChallenge']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
@@ -1217,12 +1230,12 @@ export const AuthApiFactory = function (configuration?: Configuration, basePath?
         },
         /**
          * 
-         * @param {EthereumChallengeRequestDto} ethereumChallengeRequestDto 
+         * @param {EthereumSigninChallengeRequestDto} ethereumSigninChallengeRequestDto 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        authControllerGetWeb3SignInChallenge(ethereumChallengeRequestDto: EthereumChallengeRequestDto, options?: any): AxiosPromise<void> {
-            return localVarFp.authControllerGetWeb3SignInChallenge(ethereumChallengeRequestDto, options).then((request) => request(axios, basePath));
+        authControllerGetWeb3SignInChallenge(ethereumSigninChallengeRequestDto: EthereumSigninChallengeRequestDto, options?: any): AxiosPromise<EthereumSigninChallengeResponseDto> {
+            return localVarFp.authControllerGetWeb3SignInChallenge(ethereumSigninChallengeRequestDto, options).then((request) => request(axios, basePath));
         },
         /**
          * 
@@ -1271,12 +1284,12 @@ export const AuthApiFactory = function (configuration?: Configuration, basePath?
         },
         /**
          * 
-         * @param {EthereumChallengeResponseDto} ethereumChallengeResponseDto 
+         * @param {EthereumSigninValidateRequestDto} ethereumSigninValidateRequestDto 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        authControllerValidateWeb3SignInChallenge(ethereumChallengeResponseDto: EthereumChallengeResponseDto, options?: any): AxiosPromise<void> {
-            return localVarFp.authControllerValidateWeb3SignInChallenge(ethereumChallengeResponseDto, options).then((request) => request(axios, basePath));
+        authControllerValidateWeb3SignInChallenge(ethereumSigninValidateRequestDto: EthereumSigninValidateRequestDto, options?: any): AxiosPromise<LocalSignInResponseDto> {
+            return localVarFp.authControllerValidateWeb3SignInChallenge(ethereumSigninValidateRequestDto, options).then((request) => request(axios, basePath));
         },
         /**
          * 
@@ -1309,13 +1322,13 @@ export class AuthApi extends BaseAPI {
 
     /**
      * 
-     * @param {EthereumChallengeRequestDto} ethereumChallengeRequestDto 
+     * @param {EthereumSigninChallengeRequestDto} ethereumSigninChallengeRequestDto 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof AuthApi
      */
-    public authControllerGetWeb3SignInChallenge(ethereumChallengeRequestDto: EthereumChallengeRequestDto, options?: RawAxiosRequestConfig) {
-        return AuthApiFp(this.configuration).authControllerGetWeb3SignInChallenge(ethereumChallengeRequestDto, options).then((request) => request(this.axios, this.basePath));
+    public authControllerGetWeb3SignInChallenge(ethereumSigninChallengeRequestDto: EthereumSigninChallengeRequestDto, options?: RawAxiosRequestConfig) {
+        return AuthApiFp(this.configuration).authControllerGetWeb3SignInChallenge(ethereumSigninChallengeRequestDto, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -1375,13 +1388,13 @@ export class AuthApi extends BaseAPI {
 
     /**
      * 
-     * @param {EthereumChallengeResponseDto} ethereumChallengeResponseDto 
+     * @param {EthereumSigninValidateRequestDto} ethereumSigninValidateRequestDto 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof AuthApi
      */
-    public authControllerValidateWeb3SignInChallenge(ethereumChallengeResponseDto: EthereumChallengeResponseDto, options?: RawAxiosRequestConfig) {
-        return AuthApiFp(this.configuration).authControllerValidateWeb3SignInChallenge(ethereumChallengeResponseDto, options).then((request) => request(this.axios, this.basePath));
+    public authControllerValidateWeb3SignInChallenge(ethereumSigninValidateRequestDto: EthereumSigninValidateRequestDto, options?: RawAxiosRequestConfig) {
+        return AuthApiFp(this.configuration).authControllerValidateWeb3SignInChallenge(ethereumSigninValidateRequestDto, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

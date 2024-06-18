@@ -1,21 +1,25 @@
-import {Injectable, Logger, UnauthorizedException} from '@nestjs/common';
-import {JwtService} from '@nestjs/jwt';
-import {ApiConfigService} from '../common/config.service';
-import {generateHash, generateRandomSalt, validateHash,} from '../common/utils/hash';
-import {NotificationService} from '../notification/notification.service';
-import {UserEntity} from '../user/entities';
-import {UserService} from '../user/user.service';
-import {LocalSignUpDto} from '../dtos/auth/local-sign-up.dto';
-import {LocalSignInDto} from '../dtos/auth/local-sign-in.dto';
-import {LocalSignInResponseDto} from '../dtos/auth/local-sign-in.response.dto';
-import {AccessTokenPayloadDto} from '../dtos/auth/access-token-payload.dto';
-import {TokenType} from '../dtos/auth/token-type.enum';
-import {ethers} from 'ethers';
+import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+import { ApiConfigService } from '../common/config.service';
+import {
+  generateHash,
+  generateRandomSalt,
+  validateHash,
+} from '../common/utils/hash';
+import { NotificationService } from '../notification/notification.service';
+import { UserEntity } from '../user/entities';
+import { UserService } from '../user/user.service';
+import { LocalSignUpDto } from '../dtos/auth/local-sign-up.dto';
+import { LocalSignInDto } from '../dtos/auth/local-sign-in.dto';
+import { LocalSignInResponseDto } from '../dtos/auth/local-sign-in.response.dto';
+import { AccessTokenPayloadDto } from '../dtos/auth/access-token-payload.dto';
+import { TokenType } from '../dtos/auth/token-type.enum';
+import { ethers } from 'ethers';
 // OAuth2Client
-import {LoginTicket, OAuth2Client, TokenPayload} from 'google-auth-library';
-import {EthereumChallengeRequestDto} from '../dtos/auth/ethereum-challenge-request.dto';
-import {EthereumChallengeResponseDto} from '../dtos/auth/ethereum-challenge-response.dto';
-
+import { LoginTicket, OAuth2Client, TokenPayload } from 'google-auth-library';
+import { EthereumSigninChallengeRequestDto } from '../dtos/auth/ethereum-signin-challenge-request.dto';
+import { EthereumSigninValidateRequestDto } from '../dtos/auth/ethereum-signin-validate-request.dto';
+import { EthereumSigninChallengeResponseDto } from '../dtos/auth/ethereum-signin-challenge-response.dto';
 
 @Injectable()
 export class AuthService {
@@ -77,7 +81,7 @@ export class AuthService {
       algorithm: 'RS256',
       expiresIn: this.configService.authConfig.emailVerificationTokenExpiresIn,
       privateKey:
-      this.configService.authConfig.emailVerificationTokenPrivateKey,
+        this.configService.authConfig.emailVerificationTokenPrivateKey,
     });
   }
 
@@ -120,7 +124,7 @@ export class AuthService {
   }
 
   public async sendEmailVerification(email: string) {
-    const user = await this.userService.findOne({where: {email}});
+    const user = await this.userService.findOne({ where: { email } });
     const token = await this.generateEmailVerificationToken(user);
     const url = `${this.configService.authConfig.emailVerificationUrl}?token=${token}`;
     const subject = 'One Time Password - GameGuild';
@@ -134,10 +138,10 @@ export class AuthService {
   }
 
   public async validateLocalSignIn(data: LocalSignInDto): Promise<UserEntity> {
-    const {email, username, password} = data;
+    const { email, username, password } = data;
 
     const user = await this.userService.findOne({
-      where: [{email}, {username}],
+      where: [{ email }, { username }],
     });
 
     if (!user) {
@@ -174,11 +178,11 @@ export class AuthService {
     try {
       const decodedToken = this.jwtService.verify(token, {
         publicKey:
-        this.configService.authConfig.emailVerificationTokenPublicKey,
+          this.configService.authConfig.emailVerificationTokenPublicKey,
       });
 
       const user = await this.userService.findOne({
-        where: {id: decodedToken.sub},
+        where: { id: decodedToken.sub },
       });
 
       user.emailVerified = true;
@@ -190,7 +194,7 @@ export class AuthService {
 
   public async userExists(user: string): Promise<boolean> {
     const foundUser = await this.userService.findOne({
-      where: [{email: user}, {username: user}],
+      where: [{ email: user }, { username: user }],
       select: ['id'], // Only select the id to reduce payload size.
     });
 
@@ -213,14 +217,16 @@ export class AuthService {
 
   async sendMagicLink(email: string) {
     let user = await this.userService.findOne({
-      where: {email},
+      where: { email },
     });
 
-    if (!user) user = await this.userService.findOneBy({email});
+    if (!user) user = await this.userService.findOneBy({ email });
     //todo: finish this
   }
 
-  async generateWeb3SignInChallenge(data: EthereumChallengeRequestDto) {
+  async generateWeb3SignInChallenge(
+    data: EthereumSigninChallengeRequestDto,
+  ): Promise<EthereumSigninChallengeResponseDto> {
     // todo: use class validator to validate address, signature, and others...
     const now = new Date();
     const termOfServiceUrl: string = 'https://community.metamask.io/tos';
@@ -230,13 +236,13 @@ export class AuthService {
     // TODO: It's a must because its what is accepted by the sign-in procedure.
     const message = `0x${Buffer.from(challenge, 'utf8').toString('hex')}`;
 
-    return {message: message};
+    return { message };
   }
 
   async validateWeb3SignInChallenge(
-    data: EthereumChallengeResponseDto,
+    data: EthereumSigninValidateRequestDto,
   ): Promise<LocalSignInResponseDto> {
-    const {message, signature} = data;
+    const { message, signature } = data;
 
     // ensure message is signed by the account address
     const walletAddress = ethers.verifyMessage(message, signature);
@@ -298,8 +304,8 @@ export class AuthService {
     const payload: TokenPayload = ticket.getPayload();
 
     let user = await this.userService.findOne({
-      where: {googleId: payload.sub},
-      relations: {profile: true},
+      where: { googleId: payload.sub },
+      relations: { profile: true },
     });
     if (!user) {
       user = await this.userService.createOneWithGoogleId(payload);

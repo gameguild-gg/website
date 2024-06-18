@@ -16,8 +16,9 @@ import { LocalSignInResponseDto } from '../dtos/auth/local-sign-in.response.dto'
 import { UserDto } from '../dtos/user/user.dto';
 import { UserEntity } from '../user/entities';
 import { Auth } from './decorators/http.decorator';
-import { EthereumChallengeResponseDto } from '../dtos/auth/ethereum-challenge-response.dto';
-import { EthereumChallengeRequestDto } from '../dtos/auth/ethereum-challenge-request.dto';
+import { EthereumSigninValidateRequestDto } from '../dtos/auth/ethereum-signin-validate-request.dto';
+import { EthereumSigninChallengeRequestDto } from '../dtos/auth/ethereum-signin-challenge-request.dto';
+import { EthereumSigninChallengeResponseDto } from '../dtos/auth/ethereum-signin-challenge-response.dto';
 
 @Controller('auth')
 @ApiTags('auth')
@@ -76,16 +77,18 @@ export class AuthController {
 
   @Post('web3/sign-in/challenge')
   @Public()
+  @ApiOkResponse({ type: EthereumSigninChallengeResponseDto })
   public async getWeb3SignInChallenge(
-    @Body() data: EthereumChallengeRequestDto,
-  ) {
+    @Body() data: EthereumSigninChallengeRequestDto,
+  ): Promise<EthereumSigninChallengeResponseDto> {
     return await this.authService.generateWeb3SignInChallenge(data);
   }
 
   @Post('web3/sign-in/validate')
   @Public()
+  @ApiOkResponse({ type: LocalSignInResponseDto })
   public async validateWeb3SignInChallenge(
-    @Body() data: EthereumChallengeResponseDto,
+    @Body() data: EthereumSigninValidateRequestDto,
   ): Promise<LocalSignInResponseDto> {
     return await this.authService.validateWeb3SignInChallenge(data);
   }
