@@ -1,7 +1,8 @@
-import { Configuration, CompetitionsApi, AuthApi } from '@/apinest';
+import { AuthApi, CompetitionsApi, Configuration } from '@/apinest';
 
 const configuration = new Configuration({
-  basePath: process.env.NEXT_PUBLIC_API_URL,
+  // basePath: process.env.NEST_JS_BACKEND_URL,
+  basePath: 'http://localhost:8080',
 });
 
 export const competitionsApi = new CompetitionsApi(configuration);

@@ -43,6 +43,7 @@ export const authConfig = {
   },
   providers: [
     Credentials({
+      type: 'credentials',
       id: 'web-3',
       name: 'web-3',
       credentials: {
@@ -57,7 +58,7 @@ export const authConfig = {
           placeholder: '0x0',
         },
       },
-      async authorize(credentials, req) {
+      async authorize(credentials) {
         const message: string = credentials?.message as string;
         const signature: string = credentials.signature as string;
 
@@ -65,8 +66,10 @@ export const authConfig = {
           await authApi.authControllerValidateWeb3SignInChallenge({
             message,
             signature,
+            address: '',
           });
 
+        console.log(response);
         // TODO: send the signature to the server to verify the user's identity.
         // It should be done using the auth.js (next-auth) library.
         //   //       // TODO: Verify the signature on the server.

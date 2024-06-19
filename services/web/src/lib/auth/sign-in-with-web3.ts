@@ -1,12 +1,8 @@
 'use server';
 
-import { httpClientFactory } from '@/lib/core/http';
+import { signIn } from '@/auth';
 
-export async function GetWeb3SignInChallenge() {
-  const httpClient = httpClientFactory();
-
-  const response = await httpClient.request<any>({
-    url: '/api/auth/web3/sign-in',
-    method: 'GET',
-  });
+export async function signInWithWeb3(message: string, signature: string) {
+  await signIn('web-3', { message, signature });
 }
+
