@@ -1,4 +1,9 @@
-import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  Logger,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ApiConfigService } from '../common/config.service';
 import {
@@ -20,6 +25,8 @@ import { LoginTicket, OAuth2Client, TokenPayload } from 'google-auth-library';
 import { EthereumSigninChallengeRequestDto } from '../dtos/auth/ethereum-signin-challenge-request.dto';
 import { EthereumSigninValidateRequestDto } from '../dtos/auth/ethereum-signin-validate-request.dto';
 import { EthereumSigninChallengeResponseDto } from '../dtos/auth/ethereum-signin-challenge-response.dto';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
 
 @Injectable()
 export class AuthService {
@@ -30,6 +37,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly userService: UserService,
     private readonly notificationService: NotificationService,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) {}
 
   public async generateAccessToken(user: UserEntity): Promise<string> {
@@ -230,8 +238,14 @@ export class AuthService {
     // todo: use class validator to validate address, signature, and others...
     const now = new Date();
     const termOfServiceUrl: string = 'https://community.metamask.io/tos';
+
     // TODO: Generate a parser to that message structure.
     const challenge = `${data.domain} wants you to sign in with your Ethereum account:\n${data.address}\n\nI accept the GameDev Guild Terms of Service: ${termOfServiceUrl}\n\nURI: https://${data.uri}\nVersion: ${data.version}\nChain ID: ${data.chainId}\nNonce: ${data.nonce}\nIssued At: ${now.toISOString()}`;
+
+    await this.cacheManager.set(
+      `web3:challenge:message:${data.address}`,
+      challenge,
+    );
 
     // TODO: It's a must because its what is accepted by the sign-in procedure.
     const message = `0x${Buffer.from(challenge, 'utf8').toString('hex')}`;
@@ -242,14 +256,28 @@ export class AuthService {
   async validateWeb3SignInChallenge(
     data: EthereumSigninValidateRequestDto,
   ): Promise<LocalSignInResponseDto> {
-    const { message, signature } = data;
+    const expectedMessage = await this.cacheManager.get<string>(
+      `web3:challenge:message:${data.address}`,
+    );
+
+    if (!expectedMessage) {
+      throw new UnauthorizedException(
+        'Invalid message challenge. Maybe expired? Try again.',
+      );
+    }
+
+    if (expectedMessage !== data.message) {
+      throw new UnauthorizedException(
+        'You provided a different message than expected. Maybe you are trying to replay an old challenge message?',
+      );
+    }
 
     // ensure message is signed by the account address
-    const walletAddress = ethers.verifyMessage(message, signature);
+    const walletAddress = ethers.verifyMessage(data.message, data.signature);
 
     let user = await this.userService.findOne({
       where: { walletAddress: walletAddress },
-      relations: ['profile'],
+      relations: { profile: true },
     });
 
     // todo: use class validator to validate address, signature, and others...

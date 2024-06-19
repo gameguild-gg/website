@@ -64,18 +64,24 @@ export class UserService extends TypeOrmCrudService<UserEntity> {
   public async createOneWithWalletAddress(
     walletAddress: string,
   ): Promise<UserEntity> {
-    let user = await this.findOneBy({ walletAddress: walletAddress });
+    let user = await this.findOne({
+      where: { walletAddress: walletAddress },
+      relations: { profile: true },
+    });
     if (user) {
       return user;
     } else {
       user = await this.repository.save({
         walletAddress: walletAddress,
       });
-      let profile = new UserProfileEntity();
+      const profile = new UserProfileEntity();
       profile.user = user;
-      profile = await this.profileService.save(profile);
-      user.profile = profile;
-      return user;
+      await this.profileService.save(profile);
+
+      return this.findOne({
+        where: { walletAddress: walletAddress },
+        relations: { profile: true },
+      });
     }
   }
 

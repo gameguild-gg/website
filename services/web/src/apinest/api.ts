@@ -393,6 +393,12 @@ export interface EthereumSigninValidateRequestDto {
      * @type {string}
      * @memberof EthereumSigninValidateRequestDto
      */
+    'address': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof EthereumSigninValidateRequestDto
+     */
     'message': string;
     /**
      * 

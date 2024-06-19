@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { CacheModule } from '@nestjs/cache-manager';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -32,6 +33,15 @@ import { ClsModule } from 'nestjs-cls';
       inject: [ApiConfigService],
       useFactory: (configService: ApiConfigService) =>
         configService.postgresConfig,
+    }),
+    CacheModule.registerAsync({
+      // todo: add redis cache when scaling
+      isGlobal: true, // globally available
+      useFactory: (configService: ApiConfigService) => ({
+        store: 'memory',
+        ttl: 5 * 60, // 5 minutes
+        max: 10000, // 10k requests in 5 minutes is a nice limit
+      }),
     }),
     CommonModule,
     AuthModule,
