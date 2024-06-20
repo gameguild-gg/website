@@ -6,12 +6,6 @@ type Props = {
 };
 
 export default async function Layout({ children }: Readonly<Props>) {
-  // const session = await auth();
-  //
-  // if (!session?.user) {
-  //   redirect("/sign-in");
-  // }
-
   return (
     <Dashboard>
       <Dashboard.Sidebar />
