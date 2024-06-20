@@ -1,13 +1,12 @@
-import type {NextAuthConfig, User} from 'next-auth';
+import type { NextAuthConfig, User } from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 import Google from 'next-auth/providers/google';
-import {environment} from '@/config/environment';
-import {authApi} from '@/lib/apinest';
-
+import { environment } from '@/config/environment';
+import { authApi } from '@/lib/apinest';
 
 export const authConfig = {
   callbacks: {
-    signIn: async ({user, account, profile, email, credentials}) => {
+    signIn: async ({ user, account, profile, email, credentials }) => {
       if (account?.provider === 'google') {
         // TODO:
         //  After signing in with Google, check if the user is in the database.
@@ -36,7 +35,7 @@ export const authConfig = {
         // Return true to allowing user sign-in with the Google OAuth Credential.
         return true;
       } else if (account?.provider === 'web-3') {
-        return true; // todo: debug this!
+        return !!user.wallet;
       }
       return false;
     },
@@ -50,11 +49,6 @@ export const authConfig = {
       id: 'web-3',
       name: 'web-3',
       credentials: {
-        message: {
-          label: 'Message',
-          type: 'text',
-          placeholder: '0x0',
-        },
         signature: {
           label: 'Signature',
           type: 'text',
@@ -67,18 +61,17 @@ export const authConfig = {
         },
       },
       async authorize(credentials): Promise<User | null> {
-        const message: string = credentials?.message as string;
         const signature: string = credentials?.signature as string;
         const address: string = credentials?.address as string;
 
         const response =
           await authApi.authControllerValidateWeb3SignInChallenge({
-            message,
             signature,
             address,
           });
 
-        if (!response || response.status < 200 || response.status > 299) return null;
+        if (!response || response.status < 200 || response.status > 299)
+          return null;
 
         const accessToken = response.data.accessToken;
         const refreshToken = response.data.refreshToken;
@@ -87,6 +80,9 @@ export const authConfig = {
         return {
           id: user.id,
           email: user.email,
+          name: user.username,
+          image: user.profile.picture,
+          wallet: user.walletAddress,
           accessToken,
           refreshToken,
         };

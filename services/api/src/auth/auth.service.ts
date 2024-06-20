@@ -46,6 +46,7 @@ export class AuthService {
       sub: user.id,
       email: user.email,
       username: user.username,
+      wallet: user.walletAddress,
       type: TokenType.AccessToken,
       // TODO: Add more claims.
     };
@@ -63,6 +64,7 @@ export class AuthService {
       sub: user.id,
       email: user.email,
       username: user.username,
+      wallet: user.walletAddress,
       type: TokenType.RefreshToken,
       // TODO: Add more claims.
     };
@@ -82,7 +84,8 @@ export class AuthService {
       sub: user.id,
       email: user.email,
       username: user.username,
-      type: TokenType.EmailConfirmationToken,
+      wallet: user.walletAddress,
+      type: TokenType.RefreshToken,
       // TODO: Add more claims.
     };
 

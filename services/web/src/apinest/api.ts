@@ -641,6 +641,12 @@ export interface UserDto {
      * @memberof UserDto
      */
     'elo': number;
+    /**
+     * 
+     * @type {UserProfileDto}
+     * @memberof UserDto
+     */
+    'profile': UserProfileDto;
 }
 /**
  * 
@@ -744,6 +750,61 @@ export interface UserEntity {
      * @memberof UserEntity
      */
     'elo': number;
+}
+/**
+ * 
+ * @export
+ * @interface UserProfileDto
+ */
+export interface UserProfileDto {
+    /**
+     * 
+     * @type {string}
+     * @memberof UserProfileDto
+     */
+    'id': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof UserProfileDto
+     */
+    'createdAt': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof UserProfileDto
+     */
+    'updatedAt': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof UserProfileDto
+     */
+    'bio': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof UserProfileDto
+     */
+    'name': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof UserProfileDto
+     */
+    'givenName': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof UserProfileDto
+     */
+    'familyName': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof UserProfileDto
+     */
+    'picture': string;
 }
 
 /**

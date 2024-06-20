@@ -1,22 +1,23 @@
-import { ApiProperty } from "@nestjs/swagger";
-import { Exclude } from "class-transformer";
-import { EntityDto } from "../entity.dto";
+import { ApiProperty } from '@nestjs/swagger';
+import { Exclude } from 'class-transformer';
+import { EntityDto } from '../entity.dto';
+import { UserProfileDto } from '../../user/modules/user-profile/dtos/user-profile.dto';
 
 export class UserDto extends EntityDto {
   // Local Sign-in
   @ApiProperty()
   username: string;
-  
+
   @ApiProperty()
   email: string;
-  
+
   @ApiProperty()
   emailVerified: boolean;
-  
+
   @ApiProperty()
   @Exclude()
   passwordHash: string;
-  
+
   @ApiProperty()
   @Exclude()
   passwordSalt: string;
@@ -24,19 +25,19 @@ export class UserDto extends EntityDto {
   // Social Sign-in
   @ApiProperty()
   facebookId: string;
-  
+
   @ApiProperty()
   googleId: string;
-  
+
   @ApiProperty()
   githubId: string;
-  
+
   @ApiProperty()
   appleId: string;
-  
+
   @ApiProperty()
   linkedinId: string;
-  
+
   @ApiProperty()
   twitterId: string;
 
@@ -47,4 +48,7 @@ export class UserDto extends EntityDto {
   // chess elo rank
   @ApiProperty()
   elo: number;
+
+  @ApiProperty({ type: UserProfileDto })
+  profile: UserProfileDto;
 }

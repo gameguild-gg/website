@@ -646,6 +646,47 @@
           "password"
         ]
       },
+      "UserProfileDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "bio": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "givenName": {
+            "type": "string"
+          },
+          "familyName": {
+            "type": "string"
+          },
+          "picture": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "createdAt",
+          "updatedAt",
+          "bio",
+          "name",
+          "givenName",
+          "familyName",
+          "picture"
+        ]
+      },
       "UserDto": {
         "type": "object",
         "properties": {
@@ -698,6 +739,9 @@
           },
           "elo": {
             "type": "number"
+          },
+          "profile": {
+            "$ref": "#/components/schemas/UserProfileDto"
           }
         },
         "required": [
@@ -716,7 +760,8 @@
           "linkedinId",
           "twitterId",
           "walletAddress",
-          "elo"
+          "elo",
+          "profile"
         ]
       },
       "LocalSignInResponseDto": {
