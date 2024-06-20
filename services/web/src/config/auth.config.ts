@@ -1,12 +1,13 @@
-import type { NextAuthConfig, User } from 'next-auth';
+import type {NextAuthConfig, User} from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 import Google from 'next-auth/providers/google';
-import { environment } from '@/config/environment';
-import { authApi } from '@/lib/apinest';
+import {environment} from '@/config/environment';
+import {authApi} from '@/lib/apinest';
+
 
 export const authConfig = {
   callbacks: {
-    signIn: async ({ user, account, profile, email, credentials }) => {
+    signIn: async ({user, account, profile, email, credentials}) => {
       if (account?.provider === 'google') {
         // TODO:
         //  After signing in with Google, check if the user is in the database.
@@ -77,7 +78,7 @@ export const authConfig = {
             address,
           });
 
-        if (!response || response.status !== 200) return null;
+        if (!response || response.status < 200 || response.status > 299) return null;
 
         const accessToken = response.data.accessToken;
         const refreshToken = response.data.refreshToken;
