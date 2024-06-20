@@ -2,17 +2,13 @@ import { ApiProperty } from '@nestjs/swagger';
 import { IsEthereumAddress, IsNotEmpty, IsString } from 'class-validator';
 
 export class EthereumSigninValidateRequestDto {
+  // todo: switch this to be a nonce instead of a message
   @ApiProperty()
   @IsEthereumAddress({
     message: 'error.invalidAddress: Address must be a valid Ethereum address.',
   })
   @IsNotEmpty({ message: 'error.invalidAddress: Address must not be empty.' })
-  address: string;
-
-  @ApiProperty()
-  @IsString({ message: 'error.invalidMessage: Message must be a string.' })
-  @IsNotEmpty({ message: 'error.invalidMessage: Message must not be empty.' })
-  message: string;
+  address: string; // address, message, nonce
 
   @ApiProperty()
   @IsString({ message: 'error.invalidSignature: Signature must be a string.' })

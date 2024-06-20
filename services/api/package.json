@@ -78,6 +78,7 @@
     "reflect-metadata": "^0.1.13",
     "rxjs": "^7.8.1",
     "simple-git": "^3.22.0",
+    "siwe": "^2.3.2",
     "typeorm": "^0.3.16",
     "typeorm-linq-repository": "^2.0.2",
     "typeorm-transactional": "0.4.1"

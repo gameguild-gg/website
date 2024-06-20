@@ -741,32 +741,12 @@
       "EthereumSigninChallengeRequestDto": {
         "type": "object",
         "properties": {
-          "domain": {
-            "type": "string"
-          },
           "address": {
-            "type": "string"
-          },
-          "uri": {
-            "type": "string"
-          },
-          "version": {
-            "type": "string"
-          },
-          "chainId": {
-            "type": "string"
-          },
-          "nonce": {
             "type": "string"
           }
         },
         "required": [
-          "domain",
-          "address",
-          "uri",
-          "version",
-          "chainId",
-          "nonce"
+          "address"
         ]
       },
       "EthereumSigninChallengeResponseDto": {
@@ -786,16 +766,12 @@
           "address": {
             "type": "string"
           },
-          "message": {
-            "type": "string"
-          },
           "signature": {
             "type": "string"
           }
         },
         "required": [
           "address",
-          "message",
           "signature"
         ]
       },

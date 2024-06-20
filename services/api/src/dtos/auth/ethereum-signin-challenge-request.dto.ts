@@ -9,12 +9,6 @@ import {
 
 export class EthereumSigninChallengeRequestDto {
   @ApiProperty()
-  @IsString({
-    message: 'error.invalidSignature: Signature must be a string.',
-  })
-  domain: string;
-
-  @ApiProperty()
   @IsNotEmpty({
     message: 'error.emptyEthereumAddress: Ethereum address must not be empty.',
   })
@@ -25,31 +19,4 @@ export class EthereumSigninChallengeRequestDto {
     message: 'error.invalidEthereumAddress: Ethereum address is invalid.',
   })
   address: string;
-
-  @ApiProperty()
-  @IsString({
-    message: 'error.invalidSignature: Signature must be a string.',
-  })
-  uri: string;
-
-  @ApiProperty()
-  @IsString({
-    message: 'error.invalidSignature: Signature must be a string.',
-  })
-  version: string;
-
-  @ApiProperty()
-  @IsNumberString(
-    { no_symbols: true },
-    {
-      message: 'error.invalidChainId: Chain ID must be a number.',
-    },
-  )
-  chainId: string;
-
-  @ApiProperty()
-  @IsString({
-    message: 'error.invalidSignature: Signature must be a string.',
-  })
-  nonce: string;
 }

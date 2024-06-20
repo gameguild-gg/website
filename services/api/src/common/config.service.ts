@@ -91,6 +91,14 @@ export class ApiConfigService {
     };
   }
 
+  get hostFrontendUrl(): string {
+    return ormconfig.getEnvString('HOST_FRONT_URL');
+  }
+
+  get hostBackendUrl(): string {
+    return ormconfig.getEnvString('HOST_BACK_URL');
+  }
+
   // get awsS3Config() {
   //     return {
   //         bucketRegion: ormconfig.getEnvString('AWS_S3_BUCKET_REGION'),

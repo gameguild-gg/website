@@ -337,37 +337,7 @@ export interface EthereumSigninChallengeRequestDto {
      * @type {string}
      * @memberof EthereumSigninChallengeRequestDto
      */
-    'domain': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof EthereumSigninChallengeRequestDto
-     */
     'address': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof EthereumSigninChallengeRequestDto
-     */
-    'uri': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof EthereumSigninChallengeRequestDto
-     */
-    'version': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof EthereumSigninChallengeRequestDto
-     */
-    'chainId': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof EthereumSigninChallengeRequestDto
-     */
-    'nonce': string;
 }
 /**
  * 
@@ -394,12 +364,6 @@ export interface EthereumSigninValidateRequestDto {
      * @memberof EthereumSigninValidateRequestDto
      */
     'address': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof EthereumSigninValidateRequestDto
-     */
-    'message': string;
     /**
      * 
      * @type {string}

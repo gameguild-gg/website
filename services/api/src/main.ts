@@ -4,6 +4,7 @@ import { AppModule } from './app.module';
 import { CommonModule } from './common/common.module';
 import { ApiConfigService } from './common/config.service';
 import { setupSwagger } from './setup-swagger';
+import { GlobalHttpExceptionFilter } from './common/filters/global-http-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { cors: true });
@@ -36,6 +37,8 @@ async function bootstrap() {
   //     new HttpExceptionFilter(reflector),
   //     new QueryFailedFilter(reflector),
   // );
+
+  app.useGlobalFilters(new GlobalHttpExceptionFilter(app.get(Reflector)));
 
   app.useGlobalInterceptors(
     new ClassSerializerInterceptor(app.get(Reflector)),

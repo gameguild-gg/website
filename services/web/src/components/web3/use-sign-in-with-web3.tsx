@@ -24,13 +24,7 @@ export function useSignInWithWeb3() {
         const chain = await state.provider.getNetwork();
 
         const response = await authApi.authControllerGetWeb3SignInChallenge({
-          domain: window.location.host,
           address: state.accountAddress,
-          uri: window.location.origin,
-          version: '1',
-          chainId: chain?.chainId.toString(),
-          nonce: '1',
-          // nonce: await getCsrfToken(),
         });
 
         const message = response.data.message;

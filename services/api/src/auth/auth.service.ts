@@ -27,6 +27,7 @@ import { EthereumSigninValidateRequestDto } from '../dtos/auth/ethereum-signin-v
 import { EthereumSigninChallengeResponseDto } from '../dtos/auth/ethereum-signin-challenge-response.dto';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
+import { SiweMessage } from 'siwe';
 
 @Injectable()
 export class AuthService {
@@ -235,19 +236,21 @@ export class AuthService {
   async generateWeb3SignInChallenge(
     data: EthereumSigninChallengeRequestDto,
   ): Promise<EthereumSigninChallengeResponseDto> {
-    // todo: use class validator to validate address, signature, and others...
-    const now = new Date();
-    const termOfServiceUrl: string = 'https://community.metamask.io/tos';
-
-    // TODO: Generate a parser to that message structure.
-    const challenge = `${data.domain} wants you to sign in with your Ethereum account:\n${data.address}\n\nI accept the GameDev Guild Terms of Service: ${termOfServiceUrl}\n\nURI: https://${data.uri}\nVersion: ${data.version}\nChain ID: ${data.chainId}\nNonce: ${data.nonce}\nIssued At: ${now.toISOString()}`;
+    // use siwe to generate the message to be signed
+    const termOfServiceUrl: string = `${this.configService.hostFrontendUrl}/tos`;
+    const siwe = new SiweMessage({
+      address: data.address,
+      domain: new URL(this.configService.hostFrontendUrl).host,
+      statement: `I accept the GameDev Guild Terms of Service: ${termOfServiceUrl}`,
+      issuedAt: new Date().toISOString(),
+      uri: this.configService.hostFrontendUrl,
+      version: '1',
+    });
 
     const key = `web3:challenge:message:${data.address}`;
 
     // TODO: It's a must because its what is accepted by the sign-in procedure.
-    const message = `0x${Buffer.from(challenge, 'utf8').toString('hex')}`;
-
-    this.logger.debug(`"key": ${key}, "message": ${message}`);
+    const message = siwe.prepareMessage(); //`0x${Buffer.from(challenge, 'utf8').toString('hex')}`;
 
     // stores it in the cache for 5 minutes
     await this.cacheManager.set(key, message, 5 * 60 * 1000);
@@ -260,8 +263,6 @@ export class AuthService {
   ): Promise<LocalSignInResponseDto> {
     const key = `web3:challenge:message:${data.address}`;
 
-    this.logger.debug(`"key": ${key}, "message": ${data.message}`);
-
     const expectedMessage = await this.cacheManager.get<string>(key);
 
     if (!expectedMessage) {
@@ -270,38 +271,17 @@ export class AuthService {
       );
     }
 
-    if (expectedMessage !== data.message) {
-      throw new UnauthorizedException(
-        'You provided a different message than expected. Maybe you are trying to replay an old challenge message?',
-      );
+    let walletAddress: string;
+    try {
+      walletAddress = ethers.verifyMessage(expectedMessage, data.signature);
+    } catch (exception) {
+      throw new UnauthorizedException('Invalid signature. Please try again.');
     }
-
-    // ensure message is signed by the account address
-    const walletAddress = ethers.verifyMessage(data.message, data.signature);
 
     let user = await this.userService.findOne({
       where: { walletAddress: walletAddress },
       relations: { profile: true },
     });
-
-    // todo: use class validator to validate address, signature, and others...
-    // export interface VerifyParams {
-    //   /** Signature of the message signed by the wallet */
-    //   signature: string;
-    //
-    //   /** RFC 4501 dns authority that is requesting the signing. */
-    //   domain?: string;
-    //
-    //   /** Randomized token used to prevent replay attacks, at least 8 alphanumeric characters. */
-    //   nonce?: string;
-    //
-    //   /**ISO 8601 datetime string of the current time. */
-    //   time?: string;
-    // }
-    // if (signer !== accountAddress) {
-    //   throw new UnauthorizedException('Invalid signature');
-    // }
-    // ensure the user exists
 
     if (!user) {
       user = await this.userService.createOneWithWalletAddress(walletAddress);
