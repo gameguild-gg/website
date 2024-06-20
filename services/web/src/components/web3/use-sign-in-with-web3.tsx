@@ -41,7 +41,7 @@ export function useSignInWithWeb3() {
           state.accountAddress,
         ]);
 
-        await signInWithWeb3(message, signature);
+        await signInWithWeb3(message, signature, state.accountAddress);
       }
     };
 

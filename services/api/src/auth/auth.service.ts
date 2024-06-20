@@ -242,13 +242,15 @@ export class AuthService {
     // TODO: Generate a parser to that message structure.
     const challenge = `${data.domain} wants you to sign in with your Ethereum account:\n${data.address}\n\nI accept the GameDev Guild Terms of Service: ${termOfServiceUrl}\n\nURI: https://${data.uri}\nVersion: ${data.version}\nChain ID: ${data.chainId}\nNonce: ${data.nonce}\nIssued At: ${now.toISOString()}`;
 
-    await this.cacheManager.set(
-      `web3:challenge:message:${data.address}`,
-      challenge,
-    );
+    const key = `web3:challenge:message:${data.address}`;
 
     // TODO: It's a must because its what is accepted by the sign-in procedure.
     const message = `0x${Buffer.from(challenge, 'utf8').toString('hex')}`;
+
+    this.logger.debug(`"key": ${key}, "message": ${message}`);
+
+    // stores it in the cache for 5 minutes
+    await this.cacheManager.set(key, message, 5 * 60 * 1000);
 
     return { message };
   }
@@ -256,9 +258,11 @@ export class AuthService {
   async validateWeb3SignInChallenge(
     data: EthereumSigninValidateRequestDto,
   ): Promise<LocalSignInResponseDto> {
-    const expectedMessage = await this.cacheManager.get<string>(
-      `web3:challenge:message:${data.address}`,
-    );
+    const key = `web3:challenge:message:${data.address}`;
+
+    this.logger.debug(`"key": ${key}, "message": ${data.message}`);
+
+    const expectedMessage = await this.cacheManager.get<string>(key);
 
     if (!expectedMessage) {
       throw new UnauthorizedException(

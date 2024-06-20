@@ -1,4 +1,4 @@
-import type { NextAuthConfig } from 'next-auth';
+import type { NextAuthConfig, User } from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 import Google from 'next-auth/providers/google';
 import { environment } from '@/config/environment';
@@ -34,6 +34,8 @@ export const authConfig = {
 
         // Return true to allowing user sign-in with the Google OAuth Credential.
         return true;
+      } else if (account?.provider === 'web-3') {
+        return true; // todo: debug this!
       }
       return false;
     },
@@ -57,34 +59,36 @@ export const authConfig = {
           type: 'text',
           placeholder: '0x0',
         },
+        address: {
+          label: 'address',
+          type: 'text',
+          placeholder: '0x0',
+        },
       },
-      async authorize(credentials) {
+      async authorize(credentials): Promise<User | null> {
         const message: string = credentials?.message as string;
-        const signature: string = credentials.signature as string;
+        const signature: string = credentials?.signature as string;
+        const address: string = credentials?.address as string;
 
         const response =
           await authApi.authControllerValidateWeb3SignInChallenge({
             message,
             signature,
-            address: '',
+            address,
           });
 
-        console.log(response);
-        // TODO: send the signature to the server to verify the user's identity.
-        // It should be done using the auth.js (next-auth) library.
-        //   //       // TODO: Verify the signature on the server.
-        // const validationResponse = await fetch('api/(auth)/web3/sign-in', {
-        //   method: 'POST',
-        //   headers: {
-        //     'Content-Type': 'application/json',
-        //   },
-        //   body: JSON.stringify({
-        //     accountAddress: accountAddress,
-        //     message: message,
-        //     signature: signature,
-        //   }),
-        // });
-        return null;
+        if (!response || response.status !== 200) return null;
+
+        const accessToken = response.data.accessToken;
+        const refreshToken = response.data.refreshToken;
+        const user = response.data.user;
+
+        return {
+          id: user.id,
+          email: user.email,
+          accessToken,
+          refreshToken,
+        };
       },
     }),
     Google({

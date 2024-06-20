@@ -783,6 +783,9 @@
       "EthereumSigninValidateRequestDto": {
         "type": "object",
         "properties": {
+          "address": {
+            "type": "string"
+          },
           "message": {
             "type": "string"
           },
@@ -791,6 +794,7 @@
           }
         },
         "required": [
+          "address",
           "message",
           "signature"
         ]
