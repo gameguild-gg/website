@@ -38,7 +38,9 @@ async function bootstrap() {
   //     new QueryFailedFilter(reflector),
   // );
 
-  app.useGlobalFilters(new GlobalHttpExceptionFilter(app.get(Reflector)));
+  app.useGlobalFilters(
+    new GlobalHttpExceptionFilter(app.get(Reflector), configService),
+  );
 
   app.useGlobalInterceptors(
     new ClassSerializerInterceptor(app.get(Reflector)),

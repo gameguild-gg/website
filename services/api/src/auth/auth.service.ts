@@ -210,7 +210,7 @@ export class AuthService {
     await this.notificationService.sendEmailNotification(
       data.email,
       'GameGuild Magic Link',
-      `Use this link to connect t Game Guild :${this.configService.hostFrontendUrl}/connect/?token=${token}`,
+      `Use the following link to connect to Game Guild website: ${this.configService.hostFrontendUrl}/connect/?token=${token}`,
     );
 
     return { success: true, message: 'Email sent.' };

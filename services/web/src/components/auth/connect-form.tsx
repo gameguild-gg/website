@@ -30,7 +30,7 @@ export default function ConnectForm() {
 
     const sendingToast = toast({
       title: 'Sent',
-      description: "We've sent you a magic link to your email.",
+      description: 'Requesting the magic link.',
     });
 
     let response: OkDto;

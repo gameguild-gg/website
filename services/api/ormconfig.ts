@@ -1,41 +1,47 @@
+// todo: move most of this file to ApiConfigService
+
 import * as dotenv from 'dotenv';
 import * as path from 'path';
 import { DataSource } from 'typeorm';
 
 import { SnakeNamingStrategy } from './src/snake-naming.strategy';
 
-import { isNil } from "lodash";
+import { isNil } from 'lodash';
 
 dotenv.config();
-export function getEnv(key: string, defaultValue = ''): string {
+
+export function getEnv(key: string, defaultValue: string = null): string {
   // todo: return to use the nest service. it is broken!!!
-  // detenv can be unsafe
+  // dotenv can be unsafe
   //const value = service.get<string>(key, defaultValue);
   const value = process.env[key] || defaultValue;
 
-  if (isNil(value)) {
-    throw new Error(key + ' environment variable does not set'); // probably we should call process.exit() too to avoid locking the service
+  if (isNil(value) || value === '') {
+    throw new Error(
+      key +
+        ' environment variable does not set. Manually set it or talk with us to provide them to you.',
+    ); // probably we should call process.exit() too to avoid locking the service
   }
 
   return value;
 }
 
-export function getEnvString(key: string, defaultValue = ''): string {
+export function getEnvString(key: string, defaultValue: string = null): string {
   const value = getEnv(key, defaultValue);
 
   return value.replace(/\\n/g, '\n');
 }
 
 export function nodeEnv(): string {
-  return getEnvString('NODE_ENV') || 'development';
+  return getEnvString('NODE_ENV', 'development');
 }
 
 export function isTest(): boolean {
   return nodeEnv() === 'test';
 }
 
-export function getEnvNumber(key: string): number {
-  const value = getEnv(key);
+export function getEnvNumber(key: string, defaultValue: number = null): number {
+  const value = getEnv(key, defaultValue?.toString());
 
   try {
     return Number(value);
@@ -44,7 +50,10 @@ export function getEnvNumber(key: string): number {
   }
 }
 
-export function getEnvBoolean(key: string, defaultValue: boolean): boolean {
+export function getEnvBoolean(
+  key: string,
+  defaultValue: boolean = null,
+): boolean {
   const value = getEnv(key, defaultValue.toString());
 
   try {
@@ -69,11 +78,11 @@ function getconfig() {
     keepConnectionAlive: !isTest(),
     dropSchema: isTest(),
     type: 'postgres',
-    host: getEnvString('DB_HOST') || 'localhost',
-    port: getEnvNumber('DB_PORT') || 5432,
-    username: getEnvString('DB_USERNAME') || 'postgres',
-    password: getEnvString('DB_PASSWORD') || 'postgres',
-    database: getEnvString('DB_DATABASE') || 'postgres',
+    host: getEnvString('DB_HOST'),
+    port: getEnvNumber('DB_PORT'),
+    username: getEnvString('DB_USERNAME'),
+    password: getEnvString('DB_PASSWORD'),
+    database: getEnvString('DB_DATABASE'),
     migrationsRun: true,
     logging: getEnvBoolean('ENABLE_ORM_LOGS', false),
     namingStrategy: new SnakeNamingStrategy(),
@@ -83,7 +92,7 @@ function getconfig() {
 export const ormconfig = getconfig();
 
 export const dataSource = new DataSource({
-  type: "postgres",
+  type: 'postgres',
   entities: ormconfig.entities,
   migrations: ormconfig.migrations,
   subscribers: ormconfig.subscribers,

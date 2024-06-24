@@ -6,10 +6,14 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { HttpAdapterHost } from '@nestjs/core';
+import { ApiConfigService } from '../config.service';
 
 @Catch()
 export class GlobalHttpExceptionFilter implements ExceptionFilter {
-  constructor(private readonly httpAdapterHost: HttpAdapterHost) {}
+  constructor(
+    private readonly httpAdapterHost: HttpAdapterHost,
+    private readonly configService: ApiConfigService,
+  ) {}
 
   catch(exception: HttpException, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
@@ -19,7 +23,7 @@ export class GlobalHttpExceptionFilter implements ExceptionFilter {
         ? exception.getStatus()
         : HttpStatus.INTERNAL_SERVER_ERROR;
 
-    const response = ctx.getResponse<Response>();
+    const response = ctx.getResponse();
     const request = ctx.getRequest<Request>();
 
     const responseBody: any = {
@@ -29,11 +33,11 @@ export class GlobalHttpExceptionFilter implements ExceptionFilter {
       message: exception.message,
       error: exception.name,
     };
-    if (!process.env.NODE_ENV || process.env.NODE_ENV === 'development') {
+    if (this.configService.nodeEnv === 'development') {
       responseBody.stack = exception.stack;
       responseBody.exception = exception;
     }
 
-    ctx.getResponse().status(httpStatus).json(responseBody);
+    response.status(httpStatus).json(responseBody);
   }
 }

@@ -10,14 +10,11 @@ import * as process from 'node:process';
 
 @Injectable()
 export class ApiConfigService {
-  env: {
-    [name: string]: string;
-  } = {};
-
   constructor(@Inject(ConfigService) private service: ConfigService) {
     // todo: god forgive me for what I am doing now.
+    // note: This is a workaround to mimic the next dotenv behavior.
     // for some reason the app module is not able to read .env.local files, so I am rewriting everything here.
-    // if you found a better solution to this, please let me know.
+    // if you found a better solution to this, please let me know on gh: tolstenko
 
     const processEnv = process.env;
     const defaultConfig =
@@ -34,32 +31,32 @@ export class ApiConfigService {
     // merge all envs
     // default is overridden by proccess
     // process is overridden by local
-    this.env = { ...defaultConfig, ...processEnv, ...localConfig };
+    let env = { ...defaultConfig, ...processEnv, ...localConfig };
 
-    if (!this.env.NODE_ENV || this.env.NODE_ENV === 'development') {
-      this.env.NODE_ENV = 'development';
+    if (!env.NODE_ENV || env.NODE_ENV === 'development') {
+      env.NODE_ENV = 'development';
     }
 
-    if (this.env.NODE_ENV === 'test') {
-      this.env = { ...this.env, ...testConfig };
+    if (env.NODE_ENV === 'test') {
+      env = { ...env, ...testConfig };
     }
 
-    if (this.env.NODE_ENV === 'production') {
-      this.env = { ...this.env, ...productionConfig };
+    if (env.NODE_ENV === 'production') {
+      env = { ...env, ...productionConfig };
     }
 
-    if (this.env.NODE_ENV === 'development') {
-      this.env = { ...this.env, ...developmentConfig };
+    if (env.NODE_ENV === 'development') {
+      env = { ...env, ...developmentConfig };
     }
 
     // override process env
-    Object.keys(this.env).forEach((key) => {
-      process.env[key] = this.env[key];
+    Object.keys(env).forEach((key) => {
+      process.env[key] = env[key];
     });
   }
 
   get sendGridApiKey(): string {
-    return this.service.get<string>('SENDGRID_API_KEY');
+    return this.service.getOrThrow<string>('SENDGRID_API_KEY');
   }
   get isDevelopment(): boolean {
     return this.nodeEnv === 'development';
@@ -78,7 +75,7 @@ export class ApiConfigService {
   }
 
   get fallbackLanguage(): string {
-    return ormconfig.getEnvString('FALLBACK_LANGUAGE') || 'en';
+    return ormconfig.getEnvString('FALLBACK_LANGUAGE', 'en');
   }
 
   get postgresConfig(): TypeOrmModuleOptions {
