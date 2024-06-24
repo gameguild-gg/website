@@ -10,6 +10,8 @@ import { useToast } from '@/components/ui/use-toast';
 
 import { useSession } from 'next-auth/react';
 import MetaMaskSignInButton from '@/components/others/web3/meta-mask-sign-in-button';
+import { authApi } from '@/lib/apinest';
+import { OkDto } from '@/apinest';
 
 const initialState: SignInFormState = {};
 
@@ -18,6 +20,8 @@ export default function ConnectForm() {
 
   const { toast } = useToast();
   const [sendMagicLinkClicked, setSendMagicLinkClicked] = useState(false);
+
+  const [email, setEmail] = useState<string>('');
 
   // web3 provider web3-context
   // todo: move this following logic to actions.ts
@@ -29,13 +33,31 @@ export default function ConnectForm() {
       description: "We've sent you a magic link to your email.",
     });
 
-    // todo: send api request to send magic link
+    let response: OkDto;
+    try {
+      response = await authApi.authControllerMagicLink({ email: email });
+    } catch (error) {
+      sendingToast.dismiss();
+      toast({
+        title: 'Error',
+        description:
+          'Something went wrong. Please try again or contact support.',
+      });
+      return;
+    }
 
-    sendingToast.dismiss();
+    if (!response || !response.data) {
+      toast({
+        title: 'Error',
+        description:
+          'Something went wrong. Please try again or contact support.',
+      });
+    }
 
-    const t = toast({
+    toast({
       title: 'Sent',
-      description: "We've sent you a magic link to your email.",
+      description:
+        "We've sent you a magic link to your email. Please go check it.",
     });
   };
 
@@ -66,6 +88,7 @@ export default function ConnectForm() {
             placeholder="user@example.com"
             required
             disabled={sendMagicLinkClicked}
+            onChange={(e) => setEmail(e.target.value)}
           />
         </div>
         <Button

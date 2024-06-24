@@ -57,7 +57,7 @@
     "crypto-js": "^4.1.1",
     "csurf": "^1.11.0",
     "decompress": "^4.2.1",
-    "dotenv": "^16.4.4",
+    "dotenv": "^16.4.5",
     "ethers": "^6.4.1",
     "exec-sh": "^0.4.0",
     "extract-zip": "^2.0.1",

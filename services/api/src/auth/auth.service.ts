@@ -28,6 +28,8 @@ import { EthereumSigninChallengeResponseDto } from '../dtos/auth/ethereum-signin
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
 import { SiweMessage } from 'siwe';
+import { EmailDto } from './dtos/email.dto';
+import { OkDto } from '../common/dtos/ok.dto';
 
 @Injectable()
 export class AuthService {
@@ -60,6 +62,7 @@ export class AuthService {
   }
 
   public async generateRefreshToken(user: UserEntity): Promise<string> {
+    if (!user) throw new UnauthorizedException('User not found');
     const payload: AccessTokenPayloadDto = {
       sub: user.id,
       email: user.email,
@@ -74,26 +77,6 @@ export class AuthService {
       algorithm: 'RS256',
       expiresIn: this.configService.authConfig.refreshTokenExpiresIn,
       privateKey: this.configService.authConfig.refreshTokenPrivateKey,
-    });
-  }
-
-  public async generateEmailVerificationToken(
-    user: UserEntity,
-  ): Promise<string> {
-    const payload: AccessTokenPayloadDto = {
-      sub: user.id,
-      email: user.email,
-      username: user.username,
-      wallet: user.walletAddress,
-      type: TokenType.RefreshToken,
-      // TODO: Add more claims.
-    };
-
-    return this.jwtService.sign(payload, {
-      algorithm: 'RS256',
-      expiresIn: this.configService.authConfig.emailVerificationTokenExpiresIn,
-      privateKey:
-        this.configService.authConfig.emailVerificationTokenPrivateKey,
     });
   }
 
@@ -133,20 +116,6 @@ export class AuthService {
     } catch (exception) {
       throw exception; // todo: fix this. useless.
     }
-  }
-
-  public async sendEmailVerification(email: string) {
-    const user = await this.userService.findOne({ where: { email } });
-    const token = await this.generateEmailVerificationToken(user);
-    const url = `${this.configService.authConfig.emailVerificationUrl}?token=${token}`;
-    const subject = 'One Time Password - GameGuild';
-    const message = `Please verify your email by clicking on the link: ${url}`;
-
-    await this.notificationService.sendEmailNotification(
-      user.email,
-      subject,
-      message,
-    );
   }
 
   public async validateLocalSignIn(data: LocalSignInDto): Promise<UserEntity> {
@@ -227,13 +196,24 @@ export class AuthService {
     };
   }
 
-  async sendMagicLink(email: string) {
+  async sendMagicLink(data: EmailDto): Promise<OkDto> {
     let user = await this.userService.findOne({
-      where: { email },
+      where: { email: data.email },
     });
 
-    if (!user) user = await this.userService.findOneBy({ email });
-    //todo: finish this
+    if (!user) user = await this.userService.createOneWithEmail(data.email);
+
+    // send email with magic link
+    const token = await this.generateRefreshToken(user);
+
+    // send the email notification
+    await this.notificationService.sendEmailNotification(
+      data.email,
+      'GameGuild Magic Link',
+      `Use this link to connect t Game Guild :${this.configService.hostFrontendUrl}/connect/?token=${token}`,
+    );
+
+    return { success: true, message: 'Email sent.' };
   }
 
   async generateWeb3SignInChallenge(

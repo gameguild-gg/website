@@ -4,10 +4,63 @@ import type { TypeOrmModuleOptions } from '@nestjs/typeorm';
 
 import * as ormconfig from '../../ormconfig';
 
+// import dotenv from 'dotenv';
+import * as dotenv from 'dotenv';
+import * as process from 'node:process';
+
 @Injectable()
 export class ApiConfigService {
-  constructor(@Inject(ConfigService) private service: ConfigService) {}
+  env: {
+    [name: string]: string;
+  } = {};
 
+  constructor(@Inject(ConfigService) private service: ConfigService) {
+    // todo: god forgive me for what I am doing now.
+    // for some reason the app module is not able to read .env.local files, so I am rewriting everything here.
+    // if you found a better solution to this, please let me know.
+
+    const processEnv = process.env;
+    const defaultConfig =
+      dotenv.config({ path: '.env', override: false }).parsed || {};
+    const localConfig =
+      dotenv.config({ path: '.env.local', override: false }).parsed || {};
+    const testConfig =
+      dotenv.config({ path: '.env.test', override: false }).parsed || {};
+    const productionConfig =
+      dotenv.config({ path: '.env.production', override: false }).parsed || {};
+    const developmentConfig =
+      dotenv.config({ path: '.env.development', override: false }).parsed || {};
+
+    // merge all envs
+    // default is overridden by proccess
+    // process is overridden by local
+    this.env = { ...defaultConfig, ...processEnv, ...localConfig };
+
+    if (!this.env.NODE_ENV || this.env.NODE_ENV === 'development') {
+      this.env.NODE_ENV = 'development';
+    }
+
+    if (this.env.NODE_ENV === 'test') {
+      this.env = { ...this.env, ...testConfig };
+    }
+
+    if (this.env.NODE_ENV === 'production') {
+      this.env = { ...this.env, ...productionConfig };
+    }
+
+    if (this.env.NODE_ENV === 'development') {
+      this.env = { ...this.env, ...developmentConfig };
+    }
+
+    // override process env
+    Object.keys(this.env).forEach((key) => {
+      process.env[key] = this.env[key];
+    });
+  }
+
+  get sendGridApiKey(): string {
+    return this.service.get<string>('SENDGRID_API_KEY');
+  }
   get isDevelopment(): boolean {
     return this.nodeEnv === 'development';
   }

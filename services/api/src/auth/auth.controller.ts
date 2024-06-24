@@ -19,6 +19,8 @@ import { Auth } from './decorators/http.decorator';
 import { EthereumSigninValidateRequestDto } from '../dtos/auth/ethereum-signin-validate-request.dto';
 import { EthereumSigninChallengeRequestDto } from '../dtos/auth/ethereum-signin-challenge-request.dto';
 import { EthereumSigninChallengeResponseDto } from '../dtos/auth/ethereum-signin-challenge-response.dto';
+import { EmailDto } from './dtos/email.dto';
+import { OkDto } from '../common/dtos/ok.dto';
 
 @Controller('auth')
 @ApiTags('auth')
@@ -27,10 +29,11 @@ export class AuthController {
 
   constructor(private readonly authService: AuthService) {}
 
-  @Get('magic-link')
+  @Post('magic-link')
   @Public()
-  public async magicLink(@Query('email') email: string) {
-    return await this.authService.sendMagicLink(email);
+  @ApiOkResponse({ type: OkDto })
+  public async magicLink(@Body() body: EmailDto): Promise<OkDto> {
+    return await this.authService.sendMagicLink(body);
   }
 
   // @Post('sign-in')

@@ -24,7 +24,7 @@
     "build": "npm run build --workspaces --if-present",
     "build:api": "npm run build --workspace=services/api",
     "build:web": "npm run build --workspace=services/web",
-    "dev:": "concurrently \"npm run dev:api\" \"npm run dev:web\"",
+    "dev": "concurrently \"npm run dev:api\" \"npm run dev:web\"",
     "dev:api": "npm run dev --workspace=services/api",
     "dev:web": "npm run dev --workspace=services/web",
     "test": "npm run test --workspaces --if-present",

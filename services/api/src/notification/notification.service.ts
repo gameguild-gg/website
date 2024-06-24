@@ -20,10 +20,9 @@ export class NotificationService {
     subject: string,
     message: string,
   ) {
-    // TODO: Implement this method.
     await this.mailService.send({
       to: email,
-      from: undefined,
+      from: 'no-reply@gameguild.gg',
       subject: subject,
       text: message,
       html: message,

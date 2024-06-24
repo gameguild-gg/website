@@ -12,10 +12,6 @@ export class GlobalHttpExceptionFilter implements ExceptionFilter {
   constructor(private readonly httpAdapterHost: HttpAdapterHost) {}
 
   catch(exception: HttpException, host: ArgumentsHost) {
-    // In certain situations `httpAdapter` might not be available in the
-    // constructor method, thus we should resolve it here.
-    const { httpAdapter } = this.httpAdapterHost;
-
     const ctx = host.switchToHttp();
 
     const httpStatus =
@@ -33,10 +29,11 @@ export class GlobalHttpExceptionFilter implements ExceptionFilter {
       message: exception.message,
       error: exception.name,
     };
-    if (process.env.NODE_ENV === 'development') {
+    if (!process.env.NODE_ENV || process.env.NODE_ENV === 'development') {
       responseBody.stack = exception.stack;
+      responseBody.exception = exception;
     }
 
-    httpAdapter.reply(response, responseBody, httpStatus);
+    ctx.getResponse().status(httpStatus).json(responseBody);
   }
 }

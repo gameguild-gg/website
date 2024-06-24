@@ -2,21 +2,29 @@
   "openapi": "3.0.0",
   "paths": {
     "/auth/magic-link": {
-      "get": {
+      "post": {
         "operationId": "AuthController_magicLink",
-        "parameters": [
-          {
-            "name": "email",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailDto"
+              }
             }
           }
-        ],
+        },
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkDto"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -608,6 +616,25 @@
       }
     },
     "schemas": {
+      "EmailDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "OkDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "success",
+          "message"
+        ]
+      },
       "LocalSignInDto": {
         "type": "object",
         "properties": {

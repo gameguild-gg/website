@@ -124,4 +124,25 @@ export class UserService extends TypeOrmCrudService<UserEntity> {
       });
     }
   }
+
+  async createOneWithEmail(email: string) {
+    // ensure the email is not already taken
+    let user = await this.findOne({
+      where: { email: email },
+      relations: { profile: true },
+    });
+    if (user) {
+      throw new UserAlreadyExistsException(
+        `The email '${email}' is already associated with an existing user.`,
+      );
+    }
+    user = await this.repository.save({
+      email: email,
+      emailVerified: false,
+    });
+    const profile = new UserProfileEntity();
+    profile.user = user;
+    await this.profileService.save(profile);
+    return user;
+  }
 }
