@@ -110,10 +110,10 @@ export class AuthController {
   //   return await this.authService.refreshAccessToken(request.user);
   // }
 
-  @Get('verify-email')
-  public async verifyEmail(@Query('token') token: string): Promise<any> {
-    return await this.authService.validateEmailVerificationToken(token);
-  }
+  // @Get('verify-email')
+  // public async verifyEmail(@Query('token') token: string): Promise<any> {
+  //   return await this.authService.validateEmailVerificationToken(token);
+  // }
 
   @Get('userExists/:user')
   @Public()

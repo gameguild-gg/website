@@ -119,18 +119,18 @@ export class ApiConfigService {
       refreshTokenExpiresIn: ormconfig.getEnvString(
         'REFRESH_TOKEN_EXPIRATION_TIME',
       ),
-      emailVerificationTokenPrivateKey: ormconfig.getEnvString(
-        'EMAIL_VERIFICATION_TOKEN_PRIVATE_KEY',
-      ),
-      emailVerificationTokenPublicKey: ormconfig.getEnvString(
-        'EMAIL_VERIFICATION_TOKEN_PUBLIC_KEY',
-      ),
-      emailVerificationTokenAlgorithm: ormconfig.getEnvString(
-        'EMAIL_VERIFICATION_TOKEN_ALGORITHM',
-      ),
-      emailVerificationTokenExpiresIn: ormconfig.getEnvString(
-        'EMAIL_VERIFICATION_TOKEN_EXPIRATION_TIME',
-      ),
+      // emailVerificationTokenPrivateKey: ormconfig.getEnvString(
+      //   'EMAIL_VERIFICATION_TOKEN_PRIVATE_KEY',
+      // ),
+      // emailVerificationTokenPublicKey: ormconfig.getEnvString(
+      //   'EMAIL_VERIFICATION_TOKEN_PUBLIC_KEY',
+      // ),
+      // emailVerificationTokenAlgorithm: ormconfig.getEnvString(
+      //   'EMAIL_VERIFICATION_TOKEN_ALGORITHM',
+      // ),
+      // emailVerificationTokenExpiresIn: ormconfig.getEnvString(
+      //   'EMAIL_VERIFICATION_TOKEN_EXPIRATION_TIME',
+      // ),
       emailVerificationUrl: ormconfig.getEnvString('EMAIL_VERIFICATION_URL'),
     };
   }

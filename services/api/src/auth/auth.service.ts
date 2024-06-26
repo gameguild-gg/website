@@ -154,24 +154,24 @@ export class AuthService {
     return user;
   }
 
-  public async validateEmailVerificationToken(token: string) {
-    // TODO: Validate email verification token.
-    try {
-      const decodedToken = this.jwtService.verify(token, {
-        publicKey:
-          this.configService.authConfig.emailVerificationTokenPublicKey,
-      });
-
-      const user = await this.userService.findOne({
-        where: { id: decodedToken.sub },
-      });
-
-      user.emailVerified = true;
-      await this.userService.save(user);
-    } catch (exception) {
-      throw new UnauthorizedException('Invalid or expired token');
-    }
-  }
+  // public async validateEmailVerificationToken(token: string) {
+  //   // TODO: Validate email verification token.
+  //   try {
+  //     const decodedToken = this.jwtService.verify(token, {
+  //       publicKey:
+  //         this.configService.authConfig.emailVerificationTokenPublicKey,
+  //     });
+  //
+  //     const user = await this.userService.findOne({
+  //       where: { id: decodedToken.sub },
+  //     });
+  //
+  //     user.emailVerified = true;
+  //     await this.userService.save(user);
+  //   } catch (exception) {
+  //     throw new UnauthorizedException('Invalid or expired token');
+  //   }
+  // }
 
   public async userExists(user: string): Promise<boolean> {
     const foundUser = await this.userService.findOne({

@@ -208,29 +208,6 @@
         ]
       }
     },
-    "/auth/verify-email": {
-      "get": {
-        "operationId": "AuthController_verifyEmail",
-        "parameters": [
-          {
-            "name": "token",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "auth"
-        ]
-      }
-    },
     "/auth/userExists/{user}": {
       "get": {
         "operationId": "AuthController_userExists",
