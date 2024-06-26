@@ -131,7 +131,7 @@ export class ApiConfigService {
       // emailVerificationTokenExpiresIn: ormconfig.getEnvString(
       //   'EMAIL_VERIFICATION_TOKEN_EXPIRATION_TIME',
       // ),
-      emailVerificationUrl: ormconfig.getEnvString('EMAIL_VERIFICATION_URL'),
+      // emailVerificationUrl: ormconfig.getEnvString('EMAIL_VERIFICATION_URL'),
     };
   }
 

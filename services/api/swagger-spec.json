@@ -595,7 +595,14 @@
     "schemas": {
       "EmailDto": {
         "type": "object",
-        "properties": {}
+        "properties": {
+          "email": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "email"
+        ]
       },
       "OkDto": {
         "type": "object",
