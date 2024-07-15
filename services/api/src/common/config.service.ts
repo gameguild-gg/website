@@ -167,4 +167,18 @@ export class ApiConfigService {
   //         port: this.getNumber('NATS_PORT'),
   //     };
   // }
+
+  get s3Config(): {
+    accessKeyId: string;
+    secretAccessKey: string;
+    region: string;
+    bucket: string;
+  } {
+    return {
+      accessKeyId: ormconfig.getEnvString('AWS_ACCESS_KEY_ID'),
+      secretAccessKey: ormconfig.getEnvString('AWS_SECRET_ACCESS_KEY'),
+      region: ormconfig.getEnvString('AWS_REGION'),
+      bucket: ormconfig.getEnvString('AWS_BUCKET_NAME'),
+    };
+  }
 }
