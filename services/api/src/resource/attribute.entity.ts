@@ -1,13 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsNotEmpty, IsString } from 'class-validator';
 import { Column, Entity, Index, ManyToOne } from 'typeorm';
-import { PermissionDto } from './permission.dto';
 import { UserEntity } from '../user/entities';
 import { EntityBase } from '../common/entities/entity.base';
 import { ResourceEntity } from './resource.entity';
+import { AttributeDto } from './attribute.dto';
 
-@Entity({ name: 'permissions' })
-export class PermissionEntity extends EntityBase implements PermissionDto {
+export class AttributeEntity extends EntityBase implements AttributeDto {
   @ApiProperty()
   @IsString()
   @IsNotEmpty()
@@ -19,8 +18,7 @@ export class PermissionEntity extends EntityBase implements PermissionDto {
   @ManyToOne(() => UserEntity)
   user: UserEntity;
 
-  // todo: @matheus, this is not working as I imagined.
   @ApiProperty({ type: ResourceEntity })
-  @ManyToOne(() => ResourceEntity, (resource) => resource.permissions)
+  @ManyToOne(() => ResourceEntity, (resource) => resource.userAttributes)
   resource: ResourceEntity;
 }

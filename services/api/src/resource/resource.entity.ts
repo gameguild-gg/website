@@ -1,16 +1,11 @@
 import { EntityBase } from '../common/entities/entity.base';
 import { ResourceDto } from './resource.dto';
-import { PermissionEntity } from './permission.entity';
+import { AttributeEntity } from './attribute.entity';
 import { ApiProperty } from '@nestjs/swagger';
-import { OneToMany } from 'typeorm';
+import { Entity, OneToMany } from 'typeorm';
 
-/**
- * Resource entity
- * @brief Resource entity
- * @description to be used as inherited class for any resource
- */
 export class ResourceEntity extends EntityBase implements ResourceDto {
-  @ApiProperty({ type: PermissionEntity, isArray: true })
-  @OneToMany(() => PermissionEntity, (permission) => permission.resource)
-  permissions: PermissionEntity[];
+  @ApiProperty({ type: AttributeEntity, isArray: true })
+  @OneToMany(() => AttributeEntity, (attr) => attr.resource)
+  userAttributes: AttributeEntity[];
 }

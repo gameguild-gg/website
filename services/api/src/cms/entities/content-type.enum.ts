@@ -27,5 +27,6 @@ export enum ContentTypeEnum {
   MAP = 'MAP',
   EBOOK = 'EBOOK',
   OTHER = 'OTHER',
+  GAME = 'GAME',
   NONE = 'NONE',
 }

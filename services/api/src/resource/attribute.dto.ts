@@ -4,7 +4,7 @@ import { EntityDto } from '../dtos/entity.dto';
 import { UserDto } from '../dtos/user/user.dto';
 import { ResourceDto } from './resource.dto';
 
-export class PermissionDto extends EntityDto {
+export class AttributeDto extends EntityDto {
   @ApiProperty()
   @IsString()
   @IsNotEmpty()
