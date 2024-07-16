@@ -1,8 +1,8 @@
-import { EntityDto } from '../../dtos/entity.dto';
-import { Column, Entity, ManyToOne } from 'typeorm';
+import { Column, Entity, ManyToOne, OneToMany } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { GameEntity } from './game.entity';
 import { EntityBase } from '../../common/entities/entity.base';
+import { GameFeedbackResponseEntity } from './game-feedback-response.entity';
 
 @Entity('game_version')
 export class GameVersionEntity extends EntityBase {
@@ -27,8 +27,14 @@ export class GameVersionEntity extends EntityBase {
   // deadline
   @ApiProperty()
   @Column({ type: 'timestamptz' })
-  deadline: Date;
+  feedback_deadline: Date;
 
   @ManyToOne(() => GameEntity, (game) => game.versions)
+  @ApiProperty({ type: () => GameEntity })
   game: GameEntity;
+
+  // relation to feedback responses
+  @ApiProperty({ type: () => GameFeedbackResponseEntity, isArray: true })
+  @OneToMany(() => GameFeedbackResponseEntity, (response) => response.version)
+  responses: GameFeedbackResponseEntity[];
 }

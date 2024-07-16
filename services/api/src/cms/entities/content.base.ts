@@ -1,9 +1,8 @@
 import { EntityBase } from '../../common/entities/entity.base';
 import { Column, Index, OneToMany } from 'typeorm';
-import { TagEntity } from '../../tag/tag.entity';
 import { VisibilityEnum } from './visibility.enum';
-import { ContentTypeEnum } from './content-type.enum';
 
+// todo: move some of these fields to a more basic entity and add abstract classes to specific intents
 export abstract class ContentBase extends EntityBase {
   @Column({ length: 255, nullable: true, default: '' })
   // todo: create dto and create a IsSlug decorator
