@@ -28,6 +28,7 @@ import { IsOwnerInterceptor } from '../common/interceptors/isowner.interceptor';
       decorators: [Auth()],
     },
     updateOneBase: {
+      // todo: check if the order is correct
       decorators: [Auth(), IsOwner(GameEntity)],
       interceptors: [IsOwnerInterceptor],
     },
