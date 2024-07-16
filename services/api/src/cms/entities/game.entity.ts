@@ -3,9 +3,10 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Entity, JoinTable, ManyToMany, ManyToOne, OneToMany } from 'typeorm';
 import { UserEntity } from '../../user/entities';
 import { GameVersionEntity } from './game-version.entity';
+import { GameDto } from './game.dto';
 
 @Entity('game')
-export class GameEntity extends ContentBase {
+export class GameEntity extends ContentBase implements GameDto {
   // owners
   @ApiProperty({ type: () => UserEntity })
   @ManyToOne(() => UserEntity)

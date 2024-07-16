@@ -1,26 +1,23 @@
-import { Column, Entity, Index, ManyToOne, OneToMany, Unique } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
-import { GameEntity } from './game.entity';
-import { EntityBase } from '../../common/entities/entity.base';
-import { GameFeedbackResponseEntity } from './game-feedback-response.entity';
+import { EntityDto } from '../../dtos/entity.dto';
 import {
   IsDate,
+  IsDateString,
   IsFQDN,
   IsNotEmpty,
   IsSemVer,
   IsString,
   MaxLength,
 } from 'class-validator';
+import { GameDto } from './game.dto';
+import { GameFeedbackResponseDto } from './game-feedback-response.dto';
 
-@Entity('game_version')
-@Unique(['version', 'game'])
-export class GameVersionEntity extends EntityBase {
+export class GameVersionDto extends EntityDto {
   @ApiProperty()
   @IsString({ message: 'Version must be a string' })
   @IsNotEmpty({ message: 'Version is required' })
   @MaxLength(64, { message: 'Version must be at most 64 characters' })
   @IsSemVer({ message: 'Version must be a valid SemVer string' })
-  @Column({ length: 64, nullable: false })
   version: string;
 
   @ApiProperty()
@@ -28,16 +25,14 @@ export class GameVersionEntity extends EntityBase {
   @IsNotEmpty({ message: 'Archive URL is required' })
   @IsFQDN({}, { message: 'Archive URL must be a fully qualified URL' })
   @MaxLength(1024, { message: 'Archive URL must be at most 1024 characters' })
-  @Column({ length: 1024, nullable: false })
   archive_url: string;
 
   // notes / testing plan
   @ApiProperty()
-  @IsString({ message: 'Notes URL must be a string' })
   @IsNotEmpty({ message: 'Notes URL is required' })
+  @IsString({ message: 'Notes URL must be a string' })
   @IsFQDN({}, { message: 'Notes URL must be a fully qualified URL' })
   @MaxLength(1024, { message: 'Notes URL must be at most 1024 characters' })
-  @Column({ length: 1024, nullable: false })
   notes_url: string;
 
   // feedback form
@@ -46,23 +41,19 @@ export class GameVersionEntity extends EntityBase {
   @IsString({ message: 'Feedback form must be a string' })
   @IsFQDN({}, { message: 'Feedback form must be a fully qualified URL' })
   @MaxLength(1024, { message: 'Feedback form must be at most 1024 characters' })
-  @Column({ length: 1024, nullable: false })
   feedback_form: string;
 
   // deadline
   @ApiProperty()
   @IsNotEmpty({ message: 'Feedback deadline is required' })
   @IsDate({ message: 'Feedback deadline must be a date' })
-  @Column({ type: 'timestamptz', nullable: false })
-  @Index({ unique: false })
   feedback_deadline: Date;
 
-  @ManyToOne(() => GameEntity, (game) => game.versions)
-  @ApiProperty({ type: () => GameEntity })
-  game: GameEntity;
+  @ApiProperty({ type: () => GameDto })
+  @IsNotEmpty({ message: 'Game is required' })
+  game: GameDto;
 
   // relation to feedback responses
-  @ApiProperty({ type: () => GameFeedbackResponseEntity, isArray: true })
-  @OneToMany(() => GameFeedbackResponseEntity, (response) => response.version)
-  responses: GameFeedbackResponseEntity[];
+  @ApiProperty({ type: () => GameFeedbackResponseDto, isArray: true })
+  responses: GameFeedbackResponseDto[];
 }
