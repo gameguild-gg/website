@@ -1,5 +1,5 @@
 import { Column, Index } from 'typeorm';
-import { VisibilityEnum } from './visibility.enum';
+import { VisibilityEnum } from '../entities/visibility.enum';
 import { ApiProperty } from '@nestjs/swagger';
 import { EntityDto } from '../../dtos/entity.dto';
 import { IsNotEmpty, IsString, IsUUID, MaxLength } from 'class-validator';

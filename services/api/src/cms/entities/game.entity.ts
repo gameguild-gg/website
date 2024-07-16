@@ -3,7 +3,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Entity, JoinTable, ManyToMany, ManyToOne, OneToMany } from 'typeorm';
 import { UserEntity } from '../../user/entities';
 import { GameVersionEntity } from './game-version.entity';
-import { GameDto } from './game.dto';
+import { GameDto } from '../dtos/game.dto';
 
 @Entity('game')
 export class GameEntity extends ContentBase implements GameDto {
@@ -16,7 +16,7 @@ export class GameEntity extends ContentBase implements GameDto {
   @ApiProperty({ type: () => UserEntity, isArray: true })
   @ManyToMany(() => UserEntity)
   @JoinTable()
-  team: UserEntity[];
+  editors: UserEntity[];
 
   @ApiProperty({ type: () => GameVersionEntity, isArray: true })
   @OneToMany(() => GameVersionEntity, (version) => version.game)

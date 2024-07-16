@@ -1,4 +1,4 @@
-import { ContentBase } from './content.base';
+import { ContentBase } from '../entities/content.base';
 import { ApiProperty } from '@nestjs/swagger';
 import { UserEntity } from '../../user/entities';
 import { UserDto } from '../../dtos/user/user.dto';
@@ -11,7 +11,7 @@ export class GameDto extends ContentBase {
 
   // editors
   @ApiProperty({ type: () => UserEntity, isArray: true })
-  team: UserEntity[];
+  editors: UserEntity[];
 
   @ApiProperty({ type: () => GameVersionDto, isArray: true })
   versions: GameVersionDto[];

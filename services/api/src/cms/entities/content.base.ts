@@ -1,7 +1,7 @@
 import { EntityBase } from '../../common/entities/entity.base';
 import { Column, Index } from 'typeorm';
 import { VisibilityEnum } from './visibility.enum';
-import { ContentBaseDto } from './content.base.dto';
+import { ContentBaseDto } from '../dtos/content.base.dto';
 import { ApiProperty } from '@nestjs/swagger';
 import { IsSlug } from '../../common/decorators/isslug.decorator';
 import { IsNotEmpty, IsString, MaxLength } from 'class-validator';

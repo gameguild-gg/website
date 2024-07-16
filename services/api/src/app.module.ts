@@ -17,6 +17,7 @@ import { HealthcheckModule } from './healthcheck/healthcheck.module';
 import { TagModule } from './tag/tag.module';
 // import { IpfsModule } from './asset/ipfs.module';
 import { ClsModule } from 'nestjs-cls';
+import { DataSource } from 'typeorm';
 
 @Module({
   imports: [
@@ -61,6 +62,11 @@ import { ClsModule } from 'nestjs-cls';
     //   provide: APP_GUARD,
     //   useClass: JwtAccessTokenGuard,
     // },
+    {
+      provide: 'DataSource',
+      useFactory: (dataSource: DataSource) => dataSource,
+      inject: [DataSource],
+    },
   ],
 })
 export class AppModule {}

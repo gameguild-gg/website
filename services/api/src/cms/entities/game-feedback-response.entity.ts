@@ -2,7 +2,7 @@ import { EntityBase } from '../../common/entities/entity.base';
 import { GameVersionEntity } from './game-version.entity';
 import { Entity, ManyToOne } from 'typeorm';
 import { UserEntity } from '../../user/entities';
-import { GameFeedbackResponseDto } from './game-feedback-response.dto';
+import { GameFeedbackResponseDto } from '../dtos/game-feedback-response.dto';
 import { ApiProperty } from '@nestjs/swagger';
 
 @Entity('game_feedback_response')
