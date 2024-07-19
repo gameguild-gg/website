@@ -292,6 +292,11 @@
         },
         "tags": [
           "game"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
         ]
       },
       "get": {
@@ -452,6 +457,43 @@
       }
     },
     "/game/{id}": {
+      "patch": {
+        "operationId": "updateOneBaseGameControllerGameEntity",
+        "summary": "Update a single GameEntity",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GameEntity"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "tags": [
+          "game"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
       "get": {
         "operationId": "getOneBaseGameControllerGameEntity",
         "summary": "Retrieve a single GameEntity",
@@ -507,53 +549,6 @@
         "responses": {
           "200": {
             "description": "Get one base response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/GameEntity"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized"
-          }
-        },
-        "tags": [
-          "game"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      },
-      "patch": {
-        "operationId": "updateOneBaseGameControllerGameEntity",
-        "summary": "Update a single GameEntity",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/GameEntity"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Response",
             "content": {
               "application/json": {
                 "schema": {

@@ -28,12 +28,6 @@ import { UserEntity } from '../user/entities';
   },
   routes: {
     exclude: ['replaceOneBase', 'createManyBase'],
-    createOneBase: {
-      decorators: [Auth({ public: false })],
-    },
-    updateOneBase: {
-      decorators: [Auth({ content: ContentRoles.EDITOR, entity: GameEntity })],
-    },
     getOneBase: {
       decorators: [Auth({ public: true })],
     },
@@ -57,6 +51,7 @@ export class GameController implements CrudController<GameEntity> {
   }
 
   @Override()
+  @Auth({ public: false })
   createOne(
     @ParsedRequest() req: CrudRequest,
     @ParsedBody() dto: GameDto,
@@ -64,5 +59,16 @@ export class GameController implements CrudController<GameEntity> {
   ) {
     dto.owner = user;
     return this.base.createOneBase(req, <GameEntity>dto);
+  }
+
+  @Override()
+  @Auth({ content: ContentRoles.EDITOR, entity: GameEntity })
+  async updateOne(
+    @ParsedRequest() req: CrudRequest,
+    @ParsedBody() dto: Partial<GameDto>,
+  ): Promise<GameEntity> {
+    delete dto.owner;
+    delete dto.editors;
+    return this.base.updateOneBase(req, <GameEntity>dto);
   }
 }
