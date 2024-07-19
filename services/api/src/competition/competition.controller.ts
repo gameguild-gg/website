@@ -83,7 +83,7 @@ export class CompetitionController {
   @ApiConsumes('multipart/form-data')
   @ApiOkResponse({ type: TerminalDto, isArray: true })
   @UseInterceptors(FileInterceptor('file'))
-  @Auth()
+  @Auth({ public: false })
   async submitChessAgent(
     @Body() data: CompetitionSubmissionDto,
     @UploadedFile() file: Express.Multer.File,
@@ -121,7 +121,7 @@ export class CompetitionController {
 
   @Get('/Chess/ListAgents')
   @ApiOkResponse({ type: [String] })
-  @Auth()
+  @Auth({ public: false })
   async ListChessAgents(@AuthUser() user: UserEntity): Promise<string[]> {
     if (!user) throw new UnauthorizedException('Invalid credentials');
     return this.service.listChessAgents();
@@ -129,7 +129,7 @@ export class CompetitionController {
 
   @Post('/Chess/Move')
   @ApiOkResponse({ type: String })
-  @Auth()
+  @Auth({ public: false })
   async RequestChessMove(
     @Body() data: ChessMoveRequestDto,
     @AuthUser() user: UserEntity,
@@ -140,7 +140,7 @@ export class CompetitionController {
 
   @Post('/Chess/RunMatch')
   @ApiOkResponse({ type: ChessMatchResultDto })
-  @Auth()
+  @Auth({ public: false })
   async RunChessMatch(
     @Body() data: ChessMatchRequestDto,
     @AuthUser() user: UserEntity,
@@ -150,7 +150,7 @@ export class CompetitionController {
   }
 
   @Post('/Chess/FindMatches')
-  @Auth()
+  @Auth({ public: false })
   @ApiOkResponse({
     type: MatchSearchResponseDto,
     isArray: true,
@@ -222,7 +222,7 @@ export class CompetitionController {
   }
 
   @Get('/Chess/Match/:id')
-  @Auth()
+  @Auth({ public: false })
   @ApiOkResponse({ type: ChessMatchResultDto })
   async GetChessMatchResult(
     @Param('id', ParseUUIDPipe) id: string,
@@ -233,7 +233,7 @@ export class CompetitionController {
   }
 
   @Get('/Chess/Leaderboard')
-  @Auth()
+  @Auth({ public: false })
   @ApiOkResponse({
     type: ChessLeaderboardResponseEntryDto,
     isArray: true,
@@ -246,7 +246,7 @@ export class CompetitionController {
   }
 
   @Get('Chess/RunCompetition')
-  @Auth()
+  @Auth({ public: false })
   async RunCompetition(@AuthUser() user: UserEntity) {
     if (!user) throw new UnauthorizedException('Invalid credentials');
     return this.service.runChessCompetition();
@@ -254,7 +254,7 @@ export class CompetitionController {
 
   @Get('Chess/LatestCompetitionReport')
   @ApiOkResponse({ type: CompetitionRunSubmissionReportDto, isArray: true })
-  @Auth()
+  @Auth({ public: false })
   async GetLatestChessCompetitionReport(
     @AuthUser() user: UserEntity,
   ): Promise<CompetitionRunSubmissionReportDto[]> {

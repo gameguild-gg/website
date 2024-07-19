@@ -383,6 +383,36 @@
             "bearer": []
           }
         ]
+      },
+      "delete": {
+        "operationId": "deleteOneBaseGameControllerGameEntity",
+        "summary": "Delete a single GameEntity",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Delete one base response"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "tags": [
+          "game"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
       }
     },
     "/game": {

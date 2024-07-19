@@ -1,7 +1,6 @@
 import { Body, Controller, Logger, Post } from '@nestjs/common';
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { ContentService } from './content.service';
-import { CreateCourseDto } from '../dtos/course/create-course.dto';
 import { AuthUser } from '../auth';
 import { Auth } from '../auth/decorators/http.decorator';
 import { UserEntity } from '../user/entities';
@@ -15,7 +14,7 @@ export class ContentController {
   constructor(private readonly courseService: ContentService) {}
 
   @Post('course/create')
-  @Auth()
+  @Auth({ public: false }) // todo: anyone can create?
   @ApiOkResponse({ type: CourseEntity })
   public async createEmptyCourse(
     @AuthUser() user: UserEntity,

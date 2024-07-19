@@ -13,12 +13,6 @@ import { AuthGuard } from '../guards/auth.guard';
 import { AuthUserInterceptor } from '../interceptors/auth-user-interceptor.service';
 import { Public } from './public.decorator';
 
-// jwt requirement routes
-export enum LoggedRouteFlag {
-  LOGGED = 'LOGGED', // default
-  PUBLIC = 'PUBLIC',
-}
-
 // Common DAC roles
 export enum ContentRoles {
   OWNER = 'OWNER', // default for routes for DELETE actions
@@ -42,34 +36,34 @@ export enum SystemRoles {
 type RouteRoles =
   | {
       // public routes
-      loggedRoute: LoggedRouteFlag.PUBLIC;
-      systemRole: never;
-      contentRole: never;
+      public: true;
+      content?: never;
+      system?: never;
     }
   | {
       // just logged routes
-      loggedRoute: LoggedRouteFlag.LOGGED;
-      systemRole: never;
-      contentRole: never;
+      public: false;
+      content?: never;
+      system?: never;
     }
   | {
       // System roles
-      loggedRoute: never;
-      systemRole: SystemRoles;
-      contentRole: never;
+      public?: never;
+      content?: never;
+      system: SystemRoles;
     }
   | {
       // Content roles
-      loggedRoute: never;
-      systemRole: never;
-      contentRole: ContentRoles;
+      public?: never;
+      content: ContentRoles;
+      system?: never;
     };
 // todo improve this!!!
 export const Auth = (
   // roles: RoleType[] = [],
-  options?: Partial<{ public: boolean }>,
+  options: RouteRoles,
 ): MethodDecorator => {
-  const isPublic = options?.public;
+  const isPublic = options.public;
 
   return applyDecorators(
     // Roles(roles),
@@ -80,7 +74,7 @@ export const Auth = (
     ApiUnauthorizedResponse({ description: 'Unauthorized' }),
     Public(isPublic),
   );
-}
+};
 
 export function UUIDParam(
   property: string,

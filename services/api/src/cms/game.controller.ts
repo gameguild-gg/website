@@ -2,7 +2,7 @@ import { Body, Controller, Logger, Post } from '@nestjs/common';
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { GameService } from './game.service';
 import { GameDto } from './dtos/game.dto';
-import { Auth } from '../auth/decorators/http.decorator';
+import { Auth, ContentRoles } from '../auth/decorators/http.decorator';
 import { AuthUser } from '../auth';
 import { UserEntity } from '../user/entities';
 import { ContentBaseDto } from './dtos/content.base.dto';
@@ -23,20 +23,21 @@ import { IsOwnerInterceptor } from '../common/interceptors/isowner.interceptor';
     },
   },
   routes: {
-    exclude: ['replaceOneBase', 'deleteOneBase', 'createManyBase'],
+    exclude: ['replaceOneBase', 'createManyBase'],
     createOneBase: {
-      decorators: [Auth()],
+      decorators: [Auth({ public: false })],
     },
     updateOneBase: {
-      // todo: check if the order is correct
-      decorators: [Auth(), IsOwner(GameEntity)],
-      interceptors: [IsOwnerInterceptor],
+      decorators: [Auth({ content: ContentRoles.EDITOR })],
     },
     getOneBase: {
-      decorators: [Auth()],
+      decorators: [Auth({ public: true })],
     },
     getManyBase: {
-      decorators: [Auth()],
+      decorators: [Auth({ public: true })],
+    },
+    deleteOneBase: {
+      decorators: [Auth({ content: ContentRoles.OWNER })],
     },
   },
 })
