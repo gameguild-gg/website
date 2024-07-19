@@ -11,10 +11,10 @@ import {
   ENTITY_CLASS_KEY,
   EntityClassWithOwnerField,
   IS_OWNER_KEY,
-} from '../decorators/isowner.decorator';
-import { OwnerEntity } from '../entities/owner.entity';
+} from '../../auth/decorators/owner.decorator';
+import { OwnerEntity } from '../../auth/entities/owner.entity';
 import { UserEntity } from '../../user/entities';
-import { DataSource, getRepository } from 'typeorm';
+import { DataSource } from 'typeorm';
 
 @Injectable()
 export class IsOwnerInterceptor implements NestInterceptor {

@@ -8,7 +8,7 @@ import { UserEntity } from '../user/entities';
 import { ContentBaseDto } from './dtos/content.base.dto';
 import { GameEntity } from './entities/game.entity';
 import { Crud } from '@dataui/crud';
-import { IsOwner } from '../common/decorators/isowner.decorator';
+import { IsOwner } from '../auth/decorators/owner.decorator';
 import { IsOwnerInterceptor } from '../common/interceptors/isowner.interceptor';
 
 @Crud({

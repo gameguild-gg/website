@@ -2,7 +2,7 @@ import { UserEntity } from '../../user/entities';
 import { ApiProperty } from '@nestjs/swagger';
 import { ManyToOne } from 'typeorm';
 import { OwnerDto } from '../dtos/owner.dto';
-import { EntityBase } from './entity.base';
+import { EntityBase } from '../../common/entities/entity.base';
 
 /**
  * Owner Entity
@@ -10,6 +10,6 @@ import { EntityBase } from './entity.base';
  */
 export class OwnerEntity extends EntityBase implements OwnerDto {
   @ApiProperty({ type: () => UserEntity })
-  @ManyToOne(() => UserEntity, { eager: true })
+  @ManyToOne(() => UserEntity, { lazy: true })
   owner: UserEntity;
 }

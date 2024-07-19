@@ -10,12 +10,50 @@ import { type Type } from '@nestjs/common/interfaces';
 import { ApiBearerAuth, ApiUnauthorizedResponse } from '@nestjs/swagger';
 
 import { AuthGuard } from '../guards/auth.guard';
-// import { RolesGuard } from '../guards/roles.guard';
 import { AuthUserInterceptor } from '../interceptors/auth-user-interceptor.service';
 import { Public } from './public.decorator';
-// import { Roles } from './roles.decorator';
-// import { RoleType } from "../../dtos/constants/role-type";
 
+// jwt requirement routes
+export enum LoggedRouteFlag {
+  LOGGED = 'LOGGED', // default
+  PUBLIC = 'PUBLIC',
+}
+
+// Common DAC roles
+export enum ContentRoles {
+  OWNER = 'OWNER', // default for routes for DELETE actions
+  MANAGER = 'MANAGER', // can add other editors
+  EDITOR = 'EDITOR', // default for PUT, PATCH, POST
+  // GUEST = 'GUEST', // todo
+  // SUBSCRIBER = 'SUBSCRIBER', // todo
+  // FOLLOWER = 'FOLLOWER', // todo
+}
+
+// todo: add ROLES for professor, guardian, student, etc
+
+// common RBAC roles
+export enum SystemRoles {
+  USER = 'USER', // default
+  MANAGER = 'MANAGER',
+  ADMIN = 'ADMIN',
+}
+
+// todo: it is incomplete
+type RouteRoles =
+  | {
+      loggedRoute: LoggedRouteFlag.PUBLIC;
+      contentRole?: never;
+      systemRole?: never;
+    }
+  | { systemRole: SystemRoles; contentRole?: never; loggedRoute?: never }
+  | { contentRole: ContentRoles; systemRole?: never; loggedRoute?: never }
+  | {
+      loggedRoute: LoggedRouteFlag.LOGGED;
+      systemRole?: never;
+      contentRole?: never;
+    }
+  | { loggedRoute?: never; contentRole?: never; systemRole?: never };
+// todo improve this!!!
 export const Auth = (
   // roles: RoleType[] = [],
   options?: Partial<{ public: boolean }>,
