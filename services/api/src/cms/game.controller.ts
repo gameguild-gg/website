@@ -1,15 +1,19 @@
-import { Body, Controller, Logger, Post } from '@nestjs/common';
-import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import { Controller, Logger } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import { GameService } from './game.service';
-import { GameDto } from './dtos/game.dto';
 import { Auth, ContentRoles } from '../auth/decorators/http.decorator';
+import { GameEntity } from './entities/game.entity';
+import {
+  Crud,
+  CrudController,
+  CrudRequest,
+  Override,
+  ParsedBody,
+  ParsedRequest,
+} from '@dataui/crud';
+import { GameDto } from './dtos/game.dto';
 import { AuthUser } from '../auth';
 import { UserEntity } from '../user/entities';
-import { ContentBaseDto } from './dtos/content.base.dto';
-import { GameEntity } from './entities/game.entity';
-import { Crud } from '@dataui/crud';
-import { IsOwner } from '../auth/decorators/owner.decorator';
-import { IsOwnerInterceptor } from '../common/interceptors/isowner.interceptor';
 
 @Crud({
   model: {
@@ -28,7 +32,7 @@ import { IsOwnerInterceptor } from '../common/interceptors/isowner.interceptor';
       decorators: [Auth({ public: false })],
     },
     updateOneBase: {
-      decorators: [Auth({ content: ContentRoles.EDITOR })],
+      decorators: [Auth({ content: ContentRoles.EDITOR, entity: GameEntity })],
     },
     getOneBase: {
       decorators: [Auth({ public: true })],
@@ -37,45 +41,28 @@ import { IsOwnerInterceptor } from '../common/interceptors/isowner.interceptor';
       decorators: [Auth({ public: true })],
     },
     deleteOneBase: {
-      decorators: [Auth({ content: ContentRoles.OWNER })],
+      decorators: [Auth({ content: ContentRoles.OWNER, entity: GameEntity })],
     },
   },
 })
 @Controller('game')
 @ApiTags('game')
-export class GameController {
+export class GameController implements CrudController<GameEntity> {
   private readonly logger = new Logger(GameController.name);
 
-  constructor(private readonly service: GameService) {}
+  constructor(public readonly service: GameService) {}
 
-  // CRUD GAME
-  // @Post('create')
-  // @Auth()
-  // @ApiOkResponse({ type: GameDto })
-  // async createGame(
-  //   @AuthUser() user: UserEntity,
-  //   @Body() game: ContentBaseDto,
-  // ): Promise<GameDto> {
-  //   return this.service.createGame(game, user);
-  // }
-  //
-  // @Post('update')
-  // @Auth()
-  // @ApiOkResponse({ type: GameDto })
-  // async updateGame(
-  //   @AuthUser() user: UserEntity,
-  //   @Body() game: Partial<ContentBaseDto>,
-  // ): Promise<GameDto> {
-  //   return this.service.updateGame(game, user);
-  // }
-  //
-  // @Post('find')
-  // @Auth()
-  // @ApiOkResponse({ type: GameDto, isArray: true })
-  // async findGame(
-  //   @AuthUser() user: UserEntity,
-  //   @Body() game: Partial<ContentBaseDto>,
-  // ): Promise<GameDto> {
-  //   return this.service.findGame(game, user);
-  // }
+  get base(): CrudController<GameEntity> {
+    return this;
+  }
+
+  @Override()
+  createOne(
+    @ParsedRequest() req: CrudRequest,
+    @ParsedBody() dto: GameDto,
+    @AuthUser() user: UserEntity,
+  ) {
+    dto.owner = user;
+    return this.base.createOneBase(req, <GameEntity>dto);
+  }
 }

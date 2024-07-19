@@ -12,6 +12,8 @@ import { ApiBearerAuth, ApiUnauthorizedResponse } from '@nestjs/swagger';
 import { AuthGuard } from '../guards/auth.guard';
 import { AuthUserInterceptor } from '../interceptors/auth-user-interceptor.service';
 import { Public } from './public.decorator';
+import { EditorsEntity } from '../entities/editor.entity';
+import { OwnerEntity } from '../entities/owner.entity';
 
 // Common DAC roles
 export enum ContentRoles {
@@ -39,30 +41,31 @@ type RouteRoles =
       public: true;
       content?: never;
       system?: never;
+      entity?: never;
     }
   | {
       // just logged routes
       public: false;
       content?: never;
       system?: never;
+      entity?: never;
     }
   | {
       // System roles
       public?: never;
       content?: never;
       system: SystemRoles;
+      entity?: never;
     }
   | {
       // Content roles
       public?: never;
-      content: ContentRoles;
+      content: ContentRoles; // todo: can we make it generic?
       system?: never;
+      entity: Type<OwnerEntity | EditorsEntity>; // todo: can we make it generic?
     };
 // todo improve this!!!
-export const Auth = (
-  // roles: RoleType[] = [],
-  options: RouteRoles,
-): MethodDecorator => {
+export const Auth = (options: RouteRoles): MethodDecorator => {
   const isPublic = options.public;
 
   return applyDecorators(
