@@ -5,9 +5,9 @@ import {
   Logger,
   Param,
   Post,
-  Query,
+  Query, Req, UseGuards,
 } from '@nestjs/common';
-import { ApiOkResponse, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {ApiBody, ApiOkResponse, ApiResponse, ApiTags} from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { AuthUser, Public } from './decorators';
 import { LocalSignInDto } from '../dtos/auth/local-sign-in.dto';
@@ -21,6 +21,7 @@ import { EthereumSigninChallengeRequestDto } from '../dtos/auth/ethereum-signin-
 import { EthereumSigninChallengeResponseDto } from '../dtos/auth/ethereum-signin-challenge-response.dto';
 import { EmailDto } from './dtos/email.dto';
 import { OkDto } from '../common/dtos/ok.dto';
+import {AccessTokenGuard} from "./guards/access-token-guard.service";
 
 @Controller('auth')
 @ApiTags('auth')
@@ -28,6 +29,14 @@ export class AuthController {
   private readonly logger = new Logger(AuthController.name);
 
   constructor(private readonly authService: AuthService) {}
+
+  @Get('test')
+  // @Authentication()
+  @UseGuards(AccessTokenGuard)
+  test(@Req() req) {
+    console.log(req.user);
+    return "Hello World";
+  }
 
   @Post('magic-link')
   @Public()
@@ -47,6 +56,7 @@ export class AuthController {
 
   @Post('local/sign-in')
   @Public(true)
+  @ApiBody({ type: LocalSignInDto })
   public async localSignWithEmailOrUsername(
     @Body() data: LocalSignInDto,
   ): Promise<LocalSignInResponseDto> {

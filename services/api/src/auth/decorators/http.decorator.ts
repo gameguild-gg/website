@@ -9,7 +9,7 @@ import {
 import { type Type } from '@nestjs/common/interfaces';
 import { ApiBearerAuth, ApiUnauthorizedResponse } from '@nestjs/swagger';
 
-import { AuthGuard } from '../guards/auth.guard';
+
 import { AuthUserInterceptor } from '../interceptors/auth-user-interceptor.service';
 import { Public } from './public.decorator';
 
@@ -63,11 +63,11 @@ export const Auth = (
   return applyDecorators(
     // Roles(roles),
     // UseGuards(AuthGuard({ public: isPublic }), RolesGuard),
-    UseGuards(AuthGuard({ public: isPublic })),
-    ApiBearerAuth(),
-    UseInterceptors(AuthUserInterceptor),
-    ApiUnauthorizedResponse({ description: 'Unauthorized' }),
-    Public(isPublic),
+    // UseGuards(AuthGuard({ public: isPublic })),
+    // ApiBearerAuth(),
+    // UseInterceptors(AuthUserInterceptor),
+    // ApiUnauthorizedResponse({ description: 'Unauthorized' }),
+    // Public(isPublic),
   );
 }
 

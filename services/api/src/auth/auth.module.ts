@@ -1,21 +1,19 @@
-import { forwardRef, Module } from "@nestjs/common";
-import { JwtModule } from '@nestjs/jwt';
-import { PassportModule } from '@nestjs/passport';
-import { CommonModule } from '../common/common.module';
-import { ApiConfigService } from '../common/config.service';
-import { NotificationModule } from '../notification/notification.module';
-import { UserModule } from '../user/user.module';
-import { AuthController } from './auth.controller';
-import { AuthService } from './auth.service';
-import { LocalStrategy } from './strategies';
-import { JwtStrategy } from './strategies/jwt.strategy';
-import { PublicStrategy } from "./strategies/public.strategy";
+import {forwardRef, Module} from "@nestjs/common";
+import {JwtModule} from '@nestjs/jwt';
+import {PassportModule} from '@nestjs/passport';
+import {CommonModule} from '../common/common.module';
+import {ApiConfigService} from '../common/config.service';
+import {NotificationModule} from '../notification/notification.module';
+import {UserModule} from '../user/user.module';
+import {AuthController} from './auth.controller';
+import {AuthService} from './auth.service';
+import {AccessTokenStrategy} from "./strategies/access-token.strategy";
 
 
 @Module({
   imports: [
-    forwardRef(() => UserModule),
-    PassportModule.register({ defaultStrategy: 'jwt' }),
+
+    PassportModule.register({defaultStrategy: 'access-token'}),
     JwtModule.registerAsync({
       imports: [CommonModule],
       inject: [ApiConfigService],
@@ -31,11 +29,12 @@ import { PublicStrategy } from "./strategies/public.strategy";
         };
       },
     }),
-    // PassportModule.register({ defaultStrategy: 'jwt-access-token' }),
-    NotificationModule,
+    forwardRef(() => NotificationModule),
+    forwardRef(() => UserModule),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, PublicStrategy], // LocalStrategy, JwtAccessTokenStrategy],
+  providers: [AuthService, AccessTokenStrategy],
   exports: [AuthService, JwtModule],
 })
-export class AuthModule {}
+export class AuthModule {
+}
