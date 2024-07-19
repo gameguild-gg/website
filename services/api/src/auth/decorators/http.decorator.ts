@@ -41,18 +41,29 @@ export enum SystemRoles {
 // todo: it is incomplete
 type RouteRoles =
   | {
+      // public routes
       loggedRoute: LoggedRouteFlag.PUBLIC;
-      contentRole?: never;
-      systemRole?: never;
+      systemRole: never;
+      contentRole: never;
     }
-  | { systemRole: SystemRoles; contentRole?: never; loggedRoute?: never }
-  | { contentRole: ContentRoles; systemRole?: never; loggedRoute?: never }
   | {
+      // just logged routes
       loggedRoute: LoggedRouteFlag.LOGGED;
-      systemRole?: never;
-      contentRole?: never;
+      systemRole: never;
+      contentRole: never;
     }
-  | { loggedRoute?: never; contentRole?: never; systemRole?: never };
+  | {
+      // System roles
+      loggedRoute: never;
+      systemRole: SystemRoles;
+      contentRole: never;
+    }
+  | {
+      // Content roles
+      loggedRoute: never;
+      systemRole: never;
+      contentRole: ContentRoles;
+    };
 // todo improve this!!!
 export const Auth = (
   // roles: RoleType[] = [],
