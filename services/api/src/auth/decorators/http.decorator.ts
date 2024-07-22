@@ -12,12 +12,8 @@ import { ApiBearerAuth, ApiUnauthorizedResponse } from '@nestjs/swagger';
 
 import { AuthUserInterceptor } from '../interceptors/auth-user-interceptor.service';
 import { Public } from './public.decorator';
-
-// jwt requirement routes
-export enum LoggedRouteFlag {
-  LOGGED = 'LOGGED', // default
-  PUBLIC = 'PUBLIC',
-}
+import { EditorsEntity } from '../entities/editor.entity';
+import { OwnerEntity } from '../entities/owner.entity';
 
 // Common DAC roles
 export enum ContentRoles {
@@ -41,24 +37,36 @@ export enum SystemRoles {
 // todo: it is incomplete
 type RouteRoles =
   | {
-      loggedRoute: LoggedRouteFlag.PUBLIC;
-      contentRole?: never;
-      systemRole?: never;
+      // public routes
+      public: true;
+      content?: never;
+      system?: never;
+      entity?: never;
     }
-  | { systemRole: SystemRoles; contentRole?: never; loggedRoute?: never }
-  | { contentRole: ContentRoles; systemRole?: never; loggedRoute?: never }
   | {
-      loggedRoute: LoggedRouteFlag.LOGGED;
-      systemRole?: never;
-      contentRole?: never;
+      // just logged routes
+      public: false;
+      content?: never;
+      system?: never;
+      entity?: never;
     }
-  | { loggedRoute?: never; contentRole?: never; systemRole?: never };
+  | {
+      // System roles
+      public?: never;
+      content?: never;
+      system: SystemRoles;
+      entity?: never;
+    }
+  | {
+      // Content roles
+      public?: never;
+      content: ContentRoles; // todo: can we make it generic?
+      system?: never;
+      entity: Type<OwnerEntity | EditorsEntity>; // todo: can we make it generic?
+    };
 // todo improve this!!!
-export const Auth = (
-  // roles: RoleType[] = [],
-  options?: Partial<{ public: boolean }>,
-): MethodDecorator => {
-  const isPublic = options?.public;
+export const Auth = (options: RouteRoles): MethodDecorator => {
+  const isPublic = options.public;
 
   return applyDecorators(
     // Roles(roles),
@@ -69,7 +77,7 @@ export const Auth = (
     // ApiUnauthorizedResponse({ description: 'Unauthorized' }),
     // Public(isPublic),
   );
-}
+};
 
 export function UUIDParam(
   property: string,

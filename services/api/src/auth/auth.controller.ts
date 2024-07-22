@@ -107,7 +107,7 @@ export class AuthController {
   }
 
   @Get('current-user')
-  @Auth()
+  @Auth({ public: false })
   @ApiOkResponse({ type: UserDto })
   public async getCurrentUser(@AuthUser() user: UserEntity): Promise<UserDto> {
     return user;
