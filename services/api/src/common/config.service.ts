@@ -7,6 +7,7 @@ import * as ormconfig from '../../ormconfig';
 // import dotenv from 'dotenv';
 import * as dotenv from 'dotenv';
 import * as process from 'node:process';
+import {getMetadataArgsStorage} from "typeorm";
 
 @Injectable()
 export class ApiConfigService {
@@ -87,7 +88,7 @@ export class ApiConfigService {
       username: ormconfig.ormconfig.username,
       password: ormconfig.ormconfig.password,
       database: ormconfig.ormconfig.database,
-      entities: ormconfig.ormconfig.entities,
+      entities: [...ormconfig.ormconfig.entities],
       migrations: ormconfig.ormconfig.migrations,
       subscribers: ormconfig.ormconfig.subscribers,
       keepConnectionAlive: ormconfig.ormconfig.keepConnectionAlive,
