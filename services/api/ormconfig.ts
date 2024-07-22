@@ -2,12 +2,12 @@
 
 import * as dotenv from 'dotenv';
 import * as path from 'path';
-import {DataSource, getMetadataArgsStorage} from 'typeorm';
+import { DataSource, getMetadataArgsStorage } from 'typeorm';
 
-import {SnakeNamingStrategy} from './src/snake-naming.strategy';
+import { SnakeNamingStrategy } from './src/snake-naming.strategy';
 
-import {isNil} from 'lodash';
-import {permissionEntities} from "./src/auth/entities/teste.entity";
+import { isNil } from 'lodash';
+// import { permissionEntities } from './src/auth/entities/entity-with-permissions';
 
 dotenv.config();
 
@@ -20,7 +20,7 @@ export function getEnv(key: string, defaultValue: string = null): string {
   if (isNil(value) || value === '') {
     throw new Error(
       key +
-      ' environment variable does not set. Manually set it or talk with us to provide them to you.',
+        ' environment variable does not set. Manually set it or talk with us to provide them to you.',
     ); // probably we should call process.exit() too to avoid locking the service
   }
 
@@ -68,7 +68,7 @@ function getconfig() {
   const entities = [
     path.join(__dirname, 'src/**/*.entity{.ts,.js}'),
     path.join(__dirname, 'src/**/*.view-entity{.ts,.js}'),
-    ...permissionEntities,
+    // ...permissionEntities,
     // permissions
   ];
   const migrations = [path.join(__dirname, 'migrations/*{.ts,.js}')];
