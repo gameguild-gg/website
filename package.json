@@ -40,6 +40,7 @@
     "@game-guild/jest-config": "*",
     "@game-guild/prettier-config": "*",
     "@game-guild/typescript-config": "*",
+    "@game-guild/apiclient": "*",
     "rimraf": "^5.0.5"
   },
   "dependencies": {

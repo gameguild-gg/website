@@ -29,7 +29,7 @@
     "migration:revert": "npm run typeorm -- migration:revert",
     "schema:drop": "npm run typeorm -- schema:drop",
     "db:diagram": "ts-node dbml.ts",
-    "openapigenerator": "openapi-generator-cli generate -g typescript-axios -i swagger-spec.json -o ../web/src/apinest"
+    "openapigenerator": "openapi-generator-cli generate -g typescript-axios -i swagger-spec.json -o ../../packages/apiclient -p npmName=@game-guild/apiclient"
   },
   "dependencies": {
     "@dataui/crud": "5.3.4",
