@@ -47,6 +47,24 @@ export interface ChapterEntity {
      * @memberof ChapterEntity
      */
     'updatedAt': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ChapterEntity
+     */
+    'slug': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ChapterEntity
+     */
+    'title': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ChapterEntity
+     */
+    'summary': string;
 }
 /**
  * 
@@ -297,6 +315,24 @@ export interface CourseEntity {
     'updatedAt': string;
     /**
      * 
+     * @type {string}
+     * @memberof CourseEntity
+     */
+    'slug': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof CourseEntity
+     */
+    'title': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof CourseEntity
+     */
+    'summary': string;
+    /**
+     * 
      * @type {number}
      * @memberof CourseEntity
      */
@@ -387,6 +423,440 @@ export interface EthereumSigninValidateRequestDto {
 /**
  * 
  * @export
+ * @interface GameDto
+ */
+export interface GameDto {
+    /**
+     * 
+     * @type {string}
+     * @memberof GameDto
+     */
+    'id': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof GameDto
+     */
+    'createdAt': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof GameDto
+     */
+    'updatedAt': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof GameDto
+     */
+    'slug': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof GameDto
+     */
+    'title': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof GameDto
+     */
+    'summary': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof GameDto
+     */
+    'body': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof GameDto
+     */
+    'visibility': GameDtoVisibilityEnum;
+    /**
+     * 
+     * @type {string}
+     * @memberof GameDto
+     */
+    'thumbnail': string;
+    /**
+     * 
+     * @type {PermissionsDto}
+     * @memberof GameDto
+     */
+    'roles': PermissionsDto;
+    /**
+     * 
+     * @type {Array<GameVersionDto>}
+     * @memberof GameDto
+     */
+    'versions': Array<GameVersionDto>;
+}
+
+export const GameDtoVisibilityEnum = {
+    Draft: 'DRAFT',
+    Published: 'PUBLISHED',
+    Future: 'FUTURE',
+    Pending: 'PENDING',
+    Private: 'PRIVATE',
+    Trash: 'TRASH'
+} as const;
+
+export type GameDtoVisibilityEnum = typeof GameDtoVisibilityEnum[keyof typeof GameDtoVisibilityEnum];
+
+/**
+ * 
+ * @export
+ * @interface GameEntity
+ */
+export interface GameEntity {
+    /**
+     * 
+     * @type {string}
+     * @memberof GameEntity
+     */
+    'id': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof GameEntity
+     */
+    'createdAt': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof GameEntity
+     */
+    'updatedAt': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof GameEntity
+     */
+    'slug': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof GameEntity
+     */
+    'title': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof GameEntity
+     */
+    'summary': string;
+    /**
+     * 
+     * @type {PermissionsDto}
+     * @memberof GameEntity
+     */
+    'roles': PermissionsDto;
+    /**
+     * 
+     * @type {Array<GameVersionDto>}
+     * @memberof GameEntity
+     */
+    'versions': Array<GameVersionDto>;
+}
+/**
+ * 
+ * @export
+ * @interface GameFeedbackResponseDto
+ */
+export interface GameFeedbackResponseDto {
+    /**
+     * 
+     * @type {string}
+     * @memberof GameFeedbackResponseDto
+     */
+    'id': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof GameFeedbackResponseDto
+     */
+    'createdAt': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof GameFeedbackResponseDto
+     */
+    'updatedAt': string;
+    /**
+     * 
+     * @type {GameVersionDto}
+     * @memberof GameFeedbackResponseDto
+     */
+    'version': GameVersionDto;
+    /**
+     * 
+     * @type {UserDto}
+     * @memberof GameFeedbackResponseDto
+     */
+    'user': UserDto;
+}
+/**
+ * 
+ * @export
+ * @interface GameFeedbackResponseEntity
+ */
+export interface GameFeedbackResponseEntity {
+    /**
+     * 
+     * @type {string}
+     * @memberof GameFeedbackResponseEntity
+     */
+    'id': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof GameFeedbackResponseEntity
+     */
+    'createdAt': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof GameFeedbackResponseEntity
+     */
+    'updatedAt': string;
+    /**
+     * 
+     * @type {GameVersionEntity}
+     * @memberof GameFeedbackResponseEntity
+     */
+    'version': GameVersionEntity;
+    /**
+     * 
+     * @type {UserEntity}
+     * @memberof GameFeedbackResponseEntity
+     */
+    'user': UserEntity;
+}
+/**
+ * 
+ * @export
+ * @interface GameVersionDto
+ */
+export interface GameVersionDto {
+    /**
+     * 
+     * @type {string}
+     * @memberof GameVersionDto
+     */
+    'id': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof GameVersionDto
+     */
+    'createdAt': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof GameVersionDto
+     */
+    'updatedAt': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof GameVersionDto
+     */
+    'version': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof GameVersionDto
+     */
+    'archive_url': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof GameVersionDto
+     */
+    'notes_url': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof GameVersionDto
+     */
+    'feedback_form': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof GameVersionDto
+     */
+    'feedback_deadline': string;
+    /**
+     * 
+     * @type {GameDto}
+     * @memberof GameVersionDto
+     */
+    'game': GameDto;
+    /**
+     * 
+     * @type {Array<GameFeedbackResponseDto>}
+     * @memberof GameVersionDto
+     */
+    'responses': Array<GameFeedbackResponseDto>;
+}
+/**
+ * 
+ * @export
+ * @interface GameVersionEntity
+ */
+export interface GameVersionEntity {
+    /**
+     * 
+     * @type {string}
+     * @memberof GameVersionEntity
+     */
+    'id': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof GameVersionEntity
+     */
+    'createdAt': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof GameVersionEntity
+     */
+    'updatedAt': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof GameVersionEntity
+     */
+    'version': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof GameVersionEntity
+     */
+    'archive_url': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof GameVersionEntity
+     */
+    'notes_url': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof GameVersionEntity
+     */
+    'feedback_form': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof GameVersionEntity
+     */
+    'feedback_deadline': string;
+    /**
+     * 
+     * @type {GameEntity}
+     * @memberof GameVersionEntity
+     */
+    'game': GameEntity;
+    /**
+     * 
+     * @type {Array<GameFeedbackResponseEntity>}
+     * @memberof GameVersionEntity
+     */
+    'responses': Array<GameFeedbackResponseEntity>;
+}
+/**
+ * @type GetManyBaseGameControllerGameEntity200Response
+ * @export
+ */
+export type GetManyBaseGameControllerGameEntity200Response = Array<GameEntity> | GetManyGameEntityResponseDto;
+
+/**
+ * @type GetManyBaseGameVersionControllerGameVersionEntity200Response
+ * @export
+ */
+export type GetManyBaseGameVersionControllerGameVersionEntity200Response = Array<GameVersionEntity> | GetManyGameVersionEntityResponseDto;
+
+/**
+ * 
+ * @export
+ * @interface GetManyGameEntityResponseDto
+ */
+export interface GetManyGameEntityResponseDto {
+    /**
+     * 
+     * @type {Array<GameEntity>}
+     * @memberof GetManyGameEntityResponseDto
+     */
+    'data': Array<GameEntity>;
+    /**
+     * 
+     * @type {number}
+     * @memberof GetManyGameEntityResponseDto
+     */
+    'count': number;
+    /**
+     * 
+     * @type {number}
+     * @memberof GetManyGameEntityResponseDto
+     */
+    'total': number;
+    /**
+     * 
+     * @type {number}
+     * @memberof GetManyGameEntityResponseDto
+     */
+    'page': number;
+    /**
+     * 
+     * @type {number}
+     * @memberof GetManyGameEntityResponseDto
+     */
+    'pageCount': number;
+}
+/**
+ * 
+ * @export
+ * @interface GetManyGameVersionEntityResponseDto
+ */
+export interface GetManyGameVersionEntityResponseDto {
+    /**
+     * 
+     * @type {Array<GameVersionEntity>}
+     * @memberof GetManyGameVersionEntityResponseDto
+     */
+    'data': Array<GameVersionEntity>;
+    /**
+     * 
+     * @type {number}
+     * @memberof GetManyGameVersionEntityResponseDto
+     */
+    'count': number;
+    /**
+     * 
+     * @type {number}
+     * @memberof GetManyGameVersionEntityResponseDto
+     */
+    'total': number;
+    /**
+     * 
+     * @type {number}
+     * @memberof GetManyGameVersionEntityResponseDto
+     */
+    'page': number;
+    /**
+     * 
+     * @type {number}
+     * @memberof GetManyGameVersionEntityResponseDto
+     */
+    'pageCount': number;
+}
+/**
+ * 
+ * @export
  * @interface LectureEntity
  */
 export interface LectureEntity {
@@ -408,6 +878,24 @@ export interface LectureEntity {
      * @memberof LectureEntity
      */
     'updatedAt': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof LectureEntity
+     */
+    'slug': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof LectureEntity
+     */
+    'title': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof LectureEntity
+     */
+    'summary': string;
 }
 /**
  * 
@@ -570,6 +1058,25 @@ export interface OkDto {
      * @memberof OkDto
      */
     'message': string;
+}
+/**
+ * 
+ * @export
+ * @interface PermissionsDto
+ */
+export interface PermissionsDto {
+    /**
+     * 
+     * @type {string}
+     * @memberof PermissionsDto
+     */
+    'owner': string;
+    /**
+     * 
+     * @type {Array<string>}
+     * @memberof PermissionsDto
+     */
+    'editors': Array<string>;
 }
 /**
  * 
@@ -1053,6 +1560,35 @@ export const AuthApiAxiosParamCreator = function (configuration?: Configuration)
         },
         /**
          * 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        authControllerTest: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/auth/test`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
          * @param {string} user 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -1202,6 +1738,17 @@ export const AuthApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async authControllerTest(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.authControllerTest(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['AuthApi.authControllerTest']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
          * @param {string} user 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -1286,6 +1833,14 @@ export const AuthApiFactory = function (configuration?: Configuration, basePath?
          */
         authControllerSignUpWithEmailUsernamePassword(localSignUpDto: LocalSignUpDto, options?: any): AxiosPromise<LocalSignInResponseDto> {
             return localVarFp.authControllerSignUpWithEmailUsernamePassword(localSignUpDto, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        authControllerTest(options?: any): AxiosPromise<void> {
+            return localVarFp.authControllerTest(options).then((request) => request(axios, basePath));
         },
         /**
          * 
@@ -1378,6 +1933,16 @@ export class AuthApi extends BaseAPI {
      */
     public authControllerSignUpWithEmailUsernamePassword(localSignUpDto: LocalSignUpDto, options?: RawAxiosRequestConfig) {
         return AuthApiFp(this.configuration).authControllerSignUpWithEmailUsernamePassword(localSignUpDto, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AuthApi
+     */
+    public authControllerTest(options?: RawAxiosRequestConfig) {
+        return AuthApiFp(this.configuration).authControllerTest(options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -2146,6 +2711,992 @@ export class ContentApi extends BaseAPI {
      */
     public contentControllerCreateEmptyCourse(options?: RawAxiosRequestConfig) {
         return ContentApiFp(this.configuration).contentControllerCreateEmptyCourse(options).then((request) => request(this.axios, this.basePath));
+    }
+}
+
+
+
+/**
+ * GameApi - axios parameter creator
+ * @export
+ */
+export const GameApiAxiosParamCreator = function (configuration?: Configuration) {
+    return {
+        /**
+         * 
+         * @summary Create a single GameEntity
+         * @param {GameDto} gameDto 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        createOneBaseGameControllerGameEntity: async (gameDto: GameDto, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'gameDto' is not null or undefined
+            assertParamExists('createOneBaseGameControllerGameEntity', 'gameDto', gameDto)
+            const localVarPath = `/game`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication bearer required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(gameDto, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary Delete a single GameEntity
+         * @param {string} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        deleteOneBaseGameControllerGameEntity: async (id: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('deleteOneBaseGameControllerGameEntity', 'id', id)
+            const localVarPath = `/game/{id}`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'DELETE', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication bearer required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary Retrieve multiple GameEntities
+         * @param {Array<string>} [fields] Selects resource fields. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#select\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+         * @param {string} [s] Adds search condition. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#search\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+         * @param {Array<string>} [filter] Adds filter condition. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#filter\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+         * @param {Array<string>} [or] Adds OR condition. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#or\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+         * @param {Array<string>} [sort] Adds sort by field. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#sort\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+         * @param {Array<string>} [join] Adds relational resources. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#join\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+         * @param {number} [limit] Limit amount of resources. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#limit\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+         * @param {number} [offset] Offset amount of resources. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#offset\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+         * @param {number} [page] Page portion of resources. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#page\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+         * @param {number} [cache] Reset cache (if was enabled). &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#cache\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getManyBaseGameControllerGameEntity: async (fields?: Array<string>, s?: string, filter?: Array<string>, or?: Array<string>, sort?: Array<string>, join?: Array<string>, limit?: number, offset?: number, page?: number, cache?: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/game`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            if (fields) {
+                localVarQueryParameter['fields'] = fields.join(COLLECTION_FORMATS.csv);
+            }
+
+            if (s !== undefined) {
+                localVarQueryParameter['s'] = s;
+            }
+
+            if (filter) {
+                localVarQueryParameter['filter'] = filter;
+            }
+
+            if (or) {
+                localVarQueryParameter['or'] = or;
+            }
+
+            if (sort) {
+                localVarQueryParameter['sort'] = sort;
+            }
+
+            if (join) {
+                localVarQueryParameter['join'] = join;
+            }
+
+            if (limit !== undefined) {
+                localVarQueryParameter['limit'] = limit;
+            }
+
+            if (offset !== undefined) {
+                localVarQueryParameter['offset'] = offset;
+            }
+
+            if (page !== undefined) {
+                localVarQueryParameter['page'] = page;
+            }
+
+            if (cache !== undefined) {
+                localVarQueryParameter['cache'] = cache;
+            }
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary Retrieve a single GameEntity
+         * @param {string} id 
+         * @param {Array<string>} [fields] Selects resource fields. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#select\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+         * @param {Array<string>} [join] Adds relational resources. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#join\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+         * @param {number} [cache] Reset cache (if was enabled). &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#cache\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getOneBaseGameControllerGameEntity: async (id: string, fields?: Array<string>, join?: Array<string>, cache?: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('getOneBaseGameControllerGameEntity', 'id', id)
+            const localVarPath = `/game/{id}`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            if (fields) {
+                localVarQueryParameter['fields'] = fields.join(COLLECTION_FORMATS.csv);
+            }
+
+            if (join) {
+                localVarQueryParameter['join'] = join;
+            }
+
+            if (cache !== undefined) {
+                localVarQueryParameter['cache'] = cache;
+            }
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary Update a single GameEntity
+         * @param {string} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        updateOneBaseGameControllerGameEntity: async (id: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('updateOneBaseGameControllerGameEntity', 'id', id)
+            const localVarPath = `/game/{id}`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'PATCH', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication bearer required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+    }
+};
+
+/**
+ * GameApi - functional programming interface
+ * @export
+ */
+export const GameApiFp = function(configuration?: Configuration) {
+    const localVarAxiosParamCreator = GameApiAxiosParamCreator(configuration)
+    return {
+        /**
+         * 
+         * @summary Create a single GameEntity
+         * @param {GameDto} gameDto 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async createOneBaseGameControllerGameEntity(gameDto: GameDto, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<GameEntity>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.createOneBaseGameControllerGameEntity(gameDto, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['GameApi.createOneBaseGameControllerGameEntity']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary Delete a single GameEntity
+         * @param {string} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async deleteOneBaseGameControllerGameEntity(id: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.deleteOneBaseGameControllerGameEntity(id, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['GameApi.deleteOneBaseGameControllerGameEntity']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary Retrieve multiple GameEntities
+         * @param {Array<string>} [fields] Selects resource fields. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#select\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+         * @param {string} [s] Adds search condition. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#search\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+         * @param {Array<string>} [filter] Adds filter condition. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#filter\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+         * @param {Array<string>} [or] Adds OR condition. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#or\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+         * @param {Array<string>} [sort] Adds sort by field. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#sort\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+         * @param {Array<string>} [join] Adds relational resources. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#join\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+         * @param {number} [limit] Limit amount of resources. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#limit\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+         * @param {number} [offset] Offset amount of resources. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#offset\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+         * @param {number} [page] Page portion of resources. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#page\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+         * @param {number} [cache] Reset cache (if was enabled). &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#cache\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async getManyBaseGameControllerGameEntity(fields?: Array<string>, s?: string, filter?: Array<string>, or?: Array<string>, sort?: Array<string>, join?: Array<string>, limit?: number, offset?: number, page?: number, cache?: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<GetManyBaseGameControllerGameEntity200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getManyBaseGameControllerGameEntity(fields, s, filter, or, sort, join, limit, offset, page, cache, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['GameApi.getManyBaseGameControllerGameEntity']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary Retrieve a single GameEntity
+         * @param {string} id 
+         * @param {Array<string>} [fields] Selects resource fields. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#select\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+         * @param {Array<string>} [join] Adds relational resources. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#join\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+         * @param {number} [cache] Reset cache (if was enabled). &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#cache\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async getOneBaseGameControllerGameEntity(id: string, fields?: Array<string>, join?: Array<string>, cache?: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<GameEntity>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getOneBaseGameControllerGameEntity(id, fields, join, cache, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['GameApi.getOneBaseGameControllerGameEntity']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary Update a single GameEntity
+         * @param {string} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async updateOneBaseGameControllerGameEntity(id: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<GameEntity>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.updateOneBaseGameControllerGameEntity(id, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['GameApi.updateOneBaseGameControllerGameEntity']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+    }
+};
+
+/**
+ * GameApi - factory interface
+ * @export
+ */
+export const GameApiFactory = function (configuration?: Configuration, basePath?: string, axios?: AxiosInstance) {
+    const localVarFp = GameApiFp(configuration)
+    return {
+        /**
+         * 
+         * @summary Create a single GameEntity
+         * @param {GameDto} gameDto 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        createOneBaseGameControllerGameEntity(gameDto: GameDto, options?: any): AxiosPromise<GameEntity> {
+            return localVarFp.createOneBaseGameControllerGameEntity(gameDto, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary Delete a single GameEntity
+         * @param {string} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        deleteOneBaseGameControllerGameEntity(id: string, options?: any): AxiosPromise<void> {
+            return localVarFp.deleteOneBaseGameControllerGameEntity(id, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary Retrieve multiple GameEntities
+         * @param {Array<string>} [fields] Selects resource fields. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#select\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+         * @param {string} [s] Adds search condition. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#search\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+         * @param {Array<string>} [filter] Adds filter condition. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#filter\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+         * @param {Array<string>} [or] Adds OR condition. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#or\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+         * @param {Array<string>} [sort] Adds sort by field. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#sort\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+         * @param {Array<string>} [join] Adds relational resources. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#join\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+         * @param {number} [limit] Limit amount of resources. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#limit\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+         * @param {number} [offset] Offset amount of resources. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#offset\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+         * @param {number} [page] Page portion of resources. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#page\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+         * @param {number} [cache] Reset cache (if was enabled). &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#cache\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getManyBaseGameControllerGameEntity(fields?: Array<string>, s?: string, filter?: Array<string>, or?: Array<string>, sort?: Array<string>, join?: Array<string>, limit?: number, offset?: number, page?: number, cache?: number, options?: any): AxiosPromise<GetManyBaseGameControllerGameEntity200Response> {
+            return localVarFp.getManyBaseGameControllerGameEntity(fields, s, filter, or, sort, join, limit, offset, page, cache, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary Retrieve a single GameEntity
+         * @param {string} id 
+         * @param {Array<string>} [fields] Selects resource fields. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#select\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+         * @param {Array<string>} [join] Adds relational resources. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#join\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+         * @param {number} [cache] Reset cache (if was enabled). &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#cache\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getOneBaseGameControllerGameEntity(id: string, fields?: Array<string>, join?: Array<string>, cache?: number, options?: any): AxiosPromise<GameEntity> {
+            return localVarFp.getOneBaseGameControllerGameEntity(id, fields, join, cache, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary Update a single GameEntity
+         * @param {string} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        updateOneBaseGameControllerGameEntity(id: string, options?: any): AxiosPromise<GameEntity> {
+            return localVarFp.updateOneBaseGameControllerGameEntity(id, options).then((request) => request(axios, basePath));
+        },
+    };
+};
+
+/**
+ * GameApi - object-oriented interface
+ * @export
+ * @class GameApi
+ * @extends {BaseAPI}
+ */
+export class GameApi extends BaseAPI {
+    /**
+     * 
+     * @summary Create a single GameEntity
+     * @param {GameDto} gameDto 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof GameApi
+     */
+    public createOneBaseGameControllerGameEntity(gameDto: GameDto, options?: RawAxiosRequestConfig) {
+        return GameApiFp(this.configuration).createOneBaseGameControllerGameEntity(gameDto, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary Delete a single GameEntity
+     * @param {string} id 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof GameApi
+     */
+    public deleteOneBaseGameControllerGameEntity(id: string, options?: RawAxiosRequestConfig) {
+        return GameApiFp(this.configuration).deleteOneBaseGameControllerGameEntity(id, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary Retrieve multiple GameEntities
+     * @param {Array<string>} [fields] Selects resource fields. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#select\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+     * @param {string} [s] Adds search condition. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#search\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+     * @param {Array<string>} [filter] Adds filter condition. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#filter\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+     * @param {Array<string>} [or] Adds OR condition. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#or\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+     * @param {Array<string>} [sort] Adds sort by field. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#sort\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+     * @param {Array<string>} [join] Adds relational resources. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#join\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+     * @param {number} [limit] Limit amount of resources. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#limit\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+     * @param {number} [offset] Offset amount of resources. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#offset\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+     * @param {number} [page] Page portion of resources. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#page\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+     * @param {number} [cache] Reset cache (if was enabled). &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#cache\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof GameApi
+     */
+    public getManyBaseGameControllerGameEntity(fields?: Array<string>, s?: string, filter?: Array<string>, or?: Array<string>, sort?: Array<string>, join?: Array<string>, limit?: number, offset?: number, page?: number, cache?: number, options?: RawAxiosRequestConfig) {
+        return GameApiFp(this.configuration).getManyBaseGameControllerGameEntity(fields, s, filter, or, sort, join, limit, offset, page, cache, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary Retrieve a single GameEntity
+     * @param {string} id 
+     * @param {Array<string>} [fields] Selects resource fields. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#select\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+     * @param {Array<string>} [join] Adds relational resources. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#join\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+     * @param {number} [cache] Reset cache (if was enabled). &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#cache\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof GameApi
+     */
+    public getOneBaseGameControllerGameEntity(id: string, fields?: Array<string>, join?: Array<string>, cache?: number, options?: RawAxiosRequestConfig) {
+        return GameApiFp(this.configuration).getOneBaseGameControllerGameEntity(id, fields, join, cache, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary Update a single GameEntity
+     * @param {string} id 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof GameApi
+     */
+    public updateOneBaseGameControllerGameEntity(id: string, options?: RawAxiosRequestConfig) {
+        return GameApiFp(this.configuration).updateOneBaseGameControllerGameEntity(id, options).then((request) => request(this.axios, this.basePath));
+    }
+}
+
+
+
+/**
+ * GameVersionApi - axios parameter creator
+ * @export
+ */
+export const GameVersionApiAxiosParamCreator = function (configuration?: Configuration) {
+    return {
+        /**
+         * 
+         * @summary Create a single GameVersionEntity
+         * @param {GameVersionDto} gameVersionDto 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        createOneBaseGameVersionControllerGameVersionEntity: async (gameVersionDto: GameVersionDto, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'gameVersionDto' is not null or undefined
+            assertParamExists('createOneBaseGameVersionControllerGameVersionEntity', 'gameVersionDto', gameVersionDto)
+            const localVarPath = `/game-version`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication bearer required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(gameVersionDto, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary Delete a single GameVersionEntity
+         * @param {string} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        deleteOneBaseGameVersionControllerGameVersionEntity: async (id: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('deleteOneBaseGameVersionControllerGameVersionEntity', 'id', id)
+            const localVarPath = `/game-version/{id}`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'DELETE', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary Retrieve multiple GameVersionEntities
+         * @param {Array<string>} [fields] Selects resource fields. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#select\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+         * @param {string} [s] Adds search condition. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#search\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+         * @param {Array<string>} [filter] Adds filter condition. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#filter\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+         * @param {Array<string>} [or] Adds OR condition. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#or\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+         * @param {Array<string>} [sort] Adds sort by field. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#sort\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+         * @param {Array<string>} [join] Adds relational resources. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#join\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+         * @param {number} [limit] Limit amount of resources. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#limit\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+         * @param {number} [offset] Offset amount of resources. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#offset\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+         * @param {number} [page] Page portion of resources. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#page\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+         * @param {number} [cache] Reset cache (if was enabled). &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#cache\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getManyBaseGameVersionControllerGameVersionEntity: async (fields?: Array<string>, s?: string, filter?: Array<string>, or?: Array<string>, sort?: Array<string>, join?: Array<string>, limit?: number, offset?: number, page?: number, cache?: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/game-version`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            if (fields) {
+                localVarQueryParameter['fields'] = fields.join(COLLECTION_FORMATS.csv);
+            }
+
+            if (s !== undefined) {
+                localVarQueryParameter['s'] = s;
+            }
+
+            if (filter) {
+                localVarQueryParameter['filter'] = filter;
+            }
+
+            if (or) {
+                localVarQueryParameter['or'] = or;
+            }
+
+            if (sort) {
+                localVarQueryParameter['sort'] = sort;
+            }
+
+            if (join) {
+                localVarQueryParameter['join'] = join;
+            }
+
+            if (limit !== undefined) {
+                localVarQueryParameter['limit'] = limit;
+            }
+
+            if (offset !== undefined) {
+                localVarQueryParameter['offset'] = offset;
+            }
+
+            if (page !== undefined) {
+                localVarQueryParameter['page'] = page;
+            }
+
+            if (cache !== undefined) {
+                localVarQueryParameter['cache'] = cache;
+            }
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary Retrieve a single GameVersionEntity
+         * @param {string} id 
+         * @param {Array<string>} [fields] Selects resource fields. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#select\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+         * @param {Array<string>} [join] Adds relational resources. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#join\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+         * @param {number} [cache] Reset cache (if was enabled). &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#cache\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getOneBaseGameVersionControllerGameVersionEntity: async (id: string, fields?: Array<string>, join?: Array<string>, cache?: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('getOneBaseGameVersionControllerGameVersionEntity', 'id', id)
+            const localVarPath = `/game-version/{id}`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            if (fields) {
+                localVarQueryParameter['fields'] = fields.join(COLLECTION_FORMATS.csv);
+            }
+
+            if (join) {
+                localVarQueryParameter['join'] = join;
+            }
+
+            if (cache !== undefined) {
+                localVarQueryParameter['cache'] = cache;
+            }
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary Update a single GameVersionEntity
+         * @param {string} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        updateOneBaseGameVersionControllerGameVersionEntity: async (id: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('updateOneBaseGameVersionControllerGameVersionEntity', 'id', id)
+            const localVarPath = `/game-version/{id}`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'PATCH', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication bearer required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+    }
+};
+
+/**
+ * GameVersionApi - functional programming interface
+ * @export
+ */
+export const GameVersionApiFp = function(configuration?: Configuration) {
+    const localVarAxiosParamCreator = GameVersionApiAxiosParamCreator(configuration)
+    return {
+        /**
+         * 
+         * @summary Create a single GameVersionEntity
+         * @param {GameVersionDto} gameVersionDto 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async createOneBaseGameVersionControllerGameVersionEntity(gameVersionDto: GameVersionDto, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<GameVersionEntity>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.createOneBaseGameVersionControllerGameVersionEntity(gameVersionDto, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['GameVersionApi.createOneBaseGameVersionControllerGameVersionEntity']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary Delete a single GameVersionEntity
+         * @param {string} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async deleteOneBaseGameVersionControllerGameVersionEntity(id: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.deleteOneBaseGameVersionControllerGameVersionEntity(id, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['GameVersionApi.deleteOneBaseGameVersionControllerGameVersionEntity']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary Retrieve multiple GameVersionEntities
+         * @param {Array<string>} [fields] Selects resource fields. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#select\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+         * @param {string} [s] Adds search condition. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#search\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+         * @param {Array<string>} [filter] Adds filter condition. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#filter\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+         * @param {Array<string>} [or] Adds OR condition. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#or\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+         * @param {Array<string>} [sort] Adds sort by field. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#sort\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+         * @param {Array<string>} [join] Adds relational resources. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#join\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+         * @param {number} [limit] Limit amount of resources. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#limit\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+         * @param {number} [offset] Offset amount of resources. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#offset\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+         * @param {number} [page] Page portion of resources. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#page\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+         * @param {number} [cache] Reset cache (if was enabled). &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#cache\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async getManyBaseGameVersionControllerGameVersionEntity(fields?: Array<string>, s?: string, filter?: Array<string>, or?: Array<string>, sort?: Array<string>, join?: Array<string>, limit?: number, offset?: number, page?: number, cache?: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<GetManyBaseGameVersionControllerGameVersionEntity200Response>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getManyBaseGameVersionControllerGameVersionEntity(fields, s, filter, or, sort, join, limit, offset, page, cache, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['GameVersionApi.getManyBaseGameVersionControllerGameVersionEntity']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary Retrieve a single GameVersionEntity
+         * @param {string} id 
+         * @param {Array<string>} [fields] Selects resource fields. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#select\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+         * @param {Array<string>} [join] Adds relational resources. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#join\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+         * @param {number} [cache] Reset cache (if was enabled). &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#cache\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async getOneBaseGameVersionControllerGameVersionEntity(id: string, fields?: Array<string>, join?: Array<string>, cache?: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<GameVersionEntity>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getOneBaseGameVersionControllerGameVersionEntity(id, fields, join, cache, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['GameVersionApi.getOneBaseGameVersionControllerGameVersionEntity']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary Update a single GameVersionEntity
+         * @param {string} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async updateOneBaseGameVersionControllerGameVersionEntity(id: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<GameVersionEntity>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.updateOneBaseGameVersionControllerGameVersionEntity(id, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['GameVersionApi.updateOneBaseGameVersionControllerGameVersionEntity']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+    }
+};
+
+/**
+ * GameVersionApi - factory interface
+ * @export
+ */
+export const GameVersionApiFactory = function (configuration?: Configuration, basePath?: string, axios?: AxiosInstance) {
+    const localVarFp = GameVersionApiFp(configuration)
+    return {
+        /**
+         * 
+         * @summary Create a single GameVersionEntity
+         * @param {GameVersionDto} gameVersionDto 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        createOneBaseGameVersionControllerGameVersionEntity(gameVersionDto: GameVersionDto, options?: any): AxiosPromise<GameVersionEntity> {
+            return localVarFp.createOneBaseGameVersionControllerGameVersionEntity(gameVersionDto, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary Delete a single GameVersionEntity
+         * @param {string} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        deleteOneBaseGameVersionControllerGameVersionEntity(id: string, options?: any): AxiosPromise<void> {
+            return localVarFp.deleteOneBaseGameVersionControllerGameVersionEntity(id, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary Retrieve multiple GameVersionEntities
+         * @param {Array<string>} [fields] Selects resource fields. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#select\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+         * @param {string} [s] Adds search condition. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#search\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+         * @param {Array<string>} [filter] Adds filter condition. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#filter\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+         * @param {Array<string>} [or] Adds OR condition. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#or\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+         * @param {Array<string>} [sort] Adds sort by field. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#sort\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+         * @param {Array<string>} [join] Adds relational resources. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#join\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+         * @param {number} [limit] Limit amount of resources. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#limit\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+         * @param {number} [offset] Offset amount of resources. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#offset\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+         * @param {number} [page] Page portion of resources. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#page\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+         * @param {number} [cache] Reset cache (if was enabled). &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#cache\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getManyBaseGameVersionControllerGameVersionEntity(fields?: Array<string>, s?: string, filter?: Array<string>, or?: Array<string>, sort?: Array<string>, join?: Array<string>, limit?: number, offset?: number, page?: number, cache?: number, options?: any): AxiosPromise<GetManyBaseGameVersionControllerGameVersionEntity200Response> {
+            return localVarFp.getManyBaseGameVersionControllerGameVersionEntity(fields, s, filter, or, sort, join, limit, offset, page, cache, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary Retrieve a single GameVersionEntity
+         * @param {string} id 
+         * @param {Array<string>} [fields] Selects resource fields. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#select\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+         * @param {Array<string>} [join] Adds relational resources. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#join\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+         * @param {number} [cache] Reset cache (if was enabled). &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#cache\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getOneBaseGameVersionControllerGameVersionEntity(id: string, fields?: Array<string>, join?: Array<string>, cache?: number, options?: any): AxiosPromise<GameVersionEntity> {
+            return localVarFp.getOneBaseGameVersionControllerGameVersionEntity(id, fields, join, cache, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary Update a single GameVersionEntity
+         * @param {string} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        updateOneBaseGameVersionControllerGameVersionEntity(id: string, options?: any): AxiosPromise<GameVersionEntity> {
+            return localVarFp.updateOneBaseGameVersionControllerGameVersionEntity(id, options).then((request) => request(axios, basePath));
+        },
+    };
+};
+
+/**
+ * GameVersionApi - object-oriented interface
+ * @export
+ * @class GameVersionApi
+ * @extends {BaseAPI}
+ */
+export class GameVersionApi extends BaseAPI {
+    /**
+     * 
+     * @summary Create a single GameVersionEntity
+     * @param {GameVersionDto} gameVersionDto 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof GameVersionApi
+     */
+    public createOneBaseGameVersionControllerGameVersionEntity(gameVersionDto: GameVersionDto, options?: RawAxiosRequestConfig) {
+        return GameVersionApiFp(this.configuration).createOneBaseGameVersionControllerGameVersionEntity(gameVersionDto, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary Delete a single GameVersionEntity
+     * @param {string} id 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof GameVersionApi
+     */
+    public deleteOneBaseGameVersionControllerGameVersionEntity(id: string, options?: RawAxiosRequestConfig) {
+        return GameVersionApiFp(this.configuration).deleteOneBaseGameVersionControllerGameVersionEntity(id, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary Retrieve multiple GameVersionEntities
+     * @param {Array<string>} [fields] Selects resource fields. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#select\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+     * @param {string} [s] Adds search condition. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#search\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+     * @param {Array<string>} [filter] Adds filter condition. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#filter\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+     * @param {Array<string>} [or] Adds OR condition. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#or\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+     * @param {Array<string>} [sort] Adds sort by field. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#sort\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+     * @param {Array<string>} [join] Adds relational resources. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#join\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+     * @param {number} [limit] Limit amount of resources. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#limit\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+     * @param {number} [offset] Offset amount of resources. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#offset\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+     * @param {number} [page] Page portion of resources. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#page\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+     * @param {number} [cache] Reset cache (if was enabled). &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#cache\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof GameVersionApi
+     */
+    public getManyBaseGameVersionControllerGameVersionEntity(fields?: Array<string>, s?: string, filter?: Array<string>, or?: Array<string>, sort?: Array<string>, join?: Array<string>, limit?: number, offset?: number, page?: number, cache?: number, options?: RawAxiosRequestConfig) {
+        return GameVersionApiFp(this.configuration).getManyBaseGameVersionControllerGameVersionEntity(fields, s, filter, or, sort, join, limit, offset, page, cache, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary Retrieve a single GameVersionEntity
+     * @param {string} id 
+     * @param {Array<string>} [fields] Selects resource fields. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#select\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+     * @param {Array<string>} [join] Adds relational resources. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#join\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+     * @param {number} [cache] Reset cache (if was enabled). &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#cache\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof GameVersionApi
+     */
+    public getOneBaseGameVersionControllerGameVersionEntity(id: string, fields?: Array<string>, join?: Array<string>, cache?: number, options?: RawAxiosRequestConfig) {
+        return GameVersionApiFp(this.configuration).getOneBaseGameVersionControllerGameVersionEntity(id, fields, join, cache, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary Update a single GameVersionEntity
+     * @param {string} id 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof GameVersionApi
+     */
+    public updateOneBaseGameVersionControllerGameVersionEntity(id: string, options?: RawAxiosRequestConfig) {
+        return GameVersionApiFp(this.configuration).updateOneBaseGameVersionControllerGameVersionEntity(id, options).then((request) => request(this.axios, this.basePath));
     }
 }
 

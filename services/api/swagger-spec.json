@@ -207,10 +207,18 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Unauthorized"
           }
         },
         "tags": [
           "auth"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
         ]
       }
     },
@@ -251,10 +259,18 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Unauthorized"
           }
         },
         "tags": [
           "content"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
         ]
       }
     },
@@ -283,10 +299,18 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Unauthorized"
           }
         },
         "tags": [
           "game"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
         ]
       },
       "get": {
@@ -462,10 +486,18 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Unauthorized"
           }
         },
         "tags": [
           "game"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
         ]
       },
       "get": {
@@ -552,10 +584,18 @@
         "responses": {
           "200": {
             "description": "Delete one base response"
+          },
+          "401": {
+            "description": "Unauthorized"
           }
         },
         "tags": [
           "game"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
         ]
       }
     },
@@ -584,10 +624,18 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Unauthorized"
           }
         },
         "tags": [
           "game-version"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
         ]
       },
       "get": {
@@ -763,10 +811,18 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Unauthorized"
           }
         },
         "tags": [
           "game-version"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
         ]
       },
       "get": {
@@ -887,10 +943,18 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Unauthorized"
           }
         },
         "tags": [
           "competitions"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
         ]
       }
     },
@@ -911,10 +975,18 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Unauthorized"
           }
         },
         "tags": [
           "competitions"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
         ]
       }
     },
@@ -942,10 +1014,18 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Unauthorized"
           }
         },
         "tags": [
           "competitions"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
         ]
       }
     },
@@ -973,10 +1053,18 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Unauthorized"
           }
         },
         "tags": [
           "competitions"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
         ]
       }
     },
@@ -1007,10 +1095,18 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Unauthorized"
           }
         },
         "tags": [
           "competitions"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
         ]
       }
     },
@@ -1037,10 +1133,18 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Unauthorized"
           }
         },
         "tags": [
           "competitions"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
         ]
       }
     },
@@ -1061,10 +1165,18 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Unauthorized"
           }
         },
         "tags": [
           "competitions"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
         ]
       }
     },
@@ -1073,12 +1185,17 @@
         "operationId": "CompetitionController_RunCompetition",
         "parameters": [],
         "responses": {
-          "200": {
-            "description": ""
+          "401": {
+            "description": "Unauthorized"
           }
         },
         "tags": [
           "competitions"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
         ]
       }
     },
@@ -1099,10 +1216,18 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Unauthorized"
           }
         },
         "tags": [
           "competitions"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
         ]
       }
     }
