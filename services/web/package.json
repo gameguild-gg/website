@@ -12,6 +12,7 @@
     "ui:add": "npx shadcn-ui@latest add"
   },
   "dependencies": {
+    "@game-guild/apiclient": "*",
     "@game-guild/ui": "*",
     "@hookform/resolvers": "^3.3.4",
     "@lexical/react": "0.13.1",

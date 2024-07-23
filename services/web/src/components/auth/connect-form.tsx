@@ -11,7 +11,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { useSession } from 'next-auth/react';
 import MetaMaskSignInButton from '@/components/others/web3/meta-mask-sign-in-button';
 import { authApi } from '@/lib/apinest';
-import { OkDto } from '@/apinest';
+import { OkDto } from '@game-guild/apiclient';
 
 const initialState: SignInFormState = {};
 

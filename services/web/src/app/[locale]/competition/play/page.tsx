@@ -10,7 +10,7 @@ import { Button, Dropdown, message, Space, Tooltip } from 'antd';
 
 import { getCookie } from 'cookies-next';
 import { useRouter } from 'next/navigation';
-import { ChessMoveRequestDto } from '@/apinest';
+import { ChessMoveRequestDto } from '@game-guild/apiclient';
 
 export default function PlayPage() {
   const router = useRouter();

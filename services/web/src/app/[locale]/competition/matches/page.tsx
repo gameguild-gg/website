@@ -13,7 +13,10 @@ import {
 
 import { getCookie } from 'cookies-next';
 import { useRouter } from 'next/navigation';
-import { MatchSearchRequestDto, MatchSearchResponseDto } from '@/apinest';
+import {
+  MatchSearchRequestDto,
+  MatchSearchResponseDto,
+} from '@game-guild/apiclient';
 
 export default function MatchesPage() {
   const router = useRouter();

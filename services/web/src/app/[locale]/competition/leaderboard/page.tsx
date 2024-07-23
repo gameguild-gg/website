@@ -4,7 +4,7 @@ import React, { useEffect } from 'react';
 import { getCookie } from 'cookies-next';
 import { useRouter } from 'next/navigation';
 import { Table, TableColumnsType, Typography } from 'antd';
-import { ChessLeaderboardResponseEntryDto } from '@/apinest';
+import { ChessLeaderboardResponseEntryDto } from '@game-guild/apiclient';
 
 export default function LeaderboardPage() {
   const router = useRouter();

@@ -6,7 +6,7 @@ import { Button, Dropdown, MenuProps, message, Space, Typography } from 'antd';
 import { RobotFilled, UserOutlined } from '@ant-design/icons';
 import { useRouter } from 'next/navigation';
 import { competitionsApi } from '@/lib/apinest';
-import { ChessMatchResultDto, UserDto } from '@/apinest';
+import { ChessMatchResultDto, UserDto } from '@game-guild/apiclient';
 
 const ChallengePage: React.FC = () => {
   const router = useRouter();

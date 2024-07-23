@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import React, { useEffect } from 'react';
 import { Button, message, Space, Typography } from 'antd';
 import { Chessboard } from 'react-chessboard';
-import { ChessMatchResultDto } from '@/apinest';
+import { ChessMatchResultDto } from '@game-guild/apiclient';
 
 export default function ReplayPage() {
   const [states, setStates] = React.useState<string[]>([]);

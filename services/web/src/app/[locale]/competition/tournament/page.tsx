@@ -8,7 +8,7 @@ import { RedoOutlined } from '@ant-design/icons';
 
 import { Moment } from 'moment';
 import moment from 'moment-timezone';
-import { CompetitionRunSubmissionReportDto } from '@/apinest';
+import { CompetitionRunSubmissionReportDto } from '@game-guild/apiclient';
 
 export default function TournamentPage() {
   const router = useRouter();

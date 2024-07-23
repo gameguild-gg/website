@@ -9,7 +9,7 @@ import {
   LocalSignInDto,
   LocalSignInResponseDto,
   LocalSignUpDto,
-} from '@/apinest';
+} from '@game-guild/apiclient';
 
 enum UserExists {
   NotChecked = 'NotChecked',
