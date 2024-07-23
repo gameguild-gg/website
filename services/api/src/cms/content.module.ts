@@ -13,7 +13,9 @@ import { GameFeedbackResponseEntity } from './entities/game-feedback-response.en
 import { GameController } from './game.controller';
 import { GameService } from './game.service';
 import { APP_INTERCEPTOR } from '@nestjs/core';
-import { IsOwnerInterceptor } from '../common/interceptors/isowner.interceptor';
+import { RequireRoleInterceptor } from '../auth/interceptors/require-role.interceptor';
+import { GameVersionController } from './game-version.controller';
+import { GameVersionService } from './game-version.service';
 
 @Module({
   imports: [
@@ -28,15 +30,16 @@ import { IsOwnerInterceptor } from '../common/interceptors/isowner.interceptor';
     ]),
     forwardRef(() => UserModule),
   ],
-  controllers: [ContentController, GameController],
+  controllers: [ContentController, GameController, GameVersionController],
   providers: [
     ContentService,
     GameService,
     {
       provide: APP_INTERCEPTOR,
-      useClass: IsOwnerInterceptor,
+      useClass: RequireRoleInterceptor,
     },
+    GameVersionService,
   ],
-  exports: [ContentService, GameService],
+  exports: [ContentService, GameService, GameVersionService],
 })
 export class ContentModule {}

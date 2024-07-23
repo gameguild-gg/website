@@ -57,8 +57,8 @@ export class GameVersionEntity extends EntityBase {
   @Index({ unique: false })
   feedback_deadline: Date;
 
-  @ManyToOne(() => GameEntity, (game) => game.versions)
   @ApiProperty({ type: () => GameEntity })
+  @ManyToOne(() => GameEntity, (game) => game.versions)
   game: GameEntity;
 
   // relation to feedback responses

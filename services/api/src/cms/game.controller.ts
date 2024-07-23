@@ -1,7 +1,7 @@
 import { Controller, Logger } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { GameService } from './game.service';
-import { Auth, ContentRoles } from '../auth/decorators/http.decorator';
+import { Auth } from '../auth/decorators/http.decorator';
 import { GameEntity } from './entities/game.entity';
 import {
   Crud,
@@ -14,6 +14,7 @@ import {
 import { GameDto } from './dtos/game.dto';
 import { AuthUser } from '../auth';
 import { UserEntity } from '../user/entities';
+import { ContentUserRolesEnum } from '../auth/auth.enum';
 
 @Crud({
   model: {
@@ -35,7 +36,9 @@ import { UserEntity } from '../user/entities';
       decorators: [Auth({ public: true })],
     },
     deleteOneBase: {
-      decorators: [Auth({ content: ContentRoles.OWNER, entity: GameEntity })],
+      decorators: [
+        Auth({ content: ContentUserRolesEnum.OWNER, entity: GameEntity }),
+      ],
     },
   },
 })
@@ -57,18 +60,19 @@ export class GameController implements CrudController<GameEntity> {
     @ParsedBody() dto: GameDto,
     @AuthUser() user: UserEntity,
   ) {
-    dto.owner = user;
+    dto.roles = {
+      owner: user.id,
+      editors: [user.id],
+    };
     return this.base.createOneBase(req, <GameEntity>dto);
   }
 
   @Override()
-  @Auth({ content: ContentRoles.EDITOR, entity: GameEntity })
+  @Auth({ content: ContentUserRolesEnum.EDITOR, entity: GameEntity })
   async updateOne(
     @ParsedRequest() req: CrudRequest,
     @ParsedBody() dto: Partial<GameDto>,
   ): Promise<GameEntity> {
-    delete dto.owner;
-    delete dto.editors;
     return this.base.updateOneBase(req, <GameEntity>dto);
   }
 }
