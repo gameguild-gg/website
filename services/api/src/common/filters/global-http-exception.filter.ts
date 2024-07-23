@@ -34,7 +34,10 @@ export class GlobalHttpExceptionFilter implements ExceptionFilter {
       error: exception.name,
     };
     if (this.configService.nodeEnv === 'development') {
-      responseBody.stack = exception.stack;
+      // split the stack into an array of lines
+      responseBody.stack = exception.stack
+        .split('\n')
+        .map((line) => line.trim());
       responseBody.exception = exception;
     }
 
