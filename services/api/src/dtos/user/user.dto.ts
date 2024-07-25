@@ -1,7 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Exclude } from 'class-transformer';
+import { Exclude, Type } from 'class-transformer';
 import { EntityDto } from '../entity.dto';
 import { UserProfileDto } from '../../user/modules/user-profile/dtos/user-profile.dto';
+import { ValidateNested } from 'class-validator';
 
 export class UserDto extends EntityDto {
   // Local Sign-in
@@ -50,5 +51,12 @@ export class UserDto extends EntityDto {
   elo: number;
 
   @ApiProperty({ type: UserProfileDto })
+  @ValidateNested()
+  @Type(() => UserProfileDto)
   profile: UserProfileDto;
+
+  constructor(partial: Partial<UserDto>) {
+    super();
+    Object.assign(this, partial);
+  }
 }

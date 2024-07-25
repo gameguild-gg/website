@@ -13,9 +13,13 @@ module.exports = {
   },
   ignorePatterns: ['.eslintrc'],
   rules: {
-    'prettier/prettier': [
-      'error',
-      require('@game-guild/prettier-config'),
-    ],
+    'prettier/prettier': ['error', require('@game-guild/prettier-config')],
+    // consistent return types
+    '@typescript-eslint/explicit-function-return-type': 'error',
+    // consistent-return
+    'consistent-return': 'error',
+    // no-implicit-coercion
+    'no-implicit-coercion': 'error',
+    'no-return-await': 'error',
   },
 };

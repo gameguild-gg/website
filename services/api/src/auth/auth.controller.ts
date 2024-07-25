@@ -1,13 +1,5 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Logger,
-  Param,
-  Post,
-  Query, Req, UseGuards,
-} from '@nestjs/common';
-import {ApiBody, ApiOkResponse, ApiResponse, ApiTags} from '@nestjs/swagger';
+import { Body, Controller, Get, Logger, Param, Post } from '@nestjs/common';
+import { ApiBody, ApiTags } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { AuthUser, Public } from './decorators';
 import { LocalSignInDto } from '../dtos/auth/local-sign-in.dto';
@@ -21,7 +13,7 @@ import { EthereumSigninChallengeRequestDto } from '../dtos/auth/ethereum-signin-
 import { EthereumSigninChallengeResponseDto } from '../dtos/auth/ethereum-signin-challenge-response.dto';
 import { EmailDto } from './dtos/email.dto';
 import { OkDto } from '../common/dtos/ok.dto';
-import {AccessTokenGuard} from "./guards/access-token-guard.service";
+import { OkResponse } from '../common/decorators/return-type.decorator';
 
 @Controller('auth')
 @ApiTags('auth')
@@ -30,19 +22,11 @@ export class AuthController {
 
   constructor(private readonly authService: AuthService) {}
 
-  @Get('test')
-  // @Authentication()
-  @UseGuards(AccessTokenGuard)
-  test(@Req() req) {
-    console.log(req.user);
-    return "Hello World";
-  }
-
   @Post('magic-link')
   @Public()
-  @ApiOkResponse({ type: OkDto })
+  @OkResponse({ type: OkDto })
   public async magicLink(@Body() body: EmailDto): Promise<OkDto> {
-    return await this.authService.sendMagicLink(body);
+    return this.authService.sendMagicLink(body);
   }
 
   // @Post('sign-in')
@@ -60,16 +44,17 @@ export class AuthController {
   public async localSignWithEmailOrUsername(
     @Body() data: LocalSignInDto,
   ): Promise<LocalSignInResponseDto> {
-    return await this.authService.signInWithEmailOrPassword(data);
+    return this.authService.signInWithEmailOrPassword(data);
   }
 
   @Post('local/sign-up')
   @Public()
-  @ApiResponse({ type: LocalSignInResponseDto })
+  @OkResponse({ type: LocalSignInResponseDto }) // pass the type to the swagger
   public async signUpWithEmailUsernamePassword(
     @Body() data: LocalSignUpDto,
   ): Promise<LocalSignInResponseDto> {
-    return this.authService.signUpWithEmailUsernamePassword(data);
+    const resp = await this.authService.signUpWithEmailUsernamePassword(data);
+    return resp;
   }
 
   // TODO: Implement this endpoint.
@@ -80,35 +65,35 @@ export class AuthController {
   // }
 
   @Get('google/callback/:token')
-  @ApiOkResponse({ type: LocalSignInResponseDto })
+  @OkResponse({ type: LocalSignInResponseDto })
   @Public()
   public async signInWithGoogle(
     @Param('token') token: string,
   ): Promise<LocalSignInResponseDto> {
-    return await this.authService.validateGoogleSignIn(token);
+    return this.authService.validateGoogleSignIn(token);
   }
 
   @Post('web3/sign-in/challenge')
   @Public()
-  @ApiOkResponse({ type: EthereumSigninChallengeResponseDto })
+  @OkResponse({ type: EthereumSigninChallengeResponseDto })
   public async getWeb3SignInChallenge(
     @Body() data: EthereumSigninChallengeRequestDto,
   ): Promise<EthereumSigninChallengeResponseDto> {
-    return await this.authService.generateWeb3SignInChallenge(data);
+    return this.authService.generateWeb3SignInChallenge(data);
   }
 
   @Post('web3/sign-in/validate')
   @Public()
-  @ApiOkResponse({ type: LocalSignInResponseDto })
+  @OkResponse({ type: LocalSignInResponseDto })
   public async validateWeb3SignInChallenge(
     @Body() data: EthereumSigninValidateRequestDto,
   ): Promise<LocalSignInResponseDto> {
-    return await this.authService.validateWeb3SignInChallenge(data);
+    return this.authService.validateWeb3SignInChallenge(data);
   }
 
   @Get('current-user')
   @Auth({ public: false })
-  @ApiOkResponse({ type: UserDto })
+  @OkResponse({ type: UserDto })
   public async getCurrentUser(@AuthUser() user: UserEntity): Promise<UserDto> {
     return user;
   }
@@ -128,6 +113,6 @@ export class AuthController {
   @Get('userExists/:user')
   @Public()
   public async userExists(@Param('user') user: string): Promise<boolean> {
-    return await this.authService.userExists(user);
+    return this.authService.userExists(user);
   }
 }

@@ -28,4 +28,9 @@ export class UserProfileEntity extends EntityBase implements UserProfileDto {
   @Column({ nullable: true, default: null })
   @ApiProperty()
   picture?: string;
+
+  constructor(partial?: Partial<UserProfileEntity>) {
+    super();
+    Object.assign(this, partial);
+  }
 }

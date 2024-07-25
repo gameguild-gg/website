@@ -12,7 +12,7 @@ import {
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
-import { ApiConsumes, ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import { ApiConsumes, ApiTags } from '@nestjs/swagger';
 import { CompetitionService } from './competition.service';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { CompetitionGame } from './entities/competition.submission.entity';
@@ -30,6 +30,7 @@ import { AuthUser } from '../auth';
 import { UserEntity } from '../user/entities';
 
 import { CompetitionRunSubmissionReportDto } from '../dtos/competition/chess-competition-report.dto';
+import { OkResponse } from '../common/decorators/return-type.decorator';
 
 @Controller('Competitions')
 @ApiTags('competitions')
@@ -81,7 +82,7 @@ export class CompetitionController {
   // todo: Add login protections here and remove the password requirement.
   @Post('/Chess/submit')
   @ApiConsumes('multipart/form-data')
-  @ApiOkResponse({ type: TerminalDto, isArray: true })
+  @OkResponse({ type: TerminalDto, isArray: true })
   @UseInterceptors(FileInterceptor('file'))
   @Auth({ public: false })
   async submitChessAgent(
@@ -120,7 +121,7 @@ export class CompetitionController {
   }
 
   @Get('/Chess/ListAgents')
-  @ApiOkResponse({ type: [String] })
+  @OkResponse({ type: [String] })
   @Auth({ public: false })
   async ListChessAgents(@AuthUser() user: UserEntity): Promise<string[]> {
     if (!user) throw new UnauthorizedException('Invalid credentials');
@@ -128,7 +129,7 @@ export class CompetitionController {
   }
 
   @Post('/Chess/Move')
-  @ApiOkResponse({ type: String })
+  @OkResponse({ type: String })
   @Auth({ public: false })
   async RequestChessMove(
     @Body() data: ChessMoveRequestDto,
@@ -139,7 +140,7 @@ export class CompetitionController {
   }
 
   @Post('/Chess/RunMatch')
-  @ApiOkResponse({ type: ChessMatchResultDto })
+  @OkResponse({ type: ChessMatchResultDto })
   @Auth({ public: false })
   async RunChessMatch(
     @Body() data: ChessMatchRequestDto,
@@ -151,7 +152,7 @@ export class CompetitionController {
 
   @Post('/Chess/FindMatches')
   @Auth({ public: false })
-  @ApiOkResponse({
+  @OkResponse({
     type: MatchSearchResponseDto,
     isArray: true,
   })
@@ -223,7 +224,7 @@ export class CompetitionController {
 
   @Get('/Chess/Match/:id')
   @Auth({ public: false })
-  @ApiOkResponse({ type: ChessMatchResultDto })
+  @OkResponse({ type: ChessMatchResultDto })
   async GetChessMatchResult(
     @Param('id', ParseUUIDPipe) id: string,
     @AuthUser() user: UserEntity,
@@ -234,7 +235,7 @@ export class CompetitionController {
 
   @Get('/Chess/Leaderboard')
   @Auth({ public: false })
-  @ApiOkResponse({
+  @OkResponse({
     type: ChessLeaderboardResponseEntryDto,
     isArray: true,
   })
@@ -253,7 +254,7 @@ export class CompetitionController {
   }
 
   @Get('Chess/LatestCompetitionReport')
-  @ApiOkResponse({ type: CompetitionRunSubmissionReportDto, isArray: true })
+  @OkResponse({ type: CompetitionRunSubmissionReportDto, isArray: true })
   @Auth({ public: false })
   async GetLatestChessCompetitionReport(
     @AuthUser() user: UserEntity,

@@ -1,8 +1,11 @@
 import {
+  ClassSerializerInterceptor,
   Inject,
   Injectable,
   Logger,
+  SerializeOptions,
   UnauthorizedException,
+  UseInterceptors,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ApiConfigService } from '../common/config.service';
@@ -30,6 +33,9 @@ import { Cache } from 'cache-manager';
 import { SiweMessage } from 'siwe';
 import { EmailDto } from './dtos/email.dto';
 import { OkDto } from '../common/dtos/ok.dto';
+import { UserDto } from '../dtos/user/user.dto';
+import { classToPlain, instanceToPlain } from 'class-transformer';
+import { CreateLocalUserDto } from '../dtos/user';
 
 @Injectable()
 export class AuthService {
@@ -84,15 +90,15 @@ export class AuthService {
     return this.generateAccessToken(user);
   }
 
-  public async signIn(user: UserEntity) {
+  public async signIn(user: UserEntity): Promise<LocalSignInResponseDto> {
     const accessToken = await this.generateAccessToken(user);
     const refreshToken = await this.generateRefreshToken(user);
 
-    return {
+    return new LocalSignInResponseDto({
       user: user,
       accessToken: accessToken,
       refreshToken: refreshToken,
-    };
+    });
   }
 
   public async signUpWithEmailUsernamePassword(
@@ -102,17 +108,19 @@ export class AuthService {
     const passwordHash = generateHash(data.password, passwordSalt);
 
     try {
-      const user = await this.userService.createOneWithEmailAndPassword({
-        // username: data.username,
-        email: data.email,
-        username: data.username,
-        passwordHash: passwordHash,
-        passwordSalt: passwordSalt,
-      });
+      const user = await this.userService.createOneWithEmailAndPassword(
+        new CreateLocalUserDto({
+          // username: data.username,
+          email: data.email,
+          username: data.username,
+          passwordHash: passwordHash,
+          passwordSalt: passwordSalt,
+        }),
+      );
 
       // this.sendEmailVerification(user);
 
-      return await this.signIn(user);
+      return this.signIn(user);
     } catch (exception) {
       throw exception; // todo: fix this. useless.
     }
@@ -179,7 +187,7 @@ export class AuthService {
       select: ['id'], // Only select the id to reduce payload size.
     });
 
-    return !!foundUser;
+    return Boolean(foundUser);
   }
 
   async signInWithEmailOrPassword(

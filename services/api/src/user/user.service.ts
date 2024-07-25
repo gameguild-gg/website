@@ -1,7 +1,7 @@
 import { TypeOrmCrudService } from '@dataui/crud-typeorm';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, UpdateResult } from 'typeorm';
+import { Repository, Transaction, UpdateResult } from 'typeorm';
 import { UserEntity } from './entities';
 import { UserAlreadyExistsException } from './exceptions/user-already-exists.exception';
 import { UserProfileEntity } from './modules/user-profile/entities/user-profile.entity';
@@ -30,11 +30,11 @@ export class UserService extends TypeOrmCrudService<UserEntity> {
   }
 
   async isEmailTaken(email: string): Promise<boolean> {
-    return !!(await this.findOne({ where: { email: email } }));
+    return Boolean(await this.findOne({ where: { email: email } }));
   }
 
   async isUsernameTaken(username: string): Promise<boolean> {
-    return !!(await this.findOne({ where: { username: username } }));
+    return Boolean(await this.findOne({ where: { username: username } }));
   }
 
   async createOneWithEmailAndPassword(
@@ -52,12 +52,15 @@ export class UserService extends TypeOrmCrudService<UserEntity> {
       );
     }
 
-    return this.repository.save({
+    // todo: wrap in transaction
+    const profile = await this.profileService.save({});
+    return this.save({
       username: data.username,
       email: data.email,
       emailVerified: false,
       passwordHash: data.passwordHash,
       passwordSalt: data.passwordSalt,
+      profile: profile,
     });
   }
 
@@ -71,7 +74,7 @@ export class UserService extends TypeOrmCrudService<UserEntity> {
     if (user) {
       return user;
     } else {
-      user = await this.repository.save({
+      user = await this.save({
         walletAddress: walletAddress,
       });
       const profile = new UserProfileEntity();
@@ -85,12 +88,12 @@ export class UserService extends TypeOrmCrudService<UserEntity> {
     }
   }
 
-  public async save(user: Partial<UserEntity>) {
-    return this.repository.save(user);
+  public async save(user: Partial<UserEntity>): Promise<UserEntity> {
+    return new UserEntity(await this.repository.save(user));
   }
 
   async createOneWithGoogleId(payload: TokenPayload): Promise<UserEntity> {
-    let user = await this.findOne({
+    const user = await this.findOne({
       where: { googleId: payload.sub },
       relations: { profile: true },
     });
@@ -98,29 +101,24 @@ export class UserService extends TypeOrmCrudService<UserEntity> {
       // todo: update user profile with new data
       return user;
     } else {
-      // todo: check the border case the user have previosly signed up with email and now wants to sign in with google
+      // todo: check the border case the user have previously signed up with email and now wants to sign in with google
       // todo: relate to feature to merge accounts
       if (await this.isEmailTaken(payload.email)) {
         throw new UserAlreadyExistsException(
           `The email '${payload.email}' is already associated with an existing user. Merging accounts is not supported yet. Send us a message on Discord.`,
         );
       }
-      user = await this.repository.save({
+      return this.save({
         googleId: payload.sub,
         email: payload.email,
         emailVerified: true,
-      });
-      const profile = new UserProfileEntity();
-      profile.user = user;
-      profile.name = payload.name;
-      profile.givenName = payload.given_name;
-      profile.familyName = payload.family_name;
-      profile.picture = payload.picture;
-      await this.profileService.save(profile);
-
-      return this.findOne({
-        where: { googleId: payload.sub },
-        relations: { profile: true },
+        profile: await this.profileService.save({
+          user: user,
+          name: payload.name,
+          givenName: payload.given_name,
+          familyName: payload.family_name,
+          picture: payload.picture,
+        }),
       });
     }
   }

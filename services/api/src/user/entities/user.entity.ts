@@ -2,6 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Exclude } from 'class-transformer';
 import {
   Column,
+  DeepPartial,
   Entity,
   Index,
   JoinColumn,
@@ -16,6 +17,7 @@ import { CompetitionSubmissionEntity } from '../../competition/entities/competit
 import { UserDto } from '../../dtos/user/user.dto';
 import { PostEntity } from '../../cms/entities/post.entity';
 import { CourseEntity } from '../../cms/entities/course.entity';
+import { SerializeOptions } from '@nestjs/common';
 
 // todo: move to user-profile lots of fields from here
 
@@ -24,12 +26,12 @@ export class UserEntity extends EntityBase implements UserDto {
   // Local Sign-in
   @ApiProperty()
   @Column({ unique: true, nullable: true, default: null })
-  @Index()
+  @Index({ unique: true })
   username: string;
 
   @Column({ unique: true, nullable: true, default: null })
   @ApiProperty()
-  @Index()
+  @Index({ unique: true })
   email: string;
 
   @Column({ nullable: false, default: false })
@@ -49,38 +51,38 @@ export class UserEntity extends EntityBase implements UserDto {
   // Social Sign-in
   @Column({ nullable: true, unique: true, default: null })
   @ApiProperty()
-  @Index()
+  @Index({ unique: true })
   facebookId: string;
 
   @Column({ nullable: true, unique: true, default: null })
   @ApiProperty()
-  @Index()
+  @Index({ unique: true })
   googleId: string;
 
   @Column({ nullable: true, unique: true, default: null })
   @ApiProperty()
-  @Index()
+  @Index({ unique: true })
   githubId: string;
 
   @Column({ nullable: true, unique: true, default: null })
   @ApiProperty()
-  @Index()
+  @Index({ unique: true })
   appleId: string;
 
   @Column({ nullable: true, unique: true, default: null })
   @ApiProperty()
-  @Index()
+  @Index({ unique: true })
   linkedinId: string;
 
   @Column({ nullable: true, unique: true, default: null })
   @ApiProperty()
-  @Index()
+  @Index({ unique: true })
   twitterId: string;
 
   // Web3 Sign-in
   @Column({ nullable: true, unique: true, default: null })
   @ApiProperty()
-  @Index()
+  @Index({ unique: true })
   walletAddress: string;
 
   // Profile
@@ -108,4 +110,9 @@ export class UserEntity extends EntityBase implements UserDto {
   // relation to courses
   @OneToMany(() => CourseEntity, (course) => course.author)
   courses: CourseEntity[];
+
+  constructor(partial: Partial<UserEntity>) {
+    super();
+    Object.assign(this, partial);
+  }
 }

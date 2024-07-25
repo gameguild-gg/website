@@ -6,5 +6,5 @@
     "dist",
     "**/*spec.ts",
     "chessSubmissions"
-  ]
+  ],
 }

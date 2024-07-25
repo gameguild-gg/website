@@ -1,38 +1,53 @@
-import { ConflictException, HttpException, Injectable, UnprocessableEntityException } from "@nestjs/common";
-import { AuthService } from "../auth/auth.service";
-import * as util from "util";
-import { InjectRepository } from "@nestjs/typeorm";
-import { IsNull, Not, Repository } from "typeorm";
-import { CompetitionGame, CompetitionSubmissionEntity } from "./entities/competition.submission.entity";
-import { CompetitionRunEntity, CompetitionRunState } from "./entities/competition.run.entity";
-import { CompetitionMatchEntity, CompetitionWinner } from "./entities/competition.match.entity";
-import { promises as fsp } from "fs";
-import * as fse from "fs-extra";
-import { UserService } from "../user/user.service";
-import { LinqRepository } from "typeorm-linq-repository";
-import { CompetitionRunSubmissionReportEntity } from "./entities/competition.run.submission.report.entity";
-import { UserEntity } from "../user/entities";
-import { CleanOptions, ResetMode, simpleGit } from "simple-git";
-import * as process from "process";
-import * as decompress from "decompress";
-import ExecuteCommand, { ExecuteCommandResult } from "../common/execute-command";
-import { Chess, Move } from "chess.js";
-import { UserProfileService } from "../user/modules/user-profile/user-profile.service";
-import { FindManyOptions } from "typeorm/find-options/FindManyOptions";
-import { TerminalDto } from "../dtos/competition/terminal.dto";
-import { ChessMoveRequestDto } from "../dtos/competition/chess-move-request.dto";
+import {
+  ConflictException,
+  Injectable,
+  UnprocessableEntityException,
+} from '@nestjs/common';
+import { AuthService } from '../auth/auth.service';
+import * as util from 'util';
+import { InjectRepository } from '@nestjs/typeorm';
+import { IsNull, Not, Repository } from 'typeorm';
+import {
+  CompetitionGame,
+  CompetitionSubmissionEntity,
+} from './entities/competition.submission.entity';
+import {
+  CompetitionRunEntity,
+  CompetitionRunState,
+} from './entities/competition.run.entity';
+import {
+  CompetitionMatchEntity,
+  CompetitionWinner,
+} from './entities/competition.match.entity';
+import { promises as fsp } from 'fs';
+import * as fse from 'fs-extra';
+import { UserService } from '../user/user.service';
+import { LinqRepository } from 'typeorm-linq-repository';
+import { CompetitionRunSubmissionReportEntity } from './entities/competition.run.submission.report.entity';
+import { UserEntity } from '../user/entities';
+import { CleanOptions, ResetMode, simpleGit } from 'simple-git';
+import * as process from 'process';
+import decompress from 'decompress';
+import ExecuteCommand, {
+  ExecuteCommandResult,
+} from '../common/execute-command';
+import { Chess, Move } from 'chess.js';
+import { UserProfileService } from '../user/modules/user-profile/user-profile.service';
+import { FindManyOptions } from 'typeorm/find-options/FindManyOptions';
+import { TerminalDto } from '../dtos/competition/terminal.dto';
+import { ChessMoveRequestDto } from '../dtos/competition/chess-move-request.dto';
 import {
   ChessGameResult,
   ChessGameResultReason,
-  ChessMatchResultDto
-} from "../dtos/competition/chess-match-result.dto";
-import { ChessLeaderboardResponseDto } from "../dtos/competition/chess-leaderboard-response.dto";
-import { ChessMatchRequestDto } from "../dtos/competition/chess-match-request.dto";
-import { CompetitionRunSubmissionReportDto } from "../dtos/competition/chess-competition-report.dto";
-import * as moment from "moment";
+  ChessMatchResultDto,
+} from '../dtos/competition/chess-match-result.dto';
+import { ChessLeaderboardResponseDto } from '../dtos/competition/chess-leaderboard-response.dto';
+import { ChessMatchRequestDto } from '../dtos/competition/chess-match-request.dto';
+import { CompetitionRunSubmissionReportDto } from '../dtos/competition/chess-competition-report.dto';
+import * as moment from 'moment';
 
 // nest exceptions
-import { InternalServerErrorException } from "@nestjs/common";
+import { InternalServerErrorException } from '@nestjs/common';
 
 const execShPromise = require('exec-sh').promise;
 
@@ -187,7 +202,7 @@ export class CompetitionService {
     try {
       if (timeout === null) {
         const outExec = exec(command);
-        outExec.stdout.on('data', (data) => {
+        outExec.stdout.on('data', (data: any) => {
           console.log(data);
         });
         const out = await outExec;
@@ -195,7 +210,7 @@ export class CompetitionService {
         stderr = out.stderr;
       } else {
         const outExec = exec(command, { timeout: timeout });
-        outExec.stdout.on('data', (data) => {
+        outExec.stdout.on('data', (data: any) => {
           console.log(data);
         });
         const out = await outExec;
@@ -215,7 +230,7 @@ export class CompetitionService {
         date: this.getDate(),
         command: command,
         stdout: null,
-        stderr: err,
+        stderr: err as any,
       };
       if (log) await this.appendLog(data);
       return data;
@@ -601,13 +616,15 @@ export class CompetitionService {
       const gitReponse = await simpleGit().clone(chessEngineGitUrl, srcFolder);
       console.log(gitReponse);
     } else {
-      await simpleGit(srcFolder).reset(ResetMode.HARD)
+      await simpleGit(srcFolder)
+        .reset(ResetMode.HARD)
         .clean(
           CleanOptions.FORCE +
             CleanOptions.RECURSIVE +
             CleanOptions.IGNORED_INCLUDED +
             CleanOptions.DRY_RUN,
-        ).pull();
+        )
+        .pull();
     }
 
     // clear the contents of bot folder
@@ -617,24 +634,35 @@ export class CompetitionService {
     // unzip the zip contents into the bot folder
     await decompress(zipFilePath, botFolder);
 
+    const outs: TerminalDto[] = [];
+
     // generate cmake project folder and build
-    await this.runCommandSpawn(
+    let cmd =
       'cmake -S' +
-        srcFolder +
-        ' -B' +
-        buildFolder +
-        ' -DCMAKE_BUILD_TYPE=MinSizeRel -DCHESS_VALIDATOR_ONLY=ON',
-    );
-    await this.runCommandSpawn(
-      'cmake --build ' + buildFolder + ' --target chesscli --config MinSizeRel',
-    );
+      srcFolder +
+      ' -B' +
+      buildFolder +
+      ' -DCMAKE_BUILD_TYPE=MinSizeRel -DCHESS_VALIDATOR_ONLY=ON';
+    outs.push({
+      date: this.getDate(),
+      command: cmd,
+      ...(await this.runCommandSpawn(cmd)),
+    });
+
+    cmd =
+      'cmake --build ' + buildFolder + ' --target chesscli --config MinSizeRel';
+    outs.push({
+      date: this.getDate(),
+      command: cmd,
+      ...(await this.runCommandSpawn(cmd)),
+    });
 
     // todo: compress the executable built to save space
 
     // get the bytes of the executable
     submission.executable = await fsp.readFile(buildFolder + '/chesscli');
     await this.submissionRepository.save(submission);
-    return;
+    return outs;
   }
 
   async RequestChessMove(data: ChessMoveRequestDto): Promise<string> {
@@ -669,9 +697,11 @@ export class CompetitionService {
         stdin: data.fen,
         timeout: 10000,
       });
-    }
-    catch (e) {
-      throw new InternalServerErrorException('Error running the executable: '+ JSON.stringify(e), JSON.stringify(output));
+    } catch (e) {
+      throw new InternalServerErrorException(
+        'Error running the executable: ' + JSON.stringify(e),
+        JSON.stringify(output),
+      );
     }
     if (output.stderr)
       throw new UnprocessableEntityException(
@@ -688,8 +718,8 @@ export class CompetitionService {
       ChessMatchRequestDto.player1username,
       ChessMatchRequestDto.player2username,
     ];
-    
-    console.log("Match request: ", usernames);
+
+    console.log('Match request: ', usernames);
 
     // find users to be able to get their elo
     // todo: move elo to user profile
@@ -712,7 +742,7 @@ export class CompetitionService {
     // find the last submission from both players
     const submissions: CompetitionSubmissionEntity[] = await Promise.all(
       usernames.map(async (username) => {
-        return await this.submissionRepository.findOne({
+        return this.submissionRepository.findOne({
           where: {
             user: { username: username },
             gameType: CompetitionGame.Chess,
@@ -727,7 +757,7 @@ export class CompetitionService {
     // report error if any of the submissions is not found
     for (let i = 0; i < submissions.length; i++)
       if (!submissions[i]) {
-        let msg = 'No submission found for player ' + usernames[i];
+        const msg = 'No submission found for player ' + usernames[i];
         console.log(msg);
         throw new UnprocessableEntityException(msg);
       }
@@ -1020,7 +1050,7 @@ export class CompetitionService {
     ) {
       throw new ConflictException('There is already a competition running');
     }
-    
+
     // create a new competition
     let competition = this.runRepository.create();
     competition.state = CompetitionRunState.RUNNING;
@@ -1081,8 +1111,7 @@ export class CompetitionService {
         state: CompetitionRunState.FINISHED,
       });
       console.log('Competition finished');
-    }
-    catch (e) {
+    } catch (e) {
       await this.runRepository.update(competition.id, {
         state: CompetitionRunState.FAILED,
       });
@@ -1099,12 +1128,12 @@ export class CompetitionService {
       order: { updatedAt: 'DESC' },
     });
     if (!competition) return;
-    
+
     // go over all the matches and delete them
     await this.matchRepository.delete({
       run: { id: competition.id },
     });
-    
+
     // delete the reports
     await this.submissionReportRepository.delete({
       run: { id: competition.id },
@@ -1113,7 +1142,7 @@ export class CompetitionService {
     // delete the competition
     await this.runRepository.delete({ id: competition.id });
   }
-  
+
   async getLatestChessCompetitionReport(): Promise<
     CompetitionRunSubmissionReportDto[]
   > {

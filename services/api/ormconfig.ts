@@ -2,12 +2,11 @@
 
 import * as dotenv from 'dotenv';
 import * as path from 'path';
-import { DataSource, getMetadataArgsStorage } from 'typeorm';
+import { DataSource } from 'typeorm';
 
 import { SnakeNamingStrategy } from './src/snake-naming.strategy';
 
 import { isNil } from 'lodash';
-// import { permissionEntities } from './src/auth/entities/entity-with-permissions';
 
 dotenv.config();
 

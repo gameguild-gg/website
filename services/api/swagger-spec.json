@@ -1,20 +1,6 @@
 {
   "openapi": "3.0.0",
   "paths": {
-    "/auth/test": {
-      "get": {
-        "operationId": "AuthController_test",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "auth"
-        ]
-      }
-    },
     "/auth/magic-link": {
       "post": {
         "operationId": "AuthController_magicLink",
@@ -85,7 +71,7 @@
           }
         },
         "responses": {
-          "default": {
+          "200": {
             "description": "",
             "content": {
               "application/json": {
@@ -1313,6 +1299,135 @@
           "password"
         ]
       },
+      "UserEntity": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "username": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "emailVerified": {
+            "type": "boolean"
+          },
+          "passwordHash": {
+            "type": "string"
+          },
+          "passwordSalt": {
+            "type": "string"
+          },
+          "facebookId": {
+            "type": "string"
+          },
+          "googleId": {
+            "type": "string"
+          },
+          "githubId": {
+            "type": "string"
+          },
+          "appleId": {
+            "type": "string"
+          },
+          "linkedinId": {
+            "type": "string"
+          },
+          "twitterId": {
+            "type": "string"
+          },
+          "walletAddress": {
+            "type": "string"
+          },
+          "elo": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "createdAt",
+          "updatedAt",
+          "username",
+          "email",
+          "emailVerified",
+          "passwordHash",
+          "passwordSalt",
+          "facebookId",
+          "googleId",
+          "githubId",
+          "appleId",
+          "linkedinId",
+          "twitterId",
+          "walletAddress",
+          "elo"
+        ]
+      },
+      "LocalSignInResponseDto": {
+        "type": "object",
+        "properties": {
+          "accessToken": {
+            "type": "string"
+          },
+          "refreshToken": {
+            "type": "string"
+          },
+          "user": {
+            "$ref": "#/components/schemas/UserEntity"
+          }
+        },
+        "required": [
+          "accessToken",
+          "refreshToken",
+          "user"
+        ]
+      },
+      "EthereumSigninChallengeRequestDto": {
+        "type": "object",
+        "properties": {
+          "address": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "address"
+        ]
+      },
+      "EthereumSigninChallengeResponseDto": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "message"
+        ]
+      },
+      "EthereumSigninValidateRequestDto": {
+        "type": "object",
+        "properties": {
+          "address": {
+            "type": "string"
+          },
+          "signature": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "address",
+          "signature"
+        ]
+      },
       "UserProfileDto": {
         "type": "object",
         "properties": {
@@ -1429,135 +1544,6 @@
           "walletAddress",
           "elo",
           "profile"
-        ]
-      },
-      "LocalSignInResponseDto": {
-        "type": "object",
-        "properties": {
-          "accessToken": {
-            "type": "string"
-          },
-          "refreshToken": {
-            "type": "string"
-          },
-          "user": {
-            "$ref": "#/components/schemas/UserDto"
-          }
-        },
-        "required": [
-          "accessToken",
-          "refreshToken",
-          "user"
-        ]
-      },
-      "EthereumSigninChallengeRequestDto": {
-        "type": "object",
-        "properties": {
-          "address": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "address"
-        ]
-      },
-      "EthereumSigninChallengeResponseDto": {
-        "type": "object",
-        "properties": {
-          "message": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "message"
-        ]
-      },
-      "EthereumSigninValidateRequestDto": {
-        "type": "object",
-        "properties": {
-          "address": {
-            "type": "string"
-          },
-          "signature": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "address",
-          "signature"
-        ]
-      },
-      "UserEntity": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "createdAt": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "updatedAt": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "username": {
-            "type": "string"
-          },
-          "email": {
-            "type": "string"
-          },
-          "emailVerified": {
-            "type": "boolean"
-          },
-          "passwordHash": {
-            "type": "string"
-          },
-          "passwordSalt": {
-            "type": "string"
-          },
-          "facebookId": {
-            "type": "string"
-          },
-          "googleId": {
-            "type": "string"
-          },
-          "githubId": {
-            "type": "string"
-          },
-          "appleId": {
-            "type": "string"
-          },
-          "linkedinId": {
-            "type": "string"
-          },
-          "twitterId": {
-            "type": "string"
-          },
-          "walletAddress": {
-            "type": "string"
-          },
-          "elo": {
-            "type": "number"
-          }
-        },
-        "required": [
-          "id",
-          "createdAt",
-          "updatedAt",
-          "username",
-          "email",
-          "emailVerified",
-          "passwordHash",
-          "passwordSalt",
-          "facebookId",
-          "googleId",
-          "githubId",
-          "appleId",
-          "linkedinId",
-          "twitterId",
-          "walletAddress",
-          "elo"
         ]
       },
       "LectureEntity": {

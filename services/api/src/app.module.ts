@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { CacheModule } from '@nestjs/cache-manager';
 import { ConfigModule } from '@nestjs/config';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AuthModule } from './auth/auth.module';
@@ -15,9 +15,9 @@ import { UserModule } from './user/user.module';
 import { CompetitionModule } from './competition/competition.module';
 import { HealthcheckModule } from './healthcheck/healthcheck.module';
 import { TagModule } from './tag/tag.module';
-// import { IpfsModule } from './asset/ipfs.module';
 import { ClsModule } from 'nestjs-cls';
 import { DataSource } from 'typeorm';
+import { EnforceResponseTypeInterceptor } from './common/interceptors/enforce-response-type.interceptor';
 
 @Module({
   imports: [
@@ -66,6 +66,10 @@ import { DataSource } from 'typeorm';
       provide: 'DataSource',
       useFactory: (dataSource: DataSource) => dataSource,
       inject: [DataSource],
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: EnforceResponseTypeInterceptor,
     },
   ],
 })

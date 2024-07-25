@@ -6,7 +6,9 @@ import {
   IsNotEmpty,
   IsString,
   IsStrongPassword,
+  Matches,
   MaxLength,
+  MinLength,
 } from 'class-validator';
 
 export class LocalSignUpDto {
@@ -18,9 +20,9 @@ export class LocalSignUpDto {
     message:
       'error.invalidUsername: Username must be shorter than or equal to 32 characters.',
   })
-  @IsAlphanumeric('en-US', {
+  @Matches(/^[a-z0-9_.-]{1,32}$/, {
     message:
-      'error.invalidUsername: Username must be alphanumeric without any special characters.',
+      'error.invalidUsername: Username must contain only alphanumeric characters, underscores, periods, hyphens and be shorter than or equal to 32 characters.',
   })
   readonly username: string;
 
@@ -40,7 +42,14 @@ export class LocalSignUpDto {
   @IsString()
   @IsNotEmpty()
   // TODO: Add a max length for the password.
-  // @MaxLength()
+  @MaxLength(64, {
+    message:
+      'error.invalidPassword: Password must be shorter than or equal to 64 characters.',
+  })
+  @MinLength(8, {
+    message:
+      'error.invalidPassword: Password must be longer than or equal to 8 characters.',
+  })
   @IsStrongPassword(
     {
       minLength: 8,

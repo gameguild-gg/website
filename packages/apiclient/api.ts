@@ -942,10 +942,10 @@ export interface LocalSignInResponseDto {
     'refreshToken': string;
     /**
      * 
-     * @type {UserDto}
+     * @type {UserEntity}
      * @memberof LocalSignInResponseDto
      */
-    'user': UserDto;
+    'user': UserEntity;
 }
 /**
  * 
@@ -1560,35 +1560,6 @@ export const AuthApiAxiosParamCreator = function (configuration?: Configuration)
         },
         /**
          * 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        authControllerTest: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            const localVarPath = `/auth/test`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-
-    
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * 
          * @param {string} user 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -1738,17 +1709,6 @@ export const AuthApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async authControllerTest(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.authControllerTest(options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['AuthApi.authControllerTest']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
-        /**
-         * 
          * @param {string} user 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -1833,14 +1793,6 @@ export const AuthApiFactory = function (configuration?: Configuration, basePath?
          */
         authControllerSignUpWithEmailUsernamePassword(localSignUpDto: LocalSignUpDto, options?: any): AxiosPromise<LocalSignInResponseDto> {
             return localVarFp.authControllerSignUpWithEmailUsernamePassword(localSignUpDto, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        authControllerTest(options?: any): AxiosPromise<void> {
-            return localVarFp.authControllerTest(options).then((request) => request(axios, basePath));
         },
         /**
          * 
@@ -1933,16 +1885,6 @@ export class AuthApi extends BaseAPI {
      */
     public authControllerSignUpWithEmailUsernamePassword(localSignUpDto: LocalSignUpDto, options?: RawAxiosRequestConfig) {
         return AuthApiFp(this.configuration).authControllerSignUpWithEmailUsernamePassword(localSignUpDto, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof AuthApi
-     */
-    public authControllerTest(options?: RawAxiosRequestConfig) {
-        return AuthApiFp(this.configuration).authControllerTest(options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
