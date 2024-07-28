@@ -18,7 +18,7 @@ const PageHeader: React.FunctionComponent<Readonly<Props>> & {
         {/*Left Corner of the Header*/}
         <div className="flex my-0 py-0">
           <img
-            src="assets/images/logo-text.png"
+            src="/assets/images/logo-text.png"
             className="w-[135px] h-46px my-auto mx-[10px]"
           />
           &nbsp;

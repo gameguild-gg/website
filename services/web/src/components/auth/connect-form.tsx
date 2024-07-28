@@ -68,7 +68,7 @@ export default function ConnectForm() {
       </div>
       <Button variant="outline" onClick={() => signInWithGoogle()}>
         <img
-          src="assets/images/google-icon.svg"
+          src="/assets/images/google-icon.svg"
           loading="lazy"
           className="w-[20px] h-[20px] m-2"
         />

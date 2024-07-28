@@ -64,7 +64,7 @@ export default async function Page() {
               key={i}
             >
               <img
-                src="assets/images/placeholder.svg"
+                src="/assets/images/placeholder.svg"
                 className="w-full object-none h-[170px]"
               />
               <div className="font-bold p-2">{c.name}</div>

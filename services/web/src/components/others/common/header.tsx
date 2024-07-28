@@ -34,7 +34,7 @@ function Header() {
         >
           <img
             style={{ width: 135, height: 46, margin: '7px' }}
-            src="assets/images/logo-text.png"
+            src="/assets/images/logo-text.png"
           />
           &nbsp;
           {/*<a href="/">*/}
@@ -110,7 +110,7 @@ function Header() {
           </a>
           <img
             width={25}
-            src="assets/images/language.svg"
+            src="/assets/images/language.svg"
             style={{ margin: '7px' }}
           />
         </Col>

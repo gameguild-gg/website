@@ -22,13 +22,13 @@ function PageFooter({ children }: Readonly<Props>) {
             <a href="#">
               <img
                 style={{ width: 30, height: 30, margin: 3 }}
-                src="assets/images/whatsapp-icon.svg"
+                src="/assets/images/whatsapp-icon.svg"
               />
             </a>
             <a href="#">
               <img
                 style={{ width: 30, height: 30, margin: 3 }}
-                src="assets/images/discord-icon.svg"
+                src="/assets/images/discord-icon.svg"
               />
             </a>
           </div>
