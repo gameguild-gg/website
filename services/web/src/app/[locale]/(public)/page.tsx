@@ -6,19 +6,19 @@ function Home() {
   return (
     <div className="text-center block text-[#ffffff] bg-[#101014] items-center content-center overflow-hidden w-full">
       <video
-        className=" absolute max-h-[500px] w-full object-none overflow-hidden -z-3"
+        className=" absolute max-h-[600px] w-full object-none overflow-hidden"
         autoPlay
         loop
         muted
       >
         <source src="assets/videos/hexagon-bg.mp4" type="video/mp4" />
       </video>
-      <div className="absolute h-[500px] w-full overflow-hidden opacity-70 z-10 bg-[#000000]" />
-      <div className="absolute left-1/2 -translate-x-1/2 justify-around max-w-[1440px] w-full flex h-[500px] overflow-hidden items-center grid grid-cols-1 mx-auto block z-20 ">
-        <div>
-          <div className="text-6xl z-20">Building Games Together</div>
+      <div className="absolute w-full flex h-[400px] overflow-hidden items-center grid grid-cols-1 mx-auto block z-10">
+        
+        <div className='z-10 text-black'>
+          <div className="text-7xl font-semibold">Let's Build Dreams Together!</div>
           <br />
-          <span className="text-lg">All-in-One Game Development community</span>
+          <span className="text-2xl">The All-in-One Game Dev Toolkit</span>
         </div>
       </div>
 
@@ -26,10 +26,10 @@ function Home() {
         {/*espaço vazio para texto e vídeo de fundo coexistirem*/}
       </div>
 
-      <div className="justify-between max-w-[1440px] w-full items-center bg-[#18181c] flex justify-between max-h-[480px] mx-auto">
+      <div className="relative justify-between max-w-[1440px] w-full items-center bg-[#18181c] flex justify-between max-h-[480px] mx-auto z-30">
         <div>
           <img
-            src="assets/images/header2.jpeg"
+            src="/assets/images/header2.jpeg"
             className="max-w-[480px] w-full"
           />
         </div>
@@ -60,7 +60,7 @@ function Home() {
         </div>
         <div>
           <img
-            src="assets/images/header1.jpeg"
+            src="/assets/images/header1.jpeg"
             className="max-w-[480px] w-full"
           />
         </div>
