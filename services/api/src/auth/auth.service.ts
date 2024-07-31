@@ -1,11 +1,8 @@
 import {
-  ClassSerializerInterceptor,
   Inject,
   Injectable,
   Logger,
-  SerializeOptions,
   UnauthorizedException,
-  UseInterceptors,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ApiConfigService } from '../common/config.service';
@@ -33,8 +30,6 @@ import { Cache } from 'cache-manager';
 import { SiweMessage } from 'siwe';
 import { EmailDto } from './dtos/email.dto';
 import { OkDto } from '../common/dtos/ok.dto';
-import { UserDto } from '../dtos/user/user.dto';
-import { classToPlain, instanceToPlain } from 'class-transformer';
 import { CreateLocalUserDto } from '../dtos/user';
 
 @Injectable()

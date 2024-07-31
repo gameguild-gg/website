@@ -43,14 +43,13 @@ import {
 } from '../dtos/competition/chess-match-result.dto';
 import { ChessLeaderboardResponseDto } from '../dtos/competition/chess-leaderboard-response.dto';
 import { ChessMatchRequestDto } from '../dtos/competition/chess-match-request.dto';
-import { CompetitionRunSubmissionReportDto } from '../dtos/competition/chess-competition-report.dto';
-import * as moment from 'moment';
 
 // nest exceptions
 import { InternalServerErrorException } from '@nestjs/common';
 
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const execShPromise = require('exec-sh').promise;
-
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const exec = util.promisify(require('child_process').exec);
 
 class Point2D {
@@ -190,7 +189,7 @@ export class CompetitionService {
   async runCommandSpawn(
     command: string,
   ): Promise<{ stdout: string; stderr: string }> {
-    return await execShPromise(command, { maxBuffer: 1024 * 1024 * 50 });
+    return execShPromise(command, { maxBuffer: 1024 * 1024 * 50 });
   }
 
   async runCommand(
@@ -456,7 +455,7 @@ export class CompetitionService {
 
     // save the match
     match.run = competition;
-    return await this.matchRepository.save(match);
+    return this.matchRepository.save(match);
   }
 
   // async runCatCompetition(): Promise<void> {
@@ -725,7 +724,7 @@ export class CompetitionService {
     // todo: move elo to user profile
     const users = await Promise.all(
       usernames.map(async (username) => {
-        return await this.userService.findOne({
+        return this.userService.findOne({
           where: { username: username },
         });
       }),
@@ -1015,11 +1014,11 @@ export class CompetitionService {
   async findMatchesByCriteria(
     criteria: FindManyOptions<CompetitionMatchEntity>,
   ): Promise<CompetitionMatchEntity[]> {
-    return await this.matchRepository.find(criteria);
+    return this.matchRepository.find(criteria);
   }
 
   async findMatchById(id: string): Promise<CompetitionMatchEntity> {
-    return await this.matchRepository.findOne({ where: { id } });
+    return this.matchRepository.findOne({ where: { id } });
   }
 
   async getLeaderboard(): Promise<ChessLeaderboardResponseDto> {
@@ -1070,7 +1069,7 @@ export class CompetitionService {
       // find last valid submission for each user and remove if it is null
       let submissions: CompetitionSubmissionEntity[] = await Promise.all(
         users.map(async (user) => {
-          return await this.submissionRepository.findOne({
+          return this.submissionRepository.findOne({
             where: {
               user: { id: user.id },
               gameType: CompetitionGame.Chess,
@@ -1144,7 +1143,7 @@ export class CompetitionService {
   }
 
   async getLatestChessCompetitionReport(): Promise<
-    CompetitionRunSubmissionReportDto[]
+    CompetitionRunSubmissionReportEntity[]
   > {
     // get the latest finished competition
     const competition = await this.runRepository.findOne({
@@ -1156,7 +1155,7 @@ export class CompetitionService {
     });
     if (!competition) return [];
     // get all the reports for that competition with usernames
-    return await this.submissionReportRepository.find({
+    return this.submissionReportRepository.find({
       where: { run: { id: competition.id } },
       relations: { user: true },
       order: { totalWins: 'DESC' },

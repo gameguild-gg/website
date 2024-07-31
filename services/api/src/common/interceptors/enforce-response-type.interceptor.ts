@@ -4,7 +4,6 @@ import {
   Injectable,
   NestInterceptor,
   InternalServerErrorException,
-  Type,
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';

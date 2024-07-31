@@ -6,7 +6,7 @@ import { Button, Dropdown, MenuProps, message, Space, Typography } from 'antd';
 import { RobotFilled, UserOutlined } from '@ant-design/icons';
 import { useRouter } from 'next/navigation';
 import { competitionsApi } from '@/lib/apinest';
-import { ChessMatchResultDto, UserDto } from '@game-guild/apiclient';
+import { ChessMatchResultDto, UserEntity } from '@game-guild/apiclient';
 
 const ChallengePage: React.FC = () => {
   const router = useRouter();
@@ -49,13 +49,13 @@ const ChallengePage: React.FC = () => {
     const agent = e.key.toString();
     // todo: fix the requirement to play chess to have a username
     // todo: do not use cookies anymor
-    const userAgent = (JSON.parse(getCookie('user') as string) as UserDto)
+    const userAgent = (JSON.parse(getCookie('user') as string) as UserEntity)
       .username;
     setSelectedAgentWhite(agent);
   };
   const handleMenuClickBlack: MenuProps['onClick'] = (e) => {
     const agent = e.key.toString();
-    const userAgent = (JSON.parse(getCookie('user') as string) as UserDto)
+    const userAgent = (JSON.parse(getCookie('user') as string) as UserEntity)
       .username;
     setSelectedAgentBlack(agent);
   };
@@ -69,7 +69,7 @@ const ChallengePage: React.FC = () => {
       message.error('Please select agents to challenge.');
       return;
     }
-    const userAgent = (JSON.parse(getCookie('user') as string) as UserDto)
+    const userAgent = (JSON.parse(getCookie('user') as string) as UserEntity)
       .username;
     if (selectedAgentWhite !== userAgent && selectedAgentBlack !== userAgent) {
       message.error('You must be one of the players.');

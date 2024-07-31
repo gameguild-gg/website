@@ -1,67 +1,20 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
-  IsAlphanumeric,
   IsEmail,
-  IsLowercase,
-  IsNotEmpty,
-  IsString,
-  IsStrongPassword,
-  Matches,
-  MaxLength,
-  MinLength,
-} from 'class-validator';
+  IsPassword,
+  IsUsername,
+} from '../../common/decorators/validator.decorator';
 
 export class LocalSignUpDto {
-  // TODO: Add a username field.
   @ApiProperty()
-  @IsString({ message: 'error.invalidUsername: Username must be a string.' })
-  @IsNotEmpty({ message: 'error.invalidUsername: Username must not be empty.' })
-  @MaxLength(32, {
-    message:
-      'error.invalidUsername: Username must be shorter than or equal to 32 characters.',
-  })
-  @Matches(/^[a-z0-9_.-]{1,32}$/, {
-    message:
-      'error.invalidUsername: Username must contain only alphanumeric characters, underscores, periods, hyphens and be shorter than or equal to 32 characters.',
-  })
+  @IsUsername()
   readonly username: string;
 
   @ApiProperty()
-  @IsString({ message: 'error.invalidEmail: Email must be a string.' })
-  @IsNotEmpty({ message: 'error.invalidEmail: Email must not be empty.' })
-  @IsLowercase({ message: 'error.invalidEmail: Email must be lowercase.' })
-  @IsEmail(
-    {},
-    {
-      message: 'error.invalidEmail: It must be a valid email address.',
-    },
-  )
+  @IsEmail()
   readonly email: string;
 
   @ApiProperty()
-  @IsString()
-  @IsNotEmpty()
-  // TODO: Add a max length for the password.
-  @MaxLength(64, {
-    message:
-      'error.invalidPassword: Password must be shorter than or equal to 64 characters.',
-  })
-  @MinLength(8, {
-    message:
-      'error.invalidPassword: Password must be longer than or equal to 8 characters.',
-  })
-  @IsStrongPassword(
-    {
-      minLength: 8,
-      minLowercase: 1,
-      minUppercase: 1,
-      minNumbers: 1,
-      minSymbols: 1,
-    },
-    {
-      message:
-        'error.weakPassword: Password is too weak. It must have at least 8 characters, including 1 lowercase, 1 uppercase, 1 number, and 1 symbol.',
-    },
-  )
+  @IsPassword()
   readonly password: string;
 }

@@ -21,7 +21,7 @@ import { FloatButton, Layout, Menu, MenuProps, theme } from 'antd';
 import { deleteCookie, getCookie } from 'cookies-next';
 import { useRouter } from 'next/navigation';
 import React, { useEffect, useState } from 'react';
-import { UserDto } from '@game-guild/apiclient';
+import { UserEntity } from '@game-guild/apiclient';
 
 const { Content, Footer, Sider } = Layout;
 
@@ -105,7 +105,7 @@ export default function CompetitionPage({
   } = theme.useToken();
   const [selectedKey, setSelectedKey] = useState(MenuKeys.Summary);
 
-  const [user, setUser] = useState(null as UserDto | null);
+  const [user, setUser] = useState(null as UserEntity | null);
 
   const [accessToken, setAccessToken] = useState('');
   const [refreshToken, setRefreshToken] = useState('');
@@ -122,7 +122,7 @@ export default function CompetitionPage({
     if (!user) {
       const userCookie = getCookie('user');
       if (userCookie) {
-        setUser(JSON.parse(userCookie) as UserDto);
+        setUser(JSON.parse(userCookie) as UserEntity);
         setAccessToken(getCookie('access_token') as string);
         setRefreshToken(getCookie('refresh_token') as string);
       } else {

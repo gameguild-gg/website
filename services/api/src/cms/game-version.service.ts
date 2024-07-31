@@ -8,7 +8,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { ArrayContains, Repository } from 'typeorm';
 import { TypeOrmCrudService } from '@dataui/crud-typeorm';
 import { GameVersionEntity } from './entities/game-version.entity';
-import { GameVersionDto } from './dtos/game-version.dto';
 import { UserEntity } from '../user/entities';
 import { GameEntity } from './entities/game.entity';
 
@@ -25,7 +24,7 @@ export class GameVersionService extends TypeOrmCrudService<GameVersionEntity> {
   }
 
   async createGameVersion(
-    body: GameVersionDto,
+    body: GameVersionEntity,
     user: UserEntity,
   ): Promise<GameVersionEntity> {
     if (!body.game || !body.game.id) {

@@ -1,10 +1,11 @@
-import { IsEmail, IsNotEmpty, IsString } from 'class-validator';
+import { IsNotEmpty, IsString } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { IsEmail } from '../../common/decorators/validator.decorator';
 
 export class EmailDto {
-  @IsString({ message: 'Email must be a string' })
-  @IsEmail({}, { message: 'Email must be a valid email' })
-  @IsNotEmpty({ message: 'Email must not be empty' })
   @ApiProperty()
+  @IsNotEmpty({ message: 'error.invalid_email: email must be not empty.' })
+  @IsString({ message: 'error.invalid_email: email must be a string.' })
+  @IsEmail()
   email: string;
 }

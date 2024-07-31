@@ -25,7 +25,7 @@ export default function ConnectForm() {
 
   // web3 provider web3-context
   // todo: move this following logic to actions.ts
-  const handleSendMagicLink = async () => {
+  const handleSendMagicLink = async (): Promise<void> => {
     setSendMagicLinkClicked(true);
 
     const sendingToast = toast({
@@ -35,18 +35,19 @@ export default function ConnectForm() {
 
     let response: OkDto;
     try {
-      response = await authApi.authControllerMagicLink({ email: email });
+      response = (await authApi.authControllerMagicLink({ email: email })).data;
     } catch (error) {
       sendingToast.dismiss();
       toast({
         title: 'Error',
         description:
-          'Something went wrong. Please try again or contact support.',
+          'Something went wrong. Please try again or contact support. Description: ' +
+          JSON.stringify(error),
       });
       return;
     }
 
-    if (!response || !response.data) {
+    if (!response) {
       toast({
         title: 'Error',
         description:

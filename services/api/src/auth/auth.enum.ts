@@ -1,5 +1,5 @@
-import { WithRolesEntity } from './entities/with-roles.entity';
 import { Type } from '@nestjs/common/interfaces';
+import { WithPermissionsEntity } from './entities/with-roles.entity';
 
 export enum ContentUserRolesEnum {
   OWNER = 'CONTENT_OWNER', // default for routes for DELETE actions
@@ -39,5 +39,5 @@ export type RouteRoles =
       public?: false;
       content: ContentUserRolesEnum;
       system?: never;
-      entity: Type<WithRolesEntity>;
+      entity: Type<WithPermissionsEntity>;
     };

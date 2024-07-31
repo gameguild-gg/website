@@ -1,6 +1,6 @@
 // how a given submission performed in a given run
 
-import { Column, Entity, ManyToOne, OneToMany } from 'typeorm';
+import { Column, Entity, ManyToOne } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { CompetitionRunEntity } from './competition.run.entity';
 import { CompetitionSubmissionEntity } from './competition.submission.entity';
@@ -34,13 +34,16 @@ export class CompetitionRunSubmissionReportEntity extends EntityBase {
   totalPoints: number;
 
   @ManyToOne(() => CompetitionRunEntity, (c) => c.reports)
+  @ApiProperty({ type: () => CompetitionRunEntity })
   run: CompetitionRunEntity;
 
   // link to the submission
   @ManyToOne(() => CompetitionSubmissionEntity, (s) => s.submissionReports)
+  @ApiProperty({ type: () => CompetitionSubmissionEntity })
   submission: CompetitionSubmissionEntity;
 
   // link to the user
   @ManyToOne(() => UserEntity)
+  @ApiProperty({ type: () => UserEntity })
   user: UserEntity;
 }

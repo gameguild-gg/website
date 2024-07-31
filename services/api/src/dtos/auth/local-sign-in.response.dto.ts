@@ -1,6 +1,5 @@
-import { UserDto } from '../user/user.dto';
 import { ApiProperty } from '@nestjs/swagger';
-import { Exclude, Type } from 'class-transformer';
+import { Type } from 'class-transformer';
 import { UserEntity } from '../../user/entities';
 
 export class LocalSignInResponseDto {
@@ -10,10 +9,9 @@ export class LocalSignInResponseDto {
   refreshToken: string;
   @ApiProperty({ type: UserEntity })
   @Type(() => {
-    return UserDto;
+    return UserEntity;
   })
-  @Exclude()
-  user: UserDto;
+  user: UserEntity;
 
   constructor(partial: Partial<LocalSignInResponseDto>) {
     Object.assign(this, partial);

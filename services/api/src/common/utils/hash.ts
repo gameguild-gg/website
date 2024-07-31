@@ -1,5 +1,10 @@
 import { ethers } from 'ethers';
 
+/**
+ * generate hash from password or string
+ * @param {string} data
+ * @returns {string}
+ */
 export function generateHash(data: string, salt?: string): string {
   if (!salt) salt = '';
 

@@ -15,7 +15,7 @@ import { AuthGuard } from '../guards/auth.guard';
 
 // todo improve this!!!
 export const Auth = (options: RouteRoles): MethodDecorator => {
-  const isPublic = !!options?.public;
+  const isPublic = Boolean(options?.public);
   const systemRole = options?.system;
   const contentRole = options?.content;
 

@@ -36,7 +36,7 @@ export const authConfig = {
         // Return true to allowing user sign-in with the Google OAuth Credential.
         return true;
       } else if (account?.provider === 'web-3') {
-        return !!user.wallet;
+        return Boolean(user.wallet);
       }
       return false;
     },
@@ -45,13 +45,22 @@ export const authConfig = {
     signIn: '/sign-in',
   },
   providers: [
-    {
-      id: 'http-email',
-      name: 'Email',
-      type: 'email',
-      // maxAge: 60 * 60 * 24, // Email link will expire in 24 hours
-      sendVerificationRequest: sendVerificationRequest,
-    },
+    // todo: implement refresh token
+    // Credentials({
+    //   type: 'credentials',
+    //   id: 'email',
+    //   name: 'email',
+    //   credentials: {
+    //     refreshToken: {
+    //       label: 'Refresh Token',
+    //       type: 'email',
+    //       placeholder: '',
+    //     },
+    //   },
+    //   async authorize(credentials): Promise<User | null> {
+    //     const refreshToken: string = credentials?.refreshToken as string;
+    //   },
+    // }),
     Credentials({
       type: 'credentials',
       id: 'web-3',
@@ -109,4 +118,4 @@ export const authConfig = {
   session: {
     strategy: 'jwt',
   },
-};
+} satisfies NextAuthConfig;

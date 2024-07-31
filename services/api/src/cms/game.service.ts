@@ -1,8 +1,5 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { GameDto } from './dtos/game.dto';
-import { ContentBaseDto } from './dtos/content.base.dto';
+import { Injectable, Logger } from '@nestjs/common';
 import { GameEntity } from './entities/game.entity';
-import { UserEntity } from '../user/entities';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { TypeOrmCrudService } from '@dataui/crud-typeorm';

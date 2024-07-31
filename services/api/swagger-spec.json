@@ -189,7 +189,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UserDto"
+                  "$ref": "#/components/schemas/UserEntity"
                 }
               }
             }
@@ -270,7 +270,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/GameDto"
+                "$ref": "#/components/schemas/GameEntity"
               }
             }
           }
@@ -595,7 +595,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/GameVersionDto"
+                "$ref": "#/components/schemas/GameVersionEntity"
               }
             }
           }
@@ -1197,7 +1197,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/CompetitionRunSubmissionReportDto"
+                    "$ref": "#/components/schemas/CompetitionRunSubmissionReportEntity"
                   }
                 }
               }
@@ -1299,6 +1299,337 @@
           "password"
         ]
       },
+      "UserProfileEntity": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "user": {
+            "$ref": "#/components/schemas/UserEntity"
+          },
+          "bio": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "givenName": {
+            "type": "string"
+          },
+          "familyName": {
+            "type": "string"
+          },
+          "picture": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "createdAt",
+          "updatedAt",
+          "user",
+          "bio",
+          "name",
+          "givenName",
+          "familyName",
+          "picture"
+        ]
+      },
+      "CompetitionSubmissionEntity": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "PostEntity": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "summary": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "DRAFT",
+              "PUBLISHED",
+              "FUTURE",
+              "PENDING",
+              "PRIVATE",
+              "TRASH"
+            ]
+          },
+          "thumbnail": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "createdAt",
+          "updatedAt",
+          "slug",
+          "title",
+          "summary",
+          "body",
+          "visibility",
+          "thumbnail"
+        ]
+      },
+      "LectureEntity": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "summary": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "DRAFT",
+              "PUBLISHED",
+              "FUTURE",
+              "PENDING",
+              "PRIVATE",
+              "TRASH"
+            ]
+          },
+          "thumbnail": {
+            "type": "string"
+          },
+          "order": {
+            "type": "number"
+          },
+          "course": {
+            "$ref": "#/components/schemas/CourseEntity"
+          },
+          "chapter": {
+            "$ref": "#/components/schemas/CourseEntity"
+          }
+        },
+        "required": [
+          "id",
+          "createdAt",
+          "updatedAt",
+          "slug",
+          "title",
+          "summary",
+          "body",
+          "visibility",
+          "thumbnail",
+          "order",
+          "course",
+          "chapter"
+        ]
+      },
+      "ChapterEntity": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "summary": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "DRAFT",
+              "PUBLISHED",
+              "FUTURE",
+              "PENDING",
+              "PRIVATE",
+              "TRASH"
+            ]
+          },
+          "thumbnail": {
+            "type": "string"
+          },
+          "order": {
+            "type": "number"
+          },
+          "course": {
+            "$ref": "#/components/schemas/CourseEntity"
+          },
+          "lectures": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LectureEntity"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "createdAt",
+          "updatedAt",
+          "slug",
+          "title",
+          "summary",
+          "body",
+          "visibility",
+          "thumbnail",
+          "order",
+          "course",
+          "lectures"
+        ]
+      },
+      "CourseEntity": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "summary": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "DRAFT",
+              "PUBLISHED",
+              "FUTURE",
+              "PENDING",
+              "PRIVATE",
+              "TRASH"
+            ]
+          },
+          "thumbnail": {
+            "type": "string"
+          },
+          "price": {
+            "type": "number"
+          },
+          "subscriptionAccess": {
+            "type": "boolean"
+          },
+          "author": {
+            "$ref": "#/components/schemas/UserEntity"
+          },
+          "lectures": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LectureEntity"
+            }
+          },
+          "chapters": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChapterEntity"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "createdAt",
+          "updatedAt",
+          "slug",
+          "title",
+          "summary",
+          "body",
+          "visibility",
+          "thumbnail",
+          "price",
+          "subscriptionAccess",
+          "author",
+          "lectures",
+          "chapters"
+        ]
+      },
       "UserEntity": {
         "type": "object",
         "properties": {
@@ -1349,8 +1680,29 @@
           "walletAddress": {
             "type": "string"
           },
+          "profile": {
+            "$ref": "#/components/schemas/UserProfileEntity"
+          },
+          "competitionSubmissions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CompetitionSubmissionEntity"
+            }
+          },
           "elo": {
             "type": "number"
+          },
+          "posts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PostEntity"
+            }
+          },
+          "courses": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CourseEntity"
+            }
           }
         },
         "required": [
@@ -1369,7 +1721,11 @@
           "linkedinId",
           "twitterId",
           "walletAddress",
-          "elo"
+          "profile",
+          "competitionSubmissions",
+          "elo",
+          "posts",
+          "courses"
         ]
       },
       "LocalSignInResponseDto": {
@@ -1428,414 +1784,6 @@
           "signature"
         ]
       },
-      "UserProfileDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "createdAt": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "updatedAt": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "bio": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "givenName": {
-            "type": "string"
-          },
-          "familyName": {
-            "type": "string"
-          },
-          "picture": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "createdAt",
-          "updatedAt",
-          "bio",
-          "name",
-          "givenName",
-          "familyName",
-          "picture"
-        ]
-      },
-      "UserDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "createdAt": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "updatedAt": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "username": {
-            "type": "string"
-          },
-          "email": {
-            "type": "string"
-          },
-          "emailVerified": {
-            "type": "boolean"
-          },
-          "passwordHash": {
-            "type": "string"
-          },
-          "passwordSalt": {
-            "type": "string"
-          },
-          "facebookId": {
-            "type": "string"
-          },
-          "googleId": {
-            "type": "string"
-          },
-          "githubId": {
-            "type": "string"
-          },
-          "appleId": {
-            "type": "string"
-          },
-          "linkedinId": {
-            "type": "string"
-          },
-          "twitterId": {
-            "type": "string"
-          },
-          "walletAddress": {
-            "type": "string"
-          },
-          "elo": {
-            "type": "number"
-          },
-          "profile": {
-            "$ref": "#/components/schemas/UserProfileDto"
-          }
-        },
-        "required": [
-          "id",
-          "createdAt",
-          "updatedAt",
-          "username",
-          "email",
-          "emailVerified",
-          "passwordHash",
-          "passwordSalt",
-          "facebookId",
-          "googleId",
-          "githubId",
-          "appleId",
-          "linkedinId",
-          "twitterId",
-          "walletAddress",
-          "elo",
-          "profile"
-        ]
-      },
-      "LectureEntity": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "createdAt": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "updatedAt": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "slug": {
-            "type": "string"
-          },
-          "title": {
-            "type": "string"
-          },
-          "summary": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "createdAt",
-          "updatedAt",
-          "slug",
-          "title",
-          "summary"
-        ]
-      },
-      "ChapterEntity": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "createdAt": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "updatedAt": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "slug": {
-            "type": "string"
-          },
-          "title": {
-            "type": "string"
-          },
-          "summary": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "createdAt",
-          "updatedAt",
-          "slug",
-          "title",
-          "summary"
-        ]
-      },
-      "CourseEntity": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "createdAt": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "updatedAt": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "slug": {
-            "type": "string"
-          },
-          "title": {
-            "type": "string"
-          },
-          "summary": {
-            "type": "string"
-          },
-          "price": {
-            "type": "number"
-          },
-          "subscriptionAccess": {
-            "type": "boolean"
-          },
-          "author": {
-            "$ref": "#/components/schemas/UserEntity"
-          },
-          "lectures": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/LectureEntity"
-            }
-          },
-          "chapters": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ChapterEntity"
-            }
-          }
-        },
-        "required": [
-          "id",
-          "createdAt",
-          "updatedAt",
-          "slug",
-          "title",
-          "summary",
-          "price",
-          "subscriptionAccess",
-          "author",
-          "lectures",
-          "chapters"
-        ]
-      },
-      "PermissionsDto": {
-        "type": "object",
-        "properties": {
-          "owner": {
-            "type": "string"
-          },
-          "editors": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          }
-        },
-        "required": [
-          "owner",
-          "editors"
-        ]
-      },
-      "GameDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "createdAt": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "updatedAt": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "slug": {
-            "type": "string"
-          },
-          "title": {
-            "type": "string"
-          },
-          "summary": {
-            "type": "string"
-          },
-          "body": {
-            "type": "string"
-          },
-          "visibility": {
-            "type": "string",
-            "enum": [
-              "DRAFT",
-              "PUBLISHED",
-              "FUTURE",
-              "PENDING",
-              "PRIVATE",
-              "TRASH"
-            ],
-            "default": "DRAFT"
-          },
-          "thumbnail": {
-            "type": "string"
-          },
-          "roles": {
-            "$ref": "#/components/schemas/PermissionsDto"
-          },
-          "versions": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/GameVersionDto"
-            }
-          }
-        },
-        "required": [
-          "id",
-          "createdAt",
-          "updatedAt",
-          "slug",
-          "title",
-          "summary",
-          "body",
-          "visibility",
-          "thumbnail",
-          "roles",
-          "versions"
-        ]
-      },
-      "GameFeedbackResponseDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "createdAt": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "updatedAt": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "version": {
-            "$ref": "#/components/schemas/GameVersionDto"
-          },
-          "user": {
-            "$ref": "#/components/schemas/UserDto"
-          }
-        },
-        "required": [
-          "id",
-          "createdAt",
-          "updatedAt",
-          "version",
-          "user"
-        ]
-      },
-      "GameVersionDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "createdAt": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "updatedAt": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "version": {
-            "type": "string"
-          },
-          "archive_url": {
-            "type": "string"
-          },
-          "notes_url": {
-            "type": "string"
-          },
-          "feedback_form": {
-            "type": "string"
-          },
-          "feedback_deadline": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "game": {
-            "$ref": "#/components/schemas/GameDto"
-          },
-          "responses": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/GameFeedbackResponseDto"
-            }
-          }
-        },
-        "required": [
-          "id",
-          "createdAt",
-          "updatedAt",
-          "version",
-          "archive_url",
-          "notes_url",
-          "feedback_form",
-          "feedback_deadline",
-          "game",
-          "responses"
-        ]
-      },
       "GetManyGameEntityResponseDto": {
         "type": "object",
         "properties": {
@@ -1866,48 +1814,22 @@
           "pageCount"
         ]
       },
-      "GameEntity": {
+      "Permissions": {
         "type": "object",
         "properties": {
-          "id": {
+          "owner": {
             "type": "string"
           },
-          "createdAt": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "updatedAt": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "slug": {
-            "type": "string"
-          },
-          "title": {
-            "type": "string"
-          },
-          "summary": {
-            "type": "string"
-          },
-          "roles": {
-            "$ref": "#/components/schemas/PermissionsDto"
-          },
-          "versions": {
+          "editors": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/GameVersionDto"
+              "type": "string"
             }
           }
         },
         "required": [
-          "id",
-          "createdAt",
-          "updatedAt",
-          "slug",
-          "title",
-          "summary",
-          "roles",
-          "versions"
+          "owner",
+          "editors"
         ]
       },
       "GetManyGameVersionEntityResponseDto": {
@@ -2020,6 +1942,70 @@
           "feedback_deadline",
           "game",
           "responses"
+        ]
+      },
+      "GameEntity": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "summary": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "DRAFT",
+              "PUBLISHED",
+              "FUTURE",
+              "PENDING",
+              "PRIVATE",
+              "TRASH"
+            ]
+          },
+          "thumbnail": {
+            "type": "string"
+          },
+          "roles": {
+            "$ref": "#/components/schemas/Permissions"
+          },
+          "versions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GameVersionEntity"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "createdAt",
+          "updatedAt",
+          "slug",
+          "title",
+          "summary",
+          "body",
+          "visibility",
+          "thumbnail",
+          "roles",
+          "versions"
         ]
       },
       "CompetitionSubmissionDto": {
@@ -2225,7 +2211,28 @@
           "elo"
         ]
       },
-      "CompetitionRunSubmissionReportDto": {
+      "CompetitionRunEntity": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "CompetitionRunSubmissionReportEntity": {
         "type": "object",
         "properties": {
           "id": {
@@ -2257,8 +2264,14 @@
           "totalPoints": {
             "type": "number"
           },
+          "run": {
+            "$ref": "#/components/schemas/CompetitionRunEntity"
+          },
+          "submission": {
+            "$ref": "#/components/schemas/CompetitionSubmissionEntity"
+          },
           "user": {
-            "$ref": "#/components/schemas/UserDto"
+            "$ref": "#/components/schemas/UserEntity"
           }
         },
         "required": [
@@ -2271,6 +2284,8 @@
           "pointsAsP1",
           "pointsAsP2",
           "totalPoints",
+          "run",
+          "submission",
           "user"
         ]
       }

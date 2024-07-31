@@ -1,8 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
 
 export class OkDto {
-  @ApiProperty()
+  @ApiProperty({ type: Boolean })
   success: boolean;
-  @ApiProperty()
+  @ApiProperty({ type: String })
   message: string;
 }

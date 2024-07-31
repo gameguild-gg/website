@@ -11,7 +11,6 @@ import {
   ParsedBody,
   ParsedRequest,
 } from '@dataui/crud';
-import { GameDto } from './dtos/game.dto';
 import { AuthUser } from '../auth';
 import { UserEntity } from '../user/entities';
 import { ContentUserRolesEnum } from '../auth/auth.enum';
@@ -57,7 +56,7 @@ export class GameController implements CrudController<GameEntity> {
   @Auth({ public: false })
   createOne(
     @ParsedRequest() req: CrudRequest,
-    @ParsedBody() dto: GameDto,
+    @ParsedBody() dto: GameEntity,
     @AuthUser() user: UserEntity,
   ) {
     dto.roles = {
@@ -71,7 +70,7 @@ export class GameController implements CrudController<GameEntity> {
   @Auth({ content: ContentUserRolesEnum.EDITOR, entity: GameEntity })
   async updateOne(
     @ParsedRequest() req: CrudRequest,
-    @ParsedBody() dto: Partial<GameDto>,
+    @ParsedBody() dto: Partial<GameEntity>,
   ): Promise<GameEntity> {
     return this.base.updateOneBase(req, <GameEntity>dto);
   }

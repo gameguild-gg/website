@@ -1,11 +1,11 @@
 import { SetMetadata } from '@nestjs/common';
-import { WithRolesEntity } from '../entities/with-roles.entity';
 import { ContentUserRolesEnum } from '../auth.enum';
+import { WithPermissionsEntity } from '../entities/with-roles.entity';
 
 export const REQUIRED_ROLE_KEY = 'role';
 export const ENTITY_CLASS_KEY = 'entityClass';
 
-export type EntityClassWithRolesField<T extends WithRolesEntity> = new (
+export type EntityClassWithRolesField<T extends WithPermissionsEntity> = new (
   ...args: any[]
 ) => T;
 
@@ -18,7 +18,7 @@ export const RequireRole = (role: ContentUserRolesEnum): ClassDecorator => {
     // todo: Check if the target is a class or a newable function derived from WithRolesEntity
     let entityClass: EntityClassWithRolesField<any> | undefined;
 
-    if (target.prototype instanceof WithRolesEntity) {
+    if (target.prototype instanceof WithPermissionsEntity) {
       entityClass = target as EntityClassWithRolesField<any>;
     }
 

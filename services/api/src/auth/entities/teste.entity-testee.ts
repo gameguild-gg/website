@@ -127,7 +127,7 @@
 // //   extends EntityBase
 // //   implements UserRoleResourceDto
 // // {
-// //   @ApiProperty({ type: () => UserEntity })
+// //   @ApiProperty({ type:  () => UserEntity })
 // //   @ManyToOne(() => UserEntity, { lazy: true })
 // //   @IsNotEmpty({ message: '{user: {id: string}} is required' })
 // //   user: UserEntity;
@@ -165,7 +165,7 @@
 // // ) {
 // //   @Entity({ name: `${contentType.name as string}_permissions` })
 // //   class UserRoleContentEntity extends EntityBase implements UserRoleDto {
-// //     @ApiProperty({ type: () => UserEntity })
+// //     @ApiProperty({ type:  () => UserEntity })
 // //     @ManyToOne(() => UserEntity, { lazy: true })
 // //     user: UserEntity;
 // //
@@ -178,7 +178,7 @@
 // //     role: ContentUserRolesEnum;
 // //
 // //     // todo: implement the reverse relation
-// //     @ApiProperty({ type: () => contentType })
+// //     @ApiProperty({ type:  () => contentType })
 // //     @ManyToOne(() => contentType, { lazy: true })
 // //     @Type(() => contentType)
 // //     content: T;
@@ -196,7 +196,7 @@
 //
 // // @EntityWithPermissions('teste')
 // // export class TesteEntity extends EntityBase implements WithRolesEntity {
-// //   @ApiProperty({ type: () => UserRoleContentEntity })
+// //   @ApiProperty({ type:  () => UserRoleContentEntity })
 // //   @ManyToOne(() => UserRoleContentEntity, { lazy: true })
 // //   roles: UserRoleContentEntity[];
 // // }

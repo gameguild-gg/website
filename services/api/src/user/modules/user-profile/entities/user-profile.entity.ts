@@ -2,11 +2,11 @@ import { Column, Entity, OneToOne } from 'typeorm';
 import { EntityBase } from '../../../../common/entities/entity.base';
 import { UserEntity } from '../../../entities/user.entity';
 import { ApiProperty } from '@nestjs/swagger';
-import { UserProfileDto } from '../dtos/user-profile.dto';
 
 @Entity({ name: 'user_profile' })
-export class UserProfileEntity extends EntityBase implements UserProfileDto {
+export class UserProfileEntity extends EntityBase {
   @OneToOne(() => UserEntity, (user) => user.profile)
+  @ApiProperty({ type: () => UserEntity })
   user: UserEntity;
 
   @Column({ nullable: true, default: null })
@@ -30,7 +30,7 @@ export class UserProfileEntity extends EntityBase implements UserProfileDto {
   picture?: string;
 
   constructor(partial?: Partial<UserProfileEntity>) {
-    super();
+    super(partial);
     Object.assign(this, partial);
   }
 }

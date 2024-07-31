@@ -9,7 +9,9 @@ export function AuthGuard(
 ): Type<IAuthGuard> {
   const strategies = ['jwt'];
 
+  // todo: inspect do we need this?
   if (options?.public) {
+    debugger;
     strategies.push('public');
   }
 

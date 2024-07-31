@@ -1,10 +1,10 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { GameVersionDto } from './game-version.dto';
+import { GameVersionEntity } from '../entities/game-version.entity';
 
 export class GameVersionCreateRequestDto {
   @ApiProperty({ description: 'The id of the game this version belongs to' })
-  id: string;
+  gameId: string;
 
-  @ApiProperty()
-  version: GameVersionDto;
+  @ApiProperty({ type: () => GameVersionEntity })
+  version: GameVersionEntity;
 }

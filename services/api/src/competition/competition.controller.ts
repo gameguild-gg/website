@@ -29,7 +29,7 @@ import { Auth } from '../auth/decorators/http.decorator';
 import { AuthUser } from '../auth';
 import { UserEntity } from '../user/entities';
 
-import { CompetitionRunSubmissionReportDto } from '../dtos/competition/chess-competition-report.dto';
+import { CompetitionRunSubmissionReportEntity } from './entities/competition.run.submission.report.entity';
 import { OkResponse } from '../common/decorators/return-type.decorator';
 
 @Controller('Competitions')
@@ -207,14 +207,15 @@ export class CompetitionController {
     const converted: MatchSearchResponseDto[] = ret.map(
       (match: CompetitionMatchEntity) => {
         const convertedMatch: MatchSearchResponseDto =
-          new MatchSearchResponseDto();
-        convertedMatch.id = match.id;
-        convertedMatch.winner = match.winner;
-        convertedMatch.lastState = match.lastState;
-        convertedMatch.players = [
-          match.p1submission.user.username,
-          match.p2submission.user.username,
-        ];
+          new MatchSearchResponseDto({
+            id: match.id,
+            winner: match.winner,
+            lastState: match.lastState,
+            players: [
+              match.p1submission.user.username,
+              match.p2submission.user.username,
+            ],
+          });
         return convertedMatch;
       },
     );
@@ -254,11 +255,11 @@ export class CompetitionController {
   }
 
   @Get('Chess/LatestCompetitionReport')
-  @OkResponse({ type: CompetitionRunSubmissionReportDto, isArray: true })
+  @OkResponse({ type: CompetitionRunSubmissionReportEntity, isArray: true })
   @Auth({ public: false })
   async GetLatestChessCompetitionReport(
     @AuthUser() user: UserEntity,
-  ): Promise<CompetitionRunSubmissionReportDto[]> {
+  ): Promise<CompetitionRunSubmissionReportEntity[]> {
     if (!user) throw new UnauthorizedException('Invalid credentials');
     return this.service.getLatestChessCompetitionReport();
   }

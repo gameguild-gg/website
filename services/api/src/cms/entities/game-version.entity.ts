@@ -62,7 +62,7 @@ export class GameVersionEntity extends EntityBase {
   game: GameEntity;
 
   // relation to feedback responses
-  @ApiProperty({ type: () => GameFeedbackResponseEntity, isArray: true })
+  @ApiProperty({ type: GameFeedbackResponseEntity, isArray: true })
   @OneToMany(() => GameFeedbackResponseEntity, (response) => response.version)
   responses: GameFeedbackResponseEntity[];
 }

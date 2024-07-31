@@ -2,14 +2,10 @@ import { EntityBase } from '../../common/entities/entity.base';
 import { GameVersionEntity } from './game-version.entity';
 import { Entity, ManyToOne } from 'typeorm';
 import { UserEntity } from '../../user/entities';
-import { GameFeedbackResponseDto } from '../dtos/game-feedback-response.dto';
 import { ApiProperty } from '@nestjs/swagger';
 
 @Entity('game_feedback_response')
-export class GameFeedbackResponseEntity
-  extends EntityBase
-  implements GameFeedbackResponseDto
-{
+export class GameFeedbackResponseEntity extends EntityBase {
   // relationship to the game version
   @ManyToOne(() => GameVersionEntity, (version) => version.responses)
   @ApiProperty({ type: () => GameVersionEntity })

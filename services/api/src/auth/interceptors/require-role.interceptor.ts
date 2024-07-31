@@ -14,8 +14,8 @@ import {
 } from '../decorators/has-role.decorator';
 import { UserEntity } from '../../user/entities';
 import { ArrayContains, DataSource } from 'typeorm';
-import { WithRolesEntity } from '../entities/with-roles.entity';
 import { ContentUserRolesEnum } from '../auth.enum';
+import { WithPermissionsEntity } from '../entities/with-roles.entity';
 
 @Injectable()
 export class RequireRoleInterceptor implements NestInterceptor {
@@ -50,9 +50,9 @@ export class RequireRoleInterceptor implements NestInterceptor {
     const entityId = request.body.id;
 
     const repository =
-      this.dataSource.getRepository<WithRolesEntity>(entityClass);
+      this.dataSource.getRepository<WithPermissionsEntity>(entityClass);
 
-    let entity: WithRolesEntity;
+    let entity: WithPermissionsEntity;
     if (requiredRole === ContentUserRolesEnum.OWNER) {
       entity = await repository.findOne({
         where: {

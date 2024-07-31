@@ -28,11 +28,11 @@ export class CourseEntity extends ContentBase {
 
   // a course have many lectures
   @OneToMany(() => LectureEntity, (lecture) => lecture.course)
-  @ApiProperty({ type: () => LectureEntity, isArray: true })
+  @ApiProperty({ type: LectureEntity, isArray: true })
   lectures: LectureEntity[];
 
   // a course have many chapters
   @OneToMany(() => ChapterEntity, (chapter) => chapter.course)
-  @ApiProperty({ type: () => ChapterEntity, isArray: true })
+  @ApiProperty({ type: ChapterEntity, isArray: true })
   chapters: ChapterEntity[];
 }

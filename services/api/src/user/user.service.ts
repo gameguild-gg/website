@@ -53,14 +53,13 @@ export class UserService extends TypeOrmCrudService<UserEntity> {
     }
 
     // todo: wrap in transaction
-    const profile = await this.profileService.save({});
     return this.save({
       username: data.username,
       email: data.email,
       emailVerified: false,
       passwordHash: data.passwordHash,
       passwordSalt: data.passwordSalt,
-      profile: profile,
+      profile: await this.profileService.save({}),
     });
   }
 

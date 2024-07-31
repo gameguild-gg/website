@@ -65,7 +65,55 @@ export interface ChapterEntity {
      * @memberof ChapterEntity
      */
     'summary': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ChapterEntity
+     */
+    'body': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ChapterEntity
+     */
+    'visibility': ChapterEntityVisibilityEnum;
+    /**
+     * 
+     * @type {string}
+     * @memberof ChapterEntity
+     */
+    'thumbnail': string;
+    /**
+     * 
+     * @type {number}
+     * @memberof ChapterEntity
+     */
+    'order': number;
+    /**
+     * 
+     * @type {CourseEntity}
+     * @memberof ChapterEntity
+     */
+    'course': CourseEntity;
+    /**
+     * 
+     * @type {Array<LectureEntity>}
+     * @memberof ChapterEntity
+     */
+    'lectures': Array<LectureEntity>;
 }
+
+export const ChapterEntityVisibilityEnum = {
+    Draft: 'DRAFT',
+    Published: 'PUBLISHED',
+    Future: 'FUTURE',
+    Pending: 'PENDING',
+    Private: 'PRIVATE',
+    Trash: 'TRASH'
+} as const;
+
+export type ChapterEntityVisibilityEnum = typeof ChapterEntityVisibilityEnum[keyof typeof ChapterEntityVisibilityEnum];
+
 /**
  * 
  * @export
@@ -225,69 +273,131 @@ export interface ChessMoveRequestDto {
 /**
  * 
  * @export
- * @interface CompetitionRunSubmissionReportDto
+ * @interface CompetitionRunEntity
  */
-export interface CompetitionRunSubmissionReportDto {
+export interface CompetitionRunEntity {
     /**
      * 
      * @type {string}
-     * @memberof CompetitionRunSubmissionReportDto
+     * @memberof CompetitionRunEntity
      */
     'id': string;
     /**
      * 
      * @type {string}
-     * @memberof CompetitionRunSubmissionReportDto
+     * @memberof CompetitionRunEntity
      */
     'createdAt': string;
     /**
      * 
      * @type {string}
-     * @memberof CompetitionRunSubmissionReportDto
+     * @memberof CompetitionRunEntity
+     */
+    'updatedAt': string;
+}
+/**
+ * 
+ * @export
+ * @interface CompetitionRunSubmissionReportEntity
+ */
+export interface CompetitionRunSubmissionReportEntity {
+    /**
+     * 
+     * @type {string}
+     * @memberof CompetitionRunSubmissionReportEntity
+     */
+    'id': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof CompetitionRunSubmissionReportEntity
+     */
+    'createdAt': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof CompetitionRunSubmissionReportEntity
      */
     'updatedAt': string;
     /**
      * 
      * @type {number}
-     * @memberof CompetitionRunSubmissionReportDto
+     * @memberof CompetitionRunSubmissionReportEntity
      */
     'winsAsP1': number;
     /**
      * 
      * @type {number}
-     * @memberof CompetitionRunSubmissionReportDto
+     * @memberof CompetitionRunSubmissionReportEntity
      */
     'winsAsP2': number;
     /**
      * 
      * @type {number}
-     * @memberof CompetitionRunSubmissionReportDto
+     * @memberof CompetitionRunSubmissionReportEntity
      */
     'totalWins': number;
     /**
      * 
      * @type {number}
-     * @memberof CompetitionRunSubmissionReportDto
+     * @memberof CompetitionRunSubmissionReportEntity
      */
     'pointsAsP1': number;
     /**
      * 
      * @type {number}
-     * @memberof CompetitionRunSubmissionReportDto
+     * @memberof CompetitionRunSubmissionReportEntity
      */
     'pointsAsP2': number;
     /**
      * 
      * @type {number}
-     * @memberof CompetitionRunSubmissionReportDto
+     * @memberof CompetitionRunSubmissionReportEntity
      */
     'totalPoints': number;
     /**
      * 
-     * @type {UserDto}
-     * @memberof CompetitionRunSubmissionReportDto
+     * @type {CompetitionRunEntity}
+     * @memberof CompetitionRunSubmissionReportEntity
      */
-    'user': UserDto;
+    'run': CompetitionRunEntity;
+    /**
+     * 
+     * @type {CompetitionSubmissionEntity}
+     * @memberof CompetitionRunSubmissionReportEntity
+     */
+    'submission': CompetitionSubmissionEntity;
+    /**
+     * 
+     * @type {UserEntity}
+     * @memberof CompetitionRunSubmissionReportEntity
+     */
+    'user': UserEntity;
+}
+/**
+ * 
+ * @export
+ * @interface CompetitionSubmissionEntity
+ */
+export interface CompetitionSubmissionEntity {
+    /**
+     * 
+     * @type {string}
+     * @memberof CompetitionSubmissionEntity
+     */
+    'id': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof CompetitionSubmissionEntity
+     */
+    'createdAt': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof CompetitionSubmissionEntity
+     */
+    'updatedAt': string;
 }
 /**
  * 
@@ -333,6 +443,24 @@ export interface CourseEntity {
     'summary': string;
     /**
      * 
+     * @type {string}
+     * @memberof CourseEntity
+     */
+    'body': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof CourseEntity
+     */
+    'visibility': CourseEntityVisibilityEnum;
+    /**
+     * 
+     * @type {string}
+     * @memberof CourseEntity
+     */
+    'thumbnail': string;
+    /**
+     * 
      * @type {number}
      * @memberof CourseEntity
      */
@@ -362,6 +490,18 @@ export interface CourseEntity {
      */
     'chapters': Array<ChapterEntity>;
 }
+
+export const CourseEntityVisibilityEnum = {
+    Draft: 'DRAFT',
+    Published: 'PUBLISHED',
+    Future: 'FUTURE',
+    Pending: 'PENDING',
+    Private: 'PRIVATE',
+    Trash: 'TRASH'
+} as const;
+
+export type CourseEntityVisibilityEnum = typeof CourseEntityVisibilityEnum[keyof typeof CourseEntityVisibilityEnum];
+
 /**
  * 
  * @export
@@ -423,91 +563,6 @@ export interface EthereumSigninValidateRequestDto {
 /**
  * 
  * @export
- * @interface GameDto
- */
-export interface GameDto {
-    /**
-     * 
-     * @type {string}
-     * @memberof GameDto
-     */
-    'id': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof GameDto
-     */
-    'createdAt': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof GameDto
-     */
-    'updatedAt': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof GameDto
-     */
-    'slug': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof GameDto
-     */
-    'title': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof GameDto
-     */
-    'summary': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof GameDto
-     */
-    'body': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof GameDto
-     */
-    'visibility': GameDtoVisibilityEnum;
-    /**
-     * 
-     * @type {string}
-     * @memberof GameDto
-     */
-    'thumbnail': string;
-    /**
-     * 
-     * @type {PermissionsDto}
-     * @memberof GameDto
-     */
-    'roles': PermissionsDto;
-    /**
-     * 
-     * @type {Array<GameVersionDto>}
-     * @memberof GameDto
-     */
-    'versions': Array<GameVersionDto>;
-}
-
-export const GameDtoVisibilityEnum = {
-    Draft: 'DRAFT',
-    Published: 'PUBLISHED',
-    Future: 'FUTURE',
-    Pending: 'PENDING',
-    Private: 'PRIVATE',
-    Trash: 'TRASH'
-} as const;
-
-export type GameDtoVisibilityEnum = typeof GameDtoVisibilityEnum[keyof typeof GameDtoVisibilityEnum];
-
-/**
- * 
- * @export
  * @interface GameEntity
  */
 export interface GameEntity {
@@ -549,54 +604,47 @@ export interface GameEntity {
     'summary': string;
     /**
      * 
-     * @type {PermissionsDto}
+     * @type {string}
      * @memberof GameEntity
      */
-    'roles': PermissionsDto;
+    'body': string;
     /**
      * 
-     * @type {Array<GameVersionDto>}
+     * @type {string}
      * @memberof GameEntity
      */
-    'versions': Array<GameVersionDto>;
+    'visibility': GameEntityVisibilityEnum;
+    /**
+     * 
+     * @type {string}
+     * @memberof GameEntity
+     */
+    'thumbnail': string;
+    /**
+     * 
+     * @type {Permissions}
+     * @memberof GameEntity
+     */
+    'roles': Permissions;
+    /**
+     * 
+     * @type {Array<GameVersionEntity>}
+     * @memberof GameEntity
+     */
+    'versions': Array<GameVersionEntity>;
 }
-/**
- * 
- * @export
- * @interface GameFeedbackResponseDto
- */
-export interface GameFeedbackResponseDto {
-    /**
-     * 
-     * @type {string}
-     * @memberof GameFeedbackResponseDto
-     */
-    'id': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof GameFeedbackResponseDto
-     */
-    'createdAt': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof GameFeedbackResponseDto
-     */
-    'updatedAt': string;
-    /**
-     * 
-     * @type {GameVersionDto}
-     * @memberof GameFeedbackResponseDto
-     */
-    'version': GameVersionDto;
-    /**
-     * 
-     * @type {UserDto}
-     * @memberof GameFeedbackResponseDto
-     */
-    'user': UserDto;
-}
+
+export const GameEntityVisibilityEnum = {
+    Draft: 'DRAFT',
+    Published: 'PUBLISHED',
+    Future: 'FUTURE',
+    Pending: 'PENDING',
+    Private: 'PRIVATE',
+    Trash: 'TRASH'
+} as const;
+
+export type GameEntityVisibilityEnum = typeof GameEntityVisibilityEnum[keyof typeof GameEntityVisibilityEnum];
+
 /**
  * 
  * @export
@@ -633,73 +681,6 @@ export interface GameFeedbackResponseEntity {
      * @memberof GameFeedbackResponseEntity
      */
     'user': UserEntity;
-}
-/**
- * 
- * @export
- * @interface GameVersionDto
- */
-export interface GameVersionDto {
-    /**
-     * 
-     * @type {string}
-     * @memberof GameVersionDto
-     */
-    'id': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof GameVersionDto
-     */
-    'createdAt': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof GameVersionDto
-     */
-    'updatedAt': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof GameVersionDto
-     */
-    'version': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof GameVersionDto
-     */
-    'archive_url': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof GameVersionDto
-     */
-    'notes_url': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof GameVersionDto
-     */
-    'feedback_form': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof GameVersionDto
-     */
-    'feedback_deadline': string;
-    /**
-     * 
-     * @type {GameDto}
-     * @memberof GameVersionDto
-     */
-    'game': GameDto;
-    /**
-     * 
-     * @type {Array<GameFeedbackResponseDto>}
-     * @memberof GameVersionDto
-     */
-    'responses': Array<GameFeedbackResponseDto>;
 }
 /**
  * 
@@ -896,7 +877,55 @@ export interface LectureEntity {
      * @memberof LectureEntity
      */
     'summary': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof LectureEntity
+     */
+    'body': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof LectureEntity
+     */
+    'visibility': LectureEntityVisibilityEnum;
+    /**
+     * 
+     * @type {string}
+     * @memberof LectureEntity
+     */
+    'thumbnail': string;
+    /**
+     * 
+     * @type {number}
+     * @memberof LectureEntity
+     */
+    'order': number;
+    /**
+     * 
+     * @type {CourseEntity}
+     * @memberof LectureEntity
+     */
+    'course': CourseEntity;
+    /**
+     * 
+     * @type {CourseEntity}
+     * @memberof LectureEntity
+     */
+    'chapter': CourseEntity;
 }
+
+export const LectureEntityVisibilityEnum = {
+    Draft: 'DRAFT',
+    Published: 'PUBLISHED',
+    Future: 'FUTURE',
+    Pending: 'PENDING',
+    Private: 'PRIVATE',
+    Trash: 'TRASH'
+} as const;
+
+export type LectureEntityVisibilityEnum = typeof LectureEntityVisibilityEnum[keyof typeof LectureEntityVisibilityEnum];
+
 /**
  * 
  * @export
@@ -1062,131 +1091,95 @@ export interface OkDto {
 /**
  * 
  * @export
- * @interface PermissionsDto
+ * @interface Permissions
  */
-export interface PermissionsDto {
+export interface Permissions {
     /**
      * 
      * @type {string}
-     * @memberof PermissionsDto
+     * @memberof Permissions
      */
     'owner': string;
     /**
      * 
      * @type {Array<string>}
-     * @memberof PermissionsDto
+     * @memberof Permissions
      */
     'editors': Array<string>;
 }
 /**
  * 
  * @export
- * @interface UserDto
+ * @interface PostEntity
  */
-export interface UserDto {
+export interface PostEntity {
     /**
      * 
      * @type {string}
-     * @memberof UserDto
+     * @memberof PostEntity
      */
     'id': string;
     /**
      * 
      * @type {string}
-     * @memberof UserDto
+     * @memberof PostEntity
      */
     'createdAt': string;
     /**
      * 
      * @type {string}
-     * @memberof UserDto
+     * @memberof PostEntity
      */
     'updatedAt': string;
     /**
      * 
      * @type {string}
-     * @memberof UserDto
+     * @memberof PostEntity
      */
-    'username': string;
+    'slug': string;
     /**
      * 
      * @type {string}
-     * @memberof UserDto
+     * @memberof PostEntity
      */
-    'email': string;
-    /**
-     * 
-     * @type {boolean}
-     * @memberof UserDto
-     */
-    'emailVerified': boolean;
+    'title': string;
     /**
      * 
      * @type {string}
-     * @memberof UserDto
+     * @memberof PostEntity
      */
-    'passwordHash': string;
+    'summary': string;
     /**
      * 
      * @type {string}
-     * @memberof UserDto
+     * @memberof PostEntity
      */
-    'passwordSalt': string;
+    'body': string;
     /**
      * 
      * @type {string}
-     * @memberof UserDto
+     * @memberof PostEntity
      */
-    'facebookId': string;
+    'visibility': PostEntityVisibilityEnum;
     /**
      * 
      * @type {string}
-     * @memberof UserDto
+     * @memberof PostEntity
      */
-    'googleId': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof UserDto
-     */
-    'githubId': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof UserDto
-     */
-    'appleId': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof UserDto
-     */
-    'linkedinId': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof UserDto
-     */
-    'twitterId': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof UserDto
-     */
-    'walletAddress': string;
-    /**
-     * 
-     * @type {number}
-     * @memberof UserDto
-     */
-    'elo': number;
-    /**
-     * 
-     * @type {UserProfileDto}
-     * @memberof UserDto
-     */
-    'profile': UserProfileDto;
+    'thumbnail': string;
 }
+
+export const PostEntityVisibilityEnum = {
+    Draft: 'DRAFT',
+    Published: 'PUBLISHED',
+    Future: 'FUTURE',
+    Pending: 'PENDING',
+    Private: 'PRIVATE',
+    Trash: 'TRASH'
+} as const;
+
+export type PostEntityVisibilityEnum = typeof PostEntityVisibilityEnum[keyof typeof PostEntityVisibilityEnum];
+
 /**
  * 
  * @export
@@ -1285,63 +1278,93 @@ export interface UserEntity {
     'walletAddress': string;
     /**
      * 
+     * @type {UserProfileEntity}
+     * @memberof UserEntity
+     */
+    'profile': UserProfileEntity;
+    /**
+     * 
+     * @type {Array<CompetitionSubmissionEntity>}
+     * @memberof UserEntity
+     */
+    'competitionSubmissions': Array<CompetitionSubmissionEntity>;
+    /**
+     * 
      * @type {number}
      * @memberof UserEntity
      */
     'elo': number;
+    /**
+     * 
+     * @type {Array<PostEntity>}
+     * @memberof UserEntity
+     */
+    'posts': Array<PostEntity>;
+    /**
+     * 
+     * @type {Array<CourseEntity>}
+     * @memberof UserEntity
+     */
+    'courses': Array<CourseEntity>;
 }
 /**
  * 
  * @export
- * @interface UserProfileDto
+ * @interface UserProfileEntity
  */
-export interface UserProfileDto {
+export interface UserProfileEntity {
     /**
      * 
      * @type {string}
-     * @memberof UserProfileDto
+     * @memberof UserProfileEntity
      */
     'id': string;
     /**
      * 
      * @type {string}
-     * @memberof UserProfileDto
+     * @memberof UserProfileEntity
      */
     'createdAt': string;
     /**
      * 
      * @type {string}
-     * @memberof UserProfileDto
+     * @memberof UserProfileEntity
      */
     'updatedAt': string;
     /**
      * 
+     * @type {UserEntity}
+     * @memberof UserProfileEntity
+     */
+    'user': UserEntity;
+    /**
+     * 
      * @type {string}
-     * @memberof UserProfileDto
+     * @memberof UserProfileEntity
      */
     'bio': string;
     /**
      * 
      * @type {string}
-     * @memberof UserProfileDto
+     * @memberof UserProfileEntity
      */
     'name': string;
     /**
      * 
      * @type {string}
-     * @memberof UserProfileDto
+     * @memberof UserProfileEntity
      */
     'givenName': string;
     /**
      * 
      * @type {string}
-     * @memberof UserProfileDto
+     * @memberof UserProfileEntity
      */
     'familyName': string;
     /**
      * 
      * @type {string}
-     * @memberof UserProfileDto
+     * @memberof UserProfileEntity
      */
     'picture': string;
 }
@@ -1641,7 +1664,7 @@ export const AuthApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async authControllerGetCurrentUser(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<UserDto>> {
+        async authControllerGetCurrentUser(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<UserEntity>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.authControllerGetCurrentUser(options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['AuthApi.authControllerGetCurrentUser']?.[localVarOperationServerIndex]?.url;
@@ -1746,7 +1769,7 @@ export const AuthApiFactory = function (configuration?: Configuration, basePath?
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        authControllerGetCurrentUser(options?: any): AxiosPromise<UserDto> {
+        authControllerGetCurrentUser(options?: any): AxiosPromise<UserEntity> {
             return localVarFp.authControllerGetCurrentUser(options).then((request) => request(axios, basePath));
         },
         /**
@@ -2298,7 +2321,7 @@ export const CompetitionsApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async competitionControllerGetLatestChessCompetitionReport(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<CompetitionRunSubmissionReportDto>>> {
+        async competitionControllerGetLatestChessCompetitionReport(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<CompetitionRunSubmissionReportEntity>>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.competitionControllerGetLatestChessCompetitionReport(options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['CompetitionsApi.competitionControllerGetLatestChessCompetitionReport']?.[localVarOperationServerIndex]?.url;
@@ -2403,7 +2426,7 @@ export const CompetitionsApiFactory = function (configuration?: Configuration, b
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        competitionControllerGetLatestChessCompetitionReport(options?: any): AxiosPromise<Array<CompetitionRunSubmissionReportDto>> {
+        competitionControllerGetLatestChessCompetitionReport(options?: any): AxiosPromise<Array<CompetitionRunSubmissionReportEntity>> {
             return localVarFp.competitionControllerGetLatestChessCompetitionReport(options).then((request) => request(axios, basePath));
         },
         /**
@@ -2667,13 +2690,13 @@ export const GameApiAxiosParamCreator = function (configuration?: Configuration)
         /**
          * 
          * @summary Create a single GameEntity
-         * @param {GameDto} gameDto 
+         * @param {GameEntity} gameEntity 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        createOneBaseGameControllerGameEntity: async (gameDto: GameDto, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'gameDto' is not null or undefined
-            assertParamExists('createOneBaseGameControllerGameEntity', 'gameDto', gameDto)
+        createOneBaseGameControllerGameEntity: async (gameEntity: GameEntity, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'gameEntity' is not null or undefined
+            assertParamExists('createOneBaseGameControllerGameEntity', 'gameEntity', gameEntity)
             const localVarPath = `/game`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -2697,7 +2720,7 @@ export const GameApiAxiosParamCreator = function (configuration?: Configuration)
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(gameDto, localVarRequestOptions, configuration)
+            localVarRequestOptions.data = serializeDataIfNeeded(gameEntity, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -2922,12 +2945,12 @@ export const GameApiFp = function(configuration?: Configuration) {
         /**
          * 
          * @summary Create a single GameEntity
-         * @param {GameDto} gameDto 
+         * @param {GameEntity} gameEntity 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async createOneBaseGameControllerGameEntity(gameDto: GameDto, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<GameEntity>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.createOneBaseGameControllerGameEntity(gameDto, options);
+        async createOneBaseGameControllerGameEntity(gameEntity: GameEntity, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<GameEntity>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.createOneBaseGameControllerGameEntity(gameEntity, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['GameApi.createOneBaseGameControllerGameEntity']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
@@ -3009,12 +3032,12 @@ export const GameApiFactory = function (configuration?: Configuration, basePath?
         /**
          * 
          * @summary Create a single GameEntity
-         * @param {GameDto} gameDto 
+         * @param {GameEntity} gameEntity 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        createOneBaseGameControllerGameEntity(gameDto: GameDto, options?: any): AxiosPromise<GameEntity> {
-            return localVarFp.createOneBaseGameControllerGameEntity(gameDto, options).then((request) => request(axios, basePath));
+        createOneBaseGameControllerGameEntity(gameEntity: GameEntity, options?: any): AxiosPromise<GameEntity> {
+            return localVarFp.createOneBaseGameControllerGameEntity(gameEntity, options).then((request) => request(axios, basePath));
         },
         /**
          * 
@@ -3081,13 +3104,13 @@ export class GameApi extends BaseAPI {
     /**
      * 
      * @summary Create a single GameEntity
-     * @param {GameDto} gameDto 
+     * @param {GameEntity} gameEntity 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof GameApi
      */
-    public createOneBaseGameControllerGameEntity(gameDto: GameDto, options?: RawAxiosRequestConfig) {
-        return GameApiFp(this.configuration).createOneBaseGameControllerGameEntity(gameDto, options).then((request) => request(this.axios, this.basePath));
+    public createOneBaseGameControllerGameEntity(gameEntity: GameEntity, options?: RawAxiosRequestConfig) {
+        return GameApiFp(this.configuration).createOneBaseGameControllerGameEntity(gameEntity, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -3162,13 +3185,13 @@ export const GameVersionApiAxiosParamCreator = function (configuration?: Configu
         /**
          * 
          * @summary Create a single GameVersionEntity
-         * @param {GameVersionDto} gameVersionDto 
+         * @param {GameVersionEntity} gameVersionEntity 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        createOneBaseGameVersionControllerGameVersionEntity: async (gameVersionDto: GameVersionDto, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'gameVersionDto' is not null or undefined
-            assertParamExists('createOneBaseGameVersionControllerGameVersionEntity', 'gameVersionDto', gameVersionDto)
+        createOneBaseGameVersionControllerGameVersionEntity: async (gameVersionEntity: GameVersionEntity, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'gameVersionEntity' is not null or undefined
+            assertParamExists('createOneBaseGameVersionControllerGameVersionEntity', 'gameVersionEntity', gameVersionEntity)
             const localVarPath = `/game-version`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -3192,7 +3215,7 @@ export const GameVersionApiAxiosParamCreator = function (configuration?: Configu
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(gameVersionDto, localVarRequestOptions, configuration)
+            localVarRequestOptions.data = serializeDataIfNeeded(gameVersionEntity, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -3413,12 +3436,12 @@ export const GameVersionApiFp = function(configuration?: Configuration) {
         /**
          * 
          * @summary Create a single GameVersionEntity
-         * @param {GameVersionDto} gameVersionDto 
+         * @param {GameVersionEntity} gameVersionEntity 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async createOneBaseGameVersionControllerGameVersionEntity(gameVersionDto: GameVersionDto, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<GameVersionEntity>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.createOneBaseGameVersionControllerGameVersionEntity(gameVersionDto, options);
+        async createOneBaseGameVersionControllerGameVersionEntity(gameVersionEntity: GameVersionEntity, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<GameVersionEntity>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.createOneBaseGameVersionControllerGameVersionEntity(gameVersionEntity, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['GameVersionApi.createOneBaseGameVersionControllerGameVersionEntity']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
@@ -3500,12 +3523,12 @@ export const GameVersionApiFactory = function (configuration?: Configuration, ba
         /**
          * 
          * @summary Create a single GameVersionEntity
-         * @param {GameVersionDto} gameVersionDto 
+         * @param {GameVersionEntity} gameVersionEntity 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        createOneBaseGameVersionControllerGameVersionEntity(gameVersionDto: GameVersionDto, options?: any): AxiosPromise<GameVersionEntity> {
-            return localVarFp.createOneBaseGameVersionControllerGameVersionEntity(gameVersionDto, options).then((request) => request(axios, basePath));
+        createOneBaseGameVersionControllerGameVersionEntity(gameVersionEntity: GameVersionEntity, options?: any): AxiosPromise<GameVersionEntity> {
+            return localVarFp.createOneBaseGameVersionControllerGameVersionEntity(gameVersionEntity, options).then((request) => request(axios, basePath));
         },
         /**
          * 
@@ -3572,13 +3595,13 @@ export class GameVersionApi extends BaseAPI {
     /**
      * 
      * @summary Create a single GameVersionEntity
-     * @param {GameVersionDto} gameVersionDto 
+     * @param {GameVersionEntity} gameVersionEntity 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof GameVersionApi
      */
-    public createOneBaseGameVersionControllerGameVersionEntity(gameVersionDto: GameVersionDto, options?: RawAxiosRequestConfig) {
-        return GameVersionApiFp(this.configuration).createOneBaseGameVersionControllerGameVersionEntity(gameVersionDto, options).then((request) => request(this.axios, this.basePath));
+    public createOneBaseGameVersionControllerGameVersionEntity(gameVersionEntity: GameVersionEntity, options?: RawAxiosRequestConfig) {
+        return GameVersionApiFp(this.configuration).createOneBaseGameVersionControllerGameVersionEntity(gameVersionEntity, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

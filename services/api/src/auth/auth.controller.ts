@@ -5,7 +5,6 @@ import { AuthUser, Public } from './decorators';
 import { LocalSignInDto } from '../dtos/auth/local-sign-in.dto';
 import { LocalSignUpDto } from '../dtos/auth/local-sign-up.dto';
 import { LocalSignInResponseDto } from '../dtos/auth/local-sign-in.response.dto';
-import { UserDto } from '../dtos/user/user.dto';
 import { UserEntity } from '../user/entities';
 import { Auth } from './decorators/http.decorator';
 import { EthereumSigninValidateRequestDto } from '../dtos/auth/ethereum-signin-validate-request.dto';
@@ -93,8 +92,10 @@ export class AuthController {
 
   @Get('current-user')
   @Auth({ public: false })
-  @OkResponse({ type: UserDto })
-  public async getCurrentUser(@AuthUser() user: UserEntity): Promise<UserDto> {
+  @OkResponse({ type: UserEntity })
+  public async getCurrentUser(
+    @AuthUser() user: UserEntity,
+  ): Promise<UserEntity> {
     return user;
   }
 

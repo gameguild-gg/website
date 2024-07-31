@@ -1,4 +1,3 @@
-import { TypeOrmCrudService } from '@dataui/crud-typeorm';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -7,7 +6,6 @@ import { LectureEntity } from './entities/lecture.entity';
 import { ChapterEntity } from './entities/chapter.entity';
 import { PostEntity } from './entities/post.entity';
 import { UserEntity } from '../user/entities';
-import { CreateCourseDto } from '../dtos/course/create-course.dto';
 import { UserService } from '../user/user.service';
 
 @Injectable()

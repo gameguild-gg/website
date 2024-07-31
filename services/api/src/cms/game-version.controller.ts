@@ -10,11 +10,9 @@ import {
   ParsedBody,
   ParsedRequest,
 } from '@dataui/crud';
-import { GameDto } from './dtos/game.dto';
 import { AuthUser } from '../auth';
 import { UserEntity } from '../user/entities';
 import { GameVersionEntity } from './entities/game-version.entity';
-import { GameVersionDto } from './dtos/game-version.dto';
 import { GameVersionService } from './game-version.service';
 import { ContentUserRolesEnum } from '../auth/auth.enum';
 
@@ -55,9 +53,9 @@ export class GameVersionController
   @Override()
   @Auth({ public: false })
   async createOne(
-    @Body() body: GameVersionDto,
+    @Body() body: GameVersionEntity,
     @AuthUser() user: UserEntity,
-  ): Promise<GameVersionDto> {
+  ): Promise<GameVersionEntity> {
     return this.service.createGameVersion(body, user);
   }
 
@@ -65,7 +63,7 @@ export class GameVersionController
   @Auth({ content: ContentUserRolesEnum.EDITOR, entity: GameEntity })
   async updateOne(
     @ParsedRequest() req: CrudRequest,
-    @ParsedBody() dto: Partial<GameDto>,
+    @ParsedBody() dto: Partial<GameEntity>,
   ) {
     delete dto.roles;
     await this.base.updateOneBase(req, <GameEntity>dto);

@@ -8,12 +8,12 @@ import { RedoOutlined } from '@ant-design/icons';
 
 import { Moment } from 'moment';
 import moment from 'moment-timezone';
-import { CompetitionRunSubmissionReportDto } from '@game-guild/apiclient';
+import { CompetitionRunSubmissionReportEntity } from '@game-guild/apiclient';
 
 export default function TournamentPage() {
   const router = useRouter();
   const [lastCompetitionState, setLastCompetitionState] = React.useState<
-    CompetitionRunSubmissionReportDto[] | null
+    CompetitionRunSubmissionReportEntity[] | null
   >(null);
 
   const [dataFetched, setDataFetched] = React.useState(false);
@@ -33,7 +33,8 @@ export default function TournamentPage() {
       router.push('/login');
       return;
     }
-    const data = (await response.json()) as CompetitionRunSubmissionReportDto[];
+    const data =
+      (await response.json()) as CompetitionRunSubmissionReportEntity[];
     setLastCompetitionState(data);
   };
 

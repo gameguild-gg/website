@@ -1,27 +1,25 @@
 import { ContentBase } from './content.base';
 import { ApiProperty } from '@nestjs/swagger';
 import { Column, Entity, OneToMany } from 'typeorm';
-import { GameDto } from '../dtos/game.dto';
-import { PermissionsDto } from '../../auth/dtos/with-roles.dto';
 import { ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
-import { GameVersionDto } from '../dtos/game-version.dto';
 import { GameVersionEntity } from './game-version.entity';
+import { Permissions } from '../../auth/entities/with-roles.entity';
 
 @Entity('game')
-export class GameEntity extends ContentBase implements GameDto {
-  @ApiProperty({ type: () => PermissionsDto })
+export class GameEntity extends ContentBase {
+  @ApiProperty({ type: Permissions })
   @ValidateNested({ message: 'roles must be an instance of PermissionsDto' })
-  @Type(() => PermissionsDto)
+  @Type(() => Permissions)
   @Column('jsonb', { nullable: true, select: false })
-  roles: PermissionsDto;
+  roles: Permissions;
 
-  @ApiProperty({ type: () => GameVersionDto, isArray: true })
+  @ApiProperty({ type: GameVersionEntity, isArray: true })
   @ValidateNested({
     each: true,
     message: 'versions must be an array of GameVersionDto',
   })
-  @Type(() => GameVersionDto)
+  @Type(() => GameVersionEntity)
   // relation to GameVersionEntity
   @OneToMany(() => GameVersionEntity, (version) => version.game)
   versions: GameVersionEntity[];

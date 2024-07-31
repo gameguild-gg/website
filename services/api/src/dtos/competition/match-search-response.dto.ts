@@ -1,11 +1,16 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { EntityDto } from "../entity.dto";
+import { EntityBase } from '../../common/entities/entity.base';
 
-export class MatchSearchResponseDto extends EntityDto {
+export class MatchSearchResponseDto extends EntityBase {
   @ApiProperty()
   winner: string;
   @ApiProperty()
   lastState: string;
   @ApiProperty({ type: [String] })
   players: string[];
+
+  constructor(partial: Partial<MatchSearchResponseDto>) {
+    super(partial);
+    Object.assign(this, partial);
+  }
 }
