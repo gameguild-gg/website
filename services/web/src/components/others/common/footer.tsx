@@ -8,13 +8,13 @@ function Footer() {
           <div className="flex">
             <a href="#">
               <img
-                src="assets/images/whatsapp-icon.svg"
+                src="/assets/images/whatsapp-icon.svg"
                 className="w-[30px] h-[30px] m-3"
               />
             </a>
             <a href="#">
               <img
-                src="assets/images/discord-icon.svg"
+                src="/assets/images/discord-icon.svg"
                 className="w-[30px] h-[30px] m-3"
               />
             </a>

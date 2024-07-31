@@ -17,10 +17,12 @@ const PageHeader: React.FunctionComponent<Readonly<Props>> & {
       <div className="flex justify-between my-0 px-0 py-0 h-full w-full mx-auto">
         {/*Left Corner of the Header*/}
         <div className="flex my-0 py-0">
-          <img
-            src="assets/images/logo-text.png"
-            className="w-[135px] h-46px my-auto mx-[10px]"
-          />
+          <a href="/" className='flex my-0 py-0'>
+            <img
+              src="/assets/images/logo-text.png"
+              className="w-[135px] h-46px my-auto mx-[10px]"
+            />
+          </a>
           &nbsp;
           <a
             href="/competition"
@@ -35,10 +37,10 @@ const PageHeader: React.FunctionComponent<Readonly<Props>> & {
             <span className="m-auto ">Courses</span>
           </a>
           <a
-            href="/jobs"
+            href="/gtl"
             className="flex my-0 font-semibold hover:bg-neutral-800 px-2 min-w-[80px] hover:text-green-400"
           >
-            <span className="m-auto ">Jobs</span>
+            <span className="m-auto ">GTL</span>
           </a>
           <a
             href="/blog"

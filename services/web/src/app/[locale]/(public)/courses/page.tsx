@@ -33,7 +33,7 @@ export default async function Page() {
   };
 
   return (
-    <div className="w-screen h-full bg-neutral-100">
+    <div className="w-full h-full bg-neutral-100">
       <div className="w-[1440px] max-w-full min-h-screen mx-auto bg-white p-2 ">
         {/*Search Bar Row*/}
         <div className="flex h-[45px] text-center items-center">
@@ -64,7 +64,7 @@ export default async function Page() {
               key={i}
             >
               <img
-                src="assets/images/placeholder.svg"
+                src="/assets/images/placeholder.svg"
                 className="w-full object-none h-[170px]"
               />
               <div className="font-bold p-2">{c.name}</div>
