@@ -1,5 +1,8 @@
+import type { CustomDecorator } from '@nestjs/common';
 import { SetMetadata } from '@nestjs/common';
 
-export const IS_PUBLIC_KEY = 'isPublic';
+export const PUBLIC_ROUTE_KEY = 'public_route';
 
-export const Public = (isPublic = true) => SetMetadata(IS_PUBLIC_KEY, isPublic);
+// eslint-disable-next-line @typescript-eslint/naming-convention
+export const PublicRoute = (isPublic = false): CustomDecorator =>
+  SetMetadata(PUBLIC_ROUTE_KEY, isPublic);

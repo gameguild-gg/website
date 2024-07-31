@@ -1,13 +1,12 @@
-import {applyDecorators, UseGuards} from '@nestjs/common';
-import {Public} from "./public.decorator";
-import {AccessTokenGuard} from "../guards/access-token-guard.service";
+import { applyDecorators, UseGuards } from '@nestjs/common';
+import { AccessTokenGuard } from '../guards/access-token-guard.service';
+import { PublicRoute } from './public.decorator';
 
+type AuthRole = { isPublic: boolean };
 
-type AuthRole =
-  | { isPublic: boolean }
-
-
-export const Authentication = (role: AuthRole = {isPublic: false}): PropertyDecorator => {
+export const Authentication = (
+  role: AuthRole = { isPublic: false },
+): PropertyDecorator => {
   // SetMetadata('auth', args)
 
   // Os Decorators precisam ser aplicados na ordem correta, por isso a ordem é importante.
@@ -25,7 +24,7 @@ export const Authentication = (role: AuthRole = {isPublic: false}): PropertyDeco
   // 5. Se o usuário não for OWNER, tem que ter permissão para acessar a rota apenas como VIEWER, eu preciso verificar se o usuário
   // é que TIPO DE VIEWER ou SUBSCRIBER (TEACHER, GUARDIAN, STUDENT).
 
-  let decorators: MethodDecorator | ClassDecorator | PropertyDecorator[] = [];
+  const decorators: MethodDecorator | ClassDecorator | PropertyDecorator[] = [];
 
   if (!role.isPublic) {
     // The guards must be applied in the correct order, so the order is important!
@@ -38,10 +37,9 @@ export const Authentication = (role: AuthRole = {isPublic: false}): PropertyDeco
     // decorators.push(UseGuards(ContentRolesGuard)); // This guard will check the user's content role.
     // // If the route isn't public, apply the ViewerRolesGuard to check the user's viewer role.
     // decorators.push(UseGuards(ViewerRolesGuard)); // This guard will check the user's viewer role.
-
   } else {
     // The route is public, apply the Public decorator
-    decorators.push(Public());
+    decorators.push(PublicRoute());
   }
 
   return applyDecorators(...decorators);

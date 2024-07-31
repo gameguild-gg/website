@@ -8,10 +8,12 @@ import { UserModule } from '../user/user.module';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { AccessTokenStrategy } from './strategies/access-token.strategy';
+import { JwtStrategy, PublicStrategy } from './strategies';
 
 @Module({
   imports: [
-    PassportModule.register({ defaultStrategy: 'access-token' }),
+    forwardRef(() => UserModule),
+    PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       imports: [CommonModule],
       inject: [ApiConfigService],
@@ -24,14 +26,16 @@ import { AccessTokenStrategy } from './strategies/access-token.strategy';
             algorithm: 'RS256',
             expiresIn: configService.authConfig.accessTokenExpiresIn,
           },
+          verifyOptions: {
+            algorithms: ['RS256'],
+          },
         };
       },
     }),
     forwardRef(() => NotificationModule),
-    forwardRef(() => UserModule),
   ],
   controllers: [AuthController],
-  providers: [AuthService, AccessTokenStrategy],
+  providers: [AuthService, AccessTokenStrategy, JwtStrategy, PublicStrategy],
   exports: [AuthService, JwtModule],
 })
 export class AuthModule {}

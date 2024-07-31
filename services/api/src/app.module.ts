@@ -57,10 +57,6 @@ import { DataSource } from 'typeorm';
   ],
   controllers: [AppController],
   providers: [
-    // {
-    //   provide: APP_GUARD,
-    //   useClass: JwtAccessTokenGuard,
-    // },
     {
       provide: 'DataSource',
       useFactory: (dataSource: DataSource) => dataSource,

@@ -2794,6 +2794,10 @@ export const GameApiAxiosParamCreator = function (configuration?: Configuration)
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
 
+            // authentication bearer required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
             if (fields) {
                 localVarQueryParameter['fields'] = fields.join(COLLECTION_FORMATS.csv);
             }
@@ -2870,6 +2874,10 @@ export const GameApiAxiosParamCreator = function (configuration?: Configuration)
             const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
+
+            // authentication bearer required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
             if (fields) {
                 localVarQueryParameter['fields'] = fields.join(COLLECTION_FORMATS.csv);
@@ -3285,6 +3293,10 @@ export const GameVersionApiAxiosParamCreator = function (configuration?: Configu
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
 
+            // authentication bearer required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
             if (fields) {
                 localVarQueryParameter['fields'] = fields.join(COLLECTION_FORMATS.csv);
             }
@@ -3361,6 +3373,10 @@ export const GameVersionApiAxiosParamCreator = function (configuration?: Configu
             const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
+
+            // authentication bearer required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
             if (fields) {
                 localVarQueryParameter['fields'] = fields.join(COLLECTION_FORMATS.csv);

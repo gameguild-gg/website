@@ -1,29 +1,32 @@
-import { AuthApi, Configuration } from '@game-guild/apiclient';
+import {
+  AuthApi,
+  Configuration,
+  ConfigurationParameters,
+} from '@game-guild/apiclient';
 import { faker } from '@faker-js/faker';
 import { generatePassword } from './utils';
 
 // todo: the API
 
 describe('Auth (e2e)', () => {
-  let apiConfig: Configuration;
   const basepath = 'http://localhost:8080';
+  const apiConfig: ConfigurationParameters = {
+    basePath: basepath,
+    baseOptions: {
+      validateStatus: () => true,
+    },
+  };
   jest.setTimeout(60000);
 
   // server have to be running
   beforeAll(async () => {
     jest.useFakeTimers();
-    apiConfig = new Configuration({
-      basePath: basepath,
-      baseOptions: {
-        validateStatus: () => true,
-      },
-    });
   });
 
   // create user
   it('create user, get current user, delete user', async () => {
     // create user
-    const authApi = new AuthApi(apiConfig);
+    const authApi = new AuthApi(new Configuration(apiConfig));
     const username = faker.internet.userName().toLowerCase();
     const email = faker.internet.email().toLowerCase();
     const password = generatePassword(); // faker.internet.password();
@@ -59,9 +62,9 @@ describe('Auth (e2e)', () => {
     expect(accessToken).not.toBe(refreshToken);
 
     // test current user from accesstoken
-    const configClone = new Configuration(apiConfig);
-    apiConfig.accessToken = accessToken;
-    const authApiLogged = new AuthApi(configClone);
+    const configClone = apiConfig;
+    configClone.accessToken = accessToken;
+    const authApiLogged = new AuthApi(new Configuration(configClone));
     const me = await authApiLogged.authControllerGetCurrentUser();
     expect(me).toBeDefined();
     expect(me.status).toBe(200);

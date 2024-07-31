@@ -11,7 +11,6 @@ export function AuthGuard(
 
   // todo: inspect do we need this?
   if (options?.public) {
-    debugger;
     strategies.push('public');
   }
 
