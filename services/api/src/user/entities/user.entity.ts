@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Exclude } from 'class-transformer';
+import { Exclude, Type } from 'class-transformer';
 import {
   Column,
   Entity,
@@ -19,7 +19,12 @@ import {
   IsEmail,
   IsUsername,
 } from '../../common/decorators/validator.decorator';
-import { IsBoolean } from 'class-validator';
+import {
+  IsArray,
+  IsBoolean,
+  IsOptional,
+  ValidateNested,
+} from 'class-validator';
 
 // todo: move to user-profile lots of fields from here
 
@@ -27,14 +32,28 @@ import { IsBoolean } from 'class-validator';
 export class UserEntity extends EntityBase {
   // Local Sign-in
   @ApiProperty()
-  @Column({ unique: true, nullable: true, default: null })
+  @Column({
+    unique: true,
+    nullable: true,
+    default: null,
+    type: 'varchar',
+    length: 32,
+  })
   @Index({ unique: true })
+  @IsOptional()
   @IsUsername()
   username: string;
 
-  @Column({ unique: true, nullable: true, default: null })
+  @Column({
+    unique: true,
+    nullable: true,
+    default: null,
+    type: 'varchar',
+    length: 254,
+  })
   @ApiProperty()
   @Index({ unique: true })
+  @IsOptional()
   @IsEmail()
   email: string;
 
@@ -98,10 +117,17 @@ export class UserEntity extends EntityBase {
   })
   @JoinColumn()
   @ApiProperty({ type: UserProfileEntity })
+  @ValidateNested()
+  @Type(() => UserProfileEntity)
   profile: UserProfileEntity;
 
   @OneToMany(() => CompetitionSubmissionEntity, (s) => s.user)
   @ApiProperty({ type: CompetitionSubmissionEntity, isArray: true })
+  @IsArray({
+    message: 'error.IsArray: competitionSubmissions should be an array',
+  })
+  @ValidateNested({ each: true })
+  @Type(() => CompetitionSubmissionEntity)
   competitionSubmissions: CompetitionSubmissionEntity[];
 
   // chess elo rank
@@ -113,11 +139,17 @@ export class UserEntity extends EntityBase {
   @ManyToMany(() => PostEntity, (post) => post.owners)
   @JoinTable()
   @ApiProperty({ type: PostEntity, isArray: true })
+  @IsArray({ message: 'error.IsArray: posts should be an array' })
+  @ValidateNested({ each: true })
+  @Type(() => PostEntity)
   posts: PostEntity[];
 
   // relation to courses
   @OneToMany(() => CourseEntity, (course) => course.author)
   @ApiProperty({ type: CourseEntity, isArray: true })
+  @IsArray({ message: 'error.IsArray: courses should be an array' })
+  @ValidateNested({ each: true })
+  @Type(() => CourseEntity)
   courses: CourseEntity[];
 
   constructor(partial: Partial<UserEntity>) {

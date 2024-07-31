@@ -4,11 +4,24 @@ import { LectureEntity } from './lecture.entity';
 import { ChapterEntity } from './chapter.entity';
 import { UserEntity } from '../../user/entities';
 import { ApiProperty } from '@nestjs/swagger';
+import {
+  IsArray,
+  IsBoolean,
+  IsNotEmpty,
+  ValidateNested,
+} from 'class-validator';
+import { Type } from 'class-transformer';
 
 @Entity({ name: 'course' })
 export class CourseEntity extends ContentBase {
   // todo: ensure 2 digits after decimal only
-  @Column({ nullable: true, default: 0, type: 'float' })
+  @Column({
+    nullable: true,
+    default: 0,
+    type: 'decimal',
+    precision: 7,
+    scale: 2,
+  })
   @Index({ unique: false })
   @ApiProperty()
   price: number;
@@ -16,6 +29,12 @@ export class CourseEntity extends ContentBase {
   // subscriptions access
   @Column({ nullable: false, default: true })
   @Index({ unique: false })
+  @IsNotEmpty({
+    message: 'error.IsNotEmpty: subscriptionAccess should not be empty',
+  })
+  @IsBoolean({
+    message: 'error.IsBoolean: subscriptionAccess should be boolean',
+  })
   @ApiProperty()
   subscriptionAccess: boolean;
 
@@ -24,15 +43,23 @@ export class CourseEntity extends ContentBase {
   // author
   @ManyToOne(() => UserEntity, (user) => user.courses)
   @ApiProperty({ type: () => UserEntity })
+  @ValidateNested()
+  @Type(() => UserEntity)
   author: UserEntity;
 
   // a course have many lectures
   @OneToMany(() => LectureEntity, (lecture) => lecture.course)
   @ApiProperty({ type: LectureEntity, isArray: true })
+  @IsArray({ message: 'error.IsArray: lectures should be an array' })
+  @ValidateNested({ each: true })
+  @Type(() => LectureEntity)
   lectures: LectureEntity[];
 
   // a course have many chapters
   @OneToMany(() => ChapterEntity, (chapter) => chapter.course)
   @ApiProperty({ type: ChapterEntity, isArray: true })
+  @IsArray({ message: 'error.IsArray: chapters should be an array' })
+  @ValidateNested({ each: true })
+  @Type(() => ChapterEntity)
   chapters: ChapterEntity[];
 }

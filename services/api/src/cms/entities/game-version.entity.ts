@@ -4,13 +4,16 @@ import { GameEntity } from './game.entity';
 import { EntityBase } from '../../common/entities/entity.base';
 import { GameFeedbackResponseEntity } from './game-feedback-response.entity';
 import {
+  IsArray,
   IsDate,
   IsFQDN,
   IsNotEmpty,
   IsSemVer,
   IsString,
   MaxLength,
+  ValidateNested,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 
 @Entity('game_version')
 @Unique(['version', 'game'])
@@ -59,10 +62,15 @@ export class GameVersionEntity extends EntityBase {
 
   @ApiProperty({ type: () => GameEntity })
   @ManyToOne(() => GameEntity, (game) => game.versions)
+  @ValidateNested()
+  @Type(() => GameEntity)
   game: GameEntity;
 
   // relation to feedback responses
   @ApiProperty({ type: GameFeedbackResponseEntity, isArray: true })
   @OneToMany(() => GameFeedbackResponseEntity, (response) => response.version)
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => GameFeedbackResponseEntity)
   responses: GameFeedbackResponseEntity[];
 }

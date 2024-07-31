@@ -26,8 +26,6 @@ export class GlobalHttpExceptionFilter implements ExceptionFilter {
     const response = ctx.getResponse();
     const request = ctx.getRequest<Request>();
 
-    const errorResponse = exception.getResponse();
-
     const responseBody: any = {
       statusCode: httpStatus,
       timestamp: new Date().toISOString(),
@@ -35,12 +33,15 @@ export class GlobalHttpExceptionFilter implements ExceptionFilter {
       message: exception.message,
       error: exception.name,
     };
-    if (errorResponse && typeof errorResponse === 'object') {
-      if ('message' in errorResponse) {
-        responseBody.message = errorResponse['message'];
-      }
-      if ('error' in errorResponse) {
-        responseBody.error = errorResponse['error'];
+    if (exception.getResponse) {
+      const errorResponse = exception.getResponse();
+      if (errorResponse && typeof errorResponse === 'object') {
+        if ('message' in errorResponse) {
+          responseBody.message = errorResponse['message'];
+        }
+        if ('error' in errorResponse) {
+          responseBody.error = errorResponse['error'];
+        }
       }
     }
     if (this.configService.nodeEnv === 'development') {

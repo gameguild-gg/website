@@ -54,5 +54,22 @@ describe('Auth (e2e)', () => {
     // verify access and refresh tokens
     const accessToken = createUserResponse.data.accessToken;
     const refreshToken = createUserResponse.data.refreshToken;
+
+    // tokens should be different
+    expect(accessToken).not.toBe(refreshToken);
+
+    // test current user from accesstoken
+    const configClone = new Configuration(apiConfig);
+    apiConfig.accessToken = accessToken;
+    const authApiLogged = new AuthApi(configClone);
+    const me = await authApiLogged.authControllerGetCurrentUser();
+    expect(me).toBeDefined();
+    expect(me.status).toBe(200);
+    expect(me.data).toBeDefined();
+    expect(me.data.username).toBe(username);
+    expect(me.data.email).toBe(email);
+    expect(me.data.passwordSalt).toBeUndefined();
+    expect(me.data.passwordHash).toBeUndefined();
+    expect(me.data.id).toBeDefined();
   });
 });

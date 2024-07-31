@@ -17,7 +17,6 @@ import { HealthcheckModule } from './healthcheck/healthcheck.module';
 import { TagModule } from './tag/tag.module';
 import { ClsModule } from 'nestjs-cls';
 import { DataSource } from 'typeorm';
-import { EnforceResponseTypeInterceptor } from './common/interceptors/enforce-response-type.interceptor';
 
 @Module({
   imports: [
@@ -66,10 +65,6 @@ import { EnforceResponseTypeInterceptor } from './common/interceptors/enforce-re
       provide: 'DataSource',
       useFactory: (dataSource: DataSource) => dataSource,
       inject: [DataSource],
-    },
-    {
-      provide: APP_INTERCEPTOR,
-      useClass: EnforceResponseTypeInterceptor,
     },
   ],
 })
