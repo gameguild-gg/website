@@ -33,7 +33,7 @@
     "posttest:e2e": "npm run kill",
     "test:e2e:wait": "wait-on tcp:8080 && npm run test:e2e",
     "startandtest": "npm-run-all --parallel start:dev test:e2e:wait",
-    "kill": "kill -9 $(lsof -t -i:8080)"
+    "kill": "killall node"
   },
   "dependencies": {
     "@dataui/crud": "5.3.4",

@@ -4,16 +4,15 @@ import {
   type Type,
 } from '@nestjs/passport';
 
-export function AuthGuard(
-  options?: Partial<{ public: boolean }>,
-): Type<IAuthGuard> {
-  const strategies = ['jwt'];
+export enum AuthType {
+  Public = 'public',
+  AccessToken = 'access-token',
+  RefreshToken = 'refresh-token',
+}
 
-  // todo: inspect do we need this?
-  if (options?.public) {
-    strategies.push('public');
-  }
-
+export function AuthGuard(options: AuthType): Type<IAuthGuard> {
+  const strategies: string[] = [];
+  strategies.push(options.toString());
   return NestAuthGuard(strategies);
 }
 

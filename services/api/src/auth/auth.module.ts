@@ -7,13 +7,18 @@ import { NotificationModule } from '../notification/notification.module';
 import { UserModule } from '../user/user.module';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
-import { AccessTokenStrategy } from './strategies/access-token.strategy';
-import { JwtStrategy, PublicStrategy } from './strategies';
+import {
+  JwtStrategy,
+  PublicStrategy,
+  RefreshTokenStrategy,
+} from './strategies';
 
 @Module({
   imports: [
     forwardRef(() => UserModule),
-    PassportModule.register({ defaultStrategy: 'jwt' }),
+    PassportModule.register({
+      defaultStrategy: ['access-token', 'refresh-token'],
+    }),
     JwtModule.registerAsync({
       imports: [CommonModule],
       inject: [ApiConfigService],
@@ -35,7 +40,7 @@ import { JwtStrategy, PublicStrategy } from './strategies';
     forwardRef(() => NotificationModule),
   ],
   controllers: [AuthController],
-  providers: [AuthService, AccessTokenStrategy, JwtStrategy, PublicStrategy],
+  providers: [AuthService, JwtStrategy, RefreshTokenStrategy, PublicStrategy],
   exports: [AuthService, JwtModule],
 })
 export class AuthModule {}

@@ -17,8 +17,8 @@ import { UserService } from '../user/user.service';
 import { LocalSignUpDto } from '../dtos/auth/local-sign-up.dto';
 import { LocalSignInDto } from '../dtos/auth/local-sign-in.dto';
 import { LocalSignInResponseDto } from '../dtos/auth/local-sign-in.response.dto';
-import { AccessTokenPayloadDto } from '../dtos/auth/access-token-payload.dto';
-import { TokenType } from '../dtos/auth/token-type.enum';
+import { AccessTokenPayloadDto } from './dtos/access-token-payload.dto';
+import { TokenType } from './dtos/token-type.enum';
 import { ethers } from 'ethers';
 // OAuth2Client
 import { LoginTicket, OAuth2Client, TokenPayload } from 'google-auth-library';
@@ -81,8 +81,10 @@ export class AuthService {
     });
   }
 
-  public async refreshAccessToken(user: UserEntity) {
-    return this.generateAccessToken(user);
+  public async refreshAccessToken(
+    user: UserEntity,
+  ): Promise<LocalSignInResponseDto> {
+    return this.signIn(user);
   }
 
   public async signIn(user: UserEntity): Promise<LocalSignInResponseDto> {

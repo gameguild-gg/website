@@ -179,7 +179,7 @@
         ]
       }
     },
-    "/auth/current-user": {
+    "/auth/me": {
       "get": {
         "operationId": "AuthController_getCurrentUser",
         "parameters": [],
@@ -190,6 +190,35 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/UserEntity"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "tags": [
+          "auth"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/auth/refresh-token": {
+      "get": {
+        "operationId": "AuthController_refreshToken",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LocalSignInResponseDto"
                 }
               }
             }

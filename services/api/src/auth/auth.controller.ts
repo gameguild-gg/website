@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Logger, Param, Post } from '@nestjs/common';
-import { ApiBody, ApiTags } from '@nestjs/swagger';
+import { ApiBody, ApiProperty, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { AuthUser } from './decorators';
 import { LocalSignInDto } from '../dtos/auth/local-sign-in.dto';
@@ -13,6 +13,7 @@ import { EthereumSigninChallengeResponseDto } from '../dtos/auth/ethereum-signin
 import { EmailDto } from './dtos/email.dto';
 import { OkDto } from '../common/dtos/ok.dto';
 import { OkResponse } from '../common/decorators/return-type.decorator';
+import { AuthType } from './guards';
 
 @Controller('auth')
 @ApiTags('auth')
@@ -90,8 +91,8 @@ export class AuthController {
     return this.authService.validateWeb3SignInChallenge(data);
   }
 
-  @Get('current-user')
-  @Auth({ public: false })
+  @Get('me')
+  @Auth({ guard: AuthType.AccessToken })
   @OkResponse({ type: UserEntity })
   public async getCurrentUser(
     @AuthUser() user: UserEntity,
@@ -99,12 +100,14 @@ export class AuthController {
     return user;
   }
 
-  // @Post('refresh-token')
-  // //@Public()
-  // @UseGuards(JwtRefreshTokenGuard)
-  // public async refreshToken(@Request() request: RequestWithUser) {
-  //   return await this.authService.refreshAccessToken(request.user);
-  // }
+  @Get('refresh-token')
+  @Auth({ guard: AuthType.RefreshToken })
+  @OkResponse({ type: LocalSignInResponseDto })
+  public async refreshToken(
+    @AuthUser() user: UserEntity,
+  ): Promise<LocalSignInResponseDto> {
+    return this.authService.refreshAccessToken(user);
+  }
 
   // @Get('verify-email')
   // public async verifyEmail(@Query('token') token: string): Promise<any> {

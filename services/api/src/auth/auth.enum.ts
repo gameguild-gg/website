@@ -1,5 +1,7 @@
 import { Type } from '@nestjs/common/interfaces';
 import { WithPermissionsEntity } from './entities/with-roles.entity';
+import { TokenType } from './dtos/token-type.enum';
+import { AuthType } from './guards';
 
 export enum ContentUserRolesEnum {
   OWNER = 'CONTENT_OWNER', // default for routes for DELETE actions
@@ -22,21 +24,22 @@ export enum SystemRoles {
 // todo: it is incomplete
 export type RouteRoles =
   | {
-      public: boolean; // true: public routes, false: logged routes
+      // public routes and just user injection
+      guard: AuthType;
       content?: never;
       system?: never;
       entity?: never;
     }
   | {
       // System roles
-      public?: false;
+      guard?: AuthType.AccessToken;
       content?: never;
       system: SystemRoles;
       entity?: never;
     }
   | {
       // Content roles
-      public?: false;
+      guard?: AuthType.AccessToken;
       content: ContentUserRolesEnum;
       system?: never;
       entity: Type<WithPermissionsEntity>;

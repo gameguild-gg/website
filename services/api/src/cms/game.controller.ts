@@ -14,6 +14,7 @@ import {
 import { AuthUser } from '../auth';
 import { UserEntity } from '../user/entities';
 import { ContentUserRolesEnum } from '../auth/auth.enum';
+import { AuthType } from '../auth/guards';
 
 @Crud({
   model: {
@@ -29,10 +30,10 @@ import { ContentUserRolesEnum } from '../auth/auth.enum';
   routes: {
     exclude: ['replaceOneBase', 'createManyBase'],
     getOneBase: {
-      decorators: [Auth({ public: true })],
+      decorators: [Auth({ guard: AuthType.AccessToken })],
     },
     getManyBase: {
-      decorators: [Auth({ public: true })],
+      decorators: [Auth({ guard: AuthType.AccessToken })],
     },
     deleteOneBase: {
       decorators: [
@@ -53,7 +54,7 @@ export class GameController implements CrudController<GameEntity> {
   }
 
   @Override()
-  @Auth({ public: false })
+  @Auth({ guard: AuthType.AccessToken })
   createOne(
     @ParsedRequest() req: CrudRequest,
     @ParsedBody() dto: GameEntity,

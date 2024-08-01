@@ -15,6 +15,7 @@ import { UserEntity } from '../user/entities';
 import { GameVersionEntity } from './entities/game-version.entity';
 import { GameVersionService } from './game-version.service';
 import { ContentUserRolesEnum } from '../auth/auth.enum';
+import { AuthType } from '../auth/guards';
 
 @Crud({
   model: {
@@ -30,10 +31,10 @@ import { ContentUserRolesEnum } from '../auth/auth.enum';
   routes: {
     exclude: ['replaceOneBase', 'createManyBase'],
     getOneBase: {
-      decorators: [Auth({ public: true })],
+      decorators: [Auth({ guard: AuthType.AccessToken })],
     },
     getManyBase: {
-      decorators: [Auth({ public: true })],
+      decorators: [Auth({ guard: AuthType.AccessToken })],
     },
   },
 })
@@ -51,7 +52,7 @@ export class GameVersionController
   }
 
   @Override()
-  @Auth({ public: false })
+  @Auth({ guard: AuthType.AccessToken })
   async createOne(
     @Body() body: GameVersionEntity,
     @AuthUser() user: UserEntity,
@@ -70,6 +71,6 @@ export class GameVersionController
   }
 
   // @Override()
-  // @Auth({ public: false })
+  // @Auth({ guard: AuthType.AccessToken })
   // deleteOne(
 }

@@ -1,12 +1,13 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
-  IsEmail,
+  IsEnum,
   IsEthereumAddress,
   IsNotEmpty,
   IsString,
   MaxLength,
 } from 'class-validator';
 import { TokenType } from './token-type.enum';
+import { IsUsername } from '../../common/decorators/validator.decorator';
 
 export class AccessTokenPayloadDto {
   @ApiProperty()
@@ -19,10 +20,7 @@ export class AccessTokenPayloadDto {
   sub: string;
 
   @ApiProperty()
-  @IsEmail(
-    {},
-    { message: 'error.invalidEmail: It must be a valid email address.' },
-  )
+  @IsUsername()
   email: string;
 
   @ApiProperty()
@@ -44,5 +42,8 @@ export class AccessTokenPayloadDto {
 
   // token type
   @ApiProperty({ enum: TokenType })
+  @IsEnum(TokenType, {
+    message: 'error.invalidTokenType: Token type is invalid.',
+  })
   type: TokenType;
 }
