@@ -7,7 +7,7 @@ import {
 import { faker } from '@faker-js/faker';
 import { generatePassword } from './utils';
 
-async function CreateRandomUser(
+export async function CreateRandomUser(
   apiConfig: ConfigurationParameters,
 ): Promise<LocalSignInResponseDto> {
   // create user

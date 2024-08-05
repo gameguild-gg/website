@@ -41,8 +41,9 @@ export class RequireRoleInterceptor implements NestInterceptor {
       EntityClassWithRolesField<any>
     >(ENTITY_CLASS_KEY, [context.getHandler(), context.getClass()]);
 
+    // reject
     if (!entityClass) {
-      return next.handle();
+      throw new ForbiddenException('Entity class not found.');
     }
 
     const request = context.switchToHttp().getRequest();
@@ -73,7 +74,7 @@ export class RequireRoleInterceptor implements NestInterceptor {
 
     if (!entity) {
       throw new ForbiddenException(
-        'Entity not found, or you do not have access to it.',
+        'Content not found, or you do not have access to it.',
       );
     }
 

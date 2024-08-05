@@ -31,6 +31,7 @@ import { SiweMessage } from 'siwe';
 import { EmailDto } from './dtos/email.dto';
 import { OkDto } from '../common/dtos/ok.dto';
 import { CreateLocalUserDto } from '../dtos/user';
+import { RefreshTokenPayloadDto } from './dtos/refresh-token-payload.dto';
 
 @Injectable()
 export class AuthService {
@@ -64,11 +65,9 @@ export class AuthService {
 
   public async generateRefreshToken(user: UserEntity): Promise<string> {
     if (!user) throw new UnauthorizedException('User not found');
-    const payload: AccessTokenPayloadDto = {
+    const payload: RefreshTokenPayloadDto = {
       sub: user.id,
-      email: user.email,
       username: user.username,
-      wallet: user.walletAddress,
       type: TokenType.RefreshToken,
       // TODO: Add more claims.
     };

@@ -1,6 +1,5 @@
 import { Type } from '@nestjs/common/interfaces';
 import { WithPermissionsEntity } from './entities/with-roles.entity';
-import { TokenType } from './dtos/token-type.enum';
 import { AuthType } from './guards';
 
 export enum ContentUserRolesEnum {
@@ -24,11 +23,20 @@ export enum SystemRoles {
 // todo: it is incomplete
 export type RouteRoles =
   | {
-      // public routes and just user injection
-      guard: AuthType;
+      // public routes
+      guard: AuthType.Public;
       content?: never;
       system?: never;
       entity?: never;
+      injectOwner?: never;
+    }
+  | {
+      // just authenticated routes
+      guard: AuthType.RefreshToken | AuthType.AccessToken;
+      content?: never;
+      system?: never;
+      entity?: never;
+      injectOwner?: boolean;
     }
   | {
       // System roles
@@ -36,6 +44,7 @@ export type RouteRoles =
       content?: never;
       system: SystemRoles;
       entity?: never;
+      injectOwner?: boolean;
     }
   | {
       // Content roles
@@ -43,4 +52,5 @@ export type RouteRoles =
       content: ContentUserRolesEnum;
       system?: never;
       entity: Type<WithPermissionsEntity>;
+      injectOwner?: boolean;
     };

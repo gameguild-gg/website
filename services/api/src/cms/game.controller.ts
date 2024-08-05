@@ -3,16 +3,7 @@ import { ApiTags } from '@nestjs/swagger';
 import { GameService } from './game.service';
 import { Auth } from '../auth/decorators/http.decorator';
 import { GameEntity } from './entities/game.entity';
-import {
-  Crud,
-  CrudController,
-  CrudRequest,
-  Override,
-  ParsedBody,
-  ParsedRequest,
-} from '@dataui/crud';
-import { AuthUser } from '../auth';
-import { UserEntity } from '../user/entities';
+import { Crud, CrudController } from '@dataui/crud';
 import { ContentUserRolesEnum } from '../auth/auth.enum';
 import { AuthType } from '../auth/guards';
 
@@ -32,8 +23,16 @@ import { AuthType } from '../auth/guards';
     getOneBase: {
       decorators: [Auth({ guard: AuthType.AccessToken })],
     },
+    createOneBase: {
+      decorators: [Auth({ guard: AuthType.AccessToken, injectOwner: true })],
+    },
     getManyBase: {
       decorators: [Auth({ guard: AuthType.AccessToken })],
+    },
+    updateOneBase: {
+      decorators: [
+        Auth({ content: ContentUserRolesEnum.EDITOR, entity: GameEntity }),
+      ],
     },
     deleteOneBase: {
       decorators: [
@@ -48,31 +47,4 @@ export class GameController implements CrudController<GameEntity> {
   private readonly logger = new Logger(GameController.name);
 
   constructor(public readonly service: GameService) {}
-
-  get base(): CrudController<GameEntity> {
-    return this;
-  }
-
-  @Override()
-  @Auth({ guard: AuthType.AccessToken })
-  createOne(
-    @ParsedRequest() req: CrudRequest,
-    @ParsedBody() dto: GameEntity,
-    @AuthUser() user: UserEntity,
-  ) {
-    dto.roles = {
-      owner: user.id,
-      editors: [user.id],
-    };
-    return this.base.createOneBase(req, <GameEntity>dto);
-  }
-
-  @Override()
-  @Auth({ content: ContentUserRolesEnum.EDITOR, entity: GameEntity })
-  async updateOne(
-    @ParsedRequest() req: CrudRequest,
-    @ParsedBody() dto: Partial<GameEntity>,
-  ): Promise<GameEntity> {
-    return this.base.updateOneBase(req, <GameEntity>dto);
-  }
 }

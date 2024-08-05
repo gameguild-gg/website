@@ -2968,12 +2968,15 @@ export const GameApiAxiosParamCreator = function (configuration?: Configuration)
          * 
          * @summary Update a single GameEntity
          * @param {string} id 
+         * @param {GameEntity} gameEntity 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        updateOneBaseGameControllerGameEntity: async (id: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+        updateOneBaseGameControllerGameEntity: async (id: string, gameEntity: GameEntity, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
             // verify required parameter 'id' is not null or undefined
             assertParamExists('updateOneBaseGameControllerGameEntity', 'id', id)
+            // verify required parameter 'gameEntity' is not null or undefined
+            assertParamExists('updateOneBaseGameControllerGameEntity', 'gameEntity', gameEntity)
             const localVarPath = `/game/{id}`
                 .replace(`{${"id"}}`, encodeURIComponent(String(id)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
@@ -2993,9 +2996,12 @@ export const GameApiAxiosParamCreator = function (configuration?: Configuration)
 
 
     
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(gameEntity, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -3080,11 +3086,12 @@ export const GameApiFp = function(configuration?: Configuration) {
          * 
          * @summary Update a single GameEntity
          * @param {string} id 
+         * @param {GameEntity} gameEntity 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async updateOneBaseGameControllerGameEntity(id: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<GameEntity>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.updateOneBaseGameControllerGameEntity(id, options);
+        async updateOneBaseGameControllerGameEntity(id: string, gameEntity: GameEntity, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<GameEntity>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.updateOneBaseGameControllerGameEntity(id, gameEntity, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['GameApi.updateOneBaseGameControllerGameEntity']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
@@ -3155,11 +3162,12 @@ export const GameApiFactory = function (configuration?: Configuration, basePath?
          * 
          * @summary Update a single GameEntity
          * @param {string} id 
+         * @param {GameEntity} gameEntity 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        updateOneBaseGameControllerGameEntity(id: string, options?: any): AxiosPromise<GameEntity> {
-            return localVarFp.updateOneBaseGameControllerGameEntity(id, options).then((request) => request(axios, basePath));
+        updateOneBaseGameControllerGameEntity(id: string, gameEntity: GameEntity, options?: any): AxiosPromise<GameEntity> {
+            return localVarFp.updateOneBaseGameControllerGameEntity(id, gameEntity, options).then((request) => request(axios, basePath));
         },
     };
 };
@@ -3235,12 +3243,13 @@ export class GameApi extends BaseAPI {
      * 
      * @summary Update a single GameEntity
      * @param {string} id 
+     * @param {GameEntity} gameEntity 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof GameApi
      */
-    public updateOneBaseGameControllerGameEntity(id: string, options?: RawAxiosRequestConfig) {
-        return GameApiFp(this.configuration).updateOneBaseGameControllerGameEntity(id, options).then((request) => request(this.axios, this.basePath));
+    public updateOneBaseGameControllerGameEntity(id: string, gameEntity: GameEntity, options?: RawAxiosRequestConfig) {
+        return GameApiFp(this.configuration).updateOneBaseGameControllerGameEntity(id, gameEntity, options).then((request) => request(this.axios, this.basePath));
     }
 }
 

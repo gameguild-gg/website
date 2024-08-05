@@ -55,6 +55,7 @@ export class RefreshTokenStrategy extends PassportStrategy(
   }
 
   async validate(args: RefreshTokenPayloadDto): Promise<UserEntity> {
+    // todo: add extra security layers, check if the user is active, etc
     if (args.type !== TokenType.RefreshToken) {
       throw new UnauthorizedException();
     }
