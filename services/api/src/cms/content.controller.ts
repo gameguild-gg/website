@@ -15,7 +15,7 @@ export class ContentController {
 
   constructor(private readonly courseService: ContentService) {}
 
-  @Post('course/create')
+  @Post('course/create-empty')
   @Auth({ guard: AuthType.AccessToken }) // todo: anyone can create?
   @OkResponse({ type: CourseEntity })
   public async createEmptyCourse(
