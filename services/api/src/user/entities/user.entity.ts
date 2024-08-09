@@ -144,13 +144,21 @@ export class UserEntity extends EntityBase {
   @Type(() => PostEntity)
   posts: PostEntity[];
 
-  // relation to courses
+  // relation to courses as author
   @OneToMany(() => CourseEntity, (course) => course.author)
   @ApiProperty({ type: CourseEntity, isArray: true })
   @IsArray({ message: 'error.IsArray: courses should be an array' })
   @ValidateNested({ each: true })
   @Type(() => CourseEntity)
   courses: CourseEntity[];
+  
+  // relation to enrolled courses
+  @OneToMany(() => CourseEntity, (course) => course.author)
+  @ApiProperty({ type: CourseEntity, isArray: true })
+  @IsArray({ message: 'error.IsArray: courses should be an array' })
+  @ValidateNested({ each: true })
+  @Type(() => CourseEntity)
+  enrolledCourses: CourseEntity[];
 
   constructor(partial: Partial<UserEntity>) {
     super(partial);

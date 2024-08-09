@@ -260,6 +260,123 @@
         ]
       }
     },
+    "/course/create-course": {
+      "post": {
+        "operationId": "CourseController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCourseDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Course"
+        ]
+      }
+    },
+    "/course/get-all-courses": {
+      "get": {
+        "operationId": "CourseController_findAll",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Course"
+        ]
+      }
+    },
+    "/course/get-couse/{id}": {
+      "get": {
+        "operationId": "CourseController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Course"
+        ]
+      }
+    },
+    "/course/update-course/{id}": {
+      "patch": {
+        "operationId": "CourseController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCourseDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Course"
+        ]
+      }
+    },
+    "/course/delete-course/{id}": {
+      "delete": {
+        "operationId": "CourseController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Course"
+        ]
+      }
+    },
     "/content/course/create": {
       "post": {
         "operationId": "ContentController_createEmptyCourse",
@@ -1677,6 +1794,9 @@
           "author": {
             "$ref": "#/components/schemas/UserEntity"
           },
+          "students": {
+            "$ref": "#/components/schemas/UserEntity"
+          },
           "lectures": {
             "type": "array",
             "items": {
@@ -1703,6 +1823,7 @@
           "price",
           "subscriptionAccess",
           "author",
+          "students",
           "lectures",
           "chapters"
         ]
@@ -1781,6 +1902,12 @@
             "items": {
               "$ref": "#/components/schemas/CourseEntity"
             }
+          },
+          "enrolledCourses": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CourseEntity"
+            }
           }
         },
         "required": [
@@ -1803,7 +1930,8 @@
           "competitionSubmissions",
           "elo",
           "posts",
-          "courses"
+          "courses",
+          "enrolledCourses"
         ]
       },
       "LocalSignInResponseDto": {
@@ -1861,6 +1989,14 @@
           "address",
           "signature"
         ]
+      },
+      "CreateCourseDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "UpdateCourseDto": {
+        "type": "object",
+        "properties": {}
       },
       "GetManyGameEntityResponseDto": {
         "type": "object",
