@@ -16,23 +16,39 @@ export class CourseService {
     private readonly userService: UserService,
   ) {}
 
-  async create(createCourseDto: CreateCourseDto): Promise<CourseDto> {
-    return null;
+  // TODO: change logged user type
+  async create(loggedUser: any, createCourseDto: CreateCourseDto): Promise<CourseDto> {
+    const user = await this.userService.findOneBy({ email: loggedUser.email });
+    let course = this.repo.create();
+
+    course = {
+      ...course,
+      ...createCourseDto,
+    }
+
+    await this.repo.save(course);
+
+    return new CourseDto(course);
   }
 
   async findAll(): Promise<CourseDto[]> {
-    return null;
+    const courses = await this.repo.find();
+    return courses.map((course) => new CourseDto(course));
   }
 
   async findOne(id: string): Promise<CourseDto> {
-    return null;
+    const course = await this.repo.findOneBy({ id })
+    return new CourseDto(course);
   }
 
   async update(id: string, updateCourseDto: UpdateCourseDto): Promise<CourseDto> {
-    return null;
+    await this.repo.update(id, updateCourseDto);
+    return await this.findOne(id);
   }
 
   async remove(id: string): Promise<CourseDto> {
-    return null;
+    const course = await this.findOne(id);
+    await this.repo.delete(id);
+    return course;
   }
 }

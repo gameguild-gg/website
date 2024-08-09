@@ -2,17 +2,22 @@ import { Controller, Get, Post, Body, Patch, Param, Delete } from "@nestjs/commo
 import { CourseService } from "./course.service";
 import { CreateCourseDto } from "./dto/create-course.dto";
 import { UpdateCourseDto } from "./dto/update-course.dto";
-import { ApiTags } from "@nestjs/swagger";
+import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { CourseDto } from "./dto/course.dto";
+import { AuthUser } from "src/auth";
 
 @ApiTags("Course")
 @Controller("course")
+@ApiBearerAuth()
 export class CourseController {
   constructor(private readonly courseService: CourseService) {}
 
   @Post("create-course")
-  async create(@Body() createCourseDto: CreateCourseDto): Promise<CourseDto> {
-    return await this.courseService.create(createCourseDto);
+  async create(
+    @AuthUser() loggedUser: any,
+    @Body() createCourseDto: CreateCourseDto
+  ): Promise<CourseDto> {
+    return await this.courseService.create(loggedUser, createCourseDto);
   }
 
   @Get("get-all-courses")
