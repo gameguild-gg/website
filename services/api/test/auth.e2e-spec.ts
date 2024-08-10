@@ -5,7 +5,7 @@ import {
   LocalSignInResponseDto,
 } from '@game-guild/apiclient';
 import { faker } from '@faker-js/faker';
-import { generatePassword } from './utils';
+import { delay, generatePassword } from './utils';
 
 export async function CreateRandomUser(
   apiConfig: ConfigurationParameters,
@@ -55,7 +55,7 @@ describe('Auth (e2e)', () => {
 
   // server have to be running
   beforeAll(async () => {
-    jest.useFakeTimers();
+    // jest.useFakeTimers();
   });
 
   // create user
@@ -91,6 +91,9 @@ describe('Auth (e2e)', () => {
     configClone.accessToken = loginData.refreshToken;
     const authApiLogged = new AuthApi(new Configuration(configClone));
 
+    // wait 1 second
+    await delay(1000);
+
     const refreshTokenResponse =
       await authApiLogged.authControllerRefreshToken();
     expect(refreshTokenResponse).toBeDefined();
@@ -100,7 +103,7 @@ describe('Auth (e2e)', () => {
     expect(newLoginData.user).toBeDefined();
     expect(newLoginData.accessToken).toBeDefined();
     expect(newLoginData.refreshToken).toBeDefined();
-    // tokens should be different
+    // // tokens should be different
     expect(newLoginData.accessToken).not.toBe(loginData.accessToken);
     expect(newLoginData.refreshToken).not.toBe(loginData.refreshToken);
     expect(newLoginData.user.id).toBe(loginData.user.id);

@@ -73,4 +73,9 @@ export class GameVersionEntity extends EntityBase {
   @ValidateNested({ each: true })
   @Type(() => GameFeedbackResponseEntity)
   responses: GameFeedbackResponseEntity[];
+
+  constructor(partial: Partial<GameVersionEntity>) {
+    super(partial);
+    Object.assign(this, partial);
+  }
 }

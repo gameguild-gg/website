@@ -31,15 +31,7 @@ import { GameVersionService } from './game-version.service';
     forwardRef(() => UserModule),
   ],
   controllers: [ContentController, GameController, GameVersionController],
-  providers: [
-    ContentService,
-    GameService,
-    {
-      provide: APP_INTERCEPTOR,
-      useClass: RequireRoleInterceptor,
-    },
-    GameVersionService,
-  ],
+  providers: [ContentService, GameService, GameVersionService],
   exports: [ContentService, GameService, GameVersionService],
 })
 export class ContentModule {}

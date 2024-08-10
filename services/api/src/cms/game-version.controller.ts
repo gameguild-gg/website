@@ -50,25 +50,24 @@ export class GameVersionController
   get base(): CrudController<GameVersionEntity> {
     return this;
   }
-
-  @Override()
-  @Auth({ guard: AuthType.AccessToken })
-  async createOne(
-    @Body() body: GameVersionEntity,
-    @AuthUser() user: UserEntity,
-  ): Promise<GameVersionEntity> {
-    return this.service.createGameVersion(body, user);
-  }
-
-  @Override()
-  @Auth({ content: ContentUserRolesEnum.EDITOR, entity: GameEntity })
-  async updateOne(
-    @ParsedRequest() req: CrudRequest,
-    @ParsedBody() dto: Partial<GameEntity>,
-  ) {
-    delete dto.roles;
-    await this.base.updateOneBase(req, <GameEntity>dto);
-  }
+  //
+  // @Override()
+  // @Auth({ guard: AuthType.AccessToken })
+  // async createOne(
+  //   @Body() body: GameVersionEntity,
+  //   @AuthUser() user: UserEntity,
+  // ): Promise<GameVersionEntity> {
+  //   return this.service.createGameVersion(body, user);
+  // }
+  //
+  // @Override()
+  // @Auth({ content: ContentUserRolesEnum.EDITOR, entity: GameEntity })
+  // async updateOne(
+  //   @ParsedRequest() req: CrudRequest,
+  //   @ParsedBody() dto: Partial<GameEntity>,
+  // ) {
+  //   await this.base.updateOneBase(req, <GameEntity>dto);
+  // }
 
   // @Override()
   // @Auth({ guard: AuthType.AccessToken })

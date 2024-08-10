@@ -1,5 +1,4 @@
 import {
-  AuthApi,
   Configuration,
   ConfigurationParameters,
   GameApi,
@@ -7,7 +6,6 @@ import {
   LocalSignInResponseDto,
 } from '@game-guild/apiclient';
 import { faker } from '@faker-js/faker';
-import { generatePassword } from './utils';
 import { CreateRandomUser } from './auth.e2e-spec';
 
 describe('Game CMS (e2e)', () => {
@@ -29,8 +27,6 @@ describe('Game CMS (e2e)', () => {
 
   // server have to be running
   beforeAll(async () => {
-    jest.useFakeTimers();
-
     // generate 2 random users
     user1 = await CreateRandomUser(apiConfig);
     user2 = await CreateRandomUser(apiConfig);
@@ -47,7 +43,7 @@ describe('Game CMS (e2e)', () => {
   // test game crud with permissions
   it.only('test ownership permission of a game', async () => {
     // create game
-    const game = await gameApi1.createOneBaseGameControllerGameEntity({
+    const game1 = await gameApi1.createOneBaseGameControllerGameEntity({
       title: faker.lorem.words(2),
       summary: faker.lorem.words(10),
       body: faker.lorem.words(100),
@@ -55,25 +51,23 @@ describe('Game CMS (e2e)', () => {
       visibility: 'DRAFT',
       thumbnail: faker.image.url(),
     } as GameEntity);
-    expect(game).toBeDefined();
-    expect(game.data).toBeDefined();
-    expect(game.data.id).toBeDefined();
+    expect(game1).toBeDefined();
+    expect(game1.data).toBeDefined();
+    expect(game1.data.id).toBeDefined();
 
-    // // update game
-    // const updatedGame = await gameApi1.gameControllerUpdateGame({
-    //   id: game.data.id,
-    //   name: faker.lorem.words(2),
-    // });
-    // expect(updatedGame).toBeDefined();
-    // expect(updatedGame.data).toBeDefined();
-    // expect(updatedGame.data.id).toBeDefined();
-    //
-    // // delete game
-    // const deletedGame = await gameApi1.gameControllerDeleteGame({
-    //   id: game.data.id,
-    // });
-    // expect(deletedGame).toBeDefined();
-    // expect(deletedGame.data).toBeDefined();
-    // expect(deletedGame.data.id).toBeDefined();
+    // update game
+    const updatedGame = await gameApi1.updateOneBaseGameControllerGameEntity(
+      game1.data.id,
+      { title: faker.lorem.words(2) } as GameEntity,
+    );
+    expect(updatedGame).toBeDefined();
+    expect(updatedGame.data).toBeDefined();
+    expect(updatedGame.data.id).toBeDefined();
+
+    // delete game
+    const deletedGame = await gameApi1.deleteOneBaseGameControllerGameEntity(
+      game1.data.id,
+    );
+    expect(deletedGame).toBeDefined();
   });
 });

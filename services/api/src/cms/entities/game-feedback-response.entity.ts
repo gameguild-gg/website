@@ -22,5 +22,10 @@ export class GameFeedbackResponseEntity extends EntityBase {
   @Type(() => UserEntity)
   user: UserEntity;
 
+  constructor(partial: Partial<GameFeedbackResponseEntity>) {
+    super(partial);
+    Object.assign(this, partial);
+  }
+
   // add other fields here, for now if the data is here, the user has already submitted the feedback
 }
