@@ -77,7 +77,7 @@ export class RequireRoleInterceptor implements NestInterceptor {
       entity = await repository.findOne({
         where: {
           id: entityId,
-          editors: { id: user.id }, // fix: Error: This relation isn't supported by given find operator
+          editors: { id: user.id },
         },
       });
     }
@@ -87,6 +87,9 @@ export class RequireRoleInterceptor implements NestInterceptor {
         'Content not found, or you do not have access to it.',
       );
     }
+
+    // store the content into the request
+    request.content = entity;
 
     return next.handle();
   }

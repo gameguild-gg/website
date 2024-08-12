@@ -620,6 +620,93 @@
         ]
       }
     },
+    "/game/transfer-ownership": {
+      "post": {
+        "operationId": "GameController_switchOwner",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TransferOwnershipRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "tags": [
+          "game"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/game/add-editor": {
+      "post": {
+        "operationId": "GameController_addEditor",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EditorRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "tags": [
+          "game"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/game/remove-editor": {
+      "post": {
+        "operationId": "GameController_removeEditor",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EditorRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "tags": [
+          "game"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/game-version/{id}": {
       "get": {
         "operationId": "getOneBaseGameVersionControllerGameVersionEntity",
@@ -1878,6 +1965,50 @@
         "required": [
           "address",
           "signature"
+        ]
+      },
+      "IdDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "TransferOwnershipRequestDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "newUser": {
+            "$ref": "#/components/schemas/IdDto"
+          }
+        },
+        "required": [
+          "id",
+          "newUser"
+        ]
+      },
+      "EditorRequestDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "editor": {
+            "$ref": "#/components/schemas/IdDto"
+          }
+        },
+        "required": [
+          "id",
+          "editor"
         ]
       },
       "GetManyGameEntityResponseDto": {

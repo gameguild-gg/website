@@ -1,7 +1,12 @@
 import { TypeOrmCrudService } from '@dataui/crud-typeorm';
 import { WithRolesEntity } from '../auth/entities/with-roles.entity';
-import { Repository } from 'typeorm';
-import { UserEntity } from '../user/entities';
+import {
+  FindOptionsRelations,
+  FindOptionsSelect,
+  FindOptionsWhere,
+  Repository,
+} from 'typeorm';
+import { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
 
 export class WithRolesService<
   T extends WithRolesEntity,
@@ -10,23 +15,61 @@ export class WithRolesService<
     super(repo);
   }
 
-  async SwitchOwner(id: string, newOwner: UserEntity): Promise<void> {
+  async SwitchOwner(
+    id: string,
+    oldOwnerId: string,
+    newOwnerId: string,
+  ): Promise<void> {
     // new owner should be a previous editor
-    const repoWithRoles = this.repo as Repository<WithRolesEntity>;
-    const entity = await repoWithRoles.findOne({
-      where: { id, editors: { id: newOwner.id } },
+    const entity = await this.repo.findOne({
+      where: {
+        id,
+        owner: { id: oldOwnerId },
+        editors: { id: newOwnerId },
+      } as FindOptionsWhere<T>,
+      relations: { editors: true } as FindOptionsRelations<T>,
+      select: { id: true, editors: true, owner: true } as FindOptionsSelect<T>,
     });
-    if (!entity.editors.includes(newOwner)) {
-      throw new Error('New owner should be a previous editor');
+    if (!entity) {
+      throw new Error(
+        'You should be the owner of the resource and the new owner should be a previous editor of the entity.',
+      );
     }
-    await repoWithRoles.update({ id }, { owner: newOwner });
+
+    // set new owner, add the previous owner to editors if not already there
+    await this.repo.update(id, {
+      owner: { id: newOwnerId },
+    } as unknown as QueryDeepPartialEntity<T>);
+
+    await this.AddEditor(id, entity.owner.id);
   }
 
-  async AddEditor(id: string, newEditor: UserEntity): Promise<void> {
+  async AddEditor(id: string, newEditorId: string): Promise<void> {
+    // todo: waste of bandwith, we should consider a more efficient way to do this
+    const entity = await this.repo.findOne({
+      where: { id } as FindOptionsWhere<T>,
+      relations: { editors: true } as FindOptionsRelations<T>,
+      select: { id: true, editors: true } as FindOptionsSelect<T>,
+    });
+    if (!entity) {
+      throw new Error('Entity not found.');
+    }
+
+    // add editor if not already there
+    if (!entity.editors?.find((e) => e.id === newEditorId)) {
+      await this.repo
+        .createQueryBuilder()
+        .relation(nameof<WithRolesEntity>((o) => o.editors))
+        .of(id)
+        .add(newEditorId);
+    }
+  }
+
+  async RemoveEditor(id: string, editorId: string): Promise<void> {
     await this.repo
       .createQueryBuilder()
-      .relation(WithRolesEntity, 'editors')
+      .relation(nameof<WithRolesEntity>((o) => o.editors))
       .of(id)
-      .add(newEditor);
+      .remove(editorId);
   }
 }
