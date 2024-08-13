@@ -1,12 +1,12 @@
-import { EntityBase } from '../../common/entities/entity.base';
 import { Column, Index } from 'typeorm';
 import { VisibilityEnum } from './visibility.enum';
 import { ApiProperty } from '@nestjs/swagger';
 import { IsSlug } from '../../common/decorators/isslug.decorator';
 import { IsNotEmpty, IsString, MaxLength } from 'class-validator';
+import { WithRolesEntity } from '../../auth/entities/with-roles.entity';
 
 // todo: move some of these fields to a more basic entity and add abstract classes to specific intents
-export abstract class ContentBase extends EntityBase {
+export abstract class ContentBase extends WithRolesEntity {
   @Column({ length: 255, nullable: false, type: 'varchar' })
   @Index({ unique: true })
   @ApiProperty()

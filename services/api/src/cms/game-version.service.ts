@@ -34,9 +34,9 @@ export class GameVersionService extends TypeOrmCrudService<GameVersionEntity> {
     const game = await this.gameRepository.findOne({
       where: [
         // is owner
-        { id: body.game.id, roles: { owner: user.id } },
+        { id: body.game.id, owner: user },
         // or is one of the editors
-        { id: body.game.id, roles: { editors: ArrayContains([user.id]) } },
+        { id: body.game.id, editors: ArrayContains([user.id]) },
       ],
     });
     // check if the user can create a version of the game

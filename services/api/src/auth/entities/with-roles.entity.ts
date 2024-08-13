@@ -1,36 +1,17 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Column } from 'typeorm';
-import {
-  IsArray,
-  IsNotEmpty,
-  IsString,
-  IsUUID,
-  ValidateNested,
-} from 'class-validator';
-import { Type } from 'class-transformer';
 import { EntityBase } from '../../common/entities/entity.base';
+import { JoinTable, ManyToMany, ManyToOne } from 'typeorm';
+import { UserEntity } from '../../user/entities';
 
-export class Permissions {
-  @ApiProperty()
-  @IsString({ message: 'permission must be a string' })
-  @IsNotEmpty({ message: 'owner is required' })
-  @IsUUID('4', { message: 'owner must be a valid UUID v4' })
-  owner: string;
+// to be used in inheritance of entities that require roles
+// todo: change this to be more efficient and generic to different types of roles
+export class WithRolesEntity extends EntityBase {
+  @ApiProperty({ type: () => UserEntity })
+  @ManyToOne(() => UserEntity, { nullable: false, eager: false })
+  owner: UserEntity;
 
-  @ApiProperty()
-  @IsArray({ message: 'editors must be an array or strings' })
-  @IsString({ each: true, message: 'each editor entry must be a string' })
-  @IsUUID('4', {
-    each: true,
-    message: 'editors must be an array of valid UUID v4',
-  })
-  editors?: string[];
-}
-
-export class WithPermissionsEntity extends EntityBase {
-  @ApiProperty({ type: () => Permissions })
-  @ValidateNested()
-  @Type(() => Permissions)
-  @Column({ type: 'jsonb', nullable: true })
-  roles: Permissions;
+  @ApiProperty({ type: () => UserEntity, isArray: true })
+  @ManyToMany(() => UserEntity, { nullable: true, eager: false })
+  @JoinTable()
+  editors?: UserEntity[];
 }

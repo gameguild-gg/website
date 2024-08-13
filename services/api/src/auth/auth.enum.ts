@@ -1,5 +1,5 @@
 import { Type } from '@nestjs/common/interfaces';
-import { WithPermissionsEntity } from './entities/with-roles.entity';
+import { WithRolesEntity } from './entities/with-roles.entity';
 import { AuthType } from './guards';
 
 export enum ContentUserRolesEnum {
@@ -28,7 +28,6 @@ export type RouteRoles =
       content?: never;
       system?: never;
       entity?: never;
-      injectOwner?: never;
     }
   | {
       // just authenticated routes
@@ -36,7 +35,6 @@ export type RouteRoles =
       content?: never;
       system?: never;
       entity?: never;
-      injectOwner?: boolean;
     }
   | {
       // System roles
@@ -44,13 +42,11 @@ export type RouteRoles =
       content?: never;
       system: SystemRoles;
       entity?: never;
-      injectOwner?: boolean;
     }
   | {
       // Content roles
       guard?: AuthType.AccessToken;
       content: ContentUserRolesEnum;
       system?: never;
-      entity: Type<WithPermissionsEntity>;
-      injectOwner?: boolean;
+      entity: Type<WithRolesEntity>;
     };

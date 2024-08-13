@@ -1,5 +1,9 @@
 import { faker } from '@faker-js/faker';
 
+export function delay(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 export function generatePassword(): string {
   // Generate the required characters
   const lowercase = faker.string.alpha({ length: 1, casing: 'lower' });

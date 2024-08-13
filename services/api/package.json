@@ -31,7 +31,7 @@
     "test:debug_": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config test/jest-e2e.json",
     "posttest:e2e": "npm run kill",
-    "test:e2e:wait": "wait-on tcp:8080 && npm run test:e2e",
+    "test:e2e:wait": "wait-on tcp:8080 && npm run test:e2e --runInBand --detectOpenHandles --forceExit",
     "startandtest": "npm-run-all --parallel start:dev test:e2e:wait",
     "kill": "killall node"
   },

@@ -4,18 +4,19 @@ import {
   ExecutionContext,
   CallHandler,
   ForbiddenException,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { Reflector } from '@nestjs/core';
+import { UserEntity } from '../../user/entities';
+import { DataSource, ArrayContains } from 'typeorm';
+import { ContentUserRolesEnum } from '../auth.enum';
+import { WithRolesEntity } from '../entities/with-roles.entity';
 import {
   ENTITY_CLASS_KEY,
-  EntityClassWithRolesField,
   REQUIRED_ROLE_KEY,
-} from '../decorators/has-role.decorator';
-import { UserEntity } from '../../user/entities';
-import { ArrayContains, DataSource } from 'typeorm';
-import { ContentUserRolesEnum } from '../auth.enum';
-import { WithPermissionsEntity } from '../entities/with-roles.entity';
+  EntityClassWithRolesField,
+} from '../decorators';
 
 @Injectable()
 export class RequireRoleInterceptor implements NestInterceptor {
@@ -28,13 +29,16 @@ export class RequireRoleInterceptor implements NestInterceptor {
     context: ExecutionContext,
     next: CallHandler,
   ): Promise<Observable<any>> {
+    // get required role
     const requiredRole = this.reflector.getAllAndOverride<ContentUserRolesEnum>(
       REQUIRED_ROLE_KEY,
       [context.getHandler(), context.getClass()],
     );
 
     if (!requiredRole) {
-      return next.handle();
+      throw new InternalServerErrorException(
+        "Don't use this interceptor without a required role.",
+      );
     }
 
     const entityClass = this.reflector.getAllAndOverride<
@@ -48,27 +52,33 @@ export class RequireRoleInterceptor implements NestInterceptor {
 
     const request = context.switchToHttp().getRequest();
     const user: UserEntity = request.user;
-    const entityId = request.body.id;
+
+    // get uuid from request path. it is the last element in the path
+    let entityId = request.path.split('/').pop();
+    if (!entityId) entityId = request.body.id;
+    if (!entityId) {
+      throw new ForbiddenException(
+        'Entity id not found in the path or in the body',
+      );
+    }
 
     const repository =
-      this.dataSource.getRepository<WithPermissionsEntity>(entityClass);
+      this.dataSource.getRepository<WithRolesEntity>(entityClass);
 
-    let entity: WithPermissionsEntity;
+    let entity: WithRolesEntity;
     if (requiredRole === ContentUserRolesEnum.OWNER) {
       entity = await repository.findOne({
         where: {
           id: entityId,
-          roles: { owner: user.id },
+          owner: user,
         },
-        select: { id: true },
       });
     } else if (requiredRole === ContentUserRolesEnum.EDITOR) {
       entity = await repository.findOne({
         where: {
           id: entityId,
-          roles: { editors: ArrayContains([user.id]) },
+          editors: { id: user.id }, // fix: Error: This relation isn't supported by given find operator
         },
-        select: { id: true },
       });
     }
 

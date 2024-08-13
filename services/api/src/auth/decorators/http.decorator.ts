@@ -14,7 +14,6 @@ import { PublicRoute } from './public.decorator';
 import { AuthGuard, AuthType } from '../guards/auth.guard';
 import { RequireRoleInterceptor } from '../interceptors/require-role.interceptor';
 import { RequireRole } from './has-role.decorator';
-import { InjectUserAsOwnerToRequestInterceptor } from '../../cms/interceptors/inject-user-as-owner-to-request.interceptor';
 
 export const Auth = (options: RouteRoles): MethodDecorator => {
   const decorators: Array<
@@ -33,10 +32,6 @@ export const Auth = (options: RouteRoles): MethodDecorator => {
   decorators.push(ApiBearerAuth());
   decorators.push(UseInterceptors(AuthUserInterceptor));
   decorators.push(ApiUnauthorizedResponse({ description: 'Unauthorized' }));
-
-  // inject owner to request body. it assumes the context has user and the content is in the request body
-  if (options?.injectOwner)
-    decorators.push(UseInterceptors(InjectUserAsOwnerToRequestInterceptor));
 
   if (options?.content) {
     // add require roles for content
