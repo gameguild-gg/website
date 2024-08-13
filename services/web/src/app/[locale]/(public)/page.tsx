@@ -42,42 +42,64 @@ function Home() {
         <div></div> 
       </div>
 
+      <div className="h-10"></div>
+
       <div className="justify-between max-w-[1440px] w-full inline-flex items-center content-center bg-[#18181c]">
         <div></div>
         <div>
           <div className="text-neutral-50 rounded-lg p-4 shadow">
-            <div className="text-5xl font-semibold">Test!</div>
-            Fully Featured Game Testing Lab
+            <div className="text-5xl font-semibold">Build!</div>
+            Code Competitions, Jobs and Game Jams
           </div>
         </div>
+        <div>
+          <img
+            src="/assets/images/header3.jpeg"
+            className="max-w-[480px] w-full"
+          />
+        </div>
+      </div>
+
+      <div className="h-10"></div>
+
+      <div className="justify-between max-w-[1440px] w-full inline-flex items-center content-center bg-[#18181c]">
         <div>
           <img
             src="/assets/images/header1.jpeg"
             className="max-w-[480px] w-full"
           />
         </div>
+        <div>
+          <div className="text-neutral-50 rounded-lg p-4 shadow">
+            <div className="text-5xl font-semibold">Test!</div>
+            Fully Featured Game Testing Lab
+          </div>
+        </div>
+        
+        <div></div>
       </div>
 
-      <div className="relative justify-between max-w-[1440px] w-full items-center bg-[#18181c] flex justify-between max-h-[480px] mx-auto z-30">
+      <div className="h-10"></div>
 
-        <div className="justify-end">
+      <div className="relative justify-between max-w-[1440px] w-full items-center bg-[#18181c] flex justify-between max-h-[480px] mx-auto z-30">
+        <div></div>
+
+        <div>
+          <div className="text-neutral-50 rounded-lg p-4 shadow">
+            <div className="text-5xl font-semibold ">Share!</div>
+            Join our Discord Community
+          </div>
+        </div>
+
+        <div className="items-center w-[480px]">
           <iframe
             src="https://discord.com/widget?id=956922983727915078&theme=dark"
             width="370px"
             height="480"
             sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts"
-            className="p-[10px]"
+            className="p-[10px] m-auto"
           />
         </div>
-
-        <div>
-          <div className="text-neutral-50 rounded-lg p-4 shadow">
-            <div className="text-5xl font-semibold ">Let's Talk!</div>
-            Join our Discord Community
-          </div>
-        </div>
-
-        <div></div>
 
       </div>
 
