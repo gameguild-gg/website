@@ -6,16 +6,16 @@ function Home() {
   return (
     <div className="text-center block text-[#ffffff] bg-[#101014] items-center content-center overflow-hidden w-full">
       <video
-        className=" absolute max-h-[600px] w-full object-none overflow-hidden"
+        className=" absolute h-[600px] w-full object-none overflow-hidden"
         autoPlay
         loop
         muted
       >
         <source src="assets/videos/hexagon-bg.mp4" type="video/mp4" />
       </video>
-      <div className="absolute w-full flex h-[400px] overflow-hidden items-center grid grid-cols-1 mx-auto block z-10">
+      <div className="absolute w-full lg:flex h-[400px] overflow-hidden items-center grid grid-cols-1 mx-auto block z-10">
         
-        <div className='z-10 text-black'>
+        <div className='z-10 text-black mx-auto'>
           <div className="text-7xl font-semibold  text-shadow-lg shadow-white">Let's Build Dreams Together!</div>
           <br />
           <span className="text-2xl">The All-in-One Game Dev Toolkit</span>
@@ -26,11 +26,11 @@ function Home() {
         {/*espaço vazio para texto e vídeo de fundo coexistirem*/}
       </div>
 
-      <div className="relative justify-between max-w-[1440px] w-full items-center bg-[#18181c] flex max-h-[480px] mx-auto z-30">
+      <div className="relative justify-between max-w-[1440px] w-full items-center bg-[#18181c] lg:flex mx-auto z-30">
         <div>
           <img
             src="/assets/images/header2.jpeg"
-            className="max-w-[480px] w-full"
+            className="w-full lg:max-w-[480px] w-full"
           />
         </div>
         <div>
@@ -44,7 +44,7 @@ function Home() {
 
       <div className="h-10"></div>
 
-      <div className="justify-between max-w-[1440px] w-full inline-flex items-center content-center bg-[#18181c]">
+      <div className="justify-between max-w-[1440px] w-full mx-auto lg:flex items-center content-center bg-[#18181c]">
         <div></div>
         <div>
           <div className="text-neutral-50 rounded-lg p-4 shadow">
@@ -55,18 +55,18 @@ function Home() {
         <div>
           <img
             src="/assets/images/header3.jpeg"
-            className="max-w-[480px] w-full"
+            className="w-full lg:max-w-[480px] w-full"
           />
         </div>
       </div>
 
       <div className="h-10"></div>
 
-      <div className="justify-between max-w-[1440px] w-full inline-flex items-center content-center bg-[#18181c]">
+      <div className="justify-between max-w-[1440px] w-full mx-auto lg:flex items-center content-center bg-[#18181c]">
         <div>
           <img
             src="/assets/images/header1.jpeg"
-            className="max-w-[480px] w-full"
+            className="w-full lg:max-w-[480px] w-full"
           />
         </div>
         <div>
@@ -81,7 +81,7 @@ function Home() {
 
       <div className="h-10"></div>
 
-      <div className="relative justify-between max-w-[1440px] w-full items-center bg-[#18181c] flex justify-between max-h-[480px] mx-auto z-30">
+      <div className="relative justify-between max-w-[1440px] w-full items-center bg-[#18181c] lg:flex justify-between mx-auto z-30">
         <div></div>
 
         <div>
@@ -91,7 +91,7 @@ function Home() {
           </div>
         </div>
 
-        <div className="items-center w-[480px]">
+        <div className="items-center w-full lg:w-[480px]">
           <iframe
             src="https://discord.com/widget?id=956922983727915078&theme=dark"
             width="370px"
