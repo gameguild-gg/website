@@ -1,4 +1,4 @@
-import { Body, Controller, Logger, Param, Post } from '@nestjs/common';
+import { Body, Controller, Logger } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { GameService } from './game.service';
 import { Auth } from '../auth/decorators/http.decorator';
@@ -10,14 +10,18 @@ import {
   Override,
   ParsedRequest,
 } from '@dataui/crud';
-import { ContentUserRolesEnum } from '../auth/auth.enum';
-import { AuthType } from '../auth/guards';
+import {
+  AuthenticatedRoute,
+  ManagerRoute,
+  OwnerRoute,
+} from '../auth/auth.enum';
 import { BodyOwnerInject } from '../common/decorators/parameter.decorator';
 import {
   OwnershipEmptyInterceptor,
   PartialWithoutFields,
 } from './interceptors/ownership-empty-interceptor.service';
 import { ExcludeFieldsPipe } from './pipes/exclude-fields.pipe';
+import { WithRolesController } from './with-roles.controller';
 
 @Crud({
   model: {
@@ -38,33 +42,34 @@ import { ExcludeFieldsPipe } from './pipes/exclude-fields.pipe';
       'recoverOneBase',
     ],
     getOneBase: {
-      decorators: [Auth({ guard: AuthType.AccessToken })],
+      decorators: [Auth(AuthenticatedRoute)],
     },
     createOneBase: {
-      decorators: [Auth({ guard: AuthType.AccessToken })],
+      decorators: [Auth(AuthenticatedRoute)],
     },
     getManyBase: {
-      decorators: [Auth({ guard: AuthType.AccessToken })],
+      decorators: [Auth(AuthenticatedRoute)],
     },
     updateOneBase: {
-      decorators: [
-        Auth({ content: ContentUserRolesEnum.EDITOR, entity: GameEntity }),
-      ],
+      decorators: [Auth<GameEntity>(ManagerRoute<GameEntity>)],
       interceptors: [OwnershipEmptyInterceptor],
     },
     deleteOneBase: {
-      decorators: [
-        Auth({ content: ContentUserRolesEnum.OWNER, entity: GameEntity }),
-      ],
+      decorators: [Auth<GameEntity>(OwnerRoute<GameEntity>)],
     },
   },
 })
 @Controller('game')
 @ApiTags('game')
-export class GameController implements CrudController<GameEntity> {
+export class GameController
+  extends WithRolesController<GameEntity>
+  implements CrudController<GameEntity>
+{
   private readonly logger = new Logger(GameController.name);
 
-  constructor(public readonly service: GameService) {}
+  constructor(public readonly service: GameService) {
+    super(service);
+  }
 
   get base(): CrudController<GameEntity> {
     return this;
@@ -72,7 +77,7 @@ export class GameController implements CrudController<GameEntity> {
 
   // we need to override to guarantee the user is being injected as owner and editor
   @Override()
-  @Auth({ guard: AuthType.AccessToken })
+  @Auth(AuthenticatedRoute)
   createOne(
     @ParsedRequest() crudReq: CrudRequest,
     @BodyOwnerInject() body: GameEntity,
@@ -81,7 +86,7 @@ export class GameController implements CrudController<GameEntity> {
   }
 
   @Override()
-  @Auth({ content: ContentUserRolesEnum.EDITOR, entity: GameEntity })
+  @Auth<GameEntity>(ManagerRoute<GameEntity>)
   async updateOne(
     @ParsedRequest() req: CrudRequest,
     @Body(new ExcludeFieldsPipe<GameEntity>(['owner', 'editors']))

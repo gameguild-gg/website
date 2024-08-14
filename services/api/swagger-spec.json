@@ -1967,50 +1967,6 @@
           "signature"
         ]
       },
-      "IdDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          }
-        },
-        "required": [
-          "id"
-        ]
-      },
-      "TransferOwnershipRequestDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "newUser": {
-            "$ref": "#/components/schemas/IdDto"
-          }
-        },
-        "required": [
-          "id",
-          "newUser"
-        ]
-      },
-      "EditorRequestDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "editor": {
-            "$ref": "#/components/schemas/IdDto"
-          }
-        },
-        "required": [
-          "id",
-          "editor"
-        ]
-      },
       "GetManyGameEntityResponseDto": {
         "type": "object",
         "properties": {
@@ -2225,6 +2181,50 @@
           "visibility",
           "thumbnail",
           "versions"
+        ]
+      },
+      "IdDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "TransferOwnershipRequestDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "newUser": {
+            "$ref": "#/components/schemas/IdDto"
+          }
+        },
+        "required": [
+          "id",
+          "newUser"
+        ]
+      },
+      "EditorRequestDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "editor": {
+            "$ref": "#/components/schemas/IdDto"
+          }
+        },
+        "required": [
+          "id",
+          "editor"
         ]
       },
       "CompetitionSubmissionDto": {

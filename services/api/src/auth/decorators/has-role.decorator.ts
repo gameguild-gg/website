@@ -9,9 +9,9 @@ export type EntityClassWithRolesField<T extends WithRolesEntity> = new (
   ...args: any[]
 ) => T;
 
-export const RequireRole = (
+export const RequireRole = <T extends WithRolesEntity>(
   role: ContentUserRolesEnum,
-  type: EntityClassWithRolesField<any>, // todo: add a type that inherits the WithPermissionsEntity class
+  type: T, // todo: add a type that inherits the WithPermissionsEntity class
 ): MethodDecorator => {
   return (target, key, descriptor) => {
     SetMetadata(REQUIRED_ROLE_KEY, role)(target, key, descriptor);

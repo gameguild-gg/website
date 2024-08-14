@@ -7,35 +7,53 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { type Type } from '@nestjs/common/interfaces';
-import { RouteRoles } from '../auth.enum';
+import {
+  AuthenticatedRoute,
+  ManagerRoute,
+  OwnerRoute,
+  RefreshTokenRoute,
+  RouteContentClass,
+} from '../auth.enum';
 import { ApiBearerAuth, ApiUnauthorizedResponse } from '@nestjs/swagger';
 import { AuthUserInterceptor } from '../interceptors/auth-user-interceptor.service';
 import { PublicRoute } from './public.decorator';
 import { AuthGuard, AuthType } from '../guards/auth.guard';
 import { RequireRoleInterceptor } from '../interceptors/require-role.interceptor';
+import { WithRolesEntity } from '../entities/with-roles.entity';
 import { RequireRole } from './has-role.decorator';
 
-export const Auth = (options: RouteRoles): MethodDecorator => {
+export const Auth = <T extends WithRolesEntity>(
+  options:
+    | typeof OwnerRoute<T>
+    | typeof ManagerRoute<T>
+    | typeof PublicRoute
+    | typeof AuthenticatedRoute
+    | typeof RefreshTokenRoute,
+): MethodDecorator => {
   const decorators: Array<
     ClassDecorator | MethodDecorator | PropertyDecorator
   > = [];
 
   // if public, return now
-  if (options?.guard === AuthType.Public) {
+  if (options === PublicRoute) {
     decorators.push(PublicRoute(true));
     return applyDecorators(...decorators);
   }
 
   // inject guards for authenticated routes
   decorators.push(PublicRoute(false));
-  decorators.push(UseGuards(AuthGuard(options?.guard || AuthType.AccessToken)));
+  if (options === RefreshTokenRoute) {
+    decorators.push(UseGuards(AuthGuard(AuthType.RefreshToken)));
+  } else {
+    decorators.push(UseGuards(AuthGuard(AuthType.AccessToken)));
+  }
   decorators.push(ApiBearerAuth());
   decorators.push(UseInterceptors(AuthUserInterceptor));
   decorators.push(ApiUnauthorizedResponse({ description: 'Unauthorized' }));
 
-  if (options?.content) {
-    // add require roles for content
-    decorators.push(RequireRole(options.content, options.entity));
+  // if options is RouteContentClass<T>
+  if (options instanceof RouteContentClass) {
+    decorators.push(RequireRole(options.role, options.type));
     decorators.push(UseInterceptors(RequireRoleInterceptor));
   }
 
