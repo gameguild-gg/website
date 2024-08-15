@@ -12,10 +12,16 @@ import { GameVersionEntity } from './entities/game-version.entity';
 import { GameFeedbackResponseEntity } from './entities/game-feedback-response.entity';
 import { GameController } from './game.controller';
 import { GameService } from './game.service';
-import { APP_INTERCEPTOR } from '@nestjs/core';
-import { RequireRoleInterceptor } from '../auth/interceptors/require-role.interceptor';
 import { GameVersionController } from './game-version.controller';
 import { GameVersionService } from './game-version.service';
+import { CourseService } from './modules/course/course.service';
+
+const providers = [
+  ContentService,
+  GameService,
+  GameVersionService,
+  CourseService,
+];
 
 @Module({
   imports: [
@@ -31,7 +37,7 @@ import { GameVersionService } from './game-version.service';
     forwardRef(() => UserModule),
   ],
   controllers: [ContentController, GameController, GameVersionController],
-  providers: [ContentService, GameService, GameVersionService],
-  exports: [ContentService, GameService, GameVersionService],
+  providers,
+  exports: [ ...providers ],
 })
 export class ContentModule {}
