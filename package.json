@@ -36,18 +36,18 @@
     "start:both": "concurrently \"npm:dev:api\" \"npm:dev:web\""
   },
   "devDependencies": {
+    "@game-guild/apiclient": "*",
     "@game-guild/eslint-config": "*",
     "@game-guild/jest-config": "*",
     "@game-guild/prettier-config": "*",
     "@game-guild/typescript-config": "*",
-    "@game-guild/apiclient": "*",
     "rimraf": "^5.0.5"
   },
   "dependencies": {
+    "axios": "^1.6.1",
     "bufferutil": "^4.0.8",
     "concurrently": "^8.2.2",
     "npm-run-all": "^4.1.5",
-    "utf-8-validate": "^5.0.10",
-    "axios": "^1.6.1"
+    "utf-8-validate": "^5.0.10"
   }
 }

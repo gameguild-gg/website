@@ -59,7 +59,7 @@ export class WithRolesService<
     if (!entity.editors?.find((e) => e.id === newEditorId)) {
       await this.repo
         .createQueryBuilder()
-        .relation(nameof<WithRolesEntity>((o) => o.editors))
+        .relation(nameof<WithRolesEntity>((o:any) => o.editors))
         .of(id)
         .add(newEditorId);
     }
@@ -68,7 +68,7 @@ export class WithRolesService<
   async RemoveEditor(id: string, editorId: string): Promise<void> {
     await this.repo
       .createQueryBuilder()
-      .relation(nameof<WithRolesEntity>((o) => o.editors))
+      .relation(nameof<WithRolesEntity>((o:any) => o.editors))
       .of(id)
       .remove(editorId);
   }
