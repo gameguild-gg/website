@@ -72,4 +72,17 @@ export class WithRolesService<
       .of(id)
       .remove(editorId);
   }
+
+  async UserCanEdit(editorId: string, contentId: string): Promise<boolean> {
+    // it should be owner or an editor
+    return Boolean(
+      await this.repo.findOne({
+        where: [
+          { id: contentId, owner: { id: editorId } },
+          { id: contentId, editors: { id: editorId } },
+        ] as FindOptionsWhere<T>[],
+        select: { id: true } as FindOptionsSelect<T>,
+      }),
+    );
+  }
 }

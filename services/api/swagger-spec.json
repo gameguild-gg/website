@@ -707,62 +707,24 @@
         ]
       }
     },
-    "/game-version/{id}": {
-      "get": {
-        "operationId": "getOneBaseGameVersionControllerGameVersionEntity",
-        "summary": "Retrieve a single GameVersionEntity",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "fields",
-            "description": "Selects resource fields. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#select\" target=\"_blank\">Docs</a>",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "array",
-              "items": {
-                "type": "string"
+    "/game-version": {
+      "post": {
+        "operationId": "createOneBaseGameVersionControllerGameVersionEntity",
+        "summary": "Create a single GameVersionEntity",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GameVersionEntity"
               }
-            },
-            "style": "form",
-            "explode": false
-          },
-          {
-            "name": "join",
-            "description": "Adds relational resources. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#join\" target=\"_blank\">Docs</a>",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            },
-            "style": "form",
-            "explode": true
-          },
-          {
-            "name": "cache",
-            "description": "Reset cache (if was enabled). <a href=\"https://github.com/nestjsx/crud/wiki/Requests#cache\" target=\"_blank\">Docs</a>",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "minimum": 0,
-              "maximum": 1
             }
           }
-        ],
+        },
         "responses": {
-          "200": {
-            "description": "Get one base response",
+          "201": {
+            "description": "Get create one base response",
             "content": {
               "application/json": {
                 "schema": {
@@ -784,69 +746,6 @@
           }
         ]
       },
-      "patch": {
-        "operationId": "updateOneBaseGameVersionControllerGameVersionEntity",
-        "summary": "Update a single GameVersionEntity",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/GameVersionEntity"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/GameVersionEntity"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "game-version"
-        ]
-      },
-      "delete": {
-        "operationId": "deleteOneBaseGameVersionControllerGameVersionEntity",
-        "summary": "Delete a single GameVersionEntity",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Delete one base response"
-          }
-        },
-        "tags": [
-          "game-version"
-        ]
-      }
-    },
-    "/game-version": {
       "get": {
         "operationId": "getManyBaseGameVersionControllerGameVersionEntity",
         "summary": "Retrieve multiple GameVersionEntities",
@@ -1002,24 +901,94 @@
             "bearer": []
           }
         ]
-      },
-      "post": {
-        "operationId": "createOneBaseGameVersionControllerGameVersionEntity",
-        "summary": "Create a single GameVersionEntity",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/GameVersionEntity"
-              }
+      }
+    },
+    "/game-version/{id}": {
+      "delete": {
+        "operationId": "deleteOneBaseGameVersionControllerGameVersionEntity",
+        "summary": "Delete a single GameVersionEntity",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
             }
           }
-        },
+        ],
         "responses": {
-          "201": {
-            "description": "Get create one base response",
+          "200": {
+            "description": "Delete one base response"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "tags": [
+          "game-version"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "get": {
+        "operationId": "getOneBaseGameVersionControllerGameVersionEntity",
+        "summary": "Retrieve a single GameVersionEntity",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "fields",
+            "description": "Selects resource fields. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#select\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": false
+          },
+          {
+            "name": "join",
+            "description": "Adds relational resources. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#join\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "cache",
+            "description": "Reset cache (if was enabled). <a href=\"https://github.com/nestjsx/crud/wiki/Requests#cache\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Get one base response",
             "content": {
               "application/json": {
                 "schema": {
@@ -1027,10 +996,18 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Unauthorized"
           }
         },
         "tags": [
           "game-version"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
         ]
       }
     },

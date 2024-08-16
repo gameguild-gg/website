@@ -14,6 +14,7 @@ import { EmailDto } from './dtos/email.dto';
 import { OkDto } from '../common/dtos/ok.dto';
 import { OkResponse } from '../common/decorators/return-type.decorator';
 import { AuthType } from './guards';
+import { AuthenticatedRoute, RefreshTokenRoute } from './auth.enum';
 
 @Controller('auth')
 @ApiTags('auth')
@@ -92,7 +93,7 @@ export class AuthController {
   }
 
   @Get('me')
-  @Auth({ guard: AuthType.AccessToken })
+  @Auth(AuthenticatedRoute)
   @OkResponse({ type: UserEntity })
   public async getCurrentUser(
     @AuthUser() user: UserEntity,
@@ -101,7 +102,7 @@ export class AuthController {
   }
 
   @Get('refresh-token')
-  @Auth({ guard: AuthType.RefreshToken })
+  @Auth(RefreshTokenRoute)
   @OkResponse({ type: LocalSignInResponseDto })
   public async refreshToken(
     @AuthUser() user: UserEntity,

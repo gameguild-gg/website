@@ -22,6 +22,7 @@ import { RequireRoleInterceptor } from '../interceptors/require-role.interceptor
 import { WithRolesEntity } from '../entities/with-roles.entity';
 import { RequireRole } from './has-role.decorator';
 
+// todo: how to make T optional and extract it from the parameter?
 export const Auth = <T extends WithRolesEntity>(
   options:
     | typeof OwnerRoute<T>

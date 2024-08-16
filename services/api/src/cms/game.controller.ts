@@ -89,8 +89,8 @@ export class GameController
   @Auth<GameEntity>(ManagerRoute<GameEntity>)
   async updateOne(
     @ParsedRequest() req: CrudRequest,
-    @Body(new ExcludeFieldsPipe<GameEntity>(['owner', 'editors']))
-    dto: PartialWithoutFields<GameEntity, 'owner' | 'editors'>,
+    @Body(new ExcludeFieldsPipe<GameEntity>(['owner', 'editors', 'versions']))
+    dto: PartialWithoutFields<GameEntity, 'owner' | 'editors' | 'versions'>,
   ): Promise<GameEntity> {
     return this.base.updateOneBase(req, dto);
   }

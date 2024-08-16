@@ -1,7 +1,6 @@
-import { Body, Controller, Logger } from '@nestjs/common';
+import { Controller, Logger, UnauthorizedException } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { Auth } from '../auth/decorators/http.decorator';
-import { GameEntity } from './entities/game.entity';
 import {
   Crud,
   CrudController,
@@ -10,12 +9,12 @@ import {
   ParsedBody,
   ParsedRequest,
 } from '@dataui/crud';
-import { AuthUser } from '../auth';
-import { UserEntity } from '../user/entities';
 import { GameVersionEntity } from './entities/game-version.entity';
 import { GameVersionService } from './game-version.service';
-import { ContentUserRolesEnum } from '../auth/auth.enum';
-import { AuthType } from '../auth/guards';
+import { AuthenticatedRoute } from '../auth/auth.enum';
+import { GameService } from './game.service';
+import { UserEntity } from '../user/entities';
+import { AuthUser } from '../auth';
 
 @Crud({
   model: {
@@ -29,12 +28,17 @@ import { AuthType } from '../auth/guards';
     },
   },
   routes: {
-    exclude: ['replaceOneBase', 'createManyBase'],
+    exclude: [
+      'replaceOneBase',
+      'updateOneBase',
+      'createManyBase',
+      'recoverOneBase',
+    ],
     getOneBase: {
-      decorators: [Auth({ guard: AuthType.AccessToken })],
+      decorators: [Auth(AuthenticatedRoute)],
     },
     getManyBase: {
-      decorators: [Auth({ guard: AuthType.AccessToken })],
+      decorators: [Auth(AuthenticatedRoute)],
     },
   },
 })
@@ -45,31 +49,51 @@ export class GameVersionController
 {
   private readonly logger = new Logger(GameVersionController.name);
 
-  constructor(public readonly service: GameVersionService) {}
+  constructor(
+    public readonly service: GameVersionService,
+    private gameService: GameService,
+  ) {}
 
   get base(): CrudController<GameVersionEntity> {
     return this;
   }
-  //
-  // @Override()
-  // @Auth({ guard: AuthType.AccessToken })
-  // async createOne(
-  //   @Body() body: GameVersionEntity,
-  //   @AuthUser() user: UserEntity,
-  // ): Promise<GameVersionEntity> {
-  //   return this.service.createGameVersion(body, user);
-  // }
-  //
-  // @Override()
-  // @Auth({ content: ContentUserRolesEnum.EDITOR, entity: GameEntity })
-  // async updateOne(
-  //   @ParsedRequest() req: CrudRequest,
-  //   @ParsedBody() dto: Partial<GameEntity>,
-  // ) {
-  //   await this.base.updateOneBase(req, <GameEntity>dto);
-  // }
 
-  // @Override()
-  // @Auth({ guard: AuthType.AccessToken })
-  // deleteOne(
+  @Override()
+  @Auth(AuthenticatedRoute)
+  async createOne(
+    @ParsedRequest() req: CrudRequest,
+    @ParsedBody() dto: GameVersionEntity,
+    @AuthUser() user: UserEntity,
+  ): Promise<GameVersionEntity> {
+    if (!dto.game || !dto.game.id) {
+      throw new UnauthorizedException('game.id field is required');
+    }
+    // todo: move this to a decorator
+    if (await this.gameService.UserCanEdit(user.id, dto.game.id))
+      return this.base.createOneBase(req, <GameVersionEntity>dto);
+    else
+      throw new UnauthorizedException(
+        'User does not have permission to edit this game',
+      );
+  }
+
+  @Override()
+  @Auth(AuthenticatedRoute)
+  async deleteOne(
+    @ParsedRequest() req: CrudRequest,
+    @ParsedBody() dto: GameVersionEntity,
+    @AuthUser() user: UserEntity,
+  ): Promise<void | GameVersionEntity> {
+    if (!dto.game || !dto.game.id) {
+      throw new UnauthorizedException('game.id field is required');
+    }
+
+    // todo: move this to a decorator
+    if (await this.gameService.UserCanEdit(user.id, dto.game.id))
+      return this.base.deleteOneBase(req);
+    else
+      throw new UnauthorizedException(
+        'User does not have permission to delete this game',
+      );
+  }
 }

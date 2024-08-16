@@ -7,6 +7,7 @@ import { UserEntity } from '../user/entities';
 import { CourseEntity } from './entities/course.entity';
 import { OkResponse } from '../common/decorators/return-type.decorator';
 import { AuthType } from '../auth/guards';
+import { AuthenticatedRoute } from '../auth/auth.enum';
 
 @Controller('content')
 @ApiTags('content')
@@ -16,7 +17,7 @@ export class ContentController {
   constructor(private readonly courseService: ContentService) {}
 
   @Post('course/create')
-  @Auth({ guard: AuthType.AccessToken }) // todo: anyone can create?
+  @Auth(AuthenticatedRoute) // todo: anyone can create?
   @OkResponse({ type: CourseEntity })
   public async createEmptyCourse(
     @AuthUser() user: UserEntity,

@@ -32,6 +32,7 @@ import { UserEntity } from '../user/entities';
 import { CompetitionRunSubmissionReportEntity } from './entities/competition.run.submission.report.entity';
 import { OkResponse } from '../common/decorators/return-type.decorator';
 import { AuthType } from '../auth/guards';
+import { AuthenticatedRoute } from '../auth/auth.enum';
 
 @Controller('Competitions')
 @ApiTags('competitions')
@@ -85,7 +86,7 @@ export class CompetitionController {
   @ApiConsumes('multipart/form-data')
   @OkResponse({ type: TerminalDto, isArray: true })
   @UseInterceptors(FileInterceptor('file'))
-  @Auth({ guard: AuthType.AccessToken })
+  @Auth(AuthenticatedRoute)
   async submitChessAgent(
     @Body() data: CompetitionSubmissionDto,
     @UploadedFile() file: Express.Multer.File,
@@ -123,7 +124,7 @@ export class CompetitionController {
 
   @Get('/Chess/ListAgents')
   @OkResponse({ type: [String] })
-  @Auth({ guard: AuthType.AccessToken })
+  @Auth(AuthenticatedRoute)
   async ListChessAgents(@AuthUser() user: UserEntity): Promise<string[]> {
     if (!user) throw new UnauthorizedException('Invalid credentials');
     return this.service.listChessAgents();
@@ -131,7 +132,7 @@ export class CompetitionController {
 
   @Post('/Chess/Move')
   @OkResponse({ type: String })
-  @Auth({ guard: AuthType.AccessToken })
+  @Auth(AuthenticatedRoute)
   async RequestChessMove(
     @Body() data: ChessMoveRequestDto,
     @AuthUser() user: UserEntity,
@@ -142,7 +143,7 @@ export class CompetitionController {
 
   @Post('/Chess/RunMatch')
   @OkResponse({ type: ChessMatchResultDto })
-  @Auth({ guard: AuthType.AccessToken })
+  @Auth(AuthenticatedRoute)
   async RunChessMatch(
     @Body() data: ChessMatchRequestDto,
     @AuthUser() user: UserEntity,
@@ -152,7 +153,7 @@ export class CompetitionController {
   }
 
   @Post('/Chess/FindMatches')
-  @Auth({ guard: AuthType.AccessToken })
+  @Auth(AuthenticatedRoute)
   @OkResponse({
     type: MatchSearchResponseDto,
     isArray: true,
@@ -225,7 +226,7 @@ export class CompetitionController {
   }
 
   @Get('/Chess/Match/:id')
-  @Auth({ guard: AuthType.AccessToken })
+  @Auth(AuthenticatedRoute)
   @OkResponse({ type: ChessMatchResultDto })
   async GetChessMatchResult(
     @Param('id', ParseUUIDPipe) id: string,
@@ -236,7 +237,7 @@ export class CompetitionController {
   }
 
   @Get('/Chess/Leaderboard')
-  @Auth({ guard: AuthType.AccessToken })
+  @Auth(AuthenticatedRoute)
   @OkResponse({
     type: ChessLeaderboardResponseEntryDto,
     isArray: true,
@@ -249,7 +250,7 @@ export class CompetitionController {
   }
 
   @Get('Chess/RunCompetition')
-  @Auth({ guard: AuthType.AccessToken })
+  @Auth(AuthenticatedRoute)
   async RunCompetition(@AuthUser() user: UserEntity) {
     if (!user) throw new UnauthorizedException('Invalid credentials');
     return this.service.runChessCompetition();
@@ -257,7 +258,7 @@ export class CompetitionController {
 
   @Get('Chess/LatestCompetitionReport')
   @OkResponse({ type: CompetitionRunSubmissionReportEntity, isArray: true })
-  @Auth({ guard: AuthType.AccessToken })
+  @Auth(AuthenticatedRoute)
   async GetLatestChessCompetitionReport(
     @AuthUser() user: UserEntity,
   ): Promise<CompetitionRunSubmissionReportEntity[]> {

@@ -1,6 +1,6 @@
 import { Body, Post } from '@nestjs/common';
-import { Auth, AuthUser, EntityClassWithRolesField } from '../auth';
-import { ContentUserRolesEnum, OwnerRoute } from '../auth/auth.enum';
+import { Auth, AuthUser } from '../auth';
+import { OwnerRoute } from '../auth/auth.enum';
 import { WithRolesEntity } from '../auth/entities/with-roles.entity';
 import { TransferOwnershipRequestDto } from './dtos/transfer-ownership.request.dto';
 import { WithRolesService } from './with-roles.service';
