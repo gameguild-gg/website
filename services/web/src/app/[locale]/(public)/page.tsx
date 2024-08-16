@@ -6,7 +6,7 @@ function Home() {
   return (
     <div className="text-center block text-[#ffffff] bg-[#101014] items-center content-center overflow-hidden w-full">
       <video
-        className=" absolute h-[600px] w-full object-none overflow-hidden"
+        className="absolute h-[600px] w-full object-none overflow-hidden"
         autoPlay
         loop
         muted
