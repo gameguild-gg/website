@@ -2,7 +2,7 @@ import React from 'react';
 import {fetchGames} from "@/lib/testing-lab/fetch-games.action";
 import {fetchGame} from "@/lib/testing-lab/fetch-game.action";
 
-type Props = {
+type Props = {  
   params: {
     slug: string;
   };

@@ -18,7 +18,7 @@ export default async function Page() {
 
   return (
     <div className="container mx-auto py-8 px-4 md:px-6">
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-3 lg:grid-cols-3 mt-8">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-4 lg:grid-cols-4 mt-8">
         {games.map((game) => (
           <Link key={game.slug} href={`projects/${game.slug}`}>
             <GameCard game={game}/>
