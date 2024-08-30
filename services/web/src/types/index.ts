@@ -1,4 +1,8 @@
+export type ParamsWithLocale<P = unknown> = P & { locale: string };
 
-export type PropsWithSlugParams<P = unknown> = P & { params: { slug: string } };
+export type ParamsWithSlug<P = unknown> = P & { slug: string };
 
-export type PropsWithLocaleParams<P = unknown> = P & { params: { locale: string } };
+export type PropsWithSlugParams<P = unknown> = P & { params: ParamsWithSlug };
+
+export type PropsWithLocaleParams<P = unknown> = P & { params: ParamsWithLocale };
+  
