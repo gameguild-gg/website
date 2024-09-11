@@ -1,9 +1,9 @@
 import { EntityBase } from '../../common/entities/entity.base';
 import { GameVersionEntity } from './game-version.entity';
-import { Entity, ManyToOne } from 'typeorm';
+import { Column, Entity, ManyToOne } from 'typeorm';
 import { UserEntity } from '../../user/entities';
 import { ApiProperty } from '@nestjs/swagger';
-import { IsArray, ValidateNested } from 'class-validator';
+import { IsArray, IsString, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 
 @Entity('game_feedback_response')
@@ -22,10 +22,14 @@ export class GameFeedbackResponseEntity extends EntityBase {
   @Type(() => UserEntity)
   user: UserEntity;
 
+  // feedback responses
+  @ApiProperty()
+  @IsArray()
+  @Column({ type: 'jsonb', nullable: false })
+  responses: [string | string[] | number];
+
   constructor(partial: Partial<GameFeedbackResponseEntity>) {
     super(partial);
     Object.assign(this, partial);
   }
-
-  // add other fields here, for now if the data is here, the user has already submitted the feedback
 }

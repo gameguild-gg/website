@@ -14,6 +14,7 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
+import { GameTestFeedbackQuestion } from './game-test-feedback-form';
 
 @Entity('game_version')
 @Unique(['version', 'game'])
@@ -44,13 +45,11 @@ export class GameVersionEntity extends EntityBase {
   notes_url: string;
 
   // feedback form
-  @ApiProperty()
+  @ApiProperty({ type: () => GameTestFeedbackQuestion, isArray: true })
   @IsNotEmpty({ message: 'Feedback form is required' })
-  @IsString({ message: 'Feedback form must be a string' })
-  @IsFQDN({}, { message: 'Feedback form must be a fully qualified URL' })
-  @MaxLength(1024, { message: 'Feedback form must be at most 1024 characters' })
-  @Column({ length: 1024, nullable: false })
-  feedback_form: string;
+  @ValidateNested()
+  @Column({ type: 'jsonb', nullable: false })
+  feedback_form: GameTestFeedbackQuestion[];
 
   // deadline
   @ApiProperty()
