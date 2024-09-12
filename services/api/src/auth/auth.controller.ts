@@ -1,7 +1,7 @@
 import { Body, Controller, Get, Logger, Param, Post } from '@nestjs/common';
 import { ApiBody, ApiProperty, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
-import { AuthUser } from './decorators';
+import { AuthUser, PublicRoute } from './decorators';
 import { LocalSignInDto } from '../dtos/auth/local-sign-in.dto';
 import { LocalSignUpDto } from '../dtos/auth/local-sign-up.dto';
 import { LocalSignInResponseDto } from '../dtos/auth/local-sign-in.response.dto';
@@ -24,14 +24,14 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('magic-link')
-  //@Public()
+  @Auth(PublicRoute)
   @OkResponse({ type: OkDto })
   public async magicLink(@Body() body: EmailDto): Promise<OkDto> {
     return this.authService.sendMagicLink(body);
   }
 
   // @Post('sign-in')
-  // //@Public()
+  // @Auth(PublicRoute)
   // @UseGuards(LocalGuard)
   // @ApiBody({ type: LocalSignInDto })
   // public async signInWithEmailAndPassword(@Request() request: RequestWithUser) {
@@ -49,7 +49,7 @@ export class AuthController {
   }
 
   @Post('local/sign-up')
-  //@Public()
+  @Auth(PublicRoute)
   @OkResponse({ type: LocalSignInResponseDto }) // pass the type to the swagger
   public async signUpWithEmailUsernamePassword(
     @Body() data: LocalSignUpDto,
@@ -60,14 +60,14 @@ export class AuthController {
 
   // TODO: Implement this endpoint.
   // @Post('github/callback')
-  // //@Public()
+  // @Auth(PublicRoute)
   // public async signInWithGithub(@Request() request: RequestWithUser) {
   //   return await this.authService.signIn(request.user);
   // }
 
   @Get('google/callback/:token')
   @OkResponse({ type: LocalSignInResponseDto })
-  //@Public()
+  @Auth(PublicRoute)
   public async signInWithGoogle(
     @Param('token') token: string,
   ): Promise<LocalSignInResponseDto> {
@@ -75,7 +75,7 @@ export class AuthController {
   }
 
   @Post('web3/sign-in/challenge')
-  //@Public()
+  @Auth(PublicRoute)
   @OkResponse({ type: EthereumSigninChallengeResponseDto })
   public async getWeb3SignInChallenge(
     @Body() data: EthereumSigninChallengeRequestDto,
@@ -84,7 +84,7 @@ export class AuthController {
   }
 
   @Post('web3/sign-in/validate')
-  //@Public()
+  @Auth(PublicRoute)
   @OkResponse({ type: LocalSignInResponseDto })
   public async validateWeb3SignInChallenge(
     @Body() data: EthereumSigninValidateRequestDto,
@@ -116,7 +116,7 @@ export class AuthController {
   // }
 
   @Get('userExists/:user')
-  //@Public()
+  @Auth(PublicRoute)
   public async userExists(@Param('user') user: string): Promise<boolean> {
     return this.authService.userExists(user);
   }

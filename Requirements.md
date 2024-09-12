@@ -3,7 +3,7 @@
 ## 1. Project Overview
 
 - Project Name: GameGuild
-- Purpose: GameGuild is an Game Development Community. It hosts an e-Learning platform designed to facilitate the creation, publication, and consumption of educational content. It will also serve as a platform for game developers to share and test their games, gathering feedback from users. The platform will be managed by a Decentralized Autonomous Organization (DAO), ensuring community-driven governance and decision-making.
+- Purpose: GameGuild is a Game Development Community. It hosts an e-Learning platform designed to facilitate the creation, publication, and consumption of educational content. It will also serve as a platform for game developers to share and test their games, gathering feedback from users. The platform will be managed by a Decentralized Autonomous Organization (DAO), ensuring community-driven governance and decision-making.
 
 ## 2. Core Features
 

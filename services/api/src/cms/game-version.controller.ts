@@ -1,4 +1,9 @@
-import { Controller, Logger, UnauthorizedException } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Logger,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { Auth } from '../auth/decorators/http.decorator';
 import {
@@ -15,6 +20,8 @@ import { AuthenticatedRoute } from '../auth/auth.enum';
 import { GameService } from './game.service';
 import { UserEntity } from '../user/entities';
 import { AuthUser } from '../auth';
+import { ExcludeFieldsPipe } from './pipes/exclude-fields.pipe';
+import { PartialWithoutFields } from './interceptors/ownership-empty-interceptor.service';
 
 @Crud({
   model: {
@@ -62,7 +69,19 @@ export class GameVersionController
   @Auth(AuthenticatedRoute)
   async createOne(
     @ParsedRequest() req: CrudRequest,
-    @ParsedBody() dto: GameVersionEntity,
+    @ParsedBody() parsedBody: GameVersionEntity,
+    @Body(
+      new ExcludeFieldsPipe<GameVersionEntity>([
+        'createdAt',
+        'updatedAt',
+        'id',
+        'responses',
+      ]),
+    )
+    dto: PartialWithoutFields<
+      GameVersionEntity,
+      'createdAt' | 'updatedAt' | 'id' | 'responses'
+    >,
     @AuthUser() user: UserEntity,
   ): Promise<GameVersionEntity> {
     if (!dto.game || !dto.game.id) {

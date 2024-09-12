@@ -45,3 +45,5 @@ chessSubmissions
 
 # dtos
 package-lock.json
+
+services/web/.env

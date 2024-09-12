@@ -1,21 +1,36 @@
 import { Column, Entity, Index, ManyToOne, OneToMany, Unique } from 'typeorm';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiExtraModels, ApiProperty, getSchemaPath } from '@nestjs/swagger';
 import { GameEntity } from './game.entity';
 import { EntityBase } from '../../common/entities/entity.base';
 import { GameFeedbackResponseEntity } from './game-feedback-response.entity';
 import {
   IsArray,
   IsDate,
-  IsFQDN,
   IsNotEmpty,
   IsSemVer,
   IsString,
+  IsUrl,
   MaxLength,
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { GameTestFeedbackQuestion } from './game-test-feedback-form';
+import {
+  GameTestFeedbackQuestion,
+  GameTestFeedbackQuestionCheckbox,
+  GameTestFeedbackQuestionDropdown,
+  GameTestFeedbackQuestionLinearScale,
+  GameTestFeedbackQuestionParagraph,
+  GameTestFeedbackQuestionShortAnswer,
+} from './game-test-feedback-form';
 
+@ApiExtraModels(
+  GameTestFeedbackQuestion,
+  GameTestFeedbackQuestionCheckbox,
+  GameTestFeedbackQuestionDropdown,
+  GameTestFeedbackQuestionLinearScale,
+  GameTestFeedbackQuestionShortAnswer,
+  GameTestFeedbackQuestionParagraph,
+)
 @Entity('game_version')
 @Unique(['version', 'game'])
 export class GameVersionEntity extends EntityBase {
@@ -30,7 +45,7 @@ export class GameVersionEntity extends EntityBase {
   @ApiProperty()
   @IsString({ message: 'Archive URL must be a string' })
   @IsNotEmpty({ message: 'Archive URL is required' })
-  @IsFQDN({}, { message: 'Archive URL must be a fully qualified URL' })
+  @IsUrl({}, { message: 'Archive URL must be a fully qualified URL' })
   @MaxLength(1024, { message: 'Archive URL must be at most 1024 characters' })
   @Column({ length: 1024, nullable: false })
   archive_url: string;
@@ -39,17 +54,36 @@ export class GameVersionEntity extends EntityBase {
   @ApiProperty()
   @IsString({ message: 'Notes URL must be a string' })
   @IsNotEmpty({ message: 'Notes URL is required' })
-  @IsFQDN({}, { message: 'Notes URL must be a fully qualified URL' })
+  @IsUrl({}, { message: 'Notes URL must be a fully qualified URL' })
   @MaxLength(1024, { message: 'Notes URL must be at most 1024 characters' })
   @Column({ length: 1024, nullable: false })
   notes_url: string;
 
   // feedback form
-  @ApiProperty({ type: () => GameTestFeedbackQuestion, isArray: true })
+  // type can be any of these GameTestFeedbackQuestion, GameTestFeedbackQuestionCheckbox, GameTestFeedbackQuestionDropdown, GameTestFeedbackQuestionLinearScale, GameTestFeedbackQuestionShortAnswer, GameTestFeedbackQuestionParagraph
+  @ApiProperty({
+    // error: Could not resolve reference: Could not resolve pointer: /components/schemas/GameTestFeedbackQuestion does not exist in document
+    oneOf: [
+      { $ref: getSchemaPath(GameTestFeedbackQuestion) },
+      { $ref: getSchemaPath(GameTestFeedbackQuestionCheckbox) },
+      { $ref: getSchemaPath(GameTestFeedbackQuestionDropdown) },
+      { $ref: getSchemaPath(GameTestFeedbackQuestionLinearScale) },
+      { $ref: getSchemaPath(GameTestFeedbackQuestionShortAnswer) },
+      { $ref: getSchemaPath(GameTestFeedbackQuestionParagraph) },
+    ],
+  })
+  @Type(() => GameTestFeedbackQuestion)
   @IsNotEmpty({ message: 'Feedback form is required' })
   @ValidateNested()
   @Column({ type: 'jsonb', nullable: false })
-  feedback_form: GameTestFeedbackQuestion[];
+  feedback_form: (
+    | GameTestFeedbackQuestion
+    | GameTestFeedbackQuestionCheckbox
+    | GameTestFeedbackQuestionDropdown
+    | GameTestFeedbackQuestionLinearScale
+    | GameTestFeedbackQuestionShortAnswer
+    | GameTestFeedbackQuestionParagraph
+  )[];
 
   // deadline
   @ApiProperty()

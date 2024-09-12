@@ -267,24 +267,6 @@ function Home() {
             >
               {buttonText}
             </button>
-
-            {/*<div className="mt-4">*/}
-            {/*  <button*/}
-            {/*    onClick={handleLoginGoogle}*/}
-            {/*    className="w-full bg-red-500 text-white p-2 rounded-md"*/}
-            {/*  >*/}
-            {/*    Log in with Google*/}
-            {/*  </button>*/}
-            {/*  <button*/}
-            {/*    onClick={handleLoginGitHub}*/}
-            {/*    className="w-full bg-gray-800 text-white p-2 rounded-md mt-2"*/}
-            {/*  >*/}
-            {/*    Log in with GitHub*/}
-            {/*  </button>*/}
-            {/*</div>*/}
-            {/*<div className="mt-4">*/}
-            {/*  <MetamaskSignIn />*/}
-            {/*</div>*/}
           </div>
         </div>
       </NotificationProvider>

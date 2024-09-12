@@ -48,7 +48,7 @@
     "@nestjs/jwt": "9.0.0",
     "@nestjs/passport": "9.0.3",
     "@nestjs/platform-express": "9.4.3",
-    "@nestjs/swagger": "7.0.12",
+    "@nestjs/swagger": "^7.4.0",
     "@nestjs/typeorm": "9.0.1",
     "@openapitools/openapi-generator-cli": "^2.13.4",
     "@sendgrid/client": "^7.7.0",

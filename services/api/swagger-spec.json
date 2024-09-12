@@ -1974,6 +1974,212 @@
           "pageCount"
         ]
       },
+      "GameTestFeedbackQuestion": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "SHORT_ANSWER",
+              "PARAGRAPH",
+              "CHECKBOX",
+              "DROPDOWN",
+              "LINEAR_SCALE"
+            ]
+          },
+          "description": {
+            "type": "string"
+          },
+          "isRequired": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "type",
+          "description",
+          "isRequired"
+        ]
+      },
+      "GameTestFeedbackQuestionCheckbox": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "SHORT_ANSWER",
+              "PARAGRAPH",
+              "CHECKBOX",
+              "DROPDOWN",
+              "LINEAR_SCALE"
+            ]
+          },
+          "description": {
+            "type": "string"
+          },
+          "isRequired": {
+            "type": "boolean"
+          },
+          "options": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "type",
+          "description",
+          "isRequired",
+          "options"
+        ]
+      },
+      "GameTestFeedbackQuestionDropdown": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "SHORT_ANSWER",
+              "PARAGRAPH",
+              "CHECKBOX",
+              "DROPDOWN",
+              "LINEAR_SCALE"
+            ]
+          },
+          "description": {
+            "type": "string"
+          },
+          "isRequired": {
+            "type": "boolean"
+          },
+          "options": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "type",
+          "description",
+          "isRequired",
+          "options"
+        ]
+      },
+      "GameTestFeedbackQuestionLinearScale": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "SHORT_ANSWER",
+              "PARAGRAPH",
+              "CHECKBOX",
+              "DROPDOWN",
+              "LINEAR_SCALE"
+            ]
+          },
+          "description": {
+            "type": "string"
+          },
+          "isRequired": {
+            "type": "boolean"
+          },
+          "minimum": {
+            "type": "number"
+          },
+          "maximum": {
+            "type": "number"
+          },
+          "steps": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "type",
+          "description",
+          "isRequired",
+          "minimum",
+          "maximum",
+          "steps"
+        ]
+      },
+      "GameTestFeedbackQuestionShortAnswer": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "SHORT_ANSWER",
+              "PARAGRAPH",
+              "CHECKBOX",
+              "DROPDOWN",
+              "LINEAR_SCALE"
+            ]
+          },
+          "description": {
+            "type": "string"
+          },
+          "isRequired": {
+            "type": "boolean"
+          },
+          "minimumCharacters": {
+            "type": "number"
+          },
+          "maximumCharacters": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "type",
+          "description",
+          "isRequired",
+          "minimumCharacters",
+          "maximumCharacters"
+        ]
+      },
+      "GameTestFeedbackQuestionParagraph": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "SHORT_ANSWER",
+              "PARAGRAPH",
+              "CHECKBOX",
+              "DROPDOWN",
+              "LINEAR_SCALE"
+            ]
+          },
+          "description": {
+            "type": "string"
+          },
+          "isRequired": {
+            "type": "boolean"
+          },
+          "minimumCharacters": {
+            "type": "number"
+          },
+          "maximumCharacters": {
+            "type": "number"
+          },
+          "minimumLines": {
+            "type": "number"
+          },
+          "maximumLines": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "type",
+          "description",
+          "isRequired",
+          "minimumCharacters",
+          "maximumCharacters",
+          "minimumLines",
+          "maximumLines"
+        ]
+      },
       "GetManyGameVersionEntityResponseDto": {
         "type": "object",
         "properties": {
@@ -2024,6 +2230,12 @@
           },
           "user": {
             "$ref": "#/components/schemas/UserEntity"
+          },
+          "responses": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         },
         "required": [
@@ -2031,7 +2243,8 @@
           "createdAt",
           "updatedAt",
           "version",
-          "user"
+          "user",
+          "responses"
         ]
       },
       "GameVersionEntity": {
@@ -2059,7 +2272,29 @@
             "type": "string"
           },
           "feedback_form": {
-            "type": "string"
+            "type": "array",
+            "items": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/GameTestFeedbackQuestion"
+                },
+                {
+                  "$ref": "#/components/schemas/GameTestFeedbackQuestionCheckbox"
+                },
+                {
+                  "$ref": "#/components/schemas/GameTestFeedbackQuestionDropdown"
+                },
+                {
+                  "$ref": "#/components/schemas/GameTestFeedbackQuestionLinearScale"
+                },
+                {
+                  "$ref": "#/components/schemas/GameTestFeedbackQuestionShortAnswer"
+                },
+                {
+                  "$ref": "#/components/schemas/GameTestFeedbackQuestionParagraph"
+                }
+              ]
+            }
           },
           "feedback_deadline": {
             "format": "date-time",

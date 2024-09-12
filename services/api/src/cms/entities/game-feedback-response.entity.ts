@@ -3,7 +3,7 @@ import { GameVersionEntity } from './game-version.entity';
 import { Column, Entity, ManyToOne } from 'typeorm';
 import { UserEntity } from '../../user/entities';
 import { ApiProperty } from '@nestjs/swagger';
-import { IsArray, IsString, ValidateNested } from 'class-validator';
+import { IsArray, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 
 @Entity('game_feedback_response')
