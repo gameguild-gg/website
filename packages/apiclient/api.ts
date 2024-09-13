@@ -2786,7 +2786,7 @@ export const GameApiAxiosParamCreator = function (configuration?: Configuration)
     return {
         /**
          * 
-         * @summary Create a single GameEntity
+         * @summary Create a single ProjectEntity
          * @param {GameEntity} gameEntity 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -2826,7 +2826,7 @@ export const GameApiAxiosParamCreator = function (configuration?: Configuration)
         },
         /**
          * 
-         * @summary Delete a single GameEntity
+         * @summary Delete a single ProjectEntity
          * @param {string} id 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -2948,7 +2948,7 @@ export const GameApiAxiosParamCreator = function (configuration?: Configuration)
         },
         /**
          * 
-         * @summary Retrieve a single GameEntity
+         * @summary Retrieve a single ProjectEntity
          * @param {string} id 
          * @param {Array<string>} [fields] Selects resource fields. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#select\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
          * @param {Array<string>} [join] Adds relational resources. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#join\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
@@ -3001,7 +3001,7 @@ export const GameApiAxiosParamCreator = function (configuration?: Configuration)
         },
         /**
          * 
-         * @summary Update a single GameEntity
+         * @summary Update a single ProjectEntity
          * @param {string} id 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -3049,7 +3049,7 @@ export const GameApiFp = function(configuration?: Configuration) {
     return {
         /**
          * 
-         * @summary Create a single GameEntity
+         * @summary Create a single ProjectEntity
          * @param {GameEntity} gameEntity 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -3062,7 +3062,7 @@ export const GameApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
-         * @summary Delete a single GameEntity
+         * @summary Delete a single ProjectEntity
          * @param {string} id 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -3097,7 +3097,7 @@ export const GameApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
-         * @summary Retrieve a single GameEntity
+         * @summary Retrieve a single ProjectEntity
          * @param {string} id 
          * @param {Array<string>} [fields] Selects resource fields. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#select\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
          * @param {Array<string>} [join] Adds relational resources. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#join\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
@@ -3113,7 +3113,7 @@ export const GameApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
-         * @summary Update a single GameEntity
+         * @summary Update a single ProjectEntity
          * @param {string} id 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -3136,7 +3136,7 @@ export const GameApiFactory = function (configuration?: Configuration, basePath?
     return {
         /**
          * 
-         * @summary Create a single GameEntity
+         * @summary Create a single ProjectEntity
          * @param {GameEntity} gameEntity 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -3146,7 +3146,7 @@ export const GameApiFactory = function (configuration?: Configuration, basePath?
         },
         /**
          * 
-         * @summary Delete a single GameEntity
+         * @summary Delete a single ProjectEntity
          * @param {string} id 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -3175,7 +3175,7 @@ export const GameApiFactory = function (configuration?: Configuration, basePath?
         },
         /**
          * 
-         * @summary Retrieve a single GameEntity
+         * @summary Retrieve a single ProjectEntity
          * @param {string} id 
          * @param {Array<string>} [fields] Selects resource fields. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#select\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
          * @param {Array<string>} [join] Adds relational resources. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#join\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
@@ -3188,7 +3188,7 @@ export const GameApiFactory = function (configuration?: Configuration, basePath?
         },
         /**
          * 
-         * @summary Update a single GameEntity
+         * @summary Update a single ProjectEntity
          * @param {string} id 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -3208,7 +3208,7 @@ export const GameApiFactory = function (configuration?: Configuration, basePath?
 export class GameApi extends BaseAPI {
     /**
      * 
-     * @summary Create a single GameEntity
+     * @summary Create a single ProjectEntity
      * @param {GameEntity} gameEntity 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
@@ -3220,7 +3220,7 @@ export class GameApi extends BaseAPI {
 
     /**
      * 
-     * @summary Delete a single GameEntity
+     * @summary Delete a single ProjectEntity
      * @param {string} id 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
@@ -3253,7 +3253,7 @@ export class GameApi extends BaseAPI {
 
     /**
      * 
-     * @summary Retrieve a single GameEntity
+     * @summary Retrieve a single ProjectEntity
      * @param {string} id 
      * @param {Array<string>} [fields] Selects resource fields. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#select\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
      * @param {Array<string>} [join] Adds relational resources. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#join\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
@@ -3268,7 +3268,7 @@ export class GameApi extends BaseAPI {
 
     /**
      * 
-     * @summary Update a single GameEntity
+     * @summary Update a single ProjectEntity
      * @param {string} id 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
@@ -3289,7 +3289,7 @@ export const GameVersionApiAxiosParamCreator = function (configuration?: Configu
     return {
         /**
          * 
-         * @summary Create a single GameVersionEntity
+         * @summary Create a single ProjectVersionEntity
          * @param {GameVersionEntity} gameVersionEntity 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -3325,7 +3325,7 @@ export const GameVersionApiAxiosParamCreator = function (configuration?: Configu
         },
         /**
          * 
-         * @summary Delete a single GameVersionEntity
+         * @summary Delete a single ProjectVersionEntity
          * @param {string} id 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -3443,7 +3443,7 @@ export const GameVersionApiAxiosParamCreator = function (configuration?: Configu
         },
         /**
          * 
-         * @summary Retrieve a single GameVersionEntity
+         * @summary Retrieve a single ProjectVersionEntity
          * @param {string} id 
          * @param {Array<string>} [fields] Selects resource fields. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#select\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
          * @param {Array<string>} [join] Adds relational resources. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#join\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
@@ -3496,7 +3496,7 @@ export const GameVersionApiAxiosParamCreator = function (configuration?: Configu
         },
         /**
          * 
-         * @summary Update a single GameVersionEntity
+         * @summary Update a single ProjectVersionEntity
          * @param {string} id 
          * @param {GameVersionEntity} gameVersionEntity 
          * @param {*} [options] Override http request option.
@@ -3546,7 +3546,7 @@ export const GameVersionApiFp = function(configuration?: Configuration) {
     return {
         /**
          * 
-         * @summary Create a single GameVersionEntity
+         * @summary Create a single ProjectVersionEntity
          * @param {GameVersionEntity} gameVersionEntity 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -3559,7 +3559,7 @@ export const GameVersionApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
-         * @summary Delete a single GameVersionEntity
+         * @summary Delete a single ProjectVersionEntity
          * @param {string} id 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -3594,7 +3594,7 @@ export const GameVersionApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
-         * @summary Retrieve a single GameVersionEntity
+         * @summary Retrieve a single ProjectVersionEntity
          * @param {string} id 
          * @param {Array<string>} [fields] Selects resource fields. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#select\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
          * @param {Array<string>} [join] Adds relational resources. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#join\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
@@ -3610,7 +3610,7 @@ export const GameVersionApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
-         * @summary Update a single GameVersionEntity
+         * @summary Update a single ProjectVersionEntity
          * @param {string} id 
          * @param {GameVersionEntity} gameVersionEntity 
          * @param {*} [options] Override http request option.
@@ -3634,7 +3634,7 @@ export const GameVersionApiFactory = function (configuration?: Configuration, ba
     return {
         /**
          * 
-         * @summary Create a single GameVersionEntity
+         * @summary Create a single ProjectVersionEntity
          * @param {GameVersionEntity} gameVersionEntity 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -3644,7 +3644,7 @@ export const GameVersionApiFactory = function (configuration?: Configuration, ba
         },
         /**
          * 
-         * @summary Delete a single GameVersionEntity
+         * @summary Delete a single ProjectVersionEntity
          * @param {string} id 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -3673,7 +3673,7 @@ export const GameVersionApiFactory = function (configuration?: Configuration, ba
         },
         /**
          * 
-         * @summary Retrieve a single GameVersionEntity
+         * @summary Retrieve a single ProjectVersionEntity
          * @param {string} id 
          * @param {Array<string>} [fields] Selects resource fields. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#select\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
          * @param {Array<string>} [join] Adds relational resources. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#join\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
@@ -3686,7 +3686,7 @@ export const GameVersionApiFactory = function (configuration?: Configuration, ba
         },
         /**
          * 
-         * @summary Update a single GameVersionEntity
+         * @summary Update a single ProjectVersionEntity
          * @param {string} id 
          * @param {GameVersionEntity} gameVersionEntity 
          * @param {*} [options] Override http request option.
@@ -3707,7 +3707,7 @@ export const GameVersionApiFactory = function (configuration?: Configuration, ba
 export class GameVersionApi extends BaseAPI {
     /**
      * 
-     * @summary Create a single GameVersionEntity
+     * @summary Create a single ProjectVersionEntity
      * @param {GameVersionEntity} gameVersionEntity 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
@@ -3719,7 +3719,7 @@ export class GameVersionApi extends BaseAPI {
 
     /**
      * 
-     * @summary Delete a single GameVersionEntity
+     * @summary Delete a single ProjectVersionEntity
      * @param {string} id 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
@@ -3752,7 +3752,7 @@ export class GameVersionApi extends BaseAPI {
 
     /**
      * 
-     * @summary Retrieve a single GameVersionEntity
+     * @summary Retrieve a single ProjectVersionEntity
      * @param {string} id 
      * @param {Array<string>} [fields] Selects resource fields. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#select\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
      * @param {Array<string>} [join] Adds relational resources. &lt;a href&#x3D;\&quot;https://github.com/nestjsx/crud/wiki/Requests#join\&quot; target&#x3D;\&quot;_blank\&quot;&gt;Docs&lt;/a&gt;
@@ -3767,7 +3767,7 @@ export class GameVersionApi extends BaseAPI {
 
     /**
      * 
-     * @summary Update a single GameVersionEntity
+     * @summary Update a single ProjectVersionEntity
      * @param {string} id 
      * @param {GameVersionEntity} gameVersionEntity 
      * @param {*} [options] Override http request option.

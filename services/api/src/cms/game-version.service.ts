@@ -7,26 +7,26 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { ArrayContains, Repository } from 'typeorm';
 import { TypeOrmCrudService } from '@dataui/crud-typeorm';
-import { GameVersionEntity } from './entities/game-version.entity';
+import { ProjectVersionEntity } from './entities/project-version.entity';
 import { UserEntity } from '../user/entities';
-import { GameEntity } from './entities/game.entity';
+import { ProjectEntity } from './entities/project.entity';
 
 @Injectable()
-export class GameVersionService extends TypeOrmCrudService<GameVersionEntity> {
+export class GameVersionService extends TypeOrmCrudService<ProjectVersionEntity> {
   private readonly logger = new Logger(GameVersionService.name);
   constructor(
-    @InjectRepository(GameVersionEntity)
-    private readonly gameVersionRepository: Repository<GameVersionEntity>,
-    @InjectRepository(GameEntity)
-    private readonly gameRepository: Repository<GameEntity>,
+    @InjectRepository(ProjectVersionEntity)
+    private readonly gameVersionRepository: Repository<ProjectVersionEntity>,
+    @InjectRepository(ProjectEntity)
+    private readonly gameRepository: Repository<ProjectEntity>,
   ) {
     super(gameVersionRepository);
   }
 
   async createGameVersion(
-    body: GameVersionEntity,
+    body: ProjectVersionEntity,
     user: UserEntity,
-  ): Promise<GameVersionEntity> {
+  ): Promise<ProjectVersionEntity> {
     if (!body.game || !body.game.id) {
       throw new NotFoundException('{ game: { id: string } } field is required');
     }

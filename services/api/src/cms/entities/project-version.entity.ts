@@ -1,8 +1,8 @@
 import { Column, Entity, Index, ManyToOne, OneToMany, Unique } from 'typeorm';
 import { ApiExtraModels, ApiProperty, getSchemaPath } from '@nestjs/swagger';
-import { GameEntity } from './game.entity';
+import { ProjectEntity } from './project.entity';
 import { EntityBase } from '../../common/entities/entity.base';
-import { GameFeedbackResponseEntity } from './game-feedback-response.entity';
+import { ProjectFeedbackResponseEntity } from './project-feedback-response.entity';
 import {
   IsArray,
   IsDate,
@@ -21,7 +21,7 @@ import {
   GameTestFeedbackQuestionLinearScale,
   GameTestFeedbackQuestionParagraph,
   GameTestFeedbackQuestionShortAnswer,
-} from './game-test-feedback-form';
+} from './project-test-feedback-form';
 
 @ApiExtraModels(
   GameTestFeedbackQuestion,
@@ -31,9 +31,9 @@ import {
   GameTestFeedbackQuestionShortAnswer,
   GameTestFeedbackQuestionParagraph,
 )
-@Entity('game_version')
+@Entity('project_version')
 @Unique(['version', 'game'])
-export class GameVersionEntity extends EntityBase {
+export class ProjectVersionEntity extends EntityBase {
   @ApiProperty()
   @IsString({ message: 'Version must be a string' })
   @IsNotEmpty({ message: 'Version is required' })
@@ -93,21 +93,24 @@ export class GameVersionEntity extends EntityBase {
   @Index({ unique: false })
   feedback_deadline: Date;
 
-  @ApiProperty({ type: () => GameEntity })
-  @ManyToOne(() => GameEntity, (game) => game.versions)
+  @ApiProperty({ type: () => ProjectEntity })
+  @ManyToOne(() => ProjectEntity, (game) => game.versions)
   @ValidateNested()
-  @Type(() => GameEntity)
-  game: GameEntity;
+  @Type(() => ProjectEntity)
+  game: ProjectEntity;
 
   // relation to feedback responses
-  @ApiProperty({ type: GameFeedbackResponseEntity, isArray: true })
-  @OneToMany(() => GameFeedbackResponseEntity, (response) => response.version)
+  @ApiProperty({ type: ProjectFeedbackResponseEntity, isArray: true })
+  @OneToMany(
+    () => ProjectFeedbackResponseEntity,
+    (response) => response.version,
+  )
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => GameFeedbackResponseEntity)
-  responses: GameFeedbackResponseEntity[];
+  @Type(() => ProjectFeedbackResponseEntity)
+  responses: ProjectFeedbackResponseEntity[];
 
-  constructor(partial: Partial<GameVersionEntity>) {
+  constructor(partial: Partial<ProjectVersionEntity>) {
     super(partial);
     Object.assign(this, partial);
   }
