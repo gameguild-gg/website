@@ -2,7 +2,7 @@ import { Body, Controller, Logger } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { GameService } from './game.service';
 import { Auth } from '../auth/decorators/http.decorator';
-import { GameEntity } from './entities/game.entity';
+import { ProjectEntity } from './entities/project.entity';
 import {
   Crud,
   CrudController,
@@ -25,7 +25,7 @@ import { WithRolesController } from './with-roles.controller';
 
 @Crud({
   model: {
-    type: GameEntity,
+    type: ProjectEntity,
   },
   params: {
     id: {
@@ -51,19 +51,19 @@ import { WithRolesController } from './with-roles.controller';
       decorators: [Auth(AuthenticatedRoute)],
     },
     updateOneBase: {
-      decorators: [Auth<GameEntity>(ManagerRoute<GameEntity>)],
+      decorators: [Auth<ProjectEntity>(ManagerRoute<ProjectEntity>)],
       interceptors: [OwnershipEmptyInterceptor],
     },
     deleteOneBase: {
-      decorators: [Auth<GameEntity>(OwnerRoute<GameEntity>)],
+      decorators: [Auth<ProjectEntity>(OwnerRoute<ProjectEntity>)],
     },
   },
 })
 @Controller('game')
 @ApiTags('game')
 export class GameController
-  extends WithRolesController<GameEntity>
-  implements CrudController<GameEntity>
+  extends WithRolesController<ProjectEntity>
+  implements CrudController<ProjectEntity>
 {
   private readonly logger = new Logger(GameController.name);
 
@@ -71,7 +71,7 @@ export class GameController
     super(service);
   }
 
-  get base(): CrudController<GameEntity> {
+  get base(): CrudController<ProjectEntity> {
     return this;
   }
 
@@ -80,17 +80,17 @@ export class GameController
   @Auth(AuthenticatedRoute)
   createOne(
     @ParsedRequest() crudReq: CrudRequest,
-    @BodyOwnerInject() body: GameEntity,
+    @BodyOwnerInject() body: ProjectEntity,
   ) {
     return this.base.createOneBase(crudReq, body);
   }
 
   @Override()
-  @Auth<GameEntity>(ManagerRoute<GameEntity>)
+  @Auth<ProjectEntity>(ManagerRoute<ProjectEntity>)
   async updateOne(
     @ParsedRequest() req: CrudRequest,
     @Body(
-      new ExcludeFieldsPipe<GameEntity>([
+      new ExcludeFieldsPipe<ProjectEntity>([
         'owner',
         'editors',
         'versions',
@@ -99,10 +99,10 @@ export class GameController
       ]),
     )
     dto: PartialWithoutFields<
-      GameEntity,
+      ProjectEntity,
       'owner' | 'editors' | 'versions' | 'createdAt' | 'updatedAt'
     >,
-  ): Promise<GameEntity> {
+  ): Promise<ProjectEntity> {
     return this.base.updateOneBase(req, dto);
   }
 }

@@ -10,7 +10,7 @@ import {
 } from 'class-validator';
 import { IsIntegerNumber } from '../../common/decorators/validator.decorator';
 
-export enum GameTestFeedbackQuestionType {
+export enum ProjectTestFeedbackQuestionType {
   SHORT_ANSWER = 'SHORT_ANSWER',
   PARAGRAPH = 'PARAGRAPH',
   CHECKBOX = 'CHECKBOX',
@@ -19,15 +19,15 @@ export enum GameTestFeedbackQuestionType {
 }
 
 // pass in the generic the type of the question
-export class GameTestFeedbackQuestion {
-  @ApiProperty({ enum: GameTestFeedbackQuestionType })
-  @IsEnum(GameTestFeedbackQuestionType, {
+export class ProjectTestFeedbackQuestion {
+  @ApiProperty({ enum: ProjectTestFeedbackQuestionType })
+  @IsEnum(ProjectTestFeedbackQuestionType, {
     message: 'error.invalid_question_type: Invalid question type',
   })
   @IsNotEmpty({
     message: 'error.empty_question_type: Question type is required',
   })
-  type: GameTestFeedbackQuestionType;
+  type: ProjectTestFeedbackQuestionType;
 
   @ApiProperty()
   @IsOptional()
@@ -46,12 +46,12 @@ export class GameTestFeedbackQuestion {
   })
   isRequired: boolean;
 
-  constructor(partial: Partial<GameTestFeedbackQuestion>) {
+  constructor(partial: Partial<ProjectTestFeedbackQuestion>) {
     Object.assign(this, partial);
   }
 }
 
-export class GameTestFeedbackQuestionShortAnswer extends GameTestFeedbackQuestion {
+export class ProjectTestFeedbackQuestionShortAnswer extends ProjectTestFeedbackQuestion {
   @ApiProperty()
   @IsOptional()
   minimumCharacters: number;
@@ -60,12 +60,12 @@ export class GameTestFeedbackQuestionShortAnswer extends GameTestFeedbackQuestio
   @IsOptional()
   maximumCharacters: number;
 
-  constructor(partial: Partial<GameTestFeedbackQuestionShortAnswer>) {
+  constructor(partial: Partial<ProjectTestFeedbackQuestionShortAnswer>) {
     super(partial);
   }
 }
 
-export class GameTestFeedbackQuestionParagraph extends GameTestFeedbackQuestionShortAnswer {
+export class ProjectTestFeedbackQuestionParagraph extends ProjectTestFeedbackQuestionShortAnswer {
   @ApiProperty()
   @IsOptional()
   minimumLines: number;
@@ -73,12 +73,12 @@ export class GameTestFeedbackQuestionParagraph extends GameTestFeedbackQuestionS
   @ApiProperty()
   @IsOptional()
   maximumLines: number;
-  constructor(partial: Partial<GameTestFeedbackQuestionParagraph>) {
+  constructor(partial: Partial<ProjectTestFeedbackQuestionParagraph>) {
     super(partial);
   }
 }
 
-export class GameTestFeedbackQuestionCheckbox extends GameTestFeedbackQuestion {
+export class ProjectTestFeedbackQuestionCheckbox extends ProjectTestFeedbackQuestion {
   @ApiProperty()
   @IsNotEmpty({
     message: 'error.empty_question_options: Question options are required',
@@ -94,12 +94,12 @@ export class GameTestFeedbackQuestionCheckbox extends GameTestFeedbackQuestion {
   })
   options: string[];
 
-  constructor(partial: Partial<GameTestFeedbackQuestionCheckbox>) {
+  constructor(partial: Partial<ProjectTestFeedbackQuestionCheckbox>) {
     super(partial);
   }
 }
 
-export class GameTestFeedbackQuestionDropdown extends GameTestFeedbackQuestion {
+export class ProjectTestFeedbackQuestionDropdown extends ProjectTestFeedbackQuestion {
   @ApiProperty()
   @IsNotEmpty({
     message: 'error.empty_question_options: Question options are required',
@@ -115,12 +115,12 @@ export class GameTestFeedbackQuestionDropdown extends GameTestFeedbackQuestion {
   })
   options: string[];
 
-  constructor(partial: Partial<GameTestFeedbackQuestionDropdown>) {
+  constructor(partial: Partial<ProjectTestFeedbackQuestionDropdown>) {
     super(partial);
   }
 }
 
-export class GameTestFeedbackQuestionLinearScale extends GameTestFeedbackQuestion {
+export class ProjectTestFeedbackQuestionLinearScale extends ProjectTestFeedbackQuestion {
   @ApiProperty()
   @IsNotEmpty({
     message: 'error.empty_question_min: Question min is required',
@@ -150,7 +150,7 @@ export class GameTestFeedbackQuestionLinearScale extends GameTestFeedbackQuestio
   })
   steps: number;
 
-  constructor(partial: Partial<GameTestFeedbackQuestionLinearScale>) {
+  constructor(partial: Partial<ProjectTestFeedbackQuestionLinearScale>) {
     super(partial);
   }
 }

@@ -7,9 +7,9 @@ import { LectureEntity } from './entities/lecture.entity';
 import { ChapterEntity } from './entities/chapter.entity';
 import { UserModule } from '../user/user.module';
 import { PostEntity } from './entities/post.entity';
-import { GameEntity } from './entities/game.entity';
-import { GameVersionEntity } from './entities/game-version.entity';
-import { GameFeedbackResponseEntity } from './entities/game-feedback-response.entity';
+import { ProjectEntity } from './entities/project.entity';
+import { ProjectVersionEntity } from './entities/project-version.entity';
+import { ProjectFeedbackResponseEntity } from './entities/project-feedback-response.entity';
 import { GameController } from './game.controller';
 import { GameService } from './game.service';
 import { APP_INTERCEPTOR } from '@nestjs/core';
@@ -24,9 +24,9 @@ import { GameVersionService } from './game-version.service';
       LectureEntity,
       ChapterEntity,
       PostEntity,
-      GameEntity,
-      GameVersionEntity,
-      GameFeedbackResponseEntity,
+      ProjectEntity,
+      ProjectVersionEntity,
+      ProjectFeedbackResponseEntity,
     ]),
     forwardRef(() => UserModule),
   ],

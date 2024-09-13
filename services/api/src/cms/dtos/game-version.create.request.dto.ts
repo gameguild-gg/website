@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { GameVersionEntity } from '../entities/game-version.entity';
+import { ProjectVersionEntity } from '../entities/project-version.entity';
 import { Type } from 'class-transformer';
 import { IsNotEmpty, IsString, IsUUID, ValidateNested } from 'class-validator';
 
@@ -10,8 +10,8 @@ export class GameVersionCreateRequestDto {
   @IsUUID(4, { message: 'error.uuid: gameId must be uuid 4' })
   gameId: string;
 
-  @ApiProperty({ type: () => GameVersionEntity })
+  @ApiProperty({ type: () => ProjectVersionEntity })
   @ValidateNested()
-  @Type(() => GameVersionEntity)
-  version: GameVersionEntity;
+  @Type(() => ProjectVersionEntity)
+  version: ProjectVersionEntity;
 }

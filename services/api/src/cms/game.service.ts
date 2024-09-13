@@ -1,15 +1,15 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { GameEntity } from './entities/game.entity';
+import { ProjectEntity } from './entities/project.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { WithRolesService } from './with-roles.service';
 
 @Injectable()
-export class GameService extends WithRolesService<GameEntity> {
+export class GameService extends WithRolesService<ProjectEntity> {
   private readonly logger = new Logger(GameService.name);
   constructor(
-    @InjectRepository(GameEntity)
-    private readonly gameRepository: Repository<GameEntity>,
+    @InjectRepository(ProjectEntity)
+    private readonly gameRepository: Repository<ProjectEntity>,
   ) {
     super(gameRepository);
   }

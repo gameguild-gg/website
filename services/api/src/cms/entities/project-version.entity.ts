@@ -1,8 +1,8 @@
 import { Column, Entity, Index, ManyToOne, OneToMany, Unique } from 'typeorm';
 import { ApiExtraModels, ApiProperty, getSchemaPath } from '@nestjs/swagger';
-import { GameEntity } from './game.entity';
+import { ProjectEntity } from './project.entity';
 import { EntityBase } from '../../common/entities/entity.base';
-import { GameFeedbackResponseEntity } from './game-feedback-response.entity';
+import { ProjectFeedbackResponseEntity } from './project-feedback-response.entity';
 import {
   IsArray,
   IsDate,
@@ -15,25 +15,25 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import {
-  GameTestFeedbackQuestion,
-  GameTestFeedbackQuestionCheckbox,
-  GameTestFeedbackQuestionDropdown,
-  GameTestFeedbackQuestionLinearScale,
-  GameTestFeedbackQuestionParagraph,
-  GameTestFeedbackQuestionShortAnswer,
-} from './game-test-feedback-form';
+  ProjectTestFeedbackQuestion,
+  ProjectTestFeedbackQuestionCheckbox,
+  ProjectTestFeedbackQuestionDropdown,
+  ProjectTestFeedbackQuestionLinearScale,
+  ProjectTestFeedbackQuestionParagraph,
+  ProjectTestFeedbackQuestionShortAnswer,
+} from './project-test-feedback-form';
 
 @ApiExtraModels(
-  GameTestFeedbackQuestion,
-  GameTestFeedbackQuestionCheckbox,
-  GameTestFeedbackQuestionDropdown,
-  GameTestFeedbackQuestionLinearScale,
-  GameTestFeedbackQuestionShortAnswer,
-  GameTestFeedbackQuestionParagraph,
+  ProjectTestFeedbackQuestion,
+  ProjectTestFeedbackQuestionCheckbox,
+  ProjectTestFeedbackQuestionDropdown,
+  ProjectTestFeedbackQuestionLinearScale,
+  ProjectTestFeedbackQuestionShortAnswer,
+  ProjectTestFeedbackQuestionParagraph,
 )
-@Entity('game_version')
-@Unique(['version', 'game'])
-export class GameVersionEntity extends EntityBase {
+@Entity('project_version')
+@Unique(['version', 'project'])
+export class ProjectVersionEntity extends EntityBase {
   @ApiProperty()
   @IsString({ message: 'Version must be a string' })
   @IsNotEmpty({ message: 'Version is required' })
@@ -64,25 +64,25 @@ export class GameVersionEntity extends EntityBase {
   @ApiProperty({
     // error: Could not resolve reference: Could not resolve pointer: /components/schemas/GameTestFeedbackQuestion does not exist in document
     oneOf: [
-      { $ref: getSchemaPath(GameTestFeedbackQuestion) },
-      { $ref: getSchemaPath(GameTestFeedbackQuestionCheckbox) },
-      { $ref: getSchemaPath(GameTestFeedbackQuestionDropdown) },
-      { $ref: getSchemaPath(GameTestFeedbackQuestionLinearScale) },
-      { $ref: getSchemaPath(GameTestFeedbackQuestionShortAnswer) },
-      { $ref: getSchemaPath(GameTestFeedbackQuestionParagraph) },
+      { $ref: getSchemaPath(ProjectTestFeedbackQuestion) },
+      { $ref: getSchemaPath(ProjectTestFeedbackQuestionCheckbox) },
+      { $ref: getSchemaPath(ProjectTestFeedbackQuestionDropdown) },
+      { $ref: getSchemaPath(ProjectTestFeedbackQuestionLinearScale) },
+      { $ref: getSchemaPath(ProjectTestFeedbackQuestionShortAnswer) },
+      { $ref: getSchemaPath(ProjectTestFeedbackQuestionParagraph) },
     ],
   })
-  @Type(() => GameTestFeedbackQuestion)
+  @Type(() => ProjectTestFeedbackQuestion)
   @IsNotEmpty({ message: 'Feedback form is required' })
   @ValidateNested()
   @Column({ type: 'jsonb', nullable: false })
   feedback_form: (
-    | GameTestFeedbackQuestion
-    | GameTestFeedbackQuestionCheckbox
-    | GameTestFeedbackQuestionDropdown
-    | GameTestFeedbackQuestionLinearScale
-    | GameTestFeedbackQuestionShortAnswer
-    | GameTestFeedbackQuestionParagraph
+    | ProjectTestFeedbackQuestion
+    | ProjectTestFeedbackQuestionCheckbox
+    | ProjectTestFeedbackQuestionDropdown
+    | ProjectTestFeedbackQuestionLinearScale
+    | ProjectTestFeedbackQuestionShortAnswer
+    | ProjectTestFeedbackQuestionParagraph
   )[];
 
   // deadline
@@ -93,21 +93,24 @@ export class GameVersionEntity extends EntityBase {
   @Index({ unique: false })
   feedback_deadline: Date;
 
-  @ApiProperty({ type: () => GameEntity })
-  @ManyToOne(() => GameEntity, (game) => game.versions)
+  @ApiProperty({ type: () => ProjectEntity })
+  @ManyToOne(() => ProjectEntity, (project) => project.versions)
   @ValidateNested()
-  @Type(() => GameEntity)
-  game: GameEntity;
+  @Type(() => ProjectEntity)
+  project: ProjectEntity;
 
   // relation to feedback responses
-  @ApiProperty({ type: GameFeedbackResponseEntity, isArray: true })
-  @OneToMany(() => GameFeedbackResponseEntity, (response) => response.version)
+  @ApiProperty({ type: ProjectFeedbackResponseEntity, isArray: true })
+  @OneToMany(
+    () => ProjectFeedbackResponseEntity,
+    (response) => response.version,
+  )
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => GameFeedbackResponseEntity)
-  responses: GameFeedbackResponseEntity[];
+  @Type(() => ProjectFeedbackResponseEntity)
+  responses: ProjectFeedbackResponseEntity[];
 
-  constructor(partial: Partial<GameVersionEntity>) {
+  constructor(partial: Partial<ProjectVersionEntity>) {
     super(partial);
     Object.assign(this, partial);
   }

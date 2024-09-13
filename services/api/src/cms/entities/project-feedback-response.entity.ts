@@ -1,19 +1,19 @@
 import { EntityBase } from '../../common/entities/entity.base';
-import { GameVersionEntity } from './game-version.entity';
+import { ProjectVersionEntity } from './project-version.entity';
 import { Column, Entity, ManyToOne } from 'typeorm';
 import { UserEntity } from '../../user/entities';
 import { ApiProperty } from '@nestjs/swagger';
 import { IsArray, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 
-@Entity('game_feedback_response')
-export class GameFeedbackResponseEntity extends EntityBase {
+@Entity('project_feedback_response')
+export class ProjectFeedbackResponseEntity extends EntityBase {
   // relationship to the game version
-  @ManyToOne(() => GameVersionEntity, (version) => version.responses)
-  @ApiProperty({ type: () => GameVersionEntity })
+  @ManyToOne(() => ProjectVersionEntity, (version) => version.responses)
+  @ApiProperty({ type: () => ProjectVersionEntity })
   @ValidateNested()
-  @Type(() => GameVersionEntity)
-  version: GameVersionEntity;
+  @Type(() => ProjectVersionEntity)
+  version: ProjectVersionEntity;
 
   // relationship to the user
   @ManyToOne(() => UserEntity)
@@ -28,7 +28,7 @@ export class GameFeedbackResponseEntity extends EntityBase {
   @Column({ type: 'jsonb', nullable: false })
   responses: [string | string[] | number];
 
-  constructor(partial: Partial<GameFeedbackResponseEntity>) {
+  constructor(partial: Partial<ProjectFeedbackResponseEntity>) {
     super(partial);
     Object.assign(this, partial);
   }

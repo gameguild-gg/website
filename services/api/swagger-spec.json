@@ -291,8 +291,8 @@
     },
     "/game": {
       "post": {
-        "operationId": "createOneBaseGameControllerGameEntity",
-        "summary": "Create a single GameEntity",
+        "operationId": "createOneBaseGameControllerProjectEntity",
+        "summary": "Create a single ProjectEntity",
         "parameters": [],
         "responses": {
           "201": {
@@ -300,7 +300,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/GameEntity"
+                  "$ref": "#/components/schemas/ProjectEntity"
                 }
               }
             }
@@ -319,8 +319,8 @@
         ]
       },
       "get": {
-        "operationId": "getManyBaseGameControllerGameEntity",
-        "summary": "Retrieve multiple GameEntities",
+        "operationId": "getManyBaseGameControllerProjectEntity",
+        "summary": "Retrieve multiple ProjectEntities",
         "parameters": [
           {
             "name": "fields",
@@ -448,12 +448,12 @@
                 "schema": {
                   "oneOf": [
                     {
-                      "$ref": "#/components/schemas/GetManyGameEntityResponseDto"
+                      "$ref": "#/components/schemas/GetManyProjectEntityResponseDto"
                     },
                     {
                       "type": "array",
                       "items": {
-                        "$ref": "#/components/schemas/GameEntity"
+                        "$ref": "#/components/schemas/ProjectEntity"
                       }
                     }
                   ]
@@ -477,8 +477,8 @@
     },
     "/game/{id}": {
       "patch": {
-        "operationId": "updateOneBaseGameControllerGameEntity",
-        "summary": "Update a single GameEntity",
+        "operationId": "updateOneBaseGameControllerProjectEntity",
+        "summary": "Update a single ProjectEntity",
         "parameters": [
           {
             "name": "id",
@@ -495,7 +495,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/GameEntity"
+                  "$ref": "#/components/schemas/ProjectEntity"
                 }
               }
             }
@@ -514,8 +514,8 @@
         ]
       },
       "get": {
-        "operationId": "getOneBaseGameControllerGameEntity",
-        "summary": "Retrieve a single GameEntity",
+        "operationId": "getOneBaseGameControllerProjectEntity",
+        "summary": "Retrieve a single ProjectEntity",
         "parameters": [
           {
             "name": "id",
@@ -571,7 +571,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/GameEntity"
+                  "$ref": "#/components/schemas/ProjectEntity"
                 }
               }
             }
@@ -590,8 +590,8 @@
         ]
       },
       "delete": {
-        "operationId": "deleteOneBaseGameControllerGameEntity",
-        "summary": "Delete a single GameEntity",
+        "operationId": "deleteOneBaseGameControllerProjectEntity",
+        "summary": "Delete a single ProjectEntity",
         "parameters": [
           {
             "name": "id",
@@ -709,15 +709,15 @@
     },
     "/game-version": {
       "post": {
-        "operationId": "createOneBaseGameVersionControllerGameVersionEntity",
-        "summary": "Create a single GameVersionEntity",
+        "operationId": "createOneBaseGameVersionControllerProjectVersionEntity",
+        "summary": "Create a single ProjectVersionEntity",
         "parameters": [],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/GameVersionEntity"
+                "$ref": "#/components/schemas/ProjectVersionEntity"
               }
             }
           }
@@ -728,7 +728,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/GameVersionEntity"
+                  "$ref": "#/components/schemas/ProjectVersionEntity"
                 }
               }
             }
@@ -747,8 +747,8 @@
         ]
       },
       "get": {
-        "operationId": "getManyBaseGameVersionControllerGameVersionEntity",
-        "summary": "Retrieve multiple GameVersionEntities",
+        "operationId": "getManyBaseGameVersionControllerProjectVersionEntity",
+        "summary": "Retrieve multiple ProjectVersionEntities",
         "parameters": [
           {
             "name": "fields",
@@ -876,12 +876,12 @@
                 "schema": {
                   "oneOf": [
                     {
-                      "$ref": "#/components/schemas/GetManyGameVersionEntityResponseDto"
+                      "$ref": "#/components/schemas/GetManyProjectVersionEntityResponseDto"
                     },
                     {
                       "type": "array",
                       "items": {
-                        "$ref": "#/components/schemas/GameVersionEntity"
+                        "$ref": "#/components/schemas/ProjectVersionEntity"
                       }
                     }
                   ]
@@ -905,8 +905,8 @@
     },
     "/game-version/{id}": {
       "delete": {
-        "operationId": "deleteOneBaseGameVersionControllerGameVersionEntity",
-        "summary": "Delete a single GameVersionEntity",
+        "operationId": "deleteOneBaseGameVersionControllerProjectVersionEntity",
+        "summary": "Delete a single ProjectVersionEntity",
         "parameters": [
           {
             "name": "id",
@@ -935,8 +935,8 @@
         ]
       },
       "get": {
-        "operationId": "getOneBaseGameVersionControllerGameVersionEntity",
-        "summary": "Retrieve a single GameVersionEntity",
+        "operationId": "getOneBaseGameVersionControllerProjectVersionEntity",
+        "summary": "Retrieve a single ProjectVersionEntity",
         "parameters": [
           {
             "name": "id",
@@ -992,7 +992,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/GameVersionEntity"
+                  "$ref": "#/components/schemas/ProjectVersionEntity"
                 }
               }
             }
@@ -1944,13 +1944,13 @@
           "signature"
         ]
       },
-      "GetManyGameEntityResponseDto": {
+      "GetManyProjectEntityResponseDto": {
         "type": "object",
         "properties": {
           "data": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/GameEntity"
+              "$ref": "#/components/schemas/ProjectEntity"
             }
           },
           "count": {
@@ -1974,7 +1974,7 @@
           "pageCount"
         ]
       },
-      "GameTestFeedbackQuestion": {
+      "ProjectTestFeedbackQuestion": {
         "type": "object",
         "properties": {
           "type": {
@@ -2000,7 +2000,7 @@
           "isRequired"
         ]
       },
-      "GameTestFeedbackQuestionCheckbox": {
+      "ProjectTestFeedbackQuestionCheckbox": {
         "type": "object",
         "properties": {
           "type": {
@@ -2033,7 +2033,7 @@
           "options"
         ]
       },
-      "GameTestFeedbackQuestionDropdown": {
+      "ProjectTestFeedbackQuestionDropdown": {
         "type": "object",
         "properties": {
           "type": {
@@ -2066,7 +2066,7 @@
           "options"
         ]
       },
-      "GameTestFeedbackQuestionLinearScale": {
+      "ProjectTestFeedbackQuestionLinearScale": {
         "type": "object",
         "properties": {
           "type": {
@@ -2104,7 +2104,7 @@
           "steps"
         ]
       },
-      "GameTestFeedbackQuestionShortAnswer": {
+      "ProjectTestFeedbackQuestionShortAnswer": {
         "type": "object",
         "properties": {
           "type": {
@@ -2138,7 +2138,7 @@
           "maximumCharacters"
         ]
       },
-      "GameTestFeedbackQuestionParagraph": {
+      "ProjectTestFeedbackQuestionParagraph": {
         "type": "object",
         "properties": {
           "type": {
@@ -2180,13 +2180,13 @@
           "maximumLines"
         ]
       },
-      "GetManyGameVersionEntityResponseDto": {
+      "GetManyProjectVersionEntityResponseDto": {
         "type": "object",
         "properties": {
           "data": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/GameVersionEntity"
+              "$ref": "#/components/schemas/ProjectVersionEntity"
             }
           },
           "count": {
@@ -2210,7 +2210,7 @@
           "pageCount"
         ]
       },
-      "GameFeedbackResponseEntity": {
+      "ProjectFeedbackResponseEntity": {
         "type": "object",
         "properties": {
           "id": {
@@ -2226,7 +2226,7 @@
             "type": "string"
           },
           "version": {
-            "$ref": "#/components/schemas/GameVersionEntity"
+            "$ref": "#/components/schemas/ProjectVersionEntity"
           },
           "user": {
             "$ref": "#/components/schemas/UserEntity"
@@ -2247,7 +2247,7 @@
           "responses"
         ]
       },
-      "GameVersionEntity": {
+      "ProjectVersionEntity": {
         "type": "object",
         "properties": {
           "id": {
@@ -2276,22 +2276,22 @@
             "items": {
               "oneOf": [
                 {
-                  "$ref": "#/components/schemas/GameTestFeedbackQuestion"
+                  "$ref": "#/components/schemas/ProjectTestFeedbackQuestion"
                 },
                 {
-                  "$ref": "#/components/schemas/GameTestFeedbackQuestionCheckbox"
+                  "$ref": "#/components/schemas/ProjectTestFeedbackQuestionCheckbox"
                 },
                 {
-                  "$ref": "#/components/schemas/GameTestFeedbackQuestionDropdown"
+                  "$ref": "#/components/schemas/ProjectTestFeedbackQuestionDropdown"
                 },
                 {
-                  "$ref": "#/components/schemas/GameTestFeedbackQuestionLinearScale"
+                  "$ref": "#/components/schemas/ProjectTestFeedbackQuestionLinearScale"
                 },
                 {
-                  "$ref": "#/components/schemas/GameTestFeedbackQuestionShortAnswer"
+                  "$ref": "#/components/schemas/ProjectTestFeedbackQuestionShortAnswer"
                 },
                 {
-                  "$ref": "#/components/schemas/GameTestFeedbackQuestionParagraph"
+                  "$ref": "#/components/schemas/ProjectTestFeedbackQuestionParagraph"
                 }
               ]
             }
@@ -2300,13 +2300,13 @@
             "format": "date-time",
             "type": "string"
           },
-          "game": {
-            "$ref": "#/components/schemas/GameEntity"
+          "project": {
+            "$ref": "#/components/schemas/ProjectEntity"
           },
           "responses": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/GameFeedbackResponseEntity"
+              "$ref": "#/components/schemas/ProjectFeedbackResponseEntity"
             }
           }
         },
@@ -2319,11 +2319,11 @@
           "notes_url",
           "feedback_form",
           "feedback_deadline",
-          "game",
+          "project",
           "responses"
         ]
       },
-      "GameEntity": {
+      "ProjectEntity": {
         "type": "object",
         "properties": {
           "id": {
@@ -2376,7 +2376,7 @@
           "versions": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/GameVersionEntity"
+              "$ref": "#/components/schemas/ProjectVersionEntity"
             }
           }
         },

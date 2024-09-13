@@ -14,7 +14,7 @@ import {
   ParsedBody,
   ParsedRequest,
 } from '@dataui/crud';
-import { GameVersionEntity } from './entities/game-version.entity';
+import { ProjectVersionEntity } from './entities/project-version.entity';
 import { GameVersionService } from './game-version.service';
 import { AuthenticatedRoute } from '../auth/auth.enum';
 import { GameService } from './game.service';
@@ -25,7 +25,7 @@ import { PartialWithoutFields } from './interceptors/ownership-empty-interceptor
 
 @Crud({
   model: {
-    type: GameVersionEntity,
+    type: ProjectVersionEntity,
   },
   params: {
     id: {
@@ -52,7 +52,7 @@ import { PartialWithoutFields } from './interceptors/ownership-empty-interceptor
 @Controller('game-version')
 @ApiTags('game-version')
 export class GameVersionController
-  implements CrudController<GameVersionEntity>
+  implements CrudController<ProjectVersionEntity>
 {
   private readonly logger = new Logger(GameVersionController.name);
 
@@ -61,7 +61,7 @@ export class GameVersionController
     private gameService: GameService,
   ) {}
 
-  get base(): CrudController<GameVersionEntity> {
+  get base(): CrudController<ProjectVersionEntity> {
     return this;
   }
 
@@ -69,9 +69,9 @@ export class GameVersionController
   @Auth(AuthenticatedRoute)
   async createOne(
     @ParsedRequest() req: CrudRequest,
-    @ParsedBody() parsedBody: GameVersionEntity,
+    @ParsedBody() parsedBody: ProjectVersionEntity,
     @Body(
-      new ExcludeFieldsPipe<GameVersionEntity>([
+      new ExcludeFieldsPipe<ProjectVersionEntity>([
         'createdAt',
         'updatedAt',
         'id',
@@ -79,17 +79,17 @@ export class GameVersionController
       ]),
     )
     dto: PartialWithoutFields<
-      GameVersionEntity,
+      ProjectVersionEntity,
       'createdAt' | 'updatedAt' | 'id' | 'responses'
     >,
     @AuthUser() user: UserEntity,
-  ): Promise<GameVersionEntity> {
-    if (!dto.game || !dto.game.id) {
+  ): Promise<ProjectVersionEntity> {
+    if (!dto.project || !dto.project.id) {
       throw new UnauthorizedException('game.id field is required');
     }
     // todo: move this to a decorator
-    if (await this.gameService.UserCanEdit(user.id, dto.game.id))
-      return this.base.createOneBase(req, <GameVersionEntity>dto);
+    if (await this.gameService.UserCanEdit(user.id, dto.project.id))
+      return this.base.createOneBase(req, <ProjectVersionEntity>dto);
     else
       throw new UnauthorizedException(
         'User does not have permission to edit this game',
@@ -100,15 +100,15 @@ export class GameVersionController
   @Auth(AuthenticatedRoute)
   async deleteOne(
     @ParsedRequest() req: CrudRequest,
-    @ParsedBody() dto: GameVersionEntity,
+    @ParsedBody() dto: ProjectVersionEntity,
     @AuthUser() user: UserEntity,
-  ): Promise<void | GameVersionEntity> {
-    if (!dto.game || !dto.game.id) {
+  ): Promise<void | ProjectVersionEntity> {
+    if (!dto.project || !dto.project.id) {
       throw new UnauthorizedException('game.id field is required');
     }
 
     // todo: move this to a decorator
-    if (await this.gameService.UserCanEdit(user.id, dto.game.id))
+    if (await this.gameService.UserCanEdit(user.id, dto.project.id))
       return this.base.deleteOneBase(req);
     else
       throw new UnauthorizedException(
