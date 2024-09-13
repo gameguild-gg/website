@@ -1,14 +1,12 @@
-import { ReactNode } from 'react';
+import {PropsWithChildren} from 'react';
 import '@/styles/globals.css';
-import { redirect } from 'next/navigation';
-import { auth } from '@/auth';
+import {redirect} from 'next/navigation';
+import {auth} from '@/auth';
 
-type Props = {
-  children: ReactNode;
-};
 
-export default async function Layout({ children }: Props) {
+export default async function Layout({children}: PropsWithChildren) {
   const session = await auth();
+
   if (!session) {
     redirect('/connect');
   }
