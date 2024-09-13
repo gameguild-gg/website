@@ -36,28 +36,13 @@ export const authConfig = {
         // Return true to allowing user sign-in with the Google OAuth Credential.
         return true;
       } else if (account?.provider === 'web-3') {
-        if (!credentials) return false;
-        const response =
-          await authApi.authControllerValidateWeb3SignInChallenge({
-            signature: credentials.signature as string,
-            address: credentials.address as string,
-          });
-        if (!(response.status === 200 || response.status === 201)) return false;
-        user.id = response.data.user.id;
-        user.email = response.data.user.email;
-        user.name = response.data.user.username;
-        user.image = response.data.user.profile.picture;
-        user.wallet = response.data.user.walletAddress;
-        user.accessToken = response.data.accessToken;
-        user.refreshToken = response.data.refreshToken;
-
-        return true;
+        return Boolean(user.wallet && user.accessToken && user.refreshToken);
       }
       return false;
     },
   },
   pages: {
-    signIn: '/sign-in',
+    signIn: '/connect',
   },
   providers: [
     // todo: implement refresh token

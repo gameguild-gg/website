@@ -1,5 +1,4 @@
 'use client';
-import MetamaskSignIn from '@/components/others/web3/metamask';
 import { useRouter } from 'next/navigation';
 import { message, notification, NotificationArgsProps } from 'antd';
 import React from 'react';

@@ -6,6 +6,7 @@ import { useCallback, useEffect } from 'react';
 import { signIn } from '@/auth';
 import { authApi } from '@/lib/apinest';
 import { signInWithWeb3 } from '@/lib/auth/sign-in-with-web3';
+import { getSession } from 'next-auth/react';
 
 export function useSignInWithWeb3() {
   const { state, dispatch } = useWeb3();
@@ -36,6 +37,13 @@ export function useSignInWithWeb3() {
         ]);
 
         await signInWithWeb3(signature, state.accountAddress);
+
+        // todo: move this elsewhere!!
+        // the await on the signInAndRedirectIfSucceed on metamask-sign-in-button.tsx is not working
+        const session = await getSession();
+        if (session) {
+          window.location.replace('/feed');
+        }
       }
     };
 
