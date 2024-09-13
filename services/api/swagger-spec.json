@@ -1974,7 +1974,7 @@
           "pageCount"
         ]
       },
-      "GameTestFeedbackQuestion": {
+      "ProjectTestFeedbackQuestion": {
         "type": "object",
         "properties": {
           "type": {
@@ -2000,7 +2000,7 @@
           "isRequired"
         ]
       },
-      "GameTestFeedbackQuestionCheckbox": {
+      "ProjectTestFeedbackQuestionCheckbox": {
         "type": "object",
         "properties": {
           "type": {
@@ -2033,7 +2033,7 @@
           "options"
         ]
       },
-      "GameTestFeedbackQuestionDropdown": {
+      "ProjectTestFeedbackQuestionDropdown": {
         "type": "object",
         "properties": {
           "type": {
@@ -2066,7 +2066,7 @@
           "options"
         ]
       },
-      "GameTestFeedbackQuestionLinearScale": {
+      "ProjectTestFeedbackQuestionLinearScale": {
         "type": "object",
         "properties": {
           "type": {
@@ -2104,7 +2104,7 @@
           "steps"
         ]
       },
-      "GameTestFeedbackQuestionShortAnswer": {
+      "ProjectTestFeedbackQuestionShortAnswer": {
         "type": "object",
         "properties": {
           "type": {
@@ -2138,7 +2138,7 @@
           "maximumCharacters"
         ]
       },
-      "GameTestFeedbackQuestionParagraph": {
+      "ProjectTestFeedbackQuestionParagraph": {
         "type": "object",
         "properties": {
           "type": {
@@ -2276,22 +2276,22 @@
             "items": {
               "oneOf": [
                 {
-                  "$ref": "#/components/schemas/GameTestFeedbackQuestion"
+                  "$ref": "#/components/schemas/ProjectTestFeedbackQuestion"
                 },
                 {
-                  "$ref": "#/components/schemas/GameTestFeedbackQuestionCheckbox"
+                  "$ref": "#/components/schemas/ProjectTestFeedbackQuestionCheckbox"
                 },
                 {
-                  "$ref": "#/components/schemas/GameTestFeedbackQuestionDropdown"
+                  "$ref": "#/components/schemas/ProjectTestFeedbackQuestionDropdown"
                 },
                 {
-                  "$ref": "#/components/schemas/GameTestFeedbackQuestionLinearScale"
+                  "$ref": "#/components/schemas/ProjectTestFeedbackQuestionLinearScale"
                 },
                 {
-                  "$ref": "#/components/schemas/GameTestFeedbackQuestionShortAnswer"
+                  "$ref": "#/components/schemas/ProjectTestFeedbackQuestionShortAnswer"
                 },
                 {
-                  "$ref": "#/components/schemas/GameTestFeedbackQuestionParagraph"
+                  "$ref": "#/components/schemas/ProjectTestFeedbackQuestionParagraph"
                 }
               ]
             }
@@ -2300,7 +2300,7 @@
             "format": "date-time",
             "type": "string"
           },
-          "game": {
+          "project": {
             "$ref": "#/components/schemas/ProjectEntity"
           },
           "responses": {
@@ -2319,7 +2319,7 @@
           "notes_url",
           "feedback_form",
           "feedback_deadline",
-          "game",
+          "project",
           "responses"
         ]
       },

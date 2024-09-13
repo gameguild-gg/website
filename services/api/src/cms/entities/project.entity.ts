@@ -14,7 +14,7 @@ export class ProjectEntity extends ContentBase {
   })
   @Type(() => ProjectVersionEntity)
   // relation to ProjectVersionEntity
-  @OneToMany(() => ProjectVersionEntity, (version) => version.game)
+  @OneToMany(() => ProjectVersionEntity, (version) => version.project)
   versions: ProjectVersionEntity[];
 
   constructor(partial?: Partial<ProjectEntity>) {

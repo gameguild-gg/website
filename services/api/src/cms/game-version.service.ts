@@ -27,16 +27,16 @@ export class GameVersionService extends TypeOrmCrudService<ProjectVersionEntity>
     body: ProjectVersionEntity,
     user: UserEntity,
   ): Promise<ProjectVersionEntity> {
-    if (!body.game || !body.game.id) {
+    if (!body.project || !body.project.id) {
       throw new NotFoundException('{ game: { id: string } } field is required');
     }
     // check if user is owner or editor of the game
     const game = await this.gameRepository.findOne({
       where: [
         // is owner
-        { id: body.game.id, owner: user },
+        { id: body.project.id, owner: user },
         // or is one of the editors
-        { id: body.game.id, editors: ArrayContains([user.id]) },
+        { id: body.project.id, editors: ArrayContains([user.id]) },
       ],
     });
     // check if the user can create a version of the game
@@ -47,7 +47,7 @@ export class GameVersionService extends TypeOrmCrudService<ProjectVersionEntity>
     }
     // create the version
     const version = this.gameVersionRepository.create(body);
-    version.game = game;
+    version.project = game;
     return this.gameVersionRepository.save(version);
   }
 }

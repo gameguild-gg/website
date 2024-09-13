@@ -15,24 +15,24 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import {
-  GameTestFeedbackQuestion,
-  GameTestFeedbackQuestionCheckbox,
-  GameTestFeedbackQuestionDropdown,
-  GameTestFeedbackQuestionLinearScale,
-  GameTestFeedbackQuestionParagraph,
-  GameTestFeedbackQuestionShortAnswer,
+  ProjectTestFeedbackQuestion,
+  ProjectTestFeedbackQuestionCheckbox,
+  ProjectTestFeedbackQuestionDropdown,
+  ProjectTestFeedbackQuestionLinearScale,
+  ProjectTestFeedbackQuestionParagraph,
+  ProjectTestFeedbackQuestionShortAnswer,
 } from './project-test-feedback-form';
 
 @ApiExtraModels(
-  GameTestFeedbackQuestion,
-  GameTestFeedbackQuestionCheckbox,
-  GameTestFeedbackQuestionDropdown,
-  GameTestFeedbackQuestionLinearScale,
-  GameTestFeedbackQuestionShortAnswer,
-  GameTestFeedbackQuestionParagraph,
+  ProjectTestFeedbackQuestion,
+  ProjectTestFeedbackQuestionCheckbox,
+  ProjectTestFeedbackQuestionDropdown,
+  ProjectTestFeedbackQuestionLinearScale,
+  ProjectTestFeedbackQuestionShortAnswer,
+  ProjectTestFeedbackQuestionParagraph,
 )
 @Entity('project_version')
-@Unique(['version', 'game'])
+@Unique(['version', 'project'])
 export class ProjectVersionEntity extends EntityBase {
   @ApiProperty()
   @IsString({ message: 'Version must be a string' })
@@ -64,25 +64,25 @@ export class ProjectVersionEntity extends EntityBase {
   @ApiProperty({
     // error: Could not resolve reference: Could not resolve pointer: /components/schemas/GameTestFeedbackQuestion does not exist in document
     oneOf: [
-      { $ref: getSchemaPath(GameTestFeedbackQuestion) },
-      { $ref: getSchemaPath(GameTestFeedbackQuestionCheckbox) },
-      { $ref: getSchemaPath(GameTestFeedbackQuestionDropdown) },
-      { $ref: getSchemaPath(GameTestFeedbackQuestionLinearScale) },
-      { $ref: getSchemaPath(GameTestFeedbackQuestionShortAnswer) },
-      { $ref: getSchemaPath(GameTestFeedbackQuestionParagraph) },
+      { $ref: getSchemaPath(ProjectTestFeedbackQuestion) },
+      { $ref: getSchemaPath(ProjectTestFeedbackQuestionCheckbox) },
+      { $ref: getSchemaPath(ProjectTestFeedbackQuestionDropdown) },
+      { $ref: getSchemaPath(ProjectTestFeedbackQuestionLinearScale) },
+      { $ref: getSchemaPath(ProjectTestFeedbackQuestionShortAnswer) },
+      { $ref: getSchemaPath(ProjectTestFeedbackQuestionParagraph) },
     ],
   })
-  @Type(() => GameTestFeedbackQuestion)
+  @Type(() => ProjectTestFeedbackQuestion)
   @IsNotEmpty({ message: 'Feedback form is required' })
   @ValidateNested()
   @Column({ type: 'jsonb', nullable: false })
   feedback_form: (
-    | GameTestFeedbackQuestion
-    | GameTestFeedbackQuestionCheckbox
-    | GameTestFeedbackQuestionDropdown
-    | GameTestFeedbackQuestionLinearScale
-    | GameTestFeedbackQuestionShortAnswer
-    | GameTestFeedbackQuestionParagraph
+    | ProjectTestFeedbackQuestion
+    | ProjectTestFeedbackQuestionCheckbox
+    | ProjectTestFeedbackQuestionDropdown
+    | ProjectTestFeedbackQuestionLinearScale
+    | ProjectTestFeedbackQuestionShortAnswer
+    | ProjectTestFeedbackQuestionParagraph
   )[];
 
   // deadline
@@ -94,10 +94,10 @@ export class ProjectVersionEntity extends EntityBase {
   feedback_deadline: Date;
 
   @ApiProperty({ type: () => ProjectEntity })
-  @ManyToOne(() => ProjectEntity, (game) => game.versions)
+  @ManyToOne(() => ProjectEntity, (project) => project.versions)
   @ValidateNested()
   @Type(() => ProjectEntity)
-  game: ProjectEntity;
+  project: ProjectEntity;
 
   // relation to feedback responses
   @ApiProperty({ type: ProjectFeedbackResponseEntity, isArray: true })

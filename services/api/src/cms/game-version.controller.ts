@@ -84,11 +84,11 @@ export class GameVersionController
     >,
     @AuthUser() user: UserEntity,
   ): Promise<ProjectVersionEntity> {
-    if (!dto.game || !dto.game.id) {
+    if (!dto.project || !dto.project.id) {
       throw new UnauthorizedException('game.id field is required');
     }
     // todo: move this to a decorator
-    if (await this.gameService.UserCanEdit(user.id, dto.game.id))
+    if (await this.gameService.UserCanEdit(user.id, dto.project.id))
       return this.base.createOneBase(req, <ProjectVersionEntity>dto);
     else
       throw new UnauthorizedException(
@@ -103,12 +103,12 @@ export class GameVersionController
     @ParsedBody() dto: ProjectVersionEntity,
     @AuthUser() user: UserEntity,
   ): Promise<void | ProjectVersionEntity> {
-    if (!dto.game || !dto.game.id) {
+    if (!dto.project || !dto.project.id) {
       throw new UnauthorizedException('game.id field is required');
     }
 
     // todo: move this to a decorator
-    if (await this.gameService.UserCanEdit(user.id, dto.game.id))
+    if (await this.gameService.UserCanEdit(user.id, dto.project.id))
       return this.base.deleteOneBase(req);
     else
       throw new UnauthorizedException(
