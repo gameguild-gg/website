@@ -15,7 +15,7 @@ export default function CreateProjectForm() {
   React.useEffect(() => {
     if (state.project) {
       // Redirecionar para a página do projeto recém-criado
-      router.push(`/projects/${state.project.id}`);
+      router.push(`/projects/${state.project.slug}`);
     }
   }, [state.project, router]);
 

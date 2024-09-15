@@ -10,7 +10,7 @@ export class FetchProjectGateway implements FetchProject {
   }
 
   public fetchProject(slug: string): Promise<Readonly<Project> | null> {
-    // const game = GAMES.find((game) => game.slug === slug);
+
 
     return Promise.resolve(null);
   }

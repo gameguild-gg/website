@@ -3,6 +3,7 @@
 import {httpClientFactory} from '@/lib/core/http';
 import {CreateProjectGateway} from "@/lib/project/create-project.gateway";
 import {CreateProjectFormState} from "@/lib/project/create-project-form-state";
+import {VisibilityEnum} from "@/lib/project/project";
 
 
 export async function createProject(previousState: CreateProjectFormState, formData: FormData): Promise<CreateProjectFormState> {
@@ -31,6 +32,7 @@ export async function createProject(previousState: CreateProjectFormState, formD
     slug,
     summary,
     thumbnail,
+    visibility: VisibilityEnum.DRAFT,
     body,
   };
 
