@@ -289,9 +289,9 @@
         ]
       }
     },
-    "/game": {
+    "/project": {
       "post": {
-        "operationId": "createOneBaseGameControllerProjectEntity",
+        "operationId": "createOneBaseProjectControllerProjectEntity",
         "summary": "Create a single ProjectEntity",
         "parameters": [],
         "responses": {
@@ -310,7 +310,7 @@
           }
         },
         "tags": [
-          "game"
+          "project"
         ],
         "security": [
           {
@@ -319,7 +319,7 @@
         ]
       },
       "get": {
-        "operationId": "getManyBaseGameControllerProjectEntity",
+        "operationId": "getManyBaseProjectControllerProjectEntity",
         "summary": "Retrieve multiple ProjectEntities",
         "parameters": [
           {
@@ -466,7 +466,7 @@
           }
         },
         "tags": [
-          "game"
+          "project"
         ],
         "security": [
           {
@@ -475,9 +475,9 @@
         ]
       }
     },
-    "/game/{id}": {
+    "/project/{id}": {
       "patch": {
-        "operationId": "updateOneBaseGameControllerProjectEntity",
+        "operationId": "updateOneBaseProjectControllerProjectEntity",
         "summary": "Update a single ProjectEntity",
         "parameters": [
           {
@@ -505,7 +505,7 @@
           }
         },
         "tags": [
-          "game"
+          "project"
         ],
         "security": [
           {
@@ -514,7 +514,7 @@
         ]
       },
       "get": {
-        "operationId": "getOneBaseGameControllerProjectEntity",
+        "operationId": "getOneBaseProjectControllerProjectEntity",
         "summary": "Retrieve a single ProjectEntity",
         "parameters": [
           {
@@ -581,7 +581,7 @@
           }
         },
         "tags": [
-          "game"
+          "project"
         ],
         "security": [
           {
@@ -590,7 +590,7 @@
         ]
       },
       "delete": {
-        "operationId": "deleteOneBaseGameControllerProjectEntity",
+        "operationId": "deleteOneBaseProjectControllerProjectEntity",
         "summary": "Delete a single ProjectEntity",
         "parameters": [
           {
@@ -611,7 +611,7 @@
           }
         },
         "tags": [
-          "game"
+          "project"
         ],
         "security": [
           {
@@ -620,9 +620,9 @@
         ]
       }
     },
-    "/game/transfer-ownership": {
+    "/project/transfer-ownership": {
       "post": {
-        "operationId": "GameController_switchOwner",
+        "operationId": "ProjectController_switchOwner",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -640,7 +640,7 @@
           }
         },
         "tags": [
-          "game"
+          "project"
         ],
         "security": [
           {
@@ -649,9 +649,9 @@
         ]
       }
     },
-    "/game/add-editor": {
+    "/project/add-editor": {
       "post": {
-        "operationId": "GameController_addEditor",
+        "operationId": "ProjectController_addEditor",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -669,7 +669,7 @@
           }
         },
         "tags": [
-          "game"
+          "project"
         ],
         "security": [
           {
@@ -678,9 +678,9 @@
         ]
       }
     },
-    "/game/remove-editor": {
+    "/project/remove-editor": {
       "post": {
-        "operationId": "GameController_removeEditor",
+        "operationId": "ProjectController_removeEditor",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -698,7 +698,7 @@
           }
         },
         "tags": [
-          "game"
+          "project"
         ],
         "security": [
           {
@@ -707,9 +707,9 @@
         ]
       }
     },
-    "/game-version": {
+    "/project-version": {
       "post": {
-        "operationId": "createOneBaseGameVersionControllerProjectVersionEntity",
+        "operationId": "createOneBaseProjectVersionControllerProjectVersionEntity",
         "summary": "Create a single ProjectVersionEntity",
         "parameters": [],
         "requestBody": {
@@ -738,7 +738,7 @@
           }
         },
         "tags": [
-          "game-version"
+          "project-version"
         ],
         "security": [
           {
@@ -747,7 +747,7 @@
         ]
       },
       "get": {
-        "operationId": "getManyBaseGameVersionControllerProjectVersionEntity",
+        "operationId": "getManyBaseProjectVersionControllerProjectVersionEntity",
         "summary": "Retrieve multiple ProjectVersionEntities",
         "parameters": [
           {
@@ -894,7 +894,7 @@
           }
         },
         "tags": [
-          "game-version"
+          "project-version"
         ],
         "security": [
           {
@@ -903,9 +903,9 @@
         ]
       }
     },
-    "/game-version/{id}": {
+    "/project-version/{id}": {
       "delete": {
-        "operationId": "deleteOneBaseGameVersionControllerProjectVersionEntity",
+        "operationId": "deleteOneBaseProjectVersionControllerProjectVersionEntity",
         "summary": "Delete a single ProjectVersionEntity",
         "parameters": [
           {
@@ -926,7 +926,7 @@
           }
         },
         "tags": [
-          "game-version"
+          "project-version"
         ],
         "security": [
           {
@@ -935,7 +935,7 @@
         ]
       },
       "get": {
-        "operationId": "getOneBaseGameVersionControllerProjectVersionEntity",
+        "operationId": "getOneBaseProjectVersionControllerProjectVersionEntity",
         "summary": "Retrieve a single ProjectVersionEntity",
         "parameters": [
           {
@@ -1002,7 +1002,7 @@
           }
         },
         "tags": [
-          "game-version"
+          "project-version"
         ],
         "security": [
           {
