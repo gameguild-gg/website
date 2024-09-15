@@ -5,8 +5,8 @@ import { Repository } from 'typeorm';
 import { WithRolesService } from './with-roles.service';
 
 @Injectable()
-export class GameService extends WithRolesService<ProjectEntity> {
-  private readonly logger = new Logger(GameService.name);
+export class ProjectService extends WithRolesService<ProjectEntity> {
+  private readonly logger = new Logger(ProjectService.name);
   constructor(
     @InjectRepository(ProjectEntity)
     private readonly gameRepository: Repository<ProjectEntity>,

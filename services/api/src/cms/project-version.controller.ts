@@ -15,9 +15,9 @@ import {
   ParsedRequest,
 } from '@dataui/crud';
 import { ProjectVersionEntity } from './entities/project-version.entity';
-import { GameVersionService } from './game-version.service';
+import { ProjectVersionService } from './project-version.service';
 import { AuthenticatedRoute } from '../auth/auth.enum';
-import { GameService } from './game.service';
+import { ProjectService } from './project.service';
 import { UserEntity } from '../user/entities';
 import { AuthUser } from '../auth';
 import { ExcludeFieldsPipe } from './pipes/exclude-fields.pipe';
@@ -49,16 +49,16 @@ import { PartialWithoutFields } from './interceptors/ownership-empty-interceptor
     },
   },
 })
-@Controller('game-version')
-@ApiTags('game-version')
-export class GameVersionController
+@Controller('project-version')
+@ApiTags('project-version')
+export class ProjectVersionController
   implements CrudController<ProjectVersionEntity>
 {
-  private readonly logger = new Logger(GameVersionController.name);
+  private readonly logger = new Logger(ProjectVersionController.name);
 
   constructor(
-    public readonly service: GameVersionService,
-    private gameService: GameService,
+    public readonly service: ProjectVersionService,
+    private gameService: ProjectService,
   ) {}
 
   get base(): CrudController<ProjectVersionEntity> {

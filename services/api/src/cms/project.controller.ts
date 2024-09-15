@@ -1,6 +1,6 @@
 import { Body, Controller, Logger } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { GameService } from './game.service';
+import { ProjectService } from './project.service';
 import { Auth } from '../auth/decorators/http.decorator';
 import { ProjectEntity } from './entities/project.entity';
 import {
@@ -59,15 +59,15 @@ import { WithRolesController } from './with-roles.controller';
     },
   },
 })
-@Controller('game')
-@ApiTags('game')
-export class GameController
+@Controller('project')
+@ApiTags('project')
+export class ProjectController
   extends WithRolesController<ProjectEntity>
   implements CrudController<ProjectEntity>
 {
-  private readonly logger = new Logger(GameController.name);
+  private readonly logger = new Logger(ProjectController.name);
 
-  constructor(public readonly service: GameService) {
+  constructor(public readonly service: ProjectService) {
     super(service);
   }
 
