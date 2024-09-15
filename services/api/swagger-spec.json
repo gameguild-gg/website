@@ -294,6 +294,16 @@
         "operationId": "createOneBaseProjectControllerProjectEntity",
         "summary": "Create a single ProjectEntity",
         "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProjectEntity"
+              }
+            }
+          }
+        },
         "responses": {
           "201": {
             "description": "Get create one base response",
@@ -489,6 +499,16 @@
             }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProjectEntity"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Response",
