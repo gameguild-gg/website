@@ -12,6 +12,7 @@ import { useSession } from 'next-auth/react';
 import MetaMaskSignInButton from '@/components/others/web3/meta-mask-sign-in-button';
 import { authApi } from '@/lib/apinest';
 import { OkDto } from '@game-guild/apiclient';
+import TorusSignInButton from '@/components/others/web3/torus-sign-in-button';
 
 const initialState: SignInFormState = {};
 
@@ -76,6 +77,7 @@ export default function ConnectForm() {
         Google
       </Button>
       <MetaMaskSignInButton />
+      <TorusSignInButton />
       <div className="text-center text-sm text-muted-foreground">or</div>
       <p className="text-balance text-muted-foreground">
         Send a magic link to your email

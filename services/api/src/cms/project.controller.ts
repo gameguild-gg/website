@@ -1,5 +1,5 @@
 import { Body, Controller, Logger } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiBody, ApiTags } from '@nestjs/swagger';
 import { ProjectService } from './project.service';
 import { Auth } from '../auth/decorators/http.decorator';
 import { ProjectEntity } from './entities/project.entity';
@@ -78,15 +78,22 @@ export class ProjectController
   // we need to override to guarantee the user is being injected as owner and editor
   @Override()
   @Auth(AuthenticatedRoute)
-  createOne(
+  @ApiBody({ type: ProjectEntity })
+  async createOne(
     @ParsedRequest() crudReq: CrudRequest,
+    // todo: remove id and other unwanted fields
     @BodyOwnerInject() body: ProjectEntity,
   ) {
-    return this.base.createOneBase(crudReq, body);
+    const res = await this.base.createOneBase(crudReq, body);
+    return this.service.findOne({
+      where: { id: res.id },
+      relations: { owner: true, editors: true },
+    });
   }
 
   @Override()
   @Auth<ProjectEntity>(ManagerRoute<ProjectEntity>)
+  @ApiBody({ type: ProjectEntity })
   async updateOne(
     @ParsedRequest() req: CrudRequest,
     @Body(
