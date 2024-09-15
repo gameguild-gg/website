@@ -9,9 +9,22 @@ export class CreateProjectGateway implements CreateProject {
   constructor(readonly httpClient: HttpClient) {
   }
 
-  public createProject(project: Project): Promise<Readonly<Project> | null> {
-    // const game = GAMES.find((game) => game.slug === slug);
-
-    return Promise.resolve(null);
+  public async createProject(project: Project): Promise<Readonly<Project> | null> {
+    try {
+      return this.httpClient.request({
+        url: 'http://localhost:4000/game',
+        method: 'POST',
+        body: project,
+      }).then(response => {
+        if (response.statusCode === 201) {
+          return response.body;
+        } else {
+          console.log(response);
+          throw new Error('Failed to create project');
+        }
+      });
+    } catch (error) {
+      throw error;
+    }
   }
 }

@@ -77,7 +77,7 @@
     }
 
     body {
-        @apply flex;
+            @apply flex;
         @apply bg-background text-foreground;
     }
 

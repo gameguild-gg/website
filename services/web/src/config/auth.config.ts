@@ -1,13 +1,12 @@
-import type { NextAuthConfig, User } from 'next-auth';
+import type {NextAuthConfig, User} from 'next-auth';
 import Google from 'next-auth/providers/google';
 import Credentials from 'next-auth/providers/credentials';
-import { environment } from '@/config/environment';
-import { authApi } from '@/lib/apinest';
-import { sendVerificationRequest } from '@/lib/auth/authSendRequest';
+import {environment} from '@/config/environment';
+import {authApi} from '@/lib/apinest';
 
 export const authConfig = {
   callbacks: {
-    signIn: async ({ user, account, profile, email, credentials }) => {
+    signIn: async ({user, account, profile, email, credentials}) => {
       if (account?.provider === 'google') {
         // TODO:
         //  After signing in with Google, check if the user is in the database.
@@ -40,9 +39,17 @@ export const authConfig = {
       }
       return false;
     },
+    jwt: async ({token, user, trigger, session, account}) => {
+      return {...token, ...user};
+    },
+    session: async ({session, token, user}) => {
+      session.user = token;
+      return session;
+    },
   },
   pages: {
     signIn: '/connect',
+
   },
   providers: [
     // todo: implement refresh token
@@ -119,3 +126,15 @@ export const authConfig = {
     strategy: 'jwt',
   },
 } satisfies NextAuthConfig;
+
+declare module "next-auth" {
+  interface Session {
+    accessToken?: string
+  }
+}
+
+declare module "next-auth" {
+  interface JWT {
+    accessToken?: string
+  }
+}

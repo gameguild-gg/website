@@ -14,7 +14,6 @@
     "start:tsnode": "ts-node src/main.ts",
     "start:dev": "nest start --watch",
     "dev": "nest start --watch",
-    "prestart:dev": "npm run openapigenerator",
     "syncDtos": "npm run --prefix=../../ syncApi",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/src/main",

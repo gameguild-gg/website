@@ -16,7 +16,7 @@ import { OkDto } from '@game-guild/apiclient';
 const initialState: SignInFormState = {};
 
 export default function ConnectForm() {
-  const session = useSession();
+  // const session = useSession();
 
   const { toast } = useToast();
   const [sendMagicLinkClicked, setSendMagicLinkClicked] = useState(false);
