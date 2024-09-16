@@ -4,8 +4,9 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from "@/components/ui/scroll-area";
-import AnalyticsGraphs from './AnalyticsGraphs'
+import AnalyticsGraphs from './AnalyticsGraphs';
 
+// GameCard component
 const GameCard = ({ title, description }) => (
     <div className="bg-gray-800 rounded-lg overflow-hidden shadow-lg">
         <div className="h-48 bg-gray-700 flex items-center justify-center">
@@ -21,6 +22,7 @@ const GameCard = ({ title, description }) => (
     </div>
 );
 
+// GameGrid component wrapping after 3 items
 const GameGrid = ({ games }) => (
     <ScrollArea className="h-[calc(100vh-300px)]">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
@@ -31,15 +33,31 @@ const GameGrid = ({ games }) => (
     </ScrollArea>
 );
 
-export default function Page() {
-    const [activeTab, setActiveTab] = useState('Projects');
-    const [numberOfGames, setNumberOfGames] = useState(5); // Changed to 5 for demonstration
-    const [NumberOfViews, setNumberOfViews] = useState(1);
-    const [NumberOfDownloads, setNumberOfDownloads] = useState(2);
-    const [NumberOfFollowers, setNumberOfFollowers] = useState(3);
-    const [NumberOfTickets, setNumberOfTickets] = useState(999);
+// TicketBox component
+const TicketBox = ({ ticketStatus, gameName, submitter }) => (
+    <div className="bg-gray-800 rounded-lg overflow-hidden shadow-lg p-4">
+        <div className="flex justify-between items-center mb-2">
+            <h3 className="text-lg font-semibold text-white">{gameName}</h3>
+            <span className="text-xs font-semibold text-gray-300 px-2 py-1 rounded bg-gray-700">
+                {ticketStatus}
+            </span>
+        </div>
+        <p className="text-sm text-gray-400">Submitted by: {submitter}</p>
+    </div>
+);
 
-    // Sample game data
+// TicketGrid component wrapping after 6 items
+const TicketGrid = ({ tickets }) => (
+    <ScrollArea className="h-[calc(100vh-300px)]">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 p-6">
+            {tickets.map((ticket, index) => (
+                <TicketBox key={index} ticketStatus={ticket.ticketStatus} gameName={ticket.gameName} submitter={ticket.submitter} />
+            ))}
+        </div>
+    </ScrollArea>
+);
+
+export default function Page() {
     const games = [
         { title: "Game 1", description: "Description 1" },
         { title: "Game 2", description: "Description 2" },
@@ -48,16 +66,52 @@ export default function Page() {
         { title: "Game 5", description: "Description 5" },
     ];
 
+    const initialTickets = [
+        { ticketStatus: "Open", gameName: "Game 1", submitter: "User A" },
+        { ticketStatus: "Open", gameName: "Game 2", submitter: "User B" },
+        { ticketStatus: "Open", gameName: "Game 3", submitter: "User C" },
+        { ticketStatus: "Open", gameName: "Game 4", submitter: "User D" },
+        { ticketStatus: "Open", gameName: "Game 5", submitter: "User E" },
+        { ticketStatus: "Closed", gameName: "Game 6", submitter: "User F" },
+    ];
+
+    const [activeTab, setActiveTab] = useState('Projects');
+    const [numberOfGames, setNumberOfGames] = useState(games.length);
+    const [NumberOfViews, setNumberOfViews] = useState(1);
+    const [NumberOfDownloads, setNumberOfDownloads] = useState(2);
+    const [NumberOfFollowers, setNumberOfFollowers] = useState(3);
+    const [NumberOfTickets, setNumberOfTickets] = useState(999);
+    const [ticketFilter, setTicketFilter] = useState('All');
+    const [tickets, setTickets] = useState(initialTickets);
+
+    // Filter tickets based on the selected filter status
+    const filteredTickets = tickets.filter(ticket =>
+        ticketFilter === 'All' || ticket.ticketStatus === ticketFilter
+    );
+
     const renderContent = () => {
         switch (activeTab) {
             case 'Projects':
                 return <GameGrid games={games} />;
             case 'Analytics':
-                return <AnalyticsGraphs />; // Displays the AnalyticsGraphs component when "Analytics" is selected
-            case 'Earnings':
-                return <div>Earnings Content</div>;
+                return <AnalyticsGraphs />;
             case 'Submitted Tickets':
-                return <div>Submitted Tickets</div>;
+                return (
+                    <div>
+                        <div className="flex justify-end mb-4">
+                            <select
+                                className="bg-gray-800 text-white p-2 rounded"
+                                value={ticketFilter}
+                                onChange={(e) => setTicketFilter(e.target.value)}
+                            >
+                                <option value="All">All</option>
+                                <option value="Open">Open</option>
+                                <option value="Closed">Closed</option>
+                            </select>
+                        </div>
+                        <TicketGrid tickets={filteredTickets} />
+                    </div>
+                );
             case 'Videos':
                 return <div>Posts Content</div>;
             default:
@@ -94,7 +148,7 @@ export default function Page() {
                     </div>
                     <div className="border-t border-gray-700">
                         <nav className="flex">
-                            {['Projects', 'Analytics', 'Earnings', 'Submitted Tickets', 'Videos'].map((tab) => (
+                            {['Projects', 'Analytics', 'Submitted Tickets', 'Videos'].map((tab) => (
                                 <button
                                     key={tab}
                                     onClick={() => setActiveTab(tab)}
