@@ -1,12 +1,12 @@
 'use client';
 
 import React from 'react';
-import {getCookie} from 'cookies-next';
-import {useRouter} from 'next/navigation';
-import {Button, message, Table, TableColumnsType, Typography} from 'antd';
-import {RedoOutlined} from '@ant-design/icons';
+import { getCookie } from 'cookies-next';
+import { useRouter } from 'next/navigation';
+import { Button, message, Table, TableColumnsType, Typography } from 'antd';
+import { RedoOutlined } from '@ant-design/icons';
 import moment from 'moment-timezone';
-import {CompetitionRunSubmissionReportEntity} from '@game-guild/apiclient';
+import { CompetitionRunSubmissionReportEntity } from '@game-guild/apiclient';
 
 export default function TournamentPage() {
   const router = useRouter();
@@ -17,12 +17,12 @@ export default function TournamentPage() {
   const [dataFetched, setDataFetched] = React.useState(false);
 
   const fetchData = async () => {
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+    const baseURL = process.env.NEXT_PUBLIC_API_URL;
     const headers = new Headers();
     const accessToken = getCookie('access_token');
     headers.append('Authorization', `Bearer ${accessToken}`);
     const response = await fetch(
-      baseUrl + '/Competitions/Chess/LatestCompetitionReport',
+      baseURL + '/Competitions/Chess/LatestCompetitionReport',
       {
         headers: headers,
       },
@@ -76,12 +76,12 @@ export default function TournamentPage() {
   }
 
   async function triggerTournament() {
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+    const baseURL = process.env.NEXT_PUBLIC_API_URL;
     const headers = new Headers();
     const accessToken = getCookie('access_token');
     headers.append('Authorization', `Bearer ${accessToken}`);
     const response = await fetch(
-      baseUrl + '/Competitions/Chess/RunCompetition',
+      baseURL + '/Competitions/Chess/RunCompetition',
       {
         headers: headers,
       },
@@ -124,7 +124,7 @@ export default function TournamentPage() {
         often. Once each a day is fine.
       </Typography.Paragraph>
       <Button
-        icon={<RedoOutlined/>}
+        icon={<RedoOutlined />}
         type="primary"
         block
         danger
@@ -133,7 +133,7 @@ export default function TournamentPage() {
       >
         Trigger a tournament
       </Button>
-      <Table columns={columns} dataSource={data}/>
+      <Table columns={columns} dataSource={data} />
     </>
   );
 }

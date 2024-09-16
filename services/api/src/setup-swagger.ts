@@ -24,7 +24,7 @@ export function setupSwagger(app: INestApplication): void {
   fs.writeFileSync('./swagger-spec.json', JSON.stringify(document, null, 2));
 
   createClient({
-    client: '@hey-api/client-fetch',
+    client: '@hey-api/client-axios',
     input: './swagger-spec.json',
     output: '../../packages/apiclient',
   });

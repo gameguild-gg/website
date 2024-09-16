@@ -2,7 +2,7 @@ import type { NextAuthConfig, User } from 'next-auth';
 import Google from 'next-auth/providers/google';
 import Credentials from 'next-auth/providers/credentials';
 import { environment } from '@/config/environment';
-import { createClient } from '@hey-api/client-fetch';
+import { createClient } from '@hey-api/client-axios';
 import {
   authControllerSignInWithGoogle,
   authControllerValidateWeb3SignInChallenge,
@@ -22,7 +22,7 @@ export const authConfig = {
 
         if (!account?.id_token) return false;
         const client = createClient({
-          baseUrl: process.env.NEXT_PUBLIC_API_URL,
+          baseURL: process.env.NEXT_PUBLIC_API_URL,
           throwOnError: false,
         });
 
@@ -31,7 +31,7 @@ export const authConfig = {
           client: client,
         });
 
-        if (!response || !response.data || response.response.status !== 200)
+        if (!response || !response.data || response.status !== 200)
           return false;
 
         user.id = response.data.user.id;
@@ -48,18 +48,12 @@ export const authConfig = {
     jwt: async ({ token, user, trigger, session, account }) => {
       return { ...token, ...user };
     },
-    session: async ({session, token, user}) => {
-      session.user =
-        {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          image: user.image,
-          wallet: user.wallet,
-          emailVerified: null,
-          accessToken: (token.accessToken as string) ?? null,
-          refreshToken: (token.refreshToken as string) ?? null,
-        }
+    session: async ({ session, token, user }) => {
+      session = {
+        ...session,
+        user: { ...session.user, ...user },
+        ...token,
+      };
       return session;
     },
   },
@@ -104,7 +98,7 @@ export const authConfig = {
         const address: string = credentials?.address as string;
 
         const client = createClient({
-          baseUrl: process.env.NEXT_PUBLIC_API_URL,
+          baseURL: process.env.NEXT_PUBLIC_API_URL,
           throwOnError: false,
         });
 
@@ -119,8 +113,8 @@ export const authConfig = {
         if (
           !response ||
           !response.data ||
-          response.response.status < 200 ||
-          response.response.status > 299
+          response.status < 200 ||
+          response.status > 299
         )
           return null;
 
@@ -166,7 +160,7 @@ declare module 'next-auth' {
   }
 }
 
-declare module "next-auth" {
+declare module 'next-auth' {
   interface User {
     id?: string;
     name?: string | null;

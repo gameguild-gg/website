@@ -1,10 +1,14 @@
 'use client';
-import {useRouter} from 'next/navigation';
-import {message, notification, NotificationArgsProps} from 'antd';
+import { useRouter } from 'next/navigation';
+import { message, notification, NotificationArgsProps } from 'antd';
 import React from 'react';
-import {NotificationProvider} from '@/components/others/common/NotificationContext';
-import {setCookie} from 'cookies-next';
-import {LocalSignInDto, LocalSignInResponseDto, LocalSignUpDto,} from '@game-guild/apiclient';
+import { NotificationProvider } from '@/components/others/common/NotificationContext';
+import { setCookie } from 'cookies-next';
+import {
+  LocalSignInDto,
+  LocalSignInResponseDto,
+  LocalSignUpDto,
+} from '@game-guild/apiclient';
 
 enum UserExists {
   NotChecked = 'NotChecked',
@@ -51,8 +55,8 @@ function Home() {
   const onButtonClick = async () => {
     if (userExists === UserExists.NotChecked) {
       // call the api to check if user exists
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL;
-      const url = `${baseUrl}/auth/userExists/${emailOrUsername}`;
+      const baseURL = process.env.NEXT_PUBLIC_API_URL;
+      const url = `${baseURL}/auth/userExists/${emailOrUsername}`;
 
       const userExists: boolean = await (await fetch(url)).json();
       message.info(`User exists: ${userExists}`);
@@ -80,12 +84,12 @@ function Home() {
       }
     } else if (userExists === UserExists.UserExists) {
       // sign in
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL;
-      const url = `${baseUrl}/auth/local/sign-in`;
+      const baseURL = process.env.NEXT_PUBLIC_API_URL;
+      const url = `${baseURL}/auth/local/sign-in`;
       let data: Partial<LocalSignInDto>;
       if (emailOrUsername.includes('@'))
-        data = {email: emailOrUsername, password};
-      else data = {username: emailOrUsername, password};
+        data = { email: emailOrUsername, password };
+      else data = { username: emailOrUsername, password };
       const response = await fetch(url, {
         method: 'POST',
         headers: {
@@ -116,9 +120,9 @@ function Home() {
 
       router.push('../competition');
     } else if (userExists === UserExists.UserNotExists) {
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL;
-      const url = `${baseUrl}/auth/local/sign-up`;
-      const data: LocalSignUpDto = {email, username, password};
+      const baseURL = process.env.NEXT_PUBLIC_API_URL;
+      const url = `${baseURL}/auth/local/sign-up`;
+      const data: LocalSignUpDto = { email, username, password };
 
       const response = await fetch(url, {
         method: 'POST',
@@ -168,8 +172,7 @@ function Home() {
       'You just found a WiP feature. Help us finish by coding it for us, or you can pay us a beer or more.',
     );
 
-    async function signInWithGoogle() {
-    }
+    async function signInWithGoogle() {}
 
     try {
       await signInWithGoogle();
@@ -184,8 +187,7 @@ function Home() {
       'You just found a WiP feature. Help us finish by coding it for us, or you can pay us a beer or more.',
     );
 
-    async function signInWithGitHub() {
-    }
+    async function signInWithGitHub() {}
 
     try {
       await signInWithGitHub();
@@ -207,7 +209,7 @@ function Home() {
                 Email or Username
               </label>
               <input
-                style={{color: 'black'}}
+                style={{ color: 'black' }}
                 type="text"
                 onChange={(e) => setEmailOrUsername(e.target.value)}
                 id="emailOrUsername"
@@ -223,7 +225,7 @@ function Home() {
                 Username
               </label>
               <input
-                style={{color: 'black'}}
+                style={{ color: 'black' }}
                 type="text"
                 onChange={(e) => setUsername(e.target.value)}
                 id="username"
@@ -237,7 +239,7 @@ function Home() {
                 Email
               </label>
               <input
-                style={{color: 'black'}}
+                style={{ color: 'black' }}
                 type="email"
                 defaultValue={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -251,7 +253,7 @@ function Home() {
                 Password
               </label>
               <input
-                style={{color: 'black'}}
+                style={{ color: 'black' }}
                 type="password"
                 id="password"
                 onChange={(e) => setPassword(e.target.value)}

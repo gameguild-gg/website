@@ -4,5 +4,6 @@ services/api/dist
 services/api/ChessSubmissions
 services/web/node_modules
 services/web/.next
-packages/dto/node_modules
+packages/apiclient/node_modules
+web3/node_modules
 .git

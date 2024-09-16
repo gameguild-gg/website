@@ -1,7 +1,7 @@
 'use client';
 
-import React, {useEffect} from 'react';
-import {Button, Table, TableColumnsType, Typography,} from 'antd';
+import React, { useEffect } from 'react';
+import { Button, Table, TableColumnsType, Typography } from 'antd';
 
 import { getCookie } from 'cookies-next';
 import { useRouter } from 'next/navigation';
@@ -10,7 +10,7 @@ import {
   MatchSearchRequestDto,
   MatchSearchResponseDto,
 } from '@game-guild/apiclient';
-import { createClient } from '@hey-api/client-fetch';
+import { createClient } from '@hey-api/client-axios';
 import { getSession } from 'next-auth/react';
 
 export default function MatchesPage() {
@@ -75,7 +75,7 @@ export default function MatchesPage() {
     const session = await getSession();
 
     const client = createClient({
-      baseUrl: process.env.NEXT_PUBLIC_API_URL,
+      baseURL: process.env.NEXT_PUBLIC_API_URL,
       throwOnError: false,
       headers: {
         Authorization: `Bearer ${session?.accessToken}`,
@@ -123,5 +123,5 @@ export default function MatchesPage() {
     if (!matchesFetched) getMatchesData();
   });
 
-  return <Table columns={columns} dataSource={matchesTable}/>;
+  return <Table columns={columns} dataSource={matchesTable} />;
 }

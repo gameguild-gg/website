@@ -14,6 +14,7 @@
   "dependencies": {
     "@game-guild/apiclient": "*",
     "@game-guild/ui": "*",
+    "@hey-api/client-axios": "^0.2.3",
     "@hookform/resolvers": "^3.3.4",
     "@nestjs/swagger": "^7.3.0",
     "@next/third-parties": "^14.1.4",
@@ -50,6 +51,7 @@
     "jszip": "^3.10.1",
     "jwt-decode": "^4.0.0",
     "lucide-react": "^0.363.0",
+    "moment-timezone": "^0.5.45",
     "next": "^14.1.0",
     "next-auth": "^5.0.0-beta.21",
     "next-intl": "^3.9.5",
