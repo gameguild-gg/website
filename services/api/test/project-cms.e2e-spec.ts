@@ -1,46 +1,47 @@
-import {
-  Configuration,
-  ConfigurationParameters,
-  LocalSignInResponseDto,
-  ProjectApi,
-  ProjectEntity,
-} from '@game-guild/apiclient';
 import { faker } from '@faker-js/faker';
 import { CreateRandomUser } from './auth.e2e-spec';
+import {
+  createOneBaseProjectControllerProjectEntity,
+  deleteOneBaseProjectControllerProjectEntity,
+  LocalSignInResponseDto,
+  ProjectEntity,
+  updateOneBaseProjectControllerProjectEntity,
+} from '@game-guild/apiclient';
+import { Client, createClient } from '@hey-api/client-fetch';
+import { baseUrl } from './utils';
 
 describe('Project CMS (e2e)', () => {
-  const basepath = 'http://localhost:8080';
-  const apiConfig: ConfigurationParameters = {
-    basePath: basepath,
-    baseOptions: {
-      validateStatus: () => true,
-    },
-  };
   jest.setTimeout(60000);
 
   // users
   let user1: LocalSignInResponseDto;
   let user2: LocalSignInResponseDto;
 
-  let gameApi1: ProjectApi;
-  let gameApi2: ProjectApi;
+  let gameApi1: Client;
+  let gameApi2: Client;
 
   // server have to be running
   beforeAll(async () => {
     // generate 2 random users
-    user1 = await CreateRandomUser(apiConfig);
-    user2 = await CreateRandomUser(apiConfig);
+    user1 = await CreateRandomUser();
+    user2 = await CreateRandomUser();
 
-    // game api cms
-    gameApi1 = new ProjectApi(
-      new Configuration({ ...apiConfig, accessToken: user1.accessToken }),
-    );
-    gameApi2 = new ProjectApi(
-      new Configuration({ ...apiConfig, accessToken: user2.accessToken }),
-    );
+    gameApi1 = createClient({
+      baseUrl: baseUrl,
+      headers: {
+        Authorization: `Bearer ${user1.accessToken}`,
+      },
+    });
+
+    gameApi2 = createClient({
+      baseUrl: baseUrl,
+      headers: {
+        Authorization: `Bearer ${user2.accessToken}`,
+      },
+    });
   });
 
-  it.only('test create game', async () => {
+  it('test create game', async () => {
     const gameData = {
       title: faker.lorem.words(2),
       summary: faker.lorem.words(10),
@@ -49,8 +50,10 @@ describe('Project CMS (e2e)', () => {
       visibility: 'DRAFT',
       thumbnail: faker.image.url(),
     } as ProjectEntity;
-    const game =
-      await gameApi1.createOneBaseProjectControllerProjectEntity(gameData);
+    const game = await createOneBaseProjectControllerProjectEntity({
+      body: gameData,
+      client: gameApi1,
+    });
     expect(game).toBeDefined();
     expect(game.data).toBeDefined();
     expect(game.data.id).toBeDefined();
@@ -69,31 +72,44 @@ describe('Project CMS (e2e)', () => {
   // test game crud with permissions
   it('test ownership permission of a game', async () => {
     // create game
-    const game1 = await gameApi1.createOneBaseProjectControllerProjectEntity({
-      title: faker.lorem.words(2),
-      summary: faker.lorem.words(10),
-      body: faker.lorem.words(100),
-      slug: faker.lorem.slug(2),
-      visibility: 'DRAFT',
-      thumbnail: faker.image.url(),
-    } as ProjectEntity);
+    const game1 = await createOneBaseProjectControllerProjectEntity({
+      body: {
+        title: faker.lorem.words(2),
+        summary: faker.lorem.words(10),
+        body: faker.lorem.words(100),
+        slug: faker.lorem.slug(2),
+        visibility: 'DRAFT',
+        thumbnail: faker.image.url(),
+      } as ProjectEntity,
+      client: gameApi1,
+    });
     expect(game1).toBeDefined();
     expect(game1.data).toBeDefined();
     expect(game1.data.id).toBeDefined();
 
     // update game
-    const updatedGame =
-      await gameApi1.updateOneBaseProjectControllerProjectEntity(
-        game1.data.id,
-        { title: faker.lorem.words(2) } as ProjectEntity,
-      );
+    const updatedGame = await updateOneBaseProjectControllerProjectEntity({
+      body: {
+        title: faker.lorem.words(2),
+      } as ProjectEntity,
+      path: {
+        id: game1.data.id,
+      },
+      client: gameApi1,
+    });
     expect(updatedGame).toBeDefined();
     expect(updatedGame.data).toBeDefined();
     expect(updatedGame.data.id).toBeDefined();
 
     // delete game
-    const deletedGame =
-      await gameApi1.deleteOneBaseProjectControllerProjectEntity(game1.data.id);
+    const deletedGame = await deleteOneBaseProjectControllerProjectEntity({
+      path: {
+        id: game1.data.id,
+      },
+      client: gameApi1,
+    });
     expect(deletedGame).toBeDefined();
   });
+
+  // todo: test transfer ownership
 });

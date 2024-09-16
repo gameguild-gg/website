@@ -1,12 +1,16 @@
 'use client';
 
 import { Chess } from 'chess.js';
-import { getCookie } from 'cookies-next';
 import { useRouter } from 'next/navigation';
 import React, { useEffect } from 'react';
 import { Button, message, Space, Typography } from 'antd';
 import { Chessboard } from 'react-chessboard';
-import { ChessMatchResultDto } from '@game-guild/apiclient';
+import {
+  ChessMatchResultDto,
+  competitionControllerGetChessMatchResult,
+} from '@game-guild/apiclient';
+import { getSession } from 'next-auth/react';
+import { createClient } from '@hey-api/client-fetch';
 
 export default function ReplayPage() {
   const [states, setStates] = React.useState<string[]>([]);
@@ -28,22 +32,26 @@ export default function ReplayPage() {
       router.push('/competition/matches');
       return;
     }
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL;
-    const headers = new Headers();
-    const accessToken = getCookie('access_token');
-    headers.append('Authorization', `Bearer ${accessToken}`);
-    const response = await fetch(
-      baseUrl + '/Competitions/Chess/Match/' + matchId,
-      {
-        method: 'GET',
-        headers: headers,
+    const session = await getSession();
+    const client = createClient({
+      baseUrl: process.env.NEXT_PUBLIC_API_URL,
+      throwOnError: false,
+      headers: {
+        Authorization: `Bearer ${session?.accessToken}`,
       },
-    );
-    if (!response.ok) {
-      router.push('/login');
+    });
+
+    const response = await competitionControllerGetChessMatchResult({
+      client: client,
+      path: { id: matchId },
+    });
+
+    if (response.error) {
+      router.push('/connect');
       return;
     }
-    const data = (await response.json()) as ChessMatchResultDto;
+
+    const data = response.data;
     console.log(data);
     setMatchData(data);
     setMatchFetched(true);
@@ -51,7 +59,7 @@ export default function ReplayPage() {
     // Load the moves
     const list: string[] = [];
     list.push('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
-    data.moves.forEach((move) => {
+    data?.moves.forEach((move) => {
       chess.move(move);
       list.push(chess.fen());
     });

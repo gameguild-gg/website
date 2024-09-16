@@ -3,10 +3,16 @@
 import React, { useEffect, useState } from 'react';
 import { getCookie } from 'cookies-next';
 import { Button, Dropdown, MenuProps, message, Space, Typography } from 'antd';
-import { RobotFilled, UserOutlined } from '@ant-design/icons';
+import { RobotFilled } from '@ant-design/icons';
 import { useRouter } from 'next/navigation';
-import { competitionsApi } from '@/lib/apinest';
-import { ChessMatchResultDto, UserEntity } from '@game-guild/apiclient';
+import {
+  ChessMatchResultDto,
+  competitionControllerListChessAgents,
+  competitionControllerRunChessMatch,
+  UserEntity,
+} from '@game-guild/apiclient';
+import { getSession } from 'next-auth/react';
+import { createClient } from '@hey-api/client-fetch';
 
 const ChallengePage: React.FC = () => {
   const router = useRouter();
@@ -23,44 +29,44 @@ const ChallengePage: React.FC = () => {
     if (!agentListFetched) getAgentList();
   });
 
-  const getAgentList = async () => {
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL;
-    const headers = new Headers();
-    const accessToken = getCookie('access_token');
-    headers.append('Authorization', `Bearer ${accessToken}`);
-    const response = await fetch(baseUrl + '/Competitions/Chess/ListAgents', {
-      headers: headers,
+  async function getAgentList(): Promise<void> {
+    const session = await getSession();
+    const client = createClient({
+      baseUrl: process.env.NEXT_PUBLIC_API_URL,
+      throwOnError: false,
+      headers: {
+        Authorization: `Bearer ${session?.accessToken}`,
+      },
     });
-    if (!response.ok) {
-      router.push('/login');
+
+    const response = await competitionControllerListChessAgents({
+      client: client,
+    });
+
+    if (response.error) {
+      router.push('/connect');
       return;
     }
-    const data = (await response.json()) as string[];
+    const data = response.data as string[];
 
     setAgentList(data);
     setAgentListFetched(true);
     console.log(data);
-  };
+  }
 
   const [selectedAgentWhite, setSelectedAgentWhite] = useState<string>('');
   const [selectedAgentBlack, setSelectedAgentBlack] = useState<string>('');
 
   const handleMenuClickWhite: MenuProps['onClick'] = (e) => {
     const agent = e.key.toString();
-    // todo: fix the requirement to play chess to have a username
-    // todo: do not use cookies anymor
-    const userAgent = (JSON.parse(getCookie('user') as string) as UserEntity)
-      .username;
     setSelectedAgentWhite(agent);
   };
   const handleMenuClickBlack: MenuProps['onClick'] = (e) => {
     const agent = e.key.toString();
-    const userAgent = (JSON.parse(getCookie('user') as string) as UserEntity)
-      .username;
     setSelectedAgentBlack(agent);
   };
 
-  const challengeBot = async () => {
+  const challengeBot = async (): Promise<void> => {
     if (requestInProgress) {
       message.error('Request in progress. Please wait.');
       return;
@@ -77,18 +83,22 @@ const ChallengePage: React.FC = () => {
     }
     setRequestInProgress(true);
 
-    const response = await competitionsApi.competitionControllerRunChessMatch(
-      {
+    const session = await getSession();
+    const client = createClient({
+      baseUrl: process.env.NEXT_PUBLIC_API_URL,
+      throwOnError: false,
+      headers: {
+        Authorization: `Bearer ${session?.accessToken}`,
+      },
+    });
+
+    const response = await competitionControllerRunChessMatch({
+      body: {
         player1username: selectedAgentWhite,
         player2username: selectedAgentBlack,
       },
-      {
-        headers: {
-          Authorization: `Bearer ${getCookie('access_token')}`,
-          'Content-Type': 'application/json',
-        },
-      },
-    );
+      client: client,
+    });
 
     console.log(response.data);
     setResult(response.data);
@@ -168,7 +178,7 @@ const ChallengePage: React.FC = () => {
             <Typography.Paragraph>
               Moves:{' '}
               {result.moves.map((move) => (
-                <Typography.Text>{move} </Typography.Text>
+                <Typography.Text key={move}>{move} </Typography.Text>
               ))}
             </Typography.Paragraph>
           </>

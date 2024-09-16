@@ -10,9 +10,9 @@ import { useToast } from '@/components/ui/use-toast';
 
 import { useSession } from 'next-auth/react';
 import MetaMaskSignInButton from '@/components/others/web3/meta-mask-sign-in-button';
-import { authApi } from '@/lib/apinest';
-import { OkDto } from '@game-guild/apiclient';
+import { authControllerMagicLink, OkDto } from '@game-guild/apiclient';
 import TorusSignInButton from '@/components/others/web3/torus-sign-in-button';
+import { createClient } from '@hey-api/client-fetch';
 
 const initialState: SignInFormState = {};
 
@@ -34,9 +34,18 @@ export default function ConnectForm() {
       description: 'Requesting the magic link.',
     });
 
-    let response: OkDto;
+    let response: OkDto | undefined;
     try {
-      response = (await authApi.authControllerMagicLink({ email: email })).data;
+      const client = createClient({
+        baseUrl: process.env.NEXT_PUBLIC_API_URL,
+        throwOnError: false,
+      });
+      response = (
+        await authControllerMagicLink({
+          client: client,
+          body: { email: email },
+        })
+      ).data;
     } catch (error) {
       sendingToast.dismiss();
       toast({

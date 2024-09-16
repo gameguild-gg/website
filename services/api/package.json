@@ -23,7 +23,6 @@
     "migration:revert": "npm run typeorm -- migration:revert",
     "schema:drop": "npm run typeorm -- schema:drop",
     "db:diagram": "ts-node dbml.ts",
-    "openapigenerator": "openapi-generator-cli generate -g typescript-axios -i swagger-spec.json -o ../../packages/apiclient -p npmName=@game-guild/apiclient",
     "test_": "jest",
     "test:watch_": "jest --watch",
     "test:cov_": "jest --coverage",
@@ -32,7 +31,8 @@
     "posttest:e2e": "npm run kill",
     "test:e2e:wait": "wait-on tcp:8080 && npm run test:e2e --runInBand --detectOpenHandles --forceExit",
     "startandtest": "npm-run-all --parallel start:dev test:e2e:wait",
-    "kill": "killall node"
+    "kill": "killall node",
+    "openapi-ts": "openapi-ts"
   },
   "dependencies": {
     "@dataui/crud": "5.3.4",
@@ -40,6 +40,8 @@
     "@dataui/crud-typeorm": "5.3.4",
     "@dataui/crud-util": "5.3.4",
     "@faker-js/faker": "^8.4.1",
+    "@hey-api/openapi-ts": "^0.53.0",
+    "@hey-api/client-fetch": "^0.2.4",
     "@nestjs/cache-manager": "^2.2.2",
     "@nestjs/common": "9.4.3",
     "@nestjs/config": "3.0.0",
@@ -49,7 +51,6 @@
     "@nestjs/platform-express": "9.4.3",
     "@nestjs/swagger": "^7.4.0",
     "@nestjs/typeorm": "9.0.1",
-    "@openapitools/openapi-generator-cli": "^2.13.4",
     "@sendgrid/client": "^7.7.0",
     "@sendgrid/helpers": "^7.7.0",
     "@sendgrid/mail": "^7.7.0",

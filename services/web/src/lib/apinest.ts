@@ -1,10 +1,6 @@
-import { AuthApi, CompetitionsApi, Configuration } from '@game-guild/apiclient';
+import { createClient } from '@hey-api/client-fetch';
 
-const configuration = new Configuration({
-  // basePath: process.env.NEST_JS_BACKEND_URL,
-  basePath: 'http://localhost:4000',
+const client = createClient({
+  baseUrl: process.env.NEXT_PUBLIC_API_URL,
+  throwOnError: false,
 });
-
-export const competitionsApi = new CompetitionsApi(configuration);
-
-export const authApi = new AuthApi(configuration);

@@ -14,9 +14,12 @@ import {
 import { getCookie } from 'cookies-next';
 import { useRouter } from 'next/navigation';
 import {
+  competitionControllerFindChessMatchResult,
   MatchSearchRequestDto,
   MatchSearchResponseDto,
 } from '@game-guild/apiclient';
+import { createClient } from '@hey-api/client-fetch';
+import { getSession } from 'next-auth/react';
 
 export default function MatchesPage() {
   const router = useRouter();
@@ -76,25 +79,31 @@ export default function MatchesPage() {
 
   const [matchesFetched, setMatchesFetched] = React.useState<boolean>(false);
 
-  const getMatchesData = async () => {
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL;
-    const headers = new Headers();
-    const accessToken = getCookie('access_token');
-    headers.append('Authorization', `Bearer ${accessToken}`);
-    headers.append('Content-Type', 'application/json');
-    const response = await fetch(baseUrl + '/Competitions/Chess/FindMatches', {
-      method: 'POST',
-      headers: headers,
-      body: JSON.stringify({
+  const getMatchesData = async (): Promise<void> => {
+    const session = await getSession();
+
+    const client = createClient({
+      baseUrl: process.env.NEXT_PUBLIC_API_URL,
+      throwOnError: false,
+      headers: {
+        Authorization: `Bearer ${session?.accessToken}`,
+      },
+    });
+
+    const response = await competitionControllerFindChessMatchResult({
+      client: client,
+      body: {
         pageSize: 100,
         pageId: 0,
-      } as MatchSearchRequestDto),
+      } as MatchSearchRequestDto,
+      throwOnError: false,
     });
-    if (!response.ok) {
-      router.push('/login');
+
+    if (response.error) {
+      router.push('/connect');
       return;
     }
-    const data = (await response.json()) as MatchSearchResponseDto[];
+    const data = response.data as MatchSearchResponseDto[];
     console.log(data);
     setMatchesData(data);
     setMatchesFetched(true);

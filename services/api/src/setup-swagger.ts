@@ -1,6 +1,7 @@
 import type { INestApplication } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { CommonModule } from './common/common.module';
+import { createClient } from '@hey-api/openapi-ts';
 
 import { ApiConfigService } from './common/config.service';
 import * as fs from 'node:fs';
@@ -21,6 +22,12 @@ export function setupSwagger(app: INestApplication): void {
   const configService = app.select(CommonModule).get(ApiConfigService);
 
   fs.writeFileSync('./swagger-spec.json', JSON.stringify(document, null, 2));
+
+  createClient({
+    client: '@hey-api/client-fetch',
+    input: './swagger-spec.json',
+    output: '../../packages/apiclient',
+  });
 
   console.info(
     `Documentation: http://localhost:${configService.appConfig.port}/documentation`,

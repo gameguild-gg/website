@@ -47,3 +47,5 @@ chessSubmissions
 package-lock.json
 
 services/web/.env
+
+services/web/.env

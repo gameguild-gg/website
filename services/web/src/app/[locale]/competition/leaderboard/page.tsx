@@ -1,16 +1,22 @@
 'use client';
 
 import React, { useEffect } from 'react';
-import { getCookie } from 'cookies-next';
 import { useRouter } from 'next/navigation';
 import { Table, TableColumnsType, Typography } from 'antd';
-import { ChessLeaderboardResponseEntryDto } from '@game-guild/apiclient';
+import {
+  ChessLeaderboardResponseEntryDto,
+  competitionControllerGetChessLeaderboard,
+} from '@game-guild/apiclient';
+import { getSession } from 'next-auth/react';
+import { createClient } from '@hey-api/client-fetch';
 
-export default function LeaderboardPage() {
+export default function LeaderboardPage(): JSX.Element {
   const router = useRouter();
+
   const [leaderboardData, setLeaderboardData] = React.useState<
     ChessLeaderboardResponseEntryDto[]
   >([]);
+
   // flag for leaderboard fetched
   const [leaderboardFetched, setLeaderboardFetched] =
     React.useState<boolean>(false);
@@ -19,23 +25,29 @@ export default function LeaderboardPage() {
     if (!leaderboardFetched) getLeaderboardData();
   }, []);
 
-  const getLeaderboardData = async () => {
-    // todo: use env var properly
-    // todo: process.env.REACT_APP_API_URL is undefined here and I dont know how to fix it
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL;
-    const headers = new Headers();
-    const accessToken = getCookie('access_token');
-    headers.append('Authorization', `Bearer ${accessToken}`);
-    const response = await fetch(baseUrl + '/Competitions/Chess/Leaderboard', {
-      headers: headers,
+  const getLeaderboardData = async (): Promise<void> => {
+    const session = await getSession();
+    const client = createClient({
+      baseUrl: process.env.NEXT_PUBLIC_API_URL,
+      throwOnError: false,
+      headers: {
+        Authorization: `Bearer ${session?.accessToken}`,
+      },
     });
-    if (!response.ok) {
-      router.push('/login');
+
+    const response = await competitionControllerGetChessLeaderboard({
+      client: client,
+      throwOnError: false,
+    });
+
+    if (response.error) {
+      router.push('/connect');
       return;
     }
-    const data = (await response.json()) as ChessLeaderboardResponseEntryDto[];
+
+    const resp = response.data as ChessLeaderboardResponseEntryDto[];
     console.log(data);
-    setLeaderboardData(data);
+    setLeaderboardData(resp);
     setLeaderboardFetched(true);
   };
 

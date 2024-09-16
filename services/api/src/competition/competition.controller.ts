@@ -12,7 +12,7 @@ import {
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
-import { ApiConsumes, ApiTags } from '@nestjs/swagger';
+import { ApiConsumes, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { CompetitionService } from './competition.service';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { CompetitionGame } from './entities/competition.submission.entity';
@@ -84,7 +84,11 @@ export class CompetitionController {
   // todo: Add login protections here and remove the password requirement.
   @Post('/Chess/submit')
   @ApiConsumes('multipart/form-data')
-  @OkResponse({ type: TerminalDto, isArray: true })
+  @ApiResponse({
+    status: 200,
+    type: TerminalDto,
+    isArray: true,
+  })
   @UseInterceptors(FileInterceptor('file'))
   @Auth(AuthenticatedRoute)
   async submitChessAgent(

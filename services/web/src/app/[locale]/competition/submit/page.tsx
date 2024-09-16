@@ -6,6 +6,9 @@ import { Button, message, Space, Upload, UploadProps, Typography } from 'antd';
 import { getCookie } from 'cookies-next';
 import JSZip from 'jszip';
 import React, { useEffect, useState } from 'react';
+import { getSession } from 'next-auth/react';
+import { createClient } from '@hey-api/client-fetch';
+import { competitionControllerSubmitChessAgent } from '@game-guild/apiclient';
 
 const { Dragger } = Upload;
 
@@ -43,7 +46,7 @@ export default function SubmitPage() {
   }, []);
 
   // upload functionality
-  const doUpload = async () => {
+  const doUpload = async (): Promise<void> => {
     const isListOfCppOrH =
       files.length > 1 &&
       files.every((file) => {
@@ -97,22 +100,24 @@ export default function SubmitPage() {
     message.info('uploading files. wait for the server to respond...');
 
     // upload the zip file
-    const formData = new FormData();
-    formData.append(
-      'file',
-      new Blob([zipData as ArrayBuffer], { type: 'application/zip' }),
-      'bot.zip',
-    );
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL;
-    const headers = new Headers();
-    headers.append('Authorization', 'Bearer ' + accessToken);
-    const response = await fetch(baseUrl + '/Competitions/Chess/submit', {
-      method: 'POST',
-      body: formData,
-      headers: headers,
+    const session = await getSession();
+    const client = createClient({
+      baseUrl: process.env.NEXT_PUBLIC_API_URL,
+      throwOnError: false,
+      headers: {
+        Authorization: `Bearer ${session?.accessToken}`,
+      },
     });
-    const data = await response.text();
-    message.info(data);
+
+    const response = await competitionControllerSubmitChessAgent({
+      client: client,
+      body: {
+        file: new Blob([zipData as ArrayBuffer], { type: 'application/zip' }),
+      },
+    });
+
+    const data = response.data;
+    message.info(JSON.stringify(data));
     setFiles([]);
   };
 

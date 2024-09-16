@@ -10,7 +10,13 @@ import { Button, Dropdown, message, Space, Tooltip } from 'antd';
 
 import { getCookie } from 'cookies-next';
 import { useRouter } from 'next/navigation';
-import { ChessMoveRequestDto } from '@game-guild/apiclient';
+import {
+  ChessMoveRequestDto,
+  competitionControllerListChessAgents,
+  competitionControllerRequestChessMove,
+} from '@game-guild/apiclient';
+import { getSession } from 'next-auth/react';
+import { createClient } from '@hey-api/client-fetch';
 
 export default function PlayPage() {
   const router = useRouter();
@@ -29,7 +35,7 @@ export default function PlayPage() {
   const [game, setGame] = useState(new Chess());
   const [fen, setFen] = useState(game.fen());
 
-  const requestMove = async () => {
+  const requestMove = async (): Promise<void> => {
     if (requestMoveInProgress) return;
     setRequestMoveInProgress(true);
     const fen = game.fen();
@@ -37,43 +43,55 @@ export default function PlayPage() {
     const username = turn === WHITE ? selectedAgentWhite : selectedAgentBlack;
     const baseUrl = process.env.NEXT_PUBLIC_API_URL;
     const headers = new Headers();
-    const accessToken = getCookie('access_token');
-    headers.append('Authorization', `Bearer ${accessToken}`);
-    headers.append('Content-Type', 'application/json');
-    const response = await fetch(baseUrl + '/Competitions/Chess/Move', {
-      method: 'POST',
-      headers: headers,
-      body: JSON.stringify({
+
+    const session = await getSession();
+    const client = createClient({
+      baseUrl: process.env.NEXT_PUBLIC_API_URL,
+      throwOnError: false,
+      headers: {
+        Authorization: `Bearer ${session?.accessToken}`,
+      },
+    });
+    const response = await competitionControllerRequestChessMove({
+      client: client,
+      body: {
         fen: fen,
         username: username,
-      } as ChessMoveRequestDto),
+      },
     });
-    if (!response.ok) {
-      if (response.status === 500) {
-        message.error(response.text());
+
+    if (response.error) {
+      if (response.response.status === 500) {
+        message.error(JSON.stringify(response.error));
       } else {
-        router.push('/login');
+        router.push('/connect');
         return;
       }
     }
-    const move = (await response.text()) as string;
+    const move = response.data as string;
     makeAMove(move);
     setRequestMoveInProgress(false);
   };
 
-  const getAgentList = async () => {
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL;
-    const headers = new Headers();
-    const accessToken = getCookie('access_token');
-    headers.append('Authorization', `Bearer ${accessToken}`);
-    const response = await fetch(baseUrl + '/Competitions/Chess/ListAgents', {
-      headers: headers,
+  const getAgentList = async (): Promise<void> => {
+    const session = await getSession();
+    const client = createClient({
+      baseUrl: process.env.NEXT_PUBLIC_API_URL,
+      throwOnError: false,
+      headers: {
+        Authorization: `Bearer ${session?.accessToken}`,
+      },
     });
-    if (!response.ok) {
-      router.push('/login');
+
+    const response = await competitionControllerListChessAgents({
+      client: client,
+    });
+
+    if (response.error) {
+      router.push('/connect');
       return;
     }
-    const data = (await response.json()) as string[];
+    const data = response.data as string[];
 
     // add human to the front of the list
     data.unshift('human');

@@ -1,12 +1,17 @@
-import type {NextAuthConfig, User} from 'next-auth';
+import type { NextAuthConfig, User } from 'next-auth';
 import Google from 'next-auth/providers/google';
 import Credentials from 'next-auth/providers/credentials';
-import {environment} from '@/config/environment';
-import {authApi} from '@/lib/apinest';
+import { environment } from '@/config/environment';
+import { createClient } from '@hey-api/client-fetch';
+import {
+  authControllerSignInWithGoogle,
+  authControllerValidateWeb3SignInChallenge,
+  UserEntity,
+} from '@game-guild/apiclient';
 
 export const authConfig = {
   callbacks: {
-    signIn: async ({user, account, profile, email, credentials}) => {
+    signIn: async ({ user, account, profile, email, credentials }) => {
       if (account?.provider === 'google') {
         // TODO:
         //  After signing in with Google, check if the user is in the database.
@@ -16,40 +21,45 @@ export const authConfig = {
         // TODO: Sample code below:
 
         if (!account?.id_token) return false;
-        const response = await authApi.authControllerSignInWithGoogle(
-          account?.id_token,
-        );
+        const client = createClient({
+          baseUrl: process.env.NEXT_PUBLIC_API_URL,
+          throwOnError: false,
+        });
 
-        if (!response || response.status !== 200) return false;
+        const response = await authControllerSignInWithGoogle({
+          path: { token: account?.id_token },
+          client: client,
+        });
+
+        if (!response || !response.data || response.response.status !== 200)
+          return false;
 
         user.id = response.data.user.id;
         user.email = response.data.user.email;
-        // user.firstName = dbUser?.data?.user?.firstName;
-        // user.lastName = dbUser?.data?.user?.lastName;
-        // user.avatar = dbUser?.data?.user?.avatar;
-        // user.isEmailVerified = dbUser?.data?.user?.isEmailVerified;
-        // user.isPhoneVerified = dbUser?.data?.user?.isPhoneVerified;
         user.accessToken = response.data.accessToken;
         user.refreshToken = response.data.refreshToken;
 
-        // Return true to allowing user sign-in with the Google OAuth Credential.
         return true;
       } else if (account?.provider === 'web-3') {
         return Boolean(user.wallet && user.accessToken && user.refreshToken);
       }
       return false;
     },
-    jwt: async ({token, user, trigger, session, account}) => {
-      return {...token, ...user};
+    jwt: async ({ token, user, trigger, session, account }) => {
+      return { ...token, ...user };
     },
-    session: async ({session, token, user}) => {
-      session.user = token;
+    session: async ({ session, token, user }) => {
+      session.user = {
+        ...session.user,
+        ...user,
+        ...token,
+        email: user?.email ?? session.user.email ?? token.email ?? '', // chesus christ. please fix this filthy code.
+      };
       return session;
     },
   },
   pages: {
     signIn: '/connect',
-
   },
   providers: [
     // todo: implement refresh token
@@ -88,13 +98,25 @@ export const authConfig = {
         const signature: string = credentials?.signature as string;
         const address: string = credentials?.address as string;
 
-        const response =
-          await authApi.authControllerValidateWeb3SignInChallenge({
+        const client = createClient({
+          baseUrl: process.env.NEXT_PUBLIC_API_URL,
+          throwOnError: false,
+        });
+
+        const response = await authControllerValidateWeb3SignInChallenge({
+          body: {
             signature,
             address,
-          });
+          },
+          client: client,
+        });
 
-        if (!response || response.status < 200 || response.status > 299)
+        if (
+          !response ||
+          !response.data ||
+          response.response.status < 200 ||
+          response.response.status > 299
+        )
           return null;
 
         const accessToken = response.data.accessToken;
@@ -127,14 +149,14 @@ export const authConfig = {
   },
 } satisfies NextAuthConfig;
 
-declare module "next-auth" {
+declare module 'next-auth' {
   interface Session {
-    accessToken?: string
+    accessToken?: string;
   }
 }
 
-declare module "next-auth" {
+declare module 'next-auth' {
   interface JWT {
-    accessToken?: string
+    accessToken?: string;
   }
 }
