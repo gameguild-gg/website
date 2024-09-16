@@ -1,4 +1,4 @@
-import type {NextAuthConfig, User} from 'next-auth';
+import {NextAuthConfig, User} from 'next-auth';
 import Google from 'next-auth/providers/google';
 import Credentials from 'next-auth/providers/credentials';
 import {environment} from '@/config/environment';
@@ -50,8 +50,9 @@ export const authConfig = {
           name: user.name,
           image: user.image,
           wallet: user.wallet,
-          accessToken: token.accessToken,
-          refreshToken: token.refreshToken,
+          emailVerified: null,
+          accessToken: (token.accessToken as string) ?? null,
+          refreshToken: (token.refreshToken as string) ?? null,
         }
       return session;
     },
@@ -145,5 +146,17 @@ declare module "next-auth" {
 declare module "next-auth" {
   interface JWT {
     accessToken?: string
+  }
+}
+
+declare module "next-auth" {
+  interface User {
+    id?: string;
+    name?: string | null;
+    email?: string | null;
+    image?: string | null;
+    wallet?: string | null;
+    accessToken?: string | null;
+    refreshToken?: string | null;
   }
 }
