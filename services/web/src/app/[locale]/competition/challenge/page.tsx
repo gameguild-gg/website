@@ -12,7 +12,7 @@ import {
   UserEntity,
 } from '@game-guild/apiclient';
 import { getSession } from 'next-auth/react';
-import { createClient } from '@hey-api/client-fetch';
+import { createClient } from '@hey-api/client-axios';
 
 const ChallengePage: React.FC = () => {
   const router = useRouter();
@@ -32,7 +32,7 @@ const ChallengePage: React.FC = () => {
   async function getAgentList(): Promise<void> {
     const session = await getSession();
     const client = createClient({
-      baseUrl: process.env.NEXT_PUBLIC_API_URL,
+      baseURL: process.env.NEXT_PUBLIC_API_URL,
       throwOnError: false,
       headers: {
         Authorization: `Bearer ${session?.accessToken}`,
@@ -85,7 +85,7 @@ const ChallengePage: React.FC = () => {
 
     const session = await getSession();
     const client = createClient({
-      baseUrl: process.env.NEXT_PUBLIC_API_URL,
+      baseURL: process.env.NEXT_PUBLIC_API_URL,
       throwOnError: false,
       headers: {
         Authorization: `Bearer ${session?.accessToken}`,

@@ -1,6 +1,6 @@
-import { createClient } from '@hey-api/client-fetch';
+import { createClient } from '@hey-api/client-axios';
 
 const client = createClient({
-  baseUrl: process.env.NEXT_PUBLIC_API_URL,
+  baseURL: process.env.NEXT_PUBLIC_API_URL,
   throwOnError: false,
 });

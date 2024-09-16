@@ -12,13 +12,11 @@ import { useSession } from 'next-auth/react';
 import MetaMaskSignInButton from '@/components/others/web3/meta-mask-sign-in-button';
 import { authControllerMagicLink, OkDto } from '@game-guild/apiclient';
 import TorusSignInButton from '@/components/others/web3/torus-sign-in-button';
-import { createClient } from '@hey-api/client-fetch';
+import { createClient } from '@hey-api/client-axios';
 
 const initialState: SignInFormState = {};
 
 export default function ConnectForm() {
-  // const session = useSession();
-
   const { toast } = useToast();
   const [sendMagicLinkClicked, setSendMagicLinkClicked] = useState(false);
 
@@ -37,7 +35,7 @@ export default function ConnectForm() {
     let response: OkDto | undefined;
     try {
       const client = createClient({
-        baseUrl: process.env.NEXT_PUBLIC_API_URL,
+        baseURL: process.env.NEXT_PUBLIC_API_URL,
         throwOnError: false,
       });
       response = (
@@ -86,7 +84,6 @@ export default function ConnectForm() {
         Google
       </Button>
       <MetaMaskSignInButton />
-      <TorusSignInButton />
       <div className="text-center text-sm text-muted-foreground">or</div>
       <p className="text-balance text-muted-foreground">
         Send a magic link to your email

@@ -1,11 +1,11 @@
 'use client';
 
-import React, {useEffect, useState} from 'react';
-import {Chessboard} from 'react-chessboard';
-import {Chess, WHITE} from 'chess.js';
+import React, { useEffect, useState } from 'react';
+import { Chessboard } from 'react-chessboard';
+import { Chess, WHITE } from 'chess.js';
 
-import {RobotFilled, UserOutlined} from '@ant-design/icons';
-import {Dropdown, MenuProps, message, Space} from 'antd';
+import { RobotFilled, UserOutlined } from '@ant-design/icons';
+import { Dropdown, MenuProps, message, Space } from 'antd';
 
 import { getCookie } from 'cookies-next';
 import { useRouter } from 'next/navigation';
@@ -15,7 +15,7 @@ import {
   competitionControllerRequestChessMove,
 } from '@game-guild/apiclient';
 import { getSession } from 'next-auth/react';
-import { createClient } from '@hey-api/client-fetch';
+import { createClient } from '@hey-api/client-axios';
 
 export default function PlayPage() {
   const router = useRouter();
@@ -40,12 +40,12 @@ export default function PlayPage() {
     const fen = game.fen();
     const turn = game.turn();
     const username = turn === WHITE ? selectedAgentWhite : selectedAgentBlack;
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+    const baseURL = process.env.NEXT_PUBLIC_API_URL;
     const headers = new Headers();
 
     const session = await getSession();
     const client = createClient({
-      baseUrl: process.env.NEXT_PUBLIC_API_URL,
+      baseURL: process.env.NEXT_PUBLIC_API_URL,
       throwOnError: false,
       headers: {
         Authorization: `Bearer ${session?.accessToken}`,
@@ -60,7 +60,7 @@ export default function PlayPage() {
     });
 
     if (response.error) {
-      if (response.response.status === 500) {
+      if (response.status === 500) {
         message.error(JSON.stringify(response.error));
       } else {
         router.push('/connect');
@@ -75,7 +75,7 @@ export default function PlayPage() {
   const getAgentList = async (): Promise<void> => {
     const session = await getSession();
     const client = createClient({
-      baseUrl: process.env.NEXT_PUBLIC_API_URL,
+      baseURL: process.env.NEXT_PUBLIC_API_URL,
       throwOnError: false,
       headers: {
         Authorization: `Bearer ${session?.accessToken}`,
@@ -193,14 +193,14 @@ export default function PlayPage() {
                 return {
                   key: agent,
                   label: agent,
-                  icon: agent === 'human' ? <UserOutlined/> : <RobotFilled/>,
+                  icon: agent === 'human' ? <UserOutlined /> : <RobotFilled />,
                 };
               }),
               onClick: handleMenuClickWhite,
             }}
             placement="topLeft"
             arrow
-            style={{borderColor: 'black', color: 'black'}}
+            style={{ borderColor: 'black', color: 'black' }}
           >
             {selectedAgentWhite ? selectedAgentWhite : 'White'}
           </Dropdown.Button>
@@ -212,14 +212,14 @@ export default function PlayPage() {
                 return {
                   key: agent,
                   label: agent,
-                  icon: agent === 'human' ? <UserOutlined/> : <RobotFilled/>,
+                  icon: agent === 'human' ? <UserOutlined /> : <RobotFilled />,
                 };
               }),
               onClick: handleMenuClickBlack,
             }}
             placement="topLeft"
             arrow
-            style={{borderColor: 'red', color: 'red'}}
+            style={{ borderColor: 'red', color: 'red' }}
           >
             {selectedAgentBlack ? selectedAgentBlack : 'Black'}
           </Dropdown.Button>

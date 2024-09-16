@@ -8,7 +8,7 @@ import {
   competitionControllerGetChessLeaderboard,
 } from '@game-guild/apiclient';
 import { getSession } from 'next-auth/react';
-import { createClient } from '@hey-api/client-fetch';
+import { createClient } from '@hey-api/client-axios';
 
 export default function LeaderboardPage(): JSX.Element {
   const router = useRouter();
@@ -28,7 +28,7 @@ export default function LeaderboardPage(): JSX.Element {
   const getLeaderboardData = async (): Promise<void> => {
     const session = await getSession();
     const client = createClient({
-      baseUrl: process.env.NEXT_PUBLIC_API_URL,
+      baseURL: process.env.NEXT_PUBLIC_API_URL,
       throwOnError: false,
       headers: {
         Authorization: `Bearer ${session?.accessToken}`,
@@ -92,7 +92,7 @@ export default function LeaderboardPage(): JSX.Element {
   return (
     <>
       <Typography.Title>Leaderboard</Typography.Title>
-      <Table columns={columns} dataSource={data}/>
+      <Table columns={columns} dataSource={data} />
     </>
   );
 }

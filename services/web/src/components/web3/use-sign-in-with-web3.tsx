@@ -3,10 +3,9 @@
 import { useWeb3 } from '@/components/web3/use-web3';
 import { useConnectToWallet } from '@/components/web3/use-connect-to-wallet';
 import { useCallback, useEffect } from 'react';
-import { signIn } from '@/auth';
 import { signInWithWeb3 } from '@/lib/auth/sign-in-with-web3';
 import { getSession } from 'next-auth/react';
-import { createClient } from '@hey-api/client-fetch';
+import { createClient } from '@hey-api/client-axios';
 import { authControllerGetWeb3SignInChallenge } from '@game-guild/apiclient';
 
 export function useSignInWithWeb3() {
@@ -26,7 +25,7 @@ export function useSignInWithWeb3() {
         const chain = await state.provider.getNetwork();
 
         const client = createClient({
-          baseUrl: process.env.NEXT_PUBLIC_API_URL,
+          baseURL: process.env.NEXT_PUBLIC_API_URL,
           throwOnError: false,
         });
 
