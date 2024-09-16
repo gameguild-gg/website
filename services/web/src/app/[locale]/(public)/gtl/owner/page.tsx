@@ -3,7 +3,8 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ScrollArea } from "@/components/ui/scroll-area"
+import { ScrollArea } from "@/components/ui/scroll-area";
+import AnalyticsGraphs from './AnalyticsGraphs'
 
 const GameCard = ({ title, description }) => (
     <div className="bg-gray-800 rounded-lg overflow-hidden shadow-lg">
@@ -31,31 +32,28 @@ const GameGrid = ({ games }) => (
 );
 
 export default function Page() {
-    // imports games and shows what games to display
-    const games = [
-        {title: "Game 1", description: "Description 1" },
-        {title: "Game 2", description: "Description 2" },
-        { title: "Game 3", description: "Description 3" },
-        { title: "Game 4", description: "Description 4" },
-        { title: "Game 5", description: "Description 5" },
-    ];
-
     const [activeTab, setActiveTab] = useState('Projects');
-    const [numberOfGames, setNumberOfGames] = useState(games.length);
+    const [numberOfGames, setNumberOfGames] = useState(5); // Changed to 5 for demonstration
     const [NumberOfViews, setNumberOfViews] = useState(1);
     const [NumberOfDownloads, setNumberOfDownloads] = useState(2);
     const [NumberOfFollowers, setNumberOfFollowers] = useState(3);
     const [NumberOfTickets, setNumberOfTickets] = useState(999);
 
     // Sample game data
-
+    const games = [
+        { title: "Game 1", description: "Description 1" },
+        { title: "Game 2", description: "Description 2" },
+        { title: "Game 3", description: "Description 3" },
+        { title: "Game 4", description: "Description 4" },
+        { title: "Game 5", description: "Description 5" },
+    ];
 
     const renderContent = () => {
         switch (activeTab) {
             case 'Projects':
                 return <GameGrid games={games} />;
             case 'Analytics':
-                return <div>Analytics Content</div>;
+                return <AnalyticsGraphs />; // Displays the AnalyticsGraphs component when "Analytics" is selected
             case 'Earnings':
                 return <div>Earnings Content</div>;
             case 'Submitted Tickets':
