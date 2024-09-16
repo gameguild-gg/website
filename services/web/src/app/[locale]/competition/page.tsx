@@ -6,7 +6,7 @@ import SummaryPage from './summary/page';
 export default function CompetitionHome() {
   return (
     <>
-      <SummaryPage />
+      <SummaryPage/>
     </>
   );
 }

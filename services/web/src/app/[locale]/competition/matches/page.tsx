@@ -1,15 +1,7 @@
 'use client';
 
-import React, { useEffect } from 'react';
-import {
-  Button,
-  Col,
-  message,
-  Row,
-  Table,
-  TableColumnsType,
-  Typography,
-} from 'antd';
+import React, {useEffect} from 'react';
+import {Button, Table, TableColumnsType, Typography,} from 'antd';
 
 import { getCookie } from 'cookies-next';
 import { useRouter } from 'next/navigation';
@@ -131,5 +123,5 @@ export default function MatchesPage() {
     if (!matchesFetched) getMatchesData();
   });
 
-  return <Table columns={columns} dataSource={matchesTable} />;
+  return <Table columns={columns} dataSource={matchesTable}/>;
 }

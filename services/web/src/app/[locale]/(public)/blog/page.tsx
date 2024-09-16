@@ -1,12 +1,12 @@
 import React from 'react';
-import { PostCard } from '@/components/blog/post-card';
-import { BlogPagination } from '@/components/blog/blog-pagination';
-import { fetchPosts } from '@/lib/old/blog/actions';
+import {PostCard} from '@/components/blog/post-card';
+import {BlogPagination} from '@/components/blog/blog-pagination';
+import {fetchPosts} from '@/lib/old/blog/actions';
 
 type Props = {};
 
 export default async function Page({}: Readonly<Props>) {
-  const { posts, pagination } = await fetchPosts();
+  const {posts, pagination} = await fetchPosts();
 
   return (
     <div>
@@ -30,10 +30,10 @@ export default async function Page({}: Readonly<Props>) {
           className="grid grid-cols-1 md:grid-cols-3 mx-auto"
         >
           {posts &&
-            posts.map((post: any) => <PostCard post={post} key={post.id} />)}
+            posts.map((post: any) => <PostCard post={post} key={post.id}/>)}
         </div>
         <div>
-          <BlogPagination page={1} pages={pagination.pages} />
+          <BlogPagination page={1} pages={pagination.pages}/>
         </div>
       </div>
     </div>

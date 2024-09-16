@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Typography } from 'antd';
+import {Typography} from 'antd';
 
 export default function SummaryPage() {
   return (

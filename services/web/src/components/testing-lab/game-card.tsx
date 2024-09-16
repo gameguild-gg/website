@@ -1,14 +1,15 @@
 import {Game} from "@/lib/testing-lab/game";
 import {Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle} from "@/components/ui/card";
 import {Badge} from "@/components/ui/badge";
+import {Project} from "@/lib/project/project";
 
 type Props = {
-  game: Game
+  game: Project
 };
 
 export function GameCard({game}: Readonly<Props>) {
 
-  const {name, description} = game;
+  const {title, summary} = game;
 
   return (
     <Card
@@ -28,8 +29,8 @@ export function GameCard({game}: Readonly<Props>) {
       </div>
       <CardContent className="p-4">
         <CardHeader>
-          <CardTitle>{name}</CardTitle>
-          <CardDescription>{description}</CardDescription>
+          <CardTitle>{title}</CardTitle>
+          <CardDescription>{summary}</CardDescription>
         </CardHeader>
 
       </CardContent>

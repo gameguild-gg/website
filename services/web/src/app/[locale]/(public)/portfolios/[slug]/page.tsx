@@ -1,5 +1,5 @@
 import React from 'react';
-import type { Metadata, ResolvingMetadata } from 'next';
+import type {Metadata, ResolvingMetadata} from 'next';
 
 type Props = {
   params: {
@@ -7,12 +7,12 @@ type Props = {
   };
 };
 
-export default async function Page({ params: { slug } }: Readonly<Props>) {
+export default async function Page({params: {slug}}: Readonly<Props>) {
   return <div></div>;
 }
 
 export async function generateMetadata(
-  { params: { slug } }: Readonly<Props>,
+  {params: {slug}}: Readonly<Props>,
   parent: ResolvingMetadata,
 ): Promise<Metadata> {
   return {};

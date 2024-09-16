@@ -48,13 +48,18 @@ export const authConfig = {
     jwt: async ({ token, user, trigger, session, account }) => {
       return { ...token, ...user };
     },
-    session: async ({ session, token, user }) => {
-      session.user = {
-        ...session.user,
-        ...user,
-        ...token,
-        email: user?.email ?? session.user.email ?? token.email ?? '', // chesus christ. please fix this filthy code.
-      };
+    session: async ({session, token, user}) => {
+      session.user =
+        {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          image: user.image,
+          wallet: user.wallet,
+          emailVerified: null,
+          accessToken: (token.accessToken as string) ?? null,
+          refreshToken: (token.refreshToken as string) ?? null,
+        }
       return session;
     },
   },
@@ -158,5 +163,17 @@ declare module 'next-auth' {
 declare module 'next-auth' {
   interface JWT {
     accessToken?: string;
+  }
+}
+
+declare module "next-auth" {
+  interface User {
+    id?: string;
+    name?: string | null;
+    email?: string | null;
+    image?: string | null;
+    wallet?: string | null;
+    accessToken?: string | null;
+    refreshToken?: string | null;
   }
 }

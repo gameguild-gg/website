@@ -1,14 +1,12 @@
 'use client';
 
 import React from 'react';
-import { getCookie } from 'cookies-next';
-import { useRouter } from 'next/navigation';
-import { Button, message, Table, TableColumnsType, Typography } from 'antd';
-import { RedoOutlined } from '@ant-design/icons';
-
-import { Moment } from 'moment';
+import {getCookie} from 'cookies-next';
+import {useRouter} from 'next/navigation';
+import {Button, message, Table, TableColumnsType, Typography} from 'antd';
+import {RedoOutlined} from '@ant-design/icons';
 import moment from 'moment-timezone';
-import { CompetitionRunSubmissionReportEntity } from '@game-guild/apiclient';
+import {CompetitionRunSubmissionReportEntity} from '@game-guild/apiclient';
 
 export default function TournamentPage() {
   const router = useRouter();
@@ -126,7 +124,7 @@ export default function TournamentPage() {
         often. Once each a day is fine.
       </Typography.Paragraph>
       <Button
-        icon={<RedoOutlined />}
+        icon={<RedoOutlined/>}
         type="primary"
         block
         danger
@@ -135,7 +133,7 @@ export default function TournamentPage() {
       >
         Trigger a tournament
       </Button>
-      <Table columns={columns} dataSource={data} />
+      <Table columns={columns} dataSource={data}/>
     </>
   );
 }

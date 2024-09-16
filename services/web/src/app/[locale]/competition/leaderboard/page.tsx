@@ -92,7 +92,7 @@ export default function LeaderboardPage(): JSX.Element {
   return (
     <>
       <Typography.Title>Leaderboard</Typography.Title>
-      <Table columns={columns} dataSource={data} />
+      <Table columns={columns} dataSource={data}/>
     </>
   );
 }

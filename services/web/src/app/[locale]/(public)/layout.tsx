@@ -1,8 +1,8 @@
 import React from 'react';
 
-import { PageContent } from '@/components/page/page-content';
-import { PageFooter } from '@/components/page/page-footer';
-import { PageHeader } from '@/components/page/page-header';
+import {PageContent} from '@/components/page/page-content';
+import {PageFooter} from '@/components/page/page-footer';
+import {PageHeader} from '@/components/page/page-header';
 
 import CookieConsent from '@/components/cookie/cookie-consent';
 
@@ -10,16 +10,16 @@ type Props = {
   children: React.ReactNode;
 };
 
-export default function Layout({ children }: Readonly<Props>) {
+export default function Layout({children}: Readonly<Props>) {
   return (
     <div className="h-full w-full p-0 m-0">
-      <PageHeader />
+      <PageHeader/>
 
       <PageContent>{children}</PageContent>
 
-      <PageFooter />
+      <PageFooter/>
 
-      <CookieConsent />
+      <CookieConsent/>
     </div>
   );
 }

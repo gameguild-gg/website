@@ -1,6 +1,5 @@
 'use client';
 import React from 'react';
-import { useRouter } from 'next/navigation';
 
 function Home() {
   return (
@@ -11,13 +10,14 @@ function Home() {
         loop
         muted
       >
-        <source src="assets/videos/hexagon-bg.mp4" type="video/mp4" />
+        <source src="assets/videos/hexagon-bg.mp4" type="video/mp4"/>
       </video>
-      <div className="absolute w-full lg:flex h-[400px] overflow-hidden items-center grid grid-cols-1 mx-auto block z-10">
-        
+      <div
+        className="absolute w-full lg:flex h-[400px] overflow-hidden items-center grid grid-cols-1 mx-auto block z-10">
+
         <div className='z-10 text-black mx-auto'>
           <div className="text-7xl font-semibold  text-shadow-lg shadow-white">Let's Build Dreams Together!</div>
-          <br />
+          <br/>
           <span className="text-2xl">The All-in-One Game Dev Toolkit</span>
         </div>
       </div>
@@ -39,7 +39,7 @@ function Home() {
             Interactive Game Development Courses
           </div>
         </div>
-        <div></div> 
+        <div></div>
       </div>
 
       <div className="h-10"></div>
@@ -75,13 +75,14 @@ function Home() {
             Fully Featured Game Testing Lab
           </div>
         </div>
-        
+
         <div></div>
       </div>
 
       <div className="h-10"></div>
 
-      <div className="relative justify-between max-w-[1440px] w-full items-center bg-[#18181c] lg:flex justify-between mx-auto z-30">
+      <div
+        className="relative justify-between max-w-[1440px] w-full items-center bg-[#18181c] lg:flex justify-between mx-auto z-30">
         <div></div>
 
         <div>

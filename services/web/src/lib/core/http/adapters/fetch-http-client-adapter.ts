@@ -7,9 +7,10 @@ export class FetchHttpClientAdapter implements HttpClient {
 
     const response = await fetch(data.url, {
       method: data.method,
-      body: data.body,
+      body: data.body ? JSON.stringify(data.body) : undefined,
       headers: {
         "Authorization": `Bearer ${session?.user?.accessToken}`,
+        "Content-Type": "application/json",
         ...data.headers,
       }
     });
