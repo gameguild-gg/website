@@ -57,6 +57,41 @@ const TicketGrid = ({ tickets }) => (
     </ScrollArea>
 );
 
+// VideoBox component for displaying individual videos
+const VideoBox = ({ videoStatus, videoTitle, submitter, linkedToTicket }) => (
+    <div className="bg-gray-800 rounded-lg overflow-hidden shadow-lg p-4">
+        <div className="flex justify-between items-center mb-2">
+            <h3 className="text-lg font-semibold text-white">{videoTitle}</h3>
+            <span className="text-xs font-semibold text-gray-300 px-2 py-1 rounded bg-gray-700">
+                {videoStatus}
+            </span>
+        </div>
+        <p className="text-sm text-gray-400">Submitted by: {submitter}</p>
+        {linkedToTicket && (
+            <span className="text-sm text-pink-400 mt-2 inline-block">
+                Linked to Ticket
+            </span>
+        )}
+    </div>
+);
+
+// VideoGrid component wrapping after 6 items
+const VideoGrid = ({ videos }) => (
+    <ScrollArea className="h-[calc(100vh-300px)]">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 p-6">
+            {videos.map((video, index) => (
+                <VideoBox
+                    key={index}
+                    videoStatus={video.videoStatus}
+                    videoTitle={video.videoTitle}
+                    submitter={video.submitter}
+                    linkedToTicket={video.linkedToTicket}
+                />
+            ))}
+        </div>
+    </ScrollArea>
+);
+
 export default function Page() {
     const games = [
         { title: "Game 1", description: "Description 1" },
@@ -66,7 +101,7 @@ export default function Page() {
         { title: "Game 5", description: "Description 5" },
     ];
 
-    const initialTickets = [
+    const inatialTickets = [
         { ticketStatus: "Open", gameName: "Game 1", submitter: "User A" },
         { ticketStatus: "Open", gameName: "Game 2", submitter: "User B" },
         { ticketStatus: "Open", gameName: "Game 3", submitter: "User C" },
@@ -75,18 +110,34 @@ export default function Page() {
         { ticketStatus: "Closed", gameName: "Game 6", submitter: "User F" },
     ];
 
+    const initialVideos = [
+        { videoStatus: "Watched", videoTitle: "Gameplay 1", submitter: "User A", linkedToTicket: true },
+        { videoStatus: "Unwatched", videoTitle: "Gameplay 2", submitter: "User B", linkedToTicket: false },
+        { videoStatus: "Watched", videoTitle: "Gameplay 3", submitter: "User C", linkedToTicket: true },
+        { videoStatus: "Unwatched", videoTitle: "Gameplay 4", submitter: "User D", linkedToTicket: false },
+        { videoStatus: "Unwatched", videoTitle: "Gameplay 5", submitter: "User E", linkedToTicket: false },
+        { videoStatus: "Watched", videoTitle: "Gameplay 6", submitter: "User F", linkedToTicket: true },
+    ];
+
     const [activeTab, setActiveTab] = useState('Projects');
     const [numberOfGames, setNumberOfGames] = useState(games.length);
     const [NumberOfViews, setNumberOfViews] = useState(1);
     const [NumberOfDownloads, setNumberOfDownloads] = useState(2);
     const [NumberOfFollowers, setNumberOfFollowers] = useState(3);
-    const [NumberOfTickets, setNumberOfTickets] = useState(999);
+    const [NumberOfTickets, setNumberOfTickets] = useState(inatialTickets.length);
     const [ticketFilter, setTicketFilter] = useState('All');
-    const [tickets, setTickets] = useState(initialTickets);
+    const [tickets, setTickets] = useState(inatialTickets);
+    const [videos, setVideos] = useState(initialVideos);
+    const [videoFilter, setVideoFilter] = useState('All');
 
     // Filter tickets based on the selected filter status
     const filteredTickets = tickets.filter(ticket =>
         ticketFilter === 'All' || ticket.ticketStatus === ticketFilter
+    );
+
+    // Filter videos based on the selected filter status
+    const filteredVideos = videos.filter(video =>
+        videoFilter === 'All' || video.videoStatus === videoFilter
     );
 
     const renderContent = () => {
@@ -113,7 +164,22 @@ export default function Page() {
                     </div>
                 );
             case 'Videos':
-                return <div>Posts Content</div>;
+                return (
+                    <div>
+                        <div className="flex justify-end mb-4">
+                            <select
+                                className="bg-gray-800 text-white p-2 rounded"
+                                value={videoFilter}
+                                onChange={(e) => setVideoFilter(e.target.value)}
+                            >
+                                <option value="All">All</option>
+                                <option value="Watched">Watched</option>
+                                <option value="Unwatched">Unwatched</option>
+                            </select>
+                        </div>
+                        <VideoGrid videos={filteredVideos} />
+                    </div>
+                );
             default:
                 return <GameGrid games={games} />;
         }
