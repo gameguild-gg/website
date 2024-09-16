@@ -25,7 +25,7 @@ export default function Component() {
                         <img
                             src="/assets/images/XboxController.png"
                             alt="Tester Button"
-                            className="w-[400px] h-auto transition-all duration-300 ease-in-out group-hover:brightness-110 group-hover:grayscale-0 group-hover:shadow-lg rounded"
+                            className="w-[500px] h-auto transition-all duration-300 ease-in-out group-hover:brightness-110 group-hover:grayscale-0 group-hover:shadow-lg rounded"
                         />
                         <p className="mt-4 text-2xl font-semibold text-center text-white group-hover:text-green-600 transition-all duration-300">
                             Test a Game
