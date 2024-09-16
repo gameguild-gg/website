@@ -5,8 +5,7 @@ import Image from 'next/image';
 
 export default function NotFound() {
   return (
-    <html lang="en">
-    <body>
+
     <div className="flex flex-grow flex-col min-h-[100vh] items-center justify-center space-y-4 text-center">
       <Image
         src={'/assets/images/placeholder.svg'}
@@ -32,7 +31,5 @@ export default function NotFound() {
         Back to Safety
       </Link>
     </div>
-    </body>
-    </html>
   );
 }

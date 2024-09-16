@@ -10,7 +10,7 @@ COPY . /app
 # install dependencies
 RUN NODE_ENV=development npm install
 RUN NODE_ENV=development npm run install:web
-RUN NODE_ENV=development npm run build:web
+RUN NODE_ENV=development cd services/web && npm run build
 
 # start the app
 CMD ["npm", "run", "start:web"]
