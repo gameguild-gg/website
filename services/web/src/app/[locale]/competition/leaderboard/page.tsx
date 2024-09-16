@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useEffect } from 'react';
-import { getCookie } from 'cookies-next';
-import { useRouter } from 'next/navigation';
-import { Table, TableColumnsType, Typography } from 'antd';
-import { ChessLeaderboardResponseEntryDto } from '@game-guild/apiclient';
+import React, {useEffect} from 'react';
+import {getCookie} from 'cookies-next';
+import {useRouter} from 'next/navigation';
+import {Table, TableColumnsType, Typography} from 'antd';
+import {ChessLeaderboardResponseEntryDto} from '@game-guild/apiclient';
 
 export default function LeaderboardPage() {
   const router = useRouter();
@@ -80,7 +80,7 @@ export default function LeaderboardPage() {
   return (
     <>
       <Typography.Title>Leaderboard</Typography.Title>
-      <Table columns={columns} dataSource={data} />
+      <Table columns={columns} dataSource={data}/>
     </>
   );
 }

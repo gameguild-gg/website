@@ -1,4 +1,4 @@
-import { MetadataRoute } from 'next';
+import {MetadataRoute} from 'next';
 
 type Props = {
   slug: string;
@@ -9,7 +9,7 @@ export async function generateSitemaps(): Promise<string[]> {
 }
 
 export default async function sitemap({
-  slug,
-}: Readonly<Props>): Promise<MetadataRoute.Sitemap> {
+                                        slug,
+                                      }: Readonly<Props>): Promise<MetadataRoute.Sitemap> {
   return [];
 }

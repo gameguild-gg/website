@@ -1,26 +1,11 @@
-import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Separator } from '@/components/ui/separator';
-import { Textarea } from '@/components/ui/textarea';
-import {
-  Bold,
-  Code,
-  Heading2,
-  Italic,
-  Link,
-  List,
-  ListOrdered,
-  Quote,
-} from 'lucide-react';
+import {Button} from '@/components/ui/button';
+import {Checkbox} from '@/components/ui/checkbox';
+import {Input} from '@/components/ui/input';
+import {Label} from '@/components/ui/label';
+import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue,} from '@/components/ui/select';
+import {Separator} from '@/components/ui/separator';
+import {Textarea} from '@/components/ui/textarea';
+import {Bold, Code, Heading2, Italic, Link, List, ListOrdered, Quote,} from 'lucide-react';
 
 export default function EditProfile() {
   return (
@@ -40,14 +25,14 @@ export default function EditProfile() {
             <Button variant="ghost" className="w-full justify-start">
               Two factor auth
             </Button>
-            <Separator className="my-4" />
+            <Separator className="my-4"/>
             <Button variant="ghost" className="w-full justify-start">
               Credit cards
             </Button>
             <Button variant="ghost" className="w-full justify-start">
               Billing address
             </Button>
-            <Separator className="my-4" />
+            <Separator className="my-4"/>
             <Button variant="ghost" className="w-full justify-start">
               Get started
             </Button>
@@ -57,11 +42,11 @@ export default function EditProfile() {
             <Button variant="ghost" className="w-full justify-start">
               Third-party analytics
             </Button>
-            <Separator className="my-4" />
+            <Separator className="my-4"/>
             <Button variant="ghost" className="w-full justify-start">
               Email notifications
             </Button>
-            <Separator className="my-4" />
+            <Separator className="my-4"/>
             <Button variant="ghost" className="w-full justify-start">
               Connected accounts
             </Button>
@@ -77,7 +62,7 @@ export default function EditProfile() {
             <Button variant="ghost" className="w-full justify-start">
               Delete Account
             </Button>
-            <Separator className="my-4" />
+            <Separator className="my-4"/>
             <Button variant="ghost" className="w-full justify-start">
               API keys
             </Button>
@@ -94,7 +79,7 @@ export default function EditProfile() {
                 Username — Used to log into your account and for your page URL
               </Label>
               <div className="flex items-center gap-2">
-                <Input id="username" value="username" readOnly />
+                <Input id="username" value="username" readOnly/>
                 <Button variant="secondary">Change my username/URL</Button>
               </div>
             </div>
@@ -118,29 +103,29 @@ export default function EditProfile() {
                 Display name — Name to be shown in place of your username, leave
                 blank to default to username
               </Label>
-              <Input id="display-name" placeholder="optional" />
+              <Input id="display-name" placeholder="optional"/>
             </div>
             <div className="space-y-2">
               <Label htmlFor="website">
                 Website — Optional URL to be shown on your profile page
               </Label>
-              <Input id="website" placeholder="optional" />
+              <Input id="website" placeholder="optional"/>
             </div>
             <div className="space-y-2">
               <Label htmlFor="twitter">
                 Twitter — Twitter account to show on your profile
               </Label>
-              <Input id="twitter" placeholder="@username" />
+              <Input id="twitter" placeholder="@username"/>
             </div>
             <div className="space-y-2">
               <Label>Account type — How will you use your account</Label>
               <div className="space-y-2">
                 <div className="flex items-center space-x-2">
-                  <Checkbox id="playing" />
+                  <Checkbox id="playing"/>
                   <label htmlFor="playing">Playing and downloading games</label>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <Checkbox id="developing" />
+                  <Checkbox id="developing"/>
                   <label htmlFor="developing">
                     Developing and uploading games
                   </label>
@@ -153,7 +138,7 @@ export default function EditProfile() {
               </Label>
               <Select>
                 <SelectTrigger>
-                  <SelectValue placeholder="Default (Set to English)" />
+                  <SelectValue placeholder="Default (Set to English)"/>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="en">English</SelectItem>
@@ -174,35 +159,35 @@ export default function EditProfile() {
               <Label>Content — How content on gameguild is shown to you</Label>
               <div className="space-y-2">
                 <div className="flex items-center space-x-2">
-                  <Checkbox id="adult-content" />
+                  <Checkbox id="adult-content"/>
                   <label htmlFor="adult-content">
                     Show content marked as adult in search & browse
                   </label>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <Checkbox id="disable-gifs" />
+                  <Checkbox id="disable-gifs"/>
                   <label htmlFor="disable-gifs">Disable animated gifs</label>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <Checkbox id="disable-autoload" />
+                  <Checkbox id="disable-autoload"/>
                   <label htmlFor="disable-autoload">
                     Disable auto-loading next page when browsing
                   </label>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <Checkbox id="require-click" />
+                  <Checkbox id="require-click"/>
                   <label htmlFor="require-click">
                     Require a click to run HTML5 game embeds
                   </label>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <Checkbox id="dark-theme" />
+                  <Checkbox id="dark-theme"/>
                   <label htmlFor="dark-theme">
                     Use a dark theme where available
                   </label>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <Checkbox id="markdown" />
+                  <Checkbox id="markdown"/>
                   <label htmlFor="markdown">
                     Prefer Markdown input where available
                   </label>
@@ -214,31 +199,31 @@ export default function EditProfile() {
               <div className="border rounded-md p-2">
                 <div className="flex items-center gap-2 mb-2">
                   <Button size="sm" variant="outline">
-                    <Code className="w-4 h-4" />
+                    <Code className="w-4 h-4"/>
                   </Button>
                   <Button size="sm" variant="outline">
-                    <Bold className="w-4 h-4" />
+                    <Bold className="w-4 h-4"/>
                   </Button>
                   <Button size="sm" variant="outline">
-                    <Italic className="w-4 h-4" />
+                    <Italic className="w-4 h-4"/>
                   </Button>
                   <Button size="sm" variant="outline">
-                    <Heading2 className="w-4 h-4" />
+                    <Heading2 className="w-4 h-4"/>
                   </Button>
                   <Button size="sm" variant="outline">
-                    <List className="w-4 h-4" />
+                    <List className="w-4 h-4"/>
                   </Button>
                   <Button size="sm" variant="outline">
-                    <ListOrdered className="w-4 h-4" />
+                    <ListOrdered className="w-4 h-4"/>
                   </Button>
                   <Button size="sm" variant="outline">
-                    <Link className="w-4 h-4" />
+                    <Link className="w-4 h-4"/>
                   </Button>
                   <Button size="sm" variant="outline">
-                    <Quote className="w-4 h-4" />
+                    <Quote className="w-4 h-4"/>
                   </Button>
                 </div>
-                <Textarea placeholder="Optional" className="min-h-[200px]" />
+                <Textarea placeholder="Optional" className="min-h-[200px]"/>
               </div>
             </div>
             <Button type="submit">Save</Button>

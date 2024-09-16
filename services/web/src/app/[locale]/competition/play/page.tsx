@@ -1,16 +1,15 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { Chessboard } from 'react-chessboard';
-import { Chess, Move, WHITE } from 'chess.js';
+import React, {useEffect, useState} from 'react';
+import {Chessboard} from 'react-chessboard';
+import {Chess, WHITE} from 'chess.js';
 
-import { DownOutlined, UserOutlined, RobotFilled } from '@ant-design/icons';
-import { Flex, MenuProps } from 'antd';
-import { Button, Dropdown, message, Space, Tooltip } from 'antd';
+import {RobotFilled, UserOutlined} from '@ant-design/icons';
+import {Dropdown, MenuProps, message, Space} from 'antd';
 
-import { getCookie } from 'cookies-next';
-import { useRouter } from 'next/navigation';
-import { ChessMoveRequestDto } from '@game-guild/apiclient';
+import {getCookie} from 'cookies-next';
+import {useRouter} from 'next/navigation';
+import {ChessMoveRequestDto} from '@game-guild/apiclient';
 
 export default function PlayPage() {
   const router = useRouter();
@@ -176,14 +175,14 @@ export default function PlayPage() {
                 return {
                   key: agent,
                   label: agent,
-                  icon: agent === 'human' ? <UserOutlined /> : <RobotFilled />,
+                  icon: agent === 'human' ? <UserOutlined/> : <RobotFilled/>,
                 };
               }),
               onClick: handleMenuClickWhite,
             }}
             placement="topLeft"
             arrow
-            style={{ borderColor: 'black', color: 'black' }}
+            style={{borderColor: 'black', color: 'black'}}
           >
             {selectedAgentWhite ? selectedAgentWhite : 'White'}
           </Dropdown.Button>
@@ -195,14 +194,14 @@ export default function PlayPage() {
                 return {
                   key: agent,
                   label: agent,
-                  icon: agent === 'human' ? <UserOutlined /> : <RobotFilled />,
+                  icon: agent === 'human' ? <UserOutlined/> : <RobotFilled/>,
                 };
               }),
               onClick: handleMenuClickBlack,
             }}
             placement="topLeft"
             arrow
-            style={{ borderColor: 'red', color: 'red' }}
+            style={{borderColor: 'red', color: 'red'}}
           >
             {selectedAgentBlack ? selectedAgentBlack : 'Black'}
           </Dropdown.Button>

@@ -17,13 +17,13 @@ import {
   PlayCircleOutlined,
   UserSwitchOutlined,
 } from '@ant-design/icons';
-import { FloatButton, Layout, Menu, MenuProps, theme } from 'antd';
-import { deleteCookie, getCookie } from 'cookies-next';
-import { useRouter } from 'next/navigation';
-import React, { useEffect, useState } from 'react';
-import { UserEntity } from '@game-guild/apiclient';
+import {FloatButton, Layout, Menu, MenuProps, theme} from 'antd';
+import {deleteCookie, getCookie} from 'cookies-next';
+import {useRouter} from 'next/navigation';
+import React, {useEffect, useState} from 'react';
+import {UserEntity} from '@game-guild/apiclient';
 
-const { Content, Footer, Sider } = Layout;
+const {Content, Footer, Sider} = Layout;
 
 type MenuItem = Required<MenuProps>['items'][number];
 
@@ -61,47 +61,47 @@ interface MenuItemProps {
 const items: MenuItemProps[] = [
   {
     key: MenuKeys.Summary,
-    icon: <PieChartOutlined />,
-    content: <SummaryPage />,
+    icon: <PieChartOutlined/>,
+    content: <SummaryPage/>,
   },
   {
     key: MenuKeys.Leaderboard,
-    icon: <OrderedListOutlined />,
-    content: <LeaderboardPage />,
+    icon: <OrderedListOutlined/>,
+    content: <LeaderboardPage/>,
   },
-  { key: MenuKeys.Submit, icon: <FileAddOutlined />, content: <SubmitPage /> },
+  {key: MenuKeys.Submit, icon: <FileAddOutlined/>, content: <SubmitPage/>},
   {
     key: MenuKeys.Matches,
-    icon: <HistoryOutlined />,
-    content: <MatchesPage />,
+    icon: <HistoryOutlined/>,
+    content: <MatchesPage/>,
   },
-  { key: MenuKeys.Play, icon: <PlayCircleOutlined />, content: <PlayPage /> },
+  {key: MenuKeys.Play, icon: <PlayCircleOutlined/>, content: <PlayPage/>},
   {
     key: MenuKeys.Replay,
-    icon: <PlayCircleOutlined />,
-    content: <ReplayPage />,
+    icon: <PlayCircleOutlined/>,
+    content: <ReplayPage/>,
   },
   {
     key: MenuKeys.Challenge,
-    icon: <PlayCircleOutlined />,
-    content: <ChallengePage />,
+    icon: <PlayCircleOutlined/>,
+    content: <ChallengePage/>,
   },
   {
     key: MenuKeys.Tournament,
-    icon: <PlayCircleOutlined />,
-    content: <TournamentPage />,
+    icon: <PlayCircleOutlined/>,
+    content: <TournamentPage/>,
   },
 ];
 
 export default function CompetitionPage({
-  children,
-}: {
+                                          children,
+                                        }: {
   children: React.ReactNode;
 }) {
   const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
   const {
-    token: { colorBgContainer, borderRadiusLG },
+    token: {colorBgContainer, borderRadiusLG},
   } = theme.useToken();
   const [selectedKey, setSelectedKey] = useState(MenuKeys.Summary);
 
@@ -132,12 +132,12 @@ export default function CompetitionPage({
   }, []);
 
   return (
-    <Layout style={{ minHeight: '100vh' }}>
+    <Layout style={{minHeight: '100vh'}}>
       <FloatButton
         shape="circle"
         type="primary"
-        style={{ bottom: 50, left: 20 }}
-        icon={<UserSwitchOutlined />}
+        style={{bottom: 50, left: 20}}
+        icon={<UserSwitchOutlined/>}
         onClick={logout}
       />
       <Sider
@@ -145,7 +145,7 @@ export default function CompetitionPage({
         collapsed={collapsed}
         onCollapse={(value) => setCollapsed(value)}
       >
-        <div className="demo-logo-vertical" />
+        <div className="demo-logo-vertical"/>
         <Menu theme="dark" defaultSelectedKeys={[selectedKey]} mode="inline">
           {items.map((item) => (
             <Menu.Item
@@ -162,7 +162,7 @@ export default function CompetitionPage({
         </Menu>
       </Sider>
       <Layout>
-        <Content style={{ margin: '0 16px' }}>
+        <Content style={{margin: '0 16px'}}>
           <div
             style={{
               padding: 24,
@@ -174,7 +174,7 @@ export default function CompetitionPage({
             {children}
           </div>
         </Content>
-        <Footer style={{ textAlign: 'center' }}>
+        <Footer style={{textAlign: 'center'}}>
           Chess AI competition engine ©{new Date().getFullYear()} Created by
           GameGuild, for Game AI classes at Champlain College. Feel free to use
           and contribute to this project.

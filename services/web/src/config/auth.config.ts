@@ -43,7 +43,16 @@ export const authConfig = {
       return {...token, ...user};
     },
     session: async ({session, token, user}) => {
-      session.user = token;
+      session.user =
+        {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          image: user.image,
+          wallet: user.wallet,
+          accessToken: token.accessToken,
+          refreshToken: token.refreshToken,
+        }
       return session;
     },
   },

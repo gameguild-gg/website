@@ -1,13 +1,13 @@
 'use client';
 
-import { InboxOutlined, UploadOutlined } from '@ant-design/icons';
+import {InboxOutlined, UploadOutlined} from '@ant-design/icons';
 
-import { Button, message, Space, Upload, UploadProps, Typography } from 'antd';
-import { getCookie } from 'cookies-next';
+import {Button, message, Space, Typography, Upload, UploadProps} from 'antd';
+import {getCookie} from 'cookies-next';
 import JSZip from 'jszip';
-import React, { useEffect, useState } from 'react';
+import React, {useEffect, useState} from 'react';
 
-const { Dragger } = Upload;
+const {Dragger} = Upload;
 
 // todo: convert to typescript style
 const canUpload = function (file: any, fileList: any[] = []) {
@@ -85,7 +85,7 @@ export default function SubmitPage() {
       files.forEach((file) => {
         zip.file(file.name, file);
       });
-      zipData = await zip.generateAsync({ type: 'arraybuffer' });
+      zipData = await zip.generateAsync({type: 'arraybuffer'});
     }
 
     // check if zipData size is less than 10MB
@@ -100,7 +100,7 @@ export default function SubmitPage() {
     const formData = new FormData();
     formData.append(
       'file',
-      new Blob([zipData as ArrayBuffer], { type: 'application/zip' }),
+      new Blob([zipData as ArrayBuffer], {type: 'application/zip'}),
       'bot.zip',
     );
     const baseUrl = process.env.NEXT_PUBLIC_API_URL;
@@ -156,7 +156,7 @@ export default function SubmitPage() {
       <Typography.Paragraph></Typography.Paragraph>
       <Dragger {...uploadProps}>
         <p className="ant-upload-drag-icon">
-          <InboxOutlined />
+          <InboxOutlined/>
         </p>
         <p className="ant-upload-text">
           Click or drag file(s) to this area to upload
@@ -170,7 +170,7 @@ export default function SubmitPage() {
         </p>
       </Dragger>
       <Button
-        icon={<UploadOutlined />}
+        icon={<UploadOutlined/>}
         type="primary"
         block
         danger
@@ -180,7 +180,7 @@ export default function SubmitPage() {
         Submit
       </Button>
       {files.map((file) => (
-        <Typography.Text style={{ color: 'black' }} key={file.name}>
+        <Typography.Text style={{color: 'black'}} key={file.name}>
           {file.name} - {file.size} bytes;
         </Typography.Text>
       ))}

@@ -1,11 +1,7 @@
 'use client';
-import {
-  CredentialResponse,
-  GoogleLogin,
-  GoogleOAuthProvider,
-} from '@react-oauth/google';
-import React, { useMemo, useState } from 'react';
-import { jwtDecode } from 'jwt-decode';
+import {CredentialResponse, GoogleLogin, GoogleOAuthProvider,} from '@react-oauth/google';
+import React, {useMemo, useState} from 'react';
+import {jwtDecode} from 'jwt-decode';
 
 export default function Auth() {
   const [credentialResponse, setCredentialResponse] =
