@@ -1,12 +1,18 @@
 'use client';
 
-import React, {useEffect, useState} from 'react';
-import {getCookie} from 'cookies-next';
-import {Button, Dropdown, MenuProps, message, Space, Typography} from 'antd';
-import {RobotFilled} from '@ant-design/icons';
-import {useRouter} from 'next/navigation';
-import {competitionsApi} from '@/lib/apinest';
-import {ChessMatchResultDto, UserEntity} from '@game-guild/apiclient';
+import React, { useEffect, useState } from 'react';
+import { getCookie } from 'cookies-next';
+import { Button, Dropdown, MenuProps, message, Space, Typography } from 'antd';
+import { RobotFilled } from '@ant-design/icons';
+import { useRouter } from 'next/navigation';
+import {
+  ChessMatchResultDto,
+  competitionControllerListChessAgents,
+  competitionControllerRunChessMatch,
+  UserEntity,
+} from '@game-guild/apiclient';
+import { getSession } from 'next-auth/react';
+import { createClient } from '@hey-api/client-fetch';
 
 const ChallengePage: React.FC = () => {
   const router = useRouter();
@@ -112,14 +118,14 @@ const ChallengePage: React.FC = () => {
                 return {
                   key: agent,
                   label: agent,
-                  icon: <RobotFilled/>,
+                  icon: <RobotFilled />,
                 };
               }),
               onClick: handleMenuClickWhite,
             }}
             placement="topLeft"
             arrow
-            style={{borderColor: 'black', color: 'black'}}
+            style={{ borderColor: 'black', color: 'black' }}
           >
             {selectedAgentWhite ? selectedAgentWhite : 'White'}
           </Dropdown.Button>
@@ -131,14 +137,14 @@ const ChallengePage: React.FC = () => {
                 return {
                   key: agent,
                   label: agent,
-                  icon: <RobotFilled/>,
+                  icon: <RobotFilled />,
                 };
               }),
               onClick: handleMenuClickBlack,
             }}
             placement="topLeft"
             arrow
-            style={{borderColor: 'red', color: 'red'}}
+            style={{ borderColor: 'red', color: 'red' }}
           >
             {selectedAgentBlack ? selectedAgentBlack : 'Black'}
           </Dropdown.Button>
