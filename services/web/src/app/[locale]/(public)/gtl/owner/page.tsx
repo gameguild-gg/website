@@ -121,9 +121,78 @@ export default function Page() {
     ];
 
     const initialTickets = [
-        { id: 1, ticketStatus: "Open", gameName: "Game 1", submitter: "User A", description: "Description for Ticket 1" },
-        { id: 2, ticketStatus: "Open", gameName: "Game 2", submitter: "User B", description: "Description for Ticket 2" },
-    ];
+        {
+            "id": 1,
+            "ticketStatus": "Open",
+            "gameName": "Game 1",
+            "submitter": "User A",
+            "description": "This is the test description for game one: On level one, the map glitches out when you are holding your sword and jump onto the brown box."
+        },
+        {
+            "id": 2,
+            "ticketStatus": "Open",
+            "gameName": "Game 2",
+            "submitter": "User B",
+            "description": "Description for Ticket 2: The game freezes during the cutscene when the main character interacts with the NPC near the fountain."
+        },
+        {
+            "id": 3,
+            "ticketStatus": "Closed",
+            "gameName": "Game 3",
+            "submitter": "User C",
+            "description": "The character gets stuck in a wall after using the dash ability on level 3, preventing further progress."
+        },
+        {
+            "id": 4,
+            "ticketStatus": "Open",
+            "gameName": "Game 4",
+            "submitter": "User D",
+            "description": "Description for Ticket 4: The boss battle music does not play during the final fight, creating an awkwardly silent atmosphere."
+        },
+        {
+            "id": 5,
+            "ticketStatus": "Closed",
+            "gameName": "Game 5",
+            "submitter": "User E",
+            "description": "The save function fails after completing a mini-game, causing progress to be lost when the game is restarted."
+        },
+        {
+            "id": 6,
+            "ticketStatus": "Open",
+            "gameName": "Game 6",
+            "submitter": "User F",
+            "description": "Description for Ticket 6: The inventory screen crashes when more than 10 items are added at once, causing the game to close unexpectedly."
+        },
+        {
+            "id": 7,
+            "ticketStatus": "Closed",
+            "gameName": "Game 7",
+            "submitter": "User G",
+            "description": "The tutorial text overlaps with the background graphics, making it difficult to read the instructions on screen."
+        },
+        {
+            "id": 8,
+            "ticketStatus": "Open",
+            "gameName": "Game 8",
+            "submitter": "User H",
+            "description": "Description for Ticket 8: During multiplayer mode, one player's avatar appears invisible to the other players, impacting gameplay balance."
+        },
+        {
+            "id": 9,
+            "ticketStatus": "Closed",
+            "gameName": "Game 9",
+            "submitter": "User I",
+            "description": "The health bar does not update correctly when the character takes damage, staying full despite receiving multiple hits."
+        },
+        {
+            "id": 10,
+            "ticketStatus": "Open",
+            "gameName": "Game 10",
+            "submitter": "User J",
+            "description": "Description for Ticket 10: The game crashes on startup when running on Windows 11, displaying an error message related to DirectX compatibility."
+        }
+    ]
+
 
     const initialVideos = [
         { videoStatus: "Watched", videoTitle: "Gameplay 1", submitter: "User A", linkedToTicket: true },

@@ -38,7 +38,7 @@
   "dependencies": {
     "@dataui/crud": "5.3.4",
     "@dataui/crud-request": "5.3.4",
-    "@dataui/crud-typeorm": "5.3.4",
+    "@dataui/crud-typeorm": "^5.3.4",
     "@dataui/crud-util": "5.3.4",
     "@faker-js/faker": "^8.4.1",
     "@nestjs/cache-manager": "^2.2.2",
@@ -90,7 +90,7 @@
     "simple-git": "^3.22.0",
     "siwe": "^2.3.2",
     "ts-nameof": "^5.0.0",
-    "typeorm": "^0.3.16",
+    "typeorm": "^0.3.20",
     "typeorm-linq-repository": "^2.0.2",
     "typeorm-transactional": "0.4.1",
     "wait-on": "^7.2.0"

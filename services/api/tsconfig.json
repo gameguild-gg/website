@@ -20,6 +20,6 @@
     "strict": true,
     "noImplicitReturns": true,
     "alwaysStrict": true,
-    "strictFunctionTypes": true,
+    "strictFunctionTypes": true
   },
 }
