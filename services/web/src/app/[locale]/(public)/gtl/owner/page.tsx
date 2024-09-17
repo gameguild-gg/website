@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import AnalyticsGraphs from './AnalyticsGraphs';
 
-// GameCard component (unchanged)
+// GameCard component
 const GameCard = ({ title, description }) => (
     <div className="bg-gray-800 rounded-lg overflow-hidden shadow-lg">
         <div className="h-48 bg-gray-700 flex items-center justify-center">
@@ -23,7 +23,7 @@ const GameCard = ({ title, description }) => (
     </div>
 );
 
-// GameGrid component (unchanged)
+// GameGrid component
 const GameGrid = ({ games }) => (
     <ScrollArea className="h-[calc(100vh-300px)]">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
@@ -34,10 +34,10 @@ const GameGrid = ({ games }) => (
     </ScrollArea>
 );
 
-// Updated TicketBox component
+// TicketBox component
 const TicketBox = ({ ticket, onClick }) => (
     <div
-        onClick={() => handleTicketClick(ticket)}
+        onClick={() => onClick(ticket)}
         className="bg-gray-800 rounded-lg overflow-hidden shadow-lg p-4 hover:bg-gray-700 transition-colors duration-200 cursor-pointer"
     >
         <div className="flex justify-between items-center mb-2">
@@ -50,7 +50,7 @@ const TicketBox = ({ ticket, onClick }) => (
     </div>
 );
 
-// Updated TicketGrid component
+// TicketGrid component
 const TicketGrid = ({ tickets, onTicketClick }) => (
     <ScrollArea className="h-[calc(100vh-300px)]">
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 p-6">
@@ -58,14 +58,14 @@ const TicketGrid = ({ tickets, onTicketClick }) => (
                 <TicketBox
                     key={index}
                     ticket={ticket}
-                    onClick={onTicketClick}
+                    onClick={onTicketClick} // Correct usage of onClick
                 />
             ))}
         </div>
     </ScrollArea>
 );
 
-// VideoBox component (unchanged)
+// VideoBox component
 const VideoBox = ({ videoStatus, videoTitle, submitter, linkedToTicket }) => (
     <div className="bg-gray-800 rounded-lg overflow-hidden shadow-lg p-4">
         <div className="flex justify-between items-center mb-2">
@@ -83,7 +83,7 @@ const VideoBox = ({ videoStatus, videoTitle, submitter, linkedToTicket }) => (
     </div>
 );
 
-// VideoGrid component (unchanged)
+// VideoGrid component
 const VideoGrid = ({ videos }) => (
     <ScrollArea className="h-[calc(100vh-300px)]">
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 p-6">
@@ -100,22 +100,19 @@ const VideoGrid = ({ videos }) => (
     </ScrollArea>
 );
 
-
-
 export default function Page() {
-        const router = useRouter();
+    const router = useRouter();
 
-        // Ensure there is only one declaration of handleTicketClick
-        const handleTicketClick = (ticket) => {
-            // Save the ticket data to localStorage
-            localStorage.setItem('selectedTicket', JSON.stringify(ticket));
+    // Define the handleTicketClick function once
+    const handleTicketClick = (ticket) => {
+        // Save the ticket data to localStorage
+        localStorage.setItem('selectedTicket', JSON.stringify(ticket));
 
-            // Navigate to the desired route
-            router.push(`/gtl/owner/Tickets/`);
-        };
+        // Navigate to the desired route
+        router.push(`/gtl/owner/Tickets/`);
+    };
 
-
-        const games = [
+    const games = [
         { title: "Game 1", description: "Description 1" },
         { title: "Game 2", description: "Description 2" },
         { title: "Game 3", description: "Description 3" },
@@ -138,13 +135,8 @@ export default function Page() {
     ];
 
     const [activeTab, setActiveTab] = useState('Projects');
-    const [numberOfGames, setNumberOfGames] = useState(games.length);
-    const [NumberOfViews, setNumberOfViews] = useState(1);
-    const [NumberOfDownloads, setNumberOfDownloads] = useState(2);
-    const [NumberOfFollowers, setNumberOfFollowers] = useState(3);
-    const [NumberOfTickets, setNumberOfTickets] = useState(initialTickets.length);
     const [ticketFilter, setTicketFilter] = useState('All');
-    const [tickets, setTickets] = useState(initialTickets);
+    const [tickets] = useState(initialTickets);
     const [videos, setVideos] = useState(initialVideos);
     const [videoFilter, setVideoFilter] = useState('All');
 
@@ -157,13 +149,6 @@ export default function Page() {
     const filteredVideos = videos.filter(video =>
         videoFilter === 'All' || video.videoStatus === videoFilter
     );
-
-    const handleTicketClick = (ticket) => {
-        // Store the selected ticket in localStorage
-        localStorage.setItem('selectedTicket', JSON.stringify(ticket));
-        // Navigate to the ticket detail page
-        router.push(`/gtl/owner/Tickets/${ticket.id}`);
-    };
 
     const renderContent = () => {
         switch (activeTab) {
@@ -218,24 +203,6 @@ export default function Page() {
                         <h1 className="text-2xl font-semibold text-white">
                             Creator Dashboard
                         </h1>
-                        <div className="mt-4 flex justify-end space-x-4">
-                            <div className="text-center">
-                                <div className="text-2xl font-bold text-white">{NumberOfViews}</div>
-                                <div className="text-sm text-gray-400">Views</div>
-                            </div>
-                            <div className="text-center">
-                                <div className="text-2xl font-bold text-white">{NumberOfDownloads}</div>
-                                <div className="text-sm text-gray-400">Downloads</div>
-                            </div>
-                            <div className="text-center">
-                                <div className="text-2xl font-bold text-white">{NumberOfFollowers}</div>
-                                <div className="text-sm text-gray-400">Followers</div>
-                            </div>
-                            <div className="text-center">
-                                <div className="text-2xl font-bold text-white">{NumberOfTickets}</div>
-                                <div className="text-sm text-gray-400">Tickets</div>
-                            </div>
-                        </div>
                     </div>
                     <div className="border-t border-gray-700">
                         <nav className="flex">
@@ -254,27 +221,7 @@ export default function Page() {
                             ))}
                         </nav>
                     </div>
-                    {numberOfGames === 0 ? (
-                        <div className="p-6">
-                            <div className="text-center py-12">
-                                <h2 className="text-2xl font-semibold text-gray-700 mb-6">
-                                    Are you a developer? Upload your first game
-                                </h2>
-                                <Button className="bg-pink-500 text-white hover:bg-pink-600" asChild>
-                                    <Link href="/dashboard/projects/create">
-                                        Create new project
-                                    </Link>
-                                </Button>
-                                <div className="mt-4">
-                                    <Link href="#" className="text-sm text-gray-500 hover:underline">
-                                        Nah, take me to the games feed
-                                    </Link>
-                                </div>
-                            </div>
-                        </div>
-                    ) : (
-                        <div className="p-6">{renderContent()}</div>
-                    )}
+                    <div className="p-6">{renderContent()}</div>
                 </div>
             </main>
         </div>

@@ -26,7 +26,7 @@ export default function TicketDetail() {
             setTicket(JSON.parse(storedTicket));
         } else {
             // If no ticket data is found, redirect to the dashboard
-            router.push('/dashboard');
+            router.push('/gtl/owner');
         }
         setIsLoading(false);
     }, [id, router]);
@@ -63,7 +63,7 @@ export default function TicketDetail() {
                 </div>
                 <div className="mt-6">
                     <Button asChild>
-                        <Link href="/dashboard">Back to Dashboard</Link>
+                        <Link href="/gtl/owner">Back to Dashboard</Link>
                     </Button>
                 </div>
             </main>
