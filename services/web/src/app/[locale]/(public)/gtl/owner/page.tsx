@@ -2,11 +2,12 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import AnalyticsGraphs from './AnalyticsGraphs';
 
-// GameCard component
+// GameCard component (unchanged)
 const GameCard = ({ title, description }) => (
     <div className="bg-gray-800 rounded-lg overflow-hidden shadow-lg">
         <div className="h-48 bg-gray-700 flex items-center justify-center">
@@ -22,7 +23,7 @@ const GameCard = ({ title, description }) => (
     </div>
 );
 
-// GameGrid component wrapping after 3 items
+// GameGrid component (unchanged)
 const GameGrid = ({ games }) => (
     <ScrollArea className="h-[calc(100vh-300px)]">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
@@ -33,31 +34,38 @@ const GameGrid = ({ games }) => (
     </ScrollArea>
 );
 
-// TicketBox component
-const TicketBox = ({ ticketStatus, gameName, submitter }) => (
-    <div className="bg-gray-800 rounded-lg overflow-hidden shadow-lg p-4">
+// Updated TicketBox component
+const TicketBox = ({ ticket, onClick }) => (
+    <div
+        onClick={() => handleTicketClick(ticket)}
+        className="bg-gray-800 rounded-lg overflow-hidden shadow-lg p-4 hover:bg-gray-700 transition-colors duration-200 cursor-pointer"
+    >
         <div className="flex justify-between items-center mb-2">
-            <h3 className="text-lg font-semibold text-white">{gameName}</h3>
+            <h3 className="text-lg font-semibold text-white">{ticket.gameName}</h3>
             <span className="text-xs font-semibold text-gray-300 px-2 py-1 rounded bg-gray-700">
-                {ticketStatus}
+                {ticket.ticketStatus}
             </span>
         </div>
-        <p className="text-sm text-gray-400">Submitted by: {submitter}</p>
+        <p className="text-sm text-gray-400">Submitted by: {ticket.submitter}</p>
     </div>
 );
 
-// TicketGrid component wrapping after 6 items
-const TicketGrid = ({ tickets }) => (
+// Updated TicketGrid component
+const TicketGrid = ({ tickets, onTicketClick }) => (
     <ScrollArea className="h-[calc(100vh-300px)]">
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 p-6">
             {tickets.map((ticket, index) => (
-                <TicketBox key={index} ticketStatus={ticket.ticketStatus} gameName={ticket.gameName} submitter={ticket.submitter} />
+                <TicketBox
+                    key={index}
+                    ticket={ticket}
+                    onClick={onTicketClick}
+                />
             ))}
         </div>
     </ScrollArea>
 );
 
-// VideoBox component for displaying individual videos
+// VideoBox component (unchanged)
 const VideoBox = ({ videoStatus, videoTitle, submitter, linkedToTicket }) => (
     <div className="bg-gray-800 rounded-lg overflow-hidden shadow-lg p-4">
         <div className="flex justify-between items-center mb-2">
@@ -75,7 +83,7 @@ const VideoBox = ({ videoStatus, videoTitle, submitter, linkedToTicket }) => (
     </div>
 );
 
-// VideoGrid component wrapping after 6 items
+// VideoGrid component (unchanged)
 const VideoGrid = ({ videos }) => (
     <ScrollArea className="h-[calc(100vh-300px)]">
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 p-6">
@@ -92,8 +100,22 @@ const VideoGrid = ({ videos }) => (
     </ScrollArea>
 );
 
+
+
 export default function Page() {
-    const games = [
+        const router = useRouter();
+
+        // Ensure there is only one declaration of handleTicketClick
+        const handleTicketClick = (ticket) => {
+            // Save the ticket data to localStorage
+            localStorage.setItem('selectedTicket', JSON.stringify(ticket));
+
+            // Navigate to the desired route
+            router.push(`/gtl/owner/Tickets/`);
+        };
+
+
+        const games = [
         { title: "Game 1", description: "Description 1" },
         { title: "Game 2", description: "Description 2" },
         { title: "Game 3", description: "Description 3" },
@@ -101,13 +123,9 @@ export default function Page() {
         { title: "Game 5", description: "Description 5" },
     ];
 
-    const inatialTickets = [
-        { ticketStatus: "Open", gameName: "Game 1", submitter: "User A" },
-        { ticketStatus: "Open", gameName: "Game 2", submitter: "User B" },
-        { ticketStatus: "Open", gameName: "Game 3", submitter: "User C" },
-        { ticketStatus: "Open", gameName: "Game 4", submitter: "User D" },
-        { ticketStatus: "Open", gameName: "Game 5", submitter: "User E" },
-        { ticketStatus: "Closed", gameName: "Game 6", submitter: "User F" },
+    const initialTickets = [
+        { id: 1, ticketStatus: "Open", gameName: "Game 1", submitter: "User A", description: "Description for Ticket 1" },
+        { id: 2, ticketStatus: "Open", gameName: "Game 2", submitter: "User B", description: "Description for Ticket 2" },
     ];
 
     const initialVideos = [
@@ -124,9 +142,9 @@ export default function Page() {
     const [NumberOfViews, setNumberOfViews] = useState(1);
     const [NumberOfDownloads, setNumberOfDownloads] = useState(2);
     const [NumberOfFollowers, setNumberOfFollowers] = useState(3);
-    const [NumberOfTickets, setNumberOfTickets] = useState(inatialTickets.length);
+    const [NumberOfTickets, setNumberOfTickets] = useState(initialTickets.length);
     const [ticketFilter, setTicketFilter] = useState('All');
-    const [tickets, setTickets] = useState(inatialTickets);
+    const [tickets, setTickets] = useState(initialTickets);
     const [videos, setVideos] = useState(initialVideos);
     const [videoFilter, setVideoFilter] = useState('All');
 
@@ -139,6 +157,13 @@ export default function Page() {
     const filteredVideos = videos.filter(video =>
         videoFilter === 'All' || video.videoStatus === videoFilter
     );
+
+    const handleTicketClick = (ticket) => {
+        // Store the selected ticket in localStorage
+        localStorage.setItem('selectedTicket', JSON.stringify(ticket));
+        // Navigate to the ticket detail page
+        router.push(`/gtl/owner/Tickets/${ticket.id}`);
+    };
 
     const renderContent = () => {
         switch (activeTab) {
@@ -160,7 +185,7 @@ export default function Page() {
                                 <option value="Closed">Closed</option>
                             </select>
                         </div>
-                        <TicketGrid tickets={filteredTickets} />
+                        <TicketGrid tickets={filteredTickets} onTicketClick={handleTicketClick} />
                     </div>
                 );
             case 'Videos':
