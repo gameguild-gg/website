@@ -127,7 +127,7 @@ export class CompetitionController {
   }
 
   @Get('/Chess/ListAgents')
-  @OkResponse({ type: [String] })
+  @ApiResponse({ type: [String] })
   @Auth(AuthenticatedRoute)
   async ListChessAgents(@AuthUser() user: UserEntity): Promise<string[]> {
     if (!user) throw new UnauthorizedException('Invalid credentials');
@@ -135,7 +135,7 @@ export class CompetitionController {
   }
 
   @Post('/Chess/Move')
-  @OkResponse({ type: String })
+  @ApiResponse({ type: String })
   @Auth(AuthenticatedRoute)
   async RequestChessMove(
     @Body() data: ChessMoveRequestDto,
@@ -146,7 +146,7 @@ export class CompetitionController {
   }
 
   @Post('/Chess/RunMatch')
-  @OkResponse({ type: ChessMatchResultDto })
+  @ApiResponse({ type: ChessMatchResultDto })
   @Auth(AuthenticatedRoute)
   async RunChessMatch(
     @Body() data: ChessMatchRequestDto,
@@ -158,7 +158,7 @@ export class CompetitionController {
 
   @Post('/Chess/FindMatches')
   @Auth(AuthenticatedRoute)
-  @OkResponse({
+  @ApiResponse({
     type: MatchSearchResponseDto,
     isArray: true,
   })
@@ -231,7 +231,7 @@ export class CompetitionController {
 
   @Get('/Chess/Match/:id')
   @Auth(AuthenticatedRoute)
-  @OkResponse({ type: ChessMatchResultDto })
+  @ApiResponse({ type: ChessMatchResultDto })
   async GetChessMatchResult(
     @Param('id', ParseUUIDPipe) id: string,
     @AuthUser() user: UserEntity,
@@ -242,7 +242,7 @@ export class CompetitionController {
 
   @Get('/Chess/Leaderboard')
   @Auth(AuthenticatedRoute)
-  @OkResponse({
+  @ApiResponse({
     type: ChessLeaderboardResponseEntryDto,
     isArray: true,
   })
@@ -261,7 +261,7 @@ export class CompetitionController {
   }
 
   @Get('Chess/LatestCompetitionReport')
-  @OkResponse({ type: CompetitionRunSubmissionReportEntity, isArray: true })
+  @ApiResponse({ type: CompetitionRunSubmissionReportEntity, isArray: true })
   @Auth(AuthenticatedRoute)
   async GetLatestChessCompetitionReport(
     @AuthUser() user: UserEntity,

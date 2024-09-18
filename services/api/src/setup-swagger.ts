@@ -4,6 +4,7 @@ import { CommonModule } from './common/common.module';
 import { execSync } from 'child_process';
 import { ApiConfigService } from './common/config.service';
 import * as fs from 'node:fs';
+import * as process from 'node:process';
 
 function replaceInFile(path: string, from: string, to: string) {
   const content = fs.readFileSync(path, 'utf8');

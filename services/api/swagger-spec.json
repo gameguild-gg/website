@@ -16,7 +16,7 @@
           }
         },
         "responses": {
-          "200": {
+          "default": {
             "description": "",
             "content": {
               "application/json": {
@@ -78,7 +78,7 @@
           }
         },
         "responses": {
-          "200": {
+          "default": {
             "description": "",
             "content": {
               "application/json": {
@@ -108,7 +108,7 @@
           }
         ],
         "responses": {
-          "200": {
+          "default": {
             "description": "",
             "content": {
               "application/json": {
@@ -139,7 +139,7 @@
           }
         },
         "responses": {
-          "200": {
+          "default": {
             "description": "",
             "content": {
               "application/json": {
@@ -170,7 +170,7 @@
           }
         },
         "responses": {
-          "200": {
+          "default": {
             "description": "",
             "content": {
               "application/json": {
@@ -191,7 +191,10 @@
         "operationId": "AuthController_getCurrentUser",
         "parameters": [],
         "responses": {
-          "200": {
+          "401": {
+            "description": "Unauthorized"
+          },
+          "default": {
             "description": "",
             "content": {
               "application/json": {
@@ -200,9 +203,6 @@
                 }
               }
             }
-          },
-          "401": {
-            "description": "Unauthorized"
           }
         },
         "tags": [
@@ -220,7 +220,10 @@
         "operationId": "AuthController_refreshToken",
         "parameters": [],
         "responses": {
-          "200": {
+          "401": {
+            "description": "Unauthorized"
+          },
+          "default": {
             "description": "",
             "content": {
               "application/json": {
@@ -229,9 +232,6 @@
                 }
               }
             }
-          },
-          "401": {
-            "description": "Unauthorized"
           }
         },
         "tags": [
@@ -279,7 +279,10 @@
         "operationId": "ContentController_createEmptyCourse",
         "parameters": [],
         "responses": {
-          "200": {
+          "401": {
+            "description": "Unauthorized"
+          },
+          "default": {
             "description": "",
             "content": {
               "application/json": {
@@ -288,9 +291,6 @@
                 }
               }
             }
-          },
-          "401": {
-            "description": "Unauthorized"
           }
         },
         "tags": [
@@ -1092,7 +1092,10 @@
         "operationId": "CompetitionController_ListChessAgents",
         "parameters": [],
         "responses": {
-          "200": {
+          "401": {
+            "description": "Unauthorized"
+          },
+          "default": {
             "description": "",
             "content": {
               "application/json": {
@@ -1104,9 +1107,6 @@
                 }
               }
             }
-          },
-          "401": {
-            "description": "Unauthorized"
           }
         },
         "tags": [
@@ -1134,7 +1134,10 @@
           }
         },
         "responses": {
-          "200": {
+          "401": {
+            "description": "Unauthorized"
+          },
+          "default": {
             "description": "",
             "content": {
               "application/json": {
@@ -1143,9 +1146,6 @@
                 }
               }
             }
-          },
-          "401": {
-            "description": "Unauthorized"
           }
         },
         "tags": [
@@ -1173,7 +1173,10 @@
           }
         },
         "responses": {
-          "200": {
+          "401": {
+            "description": "Unauthorized"
+          },
+          "default": {
             "description": "",
             "content": {
               "application/json": {
@@ -1182,9 +1185,6 @@
                 }
               }
             }
-          },
-          "401": {
-            "description": "Unauthorized"
           }
         },
         "tags": [
@@ -1212,7 +1212,10 @@
           }
         },
         "responses": {
-          "200": {
+          "401": {
+            "description": "Unauthorized"
+          },
+          "default": {
             "description": "",
             "content": {
               "application/json": {
@@ -1224,9 +1227,6 @@
                 }
               }
             }
-          },
-          "401": {
-            "description": "Unauthorized"
           }
         },
         "tags": [
@@ -1253,7 +1253,10 @@
           }
         ],
         "responses": {
-          "200": {
+          "401": {
+            "description": "Unauthorized"
+          },
+          "default": {
             "description": "",
             "content": {
               "application/json": {
@@ -1262,9 +1265,6 @@
                 }
               }
             }
-          },
-          "401": {
-            "description": "Unauthorized"
           }
         },
         "tags": [
@@ -1282,7 +1282,10 @@
         "operationId": "CompetitionController_GetChessLeaderboard",
         "parameters": [],
         "responses": {
-          "200": {
+          "401": {
+            "description": "Unauthorized"
+          },
+          "default": {
             "description": "",
             "content": {
               "application/json": {
@@ -1294,9 +1297,6 @@
                 }
               }
             }
-          },
-          "401": {
-            "description": "Unauthorized"
           }
         },
         "tags": [
@@ -1333,7 +1333,10 @@
         "operationId": "CompetitionController_GetLatestChessCompetitionReport",
         "parameters": [],
         "responses": {
-          "200": {
+          "401": {
+            "description": "Unauthorized"
+          },
+          "default": {
             "description": "",
             "content": {
               "application/json": {
@@ -1345,9 +1348,6 @@
                 }
               }
             }
-          },
-          "401": {
-            "description": "Unauthorized"
           }
         },
         "tags": [

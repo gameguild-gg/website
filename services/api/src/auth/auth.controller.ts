@@ -25,7 +25,7 @@ export class AuthController {
 
   @Post('magic-link')
   @Auth(PublicRoute)
-  @OkResponse({ type: OkDto })
+  @ApiResponse({ type: OkDto })
   public async magicLink(@Body() body: EmailDto): Promise<OkDto> {
     return this.authService.sendMagicLink(body);
   }
@@ -51,7 +51,7 @@ export class AuthController {
 
   @Post('local/sign-up')
   @Auth(PublicRoute)
-  @OkResponse({ type: LocalSignInResponseDto }) // pass the type to the swagger
+  @ApiResponse({ type: LocalSignInResponseDto }) // pass the type to the swagger
   public async signUpWithEmailUsernamePassword(
     @Body() data: LocalSignUpDto,
   ): Promise<LocalSignInResponseDto> {
@@ -67,7 +67,7 @@ export class AuthController {
   // }
 
   @Get('google/callback/:token')
-  @OkResponse({ type: LocalSignInResponseDto })
+  @ApiResponse({ type: LocalSignInResponseDto })
   @Auth(PublicRoute)
   public async signInWithGoogle(
     @Param('token') token: string,
@@ -77,7 +77,7 @@ export class AuthController {
 
   @Post('web3/sign-in/challenge')
   @Auth(PublicRoute)
-  @OkResponse({ type: EthereumSigninChallengeResponseDto })
+  @ApiResponse({ type: EthereumSigninChallengeResponseDto })
   public async getWeb3SignInChallenge(
     @Body() data: EthereumSigninChallengeRequestDto,
   ): Promise<EthereumSigninChallengeResponseDto> {
@@ -86,7 +86,7 @@ export class AuthController {
 
   @Post('web3/sign-in/validate')
   @Auth(PublicRoute)
-  @OkResponse({ type: LocalSignInResponseDto })
+  @ApiResponse({ type: LocalSignInResponseDto })
   public async validateWeb3SignInChallenge(
     @Body() data: EthereumSigninValidateRequestDto,
   ): Promise<LocalSignInResponseDto> {
@@ -95,7 +95,7 @@ export class AuthController {
 
   @Get('me')
   @Auth(AuthenticatedRoute)
-  @OkResponse({ type: UserEntity })
+  @ApiResponse({ type: UserEntity })
   public async getCurrentUser(
     @AuthUser() user: UserEntity,
   ): Promise<UserEntity> {
@@ -104,7 +104,7 @@ export class AuthController {
 
   @Get('refresh-token')
   @Auth(RefreshTokenRoute)
-  @OkResponse({ type: LocalSignInResponseDto })
+  @ApiResponse({ type: LocalSignInResponseDto })
   public async refreshToken(
     @AuthUser() user: UserEntity,
   ): Promise<LocalSignInResponseDto> {

@@ -6,6 +6,7 @@ import { useCallback, useEffect } from 'react';
 import { signInWithWeb3 } from '@/lib/auth/sign-in-with-web3';
 import { getSession } from 'next-auth/react';
 import { AuthApi } from '@game-guild/apiclient';
+import { redirect } from 'next/navigation';
 
 export function useSignInWithWeb3() {
   const api = new AuthApi({
@@ -46,7 +47,7 @@ export function useSignInWithWeb3() {
           // the await on the signInAndRedirectIfSucceed on metamask-sign-in-button.tsx is not working
           const session = await getSession();
           if (session) {
-            window.location.replace('/feed');
+            window.location.href = '/feed';
           }
         }
       } catch (error) {
