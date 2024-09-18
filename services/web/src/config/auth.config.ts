@@ -58,22 +58,48 @@ export const authConfig = {
     signIn: '/connect',
   },
   providers: [
-    // todo: implement refresh token
-    // Credentials({
-    //   type: 'credentials',
-    //   id: 'email',
-    //   name: 'email',
-    //   credentials: {
-    //     refreshToken: {
-    //       label: 'Refresh Token',
-    //       type: 'email',
-    //       placeholder: '',
-    //     },
-    //   },
-    //   async authorize(credentials): Promise<User | null> {
-    //     const refreshToken: string = credentials?.refreshToken as string;
-    //   },
-    // }),
+    Credentials({
+      type: 'credentials',
+      id: 'magic-link',
+      name: 'magic-link',
+      credentials: {
+        token: {
+          label: 'Token',
+          type: 'text',
+          placeholder: '0x0',
+        },
+      },
+      async authorize(credentials): Promise<User | null> {
+        const token: string = credentials?.token as string;
+
+        const api = new AuthApi({
+          basePath: process.env.NEXT_PUBLIC_API_URL,
+        });
+
+        let response: Api.LocalSignInResponseDto;
+        try {
+          response = await api.authControllerRefreshToken({
+            headers: { Authorization: `Bearer ${token}` },
+          });
+        } catch (e) {
+          return null;
+        }
+
+        const accessToken = response.accessToken;
+        const refreshToken = response.refreshToken;
+        const user = response.user;
+
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.username,
+          image: user.profile.picture,
+          wallet: user.walletAddress,
+          accessToken,
+          refreshToken,
+        };
+      },
+    }),
     Credentials({
       type: 'credentials',
       id: 'web-3',
