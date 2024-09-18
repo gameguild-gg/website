@@ -1,6 +1,7 @@
 import { Body, Controller, Get, Logger, Param, Post } from '@nestjs/common';
 import {
   ApiBody,
+  ApiCreatedResponse,
   ApiOkResponse,
   ApiProperty,
   ApiResponse,
@@ -83,7 +84,7 @@ export class AuthController {
 
   @Post('web3/sign-in/challenge')
   @Auth(PublicRoute)
-  @ApiOkResponse({ type: EthereumSigninChallengeResponseDto })
+  @ApiResponse({ type: EthereumSigninChallengeResponseDto })
   public async getWeb3SignInChallenge(
     @Body() data: EthereumSigninChallengeRequestDto,
   ): Promise<EthereumSigninChallengeResponseDto> {
@@ -92,7 +93,7 @@ export class AuthController {
 
   @Post('web3/sign-in/validate')
   @Auth(PublicRoute)
-  @ApiOkResponse({ type: LocalSignInResponseDto })
+  @ApiResponse({ type: LocalSignInResponseDto })
   public async validateWeb3SignInChallenge(
     @Body() data: EthereumSigninValidateRequestDto,
   ): Promise<LocalSignInResponseDto> {
