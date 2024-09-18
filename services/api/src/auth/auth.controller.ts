@@ -31,7 +31,7 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('magic-link')
-  @Auth(PublicRoute)
+  // @Auth(PublicRoute)
   @ApiCreatedResponse({ type: OkDto })
   public async magicLink(@Body() body: EmailDto): Promise<OkDto> {
     return this.authService.sendMagicLink(body);
@@ -57,7 +57,7 @@ export class AuthController {
   }
 
   @Post('local/sign-up')
-  @Auth(PublicRoute)
+  // @Auth(PublicRoute)
   @ApiCreatedResponse({ type: LocalSignInResponseDto }) // pass the type to the swagger
   public async signUpWithEmailUsernamePassword(
     @Body() data: LocalSignUpDto,
@@ -75,7 +75,7 @@ export class AuthController {
 
   @Get('google/callback/:token')
   @ApiCreatedResponse({ type: LocalSignInResponseDto })
-  @Auth(PublicRoute)
+  // @Auth(PublicRoute)
   public async signInWithGoogle(
     @Param('token') token: string,
   ): Promise<LocalSignInResponseDto> {
@@ -83,7 +83,7 @@ export class AuthController {
   }
 
   @Post('web3/sign-in/challenge')
-  @Auth(PublicRoute)
+  // @Auth(PublicRoute)
   @ApiCreatedResponse({ type: EthereumSigninChallengeResponseDto })
   public async getWeb3SignInChallenge(
     @Body() data: EthereumSigninChallengeRequestDto,
@@ -92,7 +92,7 @@ export class AuthController {
   }
 
   @Post('web3/sign-in/validate')
-  @Auth(PublicRoute)
+  // @Auth(PublicRoute)
   @ApiCreatedResponse({ type: LocalSignInResponseDto })
   public async validateWeb3SignInChallenge(
     @Body() data: EthereumSigninValidateRequestDto,
@@ -124,7 +124,7 @@ export class AuthController {
   // }
 
   @Get('userExists/:user')
-  @Auth(PublicRoute)
+  // @Auth(PublicRoute)
   @ApiCreatedResponse({ type: Boolean })
   public async userExists(@Param('user') user: string): Promise<boolean> {
     return this.authService.userExists(user);
