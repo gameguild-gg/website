@@ -7,18 +7,16 @@ import { Chess, WHITE } from 'chess.js';
 import { RobotFilled, UserOutlined } from '@ant-design/icons';
 import { Dropdown, MenuProps, message, Space } from 'antd';
 
-import { getCookie } from 'cookies-next';
 import { useRouter } from 'next/navigation';
-import {
-  ChessMoveRequestDto,
-  competitionControllerListChessAgents,
-  competitionControllerRequestChessMove,
-} from '@game-guild/apiclient';
+
 import { getSession } from 'next-auth/react';
-import { createClient } from '@hey-api/client-axios';
+import { CompetitionsApi } from '@game-guild/apiclient';
 
 export default function PlayPage() {
   const router = useRouter();
+  const api = new CompetitionsApi({
+    basePath: process.env.NEXT_PUBLIC_API_URL,
+  });
 
   const [agentList, setAgentList] = useState<string[]>(['human']);
   // flag for agent list fetched
@@ -35,68 +33,59 @@ export default function PlayPage() {
   const [fen, setFen] = useState(game.fen());
 
   const requestMove = async (): Promise<void> => {
-    if (requestMoveInProgress) return;
-    setRequestMoveInProgress(true);
-    const fen = game.fen();
-    const turn = game.turn();
-    const username = turn === WHITE ? selectedAgentWhite : selectedAgentBlack;
-    const baseURL = process.env.NEXT_PUBLIC_API_URL;
-    const headers = new Headers();
+    try {
+      if (requestMoveInProgress) return;
+      setRequestMoveInProgress(true);
+      const fen = game.fen();
+      const turn = game.turn();
+      const username = turn === WHITE ? selectedAgentWhite : selectedAgentBlack;
+      const baseURL = process.env.NEXT_PUBLIC_API_URL;
+      const headers = new Headers();
 
-    const session = await getSession();
-    const client = createClient({
-      baseURL: process.env.NEXT_PUBLIC_API_URL,
-      throwOnError: false,
-      headers: {
-        Authorization: `Bearer ${session?.accessToken}`,
-      },
-    });
-    const response = await competitionControllerRequestChessMove({
-      client: client,
-      body: {
-        fen: fen,
-        username: username,
-      },
-    });
+      const session = await getSession();
+      const response = await api.competitionControllerRequestChessMove(
+        {
+          fen: fen,
+          username: username,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${session?.accessToken}`,
+          },
+        },
+      );
 
-    if (response.error) {
-      if (response.status === 500) {
-        message.error(JSON.stringify(response.error));
-      } else {
-        router.push('/connect');
-        return;
-      }
-    }
-    const move = response.data as string;
-    makeAMove(move);
-    setRequestMoveInProgress(false);
-  };
-
-  const getAgentList = async (): Promise<void> => {
-    const session = await getSession();
-    const client = createClient({
-      baseURL: process.env.NEXT_PUBLIC_API_URL,
-      throwOnError: false,
-      headers: {
-        Authorization: `Bearer ${session?.accessToken}`,
-      },
-    });
-
-    const response = await competitionControllerListChessAgents({
-      client: client,
-    });
-
-    if (response.error) {
+      const move = response as string;
+      makeAMove(move);
+      setRequestMoveInProgress(false);
+    } catch (e) {
+      message.error(JSON.stringify(e));
       router.push('/connect');
       return;
     }
-    const data = response.data as string[];
+  };
 
-    // add human to the front of the list
-    data.unshift('human');
-    setAgentList(data);
-    setAgentListFetched(true);
-    console.log(data);
+  const getAgentList = async (): Promise<void> => {
+    try {
+      const session = await getSession();
+      const response = await api.competitionControllerListChessAgents({
+        headers: {
+          Authorization: `Bearer ${session?.accessToken}`,
+        },
+      });
+
+      const data = response as string[];
+
+      // add human to the front of the list
+      data.unshift('human');
+      setAgentList(data);
+      setAgentListFetched(true);
+      console.log(data);
+    } catch (e) {
+      message.error(JSON.stringify(e));
+      router.push('/connect');
+      return;
+    }
   };
 
   useEffect(() => {

@@ -3,18 +3,17 @@
 import React, { useEffect } from 'react';
 import { Button, Table, TableColumnsType, Typography } from 'antd';
 
-import { getCookie } from 'cookies-next';
 import { useRouter } from 'next/navigation';
-import {
-  competitionControllerFindChessMatchResult,
-  MatchSearchRequestDto,
-  MatchSearchResponseDto,
-} from '@game-guild/apiclient';
-import { createClient } from '@hey-api/client-axios';
 import { getSession } from 'next-auth/react';
+import { Api, CompetitionsApi } from '@game-guild/apiclient';
+import MatchSearchResponseDto = Api.MatchSearchResponseDto;
+import MatchSearchRequestDto = Api.MatchSearchRequestDto;
 
 export default function MatchesPage() {
   const router = useRouter();
+  const api = new CompetitionsApi({
+    basePath: process.env.NEXT_PUBLIC_API_URL,
+  });
 
   interface DataType {
     key: React.Key;
@@ -72,51 +71,47 @@ export default function MatchesPage() {
   const [matchesFetched, setMatchesFetched] = React.useState<boolean>(false);
 
   const getMatchesData = async (): Promise<void> => {
-    const session = await getSession();
+    try {
+      const session = await getSession();
 
-    const client = createClient({
-      baseURL: process.env.NEXT_PUBLIC_API_URL,
-      throwOnError: false,
-      headers: {
-        Authorization: `Bearer ${session?.accessToken}`,
-      },
-    });
+      const response = await api.competitionControllerFindChessMatchResult(
+        {
+          pageSize: 100,
+          pageId: 0,
+        } as MatchSearchRequestDto,
+        {
+          headers: {
+            Authorization: `Bearer ${session?.accessToken}`,
+          },
+        },
+      );
 
-    const response = await competitionControllerFindChessMatchResult({
-      client: client,
-      body: {
-        pageSize: 100,
-        pageId: 0,
-      } as MatchSearchRequestDto,
-      throwOnError: false,
-    });
+      const data = response as MatchSearchResponseDto[];
+      console.log(data);
+      setMatchesData(data);
+      setMatchesFetched(true);
 
-    if (response.error) {
+      const tableData: DataType[] = [];
+      for (let i = 0; i < data.length; i++) {
+        const match = data[i];
+        tableData.push({
+          key: i,
+          matchId: match.id,
+          winner:
+            match.winner == null
+              ? 'DRAW'
+              : match.winner === 'Player1'
+                ? match.players[0]
+                : match.players[1],
+          white: match.players[0],
+          black: match.players[1],
+        });
+      }
+      setMatchesTable(tableData);
+    } catch (e) {
       router.push('/connect');
       return;
     }
-    const data = response.data as MatchSearchResponseDto[];
-    console.log(data);
-    setMatchesData(data);
-    setMatchesFetched(true);
-
-    const tableData: DataType[] = [];
-    for (let i = 0; i < data.length; i++) {
-      const match = data[i];
-      tableData.push({
-        key: i,
-        matchId: match.id,
-        winner:
-          match.winner == null
-            ? 'DRAW'
-            : match.winner === 'Player1'
-              ? match.players[0]
-              : match.players[1],
-        white: match.players[0],
-        black: match.players[1],
-      });
-    }
-    setMatchesTable(tableData);
   };
 
   useEffect(() => {

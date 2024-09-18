@@ -5,14 +5,10 @@ import { getCookie } from 'cookies-next';
 import { Button, Dropdown, MenuProps, message, Space, Typography } from 'antd';
 import { RobotFilled } from '@ant-design/icons';
 import { useRouter } from 'next/navigation';
-import {
-  ChessMatchResultDto,
-  competitionControllerListChessAgents,
-  competitionControllerRunChessMatch,
-  UserEntity,
-} from '@game-guild/apiclient';
 import { getSession } from 'next-auth/react';
-import { createClient } from '@hey-api/client-axios';
+import { Api, CompetitionsApi } from '@game-guild/apiclient';
+import ChessMatchResultDto = Api.ChessMatchResultDto;
+import UserEntity = Api.UserEntity;
 
 const ChallengePage: React.FC = () => {
   const router = useRouter();
@@ -29,29 +25,29 @@ const ChallengePage: React.FC = () => {
     if (!agentListFetched) getAgentList();
   });
 
+  const api = new CompetitionsApi({
+    basePath: process.env.NEXT_PUBLIC_API_URL,
+  });
+
   async function getAgentList(): Promise<void> {
     const session = await getSession();
-    const client = createClient({
-      baseURL: process.env.NEXT_PUBLIC_API_URL,
-      throwOnError: false,
-      headers: {
-        Authorization: `Bearer ${session?.accessToken}`,
-      },
-    });
 
-    const response = await competitionControllerListChessAgents({
-      client: client,
-    });
+    try {
+      const response = await api.competitionControllerListChessAgents({
+        headers: {
+          Authorization: `Bearer ${session?.accessToken}`,
+        },
+      });
 
-    if (response.error) {
+      const data = response as string[];
+
+      setAgentList(data);
+      setAgentListFetched(true);
+      console.log(data);
+    } catch (e) {
       router.push('/connect');
       return;
     }
-    const data = response.data as string[];
-
-    setAgentList(data);
-    setAgentListFetched(true);
-    console.log(data);
   }
 
   const [selectedAgentWhite, setSelectedAgentWhite] = useState<string>('');
@@ -67,6 +63,7 @@ const ChallengePage: React.FC = () => {
   };
 
   const challengeBot = async (): Promise<void> => {
+    const session = await getSession();
     if (requestInProgress) {
       message.error('Request in progress. Please wait.');
       return;
@@ -75,6 +72,7 @@ const ChallengePage: React.FC = () => {
       message.error('Please select agents to challenge.');
       return;
     }
+    // todo: get user from session
     const userAgent = (JSON.parse(getCookie('user') as string) as UserEntity)
       .username;
     if (selectedAgentWhite !== userAgent && selectedAgentBlack !== userAgent) {
@@ -83,25 +81,20 @@ const ChallengePage: React.FC = () => {
     }
     setRequestInProgress(true);
 
-    const session = await getSession();
-    const client = createClient({
-      baseURL: process.env.NEXT_PUBLIC_API_URL,
-      throwOnError: false,
-      headers: {
-        Authorization: `Bearer ${session?.accessToken}`,
-      },
-    });
-
-    const response = await competitionControllerRunChessMatch({
-      body: {
+    const response = await api.competitionControllerRunChessMatch(
+      {
         player1username: selectedAgentWhite,
         player2username: selectedAgentBlack,
       },
-      client: client,
-    });
+      {
+        headers: {
+          Authorization: `Bearer ${session?.accessToken}`,
+        },
+      },
+    );
 
-    console.log(response.data);
-    setResult(response.data);
+    console.log(response);
+    setResult(response);
     setRequestInProgress(false);
   };
 

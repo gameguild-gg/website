@@ -47,8 +47,15 @@
           }
         },
         "responses": {
-          "201": {
-            "description": ""
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LocalSignInResponseDto"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -252,7 +259,14 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -1354,7 +1368,14 @@
     "contact": {}
   },
   "tags": [],
-  "servers": [],
+  "servers": [
+    {
+      "url": "http://localhost:8080"
+    },
+    {
+      "url": "https://api.gameguild.gg"
+    }
+  ],
   "components": {
     "securitySchemes": {
       "bearer": {
@@ -1407,25 +1428,6 @@
           "email",
           "password",
           "username"
-        ]
-      },
-      "LocalSignUpDto": {
-        "type": "object",
-        "properties": {
-          "username": {
-            "type": "string"
-          },
-          "email": {
-            "type": "string"
-          },
-          "password": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "username",
-          "email",
-          "password"
         ]
       },
       "UserProfileEntity": {
@@ -1925,6 +1927,25 @@
           "accessToken",
           "refreshToken",
           "user"
+        ]
+      },
+      "LocalSignUpDto": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "username",
+          "email",
+          "password"
         ]
       },
       "EthereumSigninChallengeRequestDto": {

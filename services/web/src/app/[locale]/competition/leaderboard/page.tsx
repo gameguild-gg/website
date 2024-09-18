@@ -3,15 +3,16 @@
 import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Table, TableColumnsType, Typography } from 'antd';
-import {
-  ChessLeaderboardResponseEntryDto,
-  competitionControllerGetChessLeaderboard,
-} from '@game-guild/apiclient';
 import { getSession } from 'next-auth/react';
-import { createClient } from '@hey-api/client-axios';
+
+import { Api, CompetitionsApi } from '@game-guild/apiclient';
+import ChessLeaderboardResponseEntryDto = Api.ChessLeaderboardResponseEntryDto;
 
 export default function LeaderboardPage(): JSX.Element {
   const router = useRouter();
+  const api = new CompetitionsApi({
+    basePath: process.env.NEXT_PUBLIC_API_URL,
+  });
 
   const [leaderboardData, setLeaderboardData] = React.useState<
     ChessLeaderboardResponseEntryDto[]
@@ -27,28 +28,27 @@ export default function LeaderboardPage(): JSX.Element {
 
   const getLeaderboardData = async (): Promise<void> => {
     const session = await getSession();
-    const client = createClient({
-      baseURL: process.env.NEXT_PUBLIC_API_URL,
-      throwOnError: false,
-      headers: {
-        Authorization: `Bearer ${session?.accessToken}`,
-      },
-    });
 
-    const response = await competitionControllerGetChessLeaderboard({
-      client: client,
-      throwOnError: false,
-    });
+    try {
+      const response = await api.competitionControllerGetChessLeaderboard({
+        headers: {
+          Authorization: `Bearer ${session?.accessToken}`,
+        },
+      });
 
-    if (response.error) {
+      if (response) {
+        router.push('/connect');
+        return;
+      }
+
+      const resp = response;
+      console.log(data);
+      setLeaderboardData(resp);
+      setLeaderboardFetched(true);
+    } catch (e) {
       router.push('/connect');
       return;
     }
-
-    const resp = response.data as ChessLeaderboardResponseEntryDto[];
-    console.log(data);
-    setLeaderboardData(resp);
-    setLeaderboardFetched(true);
   };
 
   // table for the leaderboard

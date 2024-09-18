@@ -2,17 +2,16 @@ import type { NextAuthConfig, User } from 'next-auth';
 import Google from 'next-auth/providers/google';
 import Credentials from 'next-auth/providers/credentials';
 import { environment } from '@/config/environment';
-import { createClient } from '@hey-api/client-axios';
-import {
-  authControllerSignInWithGoogle,
-  authControllerValidateWeb3SignInChallenge,
-  UserEntity,
-} from '@game-guild/apiclient';
+import { Api, AuthApi } from '@game-guild/apiclient';
 
 export const authConfig = {
   callbacks: {
     signIn: async ({ user, account, profile, email, credentials }) => {
       if (account?.provider === 'google') {
+        const api = new AuthApi({
+          basePath: process.env.NEXT_PUBLIC_API_URL,
+        });
+
         // TODO:
         //  After signing in with Google, check if the user is in the database.
         //  If the user is not in the database, reject the sign-in.
@@ -21,23 +20,20 @@ export const authConfig = {
         // TODO: Sample code below:
 
         if (!account?.id_token) return false;
-        const client = createClient({
-          baseURL: process.env.NEXT_PUBLIC_API_URL,
-          throwOnError: false,
-        });
 
-        const response = await authControllerSignInWithGoogle({
-          path: { token: account?.id_token },
-          client: client,
-        });
-
-        if (!response || !response.data || response.status !== 200)
+        let response: Api.LocalSignInResponseDto;
+        try {
+          response = await api.authControllerSignInWithGoogle(
+            account?.id_token,
+          );
+        } catch (e) {
           return false;
+        }
 
-        user.id = response.data.user.id;
-        user.email = response.data.user.email;
-        user.accessToken = response.data.accessToken;
-        user.refreshToken = response.data.refreshToken;
+        user.id = response.user.id;
+        user.email = response.user.email;
+        user.accessToken = response.accessToken;
+        user.refreshToken = response.refreshToken;
 
         return true;
       } else if (account?.provider === 'web-3') {
@@ -97,30 +93,23 @@ export const authConfig = {
         const signature: string = credentials?.signature as string;
         const address: string = credentials?.address as string;
 
-        const client = createClient({
-          baseURL: process.env.NEXT_PUBLIC_API_URL,
-          throwOnError: false,
+        const api = new AuthApi({
+          basePath: process.env.NEXT_PUBLIC_API_URL,
         });
 
-        const response = await authControllerValidateWeb3SignInChallenge({
-          body: {
+        let response: Api.LocalSignInResponseDto;
+        try {
+          response = await api.authControllerValidateWeb3SignInChallenge({
             signature,
             address,
-          },
-          client: client,
-        });
-
-        if (
-          !response ||
-          !response.data ||
-          response.status < 200 ||
-          response.status > 299
-        )
+          });
+        } catch (e) {
           return null;
+        }
 
-        const accessToken = response.data.accessToken;
-        const refreshToken = response.data.refreshToken;
-        const user = response.data.user;
+        const accessToken = response.accessToken;
+        const refreshToken = response.refreshToken;
+        const user = response.user;
 
         return {
           id: user.id,

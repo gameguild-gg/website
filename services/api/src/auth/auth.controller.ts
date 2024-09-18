@@ -42,6 +42,7 @@ export class AuthController {
   @Post('local/sign-in')
   //@Public(true)
   @ApiBody({ type: LocalSignInDto })
+  @ApiResponse({ status: 200, type: LocalSignInResponseDto })
   public async localSignWithEmailOrUsername(
     @Body() data: LocalSignInDto,
   ): Promise<LocalSignInResponseDto> {
@@ -117,6 +118,7 @@ export class AuthController {
 
   @Get('userExists/:user')
   @Auth(PublicRoute)
+  @ApiResponse({ status: 200, type: Boolean })
   public async userExists(@Param('user') user: string): Promise<boolean> {
     return this.authService.userExists(user);
   }

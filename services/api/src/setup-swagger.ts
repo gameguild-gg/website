@@ -1,13 +1,15 @@
 import type { INestApplication } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { CommonModule } from './common/common.module';
-import { createClient } from '@hey-api/openapi-ts';
+import { execSync } from 'child_process';
 
 import { ApiConfigService } from './common/config.service';
 import * as fs from 'node:fs';
 
 export function setupSwagger(app: INestApplication): void {
   const documentBuilder = new DocumentBuilder().setTitle('API').addBearerAuth();
+  documentBuilder.addServer('http://localhost:8080');
+  documentBuilder.addServer('https://api.gameguild.gg');
 
   if (process.env.API_VERSION) {
     documentBuilder.setVersion(process.env.API_VERSION);
@@ -23,11 +25,14 @@ export function setupSwagger(app: INestApplication): void {
 
   fs.writeFileSync('./swagger-spec.json', JSON.stringify(document, null, 2));
 
-  createClient({
-    client: '@hey-api/client-axios',
-    input: './swagger-spec.json',
-    output: '../../packages/apiclient',
-  });
+  try {
+    execSync('npm run openapigenerator', { stdio: 'ignore' });
+    console.log('Client generated successfully');
+  } catch (e) {
+    console.error(
+      'Error generating client. Do you have installed java runtime?',
+    );
+  }
 
   console.info(
     `Documentation: http://localhost:${configService.appConfig.port}/documentation`,

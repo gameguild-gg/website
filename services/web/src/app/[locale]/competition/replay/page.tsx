@@ -5,14 +5,14 @@ import { useRouter } from 'next/navigation';
 import React, { useEffect } from 'react';
 import { Button, message, Space, Typography } from 'antd';
 import { Chessboard } from 'react-chessboard';
-import {
-  ChessMatchResultDto,
-  competitionControllerGetChessMatchResult,
-} from '@game-guild/apiclient';
 import { getSession } from 'next-auth/react';
-import { createClient } from '@hey-api/client-axios';
+import { Api, CompetitionsApi } from '@game-guild/apiclient';
+import ChessMatchResultDto = Api.ChessMatchResultDto;
 
 export default function ReplayPage() {
+  const api = new CompetitionsApi({
+    basePath: process.env.NEXT_PUBLIC_API_URL,
+  });
   const [states, setStates] = React.useState<string[]>([]);
   const [currentStateId, setCurrentStateId] = React.useState<number>(0);
 
@@ -25,46 +25,40 @@ export default function ReplayPage() {
   const [matchFetched, setMatchFetched] = React.useState(false);
 
   async function getMatchData() {
-    const queryParameters = new URLSearchParams(window.location.search);
-    const matchId = queryParameters.get('matchId');
-    message.info('Match ID: ' + matchId);
-    if (!matchId) {
-      router.push('/competition/matches');
-      return;
-    }
-    const session = await getSession();
-    const client = createClient({
-      baseURL: process.env.NEXT_PUBLIC_API_URL,
-      throwOnError: false,
-      headers: {
-        Authorization: `Bearer ${session?.accessToken}`,
-      },
-    });
+    try {
+      const queryParameters = new URLSearchParams(window.location.search);
+      const matchId = queryParameters.get('matchId');
+      message.info('Match ID: ' + matchId);
+      if (!matchId) {
+        router.push('/competition/matches');
+        return;
+      }
+      const session = await getSession();
 
-    const response = await competitionControllerGetChessMatchResult({
-      client: client,
-      path: { id: matchId },
-    });
+      const response = await api.competitionControllerGetChessMatchResult(
+        matchId,
+        { headers: { Authorization: `Bearer ${session?.accessToken}` } },
+      );
 
-    if (response.error) {
+      const data = response;
+      console.log(data);
+      setMatchData(data);
+      setMatchFetched(true);
+
+      // Load the moves
+      const list: string[] = [];
+      list.push('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
+      data?.moves.forEach((move) => {
+        chess.move(move);
+        list.push(chess.fen());
+      });
+      setStates(list);
+      message.info('Match data fetched');
+    } catch (e) {
+      message.error(JSON.stringify(e));
       router.push('/connect');
       return;
     }
-
-    const data = response.data;
-    console.log(data);
-    setMatchData(data);
-    setMatchFetched(true);
-
-    // Load the moves
-    const list: string[] = [];
-    list.push('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
-    data?.moves.forEach((move) => {
-      chess.move(move);
-      list.push(chess.fen());
-    });
-    setStates(list);
-    message.info('Match data fetched');
   }
 
   useEffect(() => {

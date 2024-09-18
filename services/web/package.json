@@ -14,7 +14,6 @@
   "dependencies": {
     "@game-guild/apiclient": "*",
     "@game-guild/ui": "*",
-    "@hey-api/client-axios": "^0.2.3",
     "@hookform/resolvers": "^3.3.4",
     "@nestjs/swagger": "^7.3.0",
     "@next/third-parties": "^14.1.4",
