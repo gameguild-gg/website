@@ -12,7 +12,12 @@ import {
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
-import { ApiConsumes, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiConsumes,
+  ApiOkResponse,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { CompetitionService } from './competition.service';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { CompetitionGame } from './entities/competition.submission.entity';
@@ -127,7 +132,7 @@ export class CompetitionController {
   }
 
   @Get('/Chess/ListAgents')
-  @ApiResponse({ type: [String] })
+  @ApiOkResponse({ type: String, isArray: true })
   @Auth(AuthenticatedRoute)
   async ListChessAgents(@AuthUser() user: UserEntity): Promise<string[]> {
     if (!user) throw new UnauthorizedException('Invalid credentials');
@@ -135,7 +140,7 @@ export class CompetitionController {
   }
 
   @Post('/Chess/Move')
-  @ApiResponse({ type: String })
+  @ApiOkResponse({ type: String })
   @Auth(AuthenticatedRoute)
   async RequestChessMove(
     @Body() data: ChessMoveRequestDto,
@@ -146,7 +151,7 @@ export class CompetitionController {
   }
 
   @Post('/Chess/RunMatch')
-  @ApiResponse({ type: ChessMatchResultDto })
+  @ApiOkResponse({ type: ChessMatchResultDto })
   @Auth(AuthenticatedRoute)
   async RunChessMatch(
     @Body() data: ChessMatchRequestDto,
@@ -158,7 +163,7 @@ export class CompetitionController {
 
   @Post('/Chess/FindMatches')
   @Auth(AuthenticatedRoute)
-  @ApiResponse({
+  @ApiOkResponse({
     type: MatchSearchResponseDto,
     isArray: true,
   })
@@ -231,7 +236,7 @@ export class CompetitionController {
 
   @Get('/Chess/Match/:id')
   @Auth(AuthenticatedRoute)
-  @ApiResponse({ type: ChessMatchResultDto })
+  @ApiOkResponse({ type: ChessMatchResultDto })
   async GetChessMatchResult(
     @Param('id', ParseUUIDPipe) id: string,
     @AuthUser() user: UserEntity,
@@ -261,7 +266,7 @@ export class CompetitionController {
   }
 
   @Get('Chess/LatestCompetitionReport')
-  @ApiResponse({ type: CompetitionRunSubmissionReportEntity, isArray: true })
+  @ApiOkResponse({ type: CompetitionRunSubmissionReportEntity, isArray: true })
   @Auth(AuthenticatedRoute)
   async GetLatestChessCompetitionReport(
     @AuthUser() user: UserEntity,

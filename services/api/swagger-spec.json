@@ -16,7 +16,7 @@
           }
         },
         "responses": {
-          "default": {
+          "200": {
             "description": "",
             "content": {
               "application/json": {
@@ -78,7 +78,7 @@
           }
         },
         "responses": {
-          "default": {
+          "200": {
             "description": "",
             "content": {
               "application/json": {
@@ -108,7 +108,7 @@
           }
         ],
         "responses": {
-          "default": {
+          "200": {
             "description": "",
             "content": {
               "application/json": {
@@ -139,7 +139,7 @@
           }
         },
         "responses": {
-          "default": {
+          "200": {
             "description": "",
             "content": {
               "application/json": {
@@ -170,7 +170,7 @@
           }
         },
         "responses": {
-          "default": {
+          "200": {
             "description": "",
             "content": {
               "application/json": {
@@ -191,10 +191,7 @@
         "operationId": "AuthController_getCurrentUser",
         "parameters": [],
         "responses": {
-          "401": {
-            "description": "Unauthorized"
-          },
-          "default": {
+          "200": {
             "description": "",
             "content": {
               "application/json": {
@@ -203,6 +200,9 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Unauthorized"
           }
         },
         "tags": [
@@ -220,10 +220,7 @@
         "operationId": "AuthController_refreshToken",
         "parameters": [],
         "responses": {
-          "401": {
-            "description": "Unauthorized"
-          },
-          "default": {
+          "200": {
             "description": "",
             "content": {
               "application/json": {
@@ -232,6 +229,9 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Unauthorized"
           }
         },
         "tags": [
@@ -279,10 +279,7 @@
         "operationId": "ContentController_createEmptyCourse",
         "parameters": [],
         "responses": {
-          "401": {
-            "description": "Unauthorized"
-          },
-          "default": {
+          "200": {
             "description": "",
             "content": {
               "application/json": {
@@ -291,6 +288,9 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Unauthorized"
           }
         },
         "tags": [
@@ -1092,10 +1092,7 @@
         "operationId": "CompetitionController_ListChessAgents",
         "parameters": [],
         "responses": {
-          "401": {
-            "description": "Unauthorized"
-          },
-          "default": {
+          "200": {
             "description": "",
             "content": {
               "application/json": {
@@ -1107,6 +1104,9 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Unauthorized"
           }
         },
         "tags": [
@@ -1134,10 +1134,7 @@
           }
         },
         "responses": {
-          "401": {
-            "description": "Unauthorized"
-          },
-          "default": {
+          "200": {
             "description": "",
             "content": {
               "application/json": {
@@ -1146,6 +1143,9 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Unauthorized"
           }
         },
         "tags": [
@@ -1173,10 +1173,7 @@
           }
         },
         "responses": {
-          "401": {
-            "description": "Unauthorized"
-          },
-          "default": {
+          "200": {
             "description": "",
             "content": {
               "application/json": {
@@ -1185,6 +1182,9 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Unauthorized"
           }
         },
         "tags": [
@@ -1212,10 +1212,7 @@
           }
         },
         "responses": {
-          "401": {
-            "description": "Unauthorized"
-          },
-          "default": {
+          "200": {
             "description": "",
             "content": {
               "application/json": {
@@ -1227,6 +1224,9 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Unauthorized"
           }
         },
         "tags": [
@@ -1253,10 +1253,7 @@
           }
         ],
         "responses": {
-          "401": {
-            "description": "Unauthorized"
-          },
-          "default": {
+          "200": {
             "description": "",
             "content": {
               "application/json": {
@@ -1265,6 +1262,9 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Unauthorized"
           }
         },
         "tags": [
@@ -1333,10 +1333,7 @@
         "operationId": "CompetitionController_GetLatestChessCompetitionReport",
         "parameters": [],
         "responses": {
-          "401": {
-            "description": "Unauthorized"
-          },
-          "default": {
+          "200": {
             "description": "",
             "content": {
               "application/json": {
@@ -1348,6 +1345,9 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Unauthorized"
           }
         },
         "tags": [

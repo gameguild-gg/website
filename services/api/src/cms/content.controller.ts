@@ -1,5 +1,5 @@
 import { Controller, Logger, Post } from '@nestjs/common';
-import { ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiOkResponse, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ContentService } from './content.service';
 import { AuthUser } from '../auth';
 import { Auth } from '../auth/decorators/http.decorator';
@@ -18,7 +18,7 @@ export class ContentController {
 
   @Post('course/create')
   @Auth(AuthenticatedRoute) // todo: anyone can create?
-  @ApiResponse({ type: CourseEntity })
+  @ApiOkResponse({ type: CourseEntity })
   public async createEmptyCourse(
     @AuthUser() user: UserEntity,
   ): Promise<CourseEntity> {

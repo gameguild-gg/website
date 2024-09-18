@@ -349,19 +349,21 @@ export const AuthApiFp = function(configuration?: Configuration) {
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		authControllerGetCurrentUser(options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<Response> {
+		authControllerGetCurrentUser(options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<Api.UserEntity> {
 			const localVarFetchArgs = AuthApiFetchParamCreator(configuration).authControllerGetCurrentUser(options);
 			return (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
 				return fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options).then((response) => {
 					const contentType = response.headers.get('Content-Type');
 					const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
 					
+					if (response.status === 200) {
+						if (mimeType === 'application/json') {
+							return response.json() as any;
+						}
+						throw response;
+					}
 					if (response.status === 401) {
 						return response;
-					}
-					/* Catch-all response */
-					if (mimeType === 'application/json') {
-						throw response;
 					}
 					throw response;
 				});
@@ -379,9 +381,11 @@ export const AuthApiFp = function(configuration?: Configuration) {
 					const contentType = response.headers.get('Content-Type');
 					const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
 					
-					/* Catch-all response */
-					if (mimeType === 'application/json') {
-						return response.json() as any;
+					if (response.status === 200) {
+						if (mimeType === 'application/json') {
+							return response.json() as any;
+						}
+						throw response;
 					}
 					throw response;
 				});
@@ -421,9 +425,11 @@ export const AuthApiFp = function(configuration?: Configuration) {
 					const contentType = response.headers.get('Content-Type');
 					const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
 					
-					/* Catch-all response */
-					if (mimeType === 'application/json') {
-						return response.json() as any;
+					if (response.status === 200) {
+						if (mimeType === 'application/json') {
+							return response.json() as any;
+						}
+						throw response;
 					}
 					throw response;
 				});
@@ -433,19 +439,21 @@ export const AuthApiFp = function(configuration?: Configuration) {
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		authControllerRefreshToken(options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<Response> {
+		authControllerRefreshToken(options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<Api.LocalSignInResponseDto> {
 			const localVarFetchArgs = AuthApiFetchParamCreator(configuration).authControllerRefreshToken(options);
 			return (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
 				return fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options).then((response) => {
 					const contentType = response.headers.get('Content-Type');
 					const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
 					
+					if (response.status === 200) {
+						if (mimeType === 'application/json') {
+							return response.json() as any;
+						}
+						throw response;
+					}
 					if (response.status === 401) {
 						return response;
-					}
-					/* Catch-all response */
-					if (mimeType === 'application/json') {
-						throw response;
 					}
 					throw response;
 				});
@@ -463,9 +471,11 @@ export const AuthApiFp = function(configuration?: Configuration) {
 					const contentType = response.headers.get('Content-Type');
 					const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
 					
-					/* Catch-all response */
-					if (mimeType === 'application/json') {
-						return response.json() as any;
+					if (response.status === 200) {
+						if (mimeType === 'application/json') {
+							return response.json() as any;
+						}
+						throw response;
 					}
 					throw response;
 				});
@@ -483,9 +493,11 @@ export const AuthApiFp = function(configuration?: Configuration) {
 					const contentType = response.headers.get('Content-Type');
 					const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
 					
-					/* Catch-all response */
-					if (mimeType === 'application/json') {
-						return response.json() as any;
+					if (response.status === 200) {
+						if (mimeType === 'application/json') {
+							return response.json() as any;
+						}
+						throw response;
 					}
 					throw response;
 				});
@@ -525,9 +537,11 @@ export const AuthApiFp = function(configuration?: Configuration) {
 					const contentType = response.headers.get('Content-Type');
 					const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
 					
-					/* Catch-all response */
-					if (mimeType === 'application/json') {
-						return response.json() as any;
+					if (response.status === 200) {
+						if (mimeType === 'application/json') {
+							return response.json() as any;
+						}
+						throw response;
 					}
 					throw response;
 				});
@@ -1016,19 +1030,21 @@ export const CompetitionsApiFp = function(configuration?: Configuration) {
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		competitionControllerFindChessMatchResult(request: Api.MatchSearchRequestDto, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<Response> {
+		competitionControllerFindChessMatchResult(request: Api.MatchSearchRequestDto, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<Api.MatchSearchResponseDto[]> {
 			const localVarFetchArgs = CompetitionsApiFetchParamCreator(configuration).competitionControllerFindChessMatchResult(request, options);
 			return (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
 				return fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options).then((response) => {
 					const contentType = response.headers.get('Content-Type');
 					const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
 					
+					if (response.status === 200) {
+						if (mimeType === 'application/json') {
+							return response.json() as any;
+						}
+						throw response;
+					}
 					if (response.status === 401) {
 						return response;
-					}
-					/* Catch-all response */
-					if (mimeType === 'application/json') {
-						throw response;
 					}
 					throw response;
 				});
@@ -1061,19 +1077,21 @@ export const CompetitionsApiFp = function(configuration?: Configuration) {
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		competitionControllerGetChessMatchResult(id: string, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<Response> {
+		competitionControllerGetChessMatchResult(id: string, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<Api.ChessMatchResultDto> {
 			const localVarFetchArgs = CompetitionsApiFetchParamCreator(configuration).competitionControllerGetChessMatchResult(id, options);
 			return (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
 				return fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options).then((response) => {
 					const contentType = response.headers.get('Content-Type');
 					const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
 					
+					if (response.status === 200) {
+						if (mimeType === 'application/json') {
+							return response.json() as any;
+						}
+						throw response;
+					}
 					if (response.status === 401) {
 						return response;
-					}
-					/* Catch-all response */
-					if (mimeType === 'application/json') {
-						throw response;
 					}
 					throw response;
 				});
@@ -1083,19 +1101,21 @@ export const CompetitionsApiFp = function(configuration?: Configuration) {
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		competitionControllerGetLatestChessCompetitionReport(options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<Response> {
+		competitionControllerGetLatestChessCompetitionReport(options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<Api.CompetitionRunSubmissionReportEntity[]> {
 			const localVarFetchArgs = CompetitionsApiFetchParamCreator(configuration).competitionControllerGetLatestChessCompetitionReport(options);
 			return (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
 				return fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options).then((response) => {
 					const contentType = response.headers.get('Content-Type');
 					const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
 					
+					if (response.status === 200) {
+						if (mimeType === 'application/json') {
+							return response.json() as any;
+						}
+						throw response;
+					}
 					if (response.status === 401) {
 						return response;
-					}
-					/* Catch-all response */
-					if (mimeType === 'application/json') {
-						throw response;
 					}
 					throw response;
 				});
@@ -1105,19 +1125,21 @@ export const CompetitionsApiFp = function(configuration?: Configuration) {
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		competitionControllerListChessAgents(options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<Response> {
+		competitionControllerListChessAgents(options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<string[]> {
 			const localVarFetchArgs = CompetitionsApiFetchParamCreator(configuration).competitionControllerListChessAgents(options);
 			return (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
 				return fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options).then((response) => {
 					const contentType = response.headers.get('Content-Type');
 					const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
 					
+					if (response.status === 200) {
+						if (mimeType === 'application/json') {
+							return response.json() as any;
+						}
+						throw response;
+					}
 					if (response.status === 401) {
 						return response;
-					}
-					/* Catch-all response */
-					if (mimeType === 'application/json') {
-						throw response;
 					}
 					throw response;
 				});
@@ -1128,19 +1150,21 @@ export const CompetitionsApiFp = function(configuration?: Configuration) {
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		competitionControllerRequestChessMove(request: Api.ChessMoveRequestDto, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<Response> {
+		competitionControllerRequestChessMove(request: Api.ChessMoveRequestDto, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<string> {
 			const localVarFetchArgs = CompetitionsApiFetchParamCreator(configuration).competitionControllerRequestChessMove(request, options);
 			return (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
 				return fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options).then((response) => {
 					const contentType = response.headers.get('Content-Type');
 					const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
 					
+					if (response.status === 200) {
+						if (mimeType === 'application/json') {
+							return response.json() as any;
+						}
+						throw response;
+					}
 					if (response.status === 401) {
 						return response;
-					}
-					/* Catch-all response */
-					if (mimeType === 'application/json') {
-						throw response;
 					}
 					throw response;
 				});
@@ -1151,19 +1175,21 @@ export const CompetitionsApiFp = function(configuration?: Configuration) {
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		competitionControllerRunChessMatch(request: Api.ChessMatchRequestDto, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<Response> {
+		competitionControllerRunChessMatch(request: Api.ChessMatchRequestDto, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<Api.ChessMatchResultDto> {
 			const localVarFetchArgs = CompetitionsApiFetchParamCreator(configuration).competitionControllerRunChessMatch(request, options);
 			return (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
 				return fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options).then((response) => {
 					const contentType = response.headers.get('Content-Type');
 					const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
 					
+					if (response.status === 200) {
+						if (mimeType === 'application/json') {
+							return response.json() as any;
+						}
+						throw response;
+					}
 					if (response.status === 401) {
 						return response;
-					}
-					/* Catch-all response */
-					if (mimeType === 'application/json') {
-						throw response;
 					}
 					throw response;
 				});
@@ -1362,19 +1388,21 @@ export const ContentApiFp = function(configuration?: Configuration) {
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		contentControllerCreateEmptyCourse(options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<Response> {
+		contentControllerCreateEmptyCourse(options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<Api.CourseEntity> {
 			const localVarFetchArgs = ContentApiFetchParamCreator(configuration).contentControllerCreateEmptyCourse(options);
 			return (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
 				return fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options).then((response) => {
 					const contentType = response.headers.get('Content-Type');
 					const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
 					
+					if (response.status === 200) {
+						if (mimeType === 'application/json') {
+							return response.json() as any;
+						}
+						throw response;
+					}
 					if (response.status === 401) {
 						return response;
-					}
-					/* Catch-all response */
-					if (mimeType === 'application/json') {
-						throw response;
 					}
 					throw response;
 				});
