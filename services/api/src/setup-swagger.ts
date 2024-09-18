@@ -1,10 +1,28 @@
-import type { INestApplication } from '@nestjs/common';
+import { INestApplication } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { CommonModule } from './common/common.module';
 import { execSync } from 'child_process';
-
 import { ApiConfigService } from './common/config.service';
 import * as fs from 'node:fs';
+
+function replaceInFile(path: string, from: string, to: string) {
+  const content = fs.readFileSync(path, 'utf8');
+  const result = content.replace(from, to);
+  fs.writeFileSync(path, result, 'utf8');
+}
+
+function fixOpenApiGeneratorPlus() {
+  replaceInFile(
+    process.cwd() + '/../../packages/apiclient/runtime.ts',
+    'import "whatwg-fetch";',
+    '',
+  );
+  replaceInFile(
+    process.cwd() + '/../../packages/apiclient/runtime.ts',
+    'window.fetch',
+    'fetch',
+  );
+}
 
 export function setupSwagger(app: INestApplication): void {
   const documentBuilder = new DocumentBuilder().setTitle('API').addBearerAuth();
@@ -28,6 +46,8 @@ export function setupSwagger(app: INestApplication): void {
   try {
     execSync('npm run openapigenerator', { stdio: 'ignore' });
     console.log('Client generated successfully');
+    fixOpenApiGeneratorPlus();
+    console.log('OpenApiPlus fixed');
   } catch (e) {
     console.error(
       'Error generating client. Do you have installed java runtime?',

@@ -12,6 +12,7 @@
  * Do not edit the class manually.
  */
 
+
 export const defaultFetch = fetch;
 import { Configuration } from "./configuration";
 
