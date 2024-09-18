@@ -32,7 +32,7 @@ export class AuthController {
 
   @Post('magic-link')
   @Auth(PublicRoute)
-  @ApiOkResponse({ type: OkDto })
+  @ApiCreatedResponse({ type: OkDto })
   public async magicLink(@Body() body: EmailDto): Promise<OkDto> {
     return this.authService.sendMagicLink(body);
   }
@@ -49,7 +49,7 @@ export class AuthController {
   @Post('local/sign-in')
   //@Public(true)
   @ApiBody({ type: LocalSignInDto })
-  @ApiResponse({ status: 200, type: LocalSignInResponseDto })
+  @ApiCreatedResponse({ type: LocalSignInResponseDto })
   public async localSignWithEmailOrUsername(
     @Body() data: LocalSignInDto,
   ): Promise<LocalSignInResponseDto> {
@@ -58,7 +58,7 @@ export class AuthController {
 
   @Post('local/sign-up')
   @Auth(PublicRoute)
-  @ApiOkResponse({ type: LocalSignInResponseDto }) // pass the type to the swagger
+  @ApiCreatedResponse({ type: LocalSignInResponseDto }) // pass the type to the swagger
   public async signUpWithEmailUsernamePassword(
     @Body() data: LocalSignUpDto,
   ): Promise<LocalSignInResponseDto> {
@@ -74,7 +74,7 @@ export class AuthController {
   // }
 
   @Get('google/callback/:token')
-  @ApiOkResponse({ type: LocalSignInResponseDto })
+  @ApiCreatedResponse({ type: LocalSignInResponseDto })
   @Auth(PublicRoute)
   public async signInWithGoogle(
     @Param('token') token: string,
@@ -84,7 +84,7 @@ export class AuthController {
 
   @Post('web3/sign-in/challenge')
   @Auth(PublicRoute)
-  @ApiResponse({ type: EthereumSigninChallengeResponseDto })
+  @ApiCreatedResponse({ type: EthereumSigninChallengeResponseDto })
   public async getWeb3SignInChallenge(
     @Body() data: EthereumSigninChallengeRequestDto,
   ): Promise<EthereumSigninChallengeResponseDto> {
@@ -93,7 +93,7 @@ export class AuthController {
 
   @Post('web3/sign-in/validate')
   @Auth(PublicRoute)
-  @ApiResponse({ type: LocalSignInResponseDto })
+  @ApiCreatedResponse({ type: LocalSignInResponseDto })
   public async validateWeb3SignInChallenge(
     @Body() data: EthereumSigninValidateRequestDto,
   ): Promise<LocalSignInResponseDto> {
@@ -102,7 +102,7 @@ export class AuthController {
 
   @Get('me')
   @Auth(AuthenticatedRoute)
-  @ApiOkResponse({ type: UserEntity })
+  @ApiCreatedResponse({ type: UserEntity })
   public async getCurrentUser(
     @AuthUser() user: UserEntity,
   ): Promise<UserEntity> {
@@ -111,7 +111,7 @@ export class AuthController {
 
   @Get('refresh-token')
   @Auth(RefreshTokenRoute)
-  @ApiOkResponse({ type: LocalSignInResponseDto })
+  @ApiCreatedResponse({ type: LocalSignInResponseDto })
   public async refreshToken(
     @AuthUser() user: UserEntity,
   ): Promise<LocalSignInResponseDto> {
@@ -125,7 +125,7 @@ export class AuthController {
 
   @Get('userExists/:user')
   @Auth(PublicRoute)
-  @ApiResponse({ status: 200, type: Boolean })
+  @ApiCreatedResponse({ type: Boolean })
   public async userExists(@Param('user') user: string): Promise<boolean> {
     return this.authService.userExists(user);
   }

@@ -356,7 +356,7 @@ export const AuthApiFp = function(configuration?: Configuration) {
 					const contentType = response.headers.get('Content-Type');
 					const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
 					
-					if (response.status === 200) {
+					if (response.status === 201) {
 						if (mimeType === 'application/json') {
 							return response.json() as any;
 						}
@@ -381,9 +381,11 @@ export const AuthApiFp = function(configuration?: Configuration) {
 					const contentType = response.headers.get('Content-Type');
 					const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
 					
-					/* Catch-all response */
-					if (mimeType === 'application/json') {
-						return response.json() as any;
+					if (response.status === 201) {
+						if (mimeType === 'application/json') {
+							return response.json() as any;
+						}
+						throw response;
 					}
 					throw response;
 				});
@@ -401,7 +403,7 @@ export const AuthApiFp = function(configuration?: Configuration) {
 					const contentType = response.headers.get('Content-Type');
 					const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
 					
-					if (response.status === 200) {
+					if (response.status === 201) {
 						if (mimeType === 'application/json') {
 							return response.json() as any;
 						}
@@ -423,7 +425,7 @@ export const AuthApiFp = function(configuration?: Configuration) {
 					const contentType = response.headers.get('Content-Type');
 					const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
 					
-					if (response.status === 200) {
+					if (response.status === 201) {
 						if (mimeType === 'application/json') {
 							return response.json() as any;
 						}
@@ -444,7 +446,7 @@ export const AuthApiFp = function(configuration?: Configuration) {
 					const contentType = response.headers.get('Content-Type');
 					const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
 					
-					if (response.status === 200) {
+					if (response.status === 201) {
 						if (mimeType === 'application/json') {
 							return response.json() as any;
 						}
@@ -469,7 +471,7 @@ export const AuthApiFp = function(configuration?: Configuration) {
 					const contentType = response.headers.get('Content-Type');
 					const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
 					
-					if (response.status === 200) {
+					if (response.status === 201) {
 						if (mimeType === 'application/json') {
 							return response.json() as any;
 						}
@@ -491,7 +493,7 @@ export const AuthApiFp = function(configuration?: Configuration) {
 					const contentType = response.headers.get('Content-Type');
 					const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
 					
-					if (response.status === 200) {
+					if (response.status === 201) {
 						if (mimeType === 'application/json') {
 							return response.json() as any;
 						}
@@ -513,7 +515,7 @@ export const AuthApiFp = function(configuration?: Configuration) {
 					const contentType = response.headers.get('Content-Type');
 					const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
 					
-					if (response.status === 200) {
+					if (response.status === 201) {
 						if (mimeType === 'application/json') {
 							return response.json() as any;
 						}
@@ -535,9 +537,11 @@ export const AuthApiFp = function(configuration?: Configuration) {
 					const contentType = response.headers.get('Content-Type');
 					const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
 					
-					/* Catch-all response */
-					if (mimeType === 'application/json') {
-						return response.json() as any;
+					if (response.status === 201) {
+						if (mimeType === 'application/json') {
+							return response.json() as any;
+						}
+						throw response;
 					}
 					throw response;
 				});
@@ -1033,7 +1037,7 @@ export const CompetitionsApiFp = function(configuration?: Configuration) {
 					const contentType = response.headers.get('Content-Type');
 					const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
 					
-					if (response.status === 200) {
+					if (response.status === 201) {
 						if (mimeType === 'application/json') {
 							return response.json() as any;
 						}
@@ -1050,19 +1054,21 @@ export const CompetitionsApiFp = function(configuration?: Configuration) {
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		competitionControllerGetChessLeaderboard(options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<Response> {
+		competitionControllerGetChessLeaderboard(options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<Api.ChessLeaderboardResponseEntryDto[]> {
 			const localVarFetchArgs = CompetitionsApiFetchParamCreator(configuration).competitionControllerGetChessLeaderboard(options);
 			return (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
 				return fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options).then((response) => {
 					const contentType = response.headers.get('Content-Type');
 					const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
 					
+					if (response.status === 201) {
+						if (mimeType === 'application/json') {
+							return response.json() as any;
+						}
+						throw response;
+					}
 					if (response.status === 401) {
 						return response;
-					}
-					/* Catch-all response */
-					if (mimeType === 'application/json') {
-						throw response;
 					}
 					throw response;
 				});
@@ -1080,7 +1086,7 @@ export const CompetitionsApiFp = function(configuration?: Configuration) {
 					const contentType = response.headers.get('Content-Type');
 					const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
 					
-					if (response.status === 200) {
+					if (response.status === 201) {
 						if (mimeType === 'application/json') {
 							return response.json() as any;
 						}
@@ -1104,7 +1110,7 @@ export const CompetitionsApiFp = function(configuration?: Configuration) {
 					const contentType = response.headers.get('Content-Type');
 					const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
 					
-					if (response.status === 200) {
+					if (response.status === 201) {
 						if (mimeType === 'application/json') {
 							return response.json() as any;
 						}
@@ -1128,7 +1134,7 @@ export const CompetitionsApiFp = function(configuration?: Configuration) {
 					const contentType = response.headers.get('Content-Type');
 					const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
 					
-					if (response.status === 200) {
+					if (response.status === 201) {
 						if (mimeType === 'application/json') {
 							return response.json() as any;
 						}
@@ -1153,7 +1159,7 @@ export const CompetitionsApiFp = function(configuration?: Configuration) {
 					const contentType = response.headers.get('Content-Type');
 					const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
 					
-					if (response.status === 200) {
+					if (response.status === 201) {
 						if (mimeType === 'application/json') {
 							return response.json() as any;
 						}
@@ -1178,7 +1184,7 @@ export const CompetitionsApiFp = function(configuration?: Configuration) {
 					const contentType = response.headers.get('Content-Type');
 					const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
 					
-					if (response.status === 200) {
+					if (response.status === 201) {
 						if (mimeType === 'application/json') {
 							return response.json() as any;
 						}
@@ -1221,7 +1227,7 @@ export const CompetitionsApiFp = function(configuration?: Configuration) {
 					const contentType = response.headers.get('Content-Type');
 					const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
 					
-					if (response.status === 200) {
+					if (response.status === 201) {
 						if (mimeType === 'application/json') {
 							return response.json() as any;
 						}
@@ -1391,7 +1397,7 @@ export const ContentApiFp = function(configuration?: Configuration) {
 					const contentType = response.headers.get('Content-Type');
 					const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
 					
-					if (response.status === 200) {
+					if (response.status === 201) {
 						if (mimeType === 'application/json') {
 							return response.json() as any;
 						}

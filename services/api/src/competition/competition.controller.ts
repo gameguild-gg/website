@@ -14,6 +14,7 @@ import {
 } from '@nestjs/common';
 import {
   ApiConsumes,
+  ApiCreatedResponse,
   ApiOkResponse,
   ApiResponse,
   ApiTags,
@@ -89,7 +90,7 @@ export class CompetitionController {
   // todo: Add login protections here and remove the password requirement.
   @Post('/Chess/submit')
   @ApiConsumes('multipart/form-data')
-  @ApiResponse({
+  @ApiCreatedResponse({
     status: 200,
     type: TerminalDto,
     isArray: true,
@@ -132,7 +133,7 @@ export class CompetitionController {
   }
 
   @Get('/Chess/ListAgents')
-  @ApiOkResponse({ type: String, isArray: true })
+  @ApiCreatedResponse({ type: String, isArray: true })
   @Auth(AuthenticatedRoute)
   async ListChessAgents(@AuthUser() user: UserEntity): Promise<string[]> {
     if (!user) throw new UnauthorizedException('Invalid credentials');
@@ -140,7 +141,7 @@ export class CompetitionController {
   }
 
   @Post('/Chess/Move')
-  @ApiOkResponse({ type: String })
+  @ApiCreatedResponse({ type: String })
   @Auth(AuthenticatedRoute)
   async RequestChessMove(
     @Body() data: ChessMoveRequestDto,
@@ -151,7 +152,7 @@ export class CompetitionController {
   }
 
   @Post('/Chess/RunMatch')
-  @ApiOkResponse({ type: ChessMatchResultDto })
+  @ApiCreatedResponse({ type: ChessMatchResultDto })
   @Auth(AuthenticatedRoute)
   async RunChessMatch(
     @Body() data: ChessMatchRequestDto,
@@ -163,7 +164,7 @@ export class CompetitionController {
 
   @Post('/Chess/FindMatches')
   @Auth(AuthenticatedRoute)
-  @ApiOkResponse({
+  @ApiCreatedResponse({
     type: MatchSearchResponseDto,
     isArray: true,
   })
@@ -236,7 +237,7 @@ export class CompetitionController {
 
   @Get('/Chess/Match/:id')
   @Auth(AuthenticatedRoute)
-  @ApiOkResponse({ type: ChessMatchResultDto })
+  @ApiCreatedResponse({ type: ChessMatchResultDto })
   async GetChessMatchResult(
     @Param('id', ParseUUIDPipe) id: string,
     @AuthUser() user: UserEntity,
@@ -247,7 +248,7 @@ export class CompetitionController {
 
   @Get('/Chess/Leaderboard')
   @Auth(AuthenticatedRoute)
-  @ApiResponse({
+  @ApiCreatedResponse({
     type: ChessLeaderboardResponseEntryDto,
     isArray: true,
   })
@@ -266,7 +267,10 @@ export class CompetitionController {
   }
 
   @Get('Chess/LatestCompetitionReport')
-  @ApiOkResponse({ type: CompetitionRunSubmissionReportEntity, isArray: true })
+  @ApiCreatedResponse({
+    type: CompetitionRunSubmissionReportEntity,
+    isArray: true,
+  })
   @Auth(AuthenticatedRoute)
   async GetLatestChessCompetitionReport(
     @AuthUser() user: UserEntity,
