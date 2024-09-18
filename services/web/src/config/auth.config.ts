@@ -5,6 +5,7 @@ import { environment } from '@/config/environment';
 import { Api, AuthApi } from '@game-guild/apiclient';
 
 export const authConfig = {
+  trustHost: true, // todo: fix [auth][error] UntrustedHost: Host must be trusted. URL was: https://localhost:3000/api/auth/session. Read more at https://errors.authjs.dev#untrustedhost
   callbacks: {
     signIn: async ({ user, account, profile, email, credentials }) => {
       if (account?.provider === 'google') {
