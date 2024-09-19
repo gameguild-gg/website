@@ -102,7 +102,7 @@ export class AuthController {
 
   @Get('me')
   @Auth(AuthenticatedRoute)
-  @ApiCreatedResponse({ type: UserEntity })
+  @ApiOkResponse({ type: UserEntity })
   public async getCurrentUser(
     @AuthUser() user: UserEntity,
   ): Promise<UserEntity> {
@@ -111,7 +111,7 @@ export class AuthController {
 
   @Get('refresh-token')
   @Auth(RefreshTokenRoute)
-  @ApiCreatedResponse({ type: LocalSignInResponseDto })
+  @ApiOkResponse({ type: LocalSignInResponseDto })
   public async refreshToken(
     @AuthUser() user: UserEntity,
   ): Promise<LocalSignInResponseDto> {

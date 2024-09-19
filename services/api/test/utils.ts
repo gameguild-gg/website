@@ -1,7 +1,5 @@
 import { faker } from '@faker-js/faker';
 
-import { createClient } from '@hey-api/client-fetch';
-
 export const baseURL = 'http://localhost:8080';
 
 export function delay(ms: number) {

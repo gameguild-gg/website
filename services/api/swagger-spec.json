@@ -191,7 +191,7 @@
         "operationId": "AuthController_getCurrentUser",
         "parameters": [],
         "responses": {
-          "201": {
+          "200": {
             "description": "",
             "content": {
               "application/json": {
@@ -220,7 +220,7 @@
         "operationId": "AuthController_refreshToken",
         "parameters": [],
         "responses": {
-          "201": {
+          "200": {
             "description": "",
             "content": {
               "application/json": {

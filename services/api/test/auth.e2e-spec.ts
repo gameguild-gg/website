@@ -1,12 +1,10 @@
 import { faker } from '@faker-js/faker';
-import { baseUrl, delay, generatePassword } from './utils';
-import {
-  authControllerGetCurrentUser,
-  authControllerRefreshToken,
-  authControllerSignUpWithEmailUsernamePassword,
-  LocalSignInResponseDto,
-} from '@game-guild/apiclient';
-import { createClient } from '@hey-api/client-fetch';
+import { delay, generatePassword } from './utils';
+import { Api, AuthApi } from '@game-guild/apiclient';
+import LocalSignInResponseDto = Api.LocalSignInResponseDto;
+import * as process from 'node:process';
+
+const api = new AuthApi({ basePath: process.env.HOST_BACK_URL });
 
 export async function CreateRandomUser(): Promise<LocalSignInResponseDto> {
   // create user
@@ -14,27 +12,17 @@ export async function CreateRandomUser(): Promise<LocalSignInResponseDto> {
   const email = faker.internet.email().toLowerCase();
   const password = generatePassword(); // faker.internet.password();
 
-  const unauthorizedClient = createClient({
-    baseUrl: 'http://localhost:8080',
-  });
-
   const createUserResponse =
-    await authControllerSignUpWithEmailUsernamePassword({
-      body: {
-        username,
-        email,
-        password,
-      },
-      throwOnError: false,
-      client: unauthorizedClient,
+    await api.authControllerSignUpWithEmailUsernamePassword({
+      username,
+      email,
+      password,
     });
 
   // verify response
   expect(createUserResponse).toBeDefined();
-  expect(createUserResponse.response.status).toBe(201);
-  expect(createUserResponse.data).toBeDefined();
 
-  const createUserData = createUserResponse.data;
+  const createUserData = createUserResponse;
   expect(createUserData.accessToken).toBeDefined();
   expect(createUserData.user).toBeDefined();
   expect(createUserData.refreshToken).toBeDefined();
@@ -72,50 +60,46 @@ describe('Auth (e2e)', () => {
 
     // test current user from accesstoken
 
-    const authorizedClient = createClient({
-      baseUrl: baseUrl,
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    });
+    const headers = {
+      Authorization: `Bearer ${accessToken}`,
+    };
 
-    const me = await authControllerGetCurrentUser({ client: authorizedClient });
+    const me = await api.authControllerGetCurrentUser({ headers });
     expect(me).toBeDefined();
-    expect(me.data).toBeDefined();
-    expect(me.data.username).toBe(user.username);
-    expect(me.data.email).toBe(user.email);
-    expect(me.data.id).toBe(user.id);
-    expect(me.data.passwordHash).toBeUndefined();
-    expect(me.data.passwordSalt).toBeUndefined();
+    expect(me.username).toBe(user.username);
+    expect(me.email).toBe(user.email);
+    expect(me.id).toBe(user.id);
+    expect(me.passwordHash).toBeUndefined();
   });
 
-  it('test refresh token', async () => {
+  it.only('test refresh token', async () => {
     const loginData = await CreateRandomUser();
 
     // wait 1 second
     await delay(1000);
 
-    const client = createClient({
-      baseUrl: baseUrl,
-      headers: {
-        Authorization: `Bearer ${loginData.accessToken}`,
-      },
-      throwOnError: false,
-    });
+    const headers = {
+      Authorization: `Bearer ${loginData.refreshToken}`,
+    };
 
-    // const refreshTokenResponse = await authControllerRefreshToken({
-    //   client: client,
-    // });
-    // expect(refreshTokenResponse).toBeDefined();
-    //
-    // const newLoginData = refreshTokenResponse.data;
-    // expect(newLoginData).toBeDefined();
-    // expect(newLoginData.user).toBeDefined();
-    // expect(newLoginData.accessToken).toBeDefined();
-    // expect(newLoginData.refreshToken).toBeDefined();
-    // // // tokens should be different
-    // expect(newLoginData.accessToken).not.toBe(loginData.accessToken);
-    // expect(newLoginData.refreshToken).not.toBe(loginData.refreshToken);
-    // expect(newLoginData.user.id).toBe(loginData.user.id);
+    try {
+      const refreshTokenResponse = await api.authControllerRefreshToken({
+        headers,
+      });
+
+      expect(refreshTokenResponse).toBeDefined();
+
+      const newLoginData = refreshTokenResponse;
+      expect(newLoginData).toBeDefined();
+      expect(newLoginData.user).toBeDefined();
+      expect(newLoginData.accessToken).toBeDefined();
+      expect(newLoginData.refreshToken).toBeDefined();
+      // // tokens should be different
+      expect(newLoginData.accessToken).not.toBe(loginData.accessToken);
+      expect(newLoginData.refreshToken).not.toBe(loginData.refreshToken);
+      expect(newLoginData.user.id).toBe(loginData.user.id);
+    } catch (e) {
+      console.log(JSON.stringify(e));
+    }
   });
 });

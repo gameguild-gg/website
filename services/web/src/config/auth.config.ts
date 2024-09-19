@@ -39,6 +39,8 @@ export const authConfig = {
         return true;
       } else if (account?.provider === 'web-3') {
         return Boolean(user.wallet && user.accessToken && user.refreshToken);
+      } else if (account?.provider === 'magic-link') {
+        return Boolean(user.accessToken && user.refreshToken);
       }
       return false;
     },
@@ -85,19 +87,26 @@ export const authConfig = {
           return null;
         }
 
-        const accessToken = response.accessToken;
-        const refreshToken = response.refreshToken;
-        const user = response.user;
+        try {
+          const accessToken = response.accessToken;
+          const refreshToken = response.refreshToken;
+          const user = await api.authControllerGetCurrentUser({
+            headers: { Authorization: `Bearer ${response.accessToken}` },
+          });
 
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.username,
-          image: user.profile.picture,
-          wallet: user.walletAddress,
-          accessToken,
-          refreshToken,
-        };
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.username,
+            image: user.profile?.picture,
+            wallet: user.walletAddress,
+            accessToken,
+            refreshToken,
+          };
+        } catch (e) {
+          console.error(JSON.stringify(e));
+          return null;
+        }
       },
     }),
     Credentials({
