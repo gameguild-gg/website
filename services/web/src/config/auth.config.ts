@@ -6,6 +6,7 @@ import { Api, AuthApi } from '@game-guild/apiclient';
 
 export const authConfig = {
   trustHost: true, // todo: fix [auth][error] UntrustedHost: Host must be trusted. URL was: https://localhost:3000/api/auth/session. Read more at https://errors.authjs.dev#untrustedhost
+  debug: true,
   callbacks: {
     signIn: async ({ user, account, profile, email, credentials }) => {
       if (account?.provider === 'google') {
@@ -28,6 +29,7 @@ export const authConfig = {
             account?.id_token,
           );
         } catch (e) {
+          console.error(JSON.stringify(e));
           return false;
         }
 
@@ -58,6 +60,9 @@ export const authConfig = {
   },
   pages: {
     signIn: '/connect',
+    // error: '/api/auth/error',
+    // verifyRequest: '/api/auth/verify-request',
+    // signOut: '/api/auth/signout',
   },
   providers: [
     Credentials({

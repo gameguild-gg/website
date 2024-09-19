@@ -108,6 +108,16 @@
           }
         ],
         "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LocalSignInResponseDto"
+                }
+              }
+            }
+          },
           "201": {
             "description": "",
             "content": {

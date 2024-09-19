@@ -471,9 +471,15 @@ export const AuthApiFp = function(configuration?: Configuration) {
 					const contentType = response.headers.get('Content-Type');
 					const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
 					
-					if (response.status === 201) {
+					if (response.status === 200) {
 						if (mimeType === 'application/json') {
 							return response.json() as any;
+						}
+						throw response;
+					}
+					if (response.status === 201) {
+						if (mimeType === 'application/json') {
+							throw response;
 						}
 						throw response;
 					}
