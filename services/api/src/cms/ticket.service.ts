@@ -3,36 +3,30 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { TicketEntity } from './entities/ticket.entity';
 import { ProjectEntity } from './entities/project.entity';
+import { ProjectService } from './project.service';
 
 @Injectable()
 export class TicketService {
   constructor(
     @InjectRepository(TicketEntity)
     private readonly ticketRepository: Repository<TicketEntity>,
-    @InjectRepository(ProjectEntity)
-    private readonly projectRepository: Repository<ProjectEntity>,
+    private readonly ProjectService: ProjectService,
   ) {}
 
-  async create(
+  async createTicketWithProjcet(
     ticketData: Partial<TicketEntity>,
     projectId: string,
-  ): Promise<TicketEntity> {
-    const project = await this.projectRepository.findOne({
+  ) {
+    const project = await this.ProjectService.findOne({
       where: { id: projectId },
     });
     if (!project) {
-      throw new NotFoundException('Project not found');
+      throw 'No Project with that id';
     }
-
     const ticket = this.ticketRepository.create({
       ...ticketData,
       project,
     });
-
     return this.ticketRepository.save(ticket);
-  }
-
-  async findAll(): Promise<TicketEntity[]> {
-    return this.ticketRepository.find({ relations: ['project'] });
   }
 }

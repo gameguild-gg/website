@@ -1,21 +1,16 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
+import { ProjectEntity } from './entities/project.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { ProjectEntity } from './entities/project.entity';
+import { WithRolesService } from './with-roles.service';
 
 @Injectable()
-export class GameService {
+export class ProjectService extends WithRolesService<ProjectEntity> {
+  private readonly logger = new Logger(ProjectService.name);
   constructor(
     @InjectRepository(ProjectEntity)
-    private readonly projectRepository: Repository<ProjectEntity>,
-  ) {}
-
-  async create(projectData: Partial<ProjectEntity>): Promise<ProjectEntity> {
-    const project = this.projectRepository.create(projectData);
-    return this.projectRepository.save(project);
-  }
-
-  async findAll(): Promise<ProjectEntity[]> {
-    return this.projectRepository.find({ relations: ['tickets'] });
+    private readonly gameRepository: Repository<ProjectEntity>,
+  ) {
+    super(gameRepository);
   }
 }

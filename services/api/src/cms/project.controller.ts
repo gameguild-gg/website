@@ -1,6 +1,6 @@
 import { Body, Controller, Logger } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
-import { GameService } from './game.service';
+import { ApiBody, ApiTags } from '@nestjs/swagger';
+import { ProjectService } from './project.service';
 import { Auth } from '../auth/decorators/http.decorator';
 import { ProjectEntity } from './entities/project.entity';
 import {
@@ -59,15 +59,15 @@ import { WithRolesController } from './with-roles.controller';
     },
   },
 })
-@Controller('game')
-@ApiTags('game')
-export class GameController
+@Controller('project')
+@ApiTags('project')
+export class ProjectController
   extends WithRolesController<ProjectEntity>
   implements CrudController<ProjectEntity>
 {
-  private readonly logger = new Logger(GameController.name);
+  private readonly logger = new Logger(ProjectController.name);
 
-  constructor(public readonly service: GameService) {
+  constructor(public readonly service: ProjectService) {
     super(service);
   }
 
@@ -78,15 +78,22 @@ export class GameController
   // we need to override to guarantee the user is being injected as owner and editor
   @Override()
   @Auth(AuthenticatedRoute)
-  createOne(
+  @ApiBody({ type: ProjectEntity })
+  async createOne(
     @ParsedRequest() crudReq: CrudRequest,
+    // todo: remove id and other unwanted fields
     @BodyOwnerInject() body: ProjectEntity,
   ) {
-    return this.base.createOneBase(crudReq, body);
+    const res = await this.base.createOneBase(crudReq, body);
+    return this.service.findOne({
+      where: { id: res.id },
+      relations: { owner: true, editors: true },
+    });
   }
 
   @Override()
   @Auth<ProjectEntity>(ManagerRoute<ProjectEntity>)
+  @ApiBody({ type: ProjectEntity })
   async updateOne(
     @ParsedRequest() req: CrudRequest,
     @Body(

@@ -12,8 +12,8 @@ import { UserEntity } from '../user/entities';
 import { ProjectEntity } from './entities/project.entity';
 
 @Injectable()
-export class GameVersionService extends TypeOrmCrudService<ProjectVersionEntity> {
-  private readonly logger = new Logger(GameVersionService.name);
+export class ProjectVersionService extends TypeOrmCrudService<ProjectVersionEntity> {
+  private readonly logger = new Logger(ProjectVersionService.name);
   constructor(
     @InjectRepository(ProjectVersionEntity)
     private readonly gameVersionRepository: Repository<ProjectVersionEntity>,

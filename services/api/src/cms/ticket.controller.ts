@@ -11,11 +11,6 @@ export class TicketController {
     @Param('projectId') projectId: string,
     @Body() ticketData: Partial<TicketEntity>,
   ): Promise<TicketEntity> {
-    return this.ticketService.create(ticketData, projectId);
-  }
-
-  @Get()
-  async findAll(): Promise<TicketEntity[]> {
-    return this.ticketService.findAll();
+    return this.ticketService.createTicketWithProjcet(ticketData, projectId);
   }
 }
