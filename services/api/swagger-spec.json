@@ -640,6 +640,20 @@
         ]
       }
     },
+    "/project/Get-Owner": {
+      "get": {
+        "operationId": "ProjectController_GetBasedOnOwner",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "project"
+        ]
+      }
+    },
     "/project/transfer-ownership": {
       "post": {
         "operationId": "ProjectController_switchOwner",

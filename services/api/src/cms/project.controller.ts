@@ -1,4 +1,4 @@
-import { Body, Controller, Logger } from '@nestjs/common';
+import { Body, Controller, Get, Logger } from '@nestjs/common';
 import { ApiBody, ApiTags } from '@nestjs/swagger';
 import { ProjectService } from './project.service';
 import { Auth } from '../auth/decorators/http.decorator';
@@ -111,5 +111,10 @@ export class ProjectController
     >,
   ): Promise<ProjectEntity> {
     return this.base.updateOneBase(req, dto);
+  }
+
+  @Get('Get-Owner')
+  async GetBasedOnOwner(ownerUsername: string): Promise<ProjectEntity[]> {
+    return this.service.getGameOwner(ownerUsername);
   }
 }

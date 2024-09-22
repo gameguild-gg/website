@@ -13,4 +13,9 @@ export class ProjectService extends WithRolesService<ProjectEntity> {
   ) {
     super(gameRepository);
   }
+  async getGameOwner(userName: string): Promise<ProjectEntity[]> {
+    return this.gameRepository.find({
+      where: { owner: { username: userName } },
+    });
+  }
 }
