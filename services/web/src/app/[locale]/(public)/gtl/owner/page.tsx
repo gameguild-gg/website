@@ -38,7 +38,6 @@ const GameGrid = ({ games }) => (
     </div>
   </ScrollArea>
 );
-
 // TicketBox component
 const TicketBox = ({ ticket, onClick }) => (
   <div
@@ -46,12 +45,14 @@ const TicketBox = ({ ticket, onClick }) => (
     className="bg-gray-800 rounded-lg overflow-hidden shadow-lg p-4 hover:bg-gray-700 transition-colors duration-200 cursor-pointer"
   >
     <div className="flex justify-between items-center mb-2">
-      <h3 className="text-lg font-semibold text-white">{ticket.gameName}</h3>
+      <h3 className="text-lg font-semibold text-white">{ticket.title}</h3>
       <span className="text-xs font-semibold text-gray-300 px-2 py-1 rounded bg-gray-700">
-        {ticket.ticketStatus}
+        {ticket.status}
       </span>
     </div>
-    <p className="text-sm text-gray-400">Submitted by: {ticket.submitter}</p>
+    <p className="text-sm text-gray-400">
+      Submitted by: {ticket.owner_username}
+    </p>
   </div>
 );
 
@@ -159,6 +160,7 @@ export default function Page() {
     localStorage.setItem('selectedTicket', JSON.stringify(ticket));
     router.push(`/gtl/owner/Tickets/`);
   };
+
   const fetchTickets = async () => {
     try {
       const response = await axios.get('http://localhost:8080/tickets');
