@@ -1035,6 +1035,16 @@
       "post": {
         "operationId": "TicketController_create",
         "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTicketDto"
+              }
+            }
+          }
+        },
         "responses": {
           "201": {
             "description": ""
@@ -2474,6 +2484,10 @@
           "id",
           "editor"
         ]
+      },
+      "CreateTicketDto": {
+        "type": "object",
+        "properties": {}
       },
       "CompetitionSubmissionDto": {
         "type": "object",

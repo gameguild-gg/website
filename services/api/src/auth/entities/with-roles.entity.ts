@@ -7,7 +7,7 @@ import { UserEntity } from '../../user/entities';
 // todo: change this to be more efficient and generic to different types of roles
 export class WithRolesEntity extends EntityBase {
   @ApiProperty({ type: () => UserEntity })
-  @ManyToOne(() => UserEntity, { nullable: false, eager: false })
+  @ManyToOne(() => UserEntity, { nullable: true, eager: false })
   owner: UserEntity;
 
   @ApiProperty({ type: () => UserEntity, isArray: true })

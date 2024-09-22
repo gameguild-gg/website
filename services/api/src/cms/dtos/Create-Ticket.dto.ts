@@ -1,8 +1,9 @@
-import { IsString, IsNotEmpty, IsEnum } from 'class-validator';
+import { IsString, IsEnum, IsNotEmpty } from 'class-validator';
 import { TicketStatus, TicketPriority } from '../entities/ticket.entity';
 
 export class CreateTicketDto {
   @IsString()
+  @IsNotEmpty()
   title: string;
 
   @IsString()

@@ -14,17 +14,31 @@ export class TicketService {
   ) {}
 
   async createTicket(
-    ticketData: Partial<TicketEntity>,
-    // projectId: string,
+    createTicketDto: CreateTicketDto, // Add ownerId as a parameter
   ): Promise<TicketEntity> {
-    //const project = await this.ProjectService.findOne({
-    // where: { id: projectId },
-    // });
-    //if (!project) {
-    // throw new NotFoundException();
-    // }
-    const newTicket = new TicketEntity(ticketData);
-    //newTicket.project = project; // Set the project
+    const newTicket = new TicketEntity(createTicketDto);
+    newTicket.owner = {
+      posts: null,
+      courses: null,
+      createdAt: null,
+      updatedAt: null,
+      walletAddress: 'N/A',
+      profile: null,
+      competitionSubmissions: null,
+      elo: null,
+      githubId: 'N/A',
+      appleId: 'N/A',
+      linkedinId: 'N/A',
+      twitterId: 'N/A',
+      passwordHash: '1232131231',
+      passwordSalt: 'N/A',
+      facebookId: 'N/A',
+      googleId: 'N/a',
+      username: 'daddy',
+      email: 'gkingof9@gmail.com',
+      emailVerified: true,
+      id: 'yes',
+    };
     return this.ticketRepository.save(newTicket);
   }
 }

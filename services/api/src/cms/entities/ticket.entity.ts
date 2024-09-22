@@ -21,13 +21,9 @@ export enum TicketPriority {
 
 @Entity('ticket')
 export class TicketEntity extends WithRolesEntity {
-  @PrimaryGeneratedColumn()
-  ticketNumber: number;
-
   @ApiProperty({ type: String, description: 'Title of the ticket' })
   @Column({ type: 'varchar', length: 255 })
   @IsString()
-  @IsNotEmpty()
   title: string;
 
   @ApiProperty({ type: String, description: 'Description of the ticket' })
@@ -68,6 +64,7 @@ export class TicketEntity extends WithRolesEntity {
   })
   @ManyToOne(() => ProjectEntity, (project) => project.tickets)
   project: ProjectEntity;
+  newTicket: { id: string };
 
   constructor(partial?: Partial<TicketEntity>) {
     super(partial);

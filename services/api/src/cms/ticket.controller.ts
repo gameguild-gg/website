@@ -1,6 +1,7 @@
-import { Controller, Post, Get, Body, Param } from '@nestjs/common';
+import { Controller, Post, Body } from '@nestjs/common';
 import { TicketService } from './ticket.service';
 import { TicketEntity } from './entities/ticket.entity';
+import { CreateTicketDto } from './dtos/Create-Ticket.dto';
 
 @Controller('tickets')
 export class TicketController {
@@ -9,8 +10,8 @@ export class TicketController {
   @Post('create-ticket')
   async create(
     //@Param('projectId') projectId: string,
-    @Body('ticket data') ticketData: Partial<TicketEntity>,
+    @Body() createTicketDto: CreateTicketDto,
   ): Promise<TicketEntity> {
-    return this.ticketService.createTicket(ticketData);
+    return this.ticketService.createTicket(createTicketDto);
   }
 }
