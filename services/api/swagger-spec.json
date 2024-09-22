@@ -1052,12 +1052,12 @@
         }
       }
     },
-    "/tickets/Update ticket Status": {
-      "post": {
+    "/tickets/{ticketID}/status": {
+      "put": {
         "operationId": "TicketController_updateStatus",
         "parameters": [
           {
-            "name": "Ticket ID",
+            "name": "ticketID",
             "required": true,
             "in": "path",
             "schema": {
@@ -1066,7 +1066,7 @@
           }
         ],
         "responses": {
-          "201": {
+          "200": {
             "description": ""
           }
         }
@@ -1076,6 +1076,26 @@
       "get": {
         "operationId": "TicketController_getAll",
         "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/tickets/tickets/{ticketID}": {
+      "get": {
+        "operationId": "TicketController_getTicketByID",
+        "parameters": [
+          {
+            "name": "ticketID",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": ""

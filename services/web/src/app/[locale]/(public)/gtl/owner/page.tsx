@@ -186,9 +186,8 @@ export default function Page() {
   const [videoFilter, setVideoFilter] = useState('All');
 
   const filteredTickets = tickets.filter(
-    (ticket) => ticketFilter === 'All' || ticket.ticketStatus === ticketFilter,
+    (ticket) => ticketFilter === 'All' || ticket.status === ticketFilter,
   );
-
   // Filter videos based on the selected filter status
   const filteredVideos = videos.filter(
     (video) => videoFilter === 'All' || video.videoStatus === videoFilter,
@@ -209,9 +208,11 @@ export default function Page() {
                 value={ticketFilter}
                 onChange={(e) => setTicketFilter(e.target.value)}
               >
-                <option value="All">All</option>
-                <option value="Open">Open</option>
-                <option value="Closed">Closed</option>
+                <option value="All">ALL</option>
+                <option value="OPEN">OPEN</option>
+                <option value="IN_PROGRESS">IN PROGRESS</option>
+                <option value="RESOLVED">RESOLVED</option>
+                <option value="CLOSED">CLOSED</option>
               </select>
             </div>
             <TicketGrid

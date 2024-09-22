@@ -30,11 +30,17 @@ export class TicketService {
     return this.ticketRepository.save(newTicket);
   }
 
+  // returns a ticket (serched by id)
+  async getTicketID(ticketID: string): Promise<TicketEntity> {
+    return this.ticketRepository.findOne({
+      where: { id: ticketID },
+    });
+  }
+
   async updateTicketStatus(
     ticketID: string,
     newStatus: TicketStatus,
   ): Promise<void> {
-    // Fetch the ticket by ID
     const ticket = await this.ticketRepository.findOne({
       where: { id: ticketID },
     });

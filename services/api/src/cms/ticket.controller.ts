@@ -1,4 +1,12 @@
-import { Controller, Post, Body, Param, Get, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Put,
+  Body,
+  Param,
+  Get,
+  Delete,
+} from '@nestjs/common';
 import { TicketService } from './ticket.service';
 import { TicketEntity, TicketStatus } from './entities/ticket.entity';
 import { CreateTicketDto } from './dtos/Create-Ticket.dto';
@@ -14,16 +22,24 @@ export class TicketController {
   ): Promise<TicketEntity> {
     return this.ticketService.createTicket(createTicketDto);
   }
-  @Post('Update ticket Status')
+  @Put(':ticketID/status') // Ensure the route matches this pattern
   async updateStatus(
-    @Param('Ticket ID') ticketID: string,
-    newStatus: TicketStatus,
+    @Param('ticketID') ticketID: string,
+    @Body('newStatus') newStatus: TicketStatus, // Use @Body for the new status
   ): Promise<void> {
-    this.ticketService.updateTicketStatus(ticketID, newStatus);
+    console.log(newStatus);
+    await this.ticketService.updateTicketStatus(ticketID, newStatus);
   }
   @Get()
   async getAll(): Promise<TicketEntity[]> {
     return this.ticketService.getAllTickets();
+  }
+
+  @Get('tickets/:ticketID')
+  async getTicketByID(
+    @Param('ticketID') ticketID: string,
+  ): Promise<TicketEntity> {
+    return this.ticketService.getTicketID(ticketID);
   }
   @Delete('delete-all') // Adjust the endpoint as needed
   async deleteAllTickets(): Promise<void> {

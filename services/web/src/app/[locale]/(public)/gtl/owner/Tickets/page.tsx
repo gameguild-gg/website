@@ -1,16 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import axios from 'axios';
 
-createdAt: '2024-09-22T22:09:42.498Z';
-owner_username: 'daddy';
-priority: 'LOW';
-status: 'OPEN';
-title: 'Test';
-updatedAt: '2024-09-22T22:09:42.498Z';
 interface Ticket {
   id: number;
   status: string;
@@ -27,16 +22,28 @@ export default function TicketDetail() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Retrieve the ticket data from localStorage
     const storedTicket = localStorage.getItem('selectedTicket');
     if (storedTicket) {
       setTicket(JSON.parse(storedTicket));
     } else {
-      // If no ticket data is found, redirect to the dashboard
       router.push('/gtl/owner');
     }
     setIsLoading(false);
   }, [id, router]);
+
+  const updateTicketStatus = async (newStatus) => {
+    try {
+      await axios.put(`http://localhost:8080/tickets/${ticket?.id}/status`, {
+        newStatus,
+      });
+      const response = await axios.get(
+        `http://localhost:8080/tickets/tickets/${ticket?.id}`,
+      );
+      setTicket(response.data);
+    } catch (error) {
+      console.error('Error updating ticket status:', error);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -84,6 +91,18 @@ export default function TicketDetail() {
           <Button asChild>
             <Link href="/gtl/owner">Back to Dashboard</Link>
           </Button>
+        </div>
+        <div className="flex justify-end mb-4">
+          <select
+            className="bg-gray-800 text-white p-2 rounded"
+            value={ticket.status}
+            onChange={(e) => updateTicketStatus(e.target.value)}
+          >
+            <option value="OPEN">OPEN</option>
+            <option value="IN_PROGRESS">IN PROGRESS</option>
+            <option value="RESOLVED">RESOLVED</option>
+            <option value="CLOSED">CLOSED</option>
+          </select>
         </div>
       </main>
     </div>
