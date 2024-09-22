@@ -20,8 +20,6 @@ const CreateTicket: React.FC = () => {
       description,
       status,
       priority,
-      userId,
-      userId1,
     };
 
     try {
