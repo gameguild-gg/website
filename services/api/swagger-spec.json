@@ -1031,19 +1031,10 @@
         ]
       }
     },
-    "/tickets/{projectId}": {
+    "/tickets/create-ticket": {
       "post": {
         "operationId": "TicketController_create",
-        "parameters": [
-          {
-            "name": "projectId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
+        "parameters": [],
         "responses": {
           "201": {
             "description": ""
@@ -2367,9 +2358,8 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "number",
-            "format": "uuid",
-            "description": "Title of the ticket"
+            "type": "string",
+            "format": "uuid"
           },
           "createdAt": {
             "format": "date-time",
@@ -2414,6 +2404,10 @@
           "thumbnail": {
             "type": "string"
           },
+          "Description": {
+            "type": "number",
+            "description": "Title of the ticket"
+          },
           "versions": {
             "type": "array",
             "items": {
@@ -2433,6 +2427,7 @@
           "body",
           "visibility",
           "thumbnail",
+          "Description",
           "versions"
         ]
       },

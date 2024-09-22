@@ -6,11 +6,11 @@ import { TicketEntity } from './entities/ticket.entity';
 export class TicketController {
   constructor(private readonly ticketService: TicketService) {}
 
-  @Post(':projectId')
+  @Post('create-ticket')
   async create(
-    @Param('projectId') projectId: string,
-    @Body() ticketData: Partial<TicketEntity>,
+    //@Param('projectId') projectId: string,
+    @Body('ticket data') ticketData: Partial<TicketEntity>,
   ): Promise<TicketEntity> {
-    return this.ticketService.createTicketWithProjcet(ticketData, projectId);
+    return this.ticketService.createTicket(ticketData);
   }
 }

@@ -1,6 +1,7 @@
 import { WithRolesEntity } from '../../auth/entities/with-roles.entity';
+import { Controller, Post, Get, Body, Param } from '@nestjs/common';
 import { ProjectEntity } from './project.entity';
-import { Entity, ManyToOne, Column } from 'typeorm';
+import { Entity, ManyToOne, Column, PrimaryGeneratedColumn } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { IsString, IsNotEmpty, IsEnum, IsDate } from 'class-validator';
 
@@ -20,6 +21,9 @@ export enum TicketPriority {
 
 @Entity('ticket')
 export class TicketEntity extends WithRolesEntity {
+  @PrimaryGeneratedColumn()
+  ticketNumber: number;
+
   @ApiProperty({ type: String, description: 'Title of the ticket' })
   @Column({ type: 'varchar', length: 255 })
   @IsString()
@@ -50,7 +54,6 @@ export class TicketEntity extends WithRolesEntity {
   @IsDate()
   createdAt: Date;
 
-  // Ensure this matches the requirement from the base class
   @ApiProperty({
     type: Date,
     description: 'Date when the ticket was last updated',
