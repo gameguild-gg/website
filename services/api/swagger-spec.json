@@ -1052,6 +1052,48 @@
         }
       }
     },
+    "/tickets/Update ticket Status": {
+      "post": {
+        "operationId": "TicketController_updateStatus",
+        "parameters": [
+          {
+            "name": "Ticket ID",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/tickets": {
+      "get": {
+        "operationId": "TicketController_getAll",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/tickets/delete-all": {
+      "delete": {
+        "operationId": "TicketController_deleteAllTickets",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
+      }
+    },
     "/Competitions/Chess/submit": {
       "post": {
         "operationId": "CompetitionController_submitChessAgent",

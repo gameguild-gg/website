@@ -7,9 +7,6 @@ const CreateTicket: React.FC = () => {
   const [description, setDescription] = useState('');
   const [status, setStatus] = useState('OPEN'); // Default status
   const [priority, setPriority] = useState('LOW'); // Default priority
-  const userId = 'fuck';
-  const userId1 = 'fuck';
-
   // Replace this with the actual user ID from your auth context
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -29,10 +26,7 @@ const CreateTicket: React.FC = () => {
       );
       console.log('Ticket created:', response.data);
     } catch (error) {
-      console.error(
-        'Error creating ticket:',
-        error.response?.data || error.message,
-      );
+      console.error('Error creating ticket:');
     }
   };
 

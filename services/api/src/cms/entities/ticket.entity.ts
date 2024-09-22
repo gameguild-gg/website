@@ -31,6 +31,11 @@ export class TicketEntity extends WithRolesEntity {
   @IsString()
   description?: string;
 
+  @ApiProperty({ type: String, description: 'owner_id' })
+  @Column({ type: 'text', nullable: true })
+  @IsString()
+  owner_username?: string;
+
   @ApiProperty({ enum: TicketStatus, description: 'Status of the ticket' })
   @Column({ type: 'enum', enum: TicketStatus, default: TicketStatus.OPEN })
   @IsEnum(TicketStatus)
