@@ -654,6 +654,25 @@
         ]
       }
     },
+    "/project/Get-All": {
+      "get": {
+        "operationId": "ProjectController_GetAllProjects",
+        "parameters": [],
+        "responses": {
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "tags": [
+          "project"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/project/transfer-ownership": {
       "post": {
         "operationId": "ProjectController_switchOwner",
@@ -1063,7 +1082,10 @@
           "201": {
             "description": ""
           }
-        }
+        },
+        "tags": [
+          "Ticket"
+        ]
       }
     },
     "/tickets/{ticketID}/status": {
@@ -1083,7 +1105,10 @@
           "200": {
             "description": ""
           }
-        }
+        },
+        "tags": [
+          "Ticket"
+        ]
       }
     },
     "/tickets": {
@@ -1094,7 +1119,10 @@
           "200": {
             "description": ""
           }
-        }
+        },
+        "tags": [
+          "Ticket"
+        ]
       }
     },
     "/tickets/tickets/{ticketID}": {
@@ -1114,7 +1142,10 @@
           "200": {
             "description": ""
           }
-        }
+        },
+        "tags": [
+          "Ticket"
+        ]
       }
     },
     "/tickets/delete-all": {
@@ -1125,7 +1156,10 @@
           "200": {
             "description": ""
           }
-        }
+        },
+        "tags": [
+          "Ticket"
+        ]
       }
     },
     "/Competitions/Chess/submit": {

@@ -117,4 +117,10 @@ export class ProjectController
   async GetBasedOnOwner(ownerUsername: string): Promise<ProjectEntity[]> {
     return this.service.getGameOwner(ownerUsername);
   }
+  @Override()
+  @Auth(AuthenticatedRoute)
+  @Get('Get-All')
+  async GetAllProjects(): Promise<ProjectEntity[]> {
+    return this.service.getAll();
+  }
 }

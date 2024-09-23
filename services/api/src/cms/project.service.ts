@@ -18,4 +18,8 @@ export class ProjectService extends WithRolesService<ProjectEntity> {
       where: { owner: { username: userName } },
     });
   }
+
+  async getAll(): Promise<ProjectEntity[]> {
+    return this.gameRepository.find();
+  }
 }
