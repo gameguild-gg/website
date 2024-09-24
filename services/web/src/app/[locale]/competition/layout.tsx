@@ -21,7 +21,8 @@ import { FloatButton, Layout, Menu, MenuProps, theme } from 'antd';
 import { deleteCookie, getCookie } from 'cookies-next';
 import { useRouter } from 'next/navigation';
 import React, { useEffect, useState } from 'react';
-import { UserEntity } from '@game-guild/apiclient';
+import { Api } from '@game-guild/apiclient';
+import UserEntity = Api.UserEntity;
 
 const { Content, Footer, Sider } = Layout;
 

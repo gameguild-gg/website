@@ -1,10 +1,6 @@
 import React from 'react';
-import {ParamsWithLocale} from "@/types";
 import ContactForm from "@/components/contact/contact-form";
 
-export async function generateStaticParams(): Promise<ParamsWithLocale[]> {
-  return [];
-}
 
 export default async function Page() {
   return (

@@ -1,5 +1,7 @@
 import { faker } from '@faker-js/faker';
 
+export const baseURL = 'http://localhost:8080';
+
 export function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }

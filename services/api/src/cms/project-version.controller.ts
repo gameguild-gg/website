@@ -49,8 +49,8 @@ import { PartialWithoutFields } from './interceptors/ownership-empty-interceptor
     },
   },
 })
-@Controller('game-version')
-@ApiTags('game-version')
+@Controller('project-version')
+@ApiTags('project-version')
 export class ProjectVersionController
   implements CrudController<ProjectVersionEntity>
 {

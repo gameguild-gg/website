@@ -7,6 +7,7 @@ import * as ormconfig from '../../ormconfig';
 // import dotenv from 'dotenv';
 import * as dotenv from 'dotenv';
 import * as process from 'node:process';
+import { decodeBase64 } from 'ethers';
 
 @Injectable()
 export class ApiConfigService {
@@ -103,18 +104,25 @@ export class ApiConfigService {
   }
 
   get authConfig() {
+    const decoder = new TextDecoder();
     return {
       googleClientId: ormconfig.getEnvString('GOOGLE_CLIENT_ID'),
-      accessTokenPrivateKey: ormconfig.getEnvString('ACCESS_TOKEN_PRIVATE_KEY'),
-      accessTokenPublicKey: ormconfig.getEnvString('ACCESS_TOKEN_PUBLIC_KEY'),
+      accessTokenPrivateKey: decoder.decode(
+        decodeBase64(ormconfig.getEnvString('ACCESS_TOKEN_PRIVATE_KEY')),
+      ),
+      accessTokenPublicKey: decoder.decode(
+        decodeBase64(ormconfig.getEnvString('ACCESS_TOKEN_PUBLIC_KEY')),
+      ),
       accessTokenAlgorithm: ormconfig.getEnvString('ACCESS_TOKEN_ALGORITHM'),
       accessTokenExpiresIn: ormconfig.getEnvString(
         'ACCESS_TOKEN_EXPIRATION_TIME',
       ),
-      refreshTokenPrivateKey: ormconfig.getEnvString(
-        'REFRESH_TOKEN_PRIVATE_KEY',
+      refreshTokenPrivateKey: decoder.decode(
+        decodeBase64(ormconfig.getEnvString('REFRESH_TOKEN_PRIVATE_KEY')),
       ),
-      refreshTokenPublicKey: ormconfig.getEnvString('REFRESH_TOKEN_PUBLIC_KEY'),
+      refreshTokenPublicKey: decoder.decode(
+        decodeBase64(ormconfig.getEnvString('REFRESH_TOKEN_PUBLIC_KEY')),
+      ),
       refreshTokenAlgorithm: ormconfig.getEnvString('REFRESH_TOKEN_ALGORITHM'),
       refreshTokenExpiresIn: ormconfig.getEnvString(
         'REFRESH_TOKEN_EXPIRATION_TIME',

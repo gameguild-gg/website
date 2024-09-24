@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { SignInFormState, signInWithGoogle } from '@/lib/auth';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -8,20 +8,40 @@ import { Button } from '@/components/ui/button';
 import { Sparkles } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 
-import { useSession } from 'next-auth/react';
 import MetaMaskSignInButton from '@/components/others/web3/meta-mask-sign-in-button';
-import { authApi } from '@/lib/apinest';
-import { OkDto } from '@game-guild/apiclient';
-
-const initialState: SignInFormState = {};
+import { Api, AuthApi } from '@game-guild/apiclient';
+import OkDto = Api.OkDto;
+import { useSearchParams } from 'next/navigation';
+import { signInWithMagicLink } from '@/lib/auth/sign-in-with-magic-link';
+import { getSession } from 'next-auth/react';
+import { Session } from 'next-auth';
 
 export default function ConnectForm() {
-  const session = useSession();
-
+  const searchParams = useSearchParams();
+  let session: Session | null;
+  const api = new AuthApi({
+    basePath: process.env.NEXT_PUBLIC_API_URL,
+  });
   const { toast } = useToast();
   const [sendMagicLinkClicked, setSendMagicLinkClicked] = useState(false);
 
   const [email, setEmail] = useState<string>('');
+
+  async function magicLinkProcess(token: string | null) {
+    if (token) {
+      await signInWithMagicLink(token);
+    }
+    session = await getSession();
+    if (session) {
+      window.location.href = '/feed';
+    }
+  }
+
+  //on mount
+  useEffect(() => {
+    const token = searchParams.get('token');
+    magicLinkProcess(token).then();
+  }, []);
 
   // web3 provider web3-context
   // todo: move this following logic to actions.ts
@@ -35,7 +55,7 @@ export default function ConnectForm() {
 
     let response: OkDto;
     try {
-      response = (await authApi.authControllerMagicLink({ email: email })).data;
+      response = await api.authControllerMagicLink({ email: email });
     } catch (error) {
       sendingToast.dismiss();
       toast({

@@ -1,6 +1,5 @@
 'use client';
 
-import Image from 'next/image';
 // todo: make it work again
 // import Editor from '@/lib/old/editor/editor';
 

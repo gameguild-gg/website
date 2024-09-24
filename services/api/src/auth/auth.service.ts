@@ -303,7 +303,7 @@ export class AuthService {
     const payload: TokenPayload = ticket.getPayload();
 
     let user = await this.userService.findOne({
-      where: { googleId: payload.sub },
+      where: [{ googleId: payload.sub }, { email: payload.email }],
       relations: { profile: true },
     });
     if (!user) {

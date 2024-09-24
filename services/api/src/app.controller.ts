@@ -7,6 +7,6 @@ export class AppController {
   @Get()
   @Redirect('/documentation', 302)
   @ApiExcludeEndpoint()
-  @Auth(PublicRoute)
+  // @Auth(PublicRoute)
   root() {}
 }

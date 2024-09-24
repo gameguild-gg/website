@@ -1,5 +1,12 @@
 import { Body, Controller, Get, Logger, Param, Post } from '@nestjs/common';
-import { ApiBody, ApiProperty, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBody,
+  ApiCreatedResponse,
+  ApiOkResponse,
+  ApiProperty,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { AuthUser, PublicRoute } from './decorators';
 import { LocalSignInDto } from '../dtos/auth/local-sign-in.dto';
@@ -24,8 +31,8 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('magic-link')
-  @Auth(PublicRoute)
-  @OkResponse({ type: OkDto })
+  // @Auth(PublicRoute)
+  @ApiCreatedResponse({ type: OkDto })
   public async magicLink(@Body() body: EmailDto): Promise<OkDto> {
     return this.authService.sendMagicLink(body);
   }
@@ -42,6 +49,7 @@ export class AuthController {
   @Post('local/sign-in')
   //@Public(true)
   @ApiBody({ type: LocalSignInDto })
+  @ApiCreatedResponse({ type: LocalSignInResponseDto })
   public async localSignWithEmailOrUsername(
     @Body() data: LocalSignInDto,
   ): Promise<LocalSignInResponseDto> {
@@ -49,8 +57,8 @@ export class AuthController {
   }
 
   @Post('local/sign-up')
-  @Auth(PublicRoute)
-  @OkResponse({ type: LocalSignInResponseDto }) // pass the type to the swagger
+  // @Auth(PublicRoute)
+  @ApiCreatedResponse({ type: LocalSignInResponseDto }) // pass the type to the swagger
   public async signUpWithEmailUsernamePassword(
     @Body() data: LocalSignUpDto,
   ): Promise<LocalSignInResponseDto> {
@@ -66,8 +74,9 @@ export class AuthController {
   // }
 
   @Get('google/callback/:token')
-  @OkResponse({ type: LocalSignInResponseDto })
-  @Auth(PublicRoute)
+  @ApiCreatedResponse({ type: LocalSignInResponseDto })
+  @ApiOkResponse({ type: LocalSignInResponseDto })
+  // @Auth(PublicRoute)
   public async signInWithGoogle(
     @Param('token') token: string,
   ): Promise<LocalSignInResponseDto> {
@@ -75,8 +84,8 @@ export class AuthController {
   }
 
   @Post('web3/sign-in/challenge')
-  @Auth(PublicRoute)
-  @OkResponse({ type: EthereumSigninChallengeResponseDto })
+  // @Auth(PublicRoute)
+  @ApiCreatedResponse({ type: EthereumSigninChallengeResponseDto })
   public async getWeb3SignInChallenge(
     @Body() data: EthereumSigninChallengeRequestDto,
   ): Promise<EthereumSigninChallengeResponseDto> {
@@ -84,8 +93,8 @@ export class AuthController {
   }
 
   @Post('web3/sign-in/validate')
-  @Auth(PublicRoute)
-  @OkResponse({ type: LocalSignInResponseDto })
+  // @Auth(PublicRoute)
+  @ApiCreatedResponse({ type: LocalSignInResponseDto })
   public async validateWeb3SignInChallenge(
     @Body() data: EthereumSigninValidateRequestDto,
   ): Promise<LocalSignInResponseDto> {
@@ -94,7 +103,7 @@ export class AuthController {
 
   @Get('me')
   @Auth(AuthenticatedRoute)
-  @OkResponse({ type: UserEntity })
+  @ApiOkResponse({ type: UserEntity })
   public async getCurrentUser(
     @AuthUser() user: UserEntity,
   ): Promise<UserEntity> {
@@ -103,7 +112,7 @@ export class AuthController {
 
   @Get('refresh-token')
   @Auth(RefreshTokenRoute)
-  @OkResponse({ type: LocalSignInResponseDto })
+  @ApiOkResponse({ type: LocalSignInResponseDto })
   public async refreshToken(
     @AuthUser() user: UserEntity,
   ): Promise<LocalSignInResponseDto> {
@@ -116,7 +125,8 @@ export class AuthController {
   // }
 
   @Get('userExists/:user')
-  @Auth(PublicRoute)
+  // @Auth(PublicRoute)
+  @ApiCreatedResponse({ type: Boolean })
   public async userExists(@Param('user') user: string): Promise<boolean> {
     return this.authService.userExists(user);
   }

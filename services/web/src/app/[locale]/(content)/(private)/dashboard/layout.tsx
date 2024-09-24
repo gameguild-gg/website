@@ -1,11 +1,9 @@
-import React from 'react';
+import React, { PropsWithChildren } from 'react';
 import Dashboard from '@/components/dashboard';
 
-type Props = {
-  children: React.ReactNode;
-};
-
-export default async function Layout({ children }: Readonly<Props>) {
+export default async function Layout({
+  children,
+}: Readonly<PropsWithChildren>) {
   return (
     <Dashboard>
       <Dashboard.Sidebar />

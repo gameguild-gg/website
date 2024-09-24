@@ -3,10 +3,12 @@
 import React, { useEffect, useState } from 'react';
 import { getCookie } from 'cookies-next';
 import { Button, Dropdown, MenuProps, message, Space, Typography } from 'antd';
-import { RobotFilled, UserOutlined } from '@ant-design/icons';
+import { RobotFilled } from '@ant-design/icons';
 import { useRouter } from 'next/navigation';
-import { competitionsApi } from '@/lib/apinest';
-import { ChessMatchResultDto, UserEntity } from '@game-guild/apiclient';
+import { getSession } from 'next-auth/react';
+import { Api, CompetitionsApi } from '@game-guild/apiclient';
+import ChessMatchResultDto = Api.ChessMatchResultDto;
+import UserEntity = Api.UserEntity;
 
 const ChallengePage: React.FC = () => {
   const router = useRouter();
@@ -23,44 +25,45 @@ const ChallengePage: React.FC = () => {
     if (!agentListFetched) getAgentList();
   });
 
-  const getAgentList = async () => {
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL;
-    const headers = new Headers();
-    const accessToken = getCookie('access_token');
-    headers.append('Authorization', `Bearer ${accessToken}`);
-    const response = await fetch(baseUrl + '/Competitions/Chess/ListAgents', {
-      headers: headers,
-    });
-    if (!response.ok) {
-      router.push('/login');
+  const api = new CompetitionsApi({
+    basePath: process.env.NEXT_PUBLIC_API_URL,
+  });
+
+  async function getAgentList(): Promise<void> {
+    const session = await getSession();
+
+    try {
+      const response = await api.competitionControllerListChessAgents({
+        headers: {
+          Authorization: `Bearer ${session?.accessToken}`,
+        },
+      });
+
+      const data = response as string[];
+
+      setAgentList(data);
+      setAgentListFetched(true);
+      console.log(data);
+    } catch (e) {
+      router.push('/connect');
       return;
     }
-    const data = (await response.json()) as string[];
-
-    setAgentList(data);
-    setAgentListFetched(true);
-    console.log(data);
-  };
+  }
 
   const [selectedAgentWhite, setSelectedAgentWhite] = useState<string>('');
   const [selectedAgentBlack, setSelectedAgentBlack] = useState<string>('');
 
   const handleMenuClickWhite: MenuProps['onClick'] = (e) => {
     const agent = e.key.toString();
-    // todo: fix the requirement to play chess to have a username
-    // todo: do not use cookies anymor
-    const userAgent = (JSON.parse(getCookie('user') as string) as UserEntity)
-      .username;
     setSelectedAgentWhite(agent);
   };
   const handleMenuClickBlack: MenuProps['onClick'] = (e) => {
     const agent = e.key.toString();
-    const userAgent = (JSON.parse(getCookie('user') as string) as UserEntity)
-      .username;
     setSelectedAgentBlack(agent);
   };
 
-  const challengeBot = async () => {
+  const challengeBot = async (): Promise<void> => {
+    const session = await getSession();
     if (requestInProgress) {
       message.error('Request in progress. Please wait.');
       return;
@@ -69,6 +72,7 @@ const ChallengePage: React.FC = () => {
       message.error('Please select agents to challenge.');
       return;
     }
+    // todo: get user from session
     const userAgent = (JSON.parse(getCookie('user') as string) as UserEntity)
       .username;
     if (selectedAgentWhite !== userAgent && selectedAgentBlack !== userAgent) {
@@ -77,21 +81,20 @@ const ChallengePage: React.FC = () => {
     }
     setRequestInProgress(true);
 
-    const response = await competitionsApi.competitionControllerRunChessMatch(
+    const response = await api.competitionControllerRunChessMatch(
       {
         player1username: selectedAgentWhite,
         player2username: selectedAgentBlack,
       },
       {
         headers: {
-          Authorization: `Bearer ${getCookie('access_token')}`,
-          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session?.accessToken}`,
         },
       },
     );
 
-    console.log(response.data);
-    setResult(response.data);
+    console.log(response);
+    setResult(response);
     setRequestInProgress(false);
   };
 
@@ -168,7 +171,7 @@ const ChallengePage: React.FC = () => {
             <Typography.Paragraph>
               Moves:{' '}
               {result.moves.map((move) => (
-                <Typography.Text>{move} </Typography.Text>
+                <Typography.Text key={move}>{move} </Typography.Text>
               ))}
             </Typography.Paragraph>
           </>

@@ -3,20 +3,23 @@ import { useRouter } from 'next/navigation';
 import { message, notification, NotificationArgsProps } from 'antd';
 import React from 'react';
 import { NotificationProvider } from '@/components/others/common/NotificationContext';
-import { getCookies, setCookie, deleteCookie, getCookie } from 'cookies-next';
-import {
-  LocalSignInDto,
-  LocalSignInResponseDto,
-  LocalSignUpDto,
-} from '@game-guild/apiclient';
+import { setCookie } from 'cookies-next';
+import { Api, AuthApi } from '@game-guild/apiclient';
+import LocalSignInDto = Api.LocalSignInDto;
+import LocalSignInResponseDto = Api.LocalSignInResponseDto;
+import LocalSignUpDto = Api.LocalSignUpDto;
 
 enum UserExists {
   NotChecked = 'NotChecked',
   UserExists = 'UserExists',
   UserNotExists = 'UserNotExists',
 }
+
 function Home() {
-  const [api, contextHolder] = notification.useNotification();
+  const api = new AuthApi({
+    basePath: process.env.NEXT_PUBLIC_API_URL,
+  });
+
   const router = useRouter();
 
   const [emailOrUsername, setEmailOrUsername] = React.useState('');
@@ -54,10 +57,9 @@ function Home() {
   const onButtonClick = async () => {
     if (userExists === UserExists.NotChecked) {
       // call the api to check if user exists
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL;
-      const url = `${baseUrl}/auth/userExists/${emailOrUsername}`;
+      const userExists: boolean =
+        await api.authControllerUserExists(emailOrUsername);
 
-      const userExists: boolean = await (await fetch(url)).json();
       message.info(`User exists: ${userExists}`);
 
       if (userExists) {
@@ -82,74 +84,59 @@ function Home() {
         setUserOrEmailLabel('Username');
       }
     } else if (userExists === UserExists.UserExists) {
-      // sign in
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL;
-      const url = `${baseUrl}/auth/local/sign-in`;
-      let data: Partial<LocalSignInDto>;
-      if (emailOrUsername.includes('@'))
-        data = { email: emailOrUsername, password };
-      else data = { username: emailOrUsername, password };
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      });
+      try {
+        // sign in
+        let data: Partial<LocalSignInDto>;
+        if (emailOrUsername.includes('@'))
+          data = { email: emailOrUsername, password };
+        else data = { username: emailOrUsername, password };
+        const response = await api.authControllerLocalSignWithEmailOrUsername(
+          data as LocalSignInDto,
+        );
 
-      if (!response.ok) {
-        const json = await response.json();
-        message.error(`${JSON.stringify(json)}`);
-        return;
+        const json: LocalSignInResponseDto = response;
+
+        // todo: store expiration date in cookie properly
+        // todo: decode jwt token to get expiration date
+        setCookie('access_token', json.accessToken, {
+          path: '/',
+        });
+        setCookie('refresh_token', json.refreshToken, {
+          path: '/',
+        });
+        setCookie('user', JSON.stringify(json.user), {
+          path: '/',
+        });
+
+        router.push('../competition');
+      } catch (e) {
+        message.error(JSON.stringify(e));
       }
-
-      const json: LocalSignInResponseDto = await response.json();
-
-      // todo: store expiration date in cookie properly
-      // todo: decode jwt token to get expiration date
-      setCookie('access_token', json.accessToken, {
-        path: '/',
-      });
-      setCookie('refresh_token', json.refreshToken, {
-        path: '/',
-      });
-      setCookie('user', JSON.stringify(json.user), {
-        path: '/',
-      });
-
-      router.push('../competition');
     } else if (userExists === UserExists.UserNotExists) {
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL;
-      const url = `${baseUrl}/auth/local/sign-up`;
       const data: LocalSignUpDto = { email, username, password };
 
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      });
-      const responseJson = await response.json();
-      if (!response.ok) {
-        message.error(`${JSON.stringify(responseJson.error)}`);
-        return;
-      } else {
-        message.success('User created successfully');
-      }
-      const json: LocalSignInResponseDto = responseJson;
+      const response =
+        await api.authControllerSignUpWithEmailUsernamePassword(data);
 
-      // todo: store expiration date in cookie properly
-      // todo: decode jwt token to get expiration date
-      setCookie('access_token', json.accessToken, {
-        path: '/',
-      });
-      setCookie('refresh_token', json.refreshToken, {
-        path: '/',
-      });
-      setCookie('user', JSON.stringify(json.user), {
-        path: '/',
-      });
+      try {
+        message.success('User created successfully');
+        const json: LocalSignInResponseDto = response;
+
+        // todo: store expiration date in cookie properly
+        // todo: decode jwt token to get expiration date
+        setCookie('access_token', json.accessToken, {
+          path: '/',
+        });
+        setCookie('refresh_token', json.refreshToken, {
+          path: '/',
+        });
+        setCookie('user', JSON.stringify(json.user), {
+          path: '/',
+        });
+      } catch (e) {
+        message.error(JSON.stringify(e));
+      }
+
       router.push('../competition');
     }
   };
@@ -170,6 +157,7 @@ function Home() {
     openNotification(
       'You just found a WiP feature. Help us finish by coding it for us, or you can pay us a beer or more.',
     );
+
     async function signInWithGoogle() {}
 
     try {
@@ -184,6 +172,7 @@ function Home() {
     openNotification(
       'You just found a WiP feature. Help us finish by coding it for us, or you can pay us a beer or more.',
     );
+
     async function signInWithGitHub() {}
 
     try {

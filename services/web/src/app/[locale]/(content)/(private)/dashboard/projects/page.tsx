@@ -1,21 +1,13 @@
 import React from 'react';
 import Link from 'next/link';
-import {Button} from '@/components/ui/button';
+import { Button } from '@/components/ui/button';
+import { fetchProjects } from '@/lib/project/fetch-projects.action';
+import { GameCard } from '@/components/testing-lab/game-card';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import CreateProjectForm from '@/components/project/create-project-form';
 
-export default function Page() {
-  //   const games = await fetchGames();
-  //
-  //   return (
-  //     <div className="container mx-auto py-8 px-4 md:px-6">
-  //       <div className="grid grid-cols-1 gap-4 md:grid-cols-4 lg:grid-cols-4 mt-8">
-  //         {games.map((game) => (
-  //           <Link key={game.slug} href={`projects/${game.slug}`}>
-  //             <GameCard game={game} />
-  //           </Link>
-  //         ))}
-  //       </div>
-  //     </div>
-  //   );
+export default async function Page() {
+  const projects = await fetchProjects();
 
   return (
     <div className="container bg-gray-100">
@@ -97,22 +89,36 @@ export default function Page() {
             {/*    </Link>*/}
             {/*  </p>*/}
             {/*</div>*/}
-            <div className="text-center py-12">
-              <h2 className="text-2xl font-semibold text-gray-700 mb-6">
-                Are you a developer? Upload your first game
-              </h2>
-              <Button className="bg-pink-500 text-white hover:bg-pink-600" asChild>
-                <Link href="/dashboard/projects/create">Create new project</Link>
-              </Button>
-              <div className="mt-4">
-                <Link
-                  href="#"
-                  className="text-sm text-gray-500 hover:underline"
-                >
-                  Nah, take me to the games feed
-                </Link>
+            {projects.length === 0 && (
+              <div className="text-center py-12">
+                <h2 className="text-2xl font-semibold text-gray-700 mb-6">
+                  Are you a developer? Upload your first game
+                </h2>
+                <Sheet>
+                  <SheetTrigger asChild>
+                    <Button className="bg-pink-500 text-white hover:bg-pink-600">
+                      Create new project
+                    </Button>
+                  </SheetTrigger>
+                  <SheetContent className="min-w-full">
+                    <CreateProjectForm />
+                  </SheetContent>
+                </Sheet>
+                <div className="mt-4">
+                  <Link
+                    href="#"
+                    className="text-sm text-gray-500 hover:underline"
+                  >
+                    Nah, take me to the games feed
+                  </Link>
+                </div>
               </div>
-            </div>
+            )}
+            {projects.map((project) => (
+              <Link key={project.slug} href={`projects/${project.slug}`}>
+                <GameCard game={project} />
+              </Link>
+            ))}
           </div>
         </div>
       </main>
