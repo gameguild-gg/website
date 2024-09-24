@@ -1,10 +1,10 @@
 import React from 'react';
 import Link from 'next/link';
-import {Button} from '@/components/ui/button';
-import {fetchProjects} from "@/lib/project/fetch-projects.action";
-import {GameCard} from "@/components/testing-lab/game-card";
-import {Sheet, SheetContent, SheetTrigger} from "@/components/ui/sheet";
-import CreateProjectForm from "@/components/project/create-project-form";
+import { Button } from '@/components/ui/button';
+import { fetchProjects } from '@/lib/project/fetch-projects.action';
+import { GameCard } from '@/components/testing-lab/game-card';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import CreateProjectForm from '@/components/project/create-project-form';
 
 export default async function Page() {
   const projects = await fetchProjects();
@@ -101,7 +101,7 @@ export default async function Page() {
                     </Button>
                   </SheetTrigger>
                   <SheetContent className="min-w-full">
-                    <CreateProjectForm/>
+                    <CreateProjectForm />
                   </SheetContent>
                 </Sheet>
                 <div className="mt-4">
@@ -116,7 +116,7 @@ export default async function Page() {
             )}
             {projects.map((project) => (
               <Link key={project.slug} href={`projects/${project.slug}`}>
-                <GameCard game={project}/>
+                <GameCard game={project} />
               </Link>
             ))}
           </div>

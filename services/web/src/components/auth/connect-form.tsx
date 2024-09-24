@@ -16,8 +16,6 @@ import { signInWithMagicLink } from '@/lib/auth/sign-in-with-magic-link';
 import { getSession } from 'next-auth/react';
 import { Session } from 'next-auth';
 
-const initialState: SignInFormState = {};
-
 export default function ConnectForm() {
   const searchParams = useSearchParams();
   let session: Session | null;
