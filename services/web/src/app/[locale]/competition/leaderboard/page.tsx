@@ -1,16 +1,23 @@
 'use client';
 
 import React, { useEffect } from 'react';
-import { getCookie } from 'cookies-next';
 import { useRouter } from 'next/navigation';
 import { Table, TableColumnsType, Typography } from 'antd';
-import { ChessLeaderboardResponseEntryDto } from '@game-guild/apiclient';
+import { getSession } from 'next-auth/react';
 
-export default function LeaderboardPage() {
+import { Api, CompetitionsApi } from '@game-guild/apiclient';
+import ChessLeaderboardResponseEntryDto = Api.ChessLeaderboardResponseEntryDto;
+
+export default function LeaderboardPage(): JSX.Element {
   const router = useRouter();
+  const api = new CompetitionsApi({
+    basePath: process.env.NEXT_PUBLIC_API_URL,
+  });
+
   const [leaderboardData, setLeaderboardData] = React.useState<
     ChessLeaderboardResponseEntryDto[]
   >([]);
+
   // flag for leaderboard fetched
   const [leaderboardFetched, setLeaderboardFetched] =
     React.useState<boolean>(false);
@@ -19,24 +26,29 @@ export default function LeaderboardPage() {
     if (!leaderboardFetched) getLeaderboardData();
   }, []);
 
-  const getLeaderboardData = async () => {
-    // todo: use env var properly
-    // todo: process.env.REACT_APP_API_URL is undefined here and I dont know how to fix it
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL;
-    const headers = new Headers();
-    const accessToken = getCookie('access_token');
-    headers.append('Authorization', `Bearer ${accessToken}`);
-    const response = await fetch(baseUrl + '/Competitions/Chess/Leaderboard', {
-      headers: headers,
-    });
-    if (!response.ok) {
-      router.push('/login');
+  const getLeaderboardData = async (): Promise<void> => {
+    const session = await getSession();
+
+    try {
+      const response = await api.competitionControllerGetChessLeaderboard({
+        headers: {
+          Authorization: `Bearer ${session?.accessToken}`,
+        },
+      });
+
+      if (response) {
+        router.push('/connect');
+        return;
+      }
+
+      const resp = response;
+      console.log(data);
+      setLeaderboardData(resp);
+      setLeaderboardFetched(true);
+    } catch (e) {
+      router.push('/connect');
       return;
     }
-    const data = (await response.json()) as ChessLeaderboardResponseEntryDto[];
-    console.log(data);
-    setLeaderboardData(data);
-    setLeaderboardFetched(true);
   };
 
   // table for the leaderboard

@@ -14,8 +14,6 @@
     "start:tsnode": "ts-node src/main.ts",
     "start:dev": "nest start --watch",
     "dev": "nest start --watch",
-    "prestart:dev": "npm run openapigenerator",
-    "syncDtos": "npm run --prefix=../../ syncApi",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/src/main",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
@@ -24,7 +22,6 @@
     "migration:revert": "npm run typeorm -- migration:revert",
     "schema:drop": "npm run typeorm -- schema:drop",
     "db:diagram": "ts-node dbml.ts",
-    "openapigenerator": "openapi-generator-cli generate -g typescript-axios -i swagger-spec.json -o ../../packages/apiclient -p npmName=@game-guild/apiclient",
     "test_": "jest",
     "test:watch_": "jest --watch",
     "test:cov_": "jest --coverage",
@@ -33,7 +30,8 @@
     "posttest:e2e": "npm run kill",
     "test:e2e:wait": "wait-on tcp:8080 && npm run test:e2e --runInBand --detectOpenHandles --forceExit",
     "startandtest": "npm-run-all --parallel start:dev test:e2e:wait",
-    "kill": "killall node"
+    "kill": "killall node",
+    "openapigenerator": "openapi-generator-plus -c config.yml"
   },
   "dependencies": {
     "@dataui/crud": "5.3.4",
@@ -50,7 +48,8 @@
     "@nestjs/platform-express": "9.4.3",
     "@nestjs/swagger": "^7.4.0",
     "@nestjs/typeorm": "9.0.1",
-    "@openapitools/openapi-generator-cli": "^2.13.4",
+    "@openapi-generator-plus/typescript-fetch-client-generator": "^1.11.0",
+    "@openapitools/openapi-generator-cli": "^2.13.5",
     "@sendgrid/client": "^7.7.0",
     "@sendgrid/helpers": "^7.7.0",
     "@sendgrid/mail": "^7.7.0",
@@ -79,6 +78,7 @@
     "moment-timezone": "^0.5.45",
     "multer": "1.4.5-lts.1",
     "nestjs-cls": "^3.5.1",
+    "openapi-generator-plus": "^2.20.0",
     "passport": "^0.6.0",
     "passport-google-oauth20": "^2.0.0",
     "passport-jwt": "^4.0.1",
@@ -90,7 +90,7 @@
     "simple-git": "^3.22.0",
     "siwe": "^2.3.2",
     "ts-nameof": "^5.0.0",
-    "typeorm": "^0.3.20",
+    "typeorm": "0.3.20",
     "typeorm-linq-repository": "^2.0.2",
     "typeorm-transactional": "0.4.1",
     "wait-on": "^7.2.0"

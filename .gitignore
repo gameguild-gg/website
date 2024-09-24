@@ -44,6 +44,5 @@ next-env.d.ts
 chessSubmissions
 
 # dtos
-package-lock.json
-
+services/web/.env.local
 services/web/.env

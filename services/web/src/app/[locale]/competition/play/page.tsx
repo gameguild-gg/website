@@ -2,18 +2,21 @@
 
 import React, { useEffect, useState } from 'react';
 import { Chessboard } from 'react-chessboard';
-import { Chess, Move, WHITE } from 'chess.js';
+import { Chess, WHITE } from 'chess.js';
 
-import { DownOutlined, UserOutlined, RobotFilled } from '@ant-design/icons';
-import { Flex, MenuProps } from 'antd';
-import { Button, Dropdown, message, Space, Tooltip } from 'antd';
+import { RobotFilled, UserOutlined } from '@ant-design/icons';
+import { Dropdown, MenuProps, message, Space } from 'antd';
 
-import { getCookie } from 'cookies-next';
 import { useRouter } from 'next/navigation';
-import { ChessMoveRequestDto } from '@game-guild/apiclient';
+
+import { getSession } from 'next-auth/react';
+import { CompetitionsApi } from '@game-guild/apiclient';
 
 export default function PlayPage() {
   const router = useRouter();
+  const api = new CompetitionsApi({
+    basePath: process.env.NEXT_PUBLIC_API_URL,
+  });
 
   const [agentList, setAgentList] = useState<string[]>(['human']);
   // flag for agent list fetched
@@ -29,57 +32,60 @@ export default function PlayPage() {
   const [game, setGame] = useState(new Chess());
   const [fen, setFen] = useState(game.fen());
 
-  const requestMove = async () => {
-    if (requestMoveInProgress) return;
-    setRequestMoveInProgress(true);
-    const fen = game.fen();
-    const turn = game.turn();
-    const username = turn === WHITE ? selectedAgentWhite : selectedAgentBlack;
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL;
-    const headers = new Headers();
-    const accessToken = getCookie('access_token');
-    headers.append('Authorization', `Bearer ${accessToken}`);
-    headers.append('Content-Type', 'application/json');
-    const response = await fetch(baseUrl + '/Competitions/Chess/Move', {
-      method: 'POST',
-      headers: headers,
-      body: JSON.stringify({
-        fen: fen,
-        username: username,
-      } as ChessMoveRequestDto),
-    });
-    if (!response.ok) {
-      if (response.status === 500) {
-        message.error(response.text());
-      } else {
-        router.push('/login');
-        return;
-      }
-    }
-    const move = (await response.text()) as string;
-    makeAMove(move);
-    setRequestMoveInProgress(false);
-  };
+  const requestMove = async (): Promise<void> => {
+    try {
+      if (requestMoveInProgress) return;
+      setRequestMoveInProgress(true);
+      const fen = game.fen();
+      const turn = game.turn();
+      const username = turn === WHITE ? selectedAgentWhite : selectedAgentBlack;
+      const baseURL = process.env.NEXT_PUBLIC_API_URL;
+      const headers = new Headers();
 
-  const getAgentList = async () => {
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL;
-    const headers = new Headers();
-    const accessToken = getCookie('access_token');
-    headers.append('Authorization', `Bearer ${accessToken}`);
-    const response = await fetch(baseUrl + '/Competitions/Chess/ListAgents', {
-      headers: headers,
-    });
-    if (!response.ok) {
-      router.push('/login');
+      const session = await getSession();
+      const response = await api.competitionControllerRequestChessMove(
+        {
+          fen: fen,
+          username: username,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${session?.accessToken}`,
+          },
+        },
+      );
+
+      const move = response as string;
+      makeAMove(move);
+      setRequestMoveInProgress(false);
+    } catch (e) {
+      message.error(JSON.stringify(e));
+      router.push('/connect');
       return;
     }
-    const data = (await response.json()) as string[];
+  };
 
-    // add human to the front of the list
-    data.unshift('human');
-    setAgentList(data);
-    setAgentListFetched(true);
-    console.log(data);
+  const getAgentList = async (): Promise<void> => {
+    try {
+      const session = await getSession();
+      const response = await api.competitionControllerListChessAgents({
+        headers: {
+          Authorization: `Bearer ${session?.accessToken}`,
+        },
+      });
+
+      const data = response as string[];
+
+      // add human to the front of the list
+      data.unshift('human');
+      setAgentList(data);
+      setAgentListFetched(true);
+      console.log(data);
+    } catch (e) {
+      message.error(JSON.stringify(e));
+      router.push('/connect');
+      return;
+    }
   };
 
   useEffect(() => {

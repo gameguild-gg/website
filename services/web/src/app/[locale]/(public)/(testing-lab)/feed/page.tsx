@@ -1,8 +1,10 @@
 import React from 'react';
-import {fetchGames} from "@/lib/testing-lab/fetch-games.action";
-import {Button} from "@/components/ui/button";
-import Link from "next/link";
-import {GameCard} from "@/components/testing-lab/game-card";
+import { fetchGames } from '@/lib/testing-lab/fetch-games.action';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
+import { GameCard } from '@/components/testing-lab/game-card';
+
+// TODO: feed should be for everyithig, not only the gtl feed. this page should be renamed!
 
 export default async function Page() {
   const games = await fetchGames();
@@ -21,7 +23,7 @@ export default async function Page() {
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3 lg:grid-cols-3 mt-8">
         {games.map((game) => (
           <Link key={game.slug} href={`projects/${game.slug}`}>
-            <GameCard game={game}/>
+            <GameCard game={game} />
           </Link>
         ))}
       </div>

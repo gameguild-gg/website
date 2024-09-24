@@ -32,6 +32,7 @@
     "test:web": "npm run test --workspace=services/web",
     "start": "npm run start --workspaces --if-present",
     "start:api": "npm run start --workspace=services/api",
+    "buildAndRun:web": "npm run build:web && npm run start:web",
     "start:web": "npm run start --workspace=services/web",
     "start:both": "concurrently \"npm:dev:api\" \"npm:dev:web\""
   },

@@ -5,12 +5,16 @@ import { getCookie } from 'cookies-next';
 import { useRouter } from 'next/navigation';
 import { Button, message, Table, TableColumnsType, Typography } from 'antd';
 import { RedoOutlined } from '@ant-design/icons';
-
-import { Moment } from 'moment';
 import moment from 'moment-timezone';
-import { CompetitionRunSubmissionReportEntity } from '@game-guild/apiclient';
+import { Api, CompetitionsApi } from '@game-guild/apiclient';
+import CompetitionRunSubmissionReportEntity = Api.CompetitionRunSubmissionReportEntity;
+import { getSession } from 'next-auth/react';
 
 export default function TournamentPage() {
+  const api = new CompetitionsApi({
+    basePath: process.env.NEXT_PUBLIC_API_URL,
+  });
+
   const router = useRouter();
   const [lastCompetitionState, setLastCompetitionState] = React.useState<
     CompetitionRunSubmissionReportEntity[] | null
@@ -19,23 +23,22 @@ export default function TournamentPage() {
   const [dataFetched, setDataFetched] = React.useState(false);
 
   const fetchData = async () => {
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL;
-    const headers = new Headers();
-    const accessToken = getCookie('access_token');
-    headers.append('Authorization', `Bearer ${accessToken}`);
-    const response = await fetch(
-      baseUrl + '/Competitions/Chess/LatestCompetitionReport',
-      {
-        headers: headers,
-      },
-    );
-    if (!response.ok) {
-      router.push('/login');
+    try {
+      const session = await getSession();
+      const response =
+        await api.competitionControllerGetLatestChessCompetitionReport({
+          headers: {
+            Authorization: `Bearer ${session?.accessToken}`,
+          },
+        });
+
+      const data = response;
+      setLastCompetitionState(data);
+    } catch (e) {
+      message.error(JSON.stringify(e));
+      router.push('/connect');
       return;
     }
-    const data =
-      (await response.json()) as CompetitionRunSubmissionReportEntity[];
-    setLastCompetitionState(data);
   };
 
   React.useEffect(() => {
@@ -78,22 +81,16 @@ export default function TournamentPage() {
   }
 
   async function triggerTournament() {
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL;
-    const headers = new Headers();
-    const accessToken = getCookie('access_token');
-    headers.append('Authorization', `Bearer ${accessToken}`);
-    const response = await fetch(
-      baseUrl + '/Competitions/Chess/RunCompetition',
-      {
-        headers: headers,
-      },
-    );
-    if (response.status === 409) {
-      message.error(response.text());
-    } else if (!response.ok) {
-      message.error;
-      router.push('/login');
-      return;
+    try {
+      const session = await getSession();
+
+      const response = await api.competitionControllerRunCompetition({
+        headers: {
+          Authorization: `Bearer ${session?.accessToken}`,
+        },
+      });
+    } catch (e) {
+      message.error(JSON.stringify(e));
     }
   }
 

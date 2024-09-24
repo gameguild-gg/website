@@ -1,6 +1,26 @@
 # Base Image.
 FROM node:latest
 
+ARG API_HOST
+ARG API_URL
+ARG BACKEND_URL
+ARG BUILD_STANDALONE
+ARG GHOST_ADMIN_API_KEY
+ARG GHOST_ADMIN_DOMAIN
+ARG GHOST_CONTENT_API_KEY
+ARG GOOGLE_ANALYTICS_MEASUREMENT_ID
+ARG GOOGLE_CLIENT_ID
+ARG GOOGLE_CLIENT_SECRET
+ARG GOOGLE_TAG_MANAGER_ID
+ARG IPFS_KEY
+ARG NEXTAUTH_SECRET
+ARG NEXTAUTH_URL
+ARG NEXT_PUBLIC_API_URL
+ARG NEXT_PUBLIC_WEB_URL
+ARG WEB_URL
+
+RUN printenv
+
 WORKDIR /app
 
 RUN apt-get clean && apt-get update
@@ -10,6 +30,8 @@ COPY . /app
 # install dependencies
 RUN NODE_ENV=development npm install
 RUN NODE_ENV=development npm run install:web
+RUN NODE_ENV=development cd services/web && npm run build
 
 # start the app
-CMD ["npm", "run", "dev:web"]
+# CMD ["npm", "run", "buildAndRun:web"]
+CMD ["npm", "run", "start:web"]

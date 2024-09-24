@@ -2,11 +2,12 @@
 
 import { InboxOutlined, UploadOutlined } from '@ant-design/icons';
 
-import { Button, message, Space, Upload, UploadProps, Typography } from 'antd';
+import { Button, message, Space, Typography, Upload, UploadProps } from 'antd';
 import { getCookie } from 'cookies-next';
 import JSZip from 'jszip';
 import React, { useEffect, useState } from 'react';
-
+import { getSession } from 'next-auth/react';
+import { CompetitionsApi } from '@game-guild/apiclient';
 const { Dragger } = Upload;
 
 // todo: convert to typescript style
@@ -30,6 +31,10 @@ export default function SubmitPage() {
   // store all files in state
   const [files, setFiles] = React.useState<File[]>([]);
 
+  const api = new CompetitionsApi({
+    basePath: process.env.NEXT_PUBLIC_API_URL,
+  });
+
   const [accessToken, setAccessToken] = useState('');
 
   useEffect(() => {
@@ -43,77 +48,87 @@ export default function SubmitPage() {
   }, []);
 
   // upload functionality
-  const doUpload = async () => {
-    const isListOfCppOrH =
-      files.length > 1 &&
-      files.every((file) => {
-        return (
-          file.name.endsWith('.cpp') ||
-          file.name.endsWith('.h') ||
-          file.name.endsWith('.hpp')
-        );
-      });
-    const isZip =
-      files.length === 1 &&
-      (files[0].type === 'application/zip' || files[0].name.endsWith('.zip'));
+  const doUpload = async (): Promise<void> => {
+    try {
+      const isListOfCppOrH =
+        files.length > 1 &&
+        files.every((file) => {
+          return (
+            file.name.endsWith('.cpp') ||
+            file.name.endsWith('.h') ||
+            file.name.endsWith('.hpp')
+          );
+        });
+      const isZip =
+        files.length === 1 &&
+        (files[0].type === 'application/zip' || files[0].name.endsWith('.zip'));
 
-    let zipData: ArrayBuffer | undefined = undefined;
-    if (isZip) {
-      message.info('validating zip file');
-      // check if zip contains only cpp and h files at the root and does not contain any subfolders
-      const zip = new JSZip();
-      await zip.loadAsync(files[0]);
-      const zipFiles = Object.values(zip.files);
-      const zipFilesAtRoot = zipFiles.every((file) => {
-        return !file.dir && file.name.indexOf('/') === -1;
-      });
-      const zipFilesAreCppOrH = zipFiles.every((file) => {
-        return (
-          file.name.endsWith('.cpp') ||
-          file.name.endsWith('.h') ||
-          file.name.endsWith('.hpp')
-        );
-      });
-      if (!zipFilesAtRoot || !zipFilesAreCppOrH) {
-        message.error('zip file must contain only cpp and h files at the root');
+      let zipData: ArrayBuffer | undefined = undefined;
+      if (isZip) {
+        message.info('validating zip file');
+        // check if zip contains only cpp and h files at the root and does not contain any subfolders
+        const zip = new JSZip();
+        await zip.loadAsync(files[0]);
+        const zipFiles = Object.values(zip.files);
+        const zipFilesAtRoot = zipFiles.every((file) => {
+          return !file.dir && file.name.indexOf('/') === -1;
+        });
+        const zipFilesAreCppOrH = zipFiles.every((file) => {
+          return (
+            file.name.endsWith('.cpp') ||
+            file.name.endsWith('.h') ||
+            file.name.endsWith('.hpp')
+          );
+        });
+        if (!zipFilesAtRoot || !zipFilesAreCppOrH) {
+          message.error(
+            'zip file must contain only cpp and h files at the root',
+          );
+          return;
+        } else zipData = await files[0].arrayBuffer();
+      } else if (isListOfCppOrH) {
+        message.info('zipping files');
+        // create a zip file for all files and upload it
+        const zip = new JSZip();
+        files.forEach((file) => {
+          zip.file(file.name, file);
+        });
+        zipData = await zip.generateAsync({ type: 'arraybuffer' });
+      }
+
+      // check if zipData size is less than 10MB
+      if (zipData && zipData.byteLength > 10 * 1024 * 1024) {
+        message.error('zip file size must be less than 10MB');
         return;
-      } else zipData = await files[0].arrayBuffer();
-    } else if (isListOfCppOrH) {
-      message.info('zipping files');
-      // create a zip file for all files and upload it
-      const zip = new JSZip();
-      files.forEach((file) => {
-        zip.file(file.name, file);
-      });
-      zipData = await zip.generateAsync({ type: 'arraybuffer' });
+      }
+
+      message.info('uploading files. wait for the server to respond...');
+
+      // upload the zip file
+      const session = await getSession();
+
+      // fix error: TS2741: Property value is missing in type Blob but required in type FilePart
+      const response = await api.competitionControllerSubmitChessAgent(
+        {
+          file: {
+            value: new Blob([zipData as ArrayBuffer], {
+              type: 'application/zip',
+            }),
+          },
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${session?.accessToken}`,
+          },
+        },
+      );
+
+      const data = response;
+      message.info(JSON.stringify(data));
+      setFiles([]);
+    } catch (e) {
+      message.error(JSON.stringify(e));
     }
-
-    // check if zipData size is less than 10MB
-    if (zipData && zipData.byteLength > 10 * 1024 * 1024) {
-      message.error('zip file size must be less than 10MB');
-      return;
-    }
-
-    message.info('uploading files. wait for the server to respond...');
-
-    // upload the zip file
-    const formData = new FormData();
-    formData.append(
-      'file',
-      new Blob([zipData as ArrayBuffer], { type: 'application/zip' }),
-      'bot.zip',
-    );
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL;
-    const headers = new Headers();
-    headers.append('Authorization', 'Bearer ' + accessToken);
-    const response = await fetch(baseUrl + '/Competitions/Chess/submit', {
-      method: 'POST',
-      body: formData,
-      headers: headers,
-    });
-    const data = await response.text();
-    message.info(data);
-    setFiles([]);
   };
 
   const uploadProps: UploadProps = {

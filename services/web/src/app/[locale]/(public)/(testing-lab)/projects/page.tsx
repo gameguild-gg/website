@@ -1,10 +1,6 @@
-import { Bell, ChevronDown, Search, ShoppingCart } from 'lucide-react';
-import { Input } from '@/components/ui/input';
 import React from 'react';
 import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { GameCard } from '@/components/testing-lab/game-card';
-import { fetchGames } from '@/lib/testing-lab/fetch-games.action';
+import {Button} from '@/components/ui/button';
 
 export default function Page() {
   //   const games = await fetchGames();

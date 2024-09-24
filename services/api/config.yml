@@ -1,0 +1,12 @@
+# OpenAPI Generator Plus generator configuration
+#
+# The path (relative to this configuration file) or a URL for your API specification
+inputPath: swagger-spec.json
+
+# The path (relative to this configuration file) where the generated API should be output
+outputPath: ../../packages/apiclient
+
+# The name of the generator template used
+generator: "@openapi-generator-plus/typescript-fetch-client-generator"
+
+# See https://github.com/karlvr/openapi-generator-plus-generators/tree/master/packages/typescript-fetch-client#readme for more configuration options

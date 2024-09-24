@@ -1,6 +1,6 @@
-## @game-guild/apiclient@1.0.0
+## API
 
-This generator creates TypeScript/JavaScript client that utilizes [axios](https://github.com/axios/axios). The generated Node module can be used in the following environments:
+This generator creates TypeScript/JavaScript client that utilizes [Fetch API](https://fetch.spec.whatwg.org/). The generated Node module can be used in the following environments:
 
 Environment
 * Node.js
@@ -15,11 +15,11 @@ Module system
 * CommonJS
 * ES6 module system
 
-It can be used in both TypeScript and JavaScript. In TypeScript, the definition will be automatically resolved via `package.json`. ([Reference](https://www.typescriptlang.org/docs/handbook/declaration-files/consumption.html))
+It can be used in both TypeScript and JavaScript. In TypeScript, the definition should be automatically resolved via `package.json`. ([Reference](http://www.typescriptlang.org/docs/handbook/typings-for-npm-packages.html))
 
 ### Building
 
-To build and compile the typescript sources to javascript use:
+To build an compile the typescript sources to javascript use:
 ```
 npm install
 npm run build
@@ -27,20 +27,12 @@ npm run build
 
 ### Publishing
 
-First build the package then run `npm publish`
+First build the package then run ```npm publish```
 
 ### Consuming
 
-navigate to the folder of your consuming project and run one of the following commands.
+Navigate to the folder of your consuming project and run one of the following commands:
 
-_published:_
-
-```
-npm install @game-guild/apiclient@1.0.0 --save
-```
-
-_unPublished (not recommended):_
-
-```
+```shell
 npm install PATH_TO_GENERATED_PACKAGE --save
 ```
