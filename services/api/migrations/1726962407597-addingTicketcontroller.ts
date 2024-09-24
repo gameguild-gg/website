@@ -9,7 +9,7 @@ export class AddingTicketcontroller1726962407597 implements MigrationInterface {
         await queryRunner.query(`ALTER TABLE "ticket" ADD "ticket_number" SERIAL NOT NULL`);
         await queryRunner.query(`ALTER TABLE "ticket" DROP CONSTRAINT "PK_d9a0835407701eb86f874474b7c"`);
         await queryRunner.query(`ALTER TABLE "ticket" ADD CONSTRAINT "PK_d4bc3a258983a70c9e508d45d00" PRIMARY KEY ("id", "ticket_number")`);
-        await queryRunner.query(`ALTER TABLE "project" ADD "description" character varying(255) NOT NULL`);
+        await queryRunner.query(`ALTER TABLE "project" ADD "description" character varying(255)`);
         await queryRunner.query(`ALTER TABLE "ticket_editors_user" ADD "ticket_ticket_number" integer NOT NULL`);
         await queryRunner.query(`ALTER TABLE "ticket_editors_user" DROP CONSTRAINT "PK_cbe7f143227c03a658062234a49"`);
         await queryRunner.query(`ALTER TABLE "ticket_editors_user" ADD CONSTRAINT "PK_e3c1f4331a2e0d49242fd798e3d" PRIMARY KEY ("ticket_id", "user_id", "ticket_ticket_number")`);

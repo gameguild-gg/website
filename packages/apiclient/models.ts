@@ -223,6 +223,9 @@ export namespace Api {
 	
 	}
 
+	export interface CreateTicketDto {
+	}
+
 	export interface EditorRequestDto {
 		id: string;
 		editor: Api.IdDto;
@@ -422,6 +425,12 @@ export namespace Api {
 		body: string;
 		visibility: Api.ProjectEntity.VisibilityEnum;
 		thumbnail: string;
+		/**
+		 * @description <p>Title of the ticket</p>
+		 * @type {number}
+		 * @memberof ProjectEntity
+		 */
+		'Description': number;
 		versions: Api.ProjectVersionEntity[];
 	}
 	

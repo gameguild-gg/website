@@ -1755,6 +1755,66 @@ export const ProjectApiFetchParamCreator = function (configuration?: Configurati
 			};
 		},
 		/**
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		projectControllerGetAllProjects(options: RequestInit = {}): FetchArgs {
+			let localVarPath = `/project/Get-All`;
+			const localVarPathQueryStart = localVarPath.indexOf("?");
+			const localVarRequestOptions: RequestInit = Object.assign({ method: 'GET' }, options);
+			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
+			const localVarQueryParameter = new URLSearchParams(localVarPathQueryStart !== -1 ? localVarPath.substring(localVarPathQueryStart + 1) : "");
+			if (localVarPathQueryStart !== -1) {
+				localVarPath = localVarPath.substring(0, localVarPathQueryStart);
+			}
+
+			// authentication bearer required
+			// http authorization required
+			if (configuration && configuration.authorization) {
+				const localVarAuthorizationValue = typeof configuration.authorization === 'function'
+					? configuration.authorization('bearer')
+					: configuration.authorization;
+				if (localVarAuthorizationValue !== null) {
+					localVarHeaderParameter.set("Authorization", "Bearer " + localVarAuthorizationValue);
+				}
+			}
+			localVarRequestOptions.headers = localVarHeaderParameter;
+
+			const localVarQueryParameterString = localVarQueryParameter.toString();
+			if (localVarQueryParameterString) {
+				localVarPath += "?" + localVarQueryParameterString;
+			}
+			return {
+				url: localVarPath,
+				options: localVarRequestOptions,
+			};
+		},
+		/**
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		projectControllerGetBasedOnOwner(options: RequestInit = {}): FetchArgs {
+			let localVarPath = `/project/Get-Owner`;
+			const localVarPathQueryStart = localVarPath.indexOf("?");
+			const localVarRequestOptions: RequestInit = Object.assign({ method: 'GET' }, options);
+			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
+			const localVarQueryParameter = new URLSearchParams(localVarPathQueryStart !== -1 ? localVarPath.substring(localVarPathQueryStart + 1) : "");
+			if (localVarPathQueryStart !== -1) {
+				localVarPath = localVarPath.substring(0, localVarPathQueryStart);
+			}
+
+			localVarRequestOptions.headers = localVarHeaderParameter;
+
+			const localVarQueryParameterString = localVarQueryParameter.toString();
+			if (localVarQueryParameterString) {
+				localVarPath += "?" + localVarQueryParameterString;
+			}
+			return {
+				url: localVarPath,
+				options: localVarRequestOptions,
+			};
+		},
+		/**
 		 * @param {Api.EditorRequestDto} request
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
@@ -2041,6 +2101,42 @@ export const ProjectApiFp = function(configuration?: Configuration) {
 			};
 		},
 		/**
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		projectControllerGetAllProjects(options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<Response> {
+			const localVarFetchArgs = ProjectApiFetchParamCreator(configuration).projectControllerGetAllProjects(options);
+			return (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				return fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options).then((response) => {
+					const contentType = response.headers.get('Content-Type');
+					const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+					
+					if (response.status === 401) {
+						return response;
+					}
+					throw response;
+				});
+			};
+		},
+		/**
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		projectControllerGetBasedOnOwner(options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<Response> {
+			const localVarFetchArgs = ProjectApiFetchParamCreator(configuration).projectControllerGetBasedOnOwner(options);
+			return (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				return fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options).then((response) => {
+					const contentType = response.headers.get('Content-Type');
+					const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+					
+					if (response.status === 200) {
+						return response;
+					}
+					throw response;
+				});
+			};
+		},
+		/**
 		 * @param {Api.EditorRequestDto} request
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
@@ -2182,6 +2278,22 @@ export class ProjectApi extends BaseAPI {
 	 */
 	public projectControllerAddEditor(request: Api.EditorRequestDto, options?: RequestInit) {
 		return ProjectApiFp(this.configuration).projectControllerAddEditor(request, options)(this.fetch, this.basePath);
+	}
+
+	/**
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	public projectControllerGetAllProjects(options?: RequestInit) {
+		return ProjectApiFp(this.configuration).projectControllerGetAllProjects(options)(this.fetch, this.basePath);
+	}
+
+	/**
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	public projectControllerGetBasedOnOwner(options?: RequestInit) {
+		return ProjectApiFp(this.configuration).projectControllerGetBasedOnOwner(options)(this.fetch, this.basePath);
 	}
 
 	/**
@@ -2669,6 +2781,324 @@ export class ProjectVersionApi extends BaseAPI {
 	 */
 	public getOneBaseProjectVersionControllerProjectVersionEntity(id: string, fields: string[] | undefined, join: string[] | undefined, cache: number | undefined, options?: RequestInit) {
 		return ProjectVersionApiFp(this.configuration).getOneBaseProjectVersionControllerProjectVersionEntity(id, fields, join, cache, options)(this.fetch, this.basePath);
+	}
+
+}
+/**
+ * TicketApi - fetch parameter creator
+ * @export
+ */
+export const TicketApiFetchParamCreator = function (configuration?: Configuration) {
+	return {
+		/**
+		 * @param {Api.CreateTicketDto} request
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		ticketControllerCreate(request: Api.CreateTicketDto, options: RequestInit = {}): FetchArgs {
+			// verify required parameter 'request' is not null or undefined
+			if (request === null || request === undefined) {
+				throw new RequiredError('request', 'Required parameter request was null or undefined when calling ticketControllerCreate.');
+			}
+			let localVarPath = `/tickets/create-ticket`;
+			const localVarPathQueryStart = localVarPath.indexOf("?");
+			const localVarRequestOptions: RequestInit = Object.assign({ method: 'POST' }, options);
+			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
+			const localVarQueryParameter = new URLSearchParams(localVarPathQueryStart !== -1 ? localVarPath.substring(localVarPathQueryStart + 1) : "");
+			if (localVarPathQueryStart !== -1) {
+				localVarPath = localVarPath.substring(0, localVarPathQueryStart);
+			}
+
+			localVarHeaderParameter.set('Content-Type', 'application/json');
+
+			localVarRequestOptions.headers = localVarHeaderParameter;
+	
+			if (request !== undefined) {
+				localVarRequestOptions.body = JSON.stringify(request || {});
+			}
+
+			const localVarQueryParameterString = localVarQueryParameter.toString();
+			if (localVarQueryParameterString) {
+				localVarPath += "?" + localVarQueryParameterString;
+			}
+			return {
+				url: localVarPath,
+				options: localVarRequestOptions,
+			};
+		},
+		/**
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		ticketControllerDeleteAllTickets(options: RequestInit = {}): FetchArgs {
+			let localVarPath = `/tickets/delete-all`;
+			const localVarPathQueryStart = localVarPath.indexOf("?");
+			const localVarRequestOptions: RequestInit = Object.assign({ method: 'DELETE' }, options);
+			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
+			const localVarQueryParameter = new URLSearchParams(localVarPathQueryStart !== -1 ? localVarPath.substring(localVarPathQueryStart + 1) : "");
+			if (localVarPathQueryStart !== -1) {
+				localVarPath = localVarPath.substring(0, localVarPathQueryStart);
+			}
+
+			localVarRequestOptions.headers = localVarHeaderParameter;
+
+			const localVarQueryParameterString = localVarQueryParameter.toString();
+			if (localVarQueryParameterString) {
+				localVarPath += "?" + localVarQueryParameterString;
+			}
+			return {
+				url: localVarPath,
+				options: localVarRequestOptions,
+			};
+		},
+		/**
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		ticketControllerGetAll(options: RequestInit = {}): FetchArgs {
+			let localVarPath = `/tickets`;
+			const localVarPathQueryStart = localVarPath.indexOf("?");
+			const localVarRequestOptions: RequestInit = Object.assign({ method: 'GET' }, options);
+			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
+			const localVarQueryParameter = new URLSearchParams(localVarPathQueryStart !== -1 ? localVarPath.substring(localVarPathQueryStart + 1) : "");
+			if (localVarPathQueryStart !== -1) {
+				localVarPath = localVarPath.substring(0, localVarPathQueryStart);
+			}
+
+			localVarRequestOptions.headers = localVarHeaderParameter;
+
+			const localVarQueryParameterString = localVarQueryParameter.toString();
+			if (localVarQueryParameterString) {
+				localVarPath += "?" + localVarQueryParameterString;
+			}
+			return {
+				url: localVarPath,
+				options: localVarRequestOptions,
+			};
+		},
+		/**
+		 * @param {string} ticketID
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		ticketControllerGetTicketByID(ticketID: string, options: RequestInit = {}): FetchArgs {
+			// verify required parameter 'ticketID' is not null or undefined
+			if (ticketID === null || ticketID === undefined) {
+				throw new RequiredError('ticketID', 'Required parameter ticketID was null or undefined when calling ticketControllerGetTicketByID.');
+			}
+			let localVarPath = `/tickets/tickets/{ticketID}`
+				.replace('{ticketID}', encodeURIComponent(String(ticketID)));
+			const localVarPathQueryStart = localVarPath.indexOf("?");
+			const localVarRequestOptions: RequestInit = Object.assign({ method: 'GET' }, options);
+			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
+			const localVarQueryParameter = new URLSearchParams(localVarPathQueryStart !== -1 ? localVarPath.substring(localVarPathQueryStart + 1) : "");
+			if (localVarPathQueryStart !== -1) {
+				localVarPath = localVarPath.substring(0, localVarPathQueryStart);
+			}
+
+			localVarRequestOptions.headers = localVarHeaderParameter;
+
+			const localVarQueryParameterString = localVarQueryParameter.toString();
+			if (localVarQueryParameterString) {
+				localVarPath += "?" + localVarQueryParameterString;
+			}
+			return {
+				url: localVarPath,
+				options: localVarRequestOptions,
+			};
+		},
+		/**
+		 * @param {string} ticketID
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		ticketControllerUpdateStatus(ticketID: string, options: RequestInit = {}): FetchArgs {
+			// verify required parameter 'ticketID' is not null or undefined
+			if (ticketID === null || ticketID === undefined) {
+				throw new RequiredError('ticketID', 'Required parameter ticketID was null or undefined when calling ticketControllerUpdateStatus.');
+			}
+			let localVarPath = `/tickets/{ticketID}/status`
+				.replace('{ticketID}', encodeURIComponent(String(ticketID)));
+			const localVarPathQueryStart = localVarPath.indexOf("?");
+			const localVarRequestOptions: RequestInit = Object.assign({ method: 'PUT' }, options);
+			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
+			const localVarQueryParameter = new URLSearchParams(localVarPathQueryStart !== -1 ? localVarPath.substring(localVarPathQueryStart + 1) : "");
+			if (localVarPathQueryStart !== -1) {
+				localVarPath = localVarPath.substring(0, localVarPathQueryStart);
+			}
+
+			localVarRequestOptions.headers = localVarHeaderParameter;
+
+			const localVarQueryParameterString = localVarQueryParameter.toString();
+			if (localVarQueryParameterString) {
+				localVarPath += "?" + localVarQueryParameterString;
+			}
+			return {
+				url: localVarPath,
+				options: localVarRequestOptions,
+			};
+		},
+	}
+};
+
+/**
+ * TicketApi - functional programming interface
+ * @export
+ */
+export const TicketApiFp = function(configuration?: Configuration) {
+	return {
+		/**
+		 * @param {Api.CreateTicketDto} request
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		ticketControllerCreate(request: Api.CreateTicketDto, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<Response> {
+			const localVarFetchArgs = TicketApiFetchParamCreator(configuration).ticketControllerCreate(request, options);
+			return (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				return fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options).then((response) => {
+					const contentType = response.headers.get('Content-Type');
+					const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+					
+					if (response.status === 201) {
+						return response;
+					}
+					throw response;
+				});
+			};
+		},
+		/**
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		ticketControllerDeleteAllTickets(options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<Response> {
+			const localVarFetchArgs = TicketApiFetchParamCreator(configuration).ticketControllerDeleteAllTickets(options);
+			return (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				return fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options).then((response) => {
+					const contentType = response.headers.get('Content-Type');
+					const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+					
+					if (response.status === 200) {
+						return response;
+					}
+					throw response;
+				});
+			};
+		},
+		/**
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		ticketControllerGetAll(options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<Response> {
+			const localVarFetchArgs = TicketApiFetchParamCreator(configuration).ticketControllerGetAll(options);
+			return (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				return fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options).then((response) => {
+					const contentType = response.headers.get('Content-Type');
+					const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+					
+					if (response.status === 200) {
+						return response;
+					}
+					throw response;
+				});
+			};
+		},
+		/**
+		 * @param {string} ticketID
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		ticketControllerGetTicketByID(ticketID: string, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<Response> {
+			const localVarFetchArgs = TicketApiFetchParamCreator(configuration).ticketControllerGetTicketByID(ticketID, options);
+			return (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				return fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options).then((response) => {
+					const contentType = response.headers.get('Content-Type');
+					const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+					
+					if (response.status === 200) {
+						return response;
+					}
+					throw response;
+				});
+			};
+		},
+		/**
+		 * @param {string} ticketID
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		ticketControllerUpdateStatus(ticketID: string, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<Response> {
+			const localVarFetchArgs = TicketApiFetchParamCreator(configuration).ticketControllerUpdateStatus(ticketID, options);
+			return (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				return fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options).then((response) => {
+					const contentType = response.headers.get('Content-Type');
+					const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+					
+					if (response.status === 200) {
+						return response;
+					}
+					throw response;
+				});
+			};
+		},
+	}
+};
+
+/**
+ * TicketApi - factory interface
+ * @export
+ */
+export const TicketApiFactory: FactoryFunction<TicketApi> = function (configuration?: Configuration, basePath?: string, fetch?: FetchAPI) {
+	return new TicketApi(configuration, basePath, fetch);
+};
+
+/**
+ * TicketApi - object-oriented interface
+ * @export
+ * @class TicketApi
+ * @extends {BaseAPI}
+ */
+export class TicketApi extends BaseAPI {
+	/**
+	 * @param {Api.CreateTicketDto} request
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	public ticketControllerCreate(request: Api.CreateTicketDto, options?: RequestInit) {
+		return TicketApiFp(this.configuration).ticketControllerCreate(request, options)(this.fetch, this.basePath);
+	}
+
+	/**
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	public ticketControllerDeleteAllTickets(options?: RequestInit) {
+		return TicketApiFp(this.configuration).ticketControllerDeleteAllTickets(options)(this.fetch, this.basePath);
+	}
+
+	/**
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	public ticketControllerGetAll(options?: RequestInit) {
+		return TicketApiFp(this.configuration).ticketControllerGetAll(options)(this.fetch, this.basePath);
+	}
+
+	/**
+	 * @param {string} ticketID
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	public ticketControllerGetTicketByID(ticketID: string, options?: RequestInit) {
+		return TicketApiFp(this.configuration).ticketControllerGetTicketByID(ticketID, options)(this.fetch, this.basePath);
+	}
+
+	/**
+	 * @param {string} ticketID
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	public ticketControllerUpdateStatus(ticketID: string, options?: RequestInit) {
+		return TicketApiFp(this.configuration).ticketControllerUpdateStatus(ticketID, options)(this.fetch, this.basePath);
 	}
 
 }
