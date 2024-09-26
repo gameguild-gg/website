@@ -1,71 +1,18 @@
-import { Injectable, Logger } from '@nestjs/common';
+// ticket.service.ts
+import { Injectable } from '@nestjs/common';
+import { TypeOrmCrudService } from '@dataui/crud-typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
+import { TicketEntity } from './entities/ticket.entity';
 import { Repository } from 'typeorm';
-import { TicketEntity, TicketStatus } from './entities/ticket.entity';
-import { ProjectService } from './project.service';
-import { UserService } from '../user/user.service'; // Import your UserService
-import { CreateTicketDto } from './dtos/Create-Ticket.dto';
+import { ProjectEntity } from './entities/project.entity';
 
 @Injectable()
-export class TicketService {
-  private readonly logger = new Logger(TicketService.name); // Create a logger
-
+export class TicketService extends TypeOrmCrudService<TicketEntity> {
   constructor(
-    @InjectRepository(TicketEntity)
-    private readonly ticketRepository: Repository<TicketEntity>,
-    private readonly projectService: ProjectService,
-    private readonly userService: UserService, // Inject your UserService
-  ) {}
-
-  async createTicket(createTicketDto: CreateTicketDto): Promise<TicketEntity> {
-    // Check if user with this username already exists
-    const user = await this.userService.findOne({
-      where: { username: 'daddy' },
-    });
-
-    const newTicket = new TicketEntity(createTicketDto);
-    newTicket.owner = user;
-    newTicket.owner_username = user.username;
-
-    return this.ticketRepository.save(newTicket);
-  }
-
-  // returns a ticket (serched by id)
-  async getTicketID(ticketID: string): Promise<TicketEntity> {
-    return this.ticketRepository.findOne({
-      where: { id: ticketID },
-    });
-  }
-
-  async updateTicketStatus(
-    ticketID: string,
-    newStatus: TicketStatus,
-  ): Promise<void> {
-    const ticket = await this.ticketRepository.findOne({
-      where: { id: ticketID },
-    });
-
-    if (!ticket) {
-      throw `Ticket with ID ${ticketID} not found.`;
-    }
-
-    // Update the status with the provided enum value
-    ticket.status = newStatus;
-
-    // Save the updated ticket
-    await this.ticketRepository.save(ticket);
-  }
-
-  async getAllTickets(): Promise<TicketEntity[]> {
-    return this.ticketRepository.find();
-  }
-
-  async deleteAllTickets(): Promise<void> {
-    // Delete all tickets
-    await this.ticketRepository
-      .createQueryBuilder()
-      .delete()
-      .from(TicketEntity)
-      .execute();
+    @InjectRepository(TicketEntity) ticketRepo: Repository<TicketEntity>,
+    @InjectRepository(ProjectEntity)
+    private readonly gameRepository: Repository<ProjectEntity>,
+  ) {
+    super(ticketRepo);
   }
 }

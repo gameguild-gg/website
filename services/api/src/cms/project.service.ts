@@ -3,6 +3,8 @@ import { ProjectEntity } from './entities/project.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { WithRolesService } from './with-roles.service';
+//import { Api } from '@game-guild/apiclient';
+//import ProjectVersionEntity = Api.ProjectVersionEntity;
 
 @Injectable()
 export class ProjectService extends WithRolesService<ProjectEntity> {
@@ -13,13 +15,8 @@ export class ProjectService extends WithRolesService<ProjectEntity> {
   ) {
     super(gameRepository);
   }
-  async getGameOwner(userName: string): Promise<ProjectEntity[]> {
-    return this.gameRepository.find({
-      where: { owner: { username: userName } },
-    });
-  }
-
-  async getAll(): Promise<ProjectEntity[]> {
-    return this.gameRepository.find();
+  save(project: ProjectEntity): Promise<ProjectEntity> {
+    this.gameRepository.save(project);
+    return this.gameRepository.findOne({ where: { id: project.id } });
   }
 }

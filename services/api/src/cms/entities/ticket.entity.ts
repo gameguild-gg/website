@@ -31,10 +31,10 @@ export class TicketEntity extends WithRolesEntity {
   @IsString()
   description?: string;
 
-  @ApiProperty({ type: String, description: 'owner_id' })
+  @ApiProperty({ type: String, description: 'Description of the ticket' })
   @Column({ type: 'text', nullable: true })
   @IsString()
-  owner_username?: string;
+  projectId?: string;
 
   @ApiProperty({ enum: TicketStatus, description: 'Status of the ticket' })
   @Column({ type: 'enum', enum: TicketStatus, default: TicketStatus.OPEN })
@@ -50,26 +50,8 @@ export class TicketEntity extends WithRolesEntity {
   @IsEnum(TicketPriority)
   priority: TicketPriority;
 
-  @ApiProperty({ type: Date, description: 'Date when the ticket was created' })
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
-  @IsDate()
-  createdAt: Date;
-
-  @ApiProperty({
-    type: Date,
-    description: 'Date when the ticket was last updated',
-  })
-  @Column({ type: 'timestamp', nullable: false, onUpdate: 'CURRENT_TIMESTAMP' })
-  @IsDate()
-  updatedAt: Date;
-
-  @ApiProperty({
-    type: ProjectEntity,
-    description: 'Project associated with the ticket',
-  })
   @ManyToOne(() => ProjectEntity, (project) => project.tickets)
   project: ProjectEntity;
-  newTicket: { id: string };
 
   constructor(partial?: Partial<TicketEntity>) {
     super(partial);

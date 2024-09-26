@@ -1,12 +1,4 @@
-import {
-  Controller,
-  Post,
-  Put,
-  Body,
-  Param,
-  Get,
-  Delete,
-} from '@nestjs/common';
+import { Controller } from '@nestjs/common';
 import {
   Crud,
   CrudController,
@@ -15,9 +7,8 @@ import {
   ParsedRequest,
 } from '@dataui/crud';
 import { TicketService } from './ticket.service';
-import { TicketEntity, TicketStatus } from './entities/ticket.entity';
-import { CreateTicketDto } from './dtos/Create-Ticket.dto';
-import { ApiTags } from '@nestjs/swagger';
+import { TicketEntity } from './entities/ticket.entity';
+import { ApiBody, ApiTags } from '@nestjs/swagger';
 
 import {
   AuthenticatedRoute,
@@ -27,9 +18,8 @@ import {
 import { BodyOwnerInject } from '../common/decorators/parameter.decorator';
 import { OwnershipEmptyInterceptor } from './interceptors/ownership-empty-interceptor.service';
 import { ProjectEntity } from './entities/project.entity';
+import { ProjectService } from './project.service';
 import { Auth } from '../auth';
-import { WithRolesEntity } from '../auth/entities/with-roles.entity';
-import { WithRolesController } from './with-roles.controller';
 
 @Crud({
   model: {
@@ -59,22 +49,49 @@ import { WithRolesController } from './with-roles.controller';
       decorators: [Auth(AuthenticatedRoute)],
     },
     updateOneBase: {
-      decorators: [Auth<ProjectEntity>(ManagerRoute<ProjectEntity>)],
+      decorators: [Auth<TicketEntity>(ManagerRoute<TicketEntity>)],
       interceptors: [OwnershipEmptyInterceptor],
     },
     deleteOneBase: {
-      decorators: [Auth<ProjectEntity>(OwnerRoute<ProjectEntity>)],
+      decorators: [Auth<TicketEntity>(OwnerRoute<TicketEntity>)],
     },
   },
 })
 @Controller('tickets')
 @ApiTags('Ticket')
 export class TicketController implements CrudController<TicketEntity> {
-  constructor(public readonly service: TicketService) {
-    super(service);
-  }
+  constructor(
+    public readonly service: TicketService,
+    public readonly projectService: ProjectService,
+  ) {}
 
   get base(): CrudController<TicketEntity> {
     return this;
+  }
+
+  @Override()
+  @Auth(AuthenticatedRoute)
+  @ApiBody({ type: TicketEntity })
+  async createOne(
+    @ParsedRequest() crudReq: CrudRequest,
+    @BodyOwnerInject() body: TicketEntity, // You can also use a DTO here
+  ) {
+    const project = await this.projectService.findOne({
+      where: { id: body.projectId },
+    });
+
+    // Create the ticket and associate it with the project
+    const ticket = await this.base.createOneBase(crudReq, body);
+
+    ticket.project = project;
+
+    //project.tickets.push(ticket);
+
+    //await this.projectService.save(project);
+
+    return this.service.findOne({
+      where: { id: ticket.id },
+      relations: { owner: true, editors: true },
+    });
   }
 }

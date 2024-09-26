@@ -664,39 +664,6 @@
         ]
       }
     },
-    "/project/Get-Owner": {
-      "get": {
-        "operationId": "ProjectController_GetBasedOnOwner",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "Project"
-        ]
-      }
-    },
-    "/project/Get-All": {
-      "get": {
-        "operationId": "ProjectController_GetAllProjects",
-        "parameters": [],
-        "responses": {
-          "401": {
-            "description": "Unauthorized"
-          }
-        },
-        "tags": [
-          "Project"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
     "/project/transfer-ownership": {
       "post": {
         "operationId": "ProjectController_switchOwner",
@@ -1088,54 +1055,45 @@
         ]
       }
     },
-    "/tickets/create-ticket": {
+    "/tickets": {
       "post": {
-        "operationId": "TicketController_create",
+        "operationId": "createOneBaseTicketControllerProjectEntity",
+        "summary": "Create a single ProjectEntity",
         "parameters": [],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CreateTicketDto"
+                "$ref": "#/components/schemas/TicketEntity"
               }
             }
           }
         },
         "responses": {
           "201": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "Ticket"
-        ]
-      }
-    },
-    "/tickets/{ticketID}/status": {
-      "put": {
-        "operationId": "TicketController_updateStatus",
-        "parameters": [
-          {
-            "name": "ticketID",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
+            "description": "Get create one base response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectEntity"
+                }
+              }
             }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
+          },
+          "401": {
+            "description": "Unauthorized"
           }
         },
         "tags": [
           "Ticket"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
         ]
-      }
-    },
-    "/tickets": {
+      },
       "get": {
         "operationId": "getManyBaseTicketControllerProjectEntity",
         "summary": "Retrieve multiple ProjectEntities",
@@ -1290,81 +1248,6 @@
           {
             "bearer": []
           }
-        ]
-      },
-      "post": {
-        "operationId": "createOneBaseTicketControllerProjectEntity",
-        "summary": "Create a single ProjectEntity",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ProjectEntity"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Get create one base response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProjectEntity"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized"
-          }
-        },
-        "tags": [
-          "Ticket"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/tickets/tickets/{ticketID}": {
-      "get": {
-        "operationId": "TicketController_getTicketByID",
-        "parameters": [
-          {
-            "name": "ticketID",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "Ticket"
-        ]
-      }
-    },
-    "/tickets/delete-all": {
-      "delete": {
-        "operationId": "TicketController_deleteAllTickets",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "Ticket"
         ]
       }
     },
@@ -2963,9 +2846,75 @@
           "editor"
         ]
       },
-      "CreateTicketDto": {
+      "TicketEntity": {
         "type": "object",
-        "properties": {}
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "owner": {
+            "$ref": "#/components/schemas/UserEntity"
+          },
+          "editors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UserEntity"
+            }
+          },
+          "title": {
+            "type": "string",
+            "description": "Title of the ticket"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description of the ticket"
+          },
+          "projectId": {
+            "type": "string",
+            "description": "Description of the ticket"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "OPEN",
+              "IN_PROGRESS",
+              "RESOLVED",
+              "CLOSED"
+            ],
+            "description": "Status of the ticket"
+          },
+          "priority": {
+            "type": "string",
+            "enum": [
+              "LOW",
+              "MEDIUM",
+              "HIGH",
+              "CRITICAL"
+            ],
+            "description": "Priority of the ticket"
+          }
+        },
+        "required": [
+          "id",
+          "createdAt",
+          "updatedAt",
+          "owner",
+          "editors",
+          "title",
+          "description",
+          "projectId",
+          "status",
+          "priority"
+        ]
       },
       "CompetitionSubmissionDto": {
         "type": "object",

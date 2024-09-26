@@ -112,15 +112,4 @@ export class ProjectController
   ): Promise<ProjectEntity> {
     return this.base.updateOneBase(req, dto);
   }
-
-  @Get('Get-Owner')
-  async GetBasedOnOwner(ownerUsername: string): Promise<ProjectEntity[]> {
-    return this.service.getGameOwner(ownerUsername);
-  }
-  @Override()
-  @Auth(AuthenticatedRoute)
-  @Get('Get-All')
-  async GetAllProjects(): Promise<ProjectEntity[]> {
-    return this.service.getAll();
-  }
 }
