@@ -60,7 +60,7 @@ import { WithRolesController } from './with-roles.controller';
   },
 })
 @Controller('project')
-@ApiTags('project')
+@ApiTags('Project')
 export class ProjectController
   extends WithRolesController<ProjectEntity>
   implements CrudController<ProjectEntity>
