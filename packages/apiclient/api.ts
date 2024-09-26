@@ -1,7 +1,7 @@
 /* eslint-disable */
 // tslint:disable
 /**
- * API
+ * gameguild.gg
  * 
  *
  * OpenAPI spec version: 1.0.0
@@ -1067,7 +1067,7 @@ export const CompetitionsApiFp = function(configuration?: Configuration) {
 					const contentType = response.headers.get('Content-Type');
 					const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
 					
-					if (response.status === 201) {
+					if (response.status === 200) {
 						if (mimeType === 'application/json') {
 							return response.json() as any;
 						}

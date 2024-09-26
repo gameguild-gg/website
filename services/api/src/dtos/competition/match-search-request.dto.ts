@@ -3,6 +3,7 @@ import {
   IsAlphanumeric,
   IsNotEmpty,
   IsNumber,
+  IsOptional,
   IsString,
   Max,
   MaxLength,
@@ -13,8 +14,8 @@ import {
 export class MatchSearchRequestDto {
   // username
   @ApiProperty({ required: true })
+  @IsOptional()
   @IsString({ message: 'error.invalidUsername: Username must be a string.' })
-  @IsNotEmpty({ message: 'error.invalidUsername: Username must not be empty.' })
   @MaxLength(32, {
     message:
       'error.invalidUsername: Username must be shorter than or equal to 32 characters.',

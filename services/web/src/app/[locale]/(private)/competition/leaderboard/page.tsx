@@ -2,7 +2,7 @@
 
 import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Table, TableColumnsType, Typography } from 'antd';
+import { message, Table, TableColumnsType, Typography } from 'antd';
 import { getSession } from 'next-auth/react';
 
 import { Api, CompetitionsApi } from '@game-guild/apiclient';
@@ -10,6 +10,7 @@ import ChessLeaderboardResponseEntryDto = Api.ChessLeaderboardResponseEntryDto;
 
 export default function LeaderboardPage(): JSX.Element {
   const router = useRouter();
+
   const api = new CompetitionsApi({
     basePath: process.env.NEXT_PUBLIC_API_URL,
   });
@@ -27,25 +28,25 @@ export default function LeaderboardPage(): JSX.Element {
   }, []);
 
   const getLeaderboardData = async (): Promise<void> => {
-    const session = await getSession();
-
     try {
+      const session = await getSession();
+      console.log('before request');
+
       const response = await api.competitionControllerGetChessLeaderboard({
         headers: {
           Authorization: `Bearer ${session?.accessToken}`,
         },
       });
 
-      if (response) {
-        router.push('/connect');
-        return;
-      }
+      console.log(response);
 
       const resp = response;
       console.log(data);
       setLeaderboardData(resp);
       setLeaderboardFetched(true);
     } catch (e) {
+      message.error(e);
+      console.log(e);
       router.push('/connect');
       return;
     }

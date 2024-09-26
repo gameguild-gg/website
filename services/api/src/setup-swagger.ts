@@ -26,7 +26,9 @@ function fixOpenApiGeneratorPlus() {
 }
 
 export function setupSwagger(app: INestApplication): void {
-  const documentBuilder = new DocumentBuilder().setTitle('API').addBearerAuth();
+  const documentBuilder = new DocumentBuilder()
+    .setTitle('gameguild.gg')
+    .addBearerAuth();
   documentBuilder.addServer('http://localhost:8080');
   documentBuilder.addServer('https://api.gameguild.gg');
 

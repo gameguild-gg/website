@@ -1292,7 +1292,7 @@
         "operationId": "CompetitionController_GetChessLeaderboard",
         "parameters": [],
         "responses": {
-          "201": {
+          "200": {
             "description": "",
             "content": {
               "application/json": {
@@ -1372,7 +1372,7 @@
     }
   },
   "info": {
-    "title": "API",
+    "title": "gameguild.gg",
     "description": "",
     "version": "1.0.0",
     "contact": {}

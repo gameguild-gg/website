@@ -1,7 +1,7 @@
 /* eslint-disable */
 // tslint:disable
 /**
- * API
+ * gameguild.gg
  * 
  *
  * OpenAPI spec version: 1.0.0

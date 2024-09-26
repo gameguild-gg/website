@@ -248,7 +248,7 @@ export class CompetitionController {
 
   @Get('/Chess/Leaderboard')
   @Auth(AuthenticatedRoute)
-  @ApiCreatedResponse({
+  @ApiOkResponse({
     type: ChessLeaderboardResponseEntryDto,
     isArray: true,
   })
