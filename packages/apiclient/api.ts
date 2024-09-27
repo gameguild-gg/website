@@ -1049,6 +1049,9 @@ export const CompetitionsApiFp = function(configuration?: Configuration) {
 						}
 						throw response;
 					}
+					if (response.status === 204) {
+						return response;
+					}
 					if (response.status === 401) {
 						return response;
 					}
@@ -1072,6 +1075,9 @@ export const CompetitionsApiFp = function(configuration?: Configuration) {
 							return response.json() as any;
 						}
 						throw response;
+					}
+					if (response.status === 204) {
+						return response;
 					}
 					if (response.status === 401) {
 						return response;
@@ -1122,6 +1128,9 @@ export const CompetitionsApiFp = function(configuration?: Configuration) {
 						}
 						throw response;
 					}
+					if (response.status === 204) {
+						return response;
+					}
 					if (response.status === 401) {
 						return response;
 					}
@@ -1145,6 +1154,9 @@ export const CompetitionsApiFp = function(configuration?: Configuration) {
 							return response.json() as any;
 						}
 						throw response;
+					}
+					if (response.status === 204) {
+						return response;
 					}
 					if (response.status === 401) {
 						return response;

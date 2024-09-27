@@ -1115,6 +1115,9 @@
               }
             }
           },
+          "204": {
+            "description": "No agents found"
+          },
           "401": {
             "description": "Unauthorized"
           }
@@ -1235,6 +1238,9 @@
               }
             }
           },
+          "204": {
+            "description": "No matches found"
+          },
           "401": {
             "description": "Unauthorized"
           }
@@ -1305,6 +1311,9 @@
               }
             }
           },
+          "204": {
+            "description": "No leaderboard found"
+          },
           "401": {
             "description": "Unauthorized"
           }
@@ -1355,6 +1364,9 @@
                 }
               }
             }
+          },
+          "204": {
+            "description": "No reports found"
           },
           "401": {
             "description": "Unauthorized"

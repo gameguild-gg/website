@@ -40,14 +40,12 @@ export default function LeaderboardPage(): JSX.Element {
 
       console.log(response);
 
-      const resp = response;
-      console.log(data);
-      setLeaderboardData(resp);
+      setLeaderboardData(response);
       setLeaderboardFetched(true);
     } catch (e) {
       message.error(e);
       console.log(e);
-      router.push('/connect');
+      // router.push('/connect');
       return;
     }
   };
@@ -79,21 +77,22 @@ export default function LeaderboardPage(): JSX.Element {
     },
   ];
 
-  const data: DataType[] = leaderboardData.map(
-    (entry: ChessLeaderboardResponseEntryDto, index: number) => {
-      return {
-        key: index,
-        rank: index + 1,
-        username: entry.username,
-        elo: entry.elo.toFixed(2),
-      };
-    },
-  );
-
-  return (
-    <>
-      <Typography.Title>Leaderboard</Typography.Title>
-      <Table columns={columns} dataSource={data} />
-    </>
-  );
+  if (leaderboardFetched) {
+    const data: DataType[] = leaderboardData.map(
+      (entry: ChessLeaderboardResponseEntryDto, index: number) => {
+        return {
+          key: index,
+          rank: index + 1,
+          username: entry.username,
+          elo: entry.elo.toFixed(2),
+        };
+      },
+    );
+    return (
+      <>
+        <Typography.Title>Leaderboard</Typography.Title>
+        <Table columns={columns} dataSource={data} />
+      </>
+    );
+  } else return <></>;
 }

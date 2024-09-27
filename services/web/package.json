@@ -57,7 +57,7 @@
     "next-intl": "^3.9.5",
     "next-themes": "^0.3.0",
     "react": "^18",
-    "react-chessboard": "^4.6.0",
+    "react-chessboard": "4.7.0",
     "react-dom": "^18",
     "react-hook-form": "^7.51.2",
     "siwe": "^2.3.2",
