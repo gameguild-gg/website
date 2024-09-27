@@ -7,6 +7,6 @@ inputPath: swagger-spec.json
 outputPath: ../../packages/apiclient
 
 # The name of the generator template used
-generator: "@openapi-generator-plus/typescript-fetch-client-generator"
+generator: "@openapi-generator-plus/typescript-fetch-client-generator2"
 
 # See https://github.com/karlvr/openapi-generator-plus-generators/tree/master/packages/typescript-fetch-client#readme for more configuration options

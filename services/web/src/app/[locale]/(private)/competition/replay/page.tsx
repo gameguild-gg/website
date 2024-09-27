@@ -25,40 +25,52 @@ export default function ReplayPage() {
   const [matchFetched, setMatchFetched] = React.useState(false);
 
   async function getMatchData() {
-    try {
-      const queryParameters = new URLSearchParams(window.location.search);
-      const matchId = queryParameters.get('matchId');
-      message.info('Match ID: ' + matchId);
-      if (!matchId) {
-        router.push('/competition/matches');
-        return;
-      }
-      const session = await getSession();
-
-      const response = await api.competitionControllerGetChessMatchResult(
-        matchId,
-        { headers: { Authorization: `Bearer ${session?.accessToken}` } },
-      );
-
-      const data = response;
-      console.log(data);
-      setMatchData(data);
-      setMatchFetched(true);
-
-      // Load the moves
-      const list: string[] = [];
-      list.push('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
-      data?.moves.forEach((move) => {
-        chess.move(move);
-        list.push(chess.fen());
-      });
-      setStates(list);
-      message.info('Match data fetched');
-    } catch (e) {
-      message.error(JSON.stringify(e));
-      router.push('/connect');
+    const queryParameters = new URLSearchParams(window.location.search);
+    const matchId = queryParameters.get('matchId');
+    message.info('Match ID: ' + matchId);
+    if (!matchId) {
+      router.push('/competition/matches');
       return;
     }
+    const session = await getSession();
+
+    const response = await api.competitionControllerGetChessMatchResult(
+      matchId,
+      { headers: { Authorization: `Bearer ${session?.accessToken}` } },
+    );
+
+    if (response.status === 401) {
+      message.error('You are not authorized to view this page.');
+      setTimeout(() => {
+        router.push('/connect');
+      }, 1000);
+      setMatchFetched(true);
+      return;
+    }
+
+    if (response.status === 500) {
+      message.error(
+        'Internal server error. Please report this issue to the community.',
+      );
+      message.error(JSON.stringify(response.body));
+      setMatchFetched(true);
+      return;
+    }
+
+    const data = response.body as ChessMatchResultDto;
+    console.log(data);
+    setMatchData(data);
+    setMatchFetched(true);
+
+    // Load the moves
+    const list: string[] = [];
+    list.push('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
+    data?.moves.forEach((move) => {
+      chess.move(move);
+      list.push(chess.fen());
+    });
+    setStates(list);
+    message.info('Match data fetched');
   }
 
   useEffect(() => {

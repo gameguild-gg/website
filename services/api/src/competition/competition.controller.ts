@@ -15,6 +15,7 @@ import {
 import {
   ApiConsumes,
   ApiCreatedResponse,
+  ApiNoContentResponse,
   ApiOkResponse,
   ApiResponse,
   ApiTags,
@@ -90,8 +91,7 @@ export class CompetitionController {
   // todo: Add login protections here and remove the password requirement.
   @Post('/Chess/submit')
   @ApiConsumes('multipart/form-data')
-  @ApiCreatedResponse({
-    status: 200,
+  @ApiResponse({
     type: TerminalDto,
     isArray: true,
   })
@@ -133,7 +133,7 @@ export class CompetitionController {
   }
 
   @Get('/Chess/ListAgents')
-  @ApiCreatedResponse({ type: String, isArray: true })
+  @ApiResponse({ type: String, isArray: true })
   @Auth(AuthenticatedRoute)
   async ListChessAgents(@AuthUser() user: UserEntity): Promise<string[]> {
     if (!user) throw new UnauthorizedException('Invalid credentials');
@@ -141,7 +141,7 @@ export class CompetitionController {
   }
 
   @Post('/Chess/Move')
-  @ApiCreatedResponse({ type: String })
+  @ApiResponse({ type: String })
   @Auth(AuthenticatedRoute)
   async RequestChessMove(
     @Body() data: ChessMoveRequestDto,
@@ -152,7 +152,7 @@ export class CompetitionController {
   }
 
   @Post('/Chess/RunMatch')
-  @ApiCreatedResponse({ type: ChessMatchResultDto })
+  @ApiResponse({ type: ChessMatchResultDto })
   @Auth(AuthenticatedRoute)
   async RunChessMatch(
     @Body() data: ChessMatchRequestDto,
@@ -164,7 +164,7 @@ export class CompetitionController {
 
   @Post('/Chess/FindMatches')
   @Auth(AuthenticatedRoute)
-  @ApiCreatedResponse({
+  @ApiResponse({
     type: MatchSearchResponseDto,
     isArray: true,
   })
@@ -237,37 +237,31 @@ export class CompetitionController {
 
   @Get('/Chess/Match/:id')
   @Auth(AuthenticatedRoute)
-  @ApiCreatedResponse({ type: ChessMatchResultDto })
+  @ApiResponse({ type: ChessMatchResultDto })
   async GetChessMatchResult(
     @Param('id', ParseUUIDPipe) id: string,
-    @AuthUser() user: UserEntity,
   ): Promise<ChessMatchResultDto> {
-    if (!user) throw new UnauthorizedException('Invalid credentials');
     return JSON.parse((await this.service.findMatchById(id)).logs);
   }
 
   @Get('/Chess/Leaderboard')
   @Auth(AuthenticatedRoute)
-  @ApiCreatedResponse({
+  @ApiResponse({
     type: ChessLeaderboardResponseEntryDto,
     isArray: true,
   })
-  async GetChessLeaderboard(
-    @AuthUser() user: UserEntity,
-  ): Promise<ChessLeaderboardResponseEntryDto[]> {
-    if (!user) throw new UnauthorizedException('Invalid credentials');
+  async GetChessLeaderboard(): Promise<ChessLeaderboardResponseEntryDto[]> {
     return this.service.getLeaderboard();
   }
 
   @Get('Chess/RunCompetition')
   @Auth(AuthenticatedRoute)
-  async RunCompetition(@AuthUser() user: UserEntity) {
-    if (!user) throw new UnauthorizedException('Invalid credentials');
+  async RunCompetition() {
     return this.service.runChessCompetition();
   }
 
   @Get('Chess/LatestCompetitionReport')
-  @ApiCreatedResponse({
+  @ApiResponse({
     type: CompetitionRunSubmissionReportEntity,
     isArray: true,
   })

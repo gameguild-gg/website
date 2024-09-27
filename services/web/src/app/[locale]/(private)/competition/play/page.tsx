@@ -55,9 +55,25 @@ export default function PlayPage() {
         },
       );
 
-      const move = response as string;
-      makeAMove(move);
       setRequestMoveInProgress(false);
+      if (response.status === 401) {
+        message.error('You are not authorized to view this page.');
+        setTimeout(() => {
+          router.push('/connect');
+        }, 1000);
+        return;
+      }
+
+      if (response.status === 500) {
+        message.error(
+          'Internal server error. Please report this issue to the community.',
+        );
+        message.error(JSON.stringify(response.body));
+        return;
+      }
+
+      const move = response.body as string;
+      makeAMove(move);
     } catch (e) {
       message.error(JSON.stringify(e));
       router.push('/connect');
@@ -68,13 +84,33 @@ export default function PlayPage() {
   const getAgentList = async (): Promise<void> => {
     try {
       const session = await getSession();
+      console.log('before request');
       const response = await api.competitionControllerListChessAgents({
         headers: {
           Authorization: `Bearer ${session?.accessToken}`,
         },
       });
 
-      const data = response as string[];
+      if (response.status === 401) {
+        message.error('You are not authorized to view this page.');
+        setTimeout(() => {
+          router.push('/connect');
+        }, 1000);
+        return;
+      }
+
+      if (response.status === 500) {
+        message.error(
+          'Internal server error. Please report this issue to the community.',
+        );
+        message.error(JSON.stringify(response.body));
+        return;
+      }
+
+      console.log('agents list');
+      console.log(response);
+
+      const data = response.body as string[];
 
       // add human to the front of the list
       data.unshift('human');
@@ -83,7 +119,8 @@ export default function PlayPage() {
       console.log(data);
     } catch (e) {
       message.error(JSON.stringify(e));
-      router.push('/connect');
+      setAgentListFetched(true);
+      // router.push('/connect');
       return;
     }
   };
@@ -213,13 +250,10 @@ export default function PlayPage() {
             {selectedAgentBlack ? selectedAgentBlack : 'Black'}
           </Dropdown.Button>
         </Space>
-        <Chessboard
-          id="BasicBoard"
-          boardWidth={512}
-          position={fen}
-          onPieceDrop={onDrop}
-        />
-        <p>Current turn: {game.turn() === 'w' ? 'White' : 'Black'}</p>
+        <div style={{ width: '500px' }}>
+          <Chessboard position={fen} onPieceDrop={onDrop} />{' '}
+        </div>
+        .<p>Current turn: {game.turn() === 'w' ? 'White' : 'Black'}</p>
         <p>Current FEN: {game.fen()}</p>
         <p>In Check: {game.inCheck() ? 'Yes' : 'No'}</p>
         <p>

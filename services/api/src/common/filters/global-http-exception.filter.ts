@@ -7,6 +7,29 @@ import {
 } from '@nestjs/common';
 import { HttpAdapterHost } from '@nestjs/core';
 import { ApiConfigService } from '../config.service';
+import { ApiProperty } from '@nestjs/swagger';
+
+// todo: improve error handling type
+export class ApiErrorResponseDto {
+  @ApiProperty()
+  statusCode: number;
+  @ApiProperty()
+  timestamp: string;
+  @ApiProperty()
+  path: string;
+  @ApiProperty()
+  msg: string;
+  @ApiProperty()
+  name: string;
+  @ApiProperty()
+  message: any;
+  @ApiProperty()
+  error: any;
+  @ApiProperty()
+  stack: any;
+  @ApiProperty()
+  raw: any;
+}
 
 @Catch()
 export class GlobalHttpExceptionFilter implements ExceptionFilter {
@@ -26,12 +49,12 @@ export class GlobalHttpExceptionFilter implements ExceptionFilter {
     const response = ctx.getResponse();
     const request = ctx.getRequest<Request>();
 
-    const responseBody: any = {
+    const responseBody: Partial<ApiErrorResponseDto> = {
       statusCode: httpStatus,
       timestamp: new Date().toISOString(),
       path: request.url,
-      message: exception.message,
-      error: exception.name,
+      msg: exception.message,
+      name: exception.name,
     };
     if (exception.getResponse) {
       const errorResponse = exception.getResponse();
@@ -49,7 +72,7 @@ export class GlobalHttpExceptionFilter implements ExceptionFilter {
       responseBody.stack = exception.stack
         .split('\n')
         .map((line) => line.trim());
-      responseBody.exception = exception;
+      responseBody.raw = exception;
     }
 
     response.status(httpStatus).json(responseBody);

@@ -23,7 +23,7 @@ export class ContentController {
 
   @Post('course/create')
   @Auth(AuthenticatedRoute) // todo: anyone can create?
-  @ApiCreatedResponse({ type: CourseEntity })
+  @ApiResponse({ type: CourseEntity })
   public async createEmptyCourse(
     @AuthUser() user: UserEntity,
   ): Promise<CourseEntity> {
