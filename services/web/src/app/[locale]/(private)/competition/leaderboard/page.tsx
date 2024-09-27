@@ -28,26 +28,35 @@ export default function LeaderboardPage(): JSX.Element {
   }, []);
 
   const getLeaderboardData = async (): Promise<void> => {
-    try {
-      const session = await getSession();
-      console.log('before request');
+    const session = await getSession();
+    console.log('before request');
 
-      const response = await api.competitionControllerGetChessLeaderboard({
-        headers: {
-          Authorization: `Bearer ${session?.accessToken}`,
-        },
-      });
+    const response = await api.competitionControllerGetChessLeaderboard({
+      headers: {
+        Authorization: `Bearer ${session?.accessToken}`,
+      },
+    });
 
-      console.log(response);
-
-      setLeaderboardData(response);
+    if (response.status === 401) {
+      message.error('You are not authorized to view this page.');
+      setTimeout(() => {
+        router.push('/connect');
+      }, 1000);
       setLeaderboardFetched(true);
-    } catch (e) {
-      message.error(e);
-      console.log(e);
-      // router.push('/connect');
       return;
     }
+
+    if (response.status === 500) {
+      message.error(
+        'Internal server error. Please report this issue to the community.',
+      );
+      message.error(JSON.stringify(response.body));
+      setLeaderboardFetched(true);
+      return;
+    }
+
+    setLeaderboardData(response.body as ChessLeaderboardResponseEntryDto[]);
+    setLeaderboardFetched(true);
   };
 
   // table for the leaderboard

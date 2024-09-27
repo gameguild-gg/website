@@ -10,7 +10,6 @@ import { useToast } from '@/components/ui/use-toast';
 
 import MetaMaskSignInButton from '@/components/others/web3/meta-mask-sign-in-button';
 import { Api, AuthApi } from '@game-guild/apiclient';
-import OkDto = Api.OkDto;
 import { useSearchParams } from 'next/navigation';
 import { signInWithMagicLink } from '@/lib/auth/sign-in-with-magic-link';
 import { getSession } from 'next-auth/react';
@@ -53,26 +52,17 @@ export default function ConnectForm() {
       description: 'Requesting the magic link.',
     });
 
-    let response: OkDto;
-    try {
-      response = await api.authControllerMagicLink({ email: email });
-    } catch (error) {
+    const response = await api.authControllerMagicLink({ email: email });
+
+    if (response.status >= 400) {
       sendingToast.dismiss();
       toast({
         title: 'Error',
         description:
           'Something went wrong. Please try again or contact support. Description: ' +
-          JSON.stringify(error),
+          JSON.stringify(response.body),
       });
       return;
-    }
-
-    if (!response) {
-      toast({
-        title: 'Error',
-        description:
-          'Something went wrong. Please try again or contact support.',
-      });
     }
 
     toast({

@@ -32,7 +32,15 @@ export default function TournamentPage() {
           },
         });
 
-      const data = response;
+      if (response.status === 401) {
+        message.error('You are not authorized to view this page.');
+        setTimeout(() => {
+          router.push('/connect');
+        }, 1000);
+        return;
+      }
+
+      const data = response.body as CompetitionRunSubmissionReportEntity[];
       setLastCompetitionState(data);
     } catch (e) {
       message.error(JSON.stringify(e));
@@ -81,16 +89,24 @@ export default function TournamentPage() {
   }
 
   async function triggerTournament() {
-    try {
-      const session = await getSession();
+    const session = await getSession();
 
-      const response = await api.competitionControllerRunCompetition({
-        headers: {
-          Authorization: `Bearer ${session?.accessToken}`,
-        },
-      });
-    } catch (e) {
-      message.error(JSON.stringify(e));
+    const response = await api.competitionControllerRunCompetition({
+      headers: {
+        Authorization: `Bearer ${session?.accessToken}`,
+      },
+    });
+    if (response.status === 401) {
+      message.error('You are not authorized to view this page.');
+      setTimeout(() => {
+        router.push('/connect');
+      }, 1000);
+      return;
+    }
+    if (response.status > 401) {
+      message.error('Error. Please report this issue to the community.');
+      message.error(JSON.stringify(response.body));
+      return;
     }
   }
 

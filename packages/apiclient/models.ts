@@ -13,6 +13,41 @@
  */
 
 export namespace Api {
+	export interface ApiErrorResponseDto {
+		/**
+		 * @type {number}
+		 * @memberof ApiErrorResponseDto
+		 */
+		statusCode: number;
+		timestamp: string;
+		path: string;
+		msg: string;
+		name: string;
+		message: Api.ApiErrorResponseDto.Message;
+		error: Api.ApiErrorResponseDto.Error;
+		stack: Api.ApiErrorResponseDto.Stack;
+		raw: Api.ApiErrorResponseDto.Raw;
+	}
+	
+	/**
+	 * @export
+	 * @namespace ApiErrorResponseDto
+	 */
+	export namespace ApiErrorResponseDto {
+		export interface Message {
+		}
+	
+		export interface Error {
+		}
+	
+		export interface Stack {
+		}
+	
+		export interface Raw {
+		}
+	
+	}
+
 	export interface ChapterEntity {
 		id: string;
 		createdAt: string;
@@ -23,7 +58,7 @@ export namespace Api {
 		title: string;
 		summary: string;
 		body: string;
-		visibility: Api.ChapterEntity.VisibilityEnum;
+		visibility: Api.ChapterEntity.Visibility;
 		thumbnail: string;
 		/**
 		 * @type {number}
@@ -39,13 +74,23 @@ export namespace Api {
 	 * @namespace ChapterEntity
 	 */
 	export namespace ChapterEntity {
-		export enum VisibilityEnum {
-			DRAFT = 'DRAFT',
-			PUBLISHED = 'PUBLISHED',
-			FUTURE = 'FUTURE',
-			PENDING = 'PENDING',
-			PRIVATE = 'PRIVATE',
-			TRASH = 'TRASH'
+		export type Visibility =
+			'DRAFT' |
+			'PUBLISHED' |
+			'FUTURE' |
+			'PENDING' |
+			'PRIVATE' |
+			'TRASH'
+		
+		export namespace Visibility {
+			export enum Enum {
+				DRAFT = 'DRAFT',
+				PUBLISHED = 'PUBLISHED',
+				FUTURE = 'FUTURE',
+				PENDING = 'PENDING',
+				PRIVATE = 'PRIVATE',
+				TRASH = 'TRASH'
+			}
 		}
 	
 	}
@@ -70,8 +115,8 @@ export namespace Api {
 		moves: string[];
 		winner: string;
 		draw: boolean;
-		result: Api.ChessMatchResultDto.ResultEnum;
-		reason: Api.ChessMatchResultDto.ReasonEnum;
+		result: Api.ChessMatchResultDto.Result;
+		reason: Api.ChessMatchResultDto.Reason;
 		cpuTime: number[];
 		finalFen: string;
 		eloChange: number[];
@@ -84,20 +129,38 @@ export namespace Api {
 	 * @namespace ChessMatchResultDto
 	 */
 	export namespace ChessMatchResultDto {
-		export enum ResultEnum {
-			GAMEOVER = 'GAME_OVER',
-			DRAW = 'DRAW',
-			NONE = 'NONE'
+		export type Result =
+			'GAME_OVER' |
+			'DRAW' |
+			'NONE'
+		
+		export namespace Result {
+			export enum Enum {
+				GAMEOVER = 'GAME_OVER',
+				DRAW = 'DRAW',
+				NONE = 'NONE'
+			}
 		}
 	
-		export enum ReasonEnum {
-			CHECKMATE = 'CHECKMATE',
-			STALEMATE = 'STALEMATE',
-			INSUFFICIENTMATERIAL = 'INSUFFICIENT_MATERIAL',
-			FIFTYMOVERULE = 'FIFTY_MOVE_RULE',
-			THREEFOLDREPETITION = 'THREEFOLD_REPETITION',
-			INVALIDMOVE = 'INVALID_MOVE',
-			NONE = 'NONE'
+		export type Reason =
+			'CHECKMATE' |
+			'STALEMATE' |
+			'INSUFFICIENT_MATERIAL' |
+			'FIFTY_MOVE_RULE' |
+			'THREEFOLD_REPETITION' |
+			'INVALID_MOVE' |
+			'NONE'
+		
+		export namespace Reason {
+			export enum Enum {
+				CHECKMATE = 'CHECKMATE',
+				STALEMATE = 'STALEMATE',
+				INSUFFICIENTMATERIAL = 'INSUFFICIENT_MATERIAL',
+				FIFTYMOVERULE = 'FIFTY_MOVE_RULE',
+				THREEFOLDREPETITION = 'THREEFOLD_REPETITION',
+				INVALIDMOVE = 'INVALID_MOVE',
+				NONE = 'NONE'
+			}
 		}
 	
 	}
@@ -194,7 +257,7 @@ export namespace Api {
 		title: string;
 		summary: string;
 		body: string;
-		visibility: Api.CourseEntity.VisibilityEnum;
+		visibility: Api.CourseEntity.Visibility;
 		thumbnail: string;
 		/**
 		 * @type {number}
@@ -212,13 +275,23 @@ export namespace Api {
 	 * @namespace CourseEntity
 	 */
 	export namespace CourseEntity {
-		export enum VisibilityEnum {
-			DRAFT = 'DRAFT',
-			PUBLISHED = 'PUBLISHED',
-			FUTURE = 'FUTURE',
-			PENDING = 'PENDING',
-			PRIVATE = 'PRIVATE',
-			TRASH = 'TRASH'
+		export type Visibility =
+			'DRAFT' |
+			'PUBLISHED' |
+			'FUTURE' |
+			'PENDING' |
+			'PRIVATE' |
+			'TRASH'
+		
+		export namespace Visibility {
+			export enum Enum {
+				DRAFT = 'DRAFT',
+				PUBLISHED = 'PUBLISHED',
+				FUTURE = 'FUTURE',
+				PENDING = 'PENDING',
+				PRIVATE = 'PRIVATE',
+				TRASH = 'TRASH'
+			}
 		}
 	
 	}
@@ -307,7 +380,7 @@ export namespace Api {
 		title: string;
 		summary: string;
 		body: string;
-		visibility: Api.LectureEntity.VisibilityEnum;
+		visibility: Api.LectureEntity.Visibility;
 		thumbnail: string;
 		/**
 		 * @type {number}
@@ -323,13 +396,23 @@ export namespace Api {
 	 * @namespace LectureEntity
 	 */
 	export namespace LectureEntity {
-		export enum VisibilityEnum {
-			DRAFT = 'DRAFT',
-			PUBLISHED = 'PUBLISHED',
-			FUTURE = 'FUTURE',
-			PENDING = 'PENDING',
-			PRIVATE = 'PRIVATE',
-			TRASH = 'TRASH'
+		export type Visibility =
+			'DRAFT' |
+			'PUBLISHED' |
+			'FUTURE' |
+			'PENDING' |
+			'PRIVATE' |
+			'TRASH'
+		
+		export namespace Visibility {
+			export enum Enum {
+				DRAFT = 'DRAFT',
+				PUBLISHED = 'PUBLISHED',
+				FUTURE = 'FUTURE',
+				PENDING = 'PENDING',
+				PRIVATE = 'PRIVATE',
+				TRASH = 'TRASH'
+			}
 		}
 	
 	}
@@ -390,7 +473,7 @@ export namespace Api {
 		title: string;
 		summary: string;
 		body: string;
-		visibility: Api.PostEntity.VisibilityEnum;
+		visibility: Api.PostEntity.Visibility;
 		thumbnail: string;
 	}
 	
@@ -399,13 +482,23 @@ export namespace Api {
 	 * @namespace PostEntity
 	 */
 	export namespace PostEntity {
-		export enum VisibilityEnum {
-			DRAFT = 'DRAFT',
-			PUBLISHED = 'PUBLISHED',
-			FUTURE = 'FUTURE',
-			PENDING = 'PENDING',
-			PRIVATE = 'PRIVATE',
-			TRASH = 'TRASH'
+		export type Visibility =
+			'DRAFT' |
+			'PUBLISHED' |
+			'FUTURE' |
+			'PENDING' |
+			'PRIVATE' |
+			'TRASH'
+		
+		export namespace Visibility {
+			export enum Enum {
+				DRAFT = 'DRAFT',
+				PUBLISHED = 'PUBLISHED',
+				FUTURE = 'FUTURE',
+				PENDING = 'PENDING',
+				PRIVATE = 'PRIVATE',
+				TRASH = 'TRASH'
+			}
 		}
 	
 	}
@@ -420,7 +513,7 @@ export namespace Api {
 		title: string;
 		summary: string;
 		body: string;
-		visibility: Api.ProjectEntity.VisibilityEnum;
+		visibility: Api.ProjectEntity.Visibility;
 		thumbnail: string;
 		versions: Api.ProjectVersionEntity[];
 	}
@@ -430,13 +523,23 @@ export namespace Api {
 	 * @namespace ProjectEntity
 	 */
 	export namespace ProjectEntity {
-		export enum VisibilityEnum {
-			DRAFT = 'DRAFT',
-			PUBLISHED = 'PUBLISHED',
-			FUTURE = 'FUTURE',
-			PENDING = 'PENDING',
-			PRIVATE = 'PRIVATE',
-			TRASH = 'TRASH'
+		export type Visibility =
+			'DRAFT' |
+			'PUBLISHED' |
+			'FUTURE' |
+			'PENDING' |
+			'PRIVATE' |
+			'TRASH'
+		
+		export namespace Visibility {
+			export enum Enum {
+				DRAFT = 'DRAFT',
+				PUBLISHED = 'PUBLISHED',
+				FUTURE = 'FUTURE',
+				PENDING = 'PENDING',
+				PRIVATE = 'PRIVATE',
+				TRASH = 'TRASH'
+			}
 		}
 	
 	}
@@ -451,7 +554,7 @@ export namespace Api {
 	}
 
 	export interface ProjectTestFeedbackQuestion {
-		'type': Api.ProjectTestFeedbackQuestion.TypeEnum;
+		'type': Api.ProjectTestFeedbackQuestion.Type;
 		description: string;
 		isRequired: boolean;
 	}
@@ -461,18 +564,27 @@ export namespace Api {
 	 * @namespace ProjectTestFeedbackQuestion
 	 */
 	export namespace ProjectTestFeedbackQuestion {
-		export enum TypeEnum {
-			SHORTANSWER = 'SHORT_ANSWER',
-			PARAGRAPH = 'PARAGRAPH',
-			CHECKBOX = 'CHECKBOX',
-			DROPDOWN = 'DROPDOWN',
-			LINEARSCALE = 'LINEAR_SCALE'
+		export type Type =
+			'SHORT_ANSWER' |
+			'PARAGRAPH' |
+			'CHECKBOX' |
+			'DROPDOWN' |
+			'LINEAR_SCALE'
+		
+		export namespace Type {
+			export enum Enum {
+				SHORTANSWER = 'SHORT_ANSWER',
+				PARAGRAPH = 'PARAGRAPH',
+				CHECKBOX = 'CHECKBOX',
+				DROPDOWN = 'DROPDOWN',
+				LINEARSCALE = 'LINEAR_SCALE'
+			}
 		}
 	
 	}
 
 	export interface ProjectTestFeedbackQuestionCheckbox {
-		'type': Api.ProjectTestFeedbackQuestionCheckbox.TypeEnum;
+		'type': Api.ProjectTestFeedbackQuestionCheckbox.Type;
 		description: string;
 		isRequired: boolean;
 		options: string[];
@@ -483,18 +595,27 @@ export namespace Api {
 	 * @namespace ProjectTestFeedbackQuestionCheckbox
 	 */
 	export namespace ProjectTestFeedbackQuestionCheckbox {
-		export enum TypeEnum {
-			SHORTANSWER = 'SHORT_ANSWER',
-			PARAGRAPH = 'PARAGRAPH',
-			CHECKBOX = 'CHECKBOX',
-			DROPDOWN = 'DROPDOWN',
-			LINEARSCALE = 'LINEAR_SCALE'
+		export type Type =
+			'SHORT_ANSWER' |
+			'PARAGRAPH' |
+			'CHECKBOX' |
+			'DROPDOWN' |
+			'LINEAR_SCALE'
+		
+		export namespace Type {
+			export enum Enum {
+				SHORTANSWER = 'SHORT_ANSWER',
+				PARAGRAPH = 'PARAGRAPH',
+				CHECKBOX = 'CHECKBOX',
+				DROPDOWN = 'DROPDOWN',
+				LINEARSCALE = 'LINEAR_SCALE'
+			}
 		}
 	
 	}
 
 	export interface ProjectTestFeedbackQuestionDropdown {
-		'type': Api.ProjectTestFeedbackQuestionDropdown.TypeEnum;
+		'type': Api.ProjectTestFeedbackQuestionDropdown.Type;
 		description: string;
 		isRequired: boolean;
 		options: string[];
@@ -505,18 +626,27 @@ export namespace Api {
 	 * @namespace ProjectTestFeedbackQuestionDropdown
 	 */
 	export namespace ProjectTestFeedbackQuestionDropdown {
-		export enum TypeEnum {
-			SHORTANSWER = 'SHORT_ANSWER',
-			PARAGRAPH = 'PARAGRAPH',
-			CHECKBOX = 'CHECKBOX',
-			DROPDOWN = 'DROPDOWN',
-			LINEARSCALE = 'LINEAR_SCALE'
+		export type Type =
+			'SHORT_ANSWER' |
+			'PARAGRAPH' |
+			'CHECKBOX' |
+			'DROPDOWN' |
+			'LINEAR_SCALE'
+		
+		export namespace Type {
+			export enum Enum {
+				SHORTANSWER = 'SHORT_ANSWER',
+				PARAGRAPH = 'PARAGRAPH',
+				CHECKBOX = 'CHECKBOX',
+				DROPDOWN = 'DROPDOWN',
+				LINEARSCALE = 'LINEAR_SCALE'
+			}
 		}
 	
 	}
 
 	export interface ProjectTestFeedbackQuestionLinearScale {
-		'type': Api.ProjectTestFeedbackQuestionLinearScale.TypeEnum;
+		'type': Api.ProjectTestFeedbackQuestionLinearScale.Type;
 		description: string;
 		isRequired: boolean;
 		/**
@@ -541,18 +671,27 @@ export namespace Api {
 	 * @namespace ProjectTestFeedbackQuestionLinearScale
 	 */
 	export namespace ProjectTestFeedbackQuestionLinearScale {
-		export enum TypeEnum {
-			SHORTANSWER = 'SHORT_ANSWER',
-			PARAGRAPH = 'PARAGRAPH',
-			CHECKBOX = 'CHECKBOX',
-			DROPDOWN = 'DROPDOWN',
-			LINEARSCALE = 'LINEAR_SCALE'
+		export type Type =
+			'SHORT_ANSWER' |
+			'PARAGRAPH' |
+			'CHECKBOX' |
+			'DROPDOWN' |
+			'LINEAR_SCALE'
+		
+		export namespace Type {
+			export enum Enum {
+				SHORTANSWER = 'SHORT_ANSWER',
+				PARAGRAPH = 'PARAGRAPH',
+				CHECKBOX = 'CHECKBOX',
+				DROPDOWN = 'DROPDOWN',
+				LINEARSCALE = 'LINEAR_SCALE'
+			}
 		}
 	
 	}
 
 	export interface ProjectTestFeedbackQuestionParagraph {
-		'type': Api.ProjectTestFeedbackQuestionParagraph.TypeEnum;
+		'type': Api.ProjectTestFeedbackQuestionParagraph.Type;
 		description: string;
 		isRequired: boolean;
 		/**
@@ -582,18 +721,27 @@ export namespace Api {
 	 * @namespace ProjectTestFeedbackQuestionParagraph
 	 */
 	export namespace ProjectTestFeedbackQuestionParagraph {
-		export enum TypeEnum {
-			SHORTANSWER = 'SHORT_ANSWER',
-			PARAGRAPH = 'PARAGRAPH',
-			CHECKBOX = 'CHECKBOX',
-			DROPDOWN = 'DROPDOWN',
-			LINEARSCALE = 'LINEAR_SCALE'
+		export type Type =
+			'SHORT_ANSWER' |
+			'PARAGRAPH' |
+			'CHECKBOX' |
+			'DROPDOWN' |
+			'LINEAR_SCALE'
+		
+		export namespace Type {
+			export enum Enum {
+				SHORTANSWER = 'SHORT_ANSWER',
+				PARAGRAPH = 'PARAGRAPH',
+				CHECKBOX = 'CHECKBOX',
+				DROPDOWN = 'DROPDOWN',
+				LINEARSCALE = 'LINEAR_SCALE'
+			}
 		}
 	
 	}
 
 	export interface ProjectTestFeedbackQuestionShortAnswer {
-		'type': Api.ProjectTestFeedbackQuestionShortAnswer.TypeEnum;
+		'type': Api.ProjectTestFeedbackQuestionShortAnswer.Type;
 		description: string;
 		isRequired: boolean;
 		/**
@@ -613,12 +761,21 @@ export namespace Api {
 	 * @namespace ProjectTestFeedbackQuestionShortAnswer
 	 */
 	export namespace ProjectTestFeedbackQuestionShortAnswer {
-		export enum TypeEnum {
-			SHORTANSWER = 'SHORT_ANSWER',
-			PARAGRAPH = 'PARAGRAPH',
-			CHECKBOX = 'CHECKBOX',
-			DROPDOWN = 'DROPDOWN',
-			LINEARSCALE = 'LINEAR_SCALE'
+		export type Type =
+			'SHORT_ANSWER' |
+			'PARAGRAPH' |
+			'CHECKBOX' |
+			'DROPDOWN' |
+			'LINEAR_SCALE'
+		
+		export namespace Type {
+			export enum Enum {
+				SHORTANSWER = 'SHORT_ANSWER',
+				PARAGRAPH = 'PARAGRAPH',
+				CHECKBOX = 'CHECKBOX',
+				DROPDOWN = 'DROPDOWN',
+				LINEARSCALE = 'LINEAR_SCALE'
+			}
 		}
 	
 	}
@@ -684,3 +841,4 @@ export namespace Api {
 	}
 
 }
+

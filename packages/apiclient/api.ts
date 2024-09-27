@@ -18,6 +18,211 @@ import { Api } from "./models";
 
 export type FactoryFunction<T> = (configuration?: Configuration, basePath?: string, fetch?: FetchAPI) => T;
 
+export namespace AuthApi {
+	export type AuthControllerGetCurrentUserResponse =
+		| AuthControllerGetCurrentUser400Response
+		| AuthControllerGetCurrentUser401Response
+		| AuthControllerGetCurrentUser403Response
+		| AuthControllerGetCurrentUser404Response
+		| AuthControllerGetCurrentUser409Response
+		| AuthControllerGetCurrentUser422Response
+		| AuthControllerGetCurrentUser500Response
+		| AuthControllerGetCurrentUserDefaultResponse
+	
+	export interface AuthControllerGetCurrentUser400Response {
+		status: 400
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface AuthControllerGetCurrentUser401Response {
+		status: 401
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface AuthControllerGetCurrentUser403Response {
+		status: 403
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface AuthControllerGetCurrentUser404Response {
+		status: 404
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface AuthControllerGetCurrentUser409Response {
+		status: 409
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface AuthControllerGetCurrentUser422Response {
+		status: 422
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface AuthControllerGetCurrentUser500Response {
+		status: 500
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface AuthControllerGetCurrentUserDefaultResponse {
+		status: number
+		contentType: 'application/json'
+		body: Api.UserEntity
+		headers?: undefined
+	}
+	
+	export type AuthControllerGetWeb3SignInChallengeResponse =
+		| AuthControllerGetWeb3SignInChallengeDefaultResponse
+	
+	export interface AuthControllerGetWeb3SignInChallengeDefaultResponse {
+		status: number
+		contentType: 'application/json'
+		body: Api.EthereumSigninChallengeResponseDto
+		headers?: undefined
+	}
+	
+	export type AuthControllerLocalSignWithEmailOrUsernameResponse =
+		| AuthControllerLocalSignWithEmailOrUsernameDefaultResponse
+	
+	export interface AuthControllerLocalSignWithEmailOrUsernameDefaultResponse {
+		status: number
+		contentType: 'application/json'
+		body: Api.LocalSignInResponseDto
+		headers?: undefined
+	}
+	
+	export type AuthControllerMagicLinkResponse =
+		| AuthControllerMagicLinkDefaultResponse
+	
+	export interface AuthControllerMagicLinkDefaultResponse {
+		status: number
+		contentType: 'application/json'
+		body: Api.OkDto
+		headers?: undefined
+	}
+	
+	export type AuthControllerRefreshTokenResponse =
+		| AuthControllerRefreshToken400Response
+		| AuthControllerRefreshToken401Response
+		| AuthControllerRefreshToken403Response
+		| AuthControllerRefreshToken404Response
+		| AuthControllerRefreshToken409Response
+		| AuthControllerRefreshToken422Response
+		| AuthControllerRefreshToken500Response
+		| AuthControllerRefreshTokenDefaultResponse
+	
+	export interface AuthControllerRefreshToken400Response {
+		status: 400
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface AuthControllerRefreshToken401Response {
+		status: 401
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface AuthControllerRefreshToken403Response {
+		status: 403
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface AuthControllerRefreshToken404Response {
+		status: 404
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface AuthControllerRefreshToken409Response {
+		status: 409
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface AuthControllerRefreshToken422Response {
+		status: 422
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface AuthControllerRefreshToken500Response {
+		status: 500
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface AuthControllerRefreshTokenDefaultResponse {
+		status: number
+		contentType: 'application/json'
+		body: Api.LocalSignInResponseDto
+		headers?: undefined
+	}
+	
+	export type AuthControllerSignInWithGoogleResponse =
+		| AuthControllerSignInWithGoogleDefaultResponse
+	
+	export interface AuthControllerSignInWithGoogleDefaultResponse {
+		status: number
+		contentType: 'application/json'
+		body: Api.LocalSignInResponseDto
+		headers?: undefined
+	}
+	
+	export type AuthControllerSignUpWithEmailUsernamePasswordResponse =
+		| AuthControllerSignUpWithEmailUsernamePasswordDefaultResponse
+	
+	export interface AuthControllerSignUpWithEmailUsernamePasswordDefaultResponse {
+		status: number
+		contentType: 'application/json'
+		body: Api.LocalSignInResponseDto
+		headers?: undefined
+	}
+	
+	export type AuthControllerUserExistsResponse =
+		| AuthControllerUserExistsDefaultResponse
+	
+	export interface AuthControllerUserExistsDefaultResponse {
+		status: number
+		contentType: 'application/json'
+		body: boolean
+		headers?: undefined
+	}
+	
+	export type AuthControllerValidateWeb3SignInChallengeResponse =
+		| AuthControllerValidateWeb3SignInChallengeDefaultResponse
+	
+	export interface AuthControllerValidateWeb3SignInChallengeDefaultResponse {
+		status: number
+		contentType: 'application/json'
+		body: Api.LocalSignInResponseDto
+		headers?: undefined
+	}
+	
+}
+
 /**
  * AuthApi - fetch parameter creator
  * @export
@@ -29,6 +234,7 @@ export const AuthApiFetchParamCreator = function (configuration?: Configuration)
 		 * @throws {RequiredError}
 		 */
 		authControllerGetCurrentUser(options: RequestInit = {}): FetchArgs {
+
 			let localVarPath = `/auth/me`;
 			const localVarPathQueryStart = localVarPath.indexOf("?");
 			const localVarRequestOptions: RequestInit = Object.assign({ method: 'GET' }, options);
@@ -69,6 +275,7 @@ export const AuthApiFetchParamCreator = function (configuration?: Configuration)
 			if (request === null || request === undefined) {
 				throw new RequiredError('request', 'Required parameter request was null or undefined when calling authControllerGetWeb3SignInChallenge.');
 			}
+
 			let localVarPath = `/auth/web3/sign-in/challenge`;
 			const localVarPathQueryStart = localVarPath.indexOf("?");
 			const localVarRequestOptions: RequestInit = Object.assign({ method: 'POST' }, options);
@@ -105,6 +312,7 @@ export const AuthApiFetchParamCreator = function (configuration?: Configuration)
 			if (request === null || request === undefined) {
 				throw new RequiredError('request', 'Required parameter request was null or undefined when calling authControllerLocalSignWithEmailOrUsername.');
 			}
+
 			let localVarPath = `/auth/local/sign-in`;
 			const localVarPathQueryStart = localVarPath.indexOf("?");
 			const localVarRequestOptions: RequestInit = Object.assign({ method: 'POST' }, options);
@@ -141,6 +349,7 @@ export const AuthApiFetchParamCreator = function (configuration?: Configuration)
 			if (request === null || request === undefined) {
 				throw new RequiredError('request', 'Required parameter request was null or undefined when calling authControllerMagicLink.');
 			}
+
 			let localVarPath = `/auth/magic-link`;
 			const localVarPathQueryStart = localVarPath.indexOf("?");
 			const localVarRequestOptions: RequestInit = Object.assign({ method: 'POST' }, options);
@@ -172,6 +381,7 @@ export const AuthApiFetchParamCreator = function (configuration?: Configuration)
 		 * @throws {RequiredError}
 		 */
 		authControllerRefreshToken(options: RequestInit = {}): FetchArgs {
+
 			let localVarPath = `/auth/refresh-token`;
 			const localVarPathQueryStart = localVarPath.indexOf("?");
 			const localVarRequestOptions: RequestInit = Object.assign({ method: 'GET' }, options);
@@ -212,6 +422,7 @@ export const AuthApiFetchParamCreator = function (configuration?: Configuration)
 			if (token === null || token === undefined) {
 				throw new RequiredError('token', 'Required parameter token was null or undefined when calling authControllerSignInWithGoogle.');
 			}
+
 			let localVarPath = `/auth/google/callback/{token}`
 				.replace('{token}', encodeURIComponent(String(token)));
 			const localVarPathQueryStart = localVarPath.indexOf("?");
@@ -243,6 +454,7 @@ export const AuthApiFetchParamCreator = function (configuration?: Configuration)
 			if (request === null || request === undefined) {
 				throw new RequiredError('request', 'Required parameter request was null or undefined when calling authControllerSignUpWithEmailUsernamePassword.');
 			}
+
 			let localVarPath = `/auth/local/sign-up`;
 			const localVarPathQueryStart = localVarPath.indexOf("?");
 			const localVarRequestOptions: RequestInit = Object.assign({ method: 'POST' }, options);
@@ -279,6 +491,7 @@ export const AuthApiFetchParamCreator = function (configuration?: Configuration)
 			if (user === null || user === undefined) {
 				throw new RequiredError('user', 'Required parameter user was null or undefined when calling authControllerUserExists.');
 			}
+
 			let localVarPath = `/auth/userExists/{user}`
 				.replace('{user}', encodeURIComponent(String(user)));
 			const localVarPathQueryStart = localVarPath.indexOf("?");
@@ -310,6 +523,7 @@ export const AuthApiFetchParamCreator = function (configuration?: Configuration)
 			if (request === null || request === undefined) {
 				throw new RequiredError('request', 'Required parameter request was null or undefined when calling authControllerValidateWeb3SignInChallenge.');
 			}
+
 			let localVarPath = `/auth/web3/sign-in/validate`;
 			const localVarPathQueryStart = localVarPath.indexOf("?");
 			const localVarRequestOptions: RequestInit = Object.assign({ method: 'POST' }, options);
@@ -349,24 +563,92 @@ export const AuthApiFp = function(configuration?: Configuration) {
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		authControllerGetCurrentUser(options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<Api.UserEntity> {
+		authControllerGetCurrentUser(options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<AuthApi.AuthControllerGetCurrentUserResponse> {
 			const localVarFetchArgs = AuthApiFetchParamCreator(configuration).authControllerGetCurrentUser(options);
-			return (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
-				return fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options).then((response) => {
-					const contentType = response.headers.get('Content-Type');
-					const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
-					
-					if (response.status === 200) {
-						if (mimeType === 'application/json') {
-							return response.json() as any;
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				if (response.status === 400) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
 						}
-						throw response;
-					}
-					if (response.status === 401) {
-						return response;
 					}
 					throw response;
-				});
+				}
+				if (response.status === 401) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 403) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 404) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 409) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 422) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 500) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				/* Catch-all response */
+				if (mimeType === 'application/json') {
+					return {
+						status: response.status,
+						contentType: 'application/json',
+						body: await response.json() as Api.UserEntity,
+					}
+				}
+				throw response;
 			};
 		},
 		/**
@@ -374,21 +656,22 @@ export const AuthApiFp = function(configuration?: Configuration) {
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		authControllerGetWeb3SignInChallenge(request: Api.EthereumSigninChallengeRequestDto, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<Api.EthereumSigninChallengeResponseDto> {
+		authControllerGetWeb3SignInChallenge(request: Api.EthereumSigninChallengeRequestDto, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<AuthApi.AuthControllerGetWeb3SignInChallengeResponse> {
 			const localVarFetchArgs = AuthApiFetchParamCreator(configuration).authControllerGetWeb3SignInChallenge(request, options);
-			return (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
-				return fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options).then((response) => {
-					const contentType = response.headers.get('Content-Type');
-					const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
-					
-					if (response.status === 201) {
-						if (mimeType === 'application/json') {
-							return response.json() as any;
-						}
-						throw response;
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				/* Catch-all response */
+				if (mimeType === 'application/json') {
+					return {
+						status: response.status,
+						contentType: 'application/json',
+						body: await response.json() as Api.EthereumSigninChallengeResponseDto,
 					}
-					throw response;
-				});
+				}
+				throw response;
 			};
 		},
 		/**
@@ -396,21 +679,22 @@ export const AuthApiFp = function(configuration?: Configuration) {
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		authControllerLocalSignWithEmailOrUsername(request: Api.LocalSignInDto, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<Api.LocalSignInResponseDto> {
+		authControllerLocalSignWithEmailOrUsername(request: Api.LocalSignInDto, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<AuthApi.AuthControllerLocalSignWithEmailOrUsernameResponse> {
 			const localVarFetchArgs = AuthApiFetchParamCreator(configuration).authControllerLocalSignWithEmailOrUsername(request, options);
-			return (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
-				return fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options).then((response) => {
-					const contentType = response.headers.get('Content-Type');
-					const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
-					
-					if (response.status === 201) {
-						if (mimeType === 'application/json') {
-							return response.json() as any;
-						}
-						throw response;
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				/* Catch-all response */
+				if (mimeType === 'application/json') {
+					return {
+						status: response.status,
+						contentType: 'application/json',
+						body: await response.json() as Api.LocalSignInResponseDto,
 					}
-					throw response;
-				});
+				}
+				throw response;
 			};
 		},
 		/**
@@ -418,45 +702,114 @@ export const AuthApiFp = function(configuration?: Configuration) {
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		authControllerMagicLink(request: Api.EmailDto, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<Api.OkDto> {
+		authControllerMagicLink(request: Api.EmailDto, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<AuthApi.AuthControllerMagicLinkResponse> {
 			const localVarFetchArgs = AuthApiFetchParamCreator(configuration).authControllerMagicLink(request, options);
-			return (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
-				return fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options).then((response) => {
-					const contentType = response.headers.get('Content-Type');
-					const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
-					
-					if (response.status === 201) {
-						if (mimeType === 'application/json') {
-							return response.json() as any;
-						}
-						throw response;
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				/* Catch-all response */
+				if (mimeType === 'application/json') {
+					return {
+						status: response.status,
+						contentType: 'application/json',
+						body: await response.json() as Api.OkDto,
 					}
-					throw response;
-				});
+				}
+				throw response;
 			};
 		},
 		/**
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		authControllerRefreshToken(options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<Api.LocalSignInResponseDto> {
+		authControllerRefreshToken(options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<AuthApi.AuthControllerRefreshTokenResponse> {
 			const localVarFetchArgs = AuthApiFetchParamCreator(configuration).authControllerRefreshToken(options);
-			return (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
-				return fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options).then((response) => {
-					const contentType = response.headers.get('Content-Type');
-					const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
-					
-					if (response.status === 200) {
-						if (mimeType === 'application/json') {
-							return response.json() as any;
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				if (response.status === 400) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
 						}
-						throw response;
-					}
-					if (response.status === 401) {
-						return response;
 					}
 					throw response;
-				});
+				}
+				if (response.status === 401) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 403) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 404) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 409) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 422) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 500) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				/* Catch-all response */
+				if (mimeType === 'application/json') {
+					return {
+						status: response.status,
+						contentType: 'application/json',
+						body: await response.json() as Api.LocalSignInResponseDto,
+					}
+				}
+				throw response;
 			};
 		},
 		/**
@@ -464,27 +817,22 @@ export const AuthApiFp = function(configuration?: Configuration) {
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		authControllerSignInWithGoogle(token: string, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<Api.LocalSignInResponseDto> {
+		authControllerSignInWithGoogle(token: string, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<AuthApi.AuthControllerSignInWithGoogleResponse> {
 			const localVarFetchArgs = AuthApiFetchParamCreator(configuration).authControllerSignInWithGoogle(token, options);
-			return (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
-				return fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options).then((response) => {
-					const contentType = response.headers.get('Content-Type');
-					const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
-					
-					if (response.status === 200) {
-						if (mimeType === 'application/json') {
-							return response.json() as any;
-						}
-						throw response;
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				/* Catch-all response */
+				if (mimeType === 'application/json') {
+					return {
+						status: response.status,
+						contentType: 'application/json',
+						body: await response.json() as Api.LocalSignInResponseDto,
 					}
-					if (response.status === 201) {
-						if (mimeType === 'application/json') {
-							throw response;
-						}
-						throw response;
-					}
-					throw response;
-				});
+				}
+				throw response;
 			};
 		},
 		/**
@@ -492,21 +840,22 @@ export const AuthApiFp = function(configuration?: Configuration) {
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		authControllerSignUpWithEmailUsernamePassword(request: Api.LocalSignUpDto, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<Api.LocalSignInResponseDto> {
+		authControllerSignUpWithEmailUsernamePassword(request: Api.LocalSignUpDto, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<AuthApi.AuthControllerSignUpWithEmailUsernamePasswordResponse> {
 			const localVarFetchArgs = AuthApiFetchParamCreator(configuration).authControllerSignUpWithEmailUsernamePassword(request, options);
-			return (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
-				return fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options).then((response) => {
-					const contentType = response.headers.get('Content-Type');
-					const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
-					
-					if (response.status === 201) {
-						if (mimeType === 'application/json') {
-							return response.json() as any;
-						}
-						throw response;
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				/* Catch-all response */
+				if (mimeType === 'application/json') {
+					return {
+						status: response.status,
+						contentType: 'application/json',
+						body: await response.json() as Api.LocalSignInResponseDto,
 					}
-					throw response;
-				});
+				}
+				throw response;
 			};
 		},
 		/**
@@ -514,21 +863,22 @@ export const AuthApiFp = function(configuration?: Configuration) {
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		authControllerUserExists(user: string, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<boolean> {
+		authControllerUserExists(user: string, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<AuthApi.AuthControllerUserExistsResponse> {
 			const localVarFetchArgs = AuthApiFetchParamCreator(configuration).authControllerUserExists(user, options);
-			return (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
-				return fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options).then((response) => {
-					const contentType = response.headers.get('Content-Type');
-					const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
-					
-					if (response.status === 201) {
-						if (mimeType === 'application/json') {
-							return response.json() as any;
-						}
-						throw response;
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				/* Catch-all response */
+				if (mimeType === 'application/json') {
+					return {
+						status: response.status,
+						contentType: 'application/json',
+						body: await response.json() as boolean,
 					}
-					throw response;
-				});
+				}
+				throw response;
 			};
 		},
 		/**
@@ -536,21 +886,22 @@ export const AuthApiFp = function(configuration?: Configuration) {
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		authControllerValidateWeb3SignInChallenge(request: Api.EthereumSigninValidateRequestDto, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<Api.LocalSignInResponseDto> {
+		authControllerValidateWeb3SignInChallenge(request: Api.EthereumSigninValidateRequestDto, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<AuthApi.AuthControllerValidateWeb3SignInChallengeResponse> {
 			const localVarFetchArgs = AuthApiFetchParamCreator(configuration).authControllerValidateWeb3SignInChallenge(request, options);
-			return (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
-				return fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options).then((response) => {
-					const contentType = response.headers.get('Content-Type');
-					const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
-					
-					if (response.status === 201) {
-						if (mimeType === 'application/json') {
-							return response.json() as any;
-						}
-						throw response;
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				/* Catch-all response */
+				if (mimeType === 'application/json') {
+					return {
+						status: response.status,
+						contentType: 'application/json',
+						body: await response.json() as Api.LocalSignInResponseDto,
 					}
-					throw response;
-				});
+				}
+				throw response;
 			};
 		},
 	}
@@ -560,9 +911,78 @@ export const AuthApiFp = function(configuration?: Configuration) {
  * AuthApi - factory interface
  * @export
  */
-export const AuthApiFactory: FactoryFunction<AuthApi> = function (configuration?: Configuration, basePath?: string, fetch?: FetchAPI) {
+export const AuthApiFactory: FactoryFunction<AuthApiInterface> = function (configuration?: Configuration, basePath?: string, fetch?: FetchAPI) {
 	return new AuthApi(configuration, basePath, fetch);
 };
+
+/**
+ * AuthApi - interface
+ * @export
+ * @interface AuthApi
+ */
+export interface AuthApiInterface {
+	/**
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	authControllerGetCurrentUser(options?: RequestInit): Promise<AuthApi.AuthControllerGetCurrentUserResponse>
+
+	/**
+	 * @param {Api.EthereumSigninChallengeRequestDto} request
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	authControllerGetWeb3SignInChallenge(request: Api.EthereumSigninChallengeRequestDto, options?: RequestInit): Promise<AuthApi.AuthControllerGetWeb3SignInChallengeResponse>
+
+	/**
+	 * @param {Api.LocalSignInDto} request
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	authControllerLocalSignWithEmailOrUsername(request: Api.LocalSignInDto, options?: RequestInit): Promise<AuthApi.AuthControllerLocalSignWithEmailOrUsernameResponse>
+
+	/**
+	 * @param {Api.EmailDto} request
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	authControllerMagicLink(request: Api.EmailDto, options?: RequestInit): Promise<AuthApi.AuthControllerMagicLinkResponse>
+
+	/**
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	authControllerRefreshToken(options?: RequestInit): Promise<AuthApi.AuthControllerRefreshTokenResponse>
+
+	/**
+	 * @param {string} token
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	authControllerSignInWithGoogle(token: string, options?: RequestInit): Promise<AuthApi.AuthControllerSignInWithGoogleResponse>
+
+	/**
+	 * @param {Api.LocalSignUpDto} request
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	authControllerSignUpWithEmailUsernamePassword(request: Api.LocalSignUpDto, options?: RequestInit): Promise<AuthApi.AuthControllerSignUpWithEmailUsernamePasswordResponse>
+
+	/**
+	 * @param {string} user
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	authControllerUserExists(user: string, options?: RequestInit): Promise<AuthApi.AuthControllerUserExistsResponse>
+
+	/**
+	 * @param {Api.EthereumSigninValidateRequestDto} request
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	authControllerValidateWeb3SignInChallenge(request: Api.EthereumSigninValidateRequestDto, options?: RequestInit): Promise<AuthApi.AuthControllerValidateWeb3SignInChallengeResponse>
+
+}
 
 /**
  * AuthApi - object-oriented interface
@@ -570,7 +990,7 @@ export const AuthApiFactory: FactoryFunction<AuthApi> = function (configuration?
  * @class AuthApi
  * @extends {BaseAPI}
  */
-export class AuthApi extends BaseAPI {
+export class AuthApi extends BaseAPI implements AuthApiInterface {
 	/**
 	 * @param {RequestInit} [options] Override http request option.
 	 * @throws {RequiredError}
@@ -651,6 +1071,595 @@ export class AuthApi extends BaseAPI {
 	}
 
 }
+export namespace CompetitionsApi {
+	export type CompetitionControllerFindChessMatchResultResponse =
+		| CompetitionControllerFindChessMatchResult400Response
+		| CompetitionControllerFindChessMatchResult401Response
+		| CompetitionControllerFindChessMatchResult403Response
+		| CompetitionControllerFindChessMatchResult404Response
+		| CompetitionControllerFindChessMatchResult409Response
+		| CompetitionControllerFindChessMatchResult422Response
+		| CompetitionControllerFindChessMatchResult500Response
+		| CompetitionControllerFindChessMatchResultDefaultResponse
+	
+	export interface CompetitionControllerFindChessMatchResult400Response {
+		status: 400
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CompetitionControllerFindChessMatchResult401Response {
+		status: 401
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CompetitionControllerFindChessMatchResult403Response {
+		status: 403
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CompetitionControllerFindChessMatchResult404Response {
+		status: 404
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CompetitionControllerFindChessMatchResult409Response {
+		status: 409
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CompetitionControllerFindChessMatchResult422Response {
+		status: 422
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CompetitionControllerFindChessMatchResult500Response {
+		status: 500
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CompetitionControllerFindChessMatchResultDefaultResponse {
+		status: number
+		contentType: 'application/json'
+		body: Api.MatchSearchResponseDto[]
+		headers?: undefined
+	}
+	
+	export type CompetitionControllerGetChessLeaderboardResponse =
+		| CompetitionControllerGetChessLeaderboard400Response
+		| CompetitionControllerGetChessLeaderboard401Response
+		| CompetitionControllerGetChessLeaderboard403Response
+		| CompetitionControllerGetChessLeaderboard404Response
+		| CompetitionControllerGetChessLeaderboard409Response
+		| CompetitionControllerGetChessLeaderboard422Response
+		| CompetitionControllerGetChessLeaderboard500Response
+		| CompetitionControllerGetChessLeaderboardDefaultResponse
+	
+	export interface CompetitionControllerGetChessLeaderboard400Response {
+		status: 400
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CompetitionControllerGetChessLeaderboard401Response {
+		status: 401
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CompetitionControllerGetChessLeaderboard403Response {
+		status: 403
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CompetitionControllerGetChessLeaderboard404Response {
+		status: 404
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CompetitionControllerGetChessLeaderboard409Response {
+		status: 409
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CompetitionControllerGetChessLeaderboard422Response {
+		status: 422
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CompetitionControllerGetChessLeaderboard500Response {
+		status: 500
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CompetitionControllerGetChessLeaderboardDefaultResponse {
+		status: number
+		contentType: 'application/json'
+		body: Api.ChessLeaderboardResponseEntryDto[]
+		headers?: undefined
+	}
+	
+	export type CompetitionControllerGetChessMatchResultResponse =
+		| CompetitionControllerGetChessMatchResult400Response
+		| CompetitionControllerGetChessMatchResult401Response
+		| CompetitionControllerGetChessMatchResult403Response
+		| CompetitionControllerGetChessMatchResult404Response
+		| CompetitionControllerGetChessMatchResult409Response
+		| CompetitionControllerGetChessMatchResult422Response
+		| CompetitionControllerGetChessMatchResult500Response
+		| CompetitionControllerGetChessMatchResultDefaultResponse
+	
+	export interface CompetitionControllerGetChessMatchResult400Response {
+		status: 400
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CompetitionControllerGetChessMatchResult401Response {
+		status: 401
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CompetitionControllerGetChessMatchResult403Response {
+		status: 403
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CompetitionControllerGetChessMatchResult404Response {
+		status: 404
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CompetitionControllerGetChessMatchResult409Response {
+		status: 409
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CompetitionControllerGetChessMatchResult422Response {
+		status: 422
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CompetitionControllerGetChessMatchResult500Response {
+		status: 500
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CompetitionControllerGetChessMatchResultDefaultResponse {
+		status: number
+		contentType: 'application/json'
+		body: Api.ChessMatchResultDto
+		headers?: undefined
+	}
+	
+	export type CompetitionControllerGetLatestChessCompetitionReportResponse =
+		| CompetitionControllerGetLatestChessCompetitionReport400Response
+		| CompetitionControllerGetLatestChessCompetitionReport401Response
+		| CompetitionControllerGetLatestChessCompetitionReport403Response
+		| CompetitionControllerGetLatestChessCompetitionReport404Response
+		| CompetitionControllerGetLatestChessCompetitionReport409Response
+		| CompetitionControllerGetLatestChessCompetitionReport422Response
+		| CompetitionControllerGetLatestChessCompetitionReport500Response
+		| CompetitionControllerGetLatestChessCompetitionReportDefaultResponse
+	
+	export interface CompetitionControllerGetLatestChessCompetitionReport400Response {
+		status: 400
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CompetitionControllerGetLatestChessCompetitionReport401Response {
+		status: 401
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CompetitionControllerGetLatestChessCompetitionReport403Response {
+		status: 403
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CompetitionControllerGetLatestChessCompetitionReport404Response {
+		status: 404
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CompetitionControllerGetLatestChessCompetitionReport409Response {
+		status: 409
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CompetitionControllerGetLatestChessCompetitionReport422Response {
+		status: 422
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CompetitionControllerGetLatestChessCompetitionReport500Response {
+		status: 500
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CompetitionControllerGetLatestChessCompetitionReportDefaultResponse {
+		status: number
+		contentType: 'application/json'
+		body: Api.CompetitionRunSubmissionReportEntity[]
+		headers?: undefined
+	}
+	
+	export type CompetitionControllerListChessAgentsResponse =
+		| CompetitionControllerListChessAgents400Response
+		| CompetitionControllerListChessAgents401Response
+		| CompetitionControllerListChessAgents403Response
+		| CompetitionControllerListChessAgents404Response
+		| CompetitionControllerListChessAgents409Response
+		| CompetitionControllerListChessAgents422Response
+		| CompetitionControllerListChessAgents500Response
+		| CompetitionControllerListChessAgentsDefaultResponse
+	
+	export interface CompetitionControllerListChessAgents400Response {
+		status: 400
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CompetitionControllerListChessAgents401Response {
+		status: 401
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CompetitionControllerListChessAgents403Response {
+		status: 403
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CompetitionControllerListChessAgents404Response {
+		status: 404
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CompetitionControllerListChessAgents409Response {
+		status: 409
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CompetitionControllerListChessAgents422Response {
+		status: 422
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CompetitionControllerListChessAgents500Response {
+		status: 500
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CompetitionControllerListChessAgentsDefaultResponse {
+		status: number
+		contentType: 'application/json'
+		body: string[]
+		headers?: undefined
+	}
+	
+	export type CompetitionControllerRequestChessMoveResponse =
+		| CompetitionControllerRequestChessMove400Response
+		| CompetitionControllerRequestChessMove401Response
+		| CompetitionControllerRequestChessMove403Response
+		| CompetitionControllerRequestChessMove404Response
+		| CompetitionControllerRequestChessMove409Response
+		| CompetitionControllerRequestChessMove422Response
+		| CompetitionControllerRequestChessMove500Response
+		| CompetitionControllerRequestChessMoveDefaultResponse
+	
+	export interface CompetitionControllerRequestChessMove400Response {
+		status: 400
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CompetitionControllerRequestChessMove401Response {
+		status: 401
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CompetitionControllerRequestChessMove403Response {
+		status: 403
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CompetitionControllerRequestChessMove404Response {
+		status: 404
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CompetitionControllerRequestChessMove409Response {
+		status: 409
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CompetitionControllerRequestChessMove422Response {
+		status: 422
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CompetitionControllerRequestChessMove500Response {
+		status: 500
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CompetitionControllerRequestChessMoveDefaultResponse {
+		status: number
+		contentType: 'application/json'
+		body: string
+		headers?: undefined
+	}
+	
+	export type CompetitionControllerRunChessMatchResponse =
+		| CompetitionControllerRunChessMatch400Response
+		| CompetitionControllerRunChessMatch401Response
+		| CompetitionControllerRunChessMatch403Response
+		| CompetitionControllerRunChessMatch404Response
+		| CompetitionControllerRunChessMatch409Response
+		| CompetitionControllerRunChessMatch422Response
+		| CompetitionControllerRunChessMatch500Response
+		| CompetitionControllerRunChessMatchDefaultResponse
+	
+	export interface CompetitionControllerRunChessMatch400Response {
+		status: 400
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CompetitionControllerRunChessMatch401Response {
+		status: 401
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CompetitionControllerRunChessMatch403Response {
+		status: 403
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CompetitionControllerRunChessMatch404Response {
+		status: 404
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CompetitionControllerRunChessMatch409Response {
+		status: 409
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CompetitionControllerRunChessMatch422Response {
+		status: 422
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CompetitionControllerRunChessMatch500Response {
+		status: 500
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CompetitionControllerRunChessMatchDefaultResponse {
+		status: number
+		contentType: 'application/json'
+		body: Api.ChessMatchResultDto
+		headers?: undefined
+	}
+	
+	export type CompetitionControllerRunCompetitionResponse =
+		| CompetitionControllerRunCompetition400Response
+		| CompetitionControllerRunCompetition401Response
+		| CompetitionControllerRunCompetition403Response
+		| CompetitionControllerRunCompetition404Response
+		| CompetitionControllerRunCompetition409Response
+		| CompetitionControllerRunCompetition422Response
+		| CompetitionControllerRunCompetition500Response
+	
+	export interface CompetitionControllerRunCompetition400Response {
+		status: 400
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CompetitionControllerRunCompetition401Response {
+		status: 401
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CompetitionControllerRunCompetition403Response {
+		status: 403
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CompetitionControllerRunCompetition404Response {
+		status: 404
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CompetitionControllerRunCompetition409Response {
+		status: 409
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CompetitionControllerRunCompetition422Response {
+		status: 422
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CompetitionControllerRunCompetition500Response {
+		status: 500
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export type CompetitionControllerSubmitChessAgentResponse =
+		| CompetitionControllerSubmitChessAgent400Response
+		| CompetitionControllerSubmitChessAgent401Response
+		| CompetitionControllerSubmitChessAgent403Response
+		| CompetitionControllerSubmitChessAgent404Response
+		| CompetitionControllerSubmitChessAgent409Response
+		| CompetitionControllerSubmitChessAgent422Response
+		| CompetitionControllerSubmitChessAgent500Response
+		| CompetitionControllerSubmitChessAgentDefaultResponse
+	
+	export interface CompetitionControllerSubmitChessAgent400Response {
+		status: 400
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CompetitionControllerSubmitChessAgent401Response {
+		status: 401
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CompetitionControllerSubmitChessAgent403Response {
+		status: 403
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CompetitionControllerSubmitChessAgent404Response {
+		status: 404
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CompetitionControllerSubmitChessAgent409Response {
+		status: 409
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CompetitionControllerSubmitChessAgent422Response {
+		status: 422
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CompetitionControllerSubmitChessAgent500Response {
+		status: 500
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CompetitionControllerSubmitChessAgentDefaultResponse {
+		status: number
+		contentType: 'application/json'
+		body: Api.TerminalDto[]
+		headers?: undefined
+	}
+	
+}
+
 /**
  * CompetitionsApi - fetch parameter creator
  * @export
@@ -667,6 +1676,7 @@ export const CompetitionsApiFetchParamCreator = function (configuration?: Config
 			if (request === null || request === undefined) {
 				throw new RequiredError('request', 'Required parameter request was null or undefined when calling competitionControllerFindChessMatchResult.');
 			}
+
 			let localVarPath = `/Competitions/Chess/FindMatches`;
 			const localVarPathQueryStart = localVarPath.indexOf("?");
 			const localVarRequestOptions: RequestInit = Object.assign({ method: 'POST' }, options);
@@ -708,6 +1718,7 @@ export const CompetitionsApiFetchParamCreator = function (configuration?: Config
 		 * @throws {RequiredError}
 		 */
 		competitionControllerGetChessLeaderboard(options: RequestInit = {}): FetchArgs {
+
 			let localVarPath = `/Competitions/Chess/Leaderboard`;
 			const localVarPathQueryStart = localVarPath.indexOf("?");
 			const localVarRequestOptions: RequestInit = Object.assign({ method: 'GET' }, options);
@@ -748,6 +1759,7 @@ export const CompetitionsApiFetchParamCreator = function (configuration?: Config
 			if (id === null || id === undefined) {
 				throw new RequiredError('id', 'Required parameter id was null or undefined when calling competitionControllerGetChessMatchResult.');
 			}
+
 			let localVarPath = `/Competitions/Chess/Match/{id}`
 				.replace('{id}', encodeURIComponent(String(id)));
 			const localVarPathQueryStart = localVarPath.indexOf("?");
@@ -784,6 +1796,7 @@ export const CompetitionsApiFetchParamCreator = function (configuration?: Config
 		 * @throws {RequiredError}
 		 */
 		competitionControllerGetLatestChessCompetitionReport(options: RequestInit = {}): FetchArgs {
+
 			let localVarPath = `/Competitions/Chess/LatestCompetitionReport`;
 			const localVarPathQueryStart = localVarPath.indexOf("?");
 			const localVarRequestOptions: RequestInit = Object.assign({ method: 'GET' }, options);
@@ -819,6 +1832,7 @@ export const CompetitionsApiFetchParamCreator = function (configuration?: Config
 		 * @throws {RequiredError}
 		 */
 		competitionControllerListChessAgents(options: RequestInit = {}): FetchArgs {
+
 			let localVarPath = `/Competitions/Chess/ListAgents`;
 			const localVarPathQueryStart = localVarPath.indexOf("?");
 			const localVarRequestOptions: RequestInit = Object.assign({ method: 'GET' }, options);
@@ -859,6 +1873,7 @@ export const CompetitionsApiFetchParamCreator = function (configuration?: Config
 			if (request === null || request === undefined) {
 				throw new RequiredError('request', 'Required parameter request was null or undefined when calling competitionControllerRequestChessMove.');
 			}
+
 			let localVarPath = `/Competitions/Chess/Move`;
 			const localVarPathQueryStart = localVarPath.indexOf("?");
 			const localVarRequestOptions: RequestInit = Object.assign({ method: 'POST' }, options);
@@ -905,6 +1920,7 @@ export const CompetitionsApiFetchParamCreator = function (configuration?: Config
 			if (request === null || request === undefined) {
 				throw new RequiredError('request', 'Required parameter request was null or undefined when calling competitionControllerRunChessMatch.');
 			}
+
 			let localVarPath = `/Competitions/Chess/RunMatch`;
 			const localVarPathQueryStart = localVarPath.indexOf("?");
 			const localVarRequestOptions: RequestInit = Object.assign({ method: 'POST' }, options);
@@ -946,6 +1962,7 @@ export const CompetitionsApiFetchParamCreator = function (configuration?: Config
 		 * @throws {RequiredError}
 		 */
 		competitionControllerRunCompetition(options: RequestInit = {}): FetchArgs {
+
 			let localVarPath = `/Competitions/Chess/RunCompetition`;
 			const localVarPathQueryStart = localVarPath.indexOf("?");
 			const localVarRequestOptions: RequestInit = Object.assign({ method: 'GET' }, options);
@@ -982,6 +1999,7 @@ export const CompetitionsApiFetchParamCreator = function (configuration?: Config
 		 * @throws {RequiredError}
 		 */
 		competitionControllerSubmitChessAgent(request: Api.CompetitionSubmissionDto.MultipartFormData | undefined, options: RequestInit = {}): FetchArgs {
+
 			let localVarPath = `/Competitions/Chess/submit`;
 			const localVarPathQueryStart = localVarPath.indexOf("?");
 			const localVarRequestOptions: RequestInit = Object.assign({ method: 'POST' }, options);
@@ -1036,54 +2054,184 @@ export const CompetitionsApiFp = function(configuration?: Configuration) {
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		competitionControllerFindChessMatchResult(request: Api.MatchSearchRequestDto, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<Api.MatchSearchResponseDto[]> {
+		competitionControllerFindChessMatchResult(request: Api.MatchSearchRequestDto, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<CompetitionsApi.CompetitionControllerFindChessMatchResultResponse> {
 			const localVarFetchArgs = CompetitionsApiFetchParamCreator(configuration).competitionControllerFindChessMatchResult(request, options);
-			return (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
-				return fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options).then((response) => {
-					const contentType = response.headers.get('Content-Type');
-					const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
-					
-					if (response.status === 201) {
-						if (mimeType === 'application/json') {
-							return response.json() as any;
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				if (response.status === 400) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
 						}
-						throw response;
-					}
-					if (response.status === 204) {
-						return response;
-					}
-					if (response.status === 401) {
-						return response;
 					}
 					throw response;
-				});
+				}
+				if (response.status === 401) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 403) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 404) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 409) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 422) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 500) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				/* Catch-all response */
+				if (mimeType === 'application/json') {
+					return {
+						status: response.status,
+						contentType: 'application/json',
+						body: await response.json() as Api.MatchSearchResponseDto[],
+					}
+				}
+				throw response;
 			};
 		},
 		/**
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		competitionControllerGetChessLeaderboard(options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<Api.ChessLeaderboardResponseEntryDto[]> {
+		competitionControllerGetChessLeaderboard(options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<CompetitionsApi.CompetitionControllerGetChessLeaderboardResponse> {
 			const localVarFetchArgs = CompetitionsApiFetchParamCreator(configuration).competitionControllerGetChessLeaderboard(options);
-			return (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
-				return fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options).then((response) => {
-					const contentType = response.headers.get('Content-Type');
-					const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
-					
-					if (response.status === 200) {
-						if (mimeType === 'application/json') {
-							return response.json() as any;
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				if (response.status === 400) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
 						}
-						throw response;
-					}
-					if (response.status === 204) {
-						return response;
-					}
-					if (response.status === 401) {
-						return response;
 					}
 					throw response;
-				});
+				}
+				if (response.status === 401) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 403) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 404) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 409) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 422) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 500) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				/* Catch-all response */
+				if (mimeType === 'application/json') {
+					return {
+						status: response.status,
+						contentType: 'application/json',
+						body: await response.json() as Api.ChessLeaderboardResponseEntryDto[],
+					}
+				}
+				throw response;
 			};
 		},
 		/**
@@ -1091,78 +2239,276 @@ export const CompetitionsApiFp = function(configuration?: Configuration) {
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		competitionControllerGetChessMatchResult(id: string, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<Api.ChessMatchResultDto> {
+		competitionControllerGetChessMatchResult(id: string, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<CompetitionsApi.CompetitionControllerGetChessMatchResultResponse> {
 			const localVarFetchArgs = CompetitionsApiFetchParamCreator(configuration).competitionControllerGetChessMatchResult(id, options);
-			return (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
-				return fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options).then((response) => {
-					const contentType = response.headers.get('Content-Type');
-					const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
-					
-					if (response.status === 201) {
-						if (mimeType === 'application/json') {
-							return response.json() as any;
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				if (response.status === 400) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
 						}
-						throw response;
-					}
-					if (response.status === 401) {
-						return response;
 					}
 					throw response;
-				});
+				}
+				if (response.status === 401) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 403) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 404) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 409) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 422) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 500) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				/* Catch-all response */
+				if (mimeType === 'application/json') {
+					return {
+						status: response.status,
+						contentType: 'application/json',
+						body: await response.json() as Api.ChessMatchResultDto,
+					}
+				}
+				throw response;
 			};
 		},
 		/**
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		competitionControllerGetLatestChessCompetitionReport(options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<Api.CompetitionRunSubmissionReportEntity[]> {
+		competitionControllerGetLatestChessCompetitionReport(options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<CompetitionsApi.CompetitionControllerGetLatestChessCompetitionReportResponse> {
 			const localVarFetchArgs = CompetitionsApiFetchParamCreator(configuration).competitionControllerGetLatestChessCompetitionReport(options);
-			return (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
-				return fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options).then((response) => {
-					const contentType = response.headers.get('Content-Type');
-					const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
-					
-					if (response.status === 201) {
-						if (mimeType === 'application/json') {
-							return response.json() as any;
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				if (response.status === 400) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
 						}
-						throw response;
-					}
-					if (response.status === 204) {
-						return response;
-					}
-					if (response.status === 401) {
-						return response;
 					}
 					throw response;
-				});
+				}
+				if (response.status === 401) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 403) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 404) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 409) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 422) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 500) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				/* Catch-all response */
+				if (mimeType === 'application/json') {
+					return {
+						status: response.status,
+						contentType: 'application/json',
+						body: await response.json() as Api.CompetitionRunSubmissionReportEntity[],
+					}
+				}
+				throw response;
 			};
 		},
 		/**
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		competitionControllerListChessAgents(options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<string[]> {
+		competitionControllerListChessAgents(options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<CompetitionsApi.CompetitionControllerListChessAgentsResponse> {
 			const localVarFetchArgs = CompetitionsApiFetchParamCreator(configuration).competitionControllerListChessAgents(options);
-			return (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
-				return fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options).then((response) => {
-					const contentType = response.headers.get('Content-Type');
-					const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
-					
-					if (response.status === 201) {
-						if (mimeType === 'application/json') {
-							return response.json() as any;
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				if (response.status === 400) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
 						}
-						throw response;
-					}
-					if (response.status === 204) {
-						return response;
-					}
-					if (response.status === 401) {
-						return response;
 					}
 					throw response;
-				});
+				}
+				if (response.status === 401) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 403) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 404) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 409) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 422) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 500) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				/* Catch-all response */
+				if (mimeType === 'application/json') {
+					return {
+						status: response.status,
+						contentType: 'application/json',
+						body: await response.json() as string[],
+					}
+				}
+				throw response;
 			};
 		},
 		/**
@@ -1170,24 +2516,92 @@ export const CompetitionsApiFp = function(configuration?: Configuration) {
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		competitionControllerRequestChessMove(request: Api.ChessMoveRequestDto, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<string> {
+		competitionControllerRequestChessMove(request: Api.ChessMoveRequestDto, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<CompetitionsApi.CompetitionControllerRequestChessMoveResponse> {
 			const localVarFetchArgs = CompetitionsApiFetchParamCreator(configuration).competitionControllerRequestChessMove(request, options);
-			return (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
-				return fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options).then((response) => {
-					const contentType = response.headers.get('Content-Type');
-					const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
-					
-					if (response.status === 201) {
-						if (mimeType === 'application/json') {
-							return response.json() as any;
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				if (response.status === 400) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
 						}
-						throw response;
-					}
-					if (response.status === 401) {
-						return response;
 					}
 					throw response;
-				});
+				}
+				if (response.status === 401) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 403) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 404) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 409) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 422) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 500) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				/* Catch-all response */
+				if (mimeType === 'application/json') {
+					return {
+						status: response.status,
+						contentType: 'application/json',
+						body: await response.json() as string,
+					}
+				}
+				throw response;
 			};
 		},
 		/**
@@ -1195,42 +2609,176 @@ export const CompetitionsApiFp = function(configuration?: Configuration) {
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		competitionControllerRunChessMatch(request: Api.ChessMatchRequestDto, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<Api.ChessMatchResultDto> {
+		competitionControllerRunChessMatch(request: Api.ChessMatchRequestDto, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<CompetitionsApi.CompetitionControllerRunChessMatchResponse> {
 			const localVarFetchArgs = CompetitionsApiFetchParamCreator(configuration).competitionControllerRunChessMatch(request, options);
-			return (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
-				return fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options).then((response) => {
-					const contentType = response.headers.get('Content-Type');
-					const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
-					
-					if (response.status === 201) {
-						if (mimeType === 'application/json') {
-							return response.json() as any;
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				if (response.status === 400) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
 						}
-						throw response;
-					}
-					if (response.status === 401) {
-						return response;
 					}
 					throw response;
-				});
+				}
+				if (response.status === 401) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 403) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 404) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 409) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 422) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 500) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				/* Catch-all response */
+				if (mimeType === 'application/json') {
+					return {
+						status: response.status,
+						contentType: 'application/json',
+						body: await response.json() as Api.ChessMatchResultDto,
+					}
+				}
+				throw response;
 			};
 		},
 		/**
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		competitionControllerRunCompetition(options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<Response> {
+		competitionControllerRunCompetition(options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<CompetitionsApi.CompetitionControllerRunCompetitionResponse> {
 			const localVarFetchArgs = CompetitionsApiFetchParamCreator(configuration).competitionControllerRunCompetition(options);
-			return (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
-				return fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options).then((response) => {
-					const contentType = response.headers.get('Content-Type');
-					const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
-					
-					if (response.status === 401) {
-						return response;
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				if (response.status === 400) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
 					}
 					throw response;
-				});
+				}
+				if (response.status === 401) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 403) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 404) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 409) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 422) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 500) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				throw response;
 			};
 		},
 		/**
@@ -1238,24 +2786,92 @@ export const CompetitionsApiFp = function(configuration?: Configuration) {
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		competitionControllerSubmitChessAgent(request: Api.CompetitionSubmissionDto.MultipartFormData | undefined, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<Api.TerminalDto[]> {
+		competitionControllerSubmitChessAgent(request: Api.CompetitionSubmissionDto.MultipartFormData | undefined, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<CompetitionsApi.CompetitionControllerSubmitChessAgentResponse> {
 			const localVarFetchArgs = CompetitionsApiFetchParamCreator(configuration).competitionControllerSubmitChessAgent(request, options);
-			return (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
-				return fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options).then((response) => {
-					const contentType = response.headers.get('Content-Type');
-					const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
-					
-					if (response.status === 201) {
-						if (mimeType === 'application/json') {
-							return response.json() as any;
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				if (response.status === 400) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
 						}
-						throw response;
-					}
-					if (response.status === 401) {
-						return response;
 					}
 					throw response;
-				});
+				}
+				if (response.status === 401) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 403) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 404) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 409) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 422) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 500) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				/* Catch-all response */
+				if (mimeType === 'application/json') {
+					return {
+						status: response.status,
+						contentType: 'application/json',
+						body: await response.json() as Api.TerminalDto[],
+					}
+				}
+				throw response;
 			};
 		},
 	}
@@ -1265,9 +2881,76 @@ export const CompetitionsApiFp = function(configuration?: Configuration) {
  * CompetitionsApi - factory interface
  * @export
  */
-export const CompetitionsApiFactory: FactoryFunction<CompetitionsApi> = function (configuration?: Configuration, basePath?: string, fetch?: FetchAPI) {
+export const CompetitionsApiFactory: FactoryFunction<CompetitionsApiInterface> = function (configuration?: Configuration, basePath?: string, fetch?: FetchAPI) {
 	return new CompetitionsApi(configuration, basePath, fetch);
 };
+
+/**
+ * CompetitionsApi - interface
+ * @export
+ * @interface CompetitionsApi
+ */
+export interface CompetitionsApiInterface {
+	/**
+	 * @param {Api.MatchSearchRequestDto} request
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	competitionControllerFindChessMatchResult(request: Api.MatchSearchRequestDto, options?: RequestInit): Promise<CompetitionsApi.CompetitionControllerFindChessMatchResultResponse>
+
+	/**
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	competitionControllerGetChessLeaderboard(options?: RequestInit): Promise<CompetitionsApi.CompetitionControllerGetChessLeaderboardResponse>
+
+	/**
+	 * @param {string} id
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	competitionControllerGetChessMatchResult(id: string, options?: RequestInit): Promise<CompetitionsApi.CompetitionControllerGetChessMatchResultResponse>
+
+	/**
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	competitionControllerGetLatestChessCompetitionReport(options?: RequestInit): Promise<CompetitionsApi.CompetitionControllerGetLatestChessCompetitionReportResponse>
+
+	/**
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	competitionControllerListChessAgents(options?: RequestInit): Promise<CompetitionsApi.CompetitionControllerListChessAgentsResponse>
+
+	/**
+	 * @param {Api.ChessMoveRequestDto} request
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	competitionControllerRequestChessMove(request: Api.ChessMoveRequestDto, options?: RequestInit): Promise<CompetitionsApi.CompetitionControllerRequestChessMoveResponse>
+
+	/**
+	 * @param {Api.ChessMatchRequestDto} request
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	competitionControllerRunChessMatch(request: Api.ChessMatchRequestDto, options?: RequestInit): Promise<CompetitionsApi.CompetitionControllerRunChessMatchResponse>
+
+	/**
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	competitionControllerRunCompetition(options?: RequestInit): Promise<CompetitionsApi.CompetitionControllerRunCompetitionResponse>
+
+	/**
+	 * @param {Api.CompetitionSubmissionDto.MultipartFormData} [request]
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	competitionControllerSubmitChessAgent(request: Api.CompetitionSubmissionDto.MultipartFormData | undefined, options?: RequestInit): Promise<CompetitionsApi.CompetitionControllerSubmitChessAgentResponse>
+
+}
 
 /**
  * CompetitionsApi - object-oriented interface
@@ -1275,7 +2958,7 @@ export const CompetitionsApiFactory: FactoryFunction<CompetitionsApi> = function
  * @class CompetitionsApi
  * @extends {BaseAPI}
  */
-export class CompetitionsApi extends BaseAPI {
+export class CompetitionsApi extends BaseAPI implements CompetitionsApiInterface {
 	/**
 	 * @param {Api.MatchSearchRequestDto} request
 	 * @param {RequestInit} [options] Override http request option.
@@ -1354,6 +3037,75 @@ export class CompetitionsApi extends BaseAPI {
 	}
 
 }
+export namespace ContentApi {
+	export type ContentControllerCreateEmptyCourseResponse =
+		| ContentControllerCreateEmptyCourse400Response
+		| ContentControllerCreateEmptyCourse401Response
+		| ContentControllerCreateEmptyCourse403Response
+		| ContentControllerCreateEmptyCourse404Response
+		| ContentControllerCreateEmptyCourse409Response
+		| ContentControllerCreateEmptyCourse422Response
+		| ContentControllerCreateEmptyCourse500Response
+		| ContentControllerCreateEmptyCourseDefaultResponse
+	
+	export interface ContentControllerCreateEmptyCourse400Response {
+		status: 400
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface ContentControllerCreateEmptyCourse401Response {
+		status: 401
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface ContentControllerCreateEmptyCourse403Response {
+		status: 403
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface ContentControllerCreateEmptyCourse404Response {
+		status: 404
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface ContentControllerCreateEmptyCourse409Response {
+		status: 409
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface ContentControllerCreateEmptyCourse422Response {
+		status: 422
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface ContentControllerCreateEmptyCourse500Response {
+		status: 500
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface ContentControllerCreateEmptyCourseDefaultResponse {
+		status: number
+		contentType: 'application/json'
+		body: Api.CourseEntity
+		headers?: undefined
+	}
+	
+}
+
 /**
  * ContentApi - fetch parameter creator
  * @export
@@ -1365,6 +3117,7 @@ export const ContentApiFetchParamCreator = function (configuration?: Configurati
 		 * @throws {RequiredError}
 		 */
 		contentControllerCreateEmptyCourse(options: RequestInit = {}): FetchArgs {
+
 			let localVarPath = `/content/course/create`;
 			const localVarPathQueryStart = localVarPath.indexOf("?");
 			const localVarRequestOptions: RequestInit = Object.assign({ method: 'POST' }, options);
@@ -1408,24 +3161,92 @@ export const ContentApiFp = function(configuration?: Configuration) {
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		contentControllerCreateEmptyCourse(options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<Api.CourseEntity> {
+		contentControllerCreateEmptyCourse(options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<ContentApi.ContentControllerCreateEmptyCourseResponse> {
 			const localVarFetchArgs = ContentApiFetchParamCreator(configuration).contentControllerCreateEmptyCourse(options);
-			return (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
-				return fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options).then((response) => {
-					const contentType = response.headers.get('Content-Type');
-					const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
-					
-					if (response.status === 201) {
-						if (mimeType === 'application/json') {
-							return response.json() as any;
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				if (response.status === 400) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
 						}
-						throw response;
-					}
-					if (response.status === 401) {
-						return response;
 					}
 					throw response;
-				});
+				}
+				if (response.status === 401) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 403) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 404) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 409) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 422) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 500) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				/* Catch-all response */
+				if (mimeType === 'application/json') {
+					return {
+						status: response.status,
+						contentType: 'application/json',
+						body: await response.json() as Api.CourseEntity,
+					}
+				}
+				throw response;
 			};
 		},
 	}
@@ -1435,9 +3256,23 @@ export const ContentApiFp = function(configuration?: Configuration) {
  * ContentApi - factory interface
  * @export
  */
-export const ContentApiFactory: FactoryFunction<ContentApi> = function (configuration?: Configuration, basePath?: string, fetch?: FetchAPI) {
+export const ContentApiFactory: FactoryFunction<ContentApiInterface> = function (configuration?: Configuration, basePath?: string, fetch?: FetchAPI) {
 	return new ContentApi(configuration, basePath, fetch);
 };
+
+/**
+ * ContentApi - interface
+ * @export
+ * @interface ContentApi
+ */
+export interface ContentApiInterface {
+	/**
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	contentControllerCreateEmptyCourse(options?: RequestInit): Promise<ContentApi.ContentControllerCreateEmptyCourseResponse>
+
+}
 
 /**
  * ContentApi - object-oriented interface
@@ -1445,7 +3280,7 @@ export const ContentApiFactory: FactoryFunction<ContentApi> = function (configur
  * @class ContentApi
  * @extends {BaseAPI}
  */
-export class ContentApi extends BaseAPI {
+export class ContentApi extends BaseAPI implements ContentApiInterface {
 	/**
 	 * @param {RequestInit} [options] Override http request option.
 	 * @throws {RequiredError}
@@ -1455,6 +3290,588 @@ export class ContentApi extends BaseAPI {
 	}
 
 }
+export namespace ProjectApi {
+	export type CreateOneBaseProjectControllerProjectEntityResponse =
+		| CreateOneBaseProjectControllerProjectEntity201Response
+		| CreateOneBaseProjectControllerProjectEntity400Response
+		| CreateOneBaseProjectControllerProjectEntity401Response
+		| CreateOneBaseProjectControllerProjectEntity403Response
+		| CreateOneBaseProjectControllerProjectEntity404Response
+		| CreateOneBaseProjectControllerProjectEntity409Response
+		| CreateOneBaseProjectControllerProjectEntity422Response
+		| CreateOneBaseProjectControllerProjectEntity500Response
+	
+	export interface CreateOneBaseProjectControllerProjectEntity201Response {
+		status: 201
+		contentType: 'application/json'
+		body: Api.ProjectEntity
+		headers?: undefined
+	}
+	
+	export interface CreateOneBaseProjectControllerProjectEntity400Response {
+		status: 400
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CreateOneBaseProjectControllerProjectEntity401Response {
+		status: 401
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CreateOneBaseProjectControllerProjectEntity403Response {
+		status: 403
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CreateOneBaseProjectControllerProjectEntity404Response {
+		status: 404
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CreateOneBaseProjectControllerProjectEntity409Response {
+		status: 409
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CreateOneBaseProjectControllerProjectEntity422Response {
+		status: 422
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CreateOneBaseProjectControllerProjectEntity500Response {
+		status: 500
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export type DeleteOneBaseProjectControllerProjectEntityResponse =
+		| DeleteOneBaseProjectControllerProjectEntity200Response
+		| DeleteOneBaseProjectControllerProjectEntity400Response
+		| DeleteOneBaseProjectControllerProjectEntity401Response
+		| DeleteOneBaseProjectControllerProjectEntity403Response
+		| DeleteOneBaseProjectControllerProjectEntity404Response
+		| DeleteOneBaseProjectControllerProjectEntity409Response
+		| DeleteOneBaseProjectControllerProjectEntity422Response
+		| DeleteOneBaseProjectControllerProjectEntity500Response
+	
+	export interface DeleteOneBaseProjectControllerProjectEntity200Response {
+		status: 200
+		body?: undefined
+		headers?: undefined
+	}
+	
+	export interface DeleteOneBaseProjectControllerProjectEntity400Response {
+		status: 400
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface DeleteOneBaseProjectControllerProjectEntity401Response {
+		status: 401
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface DeleteOneBaseProjectControllerProjectEntity403Response {
+		status: 403
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface DeleteOneBaseProjectControllerProjectEntity404Response {
+		status: 404
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface DeleteOneBaseProjectControllerProjectEntity409Response {
+		status: 409
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface DeleteOneBaseProjectControllerProjectEntity422Response {
+		status: 422
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface DeleteOneBaseProjectControllerProjectEntity500Response {
+		status: 500
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface GetManyBaseProjectControllerProjectEntityParameters {
+		/**
+		 * @description <p>Selects resource fields. <a href="https://github.com/nestjsx/crud/wiki/Requests#select" target="_blank">Docs</a></p>
+		 * @type {string[]}
+		 */
+		fields?: string[]
+		/**
+		 * @description <p>Adds search condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#search" target="_blank">Docs</a></p>
+		 * @type {string}
+		 */
+		s?: string
+		/**
+		 * @description <p>Adds filter condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#filter" target="_blank">Docs</a></p>
+		 * @type {string[]}
+		 */
+		filter?: string[]
+		/**
+		 * @description <p>Adds OR condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#or" target="_blank">Docs</a></p>
+		 * @type {string[]}
+		 */
+		or?: string[]
+		/**
+		 * @description <p>Adds sort by field. <a href="https://github.com/nestjsx/crud/wiki/Requests#sort" target="_blank">Docs</a></p>
+		 * @type {string[]}
+		 */
+		sort?: string[]
+		/**
+		 * @description <p>Adds relational resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#join" target="_blank">Docs</a></p>
+		 * @type {string[]}
+		 */
+		join?: string[]
+		/**
+		 * @description <p>Limit amount of resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#limit" target="_blank">Docs</a></p>
+		 * @type {number}
+		 */
+		limit?: number
+		/**
+		 * @description <p>Offset amount of resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#offset" target="_blank">Docs</a></p>
+		 * @type {number}
+		 */
+		offset?: number
+		/**
+		 * @description <p>Page portion of resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#page" target="_blank">Docs</a></p>
+		 * @type {number}
+		 */
+		page?: number
+		/**
+		 * @description <p>Reset cache (if was enabled). <a href="https://github.com/nestjsx/crud/wiki/Requests#cache" target="_blank">Docs</a></p>
+		 * @type {number}
+		 * minimum: 0
+		 * maximum: 1
+		 */
+		cache?: number
+	}
+	
+	export type GetManyBaseProjectControllerProjectEntityResponse =
+		| GetManyBaseProjectControllerProjectEntity200Response
+		| GetManyBaseProjectControllerProjectEntity400Response
+		| GetManyBaseProjectControllerProjectEntity401Response
+		| GetManyBaseProjectControllerProjectEntity403Response
+		| GetManyBaseProjectControllerProjectEntity404Response
+		| GetManyBaseProjectControllerProjectEntity409Response
+		| GetManyBaseProjectControllerProjectEntity422Response
+		| GetManyBaseProjectControllerProjectEntity500Response
+	
+	export interface GetManyBaseProjectControllerProjectEntity200Response {
+		status: 200
+		contentType: 'application/json'
+		body: Api.GetManyProjectEntityResponseDto | Api.ProjectEntity[]
+		headers?: undefined
+	}
+	
+	export interface GetManyBaseProjectControllerProjectEntity400Response {
+		status: 400
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface GetManyBaseProjectControllerProjectEntity401Response {
+		status: 401
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface GetManyBaseProjectControllerProjectEntity403Response {
+		status: 403
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface GetManyBaseProjectControllerProjectEntity404Response {
+		status: 404
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface GetManyBaseProjectControllerProjectEntity409Response {
+		status: 409
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface GetManyBaseProjectControllerProjectEntity422Response {
+		status: 422
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface GetManyBaseProjectControllerProjectEntity500Response {
+		status: 500
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface GetOneBaseProjectControllerProjectEntityParameters {
+		id: string
+		/**
+		 * @description <p>Selects resource fields. <a href="https://github.com/nestjsx/crud/wiki/Requests#select" target="_blank">Docs</a></p>
+		 * @type {string[]}
+		 */
+		fields?: string[]
+		/**
+		 * @description <p>Adds relational resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#join" target="_blank">Docs</a></p>
+		 * @type {string[]}
+		 */
+		join?: string[]
+		/**
+		 * @description <p>Reset cache (if was enabled). <a href="https://github.com/nestjsx/crud/wiki/Requests#cache" target="_blank">Docs</a></p>
+		 * @type {number}
+		 * minimum: 0
+		 * maximum: 1
+		 */
+		cache?: number
+	}
+	
+	export type GetOneBaseProjectControllerProjectEntityResponse =
+		| GetOneBaseProjectControllerProjectEntity200Response
+		| GetOneBaseProjectControllerProjectEntity400Response
+		| GetOneBaseProjectControllerProjectEntity401Response
+		| GetOneBaseProjectControllerProjectEntity403Response
+		| GetOneBaseProjectControllerProjectEntity404Response
+		| GetOneBaseProjectControllerProjectEntity409Response
+		| GetOneBaseProjectControllerProjectEntity422Response
+		| GetOneBaseProjectControllerProjectEntity500Response
+	
+	export interface GetOneBaseProjectControllerProjectEntity200Response {
+		status: 200
+		contentType: 'application/json'
+		body: Api.ProjectEntity
+		headers?: undefined
+	}
+	
+	export interface GetOneBaseProjectControllerProjectEntity400Response {
+		status: 400
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface GetOneBaseProjectControllerProjectEntity401Response {
+		status: 401
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface GetOneBaseProjectControllerProjectEntity403Response {
+		status: 403
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface GetOneBaseProjectControllerProjectEntity404Response {
+		status: 404
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface GetOneBaseProjectControllerProjectEntity409Response {
+		status: 409
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface GetOneBaseProjectControllerProjectEntity422Response {
+		status: 422
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface GetOneBaseProjectControllerProjectEntity500Response {
+		status: 500
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export type ProjectControllerAddEditorResponse =
+		| ProjectControllerAddEditor400Response
+		| ProjectControllerAddEditor401Response
+		| ProjectControllerAddEditor403Response
+		| ProjectControllerAddEditor404Response
+		| ProjectControllerAddEditor409Response
+		| ProjectControllerAddEditor422Response
+		| ProjectControllerAddEditor500Response
+	
+	export interface ProjectControllerAddEditor400Response {
+		status: 400
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface ProjectControllerAddEditor401Response {
+		status: 401
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface ProjectControllerAddEditor403Response {
+		status: 403
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface ProjectControllerAddEditor404Response {
+		status: 404
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface ProjectControllerAddEditor409Response {
+		status: 409
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface ProjectControllerAddEditor422Response {
+		status: 422
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface ProjectControllerAddEditor500Response {
+		status: 500
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export type ProjectControllerRemoveEditorResponse =
+		| ProjectControllerRemoveEditor400Response
+		| ProjectControllerRemoveEditor401Response
+		| ProjectControllerRemoveEditor403Response
+		| ProjectControllerRemoveEditor404Response
+		| ProjectControllerRemoveEditor409Response
+		| ProjectControllerRemoveEditor422Response
+		| ProjectControllerRemoveEditor500Response
+	
+	export interface ProjectControllerRemoveEditor400Response {
+		status: 400
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface ProjectControllerRemoveEditor401Response {
+		status: 401
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface ProjectControllerRemoveEditor403Response {
+		status: 403
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface ProjectControllerRemoveEditor404Response {
+		status: 404
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface ProjectControllerRemoveEditor409Response {
+		status: 409
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface ProjectControllerRemoveEditor422Response {
+		status: 422
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface ProjectControllerRemoveEditor500Response {
+		status: 500
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export type ProjectControllerSwitchOwnerResponse =
+		| ProjectControllerSwitchOwner400Response
+		| ProjectControllerSwitchOwner401Response
+		| ProjectControllerSwitchOwner403Response
+		| ProjectControllerSwitchOwner404Response
+		| ProjectControllerSwitchOwner409Response
+		| ProjectControllerSwitchOwner422Response
+		| ProjectControllerSwitchOwner500Response
+	
+	export interface ProjectControllerSwitchOwner400Response {
+		status: 400
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface ProjectControllerSwitchOwner401Response {
+		status: 401
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface ProjectControllerSwitchOwner403Response {
+		status: 403
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface ProjectControllerSwitchOwner404Response {
+		status: 404
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface ProjectControllerSwitchOwner409Response {
+		status: 409
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface ProjectControllerSwitchOwner422Response {
+		status: 422
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface ProjectControllerSwitchOwner500Response {
+		status: 500
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export type UpdateOneBaseProjectControllerProjectEntityResponse =
+		| UpdateOneBaseProjectControllerProjectEntity200Response
+		| UpdateOneBaseProjectControllerProjectEntity400Response
+		| UpdateOneBaseProjectControllerProjectEntity401Response
+		| UpdateOneBaseProjectControllerProjectEntity403Response
+		| UpdateOneBaseProjectControllerProjectEntity404Response
+		| UpdateOneBaseProjectControllerProjectEntity409Response
+		| UpdateOneBaseProjectControllerProjectEntity422Response
+		| UpdateOneBaseProjectControllerProjectEntity500Response
+	
+	export interface UpdateOneBaseProjectControllerProjectEntity200Response {
+		status: 200
+		contentType: 'application/json'
+		body: Api.ProjectEntity
+		headers?: undefined
+	}
+	
+	export interface UpdateOneBaseProjectControllerProjectEntity400Response {
+		status: 400
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface UpdateOneBaseProjectControllerProjectEntity401Response {
+		status: 401
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface UpdateOneBaseProjectControllerProjectEntity403Response {
+		status: 403
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface UpdateOneBaseProjectControllerProjectEntity404Response {
+		status: 404
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface UpdateOneBaseProjectControllerProjectEntity409Response {
+		status: 409
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface UpdateOneBaseProjectControllerProjectEntity422Response {
+		status: 422
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface UpdateOneBaseProjectControllerProjectEntity500Response {
+		status: 500
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+}
+
 /**
  * ProjectApi - fetch parameter creator
  * @export
@@ -1472,6 +3889,7 @@ export const ProjectApiFetchParamCreator = function (configuration?: Configurati
 			if (request === null || request === undefined) {
 				throw new RequiredError('request', 'Required parameter request was null or undefined when calling createOneBaseProjectControllerProjectEntity.');
 			}
+
 			let localVarPath = `/project`;
 			const localVarPathQueryStart = localVarPath.indexOf("?");
 			const localVarRequestOptions: RequestInit = Object.assign({ method: 'POST' }, options);
@@ -1519,6 +3937,7 @@ export const ProjectApiFetchParamCreator = function (configuration?: Configurati
 			if (id === null || id === undefined) {
 				throw new RequiredError('id', 'Required parameter id was null or undefined when calling deleteOneBaseProjectControllerProjectEntity.');
 			}
+
 			let localVarPath = `/project/{id}`
 				.replace('{id}', encodeURIComponent(String(id)));
 			const localVarPathQueryStart = localVarPath.indexOf("?");
@@ -1565,7 +3984,8 @@ export const ProjectApiFetchParamCreator = function (configuration?: Configurati
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		getManyBaseProjectControllerProjectEntity(fields: string[] | undefined, s: string | undefined, filter: string[] | undefined, or: string[] | undefined, sort: string[] | undefined, join: string[] | undefined, limit: number | undefined, offset: number | undefined, page: number | undefined, cache: number | undefined, options: RequestInit = {}): FetchArgs {
+		getManyBaseProjectControllerProjectEntity(__params: ProjectApi.GetManyBaseProjectControllerProjectEntityParameters, options: RequestInit = {}): FetchArgs {
+
 			let localVarPath = `/project`;
 			const localVarPathQueryStart = localVarPath.indexOf("?");
 			const localVarRequestOptions: RequestInit = Object.assign({ method: 'GET' }, options);
@@ -1585,65 +4005,65 @@ export const ProjectApiFetchParamCreator = function (configuration?: Configurati
 					localVarHeaderParameter.set("Authorization", "Bearer " + localVarAuthorizationValue);
 				}
 			}
-			if (fields !== undefined) {
+			if (__params.fields !== undefined) {
 				/* array form */
-				localVarQueryParameter.append('fields', fields.map(localVarArrayMapElement => escape(String(localVarArrayMapElement))).join(','));
+				localVarQueryParameter.append('fields', __params.fields.map(localVarArrayMapElement => escape(String(localVarArrayMapElement))).join(','));
 			}
 
-			if (s !== undefined) {
-				localVarQueryParameter.append('s', String(s));
+			if (__params.s !== undefined) {
+				localVarQueryParameter.append('s', String(__params.s));
 			}
 
-			if (filter !== undefined) {
+			if (__params.filter !== undefined) {
 				/* array form exploded */
-				for (const localVarArrayElement of filter) {
+				for (const localVarArrayElement of __params.filter) {
 					if (localVarArrayElement !== undefined) {
 						localVarQueryParameter.append('filter', localVarArrayElement !== null ? String(localVarArrayElement) : '');
 					}
 				}
 			}
 
-			if (or !== undefined) {
+			if (__params.or !== undefined) {
 				/* array form exploded */
-				for (const localVarArrayElement of or) {
+				for (const localVarArrayElement of __params.or) {
 					if (localVarArrayElement !== undefined) {
 						localVarQueryParameter.append('or', localVarArrayElement !== null ? String(localVarArrayElement) : '');
 					}
 				}
 			}
 
-			if (sort !== undefined) {
+			if (__params.sort !== undefined) {
 				/* array form exploded */
-				for (const localVarArrayElement of sort) {
+				for (const localVarArrayElement of __params.sort) {
 					if (localVarArrayElement !== undefined) {
 						localVarQueryParameter.append('sort', localVarArrayElement !== null ? String(localVarArrayElement) : '');
 					}
 				}
 			}
 
-			if (join !== undefined) {
+			if (__params.join !== undefined) {
 				/* array form exploded */
-				for (const localVarArrayElement of join) {
+				for (const localVarArrayElement of __params.join) {
 					if (localVarArrayElement !== undefined) {
 						localVarQueryParameter.append('join', localVarArrayElement !== null ? String(localVarArrayElement) : '');
 					}
 				}
 			}
 
-			if (limit !== undefined) {
-				localVarQueryParameter.append('limit', String(limit));
+			if (__params.limit !== undefined) {
+				localVarQueryParameter.append('limit', String(__params.limit));
 			}
 
-			if (offset !== undefined) {
-				localVarQueryParameter.append('offset', String(offset));
+			if (__params.offset !== undefined) {
+				localVarQueryParameter.append('offset', String(__params.offset));
 			}
 
-			if (page !== undefined) {
-				localVarQueryParameter.append('page', String(page));
+			if (__params.page !== undefined) {
+				localVarQueryParameter.append('page', String(__params.page));
 			}
 
-			if (cache !== undefined) {
-				localVarQueryParameter.append('cache', String(cache));
+			if (__params.cache !== undefined) {
+				localVarQueryParameter.append('cache', String(__params.cache));
 			}
 
 			localVarRequestOptions.headers = localVarHeaderParameter;
@@ -1666,13 +4086,14 @@ export const ProjectApiFetchParamCreator = function (configuration?: Configurati
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		getOneBaseProjectControllerProjectEntity(id: string, fields: string[] | undefined, join: string[] | undefined, cache: number | undefined, options: RequestInit = {}): FetchArgs {
+		getOneBaseProjectControllerProjectEntity(__params: ProjectApi.GetOneBaseProjectControllerProjectEntityParameters, options: RequestInit = {}): FetchArgs {
 			// verify required parameter 'id' is not null or undefined
-			if (id === null || id === undefined) {
+			if (__params.id === null || __params.id === undefined) {
 				throw new RequiredError('id', 'Required parameter id was null or undefined when calling getOneBaseProjectControllerProjectEntity.');
 			}
+
 			let localVarPath = `/project/{id}`
-				.replace('{id}', encodeURIComponent(String(id)));
+				.replace('{id}', encodeURIComponent(String(__params.id)));
 			const localVarPathQueryStart = localVarPath.indexOf("?");
 			const localVarRequestOptions: RequestInit = Object.assign({ method: 'GET' }, options);
 			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
@@ -1691,22 +4112,22 @@ export const ProjectApiFetchParamCreator = function (configuration?: Configurati
 					localVarHeaderParameter.set("Authorization", "Bearer " + localVarAuthorizationValue);
 				}
 			}
-			if (fields !== undefined) {
+			if (__params.fields !== undefined) {
 				/* array form */
-				localVarQueryParameter.append('fields', fields.map(localVarArrayMapElement => escape(String(localVarArrayMapElement))).join(','));
+				localVarQueryParameter.append('fields', __params.fields.map(localVarArrayMapElement => escape(String(localVarArrayMapElement))).join(','));
 			}
 
-			if (join !== undefined) {
+			if (__params.join !== undefined) {
 				/* array form exploded */
-				for (const localVarArrayElement of join) {
+				for (const localVarArrayElement of __params.join) {
 					if (localVarArrayElement !== undefined) {
 						localVarQueryParameter.append('join', localVarArrayElement !== null ? String(localVarArrayElement) : '');
 					}
 				}
 			}
 
-			if (cache !== undefined) {
-				localVarQueryParameter.append('cache', String(cache));
+			if (__params.cache !== undefined) {
+				localVarQueryParameter.append('cache', String(__params.cache));
 			}
 
 			localVarRequestOptions.headers = localVarHeaderParameter;
@@ -1730,6 +4151,7 @@ export const ProjectApiFetchParamCreator = function (configuration?: Configurati
 			if (request === null || request === undefined) {
 				throw new RequiredError('request', 'Required parameter request was null or undefined when calling projectControllerAddEditor.');
 			}
+
 			let localVarPath = `/project/add-editor`;
 			const localVarPathQueryStart = localVarPath.indexOf("?");
 			const localVarRequestOptions: RequestInit = Object.assign({ method: 'POST' }, options);
@@ -1776,6 +4198,7 @@ export const ProjectApiFetchParamCreator = function (configuration?: Configurati
 			if (request === null || request === undefined) {
 				throw new RequiredError('request', 'Required parameter request was null or undefined when calling projectControllerRemoveEditor.');
 			}
+
 			let localVarPath = `/project/remove-editor`;
 			const localVarPathQueryStart = localVarPath.indexOf("?");
 			const localVarRequestOptions: RequestInit = Object.assign({ method: 'POST' }, options);
@@ -1822,6 +4245,7 @@ export const ProjectApiFetchParamCreator = function (configuration?: Configurati
 			if (request === null || request === undefined) {
 				throw new RequiredError('request', 'Required parameter request was null or undefined when calling projectControllerSwitchOwner.');
 			}
+
 			let localVarPath = `/project/transfer-ownership`;
 			const localVarPathQueryStart = localVarPath.indexOf("?");
 			const localVarRequestOptions: RequestInit = Object.assign({ method: 'POST' }, options);
@@ -1874,6 +4298,7 @@ export const ProjectApiFetchParamCreator = function (configuration?: Configurati
 			if (request === null || request === undefined) {
 				throw new RequiredError('request', 'Required parameter request was null or undefined when calling updateOneBaseProjectControllerProjectEntity.');
 			}
+
 			let localVarPath = `/project/{id}`
 				.replace('{id}', encodeURIComponent(String(id)));
 			const localVarPathQueryStart = localVarPath.indexOf("?");
@@ -1926,24 +4351,94 @@ export const ProjectApiFp = function(configuration?: Configuration) {
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		createOneBaseProjectControllerProjectEntity(request: Api.ProjectEntity, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<Api.ProjectEntity> {
+		createOneBaseProjectControllerProjectEntity(request: Api.ProjectEntity, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<ProjectApi.CreateOneBaseProjectControllerProjectEntityResponse> {
 			const localVarFetchArgs = ProjectApiFetchParamCreator(configuration).createOneBaseProjectControllerProjectEntity(request, options);
-			return (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
-				return fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options).then((response) => {
-					const contentType = response.headers.get('Content-Type');
-					const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
-					
-					if (response.status === 201) {
-						if (mimeType === 'application/json') {
-							return response.json() as any;
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				if (response.status === 201) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ProjectEntity,
 						}
-						throw response;
-					}
-					if (response.status === 401) {
-						return response;
 					}
 					throw response;
-				});
+				}
+				if (response.status === 400) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 401) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 403) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 404) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 409) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 422) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 500) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				throw response;
 			};
 		},
 		/**
@@ -1952,21 +4447,90 @@ export const ProjectApiFp = function(configuration?: Configuration) {
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		deleteOneBaseProjectControllerProjectEntity(id: string, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<Response> {
+		deleteOneBaseProjectControllerProjectEntity(id: string, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<ProjectApi.DeleteOneBaseProjectControllerProjectEntityResponse> {
 			const localVarFetchArgs = ProjectApiFetchParamCreator(configuration).deleteOneBaseProjectControllerProjectEntity(id, options);
-			return (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
-				return fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options).then((response) => {
-					const contentType = response.headers.get('Content-Type');
-					const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
-					
-					if (response.status === 200) {
-						return response;
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				if (response.status === 200) {
+					return {
+						status: response.status,
+						/* No content */
 					}
-					if (response.status === 401) {
-						return response;
+				}
+				if (response.status === 400) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
 					}
 					throw response;
-				});
+				}
+				if (response.status === 401) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 403) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 404) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 409) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 422) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 500) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				throw response;
 			};
 		},
 		/**
@@ -1984,24 +4548,94 @@ export const ProjectApiFp = function(configuration?: Configuration) {
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		getManyBaseProjectControllerProjectEntity(fields: string[] | undefined, s: string | undefined, filter: string[] | undefined, or: string[] | undefined, sort: string[] | undefined, join: string[] | undefined, limit: number | undefined, offset: number | undefined, page: number | undefined, cache: number | undefined, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<Api.GetManyProjectEntityResponseDto | Api.ProjectEntity[]> {
-			const localVarFetchArgs = ProjectApiFetchParamCreator(configuration).getManyBaseProjectControllerProjectEntity(fields, s, filter, or, sort, join, limit, offset, page, cache, options);
-			return (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
-				return fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options).then((response) => {
-					const contentType = response.headers.get('Content-Type');
-					const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
-					
-					if (response.status === 200) {
-						if (mimeType === 'application/json') {
-							return response.json() as any;
+		getManyBaseProjectControllerProjectEntity(__params: ProjectApi.GetManyBaseProjectControllerProjectEntityParameters, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<ProjectApi.GetManyBaseProjectControllerProjectEntityResponse> {
+			const localVarFetchArgs = ProjectApiFetchParamCreator(configuration).getManyBaseProjectControllerProjectEntity(__params, options);
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				if (response.status === 200) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.GetManyProjectEntityResponseDto | Api.ProjectEntity[],
 						}
-						throw response;
-					}
-					if (response.status === 401) {
-						return response;
 					}
 					throw response;
-				});
+				}
+				if (response.status === 400) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 401) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 403) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 404) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 409) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 422) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 500) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				throw response;
 			};
 		},
 		/**
@@ -2013,24 +4647,94 @@ export const ProjectApiFp = function(configuration?: Configuration) {
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		getOneBaseProjectControllerProjectEntity(id: string, fields: string[] | undefined, join: string[] | undefined, cache: number | undefined, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<Api.ProjectEntity> {
-			const localVarFetchArgs = ProjectApiFetchParamCreator(configuration).getOneBaseProjectControllerProjectEntity(id, fields, join, cache, options);
-			return (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
-				return fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options).then((response) => {
-					const contentType = response.headers.get('Content-Type');
-					const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
-					
-					if (response.status === 200) {
-						if (mimeType === 'application/json') {
-							return response.json() as any;
+		getOneBaseProjectControllerProjectEntity(__params: ProjectApi.GetOneBaseProjectControllerProjectEntityParameters, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<ProjectApi.GetOneBaseProjectControllerProjectEntityResponse> {
+			const localVarFetchArgs = ProjectApiFetchParamCreator(configuration).getOneBaseProjectControllerProjectEntity(__params, options);
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				if (response.status === 200) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ProjectEntity,
 						}
-						throw response;
-					}
-					if (response.status === 401) {
-						return response;
 					}
 					throw response;
-				});
+				}
+				if (response.status === 400) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 401) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 403) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 404) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 409) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 422) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 500) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				throw response;
 			};
 		},
 		/**
@@ -2038,18 +4742,84 @@ export const ProjectApiFp = function(configuration?: Configuration) {
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		projectControllerAddEditor(request: Api.EditorRequestDto, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<Response> {
+		projectControllerAddEditor(request: Api.EditorRequestDto, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<ProjectApi.ProjectControllerAddEditorResponse> {
 			const localVarFetchArgs = ProjectApiFetchParamCreator(configuration).projectControllerAddEditor(request, options);
-			return (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
-				return fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options).then((response) => {
-					const contentType = response.headers.get('Content-Type');
-					const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
-					
-					if (response.status === 401) {
-						return response;
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				if (response.status === 400) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
 					}
 					throw response;
-				});
+				}
+				if (response.status === 401) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 403) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 404) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 409) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 422) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 500) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				throw response;
 			};
 		},
 		/**
@@ -2057,18 +4827,84 @@ export const ProjectApiFp = function(configuration?: Configuration) {
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		projectControllerRemoveEditor(request: Api.EditorRequestDto, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<Response> {
+		projectControllerRemoveEditor(request: Api.EditorRequestDto, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<ProjectApi.ProjectControllerRemoveEditorResponse> {
 			const localVarFetchArgs = ProjectApiFetchParamCreator(configuration).projectControllerRemoveEditor(request, options);
-			return (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
-				return fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options).then((response) => {
-					const contentType = response.headers.get('Content-Type');
-					const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
-					
-					if (response.status === 401) {
-						return response;
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				if (response.status === 400) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
 					}
 					throw response;
-				});
+				}
+				if (response.status === 401) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 403) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 404) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 409) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 422) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 500) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				throw response;
 			};
 		},
 		/**
@@ -2076,18 +4912,84 @@ export const ProjectApiFp = function(configuration?: Configuration) {
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		projectControllerSwitchOwner(request: Api.TransferOwnershipRequestDto, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<Response> {
+		projectControllerSwitchOwner(request: Api.TransferOwnershipRequestDto, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<ProjectApi.ProjectControllerSwitchOwnerResponse> {
 			const localVarFetchArgs = ProjectApiFetchParamCreator(configuration).projectControllerSwitchOwner(request, options);
-			return (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
-				return fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options).then((response) => {
-					const contentType = response.headers.get('Content-Type');
-					const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
-					
-					if (response.status === 401) {
-						return response;
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				if (response.status === 400) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
 					}
 					throw response;
-				});
+				}
+				if (response.status === 401) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 403) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 404) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 409) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 422) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 500) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				throw response;
 			};
 		},
 		/**
@@ -2097,24 +4999,94 @@ export const ProjectApiFp = function(configuration?: Configuration) {
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		updateOneBaseProjectControllerProjectEntity(id: string, request: Api.ProjectEntity, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<Api.ProjectEntity> {
+		updateOneBaseProjectControllerProjectEntity(id: string, request: Api.ProjectEntity, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<ProjectApi.UpdateOneBaseProjectControllerProjectEntityResponse> {
 			const localVarFetchArgs = ProjectApiFetchParamCreator(configuration).updateOneBaseProjectControllerProjectEntity(id, request, options);
-			return (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
-				return fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options).then((response) => {
-					const contentType = response.headers.get('Content-Type');
-					const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
-					
-					if (response.status === 200) {
-						if (mimeType === 'application/json') {
-							return response.json() as any;
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				if (response.status === 200) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ProjectEntity,
 						}
-						throw response;
-					}
-					if (response.status === 401) {
-						return response;
 					}
 					throw response;
-				});
+				}
+				if (response.status === 400) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 401) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 403) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 404) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 409) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 422) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 500) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				throw response;
 			};
 		},
 	}
@@ -2124,9 +5096,91 @@ export const ProjectApiFp = function(configuration?: Configuration) {
  * ProjectApi - factory interface
  * @export
  */
-export const ProjectApiFactory: FactoryFunction<ProjectApi> = function (configuration?: Configuration, basePath?: string, fetch?: FetchAPI) {
+export const ProjectApiFactory: FactoryFunction<ProjectApiInterface> = function (configuration?: Configuration, basePath?: string, fetch?: FetchAPI) {
 	return new ProjectApi(configuration, basePath, fetch);
 };
+
+/**
+ * ProjectApi - interface
+ * @export
+ * @interface ProjectApi
+ */
+export interface ProjectApiInterface {
+	/**
+	 * @summary Create a single ProjectEntity
+	 * @param {Api.ProjectEntity} request
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	createOneBaseProjectControllerProjectEntity(request: Api.ProjectEntity, options?: RequestInit): Promise<ProjectApi.CreateOneBaseProjectControllerProjectEntityResponse>
+
+	/**
+	 * @summary Delete a single ProjectEntity
+	 * @param {string} id
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	deleteOneBaseProjectControllerProjectEntity(id: string, options?: RequestInit): Promise<ProjectApi.DeleteOneBaseProjectControllerProjectEntityResponse>
+
+	/**
+	 * @summary Retrieve multiple ProjectEntities
+	 * @param {string[]} [fields] <p>Selects resource fields. <a href="https://github.com/nestjsx/crud/wiki/Requests#select" target="_blank">Docs</a></p>
+	 * @param {string} [s] <p>Adds search condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#search" target="_blank">Docs</a></p>
+	 * @param {string[]} [filter] <p>Adds filter condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#filter" target="_blank">Docs</a></p>
+	 * @param {string[]} [or] <p>Adds OR condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#or" target="_blank">Docs</a></p>
+	 * @param {string[]} [sort] <p>Adds sort by field. <a href="https://github.com/nestjsx/crud/wiki/Requests#sort" target="_blank">Docs</a></p>
+	 * @param {string[]} [join] <p>Adds relational resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#join" target="_blank">Docs</a></p>
+	 * @param {number} [limit] <p>Limit amount of resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#limit" target="_blank">Docs</a></p>
+	 * @param {number} [offset] <p>Offset amount of resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#offset" target="_blank">Docs</a></p>
+	 * @param {number} [page] <p>Page portion of resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#page" target="_blank">Docs</a></p>
+	 * @param {number} [cache] <p>Reset cache (if was enabled). <a href="https://github.com/nestjsx/crud/wiki/Requests#cache" target="_blank">Docs</a></p>
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	getManyBaseProjectControllerProjectEntity(__params: ProjectApi.GetManyBaseProjectControllerProjectEntityParameters, options?: RequestInit): Promise<ProjectApi.GetManyBaseProjectControllerProjectEntityResponse>
+
+	/**
+	 * @summary Retrieve a single ProjectEntity
+	 * @param {string} id
+	 * @param {string[]} [fields] <p>Selects resource fields. <a href="https://github.com/nestjsx/crud/wiki/Requests#select" target="_blank">Docs</a></p>
+	 * @param {string[]} [join] <p>Adds relational resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#join" target="_blank">Docs</a></p>
+	 * @param {number} [cache] <p>Reset cache (if was enabled). <a href="https://github.com/nestjsx/crud/wiki/Requests#cache" target="_blank">Docs</a></p>
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	getOneBaseProjectControllerProjectEntity(__params: ProjectApi.GetOneBaseProjectControllerProjectEntityParameters, options?: RequestInit): Promise<ProjectApi.GetOneBaseProjectControllerProjectEntityResponse>
+
+	/**
+	 * @param {Api.EditorRequestDto} request
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	projectControllerAddEditor(request: Api.EditorRequestDto, options?: RequestInit): Promise<ProjectApi.ProjectControllerAddEditorResponse>
+
+	/**
+	 * @param {Api.EditorRequestDto} request
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	projectControllerRemoveEditor(request: Api.EditorRequestDto, options?: RequestInit): Promise<ProjectApi.ProjectControllerRemoveEditorResponse>
+
+	/**
+	 * @param {Api.TransferOwnershipRequestDto} request
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	projectControllerSwitchOwner(request: Api.TransferOwnershipRequestDto, options?: RequestInit): Promise<ProjectApi.ProjectControllerSwitchOwnerResponse>
+
+	/**
+	 * @summary Update a single ProjectEntity
+	 * @param {string} id
+	 * @param {Api.ProjectEntity} request
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	updateOneBaseProjectControllerProjectEntity(id: string, request: Api.ProjectEntity, options?: RequestInit): Promise<ProjectApi.UpdateOneBaseProjectControllerProjectEntityResponse>
+
+}
 
 /**
  * ProjectApi - object-oriented interface
@@ -2134,7 +5188,7 @@ export const ProjectApiFactory: FactoryFunction<ProjectApi> = function (configur
  * @class ProjectApi
  * @extends {BaseAPI}
  */
-export class ProjectApi extends BaseAPI {
+export class ProjectApi extends BaseAPI implements ProjectApiInterface {
 	/**
 	 * @summary Create a single ProjectEntity
 	 * @param {Api.ProjectEntity} request
@@ -2170,8 +5224,8 @@ export class ProjectApi extends BaseAPI {
 	 * @param {RequestInit} [options] Override http request option.
 	 * @throws {RequiredError}
 	 */
-	public getManyBaseProjectControllerProjectEntity(fields: string[] | undefined, s: string | undefined, filter: string[] | undefined, or: string[] | undefined, sort: string[] | undefined, join: string[] | undefined, limit: number | undefined, offset: number | undefined, page: number | undefined, cache: number | undefined, options?: RequestInit) {
-		return ProjectApiFp(this.configuration).getManyBaseProjectControllerProjectEntity(fields, s, filter, or, sort, join, limit, offset, page, cache, options)(this.fetch, this.basePath);
+	public getManyBaseProjectControllerProjectEntity(__params: ProjectApi.GetManyBaseProjectControllerProjectEntityParameters, options?: RequestInit) {
+		return ProjectApiFp(this.configuration).getManyBaseProjectControllerProjectEntity(__params, options)(this.fetch, this.basePath);
 	}
 
 	/**
@@ -2183,8 +5237,8 @@ export class ProjectApi extends BaseAPI {
 	 * @param {RequestInit} [options] Override http request option.
 	 * @throws {RequiredError}
 	 */
-	public getOneBaseProjectControllerProjectEntity(id: string, fields: string[] | undefined, join: string[] | undefined, cache: number | undefined, options?: RequestInit) {
-		return ProjectApiFp(this.configuration).getOneBaseProjectControllerProjectEntity(id, fields, join, cache, options)(this.fetch, this.basePath);
+	public getOneBaseProjectControllerProjectEntity(__params: ProjectApi.GetOneBaseProjectControllerProjectEntityParameters, options?: RequestInit) {
+		return ProjectApiFp(this.configuration).getOneBaseProjectControllerProjectEntity(__params, options)(this.fetch, this.basePath);
 	}
 
 	/**
@@ -2226,6 +5280,348 @@ export class ProjectApi extends BaseAPI {
 	}
 
 }
+export namespace ProjectVersionApi {
+	export type CreateOneBaseProjectVersionControllerProjectVersionEntityResponse =
+		| CreateOneBaseProjectVersionControllerProjectVersionEntity201Response
+		| CreateOneBaseProjectVersionControllerProjectVersionEntity400Response
+		| CreateOneBaseProjectVersionControllerProjectVersionEntity401Response
+		| CreateOneBaseProjectVersionControllerProjectVersionEntity403Response
+		| CreateOneBaseProjectVersionControllerProjectVersionEntity404Response
+		| CreateOneBaseProjectVersionControllerProjectVersionEntity409Response
+		| CreateOneBaseProjectVersionControllerProjectVersionEntity422Response
+		| CreateOneBaseProjectVersionControllerProjectVersionEntity500Response
+	
+	export interface CreateOneBaseProjectVersionControllerProjectVersionEntity201Response {
+		status: 201
+		contentType: 'application/json'
+		body: Api.ProjectVersionEntity
+		headers?: undefined
+	}
+	
+	export interface CreateOneBaseProjectVersionControllerProjectVersionEntity400Response {
+		status: 400
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CreateOneBaseProjectVersionControllerProjectVersionEntity401Response {
+		status: 401
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CreateOneBaseProjectVersionControllerProjectVersionEntity403Response {
+		status: 403
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CreateOneBaseProjectVersionControllerProjectVersionEntity404Response {
+		status: 404
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CreateOneBaseProjectVersionControllerProjectVersionEntity409Response {
+		status: 409
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CreateOneBaseProjectVersionControllerProjectVersionEntity422Response {
+		status: 422
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CreateOneBaseProjectVersionControllerProjectVersionEntity500Response {
+		status: 500
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export type DeleteOneBaseProjectVersionControllerProjectVersionEntityResponse =
+		| DeleteOneBaseProjectVersionControllerProjectVersionEntity200Response
+		| DeleteOneBaseProjectVersionControllerProjectVersionEntity400Response
+		| DeleteOneBaseProjectVersionControllerProjectVersionEntity401Response
+		| DeleteOneBaseProjectVersionControllerProjectVersionEntity403Response
+		| DeleteOneBaseProjectVersionControllerProjectVersionEntity404Response
+		| DeleteOneBaseProjectVersionControllerProjectVersionEntity409Response
+		| DeleteOneBaseProjectVersionControllerProjectVersionEntity422Response
+		| DeleteOneBaseProjectVersionControllerProjectVersionEntity500Response
+	
+	export interface DeleteOneBaseProjectVersionControllerProjectVersionEntity200Response {
+		status: 200
+		body?: undefined
+		headers?: undefined
+	}
+	
+	export interface DeleteOneBaseProjectVersionControllerProjectVersionEntity400Response {
+		status: 400
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface DeleteOneBaseProjectVersionControllerProjectVersionEntity401Response {
+		status: 401
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface DeleteOneBaseProjectVersionControllerProjectVersionEntity403Response {
+		status: 403
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface DeleteOneBaseProjectVersionControllerProjectVersionEntity404Response {
+		status: 404
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface DeleteOneBaseProjectVersionControllerProjectVersionEntity409Response {
+		status: 409
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface DeleteOneBaseProjectVersionControllerProjectVersionEntity422Response {
+		status: 422
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface DeleteOneBaseProjectVersionControllerProjectVersionEntity500Response {
+		status: 500
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface GetManyBaseProjectVersionControllerProjectVersionEntityParameters {
+		/**
+		 * @description <p>Selects resource fields. <a href="https://github.com/nestjsx/crud/wiki/Requests#select" target="_blank">Docs</a></p>
+		 * @type {string[]}
+		 */
+		fields?: string[]
+		/**
+		 * @description <p>Adds search condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#search" target="_blank">Docs</a></p>
+		 * @type {string}
+		 */
+		s?: string
+		/**
+		 * @description <p>Adds filter condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#filter" target="_blank">Docs</a></p>
+		 * @type {string[]}
+		 */
+		filter?: string[]
+		/**
+		 * @description <p>Adds OR condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#or" target="_blank">Docs</a></p>
+		 * @type {string[]}
+		 */
+		or?: string[]
+		/**
+		 * @description <p>Adds sort by field. <a href="https://github.com/nestjsx/crud/wiki/Requests#sort" target="_blank">Docs</a></p>
+		 * @type {string[]}
+		 */
+		sort?: string[]
+		/**
+		 * @description <p>Adds relational resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#join" target="_blank">Docs</a></p>
+		 * @type {string[]}
+		 */
+		join?: string[]
+		/**
+		 * @description <p>Limit amount of resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#limit" target="_blank">Docs</a></p>
+		 * @type {number}
+		 */
+		limit?: number
+		/**
+		 * @description <p>Offset amount of resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#offset" target="_blank">Docs</a></p>
+		 * @type {number}
+		 */
+		offset?: number
+		/**
+		 * @description <p>Page portion of resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#page" target="_blank">Docs</a></p>
+		 * @type {number}
+		 */
+		page?: number
+		/**
+		 * @description <p>Reset cache (if was enabled). <a href="https://github.com/nestjsx/crud/wiki/Requests#cache" target="_blank">Docs</a></p>
+		 * @type {number}
+		 * minimum: 0
+		 * maximum: 1
+		 */
+		cache?: number
+	}
+	
+	export type GetManyBaseProjectVersionControllerProjectVersionEntityResponse =
+		| GetManyBaseProjectVersionControllerProjectVersionEntity200Response
+		| GetManyBaseProjectVersionControllerProjectVersionEntity400Response
+		| GetManyBaseProjectVersionControllerProjectVersionEntity401Response
+		| GetManyBaseProjectVersionControllerProjectVersionEntity403Response
+		| GetManyBaseProjectVersionControllerProjectVersionEntity404Response
+		| GetManyBaseProjectVersionControllerProjectVersionEntity409Response
+		| GetManyBaseProjectVersionControllerProjectVersionEntity422Response
+		| GetManyBaseProjectVersionControllerProjectVersionEntity500Response
+	
+	export interface GetManyBaseProjectVersionControllerProjectVersionEntity200Response {
+		status: 200
+		contentType: 'application/json'
+		body: Api.GetManyProjectVersionEntityResponseDto | Api.ProjectVersionEntity[]
+		headers?: undefined
+	}
+	
+	export interface GetManyBaseProjectVersionControllerProjectVersionEntity400Response {
+		status: 400
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface GetManyBaseProjectVersionControllerProjectVersionEntity401Response {
+		status: 401
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface GetManyBaseProjectVersionControllerProjectVersionEntity403Response {
+		status: 403
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface GetManyBaseProjectVersionControllerProjectVersionEntity404Response {
+		status: 404
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface GetManyBaseProjectVersionControllerProjectVersionEntity409Response {
+		status: 409
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface GetManyBaseProjectVersionControllerProjectVersionEntity422Response {
+		status: 422
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface GetManyBaseProjectVersionControllerProjectVersionEntity500Response {
+		status: 500
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface GetOneBaseProjectVersionControllerProjectVersionEntityParameters {
+		id: string
+		/**
+		 * @description <p>Selects resource fields. <a href="https://github.com/nestjsx/crud/wiki/Requests#select" target="_blank">Docs</a></p>
+		 * @type {string[]}
+		 */
+		fields?: string[]
+		/**
+		 * @description <p>Adds relational resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#join" target="_blank">Docs</a></p>
+		 * @type {string[]}
+		 */
+		join?: string[]
+		/**
+		 * @description <p>Reset cache (if was enabled). <a href="https://github.com/nestjsx/crud/wiki/Requests#cache" target="_blank">Docs</a></p>
+		 * @type {number}
+		 * minimum: 0
+		 * maximum: 1
+		 */
+		cache?: number
+	}
+	
+	export type GetOneBaseProjectVersionControllerProjectVersionEntityResponse =
+		| GetOneBaseProjectVersionControllerProjectVersionEntity200Response
+		| GetOneBaseProjectVersionControllerProjectVersionEntity400Response
+		| GetOneBaseProjectVersionControllerProjectVersionEntity401Response
+		| GetOneBaseProjectVersionControllerProjectVersionEntity403Response
+		| GetOneBaseProjectVersionControllerProjectVersionEntity404Response
+		| GetOneBaseProjectVersionControllerProjectVersionEntity409Response
+		| GetOneBaseProjectVersionControllerProjectVersionEntity422Response
+		| GetOneBaseProjectVersionControllerProjectVersionEntity500Response
+	
+	export interface GetOneBaseProjectVersionControllerProjectVersionEntity200Response {
+		status: 200
+		contentType: 'application/json'
+		body: Api.ProjectVersionEntity
+		headers?: undefined
+	}
+	
+	export interface GetOneBaseProjectVersionControllerProjectVersionEntity400Response {
+		status: 400
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface GetOneBaseProjectVersionControllerProjectVersionEntity401Response {
+		status: 401
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface GetOneBaseProjectVersionControllerProjectVersionEntity403Response {
+		status: 403
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface GetOneBaseProjectVersionControllerProjectVersionEntity404Response {
+		status: 404
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface GetOneBaseProjectVersionControllerProjectVersionEntity409Response {
+		status: 409
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface GetOneBaseProjectVersionControllerProjectVersionEntity422Response {
+		status: 422
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface GetOneBaseProjectVersionControllerProjectVersionEntity500Response {
+		status: 500
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+}
+
 /**
  * ProjectVersionApi - fetch parameter creator
  * @export
@@ -2243,6 +5639,7 @@ export const ProjectVersionApiFetchParamCreator = function (configuration?: Conf
 			if (request === null || request === undefined) {
 				throw new RequiredError('request', 'Required parameter request was null or undefined when calling createOneBaseProjectVersionControllerProjectVersionEntity.');
 			}
+
 			let localVarPath = `/project-version`;
 			const localVarPathQueryStart = localVarPath.indexOf("?");
 			const localVarRequestOptions: RequestInit = Object.assign({ method: 'POST' }, options);
@@ -2290,6 +5687,7 @@ export const ProjectVersionApiFetchParamCreator = function (configuration?: Conf
 			if (id === null || id === undefined) {
 				throw new RequiredError('id', 'Required parameter id was null or undefined when calling deleteOneBaseProjectVersionControllerProjectVersionEntity.');
 			}
+
 			let localVarPath = `/project-version/{id}`
 				.replace('{id}', encodeURIComponent(String(id)));
 			const localVarPathQueryStart = localVarPath.indexOf("?");
@@ -2336,7 +5734,8 @@ export const ProjectVersionApiFetchParamCreator = function (configuration?: Conf
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		getManyBaseProjectVersionControllerProjectVersionEntity(fields: string[] | undefined, s: string | undefined, filter: string[] | undefined, or: string[] | undefined, sort: string[] | undefined, join: string[] | undefined, limit: number | undefined, offset: number | undefined, page: number | undefined, cache: number | undefined, options: RequestInit = {}): FetchArgs {
+		getManyBaseProjectVersionControllerProjectVersionEntity(__params: ProjectVersionApi.GetManyBaseProjectVersionControllerProjectVersionEntityParameters, options: RequestInit = {}): FetchArgs {
+
 			let localVarPath = `/project-version`;
 			const localVarPathQueryStart = localVarPath.indexOf("?");
 			const localVarRequestOptions: RequestInit = Object.assign({ method: 'GET' }, options);
@@ -2356,65 +5755,65 @@ export const ProjectVersionApiFetchParamCreator = function (configuration?: Conf
 					localVarHeaderParameter.set("Authorization", "Bearer " + localVarAuthorizationValue);
 				}
 			}
-			if (fields !== undefined) {
+			if (__params.fields !== undefined) {
 				/* array form */
-				localVarQueryParameter.append('fields', fields.map(localVarArrayMapElement => escape(String(localVarArrayMapElement))).join(','));
+				localVarQueryParameter.append('fields', __params.fields.map(localVarArrayMapElement => escape(String(localVarArrayMapElement))).join(','));
 			}
 
-			if (s !== undefined) {
-				localVarQueryParameter.append('s', String(s));
+			if (__params.s !== undefined) {
+				localVarQueryParameter.append('s', String(__params.s));
 			}
 
-			if (filter !== undefined) {
+			if (__params.filter !== undefined) {
 				/* array form exploded */
-				for (const localVarArrayElement of filter) {
+				for (const localVarArrayElement of __params.filter) {
 					if (localVarArrayElement !== undefined) {
 						localVarQueryParameter.append('filter', localVarArrayElement !== null ? String(localVarArrayElement) : '');
 					}
 				}
 			}
 
-			if (or !== undefined) {
+			if (__params.or !== undefined) {
 				/* array form exploded */
-				for (const localVarArrayElement of or) {
+				for (const localVarArrayElement of __params.or) {
 					if (localVarArrayElement !== undefined) {
 						localVarQueryParameter.append('or', localVarArrayElement !== null ? String(localVarArrayElement) : '');
 					}
 				}
 			}
 
-			if (sort !== undefined) {
+			if (__params.sort !== undefined) {
 				/* array form exploded */
-				for (const localVarArrayElement of sort) {
+				for (const localVarArrayElement of __params.sort) {
 					if (localVarArrayElement !== undefined) {
 						localVarQueryParameter.append('sort', localVarArrayElement !== null ? String(localVarArrayElement) : '');
 					}
 				}
 			}
 
-			if (join !== undefined) {
+			if (__params.join !== undefined) {
 				/* array form exploded */
-				for (const localVarArrayElement of join) {
+				for (const localVarArrayElement of __params.join) {
 					if (localVarArrayElement !== undefined) {
 						localVarQueryParameter.append('join', localVarArrayElement !== null ? String(localVarArrayElement) : '');
 					}
 				}
 			}
 
-			if (limit !== undefined) {
-				localVarQueryParameter.append('limit', String(limit));
+			if (__params.limit !== undefined) {
+				localVarQueryParameter.append('limit', String(__params.limit));
 			}
 
-			if (offset !== undefined) {
-				localVarQueryParameter.append('offset', String(offset));
+			if (__params.offset !== undefined) {
+				localVarQueryParameter.append('offset', String(__params.offset));
 			}
 
-			if (page !== undefined) {
-				localVarQueryParameter.append('page', String(page));
+			if (__params.page !== undefined) {
+				localVarQueryParameter.append('page', String(__params.page));
 			}
 
-			if (cache !== undefined) {
-				localVarQueryParameter.append('cache', String(cache));
+			if (__params.cache !== undefined) {
+				localVarQueryParameter.append('cache', String(__params.cache));
 			}
 
 			localVarRequestOptions.headers = localVarHeaderParameter;
@@ -2437,13 +5836,14 @@ export const ProjectVersionApiFetchParamCreator = function (configuration?: Conf
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		getOneBaseProjectVersionControllerProjectVersionEntity(id: string, fields: string[] | undefined, join: string[] | undefined, cache: number | undefined, options: RequestInit = {}): FetchArgs {
+		getOneBaseProjectVersionControllerProjectVersionEntity(__params: ProjectVersionApi.GetOneBaseProjectVersionControllerProjectVersionEntityParameters, options: RequestInit = {}): FetchArgs {
 			// verify required parameter 'id' is not null or undefined
-			if (id === null || id === undefined) {
+			if (__params.id === null || __params.id === undefined) {
 				throw new RequiredError('id', 'Required parameter id was null or undefined when calling getOneBaseProjectVersionControllerProjectVersionEntity.');
 			}
+
 			let localVarPath = `/project-version/{id}`
-				.replace('{id}', encodeURIComponent(String(id)));
+				.replace('{id}', encodeURIComponent(String(__params.id)));
 			const localVarPathQueryStart = localVarPath.indexOf("?");
 			const localVarRequestOptions: RequestInit = Object.assign({ method: 'GET' }, options);
 			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
@@ -2462,22 +5862,22 @@ export const ProjectVersionApiFetchParamCreator = function (configuration?: Conf
 					localVarHeaderParameter.set("Authorization", "Bearer " + localVarAuthorizationValue);
 				}
 			}
-			if (fields !== undefined) {
+			if (__params.fields !== undefined) {
 				/* array form */
-				localVarQueryParameter.append('fields', fields.map(localVarArrayMapElement => escape(String(localVarArrayMapElement))).join(','));
+				localVarQueryParameter.append('fields', __params.fields.map(localVarArrayMapElement => escape(String(localVarArrayMapElement))).join(','));
 			}
 
-			if (join !== undefined) {
+			if (__params.join !== undefined) {
 				/* array form exploded */
-				for (const localVarArrayElement of join) {
+				for (const localVarArrayElement of __params.join) {
 					if (localVarArrayElement !== undefined) {
 						localVarQueryParameter.append('join', localVarArrayElement !== null ? String(localVarArrayElement) : '');
 					}
 				}
 			}
 
-			if (cache !== undefined) {
-				localVarQueryParameter.append('cache', String(cache));
+			if (__params.cache !== undefined) {
+				localVarQueryParameter.append('cache', String(__params.cache));
 			}
 
 			localVarRequestOptions.headers = localVarHeaderParameter;
@@ -2506,24 +5906,94 @@ export const ProjectVersionApiFp = function(configuration?: Configuration) {
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		createOneBaseProjectVersionControllerProjectVersionEntity(request: Api.ProjectVersionEntity, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<Api.ProjectVersionEntity> {
+		createOneBaseProjectVersionControllerProjectVersionEntity(request: Api.ProjectVersionEntity, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<ProjectVersionApi.CreateOneBaseProjectVersionControllerProjectVersionEntityResponse> {
 			const localVarFetchArgs = ProjectVersionApiFetchParamCreator(configuration).createOneBaseProjectVersionControllerProjectVersionEntity(request, options);
-			return (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
-				return fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options).then((response) => {
-					const contentType = response.headers.get('Content-Type');
-					const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
-					
-					if (response.status === 201) {
-						if (mimeType === 'application/json') {
-							return response.json() as any;
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				if (response.status === 201) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ProjectVersionEntity,
 						}
-						throw response;
-					}
-					if (response.status === 401) {
-						return response;
 					}
 					throw response;
-				});
+				}
+				if (response.status === 400) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 401) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 403) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 404) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 409) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 422) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 500) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				throw response;
 			};
 		},
 		/**
@@ -2532,21 +6002,90 @@ export const ProjectVersionApiFp = function(configuration?: Configuration) {
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		deleteOneBaseProjectVersionControllerProjectVersionEntity(id: string, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<Response> {
+		deleteOneBaseProjectVersionControllerProjectVersionEntity(id: string, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<ProjectVersionApi.DeleteOneBaseProjectVersionControllerProjectVersionEntityResponse> {
 			const localVarFetchArgs = ProjectVersionApiFetchParamCreator(configuration).deleteOneBaseProjectVersionControllerProjectVersionEntity(id, options);
-			return (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
-				return fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options).then((response) => {
-					const contentType = response.headers.get('Content-Type');
-					const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
-					
-					if (response.status === 200) {
-						return response;
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				if (response.status === 200) {
+					return {
+						status: response.status,
+						/* No content */
 					}
-					if (response.status === 401) {
-						return response;
+				}
+				if (response.status === 400) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
 					}
 					throw response;
-				});
+				}
+				if (response.status === 401) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 403) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 404) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 409) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 422) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 500) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				throw response;
 			};
 		},
 		/**
@@ -2564,24 +6103,94 @@ export const ProjectVersionApiFp = function(configuration?: Configuration) {
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		getManyBaseProjectVersionControllerProjectVersionEntity(fields: string[] | undefined, s: string | undefined, filter: string[] | undefined, or: string[] | undefined, sort: string[] | undefined, join: string[] | undefined, limit: number | undefined, offset: number | undefined, page: number | undefined, cache: number | undefined, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<Api.GetManyProjectVersionEntityResponseDto | Api.ProjectVersionEntity[]> {
-			const localVarFetchArgs = ProjectVersionApiFetchParamCreator(configuration).getManyBaseProjectVersionControllerProjectVersionEntity(fields, s, filter, or, sort, join, limit, offset, page, cache, options);
-			return (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
-				return fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options).then((response) => {
-					const contentType = response.headers.get('Content-Type');
-					const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
-					
-					if (response.status === 200) {
-						if (mimeType === 'application/json') {
-							return response.json() as any;
+		getManyBaseProjectVersionControllerProjectVersionEntity(__params: ProjectVersionApi.GetManyBaseProjectVersionControllerProjectVersionEntityParameters, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<ProjectVersionApi.GetManyBaseProjectVersionControllerProjectVersionEntityResponse> {
+			const localVarFetchArgs = ProjectVersionApiFetchParamCreator(configuration).getManyBaseProjectVersionControllerProjectVersionEntity(__params, options);
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				if (response.status === 200) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.GetManyProjectVersionEntityResponseDto | Api.ProjectVersionEntity[],
 						}
-						throw response;
-					}
-					if (response.status === 401) {
-						return response;
 					}
 					throw response;
-				});
+				}
+				if (response.status === 400) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 401) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 403) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 404) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 409) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 422) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 500) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				throw response;
 			};
 		},
 		/**
@@ -2593,24 +6202,94 @@ export const ProjectVersionApiFp = function(configuration?: Configuration) {
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		getOneBaseProjectVersionControllerProjectVersionEntity(id: string, fields: string[] | undefined, join: string[] | undefined, cache: number | undefined, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<Api.ProjectVersionEntity> {
-			const localVarFetchArgs = ProjectVersionApiFetchParamCreator(configuration).getOneBaseProjectVersionControllerProjectVersionEntity(id, fields, join, cache, options);
-			return (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
-				return fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options).then((response) => {
-					const contentType = response.headers.get('Content-Type');
-					const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
-					
-					if (response.status === 200) {
-						if (mimeType === 'application/json') {
-							return response.json() as any;
+		getOneBaseProjectVersionControllerProjectVersionEntity(__params: ProjectVersionApi.GetOneBaseProjectVersionControllerProjectVersionEntityParameters, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<ProjectVersionApi.GetOneBaseProjectVersionControllerProjectVersionEntityResponse> {
+			const localVarFetchArgs = ProjectVersionApiFetchParamCreator(configuration).getOneBaseProjectVersionControllerProjectVersionEntity(__params, options);
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				if (response.status === 200) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ProjectVersionEntity,
 						}
-						throw response;
-					}
-					if (response.status === 401) {
-						return response;
 					}
 					throw response;
-				});
+				}
+				if (response.status === 400) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 401) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 403) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 404) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 409) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 422) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 500) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				throw response;
 			};
 		},
 	}
@@ -2620,9 +6299,61 @@ export const ProjectVersionApiFp = function(configuration?: Configuration) {
  * ProjectVersionApi - factory interface
  * @export
  */
-export const ProjectVersionApiFactory: FactoryFunction<ProjectVersionApi> = function (configuration?: Configuration, basePath?: string, fetch?: FetchAPI) {
+export const ProjectVersionApiFactory: FactoryFunction<ProjectVersionApiInterface> = function (configuration?: Configuration, basePath?: string, fetch?: FetchAPI) {
 	return new ProjectVersionApi(configuration, basePath, fetch);
 };
+
+/**
+ * ProjectVersionApi - interface
+ * @export
+ * @interface ProjectVersionApi
+ */
+export interface ProjectVersionApiInterface {
+	/**
+	 * @summary Create a single ProjectVersionEntity
+	 * @param {Api.ProjectVersionEntity} request
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	createOneBaseProjectVersionControllerProjectVersionEntity(request: Api.ProjectVersionEntity, options?: RequestInit): Promise<ProjectVersionApi.CreateOneBaseProjectVersionControllerProjectVersionEntityResponse>
+
+	/**
+	 * @summary Delete a single ProjectVersionEntity
+	 * @param {string} id
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	deleteOneBaseProjectVersionControllerProjectVersionEntity(id: string, options?: RequestInit): Promise<ProjectVersionApi.DeleteOneBaseProjectVersionControllerProjectVersionEntityResponse>
+
+	/**
+	 * @summary Retrieve multiple ProjectVersionEntities
+	 * @param {string[]} [fields] <p>Selects resource fields. <a href="https://github.com/nestjsx/crud/wiki/Requests#select" target="_blank">Docs</a></p>
+	 * @param {string} [s] <p>Adds search condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#search" target="_blank">Docs</a></p>
+	 * @param {string[]} [filter] <p>Adds filter condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#filter" target="_blank">Docs</a></p>
+	 * @param {string[]} [or] <p>Adds OR condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#or" target="_blank">Docs</a></p>
+	 * @param {string[]} [sort] <p>Adds sort by field. <a href="https://github.com/nestjsx/crud/wiki/Requests#sort" target="_blank">Docs</a></p>
+	 * @param {string[]} [join] <p>Adds relational resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#join" target="_blank">Docs</a></p>
+	 * @param {number} [limit] <p>Limit amount of resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#limit" target="_blank">Docs</a></p>
+	 * @param {number} [offset] <p>Offset amount of resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#offset" target="_blank">Docs</a></p>
+	 * @param {number} [page] <p>Page portion of resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#page" target="_blank">Docs</a></p>
+	 * @param {number} [cache] <p>Reset cache (if was enabled). <a href="https://github.com/nestjsx/crud/wiki/Requests#cache" target="_blank">Docs</a></p>
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	getManyBaseProjectVersionControllerProjectVersionEntity(__params: ProjectVersionApi.GetManyBaseProjectVersionControllerProjectVersionEntityParameters, options?: RequestInit): Promise<ProjectVersionApi.GetManyBaseProjectVersionControllerProjectVersionEntityResponse>
+
+	/**
+	 * @summary Retrieve a single ProjectVersionEntity
+	 * @param {string} id
+	 * @param {string[]} [fields] <p>Selects resource fields. <a href="https://github.com/nestjsx/crud/wiki/Requests#select" target="_blank">Docs</a></p>
+	 * @param {string[]} [join] <p>Adds relational resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#join" target="_blank">Docs</a></p>
+	 * @param {number} [cache] <p>Reset cache (if was enabled). <a href="https://github.com/nestjsx/crud/wiki/Requests#cache" target="_blank">Docs</a></p>
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	getOneBaseProjectVersionControllerProjectVersionEntity(__params: ProjectVersionApi.GetOneBaseProjectVersionControllerProjectVersionEntityParameters, options?: RequestInit): Promise<ProjectVersionApi.GetOneBaseProjectVersionControllerProjectVersionEntityResponse>
+
+}
 
 /**
  * ProjectVersionApi - object-oriented interface
@@ -2630,7 +6361,7 @@ export const ProjectVersionApiFactory: FactoryFunction<ProjectVersionApi> = func
  * @class ProjectVersionApi
  * @extends {BaseAPI}
  */
-export class ProjectVersionApi extends BaseAPI {
+export class ProjectVersionApi extends BaseAPI implements ProjectVersionApiInterface {
 	/**
 	 * @summary Create a single ProjectVersionEntity
 	 * @param {Api.ProjectVersionEntity} request
@@ -2666,8 +6397,8 @@ export class ProjectVersionApi extends BaseAPI {
 	 * @param {RequestInit} [options] Override http request option.
 	 * @throws {RequiredError}
 	 */
-	public getManyBaseProjectVersionControllerProjectVersionEntity(fields: string[] | undefined, s: string | undefined, filter: string[] | undefined, or: string[] | undefined, sort: string[] | undefined, join: string[] | undefined, limit: number | undefined, offset: number | undefined, page: number | undefined, cache: number | undefined, options?: RequestInit) {
-		return ProjectVersionApiFp(this.configuration).getManyBaseProjectVersionControllerProjectVersionEntity(fields, s, filter, or, sort, join, limit, offset, page, cache, options)(this.fetch, this.basePath);
+	public getManyBaseProjectVersionControllerProjectVersionEntity(__params: ProjectVersionApi.GetManyBaseProjectVersionControllerProjectVersionEntityParameters, options?: RequestInit) {
+		return ProjectVersionApiFp(this.configuration).getManyBaseProjectVersionControllerProjectVersionEntity(__params, options)(this.fetch, this.basePath);
 	}
 
 	/**
@@ -2679,8 +6410,8 @@ export class ProjectVersionApi extends BaseAPI {
 	 * @param {RequestInit} [options] Override http request option.
 	 * @throws {RequiredError}
 	 */
-	public getOneBaseProjectVersionControllerProjectVersionEntity(id: string, fields: string[] | undefined, join: string[] | undefined, cache: number | undefined, options?: RequestInit) {
-		return ProjectVersionApiFp(this.configuration).getOneBaseProjectVersionControllerProjectVersionEntity(id, fields, join, cache, options)(this.fetch, this.basePath);
+	public getOneBaseProjectVersionControllerProjectVersionEntity(__params: ProjectVersionApi.GetOneBaseProjectVersionControllerProjectVersionEntityParameters, options?: RequestInit) {
+		return ProjectVersionApiFp(this.configuration).getOneBaseProjectVersionControllerProjectVersionEntity(__params, options)(this.fetch, this.basePath);
 	}
 
 }

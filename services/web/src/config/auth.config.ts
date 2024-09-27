@@ -23,20 +23,18 @@ export const authConfig = {
 
         if (!account?.id_token) return false;
 
-        let response: Api.LocalSignInResponseDto;
-        try {
-          response = await api.authControllerSignInWithGoogle(
-            account?.id_token,
-          );
-        } catch (e) {
-          console.error(JSON.stringify(e));
+        const response = await api.authControllerSignInWithGoogle(
+          account?.id_token,
+        );
+        if (response.status >= 400) {
+          console.error(response.body);
           return false;
         }
 
-        user.id = response.user.id;
-        user.email = response.user.email;
-        user.accessToken = response.accessToken;
-        user.refreshToken = response.refreshToken;
+        user.id = response.body.user.id;
+        user.email = response.body.user.email;
+        user.accessToken = response.body.accessToken;
+        user.refreshToken = response.body.refreshToken;
 
         return true;
       } else if (account?.provider === 'web-3') {
@@ -83,35 +81,38 @@ export const authConfig = {
           basePath: process.env.NEXT_PUBLIC_API_URL,
         });
 
-        let response: Api.LocalSignInResponseDto;
-        try {
-          response = await api.authControllerRefreshToken({
-            headers: { Authorization: `Bearer ${token}` },
-          });
-        } catch (e) {
+        const response = await api.authControllerRefreshToken({
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (response.status >= 400) {
+          console.error(JSON.stringify(response.body));
+          return null;
+        }
+        const body = response.body as Api.LocalSignInResponseDto;
+
+        const accessToken = body.accessToken;
+        const refreshToken = body.refreshToken;
+        const userResponse = await api.authControllerGetCurrentUser({
+          headers: { Authorization: `Bearer ${body.accessToken}` },
+        });
+
+        if (userResponse.status >= 400) {
+          console.error(JSON.stringify(userResponse.body));
           return null;
         }
 
-        try {
-          const accessToken = response.accessToken;
-          const refreshToken = response.refreshToken;
-          const user = await api.authControllerGetCurrentUser({
-            headers: { Authorization: `Bearer ${response.accessToken}` },
-          });
+        const user = userResponse.body as Api.UserEntity;
 
-          return {
-            id: user.id,
-            email: user.email,
-            name: user.username,
-            image: user.profile?.picture,
-            wallet: user.walletAddress,
-            accessToken,
-            refreshToken,
-          };
-        } catch (e) {
-          console.error(JSON.stringify(e));
-          return null;
-        }
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.username,
+          image: user.profile?.picture,
+          wallet: user.walletAddress,
+          accessToken,
+          refreshToken,
+        };
       },
     }),
     Credentials({
@@ -138,19 +139,21 @@ export const authConfig = {
           basePath: process.env.NEXT_PUBLIC_API_URL,
         });
 
-        let response: Api.LocalSignInResponseDto;
-        try {
-          response = await api.authControllerValidateWeb3SignInChallenge({
-            signature,
-            address,
-          });
-        } catch (e) {
+        const response = await api.authControllerValidateWeb3SignInChallenge({
+          signature,
+          address,
+        });
+
+        if (response.status >= 400) {
+          console.error(JSON.stringify(response.body));
           return null;
         }
 
-        const accessToken = response.accessToken;
-        const refreshToken = response.refreshToken;
-        const user = response.user;
+        const body = response.body as Api.LocalSignInResponseDto;
+
+        const accessToken = body.accessToken;
+        const refreshToken = body.refreshToken;
+        const user = body.user;
 
         return {
           id: user.id,

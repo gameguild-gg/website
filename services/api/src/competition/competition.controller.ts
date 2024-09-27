@@ -91,8 +91,7 @@ export class CompetitionController {
   // todo: Add login protections here and remove the password requirement.
   @Post('/Chess/submit')
   @ApiConsumes('multipart/form-data')
-  @ApiCreatedResponse({
-    status: 200,
+  @ApiResponse({
     type: TerminalDto,
     isArray: true,
   })
@@ -134,8 +133,7 @@ export class CompetitionController {
   }
 
   @Get('/Chess/ListAgents')
-  @ApiCreatedResponse({ type: String, isArray: true })
-  @ApiNoContentResponse({ description: 'No agents found' })
+  @ApiResponse({ type: String, isArray: true })
   @Auth(AuthenticatedRoute)
   async ListChessAgents(@AuthUser() user: UserEntity): Promise<string[]> {
     if (!user) throw new UnauthorizedException('Invalid credentials');
@@ -143,7 +141,7 @@ export class CompetitionController {
   }
 
   @Post('/Chess/Move')
-  @ApiCreatedResponse({ type: String })
+  @ApiResponse({ type: String })
   @Auth(AuthenticatedRoute)
   async RequestChessMove(
     @Body() data: ChessMoveRequestDto,
@@ -154,7 +152,7 @@ export class CompetitionController {
   }
 
   @Post('/Chess/RunMatch')
-  @ApiCreatedResponse({ type: ChessMatchResultDto })
+  @ApiResponse({ type: ChessMatchResultDto })
   @Auth(AuthenticatedRoute)
   async RunChessMatch(
     @Body() data: ChessMatchRequestDto,
@@ -166,11 +164,10 @@ export class CompetitionController {
 
   @Post('/Chess/FindMatches')
   @Auth(AuthenticatedRoute)
-  @ApiCreatedResponse({
+  @ApiResponse({
     type: MatchSearchResponseDto,
     isArray: true,
   })
-  @ApiNoContentResponse({ description: 'No matches found' })
   async FindChessMatchResult(
     @Body() data: MatchSearchRequestDto,
     @AuthUser() user: UserEntity,
@@ -240,7 +237,7 @@ export class CompetitionController {
 
   @Get('/Chess/Match/:id')
   @Auth(AuthenticatedRoute)
-  @ApiCreatedResponse({ type: ChessMatchResultDto })
+  @ApiResponse({ type: ChessMatchResultDto })
   async GetChessMatchResult(
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<ChessMatchResultDto> {
@@ -249,11 +246,10 @@ export class CompetitionController {
 
   @Get('/Chess/Leaderboard')
   @Auth(AuthenticatedRoute)
-  @ApiOkResponse({
+  @ApiResponse({
     type: ChessLeaderboardResponseEntryDto,
     isArray: true,
   })
-  @ApiNoContentResponse({ description: 'No leaderboard found' })
   async GetChessLeaderboard(): Promise<ChessLeaderboardResponseEntryDto[]> {
     return this.service.getLeaderboard();
   }
@@ -265,11 +261,10 @@ export class CompetitionController {
   }
 
   @Get('Chess/LatestCompetitionReport')
-  @ApiCreatedResponse({
+  @ApiResponse({
     type: CompetitionRunSubmissionReportEntity,
     isArray: true,
   })
-  @ApiNoContentResponse({ description: 'No reports found' })
   @Auth(AuthenticatedRoute)
   async GetLatestChessCompetitionReport(
     @AuthUser() user: UserEntity,

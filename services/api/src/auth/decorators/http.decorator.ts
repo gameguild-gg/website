@@ -14,13 +14,24 @@ import {
   RefreshTokenRoute,
   RouteContentClass,
 } from '../auth.enum';
-import { ApiBearerAuth, ApiUnauthorizedResponse } from '@nestjs/swagger';
+import {
+  ApiBadRequestResponse,
+  ApiBearerAuth,
+  ApiConflictResponse,
+  ApiForbiddenResponse,
+  ApiInternalServerErrorResponse,
+  ApiNotFoundResponse,
+  ApiResponse,
+  ApiUnauthorizedResponse,
+  ApiUnprocessableEntityResponse,
+} from '@nestjs/swagger';
 import { AuthUserInterceptor } from '../interceptors/auth-user-interceptor.service';
 import { PublicRoute } from './public.decorator';
 import { AuthGuard, AuthType } from '../guards/auth.guard';
 import { RequireRoleInterceptor } from '../interceptors/require-role.interceptor';
 import { WithRolesEntity } from '../entities/with-roles.entity';
 import { RequireRole } from './has-role.decorator';
+import { ApiErrorResponseDto } from '../../common/filters/global-http-exception.filter';
 
 // todo: how to make T optional and extract it from the parameter?
 export const Auth = <T extends WithRolesEntity>(
@@ -34,6 +45,27 @@ export const Auth = <T extends WithRolesEntity>(
   const decorators: Array<
     ClassDecorator | MethodDecorator | PropertyDecorator
   > = [];
+
+  decorators.push(
+    ApiInternalServerErrorResponse({
+      description: 'Internal server error',
+      type: ApiErrorResponseDto,
+    }),
+  );
+
+  decorators.push(
+    ApiUnprocessableEntityResponse({
+      description: 'Unprocessable entity',
+      type: ApiErrorResponseDto,
+    }),
+  );
+
+  decorators.push(
+    ApiBadRequestResponse({
+      description: 'Bad request',
+      type: ApiErrorResponseDto,
+    }),
+  );
 
   // if public, return now
   if (options === PublicRoute) {
@@ -50,7 +82,30 @@ export const Auth = <T extends WithRolesEntity>(
   }
   decorators.push(ApiBearerAuth());
   decorators.push(UseInterceptors(AuthUserInterceptor));
-  decorators.push(ApiUnauthorizedResponse({ description: 'Unauthorized' }));
+  decorators.push(
+    ApiUnauthorizedResponse({
+      description: 'Unauthorized',
+      type: ApiErrorResponseDto,
+    }),
+  );
+  decorators.push(
+    ApiForbiddenResponse({
+      description: 'Forbidden',
+      type: ApiErrorResponseDto,
+    }),
+  );
+  decorators.push(
+    ApiNotFoundResponse({
+      description: 'Not found',
+      type: ApiErrorResponseDto,
+    }),
+  );
+  decorators.push(
+    ApiConflictResponse({
+      description: 'Already exists',
+      type: ApiErrorResponseDto,
+    }),
+  );
 
   // if options is RouteContentClass<T>
   if (options instanceof RouteContentClass) {

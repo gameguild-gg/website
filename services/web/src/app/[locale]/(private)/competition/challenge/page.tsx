@@ -32,22 +32,30 @@ const ChallengePage: React.FC = () => {
   async function getAgentList(): Promise<void> {
     const session = await getSession();
 
-    try {
-      const response = await api.competitionControllerListChessAgents({
-        headers: {
-          Authorization: `Bearer ${session?.accessToken}`,
-        },
-      });
+    const response = await api.competitionControllerListChessAgents({
+      headers: {
+        Authorization: `Bearer ${session?.accessToken}`,
+      },
+    });
 
-      const data = response as string[];
-
-      setAgentList(data);
-      setAgentListFetched(true);
-      console.log(data);
-    } catch (e) {
+    if (!response || response.status === 401) {
       router.push('/connect');
       return;
     }
+
+    if (response.status === 500) {
+      message.error(
+        'Internal server error. Please report this issue to the community.',
+      );
+      message.error(JSON.stringify(response.body));
+      return;
+    }
+
+    const data = response.body as string[];
+
+    setAgentList(data);
+    setAgentListFetched(true);
+    console.log(data);
   }
 
   const [selectedAgentWhite, setSelectedAgentWhite] = useState<string>('');
@@ -93,8 +101,31 @@ const ChallengePage: React.FC = () => {
       },
     );
 
-    console.log(response);
-    setResult(response);
+    if (response.status === 500) {
+      message.error(
+        'Internal server error. Please report this issue to the community.',
+      );
+      message.error(JSON.stringify(response.body));
+      setRequestInProgress(false);
+      return;
+    }
+
+    if (response.status === 401) {
+      message.error('Unauthorized. Please login again.');
+      setTimeout(() => {
+        router.push('/connect');
+      }, 1000);
+      return;
+    }
+
+    if (response.status === 422) {
+      message.error('Invalid request. Please try again.');
+      message.error(JSON.stringify(response.body));
+      setRequestInProgress(false);
+      return;
+    }
+
+    setResult(response.body as ChessMatchResultDto);
     setRequestInProgress(false);
   };
 
