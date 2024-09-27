@@ -49,6 +49,7 @@
     "@nestjs/swagger": "^7.4.0",
     "@nestjs/typeorm": "9.0.1",
     "@openapi-generator-plus/typescript-fetch-client-generator": "^1.11.0",
+    "@openapi-generator-plus/typescript-fetch-client-generator2": "^0.12.0",
     "@openapitools/openapi-generator-cli": "^2.13.5",
     "@sendgrid/client": "^7.7.0",
     "@sendgrid/helpers": "^7.7.0",
