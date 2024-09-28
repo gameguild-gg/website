@@ -1,13 +1,20 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import Image from 'next/image'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { PlayCircle, FileText, Lock } from 'lucide-react'
+import { Play, PlayCircle, FileText, Lock } from 'lucide-react'
 
-export default function Component() {
+type Props = {
+  params: {
+    slug: string;
+  };
+};
+
+export default function Component({params: {slug}}: Readonly<Props>) {
   const [isPurchased, setIsPurchased] = useState(false)
 
   const handlePurchase = () => {
@@ -19,8 +26,8 @@ export default function Component() {
       <div className="grid gap-6 lg:grid-cols-2">
         <div>
           <Image
-            src="/assets/images/placeholder.svg?height=400&width=600"
-            alt="Course Cover"
+            src="/assets/images/placeholder.svg"
+            alt="Course Cover Image"
             width={600}
             height={400}
             className="rounded-lg object-cover w-full"
@@ -61,7 +68,11 @@ export default function Component() {
                   <FileText className="mr-2 h-5 w-5 text-primary" />
                 )}
                 <span className="flex-grow">{item.title}</span>
-                {!isPurchased && <Lock className="ml-2 h-5 w-5 text-muted-foreground" />}
+                {isPurchased ? (
+                  <Link href={`/courses/${slug}/${index}`}><Play className="ml-2 h-5 w-5 text-muted-foreground" /></Link>
+                ) : (
+                  <Lock className="ml-2 h-5 w-5 text-muted-foreground" />
+                )}
               </div>
             ))}
           </ScrollArea>
