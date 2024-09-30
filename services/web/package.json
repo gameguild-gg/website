@@ -13,6 +13,7 @@
     "ui:add": "npx shadcn-ui@latest add"
   },
   "dependencies": {
+    "@codeium/react-code-editor": "^1.0.12",
     "@game-guild/apiclient": "*",
     "@game-guild/ui": "*",
     "@hookform/resolvers": "^3.3.4",
