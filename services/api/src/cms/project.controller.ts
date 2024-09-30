@@ -1,5 +1,5 @@
 import { Body, Controller, Logger } from '@nestjs/common';
-import { ApiBody, ApiTags } from '@nestjs/swagger';
+import { ApiBody, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ProjectService } from './project.service';
 import { Auth } from '../auth/decorators/http.decorator';
 import { ProjectEntity } from './entities/project.entity';
@@ -35,12 +35,7 @@ import { WithRolesController } from './with-roles.controller';
     },
   },
   routes: {
-    exclude: [
-      'replaceOneBase',
-      'createManyBase',
-      'createManyBase',
-      'recoverOneBase',
-    ],
+    exclude: ['replaceOneBase', 'createManyBase', 'recoverOneBase'],
     getOneBase: {
       decorators: [Auth(AuthenticatedRoute)],
     },
@@ -79,6 +74,7 @@ export class ProjectController
   @Override()
   @Auth(AuthenticatedRoute)
   @ApiBody({ type: ProjectEntity })
+  @ApiResponse({ type: ProjectEntity })
   async createOne(
     @ParsedRequest() crudReq: CrudRequest,
     // todo: remove id and other unwanted fields
@@ -94,6 +90,7 @@ export class ProjectController
   @Override()
   @Auth<ProjectEntity>(ManagerRoute<ProjectEntity>)
   @ApiBody({ type: ProjectEntity })
+  @ApiResponse({ type: ProjectEntity })
   async updateOne(
     @ParsedRequest() req: CrudRequest,
     @Body(

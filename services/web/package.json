@@ -13,6 +13,10 @@
     "ui:add": "npx shadcn-ui@latest add"
   },
   "dependencies": {
+    "copy-webpack-plugin": "^11.0.0",
+    "@types/copy-webpack-plugin": "^10.1.0",
+    "compression-webpack-plugin": "^10.0.0",
+    "@types/compression-webpack-plugin": "^9.1.1",
     "@codeium/react-code-editor": "^1.0.12",
     "@game-guild/apiclient": "*",
     "@game-guild/ui": "*",

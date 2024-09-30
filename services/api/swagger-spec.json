@@ -599,6 +599,16 @@
                 }
               }
             }
+          },
+          "default": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectEntity"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -935,6 +945,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectEntity"
                 }
               }
             }

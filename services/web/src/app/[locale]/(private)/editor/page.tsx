@@ -1,9 +1,15 @@
 'use client';
 
-import { CodeiumEditor, Language, Document } from '@codeium/react-code-editor';
+import { CodeiumEditor } from '@codeium/react-code-editor';
 import { editor } from 'monaco-editor';
 import { Monaco } from '@monaco-editor/react';
 import React, { useEffect, useRef, useState } from 'react';
+import * as Comlink from 'comlink';
+import Emception from './emception';
+
+type EmceptionWrapper = {
+  worker: Comlink.Remote<Emception> | null;
+};
 
 interface CodeEditorProps {
   descriptionText: string;
@@ -11,11 +17,16 @@ interface CodeEditorProps {
 }
 
 export default function CodeEditor() {
+  const [emceptionLoaded, setEmceptionLoaded] = useState(false);
+  const [emception, setEmception] = useState<EmceptionWrapper>({
+    worker: null,
+  });
+
   const initialCode = `#include <iostream>
-   int main(){
-        // add your code here
-    }
-    `;
+int main(){
+    // add your code here
+}
+`;
   const descriptionText = 'Description Goes Here';
 
   const [code, setCode] = useState<string>(
@@ -38,6 +49,37 @@ int main(){
   const containerRef = useRef<HTMLDivElement>(null);
   const isDragging = useRef<boolean>(false);
   const [leftWidth, setLeftWidth] = useState<number>(20);
+
+  async function loadEmception(): Promise<any> {
+    showNotification('Loading emception...');
+    if (emceptionLoaded) return;
+    setEmceptionLoaded(true);
+
+    // todo: is it possible to not refer as url?
+    const emceptionWorker = new Worker(
+      new URL('./emception.worker.ts', import.meta.url),
+      { type: 'module' },
+    );
+
+    emceptionWorker.onerror = (e) => {
+      console.error(e);
+      console.error('Emception worker error');
+    };
+
+    const emception: Comlink.Remote<Emception> = Comlink.wrap(emceptionWorker);
+
+    setEmception({ worker: emception });
+
+    emception.onstdout.bind(console.log);
+    emception.onstderr.bind(console.log);
+    emception.onprocessstart.bind(console.log);
+    emception.onprocessend.bind(console.log);
+
+    await emception.init();
+
+    console.log('Post init');
+    console.log('Ready');
+  }
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {

@@ -1,8 +1,8 @@
-import {AssignmentBasev1_0_0} from "../assignment.base.v1.0.0";
+import { AssignmentBasev1_0_0 } from '../assignment.base.v1.0.0';
 
 export const HelloWorldCPP: AssignmentBasev1_0_0 = {
-    format_ver: "1.0.0",
-    description: `# Hello World
+  format_ver: '1.0.0',
+  description: `# Hello World
 ## Context
 In conputer science, "Hello World" is the traditional first program that is written when learning a new programming language. It is a simple program that outputs "Hello World" to the console.
 
@@ -36,13 +36,13 @@ cout << "Your message goes here" << endl;
 ## Task 
 Write a program that prints "Hello World!" to the console and then jump to the next line.
     `,
-    initialCode: `#include <iostream>
+  initialCode: `#include <iostream>
 using namespace std;
 
 int main() {
     // Your code goes here
     return 0;
 }`,
-    inputs: [""],
-    outputs: ["Hello World!"]
-}
+  inputs: [''],
+  outputs: ['Hello World!\n'],
+};

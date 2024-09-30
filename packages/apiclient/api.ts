@@ -3300,6 +3300,7 @@ export namespace ProjectApi {
 		| CreateOneBaseProjectControllerProjectEntity409Response
 		| CreateOneBaseProjectControllerProjectEntity422Response
 		| CreateOneBaseProjectControllerProjectEntity500Response
+		| CreateOneBaseProjectControllerProjectEntityDefaultResponse
 	
 	export interface CreateOneBaseProjectControllerProjectEntity201Response {
 		status: 201
@@ -3354,6 +3355,13 @@ export namespace ProjectApi {
 		status: 500
 		contentType: 'application/json'
 		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CreateOneBaseProjectControllerProjectEntityDefaultResponse {
+		status: number
+		contentType: 'application/json'
+		body: Api.ProjectEntity
 		headers?: undefined
 	}
 	
@@ -3813,6 +3821,7 @@ export namespace ProjectApi {
 		| UpdateOneBaseProjectControllerProjectEntity409Response
 		| UpdateOneBaseProjectControllerProjectEntity422Response
 		| UpdateOneBaseProjectControllerProjectEntity500Response
+		| UpdateOneBaseProjectControllerProjectEntityDefaultResponse
 	
 	export interface UpdateOneBaseProjectControllerProjectEntity200Response {
 		status: 200
@@ -3867,6 +3876,13 @@ export namespace ProjectApi {
 		status: 500
 		contentType: 'application/json'
 		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface UpdateOneBaseProjectControllerProjectEntityDefaultResponse {
+		status: number
+		contentType: 'application/json'
+		body: Api.ProjectEntity
 		headers?: undefined
 	}
 	
@@ -4437,6 +4453,14 @@ export const ProjectApiFp = function(configuration?: Configuration) {
 						}
 					}
 					throw response;
+				}
+				/* Catch-all response */
+				if (mimeType === 'application/json') {
+					return {
+						status: response.status,
+						contentType: 'application/json',
+						body: await response.json() as Api.ProjectEntity,
+					}
 				}
 				throw response;
 			};
@@ -5085,6 +5109,14 @@ export const ProjectApiFp = function(configuration?: Configuration) {
 						}
 					}
 					throw response;
+				}
+				/* Catch-all response */
+				if (mimeType === 'application/json') {
+					return {
+						status: response.status,
+						contentType: 'application/json',
+						body: await response.json() as Api.ProjectEntity,
+					}
 				}
 				throw response;
 			};
