@@ -26,15 +26,9 @@ const Header: React.FunctionComponent<Readonly<Props>> & {
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center border-b py-4">
           <div className="flex items-center space-x-4">
-            <img
-              src="/placeholder.svg"
-              alt="Logo"
-              className="h-10 w-10"
-              width="40"
-              height="40"
-              style={{aspectRatio: "40/40", objectFit: "cover"}}
-            />
-            <span className="text-xl font-bold">Game Guild</span>
+
+            <img src="/assets/images/logo-text-2.png" className="w-[135px] h-46px my-auto mx-[10px]"/>
+
           </div>
           <div className="flex space-x-6">
             <Link href="#" className="text-sm" prefetch={false}>
