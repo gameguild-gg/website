@@ -36,6 +36,7 @@
     "openapigenerator": "openapi-generator-plus -c config.yml"
   },
   "dependencies": {
+    "@codeium/react-code-editor": "^1.0.12",
     "@dataui/crud": "5.3.4",
     "@dataui/crud-request": "5.3.4",
     "@dataui/crud-typeorm": "5.3.4",
