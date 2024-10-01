@@ -28,14 +28,14 @@ export const authConfig = {
           account?.id_token,
         );
         if (response.status >= 400) {
-          console.error(response.data);
+          console.error(response.body);
           return false;
         }
 
-        user.id = response.data.user.id;
-        user.email = response.data.user.email;
-        user.accessToken = response.data.accessToken;
-        user.refreshToken = response.data.refreshToken;
+        user.id = response.body.user.id;
+        user.email = response.body.user.email;
+        user.accessToken = response.body.accessToken;
+        user.refreshToken = response.body.refreshToken;
 
         return true;
       } else if (account?.provider === 'web-3') {
