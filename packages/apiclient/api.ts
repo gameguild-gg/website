@@ -3884,7 +3884,7 @@ export const ProjectApiFetchParamCreator = function (configuration?: Configurati
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		createOneBaseProjectControllerProjectEntity(request: Api.ProjectEntity, options: RequestInit = {}): FetchArgs {
+		createOneBaseProjectControllerProjectEntity(request: Api.CreateProjectDto, options: RequestInit = {}): FetchArgs {
 			// verify required parameter 'request' is not null or undefined
 			if (request === null || request === undefined) {
 				throw new RequiredError('request', 'Required parameter request was null or undefined when calling createOneBaseProjectControllerProjectEntity.');
@@ -3898,7 +3898,6 @@ export const ProjectApiFetchParamCreator = function (configuration?: Configurati
 			if (localVarPathQueryStart !== -1) {
 				localVarPath = localVarPath.substring(0, localVarPathQueryStart);
 			}
-
 			// authentication bearer required
 			// http authorization required
 			if (configuration && configuration.authorization) {
@@ -4193,7 +4192,7 @@ export const ProjectApiFetchParamCreator = function (configuration?: Configurati
 		 * @throws {RequiredError}
 		 */
 		projectControllerGetAllProjects(options: RequestInit = {}): FetchArgs {
-			let localVarPath = `/project/Get-All`;
+			let localVarPath = `/project`;
 			const localVarPathQueryStart = localVarPath.indexOf("?");
 			const localVarRequestOptions: RequestInit = Object.assign({ method: 'GET' }, options);
 			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
@@ -4411,7 +4410,7 @@ export const ProjectApiFp = function(configuration?: Configuration) {
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		createOneBaseProjectControllerProjectEntity(request: Api.ProjectEntity, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<ProjectApi.CreateOneBaseProjectControllerProjectEntityResponse> {
+		createOneBaseProjectControllerProjectEntity(request: Api.CreateProjectDto, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<ProjectApi.CreateOneBaseProjectControllerProjectEntityResponse> {
 			const localVarFetchArgs = ProjectApiFetchParamCreator(configuration).createOneBaseProjectControllerProjectEntity(request, options);
 			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
 				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
@@ -5291,7 +5290,7 @@ export class ProjectApi extends BaseAPI implements ProjectApiInterface {
 	 * @param {RequestInit} [options] Override http request option.
 	 * @throws {RequiredError}
 	 */
-	public createOneBaseProjectControllerProjectEntity(request: Api.ProjectEntity, options?: RequestInit) {
+	public createOneBaseProjectControllerProjectEntity(request: Api.CreateProjectDto, options?: RequestInit) {
 		return ProjectApiFp(this.configuration).createOneBaseProjectControllerProjectEntity(request, options)(this.fetch, this.basePath);
 	}
 

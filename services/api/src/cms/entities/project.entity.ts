@@ -11,12 +11,6 @@ export class ProjectEntity extends ContentBase {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @ApiProperty({ type: Number, description: 'Title of the ticket' })
-  @Column({ type: 'varchar', length: 255 })
-  @IsString()
-  @IsNotEmpty()
-  Description: string;
-
   @ApiProperty({ type: ProjectVersionEntity, isArray: true })
   @ValidateNested({
     each: true,

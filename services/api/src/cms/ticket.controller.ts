@@ -17,13 +17,12 @@ import {
 } from '../auth/auth.enum';
 import { BodyOwnerInject } from '../common/decorators/parameter.decorator';
 import { OwnershipEmptyInterceptor } from './interceptors/ownership-empty-interceptor.service';
-import { ProjectEntity } from './entities/project.entity';
 import { ProjectService } from './project.service';
 import { Auth } from '../auth';
 
 @Crud({
   model: {
-    type: ProjectEntity,
+    type: TicketEntity,
   },
   params: {
     id: {
@@ -74,7 +73,7 @@ export class TicketController implements CrudController<TicketEntity> {
   @ApiBody({ type: TicketEntity })
   async createOne(
     @ParsedRequest() crudReq: CrudRequest,
-    @BodyOwnerInject() body: TicketEntity, // You can also use a DTO here
+    @BodyOwnerInject() body: TicketEntity,
   ) {
     const project = await this.projectService.findOne({
       where: { id: body.projectId },
@@ -85,9 +84,9 @@ export class TicketController implements CrudController<TicketEntity> {
 
     ticket.project = project;
 
-    //project.tickets.push(ticket);
+    project.tickets.push(ticket);
 
-    //await this.projectService.save(project);
+    await this.projectService.save(project);
 
     return this.service.findOne({
       where: { id: ticket.id },

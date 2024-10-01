@@ -3,7 +3,7 @@ import { Controller, Post, Get, Body, Param } from '@nestjs/common';
 import { ProjectEntity } from './project.entity';
 import { Entity, ManyToOne, Column, PrimaryGeneratedColumn } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, IsEnum, IsDate } from 'class-validator';
+import { IsString, IsNotEmpty, IsEnum } from 'class-validator';
 
 export enum TicketStatus {
   OPEN = 'OPEN',

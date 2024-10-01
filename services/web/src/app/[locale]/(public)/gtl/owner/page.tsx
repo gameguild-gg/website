@@ -5,8 +5,9 @@ import { useRouter } from 'next/navigation';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import AnalyticsGraphs from './AnalyticsGraphs';
 import axios from 'axios';
+import { TicketApi, ProjectApi } from '@game-guild/apiclient/api';
+import { getSession } from 'next-auth/react';
 
-// GameCard component
 const GameCard = ({ title, description }) => (
   <div className="bg-gray-800 rounded-lg overflow-hidden shadow-lg">
     <div className="h-48 bg-gray-700 flex items-center justify-center">
@@ -106,6 +107,50 @@ const VideoGrid = ({ videos }) => (
   </ScrollArea>
 );
 
+const apiTicket = new TicketApi({
+  basePath: process.env.NEXT_PUBLIC_API_URL,
+});
+const apiProject = new ProjectApi({
+  basePath: process.env.NEXT_PUBLIC_API_URL,
+});
+export enum VisibilityEnum {
+  DRAFT = 'DRAFT', // not visible to the public
+  PUBLISHED = 'PUBLISHED', // published and visible
+  FUTURE = 'FUTURE', // scheduled for future publication
+  PENDING = 'PENDING', // pending approval
+  PRIVATE = 'PRIVATE', // only visible to the author
+  TRASH = 'TRASH', // marked for deletion
+}
+
+const createProjectData = {
+  id: 'uuid-v4-string', // Replace with a UUID if required by your API
+  title: 'My New Project',
+  summary: 'A brief summary of the project.',
+  body: 'Detailed content of the project.',
+  slug: 'my-new-project',
+  visibility: 'PUBLIC', // or 'PRIVATE' based on the enum values
+  thumbnail: 'https://example.com/thumbnail.jpg',
+  Description: 1, // Assuming it's a number as per your interface
+  owner: {
+    id: 'owner-user-id', // Replace with the actual owner ID
+  },
+  editors: [
+    {
+      id: 'editor-user-id-1', // Replace with actual editor user IDs
+    },
+    {
+      id: 'editor-user-id-2',
+    },
+  ],
+  versions: [
+    {
+      id: 'version-id-1', // Replace with actual version IDs or details
+    },
+  ],
+  createdAt: 'now', // Add createdAt field
+  updatedAt: 'now', // Add updatedAt field
+};
+
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 export default function Page() {
   const games = [
@@ -162,22 +207,40 @@ export default function Page() {
   };
 
   const fetchTickets = async () => {
-    try {
-      const response = await axios.get('http://localhost:8080/tickets');
-      const fetchedTickets = response.data;
+    const session = await getSession();
+    const projectData = {
+      title: 'My New Project',
+      summary: 'Project description',
+      body: 'Detailed content of the project.',
+      slug: 'my-project-slug',
+      visibilit: VisibilityEnum.DRAFT,
+      thumbnail: 'test',
+    };
+    const project =
+      await apiProject.createOneBaseProjectControllerProjectEntity(
+        projectData,
+        {
+          headers: {
+            Authorization: `Bearer ${session?.accessToken}`,
+          },
+        },
+      );
+    console.log(project);
+    if (!response || response.status === 401) {
+      router.push('/connect');
+      return;
+    }
 
-      if (fetchedTickets.length === 0) {
-        // Check if the array is empty
-        console.log('No tickets found');
-      } else {
-        console.log('Fetched Tickets:', fetchedTickets); // Corrected logging
-        setTickets(fetchedTickets); // Update the state with fetched tickets
-      }
-    } catch (error) {
-      console.error('Error retrieving tickets:', error);
+    if (response.status === 500) {
+      message.error(
+        'Internal server error. Please report this issue to the community.',
+      );
+      message.error(JSON.stringify(response.body));
+      return;
     }
   };
 
+  let fetchTicketsCalled = false;
   const [activeTab, setActiveTab] = useState('Projects');
   const [ticketFilter, setTicketFilter] = useState('All');
   const [tickets, setTickets] = useState([]);
@@ -244,8 +307,14 @@ export default function Page() {
   };
 
   useEffect(() => {
-    console.log('useEffect called'); // Debugging log
-    fetchTickets(); // This should be called when the component is loaded
+    if (!fetchTicketsCalled) {
+      fetchTicketsCalled = true; // Set the flag to true after calling the function
+      fetchTickets();
+    }
+
+    return () => {
+      fetchTicketsCalled = false; // Optionally reset the flag in cleanup
+    };
   }, []);
 
   return (

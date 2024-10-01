@@ -1,5 +1,7 @@
 /* eslint-disable */
 // tslint:disable
+import {CreateProjectDto} from "@game-guild/api/dist/src/cms/dtos/Create-Project.dto";
+
 /**
  * gameguild.gg
  * 
@@ -298,7 +300,9 @@ export namespace Api {
 
 	export interface CreateTicketDto {
 	}
+	export  interface CreateProjectDto{
 
+	}
 	export interface EditorRequestDto {
 		id: string;
 		editor: Api.IdDto;
