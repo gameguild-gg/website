@@ -32,7 +32,7 @@ const jobs = [
     postedAgo: "2 days ago",
     image: "/placeholder.svg?height=40&width=40",
     skills: ["React", "TypeScript", "CSS"],
-    description: "We are looking for a skilled Frontend Developer to join our team...",
+    description: "We are looking for a skilled Frontend Developer to join our team...\nLorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
   },
   {
     id: 2,
@@ -42,7 +42,7 @@ const jobs = [
     postedAgo: "1 week ago",
     image: "/placeholder.svg?height=40&width=40",
     skills: ["Node.js", "Python", "MongoDB"],
-    description: "Seeking an experienced Backend Engineer to develop scalable services...",
+    description: "Seeking an experienced Backend Engineer to develop scalable services...\nLorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
   },
   {
     id: 3,
@@ -52,7 +52,17 @@ const jobs = [
     postedAgo: "3 days ago",
     image: "/placeholder.svg?height=40&width=40",
     skills: ["Figma", "User Research", "Prototyping"],
-    description: "Join our design team to create intuitive and engaging user experiences...",
+    description: "Join our design team to create intuitive and engaging user experiences...\nLorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+  },
+  {
+    id: 5,
+    title: "Game Designer",
+    company: "CreativeMinds",
+    location: "New York, NY",
+    postedAgo: "3 days ago",
+    image: "/placeholder.svg?height=40&width=40",
+    skills: ["Figma", "User Research", "Prototyping"],
+    description: "Join our design team to create intuitive and engaging user experiences...\nLorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
   },
 ]
 
@@ -83,7 +93,7 @@ export default function JobBoard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-[calc(100vh-150px)] bg-gray-100">
       <div className="container mx-auto p-4">
         <div className="mb-6 flex space-x-4">
           <div className="relative flex-grow">
@@ -179,7 +189,7 @@ export default function JobBoard() {
         </div>
         <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
           <div className="md:col-span-1">
-            <ScrollArea className="h-[calc(100vh-150px)]">
+            <ScrollArea className="h-[calc(100vh-300px)]">
               {jobs.map((job) => (
                 <Card
                   key={job.id}
