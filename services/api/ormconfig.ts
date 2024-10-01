@@ -86,7 +86,7 @@ function getconfig() {
     password: getEnvString('DB_PASSWORD'),
     database: getEnvString('DB_DATABASE'),
     migrationsRun: true,
-    logging: getEnvBoolean('ENABLE_ORM_LOGS', true),
+    logging: getEnvBoolean('ENABLE_ORM_LOGS', false),
     namingStrategy: new SnakeNamingStrategy(),
   };
 }

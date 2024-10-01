@@ -1,0 +1,302 @@
+Table TagEntity {
+  id uuid
+  createdAt timestamp
+  updatedAt timestamp
+  tag string
+}
+
+Table UserProfileEntity {
+  id uuid
+  createdAt timestamp
+  updatedAt timestamp
+  bio varchar
+  name varchar
+  givenName varchar
+  familyName varchar
+  picture varchar
+  user UserEntity
+}
+
+Table CompetitionRunSubmissionReportEntity {
+  id uuid
+  createdAt timestamp
+  updatedAt timestamp
+  winsAsP1 integer
+  winsAsP2 integer
+  totalWins integer
+  pointsAsP1 float8
+  pointsAsP2 float8
+  totalPoints float8
+  run CompetitionRunEntity
+  submission CompetitionSubmissionEntity
+  user UserEntity
+}
+
+Table CompetitionRunEntity {
+  id uuid
+  createdAt timestamp
+  updatedAt timestamp
+  state enum
+  gameType string
+  matches CompetitionMatchEntity
+  reports CompetitionRunSubmissionReportEntity
+}
+
+Table CompetitionMatchEntity {
+  id uuid
+  createdAt timestamp
+  updatedAt timestamp
+  winner enum
+  p1Points float
+  p2Points float
+  p1Turns integer
+  p2Turns integer
+  logs text
+  lastState text
+  run CompetitionRunEntity
+  p1submission CompetitionSubmissionEntity
+  p2submission CompetitionSubmissionEntity
+}
+
+Table CompetitionSubmissionEntity {
+  id uuid
+  createdAt timestamp
+  updatedAt timestamp
+  sourceCodeZip bytea
+  executable bytea
+  gameType enum
+  user UserEntity
+  matchesAsP1 CompetitionMatchEntity
+  matchesAsP2 CompetitionMatchEntity
+  submissionReports CompetitionRunSubmissionReportEntity
+}
+
+Table PostEntity {
+  id uuid
+  createdAt timestamp
+  updatedAt timestamp
+  slug varchar
+  title varchar
+  summary string
+  body text
+  visibility enum
+  thumbnail varchar
+  PostType enum
+  owner UserEntity
+  editors UserEntity
+  owners UserEntity
+}
+
+Table LectureEntity {
+  id uuid
+  createdAt timestamp
+  updatedAt timestamp
+  slug varchar
+  title varchar
+  summary string
+  body text
+  visibility enum
+  thumbnail varchar
+  order float
+  owner UserEntity
+  course CourseEntity
+  chapter CourseEntity
+  editors UserEntity
+}
+
+Table ChapterEntity {
+  id uuid
+  createdAt timestamp
+  updatedAt timestamp
+  slug varchar
+  title varchar
+  summary string
+  body text
+  visibility enum
+  thumbnail varchar
+  order float
+  owner UserEntity
+  course CourseEntity
+  editors UserEntity
+  lectures LectureEntity
+}
+
+Table CourseEntity {
+  id uuid
+  createdAt timestamp
+  updatedAt timestamp
+  slug varchar
+  title varchar
+  summary string
+  body text
+  visibility enum
+  thumbnail varchar
+  price decimal
+  subscriptionAccess boolean
+  owner UserEntity
+  author UserEntity
+  editors UserEntity
+  lectures LectureEntity
+  chapters ChapterEntity
+}
+
+Table UserEntity {
+  id uuid
+  createdAt timestamp
+  updatedAt timestamp
+  username varchar
+  email varchar
+  emailVerified boolean
+  passwordHash string
+  passwordSalt string
+  facebookId string
+  googleId string
+  githubId string
+  appleId string
+  linkedinId string
+  twitterId string
+  walletAddress string
+  elo float
+  profile UserProfileEntity
+  competitionSubmissions CompetitionSubmissionEntity
+  posts PostEntity
+  courses CourseEntity
+}
+
+Table VoteEntity {
+  id uuid
+  createdAt timestamp
+  updatedAt timestamp
+}
+
+Table ProposalEntity {
+  id uuid
+  createdAt timestamp
+  updatedAt timestamp
+  slug varchar
+  title varchar
+  summary string
+  body text
+  visibility enum
+  thumbnail varchar
+  owner UserEntity
+  editors UserEntity
+}
+
+Table EventEntity {
+  id uuid
+  createdAt timestamp
+  updatedAt timestamp
+  slug varchar
+  title varchar
+  summary string
+  body text
+  visibility enum
+  thumbnail varchar
+  owner UserEntity
+  editors UserEntity
+}
+
+Table ProjectFeedbackResponseEntity {
+  id uuid
+  createdAt timestamp
+  updatedAt timestamp
+  responses jsonb
+  version ProjectVersionEntity
+  user UserEntity
+}
+
+Table ProjectVersionEntity {
+  id uuid
+  createdAt timestamp
+  updatedAt timestamp
+  version string
+  archive_url string
+  notes_url string
+  feedback_form jsonb
+  feedback_deadline timestamptz
+  project ProjectEntity
+  responses ProjectFeedbackResponseEntity
+}
+
+Table ProjectEntity {
+  id uuid
+  createdAt timestamp
+  updatedAt timestamp
+  slug varchar
+  title varchar
+  summary string
+  body text
+  visibility enum
+  thumbnail varchar
+  owner UserEntity
+  editors UserEntity
+  versions ProjectVersionEntity
+}
+
+Table post_editors_user {
+  post_id uuid
+  user_id uuid
+}
+
+Table lecture_editors_user {
+  lecture_id uuid
+  user_id uuid
+}
+
+Table chapter_editors_user {
+  chapter_id uuid
+  user_id uuid
+}
+
+Table course_editors_user {
+  course_id uuid
+  user_id uuid
+}
+
+Table user_posts_post {
+  user_id uuid
+  post_id uuid
+}
+
+Table proposal_editors_user {
+  proposal_id uuid
+  user_id uuid
+}
+
+Table project_editors_user {
+  project_id uuid
+  user_id uuid
+}
+
+Ref: UserProfileEntity.user - UserEntity.profile
+Ref: CompetitionRunSubmissionReportEntity.run > CompetitionRunEntity.reports
+Ref: CompetitionRunSubmissionReportEntity.submission > CompetitionSubmissionEntity.submissionReports
+Ref: CompetitionRunSubmissionReportEntity.user > UserEntity.id
+Ref: CompetitionRunEntity.matches < CompetitionMatchEntity.run
+Ref: CompetitionMatchEntity.p1submission > CompetitionSubmissionEntity.matchesAsP1
+Ref: CompetitionMatchEntity.p2submission > CompetitionSubmissionEntity.matchesAsP2
+Ref: CompetitionSubmissionEntity.user > UserEntity.competitionSubmissions
+Ref: PostEntity.owner > UserEntity.id
+Ref: PostEntity.editors <> UserEntity.id
+Ref: PostEntity.owners <> UserEntity.posts
+Ref: LectureEntity.owner > UserEntity.id
+Ref: LectureEntity.editors <> UserEntity.id
+Ref: LectureEntity.course > CourseEntity.lectures
+Ref: LectureEntity.chapter > CourseEntity.chapters
+Ref: ChapterEntity.owner > UserEntity.id
+Ref: ChapterEntity.editors <> UserEntity.id
+Ref: ChapterEntity.course > CourseEntity.chapters
+Ref: ChapterEntity.lectures < LectureEntity.chapter
+Ref: CourseEntity.owner > UserEntity.id
+Ref: CourseEntity.editors <> UserEntity.id
+Ref: CourseEntity.author > UserEntity.courses
+Ref: ProposalEntity.owner > UserEntity.id
+Ref: ProposalEntity.editors <> UserEntity.id
+Ref: EventEntity.owner > UserEntity.id
+Ref: EventEntity.editors <> UserEntity.id
+Ref: ProjectFeedbackResponseEntity.version > ProjectVersionEntity.responses
+Ref: ProjectFeedbackResponseEntity.user > UserEntity.id
+Ref: ProjectVersionEntity.project > ProjectEntity.versions
+Ref: ProjectEntity.owner > UserEntity.id
+Ref: ProjectEntity.editors <> UserEntity.id
