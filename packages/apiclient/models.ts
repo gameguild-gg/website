@@ -1,7 +1,5 @@
 /* eslint-disable */
 // tslint:disable
-import {CreateProjectDto} from "@game-guild/api/dist/src/cms/dtos/Create-Project.dto";
-
 /**
  * gameguild.gg
  * 
@@ -298,11 +296,6 @@ export namespace Api {
 	
 	}
 
-	export interface CreateTicketDto {
-	}
-	export  interface CreateProjectDto{
-
-	}
 	export interface EditorRequestDto {
 		id: string;
 		editor: Api.IdDto;
@@ -369,6 +362,30 @@ export namespace Api {
 		/**
 		 * @type {number}
 		 * @memberof GetManyProjectVersionEntityResponseDto
+		 */
+		pageCount: number;
+	}
+
+	export interface GetManyTicketEntityResponseDto {
+		data: Api.TicketEntity[];
+		/**
+		 * @type {number}
+		 * @memberof GetManyTicketEntityResponseDto
+		 */
+		count: number;
+		/**
+		 * @type {number}
+		 * @memberof GetManyTicketEntityResponseDto
+		 */
+		total: number;
+		/**
+		 * @type {number}
+		 * @memberof GetManyTicketEntityResponseDto
+		 */
+		page: number;
+		/**
+		 * @type {number}
+		 * @memberof GetManyTicketEntityResponseDto
 		 */
 		pageCount: number;
 	}
@@ -522,12 +539,6 @@ export namespace Api {
 		body: string;
 		visibility: Api.ProjectEntity.Visibility;
 		thumbnail: string;
-		/**
-		 * @description <p>Title of the ticket</p>
-		 * @type {number}
-		 * @memberof ProjectEntity
-		 */
-		'Description': number;
 		versions: Api.ProjectVersionEntity[];
 	}
 	
@@ -807,6 +818,87 @@ export namespace Api {
 	}
 
 	export interface TerminalDto {
+	}
+
+	export interface TicketEntity {
+		id: string;
+		createdAt: string;
+		updatedAt: string;
+		owner: Api.UserEntity;
+		editors: Api.UserEntity[];
+		/**
+		 * @description <p>Title of the ticket</p>
+		 * @type {string}
+		 * @memberof TicketEntity
+		 */
+		title: string;
+		/**
+		 * @description <p>Description of the ticket</p>
+		 * @type {string}
+		 * @memberof TicketEntity
+		 */
+		description: string;
+		/**
+		 * @description <p>Description of the ticket</p>
+		 * @type {string}
+		 * @memberof TicketEntity
+		 */
+		projectId: string;
+		/**
+		 * @description <p>Status of the ticket</p>
+		 * @type {Api.TicketEntity.Status}
+		 * @memberof TicketEntity
+		 */
+		status: Api.TicketEntity.Status;
+		/**
+		 * @description <p>Priority of the ticket</p>
+		 * @type {Api.TicketEntity.Priority}
+		 * @memberof TicketEntity
+		 */
+		priority: Api.TicketEntity.Priority;
+	}
+	
+	/**
+	 * @export
+	 * @namespace TicketEntity
+	 */
+	export namespace TicketEntity {
+		/**
+		 * <p>Status of the ticket</p>
+		 */
+		export type Status =
+			'OPEN' |
+			'IN_PROGRESS' |
+			'RESOLVED' |
+			'CLOSED'
+		
+		export namespace Status {
+			export enum Enum {
+				OPEN = 'OPEN',
+				INPROGRESS = 'IN_PROGRESS',
+				RESOLVED = 'RESOLVED',
+				CLOSED = 'CLOSED'
+			}
+		}
+	
+		/**
+		 * <p>Priority of the ticket</p>
+		 */
+		export type Priority =
+			'LOW' |
+			'MEDIUM' |
+			'HIGH' |
+			'CRITICAL'
+		
+		export namespace Priority {
+			export enum Enum {
+				LOW = 'LOW',
+				MEDIUM = 'MEDIUM',
+				HIGH = 'HIGH',
+				CRITICAL = 'CRITICAL'
+			}
+		}
+	
 	}
 
 	export interface TransferOwnershipRequestDto {

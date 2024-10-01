@@ -3300,6 +3300,7 @@ export namespace ProjectApi {
 		| CreateOneBaseProjectControllerProjectEntity409Response
 		| CreateOneBaseProjectControllerProjectEntity422Response
 		| CreateOneBaseProjectControllerProjectEntity500Response
+		| CreateOneBaseProjectControllerProjectEntityDefaultResponse
 	
 	export interface CreateOneBaseProjectControllerProjectEntity201Response {
 		status: 201
@@ -3354,6 +3355,13 @@ export namespace ProjectApi {
 		status: 500
 		contentType: 'application/json'
 		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CreateOneBaseProjectControllerProjectEntityDefaultResponse {
+		status: number
+		contentType: 'application/json'
+		body: Api.ProjectEntity
 		headers?: undefined
 	}
 	
@@ -3813,6 +3821,7 @@ export namespace ProjectApi {
 		| UpdateOneBaseProjectControllerProjectEntity409Response
 		| UpdateOneBaseProjectControllerProjectEntity422Response
 		| UpdateOneBaseProjectControllerProjectEntity500Response
+		| UpdateOneBaseProjectControllerProjectEntityDefaultResponse
 	
 	export interface UpdateOneBaseProjectControllerProjectEntity200Response {
 		status: 200
@@ -3870,6 +3879,13 @@ export namespace ProjectApi {
 		headers?: undefined
 	}
 	
+	export interface UpdateOneBaseProjectControllerProjectEntityDefaultResponse {
+		status: number
+		contentType: 'application/json'
+		body: Api.ProjectEntity
+		headers?: undefined
+	}
+	
 }
 
 /**
@@ -3884,7 +3900,7 @@ export const ProjectApiFetchParamCreator = function (configuration?: Configurati
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		createOneBaseProjectControllerProjectEntity(request: Api.CreateProjectDto, options: RequestInit = {}): FetchArgs {
+		createOneBaseProjectControllerProjectEntity(request: Api.ProjectEntity, options: RequestInit = {}): FetchArgs {
 			// verify required parameter 'request' is not null or undefined
 			if (request === null || request === undefined) {
 				throw new RequiredError('request', 'Required parameter request was null or undefined when calling createOneBaseProjectControllerProjectEntity.');
@@ -3898,6 +3914,7 @@ export const ProjectApiFetchParamCreator = function (configuration?: Configurati
 			if (localVarPathQueryStart !== -1) {
 				localVarPath = localVarPath.substring(0, localVarPathQueryStart);
 			}
+
 			// authentication bearer required
 			// http authorization required
 			if (configuration && configuration.authorization) {
@@ -4188,66 +4205,6 @@ export const ProjectApiFetchParamCreator = function (configuration?: Configurati
 			};
 		},
 		/**
-		 * @param {RequestInit} [options] Override http request option.
-		 * @throws {RequiredError}
-		 */
-		projectControllerGetAllProjects(options: RequestInit = {}): FetchArgs {
-			let localVarPath = `/project`;
-			const localVarPathQueryStart = localVarPath.indexOf("?");
-			const localVarRequestOptions: RequestInit = Object.assign({ method: 'GET' }, options);
-			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
-			const localVarQueryParameter = new URLSearchParams(localVarPathQueryStart !== -1 ? localVarPath.substring(localVarPathQueryStart + 1) : "");
-			if (localVarPathQueryStart !== -1) {
-				localVarPath = localVarPath.substring(0, localVarPathQueryStart);
-			}
-
-			// authentication bearer required
-			// http authorization required
-			if (configuration && configuration.authorization) {
-				const localVarAuthorizationValue = typeof configuration.authorization === 'function'
-					? configuration.authorization('bearer')
-					: configuration.authorization;
-				if (localVarAuthorizationValue !== null) {
-					localVarHeaderParameter.set("Authorization", "Bearer " + localVarAuthorizationValue);
-				}
-			}
-			localVarRequestOptions.headers = localVarHeaderParameter;
-
-			const localVarQueryParameterString = localVarQueryParameter.toString();
-			if (localVarQueryParameterString) {
-				localVarPath += "?" + localVarQueryParameterString;
-			}
-			return {
-				url: localVarPath,
-				options: localVarRequestOptions,
-			};
-		},
-		/**
-		 * @param {RequestInit} [options] Override http request option.
-		 * @throws {RequiredError}
-		 */
-		projectControllerGetBasedOnOwner(options: RequestInit = {}): FetchArgs {
-			let localVarPath = `/project/Get-Owner`;
-			const localVarPathQueryStart = localVarPath.indexOf("?");
-			const localVarRequestOptions: RequestInit = Object.assign({ method: 'GET' }, options);
-			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
-			const localVarQueryParameter = new URLSearchParams(localVarPathQueryStart !== -1 ? localVarPath.substring(localVarPathQueryStart + 1) : "");
-			if (localVarPathQueryStart !== -1) {
-				localVarPath = localVarPath.substring(0, localVarPathQueryStart);
-			}
-
-			localVarRequestOptions.headers = localVarHeaderParameter;
-
-			const localVarQueryParameterString = localVarQueryParameter.toString();
-			if (localVarQueryParameterString) {
-				localVarPath += "?" + localVarQueryParameterString;
-			}
-			return {
-				url: localVarPath,
-				options: localVarRequestOptions,
-			};
-		},
-		/**
 		 * @param {Api.EditorRequestDto} request
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
@@ -4410,7 +4367,7 @@ export const ProjectApiFp = function(configuration?: Configuration) {
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		createOneBaseProjectControllerProjectEntity(request: Api.CreateProjectDto, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<ProjectApi.CreateOneBaseProjectControllerProjectEntityResponse> {
+		createOneBaseProjectControllerProjectEntity(request: Api.ProjectEntity, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<ProjectApi.CreateOneBaseProjectControllerProjectEntityResponse> {
 			const localVarFetchArgs = ProjectApiFetchParamCreator(configuration).createOneBaseProjectControllerProjectEntity(request, options);
 			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
 				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
@@ -4496,6 +4453,14 @@ export const ProjectApiFp = function(configuration?: Configuration) {
 						}
 					}
 					throw response;
+				}
+				/* Catch-all response */
+				if (mimeType === 'application/json') {
+					return {
+						status: response.status,
+						contentType: 'application/json',
+						body: await response.json() as Api.ProjectEntity,
+					}
 				}
 				throw response;
 			};
@@ -4882,42 +4847,6 @@ export const ProjectApiFp = function(configuration?: Configuration) {
 			};
 		},
 		/**
-		 * @param {RequestInit} [options] Override http request option.
-		 * @throws {RequiredError}
-		 */
-		projectControllerGetAllProjects(options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<Response> {
-			const localVarFetchArgs = ProjectApiFetchParamCreator(configuration).projectControllerGetAllProjects(options);
-			return (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
-				return fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options).then((response) => {
-					const contentType = response.headers.get('Content-Type');
-					const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
-					
-					if (response.status === 401) {
-						return response;
-					}
-					throw response;
-				});
-			};
-		},
-		/**
-		 * @param {RequestInit} [options] Override http request option.
-		 * @throws {RequiredError}
-		 */
-		projectControllerGetBasedOnOwner(options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<Response> {
-			const localVarFetchArgs = ProjectApiFetchParamCreator(configuration).projectControllerGetBasedOnOwner(options);
-			return (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
-				return fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options).then((response) => {
-					const contentType = response.headers.get('Content-Type');
-					const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
-					
-					if (response.status === 200) {
-						return response;
-					}
-					throw response;
-				});
-			};
-		},
-		/**
 		 * @param {Api.EditorRequestDto} request
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
@@ -5181,6 +5110,14 @@ export const ProjectApiFp = function(configuration?: Configuration) {
 					}
 					throw response;
 				}
+				/* Catch-all response */
+				if (mimeType === 'application/json') {
+					return {
+						status: response.status,
+						contentType: 'application/json',
+						body: await response.json() as Api.ProjectEntity,
+					}
+				}
 				throw response;
 			};
 		},
@@ -5290,7 +5227,7 @@ export class ProjectApi extends BaseAPI implements ProjectApiInterface {
 	 * @param {RequestInit} [options] Override http request option.
 	 * @throws {RequiredError}
 	 */
-	public createOneBaseProjectControllerProjectEntity(request: Api.CreateProjectDto, options?: RequestInit) {
+	public createOneBaseProjectControllerProjectEntity(request: Api.ProjectEntity, options?: RequestInit) {
 		return ProjectApiFp(this.configuration).createOneBaseProjectControllerProjectEntity(request, options)(this.fetch, this.basePath);
 	}
 
@@ -5343,22 +5280,6 @@ export class ProjectApi extends BaseAPI implements ProjectApiInterface {
 	 */
 	public projectControllerAddEditor(request: Api.EditorRequestDto, options?: RequestInit) {
 		return ProjectApiFp(this.configuration).projectControllerAddEditor(request, options)(this.fetch, this.basePath);
-	}
-
-	/**
-	 * @param {RequestInit} [options] Override http request option.
-	 * @throws {RequiredError}
-	 */
-	public projectControllerGetAllProjects(options?: RequestInit) {
-		return ProjectApiFp(this.configuration).projectControllerGetAllProjects(options)(this.fetch, this.basePath);
-	}
-
-	/**
-	 * @param {RequestInit} [options] Override http request option.
-	 * @throws {RequiredError}
-	 */
-	public projectControllerGetBasedOnOwner(options?: RequestInit) {
-		return ProjectApiFp(this.configuration).projectControllerGetBasedOnOwner(options)(this.fetch, this.basePath);
 	}
 
 	/**
@@ -6526,6 +6447,414 @@ export class ProjectVersionApi extends BaseAPI implements ProjectVersionApiInter
 	}
 
 }
+export namespace TicketApi {
+	export type CreateOneBaseTicketControllerTicketEntityResponse =
+		| CreateOneBaseTicketControllerTicketEntity201Response
+		| CreateOneBaseTicketControllerTicketEntity400Response
+		| CreateOneBaseTicketControllerTicketEntity401Response
+		| CreateOneBaseTicketControllerTicketEntity403Response
+		| CreateOneBaseTicketControllerTicketEntity404Response
+		| CreateOneBaseTicketControllerTicketEntity409Response
+		| CreateOneBaseTicketControllerTicketEntity422Response
+		| CreateOneBaseTicketControllerTicketEntity500Response
+	
+	export interface CreateOneBaseTicketControllerTicketEntity201Response {
+		status: 201
+		contentType: 'application/json'
+		body: Api.TicketEntity
+		headers?: undefined
+	}
+	
+	export interface CreateOneBaseTicketControllerTicketEntity400Response {
+		status: 400
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CreateOneBaseTicketControllerTicketEntity401Response {
+		status: 401
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CreateOneBaseTicketControllerTicketEntity403Response {
+		status: 403
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CreateOneBaseTicketControllerTicketEntity404Response {
+		status: 404
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CreateOneBaseTicketControllerTicketEntity409Response {
+		status: 409
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CreateOneBaseTicketControllerTicketEntity422Response {
+		status: 422
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CreateOneBaseTicketControllerTicketEntity500Response {
+		status: 500
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export type DeleteOneBaseTicketControllerTicketEntityResponse =
+		| DeleteOneBaseTicketControllerTicketEntity200Response
+		| DeleteOneBaseTicketControllerTicketEntity400Response
+		| DeleteOneBaseTicketControllerTicketEntity401Response
+		| DeleteOneBaseTicketControllerTicketEntity403Response
+		| DeleteOneBaseTicketControllerTicketEntity404Response
+		| DeleteOneBaseTicketControllerTicketEntity409Response
+		| DeleteOneBaseTicketControllerTicketEntity422Response
+		| DeleteOneBaseTicketControllerTicketEntity500Response
+	
+	export interface DeleteOneBaseTicketControllerTicketEntity200Response {
+		status: 200
+		body?: undefined
+		headers?: undefined
+	}
+	
+	export interface DeleteOneBaseTicketControllerTicketEntity400Response {
+		status: 400
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface DeleteOneBaseTicketControllerTicketEntity401Response {
+		status: 401
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface DeleteOneBaseTicketControllerTicketEntity403Response {
+		status: 403
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface DeleteOneBaseTicketControllerTicketEntity404Response {
+		status: 404
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface DeleteOneBaseTicketControllerTicketEntity409Response {
+		status: 409
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface DeleteOneBaseTicketControllerTicketEntity422Response {
+		status: 422
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface DeleteOneBaseTicketControllerTicketEntity500Response {
+		status: 500
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface GetManyBaseTicketControllerTicketEntityParameters {
+		/**
+		 * @description <p>Selects resource fields. <a href="https://github.com/nestjsx/crud/wiki/Requests#select" target="_blank">Docs</a></p>
+		 * @type {string[]}
+		 */
+		fields?: string[]
+		/**
+		 * @description <p>Adds search condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#search" target="_blank">Docs</a></p>
+		 * @type {string}
+		 */
+		s?: string
+		/**
+		 * @description <p>Adds filter condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#filter" target="_blank">Docs</a></p>
+		 * @type {string[]}
+		 */
+		filter?: string[]
+		/**
+		 * @description <p>Adds OR condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#or" target="_blank">Docs</a></p>
+		 * @type {string[]}
+		 */
+		or?: string[]
+		/**
+		 * @description <p>Adds sort by field. <a href="https://github.com/nestjsx/crud/wiki/Requests#sort" target="_blank">Docs</a></p>
+		 * @type {string[]}
+		 */
+		sort?: string[]
+		/**
+		 * @description <p>Adds relational resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#join" target="_blank">Docs</a></p>
+		 * @type {string[]}
+		 */
+		join?: string[]
+		/**
+		 * @description <p>Limit amount of resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#limit" target="_blank">Docs</a></p>
+		 * @type {number}
+		 */
+		limit?: number
+		/**
+		 * @description <p>Offset amount of resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#offset" target="_blank">Docs</a></p>
+		 * @type {number}
+		 */
+		offset?: number
+		/**
+		 * @description <p>Page portion of resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#page" target="_blank">Docs</a></p>
+		 * @type {number}
+		 */
+		page?: number
+		/**
+		 * @description <p>Reset cache (if was enabled). <a href="https://github.com/nestjsx/crud/wiki/Requests#cache" target="_blank">Docs</a></p>
+		 * @type {number}
+		 * minimum: 0
+		 * maximum: 1
+		 */
+		cache?: number
+	}
+	
+	export type GetManyBaseTicketControllerTicketEntityResponse =
+		| GetManyBaseTicketControllerTicketEntity200Response
+		| GetManyBaseTicketControllerTicketEntity400Response
+		| GetManyBaseTicketControllerTicketEntity401Response
+		| GetManyBaseTicketControllerTicketEntity403Response
+		| GetManyBaseTicketControllerTicketEntity404Response
+		| GetManyBaseTicketControllerTicketEntity409Response
+		| GetManyBaseTicketControllerTicketEntity422Response
+		| GetManyBaseTicketControllerTicketEntity500Response
+	
+	export interface GetManyBaseTicketControllerTicketEntity200Response {
+		status: 200
+		contentType: 'application/json'
+		body: Api.GetManyTicketEntityResponseDto | Api.TicketEntity[]
+		headers?: undefined
+	}
+	
+	export interface GetManyBaseTicketControllerTicketEntity400Response {
+		status: 400
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface GetManyBaseTicketControllerTicketEntity401Response {
+		status: 401
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface GetManyBaseTicketControllerTicketEntity403Response {
+		status: 403
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface GetManyBaseTicketControllerTicketEntity404Response {
+		status: 404
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface GetManyBaseTicketControllerTicketEntity409Response {
+		status: 409
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface GetManyBaseTicketControllerTicketEntity422Response {
+		status: 422
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface GetManyBaseTicketControllerTicketEntity500Response {
+		status: 500
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface GetOneBaseTicketControllerTicketEntityParameters {
+		id: string
+		/**
+		 * @description <p>Selects resource fields. <a href="https://github.com/nestjsx/crud/wiki/Requests#select" target="_blank">Docs</a></p>
+		 * @type {string[]}
+		 */
+		fields?: string[]
+		/**
+		 * @description <p>Adds relational resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#join" target="_blank">Docs</a></p>
+		 * @type {string[]}
+		 */
+		join?: string[]
+		/**
+		 * @description <p>Reset cache (if was enabled). <a href="https://github.com/nestjsx/crud/wiki/Requests#cache" target="_blank">Docs</a></p>
+		 * @type {number}
+		 * minimum: 0
+		 * maximum: 1
+		 */
+		cache?: number
+	}
+	
+	export type GetOneBaseTicketControllerTicketEntityResponse =
+		| GetOneBaseTicketControllerTicketEntity200Response
+		| GetOneBaseTicketControllerTicketEntity400Response
+		| GetOneBaseTicketControllerTicketEntity401Response
+		| GetOneBaseTicketControllerTicketEntity403Response
+		| GetOneBaseTicketControllerTicketEntity404Response
+		| GetOneBaseTicketControllerTicketEntity409Response
+		| GetOneBaseTicketControllerTicketEntity422Response
+		| GetOneBaseTicketControllerTicketEntity500Response
+	
+	export interface GetOneBaseTicketControllerTicketEntity200Response {
+		status: 200
+		contentType: 'application/json'
+		body: Api.TicketEntity
+		headers?: undefined
+	}
+	
+	export interface GetOneBaseTicketControllerTicketEntity400Response {
+		status: 400
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface GetOneBaseTicketControllerTicketEntity401Response {
+		status: 401
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface GetOneBaseTicketControllerTicketEntity403Response {
+		status: 403
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface GetOneBaseTicketControllerTicketEntity404Response {
+		status: 404
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface GetOneBaseTicketControllerTicketEntity409Response {
+		status: 409
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface GetOneBaseTicketControllerTicketEntity422Response {
+		status: 422
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface GetOneBaseTicketControllerTicketEntity500Response {
+		status: 500
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export type UpdateOneBaseTicketControllerTicketEntityResponse =
+		| UpdateOneBaseTicketControllerTicketEntity200Response
+		| UpdateOneBaseTicketControllerTicketEntity400Response
+		| UpdateOneBaseTicketControllerTicketEntity401Response
+		| UpdateOneBaseTicketControllerTicketEntity403Response
+		| UpdateOneBaseTicketControllerTicketEntity404Response
+		| UpdateOneBaseTicketControllerTicketEntity409Response
+		| UpdateOneBaseTicketControllerTicketEntity422Response
+		| UpdateOneBaseTicketControllerTicketEntity500Response
+	
+	export interface UpdateOneBaseTicketControllerTicketEntity200Response {
+		status: 200
+		contentType: 'application/json'
+		body: Api.TicketEntity
+		headers?: undefined
+	}
+	
+	export interface UpdateOneBaseTicketControllerTicketEntity400Response {
+		status: 400
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface UpdateOneBaseTicketControllerTicketEntity401Response {
+		status: 401
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface UpdateOneBaseTicketControllerTicketEntity403Response {
+		status: 403
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface UpdateOneBaseTicketControllerTicketEntity404Response {
+		status: 404
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface UpdateOneBaseTicketControllerTicketEntity409Response {
+		status: 409
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface UpdateOneBaseTicketControllerTicketEntity422Response {
+		status: 422
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface UpdateOneBaseTicketControllerTicketEntity500Response {
+		status: 500
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+}
+
 /**
  * TicketApi - fetch parameter creator
  * @export
@@ -6533,16 +6862,18 @@ export class ProjectVersionApi extends BaseAPI implements ProjectVersionApiInter
 export const TicketApiFetchParamCreator = function (configuration?: Configuration) {
 	return {
 		/**
-		 * @param {Api.CreateTicketDto} request
+		 * @summary Create a single TicketEntity
+		 * @param {Api.TicketEntity} request
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		ticketControllerCreate(request: Api.CreateTicketDto, options: RequestInit = {}): FetchArgs {
+		createOneBaseTicketControllerTicketEntity(request: Api.TicketEntity, options: RequestInit = {}): FetchArgs {
 			// verify required parameter 'request' is not null or undefined
 			if (request === null || request === undefined) {
-				throw new RequiredError('request', 'Required parameter request was null or undefined when calling ticketControllerCreate.');
+				throw new RequiredError('request', 'Required parameter request was null or undefined when calling createOneBaseTicketControllerTicketEntity.');
 			}
-			let localVarPath = `/tickets/create-ticket`;
+
+			let localVarPath = `/tickets`;
 			const localVarPathQueryStart = localVarPath.indexOf("?");
 			const localVarRequestOptions: RequestInit = Object.assign({ method: 'POST' }, options);
 			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
@@ -6551,6 +6882,16 @@ export const TicketApiFetchParamCreator = function (configuration?: Configuratio
 				localVarPath = localVarPath.substring(0, localVarPathQueryStart);
 			}
 
+			// authentication bearer required
+			// http authorization required
+			if (configuration && configuration.authorization) {
+				const localVarAuthorizationValue = typeof configuration.authorization === 'function'
+					? configuration.authorization('bearer')
+					: configuration.authorization;
+				if (localVarAuthorizationValue !== null) {
+					localVarHeaderParameter.set("Authorization", "Bearer " + localVarAuthorizationValue);
+				}
+			}
 			localVarHeaderParameter.set('Content-Type', 'application/json');
 
 			localVarRequestOptions.headers = localVarHeaderParameter;
@@ -6569,11 +6910,19 @@ export const TicketApiFetchParamCreator = function (configuration?: Configuratio
 			};
 		},
 		/**
+		 * @summary Delete a single TicketEntity
+		 * @param {string} id
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		ticketControllerDeleteAllTickets(options: RequestInit = {}): FetchArgs {
-			let localVarPath = `/tickets/delete-all`;
+		deleteOneBaseTicketControllerTicketEntity(id: string, options: RequestInit = {}): FetchArgs {
+			// verify required parameter 'id' is not null or undefined
+			if (id === null || id === undefined) {
+				throw new RequiredError('id', 'Required parameter id was null or undefined when calling deleteOneBaseTicketControllerTicketEntity.');
+			}
+
+			let localVarPath = `/tickets/{id}`
+				.replace('{id}', encodeURIComponent(String(id)));
 			const localVarPathQueryStart = localVarPath.indexOf("?");
 			const localVarRequestOptions: RequestInit = Object.assign({ method: 'DELETE' }, options);
 			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
@@ -6582,6 +6931,16 @@ export const TicketApiFetchParamCreator = function (configuration?: Configuratio
 				localVarPath = localVarPath.substring(0, localVarPathQueryStart);
 			}
 
+			// authentication bearer required
+			// http authorization required
+			if (configuration && configuration.authorization) {
+				const localVarAuthorizationValue = typeof configuration.authorization === 'function'
+					? configuration.authorization('bearer')
+					: configuration.authorization;
+				if (localVarAuthorizationValue !== null) {
+					localVarHeaderParameter.set("Authorization", "Bearer " + localVarAuthorizationValue);
+				}
+			}
 			localVarRequestOptions.headers = localVarHeaderParameter;
 
 			const localVarQueryParameterString = localVarQueryParameter.toString();
@@ -6594,10 +6953,22 @@ export const TicketApiFetchParamCreator = function (configuration?: Configuratio
 			};
 		},
 		/**
+		 * @summary Retrieve multiple TicketEntities
+		 * @param {string[]} [fields] <p>Selects resource fields. <a href="https://github.com/nestjsx/crud/wiki/Requests#select" target="_blank">Docs</a></p>
+		 * @param {string} [s] <p>Adds search condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#search" target="_blank">Docs</a></p>
+		 * @param {string[]} [filter] <p>Adds filter condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#filter" target="_blank">Docs</a></p>
+		 * @param {string[]} [or] <p>Adds OR condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#or" target="_blank">Docs</a></p>
+		 * @param {string[]} [sort] <p>Adds sort by field. <a href="https://github.com/nestjsx/crud/wiki/Requests#sort" target="_blank">Docs</a></p>
+		 * @param {string[]} [join] <p>Adds relational resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#join" target="_blank">Docs</a></p>
+		 * @param {number} [limit] <p>Limit amount of resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#limit" target="_blank">Docs</a></p>
+		 * @param {number} [offset] <p>Offset amount of resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#offset" target="_blank">Docs</a></p>
+		 * @param {number} [page] <p>Page portion of resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#page" target="_blank">Docs</a></p>
+		 * @param {number} [cache] <p>Reset cache (if was enabled). <a href="https://github.com/nestjsx/crud/wiki/Requests#cache" target="_blank">Docs</a></p>
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		ticketControllerGetAll(options: RequestInit = {}): FetchArgs {
+		getManyBaseTicketControllerTicketEntity(__params: TicketApi.GetManyBaseTicketControllerTicketEntityParameters, options: RequestInit = {}): FetchArgs {
+
 			let localVarPath = `/tickets`;
 			const localVarPathQueryStart = localVarPath.indexOf("?");
 			const localVarRequestOptions: RequestInit = Object.assign({ method: 'GET' }, options);
@@ -6607,6 +6978,77 @@ export const TicketApiFetchParamCreator = function (configuration?: Configuratio
 				localVarPath = localVarPath.substring(0, localVarPathQueryStart);
 			}
 
+			// authentication bearer required
+			// http authorization required
+			if (configuration && configuration.authorization) {
+				const localVarAuthorizationValue = typeof configuration.authorization === 'function'
+					? configuration.authorization('bearer')
+					: configuration.authorization;
+				if (localVarAuthorizationValue !== null) {
+					localVarHeaderParameter.set("Authorization", "Bearer " + localVarAuthorizationValue);
+				}
+			}
+			if (__params.fields !== undefined) {
+				/* array form */
+				localVarQueryParameter.append('fields', __params.fields.map(localVarArrayMapElement => escape(String(localVarArrayMapElement))).join(','));
+			}
+
+			if (__params.s !== undefined) {
+				localVarQueryParameter.append('s', String(__params.s));
+			}
+
+			if (__params.filter !== undefined) {
+				/* array form exploded */
+				for (const localVarArrayElement of __params.filter) {
+					if (localVarArrayElement !== undefined) {
+						localVarQueryParameter.append('filter', localVarArrayElement !== null ? String(localVarArrayElement) : '');
+					}
+				}
+			}
+
+			if (__params.or !== undefined) {
+				/* array form exploded */
+				for (const localVarArrayElement of __params.or) {
+					if (localVarArrayElement !== undefined) {
+						localVarQueryParameter.append('or', localVarArrayElement !== null ? String(localVarArrayElement) : '');
+					}
+				}
+			}
+
+			if (__params.sort !== undefined) {
+				/* array form exploded */
+				for (const localVarArrayElement of __params.sort) {
+					if (localVarArrayElement !== undefined) {
+						localVarQueryParameter.append('sort', localVarArrayElement !== null ? String(localVarArrayElement) : '');
+					}
+				}
+			}
+
+			if (__params.join !== undefined) {
+				/* array form exploded */
+				for (const localVarArrayElement of __params.join) {
+					if (localVarArrayElement !== undefined) {
+						localVarQueryParameter.append('join', localVarArrayElement !== null ? String(localVarArrayElement) : '');
+					}
+				}
+			}
+
+			if (__params.limit !== undefined) {
+				localVarQueryParameter.append('limit', String(__params.limit));
+			}
+
+			if (__params.offset !== undefined) {
+				localVarQueryParameter.append('offset', String(__params.offset));
+			}
+
+			if (__params.page !== undefined) {
+				localVarQueryParameter.append('page', String(__params.page));
+			}
+
+			if (__params.cache !== undefined) {
+				localVarQueryParameter.append('cache', String(__params.cache));
+			}
+
 			localVarRequestOptions.headers = localVarHeaderParameter;
 
 			const localVarQueryParameterString = localVarQueryParameter.toString();
@@ -6619,17 +7061,22 @@ export const TicketApiFetchParamCreator = function (configuration?: Configuratio
 			};
 		},
 		/**
-		 * @param {string} ticketID
+		 * @summary Retrieve a single TicketEntity
+		 * @param {string} id
+		 * @param {string[]} [fields] <p>Selects resource fields. <a href="https://github.com/nestjsx/crud/wiki/Requests#select" target="_blank">Docs</a></p>
+		 * @param {string[]} [join] <p>Adds relational resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#join" target="_blank">Docs</a></p>
+		 * @param {number} [cache] <p>Reset cache (if was enabled). <a href="https://github.com/nestjsx/crud/wiki/Requests#cache" target="_blank">Docs</a></p>
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		ticketControllerGetTicketByID(ticketID: string, options: RequestInit = {}): FetchArgs {
-			// verify required parameter 'ticketID' is not null or undefined
-			if (ticketID === null || ticketID === undefined) {
-				throw new RequiredError('ticketID', 'Required parameter ticketID was null or undefined when calling ticketControllerGetTicketByID.');
+		getOneBaseTicketControllerTicketEntity(__params: TicketApi.GetOneBaseTicketControllerTicketEntityParameters, options: RequestInit = {}): FetchArgs {
+			// verify required parameter 'id' is not null or undefined
+			if (__params.id === null || __params.id === undefined) {
+				throw new RequiredError('id', 'Required parameter id was null or undefined when calling getOneBaseTicketControllerTicketEntity.');
 			}
-			let localVarPath = `/tickets/tickets/{ticketID}`
-				.replace('{ticketID}', encodeURIComponent(String(ticketID)));
+
+			let localVarPath = `/tickets/{id}`
+				.replace('{id}', encodeURIComponent(String(__params.id)));
 			const localVarPathQueryStart = localVarPath.indexOf("?");
 			const localVarRequestOptions: RequestInit = Object.assign({ method: 'GET' }, options);
 			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
@@ -6638,6 +7085,34 @@ export const TicketApiFetchParamCreator = function (configuration?: Configuratio
 				localVarPath = localVarPath.substring(0, localVarPathQueryStart);
 			}
 
+			// authentication bearer required
+			// http authorization required
+			if (configuration && configuration.authorization) {
+				const localVarAuthorizationValue = typeof configuration.authorization === 'function'
+					? configuration.authorization('bearer')
+					: configuration.authorization;
+				if (localVarAuthorizationValue !== null) {
+					localVarHeaderParameter.set("Authorization", "Bearer " + localVarAuthorizationValue);
+				}
+			}
+			if (__params.fields !== undefined) {
+				/* array form */
+				localVarQueryParameter.append('fields', __params.fields.map(localVarArrayMapElement => escape(String(localVarArrayMapElement))).join(','));
+			}
+
+			if (__params.join !== undefined) {
+				/* array form exploded */
+				for (const localVarArrayElement of __params.join) {
+					if (localVarArrayElement !== undefined) {
+						localVarQueryParameter.append('join', localVarArrayElement !== null ? String(localVarArrayElement) : '');
+					}
+				}
+			}
+
+			if (__params.cache !== undefined) {
+				localVarQueryParameter.append('cache', String(__params.cache));
+			}
+
 			localVarRequestOptions.headers = localVarHeaderParameter;
 
 			const localVarQueryParameterString = localVarQueryParameter.toString();
@@ -6650,26 +7125,49 @@ export const TicketApiFetchParamCreator = function (configuration?: Configuratio
 			};
 		},
 		/**
-		 * @param {string} ticketID
+		 * @summary Update a single TicketEntity
+		 * @param {string} id
+		 * @param {Api.TicketEntity} request
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		ticketControllerUpdateStatus(ticketID: string, options: RequestInit = {}): FetchArgs {
-			// verify required parameter 'ticketID' is not null or undefined
-			if (ticketID === null || ticketID === undefined) {
-				throw new RequiredError('ticketID', 'Required parameter ticketID was null or undefined when calling ticketControllerUpdateStatus.');
+		updateOneBaseTicketControllerTicketEntity(id: string, request: Api.TicketEntity, options: RequestInit = {}): FetchArgs {
+			// verify required parameter 'id' is not null or undefined
+			if (id === null || id === undefined) {
+				throw new RequiredError('id', 'Required parameter id was null or undefined when calling updateOneBaseTicketControllerTicketEntity.');
 			}
-			let localVarPath = `/tickets/{ticketID}/status`
-				.replace('{ticketID}', encodeURIComponent(String(ticketID)));
+			// verify required parameter 'request' is not null or undefined
+			if (request === null || request === undefined) {
+				throw new RequiredError('request', 'Required parameter request was null or undefined when calling updateOneBaseTicketControllerTicketEntity.');
+			}
+
+			let localVarPath = `/tickets/{id}`
+				.replace('{id}', encodeURIComponent(String(id)));
 			const localVarPathQueryStart = localVarPath.indexOf("?");
-			const localVarRequestOptions: RequestInit = Object.assign({ method: 'PUT' }, options);
+			const localVarRequestOptions: RequestInit = Object.assign({ method: 'PATCH' }, options);
 			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
 			const localVarQueryParameter = new URLSearchParams(localVarPathQueryStart !== -1 ? localVarPath.substring(localVarPathQueryStart + 1) : "");
 			if (localVarPathQueryStart !== -1) {
 				localVarPath = localVarPath.substring(0, localVarPathQueryStart);
 			}
 
+			// authentication bearer required
+			// http authorization required
+			if (configuration && configuration.authorization) {
+				const localVarAuthorizationValue = typeof configuration.authorization === 'function'
+					? configuration.authorization('bearer')
+					: configuration.authorization;
+				if (localVarAuthorizationValue !== null) {
+					localVarHeaderParameter.set("Authorization", "Bearer " + localVarAuthorizationValue);
+				}
+			}
+			localVarHeaderParameter.set('Content-Type', 'application/json');
+
 			localVarRequestOptions.headers = localVarHeaderParameter;
+	
+			if (request !== undefined) {
+				localVarRequestOptions.body = JSON.stringify(request || {});
+			}
 
 			const localVarQueryParameterString = localVarQueryParameter.toString();
 			if (localVarQueryParameterString) {
@@ -6690,96 +7188,492 @@ export const TicketApiFetchParamCreator = function (configuration?: Configuratio
 export const TicketApiFp = function(configuration?: Configuration) {
 	return {
 		/**
-		 * @param {Api.CreateTicketDto} request
+		 * @summary Create a single TicketEntity
+		 * @param {Api.TicketEntity} request
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		ticketControllerCreate(request: Api.CreateTicketDto, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<Response> {
-			const localVarFetchArgs = TicketApiFetchParamCreator(configuration).ticketControllerCreate(request, options);
-			return (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
-				return fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options).then((response) => {
-					const contentType = response.headers.get('Content-Type');
-					const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
-					
-					if (response.status === 201) {
-						return response;
+		createOneBaseTicketControllerTicketEntity(request: Api.TicketEntity, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<TicketApi.CreateOneBaseTicketControllerTicketEntityResponse> {
+			const localVarFetchArgs = TicketApiFetchParamCreator(configuration).createOneBaseTicketControllerTicketEntity(request, options);
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				if (response.status === 201) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.TicketEntity,
+						}
 					}
 					throw response;
-				});
+				}
+				if (response.status === 400) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 401) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 403) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 404) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 409) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 422) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 500) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				throw response;
 			};
 		},
 		/**
+		 * @summary Delete a single TicketEntity
+		 * @param {string} id
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		ticketControllerDeleteAllTickets(options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<Response> {
-			const localVarFetchArgs = TicketApiFetchParamCreator(configuration).ticketControllerDeleteAllTickets(options);
-			return (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
-				return fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options).then((response) => {
-					const contentType = response.headers.get('Content-Type');
-					const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
-					
-					if (response.status === 200) {
-						return response;
+		deleteOneBaseTicketControllerTicketEntity(id: string, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<TicketApi.DeleteOneBaseTicketControllerTicketEntityResponse> {
+			const localVarFetchArgs = TicketApiFetchParamCreator(configuration).deleteOneBaseTicketControllerTicketEntity(id, options);
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				if (response.status === 200) {
+					return {
+						status: response.status,
+						/* No content */
+					}
+				}
+				if (response.status === 400) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
 					}
 					throw response;
-				});
+				}
+				if (response.status === 401) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 403) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 404) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 409) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 422) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 500) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				throw response;
 			};
 		},
 		/**
+		 * @summary Retrieve multiple TicketEntities
+		 * @param {string[]} [fields] <p>Selects resource fields. <a href="https://github.com/nestjsx/crud/wiki/Requests#select" target="_blank">Docs</a></p>
+		 * @param {string} [s] <p>Adds search condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#search" target="_blank">Docs</a></p>
+		 * @param {string[]} [filter] <p>Adds filter condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#filter" target="_blank">Docs</a></p>
+		 * @param {string[]} [or] <p>Adds OR condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#or" target="_blank">Docs</a></p>
+		 * @param {string[]} [sort] <p>Adds sort by field. <a href="https://github.com/nestjsx/crud/wiki/Requests#sort" target="_blank">Docs</a></p>
+		 * @param {string[]} [join] <p>Adds relational resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#join" target="_blank">Docs</a></p>
+		 * @param {number} [limit] <p>Limit amount of resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#limit" target="_blank">Docs</a></p>
+		 * @param {number} [offset] <p>Offset amount of resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#offset" target="_blank">Docs</a></p>
+		 * @param {number} [page] <p>Page portion of resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#page" target="_blank">Docs</a></p>
+		 * @param {number} [cache] <p>Reset cache (if was enabled). <a href="https://github.com/nestjsx/crud/wiki/Requests#cache" target="_blank">Docs</a></p>
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		ticketControllerGetAll(options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<Response> {
-			const localVarFetchArgs = TicketApiFetchParamCreator(configuration).ticketControllerGetAll(options);
-			return (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
-				return fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options).then((response) => {
-					const contentType = response.headers.get('Content-Type');
-					const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
-					
-					if (response.status === 200) {
-						return response;
+		getManyBaseTicketControllerTicketEntity(__params: TicketApi.GetManyBaseTicketControllerTicketEntityParameters, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<TicketApi.GetManyBaseTicketControllerTicketEntityResponse> {
+			const localVarFetchArgs = TicketApiFetchParamCreator(configuration).getManyBaseTicketControllerTicketEntity(__params, options);
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				if (response.status === 200) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.GetManyTicketEntityResponseDto | Api.TicketEntity[],
+						}
 					}
 					throw response;
-				});
+				}
+				if (response.status === 400) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 401) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 403) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 404) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 409) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 422) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 500) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				throw response;
 			};
 		},
 		/**
-		 * @param {string} ticketID
+		 * @summary Retrieve a single TicketEntity
+		 * @param {string} id
+		 * @param {string[]} [fields] <p>Selects resource fields. <a href="https://github.com/nestjsx/crud/wiki/Requests#select" target="_blank">Docs</a></p>
+		 * @param {string[]} [join] <p>Adds relational resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#join" target="_blank">Docs</a></p>
+		 * @param {number} [cache] <p>Reset cache (if was enabled). <a href="https://github.com/nestjsx/crud/wiki/Requests#cache" target="_blank">Docs</a></p>
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		ticketControllerGetTicketByID(ticketID: string, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<Response> {
-			const localVarFetchArgs = TicketApiFetchParamCreator(configuration).ticketControllerGetTicketByID(ticketID, options);
-			return (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
-				return fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options).then((response) => {
-					const contentType = response.headers.get('Content-Type');
-					const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
-					
-					if (response.status === 200) {
-						return response;
+		getOneBaseTicketControllerTicketEntity(__params: TicketApi.GetOneBaseTicketControllerTicketEntityParameters, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<TicketApi.GetOneBaseTicketControllerTicketEntityResponse> {
+			const localVarFetchArgs = TicketApiFetchParamCreator(configuration).getOneBaseTicketControllerTicketEntity(__params, options);
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				if (response.status === 200) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.TicketEntity,
+						}
 					}
 					throw response;
-				});
+				}
+				if (response.status === 400) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 401) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 403) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 404) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 409) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 422) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 500) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				throw response;
 			};
 		},
 		/**
-		 * @param {string} ticketID
+		 * @summary Update a single TicketEntity
+		 * @param {string} id
+		 * @param {Api.TicketEntity} request
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		ticketControllerUpdateStatus(ticketID: string, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<Response> {
-			const localVarFetchArgs = TicketApiFetchParamCreator(configuration).ticketControllerUpdateStatus(ticketID, options);
-			return (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
-				return fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options).then((response) => {
-					const contentType = response.headers.get('Content-Type');
-					const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
-					
-					if (response.status === 200) {
-						return response;
+		updateOneBaseTicketControllerTicketEntity(id: string, request: Api.TicketEntity, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<TicketApi.UpdateOneBaseTicketControllerTicketEntityResponse> {
+			const localVarFetchArgs = TicketApiFetchParamCreator(configuration).updateOneBaseTicketControllerTicketEntity(id, request, options);
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				if (response.status === 200) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.TicketEntity,
+						}
 					}
 					throw response;
-				});
+				}
+				if (response.status === 400) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 401) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 403) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 404) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 409) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 422) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 500) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				throw response;
 			};
 		},
 	}
@@ -6789,9 +7683,70 @@ export const TicketApiFp = function(configuration?: Configuration) {
  * TicketApi - factory interface
  * @export
  */
-export const TicketApiFactory: FactoryFunction<TicketApi> = function (configuration?: Configuration, basePath?: string, fetch?: FetchAPI) {
+export const TicketApiFactory: FactoryFunction<TicketApiInterface> = function (configuration?: Configuration, basePath?: string, fetch?: FetchAPI) {
 	return new TicketApi(configuration, basePath, fetch);
 };
+
+/**
+ * TicketApi - interface
+ * @export
+ * @interface TicketApi
+ */
+export interface TicketApiInterface {
+	/**
+	 * @summary Create a single TicketEntity
+	 * @param {Api.TicketEntity} request
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	createOneBaseTicketControllerTicketEntity(request: Api.TicketEntity, options?: RequestInit): Promise<TicketApi.CreateOneBaseTicketControllerTicketEntityResponse>
+
+	/**
+	 * @summary Delete a single TicketEntity
+	 * @param {string} id
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	deleteOneBaseTicketControllerTicketEntity(id: string, options?: RequestInit): Promise<TicketApi.DeleteOneBaseTicketControllerTicketEntityResponse>
+
+	/**
+	 * @summary Retrieve multiple TicketEntities
+	 * @param {string[]} [fields] <p>Selects resource fields. <a href="https://github.com/nestjsx/crud/wiki/Requests#select" target="_blank">Docs</a></p>
+	 * @param {string} [s] <p>Adds search condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#search" target="_blank">Docs</a></p>
+	 * @param {string[]} [filter] <p>Adds filter condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#filter" target="_blank">Docs</a></p>
+	 * @param {string[]} [or] <p>Adds OR condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#or" target="_blank">Docs</a></p>
+	 * @param {string[]} [sort] <p>Adds sort by field. <a href="https://github.com/nestjsx/crud/wiki/Requests#sort" target="_blank">Docs</a></p>
+	 * @param {string[]} [join] <p>Adds relational resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#join" target="_blank">Docs</a></p>
+	 * @param {number} [limit] <p>Limit amount of resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#limit" target="_blank">Docs</a></p>
+	 * @param {number} [offset] <p>Offset amount of resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#offset" target="_blank">Docs</a></p>
+	 * @param {number} [page] <p>Page portion of resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#page" target="_blank">Docs</a></p>
+	 * @param {number} [cache] <p>Reset cache (if was enabled). <a href="https://github.com/nestjsx/crud/wiki/Requests#cache" target="_blank">Docs</a></p>
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	getManyBaseTicketControllerTicketEntity(__params: TicketApi.GetManyBaseTicketControllerTicketEntityParameters, options?: RequestInit): Promise<TicketApi.GetManyBaseTicketControllerTicketEntityResponse>
+
+	/**
+	 * @summary Retrieve a single TicketEntity
+	 * @param {string} id
+	 * @param {string[]} [fields] <p>Selects resource fields. <a href="https://github.com/nestjsx/crud/wiki/Requests#select" target="_blank">Docs</a></p>
+	 * @param {string[]} [join] <p>Adds relational resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#join" target="_blank">Docs</a></p>
+	 * @param {number} [cache] <p>Reset cache (if was enabled). <a href="https://github.com/nestjsx/crud/wiki/Requests#cache" target="_blank">Docs</a></p>
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	getOneBaseTicketControllerTicketEntity(__params: TicketApi.GetOneBaseTicketControllerTicketEntityParameters, options?: RequestInit): Promise<TicketApi.GetOneBaseTicketControllerTicketEntityResponse>
+
+	/**
+	 * @summary Update a single TicketEntity
+	 * @param {string} id
+	 * @param {Api.TicketEntity} request
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	updateOneBaseTicketControllerTicketEntity(id: string, request: Api.TicketEntity, options?: RequestInit): Promise<TicketApi.UpdateOneBaseTicketControllerTicketEntityResponse>
+
+}
 
 /**
  * TicketApi - object-oriented interface
@@ -6799,48 +7754,68 @@ export const TicketApiFactory: FactoryFunction<TicketApi> = function (configurat
  * @class TicketApi
  * @extends {BaseAPI}
  */
-export class TicketApi extends BaseAPI {
+export class TicketApi extends BaseAPI implements TicketApiInterface {
 	/**
-	 * @param {Api.CreateTicketDto} request
+	 * @summary Create a single TicketEntity
+	 * @param {Api.TicketEntity} request
 	 * @param {RequestInit} [options] Override http request option.
 	 * @throws {RequiredError}
 	 */
-	public ticketControllerCreate(request: Api.CreateTicketDto, options?: RequestInit) {
-		return TicketApiFp(this.configuration).ticketControllerCreate(request, options)(this.fetch, this.basePath);
+	public createOneBaseTicketControllerTicketEntity(request: Api.TicketEntity, options?: RequestInit) {
+		return TicketApiFp(this.configuration).createOneBaseTicketControllerTicketEntity(request, options)(this.fetch, this.basePath);
 	}
 
 	/**
+	 * @summary Delete a single TicketEntity
+	 * @param {string} id
 	 * @param {RequestInit} [options] Override http request option.
 	 * @throws {RequiredError}
 	 */
-	public ticketControllerDeleteAllTickets(options?: RequestInit) {
-		return TicketApiFp(this.configuration).ticketControllerDeleteAllTickets(options)(this.fetch, this.basePath);
+	public deleteOneBaseTicketControllerTicketEntity(id: string, options?: RequestInit) {
+		return TicketApiFp(this.configuration).deleteOneBaseTicketControllerTicketEntity(id, options)(this.fetch, this.basePath);
 	}
 
 	/**
+	 * @summary Retrieve multiple TicketEntities
+	 * @param {string[]} [fields] <p>Selects resource fields. <a href="https://github.com/nestjsx/crud/wiki/Requests#select" target="_blank">Docs</a></p>
+	 * @param {string} [s] <p>Adds search condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#search" target="_blank">Docs</a></p>
+	 * @param {string[]} [filter] <p>Adds filter condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#filter" target="_blank">Docs</a></p>
+	 * @param {string[]} [or] <p>Adds OR condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#or" target="_blank">Docs</a></p>
+	 * @param {string[]} [sort] <p>Adds sort by field. <a href="https://github.com/nestjsx/crud/wiki/Requests#sort" target="_blank">Docs</a></p>
+	 * @param {string[]} [join] <p>Adds relational resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#join" target="_blank">Docs</a></p>
+	 * @param {number} [limit] <p>Limit amount of resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#limit" target="_blank">Docs</a></p>
+	 * @param {number} [offset] <p>Offset amount of resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#offset" target="_blank">Docs</a></p>
+	 * @param {number} [page] <p>Page portion of resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#page" target="_blank">Docs</a></p>
+	 * @param {number} [cache] <p>Reset cache (if was enabled). <a href="https://github.com/nestjsx/crud/wiki/Requests#cache" target="_blank">Docs</a></p>
 	 * @param {RequestInit} [options] Override http request option.
 	 * @throws {RequiredError}
 	 */
-	public ticketControllerGetAll(options?: RequestInit) {
-		return TicketApiFp(this.configuration).ticketControllerGetAll(options)(this.fetch, this.basePath);
+	public getManyBaseTicketControllerTicketEntity(__params: TicketApi.GetManyBaseTicketControllerTicketEntityParameters, options?: RequestInit) {
+		return TicketApiFp(this.configuration).getManyBaseTicketControllerTicketEntity(__params, options)(this.fetch, this.basePath);
 	}
 
 	/**
-	 * @param {string} ticketID
+	 * @summary Retrieve a single TicketEntity
+	 * @param {string} id
+	 * @param {string[]} [fields] <p>Selects resource fields. <a href="https://github.com/nestjsx/crud/wiki/Requests#select" target="_blank">Docs</a></p>
+	 * @param {string[]} [join] <p>Adds relational resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#join" target="_blank">Docs</a></p>
+	 * @param {number} [cache] <p>Reset cache (if was enabled). <a href="https://github.com/nestjsx/crud/wiki/Requests#cache" target="_blank">Docs</a></p>
 	 * @param {RequestInit} [options] Override http request option.
 	 * @throws {RequiredError}
 	 */
-	public ticketControllerGetTicketByID(ticketID: string, options?: RequestInit) {
-		return TicketApiFp(this.configuration).ticketControllerGetTicketByID(ticketID, options)(this.fetch, this.basePath);
+	public getOneBaseTicketControllerTicketEntity(__params: TicketApi.GetOneBaseTicketControllerTicketEntityParameters, options?: RequestInit) {
+		return TicketApiFp(this.configuration).getOneBaseTicketControllerTicketEntity(__params, options)(this.fetch, this.basePath);
 	}
 
 	/**
-	 * @param {string} ticketID
+	 * @summary Update a single TicketEntity
+	 * @param {string} id
+	 * @param {Api.TicketEntity} request
 	 * @param {RequestInit} [options] Override http request option.
 	 * @throws {RequiredError}
 	 */
-	public ticketControllerUpdateStatus(ticketID: string, options?: RequestInit) {
-		return TicketApiFp(this.configuration).ticketControllerUpdateStatus(ticketID, options)(this.fetch, this.basePath);
+	public updateOneBaseTicketControllerTicketEntity(id: string, request: Api.TicketEntity, options?: RequestInit) {
+		return TicketApiFp(this.configuration).updateOneBaseTicketControllerTicketEntity(id, request, options)(this.fetch, this.basePath);
 	}
 
 }
