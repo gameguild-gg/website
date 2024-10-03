@@ -83,7 +83,7 @@ export const authConfig = {
         return {};
       }
 
-      return token;
+      return merged;
     },
     session: async ({ session, token, user }) => {
       session = {
