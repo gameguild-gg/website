@@ -1,12 +1,18 @@
 'use client'
 
-import { useState } from 'react'
-import Link from 'next/link'
-import Image from 'next/image'
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Play, PlayCircle, FileText, Lock } from 'lucide-react'
+import { useState } from 'react';
+import Link from 'next/link';
+import Image from 'next/image';
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Play, PlayCircle, FileText, Lock } from 'lucide-react';
 
 type Props = {
   params: {
@@ -14,12 +20,12 @@ type Props = {
   };
 };
 
-export default function Component({params: {slug}}: Readonly<Props>) {
-  const [isPurchased, setIsPurchased] = useState(false)
+export default function Component({ params: { slug } }: Readonly<Props>) {
+  const [isPurchased, setIsPurchased] = useState(false);
 
   const handlePurchase = () => {
-    setIsPurchased(true)
-  }
+    setIsPurchased(true);
+  };
 
   return (
     <div className="container mx-auto px-4 py-8">

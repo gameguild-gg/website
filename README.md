@@ -10,3 +10,8 @@ Game Guild is a game dev community. We aim to revolutionize the way game develop
 4. Ask a teammate the `.env` files;
 5. run `npm install` on the root of the repo to install the dependencies;
 6. run `npm run start:both` on the root of the repo to start both front and back-end;
+
+## How to create a new page
+
+## How to create e new api
+
