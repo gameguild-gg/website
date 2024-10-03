@@ -234,6 +234,29 @@ Table ProjectEntity {
   versions ProjectVersionEntity
 }
 
+Table JobTagEntity {
+  id uuid
+  createdAt timestamp
+  updatedAt timestamp
+  name varchar
+  job JobPostEntity
+}
+
+Table JobPostEntity {
+  id uuid
+  createdAt timestamp
+  updatedAt timestamp
+  slug varchar
+  title varchar
+  summary string
+  body text
+  visibility enum
+  thumbnail varchar
+  owner UserEntity
+  editors UserEntity
+  tags JobTagEntity
+}
+
 Table post_editors_user {
   post_id uuid
   user_id uuid
@@ -269,6 +292,11 @@ Table project_editors_user {
   user_id uuid
 }
 
+Table job-post_editors_user {
+  job-post_id uuid
+  user_id uuid
+}
+
 Ref: UserProfileEntity.user - UserEntity.profile
 Ref: CompetitionRunSubmissionReportEntity.run > CompetitionRunEntity.reports
 Ref: CompetitionRunSubmissionReportEntity.submission > CompetitionSubmissionEntity.submissionReports
@@ -300,3 +328,6 @@ Ref: ProjectFeedbackResponseEntity.user > UserEntity.id
 Ref: ProjectVersionEntity.project > ProjectEntity.versions
 Ref: ProjectEntity.owner > UserEntity.id
 Ref: ProjectEntity.editors <> UserEntity.id
+Ref: JobTagEntity.job > JobPostEntity.tags
+Ref: JobPostEntity.owner > UserEntity.id
+Ref: JobPostEntity.editors <> UserEntity.id
