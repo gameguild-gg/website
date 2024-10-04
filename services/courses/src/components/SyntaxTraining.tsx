@@ -1,11 +1,11 @@
-import { AssignmentBasev1_0_0 } from "../assignments/assignment.base.v1.0.0";
+import { AssignmentBasev1_0_0 } from '../assignments/assignment.base.v1.0.0';
 
 import {
   CopyOutlined,
   PlayCircleFilled,
   UndoOutlined,
-} from "@ant-design/icons";
-import { Editor } from "@monaco-editor/react";
+} from '@ant-design/icons';
+import { Editor } from '@monaco-editor/react';
 import {
   Breadcrumb,
   Button,
@@ -17,17 +17,18 @@ import {
   Space,
   Input,
   Typography,
-} from "antd";
+  message,
+} from 'antd';
 const { TextArea } = Input;
 
-import * as Comlink from "comlink";
-import { editor } from "monaco-editor";
-import React, { useEffect, useRef, useState } from "react";
-import { HelloWorldCPP } from "../assignments/intro-cpp/hello-world-cpp";
-import Markdown from "markdown-to-jsx";
+import * as Comlink from 'comlink';
+import { editor } from 'monaco-editor';
+import React, { useEffect, useRef, useState } from 'react';
+import { HelloWorldCPP } from '../assignments/intro-cpp/hello-world-cpp';
+import Markdown from 'markdown-to-jsx';
 
-import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import Emception from "./emception";
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import Emception from './emception';
 
 const { Header, Content, Footer } = Layout;
 
@@ -44,34 +45,34 @@ type EmceptionWrapper = {
 
 const SyntaxTrainingPage: React.FC<SyntaxTrainingPageProps> = ({
   assignment = HelloWorldCPP,
-  theme = "vs-dark",
-  language = "cpp",
-  height = "40vh",
+  theme = 'vs-dark',
+  language = 'cpp',
+  height = '40vh',
 }) => {
   const [code, setCode] = useState(assignment.initialCode);
 
   const [emceptionLoaded, setEmceptionLoaded] = useState(false);
 
   const [api, contextHolder] = notification.useNotification();
-  const [consoleOutput, setConsoleOutput] = useState<string>("");
+  const [consoleOutput, setConsoleOutput] = useState<string>('');
 
   const [emception, setEmception] = useState<EmceptionWrapper>({
     worker: null,
   });
 
   const writeLineToConsole = (str: any) => {
-    setConsoleOutput(consoleOutput + str + "\n");
+    setConsoleOutput(consoleOutput + str + '\n');
   };
 
   const clearConsole = () => {
-    setConsoleOutput("");
+    setConsoleOutput('');
   };
 
   // todo: fix code styles
   const CodeBlock = ({ children }: { children: React.ReactElement }) => {
     const { className, children: code } = children.props;
 
-    const language = className?.replace("lang-", "");
+    const language = className?.replace('lang-', '');
     return <SyntaxHighlighter language={language}>{code}</SyntaxHighlighter>;
   };
 
@@ -101,19 +102,19 @@ var Module = {
 `;
 
   async function loadEmception(): Promise<any> {
-    showNotification("Loading emception...");
+    showNotification('Loading emception...');
     if (emceptionLoaded) return;
     setEmceptionLoaded(true);
 
     // todo: is it possible to not refer as url?
     const emceptionWorker = new Worker(
-      new URL("./emception.worker.ts", import.meta.url),
-      { type: "module" },
+      new URL('./emception.worker.ts', import.meta.url),
+      { type: 'module' },
     );
 
     emceptionWorker.onerror = (e) => {
       console.error(e);
-      showNotification("Emception worker error");
+      showNotification('Emception worker error');
     };
 
     const emception: Comlink.Remote<Emception> = Comlink.wrap(emceptionWorker);
@@ -127,8 +128,8 @@ var Module = {
 
     await emception.init();
 
-    console.log("Post init");
-    showNotification("Ready");
+    console.log('Post init');
+    showNotification('Ready');
   }
 
   useEffect(() => {
@@ -146,7 +147,7 @@ var Module = {
     if (value === undefined) return;
     setCode(value);
     console.log(value);
-    console.log("event", event);
+    console.log('event', event);
   }
 
   function handleEditorDidMount(
@@ -155,22 +156,22 @@ var Module = {
   ) {
     editorRef.current = editor;
     monacoRef.current = monaco;
-    console.log("onMount: the editor instance:", editor);
-    console.log("onMount: the monaco instance:", monaco);
+    console.log('onMount: the editor instance:', editor);
+    console.log('onMount: the monaco instance:', monaco);
   }
 
   function handleEditorWillMount(monaco: any) {
     monacoRef.current = monaco;
-    console.log("beforeMount: the monaco instance:", monaco);
+    console.log('beforeMount: the monaco instance:', monaco);
   }
 
   function handleEditorValidation(markers: any) {
     // model markers
-    markers.forEach((marker) => console.log("onValidate:", marker.message));
+    markers.forEach((marker) => console.log('onValidate:', marker.message));
   }
 
   const onprocessstart = (argv) => {
-    writeLineToConsole(`\$ ${argv.join(" ")}`);
+    writeLineToConsole(`\$ ${argv.join(' ')}`);
   };
   const onprocessend = () => {
     writeLineToConsole(`Process finished`);
@@ -179,33 +180,38 @@ var Module = {
   const onRunClick = async () => {
     clearConsole();
     if (!emception || !emception.worker) {
-      showNotification("Emception not loaded");
-      console.log("Emception not loaded");
+      showNotification('Emception not loaded');
+      console.log('Emception not loaded');
       return;
     }
 
     try {
-      await emception.worker.fileSystem.writeFile("/working/main.cpp", code);
-      await emception.worker.fileSystem.writeFile("/working/pre.js", prejs);
+      await emception.worker.fileSystem.writeFile('/working/main.cpp', code);
+      await emception.worker.fileSystem.writeFile('/working/pre.js', prejs);
       const cmd = `em++ -O2 -fexceptions --pre-js /working/pre.js -sEXIT_RUNTIME=1 -std=c++23 -sSINGLE_FILE=1 -sUSE_CLOSURE_COMPILER=0 /working/main.cpp -o /working/main.js`;
       onprocessstart(`/emscripten/${cmd}`.split(/\s+/g));
       const result = await emception.worker.run(cmd);
       if (result.returncode == 0) {
         const content = await emception.worker.fileSystem.readFile(
-          "/working/main.js",
-          { encoding: "utf8" },
+          '/working/main.js',
+          { encoding: 'utf8' },
         );
-        writeLineToConsole("Compilation succeeded");
+        writeLineToConsole('Compilation succeeded');
         // todo: test all test cases
         // todo: create ways to pass custom inputs and custom outputs
         (window as any).stdin = assignment.inputs[0];
-        (window as any).stdout = "";
+        (window as any).stdout = '';
 
         //wrap eval in a promise and wait it to finish
         await new Promise<void>((resolve) => {
           eval(content);
           resolve();
         });
+
+        if ((window as any).stdout === assignment.outputs[0])
+          message.success('Test passed');
+        else message.error('Test failed');
+
         clearConsole();
         // todo: fix the requirement to use window.stdout and wait for it to be filled
         await new Promise((resolve) => setTimeout(resolve, 200)); // todo: this shouldnt be needed!!
@@ -229,7 +235,7 @@ var Module = {
     writeLineToConsole(message);
     api.info({
       message: message,
-      placement: "topRight",
+      placement: 'topRight',
     });
   };
 
@@ -240,32 +246,32 @@ var Module = {
 
   const resetCode = () => {
     editorRef.current?.setValue(assignment.initialCode);
-    showNotification("Code reset");
+    showNotification('Code reset');
   };
 
   const copyCode = async () => {
-    await navigator.clipboard.writeText(editorRef.current?.getValue() || "");
+    await navigator.clipboard.writeText(editorRef.current?.getValue() || '');
   };
 
   return (
     <>
       {contextHolder}
       <Layout>
-        <Header style={{ display: "flex", alignItems: "center" }}>
+        <Header style={{ display: 'flex', alignItems: 'center' }}>
           <div className="demo-logo" />
           <Menu
             theme="dark"
             mode="horizontal"
-            defaultSelectedKeys={["2"]}
+            defaultSelectedKeys={['2']}
             items={items}
             style={{ flex: 1, minWidth: 0 }}
           />
         </Header>
 
-        <Content style={{ padding: "0 48px" }}>
+        <Content style={{ padding: '0 48px' }}>
           <Breadcrumb
-            style={{ margin: "16px 0" }}
-            items={[{ title: "Home" }, { title: "List" }, { title: "App" }]}
+            style={{ margin: '16px 0' }}
+            items={[{ title: 'Home' }, { title: 'List' }, { title: 'App' }]}
           />
           <div
             style={{
@@ -294,7 +300,7 @@ var Module = {
                 onValidate={handleEditorValidation}
                 onMount={handleEditorDidMount}
                 beforeMount={handleEditorWillMount}
-                options={{ automaticLayout: true, wordWrap: "on" }}
+                options={{ automaticLayout: true, wordWrap: 'on' }}
               />
               <Row justify="space-between">
                 <Col>
@@ -351,7 +357,7 @@ var Module = {
             </Space>
           </div>
         </Content>
-        <Footer style={{ textAlign: "center" }}>
+        <Footer style={{ textAlign: 'center' }}>
           GameGuild ©2023. Created by Alexandre Tolstenko.
         </Footer>
       </Layout>
