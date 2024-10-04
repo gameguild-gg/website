@@ -5,6 +5,7 @@ export default async function Layout({
   children,
 }: Readonly<PropsWithChildren>) {
   return (
+    /*
     <Dashboard>
       <Dashboard.Sidebar />
       <Dashboard.Content size="compact">
@@ -13,5 +14,7 @@ export default async function Layout({
         <Dashboard.Footer />
       </Dashboard.Content>
     </Dashboard>
+    */
+    <>{children}</>
   );
 }
