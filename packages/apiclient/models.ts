@@ -296,6 +296,9 @@ export namespace Api {
 	
 	}
 
+	export interface CreateProjectDto {
+	}
+
 	export interface EditorRequestDto {
 		id: string;
 		editor: Api.IdDto;

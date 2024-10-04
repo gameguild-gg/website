@@ -1,4 +1,4 @@
-import { Controller } from '@nestjs/common';
+import { Controller, Param, Post } from '@nestjs/common';
 import {
   Crud,
   CrudController,
@@ -7,7 +7,7 @@ import {
   ParsedRequest,
 } from '@dataui/crud';
 import { TicketService } from './ticket.service';
-import { TicketEntity } from './entities/ticket.entity';
+import { TicketEntity, TicketStatus } from './entities/ticket.entity';
 import { ApiBody, ApiTags } from '@nestjs/swagger';
 
 import {
@@ -92,5 +92,15 @@ export class TicketController implements CrudController<TicketEntity> {
       where: { id: ticket.id },
       relations: { owner: true, editors: true },
     });
+  }
+
+  @Post('Update Ticket')
+  @Auth(AuthenticatedRoute)
+  async UpdateStatus(newStatus: TicketStatus, tickId: string) {
+    const ticket = await this.service.findOne({ where: { id: tickId } });
+    ticket.status = newStatus;
+    const newTitcket = await this.service.save(ticket);
+
+    return newTitcket;
   }
 }

@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import axios from 'axios';
+import { TicketApi } from '@game-guild/apiclient/api';
 
 interface Ticket {
   id: number;
@@ -16,6 +16,9 @@ interface Ticket {
 }
 
 export default function TicketDetail() {
+  const apiTicket = new TicketApi({
+    basePath: process.env.NEXT_PUBLIC_API_URL,
+  });
   const router = useRouter();
   const { id } = useParams();
   const [ticket, setTicket] = useState<Ticket | null>(null);
@@ -32,17 +35,7 @@ export default function TicketDetail() {
   }, [id, router]);
 
   const updateTicketStatus = async (newStatus) => {
-    try {
-      await axios.put(`http://localhost:8080/tickets/${ticket?.id}/status`, {
-        newStatus,
-      });
-      const response = await axios.get(
-        `http://localhost:8080/tickets/tickets/${ticket?.id}`,
-      );
-      setTicket(response.data);
-    } catch (error) {
-      console.error('Error updating ticket status:', error);
-    }
+    const newTicekt = await apiTicket.ticketControllerUpdateStatus( {newStatus, ticket.id,},);
   };
 
   if (isLoading) {

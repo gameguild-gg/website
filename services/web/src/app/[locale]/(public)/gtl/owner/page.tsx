@@ -6,6 +6,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import AnalyticsGraphs from './AnalyticsGraphs';
 import { TicketApi, ProjectApi } from '@game-guild/apiclient/api';
 import { getSession } from 'next-auth/react';
+import { ProjectEntity } from '@game-guild/api/dist/src/cms/entities/project.entity';
+import { TicketEntity } from '@game-guild/api/dist/src/cms/entities/ticket.entity';
 
 const GameCard = ({ title, description }) => (
   <div className="bg-gray-800 rounded-lg overflow-hidden shadow-lg">
@@ -109,9 +111,11 @@ const VideoGrid = ({ videos }) => (
 const apiTicket = new TicketApi({
   basePath: process.env.NEXT_PUBLIC_API_URL,
 });
+
 const apiProject = new ProjectApi({
   basePath: process.env.NEXT_PUBLIC_API_URL,
 });
+
 export enum VisibilityEnum {
   DRAFT = 'DRAFT', // not visible to the public
   PUBLISHED = 'PUBLISHED', // published and visible
@@ -120,45 +124,17 @@ export enum VisibilityEnum {
   PRIVATE = 'PRIVATE', // only visible to the author
   TRASH = 'TRASH', // marked for deletion
 }
-
-const createProjectData = {
-  id: 'uuid-v4-string', // Replace with a UUID if required by your API
+const projectData = {
   title: 'My New Project',
-  summary: 'A brief summary of the project.',
+  summary: 'Project description',
   body: 'Detailed content of the project.',
-  slug: 'my-new-project',
-  visibility: 'PUBLIC', // or 'PRIVATE' based on the enum values
-  thumbnail: 'https://example.com/thumbnail.jpg',
-  Description: 1, // Assuming it's a number as per your interface
-  owner: {
-    id: 'owner-user-id', // Replace with the actual owner ID
-  },
-  editors: [
-    {
-      id: 'editor-user-id-1', // Replace with actual editor user IDs
-    },
-    {
-      id: 'editor-user-id-2',
-    },
-  ],
-  versions: [
-    {
-      id: 'version-id-1', // Replace with actual version IDs or details
-    },
-  ],
-  createdAt: 'now', // Add createdAt field
-  updatedAt: 'now', // Add updatedAt field
+  slug: 'my-project-slug',
+  visibilit: VisibilityEnum.DRAFT,
+  thumbnail: 'test',
 };
 
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 export default function Page() {
-  const games = [
-    { title: 'Game 1', description: 'Description 1' },
-    { title: 'Game 2', description: 'Description 2' },
-    { title: 'Game 3', description: 'Description 3' },
-    { title: 'Game 4', description: 'Description 4' },
-    { title: 'Game 5', description: 'Description 5' },
-  ];
   const initialVideos = [
     {
       videoStatus: 'Watched',
@@ -197,6 +173,13 @@ export default function Page() {
       linkedToTicket: true,
     },
   ];
+
+  const [activeTab, setActiveTab] = useState('Projects');
+  const [ticketFilter, setTicketFilter] = useState('All');
+  const [tickets, setTickets] = useState<TicketEntity[]>([]);
+  const [projects, setProjects] = useState<ProjectEntity[]>([]);
+  const [videos] = useState(initialVideos);
+
   const router = useRouter();
 
   // Define the handleTicketClick function once
@@ -205,17 +188,19 @@ export default function Page() {
     router.push(`/gtl/owner/Tickets/`);
   };
 
-  const fetchTickets = async () => {
+  const fetchData = async () => {
     const session = await getSession();
-    const projectData = {
-      title: 'My New Project',
-      summary: 'Project description',
-      body: 'Detailed content of the project.',
-      slug: 'my-project-slug',
-      visibilit: VisibilityEnum.DRAFT,
-      thumbnail: 'test',
-    };
-    const project = await apiProject.getManyBaseProjectControllerProjectEntity(
+    const gotProjects =
+      await apiProject.getManyBaseProjectControllerProjectEntity(
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${session?.accessToken}`,
+          },
+        },
+      );
+
+    const gotTickets = await apiTicket.getManyBaseTicketControllerTicketEntity(
       {},
       {
         headers: {
@@ -223,26 +208,17 @@ export default function Page() {
         },
       },
     );
-    console.log(project.body);
-    if (!response || response.status === 401) {
-      router.push('/connect');
-      return;
+
+    if (gotTickets && Array.isArray(gotTickets.body)) {
+      setTickets(gotTickets.body);
     }
 
-    if (response.status === 500) {
-      message.error(
-        'Internal server error. Please report this issue to the community.',
-      );
-      message.error(JSON.stringify(response.body));
-      return;
+    if (gotProjects && Array.isArray(gotProjects.body)) {
+      setProjects(gotProjects.body);
+    } else {
+      console.error('Unexpected response format:', gotProjects);
     }
   };
-
-  let fetchTicketsCalled = false;
-  const [activeTab, setActiveTab] = useState('Projects');
-  const [ticketFilter, setTicketFilter] = useState('All');
-  const [tickets, setTickets] = useState([]);
-  const [videos] = useState(initialVideos);
 
   const [videoFilter, setVideoFilter] = useState('All');
 
@@ -257,7 +233,7 @@ export default function Page() {
   const renderContent = () => {
     switch (activeTab) {
       case 'Projects':
-        return <GameGrid games={games} />;
+        return <GameGrid games={projects} />;
       case 'Analytics':
         return <AnalyticsGraphs />;
       case 'Submitted Tickets':
@@ -300,19 +276,12 @@ export default function Page() {
           </div>
         );
       default:
-        return <GameGrid games={games} />;
+        return <GameGrid games={projects} />;
     }
   };
 
   useEffect(() => {
-    if (!fetchTicketsCalled) {
-      fetchTicketsCalled = true; // Set the flag to true after calling the function
-      fetchTickets();
-    }
-
-    return () => {
-      fetchTicketsCalled = false; // Optionally reset the flag in cleanup
-    };
+    fetchData();
   }, []);
 
   return (

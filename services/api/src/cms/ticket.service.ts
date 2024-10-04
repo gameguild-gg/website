@@ -15,4 +15,8 @@ export class TicketService extends TypeOrmCrudService<TicketEntity> {
   ) {
     super(ticketRepo);
   }
+  save(ticket: TicketEntity): Promise<ProjectEntity> {
+    this.gameRepository.save(ticket);
+    return this.gameRepository.findOne({ where: { id: ticket.id } });
+  }
 }
