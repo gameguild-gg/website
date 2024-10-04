@@ -42,6 +42,17 @@ export interface ButtonProps
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant, size, asChild = false, ...props }, ref) => {
     const Comp = asChild ? Slot : 'button';
+
+    // if the button is being used on client side
+    if (typeof window !== 'undefined' && !props.onClick) {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      props.onClick = () => {
+        alert(
+          'Work in progress! Please help us to implement this feature. Go to our discord or github to contribute.',
+        );
+      };
+    }
+
     return (
       <Comp
         className={cn(buttonVariants({ variant, size, className }))}

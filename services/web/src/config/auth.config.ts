@@ -75,15 +75,11 @@ export const authConfig = {
       // merge token
       const merged = { ...token, ...user };
 
-      // Check if the token is expired
+      // refresh the token if it is about to expire(5m), or if it is expired already
       const isExpired = token.exp && Date.now() >= token.exp * 1000;
-      if (isExpired) {
-        // Delete the session
-        await signOut({ redirect: false });
-        return {};
-      }
+      if (isExpired) await signOut();
 
-      return merged;
+      return { ...token, ...user };
     },
     session: async ({ session, token, user }) => {
       session = {
@@ -91,15 +87,11 @@ export const authConfig = {
         user: { ...session.user, ...user },
         ...token,
       };
-
-      // Check if the token is expired
       const isExpired = token.exp && Date.now() >= token.exp * 1000;
       if (isExpired) {
-        // Redirect to the /connect page
-        const response = NextResponse.redirect('/connect');
-        response.cookies.delete('next-auth.session-token');
-        return response;
+        await signOut();
       }
+
       return session;
     },
   },
@@ -214,6 +206,7 @@ export const authConfig = {
         };
       },
     }),
+    ...providers,
   ],
   session: {
     strategy: 'jwt',
