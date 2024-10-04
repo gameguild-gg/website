@@ -4793,6 +4793,10 @@
           "versions"
         ]
       },
+      "CreateProjectDto": {
+        "type": "object",
+        "properties": {}
+      },
       "IdDto": {
         "type": "object",
         "properties": {

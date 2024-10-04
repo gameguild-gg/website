@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import AnalyticsGraphs from './AnalyticsGraphs';
-import axios from 'axios';
 import { TicketApi, ProjectApi } from '@game-guild/apiclient/api';
 import { getSession } from 'next-auth/react';
 
@@ -216,16 +215,15 @@ export default function Page() {
       visibilit: VisibilityEnum.DRAFT,
       thumbnail: 'test',
     };
-    const project =
-      await apiProject.createOneBaseProjectControllerProjectEntity(
-        projectData,
-        {
-          headers: {
-            Authorization: `Bearer ${session?.accessToken}`,
-          },
+    const project = await apiProject.getManyBaseProjectControllerProjectEntity(
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${session?.accessToken}`,
         },
-      );
-    console.log(project);
+      },
+    );
+    console.log(project.body);
     if (!response || response.status === 401) {
       router.push('/connect');
       return;

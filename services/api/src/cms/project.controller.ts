@@ -22,10 +22,14 @@ import {
 } from './interceptors/ownership-empty-interceptor.service';
 import { ExcludeFieldsPipe } from './pipes/exclude-fields.pipe';
 import { WithRolesController } from './with-roles.controller';
+import { CreateProjectDto } from './dtos/Create-Project.dto';
 
 @Crud({
   model: {
     type: ProjectEntity,
+  },
+  dto: {
+    create: CreateProjectDto,
   },
   params: {
     id: {
