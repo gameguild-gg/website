@@ -1,6 +1,6 @@
-import React, {PropsWithChildren} from "react";
-import {cva, type VariantProps} from "class-variance-authority";
-import Link from "next/link";
+import React, { PropsWithChildren } from 'react';
+import { cva, type VariantProps } from 'class-variance-authority';
+import Link from 'next/link';
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -8,42 +8,29 @@ import {
   NavigationMenuLink,
   NavigationMenuList,
   NavigationMenuTrigger,
-} from "@/components/ui/navigation-menu"
-import {cn} from "@/lib/utils";
+} from '@/components/ui/navigation-menu';
+import { cn } from '@/lib/utils';
 
 const headerVariants = cva('', {
   variants: {},
   defaultVariants: {},
 });
 
-type Props = PropsWithChildren<React.HTMLAttributes<HTMLDivElement>> & VariantProps<typeof headerVariants>;
+type Props = PropsWithChildren<React.HTMLAttributes<HTMLDivElement>> &
+  VariantProps<typeof headerVariants>;
 
 const Header: React.FunctionComponent<Readonly<Props>> & {
   //
-} = ({className, children, ...props}: Readonly<Props>) => {
+} = ({ className, children, ...props }: Readonly<Props>) => {
   return (
     <div className="flex bg-[#f2f2f2]">
       <div className="container mx-auto px-4">
-        <div className="flex justify-between items-center border-b py-4">
-          <div className="flex items-center space-x-4">
-
-            <img src="/assets/images/logo-text-2.png" className="w-[135px] h-46px my-auto mx-[10px]"/>
-
-          </div>
-          <div className="flex space-x-6">
-            <Link href="#" className="text-sm" prefetch={false}>
-              Game Market Research
-            </Link>
-            <Link href="#" className="text-sm" prefetch={false}>
-              GDC Vault
-            </Link>
-            <Link href="#" className="text-sm" prefetch={false}>
-              Advertise With Game Developer
-            </Link>
-          </div>
-        </div>
         <div className="flex justify-between items-center py-4">
           <div className="flex space-x-8">
+            <img
+              src="/assets/images/logo-text-2.png"
+              className="w-[135px] h-46px my-auto mx-[10px]"
+            />
             <NavigationMenu>
               <NavigationMenuList>
                 <NavigationMenuItem>
@@ -61,20 +48,24 @@ const Header: React.FunctionComponent<Readonly<Props>> & {
                               shadcn/ui
                             </div>
                             <p className="text-sm leading-tight text-muted-foreground">
-                              Beautifully designed components that you can copy and
-                              paste into your apps. Accessible. Customizable. Open
-                              Source.
+                              Beautifully designed components that you can copy
+                              and paste into your apps. Accessible.
+                              Customizable. Open Source.
                             </p>
                           </a>
                         </NavigationMenuLink>
                       </li>
                       <ListItem href="/docs" title="Introduction">
-                        Re-usable components built using Radix UI and Tailwind CSS.
+                        Re-usable components built using Radix UI and Tailwind
+                        CSS.
                       </ListItem>
                       <ListItem href="/docs/installation" title="Installation">
                         How to install dependencies and structure your app.
                       </ListItem>
-                      <ListItem href="/docs/primitives/typography" title="Typography">
+                      <ListItem
+                        href="/docs/primitives/typography"
+                        title="Typography"
+                      >
                         Styles for headings, paragraphs, lists...etc
                       </ListItem>
                     </ul>
@@ -95,20 +86,24 @@ const Header: React.FunctionComponent<Readonly<Props>> & {
                               shadcn/ui
                             </div>
                             <p className="text-sm leading-tight text-muted-foreground">
-                              Beautifully designed components that you can copy and
-                              paste into your apps. Accessible. Customizable. Open
-                              Source.
+                              Beautifully designed components that you can copy
+                              and paste into your apps. Accessible.
+                              Customizable. Open Source.
                             </p>
                           </a>
                         </NavigationMenuLink>
                       </li>
                       <ListItem href="/docs" title="Introduction">
-                        Re-usable components built using Radix UI and Tailwind CSS.
+                        Re-usable components built using Radix UI and Tailwind
+                        CSS.
                       </ListItem>
                       <ListItem href="/docs/installation" title="Installation">
                         How to install dependencies and structure your app.
                       </ListItem>
-                      <ListItem href="/docs/primitives/typography" title="Typography">
+                      <ListItem
+                        href="/docs/primitives/typography"
+                        title="Typography"
+                      >
                         Styles for headings, paragraphs, lists...etc
                       </ListItem>
                     </ul>
@@ -129,20 +124,24 @@ const Header: React.FunctionComponent<Readonly<Props>> & {
                               shadcn/ui
                             </div>
                             <p className="text-sm leading-tight text-muted-foreground">
-                              Beautifully designed components that you can copy and
-                              paste into your apps. Accessible. Customizable. Open
-                              Source.
+                              Beautifully designed components that you can copy
+                              and paste into your apps. Accessible.
+                              Customizable. Open Source.
                             </p>
                           </a>
                         </NavigationMenuLink>
                       </li>
                       <ListItem href="/docs" title="Introduction">
-                        Re-usable components built using Radix UI and Tailwind CSS.
+                        Re-usable components built using Radix UI and Tailwind
+                        CSS.
                       </ListItem>
                       <ListItem href="/docs/installation" title="Installation">
                         How to install dependencies and structure your app.
                       </ListItem>
-                      <ListItem href="/docs/primitives/typography" title="Typography">
+                      <ListItem
+                        href="/docs/primitives/typography"
+                        title="Typography"
+                      >
                         Styles for headings, paragraphs, lists...etc
                       </ListItem>
                     </ul>
@@ -163,20 +162,24 @@ const Header: React.FunctionComponent<Readonly<Props>> & {
                               shadcn/ui
                             </div>
                             <p className="text-sm leading-tight text-muted-foreground">
-                              Beautifully designed components that you can copy and
-                              paste into your apps. Accessible. Customizable. Open
-                              Source.
+                              Beautifully designed components that you can copy
+                              and paste into your apps. Accessible.
+                              Customizable. Open Source.
                             </p>
                           </a>
                         </NavigationMenuLink>
                       </li>
                       <ListItem href="/docs" title="Introduction">
-                        Re-usable components built using Radix UI and Tailwind CSS.
+                        Re-usable components built using Radix UI and Tailwind
+                        CSS.
                       </ListItem>
                       <ListItem href="/docs/installation" title="Installation">
                         How to install dependencies and structure your app.
                       </ListItem>
-                      <ListItem href="/docs/primitives/typography" title="Typography">
+                      <ListItem
+                        href="/docs/primitives/typography"
+                        title="Typography"
+                      >
                         Styles for headings, paragraphs, lists...etc
                       </ListItem>
                     </ul>
@@ -190,19 +193,19 @@ const Header: React.FunctionComponent<Readonly<Props>> & {
       </div>
     </div>
   );
-}
+};
 const ListItem = React.forwardRef<
-  React.ElementRef<"a">,
-  React.ComponentPropsWithoutRef<"a">
->(({className, title, children, ...props}, ref) => {
+  React.ElementRef<'a'>,
+  React.ComponentPropsWithoutRef<'a'>
+>(({ className, title, children, ...props }, ref) => {
   return (
     <li>
       <NavigationMenuLink asChild>
         <a
           ref={ref}
           className={cn(
-            "block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
-            className
+            'block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground',
+            className,
           )}
           {...props}
         >
@@ -213,8 +216,8 @@ const ListItem = React.forwardRef<
         </a>
       </NavigationMenuLink>
     </li>
-  )
-})
-ListItem.displayName = "ListItem"
+  );
+});
+ListItem.displayName = 'ListItem';
 
 export default Header;
