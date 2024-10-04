@@ -4,6 +4,32 @@ import Credentials from 'next-auth/providers/credentials';
 import { environment } from '@/config/environment';
 import { Api, AuthApi } from '@game-guild/apiclient';
 import { signOut } from 'next-auth/react';
+import type { Provider } from 'next-auth/providers';
+import { NextResponse } from 'next/server';
+
+// list of providers
+const providers: Provider[] = [];
+
+if (
+  !environment.GoogleClientId ||
+  !environment.GoogleClientSecret ||
+  !environment.SignInGoogleCallbackUrl
+) {
+  throw new Error(
+    'GoogleClientId, GoogleClientSecret, and SignInGoogleCallbackUrl must be set in the environment. Please check your .env file. Or talk with us to provide them to you.',
+  );
+}
+providers.push(
+  Google({
+    clientId: environment.GoogleClientId,
+    clientSecret: environment.GoogleClientSecret,
+    authorization: {
+      params: {
+        request_uri: environment.SignInGoogleCallbackUrl,
+      },
+    },
+  }),
+);
 
 export const authConfig = {
   trustHost: true, // todo: fix [auth][error] UntrustedHost: Host must be trusted. URL was: https://localhost:3000/api/auth/session. Read more at https://errors.authjs.dev#untrustedhost
@@ -52,27 +78,8 @@ export const authConfig = {
       }
 
       // refresh the token if it is about to expire(5m), or if it is expired already
-      if (token?.exp && Date.now() + 300000 > token.exp * 1000) {
-        const api = new AuthApi({
-          basePath: process.env.NEXT_PUBLIC_API_URL,
-        });
-
-        // try to refresh the session
-        const response = await api.authControllerRefreshToken({
-          headers: { Authorization: `Bearer ${token.refreshToken}` },
-        });
-
-        if (response.status >= 400) {
-          console.error(JSON.stringify(response.body));
-          // logout the user if the refresh token is invalid
-          await signOut();
-          return {};
-        } else {
-          const body = response.body as Api.LocalSignInResponseDto;
-          token.accessToken = body.accessToken;
-          token.refreshToken = body.refreshToken;
-        }
-      }
+      const isExpired = token.exp && Date.now() >= token.exp * 1000;
+      if (isExpired) await signOut();
 
       return { ...token, ...user };
     },
@@ -82,6 +89,11 @@ export const authConfig = {
         user: { ...session.user, ...user },
         ...token,
       };
+      const isExpired = token.exp && Date.now() >= token.exp * 1000;
+      if (isExpired) {
+        await signOut();
+      }
+
       return session;
     },
   },
@@ -195,15 +207,7 @@ export const authConfig = {
         };
       },
     }),
-    Google({
-      clientId: environment.GoogleClientId,
-      clientSecret: environment.GoogleClientSecret,
-      authorization: {
-        params: {
-          request_uri: environment.SignInGoogleCallbackUrl,
-        },
-      },
-    }),
+    ...providers,
   ],
   session: {
     strategy: 'jwt',
