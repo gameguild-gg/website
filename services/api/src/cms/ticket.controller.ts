@@ -1,4 +1,10 @@
-import { Controller, Param, Post } from '@nestjs/common';
+import {
+  Controller,
+  Patch,
+  Param,
+  ForbiddenException,
+  Put,
+} from '@nestjs/common';
 import {
   Crud,
   CrudController,
@@ -93,14 +99,15 @@ export class TicketController implements CrudController<TicketEntity> {
       relations: { owner: true, editors: true },
     });
   }
-
-  @Post('Update Ticket')
+  @Put()
   @Auth(AuthenticatedRoute)
-  async UpdateStatus(newStatus: TicketStatus, tickId: string) {
-    const ticket = await this.service.findOne({ where: { id: tickId } });
+  async updateStates(
+    @Param('NewStatus') newStatus: TicketStatus,
+    @Param('Id') id: string,
+  ) {
+    const ticket = await this.service.findOne({ where: { id: id } });
     ticket.status = newStatus;
-    const newTitcket = await this.service.save(ticket);
-
-    return newTitcket;
+    await this.service.save(ticket);
+    return this.service.findOne({ where: { id: id } });
   }
 }

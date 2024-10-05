@@ -6,8 +6,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import AnalyticsGraphs from './AnalyticsGraphs';
 import { TicketApi, ProjectApi } from '@game-guild/apiclient/api';
 import { getSession } from 'next-auth/react';
-import { ProjectEntity } from '@game-guild/api/dist/src/cms/entities/project.entity';
-import { TicketEntity } from '@game-guild/api/dist/src/cms/entities/ticket.entity';
+import { Api } from '@game-guild/apiclient/models';
 
 const GameCard = ({ title, description }) => (
   <div className="bg-gray-800 rounded-lg overflow-hidden shadow-lg">
@@ -176,8 +175,8 @@ export default function Page() {
 
   const [activeTab, setActiveTab] = useState('Projects');
   const [ticketFilter, setTicketFilter] = useState('All');
-  const [tickets, setTickets] = useState<TicketEntity[]>([]);
-  const [projects, setProjects] = useState<ProjectEntity[]>([]);
+  const [tickets, setTickets] = useState<Api.TicketEntity[]>([]);
+  const [projects, setProjects] = useState<Api.ProjectEntity[]>([]);
   const [videos] = useState(initialVideos);
 
   const router = useRouter();

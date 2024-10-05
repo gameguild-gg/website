@@ -6787,58 +6787,63 @@ export namespace TicketApi {
 		headers?: undefined
 	}
 	
-	export type TicketControllerUpdateStatusResponse =
-		| TicketControllerUpdateStatus400Response
-		| TicketControllerUpdateStatus401Response
-		| TicketControllerUpdateStatus403Response
-		| TicketControllerUpdateStatus404Response
-		| TicketControllerUpdateStatus409Response
-		| TicketControllerUpdateStatus422Response
-		| TicketControllerUpdateStatus500Response
+	export interface TicketControllerUpdateStatesParameters {
+		newStatus: string
+		id: string
+	}
 	
-	export interface TicketControllerUpdateStatus400Response {
+	export type TicketControllerUpdateStatesResponse =
+		| TicketControllerUpdateStates400Response
+		| TicketControllerUpdateStates401Response
+		| TicketControllerUpdateStates403Response
+		| TicketControllerUpdateStates404Response
+		| TicketControllerUpdateStates409Response
+		| TicketControllerUpdateStates422Response
+		| TicketControllerUpdateStates500Response
+	
+	export interface TicketControllerUpdateStates400Response {
 		status: 400
 		contentType: 'application/json'
 		body: Api.ApiErrorResponseDto
 		headers?: undefined
 	}
 	
-	export interface TicketControllerUpdateStatus401Response {
+	export interface TicketControllerUpdateStates401Response {
 		status: 401
 		contentType: 'application/json'
 		body: Api.ApiErrorResponseDto
 		headers?: undefined
 	}
 	
-	export interface TicketControllerUpdateStatus403Response {
+	export interface TicketControllerUpdateStates403Response {
 		status: 403
 		contentType: 'application/json'
 		body: Api.ApiErrorResponseDto
 		headers?: undefined
 	}
 	
-	export interface TicketControllerUpdateStatus404Response {
+	export interface TicketControllerUpdateStates404Response {
 		status: 404
 		contentType: 'application/json'
 		body: Api.ApiErrorResponseDto
 		headers?: undefined
 	}
 	
-	export interface TicketControllerUpdateStatus409Response {
+	export interface TicketControllerUpdateStates409Response {
 		status: 409
 		contentType: 'application/json'
 		body: Api.ApiErrorResponseDto
 		headers?: undefined
 	}
 	
-	export interface TicketControllerUpdateStatus422Response {
+	export interface TicketControllerUpdateStates422Response {
 		status: 422
 		contentType: 'application/json'
 		body: Api.ApiErrorResponseDto
 		headers?: undefined
 	}
 	
-	export interface TicketControllerUpdateStatus500Response {
+	export interface TicketControllerUpdateStates500Response {
 		status: 500
 		contentType: 'application/json'
 		body: Api.ApiErrorResponseDto
@@ -7183,14 +7188,26 @@ export const TicketApiFetchParamCreator = function (configuration?: Configuratio
 			};
 		},
 		/**
+		 * @param {string} newStatus
+		 * @param {string} id
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		ticketControllerUpdateStatus(options: RequestInit = {}): FetchArgs {
+		ticketControllerUpdateStates(__params: TicketApi.TicketControllerUpdateStatesParameters, options: RequestInit = {}): FetchArgs {
+			// verify required parameter 'newStatus' is not null or undefined
+			if (__params.newStatus === null || __params.newStatus === undefined) {
+				throw new RequiredError('newStatus', 'Required parameter newStatus was null or undefined when calling ticketControllerUpdateStates.');
+			}
+			// verify required parameter 'id' is not null or undefined
+			if (__params.id === null || __params.id === undefined) {
+				throw new RequiredError('id', 'Required parameter id was null or undefined when calling ticketControllerUpdateStates.');
+			}
 
-			let localVarPath = `/tickets/Update Ticket`;
+			let localVarPath = `/tickets`
+				.replace('{NewStatus}', encodeURIComponent(String(__params.newStatus)))
+				.replace('{Id}', encodeURIComponent(String(__params.id)));
 			const localVarPathQueryStart = localVarPath.indexOf("?");
-			const localVarRequestOptions: RequestInit = Object.assign({ method: 'POST' }, options);
+			const localVarRequestOptions: RequestInit = Object.assign({ method: 'PUT' }, options);
 			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
 			const localVarQueryParameter = new URLSearchParams(localVarPathQueryStart !== -1 ? localVarPath.substring(localVarPathQueryStart + 1) : "");
 			if (localVarPathQueryStart !== -1) {
@@ -7674,11 +7691,13 @@ export const TicketApiFp = function(configuration?: Configuration) {
 			};
 		},
 		/**
+		 * @param {string} newStatus
+		 * @param {string} id
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		ticketControllerUpdateStatus(options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<TicketApi.TicketControllerUpdateStatusResponse> {
-			const localVarFetchArgs = TicketApiFetchParamCreator(configuration).ticketControllerUpdateStatus(options);
+		ticketControllerUpdateStates(__params: TicketApi.TicketControllerUpdateStatesParameters, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<TicketApi.TicketControllerUpdateStatesResponse> {
+			const localVarFetchArgs = TicketApiFetchParamCreator(configuration).ticketControllerUpdateStates(__params, options);
 			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
 				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
 				const contentType = response.headers.get('Content-Type');
@@ -7916,10 +7935,12 @@ export interface TicketApiInterface {
 	getOneBaseTicketControllerTicketEntity(__params: TicketApi.GetOneBaseTicketControllerTicketEntityParameters, options?: RequestInit): Promise<TicketApi.GetOneBaseTicketControllerTicketEntityResponse>
 
 	/**
+	 * @param {string} newStatus
+	 * @param {string} id
 	 * @param {RequestInit} [options] Override http request option.
 	 * @throws {RequiredError}
 	 */
-	ticketControllerUpdateStatus(options?: RequestInit): Promise<TicketApi.TicketControllerUpdateStatusResponse>
+	ticketControllerUpdateStates(__params: TicketApi.TicketControllerUpdateStatesParameters, options?: RequestInit): Promise<TicketApi.TicketControllerUpdateStatesResponse>
 
 	/**
 	 * @summary Update a single TicketEntity
@@ -7992,11 +8013,13 @@ export class TicketApi extends BaseAPI implements TicketApiInterface {
 	}
 
 	/**
+	 * @param {string} newStatus
+	 * @param {string} id
 	 * @param {RequestInit} [options] Override http request option.
 	 * @throws {RequiredError}
 	 */
-	public ticketControllerUpdateStatus(options?: RequestInit) {
-		return TicketApiFp(this.configuration).ticketControllerUpdateStatus(options)(this.fetch, this.basePath);
+	public ticketControllerUpdateStates(__params: TicketApi.TicketControllerUpdateStatesParameters, options?: RequestInit) {
+		return TicketApiFp(this.configuration).ticketControllerUpdateStates(__params, options)(this.fetch, this.basePath);
 	}
 
 	/**

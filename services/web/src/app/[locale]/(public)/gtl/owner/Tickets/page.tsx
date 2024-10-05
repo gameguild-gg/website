@@ -5,9 +5,11 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { TicketApi } from '@game-guild/apiclient/api';
+import { getSession } from 'next-auth/react';
+import { runInNewContext } from 'node:vm';
 
 interface Ticket {
-  id: number;
+  id: string;
   status: string;
   title: string;
   gameName: string;
@@ -35,7 +37,33 @@ export default function TicketDetail() {
   }, [id, router]);
 
   const updateTicketStatus = async (newStatus) => {
-    const newTicekt = await apiTicket.ticketControllerUpdateStatus( {newStatus, ticket.id,},);
+    const session = await getSession();
+
+    if (ticket) {
+      // Update the ticket status
+      ticket.status = newStatus;
+      const id = ticket.id;
+      try {
+        // Make sure to send the raw `ticket` object, not a stringified version
+        const newTicket = apiTicket.ticketControllerUpdateStates(
+          {
+            newStatus,
+            id,
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${session?.accessToken}`,
+            },
+          },
+        );
+
+        console.log(newTicket);
+      } catch (error) {
+        console.error(error);
+      }
+    } else {
+      console.error('Ticket is null or undefined');
+    }
   };
 
   if (isLoading) {
