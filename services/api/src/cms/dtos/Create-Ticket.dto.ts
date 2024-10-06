@@ -1,5 +1,6 @@
 import { IsString, IsEnum, IsNotEmpty } from 'class-validator';
 import { TicketStatus, TicketPriority } from '../entities/ticket.entity';
+import { UserEntity } from '../../user/entities';
 
 export class CreateTicketDto {
   @IsString()
@@ -17,4 +18,6 @@ export class CreateTicketDto {
 
   @IsString()
   projectId: string;
+
+  owner: UserEntity;
 }

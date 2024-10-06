@@ -123,14 +123,6 @@ export enum VisibilityEnum {
   PRIVATE = 'PRIVATE', // only visible to the author
   TRASH = 'TRASH', // marked for deletion
 }
-const projectData = {
-  title: 'My New Project',
-  summary: 'Project description',
-  body: 'Detailed content of the project.',
-  slug: 'my-project-slug',
-  visibilit: VisibilityEnum.DRAFT,
-  thumbnail: 'test',
-};
 
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 export default function Page() {
@@ -189,6 +181,7 @@ export default function Page() {
 
   const fetchData = async () => {
     const session = await getSession();
+    console.log(session);
     const gotProjects =
       await apiProject.getManyBaseProjectControllerProjectEntity(
         {},

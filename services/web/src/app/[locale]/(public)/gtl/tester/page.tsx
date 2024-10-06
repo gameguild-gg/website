@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { getSession } from 'next-auth/react';
 import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
@@ -13,125 +14,140 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { ChevronLeft, ChevronRight, Ticket } from 'lucide-react';
+import { TicketApi, AuthApi } from '@game-guild/apiclient/api';
 
 const gameCover = '/assets/images/game_cover.png';
 
 type Game = {
-  id: number;
+  id: string;
   title: string;
   image: string;
   genre: string;
   Gradble: boolean;
 };
 
+enum TicketStatus {
+  OPEN = 'OPEN',
+  IN_PROGRESS = 'IN_PROGRESS',
+  CLOSED = 'CLOSED',
+  RESOLVED = 'RESOLVED',
+}
+
+enum TicketPriority {
+  LOW = 'LOW',
+  MEDIUM = 'MEDIUM',
+  HIGH = 'HIGH',
+  CRITICAL = 'CRITICAL',
+}
+
 const Games: Game[] = [
   {
-    id: 1,
+    id: 'c86288fc-7a41-48b1-9872-9f07c0035f5c',
     title: 'Game 1',
     image: gameCover,
     genre: 'Action',
     Gradble: false,
   },
   {
-    id: 2,
+    id: '50c7bf71-c58a-4ab9-aa32-47f4e98086d6',
     title: 'Game 2',
     image: gameCover,
     genre: 'Adventure',
     Gradble: false,
   },
   {
-    id: 3,
+    id: 'd9e6f9fc-4c41-47c1-9872-9f07c0035f7e',
     title: 'Game 3',
     image: gameCover,
     genre: 'RPG',
     Gradble: false,
   },
   {
-    id: 4,
+    id: '50c7bf72-c58a-4ab9-aa32-47f4e98086d6',
     title: 'Game 4',
     image: gameCover,
     genre: 'Strategy',
     Gradble: false,
   },
   {
-    id: 5,
+    id: '2c7bf71a-1a2b-4ab9-aa32-3f4e98076b9f',
     title: 'Game 5',
     image: gameCover,
     genre: 'Action',
     Gradble: false,
   },
   {
-    id: 6,
+    id: 'f7c5bf71-28a7-4b21-9a4c-93a76f980c12',
     title: 'Game 6',
     image: gameCover,
     genre: 'Adventure',
     Gradble: false,
   },
   {
-    id: 7,
+    id: '07f1f8ac-1b41-38b1-7c72-1f01c0134b8d',
     title: 'Game 7',
     image: gameCover,
     genre: 'RPG',
     Gradble: false,
   },
   {
-    id: 8,
+    id: '2f6ff9ec-5c41-46c1-9382-9a08c0131a7e',
     title: 'Game 8',
     image: gameCover,
     genre: 'Strategy',
     Gradble: false,
   },
   {
-    id: 9,
+    id: 'c87bf51c-9a5c-4c31-8b92-9f07f0072f1b',
     title: 'Game 9',
     image: gameCover,
     genre: 'Action',
     Gradble: false,
   },
   {
-    id: 10,
+    id: '7b17f8d3-6c41-41b2-7c12-1f01c0011a6f',
     title: 'Game 10',
     image: gameCover,
     genre: 'Adventure',
     Gradble: false,
   },
   {
-    id: 11,
+    id: 'a7f5e9ff-8c11-4ac1-8371-2f02f0134c5a',
     title: 'Game 11',
     image: gameCover,
     genre: 'RPG',
     Gradble: false,
   },
   {
-    id: 12,
+    id: '57f1f8fc-6b41-49b1-9872-4c08f0133a5c',
     title: 'Game 12',
     image: gameCover,
     genre: 'Strategy',
     Gradble: false,
   },
   {
-    id: 13,
+    id: '5c7bf61c-4b3c-47c1-9a02-3c01e0015a7d',
     title: 'Game 13',
     image: gameCover,
     genre: 'Strategy',
     Gradble: true,
   },
   {
-    id: 14,
+    id: 'c87ef51c-9a3f-4a31-8a32-9f07e0123b7c',
     title: 'Game 14',
     image: gameCover,
     genre: 'Strategy',
     Gradble: true,
   },
   {
-    id: 15,
+    id: 'e1c5bf71-9a72-4ab2-9b4a-9c01c0138a5d',
     title: 'Game 15',
     image: gameCover,
     genre: 'Strategy',
     Gradble: true,
   },
   {
-    id: 16,
+    id: 'a7f5ef0c-5c42-4ab3-8a82-4f07b0121c8e',
     title: 'Game 16',
     image: gameCover,
     genre: 'Strategy',
@@ -141,6 +157,15 @@ const Games: Game[] = [
 
 const genres = ['All', 'Action', 'Adventure', 'RPG', 'Strategy'];
 
+const apiTicket = new TicketApi({
+  basePath: process.env.NEXT_PUBLIC_API_URL,
+});
+const apiUser = new AuthApi({
+  basePath: process.env.NEXT_PUBLIC_API_URL,
+});
+
+const gameIds = Games.map((game) => ({ gameName: game.title, id: game.id }));
+
 export default function GameMarketplace() {
   const [selectedGenre, setSelectedGenre] = useState('All');
   const [startIndex, setStartIndex] = useState(0);
@@ -149,8 +174,13 @@ export default function GameMarketplace() {
   const [showTicketForm, setShowTicketForm] = useState(false);
   const [ticketTitle, setTicketTitle] = useState('');
   const [ticketDescription, setTicketDescription] = useState('');
-  const [ticketStatus, setTicketStatus] = useState('');
-  const [ticketPriority, setTicketPriority] = useState('');
+  const [ticketStatus, setTicketStatus] = useState<TicketStatus>(
+    TicketStatus.OPEN,
+  );
+  const [ticketPriority, setTicketPriority] = useState<TicketPriority>(
+    TicketPriority.LOW,
+  );
+  const [selectedGameId, setSelectedGameId] = useState<string>('');
 
   const filteredGames =
     selectedGenre === 'All'
@@ -187,18 +217,36 @@ export default function GameMarketplace() {
     setNonGradableGames(nonGradable);
   }, []);
 
-  const handleSubmitTicket = (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log({
-      ticketTitle,
-      ticketDescription,
-      ticketStatus,
-      ticketPriority,
+  const handleSubmitTicket = async () => {
+    const session = await getSession();
+    const currentUser = await apiUser.authControllerGetCurrentUser({
+      headers: {
+        Authorization: `Bearer ${session?.accessToken}`,
+      },
     });
+    console.log(currentUser);
+    const submitedTicket =
+      await apiTicket.createOneBaseTicketControllerTicketEntity(
+        {
+          title: ticketTitle,
+          owner: currentUser,
+          status: ticketStatus,
+          priority: ticketPriority,
+          description: ticketDescription,
+          projectId: selectedGameId,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${session?.accessToken}`,
+          },
+        },
+      );
+    console.log(submitedTicket);
     setTicketTitle('');
     setTicketDescription('');
-    setTicketStatus('');
-    setTicketPriority('');
+    setTicketStatus(TicketStatus.OPEN);
+    setTicketPriority(TicketPriority.LOW);
+    setSelectedGameId('');
     setShowTicketForm(false);
   };
 
@@ -232,20 +280,31 @@ export default function GameMarketplace() {
         {showTicketForm ? (
           <div className="bg-gray-800 p-6 rounded-lg">
             <h2 className="text-2xl font-semibold mb-4">Submit a Ticket</h2>
-            <form onSubmit={handleSubmitTicket} className="space-y-4">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleSubmitTicket();
+              }}
+              className="space-y-4"
+            >
               <div>
                 <label
                   htmlFor="title"
                   className="block text-sm font-medium text-gray-400"
                 >
-                  Title
+                  Title (75 characters max)
                 </label>
                 <Input
                   id="title"
                   value={ticketTitle}
-                  onChange={(e) => setTicketTitle(e.target.value)}
+                  onChange={(e) => setTicketTitle(e.target.value.slice(0, 75))}
                   required
+                  maxLength={75}
+                  className="bg-gray-700 text-white"
                 />
+                <p className="text-sm text-gray-400 mt-1">
+                  {ticketTitle.length}/75 characters
+                </p>
               </div>
               <div>
                 <label
@@ -259,6 +318,7 @@ export default function GameMarketplace() {
                   value={ticketDescription}
                   onChange={(e) => setTicketDescription(e.target.value)}
                   required
+                  className="bg-gray-700 text-white"
                 />
               </div>
               <div>
@@ -268,14 +328,22 @@ export default function GameMarketplace() {
                 >
                   Status
                 </label>
-                <Select onValueChange={setTicketStatus} required>
-                  <SelectTrigger>
+                <Select
+                  value={ticketStatus}
+                  onValueChange={(value) =>
+                    setTicketStatus(value as TicketStatus)
+                  }
+                  required
+                >
+                  <SelectTrigger className="bg-gray-700 text-white">
                     <SelectValue placeholder="Select status" />
                   </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="open">Open</SelectItem>
-                    <SelectItem value="in-progress">In Progress</SelectItem>
-                    <SelectItem value="closed">Closed</SelectItem>
+                  <SelectContent className="bg-gray-700 text-white">
+                    {Object.values(TicketStatus).map((status) => (
+                      <SelectItem key={status} value={status}>
+                        {status}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -286,24 +354,60 @@ export default function GameMarketplace() {
                 >
                   Priority
                 </label>
-                <Select onValueChange={setTicketPriority} required>
-                  <SelectTrigger>
+                <Select
+                  value={ticketPriority}
+                  onValueChange={(value) =>
+                    setTicketPriority(value as TicketPriority)
+                  }
+                  required
+                >
+                  <SelectTrigger className="bg-gray-700 text-white">
                     <SelectValue placeholder="Select priority" />
                   </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="low">Low</SelectItem>
-                    <SelectItem value="medium">Medium</SelectItem>
-                    <SelectItem value="high">High</SelectItem>
+                  <SelectContent className="bg-gray-700 text-white">
+                    {Object.values(TicketPriority).map((priority) => (
+                      <SelectItem key={priority} value={priority}>
+                        {priority}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
-              <Button type="submit">Submit Ticket</Button>
-              <Button
-                variant="outline"
-                onClick={() => setShowTicketForm(false)}
-              >
-                Cancel
-              </Button>
+              <div>
+                <label
+                  htmlFor="gameId"
+                  className="block text-sm font-medium text-gray-400"
+                >
+                  Game
+                </label>
+                <Select
+                  value={selectedGameId ? selectedGameId.toString() : undefined}
+                  onValueChange={(value) => setSelectedGameId(String(value))}
+                  required
+                >
+                  <SelectTrigger className="bg-gray-700 text-white">
+                    <SelectValue placeholder="Select game" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-gray-700 text-white">
+                    <ScrollArea className="h-[200px]">
+                      {gameIds.map((game) => (
+                        <SelectItem key={game.id} value={game.id.toString()}>
+                          {game.gameName}
+                        </SelectItem>
+                      ))}
+                    </ScrollArea>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex justify-between items-center">
+                <Button type="submit">Submit Ticket</Button>
+                <Button
+                  variant="secondary"
+                  onClick={() => setShowTicketForm(false)}
+                >
+                  Cancel
+                </Button>
+              </div>
             </form>
           </div>
         ) : (

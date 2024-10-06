@@ -1,9 +1,8 @@
 import { WithRolesEntity } from '../../auth/entities/with-roles.entity';
-import { Controller, Post, Get, Body, Param } from '@nestjs/common';
 import { ProjectEntity } from './project.entity';
-import { Entity, ManyToOne, Column, PrimaryGeneratedColumn } from 'typeorm';
+import { Entity, ManyToOne, Column } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, IsEnum } from 'class-validator';
+import { IsString, IsEnum } from 'class-validator';
 
 export enum TicketStatus {
   OPEN = 'OPEN',

@@ -1,10 +1,4 @@
-import {
-  Controller,
-  Patch,
-  Param,
-  ForbiddenException,
-  Put,
-} from '@nestjs/common';
+import { Controller, Param, Put, Body } from '@nestjs/common';
 import {
   Crud,
   CrudController,
@@ -13,15 +7,14 @@ import {
   ParsedRequest,
 } from '@dataui/crud';
 import { TicketService } from './ticket.service';
-import { TicketEntity, TicketStatus } from './entities/ticket.entity';
+import { TicketEntity } from './entities/ticket.entity';
 import { ApiBody, ApiTags } from '@nestjs/swagger';
-
+import { CreateTicketDto } from './dtos/Create-Ticket.dto';
 import {
   AuthenticatedRoute,
   ManagerRoute,
   OwnerRoute,
 } from '../auth/auth.enum';
-import { BodyOwnerInject } from '../common/decorators/parameter.decorator';
 import { OwnershipEmptyInterceptor } from './interceptors/ownership-empty-interceptor.service';
 import { ProjectService } from './project.service';
 import { Auth } from '../auth';
@@ -37,6 +30,7 @@ import { Auth } from '../auth';
       primary: true,
     },
   },
+  dto: { create: CreateTicketDto }, // The DTO is still valid here for automatic routes
   routes: {
     exclude: [
       'replaceOneBase',
@@ -76,21 +70,23 @@ export class TicketController implements CrudController<TicketEntity> {
 
   @Override()
   @Auth(AuthenticatedRoute)
-  @ApiBody({ type: TicketEntity })
+  @ApiBody({ type: CreateTicketDto }) // For Swagger documentation
   async createOne(
     @ParsedRequest() crudReq: CrudRequest,
-    @BodyOwnerInject() body: TicketEntity,
+    @Body() createTicketDto: CreateTicketDto,
   ) {
     const project = await this.projectService.findOne({
-      where: { id: body.projectId },
+      where: { id: createTicketDto.projectId },
     });
 
-    // Create the ticket and associate it with the project
-    const ticket = await this.base.createOneBase(crudReq, body);
+    const ticketEntity: TicketEntity = {
+      ...new TicketEntity(),
+      ...createTicketDto,
+    };
 
-    ticket.project = project;
+    ticketEntity.project = project;
 
-    project.tickets.push(ticket);
+    const ticket = await this.base.createOneBase(crudReq, ticketEntity);
 
     await this.projectService.save(project);
 
@@ -98,16 +94,5 @@ export class TicketController implements CrudController<TicketEntity> {
       where: { id: ticket.id },
       relations: { owner: true, editors: true },
     });
-  }
-  @Put()
-  @Auth(AuthenticatedRoute)
-  async updateStates(
-    @Param('NewStatus') newStatus: TicketStatus,
-    @Param('Id') id: string,
-  ) {
-    const ticket = await this.service.findOne({ where: { id: id } });
-    ticket.status = newStatus;
-    await this.service.save(ticket);
-    return this.service.findOne({ where: { id: id } });
   }
 }

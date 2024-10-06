@@ -29,6 +29,8 @@ export default function TicketDetail() {
   useEffect(() => {
     const storedTicket = localStorage.getItem('selectedTicket');
     if (storedTicket) {
+      console.log(storedTicket);
+      console.log(JSON.parse(storedTicket));
       setTicket(JSON.parse(storedTicket));
     } else {
       router.push('/gtl/owner');
