@@ -1,5 +1,5 @@
 // worker-module.d.ts
-declare module "*.worker.ts" {
+declare module '*.worker.js' {
   class WebpackWorker extends Worker {
     constructor();
   }
