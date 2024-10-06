@@ -219,17 +219,17 @@ export default function GameMarketplace() {
 
   const handleSubmitTicket = async () => {
     const session = await getSession();
+    console.log(session);
     const currentUser = await apiUser.authControllerGetCurrentUser({
       headers: {
         Authorization: `Bearer ${session?.accessToken}`,
       },
     });
-    console.log(currentUser);
     const submitedTicket =
       await apiTicket.createOneBaseTicketControllerTicketEntity(
         {
           title: ticketTitle,
-          owner: currentUser,
+          owner: currentUser.body,
           status: ticketStatus,
           priority: ticketPriority,
           description: ticketDescription,
@@ -241,7 +241,6 @@ export default function GameMarketplace() {
           },
         },
       );
-    console.log(submitedTicket);
     setTicketTitle('');
     setTicketDescription('');
     setTicketStatus(TicketStatus.OPEN);

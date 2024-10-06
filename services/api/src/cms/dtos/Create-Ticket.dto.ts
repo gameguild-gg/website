@@ -19,5 +19,6 @@ export class CreateTicketDto {
   @IsString()
   projectId: string;
 
+  @IsNotEmpty()
   owner: UserEntity;
 }

@@ -1,4 +1,4 @@
-import { Controller, Param, Put, Body } from '@nestjs/common';
+import { Controller, Body, ForbiddenException } from '@nestjs/common';
 import {
   Crud,
   CrudController,
@@ -75,24 +75,29 @@ export class TicketController implements CrudController<TicketEntity> {
     @ParsedRequest() crudReq: CrudRequest,
     @Body() createTicketDto: CreateTicketDto,
   ) {
-    const project = await this.projectService.findOne({
-      where: { id: createTicketDto.projectId },
-    });
+    if (createTicketDto.owner != undefined) {
+      const project = await this.projectService.findOne({
+        where: { id: createTicketDto.projectId },
+      });
 
-    const ticketEntity: TicketEntity = {
-      ...new TicketEntity(),
-      ...createTicketDto,
-    };
+      const ticketEntity: TicketEntity = {
+        ...new TicketEntity(),
+        ...createTicketDto,
+      };
 
-    ticketEntity.project = project;
+      ticketEntity.project = project;
 
-    const ticket = await this.base.createOneBase(crudReq, ticketEntity);
+      const ticket = await this.base.createOneBase(crudReq, ticketEntity);
 
-    await this.projectService.save(project);
+      await this.projectService.save(project);
 
-    return this.service.findOne({
-      where: { id: ticket.id },
-      relations: { owner: true, editors: true },
-    });
+      return this.service.findOne({
+        where: { id: ticket.id },
+        relations: { owner: true, editors: true },
+      });
+    } else {
+      console.log('Owner undffined Please try again');
+      throw new ForbiddenException();
+    }
   }
 }
