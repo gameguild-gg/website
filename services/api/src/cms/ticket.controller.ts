@@ -1,4 +1,4 @@
-import { Controller, Body, ForbiddenException } from '@nestjs/common';
+import { Controller, Body, ForbiddenException, Param } from '@nestjs/common';
 import {
   Crud,
   CrudController,
@@ -67,7 +67,24 @@ export class TicketController implements CrudController<TicketEntity> {
   get base(): CrudController<TicketEntity> {
     return this;
   }
-
+  @Override()
+  @Auth(AuthenticatedRoute)
+  async getMany(@ParsedRequest() req: CrudRequest): Promise<TicketEntity[]> {
+    return this.service.find({
+      relations: ['owner', 'project'],
+    });
+  }
+  @Override()
+  @Auth(AuthenticatedRoute)
+  async getOne(
+    @ParsedRequest() req: CrudRequest,
+    @Param('id') id: string,
+  ): Promise<TicketEntity> {
+    return this.service.findOne({
+      where: { id: id },
+      relations: ['owner', 'project'],
+    });
+  }
   @Override()
   @Auth(AuthenticatedRoute)
   @ApiBody({ type: CreateTicketDto }) // For Swagger documentation

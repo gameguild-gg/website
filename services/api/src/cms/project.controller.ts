@@ -23,6 +23,7 @@ import {
 import { ExcludeFieldsPipe } from './pipes/exclude-fields.pipe';
 import { WithRolesController } from './with-roles.controller';
 import { CreateProjectDto } from './dtos/Create-Project.dto';
+import { TicketEntity } from './entities/ticket.entity';
 
 @Crud({
   model: {
@@ -79,7 +80,13 @@ export class ProjectController
     return this;
   }
 
-  // we need to override to guarantee the user is being injected as owner and editor
+  @Override()
+  @Auth(AuthenticatedRoute)
+  async getMany(@ParsedRequest() req: CrudRequest): Promise<ProjectEntity[]> {
+    return this.service.find({
+      relations: ['owner', 'tickets'],
+    });
+  }
   @Override()
   @Auth(AuthenticatedRoute)
   @ApiBody({ type: ProjectEntity })

@@ -219,7 +219,6 @@ export default function GameMarketplace() {
 
   const handleSubmitTicket = async () => {
     const session = await getSession();
-    console.log(session);
     const currentUser = await apiUser.authControllerGetCurrentUser({
       headers: {
         Authorization: `Bearer ${session?.accessToken}`,
@@ -282,7 +281,8 @@ export default function GameMarketplace() {
             <form
               onSubmit={(e) => {
                 e.preventDefault();
-                handleSubmitTicket();
+                //handleSubmitTicket();
+                // the ticket submition works this is here so people cant spam it
               }}
               className="space-y-4"
             >
@@ -412,15 +412,15 @@ export default function GameMarketplace() {
         ) : (
           <>
             <div className="mb-8">
-              <h2 className="text-2xl font-semibold mb-4">Gradable Games</h2>
+              <h2 className="text-2xl font-semibold mb-4">Top Games</h2>
               <div className="relative px-12">
                 <Button
-                  variant="outline"
+                  variant="ghost"
                   size="icon"
-                  className="absolute left-0 top-1/2 transform -translate-y-1/2 z-10"
+                  className="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
                   onClick={handlePrev}
                 >
-                  <ChevronLeft className="h-4 w-4" />
+                  <ChevronLeft className="h-6 w-6" />
                 </Button>
                 <ScrollArea className="w-full overflow-hidden">
                   <div className="flex justify-center space-x-4 p-4">
@@ -437,12 +437,12 @@ export default function GameMarketplace() {
                   </div>
                 </ScrollArea>
                 <Button
-                  variant="outline"
+                  variant="ghost"
                   size="icon"
-                  className="absolute right-0 top-1/2 transform -translate-y-1/2 z-10"
+                  className="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
                   onClick={handleNext}
                 >
-                  <ChevronRight className="h-4 w-4" />
+                  <ChevronRight className="h-6 w-6" />
                 </Button>
               </div>
             </div>

@@ -4,10 +4,11 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import AnalyticsGraphs from './AnalyticsGraphs';
-import { TicketApi, ProjectApi } from '@game-guild/apiclient/api';
+import { TicketApi, ProjectApi, AuthApi } from '@game-guild/apiclient/api';
 import { getSession } from 'next-auth/react';
 import { Api } from '@game-guild/apiclient/models';
 
+// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 const GameCard = ({ title, description }) => (
   <div className="bg-gray-800 rounded-lg overflow-hidden shadow-lg">
     <div className="h-48 bg-gray-700 flex items-center justify-center">
@@ -26,6 +27,7 @@ const GameCard = ({ title, description }) => (
 );
 
 // GameGrid component
+// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 const GameGrid = ({ games }) => (
   <ScrollArea className="h-[calc(100vh-300px)]">
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
@@ -40,6 +42,7 @@ const GameGrid = ({ games }) => (
   </ScrollArea>
 );
 // TicketBox component
+// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 const TicketBox = ({ ticket, onClick }) => (
   <div
     onClick={() => onClick(ticket)}
@@ -52,12 +55,13 @@ const TicketBox = ({ ticket, onClick }) => (
       </span>
     </div>
     <p className="text-sm text-gray-400">
-      Submitted by: {ticket.owner_username}
+      Submitted by: {ticket.owner.username}
     </p>
   </div>
 );
 
 // TicketGrid component
+// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 const TicketGrid = ({ tickets, onTicketClick }) => (
   <ScrollArea className="h-[calc(100vh-300px)]">
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 p-6">
@@ -73,6 +77,7 @@ const TicketGrid = ({ tickets, onTicketClick }) => (
 );
 
 // VideoBox component
+// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 const VideoBox = ({ videoStatus, videoTitle, submitter, linkedToTicket }) => (
   <div className="bg-gray-800 rounded-lg overflow-hidden shadow-lg p-4">
     <div className="flex justify-between items-center mb-2">
@@ -91,6 +96,7 @@ const VideoBox = ({ videoStatus, videoTitle, submitter, linkedToTicket }) => (
 );
 
 // VideoGrid component
+// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 const VideoGrid = ({ videos }) => (
   <ScrollArea className="h-[calc(100vh-300px)]">
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 p-6">
@@ -114,15 +120,9 @@ const apiTicket = new TicketApi({
 const apiProject = new ProjectApi({
   basePath: process.env.NEXT_PUBLIC_API_URL,
 });
-
-export enum VisibilityEnum {
-  DRAFT = 'DRAFT', // not visible to the public
-  PUBLISHED = 'PUBLISHED', // published and visible
-  FUTURE = 'FUTURE', // scheduled for future publication
-  PENDING = 'PENDING', // pending approval
-  PRIVATE = 'PRIVATE', // only visible to the author
-  TRASH = 'TRASH', // marked for deletion
-}
+const apiUser = new AuthApi({
+  basePath: process.env.NEXT_PUBLIC_API_URL,
+});
 
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 export default function Page() {
@@ -164,51 +164,75 @@ export default function Page() {
       linkedToTicket: true,
     },
   ];
-
   const [activeTab, setActiveTab] = useState('Projects');
   const [ticketFilter, setTicketFilter] = useState('All');
   const [tickets, setTickets] = useState<Api.TicketEntity[]>([]);
   const [projects, setProjects] = useState<Api.ProjectEntity[]>([]);
+  const [isSignedIn, setSignedIn] = useState(false);
   const [videos] = useState(initialVideos);
-
   const router = useRouter();
 
   // Define the handleTicketClick function once
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
   const handleTicketClick = (ticket) => {
     localStorage.setItem('selectedTicket', JSON.stringify(ticket));
     router.push(`/gtl/owner/Tickets/`);
   };
 
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
   const fetchData = async () => {
     const session = await getSession();
-    console.log(session);
-    const gotProjects =
-      await apiProject.getManyBaseProjectControllerProjectEntity(
-        {},
-        {
-          headers: {
-            Authorization: `Bearer ${session?.accessToken}`,
-          },
-        },
-      );
-
-    const gotTickets = await apiTicket.getManyBaseTicketControllerTicketEntity(
-      {},
-      {
+    if (session != null) {
+      setSignedIn(true);
+      const currentUser = await apiUser.authControllerGetCurrentUser({
         headers: {
           Authorization: `Bearer ${session?.accessToken}`,
         },
-      },
-    );
+      });
 
-    if (gotTickets && Array.isArray(gotTickets.body)) {
-      setTickets(gotTickets.body);
-    }
+      const gotProjects =
+        await apiProject.getManyBaseProjectControllerProjectEntity(
+          {},
+          {
+            headers: {
+              Authorization: `Bearer ${session?.accessToken}`,
+            },
+          },
+        );
 
-    if (gotProjects && Array.isArray(gotProjects.body)) {
-      setProjects(gotProjects.body);
+      if (gotProjects && Array.isArray(gotProjects.body)) {
+        const ownedProjects: Api.ProjectEntity[] = []; // Temporary array for owned projects
+        const updatedTickets: Api.TicketEntity[] = []; // Temporary array for tickets
+
+        // Filter and collect the owned projects
+        gotProjects.body.forEach((project: Api.ProjectEntity) => {
+          if (project.owner.id === currentUser.body.id) {
+            ownedProjects.push(project); // Push to temporary array
+          }
+        });
+        for (const project of ownedProjects) {
+          if (project.tickets && Array.isArray(project.tickets)) {
+            for (const ticket of project.tickets) {
+              const pulledTicket =
+                await apiTicket.getOneBaseTicketControllerTicketEntity(
+                  { id: ticket.id },
+                  {
+                    headers: {
+                      Authorization: `Bearer ${session?.accessToken}`,
+                    },
+                  },
+                );
+              updatedTickets.push(pulledTicket.body); // Push tickets to temporary array
+            }
+          }
+        }
+
+        // Update state with the new arrays
+        setProjects(ownedProjects); // Set the new array for projects
+        setTickets(updatedTickets); // Set the new array for tickets
+      }
     } else {
-      console.error('Unexpected response format:', gotProjects);
+      setSignedIn(false);
     }
   };
 
@@ -222,6 +246,7 @@ export default function Page() {
     (video) => videoFilter === 'All' || video.videoStatus === videoFilter,
   );
 
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
   const renderContent = () => {
     switch (activeTab) {
       case 'Projects':
@@ -304,7 +329,50 @@ export default function Page() {
               )}
             </nav>
           </div>
-          <div className="p-6">{renderContent()}</div>
+
+          {/* Check if there are no projects */}
+          {projects.length === 0 ? (
+            <div className="p-6 text-center">
+              {isSignedIn ? (
+                <>
+                  <p className="text-lg mb-4">
+                    It seems that you do not have any projects, please upload
+                    one.
+                  </p>
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                    }}
+                    className="bg-pink-500 hover:bg-pink-600 text-white font-semibold px-4 py-2 rounded"
+                  >
+                    Upload Project
+                  </button>
+                  <p className="text-lg mb-4">
+                    Work in progress! Please help us to implement this feature.
+                    Go to our discord or github to contribute.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="text-lg mb-4">
+                    It seems like you are not signed in, please sign in here.
+                  </p>
+                  <button
+                    onClick={() => {
+                      // Handle the sign-in logic here (e.g., redirect to sign-in page)
+                      router.push('/connect'); // Example of pushing to a sign-in route
+                    }}
+                    className="bg-blue-500 hover:bg-blue-600 text-white font-semibold px-4 py-2 rounded"
+                  >
+                    Sign In
+                  </button>
+                </>
+              )}
+            </div>
+          ) : (
+            // If there are projects, render the content as usual
+            <div className="p-6">{renderContent()}</div>
+          )}
         </div>
       </main>
     </div>

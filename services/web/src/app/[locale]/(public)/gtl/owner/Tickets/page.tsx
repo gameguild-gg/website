@@ -4,23 +4,25 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { TicketApi } from '@game-guild/apiclient/api';
-import { getSession } from 'next-auth/react';
-import { runInNewContext } from 'node:vm';
+//import { TicketApi } from '@game-guild/apiclient/api';
+//import { getSession } from 'next-auth/react';
+import { Api } from '@game-guild/apiclient/models';
 
 interface Ticket {
   id: string;
   status: string;
   title: string;
-  gameName: string;
+  owner: Api.UserEntity;
+  project: Api.ProjectEntity;
   owner_username: string;
   description: string;
 }
 
+// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 export default function TicketDetail() {
-  const apiTicket = new TicketApi({
-    basePath: process.env.NEXT_PUBLIC_API_URL,
-  });
+  //const apiTicket = new TicketApi({
+  //   basePath: process.env.NEXT_PUBLIC_API_URL,
+  //});
   const router = useRouter();
   const { id } = useParams();
   const [ticket, setTicket] = useState<Ticket | null>(null);
@@ -29,44 +31,12 @@ export default function TicketDetail() {
   useEffect(() => {
     const storedTicket = localStorage.getItem('selectedTicket');
     if (storedTicket) {
-      console.log(storedTicket);
-      console.log(JSON.parse(storedTicket));
       setTicket(JSON.parse(storedTicket));
     } else {
       router.push('/gtl/owner');
     }
     setIsLoading(false);
   }, [id, router]);
-
-  const updateTicketStatus = async (newStatus) => {
-    const session = await getSession();
-
-    if (ticket) {
-      // Update the ticket status
-      ticket.status = newStatus;
-      const id = ticket.id;
-      try {
-        // Make sure to send the raw `ticket` object, not a stringified version
-        const newTicket = apiTicket.ticketControllerUpdateStates(
-          {
-            newStatus,
-            id,
-          },
-          {
-            headers: {
-              Authorization: `Bearer ${session?.accessToken}`,
-            },
-          },
-        );
-
-        console.log(newTicket);
-      } catch (error) {
-        console.error(error);
-      }
-    } else {
-      console.error('Ticket is null or undefined');
-    }
-  };
 
   if (isLoading) {
     return (
@@ -99,11 +69,11 @@ export default function TicketDetail() {
             <span className="text-gray-400">Status:</span> {ticket.status}
           </div>
           <div className="mb-4">
-            <span className="text-gray-400">Game:</span> {ticket.gameName}
+            <span className="text-gray-400">Game:</span> {ticket.project.title}
           </div>
           <div className="mb-4">
             <span className="text-gray-400">Submitted by:</span>{' '}
-            {ticket.owner_username}
+            {ticket.owner.username}
           </div>
           <div className="mb-4">
             <span className="text-gray-400">Description:</span>
@@ -114,18 +84,6 @@ export default function TicketDetail() {
           <Button asChild>
             <Link href="/gtl/owner">Back to Dashboard</Link>
           </Button>
-        </div>
-        <div className="flex justify-end mb-4">
-          <select
-            className="bg-gray-800 text-white p-2 rounded"
-            value={ticket.status}
-            onChange={(e) => updateTicketStatus(e.target.value)}
-          >
-            <option value="OPEN">OPEN</option>
-            <option value="IN_PROGRESS">IN PROGRESS</option>
-            <option value="RESOLVED">RESOLVED</option>
-            <option value="CLOSED">CLOSED</option>
-          </select>
         </div>
       </main>
     </div>
