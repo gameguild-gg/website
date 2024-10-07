@@ -370,6 +370,54 @@ export namespace Api {
 		id: string;
 	}
 
+	export interface JobPostEntity {
+		id: string;
+		createdAt: string;
+		updatedAt: string;
+		owner: Api.UserEntity;
+		editors: Api.UserEntity[];
+		slug: string;
+		title: string;
+		summary: string;
+		body: string;
+		visibility: Api.JobPostEntity.Visibility;
+		thumbnail: string;
+		tags: Api.JobTagEntity[];
+	}
+	
+	/**
+	 * @export
+	 * @namespace JobPostEntity
+	 */
+	export namespace JobPostEntity {
+		export type Visibility =
+			'DRAFT' |
+			'PUBLISHED' |
+			'FUTURE' |
+			'PENDING' |
+			'PRIVATE' |
+			'TRASH'
+		
+		export namespace Visibility {
+			export enum Enum {
+				DRAFT = 'DRAFT',
+				PUBLISHED = 'PUBLISHED',
+				FUTURE = 'FUTURE',
+				PENDING = 'PENDING',
+				PRIVATE = 'PRIVATE',
+				TRASH = 'TRASH'
+			}
+		}
+	
+	}
+
+	export interface JobTagEntity {
+		id: string;
+		createdAt: string;
+		updatedAt: string;
+		name: string;
+	}
+
 	export interface LectureEntity {
 		id: string;
 		createdAt: string;

@@ -1,6 +1,8 @@
 "use client"
 
 import { useState } from "react"
+import { JobsApi } from '@game-guild/apiclient';
+import { getSession } from 'next-auth/react';
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -27,6 +29,10 @@ export default function JobPost() {
   const [location, setLocation] = useState("")
   const [selectedSkills, setSelectedSkills] = useState<string[]>([])
 
+  const api = new JobsApi({
+    basePath: process.env.NEXT_PUBLIC_API_URL,
+  });
+
   const handleSkillSelection = (skill: string) => {
     setSelectedSkills((prev) =>
       prev.includes(skill)
@@ -39,6 +45,20 @@ export default function JobPost() {
     e.preventDefault()
     // Handle form submission here
     console.log({ title, description, location, selectedSkills })
+    //
+    postJob();
+  }
+
+  const postJob = async ():Promise<void> => {
+    const session = await getSession();
+    if (!session) {
+      window.location.href = '/connect';
+      return;
+    }
+    const response = await api.jobControllerCreateJobPost({
+      headers: { Authorization: `Bearer ${session.accessToken}` },
+    });
+    console.log("/jobs API RESPONSE:\n",response)
   }
 
   return (
@@ -94,7 +114,7 @@ export default function JobPost() {
               <Button type="button" variant="outline">
                 Return
               </Button>
-              <Button type="submit">Post Job</Button>
+              <Button type="submit" onClick={handleSubmit}>Post Job</Button>
             </div>
           </form>
         </CardContent>

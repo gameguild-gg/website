@@ -3290,6 +3290,259 @@ export class ContentApi extends BaseAPI implements ContentApiInterface {
 	}
 
 }
+export namespace JobsApi {
+	export type JobControllerCreateJobPostResponse =
+		| JobControllerCreateJobPost400Response
+		| JobControllerCreateJobPost401Response
+		| JobControllerCreateJobPost403Response
+		| JobControllerCreateJobPost404Response
+		| JobControllerCreateJobPost409Response
+		| JobControllerCreateJobPost422Response
+		| JobControllerCreateJobPost500Response
+		| JobControllerCreateJobPostDefaultResponse
+	
+	export interface JobControllerCreateJobPost400Response {
+		status: 400
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface JobControllerCreateJobPost401Response {
+		status: 401
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface JobControllerCreateJobPost403Response {
+		status: 403
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface JobControllerCreateJobPost404Response {
+		status: 404
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface JobControllerCreateJobPost409Response {
+		status: 409
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface JobControllerCreateJobPost422Response {
+		status: 422
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface JobControllerCreateJobPost500Response {
+		status: 500
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface JobControllerCreateJobPostDefaultResponse {
+		status: number
+		contentType: 'application/json'
+		body: Api.JobPostEntity
+		headers?: undefined
+	}
+	
+}
+
+/**
+ * JobsApi - fetch parameter creator
+ * @export
+ */
+export const JobsApiFetchParamCreator = function (configuration?: Configuration) {
+	return {
+		/**
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		jobControllerCreateJobPost(options: RequestInit = {}): FetchArgs {
+
+			let localVarPath = `/jobs/job-post/create`;
+			const localVarPathQueryStart = localVarPath.indexOf("?");
+			const localVarRequestOptions: RequestInit = Object.assign({ method: 'POST' }, options);
+			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
+			const localVarQueryParameter = new URLSearchParams(localVarPathQueryStart !== -1 ? localVarPath.substring(localVarPathQueryStart + 1) : "");
+			if (localVarPathQueryStart !== -1) {
+				localVarPath = localVarPath.substring(0, localVarPathQueryStart);
+			}
+
+			// authentication bearer required
+			// http authorization required
+			if (configuration && configuration.authorization) {
+				const localVarAuthorizationValue = typeof configuration.authorization === 'function'
+					? configuration.authorization('bearer')
+					: configuration.authorization;
+				if (localVarAuthorizationValue !== null) {
+					localVarHeaderParameter.set("Authorization", "Bearer " + localVarAuthorizationValue);
+				}
+			}
+			localVarRequestOptions.headers = localVarHeaderParameter;
+
+			const localVarQueryParameterString = localVarQueryParameter.toString();
+			if (localVarQueryParameterString) {
+				localVarPath += "?" + localVarQueryParameterString;
+			}
+			return {
+				url: localVarPath,
+				options: localVarRequestOptions,
+			};
+		},
+	}
+};
+
+/**
+ * JobsApi - functional programming interface
+ * @export
+ */
+export const JobsApiFp = function(configuration?: Configuration) {
+	return {
+		/**
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		jobControllerCreateJobPost(options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<JobsApi.JobControllerCreateJobPostResponse> {
+			const localVarFetchArgs = JobsApiFetchParamCreator(configuration).jobControllerCreateJobPost(options);
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				if (response.status === 400) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 401) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 403) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 404) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 409) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 422) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 500) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				/* Catch-all response */
+				if (mimeType === 'application/json') {
+					return {
+						status: response.status,
+						contentType: 'application/json',
+						body: await response.json() as Api.JobPostEntity,
+					}
+				}
+				throw response;
+			};
+		},
+	}
+};
+
+/**
+ * JobsApi - factory interface
+ * @export
+ */
+export const JobsApiFactory: FactoryFunction<JobsApiInterface> = function (configuration?: Configuration, basePath?: string, fetch?: FetchAPI) {
+	return new JobsApi(configuration, basePath, fetch);
+};
+
+/**
+ * JobsApi - interface
+ * @export
+ * @interface JobsApi
+ */
+export interface JobsApiInterface {
+	/**
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	jobControllerCreateJobPost(options?: RequestInit): Promise<JobsApi.JobControllerCreateJobPostResponse>
+
+}
+
+/**
+ * JobsApi - object-oriented interface
+ * @export
+ * @class JobsApi
+ * @extends {BaseAPI}
+ */
+export class JobsApi extends BaseAPI implements JobsApiInterface {
+	/**
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	public jobControllerCreateJobPost(options?: RequestInit) {
+		return JobsApiFp(this.configuration).jobControllerCreateJobPost(options)(this.fetch, this.basePath);
+	}
+
+}
 export namespace ProjectApi {
 	export type CreateOneBaseProjectControllerProjectEntityResponse =
 		| CreateOneBaseProjectControllerProjectEntity201Response

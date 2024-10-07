@@ -13,6 +13,7 @@ import { ProposalModule } from './proposal/proposal.module';
 import { UserModule } from './user/user.module';
 import { CompetitionModule } from './competition/competition.module';
 import { HealthcheckModule } from './healthcheck/healthcheck.module';
+import { JobModule } from './job/job.module';
 import { TagModule } from './tag/tag.module';
 import { ClsModule } from 'nestjs-cls';
 import { DataSource } from 'typeorm';
@@ -52,6 +53,7 @@ import { DataSource } from 'typeorm';
     CompetitionModule,
     HealthcheckModule,
     TagModule,
+    JobModule,
     // IpfsModule,
   ],
   controllers: [AppController],

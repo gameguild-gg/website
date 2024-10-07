@@ -1,5 +1,5 @@
 import { Column, Entity, JoinTable, OneToMany } from 'typeorm';
-import { ContentBase } from './content.base';
+import { ContentBase } from '../../cms/entities/content.base';
 import { JobTagEntity } from './job-tag.entity';
 import { ApiProperty } from '@nestjs/swagger';
 import { IsArray, ValidateNested } from 'class-validator';
@@ -10,7 +10,7 @@ export class JobPostEntity extends ContentBase {
   // a job is very similar to a content base, but has many job tags
   @OneToMany(() => JobTagEntity, (jobTag) => jobTag.job)
   @ApiProperty({ type: JobTagEntity, isArray: true })
-  @IsArray({ message: 'error.IsArray: lectures should be an array' })
+  @IsArray({ message: 'error.IsArray: tags should be an array' })
   @ValidateNested({ each: true })
   @Type(() => JobTagEntity)
   @JoinTable()
