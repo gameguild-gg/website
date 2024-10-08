@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { JobsApi } from '@game-guild/apiclient';
+import { Api, JobsApi } from '@game-guild/apiclient';
 import { getSession } from 'next-auth/react';
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -55,9 +55,18 @@ export default function JobPost() {
       window.location.href = '/connect';
       return;
     }
-    const response = await api.jobControllerCreateJobPost({
+    
+    const response = await api.createOneBaseJobControllerJobPostEntity(
+      {
+        title: title,
+        slug: title,
+        summary: description,
+        body: description,
+      } as Api.JobPostCreateDto,
+      {
       headers: { Authorization: `Bearer ${session.accessToken}` },
-    });
+      }
+    );
     console.log("/jobs API RESPONSE:\n",response)
   }
 

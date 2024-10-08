@@ -163,6 +163,12 @@ Table UserEntity {
   courses CourseEntity
 }
 
+Table VoteEntity {
+  id uuid
+  createdAt timestamp
+  updatedAt timestamp
+}
+
 Table ProposalEntity {
   id uuid
   createdAt timestamp
@@ -175,12 +181,6 @@ Table ProposalEntity {
   thumbnail varchar
   owner UserEntity
   editors UserEntity
-}
-
-Table VoteEntity {
-  id uuid
-  createdAt timestamp
-  updatedAt timestamp
 }
 
 Table JobTagEntity {
@@ -206,6 +206,15 @@ Table JobPostEntity {
   tags JobTagEntity
 }
 
+Table JobAplicationEntity {
+  id uuid
+  createdAt timestamp
+  updatedAt timestamp
+  progress int
+  aplicant UserEntity
+  job JobPostEntity
+}
+
 Table EventEntity {
   id uuid
   createdAt timestamp
@@ -220,13 +229,19 @@ Table EventEntity {
   editors UserEntity
 }
 
-Table JobAplicationEntity {
+Table ProjectEntity {
   id uuid
   createdAt timestamp
   updatedAt timestamp
-  progress int
-  aplicant UserEntity
-  job JobPostEntity
+  slug varchar
+  title varchar
+  summary string
+  body text
+  visibility enum
+  thumbnail varchar
+  owner UserEntity
+  editors UserEntity
+  versions ProjectVersionEntity
 }
 
 Table ProjectFeedbackResponseEntity {
@@ -249,21 +264,6 @@ Table ProjectVersionEntity {
   feedback_deadline timestamptz
   project ProjectEntity
   responses ProjectFeedbackResponseEntity
-}
-
-Table ProjectEntity {
-  id uuid
-  createdAt timestamp
-  updatedAt timestamp
-  slug varchar
-  title varchar
-  summary string
-  body text
-  visibility enum
-  thumbnail varchar
-  owner UserEntity
-  editors UserEntity
-  versions ProjectVersionEntity
 }
 
 Table post_editors_user {
@@ -333,12 +333,12 @@ Ref: ProposalEntity.editors <> UserEntity.id
 Ref: JobTagEntity.job > JobPostEntity.tags
 Ref: JobPostEntity.owner > UserEntity.id
 Ref: JobPostEntity.editors <> UserEntity.id
-Ref: EventEntity.owner > UserEntity.id
-Ref: EventEntity.editors <> UserEntity.id
 Ref: JobAplicationEntity.aplicant > UserEntity.id
 Ref: JobAplicationEntity.job > JobPostEntity.tags
-Ref: ProjectFeedbackResponseEntity.version > ProjectVersionEntity.responses
-Ref: ProjectFeedbackResponseEntity.user > UserEntity.id
-Ref: ProjectVersionEntity.project > ProjectEntity.versions
+Ref: EventEntity.owner > UserEntity.id
+Ref: EventEntity.editors <> UserEntity.id
 Ref: ProjectEntity.owner > UserEntity.id
 Ref: ProjectEntity.editors <> UserEntity.id
+Ref: ProjectEntity.versions < ProjectVersionEntity.project
+Ref: ProjectFeedbackResponseEntity.version > ProjectVersionEntity.responses
+Ref: ProjectFeedbackResponseEntity.user > UserEntity.id
