@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { Api, JobsApi } from '@game-guild/apiclient';
+import { useEffect, useState } from "react"
+import { Api, AuthApi, JobsApi } from '@game-guild/apiclient';
 import { getSession } from 'next-auth/react';
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -29,9 +29,21 @@ export default function JobPost() {
   const [location, setLocation] = useState("")
   const [selectedSkills, setSelectedSkills] = useState<string[]>([])
 
-  const api = new JobsApi({
+  const authapi = new AuthApi({
+    basePath: process.env.NEXT_PUBLIC_API_URL,
+  })
+  const jobapi = new JobsApi({
     basePath: process.env.NEXT_PUBLIC_API_URL,
   });
+
+  useEffect(() => {
+    // sessionDebug()
+  },[]);
+
+  const sessionDebug = async () =>{
+    const session = await getSession();
+    console.log('SESSION:\n',session)
+  }
 
   const handleSkillSelection = (skill: string) => {
     setSelectedSkills((prev) =>
@@ -50,24 +62,32 @@ export default function JobPost() {
   }
 
   const postJob = async ():Promise<void> => {
-    const session = await getSession();
+    const session:any = await getSession();
     if (!session) {
       window.location.href = '/connect';
       return;
     }
     
-    const response = await api.createOneBaseJobControllerJobPostEntity(
+    const response1 = await authapi.authControllerGetCurrentUser(
+      { headers: { Authorization: `Bearer ${session.accessToken}` }, }
+    )
+    // console.log("/auth/me API RESPONSE:\n", response1)
+    
+    const response2 = await jobapi.createOneBaseJobControllerJobPostEntity(
       {
         title: title,
         slug: title,
         summary: description,
         body: description,
+        location: location,
+        // tags: 
+        owner: response1.body,
       } as Api.JobPostCreateDto,
       {
       headers: { Authorization: `Bearer ${session.accessToken}` },
       }
     );
-    console.log("/jobs API RESPONSE:\n",response)
+    console.log("/jobs API RESPONSE:\n",response2)
   }
 
   return (

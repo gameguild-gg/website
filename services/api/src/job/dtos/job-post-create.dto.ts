@@ -5,6 +5,8 @@ import {
   IsString,
   MaxLength,
 } from 'class-validator';
+import { UserEntity } from '../../user/entities';
+import { ManyToOne } from 'typeorm';
 
 export class JobPostCreateDto {
     
@@ -15,10 +17,16 @@ export class JobPostCreateDto {
   @MaxLength(64, {
     message: 'error.invalidTitle: Title must be shorter than or equal to 64 characters.',
   })
-  @IsAlphanumeric('en-US', {
-    message: 'error.invalidTitle: Title must be alphanumeric without any special characters.',
-  })
   readonly title: string;
+
+  // Slug
+  @ApiProperty({ required: true })
+  @IsString({ message: 'error.invalidTitle: Title must be a string.' })
+  @IsNotEmpty({ message: 'error.invalidTitle: Title must not be empty.' })
+  @MaxLength(64, {
+    message: 'error.invalidTitle: Title must be shorter than or equal to 64 characters.',
+  })
+  readonly slug: string;
 
   // Summary
   @ApiProperty({ required: true })
@@ -27,31 +35,28 @@ export class JobPostCreateDto {
   @MaxLength(64, {
     message: 'error.invalidTitle: Title must be shorter than or equal to 64 characters.',
   })
-  @IsAlphanumeric('en-US', {
-    message: 'error.invalidTitle: Title must be alphanumeric without any special characters.',
-  })
   readonly summary: string;
 
   // Body
   @ApiProperty({ required: true })
   @IsString({ message: 'error.invalidTitle: Title must be a string.' })
   @IsNotEmpty({ message: 'error.invalidTitle: Title must not be empty.' })
-  @IsAlphanumeric('en-US', {
-    message: 'error.invalidTitle: Title must be alphanumeric without any special characters.',
-  })
   readonly body: string;
 
-  // slug
+  // Location
   @ApiProperty({ required: true })
-  @IsString({ message: 'error.invalidTitle: Title must be a string.' })
-  @IsNotEmpty({ message: 'error.invalidTitle: Title must not be empty.' })
-  @MaxLength(64, {
-    message: 'error.invalidTitle: Title must be shorter than or equal to 64 characters.',
-  })
-  @IsAlphanumeric('en-US', {
-    message: 'error.invalidTitle: Title must be alphanumeric without any special characters.',
-  })
-  readonly slug: string;
+  @MaxLength(64, { message: 'error.maxLength: location is too long, max 64' })
+  @IsNotEmpty({ message: 'error.isNotEmpty: location is required' })
+  @IsString({ message: 'error.isString: location must be a string' })
+  location: string;
 
+  // Owner
+  @ApiProperty({ required: true, type: () => UserEntity })
+  @IsNotEmpty({ message: 'error.invalidTitle: Title must not be empty.' })
+  @ManyToOne(() => UserEntity, { nullable: false, eager: false })
+  readonly owner: UserEntity;
+
+  // Tags
+  // TODO
   
 }

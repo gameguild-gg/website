@@ -342,6 +342,30 @@ export namespace Api {
 		pageCount: number;
 	}
 
+	export interface GetManyJobTagEntityResponseDto {
+		data: Api.JobTagEntity[];
+		/**
+		 * @type {number}
+		 * @memberof GetManyJobTagEntityResponseDto
+		 */
+		count: number;
+		/**
+		 * @type {number}
+		 * @memberof GetManyJobTagEntityResponseDto
+		 */
+		total: number;
+		/**
+		 * @type {number}
+		 * @memberof GetManyJobTagEntityResponseDto
+		 */
+		page: number;
+		/**
+		 * @type {number}
+		 * @memberof GetManyJobTagEntityResponseDto
+		 */
+		pageCount: number;
+	}
+
 	export interface GetManyProjectEntityResponseDto {
 		data: Api.ProjectEntity[];
 		/**
@@ -396,9 +420,11 @@ export namespace Api {
 
 	export interface JobPostCreateDto {
 		title: string;
+		slug: string;
 		summary: string;
 		body: string;
-		slug: string;
+		location: string;
+		owner: Api.UserEntity;
 	}
 
 	export interface JobPostEntity {
@@ -413,6 +439,7 @@ export namespace Api {
 		body: string;
 		visibility: Api.JobPostEntity.Visibility;
 		thumbnail: string;
+		location: string;
 		tags: Api.JobTagEntity[];
 	}
 	

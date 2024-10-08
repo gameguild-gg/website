@@ -10,9 +10,9 @@ import { UserService } from '../user/user.service';
 import { WithRolesService } from '../cms/with-roles.service';
 
 @Injectable()
-export class JobService extends WithRolesService<JobPostEntity> {
+export class JobPostService extends WithRolesService<JobPostEntity> {
 
-  private readonly logger = new Logger(JobService.name);
+  private readonly logger = new Logger(JobPostService.name);
 
   constructor(
     @InjectRepository(JobPostEntity)

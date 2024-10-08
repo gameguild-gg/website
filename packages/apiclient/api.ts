@@ -3290,139 +3290,139 @@ export class ContentApi extends BaseAPI implements ContentApiInterface {
 	}
 
 }
-export namespace JobsApi {
-	export type CreateOneBaseJobControllerJobPostEntityResponse =
-		| CreateOneBaseJobControllerJobPostEntity201Response
-		| CreateOneBaseJobControllerJobPostEntity400Response
-		| CreateOneBaseJobControllerJobPostEntity401Response
-		| CreateOneBaseJobControllerJobPostEntity403Response
-		| CreateOneBaseJobControllerJobPostEntity404Response
-		| CreateOneBaseJobControllerJobPostEntity409Response
-		| CreateOneBaseJobControllerJobPostEntity422Response
-		| CreateOneBaseJobControllerJobPostEntity500Response
+export namespace JobPostsApi {
+	export type CreateOneBaseJobPostControllerJobPostEntityResponse =
+		| CreateOneBaseJobPostControllerJobPostEntity201Response
+		| CreateOneBaseJobPostControllerJobPostEntity400Response
+		| CreateOneBaseJobPostControllerJobPostEntity401Response
+		| CreateOneBaseJobPostControllerJobPostEntity403Response
+		| CreateOneBaseJobPostControllerJobPostEntity404Response
+		| CreateOneBaseJobPostControllerJobPostEntity409Response
+		| CreateOneBaseJobPostControllerJobPostEntity422Response
+		| CreateOneBaseJobPostControllerJobPostEntity500Response
 	
-	export interface CreateOneBaseJobControllerJobPostEntity201Response {
+	export interface CreateOneBaseJobPostControllerJobPostEntity201Response {
 		status: 201
 		contentType: 'application/json'
 		body: Api.JobPostEntity
 		headers?: undefined
 	}
 	
-	export interface CreateOneBaseJobControllerJobPostEntity400Response {
+	export interface CreateOneBaseJobPostControllerJobPostEntity400Response {
 		status: 400
 		contentType: 'application/json'
 		body: Api.ApiErrorResponseDto
 		headers?: undefined
 	}
 	
-	export interface CreateOneBaseJobControllerJobPostEntity401Response {
+	export interface CreateOneBaseJobPostControllerJobPostEntity401Response {
 		status: 401
 		contentType: 'application/json'
 		body: Api.ApiErrorResponseDto
 		headers?: undefined
 	}
 	
-	export interface CreateOneBaseJobControllerJobPostEntity403Response {
+	export interface CreateOneBaseJobPostControllerJobPostEntity403Response {
 		status: 403
 		contentType: 'application/json'
 		body: Api.ApiErrorResponseDto
 		headers?: undefined
 	}
 	
-	export interface CreateOneBaseJobControllerJobPostEntity404Response {
+	export interface CreateOneBaseJobPostControllerJobPostEntity404Response {
 		status: 404
 		contentType: 'application/json'
 		body: Api.ApiErrorResponseDto
 		headers?: undefined
 	}
 	
-	export interface CreateOneBaseJobControllerJobPostEntity409Response {
+	export interface CreateOneBaseJobPostControllerJobPostEntity409Response {
 		status: 409
 		contentType: 'application/json'
 		body: Api.ApiErrorResponseDto
 		headers?: undefined
 	}
 	
-	export interface CreateOneBaseJobControllerJobPostEntity422Response {
+	export interface CreateOneBaseJobPostControllerJobPostEntity422Response {
 		status: 422
 		contentType: 'application/json'
 		body: Api.ApiErrorResponseDto
 		headers?: undefined
 	}
 	
-	export interface CreateOneBaseJobControllerJobPostEntity500Response {
+	export interface CreateOneBaseJobPostControllerJobPostEntity500Response {
 		status: 500
 		contentType: 'application/json'
 		body: Api.ApiErrorResponseDto
 		headers?: undefined
 	}
 	
-	export type DeleteOneBaseJobControllerJobPostEntityResponse =
-		| DeleteOneBaseJobControllerJobPostEntity200Response
-		| DeleteOneBaseJobControllerJobPostEntity400Response
-		| DeleteOneBaseJobControllerJobPostEntity401Response
-		| DeleteOneBaseJobControllerJobPostEntity403Response
-		| DeleteOneBaseJobControllerJobPostEntity404Response
-		| DeleteOneBaseJobControllerJobPostEntity409Response
-		| DeleteOneBaseJobControllerJobPostEntity422Response
-		| DeleteOneBaseJobControllerJobPostEntity500Response
+	export type DeleteOneBaseJobPostControllerJobPostEntityResponse =
+		| DeleteOneBaseJobPostControllerJobPostEntity200Response
+		| DeleteOneBaseJobPostControllerJobPostEntity400Response
+		| DeleteOneBaseJobPostControllerJobPostEntity401Response
+		| DeleteOneBaseJobPostControllerJobPostEntity403Response
+		| DeleteOneBaseJobPostControllerJobPostEntity404Response
+		| DeleteOneBaseJobPostControllerJobPostEntity409Response
+		| DeleteOneBaseJobPostControllerJobPostEntity422Response
+		| DeleteOneBaseJobPostControllerJobPostEntity500Response
 	
-	export interface DeleteOneBaseJobControllerJobPostEntity200Response {
+	export interface DeleteOneBaseJobPostControllerJobPostEntity200Response {
 		status: 200
 		body?: undefined
 		headers?: undefined
 	}
 	
-	export interface DeleteOneBaseJobControllerJobPostEntity400Response {
+	export interface DeleteOneBaseJobPostControllerJobPostEntity400Response {
 		status: 400
 		contentType: 'application/json'
 		body: Api.ApiErrorResponseDto
 		headers?: undefined
 	}
 	
-	export interface DeleteOneBaseJobControllerJobPostEntity401Response {
+	export interface DeleteOneBaseJobPostControllerJobPostEntity401Response {
 		status: 401
 		contentType: 'application/json'
 		body: Api.ApiErrorResponseDto
 		headers?: undefined
 	}
 	
-	export interface DeleteOneBaseJobControllerJobPostEntity403Response {
+	export interface DeleteOneBaseJobPostControllerJobPostEntity403Response {
 		status: 403
 		contentType: 'application/json'
 		body: Api.ApiErrorResponseDto
 		headers?: undefined
 	}
 	
-	export interface DeleteOneBaseJobControllerJobPostEntity404Response {
+	export interface DeleteOneBaseJobPostControllerJobPostEntity404Response {
 		status: 404
 		contentType: 'application/json'
 		body: Api.ApiErrorResponseDto
 		headers?: undefined
 	}
 	
-	export interface DeleteOneBaseJobControllerJobPostEntity409Response {
+	export interface DeleteOneBaseJobPostControllerJobPostEntity409Response {
 		status: 409
 		contentType: 'application/json'
 		body: Api.ApiErrorResponseDto
 		headers?: undefined
 	}
 	
-	export interface DeleteOneBaseJobControllerJobPostEntity422Response {
+	export interface DeleteOneBaseJobPostControllerJobPostEntity422Response {
 		status: 422
 		contentType: 'application/json'
 		body: Api.ApiErrorResponseDto
 		headers?: undefined
 	}
 	
-	export interface DeleteOneBaseJobControllerJobPostEntity500Response {
+	export interface DeleteOneBaseJobPostControllerJobPostEntity500Response {
 		status: 500
 		contentType: 'application/json'
 		body: Api.ApiErrorResponseDto
 		headers?: undefined
 	}
 	
-	export interface GetManyBaseJobControllerJobPostEntityParameters {
+	export interface GetManyBaseJobPostControllerJobPostEntityParameters {
 		/**
 		 * @description <p>Selects resource fields. <a href="https://github.com/nestjsx/crud/wiki/Requests#select" target="_blank">Docs</a></p>
 		 * @type {string[]}
@@ -3477,73 +3477,17 @@ export namespace JobsApi {
 		cache?: number
 	}
 	
-	export type GetManyBaseJobControllerJobPostEntityResponse =
-		| GetManyBaseJobControllerJobPostEntity200Response
-		| GetManyBaseJobControllerJobPostEntity400Response
-		| GetManyBaseJobControllerJobPostEntity401Response
-		| GetManyBaseJobControllerJobPostEntity403Response
-		| GetManyBaseJobControllerJobPostEntity404Response
-		| GetManyBaseJobControllerJobPostEntity409Response
-		| GetManyBaseJobControllerJobPostEntity422Response
-		| GetManyBaseJobControllerJobPostEntity500Response
+	export type GetManyBaseJobPostControllerJobPostEntityResponse =
+		| GetManyBaseJobPostControllerJobPostEntity200Response
 	
-	export interface GetManyBaseJobControllerJobPostEntity200Response {
+	export interface GetManyBaseJobPostControllerJobPostEntity200Response {
 		status: 200
 		contentType: 'application/json'
 		body: Api.GetManyJobPostEntityResponseDto | Api.JobPostEntity[]
 		headers?: undefined
 	}
 	
-	export interface GetManyBaseJobControllerJobPostEntity400Response {
-		status: 400
-		contentType: 'application/json'
-		body: Api.ApiErrorResponseDto
-		headers?: undefined
-	}
-	
-	export interface GetManyBaseJobControllerJobPostEntity401Response {
-		status: 401
-		contentType: 'application/json'
-		body: Api.ApiErrorResponseDto
-		headers?: undefined
-	}
-	
-	export interface GetManyBaseJobControllerJobPostEntity403Response {
-		status: 403
-		contentType: 'application/json'
-		body: Api.ApiErrorResponseDto
-		headers?: undefined
-	}
-	
-	export interface GetManyBaseJobControllerJobPostEntity404Response {
-		status: 404
-		contentType: 'application/json'
-		body: Api.ApiErrorResponseDto
-		headers?: undefined
-	}
-	
-	export interface GetManyBaseJobControllerJobPostEntity409Response {
-		status: 409
-		contentType: 'application/json'
-		body: Api.ApiErrorResponseDto
-		headers?: undefined
-	}
-	
-	export interface GetManyBaseJobControllerJobPostEntity422Response {
-		status: 422
-		contentType: 'application/json'
-		body: Api.ApiErrorResponseDto
-		headers?: undefined
-	}
-	
-	export interface GetManyBaseJobControllerJobPostEntity500Response {
-		status: 500
-		contentType: 'application/json'
-		body: Api.ApiErrorResponseDto
-		headers?: undefined
-	}
-	
-	export interface GetOneBaseJobControllerJobPostEntityParameters {
+	export interface GetOneBaseJobPostControllerJobPostEntityParameters {
 		id: string
 		/**
 		 * @description <p>Selects resource fields. <a href="https://github.com/nestjsx/crud/wiki/Requests#select" target="_blank">Docs</a></p>
@@ -3564,306 +3508,306 @@ export namespace JobsApi {
 		cache?: number
 	}
 	
-	export type GetOneBaseJobControllerJobPostEntityResponse =
-		| GetOneBaseJobControllerJobPostEntity200Response
-		| GetOneBaseJobControllerJobPostEntity400Response
-		| GetOneBaseJobControllerJobPostEntity401Response
-		| GetOneBaseJobControllerJobPostEntity403Response
-		| GetOneBaseJobControllerJobPostEntity404Response
-		| GetOneBaseJobControllerJobPostEntity409Response
-		| GetOneBaseJobControllerJobPostEntity422Response
-		| GetOneBaseJobControllerJobPostEntity500Response
+	export type GetOneBaseJobPostControllerJobPostEntityResponse =
+		| GetOneBaseJobPostControllerJobPostEntity200Response
+		| GetOneBaseJobPostControllerJobPostEntity400Response
+		| GetOneBaseJobPostControllerJobPostEntity401Response
+		| GetOneBaseJobPostControllerJobPostEntity403Response
+		| GetOneBaseJobPostControllerJobPostEntity404Response
+		| GetOneBaseJobPostControllerJobPostEntity409Response
+		| GetOneBaseJobPostControllerJobPostEntity422Response
+		| GetOneBaseJobPostControllerJobPostEntity500Response
 	
-	export interface GetOneBaseJobControllerJobPostEntity200Response {
+	export interface GetOneBaseJobPostControllerJobPostEntity200Response {
 		status: 200
 		contentType: 'application/json'
 		body: Api.JobPostEntity
 		headers?: undefined
 	}
 	
-	export interface GetOneBaseJobControllerJobPostEntity400Response {
+	export interface GetOneBaseJobPostControllerJobPostEntity400Response {
 		status: 400
 		contentType: 'application/json'
 		body: Api.ApiErrorResponseDto
 		headers?: undefined
 	}
 	
-	export interface GetOneBaseJobControllerJobPostEntity401Response {
+	export interface GetOneBaseJobPostControllerJobPostEntity401Response {
 		status: 401
 		contentType: 'application/json'
 		body: Api.ApiErrorResponseDto
 		headers?: undefined
 	}
 	
-	export interface GetOneBaseJobControllerJobPostEntity403Response {
+	export interface GetOneBaseJobPostControllerJobPostEntity403Response {
 		status: 403
 		contentType: 'application/json'
 		body: Api.ApiErrorResponseDto
 		headers?: undefined
 	}
 	
-	export interface GetOneBaseJobControllerJobPostEntity404Response {
+	export interface GetOneBaseJobPostControllerJobPostEntity404Response {
 		status: 404
 		contentType: 'application/json'
 		body: Api.ApiErrorResponseDto
 		headers?: undefined
 	}
 	
-	export interface GetOneBaseJobControllerJobPostEntity409Response {
+	export interface GetOneBaseJobPostControllerJobPostEntity409Response {
 		status: 409
 		contentType: 'application/json'
 		body: Api.ApiErrorResponseDto
 		headers?: undefined
 	}
 	
-	export interface GetOneBaseJobControllerJobPostEntity422Response {
+	export interface GetOneBaseJobPostControllerJobPostEntity422Response {
 		status: 422
 		contentType: 'application/json'
 		body: Api.ApiErrorResponseDto
 		headers?: undefined
 	}
 	
-	export interface GetOneBaseJobControllerJobPostEntity500Response {
+	export interface GetOneBaseJobPostControllerJobPostEntity500Response {
 		status: 500
 		contentType: 'application/json'
 		body: Api.ApiErrorResponseDto
 		headers?: undefined
 	}
 	
-	export type JobControllerAddEditorResponse =
-		| JobControllerAddEditor400Response
-		| JobControllerAddEditor401Response
-		| JobControllerAddEditor403Response
-		| JobControllerAddEditor404Response
-		| JobControllerAddEditor409Response
-		| JobControllerAddEditor422Response
-		| JobControllerAddEditor500Response
+	export type JobPostControllerAddEditorResponse =
+		| JobPostControllerAddEditor400Response
+		| JobPostControllerAddEditor401Response
+		| JobPostControllerAddEditor403Response
+		| JobPostControllerAddEditor404Response
+		| JobPostControllerAddEditor409Response
+		| JobPostControllerAddEditor422Response
+		| JobPostControllerAddEditor500Response
 	
-	export interface JobControllerAddEditor400Response {
+	export interface JobPostControllerAddEditor400Response {
 		status: 400
 		contentType: 'application/json'
 		body: Api.ApiErrorResponseDto
 		headers?: undefined
 	}
 	
-	export interface JobControllerAddEditor401Response {
+	export interface JobPostControllerAddEditor401Response {
 		status: 401
 		contentType: 'application/json'
 		body: Api.ApiErrorResponseDto
 		headers?: undefined
 	}
 	
-	export interface JobControllerAddEditor403Response {
+	export interface JobPostControllerAddEditor403Response {
 		status: 403
 		contentType: 'application/json'
 		body: Api.ApiErrorResponseDto
 		headers?: undefined
 	}
 	
-	export interface JobControllerAddEditor404Response {
+	export interface JobPostControllerAddEditor404Response {
 		status: 404
 		contentType: 'application/json'
 		body: Api.ApiErrorResponseDto
 		headers?: undefined
 	}
 	
-	export interface JobControllerAddEditor409Response {
+	export interface JobPostControllerAddEditor409Response {
 		status: 409
 		contentType: 'application/json'
 		body: Api.ApiErrorResponseDto
 		headers?: undefined
 	}
 	
-	export interface JobControllerAddEditor422Response {
+	export interface JobPostControllerAddEditor422Response {
 		status: 422
 		contentType: 'application/json'
 		body: Api.ApiErrorResponseDto
 		headers?: undefined
 	}
 	
-	export interface JobControllerAddEditor500Response {
+	export interface JobPostControllerAddEditor500Response {
 		status: 500
 		contentType: 'application/json'
 		body: Api.ApiErrorResponseDto
 		headers?: undefined
 	}
 	
-	export type JobControllerRemoveEditorResponse =
-		| JobControllerRemoveEditor400Response
-		| JobControllerRemoveEditor401Response
-		| JobControllerRemoveEditor403Response
-		| JobControllerRemoveEditor404Response
-		| JobControllerRemoveEditor409Response
-		| JobControllerRemoveEditor422Response
-		| JobControllerRemoveEditor500Response
+	export type JobPostControllerRemoveEditorResponse =
+		| JobPostControllerRemoveEditor400Response
+		| JobPostControllerRemoveEditor401Response
+		| JobPostControllerRemoveEditor403Response
+		| JobPostControllerRemoveEditor404Response
+		| JobPostControllerRemoveEditor409Response
+		| JobPostControllerRemoveEditor422Response
+		| JobPostControllerRemoveEditor500Response
 	
-	export interface JobControllerRemoveEditor400Response {
+	export interface JobPostControllerRemoveEditor400Response {
 		status: 400
 		contentType: 'application/json'
 		body: Api.ApiErrorResponseDto
 		headers?: undefined
 	}
 	
-	export interface JobControllerRemoveEditor401Response {
+	export interface JobPostControllerRemoveEditor401Response {
 		status: 401
 		contentType: 'application/json'
 		body: Api.ApiErrorResponseDto
 		headers?: undefined
 	}
 	
-	export interface JobControllerRemoveEditor403Response {
+	export interface JobPostControllerRemoveEditor403Response {
 		status: 403
 		contentType: 'application/json'
 		body: Api.ApiErrorResponseDto
 		headers?: undefined
 	}
 	
-	export interface JobControllerRemoveEditor404Response {
+	export interface JobPostControllerRemoveEditor404Response {
 		status: 404
 		contentType: 'application/json'
 		body: Api.ApiErrorResponseDto
 		headers?: undefined
 	}
 	
-	export interface JobControllerRemoveEditor409Response {
+	export interface JobPostControllerRemoveEditor409Response {
 		status: 409
 		contentType: 'application/json'
 		body: Api.ApiErrorResponseDto
 		headers?: undefined
 	}
 	
-	export interface JobControllerRemoveEditor422Response {
+	export interface JobPostControllerRemoveEditor422Response {
 		status: 422
 		contentType: 'application/json'
 		body: Api.ApiErrorResponseDto
 		headers?: undefined
 	}
 	
-	export interface JobControllerRemoveEditor500Response {
+	export interface JobPostControllerRemoveEditor500Response {
 		status: 500
 		contentType: 'application/json'
 		body: Api.ApiErrorResponseDto
 		headers?: undefined
 	}
 	
-	export type JobControllerSwitchOwnerResponse =
-		| JobControllerSwitchOwner400Response
-		| JobControllerSwitchOwner401Response
-		| JobControllerSwitchOwner403Response
-		| JobControllerSwitchOwner404Response
-		| JobControllerSwitchOwner409Response
-		| JobControllerSwitchOwner422Response
-		| JobControllerSwitchOwner500Response
+	export type JobPostControllerSwitchOwnerResponse =
+		| JobPostControllerSwitchOwner400Response
+		| JobPostControllerSwitchOwner401Response
+		| JobPostControllerSwitchOwner403Response
+		| JobPostControllerSwitchOwner404Response
+		| JobPostControllerSwitchOwner409Response
+		| JobPostControllerSwitchOwner422Response
+		| JobPostControllerSwitchOwner500Response
 	
-	export interface JobControllerSwitchOwner400Response {
+	export interface JobPostControllerSwitchOwner400Response {
 		status: 400
 		contentType: 'application/json'
 		body: Api.ApiErrorResponseDto
 		headers?: undefined
 	}
 	
-	export interface JobControllerSwitchOwner401Response {
+	export interface JobPostControllerSwitchOwner401Response {
 		status: 401
 		contentType: 'application/json'
 		body: Api.ApiErrorResponseDto
 		headers?: undefined
 	}
 	
-	export interface JobControllerSwitchOwner403Response {
+	export interface JobPostControllerSwitchOwner403Response {
 		status: 403
 		contentType: 'application/json'
 		body: Api.ApiErrorResponseDto
 		headers?: undefined
 	}
 	
-	export interface JobControllerSwitchOwner404Response {
+	export interface JobPostControllerSwitchOwner404Response {
 		status: 404
 		contentType: 'application/json'
 		body: Api.ApiErrorResponseDto
 		headers?: undefined
 	}
 	
-	export interface JobControllerSwitchOwner409Response {
+	export interface JobPostControllerSwitchOwner409Response {
 		status: 409
 		contentType: 'application/json'
 		body: Api.ApiErrorResponseDto
 		headers?: undefined
 	}
 	
-	export interface JobControllerSwitchOwner422Response {
+	export interface JobPostControllerSwitchOwner422Response {
 		status: 422
 		contentType: 'application/json'
 		body: Api.ApiErrorResponseDto
 		headers?: undefined
 	}
 	
-	export interface JobControllerSwitchOwner500Response {
+	export interface JobPostControllerSwitchOwner500Response {
 		status: 500
 		contentType: 'application/json'
 		body: Api.ApiErrorResponseDto
 		headers?: undefined
 	}
 	
-	export type UpdateOneBaseJobControllerJobPostEntityResponse =
-		| UpdateOneBaseJobControllerJobPostEntity200Response
-		| UpdateOneBaseJobControllerJobPostEntity400Response
-		| UpdateOneBaseJobControllerJobPostEntity401Response
-		| UpdateOneBaseJobControllerJobPostEntity403Response
-		| UpdateOneBaseJobControllerJobPostEntity404Response
-		| UpdateOneBaseJobControllerJobPostEntity409Response
-		| UpdateOneBaseJobControllerJobPostEntity422Response
-		| UpdateOneBaseJobControllerJobPostEntity500Response
+	export type UpdateOneBaseJobPostControllerJobPostEntityResponse =
+		| UpdateOneBaseJobPostControllerJobPostEntity200Response
+		| UpdateOneBaseJobPostControllerJobPostEntity400Response
+		| UpdateOneBaseJobPostControllerJobPostEntity401Response
+		| UpdateOneBaseJobPostControllerJobPostEntity403Response
+		| UpdateOneBaseJobPostControllerJobPostEntity404Response
+		| UpdateOneBaseJobPostControllerJobPostEntity409Response
+		| UpdateOneBaseJobPostControllerJobPostEntity422Response
+		| UpdateOneBaseJobPostControllerJobPostEntity500Response
 	
-	export interface UpdateOneBaseJobControllerJobPostEntity200Response {
+	export interface UpdateOneBaseJobPostControllerJobPostEntity200Response {
 		status: 200
 		contentType: 'application/json'
 		body: Api.JobPostEntity
 		headers?: undefined
 	}
 	
-	export interface UpdateOneBaseJobControllerJobPostEntity400Response {
+	export interface UpdateOneBaseJobPostControllerJobPostEntity400Response {
 		status: 400
 		contentType: 'application/json'
 		body: Api.ApiErrorResponseDto
 		headers?: undefined
 	}
 	
-	export interface UpdateOneBaseJobControllerJobPostEntity401Response {
+	export interface UpdateOneBaseJobPostControllerJobPostEntity401Response {
 		status: 401
 		contentType: 'application/json'
 		body: Api.ApiErrorResponseDto
 		headers?: undefined
 	}
 	
-	export interface UpdateOneBaseJobControllerJobPostEntity403Response {
+	export interface UpdateOneBaseJobPostControllerJobPostEntity403Response {
 		status: 403
 		contentType: 'application/json'
 		body: Api.ApiErrorResponseDto
 		headers?: undefined
 	}
 	
-	export interface UpdateOneBaseJobControllerJobPostEntity404Response {
+	export interface UpdateOneBaseJobPostControllerJobPostEntity404Response {
 		status: 404
 		contentType: 'application/json'
 		body: Api.ApiErrorResponseDto
 		headers?: undefined
 	}
 	
-	export interface UpdateOneBaseJobControllerJobPostEntity409Response {
+	export interface UpdateOneBaseJobPostControllerJobPostEntity409Response {
 		status: 409
 		contentType: 'application/json'
 		body: Api.ApiErrorResponseDto
 		headers?: undefined
 	}
 	
-	export interface UpdateOneBaseJobControllerJobPostEntity422Response {
+	export interface UpdateOneBaseJobPostControllerJobPostEntity422Response {
 		status: 422
 		contentType: 'application/json'
 		body: Api.ApiErrorResponseDto
 		headers?: undefined
 	}
 	
-	export interface UpdateOneBaseJobControllerJobPostEntity500Response {
+	export interface UpdateOneBaseJobPostControllerJobPostEntity500Response {
 		status: 500
 		contentType: 'application/json'
 		body: Api.ApiErrorResponseDto
@@ -3873,10 +3817,10 @@ export namespace JobsApi {
 }
 
 /**
- * JobsApi - fetch parameter creator
+ * JobPostsApi - fetch parameter creator
  * @export
  */
-export const JobsApiFetchParamCreator = function (configuration?: Configuration) {
+export const JobPostsApiFetchParamCreator = function (configuration?: Configuration) {
 	return {
 		/**
 		 * @summary Create a single JobPostEntity
@@ -3884,13 +3828,13 @@ export const JobsApiFetchParamCreator = function (configuration?: Configuration)
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		createOneBaseJobControllerJobPostEntity(request: Api.JobPostCreateDto, options: RequestInit = {}): FetchArgs {
+		createOneBaseJobPostControllerJobPostEntity(request: Api.JobPostCreateDto, options: RequestInit = {}): FetchArgs {
 			// verify required parameter 'request' is not null or undefined
 			if (request === null || request === undefined) {
-				throw new RequiredError('request', 'Required parameter request was null or undefined when calling createOneBaseJobControllerJobPostEntity.');
+				throw new RequiredError('request', 'Required parameter request was null or undefined when calling createOneBaseJobPostControllerJobPostEntity.');
 			}
 
-			let localVarPath = `/jobs`;
+			let localVarPath = `/job-posts`;
 			const localVarPathQueryStart = localVarPath.indexOf("?");
 			const localVarRequestOptions: RequestInit = Object.assign({ method: 'POST' }, options);
 			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
@@ -3932,13 +3876,13 @@ export const JobsApiFetchParamCreator = function (configuration?: Configuration)
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		deleteOneBaseJobControllerJobPostEntity(id: string, options: RequestInit = {}): FetchArgs {
+		deleteOneBaseJobPostControllerJobPostEntity(id: string, options: RequestInit = {}): FetchArgs {
 			// verify required parameter 'id' is not null or undefined
 			if (id === null || id === undefined) {
-				throw new RequiredError('id', 'Required parameter id was null or undefined when calling deleteOneBaseJobControllerJobPostEntity.');
+				throw new RequiredError('id', 'Required parameter id was null or undefined when calling deleteOneBaseJobPostControllerJobPostEntity.');
 			}
 
-			let localVarPath = `/jobs/{id}`
+			let localVarPath = `/job-posts/{id}`
 				.replace('{id}', encodeURIComponent(String(id)));
 			const localVarPathQueryStart = localVarPath.indexOf("?");
 			const localVarRequestOptions: RequestInit = Object.assign({ method: 'DELETE' }, options);
@@ -3984,9 +3928,9 @@ export const JobsApiFetchParamCreator = function (configuration?: Configuration)
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		getManyBaseJobControllerJobPostEntity(__params: JobsApi.GetManyBaseJobControllerJobPostEntityParameters, options: RequestInit = {}): FetchArgs {
+		getManyBaseJobPostControllerJobPostEntity(__params: JobPostsApi.GetManyBaseJobPostControllerJobPostEntityParameters, options: RequestInit = {}): FetchArgs {
 
-			let localVarPath = `/jobs`;
+			let localVarPath = `/job-posts`;
 			const localVarPathQueryStart = localVarPath.indexOf("?");
 			const localVarRequestOptions: RequestInit = Object.assign({ method: 'GET' }, options);
 			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
@@ -3995,16 +3939,6 @@ export const JobsApiFetchParamCreator = function (configuration?: Configuration)
 				localVarPath = localVarPath.substring(0, localVarPathQueryStart);
 			}
 
-			// authentication bearer required
-			// http authorization required
-			if (configuration && configuration.authorization) {
-				const localVarAuthorizationValue = typeof configuration.authorization === 'function'
-					? configuration.authorization('bearer')
-					: configuration.authorization;
-				if (localVarAuthorizationValue !== null) {
-					localVarHeaderParameter.set("Authorization", "Bearer " + localVarAuthorizationValue);
-				}
-			}
 			if (__params.fields !== undefined) {
 				/* array form */
 				localVarQueryParameter.append('fields', __params.fields.map(localVarArrayMapElement => escape(String(localVarArrayMapElement))).join(','));
@@ -4086,13 +4020,13 @@ export const JobsApiFetchParamCreator = function (configuration?: Configuration)
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		getOneBaseJobControllerJobPostEntity(__params: JobsApi.GetOneBaseJobControllerJobPostEntityParameters, options: RequestInit = {}): FetchArgs {
+		getOneBaseJobPostControllerJobPostEntity(__params: JobPostsApi.GetOneBaseJobPostControllerJobPostEntityParameters, options: RequestInit = {}): FetchArgs {
 			// verify required parameter 'id' is not null or undefined
 			if (__params.id === null || __params.id === undefined) {
-				throw new RequiredError('id', 'Required parameter id was null or undefined when calling getOneBaseJobControllerJobPostEntity.');
+				throw new RequiredError('id', 'Required parameter id was null or undefined when calling getOneBaseJobPostControllerJobPostEntity.');
 			}
 
-			let localVarPath = `/jobs/{id}`
+			let localVarPath = `/job-posts/{id}`
 				.replace('{id}', encodeURIComponent(String(__params.id)));
 			const localVarPathQueryStart = localVarPath.indexOf("?");
 			const localVarRequestOptions: RequestInit = Object.assign({ method: 'GET' }, options);
@@ -4146,13 +4080,13 @@ export const JobsApiFetchParamCreator = function (configuration?: Configuration)
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		jobControllerAddEditor(request: Api.EditorRequestDto, options: RequestInit = {}): FetchArgs {
+		jobPostControllerAddEditor(request: Api.EditorRequestDto, options: RequestInit = {}): FetchArgs {
 			// verify required parameter 'request' is not null or undefined
 			if (request === null || request === undefined) {
-				throw new RequiredError('request', 'Required parameter request was null or undefined when calling jobControllerAddEditor.');
+				throw new RequiredError('request', 'Required parameter request was null or undefined when calling jobPostControllerAddEditor.');
 			}
 
-			let localVarPath = `/jobs/add-editor`;
+			let localVarPath = `/job-posts/add-editor`;
 			const localVarPathQueryStart = localVarPath.indexOf("?");
 			const localVarRequestOptions: RequestInit = Object.assign({ method: 'POST' }, options);
 			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
@@ -4193,13 +4127,13 @@ export const JobsApiFetchParamCreator = function (configuration?: Configuration)
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		jobControllerRemoveEditor(request: Api.EditorRequestDto, options: RequestInit = {}): FetchArgs {
+		jobPostControllerRemoveEditor(request: Api.EditorRequestDto, options: RequestInit = {}): FetchArgs {
 			// verify required parameter 'request' is not null or undefined
 			if (request === null || request === undefined) {
-				throw new RequiredError('request', 'Required parameter request was null or undefined when calling jobControllerRemoveEditor.');
+				throw new RequiredError('request', 'Required parameter request was null or undefined when calling jobPostControllerRemoveEditor.');
 			}
 
-			let localVarPath = `/jobs/remove-editor`;
+			let localVarPath = `/job-posts/remove-editor`;
 			const localVarPathQueryStart = localVarPath.indexOf("?");
 			const localVarRequestOptions: RequestInit = Object.assign({ method: 'POST' }, options);
 			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
@@ -4240,13 +4174,13 @@ export const JobsApiFetchParamCreator = function (configuration?: Configuration)
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		jobControllerSwitchOwner(request: Api.TransferOwnershipRequestDto, options: RequestInit = {}): FetchArgs {
+		jobPostControllerSwitchOwner(request: Api.TransferOwnershipRequestDto, options: RequestInit = {}): FetchArgs {
 			// verify required parameter 'request' is not null or undefined
 			if (request === null || request === undefined) {
-				throw new RequiredError('request', 'Required parameter request was null or undefined when calling jobControllerSwitchOwner.');
+				throw new RequiredError('request', 'Required parameter request was null or undefined when calling jobPostControllerSwitchOwner.');
 			}
 
-			let localVarPath = `/jobs/transfer-ownership`;
+			let localVarPath = `/job-posts/transfer-ownership`;
 			const localVarPathQueryStart = localVarPath.indexOf("?");
 			const localVarRequestOptions: RequestInit = Object.assign({ method: 'POST' }, options);
 			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
@@ -4289,17 +4223,17 @@ export const JobsApiFetchParamCreator = function (configuration?: Configuration)
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		updateOneBaseJobControllerJobPostEntity(id: string, request: Api.JobPostEntity, options: RequestInit = {}): FetchArgs {
+		updateOneBaseJobPostControllerJobPostEntity(id: string, request: Api.JobPostEntity, options: RequestInit = {}): FetchArgs {
 			// verify required parameter 'id' is not null or undefined
 			if (id === null || id === undefined) {
-				throw new RequiredError('id', 'Required parameter id was null or undefined when calling updateOneBaseJobControllerJobPostEntity.');
+				throw new RequiredError('id', 'Required parameter id was null or undefined when calling updateOneBaseJobPostControllerJobPostEntity.');
 			}
 			// verify required parameter 'request' is not null or undefined
 			if (request === null || request === undefined) {
-				throw new RequiredError('request', 'Required parameter request was null or undefined when calling updateOneBaseJobControllerJobPostEntity.');
+				throw new RequiredError('request', 'Required parameter request was null or undefined when calling updateOneBaseJobPostControllerJobPostEntity.');
 			}
 
-			let localVarPath = `/jobs/{id}`
+			let localVarPath = `/job-posts/{id}`
 				.replace('{id}', encodeURIComponent(String(id)));
 			const localVarPathQueryStart = localVarPath.indexOf("?");
 			const localVarRequestOptions: RequestInit = Object.assign({ method: 'PATCH' }, options);
@@ -4340,10 +4274,10 @@ export const JobsApiFetchParamCreator = function (configuration?: Configuration)
 };
 
 /**
- * JobsApi - functional programming interface
+ * JobPostsApi - functional programming interface
  * @export
  */
-export const JobsApiFp = function(configuration?: Configuration) {
+export const JobPostsApiFp = function(configuration?: Configuration) {
 	return {
 		/**
 		 * @summary Create a single JobPostEntity
@@ -4351,8 +4285,8 @@ export const JobsApiFp = function(configuration?: Configuration) {
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		createOneBaseJobControllerJobPostEntity(request: Api.JobPostCreateDto, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<JobsApi.CreateOneBaseJobControllerJobPostEntityResponse> {
-			const localVarFetchArgs = JobsApiFetchParamCreator(configuration).createOneBaseJobControllerJobPostEntity(request, options);
+		createOneBaseJobPostControllerJobPostEntity(request: Api.JobPostCreateDto, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<JobPostsApi.CreateOneBaseJobPostControllerJobPostEntityResponse> {
+			const localVarFetchArgs = JobPostsApiFetchParamCreator(configuration).createOneBaseJobPostControllerJobPostEntity(request, options);
 			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
 				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
 				const contentType = response.headers.get('Content-Type');
@@ -4447,8 +4381,8 @@ export const JobsApiFp = function(configuration?: Configuration) {
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		deleteOneBaseJobControllerJobPostEntity(id: string, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<JobsApi.DeleteOneBaseJobControllerJobPostEntityResponse> {
-			const localVarFetchArgs = JobsApiFetchParamCreator(configuration).deleteOneBaseJobControllerJobPostEntity(id, options);
+		deleteOneBaseJobPostControllerJobPostEntity(id: string, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<JobPostsApi.DeleteOneBaseJobPostControllerJobPostEntityResponse> {
+			const localVarFetchArgs = JobPostsApiFetchParamCreator(configuration).deleteOneBaseJobPostControllerJobPostEntity(id, options);
 			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
 				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
 				const contentType = response.headers.get('Content-Type');
@@ -4548,8 +4482,8 @@ export const JobsApiFp = function(configuration?: Configuration) {
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		getManyBaseJobControllerJobPostEntity(__params: JobsApi.GetManyBaseJobControllerJobPostEntityParameters, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<JobsApi.GetManyBaseJobControllerJobPostEntityResponse> {
-			const localVarFetchArgs = JobsApiFetchParamCreator(configuration).getManyBaseJobControllerJobPostEntity(__params, options);
+		getManyBaseJobPostControllerJobPostEntity(__params: JobPostsApi.GetManyBaseJobPostControllerJobPostEntityParameters, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<JobPostsApi.GetManyBaseJobPostControllerJobPostEntityResponse> {
+			const localVarFetchArgs = JobPostsApiFetchParamCreator(configuration).getManyBaseJobPostControllerJobPostEntity(__params, options);
 			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
 				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
 				const contentType = response.headers.get('Content-Type');
@@ -4561,76 +4495,6 @@ export const JobsApiFp = function(configuration?: Configuration) {
 							status: response.status,
 							contentType: 'application/json',
 							body: await response.json() as Api.GetManyJobPostEntityResponseDto | Api.JobPostEntity[],
-						}
-					}
-					throw response;
-				}
-				if (response.status === 400) {
-					if (mimeType === 'application/json') {
-						return {
-							status: response.status,
-							contentType: 'application/json',
-							body: await response.json() as Api.ApiErrorResponseDto,
-						}
-					}
-					throw response;
-				}
-				if (response.status === 401) {
-					if (mimeType === 'application/json') {
-						return {
-							status: response.status,
-							contentType: 'application/json',
-							body: await response.json() as Api.ApiErrorResponseDto,
-						}
-					}
-					throw response;
-				}
-				if (response.status === 403) {
-					if (mimeType === 'application/json') {
-						return {
-							status: response.status,
-							contentType: 'application/json',
-							body: await response.json() as Api.ApiErrorResponseDto,
-						}
-					}
-					throw response;
-				}
-				if (response.status === 404) {
-					if (mimeType === 'application/json') {
-						return {
-							status: response.status,
-							contentType: 'application/json',
-							body: await response.json() as Api.ApiErrorResponseDto,
-						}
-					}
-					throw response;
-				}
-				if (response.status === 409) {
-					if (mimeType === 'application/json') {
-						return {
-							status: response.status,
-							contentType: 'application/json',
-							body: await response.json() as Api.ApiErrorResponseDto,
-						}
-					}
-					throw response;
-				}
-				if (response.status === 422) {
-					if (mimeType === 'application/json') {
-						return {
-							status: response.status,
-							contentType: 'application/json',
-							body: await response.json() as Api.ApiErrorResponseDto,
-						}
-					}
-					throw response;
-				}
-				if (response.status === 500) {
-					if (mimeType === 'application/json') {
-						return {
-							status: response.status,
-							contentType: 'application/json',
-							body: await response.json() as Api.ApiErrorResponseDto,
 						}
 					}
 					throw response;
@@ -4647,8 +4511,8 @@ export const JobsApiFp = function(configuration?: Configuration) {
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		getOneBaseJobControllerJobPostEntity(__params: JobsApi.GetOneBaseJobControllerJobPostEntityParameters, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<JobsApi.GetOneBaseJobControllerJobPostEntityResponse> {
-			const localVarFetchArgs = JobsApiFetchParamCreator(configuration).getOneBaseJobControllerJobPostEntity(__params, options);
+		getOneBaseJobPostControllerJobPostEntity(__params: JobPostsApi.GetOneBaseJobPostControllerJobPostEntityParameters, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<JobPostsApi.GetOneBaseJobPostControllerJobPostEntityResponse> {
+			const localVarFetchArgs = JobPostsApiFetchParamCreator(configuration).getOneBaseJobPostControllerJobPostEntity(__params, options);
 			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
 				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
 				const contentType = response.headers.get('Content-Type');
@@ -4742,8 +4606,8 @@ export const JobsApiFp = function(configuration?: Configuration) {
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		jobControllerAddEditor(request: Api.EditorRequestDto, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<JobsApi.JobControllerAddEditorResponse> {
-			const localVarFetchArgs = JobsApiFetchParamCreator(configuration).jobControllerAddEditor(request, options);
+		jobPostControllerAddEditor(request: Api.EditorRequestDto, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<JobPostsApi.JobPostControllerAddEditorResponse> {
+			const localVarFetchArgs = JobPostsApiFetchParamCreator(configuration).jobPostControllerAddEditor(request, options);
 			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
 				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
 				const contentType = response.headers.get('Content-Type');
@@ -4827,8 +4691,8 @@ export const JobsApiFp = function(configuration?: Configuration) {
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		jobControllerRemoveEditor(request: Api.EditorRequestDto, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<JobsApi.JobControllerRemoveEditorResponse> {
-			const localVarFetchArgs = JobsApiFetchParamCreator(configuration).jobControllerRemoveEditor(request, options);
+		jobPostControllerRemoveEditor(request: Api.EditorRequestDto, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<JobPostsApi.JobPostControllerRemoveEditorResponse> {
+			const localVarFetchArgs = JobPostsApiFetchParamCreator(configuration).jobPostControllerRemoveEditor(request, options);
 			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
 				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
 				const contentType = response.headers.get('Content-Type');
@@ -4912,8 +4776,8 @@ export const JobsApiFp = function(configuration?: Configuration) {
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		jobControllerSwitchOwner(request: Api.TransferOwnershipRequestDto, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<JobsApi.JobControllerSwitchOwnerResponse> {
-			const localVarFetchArgs = JobsApiFetchParamCreator(configuration).jobControllerSwitchOwner(request, options);
+		jobPostControllerSwitchOwner(request: Api.TransferOwnershipRequestDto, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<JobPostsApi.JobPostControllerSwitchOwnerResponse> {
+			const localVarFetchArgs = JobPostsApiFetchParamCreator(configuration).jobPostControllerSwitchOwner(request, options);
 			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
 				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
 				const contentType = response.headers.get('Content-Type');
@@ -4999,8 +4863,8 @@ export const JobsApiFp = function(configuration?: Configuration) {
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		updateOneBaseJobControllerJobPostEntity(id: string, request: Api.JobPostEntity, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<JobsApi.UpdateOneBaseJobControllerJobPostEntityResponse> {
-			const localVarFetchArgs = JobsApiFetchParamCreator(configuration).updateOneBaseJobControllerJobPostEntity(id, request, options);
+		updateOneBaseJobPostControllerJobPostEntity(id: string, request: Api.JobPostEntity, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<JobPostsApi.UpdateOneBaseJobPostControllerJobPostEntityResponse> {
+			const localVarFetchArgs = JobPostsApiFetchParamCreator(configuration).updateOneBaseJobPostControllerJobPostEntity(id, request, options);
 			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
 				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
 				const contentType = response.headers.get('Content-Type');
@@ -5093,26 +4957,26 @@ export const JobsApiFp = function(configuration?: Configuration) {
 };
 
 /**
- * JobsApi - factory interface
+ * JobPostsApi - factory interface
  * @export
  */
-export const JobsApiFactory: FactoryFunction<JobsApiInterface> = function (configuration?: Configuration, basePath?: string, fetch?: FetchAPI) {
-	return new JobsApi(configuration, basePath, fetch);
+export const JobPostsApiFactory: FactoryFunction<JobPostsApiInterface> = function (configuration?: Configuration, basePath?: string, fetch?: FetchAPI) {
+	return new JobPostsApi(configuration, basePath, fetch);
 };
 
 /**
- * JobsApi - interface
+ * JobPostsApi - interface
  * @export
- * @interface JobsApi
+ * @interface JobPostsApi
  */
-export interface JobsApiInterface {
+export interface JobPostsApiInterface {
 	/**
 	 * @summary Create a single JobPostEntity
 	 * @param {Api.JobPostCreateDto} request
 	 * @param {RequestInit} [options] Override http request option.
 	 * @throws {RequiredError}
 	 */
-	createOneBaseJobControllerJobPostEntity(request: Api.JobPostCreateDto, options?: RequestInit): Promise<JobsApi.CreateOneBaseJobControllerJobPostEntityResponse>
+	createOneBaseJobPostControllerJobPostEntity(request: Api.JobPostCreateDto, options?: RequestInit): Promise<JobPostsApi.CreateOneBaseJobPostControllerJobPostEntityResponse>
 
 	/**
 	 * @summary Delete a single JobPostEntity
@@ -5120,7 +4984,7 @@ export interface JobsApiInterface {
 	 * @param {RequestInit} [options] Override http request option.
 	 * @throws {RequiredError}
 	 */
-	deleteOneBaseJobControllerJobPostEntity(id: string, options?: RequestInit): Promise<JobsApi.DeleteOneBaseJobControllerJobPostEntityResponse>
+	deleteOneBaseJobPostControllerJobPostEntity(id: string, options?: RequestInit): Promise<JobPostsApi.DeleteOneBaseJobPostControllerJobPostEntityResponse>
 
 	/**
 	 * @summary Retrieve multiple JobPostEntities
@@ -5137,7 +5001,7 @@ export interface JobsApiInterface {
 	 * @param {RequestInit} [options] Override http request option.
 	 * @throws {RequiredError}
 	 */
-	getManyBaseJobControllerJobPostEntity(__params: JobsApi.GetManyBaseJobControllerJobPostEntityParameters, options?: RequestInit): Promise<JobsApi.GetManyBaseJobControllerJobPostEntityResponse>
+	getManyBaseJobPostControllerJobPostEntity(__params: JobPostsApi.GetManyBaseJobPostControllerJobPostEntityParameters, options?: RequestInit): Promise<JobPostsApi.GetManyBaseJobPostControllerJobPostEntityResponse>
 
 	/**
 	 * @summary Retrieve a single JobPostEntity
@@ -5148,28 +5012,28 @@ export interface JobsApiInterface {
 	 * @param {RequestInit} [options] Override http request option.
 	 * @throws {RequiredError}
 	 */
-	getOneBaseJobControllerJobPostEntity(__params: JobsApi.GetOneBaseJobControllerJobPostEntityParameters, options?: RequestInit): Promise<JobsApi.GetOneBaseJobControllerJobPostEntityResponse>
+	getOneBaseJobPostControllerJobPostEntity(__params: JobPostsApi.GetOneBaseJobPostControllerJobPostEntityParameters, options?: RequestInit): Promise<JobPostsApi.GetOneBaseJobPostControllerJobPostEntityResponse>
 
 	/**
 	 * @param {Api.EditorRequestDto} request
 	 * @param {RequestInit} [options] Override http request option.
 	 * @throws {RequiredError}
 	 */
-	jobControllerAddEditor(request: Api.EditorRequestDto, options?: RequestInit): Promise<JobsApi.JobControllerAddEditorResponse>
+	jobPostControllerAddEditor(request: Api.EditorRequestDto, options?: RequestInit): Promise<JobPostsApi.JobPostControllerAddEditorResponse>
 
 	/**
 	 * @param {Api.EditorRequestDto} request
 	 * @param {RequestInit} [options] Override http request option.
 	 * @throws {RequiredError}
 	 */
-	jobControllerRemoveEditor(request: Api.EditorRequestDto, options?: RequestInit): Promise<JobsApi.JobControllerRemoveEditorResponse>
+	jobPostControllerRemoveEditor(request: Api.EditorRequestDto, options?: RequestInit): Promise<JobPostsApi.JobPostControllerRemoveEditorResponse>
 
 	/**
 	 * @param {Api.TransferOwnershipRequestDto} request
 	 * @param {RequestInit} [options] Override http request option.
 	 * @throws {RequiredError}
 	 */
-	jobControllerSwitchOwner(request: Api.TransferOwnershipRequestDto, options?: RequestInit): Promise<JobsApi.JobControllerSwitchOwnerResponse>
+	jobPostControllerSwitchOwner(request: Api.TransferOwnershipRequestDto, options?: RequestInit): Promise<JobPostsApi.JobPostControllerSwitchOwnerResponse>
 
 	/**
 	 * @summary Update a single JobPostEntity
@@ -5178,25 +5042,25 @@ export interface JobsApiInterface {
 	 * @param {RequestInit} [options] Override http request option.
 	 * @throws {RequiredError}
 	 */
-	updateOneBaseJobControllerJobPostEntity(id: string, request: Api.JobPostEntity, options?: RequestInit): Promise<JobsApi.UpdateOneBaseJobControllerJobPostEntityResponse>
+	updateOneBaseJobPostControllerJobPostEntity(id: string, request: Api.JobPostEntity, options?: RequestInit): Promise<JobPostsApi.UpdateOneBaseJobPostControllerJobPostEntityResponse>
 
 }
 
 /**
- * JobsApi - object-oriented interface
+ * JobPostsApi - object-oriented interface
  * @export
- * @class JobsApi
+ * @class JobPostsApi
  * @extends {BaseAPI}
  */
-export class JobsApi extends BaseAPI implements JobsApiInterface {
+export class JobPostsApi extends BaseAPI implements JobPostsApiInterface {
 	/**
 	 * @summary Create a single JobPostEntity
 	 * @param {Api.JobPostCreateDto} request
 	 * @param {RequestInit} [options] Override http request option.
 	 * @throws {RequiredError}
 	 */
-	public createOneBaseJobControllerJobPostEntity(request: Api.JobPostCreateDto, options?: RequestInit) {
-		return JobsApiFp(this.configuration).createOneBaseJobControllerJobPostEntity(request, options)(this.fetch, this.basePath);
+	public createOneBaseJobPostControllerJobPostEntity(request: Api.JobPostCreateDto, options?: RequestInit) {
+		return JobPostsApiFp(this.configuration).createOneBaseJobPostControllerJobPostEntity(request, options)(this.fetch, this.basePath);
 	}
 
 	/**
@@ -5205,8 +5069,8 @@ export class JobsApi extends BaseAPI implements JobsApiInterface {
 	 * @param {RequestInit} [options] Override http request option.
 	 * @throws {RequiredError}
 	 */
-	public deleteOneBaseJobControllerJobPostEntity(id: string, options?: RequestInit) {
-		return JobsApiFp(this.configuration).deleteOneBaseJobControllerJobPostEntity(id, options)(this.fetch, this.basePath);
+	public deleteOneBaseJobPostControllerJobPostEntity(id: string, options?: RequestInit) {
+		return JobPostsApiFp(this.configuration).deleteOneBaseJobPostControllerJobPostEntity(id, options)(this.fetch, this.basePath);
 	}
 
 	/**
@@ -5224,8 +5088,8 @@ export class JobsApi extends BaseAPI implements JobsApiInterface {
 	 * @param {RequestInit} [options] Override http request option.
 	 * @throws {RequiredError}
 	 */
-	public getManyBaseJobControllerJobPostEntity(__params: JobsApi.GetManyBaseJobControllerJobPostEntityParameters, options?: RequestInit) {
-		return JobsApiFp(this.configuration).getManyBaseJobControllerJobPostEntity(__params, options)(this.fetch, this.basePath);
+	public getManyBaseJobPostControllerJobPostEntity(__params: JobPostsApi.GetManyBaseJobPostControllerJobPostEntityParameters, options?: RequestInit) {
+		return JobPostsApiFp(this.configuration).getManyBaseJobPostControllerJobPostEntity(__params, options)(this.fetch, this.basePath);
 	}
 
 	/**
@@ -5237,8 +5101,8 @@ export class JobsApi extends BaseAPI implements JobsApiInterface {
 	 * @param {RequestInit} [options] Override http request option.
 	 * @throws {RequiredError}
 	 */
-	public getOneBaseJobControllerJobPostEntity(__params: JobsApi.GetOneBaseJobControllerJobPostEntityParameters, options?: RequestInit) {
-		return JobsApiFp(this.configuration).getOneBaseJobControllerJobPostEntity(__params, options)(this.fetch, this.basePath);
+	public getOneBaseJobPostControllerJobPostEntity(__params: JobPostsApi.GetOneBaseJobPostControllerJobPostEntityParameters, options?: RequestInit) {
+		return JobPostsApiFp(this.configuration).getOneBaseJobPostControllerJobPostEntity(__params, options)(this.fetch, this.basePath);
 	}
 
 	/**
@@ -5246,8 +5110,8 @@ export class JobsApi extends BaseAPI implements JobsApiInterface {
 	 * @param {RequestInit} [options] Override http request option.
 	 * @throws {RequiredError}
 	 */
-	public jobControllerAddEditor(request: Api.EditorRequestDto, options?: RequestInit) {
-		return JobsApiFp(this.configuration).jobControllerAddEditor(request, options)(this.fetch, this.basePath);
+	public jobPostControllerAddEditor(request: Api.EditorRequestDto, options?: RequestInit) {
+		return JobPostsApiFp(this.configuration).jobPostControllerAddEditor(request, options)(this.fetch, this.basePath);
 	}
 
 	/**
@@ -5255,8 +5119,8 @@ export class JobsApi extends BaseAPI implements JobsApiInterface {
 	 * @param {RequestInit} [options] Override http request option.
 	 * @throws {RequiredError}
 	 */
-	public jobControllerRemoveEditor(request: Api.EditorRequestDto, options?: RequestInit) {
-		return JobsApiFp(this.configuration).jobControllerRemoveEditor(request, options)(this.fetch, this.basePath);
+	public jobPostControllerRemoveEditor(request: Api.EditorRequestDto, options?: RequestInit) {
+		return JobPostsApiFp(this.configuration).jobPostControllerRemoveEditor(request, options)(this.fetch, this.basePath);
 	}
 
 	/**
@@ -5264,8 +5128,8 @@ export class JobsApi extends BaseAPI implements JobsApiInterface {
 	 * @param {RequestInit} [options] Override http request option.
 	 * @throws {RequiredError}
 	 */
-	public jobControllerSwitchOwner(request: Api.TransferOwnershipRequestDto, options?: RequestInit) {
-		return JobsApiFp(this.configuration).jobControllerSwitchOwner(request, options)(this.fetch, this.basePath);
+	public jobPostControllerSwitchOwner(request: Api.TransferOwnershipRequestDto, options?: RequestInit) {
+		return JobPostsApiFp(this.configuration).jobPostControllerSwitchOwner(request, options)(this.fetch, this.basePath);
 	}
 
 	/**
@@ -5275,8 +5139,1380 @@ export class JobsApi extends BaseAPI implements JobsApiInterface {
 	 * @param {RequestInit} [options] Override http request option.
 	 * @throws {RequiredError}
 	 */
-	public updateOneBaseJobControllerJobPostEntity(id: string, request: Api.JobPostEntity, options?: RequestInit) {
-		return JobsApiFp(this.configuration).updateOneBaseJobControllerJobPostEntity(id, request, options)(this.fetch, this.basePath);
+	public updateOneBaseJobPostControllerJobPostEntity(id: string, request: Api.JobPostEntity, options?: RequestInit) {
+		return JobPostsApiFp(this.configuration).updateOneBaseJobPostControllerJobPostEntity(id, request, options)(this.fetch, this.basePath);
+	}
+
+}
+export namespace JobTagsApi {
+	export type CreateOneBaseJobTagControllerJobTagEntityResponse =
+		| CreateOneBaseJobTagControllerJobTagEntity201Response
+		| CreateOneBaseJobTagControllerJobTagEntity400Response
+		| CreateOneBaseJobTagControllerJobTagEntity401Response
+		| CreateOneBaseJobTagControllerJobTagEntity403Response
+		| CreateOneBaseJobTagControllerJobTagEntity404Response
+		| CreateOneBaseJobTagControllerJobTagEntity409Response
+		| CreateOneBaseJobTagControllerJobTagEntity422Response
+		| CreateOneBaseJobTagControllerJobTagEntity500Response
+	
+	export interface CreateOneBaseJobTagControllerJobTagEntity201Response {
+		status: 201
+		contentType: 'application/json'
+		body: Api.JobTagEntity
+		headers?: undefined
+	}
+	
+	export interface CreateOneBaseJobTagControllerJobTagEntity400Response {
+		status: 400
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CreateOneBaseJobTagControllerJobTagEntity401Response {
+		status: 401
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CreateOneBaseJobTagControllerJobTagEntity403Response {
+		status: 403
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CreateOneBaseJobTagControllerJobTagEntity404Response {
+		status: 404
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CreateOneBaseJobTagControllerJobTagEntity409Response {
+		status: 409
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CreateOneBaseJobTagControllerJobTagEntity422Response {
+		status: 422
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CreateOneBaseJobTagControllerJobTagEntity500Response {
+		status: 500
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export type DeleteOneBaseJobTagControllerJobTagEntityResponse =
+		| DeleteOneBaseJobTagControllerJobTagEntity200Response
+		| DeleteOneBaseJobTagControllerJobTagEntity400Response
+		| DeleteOneBaseJobTagControllerJobTagEntity401Response
+		| DeleteOneBaseJobTagControllerJobTagEntity403Response
+		| DeleteOneBaseJobTagControllerJobTagEntity404Response
+		| DeleteOneBaseJobTagControllerJobTagEntity409Response
+		| DeleteOneBaseJobTagControllerJobTagEntity422Response
+		| DeleteOneBaseJobTagControllerJobTagEntity500Response
+	
+	export interface DeleteOneBaseJobTagControllerJobTagEntity200Response {
+		status: 200
+		body?: undefined
+		headers?: undefined
+	}
+	
+	export interface DeleteOneBaseJobTagControllerJobTagEntity400Response {
+		status: 400
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface DeleteOneBaseJobTagControllerJobTagEntity401Response {
+		status: 401
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface DeleteOneBaseJobTagControllerJobTagEntity403Response {
+		status: 403
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface DeleteOneBaseJobTagControllerJobTagEntity404Response {
+		status: 404
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface DeleteOneBaseJobTagControllerJobTagEntity409Response {
+		status: 409
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface DeleteOneBaseJobTagControllerJobTagEntity422Response {
+		status: 422
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface DeleteOneBaseJobTagControllerJobTagEntity500Response {
+		status: 500
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface GetManyBaseJobTagControllerJobTagEntityParameters {
+		/**
+		 * @description <p>Selects resource fields. <a href="https://github.com/nestjsx/crud/wiki/Requests#select" target="_blank">Docs</a></p>
+		 * @type {string[]}
+		 */
+		fields?: string[]
+		/**
+		 * @description <p>Adds search condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#search" target="_blank">Docs</a></p>
+		 * @type {string}
+		 */
+		s?: string
+		/**
+		 * @description <p>Adds filter condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#filter" target="_blank">Docs</a></p>
+		 * @type {string[]}
+		 */
+		filter?: string[]
+		/**
+		 * @description <p>Adds OR condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#or" target="_blank">Docs</a></p>
+		 * @type {string[]}
+		 */
+		or?: string[]
+		/**
+		 * @description <p>Adds sort by field. <a href="https://github.com/nestjsx/crud/wiki/Requests#sort" target="_blank">Docs</a></p>
+		 * @type {string[]}
+		 */
+		sort?: string[]
+		/**
+		 * @description <p>Adds relational resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#join" target="_blank">Docs</a></p>
+		 * @type {string[]}
+		 */
+		join?: string[]
+		/**
+		 * @description <p>Limit amount of resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#limit" target="_blank">Docs</a></p>
+		 * @type {number}
+		 */
+		limit?: number
+		/**
+		 * @description <p>Offset amount of resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#offset" target="_blank">Docs</a></p>
+		 * @type {number}
+		 */
+		offset?: number
+		/**
+		 * @description <p>Page portion of resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#page" target="_blank">Docs</a></p>
+		 * @type {number}
+		 */
+		page?: number
+		/**
+		 * @description <p>Reset cache (if was enabled). <a href="https://github.com/nestjsx/crud/wiki/Requests#cache" target="_blank">Docs</a></p>
+		 * @type {number}
+		 * minimum: 0
+		 * maximum: 1
+		 */
+		cache?: number
+	}
+	
+	export type GetManyBaseJobTagControllerJobTagEntityResponse =
+		| GetManyBaseJobTagControllerJobTagEntity200Response
+		| GetManyBaseJobTagControllerJobTagEntity400Response
+		| GetManyBaseJobTagControllerJobTagEntity401Response
+		| GetManyBaseJobTagControllerJobTagEntity403Response
+		| GetManyBaseJobTagControllerJobTagEntity404Response
+		| GetManyBaseJobTagControllerJobTagEntity409Response
+		| GetManyBaseJobTagControllerJobTagEntity422Response
+		| GetManyBaseJobTagControllerJobTagEntity500Response
+	
+	export interface GetManyBaseJobTagControllerJobTagEntity200Response {
+		status: 200
+		contentType: 'application/json'
+		body: Api.GetManyJobTagEntityResponseDto | Api.JobTagEntity[]
+		headers?: undefined
+	}
+	
+	export interface GetManyBaseJobTagControllerJobTagEntity400Response {
+		status: 400
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface GetManyBaseJobTagControllerJobTagEntity401Response {
+		status: 401
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface GetManyBaseJobTagControllerJobTagEntity403Response {
+		status: 403
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface GetManyBaseJobTagControllerJobTagEntity404Response {
+		status: 404
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface GetManyBaseJobTagControllerJobTagEntity409Response {
+		status: 409
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface GetManyBaseJobTagControllerJobTagEntity422Response {
+		status: 422
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface GetManyBaseJobTagControllerJobTagEntity500Response {
+		status: 500
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface GetOneBaseJobTagControllerJobTagEntityParameters {
+		id: string
+		/**
+		 * @description <p>Selects resource fields. <a href="https://github.com/nestjsx/crud/wiki/Requests#select" target="_blank">Docs</a></p>
+		 * @type {string[]}
+		 */
+		fields?: string[]
+		/**
+		 * @description <p>Adds relational resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#join" target="_blank">Docs</a></p>
+		 * @type {string[]}
+		 */
+		join?: string[]
+		/**
+		 * @description <p>Reset cache (if was enabled). <a href="https://github.com/nestjsx/crud/wiki/Requests#cache" target="_blank">Docs</a></p>
+		 * @type {number}
+		 * minimum: 0
+		 * maximum: 1
+		 */
+		cache?: number
+	}
+	
+	export type GetOneBaseJobTagControllerJobTagEntityResponse =
+		| GetOneBaseJobTagControllerJobTagEntity200Response
+		| GetOneBaseJobTagControllerJobTagEntity400Response
+		| GetOneBaseJobTagControllerJobTagEntity401Response
+		| GetOneBaseJobTagControllerJobTagEntity403Response
+		| GetOneBaseJobTagControllerJobTagEntity404Response
+		| GetOneBaseJobTagControllerJobTagEntity409Response
+		| GetOneBaseJobTagControllerJobTagEntity422Response
+		| GetOneBaseJobTagControllerJobTagEntity500Response
+	
+	export interface GetOneBaseJobTagControllerJobTagEntity200Response {
+		status: 200
+		contentType: 'application/json'
+		body: Api.JobTagEntity
+		headers?: undefined
+	}
+	
+	export interface GetOneBaseJobTagControllerJobTagEntity400Response {
+		status: 400
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface GetOneBaseJobTagControllerJobTagEntity401Response {
+		status: 401
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface GetOneBaseJobTagControllerJobTagEntity403Response {
+		status: 403
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface GetOneBaseJobTagControllerJobTagEntity404Response {
+		status: 404
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface GetOneBaseJobTagControllerJobTagEntity409Response {
+		status: 409
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface GetOneBaseJobTagControllerJobTagEntity422Response {
+		status: 422
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface GetOneBaseJobTagControllerJobTagEntity500Response {
+		status: 500
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export type UpdateOneBaseJobTagControllerJobTagEntityResponse =
+		| UpdateOneBaseJobTagControllerJobTagEntity200Response
+		| UpdateOneBaseJobTagControllerJobTagEntity400Response
+		| UpdateOneBaseJobTagControllerJobTagEntity401Response
+		| UpdateOneBaseJobTagControllerJobTagEntity403Response
+		| UpdateOneBaseJobTagControllerJobTagEntity404Response
+		| UpdateOneBaseJobTagControllerJobTagEntity409Response
+		| UpdateOneBaseJobTagControllerJobTagEntity422Response
+		| UpdateOneBaseJobTagControllerJobTagEntity500Response
+	
+	export interface UpdateOneBaseJobTagControllerJobTagEntity200Response {
+		status: 200
+		contentType: 'application/json'
+		body: Api.JobTagEntity
+		headers?: undefined
+	}
+	
+	export interface UpdateOneBaseJobTagControllerJobTagEntity400Response {
+		status: 400
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface UpdateOneBaseJobTagControllerJobTagEntity401Response {
+		status: 401
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface UpdateOneBaseJobTagControllerJobTagEntity403Response {
+		status: 403
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface UpdateOneBaseJobTagControllerJobTagEntity404Response {
+		status: 404
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface UpdateOneBaseJobTagControllerJobTagEntity409Response {
+		status: 409
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface UpdateOneBaseJobTagControllerJobTagEntity422Response {
+		status: 422
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface UpdateOneBaseJobTagControllerJobTagEntity500Response {
+		status: 500
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+}
+
+/**
+ * JobTagsApi - fetch parameter creator
+ * @export
+ */
+export const JobTagsApiFetchParamCreator = function (configuration?: Configuration) {
+	return {
+		/**
+		 * @summary Create a single JobTagEntity
+		 * @param {Api.JobTagEntity} request
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		createOneBaseJobTagControllerJobTagEntity(request: Api.JobTagEntity, options: RequestInit = {}): FetchArgs {
+			// verify required parameter 'request' is not null or undefined
+			if (request === null || request === undefined) {
+				throw new RequiredError('request', 'Required parameter request was null or undefined when calling createOneBaseJobTagControllerJobTagEntity.');
+			}
+
+			let localVarPath = `/job-tags`;
+			const localVarPathQueryStart = localVarPath.indexOf("?");
+			const localVarRequestOptions: RequestInit = Object.assign({ method: 'POST' }, options);
+			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
+			const localVarQueryParameter = new URLSearchParams(localVarPathQueryStart !== -1 ? localVarPath.substring(localVarPathQueryStart + 1) : "");
+			if (localVarPathQueryStart !== -1) {
+				localVarPath = localVarPath.substring(0, localVarPathQueryStart);
+			}
+
+			// authentication bearer required
+			// http authorization required
+			if (configuration && configuration.authorization) {
+				const localVarAuthorizationValue = typeof configuration.authorization === 'function'
+					? configuration.authorization('bearer')
+					: configuration.authorization;
+				if (localVarAuthorizationValue !== null) {
+					localVarHeaderParameter.set("Authorization", "Bearer " + localVarAuthorizationValue);
+				}
+			}
+			localVarHeaderParameter.set('Content-Type', 'application/json');
+
+			localVarRequestOptions.headers = localVarHeaderParameter;
+	
+			if (request !== undefined) {
+				localVarRequestOptions.body = JSON.stringify(request || {});
+			}
+
+			const localVarQueryParameterString = localVarQueryParameter.toString();
+			if (localVarQueryParameterString) {
+				localVarPath += "?" + localVarQueryParameterString;
+			}
+			return {
+				url: localVarPath,
+				options: localVarRequestOptions,
+			};
+		},
+		/**
+		 * @summary Delete a single JobTagEntity
+		 * @param {string} id
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		deleteOneBaseJobTagControllerJobTagEntity(id: string, options: RequestInit = {}): FetchArgs {
+			// verify required parameter 'id' is not null or undefined
+			if (id === null || id === undefined) {
+				throw new RequiredError('id', 'Required parameter id was null or undefined when calling deleteOneBaseJobTagControllerJobTagEntity.');
+			}
+
+			let localVarPath = `/job-tags/{id}`
+				.replace('{id}', encodeURIComponent(String(id)));
+			const localVarPathQueryStart = localVarPath.indexOf("?");
+			const localVarRequestOptions: RequestInit = Object.assign({ method: 'DELETE' }, options);
+			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
+			const localVarQueryParameter = new URLSearchParams(localVarPathQueryStart !== -1 ? localVarPath.substring(localVarPathQueryStart + 1) : "");
+			if (localVarPathQueryStart !== -1) {
+				localVarPath = localVarPath.substring(0, localVarPathQueryStart);
+			}
+
+			// authentication bearer required
+			// http authorization required
+			if (configuration && configuration.authorization) {
+				const localVarAuthorizationValue = typeof configuration.authorization === 'function'
+					? configuration.authorization('bearer')
+					: configuration.authorization;
+				if (localVarAuthorizationValue !== null) {
+					localVarHeaderParameter.set("Authorization", "Bearer " + localVarAuthorizationValue);
+				}
+			}
+			localVarRequestOptions.headers = localVarHeaderParameter;
+
+			const localVarQueryParameterString = localVarQueryParameter.toString();
+			if (localVarQueryParameterString) {
+				localVarPath += "?" + localVarQueryParameterString;
+			}
+			return {
+				url: localVarPath,
+				options: localVarRequestOptions,
+			};
+		},
+		/**
+		 * @summary Retrieve multiple JobTagEntities
+		 * @param {string[]} [fields] <p>Selects resource fields. <a href="https://github.com/nestjsx/crud/wiki/Requests#select" target="_blank">Docs</a></p>
+		 * @param {string} [s] <p>Adds search condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#search" target="_blank">Docs</a></p>
+		 * @param {string[]} [filter] <p>Adds filter condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#filter" target="_blank">Docs</a></p>
+		 * @param {string[]} [or] <p>Adds OR condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#or" target="_blank">Docs</a></p>
+		 * @param {string[]} [sort] <p>Adds sort by field. <a href="https://github.com/nestjsx/crud/wiki/Requests#sort" target="_blank">Docs</a></p>
+		 * @param {string[]} [join] <p>Adds relational resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#join" target="_blank">Docs</a></p>
+		 * @param {number} [limit] <p>Limit amount of resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#limit" target="_blank">Docs</a></p>
+		 * @param {number} [offset] <p>Offset amount of resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#offset" target="_blank">Docs</a></p>
+		 * @param {number} [page] <p>Page portion of resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#page" target="_blank">Docs</a></p>
+		 * @param {number} [cache] <p>Reset cache (if was enabled). <a href="https://github.com/nestjsx/crud/wiki/Requests#cache" target="_blank">Docs</a></p>
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		getManyBaseJobTagControllerJobTagEntity(__params: JobTagsApi.GetManyBaseJobTagControllerJobTagEntityParameters, options: RequestInit = {}): FetchArgs {
+
+			let localVarPath = `/job-tags`;
+			const localVarPathQueryStart = localVarPath.indexOf("?");
+			const localVarRequestOptions: RequestInit = Object.assign({ method: 'GET' }, options);
+			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
+			const localVarQueryParameter = new URLSearchParams(localVarPathQueryStart !== -1 ? localVarPath.substring(localVarPathQueryStart + 1) : "");
+			if (localVarPathQueryStart !== -1) {
+				localVarPath = localVarPath.substring(0, localVarPathQueryStart);
+			}
+
+			// authentication bearer required
+			// http authorization required
+			if (configuration && configuration.authorization) {
+				const localVarAuthorizationValue = typeof configuration.authorization === 'function'
+					? configuration.authorization('bearer')
+					: configuration.authorization;
+				if (localVarAuthorizationValue !== null) {
+					localVarHeaderParameter.set("Authorization", "Bearer " + localVarAuthorizationValue);
+				}
+			}
+			if (__params.fields !== undefined) {
+				/* array form */
+				localVarQueryParameter.append('fields', __params.fields.map(localVarArrayMapElement => escape(String(localVarArrayMapElement))).join(','));
+			}
+
+			if (__params.s !== undefined) {
+				localVarQueryParameter.append('s', String(__params.s));
+			}
+
+			if (__params.filter !== undefined) {
+				/* array form exploded */
+				for (const localVarArrayElement of __params.filter) {
+					if (localVarArrayElement !== undefined) {
+						localVarQueryParameter.append('filter', localVarArrayElement !== null ? String(localVarArrayElement) : '');
+					}
+				}
+			}
+
+			if (__params.or !== undefined) {
+				/* array form exploded */
+				for (const localVarArrayElement of __params.or) {
+					if (localVarArrayElement !== undefined) {
+						localVarQueryParameter.append('or', localVarArrayElement !== null ? String(localVarArrayElement) : '');
+					}
+				}
+			}
+
+			if (__params.sort !== undefined) {
+				/* array form exploded */
+				for (const localVarArrayElement of __params.sort) {
+					if (localVarArrayElement !== undefined) {
+						localVarQueryParameter.append('sort', localVarArrayElement !== null ? String(localVarArrayElement) : '');
+					}
+				}
+			}
+
+			if (__params.join !== undefined) {
+				/* array form exploded */
+				for (const localVarArrayElement of __params.join) {
+					if (localVarArrayElement !== undefined) {
+						localVarQueryParameter.append('join', localVarArrayElement !== null ? String(localVarArrayElement) : '');
+					}
+				}
+			}
+
+			if (__params.limit !== undefined) {
+				localVarQueryParameter.append('limit', String(__params.limit));
+			}
+
+			if (__params.offset !== undefined) {
+				localVarQueryParameter.append('offset', String(__params.offset));
+			}
+
+			if (__params.page !== undefined) {
+				localVarQueryParameter.append('page', String(__params.page));
+			}
+
+			if (__params.cache !== undefined) {
+				localVarQueryParameter.append('cache', String(__params.cache));
+			}
+
+			localVarRequestOptions.headers = localVarHeaderParameter;
+
+			const localVarQueryParameterString = localVarQueryParameter.toString();
+			if (localVarQueryParameterString) {
+				localVarPath += "?" + localVarQueryParameterString;
+			}
+			return {
+				url: localVarPath,
+				options: localVarRequestOptions,
+			};
+		},
+		/**
+		 * @summary Retrieve a single JobTagEntity
+		 * @param {string} id
+		 * @param {string[]} [fields] <p>Selects resource fields. <a href="https://github.com/nestjsx/crud/wiki/Requests#select" target="_blank">Docs</a></p>
+		 * @param {string[]} [join] <p>Adds relational resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#join" target="_blank">Docs</a></p>
+		 * @param {number} [cache] <p>Reset cache (if was enabled). <a href="https://github.com/nestjsx/crud/wiki/Requests#cache" target="_blank">Docs</a></p>
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		getOneBaseJobTagControllerJobTagEntity(__params: JobTagsApi.GetOneBaseJobTagControllerJobTagEntityParameters, options: RequestInit = {}): FetchArgs {
+			// verify required parameter 'id' is not null or undefined
+			if (__params.id === null || __params.id === undefined) {
+				throw new RequiredError('id', 'Required parameter id was null or undefined when calling getOneBaseJobTagControllerJobTagEntity.');
+			}
+
+			let localVarPath = `/job-tags/{id}`
+				.replace('{id}', encodeURIComponent(String(__params.id)));
+			const localVarPathQueryStart = localVarPath.indexOf("?");
+			const localVarRequestOptions: RequestInit = Object.assign({ method: 'GET' }, options);
+			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
+			const localVarQueryParameter = new URLSearchParams(localVarPathQueryStart !== -1 ? localVarPath.substring(localVarPathQueryStart + 1) : "");
+			if (localVarPathQueryStart !== -1) {
+				localVarPath = localVarPath.substring(0, localVarPathQueryStart);
+			}
+
+			// authentication bearer required
+			// http authorization required
+			if (configuration && configuration.authorization) {
+				const localVarAuthorizationValue = typeof configuration.authorization === 'function'
+					? configuration.authorization('bearer')
+					: configuration.authorization;
+				if (localVarAuthorizationValue !== null) {
+					localVarHeaderParameter.set("Authorization", "Bearer " + localVarAuthorizationValue);
+				}
+			}
+			if (__params.fields !== undefined) {
+				/* array form */
+				localVarQueryParameter.append('fields', __params.fields.map(localVarArrayMapElement => escape(String(localVarArrayMapElement))).join(','));
+			}
+
+			if (__params.join !== undefined) {
+				/* array form exploded */
+				for (const localVarArrayElement of __params.join) {
+					if (localVarArrayElement !== undefined) {
+						localVarQueryParameter.append('join', localVarArrayElement !== null ? String(localVarArrayElement) : '');
+					}
+				}
+			}
+
+			if (__params.cache !== undefined) {
+				localVarQueryParameter.append('cache', String(__params.cache));
+			}
+
+			localVarRequestOptions.headers = localVarHeaderParameter;
+
+			const localVarQueryParameterString = localVarQueryParameter.toString();
+			if (localVarQueryParameterString) {
+				localVarPath += "?" + localVarQueryParameterString;
+			}
+			return {
+				url: localVarPath,
+				options: localVarRequestOptions,
+			};
+		},
+		/**
+		 * @summary Update a single JobTagEntity
+		 * @param {string} id
+		 * @param {Api.JobTagEntity} request
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		updateOneBaseJobTagControllerJobTagEntity(id: string, request: Api.JobTagEntity, options: RequestInit = {}): FetchArgs {
+			// verify required parameter 'id' is not null or undefined
+			if (id === null || id === undefined) {
+				throw new RequiredError('id', 'Required parameter id was null or undefined when calling updateOneBaseJobTagControllerJobTagEntity.');
+			}
+			// verify required parameter 'request' is not null or undefined
+			if (request === null || request === undefined) {
+				throw new RequiredError('request', 'Required parameter request was null or undefined when calling updateOneBaseJobTagControllerJobTagEntity.');
+			}
+
+			let localVarPath = `/job-tags/{id}`
+				.replace('{id}', encodeURIComponent(String(id)));
+			const localVarPathQueryStart = localVarPath.indexOf("?");
+			const localVarRequestOptions: RequestInit = Object.assign({ method: 'PATCH' }, options);
+			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
+			const localVarQueryParameter = new URLSearchParams(localVarPathQueryStart !== -1 ? localVarPath.substring(localVarPathQueryStart + 1) : "");
+			if (localVarPathQueryStart !== -1) {
+				localVarPath = localVarPath.substring(0, localVarPathQueryStart);
+			}
+
+			// authentication bearer required
+			// http authorization required
+			if (configuration && configuration.authorization) {
+				const localVarAuthorizationValue = typeof configuration.authorization === 'function'
+					? configuration.authorization('bearer')
+					: configuration.authorization;
+				if (localVarAuthorizationValue !== null) {
+					localVarHeaderParameter.set("Authorization", "Bearer " + localVarAuthorizationValue);
+				}
+			}
+			localVarHeaderParameter.set('Content-Type', 'application/json');
+
+			localVarRequestOptions.headers = localVarHeaderParameter;
+	
+			if (request !== undefined) {
+				localVarRequestOptions.body = JSON.stringify(request || {});
+			}
+
+			const localVarQueryParameterString = localVarQueryParameter.toString();
+			if (localVarQueryParameterString) {
+				localVarPath += "?" + localVarQueryParameterString;
+			}
+			return {
+				url: localVarPath,
+				options: localVarRequestOptions,
+			};
+		},
+	}
+};
+
+/**
+ * JobTagsApi - functional programming interface
+ * @export
+ */
+export const JobTagsApiFp = function(configuration?: Configuration) {
+	return {
+		/**
+		 * @summary Create a single JobTagEntity
+		 * @param {Api.JobTagEntity} request
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		createOneBaseJobTagControllerJobTagEntity(request: Api.JobTagEntity, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<JobTagsApi.CreateOneBaseJobTagControllerJobTagEntityResponse> {
+			const localVarFetchArgs = JobTagsApiFetchParamCreator(configuration).createOneBaseJobTagControllerJobTagEntity(request, options);
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				if (response.status === 201) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.JobTagEntity,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 400) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 401) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 403) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 404) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 409) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 422) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 500) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				throw response;
+			};
+		},
+		/**
+		 * @summary Delete a single JobTagEntity
+		 * @param {string} id
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		deleteOneBaseJobTagControllerJobTagEntity(id: string, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<JobTagsApi.DeleteOneBaseJobTagControllerJobTagEntityResponse> {
+			const localVarFetchArgs = JobTagsApiFetchParamCreator(configuration).deleteOneBaseJobTagControllerJobTagEntity(id, options);
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				if (response.status === 200) {
+					return {
+						status: response.status,
+						/* No content */
+					}
+				}
+				if (response.status === 400) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 401) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 403) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 404) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 409) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 422) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 500) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				throw response;
+			};
+		},
+		/**
+		 * @summary Retrieve multiple JobTagEntities
+		 * @param {string[]} [fields] <p>Selects resource fields. <a href="https://github.com/nestjsx/crud/wiki/Requests#select" target="_blank">Docs</a></p>
+		 * @param {string} [s] <p>Adds search condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#search" target="_blank">Docs</a></p>
+		 * @param {string[]} [filter] <p>Adds filter condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#filter" target="_blank">Docs</a></p>
+		 * @param {string[]} [or] <p>Adds OR condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#or" target="_blank">Docs</a></p>
+		 * @param {string[]} [sort] <p>Adds sort by field. <a href="https://github.com/nestjsx/crud/wiki/Requests#sort" target="_blank">Docs</a></p>
+		 * @param {string[]} [join] <p>Adds relational resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#join" target="_blank">Docs</a></p>
+		 * @param {number} [limit] <p>Limit amount of resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#limit" target="_blank">Docs</a></p>
+		 * @param {number} [offset] <p>Offset amount of resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#offset" target="_blank">Docs</a></p>
+		 * @param {number} [page] <p>Page portion of resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#page" target="_blank">Docs</a></p>
+		 * @param {number} [cache] <p>Reset cache (if was enabled). <a href="https://github.com/nestjsx/crud/wiki/Requests#cache" target="_blank">Docs</a></p>
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		getManyBaseJobTagControllerJobTagEntity(__params: JobTagsApi.GetManyBaseJobTagControllerJobTagEntityParameters, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<JobTagsApi.GetManyBaseJobTagControllerJobTagEntityResponse> {
+			const localVarFetchArgs = JobTagsApiFetchParamCreator(configuration).getManyBaseJobTagControllerJobTagEntity(__params, options);
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				if (response.status === 200) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.GetManyJobTagEntityResponseDto | Api.JobTagEntity[],
+						}
+					}
+					throw response;
+				}
+				if (response.status === 400) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 401) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 403) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 404) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 409) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 422) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 500) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				throw response;
+			};
+		},
+		/**
+		 * @summary Retrieve a single JobTagEntity
+		 * @param {string} id
+		 * @param {string[]} [fields] <p>Selects resource fields. <a href="https://github.com/nestjsx/crud/wiki/Requests#select" target="_blank">Docs</a></p>
+		 * @param {string[]} [join] <p>Adds relational resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#join" target="_blank">Docs</a></p>
+		 * @param {number} [cache] <p>Reset cache (if was enabled). <a href="https://github.com/nestjsx/crud/wiki/Requests#cache" target="_blank">Docs</a></p>
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		getOneBaseJobTagControllerJobTagEntity(__params: JobTagsApi.GetOneBaseJobTagControllerJobTagEntityParameters, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<JobTagsApi.GetOneBaseJobTagControllerJobTagEntityResponse> {
+			const localVarFetchArgs = JobTagsApiFetchParamCreator(configuration).getOneBaseJobTagControllerJobTagEntity(__params, options);
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				if (response.status === 200) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.JobTagEntity,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 400) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 401) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 403) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 404) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 409) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 422) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 500) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				throw response;
+			};
+		},
+		/**
+		 * @summary Update a single JobTagEntity
+		 * @param {string} id
+		 * @param {Api.JobTagEntity} request
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		updateOneBaseJobTagControllerJobTagEntity(id: string, request: Api.JobTagEntity, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<JobTagsApi.UpdateOneBaseJobTagControllerJobTagEntityResponse> {
+			const localVarFetchArgs = JobTagsApiFetchParamCreator(configuration).updateOneBaseJobTagControllerJobTagEntity(id, request, options);
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				if (response.status === 200) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.JobTagEntity,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 400) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 401) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 403) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 404) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 409) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 422) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 500) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				throw response;
+			};
+		},
+	}
+};
+
+/**
+ * JobTagsApi - factory interface
+ * @export
+ */
+export const JobTagsApiFactory: FactoryFunction<JobTagsApiInterface> = function (configuration?: Configuration, basePath?: string, fetch?: FetchAPI) {
+	return new JobTagsApi(configuration, basePath, fetch);
+};
+
+/**
+ * JobTagsApi - interface
+ * @export
+ * @interface JobTagsApi
+ */
+export interface JobTagsApiInterface {
+	/**
+	 * @summary Create a single JobTagEntity
+	 * @param {Api.JobTagEntity} request
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	createOneBaseJobTagControllerJobTagEntity(request: Api.JobTagEntity, options?: RequestInit): Promise<JobTagsApi.CreateOneBaseJobTagControllerJobTagEntityResponse>
+
+	/**
+	 * @summary Delete a single JobTagEntity
+	 * @param {string} id
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	deleteOneBaseJobTagControllerJobTagEntity(id: string, options?: RequestInit): Promise<JobTagsApi.DeleteOneBaseJobTagControllerJobTagEntityResponse>
+
+	/**
+	 * @summary Retrieve multiple JobTagEntities
+	 * @param {string[]} [fields] <p>Selects resource fields. <a href="https://github.com/nestjsx/crud/wiki/Requests#select" target="_blank">Docs</a></p>
+	 * @param {string} [s] <p>Adds search condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#search" target="_blank">Docs</a></p>
+	 * @param {string[]} [filter] <p>Adds filter condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#filter" target="_blank">Docs</a></p>
+	 * @param {string[]} [or] <p>Adds OR condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#or" target="_blank">Docs</a></p>
+	 * @param {string[]} [sort] <p>Adds sort by field. <a href="https://github.com/nestjsx/crud/wiki/Requests#sort" target="_blank">Docs</a></p>
+	 * @param {string[]} [join] <p>Adds relational resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#join" target="_blank">Docs</a></p>
+	 * @param {number} [limit] <p>Limit amount of resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#limit" target="_blank">Docs</a></p>
+	 * @param {number} [offset] <p>Offset amount of resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#offset" target="_blank">Docs</a></p>
+	 * @param {number} [page] <p>Page portion of resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#page" target="_blank">Docs</a></p>
+	 * @param {number} [cache] <p>Reset cache (if was enabled). <a href="https://github.com/nestjsx/crud/wiki/Requests#cache" target="_blank">Docs</a></p>
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	getManyBaseJobTagControllerJobTagEntity(__params: JobTagsApi.GetManyBaseJobTagControllerJobTagEntityParameters, options?: RequestInit): Promise<JobTagsApi.GetManyBaseJobTagControllerJobTagEntityResponse>
+
+	/**
+	 * @summary Retrieve a single JobTagEntity
+	 * @param {string} id
+	 * @param {string[]} [fields] <p>Selects resource fields. <a href="https://github.com/nestjsx/crud/wiki/Requests#select" target="_blank">Docs</a></p>
+	 * @param {string[]} [join] <p>Adds relational resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#join" target="_blank">Docs</a></p>
+	 * @param {number} [cache] <p>Reset cache (if was enabled). <a href="https://github.com/nestjsx/crud/wiki/Requests#cache" target="_blank">Docs</a></p>
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	getOneBaseJobTagControllerJobTagEntity(__params: JobTagsApi.GetOneBaseJobTagControllerJobTagEntityParameters, options?: RequestInit): Promise<JobTagsApi.GetOneBaseJobTagControllerJobTagEntityResponse>
+
+	/**
+	 * @summary Update a single JobTagEntity
+	 * @param {string} id
+	 * @param {Api.JobTagEntity} request
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	updateOneBaseJobTagControllerJobTagEntity(id: string, request: Api.JobTagEntity, options?: RequestInit): Promise<JobTagsApi.UpdateOneBaseJobTagControllerJobTagEntityResponse>
+
+}
+
+/**
+ * JobTagsApi - object-oriented interface
+ * @export
+ * @class JobTagsApi
+ * @extends {BaseAPI}
+ */
+export class JobTagsApi extends BaseAPI implements JobTagsApiInterface {
+	/**
+	 * @summary Create a single JobTagEntity
+	 * @param {Api.JobTagEntity} request
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	public createOneBaseJobTagControllerJobTagEntity(request: Api.JobTagEntity, options?: RequestInit) {
+		return JobTagsApiFp(this.configuration).createOneBaseJobTagControllerJobTagEntity(request, options)(this.fetch, this.basePath);
+	}
+
+	/**
+	 * @summary Delete a single JobTagEntity
+	 * @param {string} id
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	public deleteOneBaseJobTagControllerJobTagEntity(id: string, options?: RequestInit) {
+		return JobTagsApiFp(this.configuration).deleteOneBaseJobTagControllerJobTagEntity(id, options)(this.fetch, this.basePath);
+	}
+
+	/**
+	 * @summary Retrieve multiple JobTagEntities
+	 * @param {string[]} [fields] <p>Selects resource fields. <a href="https://github.com/nestjsx/crud/wiki/Requests#select" target="_blank">Docs</a></p>
+	 * @param {string} [s] <p>Adds search condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#search" target="_blank">Docs</a></p>
+	 * @param {string[]} [filter] <p>Adds filter condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#filter" target="_blank">Docs</a></p>
+	 * @param {string[]} [or] <p>Adds OR condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#or" target="_blank">Docs</a></p>
+	 * @param {string[]} [sort] <p>Adds sort by field. <a href="https://github.com/nestjsx/crud/wiki/Requests#sort" target="_blank">Docs</a></p>
+	 * @param {string[]} [join] <p>Adds relational resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#join" target="_blank">Docs</a></p>
+	 * @param {number} [limit] <p>Limit amount of resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#limit" target="_blank">Docs</a></p>
+	 * @param {number} [offset] <p>Offset amount of resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#offset" target="_blank">Docs</a></p>
+	 * @param {number} [page] <p>Page portion of resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#page" target="_blank">Docs</a></p>
+	 * @param {number} [cache] <p>Reset cache (if was enabled). <a href="https://github.com/nestjsx/crud/wiki/Requests#cache" target="_blank">Docs</a></p>
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	public getManyBaseJobTagControllerJobTagEntity(__params: JobTagsApi.GetManyBaseJobTagControllerJobTagEntityParameters, options?: RequestInit) {
+		return JobTagsApiFp(this.configuration).getManyBaseJobTagControllerJobTagEntity(__params, options)(this.fetch, this.basePath);
+	}
+
+	/**
+	 * @summary Retrieve a single JobTagEntity
+	 * @param {string} id
+	 * @param {string[]} [fields] <p>Selects resource fields. <a href="https://github.com/nestjsx/crud/wiki/Requests#select" target="_blank">Docs</a></p>
+	 * @param {string[]} [join] <p>Adds relational resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#join" target="_blank">Docs</a></p>
+	 * @param {number} [cache] <p>Reset cache (if was enabled). <a href="https://github.com/nestjsx/crud/wiki/Requests#cache" target="_blank">Docs</a></p>
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	public getOneBaseJobTagControllerJobTagEntity(__params: JobTagsApi.GetOneBaseJobTagControllerJobTagEntityParameters, options?: RequestInit) {
+		return JobTagsApiFp(this.configuration).getOneBaseJobTagControllerJobTagEntity(__params, options)(this.fetch, this.basePath);
+	}
+
+	/**
+	 * @summary Update a single JobTagEntity
+	 * @param {string} id
+	 * @param {Api.JobTagEntity} request
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	public updateOneBaseJobTagControllerJobTagEntity(id: string, request: Api.JobTagEntity, options?: RequestInit) {
+		return JobTagsApiFp(this.configuration).updateOneBaseJobTagControllerJobTagEntity(id, request, options)(this.fetch, this.basePath);
 	}
 
 }
