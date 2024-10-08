@@ -1,5 +1,8 @@
 Headers
 
+Main Header
+GameGuild/website/services/web/src/components/page/page-header/index.tsx
+
 Course Header
 GameGuild/website/services/web/src/components/common/header/index.tsx
 
