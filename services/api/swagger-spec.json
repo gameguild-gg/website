@@ -6000,67 +6000,6 @@
           "user"
         ]
       },
-      "JobPostCreateDto": {
-        "type": "object",
-        "properties": {
-          "title": {
-            "type": "string"
-          },
-          "slug": {
-            "type": "string"
-          },
-          "summary": {
-            "type": "string"
-          },
-          "body": {
-            "type": "string"
-          },
-          "location": {
-            "type": "string"
-          },
-          "owner": {
-            "$ref": "#/components/schemas/UserEntity"
-          }
-        },
-        "required": [
-          "title",
-          "slug",
-          "summary",
-          "body",
-          "location",
-          "owner"
-        ]
-      },
-      "GetManyJobPostEntityResponseDto": {
-        "type": "object",
-        "properties": {
-          "data": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/JobPostEntity"
-            }
-          },
-          "count": {
-            "type": "number"
-          },
-          "total": {
-            "type": "number"
-          },
-          "page": {
-            "type": "number"
-          },
-          "pageCount": {
-            "type": "number"
-          }
-        },
-        "required": [
-          "data",
-          "count",
-          "total",
-          "page",
-          "pageCount"
-        ]
-      },
       "GetManyJobTagEntityResponseDto": {
         "type": "object",
         "properties": {
@@ -6115,6 +6054,74 @@
           "createdAt",
           "updatedAt",
           "name"
+        ]
+      },
+      "JobPostCreateDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "summary": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          },
+          "location": {
+            "type": "string"
+          },
+          "owner": {
+            "$ref": "#/components/schemas/UserEntity"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/JobTagEntity"
+            }
+          }
+        },
+        "required": [
+          "title",
+          "slug",
+          "summary",
+          "body",
+          "location",
+          "owner",
+          "tags"
+        ]
+      },
+      "GetManyJobPostEntityResponseDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/JobPostEntity"
+            }
+          },
+          "count": {
+            "type": "number"
+          },
+          "total": {
+            "type": "number"
+          },
+          "page": {
+            "type": "number"
+          },
+          "pageCount": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "data",
+          "count",
+          "total",
+          "page",
+          "pageCount"
         ]
       },
       "JobPostEntity": {

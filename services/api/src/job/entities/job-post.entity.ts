@@ -1,4 +1,4 @@
-import { Column, Entity, Index, JoinTable, OneToMany } from 'typeorm';
+import { Column, Entity, Index, JoinTable, ManyToMany, OneToMany } from 'typeorm';
 import { ContentBase } from '../../cms/entities/content.base';
 import { JobTagEntity } from './job-tag.entity';
 import { ApiProperty } from '@nestjs/swagger';
@@ -18,7 +18,7 @@ export class JobPostEntity extends ContentBase {
   location: string;
 
   // Tags
-  @OneToMany(() => JobTagEntity, (jobTag) => jobTag.job)
+  @ManyToMany(() => JobTagEntity, (jobTag) => jobTag.id)
   @ApiProperty({ type: JobTagEntity, isArray: true })
   @IsArray({ message: 'error.IsArray: tags should be an array' })
   @ValidateNested({ each: true })

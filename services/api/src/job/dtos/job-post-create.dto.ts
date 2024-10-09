@@ -1,12 +1,15 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
-  IsAlphanumeric,
+  IsArray,
   IsNotEmpty,
   IsString,
   MaxLength,
+  ValidateNested,
 } from 'class-validator';
 import { UserEntity } from '../../user/entities';
-import { ManyToOne } from 'typeorm';
+import { JoinTable, ManyToOne, OneToMany } from 'typeorm';
+import { JobTagEntity } from '../entities/job-tag.entity';
+import { Type } from 'class-transformer';
 
 export class JobPostCreateDto {
     
@@ -48,7 +51,7 @@ export class JobPostCreateDto {
   @MaxLength(64, { message: 'error.maxLength: location is too long, max 64' })
   @IsNotEmpty({ message: 'error.isNotEmpty: location is required' })
   @IsString({ message: 'error.isString: location must be a string' })
-  location: string;
+  readonly location: string;
 
   // Owner
   @ApiProperty({ required: true, type: () => UserEntity })
@@ -57,6 +60,12 @@ export class JobPostCreateDto {
   readonly owner: UserEntity;
 
   // Tags
-  // TODO
+  @OneToMany(() => JobTagEntity, (jobTag) => jobTag.id)
+  @ApiProperty({ type: JobTagEntity, isArray: true })
+  @IsArray({ message: 'error.IsArray: tags should be an array' })
+  @ValidateNested({ each: true })
+  @Type(() => JobTagEntity)
+  @JoinTable()
+  tags: JobTagEntity[];
   
 }

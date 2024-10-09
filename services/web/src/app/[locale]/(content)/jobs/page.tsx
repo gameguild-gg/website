@@ -275,12 +275,12 @@ export default function JobBoard() {
                     </div>
                   </div>
                   <p className="mb-4 text-gray-500">{selectedJob.location} • {timeAgo(selectedJob.createdAt)}</p>
-                  {selectedJob?.skills && <div>
+                  {selectedJob?.tags && <div>
                     <p className="mb-2 text-lg font-semibold">Skills</p>
                     <div className="mb-4">
-                      {selectedJob.skills.map((skill:any) => (
-                        <Badge key={skill} className="mr-2 mb-2">
-                          {skill}
+                      {selectedJob.tags.map((tag:any) => (
+                        <Badge key={tag.id} className="mr-2 mb-2">
+                          {tag.name}
                         </Badge>
                       ))}
                     </div>

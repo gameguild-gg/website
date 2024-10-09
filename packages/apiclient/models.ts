@@ -425,6 +425,7 @@ export namespace Api {
 		body: string;
 		location: string;
 		owner: Api.UserEntity;
+		tags: Api.JobTagEntity[];
 	}
 
 	export interface JobPostEntity {

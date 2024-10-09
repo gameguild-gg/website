@@ -57,6 +57,9 @@ import { BodyOwnerInject } from 'src/common/decorators/parameter.decorator';
     join: {
       owner: {
         eager: true,
+      },
+      tags: {
+        eager: true,
       }
     }
   }
