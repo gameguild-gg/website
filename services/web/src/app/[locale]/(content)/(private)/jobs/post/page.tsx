@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Api, AuthApi, JobsApi } from '@game-guild/apiclient';
+import { Api, AuthApi, JobPostsApi } from '@game-guild/apiclient';
 import { getSession } from 'next-auth/react';
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -32,7 +32,7 @@ export default function JobPost() {
   const authapi = new AuthApi({
     basePath: process.env.NEXT_PUBLIC_API_URL,
   })
-  const jobapi = new JobsApi({
+  const jobapi = new JobPostsApi({
     basePath: process.env.NEXT_PUBLIC_API_URL,
   });
 
@@ -68,26 +68,20 @@ export default function JobPost() {
       return;
     }
     
-    const response1 = await authapi.authControllerGetCurrentUser(
-      { headers: { Authorization: `Bearer ${session.accessToken}` }, }
-    )
-    // console.log("/auth/me API RESPONSE:\n", response1)
-    
-    const response2 = await jobapi.createOneBaseJobControllerJobPostEntity(
+    const response = await jobapi.createOneBaseJobPostControllerJobPostEntity(
       {
         title: title,
         slug: title,
         summary: description,
         body: description,
         location: location,
-        // tags: 
-        owner: response1.body,
+        // TODO: add tags field here
       } as Api.JobPostCreateDto,
       {
       headers: { Authorization: `Bearer ${session.accessToken}` },
       }
     );
-    console.log("/jobs API RESPONSE:\n",response2)
+    console.log("/jobs API RESPONSE:\n",response)
   }
 
   return (

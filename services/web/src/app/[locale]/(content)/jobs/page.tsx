@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { getSession } from 'next-auth/react';
-import { Api, JobsApi } from "@game-guild/apiclient"
+import { Api, JobPostsApi } from "@game-guild/apiclient"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
@@ -91,7 +91,7 @@ export default function JobBoard() {
   const [selectedJobTypes, setSelectedJobTypes] = useState<string[]>([])
   const [selectedTags, setSelectedTags] = useState<string[]>([])
 
-  const jobapi = new JobsApi({
+  const jobapi = new JobPostsApi({
     basePath: process.env.NEXT_PUBLIC_API_URL,
   });
 
@@ -105,7 +105,7 @@ export default function JobBoard() {
       window.location.href = '/connect';
       return;
     }
-    const response = await jobapi.getManyBaseJobControllerJobPostEntity(
+    const response = await jobapi.getManyBaseJobPostControllerJobPostEntity(
       {
         limit: 10
       },
