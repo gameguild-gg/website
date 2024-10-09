@@ -60,8 +60,8 @@ export class JobPostCreateDto {
   readonly owner: UserEntity;
 
   // Tags
-  @OneToMany(() => JobTagEntity, (jobTag) => jobTag.id)
   @ApiProperty({ type: JobTagEntity, isArray: true })
+  @OneToMany(() => JobTagEntity, (jobTag) => jobTag.id)
   @IsArray({ message: 'error.IsArray: tags should be an array' })
   @ValidateNested({ each: true })
   @Type(() => JobTagEntity)

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { getSession } from 'next-auth/react';
-import { Api, JobPostsApi } from "@game-guild/apiclient"
+import { Api, JobPostsApi, JobAplicationsApi } from "@game-guild/apiclient"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
@@ -24,49 +24,6 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 
-// Mock data for jobs
-const mockjobs = [
-  {
-    id: 1,
-    title: "Frontend Developer",
-    company: "TechCorp",
-    location: "San Francisco, CA",
-    postedAgo: "2 days ago",
-    image: "/placeholder.svg?height=40&width=40",
-    skills: ["React", "TypeScript", "CSS"],
-    description: "We are looking for a skilled Frontend Developer to join our team...\nLorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-  },
-  {
-    id: 2,
-    title: "Backend Engineer",
-    company: "DataSystems",
-    location: "Remote",
-    postedAgo: "1 week ago",
-    image: "/placeholder.svg?height=40&width=40",
-    skills: ["Node.js", "Python", "MongoDB"],
-    description: "Seeking an experienced Backend Engineer to develop scalable services...\nLorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-  },
-  {
-    id: 3,
-    title: "UX Designer",
-    company: "CreativeMinds",
-    location: "New York, NY",
-    postedAgo: "3 days ago",
-    image: "/placeholder.svg?height=40&width=40",
-    skills: ["Figma", "User Research", "Prototyping"],
-    description: "Join our design team to create intuitive and engaging user experiences...\nLorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-  },
-  {
-    id: 5,
-    title: "Game Designer",
-    company: "CreativeMinds",
-    location: "New York, NY",
-    postedAgo: "3 days ago",
-    image: "/placeholder.svg?height=40&width=40",
-    skills: ["Figma", "User Research", "Prototyping"],
-    description: "Join our design team to create intuitive and engaging user experiences...\nLorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-  },
-]
 
 // Mock data for job types
 const types = [
@@ -91,7 +48,10 @@ export default function JobBoard() {
   const [selectedJobTypes, setSelectedJobTypes] = useState<string[]>([])
   const [selectedTags, setSelectedTags] = useState<string[]>([])
 
-  const jobapi = new JobPostsApi({
+  const jobPostsApi = new JobPostsApi({
+    basePath: process.env.NEXT_PUBLIC_API_URL,
+  });
+  const jobAplicationApi = new JobAplicationsApi({
     basePath: process.env.NEXT_PUBLIC_API_URL,
   });
 
@@ -105,19 +65,41 @@ export default function JobBoard() {
       window.location.href = '/connect';
       return;
     }
-    const response = await jobapi.getManyBaseJobPostControllerJobPostEntity(
+    const response = await jobPostsApi.getManyBaseJobPostControllerJobPostEntity(
       {
         limit: 10
       },
       {
-      headers: { Authorization: `Bearer ${session.accessToken}` },
-    })
+        headers: { Authorization: `Bearer ${session.accessToken}` },
+      }
+    )
     console.log("Get all jobs:\n",response)
     setJobs(response.body)
   }
 
   const getLabelsByValue = (tags:{value:string, label:string}[], values:string[]) :string[] => {
     return values.map(value => tags.find(tag => tag.value === value)?.label || '');
+  }
+
+  const handleApply = async (selectedJob: Api.JobPostEntity) => {
+    const session = await getSession();
+    if (!session) {
+      window.location.href = '/connect';
+      return;
+    }
+    const response = await jobAplicationApi.createOneBaseJobAplicationControllerJobAplicationEntity(
+      {
+        job: selectedJob,
+      },
+      {
+        headers: { Authorization: `Bearer ${session.accessToken}` },
+      }
+    )
+    if (response.status == 201){
+      // console.log("Job Aplied sucessfully!!!\n",response)
+    } else {
+      // TODO: Error message here
+    }
   }
 
   const timeAgo = (dateString: string): string => {
@@ -287,7 +269,7 @@ export default function JobBoard() {
                   </div>}
                   <p className="mb-2 text-lg font-semibold">Description</p>
                   <p className="mb-6">{selectedJob.body}</p>
-                  <Button>Apply Now</Button>
+                  <Button onClick={()=>handleApply(selectedJob)}>Apply Now</Button>
                 </CardContent>
               </Card>
             )}

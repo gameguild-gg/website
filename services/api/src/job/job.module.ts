@@ -1,26 +1,27 @@
 import { forwardRef, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserModule } from '../user/user.module';
-import { ContentModule } from '../cms/content.module';
 import { JobPostEntity } from './entities/job-post.entity';
-import { JobAplicationEntity } from './entities/job-aplication.entity';
 import { JobTagEntity } from './entities/job-tag.entity';
+import { JobAplicationEntity } from './entities/job-aplication.entity';
 import { JobPostController } from './job-post.controller';
-import { JobPostService } from './job-post.service';
 import { JobTagController } from './job-tag.controller';
-import { JobTagService } from './job-tag.service';
+import { JobAplicationController } from './job-aplication.controller';
+import { JobPostService } from './job-post.service';
+import { JobTagService } from './job-tag.service';  
+import { JobAplicationService } from './job-aplication.service';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([
       JobPostEntity,
-      JobAplicationEntity,
       JobTagEntity,
+      JobAplicationEntity,
     ]),
     forwardRef(() => UserModule),
   ],
-  controllers: [JobPostController, JobTagController],
-  providers: [JobPostService, JobTagService],
-  exports: [JobPostService, JobTagService],
+  controllers: [JobPostController, JobTagController, JobAplicationController],
+  providers: [JobPostService, JobTagService, JobAplicationService],
+  exports: [JobPostService, JobTagService, JobAplicationService],
 })
 export class JobModule {}

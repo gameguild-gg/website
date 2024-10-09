@@ -10,18 +10,6 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
 
-const skills = [
-  { id: "react", label: "React" },
-  { id: "typescript", label: "TypeScript" },
-  { id: "nodejs", label: "Node.js" },
-  { id: "python", label: "Python" },
-  { id: "java", label: "Java" },
-  { id: "csharp", label: "C#" },
-  { id: "ruby", label: "Ruby" },
-  { id: "php", label: "PHP" },
-  { id: "go", label: "Go" },
-  { id: "rust", label: "Rust" },
-]
 
 export default function JobPost() {
   const [jobTags, setJobTags] = useState<any>([])
@@ -51,7 +39,7 @@ export default function JobPost() {
       {},
       { headers: { Authorization: `Bearer ${session.accessToken}` }, }
     )
-    console.log('GET ALL JOB TAGS RESPONSE:\n',response)
+    // console.log('GET ALL JOB TAGS RESPONSE:\n',response)
     if (response.status == 200){
       setJobTags(response.body)
     }
@@ -67,9 +55,6 @@ export default function JobPost() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    // Handle form submission here
-    console.log({ title, description, location, selectedSkills })
-    //
     postJob();
   }
 
@@ -90,7 +75,7 @@ export default function JobPost() {
         tags: selectedSkills,
       } as Api.JobPostCreateDto,
       {
-      headers: { Authorization: `Bearer ${session.accessToken}` },
+        headers: { Authorization: `Bearer ${session.accessToken}` },
       }
     );
     console.log("/jobs API RESPONSE:\n",response)

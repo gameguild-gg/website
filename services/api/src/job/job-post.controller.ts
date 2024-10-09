@@ -77,6 +77,10 @@ export class JobPostController
   ) {
     super(service);
   }
+  
+  get base(): CrudController<JobPostEntity> {
+    return this;
+  }
 
   @Override()
   @Auth(AuthenticatedRoute)
@@ -91,10 +95,6 @@ export class JobPostController
       where: { id: res.id },
       relations: { owner: true, editors: true },
     });
-  }
-
-  get base(): CrudController<JobPostEntity> {
-    return this;
   }
 
   @Override()

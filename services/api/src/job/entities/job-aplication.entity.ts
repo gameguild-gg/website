@@ -13,8 +13,8 @@ export class JobAplicationEntity extends EntityBase{
     @ManyToOne(() => UserEntity, { nullable: false, eager: false })
     aplicant: UserEntity;
 
-    @ApiProperty({ type: () => UserEntity })
-    @ManyToOne((job) => JobPostEntity, (jobPost) => jobPost.tags)
+    @ApiProperty({ type: () => JobPostEntity })
+    @ManyToOne((job) => JobPostEntity, (jobPost) => jobPost.id)
     job: JobPostEntity;
 
     @Column({ nullable: false, type: 'int', default: 0 })
