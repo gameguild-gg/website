@@ -1,4 +1,4 @@
-import { Body, Controller, Logger } from '@nestjs/common';
+import { Body, Controller, Get, Logger } from '@nestjs/common';
 import { ApiBody, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ProjectService } from './project.service';
 import { Auth } from '../auth/decorators/http.decorator';
@@ -23,10 +23,14 @@ import {
 import { ExcludeFieldsPipe } from './pipes/exclude-fields.pipe';
 import { WithRolesController } from './with-roles.controller';
 import { CreateProjectDto } from './dtos/create-project.dto';
+import { TicketEntity } from './entities/ticket.entity';
 
 @Crud({
   model: {
     type: ProjectEntity,
+  },
+  dto: {
+    create: CreateProjectDto,
   },
   params: {
     id: {
@@ -67,7 +71,7 @@ import { CreateProjectDto } from './dtos/create-project.dto';
   },
 })
 @Controller('project')
-@ApiTags('project')
+@ApiTags('Project')
 export class ProjectController
   extends WithRolesController<ProjectEntity>
   implements CrudController<ProjectEntity>
@@ -82,7 +86,13 @@ export class ProjectController
     return this;
   }
 
-  // we need to override to guarantee the user is being injected as owner and editor
+  @Override()
+  @Auth(AuthenticatedRoute)
+  async getMany(@ParsedRequest() req: CrudRequest): Promise<ProjectEntity[]> {
+    return this.service.find({
+      relations: ['owner', 'tickets'],
+    });
+  }
   @Override()
   @Auth(AuthenticatedRoute)
   @ApiBody({ type: CreateProjectDto })
@@ -104,6 +114,7 @@ export class ProjectController
   @Override()
   @Auth<ProjectEntity>(ManagerRoute<ProjectEntity>)
   @ApiBody({ type: ProjectEntity })
+  @ApiResponse({ type: ProjectEntity })
   async updateOne(
     @ParsedRequest() req: CrudRequest,
     @Body(

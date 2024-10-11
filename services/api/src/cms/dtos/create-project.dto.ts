@@ -23,6 +23,7 @@ export class CreateProjectDto
       | 'updatedAt'
       | 'versions'
       | 'deletedAt'
+      | 'tickets'
     >
 {
   @ApiProperty()

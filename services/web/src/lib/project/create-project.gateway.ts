@@ -6,7 +6,8 @@ export type CreateProject = {
 };
 
 export class CreateProjectGateway implements CreateProject {
-  constructor(readonly httpClient: HttpClient<Project>) {}
+  constructor(readonly httpClient: HttpClient<Project>) {
+  }
 
   public async createProject(
     project: Project,
@@ -14,16 +15,16 @@ export class CreateProjectGateway implements CreateProject {
     try {
       return this.httpClient
         .request({
-          url: process.env.NEXT_PUBLIC_API_URL + '/project',
+          url: 'http://localhost:8080/project',
           method: 'POST',
           body: project,
         })
         .then((response) => {
-          if (response.statusCode === 201 && response.body) {
+          if (response.statusCode === 201) {
             return response.body;
           } else {
             console.log(response);
-            return null;
+            throw new Error('Failed to create project');
           }
         });
     } catch (error) {
