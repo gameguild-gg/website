@@ -58,7 +58,7 @@ import { BodyOwnerInject } from 'src/common/decorators/parameter.decorator';
       owner: {
         eager: true,
       },
-      tags: {
+      job_tags: {
         eager: true,
       }
     }

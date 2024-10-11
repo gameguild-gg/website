@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation";
 import { Api, JobPostsApi, JobTagsApi } from '@game-guild/apiclient';
 import { getSession } from 'next-auth/react';
 import { Button } from "@/components/ui/button"
@@ -9,15 +10,20 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
+import { useToast } from '@/components/ui/use-toast';
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 
 export default function JobPost() {
   const [jobTags, setJobTags] = useState<any>([])
   const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
-  const [location, setLocation] = useState("")
+  const [location, setLocation] = useState("Remote")
+  const [jobType, setJobType] = useState("TASK")
   const [selectedSkills, setSelectedSkills] = useState<Api.JobTagEntity[]>([])
 
+  const { toast } = useToast();
+  const router = useRouter()
   const jobPostsApi = new JobPostsApi({
     basePath: process.env.NEXT_PUBLIC_API_URL,
   });
@@ -30,10 +36,10 @@ export default function JobPost() {
   },[]);
 
   const loadJobTags = async () =>{
-    const session = await getSession();
+    const session:any = await getSession();
     if (!session) {
-      window.location.href = '/connect';
-      return;
+      router.push('/connect')
+      return
     }
     const response = await jobTagsApi.getManyBaseJobTagControllerJobTagEntity(
       {},
@@ -42,6 +48,12 @@ export default function JobPost() {
     // console.log('GET ALL JOB TAGS RESPONSE:\n',response)
     if (response.status == 200){
       setJobTags(response.body)
+    } else {
+      toast({
+        variant: "destructive",
+        title: 'Error',
+        description: 'Error obtaining job tag list.', // + JSON.stringify(response.body),
+      });
     }
   }
 
@@ -53,6 +65,10 @@ export default function JobPost() {
     )
   }
 
+  const handleReturn = () => {
+    router.push('/dashboard');
+  }
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     postJob();
@@ -61,8 +77,8 @@ export default function JobPost() {
   const postJob = async ():Promise<void> => {
     const session:any = await getSession();
     if (!session) {
-      window.location.href = '/connect';
-      return;
+      router.push('/connect')
+      return
     }
     
     const response = await jobPostsApi.createOneBaseJobPostControllerJobPostEntity(
@@ -78,6 +94,22 @@ export default function JobPost() {
         headers: { Authorization: `Bearer ${session.accessToken}` },
       }
     );
+    if (response.status == 201){
+      toast({
+        title: 'Sucess!',
+        description: 'Job Post was sucessfully Created', // + JSON.stringify(response.body),
+      })
+      setTitle('')
+      setDescription('')
+      setLocation('')
+      setSelectedSkills([])
+    } else {
+      toast({
+        variant: "destructive",
+        title: 'Error',
+        description: 'Error creating a Job Post', // + JSON.stringify(response.body),
+      });
+    }
     console.log("/jobs API RESPONSE:\n",response)
   }
 
@@ -115,6 +147,20 @@ export default function JobPost() {
                 required
               />
             </div>
+            <div className="space-y-2 w-full">
+              <Label htmlFor="location">Type</Label>
+              <Select defaultValue="TASK">
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a fruit" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectItem value="TASK">Task</SelectItem>
+                    <SelectItem value="CONTINUOUS">Continuous</SelectItem>
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </div>
             {(jobTags && jobTags.length > 0) &&
               <div className="space-y-2">
                 <Label>Skills</Label>
@@ -133,7 +179,7 @@ export default function JobPost() {
             </div>
             }
             <div className="flex justify-between pt-4">
-              <Button type="button" variant="outline">
+              <Button onClick={handleReturn} type="button" variant="outline">
                 Return
               </Button>
               <Button type="submit" onClick={handleSubmit}>Post Job</Button>

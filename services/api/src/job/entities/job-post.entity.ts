@@ -4,6 +4,7 @@ import { JobTagEntity } from './job-tag.entity';
 import { ApiProperty } from '@nestjs/swagger';
 import { IsArray, IsNotEmpty, IsString, MaxLength, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
+import { JobTypeEnum } from './job-type.enum';
 
 @Entity({ name: 'job-post' })
 export class JobPostEntity extends ContentBase {
@@ -17,6 +18,16 @@ export class JobPostEntity extends ContentBase {
   @IsString({ message: 'error.isString: location must be a string' })
   location: string;
 
+  @Index({ unique: false })
+  @Column({
+    type: 'enum',
+    enum: JobTypeEnum,
+    default: JobTypeEnum.TASK,
+    nullable: false,
+  })
+  @ApiProperty({ enum: JobTypeEnum })
+  job_type: JobTypeEnum;
+
   // Tags
   @ManyToMany(() => JobTagEntity, (jobTag) => jobTag.id)
   @ApiProperty({ type: JobTagEntity, isArray: true })
@@ -24,5 +35,5 @@ export class JobPostEntity extends ContentBase {
   @ValidateNested({ each: true })
   @Type(() => JobTagEntity)
   @JoinTable()
-  tags: JobTagEntity[];
+  job_tags: JobTagEntity[];
 }

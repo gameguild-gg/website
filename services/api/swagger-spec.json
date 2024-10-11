@@ -6863,7 +6863,14 @@
           "location": {
             "type": "string"
           },
-          "tags": {
+          "job_type": {
+            "type": "string",
+            "enum": [
+              "CONTINUOUS",
+              "TASK"
+            ]
+          },
+          "job_tags": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/JobTagEntity"
@@ -6883,7 +6890,8 @@
           "visibility",
           "thumbnail",
           "location",
-          "tags"
+          "job_type",
+          "job_tags"
         ]
       },
       "JobAplicationCreateDto": {

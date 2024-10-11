@@ -477,7 +477,8 @@ export namespace Api {
 		visibility: Api.JobPostEntity.Visibility;
 		thumbnail: string;
 		location: string;
-		tags: Api.JobTagEntity[];
+		'job_type': Api.JobPostEntity.JobType;
+		'job_tags': Api.JobTagEntity[];
 	}
 	
 	/**
@@ -501,6 +502,17 @@ export namespace Api {
 				PENDING = 'PENDING',
 				PRIVATE = 'PRIVATE',
 				TRASH = 'TRASH'
+			}
+		}
+	
+		export type JobType =
+			'CONTINUOUS' |
+			'TASK'
+		
+		export namespace JobType {
+			export enum Enum {
+				CONTINUOUS = 'CONTINUOUS',
+				TASK = 'TASK'
 			}
 		}
 	
