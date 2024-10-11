@@ -57,6 +57,16 @@ export function setupSwagger(app: INestApplication): void {
     );
   }
 
+  try {
+    console.log('Installing apiclient in web');
+    execSync('npm run install:apiclient --prefix ../../', {
+      stdio: 'ignore',
+    });
+    console.log('done');
+  } catch (e) {
+    console.error(JSON.stringify(e));
+  }
+
   console.info(
     `Documentation: http://localhost:${configService.appConfig.port}/documentation`,
   );

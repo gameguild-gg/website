@@ -52,6 +52,7 @@ export namespace Api {
 		id: string;
 		createdAt: string;
 		updatedAt: string;
+		deletedAt: string;
 		owner: Api.UserEntity;
 		editors: Api.UserEntity[];
 		slug: string;
@@ -174,12 +175,14 @@ export namespace Api {
 		id: string;
 		createdAt: string;
 		updatedAt: string;
+		deletedAt: string;
 	}
 
 	export interface CompetitionRunSubmissionReportEntity {
 		id: string;
 		createdAt: string;
 		updatedAt: string;
+		deletedAt: string;
 		/**
 		 * @type {number}
 		 * @memberof CompetitionRunSubmissionReportEntity
@@ -245,12 +248,14 @@ export namespace Api {
 		id: string;
 		createdAt: string;
 		updatedAt: string;
+		deletedAt: string;
 	}
 
 	export interface CourseEntity {
 		id: string;
 		createdAt: string;
 		updatedAt: string;
+		deletedAt: string;
 		owner: Api.UserEntity;
 		editors: Api.UserEntity[];
 		slug: string;
@@ -294,6 +299,9 @@ export namespace Api {
 			}
 		}
 	
+	}
+
+	export interface CreateProjectDto {
 	}
 
 	export interface EditorRequestDto {
@@ -517,6 +525,7 @@ export namespace Api {
 		id: string;
 		createdAt: string;
 		updatedAt: string;
+		deletedAt: string;
 		owner: Api.UserEntity;
 		editors: Api.UserEntity[];
 		slug: string;
@@ -596,6 +605,7 @@ export namespace Api {
 		id: string;
 		createdAt: string;
 		updatedAt: string;
+		deletedAt: string;
 		winner: string;
 		lastState: string;
 		players: string[];
@@ -610,6 +620,7 @@ export namespace Api {
 		id: string;
 		createdAt: string;
 		updatedAt: string;
+		deletedAt: string;
 		owner: Api.UserEntity;
 		editors: Api.UserEntity[];
 		slug: string;
@@ -650,6 +661,7 @@ export namespace Api {
 		id: string;
 		createdAt: string;
 		updatedAt: string;
+		deletedAt: string;
 		owner: Api.UserEntity;
 		editors: Api.UserEntity[];
 		slug: string;
@@ -691,6 +703,7 @@ export namespace Api {
 		id: string;
 		createdAt: string;
 		updatedAt: string;
+		deletedAt: string;
 		version: Api.ProjectVersionEntity;
 		user: Api.UserEntity;
 		responses: string[];
@@ -927,6 +940,7 @@ export namespace Api {
 		id: string;
 		createdAt: string;
 		updatedAt: string;
+		deletedAt: string;
 		version: string;
 		'archive_url': string;
 		'notes_url': string;
@@ -939,6 +953,88 @@ export namespace Api {
 	export interface TerminalDto {
 	}
 
+	export interface TicketEntity {
+		id: string;
+		createdAt: string;
+		updatedAt: string;
+		deletedAt: string;
+		owner: Api.UserEntity;
+		editors: Api.UserEntity[];
+		/**
+		 * @description <p>Title of the ticket</p>
+		 * @type {string}
+		 * @memberof TicketEntity
+		 */
+		title: string;
+		/**
+		 * @description <p>Description of the ticket</p>
+		 * @type {string}
+		 * @memberof TicketEntity
+		 */
+		description: string;
+		/**
+		 * @description <p>Description of the ticket</p>
+		 * @type {string}
+		 * @memberof TicketEntity
+		 */
+		projectId: string;
+		/**
+		 * @description <p>Status of the ticket</p>
+		 * @type {Api.TicketEntity.Status}
+		 * @memberof TicketEntity
+		 */
+		status: Api.TicketEntity.Status;
+		/**
+		 * @description <p>Priority of the ticket</p>
+		 * @type {Api.TicketEntity.Priority}
+		 * @memberof TicketEntity
+		 */
+		priority: Api.TicketEntity.Priority;
+	}
+	
+	/**
+	 * @export
+	 * @namespace TicketEntity
+	 */
+	export namespace TicketEntity {
+		/**
+		 * <p>Status of the ticket</p>
+		 */
+		export type Status =
+			'OPEN' |
+			'IN_PROGRESS' |
+			'RESOLVED' |
+			'CLOSED'
+		
+		export namespace Status {
+			export enum Enum {
+				OPEN = 'OPEN',
+				INPROGRESS = 'IN_PROGRESS',
+				RESOLVED = 'RESOLVED',
+				CLOSED = 'CLOSED'
+			}
+		}
+	
+		/**
+		 * <p>Priority of the ticket</p>
+		 */
+		export type Priority =
+			'LOW' |
+			'MEDIUM' |
+			'HIGH' |
+			'CRITICAL'
+		
+		export namespace Priority {
+			export enum Enum {
+				LOW = 'LOW',
+				MEDIUM = 'MEDIUM',
+				HIGH = 'HIGH',
+				CRITICAL = 'CRITICAL'
+			}
+		}
+	
+	}
+
 	export interface TransferOwnershipRequestDto {
 		id: string;
 		newUser: Api.IdDto;
@@ -948,6 +1044,7 @@ export namespace Api {
 		id: string;
 		createdAt: string;
 		updatedAt: string;
+		deletedAt: string;
 		username: string;
 		email: string;
 		emailVerified: boolean;
@@ -975,6 +1072,7 @@ export namespace Api {
 		id: string;
 		createdAt: string;
 		updatedAt: string;
+		deletedAt: string;
 		user: Api.UserEntity;
 		bio: string;
 		name: string;

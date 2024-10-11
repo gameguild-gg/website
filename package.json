@@ -13,6 +13,7 @@
   "scripts": {
     "install:api": "npm install --workspace=services/api",
     "install:web": "npm install --workspace=services/web",
+    "install:apiclient": "npm install @game-guild/apiclient --no-save --workspace=services/web",
     "clean": "rimraf --glob ./**/node_modules",
     "prepare_": "husky install",
     "format": "npm run format --workspaces --if-present",
