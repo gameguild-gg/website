@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Logger } from '@nestjs/common';
+import { Body, Controller, Logger } from '@nestjs/common';
 import { ApiBody, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ProjectService } from './project.service';
 import { Auth } from '../auth/decorators/http.decorator';
@@ -29,9 +29,6 @@ import { TicketEntity } from './entities/ticket.entity';
   model: {
     type: ProjectEntity,
   },
-  dto: {
-    create: CreateProjectDto,
-  },
   params: {
     id: {
       field: 'id',
@@ -39,11 +36,8 @@ import { TicketEntity } from './entities/ticket.entity';
       primary: true,
     },
   },
-  // Justin, if you want to use a custom dto, you can change the types here
   dto: {
     create: CreateProjectDto,
-    update: ProjectEntity,
-    replace: ProjectEntity,
   },
   routes: {
     exclude: [

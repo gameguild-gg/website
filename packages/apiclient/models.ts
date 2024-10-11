@@ -336,7 +336,6 @@ export namespace Api {
 	
 	}
 
-
 	export interface CreateTicketDto {
 	}
 
@@ -1020,6 +1019,7 @@ export namespace Api {
 		id: string;
 		createdAt: string;
 		updatedAt: string;
+		deletedAt: string;
 		owner: Api.UserEntity;
 		editors: Api.UserEntity[];
 		/**

@@ -52,8 +52,8 @@ export class TicketEntity extends WithRolesEntity {
   @ManyToOne(() => ProjectEntity, (project) => project.tickets)
   project: ProjectEntity;
 
-  constructor(partial?: Partial<TicketEntity>) {
-    super(partial);
-    Object.assign(this, partial);
-  }
+  // constructor(partial?: Partial<TicketEntity>) {
+  //   super(partial);
+  //   Object.assign(this, partial);
+  // }
 }

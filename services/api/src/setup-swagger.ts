@@ -47,6 +47,7 @@ export function setupSwagger(app: INestApplication): void {
   fs.writeFileSync('./swagger-spec.json', JSON.stringify(document, null, 2));
 
   try {
+    console.log('Generating api client');
     execSync('npm run openapigenerator', { stdio: 'ignore' });
     console.log('Client generated successfully');
     fixOpenApiGeneratorPlus();
@@ -57,14 +58,16 @@ export function setupSwagger(app: INestApplication): void {
     );
   }
 
-  try {
-    console.log('Installing apiclient in web');
-    execSync('npm run install:apiclient --prefix ../../', {
-      stdio: 'ignore',
-    });
-    console.log('done');
-  } catch (e) {
-    console.error(JSON.stringify(e));
+  if (process.env.NODE_ENV === 'development') {
+    try {
+      console.log('Installing apiclient in web');
+      execSync('npm run install:apiclient --prefix ../../', {
+        stdio: 'ignore',
+      });
+      console.log('done');
+    } catch (e) {
+      console.error(JSON.stringify(e));
+    }
   }
 
   console.info(

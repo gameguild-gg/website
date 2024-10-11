@@ -505,121 +505,6 @@
       }
     },
     "/project": {
-      "post": {
-        "operationId": "createOneBaseProjectControllerProjectEntity",
-        "summary": "Create a single ProjectEntity",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateProjectDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Get create one base response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProjectEntity"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad request",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponseDto"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponseDto"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponseDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponseDto"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Already exists",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponseDto"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Unprocessable entity",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponseDto"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponseDto"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProjectEntity"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "project"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      },
       "get": {
         "operationId": "getManyBaseProjectControllerProjectEntity",
         "summary": "Retrieve multiple ProjectEntities",
@@ -852,7 +737,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ProjectEntity"
+                "$ref": "#/components/schemas/CreateProjectDto"
               }
             }
           }
@@ -7268,10 +7153,6 @@
           "versions"
         ]
       },
-      "CreateProjectDto": {
-        "type": "object",
-        "properties": {}
-      },
       "IdDto": {
         "type": "object",
         "properties": {
@@ -7361,6 +7242,10 @@
             "format": "date-time",
             "type": "string"
           },
+          "deletedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
           "owner": {
             "$ref": "#/components/schemas/UserEntity"
           },
@@ -7407,6 +7292,7 @@
           "id",
           "createdAt",
           "updatedAt",
+          "deletedAt",
           "owner",
           "editors",
           "title",
