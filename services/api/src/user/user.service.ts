@@ -88,7 +88,7 @@ export class UserService extends TypeOrmCrudService<UserEntity> {
   }
 
   public async save(user: Partial<UserEntity>): Promise<UserEntity> {
-    return new UserEntity(await this.repository.save(user));
+    return this.repository.save(user);
   }
 
   async createOneWithGoogleId(payload: TokenPayload): Promise<UserEntity> {

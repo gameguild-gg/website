@@ -514,7 +514,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ProjectEntity"
+                "$ref": "#/components/schemas/CreateProjectDto"
               }
             }
           }
@@ -596,6 +596,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectEntity"
                 }
               }
             }
@@ -5324,6 +5334,10 @@
             "format": "date-time",
             "type": "string"
           },
+          "deletedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
           "user": {
             "$ref": "#/components/schemas/UserEntity"
           },
@@ -5347,6 +5361,7 @@
           "id",
           "createdAt",
           "updatedAt",
+          "deletedAt",
           "user",
           "bio",
           "name",
@@ -5369,12 +5384,17 @@
           "updatedAt": {
             "format": "date-time",
             "type": "string"
+          },
+          "deletedAt": {
+            "format": "date-time",
+            "type": "string"
           }
         },
         "required": [
           "id",
           "createdAt",
-          "updatedAt"
+          "updatedAt",
+          "deletedAt"
         ]
       },
       "PostEntity": {
@@ -5389,6 +5409,10 @@
             "type": "string"
           },
           "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "deletedAt": {
             "format": "date-time",
             "type": "string"
           },
@@ -5432,6 +5456,7 @@
           "id",
           "createdAt",
           "updatedAt",
+          "deletedAt",
           "owner",
           "editors",
           "slug",
@@ -5454,6 +5479,10 @@
             "type": "string"
           },
           "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "deletedAt": {
             "format": "date-time",
             "type": "string"
           },
@@ -5506,6 +5535,7 @@
           "id",
           "createdAt",
           "updatedAt",
+          "deletedAt",
           "owner",
           "editors",
           "slug",
@@ -5531,6 +5561,10 @@
             "type": "string"
           },
           "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "deletedAt": {
             "format": "date-time",
             "type": "string"
           },
@@ -5586,6 +5620,7 @@
           "id",
           "createdAt",
           "updatedAt",
+          "deletedAt",
           "owner",
           "editors",
           "slug",
@@ -5611,6 +5646,10 @@
             "type": "string"
           },
           "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "deletedAt": {
             "format": "date-time",
             "type": "string"
           },
@@ -5675,6 +5714,7 @@
           "id",
           "createdAt",
           "updatedAt",
+          "deletedAt",
           "owner",
           "editors",
           "slug",
@@ -5702,6 +5742,10 @@
             "type": "string"
           },
           "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "deletedAt": {
             "format": "date-time",
             "type": "string"
           },
@@ -5770,6 +5814,7 @@
           "id",
           "createdAt",
           "updatedAt",
+          "deletedAt",
           "username",
           "email",
           "emailVerified",
@@ -5905,6 +5950,45 @@
           "error",
           "stack",
           "raw"
+        ]
+      },
+      "CreateProjectDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "summary": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "DRAFT",
+              "PUBLISHED",
+              "FUTURE",
+              "PENDING",
+              "PRIVATE",
+              "TRASH"
+            ]
+          },
+          "thumbnail": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "summary",
+          "body",
+          "slug",
+          "visibility",
+          "thumbnail"
         ]
       },
       "GetManyProjectEntityResponseDto": {
@@ -6188,6 +6272,10 @@
             "format": "date-time",
             "type": "string"
           },
+          "deletedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
           "version": {
             "$ref": "#/components/schemas/ProjectVersionEntity"
           },
@@ -6205,6 +6293,7 @@
           "id",
           "createdAt",
           "updatedAt",
+          "deletedAt",
           "version",
           "user",
           "responses"
@@ -6222,6 +6311,10 @@
             "type": "string"
           },
           "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "deletedAt": {
             "format": "date-time",
             "type": "string"
           },
@@ -6277,6 +6370,7 @@
           "id",
           "createdAt",
           "updatedAt",
+          "deletedAt",
           "version",
           "archive_url",
           "notes_url",
@@ -6298,6 +6392,10 @@
             "type": "string"
           },
           "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "deletedAt": {
             "format": "date-time",
             "type": "string"
           },
@@ -6347,6 +6445,7 @@
           "id",
           "createdAt",
           "updatedAt",
+          "deletedAt",
           "owner",
           "editors",
           "slug",
@@ -6569,6 +6668,10 @@
             "format": "date-time",
             "type": "string"
           },
+          "deletedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
           "winner": {
             "type": "string"
           },
@@ -6586,6 +6689,7 @@
           "id",
           "createdAt",
           "updatedAt",
+          "deletedAt",
           "winner",
           "lastState",
           "players"
@@ -6620,12 +6724,17 @@
           "updatedAt": {
             "format": "date-time",
             "type": "string"
+          },
+          "deletedAt": {
+            "format": "date-time",
+            "type": "string"
           }
         },
         "required": [
           "id",
           "createdAt",
-          "updatedAt"
+          "updatedAt",
+          "deletedAt"
         ]
       },
       "CompetitionRunSubmissionReportEntity": {
@@ -6640,6 +6749,10 @@
             "type": "string"
           },
           "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "deletedAt": {
             "format": "date-time",
             "type": "string"
           },
@@ -6675,6 +6788,7 @@
           "id",
           "createdAt",
           "updatedAt",
+          "deletedAt",
           "winsAsP1",
           "winsAsP2",
           "totalWins",

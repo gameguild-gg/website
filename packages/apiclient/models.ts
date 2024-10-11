@@ -302,6 +302,38 @@ export namespace Api {
 	}
 
 	export interface CreateProjectDto {
+		title: string;
+		summary: string;
+		body: string;
+		slug: string;
+		visibility: Api.CreateProjectDto.Visibility;
+		thumbnail: string;
+	}
+	
+	/**
+	 * @export
+	 * @namespace CreateProjectDto
+	 */
+	export namespace CreateProjectDto {
+		export type Visibility =
+			'DRAFT' |
+			'PUBLISHED' |
+			'FUTURE' |
+			'PENDING' |
+			'PRIVATE' |
+			'TRASH'
+		
+		export namespace Visibility {
+			export enum Enum {
+				DRAFT = 'DRAFT',
+				PUBLISHED = 'PUBLISHED',
+				FUTURE = 'FUTURE',
+				PENDING = 'PENDING',
+				PRIVATE = 'PRIVATE',
+				TRASH = 'TRASH'
+			}
+		}
+	
 	}
 
 	export interface EditorRequestDto {
@@ -951,88 +983,6 @@ export namespace Api {
 	}
 
 	export interface TerminalDto {
-	}
-
-	export interface TicketEntity {
-		id: string;
-		createdAt: string;
-		updatedAt: string;
-		deletedAt: string;
-		owner: Api.UserEntity;
-		editors: Api.UserEntity[];
-		/**
-		 * @description <p>Title of the ticket</p>
-		 * @type {string}
-		 * @memberof TicketEntity
-		 */
-		title: string;
-		/**
-		 * @description <p>Description of the ticket</p>
-		 * @type {string}
-		 * @memberof TicketEntity
-		 */
-		description: string;
-		/**
-		 * @description <p>Description of the ticket</p>
-		 * @type {string}
-		 * @memberof TicketEntity
-		 */
-		projectId: string;
-		/**
-		 * @description <p>Status of the ticket</p>
-		 * @type {Api.TicketEntity.Status}
-		 * @memberof TicketEntity
-		 */
-		status: Api.TicketEntity.Status;
-		/**
-		 * @description <p>Priority of the ticket</p>
-		 * @type {Api.TicketEntity.Priority}
-		 * @memberof TicketEntity
-		 */
-		priority: Api.TicketEntity.Priority;
-	}
-	
-	/**
-	 * @export
-	 * @namespace TicketEntity
-	 */
-	export namespace TicketEntity {
-		/**
-		 * <p>Status of the ticket</p>
-		 */
-		export type Status =
-			'OPEN' |
-			'IN_PROGRESS' |
-			'RESOLVED' |
-			'CLOSED'
-		
-		export namespace Status {
-			export enum Enum {
-				OPEN = 'OPEN',
-				INPROGRESS = 'IN_PROGRESS',
-				RESOLVED = 'RESOLVED',
-				CLOSED = 'CLOSED'
-			}
-		}
-	
-		/**
-		 * <p>Priority of the ticket</p>
-		 */
-		export type Priority =
-			'LOW' |
-			'MEDIUM' |
-			'HIGH' |
-			'CRITICAL'
-		
-		export namespace Priority {
-			export enum Enum {
-				LOW = 'LOW',
-				MEDIUM = 'MEDIUM',
-				HIGH = 'HIGH',
-				CRITICAL = 'CRITICAL'
-			}
-		}
-	
 	}
 
 	export interface TransferOwnershipRequestDto {

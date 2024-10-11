@@ -151,9 +151,4 @@ export class UserEntity extends EntityBase {
   @ValidateNested({ each: true })
   @Type(() => CourseEntity)
   courses: CourseEntity[];
-
-  constructor(partial: Partial<UserEntity>) {
-    super(partial);
-    Object.assign(this, partial);
-  }
 }
