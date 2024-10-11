@@ -1,5 +1,5 @@
 import { Body, Controller, Logger } from '@nestjs/common';
-import { ApiBody, ApiTags } from '@nestjs/swagger';
+import { ApiBody, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ProjectService } from './project.service';
 import { Auth } from '../auth/decorators/http.decorator';
 import { ProjectEntity } from './entities/project.entity';
@@ -22,6 +22,7 @@ import {
 } from './interceptors/ownership-empty-interceptor.service';
 import { ExcludeFieldsPipe } from './pipes/exclude-fields.pipe';
 import { WithRolesController } from './with-roles.controller';
+import { CreateProjectDto } from './dtos/create-project.dto';
 
 @Crud({
   model: {
@@ -33,6 +34,12 @@ import { WithRolesController } from './with-roles.controller';
       type: 'uuid',
       primary: true,
     },
+  },
+  // Justin, if you want to use a custom dto, you can change the types here
+  dto: {
+    create: CreateProjectDto,
+    update: ProjectEntity,
+    replace: ProjectEntity,
   },
   routes: {
     exclude: [
@@ -78,13 +85,16 @@ export class ProjectController
   // we need to override to guarantee the user is being injected as owner and editor
   @Override()
   @Auth(AuthenticatedRoute)
-  @ApiBody({ type: ProjectEntity })
+  @ApiBody({ type: CreateProjectDto })
+  @ApiResponse({ type: ProjectEntity })
   async createOne(
     @ParsedRequest() crudReq: CrudRequest,
-    // todo: remove id and other unwanted fields
-    @BodyOwnerInject() body: ProjectEntity,
+    @BodyOwnerInject() body: CreateProjectDto,
   ) {
-    const res = await this.base.createOneBase(crudReq, body);
+    const res = await this.service.createOne(
+      crudReq,
+      body as Partial<ProjectEntity>,
+    );
     return this.service.findOne({
       where: { id: res.id },
       relations: { owner: true, editors: true },

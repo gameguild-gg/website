@@ -218,17 +218,16 @@ export class CompetitionController {
     // convert array of CompetitionMatchEntity to MatchSearchResponseDto
     const converted: MatchSearchResponseDto[] = ret.map(
       (match: CompetitionMatchEntity) => {
-        const convertedMatch: MatchSearchResponseDto =
-          new MatchSearchResponseDto({
-            id: match.id,
-            winner: match.winner,
-            lastState: match.lastState,
-            players: [
-              match.p1submission.user.username,
-              match.p2submission.user.username,
-            ],
-          });
-        return convertedMatch;
+        const convertedMatch = {
+          id: match.id,
+          winner: match.winner,
+          lastState: match.lastState,
+          players: [
+            match.p1submission.user.username,
+            match.p2submission.user.username,
+          ],
+        };
+        return convertedMatch as MatchSearchResponseDto;
       },
     );
 

@@ -7898,6 +7898,7 @@ export namespace ProjectApi {
 		| CreateOneBaseProjectControllerProjectEntity409Response
 		| CreateOneBaseProjectControllerProjectEntity422Response
 		| CreateOneBaseProjectControllerProjectEntity500Response
+		| CreateOneBaseProjectControllerProjectEntityDefaultResponse
 	
 	export interface CreateOneBaseProjectControllerProjectEntity201Response {
 		status: 201
@@ -7952,6 +7953,13 @@ export namespace ProjectApi {
 		status: 500
 		contentType: 'application/json'
 		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CreateOneBaseProjectControllerProjectEntityDefaultResponse {
+		status: number
+		contentType: 'application/json'
+		body: Api.ProjectEntity
 		headers?: undefined
 	}
 	
@@ -8478,11 +8486,11 @@ export const ProjectApiFetchParamCreator = function (configuration?: Configurati
 	return {
 		/**
 		 * @summary Create a single ProjectEntity
-		 * @param {Api.ProjectEntity} request
+		 * @param {Api.CreateProjectDto} request
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		createOneBaseProjectControllerProjectEntity(request: Api.ProjectEntity, options: RequestInit = {}): FetchArgs {
+		createOneBaseProjectControllerProjectEntity(request: Api.CreateProjectDto, options: RequestInit = {}): FetchArgs {
 			// verify required parameter 'request' is not null or undefined
 			if (request === null || request === undefined) {
 				throw new RequiredError('request', 'Required parameter request was null or undefined when calling createOneBaseProjectControllerProjectEntity.');
@@ -8945,11 +8953,11 @@ export const ProjectApiFp = function(configuration?: Configuration) {
 	return {
 		/**
 		 * @summary Create a single ProjectEntity
-		 * @param {Api.ProjectEntity} request
+		 * @param {Api.CreateProjectDto} request
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		createOneBaseProjectControllerProjectEntity(request: Api.ProjectEntity, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<ProjectApi.CreateOneBaseProjectControllerProjectEntityResponse> {
+		createOneBaseProjectControllerProjectEntity(request: Api.CreateProjectDto, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<ProjectApi.CreateOneBaseProjectControllerProjectEntityResponse> {
 			const localVarFetchArgs = ProjectApiFetchParamCreator(configuration).createOneBaseProjectControllerProjectEntity(request, options);
 			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
 				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
@@ -9035,6 +9043,14 @@ export const ProjectApiFp = function(configuration?: Configuration) {
 						}
 					}
 					throw response;
+				}
+				/* Catch-all response */
+				if (mimeType === 'application/json') {
+					return {
+						status: response.status,
+						contentType: 'application/json',
+						body: await response.json() as Api.ProjectEntity,
+					}
 				}
 				throw response;
 			};
@@ -9706,11 +9722,11 @@ export const ProjectApiFactory: FactoryFunction<ProjectApiInterface> = function 
 export interface ProjectApiInterface {
 	/**
 	 * @summary Create a single ProjectEntity
-	 * @param {Api.ProjectEntity} request
+	 * @param {Api.CreateProjectDto} request
 	 * @param {RequestInit} [options] Override http request option.
 	 * @throws {RequiredError}
 	 */
-	createOneBaseProjectControllerProjectEntity(request: Api.ProjectEntity, options?: RequestInit): Promise<ProjectApi.CreateOneBaseProjectControllerProjectEntityResponse>
+	createOneBaseProjectControllerProjectEntity(request: Api.CreateProjectDto, options?: RequestInit): Promise<ProjectApi.CreateOneBaseProjectControllerProjectEntityResponse>
 
 	/**
 	 * @summary Delete a single ProjectEntity
@@ -9789,11 +9805,11 @@ export interface ProjectApiInterface {
 export class ProjectApi extends BaseAPI implements ProjectApiInterface {
 	/**
 	 * @summary Create a single ProjectEntity
-	 * @param {Api.ProjectEntity} request
+	 * @param {Api.CreateProjectDto} request
 	 * @param {RequestInit} [options] Override http request option.
 	 * @throws {RequiredError}
 	 */
-	public createOneBaseProjectControllerProjectEntity(request: Api.ProjectEntity, options?: RequestInit) {
+	public createOneBaseProjectControllerProjectEntity(request: Api.CreateProjectDto, options?: RequestInit) {
 		return ProjectApiFp(this.configuration).createOneBaseProjectControllerProjectEntity(request, options)(this.fetch, this.basePath);
 	}
 
