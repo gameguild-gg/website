@@ -45,7 +45,7 @@ export default function JobPost() {
       {},
       { headers: { Authorization: `Bearer ${session.accessToken}` }, }
     )
-    // console.log('GET ALL JOB TAGS RESPONSE:\n',response)
+    // console.log('All Jobs Response:\n',response)
     if (response.status == 200){
       setJobTags(response.body)
     } else {
@@ -88,7 +88,7 @@ export default function JobPost() {
         summary: description,
         body: description,
         location: location,
-        tags: selectedSkills,
+        job_tags: selectedSkills,
       } as Api.JobPostCreateDto,
       {
         headers: { Authorization: `Bearer ${session.accessToken}` },
@@ -110,7 +110,7 @@ export default function JobPost() {
         description: 'Error creating a Job Post', // + JSON.stringify(response.body),
       });
     }
-    console.log("/jobs API RESPONSE:\n",response)
+    // console.log("/jobs API RESPONSE:\n",response)
   }
 
   return (
@@ -149,7 +149,7 @@ export default function JobPost() {
             </div>
             <div className="space-y-2 w-full">
               <Label htmlFor="location">Type</Label>
-              <Select defaultValue="TASK">
+              <Select value={jobType} onValueChange={(value) =>setJobType(value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select a fruit" />
                 </SelectTrigger>

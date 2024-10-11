@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation";
 import { getSession } from 'next-auth/react';
-import { Api, JobPostsApi, JobTagsApi, JobAplicationsApi } from "@game-guild/apiclient"
+import { Api, JobPostsApi, JobTagsApi, JobApplicationsApi } from "@game-guild/apiclient"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
@@ -26,11 +26,10 @@ import {
 } from "@/components/ui/popover"
 import { useToast } from '@/components/ui/use-toast';
 
-// Mock data for job types
 const job_types = [
-    { value: "CONTINUOUS", label: "Continuous" },
-    { value: "TASK", label: "Task" },
-  ]
+  { value: "CONTINUOUS", label: "Continuous" },
+  { value: "TASK", label: "Task" },
+]
 
 export default function JobBoard() {
   const [searchBarValue, setSearchBarValue] = useState<string>("")
@@ -49,7 +48,7 @@ export default function JobBoard() {
   const jobTagsApi = new JobTagsApi({
     basePath: process.env.NEXT_PUBLIC_API_URL,
   });
-  const jobAplicationApi = new JobAplicationsApi({
+  const jobApplicationApi = new JobApplicationsApi({
     basePath: process.env.NEXT_PUBLIC_API_URL,
   });
 
@@ -72,12 +71,11 @@ export default function JobBoard() {
     }
     const response = await jobTagsApi.getManyBaseJobTagControllerJobTagEntity(
       {},
-      {
-        headers: { Authorization: `Bearer ${session.accessToken}` },
-      }
+      { headers: { Authorization: `Bearer ${session.accessToken}` }, }
     )
     if (response.status = 200) {
       setJobTags(response.body as Api.JobTagEntity[])
+      getMyJobAplications()
     }
   }
 
@@ -96,11 +94,16 @@ export default function JobBoard() {
       }
     )
     if (response.status == 200) {
-      console.log("All jobs:\n",response)
+      // console.log("All jobs:\n",response)
       setJobs(response.body)
       setSelectedJob[jobs[0]]
+      getMyJobAplications()
     } else {
-      //tost error here
+      toast({
+        variant: "destructive",
+        title: 'Error',
+        description: 'Error searching for jobs.', // + JSON.stringify(response.body),
+      });
     }
     
   }
@@ -118,17 +121,15 @@ export default function JobBoard() {
     }
     if (selectedJobTypes.length > 0) {
       filter.push('job_type||$eq||'+selectedJobTypes)
-      //filter.push('job_type||$eq||')
     }
     if (selectedTags.length > 0) {
       filter.push('job_tags.name||$in||'+selectedTags)
     }
-    console.log("filter: ",filter)
+    // console.log("filter: ",filter)
     const response = await jobPostsApi.getManyBaseJobPostControllerJobPostEntity(
       {
-        join: ['job_tags'],
         filter: filter,
-        limit: 10,
+        limit: 50,
       },
       {
         headers: { Authorization: `Bearer ${session.accessToken}` },
@@ -143,14 +144,26 @@ export default function JobBoard() {
         title: 'Error',
         description: 'Error searching for jobs.', // + JSON.stringify(response.body),
       });
+    } 
+    // console.log("All jobs:\n",response)
+  }
+
+  const getMyJobAplications = async () => {
+    const session:any = await getSession();
+    if (!session) {
+      router.push('/connect')
+      return
     }
-    console.log("All jobs:\n",response)
+    // const filter = ['job||&in||',jobs]
+    const response = await jobApplicationApi.getManyBaseJobApplicationControllerJobApplicationEntity(
+      {},
+      {}
+    )
   }
 
   const handleSearchChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchBarValue(event.target.value)
     if (searchBarValue.length > 3){
-      console.log("Searching: ",searchBarValue)
       searchJobs()
     }
     if (searchBarValue.length == 0){
@@ -164,13 +177,11 @@ export default function JobBoard() {
       router.push('/connect')
       return
     }
-    const response = await jobAplicationApi.createOneBaseJobAplicationControllerJobAplicationEntity(
+    const response = await jobApplicationApi.createOneBaseJobApplicationControllerJobApplicationEntity(
       {
         job: selectedJob,
       },
-      {
-        headers: { Authorization: `Bearer ${session.accessToken}` },
-      }
+      { headers: { Authorization: `Bearer ${session.accessToken}` }, }
     )
     if (response.status == 201){
       toast({
@@ -273,7 +284,7 @@ export default function JobBoard() {
             </PopoverTrigger>
             <PopoverContent className="w-[200px] p-0">
               <Command>
-                <CommandInput placeholder="Search tag..." />
+                <CommandInput placeholder="Search skill..." />
                 <CommandList>
                   <CommandEmpty>No tags found.</CommandEmpty>
                   <CommandGroup>

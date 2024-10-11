@@ -1,9 +1,10 @@
 import { createParamDecorator, ExecutionContext, BadRequestException } from "@nestjs/common";
-import { JobAplicationEntity } from "../entities/job-aplication.entity";
+import { JobPostEntity } from "../entities/job-post.entity";
+import { JobApplicationEntity } from "../entities/job-application.entity";
 import { UserEntity } from "src/user/entities";
 
 
-export const BodyAplicantInject = createParamDecorator(
+export const BodyAppliedInject = createParamDecorator(
     (data: unknown, ctx: ExecutionContext) => {
       const request = ctx.switchToHttp().getRequest();
   
@@ -15,7 +16,7 @@ export const BodyAplicantInject = createParamDecorator(
       }
   
       if (request.body) {
-        (request.body as JobAplicationEntity).aplicant = user;
+        (request.body as JobApplicationEntity).applicant = user;
       } else
         throw new BadRequestException(
           'error.body: Request body not found in the context.',

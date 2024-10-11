@@ -1,24 +1,10 @@
 import { Controller, Logger } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';// ../cms/
-// import { ContentService } from '../cms/content.service';
+import { ApiTags } from '@nestjs/swagger';
 import { JobTagService } from './job-tag.service';
 import { Auth } from '../auth/decorators/http.decorator';
-// import { UserEntity } from '../user/entities';
 import { JobTagEntity } from './entities/job-tag.entity';
-// import { OkResponse } from '../common/decorators/return-type.decorator';
-// import { AuthType } from '../auth/guards';
-import {
-  AuthenticatedRoute,
-  ManagerRoute,
-  OwnerRoute,
-} from '../auth/auth.enum';
-// import { BodyOwnerInject } from '../common/decorators/parameter.decorator';
-import { OwnershipEmptyInterceptor } from '../cms/interceptors/ownership-empty-interceptor.service';
-import { WithRolesController } from 'src/cms/with-roles.controller';
+import { AuthenticatedRoute } from '../auth/auth.enum';
 import { CrudController, Crud } from '@dataui/crud';
-// import { PartialWithoutFields } from '../cms/interceptors/ownership-empty-interceptor.service';
-// import { ExcludeFieldsPipe } from 'src/cms/pipes/exclude-fields.pipe';
-import { JobPostCreateDto } from './dtos/job-post-create.dto';
 
 @Crud({
   model: {
@@ -65,5 +51,9 @@ export class JobTagController
   constructor(
     public service: JobTagService
   ) { }
+
+  // TODO: Browsing Jobs - Adds an 'applied' field
+
+  // TODO: Job Posts I created
 
 }

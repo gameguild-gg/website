@@ -1,17 +1,17 @@
-import { Column, Entity, Index } from 'typeorm';
+import { Column, Entity } from 'typeorm';
 import { ManyToOne } from 'typeorm';
 import { JobPostEntity } from './job-post.entity';
 import { ApiProperty } from '@nestjs/swagger';
-import { IsInt, IsNotEmpty, MaxLength } from 'class-validator';
+import { IsInt, IsNotEmpty } from 'class-validator';
 import { EntityBase } from '../../common/entities/entity.base';
 import { UserEntity } from '../../user/entities/user.entity';
 
-@Entity({ name: 'job-aplication' })
-export class JobAplicationEntity extends EntityBase{
+@Entity({ name: 'job-application' })
+export class JobApplicationEntity extends EntityBase{
     
     @ApiProperty({ type: () => UserEntity })
     @ManyToOne(() => UserEntity, { nullable: false, eager: false })
-    aplicant: UserEntity;
+    applicant: UserEntity;
 
     @ApiProperty({ type: () => JobPostEntity })
     @ManyToOne((job) => JobPostEntity, (jobPost) => jobPost.id)
@@ -21,4 +21,5 @@ export class JobAplicationEntity extends EntityBase{
     @IsNotEmpty({ message: 'error.isNotEmpty: progress is required' })
     @IsInt({ message: 'error.IsInt: progress must be an int'})
     progress: number;
+
 }

@@ -66,6 +66,6 @@ export class JobPostCreateDto {
   @ValidateNested({ each: true })
   @Type(() => JobTagEntity)
   @JoinTable()
-  tags: JobTagEntity[];
+  readonly job_tags: JobTagEntity[];
   
 }

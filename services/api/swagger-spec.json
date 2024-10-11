@@ -4553,10 +4553,10 @@
         ]
       }
     },
-    "/job-aplications": {
+    "/job-applications": {
       "post": {
-        "operationId": "createOneBaseJobAplicationControllerJobAplicationEntity",
-        "summary": "Create a single JobAplicationEntity",
+        "operationId": "createOneBaseJobApplicationControllerJobApplicationEntity",
+        "summary": "Create a single JobApplicationEntity",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -4574,7 +4574,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/JobAplicationEntity"
+                  "$ref": "#/components/schemas/JobApplicationEntity"
                 }
               }
             }
@@ -4651,7 +4651,7 @@
           }
         },
         "tags": [
-          "Job Aplications"
+          "Job Applications"
         ],
         "security": [
           {
@@ -4660,8 +4660,8 @@
         ]
       },
       "get": {
-        "operationId": "getManyBaseJobAplicationControllerJobAplicationEntity",
-        "summary": "Retrieve multiple JobAplicationEntities",
+        "operationId": "getManyBaseJobApplicationControllerJobApplicationEntity",
+        "summary": "Retrieve multiple JobApplicationEntities",
         "parameters": [
           {
             "name": "fields",
@@ -4789,12 +4789,12 @@
                 "schema": {
                   "oneOf": [
                     {
-                      "$ref": "#/components/schemas/GetManyJobAplicationEntityResponseDto"
+                      "$ref": "#/components/schemas/GetManyJobApplicationEntityResponseDto"
                     },
                     {
                       "type": "array",
                       "items": {
-                        "$ref": "#/components/schemas/JobAplicationEntity"
+                        "$ref": "#/components/schemas/JobApplicationEntity"
                       }
                     }
                   ]
@@ -4874,7 +4874,7 @@
           }
         },
         "tags": [
-          "Job Aplications"
+          "Job Applications"
         ],
         "security": [
           {
@@ -4883,10 +4883,10 @@
         ]
       }
     },
-    "/job-aplications/{id}": {
+    "/job-applications/{id}": {
       "patch": {
-        "operationId": "updateOneBaseJobAplicationControllerJobAplicationEntity",
-        "summary": "Update a single JobAplicationEntity",
+        "operationId": "updateOneBaseJobApplicationControllerJobApplicationEntity",
+        "summary": "Update a single JobApplicationEntity",
         "parameters": [
           {
             "name": "id",
@@ -4902,7 +4902,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/JobAplicationEntity"
+                "$ref": "#/components/schemas/JobApplicationEntity"
               }
             }
           }
@@ -4913,7 +4913,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/JobAplicationEntity"
+                  "$ref": "#/components/schemas/JobApplicationEntity"
                 }
               }
             }
@@ -4990,7 +4990,7 @@
           }
         },
         "tags": [
-          "Job Aplications"
+          "Job Applications"
         ],
         "security": [
           {
@@ -4999,8 +4999,8 @@
         ]
       },
       "get": {
-        "operationId": "getOneBaseJobAplicationControllerJobAplicationEntity",
-        "summary": "Retrieve a single JobAplicationEntity",
+        "operationId": "getOneBaseJobApplicationControllerJobApplicationEntity",
+        "summary": "Retrieve a single JobApplicationEntity",
         "parameters": [
           {
             "name": "id",
@@ -5056,7 +5056,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/JobAplicationEntity"
+                  "$ref": "#/components/schemas/JobApplicationEntity"
                 }
               }
             }
@@ -5133,7 +5133,7 @@
           }
         },
         "tags": [
-          "Job Aplications"
+          "Job Applications"
         ],
         "security": [
           {
@@ -5142,8 +5142,8 @@
         ]
       },
       "delete": {
-        "operationId": "deleteOneBaseJobAplicationControllerJobAplicationEntity",
-        "summary": "Delete a single JobAplicationEntity",
+        "operationId": "deleteOneBaseJobApplicationControllerJobApplicationEntity",
+        "summary": "Delete a single JobApplicationEntity",
         "parameters": [
           {
             "name": "id",
@@ -5230,7 +5230,7 @@
           }
         },
         "tags": [
-          "Job Aplications"
+          "Job Applications"
         ],
         "security": [
           {
@@ -6763,7 +6763,7 @@
           "owner": {
             "$ref": "#/components/schemas/UserEntity"
           },
-          "tags": {
+          "job_tags": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/JobTagEntity"
@@ -6777,7 +6777,7 @@
           "body",
           "location",
           "owner",
-          "tags"
+          "job_tags"
         ]
       },
       "GetManyJobPostEntityResponseDto": {
@@ -6905,13 +6905,13 @@
           "job"
         ]
       },
-      "GetManyJobAplicationEntityResponseDto": {
+      "GetManyJobApplicationEntityResponseDto": {
         "type": "object",
         "properties": {
           "data": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/JobAplicationEntity"
+              "$ref": "#/components/schemas/JobApplicationEntity"
             }
           },
           "count": {
@@ -6935,7 +6935,7 @@
           "pageCount"
         ]
       },
-      "JobAplicationEntity": {
+      "JobApplicationEntity": {
         "type": "object",
         "properties": {
           "id": {
@@ -6950,7 +6950,7 @@
             "format": "date-time",
             "type": "string"
           },
-          "aplicant": {
+          "applicant": {
             "$ref": "#/components/schemas/UserEntity"
           },
           "job": {
@@ -6961,7 +6961,7 @@
           "id",
           "createdAt",
           "updatedAt",
-          "aplicant",
+          "applicant",
           "job"
         ]
       }

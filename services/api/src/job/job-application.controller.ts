@@ -1,18 +1,18 @@
 import { Body, Controller, Logger } from '@nestjs/common';
 import { ApiBody, ApiTags } from '@nestjs/swagger';
-import { JobAplicationService } from './job-aplication.service';
+import { JobApplicationService } from './job-application.service';
 import { Auth } from '../auth/decorators/http.decorator';
-import { JobAplicationEntity } from './entities/job-aplication.entity';
+import { JobApplicationEntity } from './entities/job-application.entity';
 import { AuthenticatedRoute } from '../auth/auth.enum';
 import { CrudController, Crud, CrudRequest, Override, ParsedRequest } from '@dataui/crud';
 import { PartialWithoutFields } from 'src/cms/interceptors/ownership-empty-interceptor.service';
 import { ExcludeFieldsPipe } from 'src/cms/pipes/exclude-fields.pipe';
-import { BodyAplicantInject } from './decorators/body-aplicant-injection.decorator';
+import { BodyApplicantInject } from './decorators/body-applicant-injection.decorator';
 import { JobAplicationCreateDto } from './dtos/job-aplication-create.dto';
 
 @Crud({
   model: {
-    type: JobAplicationEntity,
+    type: JobApplicationEntity,
   },
   params: {
     id: {
@@ -45,18 +45,18 @@ import { JobAplicationCreateDto } from './dtos/job-aplication-create.dto';
     },
   },
 })
-@Controller('job-aplications')
-@ApiTags('Job Aplications')
-export class JobAplicationController
-  implements CrudController<JobAplicationEntity>
+@Controller('job-applications')
+@ApiTags('Job Applications')
+export class JobApplicationController
+  implements CrudController<JobApplicationEntity>
   {
-  private readonly logger = new Logger(JobAplicationController.name);
+  private readonly logger = new Logger(JobApplicationController.name);
 
   constructor(
-    public service: JobAplicationService
+    public service: JobApplicationService
   ) { }
 
-  get base(): CrudController<JobAplicationEntity> {
+  get base(): CrudController<JobApplicationEntity> {
     return this;
   }
 
@@ -66,31 +66,31 @@ export class JobAplicationController
   async createOne(
     @ParsedRequest() crudReq: CrudRequest,
     // todo: remove id and other unwanted fields
-    @BodyAplicantInject() body: JobAplicationEntity,
+    @BodyApplicantInject() body: JobApplicationEntity,
   ) {
     const res = await this.base.createOneBase(crudReq, body);
     return this.service.findOne({
       where: { id: res.id },
-      relations: { aplicant: true },
+      relations: { applicant: true },
     });
   }
 
   @Override()
   @Auth(AuthenticatedRoute)
-  @ApiBody({ type: JobAplicationEntity })
+  @ApiBody({ type: JobApplicationEntity })
   async updateOne(
     @ParsedRequest() req: CrudRequest,
     @Body(
-      new ExcludeFieldsPipe<JobAplicationEntity>([
+      new ExcludeFieldsPipe<JobApplicationEntity>([
         'createdAt',
         'updatedAt',
       ]),
     )
     dto: PartialWithoutFields<
-    JobAplicationEntity,
+    JobApplicationEntity,
       'createdAt' | 'updatedAt'
     >,
-  ): Promise<JobAplicationEntity> {
+  ): Promise<JobApplicationEntity> {
     return this.base.updateOneBase(req, dto);
   }
 

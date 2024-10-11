@@ -318,26 +318,26 @@ export namespace Api {
 		signature: string;
 	}
 
-	export interface GetManyJobAplicationEntityResponseDto {
-		data: Api.JobAplicationEntity[];
+	export interface GetManyJobApplicationEntityResponseDto {
+		data: Api.JobApplicationEntity[];
 		/**
 		 * @type {number}
-		 * @memberof GetManyJobAplicationEntityResponseDto
+		 * @memberof GetManyJobApplicationEntityResponseDto
 		 */
 		count: number;
 		/**
 		 * @type {number}
-		 * @memberof GetManyJobAplicationEntityResponseDto
+		 * @memberof GetManyJobApplicationEntityResponseDto
 		 */
 		total: number;
 		/**
 		 * @type {number}
-		 * @memberof GetManyJobAplicationEntityResponseDto
+		 * @memberof GetManyJobApplicationEntityResponseDto
 		 */
 		page: number;
 		/**
 		 * @type {number}
-		 * @memberof GetManyJobAplicationEntityResponseDto
+		 * @memberof GetManyJobApplicationEntityResponseDto
 		 */
 		pageCount: number;
 	}
@@ -446,11 +446,11 @@ export namespace Api {
 		job: Api.JobPostEntity;
 	}
 
-	export interface JobAplicationEntity {
+	export interface JobApplicationEntity {
 		id: string;
 		createdAt: string;
 		updatedAt: string;
-		aplicant: Api.UserEntity;
+		applicant: Api.UserEntity;
 		job: Api.JobPostEntity;
 	}
 
@@ -461,7 +461,7 @@ export namespace Api {
 		body: string;
 		location: string;
 		owner: Api.UserEntity;
-		tags: Api.JobTagEntity[];
+		'job_tags': Api.JobTagEntity[];
 	}
 
 	export interface JobPostEntity {
