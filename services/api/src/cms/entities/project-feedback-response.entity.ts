@@ -27,9 +27,4 @@ export class ProjectFeedbackResponseEntity extends EntityBase {
   @IsArray()
   @Column({ type: 'jsonb', nullable: false })
   responses: [string | string[] | number];
-
-  constructor(partial: Partial<ProjectFeedbackResponseEntity>) {
-    super(partial);
-    Object.assign(this, partial);
-  }
 }

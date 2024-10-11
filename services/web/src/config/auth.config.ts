@@ -72,10 +72,8 @@ export const authConfig = {
       return false;
     },
     jwt: async ({ token, user, trigger, session, account }) => {
-      if (account) {
-        token.accessToken = user.accessToken;
-        token.refreshToken = user.refreshToken;
-      }
+      // merge token
+      const merged = { ...token, ...user };
 
       // refresh the token if it is about to expire(5m), or if it is expired already
       const isExpired = token.exp && Date.now() >= token.exp * 1000;
@@ -99,11 +97,12 @@ export const authConfig = {
   },
   pages: {
     signIn: '/connect',
-    // error: '/api/auth/error',
+    error: '/connect',
     // verifyRequest: '/api/auth/verify-request',
     // signOut: '/api/auth/signout',
   },
   providers: [
+    ...providers,
     Credentials({
       type: 'credentials',
       id: 'magic-link',

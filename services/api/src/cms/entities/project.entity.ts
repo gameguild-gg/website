@@ -23,9 +23,4 @@ export class ProjectEntity extends ContentBase {
 
   @OneToMany(() => TicketEntity, (ticket) => ticket.project)
   tickets: TicketEntity[];
-
-  constructor(partial?: Partial<ProjectEntity>) {
-    super(partial);
-    Object.assign(this, partial);
-  }
 }

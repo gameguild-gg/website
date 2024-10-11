@@ -29,8 +29,8 @@ export class ChapterEntity extends ContentBase {
   @Type(() => LectureEntity)
   lectures: LectureEntity[];
 
-  constructor(partial?: Partial<ChapterEntity>) {
-    super(partial);
-    Object.assign(this, partial);
-  }
+  // constructor(partial?: Partial<ChapterEntity>) {
+  //   super(partial);
+  //   Object.assign(this, partial);
+  // }
 }

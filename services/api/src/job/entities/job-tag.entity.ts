@@ -7,6 +7,8 @@ import { EntityBase } from '../../common/entities/entity.base';
 
 @Entity({ name: 'job-tag' })
 export class JobTagEntity extends EntityBase{
+
+    // Name
     @Column({ length: 256, nullable: false, type: 'varchar' })
     @Index({ unique: false })
     @ApiProperty()
@@ -15,6 +17,4 @@ export class JobTagEntity extends EntityBase{
     @IsString({ message: 'error.isString: name must be a string' })
     name: string;
 
-    @ManyToOne((type) => JobPostEntity, (jobPost) => jobPost.tags)
-    job: JobPostEntity;
 }

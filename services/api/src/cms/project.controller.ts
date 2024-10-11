@@ -39,6 +39,12 @@ import { TicketEntity } from './entities/ticket.entity';
       primary: true,
     },
   },
+  // Justin, if you want to use a custom dto, you can change the types here
+  dto: {
+    create: CreateProjectDto,
+    update: ProjectEntity,
+    replace: ProjectEntity,
+  },
   routes: {
     exclude: [
       'replaceOneBase',
@@ -89,14 +95,16 @@ export class ProjectController
   }
   @Override()
   @Auth(AuthenticatedRoute)
-  @ApiBody({ type: ProjectEntity })
+  @ApiBody({ type: CreateProjectDto })
   @ApiResponse({ type: ProjectEntity })
   async createOne(
     @ParsedRequest() crudReq: CrudRequest,
-    // todo: remove id and other unwanted fields
-    @BodyOwnerInject() body: ProjectEntity,
+    @BodyOwnerInject() body: CreateProjectDto,
   ) {
-    const res = await this.base.createOneBase(crudReq, body);
+    const res = await this.service.createOne(
+      crudReq,
+      body as Partial<ProjectEntity>,
+    );
     return this.service.findOne({
       where: { id: res.id },
       relations: { owner: true, editors: true },

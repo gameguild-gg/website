@@ -2,8 +2,9 @@ import { Column, Index } from 'typeorm';
 import { VisibilityEnum } from './visibility.enum';
 import { ApiProperty } from '@nestjs/swagger';
 import { IsSlug } from '../../common/decorators/isslug.decorator';
-import { IsNotEmpty, IsString, MaxLength } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
 import { WithRolesEntity } from '../../auth/entities/with-roles.entity';
+import { CrudValidationGroups } from '@dataui/crud';
 
 // todo: move some of these fields to a more basic entity and add abstract classes to specific intents
 export abstract class ContentBase extends WithRolesEntity {
@@ -14,7 +15,11 @@ export abstract class ContentBase extends WithRolesEntity {
   @MaxLength(255, {
     message: 'error.maxLength: slug field is too long: max 255',
   })
-  @IsNotEmpty({ message: 'error.notEmpty: slug is required' })
+  @IsNotEmpty({
+    message: 'error.notEmpty: slug is required',
+    groups: [CrudValidationGroups.CREATE],
+  })
+  @IsOptional({ groups: [CrudValidationGroups.UPDATE] })
   @IsString({ message: 'error.isString: slug must be a string' })
   slug: string;
 
@@ -22,7 +27,11 @@ export abstract class ContentBase extends WithRolesEntity {
   @Index({ unique: false })
   @ApiProperty()
   @MaxLength(255, { message: 'error.maxLength: title is too long, max 255' })
-  @IsNotEmpty({ message: 'error.isNotEmpty: title is required' })
+  @IsNotEmpty({
+    message: 'error.isNotEmpty: title is required',
+    groups: [CrudValidationGroups.CREATE],
+  })
+  @IsOptional({ groups: [CrudValidationGroups.UPDATE] })
   @IsString({ message: 'error.isString: title must be a string' })
   title: string;
 
@@ -59,9 +68,4 @@ export abstract class ContentBase extends WithRolesEntity {
   @Column({ nullable: true, default: '', type: 'varchar', length: 1024 })
   @ApiProperty()
   thumbnail: string;
-
-  constructor(partial?: Partial<ContentBase>) {
-    super(partial);
-    Object.assign(this, partial);
-  }
 }

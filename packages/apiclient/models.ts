@@ -52,6 +52,7 @@ export namespace Api {
 		id: string;
 		createdAt: string;
 		updatedAt: string;
+		deletedAt: string;
 		owner: Api.UserEntity;
 		editors: Api.UserEntity[];
 		slug: string;
@@ -174,12 +175,14 @@ export namespace Api {
 		id: string;
 		createdAt: string;
 		updatedAt: string;
+		deletedAt: string;
 	}
 
 	export interface CompetitionRunSubmissionReportEntity {
 		id: string;
 		createdAt: string;
 		updatedAt: string;
+		deletedAt: string;
 		/**
 		 * @type {number}
 		 * @memberof CompetitionRunSubmissionReportEntity
@@ -245,12 +248,14 @@ export namespace Api {
 		id: string;
 		createdAt: string;
 		updatedAt: string;
+		deletedAt: string;
 	}
 
 	export interface CourseEntity {
 		id: string;
 		createdAt: string;
 		updatedAt: string;
+		deletedAt: string;
 		owner: Api.UserEntity;
 		editors: Api.UserEntity[];
 		slug: string;
@@ -297,7 +302,40 @@ export namespace Api {
 	}
 
 	export interface CreateProjectDto {
+		title: string;
+		summary: string;
+		body: string;
+		slug: string;
+		visibility: Api.CreateProjectDto.Visibility;
+		thumbnail: string;
 	}
+	
+	/**
+	 * @export
+	 * @namespace CreateProjectDto
+	 */
+	export namespace CreateProjectDto {
+		export type Visibility =
+			'DRAFT' |
+			'PUBLISHED' |
+			'FUTURE' |
+			'PENDING' |
+			'PRIVATE' |
+			'TRASH'
+		
+		export namespace Visibility {
+			export enum Enum {
+				DRAFT = 'DRAFT',
+				PUBLISHED = 'PUBLISHED',
+				FUTURE = 'FUTURE',
+				PENDING = 'PENDING',
+				PRIVATE = 'PRIVATE',
+				TRASH = 'TRASH'
+			}
+		}
+	
+	}
+
 
 	export interface CreateTicketDto {
 	}
@@ -322,6 +360,78 @@ export namespace Api {
 	export interface EthereumSigninValidateRequestDto {
 		address: string;
 		signature: string;
+	}
+
+	export interface GetManyJobAplicationEntityResponseDto {
+		data: Api.JobAplicationEntity[];
+		/**
+		 * @type {number}
+		 * @memberof GetManyJobAplicationEntityResponseDto
+		 */
+		count: number;
+		/**
+		 * @type {number}
+		 * @memberof GetManyJobAplicationEntityResponseDto
+		 */
+		total: number;
+		/**
+		 * @type {number}
+		 * @memberof GetManyJobAplicationEntityResponseDto
+		 */
+		page: number;
+		/**
+		 * @type {number}
+		 * @memberof GetManyJobAplicationEntityResponseDto
+		 */
+		pageCount: number;
+	}
+
+	export interface GetManyJobPostEntityResponseDto {
+		data: Api.JobPostEntity[];
+		/**
+		 * @type {number}
+		 * @memberof GetManyJobPostEntityResponseDto
+		 */
+		count: number;
+		/**
+		 * @type {number}
+		 * @memberof GetManyJobPostEntityResponseDto
+		 */
+		total: number;
+		/**
+		 * @type {number}
+		 * @memberof GetManyJobPostEntityResponseDto
+		 */
+		page: number;
+		/**
+		 * @type {number}
+		 * @memberof GetManyJobPostEntityResponseDto
+		 */
+		pageCount: number;
+	}
+
+	export interface GetManyJobTagEntityResponseDto {
+		data: Api.JobTagEntity[];
+		/**
+		 * @type {number}
+		 * @memberof GetManyJobTagEntityResponseDto
+		 */
+		count: number;
+		/**
+		 * @type {number}
+		 * @memberof GetManyJobTagEntityResponseDto
+		 */
+		total: number;
+		/**
+		 * @type {number}
+		 * @memberof GetManyJobTagEntityResponseDto
+		 */
+		page: number;
+		/**
+		 * @type {number}
+		 * @memberof GetManyJobTagEntityResponseDto
+		 */
+		pageCount: number;
 	}
 
 	export interface GetManyProjectEntityResponseDto {
@@ -400,10 +510,85 @@ export namespace Api {
 		id: string;
 	}
 
+	export interface JobAplicationCreateDto {
+		job: Api.JobPostEntity;
+	}
+
+	export interface JobAplicationEntity {
+		id: string;
+		createdAt: string;
+		updatedAt: string;
+		deletedAt: string;
+		aplicant: Api.UserEntity;
+		job: Api.JobPostEntity;
+	}
+
+	export interface JobPostCreateDto {
+		title: string;
+		slug: string;
+		summary: string;
+		body: string;
+		location: string;
+		owner: Api.UserEntity;
+		tags: Api.JobTagEntity[];
+	}
+
+	export interface JobPostEntity {
+		id: string;
+		createdAt: string;
+		updatedAt: string;
+		deletedAt: string;
+		owner: Api.UserEntity;
+		editors: Api.UserEntity[];
+		slug: string;
+		title: string;
+		summary: string;
+		body: string;
+		visibility: Api.JobPostEntity.Visibility;
+		thumbnail: string;
+		location: string;
+		tags: Api.JobTagEntity[];
+	}
+	
+	/**
+	 * @export
+	 * @namespace JobPostEntity
+	 */
+	export namespace JobPostEntity {
+		export type Visibility =
+			'DRAFT' |
+			'PUBLISHED' |
+			'FUTURE' |
+			'PENDING' |
+			'PRIVATE' |
+			'TRASH'
+		
+		export namespace Visibility {
+			export enum Enum {
+				DRAFT = 'DRAFT',
+				PUBLISHED = 'PUBLISHED',
+				FUTURE = 'FUTURE',
+				PENDING = 'PENDING',
+				PRIVATE = 'PRIVATE',
+				TRASH = 'TRASH'
+			}
+		}
+	
+	}
+
+	export interface JobTagEntity {
+		id: string;
+		createdAt: string;
+		updatedAt: string;
+		deletedAt: string;
+		name: string;
+	}
+
 	export interface LectureEntity {
 		id: string;
 		createdAt: string;
 		updatedAt: string;
+		deletedAt: string;
 		owner: Api.UserEntity;
 		editors: Api.UserEntity[];
 		slug: string;
@@ -483,6 +668,7 @@ export namespace Api {
 		id: string;
 		createdAt: string;
 		updatedAt: string;
+		deletedAt: string;
 		winner: string;
 		lastState: string;
 		players: string[];
@@ -497,6 +683,7 @@ export namespace Api {
 		id: string;
 		createdAt: string;
 		updatedAt: string;
+		deletedAt: string;
 		owner: Api.UserEntity;
 		editors: Api.UserEntity[];
 		slug: string;
@@ -537,6 +724,7 @@ export namespace Api {
 		id: string;
 		createdAt: string;
 		updatedAt: string;
+		deletedAt: string;
 		owner: Api.UserEntity;
 		editors: Api.UserEntity[];
 		slug: string;
@@ -578,6 +766,7 @@ export namespace Api {
 		id: string;
 		createdAt: string;
 		updatedAt: string;
+		deletedAt: string;
 		version: Api.ProjectVersionEntity;
 		user: Api.UserEntity;
 		responses: string[];
@@ -814,6 +1003,7 @@ export namespace Api {
 		id: string;
 		createdAt: string;
 		updatedAt: string;
+		deletedAt: string;
 		version: string;
 		'archive_url': string;
 		'notes_url': string;
@@ -916,6 +1106,7 @@ export namespace Api {
 		id: string;
 		createdAt: string;
 		updatedAt: string;
+		deletedAt: string;
 		username: string;
 		email: string;
 		emailVerified: boolean;
@@ -943,6 +1134,7 @@ export namespace Api {
 		id: string;
 		createdAt: string;
 		updatedAt: string;
+		deletedAt: string;
 		user: Api.UserEntity;
 		bio: string;
 		name: string;

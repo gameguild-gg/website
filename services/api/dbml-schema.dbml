@@ -183,6 +183,38 @@ Table ProposalEntity {
   editors UserEntity
 }
 
+Table JobTagEntity {
+  id uuid
+  createdAt timestamp
+  updatedAt timestamp
+  name varchar
+}
+
+Table JobPostEntity {
+  id uuid
+  createdAt timestamp
+  updatedAt timestamp
+  slug varchar
+  title varchar
+  summary string
+  body text
+  visibility enum
+  thumbnail varchar
+  location varchar
+  owner UserEntity
+  editors UserEntity
+  tags JobTagEntity
+}
+
+Table JobAplicationEntity {
+  id uuid
+  createdAt timestamp
+  updatedAt timestamp
+  progress int
+  aplicant UserEntity
+  job JobPostEntity
+}
+
 Table EventEntity {
   id uuid
   createdAt timestamp
@@ -234,29 +266,6 @@ Table ProjectEntity {
   versions ProjectVersionEntity
 }
 
-Table JobTagEntity {
-  id uuid
-  createdAt timestamp
-  updatedAt timestamp
-  name varchar
-  job JobPostEntity
-}
-
-Table JobPostEntity {
-  id uuid
-  createdAt timestamp
-  updatedAt timestamp
-  slug varchar
-  title varchar
-  summary string
-  body text
-  visibility enum
-  thumbnail varchar
-  owner UserEntity
-  editors UserEntity
-  tags JobTagEntity
-}
-
 Table post_editors_user {
   post_id uuid
   user_id uuid
@@ -287,13 +296,18 @@ Table proposal_editors_user {
   user_id uuid
 }
 
-Table project_editors_user {
-  project_id uuid
+Table job-post_editors_user {
+  job-post_id uuid
   user_id uuid
 }
 
-Table job-post_editors_user {
+Table job-post_tags_job-tag {
   job-post_id uuid
+  job-tag_id uuid
+}
+
+Table project_editors_user {
+  project_id uuid
   user_id uuid
 }
 
@@ -321,6 +335,11 @@ Ref: CourseEntity.editors <> UserEntity.id
 Ref: CourseEntity.author > UserEntity.courses
 Ref: ProposalEntity.owner > UserEntity.id
 Ref: ProposalEntity.editors <> UserEntity.id
+Ref: JobPostEntity.owner > UserEntity.id
+Ref: JobPostEntity.editors <> UserEntity.id
+Ref: JobPostEntity.tags <> JobTagEntity.id
+Ref: JobAplicationEntity.aplicant > UserEntity.id
+Ref: JobAplicationEntity.job > JobPostEntity.tags
 Ref: EventEntity.owner > UserEntity.id
 Ref: EventEntity.editors <> UserEntity.id
 Ref: ProjectFeedbackResponseEntity.version > ProjectVersionEntity.responses
@@ -328,6 +347,3 @@ Ref: ProjectFeedbackResponseEntity.user > UserEntity.id
 Ref: ProjectVersionEntity.project > ProjectEntity.versions
 Ref: ProjectEntity.owner > UserEntity.id
 Ref: ProjectEntity.editors <> UserEntity.id
-Ref: JobTagEntity.job > JobPostEntity.tags
-Ref: JobPostEntity.owner > UserEntity.id
-Ref: JobPostEntity.editors <> UserEntity.id
