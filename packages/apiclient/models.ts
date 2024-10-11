@@ -490,6 +490,7 @@ export namespace Api {
 		id: string;
 		createdAt: string;
 		updatedAt: string;
+		deletedAt: string;
 		aplicant: Api.UserEntity;
 		job: Api.JobPostEntity;
 	}
@@ -508,6 +509,7 @@ export namespace Api {
 		id: string;
 		createdAt: string;
 		updatedAt: string;
+		deletedAt: string;
 		owner: Api.UserEntity;
 		editors: Api.UserEntity[];
 		slug: string;
@@ -550,6 +552,7 @@ export namespace Api {
 		id: string;
 		createdAt: string;
 		updatedAt: string;
+		deletedAt: string;
 		name: string;
 	}
 

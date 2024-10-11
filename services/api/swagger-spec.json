@@ -6845,6 +6845,10 @@
             "format": "date-time",
             "type": "string"
           },
+          "deletedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
           "name": {
             "type": "string"
           }
@@ -6853,6 +6857,7 @@
           "id",
           "createdAt",
           "updatedAt",
+          "deletedAt",
           "name"
         ]
       },
@@ -6939,6 +6944,10 @@
             "format": "date-time",
             "type": "string"
           },
+          "deletedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
           "owner": {
             "$ref": "#/components/schemas/UserEntity"
           },
@@ -6988,6 +6997,7 @@
           "id",
           "createdAt",
           "updatedAt",
+          "deletedAt",
           "owner",
           "editors",
           "slug",
@@ -7056,6 +7066,10 @@
             "format": "date-time",
             "type": "string"
           },
+          "deletedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
           "aplicant": {
             "$ref": "#/components/schemas/UserEntity"
           },
@@ -7067,6 +7081,7 @@
           "id",
           "createdAt",
           "updatedAt",
+          "deletedAt",
           "aplicant",
           "job"
         ]
