@@ -22,7 +22,7 @@ import {
 } from './interceptors/ownership-empty-interceptor.service';
 import { ExcludeFieldsPipe } from './pipes/exclude-fields.pipe';
 import { WithRolesController } from './with-roles.controller';
-import { CreateProjectDto } from './dtos/Create-Project.dto';
+import { CreateProjectDto } from './dtos/create-project.dto';
 import { TicketEntity } from './entities/ticket.entity';
 
 @Crud({
