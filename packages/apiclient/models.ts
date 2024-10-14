@@ -23,7 +23,7 @@ export namespace Api {
 		path: string;
 		msg: string;
 		name: string;
-		message: Api.ApiErrorResponseDto.Message;
+		message: Api.ErrorMessage[];
 		error: Api.ApiErrorResponseDto.Error;
 		stack: Api.ApiErrorResponseDto.Stack;
 		raw: Api.ApiErrorResponseDto.Raw;
@@ -34,9 +34,6 @@ export namespace Api {
 	 * @namespace ApiErrorResponseDto
 	 */
 	export namespace ApiErrorResponseDto {
-		export interface Message {
-		}
-	
 		export interface Error {
 		}
 	
@@ -346,6 +343,25 @@ export namespace Api {
 
 	export interface EmailDto {
 		email: string;
+	}
+
+	export interface ErrorMessage {
+		target: Api.ErrorMessage.Target;
+		property: string;
+		constraints: Api.ErrorMessage.Constraints;
+	}
+	
+	/**
+	 * @export
+	 * @namespace ErrorMessage
+	 */
+	export namespace ErrorMessage {
+		export interface Target {
+		}
+	
+		export interface Constraints {
+		}
+	
 	}
 
 	export interface EthereumSigninChallengeRequestDto {
@@ -733,6 +749,7 @@ export namespace Api {
 		visibility: Api.ProjectEntity.Visibility;
 		thumbnail: string;
 		versions: Api.ProjectVersionEntity[];
+		tickets: Api.TicketEntity[];
 	}
 	
 	/**

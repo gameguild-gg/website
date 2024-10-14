@@ -120,6 +120,7 @@ const apiTicket = new TicketApi({
 const apiProject = new ProjectApi({
   basePath: process.env.NEXT_PUBLIC_API_URL,
 });
+
 const apiUser = new AuthApi({
   basePath: process.env.NEXT_PUBLIC_API_URL,
 });
@@ -182,15 +183,10 @@ export default function Page() {
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
   const fetchData = async () => {
     const session = await getSession();
-    if (session != null) {
+    if (Boolean(session) && Boolean(session?.user)) {
       setSignedIn(true);
-      const currentUser = await apiUser.authControllerGetCurrentUser({
-        headers: {
-          Authorization: `Bearer ${session?.accessToken}`,
-        },
-      });
 
-      const gotProjects =
+      const procjects =
         await apiProject.getManyBaseProjectControllerProjectEntity(
           {},
           {
@@ -200,13 +196,13 @@ export default function Page() {
           },
         );
 
-      if (gotProjects && Array.isArray(gotProjects.body)) {
+      if (procjects && Array.isArray(procjects.body)) {
         const ownedProjects: Api.ProjectEntity[] = []; // Temporary array for owned projects
         const updatedTickets: Api.TicketEntity[] = []; // Temporary array for tickets
 
         // Filter and collect the owned projects
-        gotProjects.body.forEach((project: Api.ProjectEntity) => {
-          if (project.owner.id === currentUser.body.id) {
+        procjects.body.forEach((project: Api.ProjectEntity) => {
+          if (project.owner.id === session?.user?.id) {
             ownedProjects.push(project); // Push to temporary array
           }
         });
@@ -222,7 +218,7 @@ export default function Page() {
                     },
                   },
                 );
-              updatedTickets.push(pulledTicket.body); // Push tickets to temporary array
+              updatedTickets.push(pulledTicket.body as Api.TicketEntity); // Push tickets to temporary array
             }
           }
         }

@@ -93,7 +93,7 @@ export class ProjectController
   @ApiResponse({ type: ProjectEntity })
   async createOne(
     @ParsedRequest() crudReq: CrudRequest,
-    @BodyOwnerInject() body: CreateProjectDto,
+    @BodyOwnerInject(CreateProjectDto) body: CreateProjectDto,
   ) {
     const res = await this.service.createOne(
       crudReq,

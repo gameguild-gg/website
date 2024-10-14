@@ -6605,6 +6605,25 @@
           "signature"
         ]
       },
+      "ErrorMessage": {
+        "type": "object",
+        "properties": {
+          "target": {
+            "type": "object"
+          },
+          "property": {
+            "type": "string"
+          },
+          "constraints": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "target",
+          "property",
+          "constraints"
+        ]
+      },
       "ApiErrorResponseDto": {
         "type": "object",
         "properties": {
@@ -6624,7 +6643,10 @@
             "type": "string"
           },
           "message": {
-            "type": "object"
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ErrorMessage"
+            }
           },
           "error": {
             "type": "object"
@@ -7076,127 +7098,6 @@
           "responses"
         ]
       },
-      "ProjectEntity": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "createdAt": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "updatedAt": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "deletedAt": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "owner": {
-            "$ref": "#/components/schemas/UserEntity"
-          },
-          "editors": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/UserEntity"
-            }
-          },
-          "slug": {
-            "type": "string"
-          },
-          "title": {
-            "type": "string"
-          },
-          "summary": {
-            "type": "string"
-          },
-          "body": {
-            "type": "string"
-          },
-          "visibility": {
-            "type": "string",
-            "enum": [
-              "DRAFT",
-              "PUBLISHED",
-              "FUTURE",
-              "PENDING",
-              "PRIVATE",
-              "TRASH"
-            ]
-          },
-          "thumbnail": {
-            "type": "string"
-          },
-          "versions": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ProjectVersionEntity"
-            }
-          }
-        },
-        "required": [
-          "id",
-          "createdAt",
-          "updatedAt",
-          "deletedAt",
-          "owner",
-          "editors",
-          "slug",
-          "title",
-          "summary",
-          "body",
-          "visibility",
-          "thumbnail",
-          "versions"
-        ]
-      },
-      "IdDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          }
-        },
-        "required": [
-          "id"
-        ]
-      },
-      "TransferOwnershipRequestDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "newUser": {
-            "$ref": "#/components/schemas/IdDto"
-          }
-        },
-        "required": [
-          "id",
-          "newUser"
-        ]
-      },
-      "EditorRequestDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "editor": {
-            "$ref": "#/components/schemas/IdDto"
-          }
-        },
-        "required": [
-          "id",
-          "editor"
-        ]
-      },
       "GetManyTicketEntityResponseDto": {
         "type": "object",
         "properties": {
@@ -7300,6 +7201,134 @@
           "projectId",
           "status",
           "priority"
+        ]
+      },
+      "ProjectEntity": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "deletedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "owner": {
+            "$ref": "#/components/schemas/UserEntity"
+          },
+          "editors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UserEntity"
+            }
+          },
+          "slug": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "summary": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "DRAFT",
+              "PUBLISHED",
+              "FUTURE",
+              "PENDING",
+              "PRIVATE",
+              "TRASH"
+            ]
+          },
+          "thumbnail": {
+            "type": "string"
+          },
+          "versions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProjectVersionEntity"
+            }
+          },
+          "tickets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TicketEntity"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "createdAt",
+          "updatedAt",
+          "deletedAt",
+          "owner",
+          "editors",
+          "slug",
+          "title",
+          "summary",
+          "body",
+          "visibility",
+          "thumbnail",
+          "versions",
+          "tickets"
+        ]
+      },
+      "IdDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "TransferOwnershipRequestDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "newUser": {
+            "$ref": "#/components/schemas/IdDto"
+          }
+        },
+        "required": [
+          "id",
+          "newUser"
+        ]
+      },
+      "EditorRequestDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "editor": {
+            "$ref": "#/components/schemas/IdDto"
+          }
+        },
+        "required": [
+          "id",
+          "editor"
         ]
       },
       "CreateTicketDto": {
