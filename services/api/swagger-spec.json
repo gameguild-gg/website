@@ -7912,7 +7912,6 @@
             "format": "date-time",
             "type": "string"
           },
-          "aplicant": {
           "applicant": {
             "$ref": "#/components/schemas/UserEntity"
           },
@@ -7925,7 +7924,6 @@
           "createdAt",
           "updatedAt",
           "deletedAt",
-          "aplicant",
           "applicant",
           "job"
         ]
