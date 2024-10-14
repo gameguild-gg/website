@@ -36,6 +36,7 @@ export function setupSwagger(app: INestApplication): void {
     documentBuilder.setVersion(process.env.API_VERSION);
   }
 
+  console.log('generating swagger documentation');
   const document = SwaggerModule.createDocument(app, documentBuilder.build());
   SwaggerModule.setup('documentation', app, document, {
     swaggerOptions: {
@@ -45,8 +46,10 @@ export function setupSwagger(app: INestApplication): void {
   const configService = app.select(CommonModule).get(ApiConfigService);
 
   fs.writeFileSync('./swagger-spec.json', JSON.stringify(document, null, 2));
+  console.log('Swagger documentation generated successfully');
 
   try {
+    console.log('Generating api client');
     execSync('npm run openapigenerator', { stdio: 'ignore' });
     console.log('Client generated successfully');
     fixOpenApiGeneratorPlus();
@@ -57,14 +60,16 @@ export function setupSwagger(app: INestApplication): void {
     );
   }
 
-  try {
-    console.log('Installing apiclient in web');
-    execSync('npm run install:apiclient --prefix ../../', {
-      stdio: 'ignore',
-    });
-    console.log('done');
-  } catch (e) {
-    console.error(JSON.stringify(e));
+  if (process.env.NODE_ENV === 'development') {
+    try {
+      console.log('Installing apiclient in web');
+      execSync('npm run install:apiclient --prefix ../../', {
+        stdio: 'ignore',
+      });
+      console.log('apiclient installed successfully on web');
+    } catch (e) {
+      console.error(JSON.stringify(e));
+    }
   }
 
   console.info(

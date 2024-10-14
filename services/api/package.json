@@ -38,7 +38,7 @@
   "dependencies": {
     "@dataui/crud": "5.3.4",
     "@dataui/crud-request": "5.3.4",
-    "@dataui/crud-typeorm": "5.3.4",
+    "@dataui/crud-typeorm": "^5.3.4",
     "@dataui/crud-util": "5.3.4",
     "@faker-js/faker": "^8.4.1",
     "@nestjs/cache-manager": "^2.2.2",

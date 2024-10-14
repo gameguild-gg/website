@@ -8,9 +8,18 @@ import {
   ManagerRoute,
   OwnerRoute,
 } from '../auth/auth.enum';
-import { OwnershipEmptyInterceptor, PartialWithoutFields } from '../cms/interceptors/ownership-empty-interceptor.service';
+import {
+  OwnershipEmptyInterceptor,
+  PartialWithoutFields,
+} from '../cms/interceptors/ownership-empty-interceptor.service';
 import { WithRolesController } from 'src/cms/with-roles.controller';
-import { CrudController, Crud, Override, CrudRequest, ParsedRequest } from '@dataui/crud';
+import {
+  CrudController,
+  Crud,
+  Override,
+  CrudRequest,
+  ParsedRequest,
+} from '@dataui/crud';
 import { JobPostCreateDto } from './dtos/job-post-create.dto';
 import { ExcludeFieldsPipe } from 'src/cms/pipes/exclude-fields.pipe';
 import { BodyOwnerInject } from 'src/common/decorators/parameter.decorator';
@@ -27,7 +36,7 @@ import { BodyOwnerInject } from 'src/common/decorators/parameter.decorator';
     },
   },
   dto: {
-    create: JobPostCreateDto,   
+    create: JobPostCreateDto,
   },
   routes: {
     exclude: [
@@ -60,24 +69,22 @@ import { BodyOwnerInject } from 'src/common/decorators/parameter.decorator';
       },
       job_tags: {
         eager: true,
-      }
-    }
-  }
+      },
+    },
+  },
 })
 @Controller('job-posts')
 @ApiTags('Job Posts')
-export class JobPostController 
+export class JobPostController
   extends WithRolesController<JobPostEntity>
   implements CrudController<JobPostEntity>
-  {
+{
   private readonly logger = new Logger(JobPostController.name);
 
-  constructor(
-    public service: JobPostService
-  ) {
+  constructor(public service: JobPostService) {
     super(service);
   }
-  
+
   get base(): CrudController<JobPostEntity> {
     return this;
   }
@@ -88,7 +95,7 @@ export class JobPostController
   async createOne(
     @ParsedRequest() crudReq: CrudRequest,
     // todo: remove id and other unwanted fields
-    @BodyOwnerInject() body: JobPostEntity,
+    @BodyOwnerInject(JobPostEntity) body: JobPostEntity,
   ) {
     const res = await this.base.createOneBase(crudReq, body);
     return this.service.findOne({
@@ -117,5 +124,4 @@ export class JobPostController
   ): Promise<JobPostEntity> {
     return this.base.updateOneBase(req, dto);
   }
-
 }

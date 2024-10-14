@@ -23,6 +23,7 @@ export class CreateProjectDto
       | 'updatedAt'
       | 'versions'
       | 'deletedAt'
+      | 'tickets'
     >
 {
   @ApiProperty()
@@ -61,7 +62,7 @@ export class CreateProjectDto
     message: 'error.notEmpty: slug is required',
     groups: [CrudValidationGroups.CREATE],
   })
-  @IsOptional({ groups: [CrudValidationGroups.UPDATE] })
+  // @IsOptional({ groups: [CrudValidationGroups.UPDATE] })
   @IsString({ message: 'error.isString: slug must be a string' })
   slug: string;
 

@@ -1,13 +1,36 @@
-import React from 'react';
+'use client'; // todo: I dont think all things from dashboard should be client side
+
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { fetchProjects } from '@/lib/project/fetch-projects.action';
 import { GameCard } from '@/components/testing-lab/game-card';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import CreateProjectForm from '@/components/project/create-project-form';
+import { Api, ProjectApi } from '@game-guild/apiclient';
+import ProjectEntity = Api.ProjectEntity;
+import { getSession } from 'next-auth/react';
 
 export default async function Page() {
-  const projects = await fetchProjects();
+  const [projects, setProjects] = useState<ProjectEntity[]>([]);
+
+  const fetchProjects = async () => {
+    const session = await getSession();
+    const api = new ProjectApi({ basePath: process.env.NEXT_PUBLIC_API_URL });
+    const projects = await api.getManyBaseProjectControllerProjectEntity(
+      {},
+      { headers: { Authorization: `Bearer ${session?.accessToken}` } },
+    );
+    if (projects.status == 401) {
+      // todo: redirect the user to the login and invalidate the session
+    } else if (projects.status > 401) {
+      console.error(projects.body);
+    }
+    setProjects(projects.body as ProjectEntity[]);
+  };
+
+  useEffect(() => {
+    fetchProjects();
+  });
 
   return (
     <div className="container bg-gray-100">

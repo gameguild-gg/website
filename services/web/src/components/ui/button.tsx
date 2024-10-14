@@ -44,7 +44,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     const Comp = asChild ? Slot : 'button';
 
     // if the button is being used on client side
-    if (typeof window !== 'undefined' && !props.onClick) {
+    if (typeof window !== 'undefined' && !props.onClick && !props.onSubmit) {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       props.onClick = () => {
         alert(

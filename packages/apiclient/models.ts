@@ -23,7 +23,7 @@ export namespace Api {
 		path: string;
 		msg: string;
 		name: string;
-		message: Api.ApiErrorResponseDto.Message;
+		message: Api.ErrorMessage[];
 		error: Api.ApiErrorResponseDto.Error;
 		stack: Api.ApiErrorResponseDto.Stack;
 		raw: Api.ApiErrorResponseDto.Raw;
@@ -34,9 +34,6 @@ export namespace Api {
 	 * @namespace ApiErrorResponseDto
 	 */
 	export namespace ApiErrorResponseDto {
-		export interface Message {
-		}
-	
 		export interface Error {
 		}
 	
@@ -336,6 +333,9 @@ export namespace Api {
 	
 	}
 
+	export interface CreateTicketDto {
+	}
+
 	export interface EditorRequestDto {
 		id: string;
 		editor: Api.IdDto;
@@ -343,6 +343,25 @@ export namespace Api {
 
 	export interface EmailDto {
 		email: string;
+	}
+
+	export interface ErrorMessage {
+		target: Api.ErrorMessage.Target;
+		property: string;
+		constraints: Api.ErrorMessage.Constraints;
+	}
+	
+	/**
+	 * @export
+	 * @namespace ErrorMessage
+	 */
+	export namespace ErrorMessage {
+		export interface Target {
+		}
+	
+		export interface Constraints {
+		}
+	
 	}
 
 	export interface EthereumSigninChallengeRequestDto {
@@ -474,6 +493,30 @@ export namespace Api {
 		/**
 		 * @type {number}
 		 * @memberof GetManyProjectVersionEntityResponseDto
+		 */
+		pageCount: number;
+	}
+
+	export interface GetManyTicketEntityResponseDto {
+		data: Api.TicketEntity[];
+		/**
+		 * @type {number}
+		 * @memberof GetManyTicketEntityResponseDto
+		 */
+		count: number;
+		/**
+		 * @type {number}
+		 * @memberof GetManyTicketEntityResponseDto
+		 */
+		total: number;
+		/**
+		 * @type {number}
+		 * @memberof GetManyTicketEntityResponseDto
+		 */
+		page: number;
+		/**
+		 * @type {number}
+		 * @memberof GetManyTicketEntityResponseDto
 		 */
 		pageCount: number;
 	}
@@ -719,6 +762,7 @@ export namespace Api {
 		visibility: Api.ProjectEntity.Visibility;
 		thumbnail: string;
 		versions: Api.ProjectVersionEntity[];
+		tickets: Api.TicketEntity[];
 	}
 	
 	/**
@@ -999,6 +1043,88 @@ export namespace Api {
 	}
 
 	export interface TerminalDto {
+	}
+
+	export interface TicketEntity {
+		id: string;
+		createdAt: string;
+		updatedAt: string;
+		deletedAt: string;
+		owner: Api.UserEntity;
+		editors: Api.UserEntity[];
+		/**
+		 * @description <p>Title of the ticket</p>
+		 * @type {string}
+		 * @memberof TicketEntity
+		 */
+		title: string;
+		/**
+		 * @description <p>Description of the ticket</p>
+		 * @type {string}
+		 * @memberof TicketEntity
+		 */
+		description: string;
+		/**
+		 * @description <p>Description of the ticket</p>
+		 * @type {string}
+		 * @memberof TicketEntity
+		 */
+		projectId: string;
+		/**
+		 * @description <p>Status of the ticket</p>
+		 * @type {Api.TicketEntity.Status}
+		 * @memberof TicketEntity
+		 */
+		status: Api.TicketEntity.Status;
+		/**
+		 * @description <p>Priority of the ticket</p>
+		 * @type {Api.TicketEntity.Priority}
+		 * @memberof TicketEntity
+		 */
+		priority: Api.TicketEntity.Priority;
+	}
+	
+	/**
+	 * @export
+	 * @namespace TicketEntity
+	 */
+	export namespace TicketEntity {
+		/**
+		 * <p>Status of the ticket</p>
+		 */
+		export type Status =
+			'OPEN' |
+			'IN_PROGRESS' |
+			'RESOLVED' |
+			'CLOSED'
+		
+		export namespace Status {
+			export enum Enum {
+				OPEN = 'OPEN',
+				INPROGRESS = 'IN_PROGRESS',
+				RESOLVED = 'RESOLVED',
+				CLOSED = 'CLOSED'
+			}
+		}
+	
+		/**
+		 * <p>Priority of the ticket</p>
+		 */
+		export type Priority =
+			'LOW' |
+			'MEDIUM' |
+			'HIGH' |
+			'CRITICAL'
+		
+		export namespace Priority {
+			export enum Enum {
+				LOW = 'LOW',
+				MEDIUM = 'MEDIUM',
+				HIGH = 'HIGH',
+				CRITICAL = 'CRITICAL'
+			}
+		}
+	
 	}
 
 	export interface TransferOwnershipRequestDto {
