@@ -75,7 +75,6 @@ export default function JobBoard() {
     )
     if (response.status = 200) {
       setJobTags(response.body as Api.JobTagEntity[])
-      getMyJobAplications()
     }
   }
 
@@ -85,19 +84,23 @@ export default function JobBoard() {
       router.push('/connect')
       return
     }
-    const response = await jobPostsApi.getManyBaseJobPostControllerJobPostEntity(
+    
+    const response = await jobPostsApi.jobPostControllerGetManyWithApplied(
       {
-        limit: 50,
+        req: {
+          limit: 50,
+        }
       },
       {
         headers: { Authorization: `Bearer ${session.accessToken}` },
       }
     )
+    // console.log('Response:\n',response)
+
     if (response.status == 200) {
-      // console.log("All jobs:\n",response)
+      // console.log("All jobs:\n",response.body)
       setJobs(response.body)
       setSelectedJob[jobs[0]]
-      getMyJobAplications()
     } else {
       toast({
         variant: "destructive",
@@ -126,10 +129,12 @@ export default function JobBoard() {
       filter.push('job_tags.name||$in||'+selectedTags)
     }
     // console.log("filter: ",filter)
-    const response = await jobPostsApi.getManyBaseJobPostControllerJobPostEntity(
+    const response = await jobPostsApi.jobPostControllerGetManyWithApplied(
       {
-        filter: filter,
-        limit: 50,
+        req:{
+          filter: filter,
+          limit: 50,
+        }
       },
       {
         headers: { Authorization: `Bearer ${session.accessToken}` },
@@ -146,19 +151,6 @@ export default function JobBoard() {
       });
     } 
     // console.log("All jobs:\n",response)
-  }
-
-  const getMyJobAplications = async () => {
-    const session:any = await getSession();
-    if (!session) {
-      router.push('/connect')
-      return
-    }
-    // const filter = ['job||&in||',jobs]
-    const response = await jobApplicationApi.getManyBaseJobApplicationControllerJobApplicationEntity(
-      {},
-      {}
-    )
   }
 
   const handleSearchChange = async (event: React.ChangeEvent<HTMLInputElement>) => {

@@ -21,7 +21,6 @@ export const BodyApplicantInject = createParamDecorator(
           'error.body: Request body not found in the context.',
         );
   
-      // Otherwise, return the entire body
       return request.body;
     },
   );

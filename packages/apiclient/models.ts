@@ -603,6 +603,21 @@ export namespace Api {
 	
 	}
 
+	export interface JobPostWithAppliedRequestDto {
+		req: Api.JobPostWithAppliedRequestDto.Req;
+		user?: Api.UserEntity;
+	}
+	
+	/**
+	 * @export
+	 * @namespace JobPostWithAppliedRequestDto
+	 */
+	export namespace JobPostWithAppliedRequestDto {
+		export interface Req {
+		}
+	
+	}
+
 	export interface JobTagEntity {
 		id: string;
 		createdAt: string;

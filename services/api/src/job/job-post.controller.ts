@@ -1,5 +1,5 @@
-import { Body, Controller, Logger } from '@nestjs/common';
-import { ApiBody, ApiTags } from '@nestjs/swagger';
+import { Body, Controller, Get, Logger, Param } from '@nestjs/common';
+import { ApiBody, ApiOkResponse, ApiResponse, ApiTags, getSchemaPath } from '@nestjs/swagger';
 import { JobPostService } from './job-post.service';
 import { Auth } from '../auth/decorators/http.decorator';
 import { JobPostEntity } from './entities/job-post.entity';
@@ -19,10 +19,16 @@ import {
   Override,
   CrudRequest,
   ParsedRequest,
+  CrudRequestInterceptor,
+  ParsedBody,
 } from '@dataui/crud';
 import { JobPostCreateDto } from './dtos/job-post-create.dto';
 import { ExcludeFieldsPipe } from 'src/cms/pipes/exclude-fields.pipe';
 import { BodyOwnerInject } from 'src/common/decorators/parameter.decorator';
+import { JobPostWithAppliedDto } from './dtos/job-post-with-applied.dto';
+import { BodyUserInject } from 'src/common/decorators/body-user-injection.decorator';
+import { UserEntity } from 'src/user/entities';
+import { JobPostWithAppliedRequestDto } from './dtos/job-post-with-applied.request.dto';
 
 @Crud({
   model: {
@@ -115,13 +121,25 @@ export class JobPostController
         'editors',
         'createdAt',
         'updatedAt',
+        'deletedAt',
       ]),
     )
     dto: PartialWithoutFields<
       JobPostEntity,
-      'owner' | 'editors' | 'createdAt' | 'updatedAt'
+      'owner' | 'editors' | 'createdAt' | 'updatedAt' | 'deletedAt'
     >,
   ): Promise<JobPostEntity> {
     return this.base.updateOneBase(req, dto);
   }
+  
+  @Get('get-many-with-applied')
+  @Auth<JobPostEntity>(ManagerRoute<JobPostEntity>)
+  @ApiBody({ type: JobPostWithAppliedRequestDto })
+  @ApiOkResponse({status:200, schema: {$ref: getSchemaPath(JobPostWithAppliedDto),}})
+  async getManyWithApplied(
+    @BodyUserInject('userId') body: JobPostWithAppliedRequestDto,
+  ): Promise<JobPostWithAppliedDto[]> {
+    return this.service.getManyWithApplied(body.req, body.user.id);
+  }
+  
 }
