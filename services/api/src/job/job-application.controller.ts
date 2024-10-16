@@ -1,4 +1,4 @@
-import { Body, Controller, Logger } from '@nestjs/common';
+import { Body, Controller, Logger, Post } from '@nestjs/common';
 import { ApiBody, ApiTags } from '@nestjs/swagger';
 import { JobApplicationService } from './job-application.service';
 import { Auth } from '../auth/decorators/http.decorator';
@@ -9,6 +9,9 @@ import { PartialWithoutFields } from 'src/cms/interceptors/ownership-empty-inter
 import { ExcludeFieldsPipe } from 'src/cms/pipes/exclude-fields.pipe';
 import { BodyApplicantInject } from './decorators/body-applicant-injection.decorator';
 import { JobAplicationCreateDto } from './dtos/job-aplication-create.dto';
+import { User } from 'src/common/decorators/user.decorator';
+import { JobPostEntity } from './entities/job-post.entity';
+import { UserEntity } from 'src/user/entities';
 
 @Crud({
   model: {
@@ -92,6 +95,15 @@ export class JobApplicationController
     >,
   ): Promise<JobApplicationEntity> {
     return this.base.updateOneBase(req, dto);
+  }
+
+  @Post('check-applied')
+  @Auth(AuthenticatedRoute)
+  async checkIfUserApplied(
+    @User() user: UserEntity,
+    @Body() jobPosts: JobPostEntity[],
+  ): Promise<boolean[]> {
+    return this.service.checkIfUserAppliedToJobs(user.id, jobPosts);
   }
 
 }

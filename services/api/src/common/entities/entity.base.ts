@@ -14,7 +14,7 @@ export abstract class EntityBase {
   @PrimaryGeneratedColumn('uuid')
   @IsOptional()
   @IsEmpty({
-    groups: [CrudValidationGroups.CREATE, CrudValidationGroups.UPDATE],
+    groups: [CrudValidationGroups.CREATE],
     message: 'error.isEmpty: id must be empty on create and update operations',
   })
   @IsUUID('4', {

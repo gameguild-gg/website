@@ -2,7 +2,7 @@ import { Column, Entity, Index, JoinTable, ManyToMany, OneToMany } from 'typeorm
 import { ContentBase } from '../../cms/entities/content.base';
 import { JobTagEntity } from './job-tag.entity';
 import { ApiProperty } from '@nestjs/swagger';
-import { IsArray, IsNotEmpty, IsString, MaxLength, ValidateNested } from 'class-validator';
+import { IsArray, IsNotEmpty, IsOptional, IsString, MaxLength, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 import { JobTypeEnum } from './job-type.enum';
 
@@ -29,11 +29,12 @@ export class JobPostEntity extends ContentBase {
   job_type: JobTypeEnum;
 
   // Tags
-  @ManyToMany(() => JobTagEntity, (jobTag) => jobTag.id)
   @ApiProperty({ type: JobTagEntity, isArray: true })
+  @IsOptional()
+  @ManyToMany(() => JobTagEntity, (jobTag) => jobTag.id)
   @IsArray({ message: 'error.IsArray: tags should be an array' })
   @ValidateNested({ each: true })
   @Type(() => JobTagEntity)
   @JoinTable()
-  job_tags: JobTagEntity[];
+  job_tags?: JobTagEntity[];
 }

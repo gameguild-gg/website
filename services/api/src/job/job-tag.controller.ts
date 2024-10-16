@@ -52,8 +52,4 @@ export class JobTagController
     public service: JobTagService
   ) { }
 
-  // TODO: Browsing Jobs - Adds an 'applied' field
-
-  // TODO: Job Posts I created
-
 }

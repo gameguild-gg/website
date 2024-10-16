@@ -3630,6 +3630,64 @@ export namespace JobApplicationsApi {
 		headers?: undefined
 	}
 	
+	export type JobApplicationControllerCheckIfUserAppliedResponse =
+		| JobApplicationControllerCheckIfUserApplied400Response
+		| JobApplicationControllerCheckIfUserApplied401Response
+		| JobApplicationControllerCheckIfUserApplied403Response
+		| JobApplicationControllerCheckIfUserApplied404Response
+		| JobApplicationControllerCheckIfUserApplied409Response
+		| JobApplicationControllerCheckIfUserApplied422Response
+		| JobApplicationControllerCheckIfUserApplied500Response
+	
+	export interface JobApplicationControllerCheckIfUserApplied400Response {
+		status: 400
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface JobApplicationControllerCheckIfUserApplied401Response {
+		status: 401
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface JobApplicationControllerCheckIfUserApplied403Response {
+		status: 403
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface JobApplicationControllerCheckIfUserApplied404Response {
+		status: 404
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface JobApplicationControllerCheckIfUserApplied409Response {
+		status: 409
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface JobApplicationControllerCheckIfUserApplied422Response {
+		status: 422
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface JobApplicationControllerCheckIfUserApplied500Response {
+		status: 500
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
 	export type UpdateOneBaseJobApplicationControllerJobApplicationEntityResponse =
 		| UpdateOneBaseJobApplicationControllerJobApplicationEntity200Response
 		| UpdateOneBaseJobApplicationControllerJobApplicationEntity400Response
@@ -3957,6 +4015,53 @@ export const JobApplicationsApiFetchParamCreator = function (configuration?: Con
 			}
 
 			localVarRequestOptions.headers = localVarHeaderParameter;
+
+			const localVarQueryParameterString = localVarQueryParameter.toString();
+			if (localVarQueryParameterString) {
+				localVarPath += "?" + localVarQueryParameterString;
+			}
+			return {
+				url: localVarPath,
+				options: localVarRequestOptions,
+			};
+		},
+		/**
+		 * @param {string[]} request
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		jobApplicationControllerCheckIfUserApplied(request: string[], options: RequestInit = {}): FetchArgs {
+			// verify required parameter 'request' is not null or undefined
+			if (request === null || request === undefined) {
+				throw new RequiredError('request', 'Required parameter request was null or undefined when calling jobApplicationControllerCheckIfUserApplied.');
+			}
+
+			let localVarPath = `/job-applications/check-applied`;
+			const localVarPathQueryStart = localVarPath.indexOf("?");
+			const localVarRequestOptions: RequestInit = Object.assign({ method: 'POST' }, options);
+			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
+			const localVarQueryParameter = new URLSearchParams(localVarPathQueryStart !== -1 ? localVarPath.substring(localVarPathQueryStart + 1) : "");
+			if (localVarPathQueryStart !== -1) {
+				localVarPath = localVarPath.substring(0, localVarPathQueryStart);
+			}
+
+			// authentication bearer required
+			// http authorization required
+			if (configuration && configuration.authorization) {
+				const localVarAuthorizationValue = typeof configuration.authorization === 'function'
+					? configuration.authorization('bearer')
+					: configuration.authorization;
+				if (localVarAuthorizationValue !== null) {
+					localVarHeaderParameter.set("Authorization", "Bearer " + localVarAuthorizationValue);
+				}
+			}
+			localVarHeaderParameter.set('Content-Type', 'application/json');
+
+			localVarRequestOptions.headers = localVarHeaderParameter;
+	
+			if (request !== undefined) {
+				localVarRequestOptions.body = JSON.stringify(request || {});
+			}
 
 			const localVarQueryParameterString = localVarQueryParameter.toString();
 			if (localVarQueryParameterString) {
@@ -4423,6 +4528,91 @@ export const JobApplicationsApiFp = function(configuration?: Configuration) {
 			};
 		},
 		/**
+		 * @param {string[]} request
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		jobApplicationControllerCheckIfUserApplied(request: string[], options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<JobApplicationsApi.JobApplicationControllerCheckIfUserAppliedResponse> {
+			const localVarFetchArgs = JobApplicationsApiFetchParamCreator(configuration).jobApplicationControllerCheckIfUserApplied(request, options);
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				if (response.status === 400) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 401) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 403) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 404) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 409) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 422) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 500) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				throw response;
+			};
+		},
+		/**
 		 * @summary Update a single JobApplicationEntity
 		 * @param {string} id
 		 * @param {Api.JobApplicationEntity} request
@@ -4581,6 +4771,13 @@ export interface JobApplicationsApiInterface {
 	getOneBaseJobApplicationControllerJobApplicationEntity(__params: JobApplicationsApi.GetOneBaseJobApplicationControllerJobApplicationEntityParameters, options?: RequestInit): Promise<JobApplicationsApi.GetOneBaseJobApplicationControllerJobApplicationEntityResponse>
 
 	/**
+	 * @param {string[]} request
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	jobApplicationControllerCheckIfUserApplied(request: string[], options?: RequestInit): Promise<JobApplicationsApi.JobApplicationControllerCheckIfUserAppliedResponse>
+
+	/**
 	 * @summary Update a single JobApplicationEntity
 	 * @param {string} id
 	 * @param {Api.JobApplicationEntity} request
@@ -4648,6 +4845,15 @@ export class JobApplicationsApi extends BaseAPI implements JobApplicationsApiInt
 	 */
 	public getOneBaseJobApplicationControllerJobApplicationEntity(__params: JobApplicationsApi.GetOneBaseJobApplicationControllerJobApplicationEntityParameters, options?: RequestInit) {
 		return JobApplicationsApiFp(this.configuration).getOneBaseJobApplicationControllerJobApplicationEntity(__params, options)(this.fetch, this.basePath);
+	}
+
+	/**
+	 * @param {string[]} request
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	public jobApplicationControllerCheckIfUserApplied(request: string[], options?: RequestInit) {
+		return JobApplicationsApiFp(this.configuration).jobApplicationControllerCheckIfUserApplied(request, options)(this.fetch, this.basePath);
 	}
 
 	/**
@@ -5004,6 +5210,61 @@ export namespace JobPostsApi {
 		headers?: undefined
 	}
 	
+	export interface JobPostControllerGetManyWithAppliedParameters {
+		/**
+		 * @description <p>Selects resource fields. <a href="https://github.com/nestjsx/crud/wiki/Requests#select" target="_blank">Docs</a></p>
+		 * @type {string[]}
+		 */
+		fields?: string[]
+		/**
+		 * @description <p>Adds search condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#search" target="_blank">Docs</a></p>
+		 * @type {string}
+		 */
+		s?: string
+		/**
+		 * @description <p>Adds filter condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#filter" target="_blank">Docs</a></p>
+		 * @type {string[]}
+		 */
+		filter?: string[]
+		/**
+		 * @description <p>Adds OR condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#or" target="_blank">Docs</a></p>
+		 * @type {string[]}
+		 */
+		or?: string[]
+		/**
+		 * @description <p>Adds sort by field. <a href="https://github.com/nestjsx/crud/wiki/Requests#sort" target="_blank">Docs</a></p>
+		 * @type {string[]}
+		 */
+		sort?: string[]
+		/**
+		 * @description <p>Adds relational resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#join" target="_blank">Docs</a></p>
+		 * @type {string[]}
+		 */
+		join?: string[]
+		/**
+		 * @description <p>Limit amount of resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#limit" target="_blank">Docs</a></p>
+		 * @type {number}
+		 */
+		limit?: number
+		/**
+		 * @description <p>Offset amount of resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#offset" target="_blank">Docs</a></p>
+		 * @type {number}
+		 */
+		offset?: number
+		/**
+		 * @description <p>Page portion of resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#page" target="_blank">Docs</a></p>
+		 * @type {number}
+		 */
+		page?: number
+		/**
+		 * @description <p>Reset cache (if was enabled). <a href="https://github.com/nestjsx/crud/wiki/Requests#cache" target="_blank">Docs</a></p>
+		 * @type {number}
+		 * minimum: 0
+		 * maximum: 1
+		 */
+		cache?: number
+	}
+	
 	export type JobPostControllerGetManyWithAppliedResponse =
 		| JobPostControllerGetManyWithApplied200Response
 		| JobPostControllerGetManyWithApplied400Response
@@ -5016,7 +5277,8 @@ export namespace JobPostsApi {
 	
 	export interface JobPostControllerGetManyWithApplied200Response {
 		status: 200
-		body?: undefined
+		contentType: 'application/json'
+		body: Api.Promise
 		headers?: undefined
 	}
 	
@@ -5070,6 +5332,7 @@ export namespace JobPostsApi {
 	}
 	
 	export type JobPostControllerICanEditResponse =
+		| JobPostControllerICanEdit200Response
 		| JobPostControllerICanEdit400Response
 		| JobPostControllerICanEdit401Response
 		| JobPostControllerICanEdit403Response
@@ -5077,6 +5340,12 @@ export namespace JobPostsApi {
 		| JobPostControllerICanEdit409Response
 		| JobPostControllerICanEdit422Response
 		| JobPostControllerICanEdit500Response
+	
+	export interface JobPostControllerICanEdit200Response {
+		status: 200
+		body?: undefined
+		headers?: undefined
+	}
 	
 	export interface JobPostControllerICanEdit400Response {
 		status: 400
@@ -5128,6 +5397,7 @@ export namespace JobPostsApi {
 	}
 	
 	export type JobPostControllerOwnedByMeResponse =
+		| JobPostControllerOwnedByMe200Response
 		| JobPostControllerOwnedByMe400Response
 		| JobPostControllerOwnedByMe401Response
 		| JobPostControllerOwnedByMe403Response
@@ -5135,6 +5405,12 @@ export namespace JobPostsApi {
 		| JobPostControllerOwnedByMe409Response
 		| JobPostControllerOwnedByMe422Response
 		| JobPostControllerOwnedByMe500Response
+	
+	export interface JobPostControllerOwnedByMe200Response {
+		status: 200
+		body?: undefined
+		headers?: undefined
+	}
 	
 	export interface JobPostControllerOwnedByMe400Response {
 		status: 400
@@ -5676,15 +5952,20 @@ export const JobPostsApiFetchParamCreator = function (configuration?: Configurat
 			};
 		},
 		/**
-		 * @param {Api.JobPostWithAppliedRequestDto} request
+		 * @param {string[]} [fields] <p>Selects resource fields. <a href="https://github.com/nestjsx/crud/wiki/Requests#select" target="_blank">Docs</a></p>
+		 * @param {string} [s] <p>Adds search condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#search" target="_blank">Docs</a></p>
+		 * @param {string[]} [filter] <p>Adds filter condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#filter" target="_blank">Docs</a></p>
+		 * @param {string[]} [or] <p>Adds OR condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#or" target="_blank">Docs</a></p>
+		 * @param {string[]} [sort] <p>Adds sort by field. <a href="https://github.com/nestjsx/crud/wiki/Requests#sort" target="_blank">Docs</a></p>
+		 * @param {string[]} [join] <p>Adds relational resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#join" target="_blank">Docs</a></p>
+		 * @param {number} [limit] <p>Limit amount of resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#limit" target="_blank">Docs</a></p>
+		 * @param {number} [offset] <p>Offset amount of resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#offset" target="_blank">Docs</a></p>
+		 * @param {number} [page] <p>Page portion of resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#page" target="_blank">Docs</a></p>
+		 * @param {number} [cache] <p>Reset cache (if was enabled). <a href="https://github.com/nestjsx/crud/wiki/Requests#cache" target="_blank">Docs</a></p>
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		jobPostControllerGetManyWithApplied(request: Api.JobPostWithAppliedRequestDto, options: RequestInit = {}): FetchArgs {
-			// verify required parameter 'request' is not null or undefined
-			if (request === null || request === undefined) {
-				throw new RequiredError('request', 'Required parameter request was null or undefined when calling jobPostControllerGetManyWithApplied.');
-			}
+		jobPostControllerGetManyWithApplied(__params: JobPostsApi.JobPostControllerGetManyWithAppliedParameters, options: RequestInit = {}): FetchArgs {
 
 			let localVarPath = `/job-posts/get-many-with-applied`;
 			const localVarPathQueryStart = localVarPath.indexOf("?");
@@ -5705,13 +5986,68 @@ export const JobPostsApiFetchParamCreator = function (configuration?: Configurat
 					localVarHeaderParameter.set("Authorization", "Bearer " + localVarAuthorizationValue);
 				}
 			}
-			localVarHeaderParameter.set('Content-Type', 'application/json');
+			if (__params.fields !== undefined) {
+				/* array form */
+				localVarQueryParameter.append('fields', __params.fields.map(localVarArrayMapElement => escape(String(localVarArrayMapElement))).join(','));
+			}
+
+			if (__params.s !== undefined) {
+				localVarQueryParameter.append('s', String(__params.s));
+			}
+
+			if (__params.filter !== undefined) {
+				/* array form exploded */
+				for (const localVarArrayElement of __params.filter) {
+					if (localVarArrayElement !== undefined) {
+						localVarQueryParameter.append('filter', localVarArrayElement !== null ? String(localVarArrayElement) : '');
+					}
+				}
+			}
+
+			if (__params.or !== undefined) {
+				/* array form exploded */
+				for (const localVarArrayElement of __params.or) {
+					if (localVarArrayElement !== undefined) {
+						localVarQueryParameter.append('or', localVarArrayElement !== null ? String(localVarArrayElement) : '');
+					}
+				}
+			}
+
+			if (__params.sort !== undefined) {
+				/* array form exploded */
+				for (const localVarArrayElement of __params.sort) {
+					if (localVarArrayElement !== undefined) {
+						localVarQueryParameter.append('sort', localVarArrayElement !== null ? String(localVarArrayElement) : '');
+					}
+				}
+			}
+
+			if (__params.join !== undefined) {
+				/* array form exploded */
+				for (const localVarArrayElement of __params.join) {
+					if (localVarArrayElement !== undefined) {
+						localVarQueryParameter.append('join', localVarArrayElement !== null ? String(localVarArrayElement) : '');
+					}
+				}
+			}
+
+			if (__params.limit !== undefined) {
+				localVarQueryParameter.append('limit', String(__params.limit));
+			}
+
+			if (__params.offset !== undefined) {
+				localVarQueryParameter.append('offset', String(__params.offset));
+			}
+
+			if (__params.page !== undefined) {
+				localVarQueryParameter.append('page', String(__params.page));
+			}
+
+			if (__params.cache !== undefined) {
+				localVarQueryParameter.append('cache', String(__params.cache));
+			}
 
 			localVarRequestOptions.headers = localVarHeaderParameter;
-	
-			if (request !== undefined) {
-				localVarRequestOptions.body = JSON.stringify(request || {});
-			}
 
 			const localVarQueryParameterString = localVarQueryParameter.toString();
 			if (localVarQueryParameterString) {
@@ -6361,22 +6697,35 @@ export const JobPostsApiFp = function(configuration?: Configuration) {
 			};
 		},
 		/**
-		 * @param {Api.JobPostWithAppliedRequestDto} request
+		 * @param {string[]} [fields] <p>Selects resource fields. <a href="https://github.com/nestjsx/crud/wiki/Requests#select" target="_blank">Docs</a></p>
+		 * @param {string} [s] <p>Adds search condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#search" target="_blank">Docs</a></p>
+		 * @param {string[]} [filter] <p>Adds filter condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#filter" target="_blank">Docs</a></p>
+		 * @param {string[]} [or] <p>Adds OR condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#or" target="_blank">Docs</a></p>
+		 * @param {string[]} [sort] <p>Adds sort by field. <a href="https://github.com/nestjsx/crud/wiki/Requests#sort" target="_blank">Docs</a></p>
+		 * @param {string[]} [join] <p>Adds relational resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#join" target="_blank">Docs</a></p>
+		 * @param {number} [limit] <p>Limit amount of resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#limit" target="_blank">Docs</a></p>
+		 * @param {number} [offset] <p>Offset amount of resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#offset" target="_blank">Docs</a></p>
+		 * @param {number} [page] <p>Page portion of resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#page" target="_blank">Docs</a></p>
+		 * @param {number} [cache] <p>Reset cache (if was enabled). <a href="https://github.com/nestjsx/crud/wiki/Requests#cache" target="_blank">Docs</a></p>
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		jobPostControllerGetManyWithApplied(request: Api.JobPostWithAppliedRequestDto, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<JobPostsApi.JobPostControllerGetManyWithAppliedResponse> {
-			const localVarFetchArgs = JobPostsApiFetchParamCreator(configuration).jobPostControllerGetManyWithApplied(request, options);
+		jobPostControllerGetManyWithApplied(__params: JobPostsApi.JobPostControllerGetManyWithAppliedParameters, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<JobPostsApi.JobPostControllerGetManyWithAppliedResponse> {
+			const localVarFetchArgs = JobPostsApiFetchParamCreator(configuration).jobPostControllerGetManyWithApplied(__params, options);
 			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
 				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
 				const contentType = response.headers.get('Content-Type');
 				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
 				
 				if (response.status === 200) {
-					return {
-						status: response.status,
-						/* No content */
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.Promise,
+						}
 					}
+					throw response;
 				}
 				if (response.status === 400) {
 					if (mimeType === 'application/json') {
@@ -6463,6 +6812,12 @@ export const JobPostsApiFp = function(configuration?: Configuration) {
 				const contentType = response.headers.get('Content-Type');
 				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
 				
+				if (response.status === 200) {
+					return {
+						status: response.status,
+						/* No content */
+					}
+				}
 				if (response.status === 400) {
 					if (mimeType === 'application/json') {
 						return {
@@ -6548,6 +6903,12 @@ export const JobPostsApiFp = function(configuration?: Configuration) {
 				const contentType = response.headers.get('Content-Type');
 				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
 				
+				if (response.status === 200) {
+					return {
+						status: response.status,
+						/* No content */
+					}
+				}
 				if (response.status === 400) {
 					if (mimeType === 'application/json') {
 						return {
@@ -6957,11 +7318,20 @@ export interface JobPostsApiInterface {
 	jobPostControllerAddEditor(request: Api.EditorRequestDto, options?: RequestInit): Promise<JobPostsApi.JobPostControllerAddEditorResponse>
 
 	/**
-	 * @param {Api.JobPostWithAppliedRequestDto} request
+	 * @param {string[]} [fields] <p>Selects resource fields. <a href="https://github.com/nestjsx/crud/wiki/Requests#select" target="_blank">Docs</a></p>
+	 * @param {string} [s] <p>Adds search condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#search" target="_blank">Docs</a></p>
+	 * @param {string[]} [filter] <p>Adds filter condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#filter" target="_blank">Docs</a></p>
+	 * @param {string[]} [or] <p>Adds OR condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#or" target="_blank">Docs</a></p>
+	 * @param {string[]} [sort] <p>Adds sort by field. <a href="https://github.com/nestjsx/crud/wiki/Requests#sort" target="_blank">Docs</a></p>
+	 * @param {string[]} [join] <p>Adds relational resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#join" target="_blank">Docs</a></p>
+	 * @param {number} [limit] <p>Limit amount of resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#limit" target="_blank">Docs</a></p>
+	 * @param {number} [offset] <p>Offset amount of resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#offset" target="_blank">Docs</a></p>
+	 * @param {number} [page] <p>Page portion of resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#page" target="_blank">Docs</a></p>
+	 * @param {number} [cache] <p>Reset cache (if was enabled). <a href="https://github.com/nestjsx/crud/wiki/Requests#cache" target="_blank">Docs</a></p>
 	 * @param {RequestInit} [options] Override http request option.
 	 * @throws {RequiredError}
 	 */
-	jobPostControllerGetManyWithApplied(request: Api.JobPostWithAppliedRequestDto, options?: RequestInit): Promise<JobPostsApi.JobPostControllerGetManyWithAppliedResponse>
+	jobPostControllerGetManyWithApplied(__params: JobPostsApi.JobPostControllerGetManyWithAppliedParameters, options?: RequestInit): Promise<JobPostsApi.JobPostControllerGetManyWithAppliedResponse>
 
 	/**
 	 * <p>Obtains all items the current users has permission to edit.</p>
@@ -7071,12 +7441,21 @@ export class JobPostsApi extends BaseAPI implements JobPostsApiInterface {
 	}
 
 	/**
-	 * @param {Api.JobPostWithAppliedRequestDto} request
+	 * @param {string[]} [fields] <p>Selects resource fields. <a href="https://github.com/nestjsx/crud/wiki/Requests#select" target="_blank">Docs</a></p>
+	 * @param {string} [s] <p>Adds search condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#search" target="_blank">Docs</a></p>
+	 * @param {string[]} [filter] <p>Adds filter condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#filter" target="_blank">Docs</a></p>
+	 * @param {string[]} [or] <p>Adds OR condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#or" target="_blank">Docs</a></p>
+	 * @param {string[]} [sort] <p>Adds sort by field. <a href="https://github.com/nestjsx/crud/wiki/Requests#sort" target="_blank">Docs</a></p>
+	 * @param {string[]} [join] <p>Adds relational resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#join" target="_blank">Docs</a></p>
+	 * @param {number} [limit] <p>Limit amount of resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#limit" target="_blank">Docs</a></p>
+	 * @param {number} [offset] <p>Offset amount of resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#offset" target="_blank">Docs</a></p>
+	 * @param {number} [page] <p>Page portion of resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#page" target="_blank">Docs</a></p>
+	 * @param {number} [cache] <p>Reset cache (if was enabled). <a href="https://github.com/nestjsx/crud/wiki/Requests#cache" target="_blank">Docs</a></p>
 	 * @param {RequestInit} [options] Override http request option.
 	 * @throws {RequiredError}
 	 */
-	public jobPostControllerGetManyWithApplied(request: Api.JobPostWithAppliedRequestDto, options?: RequestInit) {
-		return JobPostsApiFp(this.configuration).jobPostControllerGetManyWithApplied(request, options)(this.fetch, this.basePath);
+	public jobPostControllerGetManyWithApplied(__params: JobPostsApi.JobPostControllerGetManyWithAppliedParameters, options?: RequestInit) {
+		return JobPostsApiFp(this.configuration).jobPostControllerGetManyWithApplied(__params, options)(this.fetch, this.basePath);
 	}
 
 	/**
@@ -8906,6 +9285,7 @@ export namespace ProjectApi {
 	}
 	
 	export type ProjectControllerICanEditResponse =
+		| ProjectControllerICanEdit200Response
 		| ProjectControllerICanEdit400Response
 		| ProjectControllerICanEdit401Response
 		| ProjectControllerICanEdit403Response
@@ -8913,6 +9293,12 @@ export namespace ProjectApi {
 		| ProjectControllerICanEdit409Response
 		| ProjectControllerICanEdit422Response
 		| ProjectControllerICanEdit500Response
+	
+	export interface ProjectControllerICanEdit200Response {
+		status: 200
+		body?: undefined
+		headers?: undefined
+	}
 	
 	export interface ProjectControllerICanEdit400Response {
 		status: 400
@@ -8964,6 +9350,7 @@ export namespace ProjectApi {
 	}
 	
 	export type ProjectControllerOwnedByMeResponse =
+		| ProjectControllerOwnedByMe200Response
 		| ProjectControllerOwnedByMe400Response
 		| ProjectControllerOwnedByMe401Response
 		| ProjectControllerOwnedByMe403Response
@@ -8971,6 +9358,12 @@ export namespace ProjectApi {
 		| ProjectControllerOwnedByMe409Response
 		| ProjectControllerOwnedByMe422Response
 		| ProjectControllerOwnedByMe500Response
+	
+	export interface ProjectControllerOwnedByMe200Response {
+		status: 200
+		body?: undefined
+		headers?: undefined
+	}
 	
 	export interface ProjectControllerOwnedByMe400Response {
 		status: 400
@@ -10257,6 +10650,12 @@ export const ProjectApiFp = function(configuration?: Configuration) {
 				const contentType = response.headers.get('Content-Type');
 				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
 				
+				if (response.status === 200) {
+					return {
+						status: response.status,
+						/* No content */
+					}
+				}
 				if (response.status === 400) {
 					if (mimeType === 'application/json') {
 						return {
@@ -10342,6 +10741,12 @@ export const ProjectApiFp = function(configuration?: Configuration) {
 				const contentType = response.headers.get('Content-Type');
 				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
 				
+				if (response.status === 200) {
+					return {
+						status: response.status,
+						/* No content */
+					}
+				}
 				if (response.status === 400) {
 					if (mimeType === 'application/json') {
 						return {

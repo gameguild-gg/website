@@ -1,9 +1,10 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation";
-import { Api, JobPostsApi, JobTagsApi } from '@game-guild/apiclient';
-import { getSession } from 'next-auth/react';
+import { useRouter } from "next/navigation"
+import { Api, JobPostsApi, JobTagsApi } from '@game-guild/apiclient'
+import { getSession } from 'next-auth/react'
+import slugify from '@sindresorhus/slugify'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -11,7 +12,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
 import { useToast } from '@/components/ui/use-toast';
-import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 
 export default function JobPost() {
@@ -20,20 +21,20 @@ export default function JobPost() {
   const [description, setDescription] = useState("")
   const [location, setLocation] = useState("Remote")
   const [jobType, setJobType] = useState("TASK")
-  const [selectedSkills, setSelectedSkills] = useState<Api.JobTagEntity[]>([])
+  const [selectedSkills, setSelectedSkills] = useState<string[]>([])
 
   const { toast } = useToast();
   const router = useRouter()
   const jobPostsApi = new JobPostsApi({
     basePath: process.env.NEXT_PUBLIC_API_URL,
-  });
+  })
   const jobTagsApi = new JobTagsApi({
     basePath: process.env.NEXT_PUBLIC_API_URL,
-  });
+  })
 
   useEffect(() => {
     loadJobTags()
-  },[]);
+  },[])
 
   const loadJobTags = async () =>{
     const session:any = await getSession();
@@ -57,7 +58,7 @@ export default function JobPost() {
     }
   }
 
-  const handleSkillSelection = (skill: Api.JobTagEntity) => {
+  const handleSkillSelection = (skill: string) => {
     setSelectedSkills((prev) =>
       prev.includes(skill)
         ? prev.filter((s) => s !== skill)
@@ -84,16 +85,16 @@ export default function JobPost() {
     const response = await jobPostsApi.createOneBaseJobPostControllerJobPostEntity(
       {
         title: title,
-        slug: title,
+        slug: slugify(title+'-'+new Date().getTime()),
         summary: description,
         body: description,
         location: location,
-        job_tags: selectedSkills,
+        job_tag_ids: selectedSkills,
       } as Api.JobPostCreateDto,
       {
         headers: { Authorization: `Bearer ${session.accessToken}` },
       }
-    );
+    )
     if (response.status == 201){
       toast({
         title: 'Sucess!',
@@ -108,7 +109,7 @@ export default function JobPost() {
         variant: "destructive",
         title: 'Error',
         description: 'Error creating a Job Post', // + JSON.stringify(response.body),
-      });
+      })
     }
     // console.log("/jobs API RESPONSE:\n",response)
   }
@@ -169,8 +170,8 @@ export default function JobPost() {
                     <div key={skill.id} className="flex items-center space-x-2">
                       <Checkbox
                         id={skill.id}
-                        checked={selectedSkills.includes(skill)}
-                        onCheckedChange={() => handleSkillSelection(skill)}
+                        checked={selectedSkills.includes(skill.id)}
+                        onCheckedChange={() => handleSkillSelection(skill.id)}
                       />
                       <Label htmlFor={skill.id}>{skill.name}</Label>
                     </div>

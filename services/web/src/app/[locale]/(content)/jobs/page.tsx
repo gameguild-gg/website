@@ -35,7 +35,7 @@ export default function JobBoard() {
   const [searchBarValue, setSearchBarValue] = useState<string>("")
   const [jobs, setJobs] = useState<Api.JobPostEntity[]|any>([])
   const [jobTags, setJobTags] = useState<Api.JobTagEntity[]>([])
-  const [selectedJob, setSelectedJob] = useState<Api.JobPostEntity|any>(jobs[0])
+  const [selectedJob, setSelectedJob] = useState<Api.JobPostEntity|any>()
   const [selectedJobTypes, setSelectedJobTypes] = useState<string[]>([])
   const [selectedTags, setSelectedTags] = useState<string[]>([])
 
@@ -87,20 +87,16 @@ export default function JobBoard() {
     
     const response = await jobPostsApi.jobPostControllerGetManyWithApplied(
       {
-        req: {
-          limit: 50,
-        }
+        limit: 50,
       },
       {
         headers: { Authorization: `Bearer ${session.accessToken}` },
       }
     )
-    // console.log('Response:\n',response)
-
     if (response.status == 200) {
-      // console.log("All jobs:\n",response.body)
-      setJobs(response.body)
-      setSelectedJob[jobs[0]]
+      console.log("All jobs body:\n",response.body)
+      setJobs(response.body??[])
+      setSelectedJob(jobs[0]||null)
     } else {
       toast({
         variant: "destructive",
@@ -131,18 +127,17 @@ export default function JobBoard() {
     // console.log("filter: ",filter)
     const response = await jobPostsApi.jobPostControllerGetManyWithApplied(
       {
-        req:{
-          filter: filter,
-          limit: 50,
-        }
+        filter: filter,
+        limit: 50,
       },
       {
         headers: { Authorization: `Bearer ${session.accessToken}` },
       }
     )
     if (response.status == 200){
-      setJobs(response.body)
-      setSelectedJob[jobs[0]]
+      console.log('SearchJobs response body:', response.body)
+      setJobs(response.body??[])
+      setSelectedJob(jobs[0]||null)
     } else {
       toast({
         variant: "destructive",
@@ -150,7 +145,7 @@ export default function JobBoard() {
         description: 'Error searching for jobs.', // + JSON.stringify(response.body),
       });
     } 
-    // console.log("All jobs:\n",response)
+    
   }
 
   const handleSearchChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -325,7 +320,7 @@ export default function JobBoard() {
                     </Avatar>
                     <div>
                       <h3 className="font-semibold">{job.title}</h3>
-                      <p className="text-sm text-gray-500">{job?.owner.email}</p>{/*company */}
+                      <p className="text-sm text-gray-500">{job?.owner?.email}</p>{/*company */}
                       <p className="text-sm text-gray-500">{job?.location}</p>{/*location */}
                       <p className="text-sm text-gray-500">{timeAgo(job?.createdAt)}</p>
                     </div>
@@ -341,7 +336,7 @@ export default function JobBoard() {
                   <div className="mb-4 flex items-center space-x-4">
                     <Avatar>
                       <AvatarImage src={selectedJob?.thumbnail} alt={selectedJob?.owner?.email} />
-                      <AvatarFallback>{selectedJob?.owner.email[0]}</AvatarFallback>
+                      <AvatarFallback>{selectedJob?.owner?.email[0]}</AvatarFallback>
                     </Avatar>
                     <div>
                       <h2 className="text-2xl font-bold">{selectedJob.title}</h2>
@@ -363,7 +358,8 @@ export default function JobBoard() {
                   }
                   <p className="mb-2 text-lg font-semibold">Description</p>
                   <p className="mb-6">{selectedJob.body}</p>
-                  <Button onClick={()=>handleApply(selectedJob)}>Apply Now</Button>
+                  {selectedJob.applied && <p className="mb-6 bg-gray-100 flex">Already Applied.&nbsp;<p className="font-semibold"> Learn more.</p></p>}
+                  {!selectedJob.applied && <Button onClick={()=>handleApply(selectedJob)}>Apply Now</Button>}
                 </CardContent>
               </Card>
             )}

@@ -539,13 +539,59 @@ export namespace Api {
 	}
 
 	export interface JobPostCreateDto {
-		title: string;
+		id: string;
+		createdAt: string;
+		updatedAt: string;
+		deletedAt: string;
+		owner: Api.UserEntity;
+		editors: Api.UserEntity[];
 		slug: string;
+		title: string;
 		summary: string;
 		body: string;
+		visibility: Api.JobPostCreateDto.Visibility;
+		thumbnail: string;
 		location: string;
-		owner: Api.UserEntity;
+		'job_type': Api.JobPostCreateDto.JobType;
 		'job_tags': Api.JobTagEntity[];
+		'job_tag_ids': string[];
+	}
+	
+	/**
+	 * @export
+	 * @namespace JobPostCreateDto
+	 */
+	export namespace JobPostCreateDto {
+		export type Visibility =
+			'DRAFT' |
+			'PUBLISHED' |
+			'FUTURE' |
+			'PENDING' |
+			'PRIVATE' |
+			'TRASH'
+		
+		export namespace Visibility {
+			export enum Enum {
+				DRAFT = 'DRAFT',
+				PUBLISHED = 'PUBLISHED',
+				FUTURE = 'FUTURE',
+				PENDING = 'PENDING',
+				PRIVATE = 'PRIVATE',
+				TRASH = 'TRASH'
+			}
+		}
+	
+		export type JobType =
+			'CONTINUOUS' |
+			'TASK'
+		
+		export namespace JobType {
+			export enum Enum {
+				CONTINUOUS = 'CONTINUOUS',
+				TASK = 'TASK'
+			}
+		}
+	
 	}
 
 	export interface JobPostEntity {
@@ -599,21 +645,6 @@ export namespace Api {
 				CONTINUOUS = 'CONTINUOUS',
 				TASK = 'TASK'
 			}
-		}
-	
-	}
-
-	export interface JobPostWithAppliedRequestDto {
-		req: Api.JobPostWithAppliedRequestDto.Req;
-		user?: Api.UserEntity;
-	}
-	
-	/**
-	 * @export
-	 * @namespace JobPostWithAppliedRequestDto
-	 */
-	export namespace JobPostWithAppliedRequestDto {
-		export interface Req {
 		}
 	
 	}
@@ -1054,6 +1085,9 @@ export namespace Api {
 		'feedback_deadline': string;
 		project: Api.ProjectEntity;
 		responses: Api.ProjectFeedbackResponseEntity[];
+	}
+
+	export interface Promise {
 	}
 
 	export interface TerminalDto {
