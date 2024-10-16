@@ -116,6 +116,7 @@ export class ApiConfigService {
       accessTokenAlgorithm: ormconfig.getEnvString('ACCESS_TOKEN_ALGORITHM'),
       accessTokenExpiresIn: ormconfig.getEnvString(
         'ACCESS_TOKEN_EXPIRATION_TIME',
+        '15m',
       ),
       refreshTokenPrivateKey: decoder.decode(
         decodeBase64(ormconfig.getEnvString('REFRESH_TOKEN_PRIVATE_KEY')),
@@ -126,6 +127,7 @@ export class ApiConfigService {
       refreshTokenAlgorithm: ormconfig.getEnvString('REFRESH_TOKEN_ALGORITHM'),
       refreshTokenExpiresIn: ormconfig.getEnvString(
         'REFRESH_TOKEN_EXPIRATION_TIME',
+        '365d',
       ),
       // emailVerificationTokenPrivateKey: ormconfig.getEnvString(
       //   'EMAIL_VERIFICATION_TOKEN_PRIVATE_KEY',

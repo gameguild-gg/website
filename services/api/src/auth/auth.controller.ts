@@ -1,27 +1,21 @@
 import { Body, Controller, Get, Logger, Param, Post } from '@nestjs/common';
-import {
-  ApiBody,
-  ApiCreatedResponse,
-  ApiOkResponse,
-  ApiProperty,
-  ApiResponse,
-  ApiTags,
-} from '@nestjs/swagger';
+import { ApiBody, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
-import { AuthUser, PublicRoute } from './decorators';
-import { LocalSignInDto } from '../dtos/auth/local-sign-in.dto';
-import { LocalSignUpDto } from '../dtos/auth/local-sign-up.dto';
+import { AuthUser } from './decorators';
+import { LocalSignUpDto, LocalSignInDto } from '../dtos/auth';
 import { LocalSignInResponseDto } from '../dtos/auth/local-sign-in.response.dto';
 import { UserEntity } from '../user/entities';
-import { Auth } from './decorators/http.decorator';
+import { Auth } from './decorators';
 import { EthereumSigninValidateRequestDto } from '../dtos/auth/ethereum-signin-validate-request.dto';
 import { EthereumSigninChallengeRequestDto } from '../dtos/auth/ethereum-signin-challenge-request.dto';
 import { EthereumSigninChallengeResponseDto } from '../dtos/auth/ethereum-signin-challenge-response.dto';
 import { EmailDto } from './dtos/email.dto';
 import { OkDto } from '../common/dtos/ok.dto';
-import { OkResponse } from '../common/decorators/return-type.decorator';
-import { AuthType } from './guards';
-import { AuthenticatedRoute, RefreshTokenRoute } from './auth.enum';
+import {
+  AuthenticatedRoute,
+  PublicRoute,
+  RefreshTokenRoute,
+} from './auth.enum';
 
 @Controller('auth')
 @ApiTags('auth')
@@ -30,34 +24,17 @@ export class AuthController {
 
   constructor(private readonly authService: AuthService) {}
 
+  // todo: make a way to validade the email automatically if the user logs in with this method
+
   @Post('magic-link')
-  // @Auth(PublicRoute)
+  @Auth(PublicRoute)
   @ApiResponse({ type: OkDto })
   public async magicLink(@Body() body: EmailDto): Promise<OkDto> {
     return this.authService.sendMagicLink(body);
   }
 
-  // @Post('sign-in')
-  // @Auth(PublicRoute)
-  // @UseGuards(LocalGuard)
-  // @ApiBody({ type: LocalSignInDto })
-  // public async signInWithEmailAndPassword(@Request() request: RequestWithUser) {
-  //   // TODO: Implement this endpoint.
-  //   return await this.authService.signIn(request.user);
-  // }
-
-  @Post('local/sign-in')
-  //@Public(true)
-  @ApiBody({ type: LocalSignInDto })
-  @ApiResponse({ type: LocalSignInResponseDto })
-  public async localSignWithEmailOrUsername(
-    @Body() data: LocalSignInDto,
-  ): Promise<LocalSignInResponseDto> {
-    return this.authService.signInWithEmailOrPassword(data);
-  }
-
   @Post('local/sign-up')
-  // @Auth(PublicRoute)
+  @Auth(PublicRoute)
   @ApiResponse({ type: LocalSignInResponseDto }) // pass the type to the swagger
   public async signUpWithEmailUsernamePassword(
     @Body() data: LocalSignUpDto,
@@ -66,16 +43,9 @@ export class AuthController {
     return resp;
   }
 
-  // TODO: Implement this endpoint.
-  // @Post('github/callback')
-  // @Auth(PublicRoute)
-  // public async signInWithGithub(@Request() request: RequestWithUser) {
-  //   return await this.authService.signIn(request.user);
-  // }
-
   @Get('google/callback/:token')
   @ApiResponse({ type: LocalSignInResponseDto })
-  // @Auth(PublicRoute)
+  @Auth(PublicRoute)
   public async signInWithGoogle(
     @Param('token') token: string,
   ): Promise<LocalSignInResponseDto> {
@@ -83,7 +53,7 @@ export class AuthController {
   }
 
   @Post('web3/sign-in/challenge')
-  // @Auth(PublicRoute)
+  @Auth(PublicRoute)
   @ApiResponse({ type: EthereumSigninChallengeResponseDto })
   public async getWeb3SignInChallenge(
     @Body() data: EthereumSigninChallengeRequestDto,
@@ -92,7 +62,7 @@ export class AuthController {
   }
 
   @Post('web3/sign-in/validate')
-  // @Auth(PublicRoute)
+  @Auth(PublicRoute)
   @ApiResponse({ type: LocalSignInResponseDto })
   public async validateWeb3SignInChallenge(
     @Body() data: EthereumSigninValidateRequestDto,
@@ -118,13 +88,8 @@ export class AuthController {
     return this.authService.refreshAccessToken(user);
   }
 
-  // @Get('verify-email')
-  // public async verifyEmail(@Query('token') token: string): Promise<any> {
-  //   return await this.authService.validateEmailVerificationToken(token);
-  // }
-
   @Get('userExists/:user')
-  // @Auth(PublicRoute)
+  @Auth(PublicRoute)
   @ApiResponse({ type: Boolean })
   public async userExists(@Param('user') user: string): Promise<boolean> {
     return this.authService.userExists(user);

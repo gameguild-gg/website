@@ -55,7 +55,7 @@ export class AuthService {
       // TODO: Add more claims.
     };
 
-    // TODO: Make keys rotative.
+    // TODO: Make keys rotate.
     return this.jwtService.sign(payload, {
       algorithm: 'RS256',
       expiresIn: this.configService.authConfig.accessTokenExpiresIn,

@@ -15,9 +15,15 @@ export class ErrorMessage {
   @ApiProperty()
   property: string;
   @ApiProperty({
-    type: Object,
+    type: 'array',
+    items: {
+      type: 'object',
+      additionalProperties: {
+        type: 'string',
+      },
+    },
   })
-  constraints: { [type: string]: string };
+  constraints: Record<string, string>[];
 }
 
 // todo: improve error handling type
