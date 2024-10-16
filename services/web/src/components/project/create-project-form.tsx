@@ -16,6 +16,7 @@ import { useRouter } from 'next/navigation';
 import { Api, ProjectApi } from '@game-guild/apiclient';
 import { getSession } from 'next-auth/react';
 import ApiErrorResponseDto = Api.ApiErrorResponseDto;
+import slugify from 'slugify';
 
 export default function CreateProjectForm() {
   const [project, setProject] = React.useState<Api.CreateProjectDto | null>();
@@ -31,19 +32,19 @@ export default function CreateProjectForm() {
       });
       const response = await api.createOneBaseProjectControllerProjectEntity(
         project,
-        { headers: { Authorization: `Bearer ${session?.accessToken}` } },
+        { headers: { Authorization: `Bearer ${session?.user?.accessToken}` } },
       );
       if (response.status === 201) {
         // redirect to the project page
         const project = response.body as Api.ProjectEntity;
         router.push(`/projects/${project.slug}`);
+      } else if (response.status === 401) {
+        router.push(`/connect`);
       } else {
         setErrors(response.body as ApiErrorResponseDto);
       }
     }
   };
-
-  // todo: how to extract the errors from the response?
 
   return (
     <Card className="w-full max-w-md">
@@ -55,20 +56,32 @@ export default function CreateProjectForm() {
       </CardHeader>
       {/*<form action={formAction}>*/}
       <CardContent className="space-y-4">
-        {/*{errors?.general && (*/}
-        {/*  <p className="text-red-500">{state.errors.general}</p>*/}
-        {/*)}*/}
+        {// for all constraints error, display only the error message not the keys
+        errors?.message.map((m) => {
+          return (
+            <div key={m.property}>
+              {Object.values(m.constraints).map((c) => {
+                return <p className="text-red-500">{JSON.stringify(c)}</p>;
+              })}
+            </div>
+          );
+        })}
         <div className="space-y-2">
           <Label htmlFor="title">Project Name</Label>
           <Input
             id="title"
             name="title"
             placeholder="Enter project name"
-            // value={projectName}
+            value={project?.title}
             onChange={(e) =>
               setProject({
                 ...project,
                 title: e.target.value,
+                slug: slugify(e.target.value, {
+                  lower: true,
+                  strict: true,
+                  locale: 'en',
+                }),
               } as Api.CreateProjectDto)
             }
             required
@@ -83,11 +96,11 @@ export default function CreateProjectForm() {
             id="slug"
             name="slug"
             placeholder="Enter project name"
-            // value={projectName}
+            value={project?.slug}
             onChange={(e) =>
               setProject({
                 ...project,
-                slug: e.target.value,
+                slug: slugify(e.target.value),
               } as Api.CreateProjectDto)
             }
             required
@@ -102,7 +115,7 @@ export default function CreateProjectForm() {
             id="summary"
             name="summary"
             placeholder="Enter project description"
-            // value={description}
+            value={project?.summary}
             onChange={(e) =>
               setProject({
                 ...project,
@@ -130,8 +143,8 @@ export default function CreateProjectForm() {
           <Input
             id="thumbnail"
             name="thumbnail"
-            placeholder="Enter project manager's name"
-            // value={manager}
+            placeholder="Enter project thubnail url"
+            value={project?.thumbnail}
             onChange={(e) =>
               setProject({
                 ...project,
@@ -150,7 +163,7 @@ export default function CreateProjectForm() {
             id="body"
             name="body"
             placeholder="Enter project's body"
-            // value={manager}
+            value={project?.body}
             onChange={(e) =>
               setProject({
                 ...project,
