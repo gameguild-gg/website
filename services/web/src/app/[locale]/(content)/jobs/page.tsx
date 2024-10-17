@@ -1,5 +1,4 @@
 'use client';
-
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getSession } from 'next-auth/react';
@@ -39,7 +38,7 @@ const job_types = [
 export default function JobBoard() {
   const [searchBarValue, setSearchBarValue] = useState<string>('');
   const [jobs, setJobs] = useState<Api.JobPostEntity[] | any>([]);
-  const [jobTags, setJobTags] = useState<Api.JobTagEntity[]>([]);
+  const [jobTags, setJobTags] = useState<Api.JobTagEntity[] | any>([]);
   const [selectedJob, setSelectedJob] = useState<Api.JobPostEntity | any>();
   const [selectedJobTypes, setSelectedJobTypes] = useState<string[]>([]);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
@@ -65,6 +64,7 @@ export default function JobBoard() {
 
   // On search parameters change
   useEffect(() => {
+    // TODO: Create Overritable timer to await until the user is done selecting options to avoid sending several useless API calls
     searchJobs();
   }, [searchBarValue, selectedJobTypes, selectedTags]);
 
@@ -92,11 +92,11 @@ export default function JobBoard() {
 
     const response = await jobPostsApi.jobPostControllerGetManyWithApplied(
       {
+        // TODO add 'fields' prperty here to to filter fields and improve performance
+        // TODO create a pagination or 'Load More' syste for handling job ammounts over the limit.
         limit: 50,
       },
-      {
-        headers: { Authorization: `Bearer ${session.accessToken}` },
-      },
+      { headers: { Authorization: `Bearer ${session.accessToken}` },},
     );
     if (response.status == 200) {
       console.log('All jobs body:\n', response.body);
@@ -181,6 +181,7 @@ export default function JobBoard() {
         title: 'Sucess!',
         description: 'Job was aplied to sucessfully.', // + JSON.stringify(response.body),
       });
+      (selectedJob as any).applied = true
     } else {
       toast({
         variant: 'destructive',
@@ -189,6 +190,10 @@ export default function JobBoard() {
       });
     }
   };
+
+  const handleLearnMoreButton = (slug: string) => {
+    router.push('/jobs/application/'+slug)
+  }
 
   const timeAgo = (dateString: string): string => {
     const now = new Date();
@@ -385,8 +390,8 @@ export default function JobBoard() {
                   <p className="mb-6">{selectedJob.body}</p>
                   {selectedJob.applied && (
                     <p className="mb-6 bg-gray-100 flex">
-                      Already Applied.&nbsp;
-                      <p className="font-semibold"> Learn more.</p>
+                      Already Applied.
+                      <p className="ml-2 font-semibold text-blue-500 underline" onClick={()=>handleLearnMoreButton(selectedJob.slug)}>Learn more.</p>
                     </p>
                   )}
                   {!selectedJob.applied && (

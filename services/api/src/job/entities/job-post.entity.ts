@@ -4,7 +4,6 @@ import {
   Index,
   JoinTable,
   ManyToMany,
-  OneToMany,
 } from 'typeorm';
 import { ContentBase } from '../../cms/entities/content.base';
 import { JobTagEntity } from './job-tag.entity';

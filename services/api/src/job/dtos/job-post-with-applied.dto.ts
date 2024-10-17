@@ -1,5 +1,4 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { JobPostEntity } from '../entities/job-post.entity';
 import { Type } from 'class-transformer';
 import {
   MaxLength,
@@ -9,7 +8,7 @@ import {
   IsArray,
   ValidateNested,
 } from 'class-validator';
-import { Column, Index, ManyToMany, JoinTable } from 'typeorm';
+import { Index, ManyToMany, JoinTable } from 'typeorm';
 import { JobTagEntity } from '../entities/job-tag.entity';
 import { JobTypeEnum } from '../entities/job-type.enum';
 

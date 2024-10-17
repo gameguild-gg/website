@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Logger, UseInterceptors } from '@nestjs/common';
-import { ApiBody, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBody, ApiResponse, ApiTags, getSchemaPath } from '@nestjs/swagger';
 import { Swagger } from '@dataui/crud/lib/crud';
 import { JobPostService } from './job-post.service';
 import { Auth } from '../auth/decorators/http.decorator';
@@ -91,7 +91,7 @@ export class JobPostController
     // Modify custom function swagger manually for OpenAPIGenerator to create a proper API function
     const metadata = Swagger.getParams(this.getManyWithApplied);
     const queryParamsMeta = Swagger.createQueryParamsMeta('getManyBase', {
-      model: { type: JobPostEntity },
+      model: { type: JobPostWithAppliedDto },
       query: { softDelete: false },
     });
     Swagger.setParams(
@@ -146,9 +146,8 @@ export class JobPostController
   @Auth(AuthenticatedRoute)
   @ApiResponse({
     status: 200,
-    type: Promise<
-      JobPostWithAppliedDto[]
-    > /*schema:{$ref: getSchemaPath(Array<JobPostWithAppliedDto>)}*/,
+    type: Promise<JobPostWithAppliedDto[]>,
+    schema:{$ref: getSchemaPath(Array<JobPostWithAppliedDto>)},
   })
   async getManyWithApplied(
     @ParsedRequest() req: CrudRequest,

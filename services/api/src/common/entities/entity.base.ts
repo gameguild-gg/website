@@ -15,7 +15,7 @@ export abstract class EntityBase {
   @IsOptional()
   @IsEmpty({
     groups: [CrudValidationGroups.CREATE],
-    message: 'error.isEmpty: id must be empty on create and update operations',
+    message: 'error.isEmpty: id must be empty on create operations',
   })
   @IsUUID('4', {
     message: 'error.isUUID: id is not a valid UUID',

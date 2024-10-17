@@ -1,6 +1,4 @@
 import { Column, Entity, Index } from 'typeorm';
-import { ManyToOne } from 'typeorm';
-import { JobPostEntity } from './job-post.entity';
 import { ApiProperty } from '@nestjs/swagger';
 import { IsString, IsNotEmpty, MaxLength } from 'class-validator';
 import { EntityBase } from '../../common/entities/entity.base';

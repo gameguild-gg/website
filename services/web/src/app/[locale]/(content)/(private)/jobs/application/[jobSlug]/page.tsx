@@ -1,7 +1,13 @@
+'use client'
+import { useRouter } from 'next/navigation';
+import { Api, JobApplicationsApi } from '@game-guild/apiclient';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Check } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { getSession } from 'next-auth/react';
+
 
 // Mock data for the selected job
 const selectedJob = {
@@ -25,7 +31,53 @@ const applicationSteps = [
   { id: 5, name: 'Payment Completed', completed: false },
 ];
 
-export default function JobsFreelance() {
+// Mock data for application steps 2
+const applicationSteps2 = [
+  { id: 1, name: 'Applied', completed: true },
+  { id: 2, name: 'Application Accepted', completed: true },
+  { id: 3, name: 'Tests and Interviews', completed: true },
+  { id: 4, name: 'Hiring Proposal Sent', completed: false },
+  { id: 5, name: 'Hiring Process Complete', completed: false },
+];
+
+export default function JobsFreelance({ params }) {
+  const [jobApplication, setJobApplicaton] = useState<Api.JobApplicationEntity>()
+  const router = useRouter()
+  const { jobSlug } = params
+  console.log("SLUG:\n",jobSlug)
+
+  const jobApplicationApi = new JobApplicationsApi({
+    basePath: process.env.NEXT_PUBLIC_API_URL,
+  });
+
+  useEffect(() => {
+    loadJobApplication()
+  },[]);
+
+  const loadJobApplication = async () => {
+    const session: any = await getSession();
+    if (!session) {
+      router.push('/connect');
+      return;
+    }
+    const response = await jobApplicationApi.getManyBaseJobApplicationControllerJobApplicationEntity(
+      {
+        join: ['job'],
+        filter: ['job.slug||$eq||'+jobSlug],
+        limit: 1
+      },
+      { headers: { Authorization: `Bearer ${session.accessToken}` } },
+    );
+    console.log('API Response:\n',response)
+    if (response.status == 200 && (response.body as Api.JobApplicationEntity[])?.length >0) {
+      setJobApplicaton(response.body[0]);
+    } else {
+      router.push('/connect');
+    }
+    console.log('JobApplication:\n',jobApplication);
+  }
+  
+
   return (
     <div className="min-h-[calc(100vh-150px)] bg-gray-100">
       <div className="container mx-auto p-4">
