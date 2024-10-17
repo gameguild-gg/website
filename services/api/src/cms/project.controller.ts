@@ -29,9 +29,9 @@ import { CreateProjectDto } from './dtos/create-project.dto';
     type: ProjectEntity,
   },
   params: {
-    id: {
-      field: 'id',
-      type: 'uuid',
+    slug: {
+      field: 'slug',
+      type: 'string',
       primary: true,
     },
   },

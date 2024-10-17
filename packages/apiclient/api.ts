@@ -8388,7 +8388,7 @@ export namespace ProjectApi {
 	}
 	
 	export interface GetOneBaseProjectControllerProjectEntityParameters {
-		id: string
+		slug: string
 		/**
 		 * @description <p>Selects resource fields. <a href="https://github.com/nestjsx/crud/wiki/Requests#select" target="_blank">Docs</a></p>
 		 * @type {string[]}
@@ -8780,18 +8780,18 @@ export const ProjectApiFetchParamCreator = function (configuration?: Configurati
 		},
 		/**
 		 * @summary Delete a single ProjectEntity
-		 * @param {string} id
+		 * @param {string} slug
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		deleteOneBaseProjectControllerProjectEntity(id: string, options: RequestInit = {}): FetchArgs {
-			// verify required parameter 'id' is not null or undefined
-			if (id === null || id === undefined) {
-				throw new RequiredError('id', 'Required parameter id was null or undefined when calling deleteOneBaseProjectControllerProjectEntity.');
+		deleteOneBaseProjectControllerProjectEntity(slug: string, options: RequestInit = {}): FetchArgs {
+			// verify required parameter 'slug' is not null or undefined
+			if (slug === null || slug === undefined) {
+				throw new RequiredError('slug', 'Required parameter slug was null or undefined when calling deleteOneBaseProjectControllerProjectEntity.');
 			}
 
-			let localVarPath = `/project/{id}`
-				.replace('{id}', encodeURIComponent(String(id)));
+			let localVarPath = `/project/{slug}`
+				.replace('{slug}', encodeURIComponent(String(slug)));
 			const localVarPathQueryStart = localVarPath.indexOf("?");
 			const localVarRequestOptions: RequestInit = Object.assign({ method: 'DELETE' }, options);
 			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
@@ -8931,7 +8931,7 @@ export const ProjectApiFetchParamCreator = function (configuration?: Configurati
 		},
 		/**
 		 * @summary Retrieve a single ProjectEntity
-		 * @param {string} id
+		 * @param {string} slug
 		 * @param {string[]} [fields] <p>Selects resource fields. <a href="https://github.com/nestjsx/crud/wiki/Requests#select" target="_blank">Docs</a></p>
 		 * @param {string[]} [join] <p>Adds relational resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#join" target="_blank">Docs</a></p>
 		 * @param {number} [cache] <p>Reset cache (if was enabled). <a href="https://github.com/nestjsx/crud/wiki/Requests#cache" target="_blank">Docs</a></p>
@@ -8939,13 +8939,13 @@ export const ProjectApiFetchParamCreator = function (configuration?: Configurati
 		 * @throws {RequiredError}
 		 */
 		getOneBaseProjectControllerProjectEntity(__params: ProjectApi.GetOneBaseProjectControllerProjectEntityParameters, options: RequestInit = {}): FetchArgs {
-			// verify required parameter 'id' is not null or undefined
-			if (__params.id === null || __params.id === undefined) {
-				throw new RequiredError('id', 'Required parameter id was null or undefined when calling getOneBaseProjectControllerProjectEntity.');
+			// verify required parameter 'slug' is not null or undefined
+			if (__params.slug === null || __params.slug === undefined) {
+				throw new RequiredError('slug', 'Required parameter slug was null or undefined when calling getOneBaseProjectControllerProjectEntity.');
 			}
 
-			let localVarPath = `/project/{id}`
-				.replace('{id}', encodeURIComponent(String(__params.id)));
+			let localVarPath = `/project/{slug}`
+				.replace('{slug}', encodeURIComponent(String(__params.slug)));
 			const localVarPathQueryStart = localVarPath.indexOf("?");
 			const localVarRequestOptions: RequestInit = Object.assign({ method: 'GET' }, options);
 			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
@@ -9136,23 +9136,23 @@ export const ProjectApiFetchParamCreator = function (configuration?: Configurati
 		},
 		/**
 		 * @summary Update a single ProjectEntity
-		 * @param {string} id
+		 * @param {string} slug
 		 * @param {Api.ProjectEntity} request
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		updateOneBaseProjectControllerProjectEntity(id: string, request: Api.ProjectEntity, options: RequestInit = {}): FetchArgs {
-			// verify required parameter 'id' is not null or undefined
-			if (id === null || id === undefined) {
-				throw new RequiredError('id', 'Required parameter id was null or undefined when calling updateOneBaseProjectControllerProjectEntity.');
+		updateOneBaseProjectControllerProjectEntity(slug: string, request: Api.ProjectEntity, options: RequestInit = {}): FetchArgs {
+			// verify required parameter 'slug' is not null or undefined
+			if (slug === null || slug === undefined) {
+				throw new RequiredError('slug', 'Required parameter slug was null or undefined when calling updateOneBaseProjectControllerProjectEntity.');
 			}
 			// verify required parameter 'request' is not null or undefined
 			if (request === null || request === undefined) {
 				throw new RequiredError('request', 'Required parameter request was null or undefined when calling updateOneBaseProjectControllerProjectEntity.');
 			}
 
-			let localVarPath = `/project/{id}`
-				.replace('{id}', encodeURIComponent(String(id)));
+			let localVarPath = `/project/{slug}`
+				.replace('{slug}', encodeURIComponent(String(slug)));
 			const localVarPathQueryStart = localVarPath.indexOf("?");
 			const localVarRequestOptions: RequestInit = Object.assign({ method: 'PATCH' }, options);
 			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
@@ -9303,12 +9303,12 @@ export const ProjectApiFp = function(configuration?: Configuration) {
 		},
 		/**
 		 * @summary Delete a single ProjectEntity
-		 * @param {string} id
+		 * @param {string} slug
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		deleteOneBaseProjectControllerProjectEntity(id: string, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<ProjectApi.DeleteOneBaseProjectControllerProjectEntityResponse> {
-			const localVarFetchArgs = ProjectApiFetchParamCreator(configuration).deleteOneBaseProjectControllerProjectEntity(id, options);
+		deleteOneBaseProjectControllerProjectEntity(slug: string, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<ProjectApi.DeleteOneBaseProjectControllerProjectEntityResponse> {
+			const localVarFetchArgs = ProjectApiFetchParamCreator(configuration).deleteOneBaseProjectControllerProjectEntity(slug, options);
 			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
 				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
 				const contentType = response.headers.get('Content-Type');
@@ -9500,7 +9500,7 @@ export const ProjectApiFp = function(configuration?: Configuration) {
 		},
 		/**
 		 * @summary Retrieve a single ProjectEntity
-		 * @param {string} id
+		 * @param {string} slug
 		 * @param {string[]} [fields] <p>Selects resource fields. <a href="https://github.com/nestjsx/crud/wiki/Requests#select" target="_blank">Docs</a></p>
 		 * @param {string[]} [join] <p>Adds relational resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#join" target="_blank">Docs</a></p>
 		 * @param {number} [cache] <p>Reset cache (if was enabled). <a href="https://github.com/nestjsx/crud/wiki/Requests#cache" target="_blank">Docs</a></p>
@@ -9854,13 +9854,13 @@ export const ProjectApiFp = function(configuration?: Configuration) {
 		},
 		/**
 		 * @summary Update a single ProjectEntity
-		 * @param {string} id
+		 * @param {string} slug
 		 * @param {Api.ProjectEntity} request
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		updateOneBaseProjectControllerProjectEntity(id: string, request: Api.ProjectEntity, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<ProjectApi.UpdateOneBaseProjectControllerProjectEntityResponse> {
-			const localVarFetchArgs = ProjectApiFetchParamCreator(configuration).updateOneBaseProjectControllerProjectEntity(id, request, options);
+		updateOneBaseProjectControllerProjectEntity(slug: string, request: Api.ProjectEntity, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<ProjectApi.UpdateOneBaseProjectControllerProjectEntityResponse> {
+			const localVarFetchArgs = ProjectApiFetchParamCreator(configuration).updateOneBaseProjectControllerProjectEntity(slug, request, options);
 			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
 				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
 				const contentType = response.headers.get('Content-Type');
@@ -9984,11 +9984,11 @@ export interface ProjectApiInterface {
 
 	/**
 	 * @summary Delete a single ProjectEntity
-	 * @param {string} id
+	 * @param {string} slug
 	 * @param {RequestInit} [options] Override http request option.
 	 * @throws {RequiredError}
 	 */
-	deleteOneBaseProjectControllerProjectEntity(id: string, options?: RequestInit): Promise<ProjectApi.DeleteOneBaseProjectControllerProjectEntityResponse>
+	deleteOneBaseProjectControllerProjectEntity(slug: string, options?: RequestInit): Promise<ProjectApi.DeleteOneBaseProjectControllerProjectEntityResponse>
 
 	/**
 	 * @summary Retrieve multiple ProjectEntities
@@ -10009,7 +10009,7 @@ export interface ProjectApiInterface {
 
 	/**
 	 * @summary Retrieve a single ProjectEntity
-	 * @param {string} id
+	 * @param {string} slug
 	 * @param {string[]} [fields] <p>Selects resource fields. <a href="https://github.com/nestjsx/crud/wiki/Requests#select" target="_blank">Docs</a></p>
 	 * @param {string[]} [join] <p>Adds relational resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#join" target="_blank">Docs</a></p>
 	 * @param {number} [cache] <p>Reset cache (if was enabled). <a href="https://github.com/nestjsx/crud/wiki/Requests#cache" target="_blank">Docs</a></p>
@@ -10041,12 +10041,12 @@ export interface ProjectApiInterface {
 
 	/**
 	 * @summary Update a single ProjectEntity
-	 * @param {string} id
+	 * @param {string} slug
 	 * @param {Api.ProjectEntity} request
 	 * @param {RequestInit} [options] Override http request option.
 	 * @throws {RequiredError}
 	 */
-	updateOneBaseProjectControllerProjectEntity(id: string, request: Api.ProjectEntity, options?: RequestInit): Promise<ProjectApi.UpdateOneBaseProjectControllerProjectEntityResponse>
+	updateOneBaseProjectControllerProjectEntity(slug: string, request: Api.ProjectEntity, options?: RequestInit): Promise<ProjectApi.UpdateOneBaseProjectControllerProjectEntityResponse>
 
 }
 
@@ -10069,12 +10069,12 @@ export class ProjectApi extends BaseAPI implements ProjectApiInterface {
 
 	/**
 	 * @summary Delete a single ProjectEntity
-	 * @param {string} id
+	 * @param {string} slug
 	 * @param {RequestInit} [options] Override http request option.
 	 * @throws {RequiredError}
 	 */
-	public deleteOneBaseProjectControllerProjectEntity(id: string, options?: RequestInit) {
-		return ProjectApiFp(this.configuration).deleteOneBaseProjectControllerProjectEntity(id, options)(this.fetch, this.basePath);
+	public deleteOneBaseProjectControllerProjectEntity(slug: string, options?: RequestInit) {
+		return ProjectApiFp(this.configuration).deleteOneBaseProjectControllerProjectEntity(slug, options)(this.fetch, this.basePath);
 	}
 
 	/**
@@ -10098,7 +10098,7 @@ export class ProjectApi extends BaseAPI implements ProjectApiInterface {
 
 	/**
 	 * @summary Retrieve a single ProjectEntity
-	 * @param {string} id
+	 * @param {string} slug
 	 * @param {string[]} [fields] <p>Selects resource fields. <a href="https://github.com/nestjsx/crud/wiki/Requests#select" target="_blank">Docs</a></p>
 	 * @param {string[]} [join] <p>Adds relational resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#join" target="_blank">Docs</a></p>
 	 * @param {number} [cache] <p>Reset cache (if was enabled). <a href="https://github.com/nestjsx/crud/wiki/Requests#cache" target="_blank">Docs</a></p>
@@ -10138,13 +10138,13 @@ export class ProjectApi extends BaseAPI implements ProjectApiInterface {
 
 	/**
 	 * @summary Update a single ProjectEntity
-	 * @param {string} id
+	 * @param {string} slug
 	 * @param {Api.ProjectEntity} request
 	 * @param {RequestInit} [options] Override http request option.
 	 * @throws {RequiredError}
 	 */
-	public updateOneBaseProjectControllerProjectEntity(id: string, request: Api.ProjectEntity, options?: RequestInit) {
-		return ProjectApiFp(this.configuration).updateOneBaseProjectControllerProjectEntity(id, request, options)(this.fetch, this.basePath);
+	public updateOneBaseProjectControllerProjectEntity(slug: string, request: Api.ProjectEntity, options?: RequestInit) {
+		return ProjectApiFp(this.configuration).updateOneBaseProjectControllerProjectEntity(slug, request, options)(this.fetch, this.basePath);
 	}
 
 }

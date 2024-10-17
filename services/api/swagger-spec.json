@@ -993,13 +993,13 @@
         ]
       }
     },
-    "/project/{id}": {
+    "/project/{slug}": {
       "patch": {
         "operationId": "updateOneBaseProjectControllerProjectEntity",
         "summary": "Update a single ProjectEntity",
         "parameters": [
           {
-            "name": "id",
+            "name": "slug",
             "required": true,
             "in": "path",
             "schema": {
@@ -1123,7 +1123,7 @@
         "summary": "Retrieve a single ProjectEntity",
         "parameters": [
           {
-            "name": "id",
+            "name": "slug",
             "required": true,
             "in": "path",
             "schema": {
@@ -1266,7 +1266,7 @@
         "summary": "Delete a single ProjectEntity",
         "parameters": [
           {
-            "name": "id",
+            "name": "slug",
             "required": true,
             "in": "path",
             "schema": {
