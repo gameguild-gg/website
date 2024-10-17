@@ -1,3 +1,10 @@
+## [1.0.2](https://github.com/gameguild-gg/website/compare/v1.0.1...v1.0.2) (2024-10-17)
+
+
+### Bug Fixes
+
+* gource highlight usernames ([3977cac](https://github.com/gameguild-gg/website/commit/3977cac4e9ba24ea75836d2305ae28f471c3ce82))
+
 ## [1.0.1](https://github.com/gameguild-gg/website/compare/v1.0.0...v1.0.1) (2024-10-17)
 
 
