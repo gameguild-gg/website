@@ -1,0 +1,67 @@
+name: Main
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - run: git config --global --add safe.directory '*'
+
+      - uses: actions/checkout@v3
+        with:
+          # need for git operations
+          fetch-depth: 0
+          lfs: false
+          submodules: true
+
+      - name: Cache node modules
+        uses: actions/cache@v2
+        with:
+          path: "**/node_modules"
+          key: node-${{ hashFiles('**/package-lock.json') }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - run: npm install
+        name: Install dependencies
+
+      - name: 'Gource Action'
+        uses: nbprojekt/gource-action@v1
+        with:
+          gource_title: 'Game Guild'
+            #          logo_url: 'overrides/favicon/android-chrome-192x192.png'
+          gource_resolution: '1080p'
+          gource_fps: 60
+          avatars_url: contributors
+            #          avatars_auto_fetch: true
+          gource_seconds_per_day: 0.1
+          gource_hide_items: mouse
+
+      - name: Publish
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./gource
+          force_orphan: true
+
+      - name: Semantic Release
+        id: semantic
+        uses: cycjimmy/semantic-release-action@v2
+        with:
+          semantic_version: 19.0.2
+            # You can specify specifying version range for the extra plugins if you prefer.
+          extra_plugins: |
+            @semantic-release/changelog@6.0.2
+            @semantic-release/git@10.0.1
+            @semantic-release/commit-analyzer@9.0.2
+            @semantic-release/github@8.0.7
+            @semantic-release/npm@9.0.1
+            @semantic-release/release-notes-generator@10.0.3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
