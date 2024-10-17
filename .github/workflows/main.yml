@@ -42,6 +42,11 @@ jobs:
             #          avatars_auto_fetch: true
           gource_seconds_per_day: 0.1
           gource_hide_items: mouse
+          gource_font_size: 40
+          gource_auto_skip_seconds: 0.1
+          gource_user_scale: 2.0
+
+
 
       - name: Publish
         uses: peaceiris/actions-gh-pages@v3
