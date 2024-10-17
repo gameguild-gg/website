@@ -1,3 +1,10 @@
+## [1.0.1](https://github.com/gameguild-gg/website/compare/v1.0.0...v1.0.1) (2024-10-17)
+
+
+### Bug Fixes
+
+* gource video generation ([e4d386d](https://github.com/gameguild-gg/website/commit/e4d386d89754828c916d1cde9a5b69d82955d69f))
+
 # 1.0.0 (2024-10-17)
 
 
