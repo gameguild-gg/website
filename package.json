@@ -45,7 +45,14 @@
     "@game-guild/jest-config": "*",
     "@game-guild/prettier-config": "*",
     "@game-guild/typescript-config": "*",
-    "rimraf": "^5.0.5"
+    "@semantic-release/changelog": "^6.0.3",
+    "@semantic-release/commit-analyzer": "^13.0.0",
+    "@semantic-release/git": "^10.0.1",
+    "@semantic-release/github": "^11.0.0",
+    "@semantic-release/npm": "^12.0.1",
+    "@semantic-release/release-notes-generator": "^14.0.1",
+    "moxygen": "^0.8.0",
+    "rimraf": "^5.0.10"
   },
   "dependencies": {
     "axios": "^1.6.1",
@@ -54,5 +61,31 @@
     "npm-run-all": "^4.1.5",
     "recharts": "^2.12.7",
     "utf-8-validate": "^5.0.10"
+  },
+  "release": {
+    "branches": [
+      "master",
+      "main"
+    ],
+    "repositoryUrl": "https://github.com/gameguild-gg/website",
+    "plugins": [
+      "@semantic-release/commit-analyzer",
+      "@semantic-release/release-notes-generator",
+      [
+        "@semantic-release/changelog",
+        {
+          "changelogFile": "CHANGELOG.md"
+        }
+      ],
+      [
+        "@semantic-release/git",
+        {
+          "assets": [
+            "CHANGELOG.md"
+          ]
+        }
+      ],
+      "@semantic-release/github"
+    ]
   }
 }
