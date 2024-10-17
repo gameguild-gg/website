@@ -191,7 +191,7 @@ export default function Page() {
           {},
           {
             headers: {
-              Authorization: `Bearer ${session?.accessToken}`,
+              Authorization: `Bearer ${session?.user?.accessToken}`,
             },
           },
         );
@@ -214,7 +214,7 @@ export default function Page() {
                   { id: ticket.id },
                   {
                     headers: {
-                      Authorization: `Bearer ${session?.accessToken}`,
+                      Authorization: `Bearer ${session?.user?.accessToken}`,
                     },
                   },
                 );

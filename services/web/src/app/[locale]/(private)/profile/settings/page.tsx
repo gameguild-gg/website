@@ -46,7 +46,7 @@ export default function EditProfile() {
       return;
     }
     const response = await api.authControllerGetCurrentUser({
-      headers: { Authorization: `Bearer ${session.accessToken}` },
+      headers: { Authorization: `Bearer ${session?.user?.accessToken}` },
     });
     if (response.status === 401) {
       window.location.href = '/connect';

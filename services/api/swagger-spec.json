@@ -16,43 +16,42 @@
           }
         },
         "responses": {
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
           "default": {
             "description": "",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/OkDto"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "auth"
-        ]
-      }
-    },
-    "/auth/local/sign-in": {
-      "post": {
-        "operationId": "AuthController_localSignWithEmailOrUsername",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/LocalSignInDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "default": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/LocalSignInResponseDto"
                 }
               }
             }
@@ -78,6 +77,36 @@
           }
         },
         "responses": {
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
           "default": {
             "description": "",
             "content": {
@@ -108,6 +137,36 @@
           }
         ],
         "responses": {
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
           "default": {
             "description": "",
             "content": {
@@ -139,6 +198,36 @@
           }
         },
         "responses": {
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
           "default": {
             "description": "",
             "content": {
@@ -170,6 +259,36 @@
           }
         },
         "responses": {
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
           "default": {
             "description": "",
             "content": {
@@ -392,6 +511,36 @@
           }
         ],
         "responses": {
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
           "default": {
             "description": "",
             "content": {
@@ -5981,6 +6130,77 @@
           "email"
         ]
       },
+      "ErrorMessage": {
+        "type": "object",
+        "properties": {
+          "target": {
+            "type": "object"
+          },
+          "property": {
+            "type": "string"
+          },
+          "constraints": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "required": [
+          "target",
+          "property",
+          "constraints"
+        ]
+      },
+      "ApiErrorResponseDto": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number"
+          },
+          "timestamp": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "msg": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "message": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ErrorMessage"
+            }
+          },
+          "error": {
+            "type": "object"
+          },
+          "stack": {
+            "type": "object"
+          },
+          "raw": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "statusCode",
+          "timestamp",
+          "path",
+          "msg",
+          "name",
+          "message",
+          "error",
+          "stack",
+          "raw"
+        ]
+      },
       "OkDto": {
         "type": "object",
         "properties": {
@@ -5996,23 +6216,23 @@
           "message"
         ]
       },
-      "LocalSignInDto": {
+      "LocalSignUpDto": {
         "type": "object",
         "properties": {
+          "username": {
+            "type": "string"
+          },
           "email": {
             "type": "string"
           },
           "password": {
             "type": "string"
-          },
-          "username": {
-            "type": "string"
           }
         },
         "required": [
+          "username",
           "email",
-          "password",
-          "username"
+          "password"
         ]
       },
       "UserProfileEntity": {
@@ -6027,10 +6247,6 @@
             "type": "string"
           },
           "updatedAt": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "deletedAt": {
             "format": "date-time",
             "type": "string"
           },
@@ -6057,7 +6273,6 @@
           "id",
           "createdAt",
           "updatedAt",
-          "deletedAt",
           "user",
           "bio",
           "name",
@@ -6080,17 +6295,12 @@
           "updatedAt": {
             "format": "date-time",
             "type": "string"
-          },
-          "deletedAt": {
-            "format": "date-time",
-            "type": "string"
           }
         },
         "required": [
           "id",
           "createdAt",
-          "updatedAt",
-          "deletedAt"
+          "updatedAt"
         ]
       },
       "PostEntity": {
@@ -6105,10 +6315,6 @@
             "type": "string"
           },
           "updatedAt": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "deletedAt": {
             "format": "date-time",
             "type": "string"
           },
@@ -6152,7 +6358,6 @@
           "id",
           "createdAt",
           "updatedAt",
-          "deletedAt",
           "owner",
           "editors",
           "slug",
@@ -6175,10 +6380,6 @@
             "type": "string"
           },
           "updatedAt": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "deletedAt": {
             "format": "date-time",
             "type": "string"
           },
@@ -6231,7 +6432,6 @@
           "id",
           "createdAt",
           "updatedAt",
-          "deletedAt",
           "owner",
           "editors",
           "slug",
@@ -6257,10 +6457,6 @@
             "type": "string"
           },
           "updatedAt": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "deletedAt": {
             "format": "date-time",
             "type": "string"
           },
@@ -6316,7 +6512,6 @@
           "id",
           "createdAt",
           "updatedAt",
-          "deletedAt",
           "owner",
           "editors",
           "slug",
@@ -6342,10 +6537,6 @@
             "type": "string"
           },
           "updatedAt": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "deletedAt": {
             "format": "date-time",
             "type": "string"
           },
@@ -6410,7 +6601,6 @@
           "id",
           "createdAt",
           "updatedAt",
-          "deletedAt",
           "owner",
           "editors",
           "slug",
@@ -6438,10 +6628,6 @@
             "type": "string"
           },
           "updatedAt": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "deletedAt": {
             "format": "date-time",
             "type": "string"
           },
@@ -6510,7 +6696,6 @@
           "id",
           "createdAt",
           "updatedAt",
-          "deletedAt",
           "username",
           "email",
           "emailVerified",
@@ -6547,25 +6732,6 @@
           "accessToken",
           "refreshToken",
           "user"
-        ]
-      },
-      "LocalSignUpDto": {
-        "type": "object",
-        "properties": {
-          "username": {
-            "type": "string"
-          },
-          "email": {
-            "type": "string"
-          },
-          "password": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "username",
-          "email",
-          "password"
         ]
       },
       "EthereumSigninChallengeRequestDto": {
@@ -6605,74 +6771,12 @@
           "signature"
         ]
       },
-      "ErrorMessage": {
-        "type": "object",
-        "properties": {
-          "target": {
-            "type": "object"
-          },
-          "property": {
-            "type": "string"
-          },
-          "constraints": {
-            "type": "object"
-          }
-        },
-        "required": [
-          "target",
-          "property",
-          "constraints"
-        ]
-      },
-      "ApiErrorResponseDto": {
-        "type": "object",
-        "properties": {
-          "statusCode": {
-            "type": "number"
-          },
-          "timestamp": {
-            "type": "string"
-          },
-          "path": {
-            "type": "string"
-          },
-          "msg": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "message": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ErrorMessage"
-            }
-          },
-          "error": {
-            "type": "object"
-          },
-          "stack": {
-            "type": "object"
-          },
-          "raw": {
-            "type": "object"
-          }
-        },
-        "required": [
-          "statusCode",
-          "timestamp",
-          "path",
-          "msg",
-          "name",
-          "message",
-          "error",
-          "stack",
-          "raw"
-        ]
-      },
       "CreateProjectDto": {
         "type": "object",
         "properties": {
+          "slug": {
+            "type": "string"
+          },
           "title": {
             "type": "string"
           },
@@ -6680,9 +6784,6 @@
             "type": "string"
           },
           "body": {
-            "type": "string"
-          },
-          "slug": {
             "type": "string"
           },
           "visibility": {
@@ -6701,10 +6802,10 @@
           }
         },
         "required": [
+          "slug",
           "title",
           "summary",
           "body",
-          "slug",
           "visibility",
           "thumbnail"
         ]
@@ -6990,10 +7091,6 @@
             "format": "date-time",
             "type": "string"
           },
-          "deletedAt": {
-            "format": "date-time",
-            "type": "string"
-          },
           "version": {
             "$ref": "#/components/schemas/ProjectVersionEntity"
           },
@@ -7011,7 +7108,6 @@
           "id",
           "createdAt",
           "updatedAt",
-          "deletedAt",
           "version",
           "user",
           "responses"
@@ -7029,10 +7125,6 @@
             "type": "string"
           },
           "updatedAt": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "deletedAt": {
             "format": "date-time",
             "type": "string"
           },
@@ -7088,7 +7180,6 @@
           "id",
           "createdAt",
           "updatedAt",
-          "deletedAt",
           "version",
           "archive_url",
           "notes_url",
@@ -7143,10 +7234,6 @@
             "format": "date-time",
             "type": "string"
           },
-          "deletedAt": {
-            "format": "date-time",
-            "type": "string"
-          },
           "owner": {
             "$ref": "#/components/schemas/UserEntity"
           },
@@ -7193,7 +7280,6 @@
           "id",
           "createdAt",
           "updatedAt",
-          "deletedAt",
           "owner",
           "editors",
           "title",
@@ -7215,10 +7301,6 @@
             "type": "string"
           },
           "updatedAt": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "deletedAt": {
             "format": "date-time",
             "type": "string"
           },
@@ -7274,7 +7356,6 @@
           "id",
           "createdAt",
           "updatedAt",
-          "deletedAt",
           "owner",
           "editors",
           "slug",
@@ -7502,10 +7583,6 @@
             "format": "date-time",
             "type": "string"
           },
-          "deletedAt": {
-            "format": "date-time",
-            "type": "string"
-          },
           "winner": {
             "type": "string"
           },
@@ -7523,7 +7600,6 @@
           "id",
           "createdAt",
           "updatedAt",
-          "deletedAt",
           "winner",
           "lastState",
           "players"
@@ -7558,17 +7634,12 @@
           "updatedAt": {
             "format": "date-time",
             "type": "string"
-          },
-          "deletedAt": {
-            "format": "date-time",
-            "type": "string"
           }
         },
         "required": [
           "id",
           "createdAt",
-          "updatedAt",
-          "deletedAt"
+          "updatedAt"
         ]
       },
       "CompetitionRunSubmissionReportEntity": {
@@ -7583,10 +7654,6 @@
             "type": "string"
           },
           "updatedAt": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "deletedAt": {
             "format": "date-time",
             "type": "string"
           },
@@ -7622,7 +7689,6 @@
           "id",
           "createdAt",
           "updatedAt",
-          "deletedAt",
           "winsAsP1",
           "winsAsP2",
           "totalWins",
@@ -7679,10 +7745,6 @@
             "format": "date-time",
             "type": "string"
           },
-          "deletedAt": {
-            "format": "date-time",
-            "type": "string"
-          },
           "name": {
             "type": "string"
           }
@@ -7691,7 +7753,6 @@
           "id",
           "createdAt",
           "updatedAt",
-          "deletedAt",
           "name"
         ]
       },
@@ -7778,10 +7839,6 @@
             "format": "date-time",
             "type": "string"
           },
-          "deletedAt": {
-            "format": "date-time",
-            "type": "string"
-          },
           "owner": {
             "$ref": "#/components/schemas/UserEntity"
           },
@@ -7831,7 +7888,6 @@
           "id",
           "createdAt",
           "updatedAt",
-          "deletedAt",
           "owner",
           "editors",
           "slug",
@@ -7900,10 +7956,6 @@
             "format": "date-time",
             "type": "string"
           },
-          "deletedAt": {
-            "format": "date-time",
-            "type": "string"
-          },
           "aplicant": {
             "$ref": "#/components/schemas/UserEntity"
           },
@@ -7915,7 +7967,6 @@
           "id",
           "createdAt",
           "updatedAt",
-          "deletedAt",
           "aplicant",
           "job"
         ]

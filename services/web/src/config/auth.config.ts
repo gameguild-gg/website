@@ -94,7 +94,6 @@ export const authConfig = {
         const u = { ...(user ?? {}), ...(token?.user ?? {}) };
         const decoded = jwtDecode(u.accessToken as string);
         const exp = decoded.exp as number;
-        console.log(decoded);
 
         // 1 minute before the token expires, refresh the token
         if (exp && Date.now() > exp * 1000 - 60 * 1000) {

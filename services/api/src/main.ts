@@ -21,7 +21,7 @@ export async function bootstrap(): Promise<INestApplication> {
     preflightContinue: false,
     optionsSuccessStatus: 204,
   });
-  const logger = new Logger();
+  const logger = new Logger('bootstrap');
 
   const configService = app.select(CommonModule).get(ApiConfigService);
 
@@ -85,7 +85,7 @@ export async function bootstrap(): Promise<INestApplication> {
   //   await app.startAllMicroservices();
   // }
 
-  console.warn('Todo: use nestia for swagger setup');
+  logger.warn('Todo: use nestia for swagger setup');
   if (configService.documentationEnabled) {
     setupSwagger(app);
   }

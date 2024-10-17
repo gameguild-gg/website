@@ -210,11 +210,13 @@ export class AuthService {
     // send email with magic link
     const token = await this.generateRefreshToken(user);
 
+    const link = `${this.configService.hostFrontendUrl}/connect/?token=${token}`;
+
     // send the email notification
     await this.notificationService.sendEmailNotification(
       data.email,
       'GameGuild Magic Link',
-      `Use the following link to connect to Game Guild website: ${this.configService.hostFrontendUrl}/connect/?token=${token}`,
+      `Use the following link to connect to Game Guild website: <a href="${link}">Connect</a>. The full link is: ${link}`,
     );
 
     return { success: true, message: 'Email sent.' };

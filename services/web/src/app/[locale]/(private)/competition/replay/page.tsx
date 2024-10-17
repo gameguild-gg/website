@@ -36,7 +36,7 @@ export default function ReplayPage() {
 
     const response = await api.competitionControllerGetChessMatchResult(
       matchId,
-      { headers: { Authorization: `Bearer ${session?.accessToken}` } },
+      { headers: { Authorization: `Bearer ${session?.user?.accessToken}` } },
     );
 
     if (response.status === 401) {

@@ -221,7 +221,7 @@ export default function GameMarketplace() {
     const session = await getSession();
     const currentUser = await apiUser.authControllerGetCurrentUser({
       headers: {
-        Authorization: `Bearer ${session?.accessToken}`,
+        Authorization: `Bearer ${session?.user?.accessToken}`,
       },
     });
     const submitedTicket =
@@ -236,7 +236,7 @@ export default function GameMarketplace() {
         },
         {
           headers: {
-            Authorization: `Bearer ${session?.accessToken}`,
+            Authorization: `Bearer ${session?.user?.accessToken}`,
           },
         },
       );

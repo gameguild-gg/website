@@ -1,22 +1,21 @@
-"use client"
+'use client';
 
-import { useEffect, useState } from "react"
+import { useEffect, useState } from 'react';
 import { Api, JobPostsApi, JobTagsApi } from '@game-guild/apiclient';
 import { getSession } from 'next-auth/react';
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Checkbox } from "@/components/ui/checkbox"
-
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 
 export default function JobPost() {
-  const [jobTags, setJobTags] = useState<any>([])
-  const [title, setTitle] = useState("")
-  const [description, setDescription] = useState("")
-  const [location, setLocation] = useState("")
-  const [selectedSkills, setSelectedSkills] = useState<Api.JobTagEntity[]>([])
+  const [jobTags, setJobTags] = useState<any>([]);
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [location, setLocation] = useState('');
+  const [selectedSkills, setSelectedSkills] = useState<Api.JobTagEntity[]>([]);
 
   const jobPostsApi = new JobPostsApi({
     basePath: process.env.NEXT_PUBLIC_API_URL,
@@ -26,10 +25,10 @@ export default function JobPost() {
   });
 
   useEffect(() => {
-    loadJobTags()
-  },[]);
+    loadJobTags();
+  }, []);
 
-  const loadJobTags = async () =>{
+  const loadJobTags = async () => {
     const session = await getSession();
     if (!session) {
       window.location.href = '/connect';
@@ -37,49 +36,48 @@ export default function JobPost() {
     }
     const response = await jobTagsApi.getManyBaseJobTagControllerJobTagEntity(
       {},
-      { headers: { Authorization: `Bearer ${session.accessToken}` }, }
-    )
+      { headers: { Authorization: `Bearer ${session?.user?.accessToken}` } },
+    );
     // console.log('GET ALL JOB TAGS RESPONSE:\n',response)
-    if (response.status == 200){
-      setJobTags(response.body)
+    if (response.status == 200) {
+      setJobTags(response.body);
     }
-  }
+  };
 
   const handleSkillSelection = (skill: Api.JobTagEntity) => {
     setSelectedSkills((prev) =>
-      prev.includes(skill)
-        ? prev.filter((s) => s !== skill)
-        : [...prev, skill]
-    )
-  }
+      prev.includes(skill) ? prev.filter((s) => s !== skill) : [...prev, skill],
+    );
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     postJob();
-  }
+  };
 
-  const postJob = async ():Promise<void> => {
-    const session:any = await getSession();
+  const postJob = async (): Promise<void> => {
+    const session = await getSession();
     if (!session) {
       window.location.href = '/connect';
       return;
     }
-    
-    const response = await jobPostsApi.createOneBaseJobPostControllerJobPostEntity(
-      {
-        title: title,
-        slug: title,
-        summary: description,
-        body: description,
-        location: location,
-        tags: selectedSkills,
-      } as Api.JobPostCreateDto,
-      {
-        headers: { Authorization: `Bearer ${session.accessToken}` },
-      }
-    );
-    console.log("/jobs API RESPONSE:\n",response)
-  }
+
+    const response =
+      await jobPostsApi.createOneBaseJobPostControllerJobPostEntity(
+        {
+          title: title,
+          slug: title,
+          summary: description,
+          body: description,
+          location: location,
+          tags: selectedSkills,
+        } as Api.JobPostCreateDto,
+        {
+          headers: { Authorization: `Bearer ${session?.user?.accessToken}` },
+        },
+      );
+    console.log('/jobs API RESPONSE:\n', response);
+  };
 
   return (
     <div className="min-h-screen bg-gray-100 p-4">
@@ -115,11 +113,11 @@ export default function JobPost() {
                 required
               />
             </div>
-            {(jobTags && jobTags.length > 0) &&
+            {jobTags && jobTags.length > 0 && (
               <div className="space-y-2">
                 <Label>Skills</Label>
                 <div className="grid grid-cols-2 gap-2">
-                  {jobTags.map((skill:Api.JobTagEntity) => (
+                  {jobTags.map((skill: Api.JobTagEntity) => (
                     <div key={skill.id} className="flex items-center space-x-2">
                       <Checkbox
                         id={skill.id}
@@ -130,17 +128,19 @@ export default function JobPost() {
                     </div>
                   ))}
                 </div>
-            </div>
-            }
+              </div>
+            )}
             <div className="flex justify-between pt-4">
               <Button type="button" variant="outline">
                 Return
               </Button>
-              <Button type="submit" onClick={handleSubmit}>Post Job</Button>
+              <Button type="submit" onClick={handleSubmit}>
+                Post Job
+              </Button>
             </div>
           </form>
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

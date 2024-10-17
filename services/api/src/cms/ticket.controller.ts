@@ -1,4 +1,10 @@
-import { Controller, Body, ForbiddenException, Param } from '@nestjs/common';
+import {
+  Controller,
+  Body,
+  ForbiddenException,
+  Param,
+  Logger,
+} from '@nestjs/common';
 import {
   Crud,
   CrudController,
@@ -64,6 +70,8 @@ export class TicketController implements CrudController<TicketEntity> {
     public readonly projectService: ProjectService,
   ) {}
 
+  logger: Logger = new Logger(TicketController.name);
+
   get base(): CrudController<TicketEntity> {
     return this;
   }
@@ -113,7 +121,7 @@ export class TicketController implements CrudController<TicketEntity> {
         relations: { owner: true, editors: true },
       });
     } else {
-      console.log('Owner undffined Please try again');
+      this.logger.log('Owner undffined Please try again');
       throw new ForbiddenException();
     }
   }

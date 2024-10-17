@@ -1,8 +1,8 @@
 import { faker } from '@faker-js/faker';
 import { delay, generatePassword } from './utils';
 import { Api, AuthApi } from '@game-guild/apiclient';
-import LocalSignInResponseDto = Api.LocalSignInResponseDto;
 import * as process from 'node:process';
+import LocalSignInResponseDto = Api.LocalSignInResponseDto;
 
 const api = new AuthApi({ basePath: process.env.HOST_BACK_URL });
 
@@ -21,21 +21,23 @@ export async function CreateRandomUser(): Promise<LocalSignInResponseDto> {
 
   // verify response
   expect(createUserResponse).toBeDefined();
+  expect(createUserResponse.status).toBe(201);
+  expect(createUserResponse.body).toBeDefined();
 
-  const createUserData = createUserResponse;
-  expect(createUserData.accessToken).toBeDefined();
-  expect(createUserData.user).toBeDefined();
-  expect(createUserData.refreshToken).toBeDefined();
+  const body = createUserResponse.body as LocalSignInResponseDto;
+  expect(body.accessToken).toBeDefined();
+  expect(body.user).toBeDefined();
+  expect(body.refreshToken).toBeDefined();
 
   // verify created user
-  const user = createUserData.user;
+  const user = body.user;
   expect(user.username).toBe(username);
   expect(user.email).toBe(email);
   expect(user.emailVerified).toBe(false);
   expect(user.passwordHash).toBeUndefined();
   expect(user.passwordSalt).toBeUndefined();
   expect(user.id).toBeDefined();
-  return createUserData;
+  return body;
 }
 
 describe('Auth (e2e)', () => {
@@ -64,12 +66,19 @@ describe('Auth (e2e)', () => {
       Authorization: `Bearer ${accessToken}`,
     };
 
-    const me = await api.authControllerGetCurrentUser({ headers });
+    const response = await api.authControllerGetCurrentUser({ headers });
+
+    expect(response).toBeDefined();
+    expect(response.status).toBe(200);
+
+    const me = response.body as Api.UserEntity;
     expect(me).toBeDefined();
+
     expect(me.username).toBe(user.username);
     expect(me.email).toBe(user.email);
     expect(me.id).toBe(user.id);
     expect(me.passwordHash).toBeUndefined();
+    expect(me.passwordSalt).toBeUndefined();
   });
 
   it.only('test refresh token', async () => {
@@ -85,12 +94,14 @@ describe('Auth (e2e)', () => {
     try {
       const refreshTokenResponse = await api.authControllerRefreshToken({
         headers,
-      });
+      }); // it is breaking here
 
       expect(refreshTokenResponse).toBeDefined();
 
-      const newLoginData = refreshTokenResponse;
+      const newLoginData =
+        refreshTokenResponse.body as Api.LocalSignInResponseDto;
       expect(newLoginData).toBeDefined();
+
       expect(newLoginData.user).toBeDefined();
       expect(newLoginData.accessToken).toBeDefined();
       expect(newLoginData.refreshToken).toBeDefined();
@@ -100,6 +111,7 @@ describe('Auth (e2e)', () => {
       expect(newLoginData.user.id).toBe(loginData.user.id);
     } catch (e) {
       console.log(JSON.stringify(e));
+      expect(e).toBeUndefined();
     }
   });
 });

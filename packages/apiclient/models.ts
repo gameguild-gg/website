@@ -49,7 +49,6 @@ export namespace Api {
 		id: string;
 		createdAt: string;
 		updatedAt: string;
-		deletedAt: string;
 		owner: Api.UserEntity;
 		editors: Api.UserEntity[];
 		slug: string;
@@ -172,14 +171,12 @@ export namespace Api {
 		id: string;
 		createdAt: string;
 		updatedAt: string;
-		deletedAt: string;
 	}
 
 	export interface CompetitionRunSubmissionReportEntity {
 		id: string;
 		createdAt: string;
 		updatedAt: string;
-		deletedAt: string;
 		/**
 		 * @type {number}
 		 * @memberof CompetitionRunSubmissionReportEntity
@@ -245,14 +242,12 @@ export namespace Api {
 		id: string;
 		createdAt: string;
 		updatedAt: string;
-		deletedAt: string;
 	}
 
 	export interface CourseEntity {
 		id: string;
 		createdAt: string;
 		updatedAt: string;
-		deletedAt: string;
 		owner: Api.UserEntity;
 		editors: Api.UserEntity[];
 		slug: string;
@@ -299,10 +294,10 @@ export namespace Api {
 	}
 
 	export interface CreateProjectDto {
+		slug: string;
 		title: string;
 		summary: string;
 		body: string;
-		slug: string;
 		visibility: Api.CreateProjectDto.Visibility;
 		thumbnail: string;
 	}
@@ -348,7 +343,7 @@ export namespace Api {
 	export interface ErrorMessage {
 		target: Api.ErrorMessage.Target;
 		property: string;
-		constraints: Api.ErrorMessage.Constraints;
+		constraints: ({ [name: string]: string })[];
 	}
 	
 	/**
@@ -357,9 +352,6 @@ export namespace Api {
 	 */
 	export namespace ErrorMessage {
 		export interface Target {
-		}
-	
-		export interface Constraints {
 		}
 	
 	}
@@ -533,7 +525,6 @@ export namespace Api {
 		id: string;
 		createdAt: string;
 		updatedAt: string;
-		deletedAt: string;
 		aplicant: Api.UserEntity;
 		job: Api.JobPostEntity;
 	}
@@ -552,7 +543,6 @@ export namespace Api {
 		id: string;
 		createdAt: string;
 		updatedAt: string;
-		deletedAt: string;
 		owner: Api.UserEntity;
 		editors: Api.UserEntity[];
 		slug: string;
@@ -595,7 +585,6 @@ export namespace Api {
 		id: string;
 		createdAt: string;
 		updatedAt: string;
-		deletedAt: string;
 		name: string;
 	}
 
@@ -603,7 +592,6 @@ export namespace Api {
 		id: string;
 		createdAt: string;
 		updatedAt: string;
-		deletedAt: string;
 		owner: Api.UserEntity;
 		editors: Api.UserEntity[];
 		slug: string;
@@ -647,12 +635,6 @@ export namespace Api {
 	
 	}
 
-	export interface LocalSignInDto {
-		email: string;
-		password: string;
-		username: string;
-	}
-
 	export interface LocalSignInResponseDto {
 		accessToken: string;
 		refreshToken: string;
@@ -683,7 +665,6 @@ export namespace Api {
 		id: string;
 		createdAt: string;
 		updatedAt: string;
-		deletedAt: string;
 		winner: string;
 		lastState: string;
 		players: string[];
@@ -698,7 +679,6 @@ export namespace Api {
 		id: string;
 		createdAt: string;
 		updatedAt: string;
-		deletedAt: string;
 		owner: Api.UserEntity;
 		editors: Api.UserEntity[];
 		slug: string;
@@ -739,7 +719,6 @@ export namespace Api {
 		id: string;
 		createdAt: string;
 		updatedAt: string;
-		deletedAt: string;
 		owner: Api.UserEntity;
 		editors: Api.UserEntity[];
 		slug: string;
@@ -782,7 +761,6 @@ export namespace Api {
 		id: string;
 		createdAt: string;
 		updatedAt: string;
-		deletedAt: string;
 		version: Api.ProjectVersionEntity;
 		user: Api.UserEntity;
 		responses: string[];
@@ -1019,7 +997,6 @@ export namespace Api {
 		id: string;
 		createdAt: string;
 		updatedAt: string;
-		deletedAt: string;
 		version: string;
 		'archive_url': string;
 		'notes_url': string;
@@ -1036,7 +1013,6 @@ export namespace Api {
 		id: string;
 		createdAt: string;
 		updatedAt: string;
-		deletedAt: string;
 		owner: Api.UserEntity;
 		editors: Api.UserEntity[];
 		/**
@@ -1123,7 +1099,6 @@ export namespace Api {
 		id: string;
 		createdAt: string;
 		updatedAt: string;
-		deletedAt: string;
 		username: string;
 		email: string;
 		emailVerified: boolean;
@@ -1151,7 +1126,6 @@ export namespace Api {
 		id: string;
 		createdAt: string;
 		updatedAt: string;
-		deletedAt: string;
 		user: Api.UserEntity;
 		bio: string;
 		name: string;

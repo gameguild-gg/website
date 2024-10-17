@@ -8,7 +8,8 @@
   "workspaces": [
     "packages/*",
     "services/web",
-    "services/api"
+    "services/api",
+    "tests"
   ],
   "scripts": {
     "install:api": "npm install --workspace=services/api",
@@ -35,7 +36,8 @@
     "start:api": "npm run start --workspace=services/api",
     "buildAndRun:web": "npm run build:web && npm run start:web",
     "start:web": "npm run start --workspace=services/web",
-    "start:both": "concurrently \"npm:dev:api\" \"npm:dev:web\""
+    "start:both": "concurrently \"npm:dev:api\" \"npm:dev:web\"",
+    "open:tests": "npm run cy:open --workspace=tests"
   },
   "devDependencies": {
     "@game-guild/apiclient": "*",

@@ -80,7 +80,7 @@ export default function MatchesPage() {
       } as MatchSearchRequestDto,
       {
         headers: {
-          Authorization: `Bearer ${session?.accessToken}`,
+          Authorization: `Bearer ${session?.user?.accessToken}`,
         },
       },
     );

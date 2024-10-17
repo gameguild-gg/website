@@ -18,7 +18,7 @@ export default async function Page() {
     const api = new ProjectApi({ basePath: process.env.NEXT_PUBLIC_API_URL });
     const projects = await api.getManyBaseProjectControllerProjectEntity(
       {},
-      { headers: { Authorization: `Bearer ${session?.accessToken}` } },
+      { headers: { Authorization: `Bearer ${session?.user?.accessToken}` } },
     );
     if (projects.status == 401) {
       // todo: redirect the user to the login and invalidate the session

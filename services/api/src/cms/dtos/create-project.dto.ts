@@ -5,84 +5,50 @@ import {
   IsOptional,
   IsString,
   IsUrl,
+  Length,
   MaxLength,
 } from 'class-validator';
-import { CrudValidationGroups } from '@dataui/crud';
 import { IsSlug } from '../../common/decorators/isslug.decorator';
 import { VisibilityEnum } from '../entities/visibility.enum';
-import { ProjectEntity } from '../entities/project.entity';
+import { ContentBase } from '../entities/content.base';
 
 export class CreateProjectDto
   implements
-    Omit<
-      ProjectEntity,
-      | 'createdAt'
-      | 'editors'
-      | 'owner'
-      | 'id'
-      | 'updatedAt'
-      | 'versions'
-      | 'deletedAt'
-      | 'tickets'
-    >
+    Omit<ContentBase, 'createdAt' | 'editors' | 'owner' | 'id' | 'updatedAt'>
 {
   @ApiProperty()
-  @MaxLength(255, { message: 'error.maxLength: title is too long, max 255' })
-  @IsNotEmpty({
-    message: 'error.isNotEmpty: title is required',
-    groups: [CrudValidationGroups.CREATE],
-  })
-  @IsOptional({ groups: [CrudValidationGroups.UPDATE] })
-  @IsString({ message: 'error.isString: title must be a string' })
+  @IsNotEmpty()
+  @IsString()
+  @Length(1, 255)
+  @IsSlug()
+  slug: string;
+
+  @ApiProperty()
+  @IsNotEmpty()
+  @IsString()
+  @Length(1, 255)
   title: string;
 
   @ApiProperty()
-  @MaxLength(1024, {
-    message: 'error.maxLength: summary is too long, max 1024',
-  })
-  @IsNotEmpty({ message: 'error.isNotEmpty: summary is required' })
-  @IsString({ message: 'error.isString: summary must be a string' })
+  @IsOptional()
+  @IsString()
+  @Length(1, 1024)
   summary: string;
 
-  @IsString({ message: 'error.isString: body must be a string' })
-  @MaxLength(1024 * 64, {
-    message: 'error.maxLength: body is too long, max 64kb',
-  })
-  @IsNotEmpty({ message: 'error.isNotEmpty: body is required' })
   @ApiProperty()
-  // todo: guarantee the type here, md or anything else
+  @IsOptional()
+  @IsString()
+  @Length(1, 1024 * 64)
   body: string;
-
-  @ApiProperty()
-  @IsSlug({ message: 'error.slug: slug field must be a valid slug' })
-  @MaxLength(255, {
-    message: 'error.maxLength: slug field is too long: max 255',
-  })
-  @IsNotEmpty({
-    message: 'error.notEmpty: slug is required',
-    groups: [CrudValidationGroups.CREATE],
-  })
-  // @IsOptional({ groups: [CrudValidationGroups.UPDATE] })
-  @IsString({ message: 'error.isString: slug must be a string' })
-  slug: string;
 
   @ApiProperty({ enum: VisibilityEnum })
   @IsOptional()
-  @IsEnum(VisibilityEnum, {
-    message: 'error.isEnum: visibility must be a valid enum',
-  })
+  @IsEnum(VisibilityEnum)
   visibility: VisibilityEnum;
 
   // asset image
   @ApiProperty()
   @IsOptional()
-  @IsUrl(
-    { require_protocol: true },
-    {
-      message: 'error.isUrl: thumbnail must be a fully qualified and valid url',
-    },
-  )
+  @IsUrl({ require_protocol: true })
   thumbnail: string;
 }
-
-// the generated type does not contain the decorators.
