@@ -43,13 +43,8 @@ import { CrudController, Crud } from '@dataui/crud';
 })
 @Controller('job-tags')
 @ApiTags('Job Tags')
-export class JobTagController
-  implements CrudController<JobTagEntity>
-  {
+export class JobTagController implements CrudController<JobTagEntity> {
   private readonly logger = new Logger(JobTagController.name);
 
-  constructor(
-    public service: JobTagService
-  ) { }
-
+  constructor(public service: JobTagService) {}
 }

@@ -1,16 +1,21 @@
-"use client"
+'use client';
 
-import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { getSession } from 'next-auth/react';
-import { Api, JobPostsApi, JobTagsApi, JobApplicationsApi } from "@game-guild/apiclient"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent } from "@/components/ui/card"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Check, Search } from "lucide-react"
+import {
+  Api,
+  JobPostsApi,
+  JobTagsApi,
+  JobApplicationsApi,
+} from '@game-guild/apiclient';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent } from '@/components/ui/card';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Check, Search } from 'lucide-react';
 import {
   Command,
   CommandEmpty,
@@ -18,29 +23,29 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from "@/components/ui/command"
+} from '@/components/ui/command';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover"
+} from '@/components/ui/popover';
 import { useToast } from '@/components/ui/use-toast';
 
 const job_types = [
-  { value: "CONTINUOUS", label: "Continuous" },
-  { value: "TASK", label: "Task" },
-]
+  { value: 'CONTINUOUS', label: 'Continuous' },
+  { value: 'TASK', label: 'Task' },
+];
 
 export default function JobBoard() {
-  const [searchBarValue, setSearchBarValue] = useState<string>("")
-  const [jobs, setJobs] = useState<Api.JobPostEntity[]|any>([])
-  const [jobTags, setJobTags] = useState<Api.JobTagEntity[]>([])
-  const [selectedJob, setSelectedJob] = useState<Api.JobPostEntity|any>()
-  const [selectedJobTypes, setSelectedJobTypes] = useState<string[]>([])
-  const [selectedTags, setSelectedTags] = useState<string[]>([])
+  const [searchBarValue, setSearchBarValue] = useState<string>('');
+  const [jobs, setJobs] = useState<Api.JobPostEntity[] | any>([]);
+  const [jobTags, setJobTags] = useState<Api.JobTagEntity[]>([]);
+  const [selectedJob, setSelectedJob] = useState<Api.JobPostEntity | any>();
+  const [selectedJobTypes, setSelectedJobTypes] = useState<string[]>([]);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
   const { toast } = useToast();
-  const router = useRouter()
+  const router = useRouter();
 
   const jobPostsApi = new JobPostsApi({
     basePath: process.env.NEXT_PUBLIC_API_URL,
@@ -54,75 +59,74 @@ export default function JobBoard() {
 
   // On load page
   useEffect(() => {
-    getAllJobTags()
-    getAllJobs()
-  },[]);
+    getAllJobTags();
+    getAllJobs();
+  }, []);
 
   // On search parameters change
   useEffect(() => {
-    searchJobs()
-  },[searchBarValue, selectedJobTypes, selectedTags]);
+    searchJobs();
+  }, [searchBarValue, selectedJobTypes, selectedTags]);
 
   const getAllJobTags = async () => {
-    const session:any = await getSession();
+    const session: any = await getSession();
     if (!session) {
-      router.push('/connect')
-      return
+      router.push('/connect');
+      return;
     }
     const response = await jobTagsApi.getManyBaseJobTagControllerJobTagEntity(
       {},
-      { headers: { Authorization: `Bearer ${session.accessToken}` }, }
-    )
-    if (response.status = 200) {
-      setJobTags(response.body as Api.JobTagEntity[])
+      { headers: { Authorization: `Bearer ${session.accessToken}` } },
+    );
+    if ((response.status = 200)) {
+      setJobTags(response.body as Api.JobTagEntity[]);
     }
-  }
+  };
 
   const getAllJobs = async () => {
-    const session:any = await getSession();
+    const session: any = await getSession();
     if (!session) {
-      router.push('/connect')
-      return
+      router.push('/connect');
+      return;
     }
-    
+
     const response = await jobPostsApi.jobPostControllerGetManyWithApplied(
       {
         limit: 50,
       },
       {
         headers: { Authorization: `Bearer ${session.accessToken}` },
-      }
-    )
+      },
+    );
     if (response.status == 200) {
-      console.log("All jobs body:\n",response.body)
-      setJobs(response.body??[])
-      setSelectedJob(jobs[0]||null)
+      console.log('All jobs body:\n', response.body);
+      setJobs(response.body ?? []);
+      setSelectedJob(jobs[0] || null);
     } else {
       toast({
-        variant: "destructive",
+        variant: 'destructive',
         title: 'Error',
         description: 'Error searching for jobs.', // + JSON.stringify(response.body),
       });
     }
-    
-  }
+  };
 
   const searchJobs = async () => {
-    const session:any = await getSession();
+    const session: any = await getSession();
     if (!session) {
-      router.push('/connect')
-      return
+      router.push('/connect');
+      return;
     }
     // building filter parameters.
-    let filter:string[] = []
+    const filter: string[] = [];
     if (searchBarValue.length > 0) {
-      filter.push('title||$cont||'+searchBarValue)
+      filter.push('title||$cont||' + searchBarValue);
     }
     if (selectedJobTypes.length > 0) {
-      filter.push('job_type||$eq||'+selectedJobTypes)
+      filter.push('job_type||$eq||' + selectedJobTypes);
     }
     if (selectedTags.length > 0) {
-      filter.push('job_tags.name||$in||'+selectedTags)
+      filter.push('job_tags.name||$in||' + selectedTags);
     }
     // console.log("filter: ",filter)
     const response = await jobPostsApi.jobPostControllerGetManyWithApplied(
@@ -132,70 +136,72 @@ export default function JobBoard() {
       },
       {
         headers: { Authorization: `Bearer ${session.accessToken}` },
-      }
-    )
-    if (response.status == 200){
-      console.log('SearchJobs response body:', response.body)
-      setJobs(response.body??[])
-      setSelectedJob(jobs[0]||null)
+      },
+    );
+    if (response.status == 200) {
+      console.log('SearchJobs response body:', response.body);
+      setJobs(response.body ?? []);
+      setSelectedJob(jobs[0] || null);
     } else {
       toast({
-        variant: "destructive",
+        variant: 'destructive',
         title: 'Error',
         description: 'Error searching for jobs.', // + JSON.stringify(response.body),
       });
-    } 
-    
-  }
+    }
+  };
 
-  const handleSearchChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchBarValue(event.target.value)
-    if (searchBarValue.length > 3){
-      searchJobs()
+  const handleSearchChange = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    setSearchBarValue(event.target.value);
+    if (searchBarValue.length > 3) {
+      searchJobs();
     }
-    if (searchBarValue.length == 0){
-      getAllJobs()
+    if (searchBarValue.length == 0) {
+      getAllJobs();
     }
-  }
+  };
 
   const handleApply = async (selectedJob: Api.JobPostEntity) => {
-    const session:any = await getSession();
+    const session: any = await getSession();
     if (!session) {
-      router.push('/connect')
-      return
+      router.push('/connect');
+      return;
     }
-    const response = await jobApplicationApi.createOneBaseJobApplicationControllerJobApplicationEntity(
-      {
-        job: selectedJob,
-      },
-      { headers: { Authorization: `Bearer ${session.accessToken}` }, }
-    )
-    if (response.status == 201){
+    const response =
+      await jobApplicationApi.createOneBaseJobApplicationControllerJobApplicationEntity(
+        {
+          job: selectedJob,
+        },
+        { headers: { Authorization: `Bearer ${session.accessToken}` } },
+      );
+    if (response.status == 201) {
       toast({
         title: 'Sucess!',
         description: 'Job was aplied to sucessfully.', // + JSON.stringify(response.body),
       });
     } else {
       toast({
-        variant: "destructive",
+        variant: 'destructive',
         title: 'Error',
         description: 'Error aplying for the a job.', // + JSON.stringify(response.body),
       });
     }
-  }
+  };
 
   const timeAgo = (dateString: string): string => {
     const now = new Date();
     const pastDate = new Date(dateString);
     const diff = now.getTime() - pastDate.getTime(); // Time difference in milliseconds
-  
+
     const seconds = Math.floor(diff / 1000);
     const minutes = Math.floor(seconds / 60);
     const hours = Math.floor(minutes / 60);
     const days = Math.floor(hours / 24);
     const months = Math.floor(days / 30);
     const years = Math.floor(days / 365);
-  
+
     if (years > 0) return `${years} yr${years > 1 ? 's' : ''} ago`;
     if (months > 0) return `${months} mon${months > 1 ? 's' : ''} ago`;
     if (days > 0) return `${days} day${days > 1 ? 's' : ''} ago`;
@@ -223,7 +229,7 @@ export default function JobBoard() {
               <Button variant="outline" className="w-[250px] justify-start">
                 {selectedJobTypes.length > 0
                   ? `${selectedJobTypes}`
-                  : "Job Types"}
+                  : 'Job Types'}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-[200px] p-0">
@@ -239,15 +245,15 @@ export default function JobBoard() {
                           setSelectedJobTypes((prev) =>
                             prev.includes(type.value)
                               ? prev.filter((t) => t !== type.value)
-                              : [...prev, type.value]
-                          )
+                              : [...prev, type.value],
+                          );
                         }}
                       >
                         <div
                           className={`mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary ${
                             selectedJobTypes.includes(type.value)
-                              ? "bg-primary text-primary-foreground"
-                              : "opacity-50 [&_svg]:invisible"
+                              ? 'bg-primary text-primary-foreground'
+                              : 'opacity-50 [&_svg]:invisible'
                           }`}
                         >
                           <Check className={`h-4 w-4`} />
@@ -263,10 +269,11 @@ export default function JobBoard() {
           {/* Job Skillset */}
           <Popover>
             <PopoverTrigger asChild>
-              <Button variant="outline" className="w-[250px] justify-start overflow-auto">
-                {selectedTags.length > 0
-                  ? `${selectedTags}`
-                  : "Skills"}
+              <Button
+                variant="outline"
+                className="w-[250px] justify-start overflow-auto"
+              >
+                {selectedTags.length > 0 ? `${selectedTags}` : 'Skills'}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-[200px] p-0">
@@ -275,22 +282,22 @@ export default function JobBoard() {
                 <CommandList>
                   <CommandEmpty>No tags found.</CommandEmpty>
                   <CommandGroup>
-                    {jobTags.map((tag:Api.JobTagEntity) => (
+                    {jobTags.map((tag: Api.JobTagEntity) => (
                       <CommandItem
                         key={tag.id}
                         onSelect={() => {
                           setSelectedTags((prev) =>
                             prev.includes(tag.name)
                               ? prev.filter((t) => t !== tag.name)
-                              : [...prev, tag.name]
-                          )
+                              : [...prev, tag.name],
+                          );
                         }}
                       >
                         <div
                           className={`mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary overflow-auto ${
                             selectedTags.includes(tag.name)
-                              ? "bg-primary text-primary-foreground"
-                              : "opacity-50 [&_svg]:invisible"
+                              ? 'bg-primary text-primary-foreground'
+                              : 'opacity-50 [&_svg]:invisible'
                           }`}
                         >
                           <Check className={`h-4 w-4`} />
@@ -310,19 +317,26 @@ export default function JobBoard() {
               {jobs.map((job) => (
                 <Card
                   key={job.id}
-                  className={`mb-4 cursor-pointer ${selectedJob?.id === job.id ? "border-primary" : ""}`}
-                  onClick={() => setSelectedJob(job)}   
+                  className={`mb-4 cursor-pointer ${selectedJob?.id === job.id ? 'border-primary' : ''}`}
+                  onClick={() => setSelectedJob(job)}
                 >
                   <CardContent className="flex items-start space-x-4 p-4">
                     <Avatar>
                       <AvatarImage src={job.thumbnail} alt={job?.company} />
-                      <AvatarFallback>{job?.title[0]}</AvatarFallback>{/*company */}
+                      <AvatarFallback>{job?.title[0]}</AvatarFallback>
+                      {/*company */}
                     </Avatar>
                     <div>
                       <h3 className="font-semibold">{job.title}</h3>
-                      <p className="text-sm text-gray-500">{job?.owner?.email}</p>{/*company */}
-                      <p className="text-sm text-gray-500">{job?.location}</p>{/*location */}
-                      <p className="text-sm text-gray-500">{timeAgo(job?.createdAt)}</p>
+                      <p className="text-sm text-gray-500">
+                        {job?.owner?.email}
+                      </p>
+                      {/*company */}
+                      <p className="text-sm text-gray-500">{job?.location}</p>
+                      {/*location */}
+                      <p className="text-sm text-gray-500">
+                        {timeAgo(job?.createdAt)}
+                      </p>
                     </div>
                   </CardContent>
                 </Card>
@@ -335,31 +349,51 @@ export default function JobBoard() {
                 <CardContent className="p-6">
                   <div className="mb-4 flex items-center space-x-4">
                     <Avatar>
-                      <AvatarImage src={selectedJob?.thumbnail} alt={selectedJob?.owner?.email} />
-                      <AvatarFallback>{selectedJob?.owner?.email[0]}</AvatarFallback>
+                      <AvatarImage
+                        src={selectedJob?.thumbnail}
+                        alt={selectedJob?.owner?.email}
+                      />
+                      <AvatarFallback>
+                        {selectedJob?.owner?.email[0]}
+                      </AvatarFallback>
                     </Avatar>
                     <div>
-                      <h2 className="text-2xl font-bold">{selectedJob.title}</h2>
-                      <p className="text-gray-500">{selectedJob?.owner?.email}</p>
+                      <h2 className="text-2xl font-bold">
+                        {selectedJob.title}
+                      </h2>
+                      <p className="text-gray-500">
+                        {selectedJob?.owner?.email}
+                      </p>
                     </div>
                   </div>
-                  <p className="mb-4 text-gray-500">{selectedJob.location} • {timeAgo(selectedJob.createdAt)}</p>
-                  {selectedJob?.job_tags.length>0 &&
+                  <p className="mb-4 text-gray-500">
+                    {selectedJob.location} • {timeAgo(selectedJob.createdAt)}
+                  </p>
+                  {selectedJob?.job_tags.length > 0 && (
                     <div>
                       <p className="mb-2 text-lg font-semibold">Skills</p>
                       <div className="mb-4">
-                        {selectedJob.job_tags.map((tag:any) => (
+                        {selectedJob.job_tags.map((tag: any) => (
                           <Badge key={tag.id} className="mr-2 mb-2">
                             {tag.name}
                           </Badge>
                         ))}
                       </div>
                     </div>
-                  }
+                  )}
                   <p className="mb-2 text-lg font-semibold">Description</p>
                   <p className="mb-6">{selectedJob.body}</p>
-                  {selectedJob.applied && <p className="mb-6 bg-gray-100 flex">Already Applied.&nbsp;<p className="font-semibold"> Learn more.</p></p>}
-                  {!selectedJob.applied && <Button onClick={()=>handleApply(selectedJob)}>Apply Now</Button>}
+                  {selectedJob.applied && (
+                    <p className="mb-6 bg-gray-100 flex">
+                      Already Applied.&nbsp;
+                      <p className="font-semibold"> Learn more.</p>
+                    </p>
+                  )}
+                  {!selectedJob.applied && (
+                    <Button onClick={() => handleApply(selectedJob)}>
+                      Apply Now
+                    </Button>
+                  )}
                 </CardContent>
               </Card>
             )}
@@ -367,5 +401,5 @@ export default function JobBoard() {
         </div>
       </div>
     </div>
-  )
-}   
+  );
+}

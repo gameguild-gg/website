@@ -8,7 +8,7 @@ import { JobPostController } from './job-post.controller';
 import { JobTagController } from './job-tag.controller';
 import { JobApplicationController } from './job-application.controller';
 import { JobPostService } from './job-post.service';
-import { JobTagService } from './job-tag.service';  
+import { JobTagService } from './job-tag.service';
 import { JobApplicationService } from './job-application.service';
 
 @Module({

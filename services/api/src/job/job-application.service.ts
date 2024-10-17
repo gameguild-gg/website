@@ -7,18 +7,20 @@ import { JobPostEntity } from './entities/job-post.entity';
 
 @Injectable()
 export class JobApplicationService extends TypeOrmCrudService<JobApplicationEntity> {
-
   private readonly logger = new Logger(JobApplicationService.name);
 
   constructor(
     @InjectRepository(JobApplicationEntity)
     private readonly jobAplicationRepository: Repository<JobApplicationEntity>,
   ) {
-    super(jobAplicationRepository)
+    super(jobAplicationRepository);
   }
 
-  async checkIfUserAppliedToJobs(userId: string, jobPosts: JobPostEntity[]): Promise<boolean[]> {
-    const jobIds = jobPosts.map(job => job.id);
+  async checkIfUserAppliedToJobs(
+    userId: string,
+    jobPosts: JobPostEntity[],
+  ): Promise<boolean[]> {
+    const jobIds = jobPosts.map((job) => job.id);
 
     const appliedJobIds = await this.repo
       .createQueryBuilder()
@@ -27,9 +29,8 @@ export class JobApplicationService extends TypeOrmCrudService<JobApplicationEnti
       .andWhere('JobApplicationEntity.job IN (:...jobIds)', { jobIds })
       .getMany();
 
-    const appliedJobIdsSet = new Set(appliedJobIds.map(app => app.job.id));
+    const appliedJobIdsSet = new Set(appliedJobIds.map((app) => app.job.id));
 
-    return jobPosts.map(job => appliedJobIdsSet.has(job.id));
+    return jobPosts.map((job) => appliedJobIdsSet.has(job.id));
   }
-
 }

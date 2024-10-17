@@ -1,5 +1,5 @@
-import { Body, Controller, Get, Logger, Param, Query, Type, UseInterceptors } from '@nestjs/common';
-import { ApiBody, ApiOkResponse, ApiParam, ApiQuery, ApiResponse, ApiTags, getSchemaPath } from '@nestjs/swagger';
+import { Body, Controller, Get, Logger, UseInterceptors } from '@nestjs/common';
+import { ApiBody, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Swagger } from '@dataui/crud/lib/crud';
 import { JobPostService } from './job-post.service';
 import { Auth } from '../auth/decorators/http.decorator';
@@ -20,18 +20,14 @@ import {
   Override,
   CrudRequest,
   ParsedRequest,
-  CrudRequestOptions,
   CrudRequestInterceptor,
 } from '@dataui/crud';
 import { JobPostCreateDto } from './dtos/job-post-create.dto';
 import { ExcludeFieldsPipe } from 'src/cms/pipes/exclude-fields.pipe';
 import { BodyOwnerInject } from 'src/common/decorators/parameter.decorator';
 import { JobPostWithAppliedDto } from './dtos/job-post-with-applied.dto';
-import { BodyUserInject } from 'src/common/decorators/body-user-injection.decorator';
-import { JobPostWithAppliedRequestDto } from './dtos/job-post-with-applied.request.dto';
 import { UserEntity } from 'src/user/entities';
-import { User } from 'src/common/decorators/user.decorator';
-import { type } from 'os';
+import { UserInject } from 'src/common/decorators/user-injection.decorator';
 
 @Crud({
   model: {
@@ -94,12 +90,14 @@ export class JobPostController
     super(service);
     // Modify custom function swagger manually for OpenAPIGenerator to create a proper API function
     const metadata = Swagger.getParams(this.getManyWithApplied);
-    const queryParamsMeta = Swagger.createQueryParamsMeta('getManyBase',{
+    const queryParamsMeta = Swagger.createQueryParamsMeta('getManyBase', {
       model: { type: JobPostEntity },
       query: { softDelete: false },
     });
-    Swagger.setParams([...metadata, ...queryParamsMeta], this.getManyWithApplied);
-    
+    Swagger.setParams(
+      [...metadata, ...queryParamsMeta],
+      this.getManyWithApplied,
+    );
   }
 
   get base(): CrudController<JobPostEntity> {
@@ -118,7 +116,7 @@ export class JobPostController
     //  where: { id: res.id },
     //  relations: { owner: true, editors: true },
     //});
-    return await this.service.createOneJob(crudReq, body)
+    return await this.service.createOneJob(crudReq, body);
   }
 
   @Override()
@@ -142,16 +140,20 @@ export class JobPostController
   ): Promise<JobPostEntity> {
     return this.base.updateOneBase(req, dto);
   }
-  
+
   @Get('get-many-with-applied')
   @UseInterceptors(CrudRequestInterceptor)
   @Auth(AuthenticatedRoute)
-  @ApiResponse({ status:200, type: Promise<JobPostWithAppliedDto[]> /*schema:{$ref: getSchemaPath(Array<JobPostWithAppliedDto>)}*/ })
+  @ApiResponse({
+    status: 200,
+    type: Promise<
+      JobPostWithAppliedDto[]
+    > /*schema:{$ref: getSchemaPath(Array<JobPostWithAppliedDto>)}*/,
+  })
   async getManyWithApplied(
     @ParsedRequest() req: CrudRequest,
-    @User() user: UserEntity,
+    @UserInject() user: UserEntity,
   ): Promise<JobPostWithAppliedDto[]> {
     return this.service.getManyWithApplied(req, user.id);
   }
-  
 }

@@ -4,12 +4,18 @@ import { JobApplicationService } from './job-application.service';
 import { Auth } from '../auth/decorators/http.decorator';
 import { JobApplicationEntity } from './entities/job-application.entity';
 import { AuthenticatedRoute } from '../auth/auth.enum';
-import { CrudController, Crud, CrudRequest, Override, ParsedRequest } from '@dataui/crud';
+import {
+  CrudController,
+  Crud,
+  CrudRequest,
+  Override,
+  ParsedRequest,
+} from '@dataui/crud';
 import { PartialWithoutFields } from 'src/cms/interceptors/ownership-empty-interceptor.service';
 import { ExcludeFieldsPipe } from 'src/cms/pipes/exclude-fields.pipe';
 import { BodyApplicantInject } from './decorators/body-applicant-injection.decorator';
 import { JobAplicationCreateDto } from './dtos/job-aplication-create.dto';
-import { User } from 'src/common/decorators/user.decorator';
+import { UserInject } from 'src/common/decorators/user-injection.decorator';
 import { JobPostEntity } from './entities/job-post.entity';
 import { UserEntity } from 'src/user/entities';
 
@@ -52,12 +58,10 @@ import { UserEntity } from 'src/user/entities';
 @ApiTags('Job Applications')
 export class JobApplicationController
   implements CrudController<JobApplicationEntity>
-  {
+{
   private readonly logger = new Logger(JobApplicationController.name);
 
-  constructor(
-    public service: JobApplicationService
-  ) { }
+  constructor(public service: JobApplicationService) {}
 
   get base(): CrudController<JobApplicationEntity> {
     return this;
@@ -84,15 +88,9 @@ export class JobApplicationController
   async updateOne(
     @ParsedRequest() req: CrudRequest,
     @Body(
-      new ExcludeFieldsPipe<JobApplicationEntity>([
-        'createdAt',
-        'updatedAt',
-      ]),
+      new ExcludeFieldsPipe<JobApplicationEntity>(['createdAt', 'updatedAt']),
     )
-    dto: PartialWithoutFields<
-    JobApplicationEntity,
-      'createdAt' | 'updatedAt'
-    >,
+    dto: PartialWithoutFields<JobApplicationEntity, 'createdAt' | 'updatedAt'>,
   ): Promise<JobApplicationEntity> {
     return this.base.updateOneBase(req, dto);
   }
@@ -100,10 +98,9 @@ export class JobApplicationController
   @Post('check-applied')
   @Auth(AuthenticatedRoute)
   async checkIfUserApplied(
-    @User() user: UserEntity,
+    @UserInject() user: UserEntity,
     @Body() jobPosts: JobPostEntity[],
   ): Promise<boolean[]> {
     return this.service.checkIfUserAppliedToJobs(user.id, jobPosts);
   }
-
 }

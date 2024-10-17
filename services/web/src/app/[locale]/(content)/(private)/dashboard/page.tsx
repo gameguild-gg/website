@@ -1,57 +1,85 @@
-"use client"
+'use client';
 
-import { useState } from "react"
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Image from "next/image"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
+import Image from 'next/image';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from 'recharts';
 
-const contentTypes = ["Games", "Assets", "Blogs", "Tests", "Jams", "Jobs", "Code Battles"]
+const contentTypes = [
+  'Games',
+  'Assets',
+  'Blogs',
+  'Tests',
+  'Jams',
+  'Jobs',
+  'Code Battles',
+];
 
 const recentContent = [
-  { id: 1, title: "My Awesome Game", image: "/assets/images/placeholder.svg" },
-  { id: 2, title: "Cool 3D Asset Pack", image: "/assets/images/placeholder.svg" },
-  { id: 3, title: "How to Code Better", image: "/assets/images/placeholder.svg" },
-  { id: 4, title: "Python Skills Test", image: "/assets/images/placeholder.svg" },
-  { id: 5, title: "Game Jam Entry", image: "/assets/images/placeholder.svg" },
-]
+  { id: 1, title: 'My Awesome Game', image: '/assets/images/placeholder.svg' },
+  {
+    id: 2,
+    title: 'Cool 3D Asset Pack',
+    image: '/assets/images/placeholder.svg',
+  },
+  {
+    id: 3,
+    title: 'How to Code Better',
+    image: '/assets/images/placeholder.svg',
+  },
+  {
+    id: 4,
+    title: 'Python Skills Test',
+    image: '/assets/images/placeholder.svg',
+  },
+  { id: 5, title: 'Game Jam Entry', image: '/assets/images/placeholder.svg' },
+];
 
 const viewsData = [
-  { day: "Day 1", views: 100 },
-  { day: "Day 2", views: 150 },
-  { day: "Day 3", views: 200 },
-  { day: "Day 4", views: 180 },
-  { day: "Day 5", views: 220 },
-  { day: "Day 6", views: 250 },
-  { day: "Day 7", views: 300 },
-  { day: "Day 8", views: 350 },
-  { day: "Day 9", views: 280 },
-  { day: "Day 10", views: 400 },
-]
+  { day: 'Day 1', views: 100 },
+  { day: 'Day 2', views: 150 },
+  { day: 'Day 3', views: 200 },
+  { day: 'Day 4', views: 180 },
+  { day: 'Day 5', views: 220 },
+  { day: 'Day 6', views: 250 },
+  { day: 'Day 7', views: 300 },
+  { day: 'Day 8', views: 350 },
+  { day: 'Day 9', views: 280 },
+  { day: 'Day 10', views: 400 },
+];
 
 export default function CreatorDashboard() {
-  const [activeTab, setActiveTab] = useState("All")
+  const [activeTab, setActiveTab] = useState('All');
 
   const router = useRouter();
 
-  const handleCreateNewButton = (type:any) => {
-    if (type == "Jobs") {
+  const handleCreateNewButton = (type: any) => {
+    if (type == 'Jobs') {
       router.push('/jobs/post');
     }
-  }
+  };
 
-  const handleMoreButton = (type:any) => {
-    if (type == "Jobs") {
+  const handleMoreButton = (type: any) => {
+    if (type == 'Jobs') {
       router.push('/dashboard/jobs');
     }
-  }
+  };
 
   return (
     <div className="container mx-auto p-6">
       <h1 className="text-3xl font-bold mb-6">Creator Dashboard</h1>
-      
+
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid grid-cols-4 lg:grid-cols-8 mb-6">
           <TabsTrigger value="All">All</TabsTrigger>
@@ -62,13 +90,16 @@ export default function CreatorDashboard() {
           ))}
         </TabsList>
 
-        {["All", ...contentTypes].map((type) => (
+        {['All', ...contentTypes].map((type) => (
           <TabsContent key={type} value={type} className="space-y-6">
-            {type == "All" && (
-              <div className="h-16"></div> 
-            )}
-            {type !== "All" && (
-              <Button onClick={() => handleCreateNewButton(type)} className="mb-6">Create New {type.slice(0, -1)}</Button>
+            {type == 'All' && <div className="h-16"></div>}
+            {type !== 'All' && (
+              <Button
+                onClick={() => handleCreateNewButton(type)}
+                className="mb-6"
+              >
+                Create New {type.slice(0, -1)}
+              </Button>
             )}
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -89,7 +120,9 @@ export default function CreatorDashboard() {
                         <div className="flex-1 flex flex-col justify-between p-4">
                           <h3 className="font-medium">{item.title}</h3>
                           <div className="flex justify-end">
-                            <Button variant="outline" size="sm">Edit</Button>
+                            <Button variant="outline" size="sm">
+                              Edit
+                            </Button>
                           </div>
                         </div>
                       </CardContent>
@@ -98,7 +131,9 @@ export default function CreatorDashboard() {
                 </div>
               </div>
               <div>
-                <h2 className="text-2xl font-semibold mb-4">Views (Last 10 Days)</h2>
+                <h2 className="text-2xl font-semibold mb-4">
+                  Views (Last 10 Days)
+                </h2>
                 <div className="h-[300px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={viewsData}>
@@ -114,11 +149,13 @@ export default function CreatorDashboard() {
             </div>
 
             <div className="flex justify-start mt-6">
-              <Button onClick={()=>handleMoreButton(type)} variant="outline">More...</Button>
+              <Button onClick={() => handleMoreButton(type)} variant="outline">
+                More...
+              </Button>
             </div>
           </TabsContent>
         ))}
       </Tabs>
     </div>
-  )
+  );
 }
