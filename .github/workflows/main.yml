@@ -45,6 +45,7 @@ jobs:
           gource_font_size: 40
           gource_auto_skip_seconds: 0.1
           gource_user_scale: 2.0
+          gource_highlight_users: true
 
 
 
