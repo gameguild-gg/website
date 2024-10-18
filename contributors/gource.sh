@@ -16,4 +16,4 @@ while read wrong_name name; do
 done < "${DIR}"/name_replacements.txt)
 
 # generate the video
-gource -1280x720 --title GameGuild --user-image-dir "${DIR}" --auto-skip-seconds 0.1 --multi-sampling --stop-at-end --key --highlight-users --hide mouse,filenames --file-idle-time 0 --max-files 0 --seconds-per-day 0.1 --user-scale 2.0 --bloom-multiplier 0.5 --output-ppm-stream - "${DIR}"/gource.txt | ffmpeg -y -r 60 -f image2pipe -vcodec ppm -i - -vcodec libx264 -crf 28 -pix_fmt yuv420p -threads 0 -bf 0 "${DIR}"/gource.mp4
+gource -1920x1080 --caption-file "${DIR}"/captions.txt --title GameGuild --user-image-dir "${DIR}" --auto-skip-seconds 0.1 --multi-sampling --stop-at-end --key --highlight-users --hide mouse,filenames --file-idle-time 0 --max-files 0 --seconds-per-day 0.1 --user-scale 2.0 --bloom-multiplier 0.5 --output-ppm-stream - "${DIR}"/gource.txt | ffmpeg -y -r 60 -f image2pipe -vcodec ppm -i - -vcodec libx264 -crf 28 -pix_fmt yuv420p -threads 0 -bf 0 "${DIR}"/gource.mp4
