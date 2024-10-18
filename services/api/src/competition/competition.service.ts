@@ -1,6 +1,7 @@
 import {
   ConflictException,
   Injectable,
+  Logger,
   UnprocessableEntityException,
 } from '@nestjs/common';
 import { AuthService } from '../auth/auth.service';
@@ -128,6 +129,8 @@ export class CompetitionService {
   matchRepositoryLinq: LinqRepository<CompetitionMatchEntity>;
   submissionReportLinq: LinqRepository<CompetitionRunSubmissionReportEntity>;
 
+  logger: Logger = new Logger(CompetitionService.name);
+
   constructor(
     public authService: AuthService,
     public userService: UserService,
@@ -202,7 +205,7 @@ export class CompetitionService {
       if (timeout === null) {
         const outExec = exec(command);
         outExec.stdout.on('data', (data: any) => {
-          console.log(data);
+          this.logger.log(data);
         });
         const out = await outExec;
         stdout = out.stdout;
@@ -210,7 +213,7 @@ export class CompetitionService {
       } else {
         const outExec = exec(command, { timeout: timeout });
         outExec.stdout.on('data', (data: any) => {
-          console.log(data);
+          this.logger.log(data);
         });
         const out = await outExec;
         stdout = out.stdout;
@@ -484,12 +487,12 @@ export class CompetitionService {
   //     ).filter((submission) => submission !== null);
   //
   //     // compile all submissions
-  //     console.log('preparing all submissions');
+  //    this.logger.log('preparing all submissions');
   //     for (const submission of lastSubmissions) {
   //       try {
   //         await this.prepareLastUserSubmission(submission.user);
   //       } catch (err) {
-  //         console.log(err);
+  //        this.logger.log(err);
   //       }
   //     }
   //
@@ -613,7 +616,7 @@ export class CompetitionService {
     // if chess engine folder is there, just run git pull, otherwise just run git clone
     if (!fse.existsSync(srcFolder)) {
       const gitReponse = await simpleGit().clone(chessEngineGitUrl, srcFolder);
-      console.log(gitReponse);
+      this.logger.log(gitReponse);
     } else {
       await simpleGit(srcFolder)
         .reset(ResetMode.HARD)
@@ -718,7 +721,7 @@ export class CompetitionService {
       ChessMatchRequestDto.player2username,
     ];
 
-    console.log('Match request: ', usernames);
+    this.logger.log('Match request: ', usernames);
 
     // find users to be able to get their elo
     // todo: move elo to user profile
@@ -757,7 +760,7 @@ export class CompetitionService {
     for (let i = 0; i < submissions.length; i++)
       if (!submissions[i]) {
         const msg = 'No submission found for player ' + usernames[i];
-        console.log(msg);
+        this.logger.log(msg);
         throw new UnprocessableEntityException(msg);
       }
 
@@ -814,17 +817,17 @@ export class CompetitionService {
           timeout: 10000,
         });
       } catch (e) {
-        console.error(e);
+        this.logger.error(e);
         move = null;
       }
 
       // if the exe breaks, the other player wins
       if (!move || !move.stdout || move.stderr) {
         // username of the failed player
-        console.error('user', usernames[userIdx]);
-        console.error('command', executablePath[userIdx]);
-        console.error('fen', fen);
-        if (move) console.error('stdout', move.stdout);
+        this.logger.error('user', usernames[userIdx]);
+        this.logger.error('command', executablePath[userIdx]);
+        this.logger.error('fen', fen);
+        if (move) this.logger.error('stdout', move.stdout);
 
         result.winner = usernames[1 - userIdx];
         result.result = ChessGameResult.GAME_OVER;
@@ -1090,7 +1093,7 @@ export class CompetitionService {
           const p2 = submissions[j];
           if (!p1 || !p2 || p1.id === p2.id) continue;
           // print the users playing
-          console.log(
+          this.logger.log(
             `Progress: ${((100 * (i * submissions.length + j)) / (submissions.length * submissions.length)).toFixed(2)}. Playing: ${submissions[i].user.username} vs ${submissions[j].user.username}`,
           );
           const match = await this.RunChessMatch(
@@ -1109,13 +1112,13 @@ export class CompetitionService {
       await this.runRepository.update(competition.id, {
         state: CompetitionRunState.FINISHED,
       });
-      console.log('Competition finished');
+      this.logger.log('Competition finished');
     } catch (e) {
       await this.runRepository.update(competition.id, {
         state: CompetitionRunState.FAILED,
       });
       // print error
-      console.error(e);
+      this.logger.error(e);
       throw e;
     }
   }

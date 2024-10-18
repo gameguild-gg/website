@@ -8,7 +8,6 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "start:prod": "node .next/standalone/server.js",
     "lint": "next lint --fix",
     "ui:add": "npx shadcn-ui@latest add"
   },
@@ -69,6 +68,7 @@
     "react-hook-form": "^7.51.2",
     "recharts": "^2.12.7",
     "siwe": "^2.3.2",
+    "slugify": "^1.6.6",
     "tailwind-merge": "^2.5.2",
     "tailwindcss-animate": "^1.0.7",
     "ts-loader": "^9.5.1",

@@ -33,7 +33,7 @@ export default function LeaderboardPage(): JSX.Element {
 
     const response = await api.competitionControllerGetChessLeaderboard({
       headers: {
-        Authorization: `Bearer ${session?.accessToken}`,
+        Authorization: `Bearer ${session?.user?.accessToken}`,
       },
     });
 

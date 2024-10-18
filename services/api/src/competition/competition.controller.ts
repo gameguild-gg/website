@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Logger,
   Param,
   ParseUUIDPipe,
   PayloadTooLargeException,
@@ -45,7 +46,7 @@ import { AuthenticatedRoute } from '../auth/auth.enum';
 @ApiTags('competitions')
 export class CompetitionController {
   constructor(public service: CompetitionService) {}
-
+  logger: Logger = new Logger(CompetitionController.name);
   // @Post('/CTC/submit')
   // @ApiConsumes('multipart/form-data')
   // @UseInterceptors(FileInterceptor('file'))
@@ -126,8 +127,8 @@ export class CompetitionController {
     try {
       return this.service.prepareLastChessSubmission(user);
     } catch (e) {
-      console.error(e);
-      console.error(JSON.stringify(e));
+      this.logger.error(e);
+      this.logger.error(JSON.stringify(e));
       throw e;
     }
   }

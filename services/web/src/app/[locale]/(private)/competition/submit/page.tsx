@@ -118,7 +118,7 @@ export default function SubmitPage() {
         },
         {
           headers: {
-            Authorization: `Bearer ${session?.accessToken}`,
+            Authorization: `Bearer ${session?.user?.accessToken}`,
           },
         },
       );

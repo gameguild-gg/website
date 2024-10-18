@@ -1,5 +1,5 @@
 # Base Image.
-FROM node:latest
+FROM node:20
 
 ARG API_HOST
 ARG API_URL
@@ -26,9 +26,8 @@ RUN apt-get clean && apt-get update
 COPY . /app
 
 # install dependencies
-RUN NODE_ENV=development npm install
-RUN NODE_ENV=development npm run install:web
-RUN NODE_ENV=development cd services/web && npm run build
+RUN npm run install:web
+RUN npm run build:web
 
 # start the app
 # CMD ["npm", "run", "buildAndRun:web"]

@@ -8,11 +8,14 @@ const withNextIntl = createNextIntlPlugin();
 
 /** @type {import("next").NextConfig} */
 const nextConfig = {
-  output: 'standalone',
   eslint: {
     ignoreDuringBuilds: true,
   },
   webpack: (config, { isServer }) => {
+    if (!isServer) {
+      config.externals = config.externals || [];
+      config.externals = [...config.externals, 'apiclient'];
+    }
     config.module.rules.push(
       {
         test: /\.wasm$/,
@@ -76,6 +79,9 @@ const nextConfig = {
   // typescript: {
   //   ignoreBuildErrors: false,
   // },
+  experimental: {
+    externalDir: false,
+  },
 };
 
 // module.exports = nextConfig;

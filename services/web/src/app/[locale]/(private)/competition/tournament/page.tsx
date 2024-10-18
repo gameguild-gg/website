@@ -28,7 +28,7 @@ export default function TournamentPage() {
       const response =
         await api.competitionControllerGetLatestChessCompetitionReport({
           headers: {
-            Authorization: `Bearer ${session?.accessToken}`,
+            Authorization: `Bearer ${session?.user?.accessToken}`,
           },
         });
 
@@ -93,7 +93,7 @@ export default function TournamentPage() {
 
     const response = await api.competitionControllerRunCompetition({
       headers: {
-        Authorization: `Bearer ${session?.accessToken}`,
+        Authorization: `Bearer ${session?.user?.accessToken}`,
       },
     });
     if (response.status === 401) {

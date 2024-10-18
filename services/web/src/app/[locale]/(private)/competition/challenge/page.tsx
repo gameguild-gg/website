@@ -34,7 +34,7 @@ const ChallengePage: React.FC = () => {
 
     const response = await api.competitionControllerListChessAgents({
       headers: {
-        Authorization: `Bearer ${session?.accessToken}`,
+        Authorization: `Bearer ${session?.user?.accessToken}`,
       },
     });
 
@@ -96,7 +96,7 @@ const ChallengePage: React.FC = () => {
       },
       {
         headers: {
-          Authorization: `Bearer ${session?.accessToken}`,
+          Authorization: `Bearer ${session?.user?.accessToken}`,
         },
       },
     );

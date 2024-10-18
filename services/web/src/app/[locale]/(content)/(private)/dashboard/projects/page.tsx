@@ -11,21 +11,23 @@ import ProjectEntity = Api.ProjectEntity;
 import { getSession } from 'next-auth/react';
 
 export default async function Page() {
-  const [projects, setProjects] = useState<ProjectEntity[]>([]);
+  const [projects, setProjects] = useState<ProjectEntity[] | null>(null);
 
   const fetchProjects = async () => {
-    const session = await getSession();
-    const api = new ProjectApi({ basePath: process.env.NEXT_PUBLIC_API_URL });
-    const projects = await api.getManyBaseProjectControllerProjectEntity(
-      {},
-      { headers: { Authorization: `Bearer ${session?.accessToken}` } },
-    );
-    if (projects.status == 401) {
-      // todo: redirect the user to the login and invalidate the session
-    } else if (projects.status > 401) {
-      console.error(projects.body);
+    if (projects === null) {
+      const session = await getSession();
+      const api = new ProjectApi({ basePath: process.env.NEXT_PUBLIC_API_URL });
+      const projects = await api.getManyBaseProjectControllerProjectEntity(
+        {},
+        { headers: { Authorization: `Bearer ${session?.user?.accessToken}` } },
+      );
+      if (projects.status == 401) {
+        // todo: redirect the user to the login and invalidate the session
+      } else if (projects.status > 401) {
+        console.error(projects.body);
+      }
+      setProjects(projects.body as ProjectEntity[]);
     }
-    setProjects(projects.body as ProjectEntity[]);
   };
 
   useEffect(() => {
@@ -112,7 +114,7 @@ export default async function Page() {
             {/*    </Link>*/}
             {/*  </p>*/}
             {/*</div>*/}
-            {projects.length === 0 && (
+            {projects?.length === 0 && (
               <div className="text-center py-12">
                 <h2 className="text-2xl font-semibold text-gray-700 mb-6">
                   Are you a developer? Upload your first game
@@ -137,8 +139,8 @@ export default async function Page() {
                 </div>
               </div>
             )}
-            {projects.map((project) => (
-              <Link key={project.slug} href={`projects/${project.slug}`}>
+            {projects?.map((project) => (
+              <Link key={project.slug} href={`/projects/${project.slug}`}>
                 <GameCard game={project} />
               </Link>
             ))}

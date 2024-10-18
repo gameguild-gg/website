@@ -86,7 +86,31 @@ export namespace AuthApi {
 	}
 	
 	export type AuthControllerGetWeb3SignInChallengeResponse =
+		| AuthControllerGetWeb3SignInChallenge400Response
+		| AuthControllerGetWeb3SignInChallenge422Response
+		| AuthControllerGetWeb3SignInChallenge500Response
 		| AuthControllerGetWeb3SignInChallengeDefaultResponse
+	
+	export interface AuthControllerGetWeb3SignInChallenge400Response {
+		status: 400
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface AuthControllerGetWeb3SignInChallenge422Response {
+		status: 422
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface AuthControllerGetWeb3SignInChallenge500Response {
+		status: 500
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
 	
 	export interface AuthControllerGetWeb3SignInChallengeDefaultResponse {
 		status: number
@@ -95,18 +119,32 @@ export namespace AuthApi {
 		headers?: undefined
 	}
 	
-	export type AuthControllerLocalSignWithEmailOrUsernameResponse =
-		| AuthControllerLocalSignWithEmailOrUsernameDefaultResponse
+	export type AuthControllerMagicLinkResponse =
+		| AuthControllerMagicLink400Response
+		| AuthControllerMagicLink422Response
+		| AuthControllerMagicLink500Response
+		| AuthControllerMagicLinkDefaultResponse
 	
-	export interface AuthControllerLocalSignWithEmailOrUsernameDefaultResponse {
-		status: number
+	export interface AuthControllerMagicLink400Response {
+		status: 400
 		contentType: 'application/json'
-		body: Api.LocalSignInResponseDto
+		body: Api.ApiErrorResponseDto
 		headers?: undefined
 	}
 	
-	export type AuthControllerMagicLinkResponse =
-		| AuthControllerMagicLinkDefaultResponse
+	export interface AuthControllerMagicLink422Response {
+		status: 422
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface AuthControllerMagicLink500Response {
+		status: 500
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
 	
 	export interface AuthControllerMagicLinkDefaultResponse {
 		status: number
@@ -182,7 +220,31 @@ export namespace AuthApi {
 	}
 	
 	export type AuthControllerSignInWithGoogleResponse =
+		| AuthControllerSignInWithGoogle400Response
+		| AuthControllerSignInWithGoogle422Response
+		| AuthControllerSignInWithGoogle500Response
 		| AuthControllerSignInWithGoogleDefaultResponse
+	
+	export interface AuthControllerSignInWithGoogle400Response {
+		status: 400
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface AuthControllerSignInWithGoogle422Response {
+		status: 422
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface AuthControllerSignInWithGoogle500Response {
+		status: 500
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
 	
 	export interface AuthControllerSignInWithGoogleDefaultResponse {
 		status: number
@@ -192,7 +254,31 @@ export namespace AuthApi {
 	}
 	
 	export type AuthControllerSignUpWithEmailUsernamePasswordResponse =
+		| AuthControllerSignUpWithEmailUsernamePassword400Response
+		| AuthControllerSignUpWithEmailUsernamePassword422Response
+		| AuthControllerSignUpWithEmailUsernamePassword500Response
 		| AuthControllerSignUpWithEmailUsernamePasswordDefaultResponse
+	
+	export interface AuthControllerSignUpWithEmailUsernamePassword400Response {
+		status: 400
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface AuthControllerSignUpWithEmailUsernamePassword422Response {
+		status: 422
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface AuthControllerSignUpWithEmailUsernamePassword500Response {
+		status: 500
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
 	
 	export interface AuthControllerSignUpWithEmailUsernamePasswordDefaultResponse {
 		status: number
@@ -202,7 +288,31 @@ export namespace AuthApi {
 	}
 	
 	export type AuthControllerUserExistsResponse =
+		| AuthControllerUserExists400Response
+		| AuthControllerUserExists422Response
+		| AuthControllerUserExists500Response
 		| AuthControllerUserExistsDefaultResponse
+	
+	export interface AuthControllerUserExists400Response {
+		status: 400
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface AuthControllerUserExists422Response {
+		status: 422
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface AuthControllerUserExists500Response {
+		status: 500
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
 	
 	export interface AuthControllerUserExistsDefaultResponse {
 		status: number
@@ -212,7 +322,31 @@ export namespace AuthApi {
 	}
 	
 	export type AuthControllerValidateWeb3SignInChallengeResponse =
+		| AuthControllerValidateWeb3SignInChallenge400Response
+		| AuthControllerValidateWeb3SignInChallenge422Response
+		| AuthControllerValidateWeb3SignInChallenge500Response
 		| AuthControllerValidateWeb3SignInChallengeDefaultResponse
+	
+	export interface AuthControllerValidateWeb3SignInChallenge400Response {
+		status: 400
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface AuthControllerValidateWeb3SignInChallenge422Response {
+		status: 422
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface AuthControllerValidateWeb3SignInChallenge500Response {
+		status: 500
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
 	
 	export interface AuthControllerValidateWeb3SignInChallengeDefaultResponse {
 		status: number
@@ -277,43 +411,6 @@ export const AuthApiFetchParamCreator = function (configuration?: Configuration)
 			}
 
 			let localVarPath = `/auth/web3/sign-in/challenge`;
-			const localVarPathQueryStart = localVarPath.indexOf("?");
-			const localVarRequestOptions: RequestInit = Object.assign({ method: 'POST' }, options);
-			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
-			const localVarQueryParameter = new URLSearchParams(localVarPathQueryStart !== -1 ? localVarPath.substring(localVarPathQueryStart + 1) : "");
-			if (localVarPathQueryStart !== -1) {
-				localVarPath = localVarPath.substring(0, localVarPathQueryStart);
-			}
-
-			localVarHeaderParameter.set('Content-Type', 'application/json');
-
-			localVarRequestOptions.headers = localVarHeaderParameter;
-	
-			if (request !== undefined) {
-				localVarRequestOptions.body = JSON.stringify(request || {});
-			}
-
-			const localVarQueryParameterString = localVarQueryParameter.toString();
-			if (localVarQueryParameterString) {
-				localVarPath += "?" + localVarQueryParameterString;
-			}
-			return {
-				url: localVarPath,
-				options: localVarRequestOptions,
-			};
-		},
-		/**
-		 * @param {Api.LocalSignInDto} request
-		 * @param {RequestInit} [options] Override http request option.
-		 * @throws {RequiredError}
-		 */
-		authControllerLocalSignWithEmailOrUsername(request: Api.LocalSignInDto, options: RequestInit = {}): FetchArgs {
-			// verify required parameter 'request' is not null or undefined
-			if (request === null || request === undefined) {
-				throw new RequiredError('request', 'Required parameter request was null or undefined when calling authControllerLocalSignWithEmailOrUsername.');
-			}
-
-			let localVarPath = `/auth/local/sign-in`;
 			const localVarPathQueryStart = localVarPath.indexOf("?");
 			const localVarRequestOptions: RequestInit = Object.assign({ method: 'POST' }, options);
 			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
@@ -663,35 +760,42 @@ export const AuthApiFp = function(configuration?: Configuration) {
 				const contentType = response.headers.get('Content-Type');
 				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
 				
+				if (response.status === 400) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 422) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 500) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
 				/* Catch-all response */
 				if (mimeType === 'application/json') {
 					return {
 						status: response.status,
 						contentType: 'application/json',
 						body: await response.json() as Api.EthereumSigninChallengeResponseDto,
-					}
-				}
-				throw response;
-			};
-		},
-		/**
-		 * @param {Api.LocalSignInDto} request
-		 * @param {RequestInit} [options] Override http request option.
-		 * @throws {RequiredError}
-		 */
-		authControllerLocalSignWithEmailOrUsername(request: Api.LocalSignInDto, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<AuthApi.AuthControllerLocalSignWithEmailOrUsernameResponse> {
-			const localVarFetchArgs = AuthApiFetchParamCreator(configuration).authControllerLocalSignWithEmailOrUsername(request, options);
-			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
-				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
-				const contentType = response.headers.get('Content-Type');
-				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
-				
-				/* Catch-all response */
-				if (mimeType === 'application/json') {
-					return {
-						status: response.status,
-						contentType: 'application/json',
-						body: await response.json() as Api.LocalSignInResponseDto,
 					}
 				}
 				throw response;
@@ -709,6 +813,36 @@ export const AuthApiFp = function(configuration?: Configuration) {
 				const contentType = response.headers.get('Content-Type');
 				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
 				
+				if (response.status === 400) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 422) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 500) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
 				/* Catch-all response */
 				if (mimeType === 'application/json') {
 					return {
@@ -824,6 +958,36 @@ export const AuthApiFp = function(configuration?: Configuration) {
 				const contentType = response.headers.get('Content-Type');
 				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
 				
+				if (response.status === 400) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 422) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 500) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
 				/* Catch-all response */
 				if (mimeType === 'application/json') {
 					return {
@@ -847,6 +1011,36 @@ export const AuthApiFp = function(configuration?: Configuration) {
 				const contentType = response.headers.get('Content-Type');
 				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
 				
+				if (response.status === 400) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 422) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 500) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
 				/* Catch-all response */
 				if (mimeType === 'application/json') {
 					return {
@@ -870,6 +1064,36 @@ export const AuthApiFp = function(configuration?: Configuration) {
 				const contentType = response.headers.get('Content-Type');
 				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
 				
+				if (response.status === 400) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 422) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 500) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
 				/* Catch-all response */
 				if (mimeType === 'application/json') {
 					return {
@@ -893,6 +1117,36 @@ export const AuthApiFp = function(configuration?: Configuration) {
 				const contentType = response.headers.get('Content-Type');
 				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
 				
+				if (response.status === 400) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 422) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 500) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
 				/* Catch-all response */
 				if (mimeType === 'application/json') {
 					return {
@@ -933,13 +1187,6 @@ export interface AuthApiInterface {
 	 * @throws {RequiredError}
 	 */
 	authControllerGetWeb3SignInChallenge(request: Api.EthereumSigninChallengeRequestDto, options?: RequestInit): Promise<AuthApi.AuthControllerGetWeb3SignInChallengeResponse>
-
-	/**
-	 * @param {Api.LocalSignInDto} request
-	 * @param {RequestInit} [options] Override http request option.
-	 * @throws {RequiredError}
-	 */
-	authControllerLocalSignWithEmailOrUsername(request: Api.LocalSignInDto, options?: RequestInit): Promise<AuthApi.AuthControllerLocalSignWithEmailOrUsernameResponse>
 
 	/**
 	 * @param {Api.EmailDto} request
@@ -1006,15 +1253,6 @@ export class AuthApi extends BaseAPI implements AuthApiInterface {
 	 */
 	public authControllerGetWeb3SignInChallenge(request: Api.EthereumSigninChallengeRequestDto, options?: RequestInit) {
 		return AuthApiFp(this.configuration).authControllerGetWeb3SignInChallenge(request, options)(this.fetch, this.basePath);
-	}
-
-	/**
-	 * @param {Api.LocalSignInDto} request
-	 * @param {RequestInit} [options] Override http request option.
-	 * @throws {RequiredError}
-	 */
-	public authControllerLocalSignWithEmailOrUsername(request: Api.LocalSignInDto, options?: RequestInit) {
-		return AuthApiFp(this.configuration).authControllerLocalSignWithEmailOrUsername(request, options)(this.fetch, this.basePath);
 	}
 
 	/**
@@ -9140,7 +9378,7 @@ export namespace ProjectApi {
 	}
 	
 	export interface GetOneBaseProjectControllerProjectEntityParameters {
-		id: string
+		slug: string
 		/**
 		 * @description <p>Selects resource fields. <a href="https://github.com/nestjsx/crud/wiki/Requests#select" target="_blank">Docs</a></p>
 		 * @type {string[]}
@@ -9662,18 +9900,18 @@ export const ProjectApiFetchParamCreator = function (configuration?: Configurati
 		},
 		/**
 		 * @summary Delete a single ProjectEntity
-		 * @param {string} id
+		 * @param {string} slug
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		deleteOneBaseProjectControllerProjectEntity(id: string, options: RequestInit = {}): FetchArgs {
-			// verify required parameter 'id' is not null or undefined
-			if (id === null || id === undefined) {
-				throw new RequiredError('id', 'Required parameter id was null or undefined when calling deleteOneBaseProjectControllerProjectEntity.');
+		deleteOneBaseProjectControllerProjectEntity(slug: string, options: RequestInit = {}): FetchArgs {
+			// verify required parameter 'slug' is not null or undefined
+			if (slug === null || slug === undefined) {
+				throw new RequiredError('slug', 'Required parameter slug was null or undefined when calling deleteOneBaseProjectControllerProjectEntity.');
 			}
 
-			let localVarPath = `/project/{id}`
-				.replace('{id}', encodeURIComponent(String(id)));
+			let localVarPath = `/project/{slug}`
+				.replace('{slug}', encodeURIComponent(String(slug)));
 			const localVarPathQueryStart = localVarPath.indexOf("?");
 			const localVarRequestOptions: RequestInit = Object.assign({ method: 'DELETE' }, options);
 			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
@@ -9813,7 +10051,7 @@ export const ProjectApiFetchParamCreator = function (configuration?: Configurati
 		},
 		/**
 		 * @summary Retrieve a single ProjectEntity
-		 * @param {string} id
+		 * @param {string} slug
 		 * @param {string[]} [fields] <p>Selects resource fields. <a href="https://github.com/nestjsx/crud/wiki/Requests#select" target="_blank">Docs</a></p>
 		 * @param {string[]} [join] <p>Adds relational resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#join" target="_blank">Docs</a></p>
 		 * @param {number} [cache] <p>Reset cache (if was enabled). <a href="https://github.com/nestjsx/crud/wiki/Requests#cache" target="_blank">Docs</a></p>
@@ -9821,13 +10059,13 @@ export const ProjectApiFetchParamCreator = function (configuration?: Configurati
 		 * @throws {RequiredError}
 		 */
 		getOneBaseProjectControllerProjectEntity(__params: ProjectApi.GetOneBaseProjectControllerProjectEntityParameters, options: RequestInit = {}): FetchArgs {
-			// verify required parameter 'id' is not null or undefined
-			if (__params.id === null || __params.id === undefined) {
-				throw new RequiredError('id', 'Required parameter id was null or undefined when calling getOneBaseProjectControllerProjectEntity.');
+			// verify required parameter 'slug' is not null or undefined
+			if (__params.slug === null || __params.slug === undefined) {
+				throw new RequiredError('slug', 'Required parameter slug was null or undefined when calling getOneBaseProjectControllerProjectEntity.');
 			}
 
-			let localVarPath = `/project/{id}`
-				.replace('{id}', encodeURIComponent(String(__params.id)));
+			let localVarPath = `/project/{slug}`
+				.replace('{slug}', encodeURIComponent(String(__params.slug)));
 			const localVarPathQueryStart = localVarPath.indexOf("?");
 			const localVarRequestOptions: RequestInit = Object.assign({ method: 'GET' }, options);
 			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
@@ -10092,23 +10330,23 @@ export const ProjectApiFetchParamCreator = function (configuration?: Configurati
 		},
 		/**
 		 * @summary Update a single ProjectEntity
-		 * @param {string} id
+		 * @param {string} slug
 		 * @param {Api.ProjectEntity} request
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		updateOneBaseProjectControllerProjectEntity(id: string, request: Api.ProjectEntity, options: RequestInit = {}): FetchArgs {
-			// verify required parameter 'id' is not null or undefined
-			if (id === null || id === undefined) {
-				throw new RequiredError('id', 'Required parameter id was null or undefined when calling updateOneBaseProjectControllerProjectEntity.');
+		updateOneBaseProjectControllerProjectEntity(slug: string, request: Api.ProjectEntity, options: RequestInit = {}): FetchArgs {
+			// verify required parameter 'slug' is not null or undefined
+			if (slug === null || slug === undefined) {
+				throw new RequiredError('slug', 'Required parameter slug was null or undefined when calling updateOneBaseProjectControllerProjectEntity.');
 			}
 			// verify required parameter 'request' is not null or undefined
 			if (request === null || request === undefined) {
 				throw new RequiredError('request', 'Required parameter request was null or undefined when calling updateOneBaseProjectControllerProjectEntity.');
 			}
 
-			let localVarPath = `/project/{id}`
-				.replace('{id}', encodeURIComponent(String(id)));
+			let localVarPath = `/project/{slug}`
+				.replace('{slug}', encodeURIComponent(String(slug)));
 			const localVarPathQueryStart = localVarPath.indexOf("?");
 			const localVarRequestOptions: RequestInit = Object.assign({ method: 'PATCH' }, options);
 			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
@@ -10259,12 +10497,12 @@ export const ProjectApiFp = function(configuration?: Configuration) {
 		},
 		/**
 		 * @summary Delete a single ProjectEntity
-		 * @param {string} id
+		 * @param {string} slug
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		deleteOneBaseProjectControllerProjectEntity(id: string, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<ProjectApi.DeleteOneBaseProjectControllerProjectEntityResponse> {
-			const localVarFetchArgs = ProjectApiFetchParamCreator(configuration).deleteOneBaseProjectControllerProjectEntity(id, options);
+		deleteOneBaseProjectControllerProjectEntity(slug: string, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<ProjectApi.DeleteOneBaseProjectControllerProjectEntityResponse> {
+			const localVarFetchArgs = ProjectApiFetchParamCreator(configuration).deleteOneBaseProjectControllerProjectEntity(slug, options);
 			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
 				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
 				const contentType = response.headers.get('Content-Type');
@@ -10456,7 +10694,7 @@ export const ProjectApiFp = function(configuration?: Configuration) {
 		},
 		/**
 		 * @summary Retrieve a single ProjectEntity
-		 * @param {string} id
+		 * @param {string} slug
 		 * @param {string[]} [fields] <p>Selects resource fields. <a href="https://github.com/nestjsx/crud/wiki/Requests#select" target="_blank">Docs</a></p>
 		 * @param {string[]} [join] <p>Adds relational resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#join" target="_blank">Docs</a></p>
 		 * @param {number} [cache] <p>Reset cache (if was enabled). <a href="https://github.com/nestjsx/crud/wiki/Requests#cache" target="_blank">Docs</a></p>
@@ -10992,13 +11230,13 @@ export const ProjectApiFp = function(configuration?: Configuration) {
 		},
 		/**
 		 * @summary Update a single ProjectEntity
-		 * @param {string} id
+		 * @param {string} slug
 		 * @param {Api.ProjectEntity} request
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		updateOneBaseProjectControllerProjectEntity(id: string, request: Api.ProjectEntity, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<ProjectApi.UpdateOneBaseProjectControllerProjectEntityResponse> {
-			const localVarFetchArgs = ProjectApiFetchParamCreator(configuration).updateOneBaseProjectControllerProjectEntity(id, request, options);
+		updateOneBaseProjectControllerProjectEntity(slug: string, request: Api.ProjectEntity, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<ProjectApi.UpdateOneBaseProjectControllerProjectEntityResponse> {
+			const localVarFetchArgs = ProjectApiFetchParamCreator(configuration).updateOneBaseProjectControllerProjectEntity(slug, request, options);
 			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
 				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
 				const contentType = response.headers.get('Content-Type');
@@ -11122,11 +11360,11 @@ export interface ProjectApiInterface {
 
 	/**
 	 * @summary Delete a single ProjectEntity
-	 * @param {string} id
+	 * @param {string} slug
 	 * @param {RequestInit} [options] Override http request option.
 	 * @throws {RequiredError}
 	 */
-	deleteOneBaseProjectControllerProjectEntity(id: string, options?: RequestInit): Promise<ProjectApi.DeleteOneBaseProjectControllerProjectEntityResponse>
+	deleteOneBaseProjectControllerProjectEntity(slug: string, options?: RequestInit): Promise<ProjectApi.DeleteOneBaseProjectControllerProjectEntityResponse>
 
 	/**
 	 * @summary Retrieve multiple ProjectEntities
@@ -11147,7 +11385,7 @@ export interface ProjectApiInterface {
 
 	/**
 	 * @summary Retrieve a single ProjectEntity
-	 * @param {string} id
+	 * @param {string} slug
 	 * @param {string[]} [fields] <p>Selects resource fields. <a href="https://github.com/nestjsx/crud/wiki/Requests#select" target="_blank">Docs</a></p>
 	 * @param {string[]} [join] <p>Adds relational resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#join" target="_blank">Docs</a></p>
 	 * @param {number} [cache] <p>Reset cache (if was enabled). <a href="https://github.com/nestjsx/crud/wiki/Requests#cache" target="_blank">Docs</a></p>
@@ -11193,12 +11431,12 @@ export interface ProjectApiInterface {
 
 	/**
 	 * @summary Update a single ProjectEntity
-	 * @param {string} id
+	 * @param {string} slug
 	 * @param {Api.ProjectEntity} request
 	 * @param {RequestInit} [options] Override http request option.
 	 * @throws {RequiredError}
 	 */
-	updateOneBaseProjectControllerProjectEntity(id: string, request: Api.ProjectEntity, options?: RequestInit): Promise<ProjectApi.UpdateOneBaseProjectControllerProjectEntityResponse>
+	updateOneBaseProjectControllerProjectEntity(slug: string, request: Api.ProjectEntity, options?: RequestInit): Promise<ProjectApi.UpdateOneBaseProjectControllerProjectEntityResponse>
 
 }
 
@@ -11221,12 +11459,12 @@ export class ProjectApi extends BaseAPI implements ProjectApiInterface {
 
 	/**
 	 * @summary Delete a single ProjectEntity
-	 * @param {string} id
+	 * @param {string} slug
 	 * @param {RequestInit} [options] Override http request option.
 	 * @throws {RequiredError}
 	 */
-	public deleteOneBaseProjectControllerProjectEntity(id: string, options?: RequestInit) {
-		return ProjectApiFp(this.configuration).deleteOneBaseProjectControllerProjectEntity(id, options)(this.fetch, this.basePath);
+	public deleteOneBaseProjectControllerProjectEntity(slug: string, options?: RequestInit) {
+		return ProjectApiFp(this.configuration).deleteOneBaseProjectControllerProjectEntity(slug, options)(this.fetch, this.basePath);
 	}
 
 	/**
@@ -11250,7 +11488,7 @@ export class ProjectApi extends BaseAPI implements ProjectApiInterface {
 
 	/**
 	 * @summary Retrieve a single ProjectEntity
-	 * @param {string} id
+	 * @param {string} slug
 	 * @param {string[]} [fields] <p>Selects resource fields. <a href="https://github.com/nestjsx/crud/wiki/Requests#select" target="_blank">Docs</a></p>
 	 * @param {string[]} [join] <p>Adds relational resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#join" target="_blank">Docs</a></p>
 	 * @param {number} [cache] <p>Reset cache (if was enabled). <a href="https://github.com/nestjsx/crud/wiki/Requests#cache" target="_blank">Docs</a></p>
@@ -11308,13 +11546,13 @@ export class ProjectApi extends BaseAPI implements ProjectApiInterface {
 
 	/**
 	 * @summary Update a single ProjectEntity
-	 * @param {string} id
+	 * @param {string} slug
 	 * @param {Api.ProjectEntity} request
 	 * @param {RequestInit} [options] Override http request option.
 	 * @throws {RequiredError}
 	 */
-	public updateOneBaseProjectControllerProjectEntity(id: string, request: Api.ProjectEntity, options?: RequestInit) {
-		return ProjectApiFp(this.configuration).updateOneBaseProjectControllerProjectEntity(id, request, options)(this.fetch, this.basePath);
+	public updateOneBaseProjectControllerProjectEntity(slug: string, request: Api.ProjectEntity, options?: RequestInit) {
+		return ProjectApiFp(this.configuration).updateOneBaseProjectControllerProjectEntity(slug, request, options)(this.fetch, this.basePath);
 	}
 
 }

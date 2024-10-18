@@ -50,7 +50,7 @@ export default function PlayPage() {
         },
         {
           headers: {
-            Authorization: `Bearer ${session?.accessToken}`,
+            Authorization: `Bearer ${session?.user?.accessToken}`,
           },
         },
       );
@@ -87,7 +87,7 @@ export default function PlayPage() {
       console.log('before request');
       const response = await api.competitionControllerListChessAgents({
         headers: {
-          Authorization: `Bearer ${session?.accessToken}`,
+          Authorization: `Bearer ${session?.user?.accessToken}`,
         },
       });
 

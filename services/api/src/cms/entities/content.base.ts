@@ -2,7 +2,14 @@ import { Column, Index } from 'typeorm';
 import { VisibilityEnum } from './visibility.enum';
 import { ApiProperty } from '@nestjs/swagger';
 import { IsSlug } from '../../common/decorators/isslug.decorator';
-import { IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
+import {
+  IsEnum,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  IsUrl,
+  MaxLength,
+} from 'class-validator';
 import { WithRolesEntity } from '../../auth/entities/with-roles.entity';
 import { CrudValidationGroups } from '@dataui/crud';
 
@@ -11,47 +18,34 @@ export abstract class ContentBase extends WithRolesEntity {
   @Column({ length: 255, nullable: false, type: 'varchar' })
   @Index({ unique: true })
   @ApiProperty()
-  @IsSlug({ message: 'error.slug: slug field must be a valid slug' })
-  @MaxLength(255, {
-    message: 'error.maxLength: slug field is too long: max 255',
-  })
-  @IsNotEmpty({
-    message: 'error.notEmpty: slug is required',
-    groups: [CrudValidationGroups.CREATE],
-  })
   @IsOptional({ groups: [CrudValidationGroups.UPDATE] })
-  @IsString({ message: 'error.isString: slug must be a string' })
+  @IsNotEmpty({ groups: [CrudValidationGroups.CREATE] })
+  @IsString()
+  @MaxLength(255)
+  @IsSlug()
   slug: string;
 
-  @Column({ length: 1024, nullable: false, type: 'varchar' })
+  @Column({ length: 255, nullable: false, type: 'varchar' })
   @Index({ unique: false })
   @ApiProperty()
-  @MaxLength(255, { message: 'error.maxLength: title is too long, max 255' })
-  @IsNotEmpty({
-    message: 'error.isNotEmpty: title is required',
-    groups: [CrudValidationGroups.CREATE],
-  })
-  @IsOptional({ groups: [CrudValidationGroups.UPDATE] })
-  @IsString({ message: 'error.isString: title must be a string' })
+  @IsOptional()
+  @IsNotEmpty({ groups: [CrudValidationGroups.CREATE] })
+  @IsString()
+  @MaxLength(255)
   title: string;
 
-  @Column({ length: 1024, nullable: false })
+  @Column({ length: 1024, nullable: true })
   @ApiProperty()
-  @MaxLength(1024, {
-    message: 'error.maxLength: summary is too long, max 1024',
-  })
-  @IsNotEmpty({ message: 'error.isNotEmpty: summary is required' })
-  @IsString({ message: 'error.isString: summary must be a string' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(1024)
   summary: string;
 
-  @Column({ type: 'text', nullable: false })
-  @IsString({ message: 'error.isString: body must be a string' })
-  @MaxLength(1024 * 64, {
-    message: 'error.maxLength: body is too long, max 64kb',
-  })
-  @IsNotEmpty({ message: 'error.isNotEmpty: body is required' })
+  @Column({ type: 'text', nullable: true })
   @ApiProperty()
-  // todo: guarantee the type here, md or anything else
+  @IsOptional()
+  @IsString()
+  @MaxLength(1024 * 64)
   body: string;
 
   @Index({ unique: false })
@@ -62,10 +56,14 @@ export abstract class ContentBase extends WithRolesEntity {
     nullable: false,
   })
   @ApiProperty({ enum: VisibilityEnum })
+  @IsOptional()
+  @IsEnum(VisibilityEnum)
   visibility: VisibilityEnum;
 
   // asset image
   @Column({ nullable: true, default: '', type: 'varchar', length: 1024 })
   @ApiProperty()
+  @IsOptional()
+  @IsUrl({ require_protocol: true })
   thumbnail: string;
 }
