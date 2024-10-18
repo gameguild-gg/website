@@ -1,3 +1,10 @@
+## [1.0.5](https://github.com/gameguild-gg/website/compare/v1.0.4...v1.0.5) (2024-10-18)
+
+
+### Bug Fixes
+
+* docker build web ([1373e56](https://github.com/gameguild-gg/website/commit/1373e56e951ee6d7aeab23f8a27dbdeb23c18824))
+
 ## [1.0.4](https://github.com/gameguild-gg/website/compare/v1.0.3...v1.0.4) (2024-10-18)
 
 
