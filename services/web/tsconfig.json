@@ -1,5 +1,7 @@
 {
   "compilerOptions": {
+    "baseUrl": ".",
+    "rootDir": "./",
     "module": "esnext",
     "jsx": "preserve",
     "target": "es6",
@@ -30,6 +32,9 @@
       }
     ],
     "paths": {
+      "@apiclient/*": [
+        "../../packages/apiclient/*"
+      ],
       "@/*": [
         "./src/*"
       ]
@@ -40,7 +45,8 @@
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
-    "src/global.d.ts"
+    "src/global.d.ts",
+    "build/types/**/*.ts"
   ],
   "exclude": [
     "node_modules"
