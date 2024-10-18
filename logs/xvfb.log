@@ -1,0 +1,9 @@
+The XKEYBOARD keymap compiler (xkbcomp) reports:
+> Internal error:   Could not resolve keysym XF86FullScreen
+Errors from xkbcomp are not fatal to the X server
+The XKEYBOARD keymap compiler (xkbcomp) reports:
+> Internal error:   Could not resolve keysym XF86FullScreen
+Errors from xkbcomp are not fatal to the X server
+The XKEYBOARD keymap compiler (xkbcomp) reports:
+> Internal error:   Could not resolve keysym XF86FullScreen
+Errors from xkbcomp are not fatal to the X server
