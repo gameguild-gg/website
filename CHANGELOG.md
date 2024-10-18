@@ -1,3 +1,10 @@
+## [1.0.4](https://github.com/gameguild-gg/website/compare/v1.0.3...v1.0.4) (2024-10-18)
+
+
+### Bug Fixes
+
+* web build ([72b790a](https://github.com/gameguild-gg/website/commit/72b790a4e28d9a961bf267149eca52188764bdc9))
+
 ## [1.0.3](https://github.com/gameguild-gg/website/compare/v1.0.2...v1.0.3) (2024-10-18)
 
 
