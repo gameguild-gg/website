@@ -1,3 +1,11 @@
+## [1.0.7](https://github.com/gameguild-gg/website/compare/v1.0.6...v1.0.7) (2024-10-18)
+
+
+### Bug Fixes
+
+* gource ([191edfc](https://github.com/gameguild-gg/website/commit/191edfcc0a40e0e67bcbcf74710f0f288fe72662))
+* gource ([4592cc1](https://github.com/gameguild-gg/website/commit/4592cc1f5b6f14ee3d2b3edefec5b04ff909a1e1))
+
 ## [1.0.6](https://github.com/gameguild-gg/website/compare/v1.0.5...v1.0.6) (2024-10-18)
 
 
