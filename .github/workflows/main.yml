@@ -26,34 +26,23 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
 
       - run: npm install
         name: Install dependencies
 
-      - name: 'Gource Action'
-        uses: nbprojekt/gource-action@v1
-        with:
-          gource_title: 'Game Guild'
-            #          logo_url: 'overrides/favicon/android-chrome-192x192.png'
-          gource_resolution: '1080p'
-          gource_fps: 60
-          avatars_url: contributors
-            #          avatars_auto_fetch: true
-          gource_seconds_per_day: 0.1
-          gource_hide_items: mouse
-          gource_font_size: 40
-          gource_auto_skip_seconds: 0.1
-          gource_user_scale: 2.0
-          gource_highlight_users: true
+      # install ffmpeg and gource
+      - run: sudo apt-get install ffmpeg gource
+        name: Install ffmpeg and gource
 
-
+      - run: npm run gource
+        name: Generate gource video
 
       - name: Publish
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./gource
+          publish_dir: ./contributors
           force_orphan: true
 
       - name: Semantic Release
