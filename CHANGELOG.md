@@ -1,3 +1,19 @@
+# [1.1.0](https://github.com/gameguild-gg/website/compare/v1.0.7...v1.1.0) (2024-10-18)
+
+
+### Bug Fixes
+
+* many job type and application fixes ([af0fd26](https://github.com/gameguild-gg/website/commit/af0fd2672dce9df52191a0c61337196781ebfe0d))
+* post-merge fix on job controller ([b84a2ff](https://github.com/gameguild-gg/website/commit/b84a2ff374310c3a19bab53680b4bac7e4a43ff0))
+* reworking job system backend ([2525a63](https://github.com/gameguild-gg/website/commit/2525a630733697bce77d8ffe857f6c28373dc09e))
+
+
+### Features
+
+* Job type and job search system ([61c5424](https://github.com/gameguild-gg/website/commit/61c542446348a9b7879dd7ac51544aac02fa3f09))
+* new unified job application progress page ([b4e6a28](https://github.com/gameguild-gg/website/commit/b4e6a2835c2d6a90c4dea9e7eb8ef4382eb2bf65))
+* WithRoles and JobPostWithApllied new methods ([91ec94d](https://github.com/gameguild-gg/website/commit/91ec94d6b697bbff060c775c7ff4650281ba2a60))
+
 ## [1.0.7](https://github.com/gameguild-gg/website/compare/v1.0.6...v1.0.7) (2024-10-18)
 
 
