@@ -43,8 +43,8 @@ const applicationSteps2 = [
 export default function JobsFreelance({ params }) {
   const [jobApplication, setJobApplicaton] = useState<Api.JobApplicationEntity>()
   const router = useRouter()
-  const { jobSlug } = params
-  console.log("SLUG:\n",jobSlug)
+  const { jobApplicationSlug } = params
+  console.log("SLUG:\n",jobApplicationSlug)
 
   const jobApplicationApi = new JobApplicationsApi({
     basePath: process.env.NEXT_PUBLIC_API_URL,
@@ -63,7 +63,7 @@ export default function JobsFreelance({ params }) {
     const response = await jobApplicationApi.getManyBaseJobApplicationControllerJobApplicationEntity(
       {
         join: ['job'],
-        filter: ['job.slug||$eq||'+jobSlug],
+        filter: ['job.slug||$eq||'+jobApplicationSlug],
         limit: 1
       },
       { headers: { Authorization: `Bearer ${session.accessToken}` } },
@@ -75,13 +75,14 @@ export default function JobsFreelance({ params }) {
       router.push('/connect');
     }
     console.log('JobApplication:\n',jobApplication);
+    //
   }
   
 
   return (
     <div className="min-h-[calc(100vh-150px)] bg-gray-100">
       <div className="container mx-auto p-4">
-        <h1 className="mb-6 text-2xl font-bold">Freelance Job Details</h1>
+        <h1 className="mb-6 text-2xl font-bold">Job Details</h1>
         <div className="grid gap-6 md:grid-cols-[2fr_1fr]">
           {/* Left side: Job Information */}
           <Card>

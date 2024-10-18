@@ -111,11 +111,6 @@ export class JobPostController
     @ParsedRequest() crudReq: CrudRequest,
     @BodyOwnerInject(JobPostCreateDto) body: JobPostCreateDto,
   ) {
-    //const res = await this.service.createOne(crudReq, body);
-    //return this.service.findOne({
-    //  where: { id: res.id },
-    //  relations: { owner: true, editors: true },
-    //});
     return await this.service.createOneJob(crudReq, body);
   }
 

@@ -70,6 +70,7 @@ export default function JobBoard() {
 
   const getAllJobTags = async () => {
     const session: any = await getSession();
+    //console.log("SESSION:",session)
     if (!session) {
       router.push('/connect');
       return;
@@ -79,7 +80,8 @@ export default function JobBoard() {
       { headers: { Authorization: `Bearer ${session.accessToken}` } },
     );
     if ((response.status = 200)) {
-      setJobTags(response.body as Api.JobTagEntity[]);
+      console.log('response(job tags):', response)
+      setJobTags(response.body as Api.JobTagEntity[]||[]);
     }
   };
 
@@ -287,7 +289,7 @@ export default function JobBoard() {
                 <CommandList>
                   <CommandEmpty>No tags found.</CommandEmpty>
                   <CommandGroup>
-                    {jobTags.map((tag: Api.JobTagEntity) => (
+                    {jobTags?.map((tag: Api.JobTagEntity) => (
                       <CommandItem
                         key={tag.id}
                         onSelect={() => {
@@ -329,16 +331,13 @@ export default function JobBoard() {
                     <Avatar>
                       <AvatarImage src={job.thumbnail} alt={job?.company} />
                       <AvatarFallback>{job?.title[0]}</AvatarFallback>
-                      {/*company */}
                     </Avatar>
                     <div>
                       <h3 className="font-semibold">{job.title}</h3>
                       <p className="text-sm text-gray-500">
                         {job?.owner?.email}
                       </p>
-                      {/*company */}
                       <p className="text-sm text-gray-500">{job?.location}</p>
-                      {/*location */}
                       <p className="text-sm text-gray-500">
                         {timeAgo(job?.createdAt)}
                       </p>
@@ -391,7 +390,7 @@ export default function JobBoard() {
                   {selectedJob.applied && (
                     <p className="mb-6 bg-gray-100 flex">
                       Already Applied.
-                      <p className="ml-2 font-semibold text-blue-500 underline" onClick={()=>handleLearnMoreButton(selectedJob.slug)}>Learn more.</p>
+                      <p className="ml-2 font-semibold text-blue-500 hover:underline" onClick={()=>handleLearnMoreButton(selectedJob.slug)}>Learn more.</p>
                     </p>
                   )}
                   {!selectedJob.applied && (
