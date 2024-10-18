@@ -130,12 +130,11 @@ export class JobPostController
         'editors',
         'createdAt',
         'updatedAt',
-        'deletedAt',
       ]),
     )
     dto: PartialWithoutFields<
       JobPostEntity,
-      'owner' | 'editors' | 'createdAt' | 'updatedAt' | 'deletedAt'
+      'owner' | 'editors' | 'createdAt' | 'updatedAt'
     >,
   ): Promise<JobPostEntity> {
     return this.base.updateOneBase(req, dto);
