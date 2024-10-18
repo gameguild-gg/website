@@ -1,3 +1,10 @@
+## [1.1.1](https://github.com/gameguild-gg/website/compare/v1.1.0...v1.1.1) (2024-10-18)
+
+
+### Bug Fixes
+
+* gource now have captions ([2fb6695](https://github.com/gameguild-gg/website/commit/2fb6695b350f025dece791347db78078b3b41ac0))
+
 # [1.1.0](https://github.com/gameguild-gg/website/compare/v1.0.7...v1.1.0) (2024-10-18)
 
 
