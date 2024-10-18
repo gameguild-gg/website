@@ -1,22 +1,8 @@
 import React from 'react';
 import Link from 'next/link';
-import {Button} from '@/components/ui/button';
+import { Button } from '@/components/ui/button';
 
 export default function Page() {
-  //   const games = await fetchGames();
-  //
-  //   return (
-  //     <div className="container mx-auto py-8 px-4 md:px-6">
-  //       <div className="grid grid-cols-1 gap-4 md:grid-cols-4 lg:grid-cols-4 mt-8">
-  //         {games.map((game) => (
-  //           <Link key={game.slug} href={`projects/${game.slug}`}>
-  //             <GameCard game={game} />
-  //           </Link>
-  //         ))}
-  //       </div>
-  //     </div>
-  //   );
-
   return (
     <div className="min-h-screen bg-gray-100">
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

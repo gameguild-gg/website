@@ -24,7 +24,6 @@ export default function CreateProjectForm() {
   const router = useRouter();
 
   const createProject = async () => {
-    console.log('create project');
     if (project) {
       const session = await getSession();
       const api = new ProjectApi({
