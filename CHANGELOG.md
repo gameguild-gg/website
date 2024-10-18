@@ -1,3 +1,10 @@
+## [1.0.6](https://github.com/gameguild-gg/website/compare/v1.0.5...v1.0.6) (2024-10-18)
+
+
+### Bug Fixes
+
+* node version for web ([3f03463](https://github.com/gameguild-gg/website/commit/3f03463bd6bb7ecc938f1222543fa8373f9df6bf))
+
 ## [1.0.5](https://github.com/gameguild-gg/website/compare/v1.0.4...v1.0.5) (2024-10-18)
 
 
