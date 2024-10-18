@@ -1,3 +1,10 @@
+## [1.0.3](https://github.com/gameguild-gg/website/compare/v1.0.2...v1.0.3) (2024-10-18)
+
+
+### Bug Fixes
+
+* bad include on game-card ([65fa176](https://github.com/gameguild-gg/website/commit/65fa1767bb9fb62cc05006b80a4096f5ea03c57e))
+
 ## [1.0.2](https://github.com/gameguild-gg/website/compare/v1.0.1...v1.0.2) (2024-10-17)
 
 
