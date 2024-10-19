@@ -1,3 +1,10 @@
+## [1.1.2](https://github.com/gameguild-gg/website/compare/v1.1.1...v1.1.2) (2024-10-19)
+
+
+### Bug Fixes
+
+* trying to fix name replacements for gource ([2c586d9](https://github.com/gameguild-gg/website/commit/2c586d9b16a4168a93846ea03283452559cc81d1))
+
 ## [1.1.1](https://github.com/gameguild-gg/website/compare/v1.1.0...v1.1.1) (2024-10-18)
 
 
