@@ -10331,11 +10331,11 @@ export const ProjectApiFetchParamCreator = function (configuration?: Configurati
 		/**
 		 * @summary Update a single ProjectEntity
 		 * @param {string} slug
-		 * @param {Api.ProjectEntity} request
+		 * @param {Api.CreateProjectDto} request
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		updateOneBaseProjectControllerProjectEntity(slug: string, request: Api.ProjectEntity, options: RequestInit = {}): FetchArgs {
+		updateOneBaseProjectControllerProjectEntity(slug: string, request: Api.CreateProjectDto, options: RequestInit = {}): FetchArgs {
 			// verify required parameter 'slug' is not null or undefined
 			if (slug === null || slug === undefined) {
 				throw new RequiredError('slug', 'Required parameter slug was null or undefined when calling updateOneBaseProjectControllerProjectEntity.');
@@ -11231,11 +11231,11 @@ export const ProjectApiFp = function(configuration?: Configuration) {
 		/**
 		 * @summary Update a single ProjectEntity
 		 * @param {string} slug
-		 * @param {Api.ProjectEntity} request
+		 * @param {Api.CreateProjectDto} request
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		updateOneBaseProjectControllerProjectEntity(slug: string, request: Api.ProjectEntity, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<ProjectApi.UpdateOneBaseProjectControllerProjectEntityResponse> {
+		updateOneBaseProjectControllerProjectEntity(slug: string, request: Api.CreateProjectDto, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<ProjectApi.UpdateOneBaseProjectControllerProjectEntityResponse> {
 			const localVarFetchArgs = ProjectApiFetchParamCreator(configuration).updateOneBaseProjectControllerProjectEntity(slug, request, options);
 			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
 				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
@@ -11432,11 +11432,11 @@ export interface ProjectApiInterface {
 	/**
 	 * @summary Update a single ProjectEntity
 	 * @param {string} slug
-	 * @param {Api.ProjectEntity} request
+	 * @param {Api.CreateProjectDto} request
 	 * @param {RequestInit} [options] Override http request option.
 	 * @throws {RequiredError}
 	 */
-	updateOneBaseProjectControllerProjectEntity(slug: string, request: Api.ProjectEntity, options?: RequestInit): Promise<ProjectApi.UpdateOneBaseProjectControllerProjectEntityResponse>
+	updateOneBaseProjectControllerProjectEntity(slug: string, request: Api.CreateProjectDto, options?: RequestInit): Promise<ProjectApi.UpdateOneBaseProjectControllerProjectEntityResponse>
 
 }
 
@@ -11547,11 +11547,11 @@ export class ProjectApi extends BaseAPI implements ProjectApiInterface {
 	/**
 	 * @summary Update a single ProjectEntity
 	 * @param {string} slug
-	 * @param {Api.ProjectEntity} request
+	 * @param {Api.CreateProjectDto} request
 	 * @param {RequestInit} [options] Override http request option.
 	 * @throws {RequiredError}
 	 */
-	public updateOneBaseProjectControllerProjectEntity(slug: string, request: Api.ProjectEntity, options?: RequestInit) {
+	public updateOneBaseProjectControllerProjectEntity(slug: string, request: Api.CreateProjectDto, options?: RequestInit) {
 		return ProjectApiFp(this.configuration).updateOneBaseProjectControllerProjectEntity(slug, request, options)(this.fetch, this.basePath);
 	}
 

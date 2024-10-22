@@ -6,7 +6,6 @@ import {
   IsString,
   IsUrl,
   Length,
-  MaxLength,
 } from 'class-validator';
 import { IsSlug } from '../../common/decorators/isslug.decorator';
 import { VisibilityEnum } from '../entities/visibility.enum';

@@ -1012,7 +1012,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ProjectEntity"
+                "$ref": "#/components/schemas/CreateProjectDto"
               }
             }
           }
@@ -8481,10 +8481,6 @@
             "format": "date-time",
             "type": "string"
           },
-          "deletedAt": {
-            "format": "date-time",
-            "type": "string"
-          },
           "owner": {
             "$ref": "#/components/schemas/UserEntity"
           },
@@ -8541,7 +8537,6 @@
           "id",
           "createdAt",
           "updatedAt",
-          "deletedAt",
           "owner",
           "editors",
           "slug",
@@ -8706,10 +8701,6 @@
             "format": "date-time",
             "type": "string"
           },
-          "deletedAt": {
-            "format": "date-time",
-            "type": "string"
-          },
           "applicant": {
             "$ref": "#/components/schemas/UserEntity"
           },
@@ -8721,7 +8712,6 @@
           "id",
           "createdAt",
           "updatedAt",
-          "deletedAt",
           "applicant",
           "job"
         ]

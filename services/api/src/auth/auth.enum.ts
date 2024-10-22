@@ -1,12 +1,9 @@
-import { Type } from '@nestjs/common/interfaces';
 import { WithRolesEntity } from './entities/with-roles.entity';
 import { AuthType } from './guards';
-import { EntityClassWithRolesField } from './decorators';
 
 export enum ContentUserRolesEnum {
   OWNER = 'CONTENT_OWNER', // default for routes for DELETE actions
-  MANAGER = 'CONTENT_MANAGER', // can add other editors
-  EDITOR = 'CONTENT_EDITOR', // default for PUT, PATCH, POST
+  EDITOR = 'CONTENT_EDITOR', // default for PUT, PATCH, POST, UPDATE actions
 }
 
 export enum ContentUserSubscriberRolesEnum {
@@ -42,10 +39,10 @@ export const OwnerRoute = <T extends WithRolesEntity>(
   return new RouteContentClass(ContentUserRolesEnum.OWNER, type);
 };
 
-export const ManagerRoute = <T extends WithRolesEntity>(
+export const EditorRoute = <T extends WithRolesEntity>(
   type: T,
 ): RouteContentClass<T> => {
-  return new RouteContentClass(ContentUserRolesEnum.MANAGER, type);
+  return new RouteContentClass(ContentUserRolesEnum.EDITOR, type);
 };
 
 export const PublicRoute: RouteRolesClass = {

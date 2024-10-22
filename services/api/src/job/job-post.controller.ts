@@ -4,11 +4,7 @@ import { Swagger } from '@dataui/crud/lib/crud';
 import { JobPostService } from './job-post.service';
 import { Auth } from '../auth/decorators/http.decorator';
 import { JobPostEntity } from './entities/job-post.entity';
-import {
-  AuthenticatedRoute,
-  ManagerRoute,
-  OwnerRoute,
-} from '../auth/auth.enum';
+import { AuthenticatedRoute, OwnerRoute } from '../auth/auth.enum';
 import {
   OwnershipEmptyInterceptor,
   PartialWithoutFields,
@@ -60,7 +56,7 @@ import { UserInject } from 'src/common/decorators/user-injection.decorator';
     //   decorators: [Auth(AuthenticatedRoute)],
     // },
     updateOneBase: {
-      decorators: [Auth<JobPostEntity>(ManagerRoute<JobPostEntity>)],
+      decorators: [Auth<JobPostEntity>(OwnerRoute<JobPostEntity>)],
       interceptors: [OwnershipEmptyInterceptor],
     },
     deleteOneBase: {
@@ -120,7 +116,7 @@ export class JobPostController
   }
 
   @Override()
-  @Auth<JobPostEntity>(ManagerRoute<JobPostEntity>)
+  @Auth<JobPostEntity>(OwnerRoute<JobPostEntity>)
   @ApiBody({ type: JobPostEntity })
   async updateOne(
     @ParsedRequest() req: CrudRequest,
@@ -146,7 +142,7 @@ export class JobPostController
   @ApiResponse({
     status: 200,
     type: Promise<JobPostWithAppliedDto[]>,
-    schema:{$ref: getSchemaPath(Array<JobPostWithAppliedDto>)},
+    schema: { $ref: getSchemaPath(Array<JobPostWithAppliedDto>) },
   })
   async getManyWithApplied(
     @ParsedRequest() req: CrudRequest,

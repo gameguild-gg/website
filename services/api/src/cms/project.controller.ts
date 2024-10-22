@@ -10,17 +10,9 @@ import {
   Override,
   ParsedRequest,
 } from '@dataui/crud';
-import {
-  AuthenticatedRoute,
-  ManagerRoute,
-  OwnerRoute,
-} from '../auth/auth.enum';
+import { AuthenticatedRoute, EditorRoute, OwnerRoute } from '../auth/auth.enum';
 import { BodyOwnerInject } from '../common/decorators/parameter.decorator';
-import {
-  OwnershipEmptyInterceptor,
-  PartialWithoutFields,
-} from './interceptors/ownership-empty-interceptor.service';
-import { ExcludeFieldsPipe } from './pipes/exclude-fields.pipe';
+import { OwnershipEmptyInterceptor } from './interceptors/ownership-empty-interceptor.service';
 import { WithRolesController } from './with-roles.controller';
 import { CreateProjectDto } from './dtos/create-project.dto';
 
@@ -55,7 +47,7 @@ import { CreateProjectDto } from './dtos/create-project.dto';
       decorators: [Auth(AuthenticatedRoute)],
     },
     updateOneBase: {
-      decorators: [Auth<ProjectEntity>(ManagerRoute<ProjectEntity>)],
+      decorators: [Auth<ProjectEntity>(EditorRoute<ProjectEntity>)],
       interceptors: [OwnershipEmptyInterceptor],
     },
     deleteOneBase: {
@@ -82,6 +74,7 @@ export class ProjectController
   @Override()
   @Auth(AuthenticatedRoute)
   async getMany(@ParsedRequest() req: CrudRequest): Promise<ProjectEntity[]> {
+    // todo: check if this is working, it seems wrong, without paginations and filters
     return this.service.find({
       relations: ['owner', 'tickets'],
     });
@@ -105,24 +98,12 @@ export class ProjectController
   }
 
   @Override()
-  @Auth<ProjectEntity>(ManagerRoute<ProjectEntity>)
-  @ApiBody({ type: ProjectEntity })
+  @Auth<ProjectEntity>(EditorRoute<ProjectEntity>)
+  @ApiBody({ type: CreateProjectDto })
   @ApiResponse({ type: ProjectEntity })
   async updateOne(
     @ParsedRequest() req: CrudRequest,
-    @Body(
-      new ExcludeFieldsPipe<ProjectEntity>([
-        'owner',
-        'editors',
-        'versions',
-        'createdAt',
-        'updatedAt',
-      ]),
-    )
-    dto: PartialWithoutFields<
-      ProjectEntity,
-      'owner' | 'editors' | 'versions' | 'createdAt' | 'updatedAt'
-    >,
+    @Body() dto: CreateProjectDto,
   ): Promise<ProjectEntity> {
     return this.base.updateOneBase(req, dto);
   }
