@@ -1,3 +1,11 @@
+## [1.1.3](https://github.com/gameguild-gg/website/compare/v1.1.2...v1.1.3) (2024-10-22)
+
+
+### Bug Fixes
+
+* rename MANAGER_ROUTE to EDITOR_ROUTE ([4e8434a](https://github.com/gameguild-gg/website/commit/4e8434a88a741507024fcc8e78053a2308811c68))
+* **web3:** add torus connect button ([d560462](https://github.com/gameguild-gg/website/commit/d5604624d69a24d50f6cc9e0cc284df4d7e3cf4c))
+
 ## [1.1.2](https://github.com/gameguild-gg/website/compare/v1.1.1...v1.1.2) (2024-10-19)
 
 
