@@ -30,9 +30,9 @@ import { CrudController, Crud } from '@dataui/crud';
     createOneBase: {
       decorators: [Auth(AuthenticatedRoute)],
     },
-    getManyBase: {
-      decorators: [Auth(AuthenticatedRoute)],
-    },
+    // getManyBase: {
+    //   decorators: [Auth(AuthenticatedRoute)],
+    // },
     updateOneBase: {
       decorators: [Auth(AuthenticatedRoute)],
     },

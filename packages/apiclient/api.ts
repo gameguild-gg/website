@@ -7933,67 +7933,11 @@ export namespace JobTagsApi {
 	
 	export type GetManyBaseJobTagControllerJobTagEntityResponse =
 		| GetManyBaseJobTagControllerJobTagEntity200Response
-		| GetManyBaseJobTagControllerJobTagEntity400Response
-		| GetManyBaseJobTagControllerJobTagEntity401Response
-		| GetManyBaseJobTagControllerJobTagEntity403Response
-		| GetManyBaseJobTagControllerJobTagEntity404Response
-		| GetManyBaseJobTagControllerJobTagEntity409Response
-		| GetManyBaseJobTagControllerJobTagEntity422Response
-		| GetManyBaseJobTagControllerJobTagEntity500Response
 	
 	export interface GetManyBaseJobTagControllerJobTagEntity200Response {
 		status: 200
 		contentType: 'application/json'
 		body: Api.GetManyJobTagEntityResponseDto | Api.JobTagEntity[]
-		headers?: undefined
-	}
-	
-	export interface GetManyBaseJobTagControllerJobTagEntity400Response {
-		status: 400
-		contentType: 'application/json'
-		body: Api.ApiErrorResponseDto
-		headers?: undefined
-	}
-	
-	export interface GetManyBaseJobTagControllerJobTagEntity401Response {
-		status: 401
-		contentType: 'application/json'
-		body: Api.ApiErrorResponseDto
-		headers?: undefined
-	}
-	
-	export interface GetManyBaseJobTagControllerJobTagEntity403Response {
-		status: 403
-		contentType: 'application/json'
-		body: Api.ApiErrorResponseDto
-		headers?: undefined
-	}
-	
-	export interface GetManyBaseJobTagControllerJobTagEntity404Response {
-		status: 404
-		contentType: 'application/json'
-		body: Api.ApiErrorResponseDto
-		headers?: undefined
-	}
-	
-	export interface GetManyBaseJobTagControllerJobTagEntity409Response {
-		status: 409
-		contentType: 'application/json'
-		body: Api.ApiErrorResponseDto
-		headers?: undefined
-	}
-	
-	export interface GetManyBaseJobTagControllerJobTagEntity422Response {
-		status: 422
-		contentType: 'application/json'
-		body: Api.ApiErrorResponseDto
-		headers?: undefined
-	}
-	
-	export interface GetManyBaseJobTagControllerJobTagEntity500Response {
-		status: 500
-		contentType: 'application/json'
-		body: Api.ApiErrorResponseDto
 		headers?: undefined
 	}
 	
@@ -8275,16 +8219,6 @@ export const JobTagsApiFetchParamCreator = function (configuration?: Configurati
 				localVarPath = localVarPath.substring(0, localVarPathQueryStart);
 			}
 
-			// authentication bearer required
-			// http authorization required
-			if (configuration && configuration.authorization) {
-				const localVarAuthorizationValue = typeof configuration.authorization === 'function'
-					? configuration.authorization('bearer')
-					: configuration.authorization;
-				if (localVarAuthorizationValue !== null) {
-					localVarHeaderParameter.set("Authorization", "Bearer " + localVarAuthorizationValue);
-				}
-			}
 			if (__params.fields !== undefined) {
 				/* array form */
 				localVarQueryParameter.append('fields', __params.fields.map(localVarArrayMapElement => escape(String(localVarArrayMapElement))).join(','));
@@ -8700,76 +8634,6 @@ export const JobTagsApiFp = function(configuration?: Configuration) {
 							status: response.status,
 							contentType: 'application/json',
 							body: await response.json() as Api.GetManyJobTagEntityResponseDto | Api.JobTagEntity[],
-						}
-					}
-					throw response;
-				}
-				if (response.status === 400) {
-					if (mimeType === 'application/json') {
-						return {
-							status: response.status,
-							contentType: 'application/json',
-							body: await response.json() as Api.ApiErrorResponseDto,
-						}
-					}
-					throw response;
-				}
-				if (response.status === 401) {
-					if (mimeType === 'application/json') {
-						return {
-							status: response.status,
-							contentType: 'application/json',
-							body: await response.json() as Api.ApiErrorResponseDto,
-						}
-					}
-					throw response;
-				}
-				if (response.status === 403) {
-					if (mimeType === 'application/json') {
-						return {
-							status: response.status,
-							contentType: 'application/json',
-							body: await response.json() as Api.ApiErrorResponseDto,
-						}
-					}
-					throw response;
-				}
-				if (response.status === 404) {
-					if (mimeType === 'application/json') {
-						return {
-							status: response.status,
-							contentType: 'application/json',
-							body: await response.json() as Api.ApiErrorResponseDto,
-						}
-					}
-					throw response;
-				}
-				if (response.status === 409) {
-					if (mimeType === 'application/json') {
-						return {
-							status: response.status,
-							contentType: 'application/json',
-							body: await response.json() as Api.ApiErrorResponseDto,
-						}
-					}
-					throw response;
-				}
-				if (response.status === 422) {
-					if (mimeType === 'application/json') {
-						return {
-							status: response.status,
-							contentType: 'application/json',
-							body: await response.json() as Api.ApiErrorResponseDto,
-						}
-					}
-					throw response;
-				}
-				if (response.status === 500) {
-					if (mimeType === 'application/json') {
-						return {
-							status: response.status,
-							contentType: 'application/json',
-							body: await response.json() as Api.ApiErrorResponseDto,
 						}
 					}
 					throw response;

@@ -70,17 +70,17 @@ export default function JobBoard() {
 
   const getAllJobTags = async () => {
     const session: any = await getSession();
-    //console.log("SESSION:",session)
+    // console.log("SESSION:",session)
     if (!session) {
       router.push('/connect');
       return;
     }
     const response = await jobTagsApi.getManyBaseJobTagControllerJobTagEntity(
       {},
-      { headers: { Authorization: `Bearer ${session.accessToken}` } },
+      { headers: { Authorization: `Bearer ${session.user.accessToken}` } },
     );
     if ((response.status = 200)) {
-      console.log('response(job tags):', response)
+      // console.log('response(job tags):', response)
       setJobTags(response.body as Api.JobTagEntity[]||[]);
     }
   };
@@ -98,7 +98,7 @@ export default function JobBoard() {
         // TODO create a pagination or 'Load More' syste for handling job ammounts over the limit.
         limit: 50,
       },
-      { headers: { Authorization: `Bearer ${session.accessToken}` },},
+      { headers: { Authorization: `Bearer ${session.user.accessToken}` },},
     );
     if (response.status == 200) {
       console.log('All jobs body:\n', response.body);
@@ -137,7 +137,7 @@ export default function JobBoard() {
         limit: 50,
       },
       {
-        headers: { Authorization: `Bearer ${session.accessToken}` },
+        headers: { Authorization: `Bearer ${session.user.accessToken}` },
       },
     );
     if (response.status == 200) {
@@ -176,7 +176,7 @@ export default function JobBoard() {
         {
           job: selectedJob,
         },
-        { headers: { Authorization: `Bearer ${session.accessToken}` } },
+        { headers: { Authorization: `Bearer ${session.user.accessToken}` } },
       );
     if (response.status == 201) {
       toast({
@@ -289,7 +289,7 @@ export default function JobBoard() {
                 <CommandList>
                   <CommandEmpty>No tags found.</CommandEmpty>
                   <CommandGroup>
-                    {jobTags?.map((tag: Api.JobTagEntity) => (
+                    {jobTags || jobTags?.map((tag: Api.JobTagEntity) => (
                       <CommandItem
                         key={tag.id}
                         onSelect={() => {
