@@ -1,5 +1,6 @@
 import React from 'react';
 
+import Header from '@/components/header';
 import {PageContent} from '@/components/page/page-content';
 import {PageFooter} from '@/components/page/page-footer';
 import {PageHeader} from '@/components/page/page-header';
@@ -13,7 +14,9 @@ type Props = {
 export default function Layout({children}: Readonly<Props>) {
   return (
     <div className="h-full w-full p-0 m-0">
-      <PageHeader/>
+      {/*<PageHeader/>*/}
+
+      <Header />
 
       <PageContent>{children}</PageContent>
 

@@ -40,7 +40,7 @@ const applicationSteps2 = [
   { id: 5, name: 'Hiring Process Complete', completed: false },
 ];
 
-export default function JobsFreelance({ params }) {
+export default function MyJobApplicationSlug({ params }) {
   const [jobApplication, setJobApplicaton] = useState<Api.JobApplicationEntity>()
   const router = useRouter()
   const { jobApplicationSlug } = params
@@ -66,7 +66,7 @@ export default function JobsFreelance({ params }) {
         filter: ['job.slug||$eq||'+jobApplicationSlug],
         limit: 1
       },
-      { headers: { Authorization: `Bearer ${session.accessToken}` } },
+      { headers: { Authorization: `Bearer ${session.user.accessToken}` } },
     );
     console.log('API Response:\n',response)
     if (response.status == 200 && (response.body as Api.JobApplicationEntity[])?.length >0) {
