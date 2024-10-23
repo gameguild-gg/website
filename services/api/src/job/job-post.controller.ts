@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Logger, UseInterceptors } from '@nestjs/common';
+import { Body, Controller, Get, Logger, Param, UseInterceptors } from '@nestjs/common';
 import { ApiBody, ApiResponse, ApiTags, getSchemaPath } from '@nestjs/swagger';
 import { Swagger } from '@dataui/crud/lib/crud';
 import { JobPostService } from './job-post.service';
@@ -28,6 +28,7 @@ import { BodyOwnerInject } from 'src/common/decorators/parameter.decorator';
 import { JobPostWithAppliedDto } from './dtos/job-post-with-applied.dto';
 import { UserEntity } from 'src/user/entities';
 import { UserInject } from 'src/common/decorators/user-injection.decorator';
+import { JobPostWithApplicationsDto } from './dtos/job-post-with-applications.dto';
 
 @Crud({
   model: {
@@ -148,5 +149,22 @@ export class JobPostController
     @UserInject() user: UserEntity,
   ): Promise<JobPostWithAppliedDto[]> {
     return this.service.getManyWithApplied(req, user.id);
+  }
+
+  @Get('get-by-slug/:slug')
+  @Auth(AuthenticatedRoute)
+  async getBySlug(
+    @Param('slug') slug: string,
+  ):Promise<JobPostEntity> {
+    return this.service.getBySlug(slug)
+  }
+
+  @Get('get-by-slug-for-owner/:slug')
+  @Auth(AuthenticatedRoute)
+  async getBySlugForOwner(
+    @Param('slug') slug: string,
+    @UserInject() user: UserEntity,
+  ):Promise<JobPostWithApplicationsDto> {
+    return this.service.getBySlugForOwner(slug, user.id)
   }
 }

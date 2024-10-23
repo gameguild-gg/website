@@ -3868,58 +3868,232 @@ export namespace JobApplicationsApi {
 		headers?: undefined
 	}
 	
-	export type JobApplicationControllerCheckIfUserAppliedResponse =
-		| JobApplicationControllerCheckIfUserApplied400Response
-		| JobApplicationControllerCheckIfUserApplied401Response
-		| JobApplicationControllerCheckIfUserApplied403Response
-		| JobApplicationControllerCheckIfUserApplied404Response
-		| JobApplicationControllerCheckIfUserApplied409Response
-		| JobApplicationControllerCheckIfUserApplied422Response
-		| JobApplicationControllerCheckIfUserApplied500Response
+	export type JobApplicationControllerAdvanceCandidateResponse =
+		| JobApplicationControllerAdvanceCandidate400Response
+		| JobApplicationControllerAdvanceCandidate401Response
+		| JobApplicationControllerAdvanceCandidate403Response
+		| JobApplicationControllerAdvanceCandidate404Response
+		| JobApplicationControllerAdvanceCandidate409Response
+		| JobApplicationControllerAdvanceCandidate422Response
+		| JobApplicationControllerAdvanceCandidate500Response
 	
-	export interface JobApplicationControllerCheckIfUserApplied400Response {
+	export interface JobApplicationControllerAdvanceCandidate400Response {
 		status: 400
 		contentType: 'application/json'
 		body: Api.ApiErrorResponseDto
 		headers?: undefined
 	}
 	
-	export interface JobApplicationControllerCheckIfUserApplied401Response {
+	export interface JobApplicationControllerAdvanceCandidate401Response {
 		status: 401
 		contentType: 'application/json'
 		body: Api.ApiErrorResponseDto
 		headers?: undefined
 	}
 	
-	export interface JobApplicationControllerCheckIfUserApplied403Response {
+	export interface JobApplicationControllerAdvanceCandidate403Response {
 		status: 403
 		contentType: 'application/json'
 		body: Api.ApiErrorResponseDto
 		headers?: undefined
 	}
 	
-	export interface JobApplicationControllerCheckIfUserApplied404Response {
+	export interface JobApplicationControllerAdvanceCandidate404Response {
 		status: 404
 		contentType: 'application/json'
 		body: Api.ApiErrorResponseDto
 		headers?: undefined
 	}
 	
-	export interface JobApplicationControllerCheckIfUserApplied409Response {
+	export interface JobApplicationControllerAdvanceCandidate409Response {
 		status: 409
 		contentType: 'application/json'
 		body: Api.ApiErrorResponseDto
 		headers?: undefined
 	}
 	
-	export interface JobApplicationControllerCheckIfUserApplied422Response {
+	export interface JobApplicationControllerAdvanceCandidate422Response {
 		status: 422
 		contentType: 'application/json'
 		body: Api.ApiErrorResponseDto
 		headers?: undefined
 	}
 	
-	export interface JobApplicationControllerCheckIfUserApplied500Response {
+	export interface JobApplicationControllerAdvanceCandidate500Response {
+		status: 500
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export type JobApplicationControllerMoveBackCandidateResponse =
+		| JobApplicationControllerMoveBackCandidate400Response
+		| JobApplicationControllerMoveBackCandidate401Response
+		| JobApplicationControllerMoveBackCandidate403Response
+		| JobApplicationControllerMoveBackCandidate404Response
+		| JobApplicationControllerMoveBackCandidate409Response
+		| JobApplicationControllerMoveBackCandidate422Response
+		| JobApplicationControllerMoveBackCandidate500Response
+	
+	export interface JobApplicationControllerMoveBackCandidate400Response {
+		status: 400
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface JobApplicationControllerMoveBackCandidate401Response {
+		status: 401
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface JobApplicationControllerMoveBackCandidate403Response {
+		status: 403
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface JobApplicationControllerMoveBackCandidate404Response {
+		status: 404
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface JobApplicationControllerMoveBackCandidate409Response {
+		status: 409
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface JobApplicationControllerMoveBackCandidate422Response {
+		status: 422
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface JobApplicationControllerMoveBackCandidate500Response {
+		status: 500
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export type JobApplicationControllerRejectCandidateResponse =
+		| JobApplicationControllerRejectCandidate400Response
+		| JobApplicationControllerRejectCandidate401Response
+		| JobApplicationControllerRejectCandidate403Response
+		| JobApplicationControllerRejectCandidate404Response
+		| JobApplicationControllerRejectCandidate409Response
+		| JobApplicationControllerRejectCandidate422Response
+		| JobApplicationControllerRejectCandidate500Response
+	
+	export interface JobApplicationControllerRejectCandidate400Response {
+		status: 400
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface JobApplicationControllerRejectCandidate401Response {
+		status: 401
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface JobApplicationControllerRejectCandidate403Response {
+		status: 403
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface JobApplicationControllerRejectCandidate404Response {
+		status: 404
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface JobApplicationControllerRejectCandidate409Response {
+		status: 409
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface JobApplicationControllerRejectCandidate422Response {
+		status: 422
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface JobApplicationControllerRejectCandidate500Response {
+		status: 500
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export type JobApplicationControllerUndoRejectCandidateResponse =
+		| JobApplicationControllerUndoRejectCandidate400Response
+		| JobApplicationControllerUndoRejectCandidate401Response
+		| JobApplicationControllerUndoRejectCandidate403Response
+		| JobApplicationControllerUndoRejectCandidate404Response
+		| JobApplicationControllerUndoRejectCandidate409Response
+		| JobApplicationControllerUndoRejectCandidate422Response
+		| JobApplicationControllerUndoRejectCandidate500Response
+	
+	export interface JobApplicationControllerUndoRejectCandidate400Response {
+		status: 400
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface JobApplicationControllerUndoRejectCandidate401Response {
+		status: 401
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface JobApplicationControllerUndoRejectCandidate403Response {
+		status: 403
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface JobApplicationControllerUndoRejectCandidate404Response {
+		status: 404
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface JobApplicationControllerUndoRejectCandidate409Response {
+		status: 409
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface JobApplicationControllerUndoRejectCandidate422Response {
+		status: 422
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface JobApplicationControllerUndoRejectCandidate500Response {
 		status: 500
 		contentType: 'application/json'
 		body: Api.ApiErrorResponseDto
@@ -4264,17 +4438,158 @@ export const JobApplicationsApiFetchParamCreator = function (configuration?: Con
 			};
 		},
 		/**
-		 * @param {string[]} request
+		 * @param {Api.JobApplicationEntity} request
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		jobApplicationControllerCheckIfUserApplied(request: string[], options: RequestInit = {}): FetchArgs {
+		jobApplicationControllerAdvanceCandidate(request: Api.JobApplicationEntity, options: RequestInit = {}): FetchArgs {
 			// verify required parameter 'request' is not null or undefined
 			if (request === null || request === undefined) {
-				throw new RequiredError('request', 'Required parameter request was null or undefined when calling jobApplicationControllerCheckIfUserApplied.');
+				throw new RequiredError('request', 'Required parameter request was null or undefined when calling jobApplicationControllerAdvanceCandidate.');
 			}
 
-			let localVarPath = `/job-applications/check-applied`;
+			let localVarPath = `/job-applications/advance-candidate`;
+			const localVarPathQueryStart = localVarPath.indexOf("?");
+			const localVarRequestOptions: RequestInit = Object.assign({ method: 'POST' }, options);
+			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
+			const localVarQueryParameter = new URLSearchParams(localVarPathQueryStart !== -1 ? localVarPath.substring(localVarPathQueryStart + 1) : "");
+			if (localVarPathQueryStart !== -1) {
+				localVarPath = localVarPath.substring(0, localVarPathQueryStart);
+			}
+
+			// authentication bearer required
+			// http authorization required
+			if (configuration && configuration.authorization) {
+				const localVarAuthorizationValue = typeof configuration.authorization === 'function'
+					? configuration.authorization('bearer')
+					: configuration.authorization;
+				if (localVarAuthorizationValue !== null) {
+					localVarHeaderParameter.set("Authorization", "Bearer " + localVarAuthorizationValue);
+				}
+			}
+			localVarHeaderParameter.set('Content-Type', 'application/json');
+
+			localVarRequestOptions.headers = localVarHeaderParameter;
+	
+			if (request !== undefined) {
+				localVarRequestOptions.body = JSON.stringify(request || {});
+			}
+
+			const localVarQueryParameterString = localVarQueryParameter.toString();
+			if (localVarQueryParameterString) {
+				localVarPath += "?" + localVarQueryParameterString;
+			}
+			return {
+				url: localVarPath,
+				options: localVarRequestOptions,
+			};
+		},
+		/**
+		 * @param {Api.JobApplicationEntity} request
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		jobApplicationControllerMoveBackCandidate(request: Api.JobApplicationEntity, options: RequestInit = {}): FetchArgs {
+			// verify required parameter 'request' is not null or undefined
+			if (request === null || request === undefined) {
+				throw new RequiredError('request', 'Required parameter request was null or undefined when calling jobApplicationControllerMoveBackCandidate.');
+			}
+
+			let localVarPath = `/job-applications/undo-advance-candidate`;
+			const localVarPathQueryStart = localVarPath.indexOf("?");
+			const localVarRequestOptions: RequestInit = Object.assign({ method: 'POST' }, options);
+			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
+			const localVarQueryParameter = new URLSearchParams(localVarPathQueryStart !== -1 ? localVarPath.substring(localVarPathQueryStart + 1) : "");
+			if (localVarPathQueryStart !== -1) {
+				localVarPath = localVarPath.substring(0, localVarPathQueryStart);
+			}
+
+			// authentication bearer required
+			// http authorization required
+			if (configuration && configuration.authorization) {
+				const localVarAuthorizationValue = typeof configuration.authorization === 'function'
+					? configuration.authorization('bearer')
+					: configuration.authorization;
+				if (localVarAuthorizationValue !== null) {
+					localVarHeaderParameter.set("Authorization", "Bearer " + localVarAuthorizationValue);
+				}
+			}
+			localVarHeaderParameter.set('Content-Type', 'application/json');
+
+			localVarRequestOptions.headers = localVarHeaderParameter;
+	
+			if (request !== undefined) {
+				localVarRequestOptions.body = JSON.stringify(request || {});
+			}
+
+			const localVarQueryParameterString = localVarQueryParameter.toString();
+			if (localVarQueryParameterString) {
+				localVarPath += "?" + localVarQueryParameterString;
+			}
+			return {
+				url: localVarPath,
+				options: localVarRequestOptions,
+			};
+		},
+		/**
+		 * @param {Api.JobApplicationEntity} request
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		jobApplicationControllerRejectCandidate(request: Api.JobApplicationEntity, options: RequestInit = {}): FetchArgs {
+			// verify required parameter 'request' is not null or undefined
+			if (request === null || request === undefined) {
+				throw new RequiredError('request', 'Required parameter request was null or undefined when calling jobApplicationControllerRejectCandidate.');
+			}
+
+			let localVarPath = `/job-applications/reject-candidate`;
+			const localVarPathQueryStart = localVarPath.indexOf("?");
+			const localVarRequestOptions: RequestInit = Object.assign({ method: 'POST' }, options);
+			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
+			const localVarQueryParameter = new URLSearchParams(localVarPathQueryStart !== -1 ? localVarPath.substring(localVarPathQueryStart + 1) : "");
+			if (localVarPathQueryStart !== -1) {
+				localVarPath = localVarPath.substring(0, localVarPathQueryStart);
+			}
+
+			// authentication bearer required
+			// http authorization required
+			if (configuration && configuration.authorization) {
+				const localVarAuthorizationValue = typeof configuration.authorization === 'function'
+					? configuration.authorization('bearer')
+					: configuration.authorization;
+				if (localVarAuthorizationValue !== null) {
+					localVarHeaderParameter.set("Authorization", "Bearer " + localVarAuthorizationValue);
+				}
+			}
+			localVarHeaderParameter.set('Content-Type', 'application/json');
+
+			localVarRequestOptions.headers = localVarHeaderParameter;
+	
+			if (request !== undefined) {
+				localVarRequestOptions.body = JSON.stringify(request || {});
+			}
+
+			const localVarQueryParameterString = localVarQueryParameter.toString();
+			if (localVarQueryParameterString) {
+				localVarPath += "?" + localVarQueryParameterString;
+			}
+			return {
+				url: localVarPath,
+				options: localVarRequestOptions,
+			};
+		},
+		/**
+		 * @param {Api.JobApplicationEntity} request
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		jobApplicationControllerUndoRejectCandidate(request: Api.JobApplicationEntity, options: RequestInit = {}): FetchArgs {
+			// verify required parameter 'request' is not null or undefined
+			if (request === null || request === undefined) {
+				throw new RequiredError('request', 'Required parameter request was null or undefined when calling jobApplicationControllerUndoRejectCandidate.');
+			}
+
+			let localVarPath = `/job-applications/undo-reject-candidate`;
 			const localVarPathQueryStart = localVarPath.indexOf("?");
 			const localVarRequestOptions: RequestInit = Object.assign({ method: 'POST' }, options);
 			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
@@ -4766,12 +5081,267 @@ export const JobApplicationsApiFp = function(configuration?: Configuration) {
 			};
 		},
 		/**
-		 * @param {string[]} request
+		 * @param {Api.JobApplicationEntity} request
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		jobApplicationControllerCheckIfUserApplied(request: string[], options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<JobApplicationsApi.JobApplicationControllerCheckIfUserAppliedResponse> {
-			const localVarFetchArgs = JobApplicationsApiFetchParamCreator(configuration).jobApplicationControllerCheckIfUserApplied(request, options);
+		jobApplicationControllerAdvanceCandidate(request: Api.JobApplicationEntity, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<JobApplicationsApi.JobApplicationControllerAdvanceCandidateResponse> {
+			const localVarFetchArgs = JobApplicationsApiFetchParamCreator(configuration).jobApplicationControllerAdvanceCandidate(request, options);
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				if (response.status === 400) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 401) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 403) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 404) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 409) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 422) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 500) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				throw response;
+			};
+		},
+		/**
+		 * @param {Api.JobApplicationEntity} request
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		jobApplicationControllerMoveBackCandidate(request: Api.JobApplicationEntity, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<JobApplicationsApi.JobApplicationControllerMoveBackCandidateResponse> {
+			const localVarFetchArgs = JobApplicationsApiFetchParamCreator(configuration).jobApplicationControllerMoveBackCandidate(request, options);
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				if (response.status === 400) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 401) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 403) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 404) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 409) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 422) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 500) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				throw response;
+			};
+		},
+		/**
+		 * @param {Api.JobApplicationEntity} request
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		jobApplicationControllerRejectCandidate(request: Api.JobApplicationEntity, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<JobApplicationsApi.JobApplicationControllerRejectCandidateResponse> {
+			const localVarFetchArgs = JobApplicationsApiFetchParamCreator(configuration).jobApplicationControllerRejectCandidate(request, options);
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				if (response.status === 400) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 401) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 403) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 404) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 409) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 422) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 500) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				throw response;
+			};
+		},
+		/**
+		 * @param {Api.JobApplicationEntity} request
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		jobApplicationControllerUndoRejectCandidate(request: Api.JobApplicationEntity, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<JobApplicationsApi.JobApplicationControllerUndoRejectCandidateResponse> {
+			const localVarFetchArgs = JobApplicationsApiFetchParamCreator(configuration).jobApplicationControllerUndoRejectCandidate(request, options);
 			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
 				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
 				const contentType = response.headers.get('Content-Type');
@@ -5009,11 +5579,32 @@ export interface JobApplicationsApiInterface {
 	getOneBaseJobApplicationControllerJobApplicationEntity(__params: JobApplicationsApi.GetOneBaseJobApplicationControllerJobApplicationEntityParameters, options?: RequestInit): Promise<JobApplicationsApi.GetOneBaseJobApplicationControllerJobApplicationEntityResponse>
 
 	/**
-	 * @param {string[]} request
+	 * @param {Api.JobApplicationEntity} request
 	 * @param {RequestInit} [options] Override http request option.
 	 * @throws {RequiredError}
 	 */
-	jobApplicationControllerCheckIfUserApplied(request: string[], options?: RequestInit): Promise<JobApplicationsApi.JobApplicationControllerCheckIfUserAppliedResponse>
+	jobApplicationControllerAdvanceCandidate(request: Api.JobApplicationEntity, options?: RequestInit): Promise<JobApplicationsApi.JobApplicationControllerAdvanceCandidateResponse>
+
+	/**
+	 * @param {Api.JobApplicationEntity} request
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	jobApplicationControllerMoveBackCandidate(request: Api.JobApplicationEntity, options?: RequestInit): Promise<JobApplicationsApi.JobApplicationControllerMoveBackCandidateResponse>
+
+	/**
+	 * @param {Api.JobApplicationEntity} request
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	jobApplicationControllerRejectCandidate(request: Api.JobApplicationEntity, options?: RequestInit): Promise<JobApplicationsApi.JobApplicationControllerRejectCandidateResponse>
+
+	/**
+	 * @param {Api.JobApplicationEntity} request
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	jobApplicationControllerUndoRejectCandidate(request: Api.JobApplicationEntity, options?: RequestInit): Promise<JobApplicationsApi.JobApplicationControllerUndoRejectCandidateResponse>
 
 	/**
 	 * @summary Update a single JobApplicationEntity
@@ -5086,12 +5677,39 @@ export class JobApplicationsApi extends BaseAPI implements JobApplicationsApiInt
 	}
 
 	/**
-	 * @param {string[]} request
+	 * @param {Api.JobApplicationEntity} request
 	 * @param {RequestInit} [options] Override http request option.
 	 * @throws {RequiredError}
 	 */
-	public jobApplicationControllerCheckIfUserApplied(request: string[], options?: RequestInit) {
-		return JobApplicationsApiFp(this.configuration).jobApplicationControllerCheckIfUserApplied(request, options)(this.fetch, this.basePath);
+	public jobApplicationControllerAdvanceCandidate(request: Api.JobApplicationEntity, options?: RequestInit) {
+		return JobApplicationsApiFp(this.configuration).jobApplicationControllerAdvanceCandidate(request, options)(this.fetch, this.basePath);
+	}
+
+	/**
+	 * @param {Api.JobApplicationEntity} request
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	public jobApplicationControllerMoveBackCandidate(request: Api.JobApplicationEntity, options?: RequestInit) {
+		return JobApplicationsApiFp(this.configuration).jobApplicationControllerMoveBackCandidate(request, options)(this.fetch, this.basePath);
+	}
+
+	/**
+	 * @param {Api.JobApplicationEntity} request
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	public jobApplicationControllerRejectCandidate(request: Api.JobApplicationEntity, options?: RequestInit) {
+		return JobApplicationsApiFp(this.configuration).jobApplicationControllerRejectCandidate(request, options)(this.fetch, this.basePath);
+	}
+
+	/**
+	 * @param {Api.JobApplicationEntity} request
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	public jobApplicationControllerUndoRejectCandidate(request: Api.JobApplicationEntity, options?: RequestInit) {
+		return JobApplicationsApiFp(this.configuration).jobApplicationControllerUndoRejectCandidate(request, options)(this.fetch, this.basePath);
 	}
 
 	/**
@@ -5442,6 +6060,122 @@ export namespace JobPostsApi {
 	}
 	
 	export interface JobPostControllerAddEditor500Response {
+		status: 500
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export type JobPostControllerGetBySlugResponse =
+		| JobPostControllerGetBySlug400Response
+		| JobPostControllerGetBySlug401Response
+		| JobPostControllerGetBySlug403Response
+		| JobPostControllerGetBySlug404Response
+		| JobPostControllerGetBySlug409Response
+		| JobPostControllerGetBySlug422Response
+		| JobPostControllerGetBySlug500Response
+	
+	export interface JobPostControllerGetBySlug400Response {
+		status: 400
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface JobPostControllerGetBySlug401Response {
+		status: 401
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface JobPostControllerGetBySlug403Response {
+		status: 403
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface JobPostControllerGetBySlug404Response {
+		status: 404
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface JobPostControllerGetBySlug409Response {
+		status: 409
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface JobPostControllerGetBySlug422Response {
+		status: 422
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface JobPostControllerGetBySlug500Response {
+		status: 500
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export type JobPostControllerGetBySlugForOwnerResponse =
+		| JobPostControllerGetBySlugForOwner400Response
+		| JobPostControllerGetBySlugForOwner401Response
+		| JobPostControllerGetBySlugForOwner403Response
+		| JobPostControllerGetBySlugForOwner404Response
+		| JobPostControllerGetBySlugForOwner409Response
+		| JobPostControllerGetBySlugForOwner422Response
+		| JobPostControllerGetBySlugForOwner500Response
+	
+	export interface JobPostControllerGetBySlugForOwner400Response {
+		status: 400
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface JobPostControllerGetBySlugForOwner401Response {
+		status: 401
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface JobPostControllerGetBySlugForOwner403Response {
+		status: 403
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface JobPostControllerGetBySlugForOwner404Response {
+		status: 404
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface JobPostControllerGetBySlugForOwner409Response {
+		status: 409
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface JobPostControllerGetBySlugForOwner422Response {
+		status: 422
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface JobPostControllerGetBySlugForOwner500Response {
 		status: 500
 		contentType: 'application/json'
 		body: Api.ApiErrorResponseDto
@@ -6179,6 +6913,90 @@ export const JobPostsApiFetchParamCreator = function (configuration?: Configurat
 			if (request !== undefined) {
 				localVarRequestOptions.body = JSON.stringify(request || {});
 			}
+
+			const localVarQueryParameterString = localVarQueryParameter.toString();
+			if (localVarQueryParameterString) {
+				localVarPath += "?" + localVarQueryParameterString;
+			}
+			return {
+				url: localVarPath,
+				options: localVarRequestOptions,
+			};
+		},
+		/**
+		 * @param {string} slug
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		jobPostControllerGetBySlug(slug: string, options: RequestInit = {}): FetchArgs {
+			// verify required parameter 'slug' is not null or undefined
+			if (slug === null || slug === undefined) {
+				throw new RequiredError('slug', 'Required parameter slug was null or undefined when calling jobPostControllerGetBySlug.');
+			}
+
+			let localVarPath = `/job-posts/get-by-slug/{slug}`
+				.replace('{slug}', encodeURIComponent(String(slug)));
+			const localVarPathQueryStart = localVarPath.indexOf("?");
+			const localVarRequestOptions: RequestInit = Object.assign({ method: 'GET' }, options);
+			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
+			const localVarQueryParameter = new URLSearchParams(localVarPathQueryStart !== -1 ? localVarPath.substring(localVarPathQueryStart + 1) : "");
+			if (localVarPathQueryStart !== -1) {
+				localVarPath = localVarPath.substring(0, localVarPathQueryStart);
+			}
+
+			// authentication bearer required
+			// http authorization required
+			if (configuration && configuration.authorization) {
+				const localVarAuthorizationValue = typeof configuration.authorization === 'function'
+					? configuration.authorization('bearer')
+					: configuration.authorization;
+				if (localVarAuthorizationValue !== null) {
+					localVarHeaderParameter.set("Authorization", "Bearer " + localVarAuthorizationValue);
+				}
+			}
+			localVarRequestOptions.headers = localVarHeaderParameter;
+
+			const localVarQueryParameterString = localVarQueryParameter.toString();
+			if (localVarQueryParameterString) {
+				localVarPath += "?" + localVarQueryParameterString;
+			}
+			return {
+				url: localVarPath,
+				options: localVarRequestOptions,
+			};
+		},
+		/**
+		 * @param {string} slug
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		jobPostControllerGetBySlugForOwner(slug: string, options: RequestInit = {}): FetchArgs {
+			// verify required parameter 'slug' is not null or undefined
+			if (slug === null || slug === undefined) {
+				throw new RequiredError('slug', 'Required parameter slug was null or undefined when calling jobPostControllerGetBySlugForOwner.');
+			}
+
+			let localVarPath = `/job-posts/get-by-slug-for-owner/{slug}`
+				.replace('{slug}', encodeURIComponent(String(slug)));
+			const localVarPathQueryStart = localVarPath.indexOf("?");
+			const localVarRequestOptions: RequestInit = Object.assign({ method: 'GET' }, options);
+			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
+			const localVarQueryParameter = new URLSearchParams(localVarPathQueryStart !== -1 ? localVarPath.substring(localVarPathQueryStart + 1) : "");
+			if (localVarPathQueryStart !== -1) {
+				localVarPath = localVarPath.substring(0, localVarPathQueryStart);
+			}
+
+			// authentication bearer required
+			// http authorization required
+			if (configuration && configuration.authorization) {
+				const localVarAuthorizationValue = typeof configuration.authorization === 'function'
+					? configuration.authorization('bearer')
+					: configuration.authorization;
+				if (localVarAuthorizationValue !== null) {
+					localVarHeaderParameter.set("Authorization", "Bearer " + localVarAuthorizationValue);
+				}
+			}
+			localVarRequestOptions.headers = localVarHeaderParameter;
 
 			const localVarQueryParameterString = localVarQueryParameter.toString();
 			if (localVarQueryParameterString) {
@@ -6935,6 +7753,176 @@ export const JobPostsApiFp = function(configuration?: Configuration) {
 			};
 		},
 		/**
+		 * @param {string} slug
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		jobPostControllerGetBySlug(slug: string, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<JobPostsApi.JobPostControllerGetBySlugResponse> {
+			const localVarFetchArgs = JobPostsApiFetchParamCreator(configuration).jobPostControllerGetBySlug(slug, options);
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				if (response.status === 400) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 401) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 403) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 404) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 409) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 422) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 500) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				throw response;
+			};
+		},
+		/**
+		 * @param {string} slug
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		jobPostControllerGetBySlugForOwner(slug: string, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<JobPostsApi.JobPostControllerGetBySlugForOwnerResponse> {
+			const localVarFetchArgs = JobPostsApiFetchParamCreator(configuration).jobPostControllerGetBySlugForOwner(slug, options);
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				if (response.status === 400) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 401) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 403) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 404) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 409) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 422) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 500) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				throw response;
+			};
+		},
+		/**
 		 * @param {string[]} [fields] <p>Selects resource fields. <a href="https://github.com/nestjsx/crud/wiki/Requests#select" target="_blank">Docs</a></p>
 		 * @param {string} [s] <p>Adds search condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#search" target="_blank">Docs</a></p>
 		 * @param {string[]} [filter] <p>Adds filter condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#filter" target="_blank">Docs</a></p>
@@ -7556,6 +8544,20 @@ export interface JobPostsApiInterface {
 	jobPostControllerAddEditor(request: Api.EditorRequestDto, options?: RequestInit): Promise<JobPostsApi.JobPostControllerAddEditorResponse>
 
 	/**
+	 * @param {string} slug
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	jobPostControllerGetBySlug(slug: string, options?: RequestInit): Promise<JobPostsApi.JobPostControllerGetBySlugResponse>
+
+	/**
+	 * @param {string} slug
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	jobPostControllerGetBySlugForOwner(slug: string, options?: RequestInit): Promise<JobPostsApi.JobPostControllerGetBySlugForOwnerResponse>
+
+	/**
 	 * @param {string[]} [fields] <p>Selects resource fields. <a href="https://github.com/nestjsx/crud/wiki/Requests#select" target="_blank">Docs</a></p>
 	 * @param {string} [s] <p>Adds search condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#search" target="_blank">Docs</a></p>
 	 * @param {string[]} [filter] <p>Adds filter condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#filter" target="_blank">Docs</a></p>
@@ -7676,6 +8678,24 @@ export class JobPostsApi extends BaseAPI implements JobPostsApiInterface {
 	 */
 	public jobPostControllerAddEditor(request: Api.EditorRequestDto, options?: RequestInit) {
 		return JobPostsApiFp(this.configuration).jobPostControllerAddEditor(request, options)(this.fetch, this.basePath);
+	}
+
+	/**
+	 * @param {string} slug
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	public jobPostControllerGetBySlug(slug: string, options?: RequestInit) {
+		return JobPostsApiFp(this.configuration).jobPostControllerGetBySlug(slug, options)(this.fetch, this.basePath);
+	}
+
+	/**
+	 * @param {string} slug
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	public jobPostControllerGetBySlugForOwner(slug: string, options?: RequestInit) {
+		return JobPostsApiFp(this.configuration).jobPostControllerGetBySlugForOwner(slug, options)(this.fetch, this.basePath);
 	}
 
 	/**

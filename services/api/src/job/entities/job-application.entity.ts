@@ -2,7 +2,7 @@ import { Column, Entity } from 'typeorm';
 import { ManyToOne } from 'typeorm';
 import { JobPostEntity } from './job-post.entity';
 import { ApiProperty } from '@nestjs/swagger';
-import { IsInt, IsNotEmpty } from 'class-validator';
+import { IsBoolean, IsInt, IsNotEmpty } from 'class-validator';
 import { EntityBase } from '../../common/entities/entity.base';
 import { UserEntity } from '../../user/entities/user.entity';
 
@@ -20,4 +20,9 @@ export class JobApplicationEntity extends EntityBase {
   @IsNotEmpty({ message: 'error.isNotEmpty: progress is required' })
   @IsInt({ message: 'error.IsInt: progress must be an int' })
   progress: number;
+
+  @Column({ nullable: false, type: 'boolean', default: false })
+  @IsNotEmpty({ message: 'error.isNotEmpty: rejected is required' })
+  @IsBoolean({ message: 'error.IsBoolean: rejected must be a boolean' })
+  rejected: boolean;
 }

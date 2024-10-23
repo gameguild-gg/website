@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { JobPostEntity } from './entities/job-post.entity';
@@ -8,6 +8,8 @@ import { WithRolesService } from '../cms/with-roles.service';
 import { CrudRequest, Override } from '@dataui/crud';
 import { JobPostCreateDto } from './dtos/job-post-create.dto';
 import { JobTagEntity } from './entities/job-tag.entity';
+import { UserEntity } from 'src/user/entities';
+import { JobPostWithApplicationsDto } from './dtos/job-post-with-applications.dto';
 
 @Injectable()
 export class JobPostService extends WithRolesService<JobPostEntity> {
@@ -72,5 +74,25 @@ export class JobPostService extends WithRolesService<JobPostEntity> {
       ...jobPost,
       applied: appliedJobIds.includes(jobPost.id),
     }));
+  }
+
+  async getBySlug(slug: string): Promise<JobPostEntity> {
+    return this.repo.findOne({ where: { slug }, relations: ['owner'] });
+  }
+
+  async getBySlugForOwner(slug: string, userId: string): Promise<JobPostWithApplicationsDto> {
+    const jobPost = await this.repo.findOne({ where: { slug }, relations: ['owner'] });
+
+    if (!jobPost) {
+      throw new NotFoundException('Job post not found');
+    }
+
+    if (jobPost.owner.id !== userId) {
+      throw new ForbiddenException('You are not the owner of this job post');
+    }
+
+    const applications = await this.jobApplicationRepo.find({ where: { job: jobPost } });
+
+    return { jobPost, applications };
   }
 }

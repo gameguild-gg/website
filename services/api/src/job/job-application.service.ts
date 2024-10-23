@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { JobApplicationEntity } from './entities/job-application.entity';
 import { TypeOrmCrudService } from '@dataui/crud-typeorm';
 import { JobPostEntity } from './entities/job-post.entity';
+import { UserEntity } from '../user/entities';
 
 @Injectable()
 export class JobApplicationService extends TypeOrmCrudService<JobApplicationEntity> {
@@ -16,21 +17,35 @@ export class JobApplicationService extends TypeOrmCrudService<JobApplicationEnti
     super(jobAplicationRepository);
   }
 
-  async checkIfUserAppliedToJobs(
-    userId: string,
-    jobPosts: JobPostEntity[],
-  ): Promise<boolean[]> {
-    const jobIds = jobPosts.map((job) => job.id);
+  async advanceCandidate(application: JobApplicationEntity): Promise<JobApplicationEntity> {
+    if (application.progress >= 5 || application.rejected){
+      throw new Error('Invalid application for advancing');
+    }
+    application.progress += 1;
+    return this.repo.save(application);
+  }
 
-    const appliedJobIds = await this.repo
-      .createQueryBuilder()
-      .select('JobApplicationEntity.job')
-      .where('JobApplicationEntity.applicant = :userId', { userId })
-      .andWhere('JobApplicationEntity.job IN (:...jobIds)', { jobIds })
-      .getMany();
+  async undoAdvanceCandidate(application: JobApplicationEntity): Promise<JobApplicationEntity> {
+    if (application.progress <= 0 || application.rejected){
+      throw new Error('Invalid application for undoing advance');
+    }
+    application.progress -= 1;
+    return this.repo.save(application);
+  }
 
-    const appliedJobIdsSet = new Set(appliedJobIds.map((app) => app.job.id));
+  async rejectCandidate(application: JobApplicationEntity): Promise<JobApplicationEntity> {
+    if (application.rejected){
+      throw new Error('Invalid application for rejecting');
+    }
+    application.rejected = true;
+    return this.repo.save(application);
+  }
 
-    return jobPosts.map((job) => appliedJobIdsSet.has(job.id));
+  async undoRejectCandidate(application: JobApplicationEntity): Promise<JobApplicationEntity> {
+    if (!application.rejected){
+      throw new Error('Invalid application for undoing rejection');
+    }
+    application.rejected = false;
+    return this.repo.save(application);
   }
 }

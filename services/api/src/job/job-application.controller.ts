@@ -95,12 +95,39 @@ export class JobApplicationController
     return this.base.updateOneBase(req, dto);
   }
 
-  @Post('check-applied')
+  @Post('advance-candidate')
   @Auth(AuthenticatedRoute)
-  async checkIfUserApplied(
-    @UserInject() user: UserEntity,
-    @Body() jobPosts: JobPostEntity[],
-  ): Promise<boolean[]> {
-    return this.service.checkIfUserAppliedToJobs(user.id, jobPosts);
+  @ApiBody({ type: JobApplicationEntity })
+  async advanceCandidate(
+    @Body() application: JobApplicationEntity,
+  ):Promise<JobApplicationEntity> {
+    return this.service.advanceCandidate(application);
+  }
+
+  @Post('undo-advance-candidate')
+  @Auth(AuthenticatedRoute)
+  @ApiBody({ type: JobApplicationEntity })
+  async moveBackCandidate(
+    @Body() application: JobApplicationEntity,
+  ):Promise<JobApplicationEntity> {
+    return this.service.undoAdvanceCandidate(application);
+  }
+
+  @Post('reject-candidate')
+  @Auth(AuthenticatedRoute)
+  @ApiBody({ type: JobApplicationEntity })
+  async rejectCandidate(
+    @Body() application: JobApplicationEntity,
+  ):Promise<JobApplicationEntity> {
+    return this.service.rejectCandidate(application);
+  }
+
+  @Post('undo-reject-candidate')
+  @Auth(AuthenticatedRoute)
+  @ApiBody({ type: JobApplicationEntity })
+  async undoRejectCandidate(
+    @Body() application: JobApplicationEntity,
+  ):Promise<JobApplicationEntity> {
+    return this.service.undoRejectCandidate(application);
   }
 }

@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import Image from 'next/image'
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -89,10 +88,10 @@ export default function JobApplicantManagement({params}) {
   }
 
   return (
-    <div className="container mx-auto p-4">
+    <div className="container mx-auto p-4 bg-gray-50">
       <h1 className="text-3xl font-bold mb-6">Job Applicant Management</h1>
 
-      <Card className="mb-8">
+      <Card className="mb-8 rounded-none">
         <CardHeader>
           <CardTitle>{job.title}</CardTitle>
           <CardDescription>
@@ -114,7 +113,7 @@ export default function JobApplicantManagement({params}) {
           {applicants
             .filter(applicant => applicant.stage === stageIndex)
             .map(applicant => (
-              <Card key={applicant.id} className={`mb-4 ${applicant.rejected ? 'opacity-50' : ''}`}>
+              <Card key={applicant.id} className={`mb-4 rounded-none ${applicant.rejected ? 'opacity-50' : ''}`}>
                 <CardContent className="flex items-center justify-between p-4">
                   <div className="flex items-center">
                     <Avatar>
