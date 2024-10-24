@@ -7,9 +7,11 @@ import { Session } from 'next-auth';
 
 type Props = PropsWithLocaleParams<PropsWithSlugParams>;
 
-export default function Page({ params: { locale, slug } }: Readonly<Props>) {
+export default function Page() {
   const [project, setProject] = useState<Api.ProjectEntity | null>(null);
   const [session, setSession] = useState<Session | null>();
+  // get the slug from the URL. Last segment of the URL. /:lang/projects/:slug
+  const slug: string = window.location.pathname.split('/').pop() || '';
 
   const getProject = async () => {
     const session = await getSession();
