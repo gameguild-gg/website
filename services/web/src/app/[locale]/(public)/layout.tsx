@@ -1,9 +1,9 @@
 import React from 'react';
 
 import Header from '@/components/header';
-import {PageContent} from '@/components/page/page-content';
-import {PageFooter} from '@/components/page/page-footer';
-import {PageHeader} from '@/components/page/page-header';
+import { PageContent } from '@/components/page/page-content';
+import { PageFooter } from '@/components/page/page-footer';
+import { PageHeader } from '@/components/page/page-header';
 
 import CookieConsent from '@/components/cookie/cookie-consent';
 

@@ -109,7 +109,7 @@ export default function ContentFeed() {
       : contentItems;
 
   return (
-    <div className="flex min-h-[calc(100vh-80px)] container">
+    <div className="flex min-h-[calc(100vh-80px)] container bg-white px-0">
       {/* Left side navigation */}
       <nav className="w-[260px] bg-gray-100 p-5 flex flex-col">
         <Button
