@@ -1,3 +1,11 @@
+## [1.1.6](https://github.com/gameguild-gg/website/compare/v1.1.5...v1.1.6) (2024-10-25)
+
+
+### Bug Fixes
+
+* disconnect if it receives a 401 request out of nowhere from the server ([8be629f](https://github.com/gameguild-gg/website/commit/8be629f6e09e348fed7e6ac944507b19cf0d73da))
+* **web:** fix missing router ([91318fe](https://github.com/gameguild-gg/website/commit/91318fe626a898edc692d2cc6cf1186d34530f2f))
+
 ## [1.1.5](https://github.com/gameguild-gg/website/compare/v1.1.4...v1.1.5) (2024-10-25)
 
 
