@@ -9,6 +9,7 @@ import CreateProjectForm from '@/components/project/create-project-form';
 import { Api, ProjectApi } from '@game-guild/apiclient';
 import ProjectEntity = Api.ProjectEntity;
 import { getSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 
 export default async function Page() {
   const [projects, setProjects] = useState<ProjectEntity[] | null>(null);
