@@ -1,3 +1,12 @@
+## [1.1.5](https://github.com/gameguild-gg/website/compare/v1.1.4...v1.1.5) (2024-10-25)
+
+
+### Bug Fixes
+
+* add typings to the dashboard job ([001dc6d](https://github.com/gameguild-gg/website/commit/001dc6d77e034a1f0bd89defc38f518ccaaed837))
+* **web:** heavy weight cookies ([bc20736](https://github.com/gameguild-gg/website/commit/bc20736424933f25cc2cea65cf3f455b7f4c7fb8))
+* **web:** provide session only to private routes ([be67fcd](https://github.com/gameguild-gg/website/commit/be67fcd659f18148c2cf69b473f49df0c21a0114))
+
 ## [1.1.4](https://github.com/gameguild-gg/website/compare/v1.1.3...v1.1.4) (2024-10-25)
 
 
