@@ -1,3 +1,11 @@
+## [1.1.4](https://github.com/gameguild-gg/website/compare/v1.1.3...v1.1.4) (2024-10-25)
+
+
+### Bug Fixes
+
+* metamask issue ([1cf4ff4](https://github.com/gameguild-gg/website/commit/1cf4ff45dd7d8e1420c8885fb9871c770b189ba3))
+* slug issue ([65f81b7](https://github.com/gameguild-gg/website/commit/65f81b7da103e78a7aca86d8ebe7d282fbb1fa15))
+
 ## [1.1.3](https://github.com/gameguild-gg/website/compare/v1.1.2...v1.1.3) (2024-10-22)
 
 
