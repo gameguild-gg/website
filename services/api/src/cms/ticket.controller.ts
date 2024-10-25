@@ -16,11 +16,7 @@ import { TicketService } from './ticket.service';
 import { TicketEntity } from './entities/ticket.entity';
 import { ApiBody, ApiTags } from '@nestjs/swagger';
 import { CreateTicketDto } from './dtos/Create-Ticket.dto';
-import {
-  AuthenticatedRoute,
-  ManagerRoute,
-  OwnerRoute,
-} from '../auth/auth.enum';
+import { AuthenticatedRoute, OwnerRoute } from '../auth/auth.enum';
 import { OwnershipEmptyInterceptor } from './interceptors/ownership-empty-interceptor.service';
 import { ProjectService } from './project.service';
 import { Auth } from '../auth';
@@ -54,7 +50,7 @@ import { Auth } from '../auth';
       decorators: [Auth(AuthenticatedRoute)],
     },
     updateOneBase: {
-      decorators: [Auth<TicketEntity>(ManagerRoute<TicketEntity>)],
+      decorators: [Auth<TicketEntity>(OwnerRoute<TicketEntity>)],
       interceptors: [OwnershipEmptyInterceptor],
     },
     deleteOneBase: {

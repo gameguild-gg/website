@@ -35,7 +35,7 @@ export default function TournamentPage() {
       if (response.status === 401) {
         message.error('You are not authorized to view this page.');
         setTimeout(() => {
-          router.push('/connect');
+          router.push('/disconnect');
         }, 1000);
         return;
       }
@@ -99,11 +99,10 @@ export default function TournamentPage() {
     if (response.status === 401) {
       message.error('You are not authorized to view this page.');
       setTimeout(() => {
-        router.push('/connect');
+        router.push('/disconnect');
       }, 1000);
       return;
-    }
-    if (response.status > 401) {
+    } else if (response.status >= 400) {
       message.error('Error. Please report this issue to the community.');
       message.error(JSON.stringify(response.body));
       return;

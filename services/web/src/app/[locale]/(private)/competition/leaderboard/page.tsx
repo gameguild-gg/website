@@ -40,7 +40,7 @@ export default function LeaderboardPage(): JSX.Element {
     if (response.status === 401) {
       message.error('You are not authorized to view this page.');
       setTimeout(() => {
-        router.push('/connect');
+        router.push('/disconnect');
       }, 1000);
       setLeaderboardFetched(true);
       return;

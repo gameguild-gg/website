@@ -1012,7 +1012,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ProjectEntity"
+                "$ref": "#/components/schemas/CreateProjectDto"
               }
             }
           }

@@ -9,7 +9,7 @@ import {
 import { type Type } from '@nestjs/common/interfaces';
 import {
   AuthenticatedRoute,
-  ManagerRoute,
+  EditorRoute,
   OwnerRoute,
   PublicRoute,
   RefreshTokenRoute,
@@ -37,7 +37,7 @@ import { ApiErrorResponseDto } from '../../common/filters/global-http-exception.
 export const Auth = <T extends WithRolesEntity>(
   options:
     | typeof OwnerRoute<T>
-    | typeof ManagerRoute<T>
+    | typeof EditorRoute<T>
     | typeof PublicRoute
     | typeof AuthenticatedRoute
     | typeof RefreshTokenRoute,

@@ -16,15 +16,17 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 
-const contentTypes = [
-  'Games',
-  'Assets',
-  'Blogs',
-  'Tests',
-  'Jams',
-  'Jobs',
-  'Code Battles',
-];
+// todo: use the types from the api client!!
+enum ContentTypes {
+  ALL = 'All',
+  GAMES = 'Games',
+  ASSETS = 'Assets',
+  BLOGS = 'Blogs',
+  TESTS = 'Tests',
+  JAMS = 'Jams',
+  JOBS = 'Jobs',
+  CODE_BATTLE = 'Code Battles',
+}
 
 const recentContent = [
   { id: 1, title: 'My Awesome Game', image: '/assets/images/placeholder.svg' },
@@ -60,18 +62,28 @@ const viewsData = [
 ];
 
 export default function CreatorDashboard() {
-  const [activeTab, setActiveTab] = useState('All');
+  const [activeTab, setActiveTab] = useState<ContentTypes>(ContentTypes.ALL);
 
   const router = useRouter();
 
-  const handleCreateNewButton = (type: any) => {
-    if (type == 'Jobs') {
-      router.push('/jobs/post');
+  const handleCreateNewButton = (type: ContentTypes) => {
+    switch (type) {
+      case ContentTypes.JOBS:
+        router.push('/jobs/post');
+        break;
+      case ContentTypes.GAMES:
+        router.push('/dashboard/projects/create');
+        break;
+      default:
+        alert(
+          'Not implemented yet! Help us develop this feature! Talk to us on Discord!',
+        );
+        break;
     }
   };
 
-  const handleMoreButton = (type: any) => {
-    if (type == 'Jobs') {
+  const handleMoreButton = (type: ContentTypes) => {
+    if (type == ContentTypes.JOBS) {
       router.push('/dashboard/jobs');
     }
   };
@@ -80,20 +92,29 @@ export default function CreatorDashboard() {
     <div className="container mx-auto p-6">
       <h1 className="text-3xl font-bold mb-6">Creator Dashboard</h1>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+      <Tabs
+        value={activeTab}
+        onValueChange={() => {
+          setActiveTab(activeTab);
+        }}
+        className="w-full"
+      >
         <TabsList className="grid grid-cols-4 lg:grid-cols-8 mb-6">
           <TabsTrigger value="All">All</TabsTrigger>
-          {contentTypes.map((type) => (
-            <TabsTrigger key={type} value={type}>
-              {type}
-            </TabsTrigger>
-          ))}
+          {
+            // iterate over all enum values
+            Object.values(ContentTypes).map((type) => (
+              <TabsTrigger key={type} value={type}>
+                {type}
+              </TabsTrigger>
+            ))
+          }
         </TabsList>
 
-        {['All', ...contentTypes].map((type) => (
+        {Object.values(ContentTypes).map((type) => (
           <TabsContent key={type} value={type} className="space-y-6">
-            {type == 'All' && <div className="h-16"></div>}
-            {type !== 'All' && (
+            {type == ContentTypes.ALL && <div className="h-16"></div>}
+            {type !== ContentTypes.ALL && (
               <Button
                 onClick={() => handleCreateNewButton(type)}
                 className="mb-6"

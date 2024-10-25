@@ -80,7 +80,7 @@ export const authConfig = {
         // First-time login, save the `access_token`, its expiry and the `refresh_token`
         return {
           ...token,
-          ...account,
+          // ...account,
           access_token: account.access_token,
           refresh_token: account.refresh_token,
           user: user,

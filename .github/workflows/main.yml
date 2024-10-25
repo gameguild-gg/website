@@ -31,7 +31,9 @@ jobs:
       - run: npm install
         name: Install dependencies
 
-      # install ffmpeg and gource
+      - run: npm run build
+        name: Build
+
       - run: sudo apt-get install -y ffmpeg gource
         name: Install ffmpeg and gource
 

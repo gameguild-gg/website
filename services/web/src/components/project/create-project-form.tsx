@@ -38,7 +38,7 @@ export default function CreateProjectForm() {
         const project = response.body as Api.ProjectEntity;
         router.push(`/projects/${project.slug}`);
       } else if (response.status === 401) {
-        router.push(`/connect`);
+        router.push(`/disconnect`);
       } else {
         setErrors(response.body as ApiErrorResponseDto);
       }

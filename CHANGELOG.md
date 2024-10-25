@@ -1,3 +1,43 @@
+## [1.1.6](https://github.com/gameguild-gg/website/compare/v1.1.5...v1.1.6) (2024-10-25)
+
+
+### Bug Fixes
+
+* disconnect if it receives a 401 request out of nowhere from the server ([8be629f](https://github.com/gameguild-gg/website/commit/8be629f6e09e348fed7e6ac944507b19cf0d73da))
+* **web:** fix missing router ([91318fe](https://github.com/gameguild-gg/website/commit/91318fe626a898edc692d2cc6cf1186d34530f2f))
+
+## [1.1.5](https://github.com/gameguild-gg/website/compare/v1.1.4...v1.1.5) (2024-10-25)
+
+
+### Bug Fixes
+
+* add typings to the dashboard job ([001dc6d](https://github.com/gameguild-gg/website/commit/001dc6d77e034a1f0bd89defc38f518ccaaed837))
+* **web:** heavy weight cookies ([bc20736](https://github.com/gameguild-gg/website/commit/bc20736424933f25cc2cea65cf3f455b7f4c7fb8))
+* **web:** provide session only to private routes ([be67fcd](https://github.com/gameguild-gg/website/commit/be67fcd659f18148c2cf69b473f49df0c21a0114))
+
+## [1.1.4](https://github.com/gameguild-gg/website/compare/v1.1.3...v1.1.4) (2024-10-25)
+
+
+### Bug Fixes
+
+* metamask issue ([1cf4ff4](https://github.com/gameguild-gg/website/commit/1cf4ff45dd7d8e1420c8885fb9871c770b189ba3))
+* slug issue ([65f81b7](https://github.com/gameguild-gg/website/commit/65f81b7da103e78a7aca86d8ebe7d282fbb1fa15))
+
+## [1.1.3](https://github.com/gameguild-gg/website/compare/v1.1.2...v1.1.3) (2024-10-22)
+
+
+### Bug Fixes
+
+* rename MANAGER_ROUTE to EDITOR_ROUTE ([4e8434a](https://github.com/gameguild-gg/website/commit/4e8434a88a741507024fcc8e78053a2308811c68))
+* **web3:** add torus connect button ([d560462](https://github.com/gameguild-gg/website/commit/d5604624d69a24d50f6cc9e0cc284df4d7e3cf4c))
+
+## [1.1.2](https://github.com/gameguild-gg/website/compare/v1.1.1...v1.1.2) (2024-10-19)
+
+
+### Bug Fixes
+
+* trying to fix name replacements for gource ([2c586d9](https://github.com/gameguild-gg/website/commit/2c586d9b16a4168a93846ea03283452559cc81d1))
+
 ## [1.1.1](https://github.com/gameguild-gg/website/compare/v1.1.0...v1.1.1) (2024-10-18)
 
 

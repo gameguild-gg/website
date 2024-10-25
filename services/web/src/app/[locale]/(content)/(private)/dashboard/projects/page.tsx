@@ -9,9 +9,11 @@ import CreateProjectForm from '@/components/project/create-project-form';
 import { Api, ProjectApi } from '@game-guild/apiclient';
 import ProjectEntity = Api.ProjectEntity;
 import { getSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 
 export default async function Page() {
   const [projects, setProjects] = useState<ProjectEntity[] | null>(null);
+  const router = useRouter();
 
   const fetchProjects = async () => {
     if (projects === null) {
@@ -22,8 +24,8 @@ export default async function Page() {
         { headers: { Authorization: `Bearer ${session?.user?.accessToken}` } },
       );
       if (projects.status == 401) {
-        // todo: redirect the user to the login and invalidate the session
-      } else if (projects.status > 401) {
+        router.push('/disconnect');
+      } else if (projects.status >= 400) {
         console.error(projects.body);
       }
       setProjects(projects.body as ProjectEntity[]);
