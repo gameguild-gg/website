@@ -49,7 +49,7 @@ export default function EditProfile() {
       headers: { Authorization: `Bearer ${session?.user?.accessToken}` },
     });
     if (response.status === 401) {
-      window.location.href = '/connect';
+      window.location.href = '/disconnect';
       return;
     }
     if (response.status >= 400) {
