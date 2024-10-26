@@ -1,5 +1,5 @@
-import { Body, Controller, Logger, Post } from '@nestjs/common';
-import { ApiBody, ApiTags } from '@nestjs/swagger';
+import { Body, Controller, Get, Logger, Post } from '@nestjs/common';
+import { ApiBody, ApiResponse, ApiTags, getSchemaPath } from '@nestjs/swagger';
 import { JobApplicationService } from './job-application.service';
 import { Auth } from '../auth/decorators/http.decorator';
 import { JobApplicationEntity } from './entities/job-application.entity';
@@ -95,13 +95,26 @@ export class JobApplicationController
     return this.base.updateOneBase(req, dto);
   }
 
+  @Get('my-applications')
+  @Auth(AuthenticatedRoute)
+  @ApiResponse({
+    type: Promise<JobApplicationEntity[]>,
+    schema: { $ref: getSchemaPath(Array<JobApplicationEntity>) },
+  })
+  async myApplications(
+    @UserInject() user: UserEntity,
+  ): Promise<JobApplicationEntity[]> {
+    return this.service.myApplications(user.id);
+  }
+
   @Post('advance-candidate')
   @Auth(AuthenticatedRoute)
   @ApiBody({ type: JobApplicationEntity })
   async advanceCandidate(
     @Body() application: JobApplicationEntity,
+    @UserInject() jobManager: UserEntity,
   ):Promise<JobApplicationEntity> {
-    return this.service.advanceCandidate(application);
+    return this.service.advanceCandidate(application, jobManager.id);
   }
 
   @Post('undo-advance-candidate')
@@ -109,8 +122,9 @@ export class JobApplicationController
   @ApiBody({ type: JobApplicationEntity })
   async moveBackCandidate(
     @Body() application: JobApplicationEntity,
+    @UserInject() jobManager: UserEntity,
   ):Promise<JobApplicationEntity> {
-    return this.service.undoAdvanceCandidate(application);
+    return this.service.undoAdvanceCandidate(application, jobManager.id);
   }
 
   @Post('reject-candidate')
@@ -118,8 +132,9 @@ export class JobApplicationController
   @ApiBody({ type: JobApplicationEntity })
   async rejectCandidate(
     @Body() application: JobApplicationEntity,
+    @UserInject() jobManager: UserEntity,
   ):Promise<JobApplicationEntity> {
-    return this.service.rejectCandidate(application);
+    return this.service.rejectCandidate(application, jobManager.id);
   }
 
   @Post('undo-reject-candidate')
@@ -127,7 +142,8 @@ export class JobApplicationController
   @ApiBody({ type: JobApplicationEntity })
   async undoRejectCandidate(
     @Body() application: JobApplicationEntity,
+    @UserInject() jobManager: UserEntity,
   ):Promise<JobApplicationEntity> {
-    return this.service.undoRejectCandidate(application);
+    return this.service.undoRejectCandidate(application, jobManager.id);
   }
 }

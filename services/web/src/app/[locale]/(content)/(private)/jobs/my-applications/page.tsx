@@ -72,12 +72,7 @@ export default function MyJobApplications() {
       router.push('/connect');
       return;
     }
-    const response = await jobApplicationApi.getManyBaseJobApplicationControllerJobApplicationEntity(
-      {
-        join: ['applicant'],
-        filter: ['job.slug||$eq||'+session.user.id], // TODO: Create new api call to make this safer
-        limit: 1,
-      },
+    const response = await jobApplicationApi.jobApplicationControllerMyApplications(
       { headers: { Authorization: `Bearer ${session.user.accessToken}` } },
     );
     console.log('API Response:\n',response)

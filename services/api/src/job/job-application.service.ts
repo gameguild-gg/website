@@ -17,7 +17,29 @@ export class JobApplicationService extends TypeOrmCrudService<JobApplicationEnti
     super(jobAplicationRepository);
   }
 
-  async advanceCandidate(application: JobApplicationEntity): Promise<JobApplicationEntity> {
+  async userHasPermissionToManageApplication(applicationId:string, userId:string): Promise<boolean> {
+    const app = await this.jobAplicationRepository.findOne({
+      where: {id : applicationId},
+      relations: ['job','job.owner']
+    })
+    if (app) {
+      return true
+    }
+    return false
+  }
+
+
+  async myApplications(userId: string): Promise<JobApplicationEntity[]> {
+    return this.jobAplicationRepository.find({
+      where: { applicant: {id: userId } },
+      relations: ['applicant'],
+    });
+  }
+
+  async advanceCandidate(application: JobApplicationEntity, jobManagerId: string): Promise<JobApplicationEntity> {
+    if (!await this.userHasPermissionToManageApplication(application.id, jobManagerId)) {
+      throw new Error('You do not have the required permissions to manage this job application');
+    }
     if (application.progress >= 5 || application.rejected){
       throw new Error('Invalid application for advancing');
     }
@@ -25,7 +47,10 @@ export class JobApplicationService extends TypeOrmCrudService<JobApplicationEnti
     return this.repo.save(application);
   }
 
-  async undoAdvanceCandidate(application: JobApplicationEntity): Promise<JobApplicationEntity> {
+  async undoAdvanceCandidate(application: JobApplicationEntity, jobManagerId: string): Promise<JobApplicationEntity> {
+    if (!await this.userHasPermissionToManageApplication(application.id, jobManagerId)) {
+      throw new Error('You do not have the required permissions to manage this job application');
+    }
     if (application.progress <= 0 || application.rejected){
       throw new Error('Invalid application for undoing advance');
     }
@@ -33,7 +58,10 @@ export class JobApplicationService extends TypeOrmCrudService<JobApplicationEnti
     return this.repo.save(application);
   }
 
-  async rejectCandidate(application: JobApplicationEntity): Promise<JobApplicationEntity> {
+  async rejectCandidate(application: JobApplicationEntity, jobManagerId: string): Promise<JobApplicationEntity> {
+    if (!await this.userHasPermissionToManageApplication(application.id, jobManagerId)) {
+      throw new Error('You do not have the required permissions to manage this job application');
+    }
     if (application.rejected){
       throw new Error('Invalid application for rejecting');
     }
@@ -41,7 +69,10 @@ export class JobApplicationService extends TypeOrmCrudService<JobApplicationEnti
     return this.repo.save(application);
   }
 
-  async undoRejectCandidate(application: JobApplicationEntity): Promise<JobApplicationEntity> {
+  async undoRejectCandidate(application: JobApplicationEntity, jobManagerId: string): Promise<JobApplicationEntity> {
+    if (!await this.userHasPermissionToManageApplication(application.id, jobManagerId)) {
+      throw new Error('You do not have the required permissions to manage this job application');
+    }
     if (!application.rejected){
       throw new Error('Invalid application for undoing rejection');
     }
