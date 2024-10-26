@@ -16,12 +16,12 @@ export class JobApplicationEntity extends EntityBase {
   @ManyToOne((job) => JobPostEntity, (jobPost) => jobPost.id)
   job: JobPostEntity;
 
-  @Column({ nullable: false, type: 'int', default: 0 })
+  @ApiProperty({ nullable: false, type: 'integer', default: 0 } )
   @IsNotEmpty({ message: 'error.isNotEmpty: progress is required' })
   @IsInt({ message: 'error.IsInt: progress must be an int' })
   progress: number;
 
-  @Column({ nullable: false, type: 'boolean', default: false })
+  @ApiProperty({ nullable: false, type: 'boolean', default: false })
   @IsNotEmpty({ message: 'error.isNotEmpty: rejected is required' })
   @IsBoolean({ message: 'error.IsBoolean: rejected must be a boolean' })
   rejected: boolean;

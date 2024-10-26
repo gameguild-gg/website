@@ -9106,6 +9106,16 @@
           },
           "job": {
             "$ref": "#/components/schemas/JobPostEntity"
+          },
+          "progress": {
+            "type": "integer",
+            "nullable": false,
+            "default": 0
+          },
+          "rejected": {
+            "type": "boolean",
+            "nullable": false,
+            "default": false
           }
         },
         "required": [
@@ -9113,7 +9123,9 @@
           "createdAt",
           "updatedAt",
           "applicant",
-          "job"
+          "job",
+          "progress",
+          "rejected"
         ]
       }
     }

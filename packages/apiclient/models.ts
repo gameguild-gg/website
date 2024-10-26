@@ -527,6 +527,12 @@ export namespace Api {
 		updatedAt: string;
 		applicant: Api.UserEntity;
 		job: Api.JobPostEntity;
+		/**
+		 * @type {number}
+		 * @memberof JobApplicationEntity
+		 */
+		progress: number;
+		rejected: boolean;
 	}
 
 	export interface JobPostCreateDto {

@@ -64,7 +64,7 @@ export default function MyJobApplicationSlug({ params }) {
       {
         join: ['job'],
         filter: ['job.slug||$eq||'+jobApplicationSlug],
-        limit: 1
+        limit: 1,
       },
       { headers: { Authorization: `Bearer ${session.user.accessToken}` } },
     );

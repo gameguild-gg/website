@@ -1,3 +1,8 @@
+'use client'
+import { useEffect, useState } from "react"
+import { useRouter } from 'next/navigation';
+import { getSession } from "next-auth/react"
+import { Api, JobApplicationsApi } from '@game-guild/apiclient';
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -5,6 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Check, X } from "lucide-react"
 import Image from "next/image"
+
 
 const skillTags = [
   "JavaScript", "React", "Node.js", "Python",
@@ -50,7 +56,40 @@ function ProgressBar({ progress, failed }: { progress: number; failed: boolean }
 }
 
 export default function MyJobApplications() {
-  // 
+  const [jobApplications, setJobApplicatons] = useState<Api.JobApplicationEntity[]>([])
+  const router = useRouter()
+  const jobApplicationApi = new JobApplicationsApi({
+    basePath: process.env.NEXT_PUBLIC_API_URL,
+  });
+
+  useEffect(() => {
+    loadJobApplications()
+  },[]);
+  
+  const loadJobApplications = async () => {
+    const session: any = await getSession();
+    if (!session) {
+      router.push('/connect');
+      return;
+    }
+    const response = await jobApplicationApi.getManyBaseJobApplicationControllerJobApplicationEntity(
+      {
+        join: ['applicant'],
+        filter: ['job.slug||$eq||'+session.user.id], // TODO: Create new api call to make this safer
+        limit: 1,
+      },
+      { headers: { Authorization: `Bearer ${session.user.accessToken}` } },
+    );
+    console.log('API Response:\n',response)
+    if (response.status == 200 && (response.body as Api.JobApplicationEntity[])?.length >0) {
+      setJobApplicatons(response.body as Api.JobApplicationEntity[]);
+    } else {
+      router.push('/connect');
+    }
+    console.log('JobApplications:\n',jobApplications);
+    //
+  }
+
   return (
     <div className="flex min-h-screen bg-background">
       {/* Sidebar */}
@@ -81,31 +120,31 @@ export default function MyJobApplications() {
       <main className="flex-1 p-6">
         <h1 className="text-3xl font-bold mb-6">My Job Applications</h1>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {jobApplications.slice(0, 16).map((job) => (
-            <div key={job.id} className="bg-card rounded-lg shadow-md p-4 flex flex-col h-full">
+          {jobApplications.slice(0, 16).map((app) => (
+            <div key={app.id} className="bg-card rounded-lg shadow-md p-4 flex flex-col h-full">
               <div className="flex-grow">
                 <div className="flex items-center mb-2">
                   <Image
                     src="/placeholder.svg?height=40&width=40"
-                    alt={`${job.companyName} logo`}
+                    alt={`${app.job.title} logo`}
                     width={40}
                     height={40}
                     className="rounded-full mr-2"
                   />
-                  <span className="font-semibold">{job.companyName}</span>
+                  <span className="font-semibold">{app.job.title}</span>
                 </div>
-                <h3 className="font-bold text-lg mb-2">{job.jobTitle}</h3>
+                <h3 className="font-bold text-lg mb-2">{app.job.title}</h3>
                 <div className="flex flex-wrap gap-1 mb-2">
-                  {job.tags.map((tag) => (
-                    <Badge key={tag} variant="secondary">
-                      {tag}
+                  {app.job.job_tags.map((tag) => (
+                    <Badge key={tag.id} variant="secondary">
+                      {tag.name}
                     </Badge>
                   ))}
                 </div>
               </div>
               <div className="mt-auto">
                 <div className="font-bold mt-2">Progress</div>
-                <ProgressBar progress={job.progress} failed={job.failed} />
+                <ProgressBar progress={app.progress} failed={app.rejected} />
               </div>
             </div>
           ))}
