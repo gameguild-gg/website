@@ -95,13 +95,13 @@ export default function JobBoard() {
     const response = await jobPostsApi.jobPostControllerGetManyWithApplied(
       {
         // TODO add 'fields' prperty here to to filter fields and improve performance
-        // TODO create a pagination or 'Load More' syste for handling job ammounts over the limit.
+        // TODO create a pagination or 'Load More' system for handling job ammounts over the limit.
         limit: 50,
       },
       { headers: { Authorization: `Bearer ${session.user.accessToken}` },},
     );
     if (response.status == 200) {
-      console.log('All jobs body:\n', response.body);
+      // console.log('All jobs body:\n', response.body);
       setJobs(response.body ?? []);
       setSelectedJob(jobs[0] || null);
     } else {
@@ -141,7 +141,7 @@ export default function JobBoard() {
       },
     );
     if (response.status == 200) {
-      console.log('SearchJobs response body:', response.body);
+      // console.log('SearchJobs response body:', response.body);
       setJobs(response.body ?? []);
       setSelectedJob(jobs[0] || null);
     } else {
@@ -218,7 +218,7 @@ export default function JobBoard() {
   };
 
   return (
-    <div className="min-h-[calc(100vh-150px)] bg-gray-100">
+    <div className="min-h-[calc(100vh-80px)] bg-gray-100">
       <div className="container mx-auto p-4">
         <div className="mb-6 flex space-x-4">
           <div className="relative flex-grow">
@@ -320,7 +320,10 @@ export default function JobBoard() {
         </div>
         <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
           <div className="md:col-span-1">
-            <ScrollArea className="h-[calc(100vh-300px)]">
+            <ScrollArea className="h-[calc(100vh-200px)]">
+              {(jobs.length == 0) &&
+                <div>There are no available jobs at this time.</div>
+              }
               {jobs.map((job) => (
                 <Card
                   key={job.id}
@@ -390,7 +393,7 @@ export default function JobBoard() {
                   {selectedJob.applied && (
                     <p className="mb-6 bg-gray-100 flex">
                       Already Applied.
-                      <p className="ml-2 font-semibold text-blue-500 hover:underline" onClick={()=>handleLearnMoreButton(selectedJob.slug)}>Learn more.</p>
+                      <p className="ml-2 font-semibold text-blue-500 hover:underline cursor-pointer" onClick={()=>handleLearnMoreButton(selectedJob.slug)}>Learn more.</p>
                     </p>
                   )}
                   {!selectedJob.applied && (
