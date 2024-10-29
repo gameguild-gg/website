@@ -35,7 +35,7 @@ export default function Header() {
   const getUserData = async () =>{
     const session = await getSession();
     if (session && session.user){
-      console.log('session.user: ',session?.user)
+      // console.log('session.user: ',session?.user)
       setUser(session.user)
     }
   }

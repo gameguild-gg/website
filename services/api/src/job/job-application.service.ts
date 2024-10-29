@@ -28,11 +28,20 @@ export class JobApplicationService extends TypeOrmCrudService<JobApplicationEnti
     return false
   }
 
-
   async myApplications(userId: string): Promise<JobApplicationEntity[]> {
     return this.jobAplicationRepository.find({
       where: { applicant: {id: userId } },
       relations: ['applicant'],
+    });
+  }
+
+  async myApplicationBySlug(slug:string, userId: string): Promise<JobApplicationEntity> {
+    return this.jobAplicationRepository.findOne({
+      where: {
+        applicant: {id: userId },
+        job: {slug: slug}
+      },
+      relations: ['applicant','job','job.job_tags'],
     });
   }
 

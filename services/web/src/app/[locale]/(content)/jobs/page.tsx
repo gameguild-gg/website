@@ -194,7 +194,7 @@ export default function JobBoard() {
   };
 
   const handleLearnMoreButton = (slug: string) => {
-    router.push('/jobs/application/'+slug)
+    router.push('/jobs/my-applications/'+slug)
   }
 
   const timeAgo = (dateString: string): string => {

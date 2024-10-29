@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Logger, Post } from '@nestjs/common';
+import { Body, Controller, Get, Logger, Param, Post } from '@nestjs/common';
 import { ApiBody, ApiResponse, ApiTags, getSchemaPath } from '@nestjs/swagger';
 import { JobApplicationService } from './job-application.service';
 import { Auth } from '../auth/decorators/http.decorator';
@@ -16,7 +16,6 @@ import { ExcludeFieldsPipe } from 'src/cms/pipes/exclude-fields.pipe';
 import { BodyApplicantInject } from './decorators/body-applicant-injection.decorator';
 import { JobAplicationCreateDto } from './dtos/job-aplication-create.dto';
 import { UserInject } from 'src/common/decorators/user-injection.decorator';
-import { JobPostEntity } from './entities/job-post.entity';
 import { UserEntity } from 'src/user/entities';
 
 @Crud({
@@ -53,6 +52,16 @@ import { UserEntity } from 'src/user/entities';
       decorators: [Auth(AuthenticatedRoute)],
     },
   },
+  query: {
+    join: {
+      applicant: {
+        eager: true,
+      },
+      job: {
+        eager: true,
+      }
+    }
+  }
 })
 @Controller('job-applications')
 @ApiTags('Job Applications')
@@ -105,6 +114,19 @@ export class JobApplicationController
     @UserInject() user: UserEntity,
   ): Promise<JobApplicationEntity[]> {
     return this.service.myApplications(user.id);
+  }
+
+  @Get('my-application-by-slug/:slug')
+  @Auth(AuthenticatedRoute)
+  @ApiResponse({
+    type: Promise<JobApplicationEntity[]>,
+    schema: { $ref: getSchemaPath(JobApplicationEntity) },
+  })
+  async myApplicationBySlug(
+    @Param('slug') slug: string,
+    @UserInject() user: UserEntity,
+  ): Promise<JobApplicationEntity> {
+    return this.service.myApplicationBySlug(slug, user.id);
   }
 
   @Post('advance-candidate')
