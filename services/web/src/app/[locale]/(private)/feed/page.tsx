@@ -14,6 +14,7 @@ import {
   Briefcase,
   Code,
 } from 'lucide-react';
+import { Pagination, PaginationContent, PaginationItem, PaginationPrevious, PaginationLink, PaginationEllipsis, PaginationNext } from '@/components/ui/pagination';
 
 const contentTypes = [
   { name: 'Games', icon: Joystick },
@@ -90,6 +91,7 @@ const contentItems = [
 
 export default function ContentFeed() {
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
+  const [totalPages, setTotalPages] = useState<number>(1);
 
   const router = useRouter();
 
@@ -157,6 +159,36 @@ export default function ContentFeed() {
               ))}
             </div>
           </section>
+          {/* Pagination */}
+          <div className="flex justify-center mt-5">
+            <Pagination>
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious href="#" />
+                </PaginationItem>
+                {[...Array(totalPages)].map((_, i) => (
+                  <PaginationItem key={i}>
+                    <PaginationLink href="#" isActive={i === 0}>
+                      {i + 1}
+                    </PaginationLink>
+                  </PaginationItem>
+                )).slice(0, 3)}
+                {totalPages > 3 && (
+                  <>
+                    <PaginationItem>
+                      <PaginationEllipsis />
+                    </PaginationItem>
+                    <PaginationItem>
+                      <PaginationLink href="#">{totalPages}</PaginationLink>
+                    </PaginationItem>
+                  </>
+                )}
+                <PaginationItem>
+                  <PaginationNext href="#" />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          </div>
         </ScrollArea>
       </main>
     </div>

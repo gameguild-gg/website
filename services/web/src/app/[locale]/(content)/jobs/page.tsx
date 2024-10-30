@@ -30,6 +30,7 @@ import {
 } from '@/components/ui/popover';
 import { useToast } from '@/components/ui/use-toast';
 import Link from 'next/link';
+import { Pagination, PaginationContent, PaginationItem, PaginationPrevious, PaginationLink, PaginationEllipsis, PaginationNext } from '@/components/ui/pagination';
 
 const job_types = [
   { value: 'CONTINUOUS', label: 'Continuous' },
@@ -43,6 +44,7 @@ export default function JobBoard() {
   const [selectedJob, setSelectedJob] = useState<Api.JobPostEntity | any>();
   const [selectedJobTypes, setSelectedJobTypes] = useState<string[]>([]);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [totalPages, setTotalPages] = useState<number>(1)
 
   const { toast } = useToast();
   const router = useRouter();
@@ -345,6 +347,36 @@ export default function JobBoard() {
                   </CardContent>
                 </Card>
               ))}
+              {/* Pagination */}
+              <div className="flex justify-center mt-5">
+                <Pagination>
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious href="#" />
+                    </PaginationItem>
+                    {[...Array(totalPages)].map((_, i) => (
+                      <PaginationItem key={i}>
+                        <PaginationLink href="#" isActive={i === 0}>
+                          {i + 1}
+                        </PaginationLink>
+                      </PaginationItem>
+                    )).slice(0, 3)}
+                    {totalPages > 3 && (
+                      <>
+                        <PaginationItem>
+                          <PaginationEllipsis />
+                        </PaginationItem>
+                        <PaginationItem>
+                          <PaginationLink href="#">{totalPages}</PaginationLink>
+                        </PaginationItem>
+                      </>
+                    )}
+                    <PaginationItem>
+                      <PaginationNext href="#" />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+              </div>
             </ScrollArea>
           </div>
           <div className="md:col-span-2">
@@ -401,7 +433,9 @@ export default function JobBoard() {
                 </CardContent>
               </Card>
             )}
+            
           </div>
+          
         </div>
       </div>
     </div>

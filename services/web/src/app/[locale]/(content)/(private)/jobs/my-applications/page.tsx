@@ -9,15 +9,9 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Check, X } from "lucide-react"
-import Image from "next/image"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 
-
-const skillTags = [
-  "JavaScript", "React", "Node.js", "Python",
-  "Java", "C++", "SQL", "NoSQL",
-  "AWS", "Docker", "Kubernetes", "Machine Learning"
-]
 
 function ProgressBar({ progress, failed }: { progress: number; failed: boolean }) {
   const steps = [0, 1, 2, 3, 4]
@@ -50,6 +44,7 @@ function ProgressBar({ progress, failed }: { progress: number; failed: boolean }
 export default function MyJobApplications() {
   const [jobTags, setJobTags] = useState<Api.JobTagEntity[] | any>([]);
   const [jobApplications, setJobApplicatons] = useState<Api.JobApplicationEntity[]>([])
+  const [totalPages, setTotalPages] = useState<number>(1)
   
   const router = useRouter()
   const jobTagsApi = new JobTagsApi({
@@ -88,13 +83,13 @@ export default function MyJobApplications() {
     const response = await jobApplicationApi.jobApplicationControllerMyApplications(
       { headers: { Authorization: `Bearer ${session.user.accessToken}` } },
     );
-    console.log('API Response:\n',response)
+    // console.log('API Response:\n',response)
     if (response.status == 200 && (response.body as Api.JobApplicationEntity[])?.length >0) {
       setJobApplicatons(response.body as Api.JobApplicationEntity[]);
+      setTotalPages(Math.ceil((response.body as any[]).length/12))
     } else {
       router.push('/connect');
     }
-    //
   }
 
   const handleLearnMoreButton = (slug:string) => {
@@ -129,7 +124,7 @@ export default function MyJobApplications() {
         </aside>
 
         {/* Main content */}
-        <main className="flex-1 p-6">
+        <main className="flex-1 flex-grow min-h-full p-6">
           <h1 className="text-3xl font-bold mb-6">My Job Applications</h1>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {jobApplications.length>0 && jobApplications.slice(0, 16).map((app) => (
@@ -151,7 +146,7 @@ export default function MyJobApplications() {
                     ))}
                   </div>
                 </div>
-                <div className="mt-auto">
+                <div className="mt-auto mb-0">
                   <div className="font-bold mt-2">Progress</div>
                   <ProgressBar progress={app.progress+1} failed={app.rejected} />
                   <div className="flex justify-between mt-3">
@@ -163,54 +158,37 @@ export default function MyJobApplications() {
             ))}
           </div>
 
-          {/* Pagination */}
-          <div className="flex justify-center mt-8">
-            <nav className="flex items-center space-x-2">
-              <Button variant="outline" size="icon">
-                <span className="sr-only">Go to previous page</span>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="h-4 w-4"
-                >
-                  <polyline points="15 18 9 12 15 6" />
-                </svg>
-              </Button>
-              <Button variant="outline" size="sm">
-                1
-              </Button>
-              <Button variant="outline" size="sm">
-                2
-              </Button>
-              <Button variant="outline" size="sm">
-                3
-              </Button>
-              <Button variant="outline" size="icon">
-                <span className="sr-only">Go to next page</span>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="h-4 w-4"
-                >
-                  <polyline points="9 18 15 12 9 6" />
-                </svg>
-              </Button>
-            </nav>
-          </div>
+        {/* Pagination */}
+        <div className="flex justify-center mt-auto">
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious href="#" />
+              </PaginationItem>
+              {[...Array(totalPages)].map((_, i) => (
+                <PaginationItem key={i}>
+                  <PaginationLink href="#" isActive={i === 0}>
+                    {i + 1}
+                  </PaginationLink>
+                </PaginationItem>
+              )).slice(0, 3)}
+              {totalPages > 3 && (
+                <>
+                  <PaginationItem>
+                    <PaginationEllipsis />
+                  </PaginationItem>
+                  <PaginationItem>
+                    <PaginationLink href="#">{totalPages}</PaginationLink>
+                  </PaginationItem>
+                </>
+              )}
+              <PaginationItem>
+                <PaginationNext href="#" />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        </div>
+
         </main>
       </div>
     </div>
