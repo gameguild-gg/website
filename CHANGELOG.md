@@ -1,3 +1,10 @@
+## [1.1.8](https://github.com/gameguild-gg/website/compare/v1.1.7...v1.1.8) (2024-10-30)
+
+
+### Bug Fixes
+
+* jwt import ([68cba9f](https://github.com/gameguild-gg/website/commit/68cba9ff022c54ed671587e073a21ebfb80e3735))
+
 ## [1.1.7](https://github.com/gameguild-gg/website/compare/v1.1.6...v1.1.7) (2024-10-30)
 
 
