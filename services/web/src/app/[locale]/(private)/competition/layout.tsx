@@ -23,7 +23,6 @@ import { useRouter } from 'next/navigation';
 import React, { useEffect, useState } from 'react';
 import { Api } from '@game-guild/apiclient';
 import UserEntity = Api.UserEntity;
-import { SessionProvider } from 'next-auth/react';
 
 const { Content, Footer, Sider } = Layout;
 
@@ -134,56 +133,54 @@ export default function CompetitionPage({
   }, []);
 
   return (
-    <SessionProvider>
-      <Layout style={{ minHeight: '100vh' }}>
-        <FloatButton
-          shape="circle"
-          type="primary"
-          style={{ bottom: 50, left: 20 }}
-          icon={<UserSwitchOutlined />}
-          onClick={logout}
-        />
-        <Sider
-          collapsible
-          collapsed={collapsed}
-          onCollapse={(value) => setCollapsed(value)}
-        >
-          <div className="demo-logo-vertical" />
-          <Menu theme="dark" defaultSelectedKeys={[selectedKey]} mode="inline">
-            {items.map((item) => (
-              <Menu.Item
-                key={item.key}
-                icon={item.icon}
-                onClick={() => {
-                  setSelectedKey(item.key);
-                  router.push(`/competition/${item.key}`);
-                }}
-              >
-                {item.key.toString()}
-              </Menu.Item>
-            ))}
-          </Menu>
-        </Sider>
-        <Layout>
-          <Content style={{ margin: '0 16px' }}>
-            <div
-              style={{
-                padding: 24,
-                minHeight: 360,
-                background: colorBgContainer,
-                borderRadius: borderRadiusLG,
+    <Layout style={{ minHeight: '100vh' }}>
+      <FloatButton
+        shape="circle"
+        type="primary"
+        style={{ bottom: 50, left: 20 }}
+        icon={<UserSwitchOutlined />}
+        onClick={logout}
+      />
+      <Sider
+        collapsible
+        collapsed={collapsed}
+        onCollapse={(value) => setCollapsed(value)}
+      >
+        <div className="demo-logo-vertical" />
+        <Menu theme="dark" defaultSelectedKeys={[selectedKey]} mode="inline">
+          {items.map((item) => (
+            <Menu.Item
+              key={item.key}
+              icon={item.icon}
+              onClick={() => {
+                setSelectedKey(item.key);
+                router.push(`/competition/${item.key}`);
               }}
             >
-              {children}
-            </div>
-          </Content>
-          <Footer style={{ textAlign: 'center' }}>
-            Chess AI competition engine ©{new Date().getFullYear()} Created by
-            GameGuild, for Game AI classes at Champlain College. Feel free to
-            use and contribute to this project.
-          </Footer>
-        </Layout>
+              {item.key.toString()}
+            </Menu.Item>
+          ))}
+        </Menu>
+      </Sider>
+      <Layout>
+        <Content style={{ margin: '0 16px' }}>
+          <div
+            style={{
+              padding: 24,
+              minHeight: 360,
+              background: colorBgContainer,
+              borderRadius: borderRadiusLG,
+            }}
+          >
+            {children}
+          </div>
+        </Content>
+        <Footer style={{ textAlign: 'center' }}>
+          Chess AI competition engine ©{new Date().getFullYear()} Created by
+          GameGuild, for Game AI classes at Champlain College. Feel free to use
+          and contribute to this project.
+        </Footer>
       </Layout>
-    </SessionProvider>
+    </Layout>
   );
 }

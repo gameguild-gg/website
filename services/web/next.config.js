@@ -3,6 +3,7 @@ const CompressionPlugin = require('compression-webpack-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const fs = require('fs');
 const path = require('path');
+const generatePathMapping = require('./src/generatePathMapping');
 
 const withNextIntl = createNextIntlPlugin();
 
@@ -12,6 +13,10 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
   webpack: (config, { isServer }) => {
+    if (process.env.NODE_ENV === 'development') {
+      generatePathMapping();
+    }
+
     if (!isServer) {
       config.externals = config.externals || [];
       config.externals = [...config.externals, 'apiclient'];
