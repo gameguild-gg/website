@@ -1,26 +1,14 @@
 'use client'
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { getSession } from 'next-auth/react';
 import { Api, JobApplicationsApi } from '@game-guild/apiclient';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Check, X } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import { getSession } from 'next-auth/react';
+import { Button } from '@/components/ui/button';
 
-
-// Mock data for the selected job
-const selectedJob = {
-  id: 1,
-  title: 'Freelance Web Developer',
-  company: 'TechStartup Inc.',
-  location: 'Remote',
-  postedAgo: '3 days ago',
-  image: '/assets/images/placeholder.svg?height=80&width=80',
-  skills: ['React', 'Node.js', 'TypeScript', 'API Integration'],
-  description:
-    "We're looking for a skilled freelance web developer to help build a new customer-facing portal. The ideal candidate will have strong experience with React, Node.js, and API integration. This is a 3-month contract with the possibility of extension.",
-};
 
 // Mock data for application steps
 const taskStepsNames = [
@@ -96,7 +84,10 @@ export default function MyJobApplicationSlug({ params }) {
   return (
     <div className="min-h-[calc(100vh-150px)] bg-gray-100">
       <div className="container mx-auto p-4">
-        <h1 className="mb-6 text-2xl font-bold">Job Details</h1>
+        <div className='flex justify-between'>
+          <h1 className="mb-6 text-2xl font-bold">Job Details</h1>
+          <Button variant='outline' onClick={()=>router.push('/jobs/my-applications')}>Return</Button>
+        </div>
         {jobApplication ? (
           <div className="grid gap-6 md:grid-cols-[2fr_1fr]">
             {/* Left side: Job Information */}

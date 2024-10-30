@@ -277,7 +277,7 @@ export default function JobBoard() {
             <PopoverTrigger asChild>
               <Button
                 variant="outline"
-                className="w-[250px] justify-start overflow-auto"
+                className="w-[250px] justify-start"
               >
                 {selectedTags.length > 0 ? `${selectedTags}` : 'Skills'}
               </Button>
