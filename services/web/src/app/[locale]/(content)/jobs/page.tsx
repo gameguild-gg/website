@@ -57,10 +57,8 @@ export default function JobBoard() {
     basePath: process.env.NEXT_PUBLIC_API_URL,
   });
 
-  // On load page
   useEffect(() => {
     getAllJobTags();
-    //getAllJobs();
   }, []);
 
   // On search parameters change
@@ -71,7 +69,6 @@ export default function JobBoard() {
 
   const getAllJobTags = async () => {
     const session: any = await getSession();
-    // console.log("SESSION:",session)
     if (!session) {
       router.push('/connect');
       return;
@@ -81,7 +78,6 @@ export default function JobBoard() {
       { headers: { Authorization: `Bearer ${session.user.accessToken}` } },
     );
     if ((response.status = 200)) {
-      // console.log('response(job tags):', response)
       setJobTags(response.body as Api.JobTagEntity[]||[]);
     }
   };
@@ -333,7 +329,7 @@ export default function JobBoard() {
                 >
                   <CardContent className="flex items-start space-x-4 p-4">
                     <Avatar>
-                      <AvatarImage src={job.thumbnail} alt={job?.company} />
+                      <AvatarImage src={job.thumbnail} alt={job?.title} />
                       <AvatarFallback>{job?.title[0]}</AvatarFallback>
                     </Avatar>
                     <div>

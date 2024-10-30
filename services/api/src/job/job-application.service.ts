@@ -31,7 +31,7 @@ export class JobApplicationService extends TypeOrmCrudService<JobApplicationEnti
   async myApplications(userId: string): Promise<JobApplicationEntity[]> {
     return this.jobAplicationRepository.find({
       where: { applicant: {id: userId } },
-      relations: ['applicant'],
+      relations: ['applicant','job','job.job_tags'],
     });
   }
 
