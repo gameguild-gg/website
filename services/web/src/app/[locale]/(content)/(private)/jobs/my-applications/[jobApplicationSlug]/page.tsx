@@ -4,7 +4,7 @@ import { Api, JobApplicationsApi } from '@game-guild/apiclient';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { Check } from 'lucide-react';
+import { Check, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { getSession } from 'next-auth/react';
 
@@ -23,21 +23,21 @@ const selectedJob = {
 };
 
 // Mock data for application steps
-const applicationSteps = [
-  { id: 1, name: 'Applied', completed: true },
-  { id: 2, name: 'Application Accepted', completed: true },
-  { id: 3, name: 'Job Started', completed: true },
-  { id: 4, name: 'Job Delivered', completed: false },
-  { id: 5, name: 'Payment Completed', completed: false },
+const taskStepsNames = [
+  'Applied',
+  'Application Accepted',
+  'Job Started',
+  'Job Delivered',
+  'Payment Completed',
 ];
 
 // Mock data for application steps 2
-const applicationSteps2 = [
-  { id: 1, name: 'Applied', completed: true },
-  { id: 2, name: 'Application Accepted', completed: true },
-  { id: 3, name: 'Tests and Interviews', completed: true },
-  { id: 4, name: 'Hiring Proposal Sent', completed: false },
-  { id: 5, name: 'Hiring Process Complete', completed: false },
+const continuosStepNames = [
+  'Applied',
+  'Application Accepted',
+  'Tests and Interviews',
+  'Hiring Proposal Sent',
+  'Hiring Process Complete',
 ];
 
 export default function MyJobApplicationSlug({ params }) {
@@ -75,7 +75,6 @@ export default function MyJobApplicationSlug({ params }) {
 
   const loadJobApplication = async () => {
     const session: any = await getSession();
-    // console.log("MY APPLICATIONS SLUG. SESSION: ",session)
     if (!session) {
       router.push('/connect');
       return;
@@ -84,11 +83,11 @@ export default function MyJobApplicationSlug({ params }) {
       jobApplicationSlug,
       { headers: { Authorization: `Bearer ${session.user.accessToken}` } },
     );
-    console.log('API Response.body:\n',response.body)
+    // console.log('API Response.body:\n',response.body)
     if (response.status == 200) {
       setJobApplicaton(response.body as Api.JobApplicationEntity);
     } else {
-      //router.push('/connect');
+      // router.push('/connect');
     }
     //
   }
@@ -102,7 +101,7 @@ export default function MyJobApplicationSlug({ params }) {
           <div className="grid gap-6 md:grid-cols-[2fr_1fr]">
             {/* Left side: Job Information */}
             <Card>
-              <CardContent className="p-6">
+              <CardContent className="p-6 h-full">
                 <div className="mb-4 flex items-center space-x-4">
                   <Avatar className="h-16 w-16">
                     <AvatarImage
@@ -144,38 +143,44 @@ export default function MyJobApplicationSlug({ params }) {
                   Application Progress
                 </h3>
                 <ol className="relative ">
-                  {applicationSteps.map((step, index) => (
+                  
+                  {jobApplication.progress && [0,1,2,3,4].map((step, index) => (
                     <li
-                      key={step.id}
-                      className={`
-                      mb-1 ml-6
-                      `}
+                      key={step}
+                      className={`mb-1 ml-6`}
                     >
                       <span
                         className={`absolute -left-4 flex h-8 w-8 items-center justify-center rounded-full ${
-                          step.completed
+                          (jobApplication.progress>=step)
                             ? 'bg-green-100 ring-8 ring-white'
-                            : 'bg-gray-100'
+                            : (jobApplication.progress==step-1 && jobApplication.rejected)
+                              ? 'bg-red-100'
+                              : 'bg-gray-100'
                         }`}
                       >
-                        {step.completed && (
+                        {(jobApplication.progress>=step) && (
                           <Check className="h-5 w-5 text-green-500" />
+                        )}
+                        {(jobApplication.progress==step-1 && jobApplication.rejected) && (
+                          <X className="h-5 w-5 text-red-500" />
                         )}
                       </span>
                       <h3
                         className={`font-medium ${
-                          step.completed ? 'text-green-500' : 'text-gray-500'
+                          (jobApplication.progress>=step) ? 'text-green-500' : 'text-gray-500'
                         }`}
                       >
-                        {step.name}
+                        {(jobApplication.job.job_type == 'TASK') ? taskStepsNames[step] : continuosStepNames[step]}
                       </h3>
-                      {index < applicationSteps.length - 1 && (
+                      {/* Thin green bar */}
+                      {index < 4 && (
                         <div
                           className={`mt-2 -ml-7 h-20 w-1 ${
-                            step.completed &&
-                            applicationSteps[index + 1].completed
+                            (jobApplication.progress>=step+1)
                               ? 'bg-green-500'
-                              : 'bg-gray-200'
+                              : (jobApplication.progress==step && jobApplication.rejected)
+                                ? 'bg-red-500'
+                                : 'bg-gray-200'
                           }`}
                         ></div>
                       )}
