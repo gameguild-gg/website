@@ -97,6 +97,10 @@ export default function MyJobApplications() {
     //
   }
 
+  const handleLearnMoreButton = (slug:string) => {
+    router.push('/jobs/my-applications/'+slug)
+  }
+
   return (
     <div className="min-h-[calc(100vh-70px)] bg-gray-100">
       <div className="flex container min-h-full mx-auto p-4 bg-background">
@@ -149,7 +153,11 @@ export default function MyJobApplications() {
                 </div>
                 <div className="mt-auto">
                   <div className="font-bold mt-2">Progress</div>
-                  <ProgressBar progress={app.progress} failed={app.rejected} />
+                  <ProgressBar progress={app.progress+1} failed={app.rejected} />
+                  <div className="flex justify-between mt-3">
+                    <Button onClick={()=>handleLearnMoreButton(app?.job?.slug)}>Learn More</Button>
+                    <Button variant="destructive">Give Up</Button>
+                  </div>
                 </div>
               </div>
             ))}
