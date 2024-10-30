@@ -3,7 +3,6 @@ import { getToken } from 'next-auth/jwt';
 import createIntlMiddleware from 'next-intl/middleware';
 import { locales } from '@/data/locales';
 import { pathMapping } from '@/pathMapping';
-import jwt from 'jsonwebtoken';
 
 // Create the i18n middleware
 const i18nMiddleware = createIntlMiddleware({
