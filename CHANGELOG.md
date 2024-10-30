@@ -1,3 +1,10 @@
+## [1.1.7](https://github.com/gameguild-gg/website/compare/v1.1.6...v1.1.7) (2024-10-30)
+
+
+### Bug Fixes
+
+* **private:** private path ([7f91d71](https://github.com/gameguild-gg/website/commit/7f91d71f7e7d756dd1371eeb20321d2b34fd2a6f))
+
 ## [1.1.6](https://github.com/gameguild-gg/website/compare/v1.1.5...v1.1.6) (2024-10-25)
 
 
