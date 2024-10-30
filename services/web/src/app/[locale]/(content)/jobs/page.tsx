@@ -29,6 +29,7 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { useToast } from '@/components/ui/use-toast';
+import Link from 'next/link';
 
 const job_types = [
   { value: 'CONTINUOUS', label: 'Continuous' },
@@ -59,7 +60,7 @@ export default function JobBoard() {
   // On load page
   useEffect(() => {
     getAllJobTags();
-    getAllJobs();
+    //getAllJobs();
   }, []);
 
   // On search parameters change
@@ -393,7 +394,7 @@ export default function JobBoard() {
                   {selectedJob.applied && (
                     <p className="mb-6 bg-gray-100 flex">
                       Already Applied.
-                      <p className="ml-2 font-semibold text-blue-500 hover:underline cursor-pointer" onClick={()=>handleLearnMoreButton(selectedJob.slug)}>Learn more.</p>
+                      <Link className="ml-2 font-semibold text-blue-500 hover:underline cursor-pointer" href={'/jobs/my-applications/'+selectedJob.slug}>Learn more.</Link>
                     </p>
                   )}
                   {!selectedJob.applied && (

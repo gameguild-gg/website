@@ -59,11 +59,11 @@ export class JobPostService extends WithRolesService<JobPostEntity> {
     const jobPostIds = jobPosts.map((jobPost) => jobPost.id);
 
     const jobApplications = await this.jobApplicationRepo.find({
-      relations: {
-        applicant: true,
-        job: true,
+      relations: ['applicant','job'],
+      where: {
+        applicant: { id: userId },
+        job: {id: In(jobPostIds)}
       },
-      where: [{ applicant: { id: userId } }, { job: { id: In(jobPostIds) } }],
     });
 
     const appliedJobIds = jobApplications.map(
