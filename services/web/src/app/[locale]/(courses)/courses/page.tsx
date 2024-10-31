@@ -1,7 +1,7 @@
 import React from 'react';
-import {ParamsWithLocale} from "@/types";
-import {fetchCourses} from "@/lib/course/fetch-courses.action";
-import Link from "next/link";
+import { ParamsWithLocale } from '@/types';
+import { fetchCourses } from '@/lib/course/fetch-courses.action';
+import Link from 'next/link';
 
 export async function generateStaticParams(): Promise<ParamsWithLocale[]> {
   return [];
@@ -15,7 +15,7 @@ export default async function Page() {
       <div>
         <p>It's looks like that we don't have a course yet.</p>
       </div>
-    )
+    );
   }
 
   return (
@@ -34,9 +34,12 @@ export default async function Page() {
               className="group bg-white border-2 shadow rounded-lg w-full md:w-[345px] h-[285px] m-2 hover:scale-105 duration-300 overflow-hidden cursor-pointer"
               key={course.id}
             >
-              <Link href={`/courses/${course.slug}`}>
-                <img src="/assets/images/placeholder.svg" className="w-fullobject-none h-[170px]"
-                     alt={course.name}/>
+              <Link href={`/course/${course.slug}`}>
+                <img
+                  src="/assets/images/placeholder.svg"
+                  className="w-fullobject-none h-[170px]"
+                  alt={course.name}
+                />
                 <div className="font-bold p-2">{course.name}</div>
                 <div className="p-2 text-neutral-700">{course.description}</div>
               </Link>
