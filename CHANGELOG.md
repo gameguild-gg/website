@@ -1,3 +1,11 @@
+## [1.1.9](https://github.com/gameguild-gg/website/compare/v1.1.8...v1.1.9) (2024-10-31)
+
+
+### Bug Fixes
+
+* **courses:** better courses routing for web ([041645d](https://github.com/gameguild-gg/website/commit/041645d5c1bc804fec8fd2fdf64d8ed76152e2e4))
+* disable middleware redirect if it is not logged in ([d91a90b](https://github.com/gameguild-gg/website/commit/d91a90be685ee2e240fb99cee499fa1c263a66c7))
+
 ## [1.1.8](https://github.com/gameguild-gg/website/compare/v1.1.7...v1.1.8) (2024-10-30)
 
 
