@@ -533,6 +533,7 @@ export namespace Api {
 		 */
 		progress: number;
 		rejected: boolean;
+		withdrawn: boolean;
 	}
 
 	export interface JobPostCreateDto {

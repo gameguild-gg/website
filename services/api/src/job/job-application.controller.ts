@@ -168,4 +168,15 @@ export class JobApplicationController
   ):Promise<JobApplicationEntity> {
     return this.service.undoRejectCandidate(application, jobManager.id);
   }
+  
+  @Post('withdraw')
+  @Auth(AuthenticatedRoute)
+  @ApiBody({ type: JobApplicationEntity })
+  async withdraw(
+    @Body() application: JobApplicationEntity,
+    @UserInject() jobManager: UserEntity,
+  ):Promise<JobApplicationEntity> {
+    return this.service.withdraw(application, jobManager.id);
+  }
+
 }

@@ -27,4 +27,10 @@ export class JobApplicationEntity extends EntityBase {
   @IsNotEmpty({ message: 'error.isNotEmpty: rejected is required' })
   @IsBoolean({ message: 'error.IsBoolean: rejected must be a boolean' })
   rejected: boolean;
+
+  @Column()
+  @ApiProperty({ nullable: false, type: 'boolean', default: false })
+  @IsNotEmpty({ message: 'error.isNotEmpty: withdrawn is required' })
+  @IsBoolean({ message: 'error.IsBoolean: withdrawn must be a boolean' })
+  withdrawn: boolean;
 }

@@ -133,7 +133,7 @@ export default function MyJobApplicationSlug({ params }) {
                 <h3 className="mb-4 text-xl font-semibold">
                   Application Progress
                 </h3>
-                <ol className="relative ">
+                <ol className="relative ml-4">
                   
                   {jobApplication.progress && [0,1,2,3,4].map((step, index) => (
                     <li

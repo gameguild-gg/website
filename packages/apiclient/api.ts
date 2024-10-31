@@ -4232,6 +4232,64 @@ export namespace JobApplicationsApi {
 		headers?: undefined
 	}
 	
+	export type JobApplicationControllerWithdrawResponse =
+		| JobApplicationControllerWithdraw400Response
+		| JobApplicationControllerWithdraw401Response
+		| JobApplicationControllerWithdraw403Response
+		| JobApplicationControllerWithdraw404Response
+		| JobApplicationControllerWithdraw409Response
+		| JobApplicationControllerWithdraw422Response
+		| JobApplicationControllerWithdraw500Response
+	
+	export interface JobApplicationControllerWithdraw400Response {
+		status: 400
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface JobApplicationControllerWithdraw401Response {
+		status: 401
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface JobApplicationControllerWithdraw403Response {
+		status: 403
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface JobApplicationControllerWithdraw404Response {
+		status: 404
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface JobApplicationControllerWithdraw409Response {
+		status: 409
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface JobApplicationControllerWithdraw422Response {
+		status: 422
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface JobApplicationControllerWithdraw500Response {
+		status: 500
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
 	export type UpdateOneBaseJobApplicationControllerJobApplicationEntityResponse =
 		| UpdateOneBaseJobApplicationControllerJobApplicationEntity200Response
 		| UpdateOneBaseJobApplicationControllerJobApplicationEntity400Response
@@ -4800,6 +4858,53 @@ export const JobApplicationsApiFetchParamCreator = function (configuration?: Con
 			}
 
 			let localVarPath = `/job-applications/undo-reject-candidate`;
+			const localVarPathQueryStart = localVarPath.indexOf("?");
+			const localVarRequestOptions: RequestInit = Object.assign({ method: 'POST' }, options);
+			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
+			const localVarQueryParameter = new URLSearchParams(localVarPathQueryStart !== -1 ? localVarPath.substring(localVarPathQueryStart + 1) : "");
+			if (localVarPathQueryStart !== -1) {
+				localVarPath = localVarPath.substring(0, localVarPathQueryStart);
+			}
+
+			// authentication bearer required
+			// http authorization required
+			if (configuration && configuration.authorization) {
+				const localVarAuthorizationValue = typeof configuration.authorization === 'function'
+					? configuration.authorization('bearer')
+					: configuration.authorization;
+				if (localVarAuthorizationValue !== null) {
+					localVarHeaderParameter.set("Authorization", "Bearer " + localVarAuthorizationValue);
+				}
+			}
+			localVarHeaderParameter.set('Content-Type', 'application/json');
+
+			localVarRequestOptions.headers = localVarHeaderParameter;
+	
+			if (request !== undefined) {
+				localVarRequestOptions.body = JSON.stringify(request || {});
+			}
+
+			const localVarQueryParameterString = localVarQueryParameter.toString();
+			if (localVarQueryParameterString) {
+				localVarPath += "?" + localVarQueryParameterString;
+			}
+			return {
+				url: localVarPath,
+				options: localVarRequestOptions,
+			};
+		},
+		/**
+		 * @param {Api.JobApplicationEntity} request
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		jobApplicationControllerWithdraw(request: Api.JobApplicationEntity, options: RequestInit = {}): FetchArgs {
+			// verify required parameter 'request' is not null or undefined
+			if (request === null || request === undefined) {
+				throw new RequiredError('request', 'Required parameter request was null or undefined when calling jobApplicationControllerWithdraw.');
+			}
+
+			let localVarPath = `/job-applications/withdraw`;
 			const localVarPathQueryStart = localVarPath.indexOf("?");
 			const localVarRequestOptions: RequestInit = Object.assign({ method: 'POST' }, options);
 			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
@@ -5816,6 +5921,91 @@ export const JobApplicationsApiFp = function(configuration?: Configuration) {
 			};
 		},
 		/**
+		 * @param {Api.JobApplicationEntity} request
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		jobApplicationControllerWithdraw(request: Api.JobApplicationEntity, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<JobApplicationsApi.JobApplicationControllerWithdrawResponse> {
+			const localVarFetchArgs = JobApplicationsApiFetchParamCreator(configuration).jobApplicationControllerWithdraw(request, options);
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				if (response.status === 400) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 401) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 403) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 404) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 409) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 422) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 500) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				throw response;
+			};
+		},
+		/**
 		 * @summary Update a single JobApplicationEntity
 		 * @param {string} id
 		 * @param {Api.JobApplicationEntity} request
@@ -6015,6 +6205,13 @@ export interface JobApplicationsApiInterface {
 	jobApplicationControllerUndoRejectCandidate(request: Api.JobApplicationEntity, options?: RequestInit): Promise<JobApplicationsApi.JobApplicationControllerUndoRejectCandidateResponse>
 
 	/**
+	 * @param {Api.JobApplicationEntity} request
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	jobApplicationControllerWithdraw(request: Api.JobApplicationEntity, options?: RequestInit): Promise<JobApplicationsApi.JobApplicationControllerWithdrawResponse>
+
+	/**
 	 * @summary Update a single JobApplicationEntity
 	 * @param {string} id
 	 * @param {Api.JobApplicationEntity} request
@@ -6135,6 +6332,15 @@ export class JobApplicationsApi extends BaseAPI implements JobApplicationsApiInt
 	 */
 	public jobApplicationControllerUndoRejectCandidate(request: Api.JobApplicationEntity, options?: RequestInit) {
 		return JobApplicationsApiFp(this.configuration).jobApplicationControllerUndoRejectCandidate(request, options)(this.fetch, this.basePath);
+	}
+
+	/**
+	 * @param {Api.JobApplicationEntity} request
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	public jobApplicationControllerWithdraw(request: Api.JobApplicationEntity, options?: RequestInit) {
+		return JobApplicationsApiFp(this.configuration).jobApplicationControllerWithdraw(request, options)(this.fetch, this.basePath);
 	}
 
 	/**

@@ -3,8 +3,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { JobApplicationEntity } from './entities/job-application.entity';
 import { TypeOrmCrudService } from '@dataui/crud-typeorm';
-import { JobPostEntity } from './entities/job-post.entity';
-import { UserEntity } from '../user/entities';
 
 @Injectable()
 export class JobApplicationService extends TypeOrmCrudService<JobApplicationEntity> {
@@ -17,10 +15,27 @@ export class JobApplicationService extends TypeOrmCrudService<JobApplicationEnti
     super(jobAplicationRepository);
   }
 
-  async userHasPermissionToManageApplication(applicationId:string, userId:string): Promise<boolean> {
+  async userIsJobOwner(applicationId:string, userId:string): Promise<boolean> {
     const app = await this.jobAplicationRepository.findOne({
-      where: {id : applicationId},
-      relations: ['job','job.owner']
+      where: {
+        id : applicationId,
+        job: {owner: {id: userId} },
+      },
+      relations: ['job','job.owner'],
+    })
+    if (app) {
+      return true
+    }
+    return false
+  }
+
+  async userIsJobApplicant(applicationId:string, userId:string): Promise<boolean> {
+    const app = await this.jobAplicationRepository.findOne({
+      where: {
+        id: applicationId,
+        applicant: {id: userId},
+      },
+      relations: ['applicant'],
     })
     if (app) {
       return true
@@ -46,7 +61,7 @@ export class JobApplicationService extends TypeOrmCrudService<JobApplicationEnti
   }
 
   async advanceCandidate(application: JobApplicationEntity, jobManagerId: string): Promise<JobApplicationEntity> {
-    if (!await this.userHasPermissionToManageApplication(application.id, jobManagerId)) {
+    if (!await this.userIsJobOwner(application.id, jobManagerId)) {
       throw new Error('You do not have the required permissions to manage this job application');
     }
     if (application.progress >= 5 || application.rejected){
@@ -57,7 +72,7 @@ export class JobApplicationService extends TypeOrmCrudService<JobApplicationEnti
   }
 
   async undoAdvanceCandidate(application: JobApplicationEntity, jobManagerId: string): Promise<JobApplicationEntity> {
-    if (!await this.userHasPermissionToManageApplication(application.id, jobManagerId)) {
+    if (!await this.userIsJobOwner(application.id, jobManagerId)) {
       throw new Error('You do not have the required permissions to manage this job application');
     }
     if (application.progress <= 0 || application.rejected){
@@ -68,7 +83,7 @@ export class JobApplicationService extends TypeOrmCrudService<JobApplicationEnti
   }
 
   async rejectCandidate(application: JobApplicationEntity, jobManagerId: string): Promise<JobApplicationEntity> {
-    if (!await this.userHasPermissionToManageApplication(application.id, jobManagerId)) {
+    if (!await this.userIsJobOwner(application.id, jobManagerId)) {
       throw new Error('You do not have the required permissions to manage this job application');
     }
     if (application.rejected){
@@ -79,7 +94,7 @@ export class JobApplicationService extends TypeOrmCrudService<JobApplicationEnti
   }
 
   async undoRejectCandidate(application: JobApplicationEntity, jobManagerId: string): Promise<JobApplicationEntity> {
-    if (!await this.userHasPermissionToManageApplication(application.id, jobManagerId)) {
+    if (!await this.userIsJobOwner(application.id, jobManagerId)) {
       throw new Error('You do not have the required permissions to manage this job application');
     }
     if (!application.rejected){
@@ -88,4 +103,16 @@ export class JobApplicationService extends TypeOrmCrudService<JobApplicationEnti
     application.rejected = false;
     return this.repo.save(application);
   }
+
+  async withdraw(application: JobApplicationEntity, applicantId:string):Promise<JobApplicationEntity> {
+    if (!await this.userIsJobApplicant(application.id, applicantId)) {
+      throw new Error('You do not have the required permissions to manage this job application');
+    }
+    if (!application.withdrawn && !application.rejected){
+      throw new Error('Invalid application for withdraw');
+    }
+    application.withdrawn = true
+    return this.repo.save(application)
+  }
+  
 }
