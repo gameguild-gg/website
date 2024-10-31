@@ -86,7 +86,7 @@ export class JobApplicationService extends TypeOrmCrudService<JobApplicationEnti
     if (!await this.userIsJobOwner(application.id, jobManagerId)) {
       throw new Error('You do not have the required permissions to manage this job application');
     }
-    if (application.rejected){
+    if (application.rejected && !application.withdrawn){
       throw new Error('Invalid application for rejecting');
     }
     application.rejected = true;
@@ -97,7 +97,7 @@ export class JobApplicationService extends TypeOrmCrudService<JobApplicationEnti
     if (!await this.userIsJobOwner(application.id, jobManagerId)) {
       throw new Error('You do not have the required permissions to manage this job application');
     }
-    if (!application.rejected){
+    if (!application.rejected && !application.withdrawn){
       throw new Error('Invalid application for undoing rejection');
     }
     application.rejected = false;

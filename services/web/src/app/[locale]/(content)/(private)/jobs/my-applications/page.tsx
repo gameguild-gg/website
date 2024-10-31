@@ -96,6 +96,20 @@ export default function MyJobApplications() {
     router.push('/jobs/my-applications/'+slug)
   }
 
+  const handleGiveUpButton = async (app:Api.JobApplicationEntity) => {
+    // TODO: Add Warning
+    const session: any = await getSession();
+    const response = await jobApplicationApi.jobApplicationControllerWithdraw(
+      app,
+      { headers: { Authorization: `Bearer ${session.user.accessToken}` } },
+    )
+    if (response.status == 200){
+      // TODO: sucess toaster
+    } else {
+      // TODO: error toaster
+    }
+  }
+
   return (
     <div className="min-h-[calc(100vh-70px)] bg-gray-100">
       <div className="flex container min-h-full mx-auto p-4 bg-background">
@@ -151,7 +165,7 @@ export default function MyJobApplications() {
                   <ProgressBar progress={app.progress+1} failed={app.rejected} />
                   <div className="flex justify-between mt-3">
                     <Button onClick={()=>handleLearnMoreButton(app?.job?.slug)}>Learn More</Button>
-                    <Button variant="destructive">Give Up</Button>
+                    <Button onClick={()=>handleGiveUpButton(app)} variant="destructive">Give Up</Button>
                   </div>
                 </div>
               </div>

@@ -3869,6 +3869,7 @@ export namespace JobApplicationsApi {
 	}
 	
 	export type JobApplicationControllerAdvanceCandidateResponse =
+		| JobApplicationControllerAdvanceCandidate200Response
 		| JobApplicationControllerAdvanceCandidate400Response
 		| JobApplicationControllerAdvanceCandidate401Response
 		| JobApplicationControllerAdvanceCandidate403Response
@@ -3876,6 +3877,13 @@ export namespace JobApplicationsApi {
 		| JobApplicationControllerAdvanceCandidate409Response
 		| JobApplicationControllerAdvanceCandidate422Response
 		| JobApplicationControllerAdvanceCandidate500Response
+	
+	export interface JobApplicationControllerAdvanceCandidate200Response {
+		status: 200
+		contentType: 'application/json'
+		body: Api.Promise
+		headers?: undefined
+	}
 	
 	export interface JobApplicationControllerAdvanceCandidate400Response {
 		status: 400
@@ -3927,6 +3935,7 @@ export namespace JobApplicationsApi {
 	}
 	
 	export type JobApplicationControllerMoveBackCandidateResponse =
+		| JobApplicationControllerMoveBackCandidate200Response
 		| JobApplicationControllerMoveBackCandidate400Response
 		| JobApplicationControllerMoveBackCandidate401Response
 		| JobApplicationControllerMoveBackCandidate403Response
@@ -3934,6 +3943,13 @@ export namespace JobApplicationsApi {
 		| JobApplicationControllerMoveBackCandidate409Response
 		| JobApplicationControllerMoveBackCandidate422Response
 		| JobApplicationControllerMoveBackCandidate500Response
+	
+	export interface JobApplicationControllerMoveBackCandidate200Response {
+		status: 200
+		contentType: 'application/json'
+		body: Api.Promise
+		headers?: undefined
+	}
 	
 	export interface JobApplicationControllerMoveBackCandidate400Response {
 		status: 400
@@ -3985,6 +4001,7 @@ export namespace JobApplicationsApi {
 	}
 	
 	export type JobApplicationControllerMyApplicationBySlugResponse =
+		| JobApplicationControllerMyApplicationBySlug200Response
 		| JobApplicationControllerMyApplicationBySlug400Response
 		| JobApplicationControllerMyApplicationBySlug401Response
 		| JobApplicationControllerMyApplicationBySlug403Response
@@ -3992,7 +4009,13 @@ export namespace JobApplicationsApi {
 		| JobApplicationControllerMyApplicationBySlug409Response
 		| JobApplicationControllerMyApplicationBySlug422Response
 		| JobApplicationControllerMyApplicationBySlug500Response
-		| JobApplicationControllerMyApplicationBySlugDefaultResponse
+	
+	export interface JobApplicationControllerMyApplicationBySlug200Response {
+		status: 200
+		contentType: 'application/json'
+		body: Api.Promise
+		headers?: undefined
+	}
 	
 	export interface JobApplicationControllerMyApplicationBySlug400Response {
 		status: 400
@@ -4043,14 +4066,8 @@ export namespace JobApplicationsApi {
 		headers?: undefined
 	}
 	
-	export interface JobApplicationControllerMyApplicationBySlugDefaultResponse {
-		status: number
-		contentType: 'application/json'
-		body: Api.Promise
-		headers?: undefined
-	}
-	
 	export type JobApplicationControllerMyApplicationsResponse =
+		| JobApplicationControllerMyApplications200Response
 		| JobApplicationControllerMyApplications400Response
 		| JobApplicationControllerMyApplications401Response
 		| JobApplicationControllerMyApplications403Response
@@ -4058,7 +4075,13 @@ export namespace JobApplicationsApi {
 		| JobApplicationControllerMyApplications409Response
 		| JobApplicationControllerMyApplications422Response
 		| JobApplicationControllerMyApplications500Response
-		| JobApplicationControllerMyApplicationsDefaultResponse
+	
+	export interface JobApplicationControllerMyApplications200Response {
+		status: 200
+		contentType: 'application/json'
+		body: Api.Promise
+		headers?: undefined
+	}
 	
 	export interface JobApplicationControllerMyApplications400Response {
 		status: 400
@@ -4109,14 +4132,8 @@ export namespace JobApplicationsApi {
 		headers?: undefined
 	}
 	
-	export interface JobApplicationControllerMyApplicationsDefaultResponse {
-		status: number
-		contentType: 'application/json'
-		body: Api.Promise
-		headers?: undefined
-	}
-	
 	export type JobApplicationControllerRejectCandidateResponse =
+		| JobApplicationControllerRejectCandidate200Response
 		| JobApplicationControllerRejectCandidate400Response
 		| JobApplicationControllerRejectCandidate401Response
 		| JobApplicationControllerRejectCandidate403Response
@@ -4124,6 +4141,13 @@ export namespace JobApplicationsApi {
 		| JobApplicationControllerRejectCandidate409Response
 		| JobApplicationControllerRejectCandidate422Response
 		| JobApplicationControllerRejectCandidate500Response
+	
+	export interface JobApplicationControllerRejectCandidate200Response {
+		status: 200
+		contentType: 'application/json'
+		body: Api.Promise
+		headers?: undefined
+	}
 	
 	export interface JobApplicationControllerRejectCandidate400Response {
 		status: 400
@@ -4175,6 +4199,7 @@ export namespace JobApplicationsApi {
 	}
 	
 	export type JobApplicationControllerUndoRejectCandidateResponse =
+		| JobApplicationControllerUndoRejectCandidate200Response
 		| JobApplicationControllerUndoRejectCandidate400Response
 		| JobApplicationControllerUndoRejectCandidate401Response
 		| JobApplicationControllerUndoRejectCandidate403Response
@@ -4182,6 +4207,13 @@ export namespace JobApplicationsApi {
 		| JobApplicationControllerUndoRejectCandidate409Response
 		| JobApplicationControllerUndoRejectCandidate422Response
 		| JobApplicationControllerUndoRejectCandidate500Response
+	
+	export interface JobApplicationControllerUndoRejectCandidate200Response {
+		status: 200
+		contentType: 'application/json'
+		body: Api.Promise
+		headers?: undefined
+	}
 	
 	export interface JobApplicationControllerUndoRejectCandidate400Response {
 		status: 400
@@ -4233,6 +4265,7 @@ export namespace JobApplicationsApi {
 	}
 	
 	export type JobApplicationControllerWithdrawResponse =
+		| JobApplicationControllerWithdraw200Response
 		| JobApplicationControllerWithdraw400Response
 		| JobApplicationControllerWithdraw401Response
 		| JobApplicationControllerWithdraw403Response
@@ -4240,6 +4273,13 @@ export namespace JobApplicationsApi {
 		| JobApplicationControllerWithdraw409Response
 		| JobApplicationControllerWithdraw422Response
 		| JobApplicationControllerWithdraw500Response
+	
+	export interface JobApplicationControllerWithdraw200Response {
+		status: 200
+		contentType: 'application/json'
+		body: Api.Promise
+		headers?: undefined
+	}
 	
 	export interface JobApplicationControllerWithdraw400Response {
 		status: 400
@@ -5407,6 +5447,16 @@ export const JobApplicationsApiFp = function(configuration?: Configuration) {
 				const contentType = response.headers.get('Content-Type');
 				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
 				
+				if (response.status === 200) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.Promise,
+						}
+					}
+					throw response;
+				}
 				if (response.status === 400) {
 					if (mimeType === 'application/json') {
 						return {
@@ -5492,6 +5542,16 @@ export const JobApplicationsApiFp = function(configuration?: Configuration) {
 				const contentType = response.headers.get('Content-Type');
 				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
 				
+				if (response.status === 200) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.Promise,
+						}
+					}
+					throw response;
+				}
 				if (response.status === 400) {
 					if (mimeType === 'application/json') {
 						return {
@@ -5577,6 +5637,16 @@ export const JobApplicationsApiFp = function(configuration?: Configuration) {
 				const contentType = response.headers.get('Content-Type');
 				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
 				
+				if (response.status === 200) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.Promise,
+						}
+					}
+					throw response;
+				}
 				if (response.status === 400) {
 					if (mimeType === 'application/json') {
 						return {
@@ -5646,14 +5716,6 @@ export const JobApplicationsApiFp = function(configuration?: Configuration) {
 						}
 					}
 					throw response;
-				}
-				/* Catch-all response */
-				if (mimeType === 'application/json') {
-					return {
-						status: response.status,
-						contentType: 'application/json',
-						body: await response.json() as Api.Promise,
-					}
 				}
 				throw response;
 			};
@@ -5669,6 +5731,16 @@ export const JobApplicationsApiFp = function(configuration?: Configuration) {
 				const contentType = response.headers.get('Content-Type');
 				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
 				
+				if (response.status === 200) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.Promise,
+						}
+					}
+					throw response;
+				}
 				if (response.status === 400) {
 					if (mimeType === 'application/json') {
 						return {
@@ -5738,14 +5810,6 @@ export const JobApplicationsApiFp = function(configuration?: Configuration) {
 						}
 					}
 					throw response;
-				}
-				/* Catch-all response */
-				if (mimeType === 'application/json') {
-					return {
-						status: response.status,
-						contentType: 'application/json',
-						body: await response.json() as Api.Promise,
-					}
 				}
 				throw response;
 			};
@@ -5762,6 +5826,16 @@ export const JobApplicationsApiFp = function(configuration?: Configuration) {
 				const contentType = response.headers.get('Content-Type');
 				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
 				
+				if (response.status === 200) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.Promise,
+						}
+					}
+					throw response;
+				}
 				if (response.status === 400) {
 					if (mimeType === 'application/json') {
 						return {
@@ -5847,6 +5921,16 @@ export const JobApplicationsApiFp = function(configuration?: Configuration) {
 				const contentType = response.headers.get('Content-Type');
 				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
 				
+				if (response.status === 200) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.Promise,
+						}
+					}
+					throw response;
+				}
 				if (response.status === 400) {
 					if (mimeType === 'application/json') {
 						return {
@@ -5932,6 +6016,16 @@ export const JobApplicationsApiFp = function(configuration?: Configuration) {
 				const contentType = response.headers.get('Content-Type');
 				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
 				
+				if (response.status === 200) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.Promise,
+						}
+					}
+					throw response;
+				}
 				if (response.status === 400) {
 					if (mimeType === 'application/json') {
 						return {

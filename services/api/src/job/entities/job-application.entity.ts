@@ -17,18 +17,18 @@ export class JobApplicationEntity extends EntityBase {
   job: JobPostEntity;
 
   @ApiProperty({ nullable: false, type: 'integer', default: 0 } )
-  @Column()
+  @Column({ nullable:false, type: 'integer', default: 0})
   @IsNotEmpty({ message: 'error.isNotEmpty: progress is required' })
   @IsInt({ message: 'error.IsInt: progress must be an int' })
   progress: number;
 
-  @Column()
+  @Column({ nullable: false, type: 'boolean', default: false })
   @ApiProperty({ nullable: false, type: 'boolean', default: false })
   @IsNotEmpty({ message: 'error.isNotEmpty: rejected is required' })
   @IsBoolean({ message: 'error.IsBoolean: rejected must be a boolean' })
   rejected: boolean;
 
-  @Column()
+  @Column({ nullable: false, type: 'boolean', default: false })
   @ApiProperty({ nullable: false, type: 'boolean', default: false })
   @IsNotEmpty({ message: 'error.isNotEmpty: withdrawn is required' })
   @IsBoolean({ message: 'error.IsBoolean: withdrawn must be a boolean' })

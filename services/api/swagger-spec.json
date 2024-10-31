@@ -6795,6 +6795,19 @@
         "operationId": "JobApplicationController_myApplications",
         "parameters": [],
         "responses": {
+          "200": {
+            "schema": {
+              "$ref": "#/components/schemas/Array"
+            },
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Promise"
+                }
+              }
+            }
+          },
           "400": {
             "description": "Bad request",
             "content": {
@@ -6861,19 +6874,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ApiErrorResponseDto"
-                }
-              }
-            }
-          },
-          "default": {
-            "schema": {
-              "$ref": "#/components/schemas/Array"
-            },
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Promise"
                 }
               }
             }
@@ -6903,6 +6903,19 @@
           }
         ],
         "responses": {
+          "200": {
+            "schema": {
+              "$ref": "#/components/schemas/JobApplicationEntity"
+            },
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Promise"
+                }
+              }
+            }
+          },
           "400": {
             "description": "Bad request",
             "content": {
@@ -6969,19 +6982,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ApiErrorResponseDto"
-                }
-              }
-            }
-          },
-          "default": {
-            "schema": {
-              "$ref": "#/components/schemas/JobApplicationEntity"
-            },
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Promise"
                 }
               }
             }
@@ -7012,6 +7012,19 @@
           }
         },
         "responses": {
+          "200": {
+            "schema": {
+              "$ref": "#/components/schemas/JobApplicationEntity"
+            },
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Promise"
+                }
+              }
+            }
+          },
           "400": {
             "description": "Bad request",
             "content": {
@@ -7108,6 +7121,19 @@
           }
         },
         "responses": {
+          "200": {
+            "schema": {
+              "$ref": "#/components/schemas/JobApplicationEntity"
+            },
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Promise"
+                }
+              }
+            }
+          },
           "400": {
             "description": "Bad request",
             "content": {
@@ -7204,6 +7230,19 @@
           }
         },
         "responses": {
+          "200": {
+            "schema": {
+              "$ref": "#/components/schemas/JobApplicationEntity"
+            },
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Promise"
+                }
+              }
+            }
+          },
           "400": {
             "description": "Bad request",
             "content": {
@@ -7300,6 +7339,19 @@
           }
         },
         "responses": {
+          "200": {
+            "schema": {
+              "$ref": "#/components/schemas/JobApplicationEntity"
+            },
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Promise"
+                }
+              }
+            }
+          },
           "400": {
             "description": "Bad request",
             "content": {
@@ -7396,6 +7448,19 @@
           }
         },
         "responses": {
+          "200": {
+            "schema": {
+              "$ref": "#/components/schemas/JobApplicationEntity"
+            },
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Promise"
+                }
+              }
+            }
+          },
           "400": {
             "description": "Bad request",
             "content": {
