@@ -1,4 +1,4 @@
-import { Body, Controller, Logger } from '@nestjs/common';
+import { Body, ConflictException, Controller, Logger } from '@nestjs/common';
 import { ApiBody, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ProjectService } from './project.service';
 import { Auth } from '../auth/decorators/http.decorator';
@@ -87,6 +87,13 @@ export class ProjectController
     @ParsedRequest() crudReq: CrudRequest,
     @BodyOwnerInject(CreateProjectDto) body: CreateProjectDto,
   ) {
+    const project = await this.service.findOne({
+      where: { slug: body.slug },
+    });
+    if (project) {
+      throw new ConflictException('Project with this slug already exists');
+    }
+
     const res = await this.service.createOne(
       crudReq,
       body as Partial<ProjectEntity>,
