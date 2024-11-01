@@ -9,8 +9,9 @@ import {
 import { type Type } from '@nestjs/common/interfaces';
 import {
   AuthenticatedRoute,
-  ManagerRoute,
+  EditorRoute,
   OwnerRoute,
+  PublicRoute,
   RefreshTokenRoute,
   RouteContentClass,
 } from '../auth.enum';
@@ -21,12 +22,11 @@ import {
   ApiForbiddenResponse,
   ApiInternalServerErrorResponse,
   ApiNotFoundResponse,
-  ApiResponse,
   ApiUnauthorizedResponse,
   ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
 import { AuthUserInterceptor } from '../interceptors/auth-user-interceptor.service';
-import { PublicRoute } from './public.decorator';
+import { PublicRoute as PublicRouteDecorator } from './public.decorator';
 import { AuthGuard, AuthType } from '../guards/auth.guard';
 import { RequireRoleInterceptor } from '../interceptors/require-role.interceptor';
 import { WithRolesEntity } from '../entities/with-roles.entity';
@@ -37,7 +37,7 @@ import { ApiErrorResponseDto } from '../../common/filters/global-http-exception.
 export const Auth = <T extends WithRolesEntity>(
   options:
     | typeof OwnerRoute<T>
-    | typeof ManagerRoute<T>
+    | typeof EditorRoute<T>
     | typeof PublicRoute
     | typeof AuthenticatedRoute
     | typeof RefreshTokenRoute,
@@ -69,14 +69,14 @@ export const Auth = <T extends WithRolesEntity>(
 
   // if public, return now
   if (options === PublicRoute) {
-    decorators.push(PublicRoute(true));
+    decorators.push(PublicRouteDecorator(true));
     return applyDecorators(...decorators);
   }
 
   // inject guards for authenticated routes
-  decorators.push(PublicRoute(false));
+  decorators.push(PublicRouteDecorator(false));
   if (options === RefreshTokenRoute) {
-    decorators.push(UseGuards(AuthGuard(AuthType.RefreshToken)));
+    decorators.push(UseGuards(AuthGuard(AuthType.RefreshToken))); // it is adding this guard correctly
   } else {
     decorators.push(UseGuards(AuthGuard(AuthType.AccessToken)));
   }

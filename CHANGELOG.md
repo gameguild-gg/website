@@ -1,0 +1,478 @@
+## [1.1.9](https://github.com/gameguild-gg/website/compare/v1.1.8...v1.1.9) (2024-10-31)
+
+
+### Bug Fixes
+
+* **courses:** better courses routing for web ([041645d](https://github.com/gameguild-gg/website/commit/041645d5c1bc804fec8fd2fdf64d8ed76152e2e4))
+* disable middleware redirect if it is not logged in ([d91a90b](https://github.com/gameguild-gg/website/commit/d91a90be685ee2e240fb99cee499fa1c263a66c7))
+
+## [1.1.8](https://github.com/gameguild-gg/website/compare/v1.1.7...v1.1.8) (2024-10-30)
+
+
+### Bug Fixes
+
+* jwt import ([68cba9f](https://github.com/gameguild-gg/website/commit/68cba9ff022c54ed671587e073a21ebfb80e3735))
+
+## [1.1.7](https://github.com/gameguild-gg/website/compare/v1.1.6...v1.1.7) (2024-10-30)
+
+
+### Bug Fixes
+
+* **private:** private path ([7f91d71](https://github.com/gameguild-gg/website/commit/7f91d71f7e7d756dd1371eeb20321d2b34fd2a6f))
+
+## [1.1.6](https://github.com/gameguild-gg/website/compare/v1.1.5...v1.1.6) (2024-10-25)
+
+
+### Bug Fixes
+
+* disconnect if it receives a 401 request out of nowhere from the server ([8be629f](https://github.com/gameguild-gg/website/commit/8be629f6e09e348fed7e6ac944507b19cf0d73da))
+* **web:** fix missing router ([91318fe](https://github.com/gameguild-gg/website/commit/91318fe626a898edc692d2cc6cf1186d34530f2f))
+
+## [1.1.5](https://github.com/gameguild-gg/website/compare/v1.1.4...v1.1.5) (2024-10-25)
+
+
+### Bug Fixes
+
+* add typings to the dashboard job ([001dc6d](https://github.com/gameguild-gg/website/commit/001dc6d77e034a1f0bd89defc38f518ccaaed837))
+* **web:** heavy weight cookies ([bc20736](https://github.com/gameguild-gg/website/commit/bc20736424933f25cc2cea65cf3f455b7f4c7fb8))
+* **web:** provide session only to private routes ([be67fcd](https://github.com/gameguild-gg/website/commit/be67fcd659f18148c2cf69b473f49df0c21a0114))
+
+## [1.1.4](https://github.com/gameguild-gg/website/compare/v1.1.3...v1.1.4) (2024-10-25)
+
+
+### Bug Fixes
+
+* metamask issue ([1cf4ff4](https://github.com/gameguild-gg/website/commit/1cf4ff45dd7d8e1420c8885fb9871c770b189ba3))
+* slug issue ([65f81b7](https://github.com/gameguild-gg/website/commit/65f81b7da103e78a7aca86d8ebe7d282fbb1fa15))
+
+## [1.1.3](https://github.com/gameguild-gg/website/compare/v1.1.2...v1.1.3) (2024-10-22)
+
+
+### Bug Fixes
+
+* rename MANAGER_ROUTE to EDITOR_ROUTE ([4e8434a](https://github.com/gameguild-gg/website/commit/4e8434a88a741507024fcc8e78053a2308811c68))
+* **web3:** add torus connect button ([d560462](https://github.com/gameguild-gg/website/commit/d5604624d69a24d50f6cc9e0cc284df4d7e3cf4c))
+
+## [1.1.2](https://github.com/gameguild-gg/website/compare/v1.1.1...v1.1.2) (2024-10-19)
+
+
+### Bug Fixes
+
+* trying to fix name replacements for gource ([2c586d9](https://github.com/gameguild-gg/website/commit/2c586d9b16a4168a93846ea03283452559cc81d1))
+
+## [1.1.1](https://github.com/gameguild-gg/website/compare/v1.1.0...v1.1.1) (2024-10-18)
+
+
+### Bug Fixes
+
+* gource now have captions ([2fb6695](https://github.com/gameguild-gg/website/commit/2fb6695b350f025dece791347db78078b3b41ac0))
+
+# [1.1.0](https://github.com/gameguild-gg/website/compare/v1.0.7...v1.1.0) (2024-10-18)
+
+
+### Bug Fixes
+
+* many job type and application fixes ([af0fd26](https://github.com/gameguild-gg/website/commit/af0fd2672dce9df52191a0c61337196781ebfe0d))
+* post-merge fix on job controller ([b84a2ff](https://github.com/gameguild-gg/website/commit/b84a2ff374310c3a19bab53680b4bac7e4a43ff0))
+* reworking job system backend ([2525a63](https://github.com/gameguild-gg/website/commit/2525a630733697bce77d8ffe857f6c28373dc09e))
+
+
+### Features
+
+* Job type and job search system ([61c5424](https://github.com/gameguild-gg/website/commit/61c542446348a9b7879dd7ac51544aac02fa3f09))
+* new unified job application progress page ([b4e6a28](https://github.com/gameguild-gg/website/commit/b4e6a2835c2d6a90c4dea9e7eb8ef4382eb2bf65))
+* WithRoles and JobPostWithApllied new methods ([91ec94d](https://github.com/gameguild-gg/website/commit/91ec94d6b697bbff060c775c7ff4650281ba2a60))
+
+## [1.0.7](https://github.com/gameguild-gg/website/compare/v1.0.6...v1.0.7) (2024-10-18)
+
+
+### Bug Fixes
+
+* gource ([191edfc](https://github.com/gameguild-gg/website/commit/191edfcc0a40e0e67bcbcf74710f0f288fe72662))
+* gource ([4592cc1](https://github.com/gameguild-gg/website/commit/4592cc1f5b6f14ee3d2b3edefec5b04ff909a1e1))
+
+## [1.0.6](https://github.com/gameguild-gg/website/compare/v1.0.5...v1.0.6) (2024-10-18)
+
+
+### Bug Fixes
+
+* node version for web ([3f03463](https://github.com/gameguild-gg/website/commit/3f03463bd6bb7ecc938f1222543fa8373f9df6bf))
+
+## [1.0.5](https://github.com/gameguild-gg/website/compare/v1.0.4...v1.0.5) (2024-10-18)
+
+
+### Bug Fixes
+
+* docker build web ([1373e56](https://github.com/gameguild-gg/website/commit/1373e56e951ee6d7aeab23f8a27dbdeb23c18824))
+
+## [1.0.4](https://github.com/gameguild-gg/website/compare/v1.0.3...v1.0.4) (2024-10-18)
+
+
+### Bug Fixes
+
+* web build ([72b790a](https://github.com/gameguild-gg/website/commit/72b790a4e28d9a961bf267149eca52188764bdc9))
+
+## [1.0.3](https://github.com/gameguild-gg/website/compare/v1.0.2...v1.0.3) (2024-10-18)
+
+
+### Bug Fixes
+
+* bad include on game-card ([65fa176](https://github.com/gameguild-gg/website/commit/65fa1767bb9fb62cc05006b80a4096f5ea03c57e))
+
+## [1.0.2](https://github.com/gameguild-gg/website/compare/v1.0.1...v1.0.2) (2024-10-17)
+
+
+### Bug Fixes
+
+* gource highlight usernames ([3977cac](https://github.com/gameguild-gg/website/commit/3977cac4e9ba24ea75836d2305ae28f471c3ce82))
+
+## [1.0.1](https://github.com/gameguild-gg/website/compare/v1.0.0...v1.0.1) (2024-10-17)
+
+
+### Bug Fixes
+
+* gource video generation ([e4d386d](https://github.com/gameguild-gg/website/commit/e4d386d89754828c916d1cde9a5b69d82955d69f))
+
+# 1.0.0 (2024-10-17)
+
+
+### Bug Fixes
+
+* add cls again for user context store ([bfc5c37](https://github.com/gameguild-gg/website/commit/bfc5c37b1fc46721a5fc8c0f66bf9faa45467bdf))
+* add new api for course creation ([566bf0d](https://github.com/gameguild-gg/website/commit/566bf0de2bf29250e7144cdbe644d019b2dc830f))
+* add new api for course creation ([d858f51](https://github.com/gameguild-gg/website/commit/d858f51708ccadff44c65daac4bcae1c57bbd619))
+* add recharts ([91a47a1](https://github.com/gameguild-gg/website/commit/91a47a109e65654b3a8a3fc344e4ea749c33c7b0))
+* add requirements and web3 boilerplate ([c777778](https://github.com/gameguild-gg/website/commit/c7777787cd7fdf8000f8bfe7aad8aeed7a8bafe3))
+* added cookie consent popup ([bc8c1b4](https://github.com/gameguild-gg/website/commit/bc8c1b4a219b144a6d992ecfebf72a38213c445b))
+* added private route group ([509a135](https://github.com/gameguild-gg/website/commit/509a135eeb820133c5f7b6c4c267913f94120b2b))
+* added session provider to root layout ([2c7a066](https://github.com/gameguild-gg/website/commit/2c7a06678aa0b217ba8ea5dc257bf8db7a19f38f))
+* ajuste de UI para dispositivos móveis. ([5814596](https://github.com/gameguild-gg/website/commit/5814596097c6df5d4250d2f43c6bda9ed28d3f96))
+* antd and competition build bugs ([ca09aa0](https://github.com/gameguild-gg/website/commit/ca09aa04a745b7bc092bb8e4dceb0fd529b772d4))
+* api calls ([dc4163f](https://github.com/gameguild-gg/website/commit/dc4163f52ccdaace6adfb4995d937bdf6163b39b))
+* **api:** add new dependency lodash ([7f055ab](https://github.com/gameguild-gg/website/commit/7f055ab14bedc6ffb1ee4ebf6e26bce7e0b0ba17))
+* **api:** add sendgrid dependencies ([7aaf79f](https://github.com/gameguild-gg/website/commit/7aaf79ffa39c9588aa7f2cc37221965339205212))
+* **api:** login with username + password ([84ba0f6](https://github.com/gameguild-gg/website/commit/84ba0f6253a8581d2a73e985ae485eb8baa198c7))
+* apinest.ts ([72e8998](https://github.com/gameguild-gg/website/commit/72e8998c671f2ee1f69ccaa03756a084524853a7))
+* **api:** payload too large ([92f9771](https://github.com/gameguild-gg/website/commit/92f9771aeb2878ff943c9e00017c603f5db3a2d2))
+* **api:** remove types ([c734bb1](https://github.com/gameguild-gg/website/commit/c734bb143bda15454ac79cbca3eaf3fe6cc7b739))
+* **api:** username exists ([6553daf](https://github.com/gameguild-gg/website/commit/6553daf2827d0b2fd8abcc7bc6e1bac678f99887))
+* auth config ([615e92b](https://github.com/gameguild-gg/website/commit/615e92bc0c1f00570cbd239989f4a0acaaf57df8))
+* auth config for web3 ([8e148bc](https://github.com/gameguild-gg/website/commit/8e148bc7f1a4a83efd543ff5cdc1f60d07194838))
+* auth config with refresh token. I hope it work properly ([5274311](https://github.com/gameguild-gg/website/commit/527431119772d306c7354d007fd0f3f1f3cf7efe))
+* auth login ([b2f54b9](https://github.com/gameguild-gg/website/commit/b2f54b9ef7424ca3c4c26f38474f761ab4253053))
+* auth modals ([a4172b9](https://github.com/gameguild-gg/website/commit/a4172b972cc4398ca3f0ec66b3272e1a7a307f05))
+* auth ssr ([e8d7ab0](https://github.com/gameguild-gg/website/commit/e8d7ab032f7e815b90ad95bbd0f03fbbbe82d9ac))
+* auth type ([4afb28b](https://github.com/gameguild-gg/website/commit/4afb28b9ac04cfa35b92de6075d318735582ed5e))
+* **auth:** first time google login is working ([0a888f1](https://github.com/gameguild-gg/website/commit/0a888f1b6c8463345cb327b97cfd3806cc0a9365))
+* **auth:** fix session parameter data ([039698d](https://github.com/gameguild-gg/website/commit/039698d6f13815d20fb006f0526744c289b17603))
+* authjs trust host ([f10efac](https://github.com/gameguild-gg/website/commit/f10efacb990b6d84b79af11c5bc82f461dea6b8a))
+* **auth:** reduce uniqueness of some fields of user entity ([79653d2](https://github.com/gameguild-gg/website/commit/79653d2a7a50846a0ec0fd8c181a9aeed8daff57))
+* automation to tag on ci/cd push ([5875c46](https://github.com/gameguild-gg/website/commit/5875c46ce4a2f404bf0157259d9514e82c629c81))
+* backend responses ([bf123a4](https://github.com/gameguild-gg/website/commit/bf123a40fb142d83732b8c734a28e678c94442fd))
+* Base front. ([2bc63f2](https://github.com/gameguild-gg/website/commit/2bc63f2e7c739b4fbb4d8109d67e631e82be55cc))
+* better competition folder structure ([a81c859](https://github.com/gameguild-gg/website/commit/a81c85952e22197dbdd87690923879fc08a7643d))
+* blog and post pages to ssr ([7d1214a](https://github.com/gameguild-gg/website/commit/7d1214af7b0fb5e933ca86a143b6008290f360ae))
+* blog layout ([30284aa](https://github.com/gameguild-gg/website/commit/30284aa6c3332b1c16311b2542d3f9f157fd0d7b))
+* broken build from typescript types. ([ec60e2d](https://github.com/gameguild-gg/website/commit/ec60e2d8f273ae10a0f8d09c76c0636e8f6c8674))
+* bug to infinite fetch data if there is no data ([fb6f0d7](https://github.com/gameguild-gg/website/commit/fb6f0d7a09d96c8a009f0a27bdc614cbf2a058d3))
+* bug when the git folder is empty ([d16aefc](https://github.com/gameguild-gg/website/commit/d16aefc697cfafe122295c06a5bb3786c51ea946))
+* build ([af49a9c](https://github.com/gameguild-gg/website/commit/af49a9c8ae123838108b9b258e1e5586d7ffc6c8))
+* build ([65dd268](https://github.com/gameguild-gg/website/commit/65dd2683c40ec1fd496c423441acef34a603b7ee))
+* build error on buttonprops interface ([c225425](https://github.com/gameguild-gg/website/commit/c2254254acfa3ae5927486af5d36c8182297d57d))
+* by default all post returns 201 if it returns data ([354cca5](https://github.com/gameguild-gg/website/commit/354cca51dd27b61957550c4242eabc53ec6df5c9))
+* cache bug ([5b7b01d](https://github.com/gameguild-gg/website/commit/5b7b01d9c9a6b49b44560d1e78d20c0bcbfed23c))
+* card hover effect ([0cbed24](https://github.com/gameguild-gg/website/commit/0cbed2480a977b80eb07dcf4a4aa9e452d961a8a))
+* change default elo value to 400 ([cd0809e](https://github.com/gameguild-gg/website/commit/cd0809ee56d5c27560b263465080872e3021af27))
+* change leaderboard to top 5 ([e4f7d1a](https://github.com/gameguild-gg/website/commit/e4f7d1a338739c58543018c086eb36f72cc3fcde))
+* change port to 8081 ([03dc3ac](https://github.com/gameguild-gg/website/commit/03dc3ac54dbd71efb3c2d3534ad600221fcd2226))
+* change port to 8081 ([577abd7](https://github.com/gameguild-gg/website/commit/577abd725f1f5e7b6fb3167ad8209aa036f0280f))
+* change priv / pub key to use base64 ([2dc9946](https://github.com/gameguild-gg/website/commit/2dc994679e72bd5a8c0f26907f51d73aff68f28d))
+* chess competition play page ([b5b2247](https://github.com/gameguild-gg/website/commit/b5b22474ad2d5765c1216318b45b006bc628af07))
+* chess competition report ([9cd29e1](https://github.com/gameguild-gg/website/commit/9cd29e15d0db07a5c6c56b75f689bd28046c6a19))
+* chess return type for match ([59b1df1](https://github.com/gameguild-gg/website/commit/59b1df1fb06a70590dc61864c91a6f1ea60475ed))
+* **chess:** fix competition return types ([d51bf24](https://github.com/gameguild-gg/website/commit/d51bf2446b308cb82aa089a6910f8b08186d1a61))
+* codeium dependencies ([175edf0](https://github.com/gameguild-gg/website/commit/175edf01131ab3ef9e60a81a657724ea01f2664d))
+* comment some unused code ([3978249](https://github.com/gameguild-gg/website/commit/3978249ab55e0c12738a817941df06da559b58d4))
+* competition basics ([9cf3d94](https://github.com/gameguild-gg/website/commit/9cf3d947191ce82473c1b473063ea8553c9a5b1b))
+* competition service with elo ([ab0e07c](https://github.com/gameguild-gg/website/commit/ab0e07c684754aaf40139eed2c9d5d1e31016186))
+* compilation issues ([366365b](https://github.com/gameguild-gg/website/commit/366365bb22d3f9c4adf46b50f2e3f7f2b053e3ed))
+* compilation issues related to typing ([c60c366](https://github.com/gameguild-gg/website/commit/c60c366b71631942887f1ff02468e9cc570e51ee))
+* dashboard and auth layout ([ab9f773](https://github.com/gameguild-gg/website/commit/ab9f7733ce73de9be1ae8e10a9305c6f1f195570))
+* dashboard layout base structure ([a435fb6](https://github.com/gameguild-gg/website/commit/a435fb64e8dd8e71863f4d778e6b7ea2426080b3))
+* dashboard layout base structure ([05a9140](https://github.com/gameguild-gg/website/commit/05a91403f2aee7477ac7f66bc3eb89da5d44834b))
+* default route of competition ([f59c492](https://github.com/gameguild-gg/website/commit/f59c492bbc90e859f16e5244b364c7c3724cd217))
+* deleted_at ([3a549cd](https://github.com/gameguild-gg/website/commit/3a549cd928815354b350ef6c2979855577163b94))
+* deploy web in dev mode for now ([87a63c7](https://github.com/gameguild-gg/website/commit/87a63c75482c9a199609680b307cc7b382f590d7))
+* disable lint on build ([36d5927](https://github.com/gameguild-gg/website/commit/36d5927f9286f94511931063340041b567dbc8b6))
+* docker web build ([755a75f](https://github.com/gameguild-gg/website/commit/755a75f9360d7e19cda4d60ebbb8f61602c77f3f))
+* dockercompose port ([e02eee8](https://github.com/gameguild-gg/website/commit/e02eee829015e5267be4aead04fa579918ae852c))
+* dockerfile to run api properly ([1b34dd8](https://github.com/gameguild-gg/website/commit/1b34dd83c19574e75c6dbc589ebc11dbd3533a7a))
+* dockerfile with stockfish from sources ([8b91d83](https://github.com/gameguild-gg/website/commit/8b91d838b87872e4612ff3d7a95bae3f2578aedc))
+* documentation redirect ([22bc436](https://github.com/gameguild-gg/website/commit/22bc43659ec257177a7fd0a3d65dfcc207d4a211))
+* downgrate to node18 for compatibility reasons ([2e2b8c0](https://github.com/gameguild-gg/website/commit/2e2b8c05ff0c1281d364759fb98501700d5742e5))
+* email.dto ([d7b56c6](https://github.com/gameguild-gg/website/commit/d7b56c6f52c2937453a5c0d5bd62ae1adbce011c))
+* entity base path ([e7c36a1](https://github.com/gameguild-gg/website/commit/e7c36a193776ae824c44b8854072059b2cc3e47a))
+* envs ([2176b1d](https://github.com/gameguild-gg/website/commit/2176b1d30691651be45bc8d263e5d88e7455e8d7))
+* errors of ssr ([309d2c9](https://github.com/gameguild-gg/website/commit/309d2c9755cf886b5e25ab3732b53ac0fddda4f9))
+* express and multer types ([f9e3dc3](https://github.com/gameguild-gg/website/commit/f9e3dc30a387d4aeb8f9005b736aefd78b474fe1))
+* fetch posts and pagination. ([726ffca](https://github.com/gameguild-gg/website/commit/726ffcad89bceffbb15049a781e09693d7fa8597))
+* fixed post pages from query params to url params ([7cdf12c](https://github.com/gameguild-gg/website/commit/7cdf12c366dac9dc1f1afc53c2f23f8fa2c1ad8d))
+* fixed post pages from query params to url params ([739a0ca](https://github.com/gameguild-gg/website/commit/739a0ca5e2e3bac3cf970aaa7aceaeeb0f235e06))
+* foldersync for windows ([53e6c85](https://github.com/gameguild-gg/website/commit/53e6c85c058380f4c8e3bc32444f210a4d90c5eb))
+* foldersync for windows ([dd86322](https://github.com/gameguild-gg/website/commit/dd863225adcdb8db38b5f40d4554d2d3f136c13d))
+* Front base layout. ([5ec98f8](https://github.com/gameguild-gg/website/commit/5ec98f8f49fbb05a1fcbc6f81c8c300b5740f687))
+* front compilation ([df5fff3](https://github.com/gameguild-gg/website/commit/df5fff3a71fb8625ee2a07c7a855ccd48bc14b89))
+* front login black font and reject wrong credentials ([2964d41](https://github.com/gameguild-gg/website/commit/2964d41053e76df762c4dd57c2364674f56f35db))
+* front page+misc errors ([9625473](https://github.com/gameguild-gg/website/commit/96254736b6006db2c302180fff9846f030e99a1f))
+* Front ts config. ([31675f9](https://github.com/gameguild-gg/website/commit/31675f9f008ecd97a3a0c079f191e1c143651bb9))
+* Front ts config. ([b357244](https://github.com/gameguild-gg/website/commit/b357244a04d9196df3e96984a23c4c90bf3e851d))
+* front without lexical ([03e8a57](https://github.com/gameguild-gg/website/commit/03e8a574f1aff7fa490a375e7820df71307a0735))
+* frontend menu selection ([5ff61de](https://github.com/gameguild-gg/website/commit/5ff61de24870c2e9d7843cc9bd7569d7987d3255))
+* frontend structure ([107679f](https://github.com/gameguild-gg/website/commit/107679fe723822ae3f9afe4bf4e8a3e70f342679))
+* frontend ui, intl ([9b8eb30](https://github.com/gameguild-gg/website/commit/9b8eb3064423cc0b3dd1493e7244a434ec40752b))
+* **frontend:** chess auto play random move ([be017f0](https://github.com/gameguild-gg/website/commit/be017f0abdc508eb50ba9ff73801d5eb4bf2635d))
+* game feedback results ([4a85ea8](https://github.com/gameguild-gg/website/commit/4a85ea8276c13b5f074291aa000a88ce8e309f9e))
+* gitkeep ([a34fca9](https://github.com/gameguild-gg/website/commit/a34fca99889c3e581cfd844e55d29f9a8cf3ac5a))
+* gitkeep ([64bc681](https://github.com/gameguild-gg/website/commit/64bc6812c2c01d401e442e524548049b8ebaa3cc))
+* google auth with backend data ([a1a6cde](https://github.com/gameguild-gg/website/commit/a1a6cde4c0465d65a3c37b2fef73cdbbce531e28))
+* google login on localhost. I hope it works on prod ([3efc683](https://github.com/gameguild-gg/website/commit/3efc6832c30a5715bec5cba80d4c3a227be26fd0))
+* google sign in ([a0bc166](https://github.com/gameguild-gg/website/commit/a0bc166164148c3ab6f1464ed09fbc9c2e5471d0))
+* google sign-in using auth.js (next-auth.js) ([a619752](https://github.com/gameguild-gg/website/commit/a619752feb6f35b89a5c5d6815dcb41f5341c14f))
+* image linking error ([ec7f1d4](https://github.com/gameguild-gg/website/commit/ec7f1d44d040af577ebe0ed9c7d0cf7a0e545618))
+* improve error handling on move exceptions ([093c50a](https://github.com/gameguild-gg/website/commit/093c50aaeed2e53a0a4a590c1a1128c72bbb865c))
+* improved login button ([8e4c40b](https://github.com/gameguild-gg/website/commit/8e4c40be5cc18c92418cc266190df813ab77556b))
+* install compiler dependencies ([b154eb7](https://github.com/gameguild-gg/website/commit/b154eb7ea1fce391510a2a3017e30f7c1a4f227d))
+* install web ([071d011](https://github.com/gameguild-gg/website/commit/071d011b2a63b3015ba7e2ddb83f69d4937ffd4e))
+* **ipfs:** disable ipfs upload for now ([13363b2](https://github.com/gameguild-gg/website/commit/13363b2b423f6800068546d4e7c0872f6f0ecd2e))
+* is owner interceptor ([c8a8894](https://github.com/gameguild-gg/website/commit/c8a889475bc7424c6ed8ee1711e039a75da6f26a))
+* lint and add better search for matches ([f34325e](https://github.com/gameguild-gg/website/commit/f34325ebf8f4a7edb5d5dea7391422cc070260ff))
+* **lint:** delete unused file ([0308811](https://github.com/gameguild-gg/website/commit/03088118d428e0335c3ec9bb7a824d01446b8682))
+* login ([f5fb6b0](https://github.com/gameguild-gg/website/commit/f5fb6b0c5f1dee52c233d1339a7f616d5938c5ec))
+* login flow is not bugged anymore ([ddfd5b5](https://github.com/gameguild-gg/website/commit/ddfd5b56c107b5ba0c404451f1c2b5e72f2cca84))
+* login working? ([4282f82](https://github.com/gameguild-gg/website/commit/4282f82c95c920e7d417ded96d77ddcf7cad9af6))
+* magic link auth ([80f2504](https://github.com/gameguild-gg/website/commit/80f25042c20ed67d102232f4563272f5cae14878))
+* mail service ([48e4135](https://github.com/gameguild-gg/website/commit/48e41357d9f93af7704ceb77747704daf4ee628a))
+* make protected routes protected again ([c45692f](https://github.com/gameguild-gg/website/commit/c45692ffa90031779d12845dda6c8a43f0c283bb))
+* matchsearchresponse is now visible on swagger ([217bdd1](https://github.com/gameguild-gg/website/commit/217bdd1aa0193f2128b6f8df0c48ff9193413cd6))
+* metamask login ([1bcffd7](https://github.com/gameguild-gg/website/commit/1bcffd7d6ed6e83ca36ca1a8bccf6e27bac48dcc))
+* migration ([10dfc46](https://github.com/gameguild-gg/website/commit/10dfc46f928ed647e2dae5e8eb4a4436d4ec65cb))
+* minor fixes on chess competition ([d89bebf](https://github.com/gameguild-gg/website/commit/d89bebfa8e74c79e7e38d736f61167cfd752d9f6))
+* minor issues ([acb3417](https://github.com/gameguild-gg/website/commit/acb3417843f50b351c788ff950fa005283ecda74))
+* minor issues on back ([339a912](https://github.com/gameguild-gg/website/commit/339a9128026e965df1ceade3216d69fcd541c36c))
+* missing react-chess lib ([577bbbf](https://github.com/gameguild-gg/website/commit/577bbbfa0ce232057bcbb204e394341df1a5057c))
+* missing run ([e2c1638](https://github.com/gameguild-gg/website/commit/e2c1638b66ed423b09030214935156d63685a8f0))
+* missing web-3 dto ([527fb22](https://github.com/gameguild-gg/website/commit/527fb22be67a2e32cf33f698873668059457d7f3))
+* module import ([80a951b](https://github.com/gameguild-gg/website/commit/80a951be75e35937dfaa446bdfe64211a5b73b08))
+* more rigid requirements for env vars ([d7229e0](https://github.com/gameguild-gg/website/commit/d7229e0dfc3451972fbf3867410d91b8509dc67b))
+* move orm to root ([0753932](https://github.com/gameguild-gg/website/commit/07539323a7ab6e88f203dca5d3dd0a575650bc53))
+* moved dockerfile to root to fix parent reference issues ([bfecf99](https://github.com/gameguild-gg/website/commit/bfecf997eb7efc7cc192cf7d8ef56f34504a72b8))
+* nest version ([05d5417](https://github.com/gameguild-gg/website/commit/05d541739f1940c6a58e9119968e4540a012e966))
+* nestjs versions ([35500c0](https://github.com/gameguild-gg/website/commit/35500c0e90b1af2a7414b6baaa67ab193642a381))
+* nestjs-cls enable start tournament ([06b750c](https://github.com/gameguild-gg/website/commit/06b750c744629ac6dbc4109fa2d9a6b822f1d791))
+* **next-nest:** single next config ([5246f7a](https://github.com/gameguild-gg/website/commit/5246f7a9f24483a0c005d48f627384429615d68a))
+* next.js router in competion ([39887de](https://github.com/gameguild-gg/website/commit/39887de60cb384cd3be0d6e042daf63cbf49e344))
+* notification via email and config service ([989ab1f](https://github.com/gameguild-gg/website/commit/989ab1fe558c321cfee8022b6c4d5efe1adb0d84))
+* now competition have parameters ([ac7c3c1](https://github.com/gameguild-gg/website/commit/ac7c3c1b0dde5863c50e34cab2aa116db7dfa411))
+* now most calls to api auth are using new api call method ([f2b2fce](https://github.com/gameguild-gg/website/commit/f2b2fce65a22f919f3a887d4ca1c362668282cc3))
+* npm dependencies: tryghost ([33e2a30](https://github.com/gameguild-gg/website/commit/33e2a3068ea13c686412127dda91c3f9ae92cb46))
+* npm install ([3def186](https://github.com/gameguild-gg/website/commit/3def186108163e0ad70bf02a2f479325b46fbe0f))
+* npm install depenencies for ubuntu ([bd527c5](https://github.com/gameguild-gg/website/commit/bd527c582b2a64cba12cfd4f03ff500c7a0c8be1))
+* npm run again ([aaef468](https://github.com/gameguild-gg/website/commit/aaef46835b4bcd93fb2114c399944aa2d0ee8b48))
+* npm run build ([8d36acc](https://github.com/gameguild-gg/website/commit/8d36accd50f0d3cc3ada77b6b1eee98c9596af86))
+* openapi generation ([a824888](https://github.com/gameguild-gg/website/commit/a824888ddbb6e1840071e1d8a9088210fbb9aff8))
+* package.json ([79ec108](https://github.com/gameguild-gg/website/commit/79ec108f773d97b1071d3f16757601c7a63738e2))
+* package.json settings for fixing pnpm commands ([b6c54cc](https://github.com/gameguild-gg/website/commit/b6c54cc74f4c481585071d6e72b104b1b54a2e55))
+* **package:** add front locals ([ca9324e](https://github.com/gameguild-gg/website/commit/ca9324ed9a2c258bece09442f001a9a70a593f4c))
+* packages references ([79a2994](https://github.com/gameguild-gg/website/commit/79a29942ec3d5ab5f11283bfe017dfafb0600586))
+* pagination bug ([b61304a](https://github.com/gameguild-gg/website/commit/b61304a67bee86e20621e1d495c7722b8d919db0))
+* permissions hierarchy ([7b28697](https://github.com/gameguild-gg/website/commit/7b286976a3de248c94565f9d4e18fd2629cbea95))
+* potentially make refresh token work ([f13275d](https://github.com/gameguild-gg/website/commit/f13275d2f77aa440709ef84a6085b0470faed06b))
+* project create / fetch ([d0ffe53](https://github.com/gameguild-gg/website/commit/d0ffe536bb0116a2e5cd693c08a14fd7ce14e121))
+* proposal data structures ([c37c71a](https://github.com/gameguild-gg/website/commit/c37c71a7938a552733ba461fd22a54b3e6a5f6a8))
+* protect multiple competition to run at the same time ([259724c](https://github.com/gameguild-gg/website/commit/259724ce601a52f255657ac47a238f4e89e5e1ba))
+* public decorator for api routes ([a94a5e0](https://github.com/gameguild-gg/website/commit/a94a5e0c35434bac00f3518b331fb087358ea505))
+* public routes should be public ([8892425](https://github.com/gameguild-gg/website/commit/8892425430b3b0751fae190aad8dbd559b3d7161))
+* refactor dto routes and styles ([f24cdc5](https://github.com/gameguild-gg/website/commit/f24cdc5fcf68eef19503cf5062c123bd64b128cb))
+* remove @game-guild/courses from package.json ([f62f584](https://github.com/gameguild-gg/website/commit/f62f5844523e3b463c476e34b27c834c76ed803d))
+* remove a bit more of those env vars ([c7be2d2](https://github.com/gameguild-gg/website/commit/c7be2d2edaa11e6ba6fba8075172bf49ca975f69))
+* remove cls ([697710c](https://github.com/gameguild-gg/website/commit/697710c92ae40ba17515ad67ac081bd91a5d39a7))
+* remove HttpAdapterHost ([35e4de2](https://github.com/gameguild-gg/website/commit/35e4de2efa55964ff707a3d1372cd9ce13c10776))
+* remove last state from the match history ([d5a8bbb](https://github.com/gameguild-gg/website/commit/d5a8bbbfdccc801632db7d57c108a440c095c5df))
+* remove outdated api connections ([371c44a](https://github.com/gameguild-gg/website/commit/371c44abf2d0bbece528308df0807acbc3a6bf24))
+* remove relation problems ([2ec1cf6](https://github.com/gameguild-gg/website/commit/2ec1cf6ea60f7dd0ed62748540aca99dbf94f7f0))
+* removed modals and updated the sign-in and sign-up page ([6297b55](https://github.com/gameguild-gg/website/commit/6297b55af89177a3cb60d9cabe841f60f6785044))
+* rename game to project ([475e493](https://github.com/gameguild-gg/website/commit/475e49367519ab3c137b18d6fbbd645c3dcb8936))
+* restart database structures ([93ab1c6](https://github.com/gameguild-gg/website/commit/93ab1c61e4df17dbb34f165a88236b14c93c2663))
+* restrictions ([dd1ccbd](https://github.com/gameguild-gg/website/commit/dd1ccbd77cc4048a55be041246e8c14132b8afc4))
+* root layout ([020cf05](https://github.com/gameguild-gg/website/commit/020cf0570b137712adb8371b560600e32fc88082))
+* routing from matches to replays and vice versa ([9a147b6](https://github.com/gameguild-gg/website/commit/9a147b6b0656f099065a0d4e241a68f7a7a74729))
+* security fix on job post ownership. ([3aa5244](https://github.com/gameguild-gg/website/commit/3aa5244579a715bd2396672b77b097510e4bb42a))
+* send package lock to try to pin versions ([adfbb12](https://github.com/gameguild-gg/website/commit/adfbb1263e9bbd8553ec9b3eaf84053024fbe997))
+* session competition ([2fc4bdd](https://github.com/gameguild-gg/website/commit/2fc4bdd06aafc53763961afadda04e2dc4160aa1))
+* sign in google in the web (next.js) ([2bc5fb3](https://github.com/gameguild-gg/website/commit/2bc5fb3d28419d0566e791d3832ff6baab0bf044))
+* sign in google in the web (next.js) ([c4e3246](https://github.com/gameguild-gg/website/commit/c4e32462b5d8e8fab1cb53677518632901e5a11b))
+* sign-in form ([f6ee121](https://github.com/gameguild-gg/website/commit/f6ee121bc11e4d270f6d0f9fdfbc802f0cd61ba1))
+* sign-up form ([bf0f60d](https://github.com/gameguild-gg/website/commit/bf0f60d42888d0e5c81a3e88d72803c7c0dee2b3))
+* small empty space at the right side of the screen ([51e4f5e](https://github.com/gameguild-gg/website/commit/51e4f5eb38cfc6708c386ea0cfedbb06a97dfc1e))
+* stockfish ([91dcc91](https://github.com/gameguild-gg/website/commit/91dcc91f2745792cec22111852d26db5836a129a))
+* stockfish app ([0a295e3](https://github.com/gameguild-gg/website/commit/0a295e345a5732a5db0d193b7be7536e10ad9a35))
+* stockfish installation ([215d407](https://github.com/gameguild-gg/website/commit/215d40707f0edb70061fedb2e05d7c2915184a1b))
+* summary home ([f4de681](https://github.com/gameguild-gg/website/commit/f4de6812209b5d270c663f841d7e6b41c65d9392))
+* the way we call apis ([82a4ef9](https://github.com/gameguild-gg/website/commit/82a4ef92ac69ec410618781565c996add439cb21))
+* tolsta machine data ([4ff53cd](https://github.com/gameguild-gg/website/commit/4ff53cdb0cb7b1a36d89330c829b03ea65a083da))
+* tournament page ([ec84260](https://github.com/gameguild-gg/website/commit/ec84260a5ed347a7c228701b5c2f298cf729e737))
+* tsconfig.server. ([8c32458](https://github.com/gameguild-gg/website/commit/8c32458f2294f8c9226401f42f085e7ddb22b9b8))
+* tsconfig.server. ([354570b](https://github.com/gameguild-gg/website/commit/354570bd85fd7f7e6b45086a8b02b8ea7fecc1ec))
+* typescript typings errors ([9514bb7](https://github.com/gameguild-gg/website/commit/9514bb7c72b65496a1c3216c4863f202cbd6eb5a))
+* typings ([2636f79](https://github.com/gameguild-gg/website/commit/2636f79b5fd25ed21501e5dfd82107d83cf312fc))
+* use header on the feed ([f2c3df3](https://github.com/gameguild-gg/website/commit/f2c3df3f12d62e862637c45fe1a58d396e09d48b))
+* user creation + user login flow ([33dc50b](https://github.com/gameguild-gg/website/commit/33dc50bff7b5718dcd9fc8edbc1f0303413c124e))
+* validade login via metamask; feat: add game-feedback struture ([2b8923e](https://github.com/gameguild-gg/website/commit/2b8923ede0821b4dabe1446d0b84290a771ad9c8))
+* web apinest package dependencies ([06d1557](https://github.com/gameguild-gg/website/commit/06d1557c2842f8d25718e58d6016d8486905ff7d))
+* web-3 auth ([4845412](https://github.com/gameguild-gg/website/commit/4845412b86e1f3c375263fdbf0ebb784cb00a728))
+* web3 button login ([6a62d54](https://github.com/gameguild-gg/website/commit/6a62d540bd19ae1372bc0b20a2b61ad3fe873073))
+* **web3:** [wip] web3 + magic link ([8b5619d](https://github.com/gameguild-gg/website/commit/8b5619db11f045de2f67c68ff9aa5a36f400fc6e))
+* **web3:** add wallet to user session ([0dd48ed](https://github.com/gameguild-gg/website/commit/0dd48ed64ad6040f72dfc0f24a712b982282c3bc))
+* **web3auth:** now metamask login is working ([4371463](https://github.com/gameguild-gg/website/commit/437146363a9a2464d316abd445b665b4c06cbd5f))
+* **web3:** backend now signs with siwe ([e828849](https://github.com/gameguild-gg/website/commit/e8288493b06e3501494f866f815a405c5c900344))
+* **web:** deploy in production mode ([1726794](https://github.com/gameguild-gg/website/commit/1726794b0d5df82aba90c91317ec9adf40d724db))
+
+
+### Features
+
+* add antd ([a703a06](https://github.com/gameguild-gg/website/commit/a703a06d0862d3aa085b91d8f7b3ab2481df39e1))
+* add automatic versioning ([5ec3244](https://github.com/gameguild-gg/website/commit/5ec32445f46c6f804943a927d0eb4f004f0c6adf))
+* Add base entities for Event and User. ([0c4e1ce](https://github.com/gameguild-gg/website/commit/0c4e1cea67ab8658e944c8c7b74ffb9d4d0e9691))
+* add social ids, email/pass and wallet to user entity ([683027c](https://github.com/gameguild-gg/website/commit/683027c1e656856692e6f3fa0383d849fbd72e83))
+* added editor to dashboard ([405d23d](https://github.com/gameguild-gg/website/commit/405d23db159f42b047abcad7bd8aadd0fd9b3d92))
+* added header and footer to blog page ([c344f46](https://github.com/gameguild-gg/website/commit/c344f468dbcba9c9c4d454fa74aa9942c5c4c167))
+* agg bar ([afdc2fb](https://github.com/gameguild-gg/website/commit/afdc2fb9b19baf14c127c8e7971edf5fd0c22148))
+* ahh syntax training ([4b91e46](https://github.com/gameguild-gg/website/commit/4b91e4625aed923c76531dde2b3d57742c2fd333))
+* **api-competition:** add competition ([a050476](https://github.com/gameguild-gg/website/commit/a050476e11ad9d7902d5ab178fa634c9d976025e))
+* **api:** add competition module ([f2642d9](https://github.com/gameguild-gg/website/commit/f2642d94e86f3fd08a73396a94491091e7cc4d90))
+* **api:** add simple register ([16464a7](https://github.com/gameguild-gg/website/commit/16464a7a0f4e781c0b9cf94e09b6921d7cad12b7))
+* **api:** prepare chess submission ([100f713](https://github.com/gameguild-gg/website/commit/100f7134ea886ca8d77a52de8af0b478545e81f5))
+* auth on index page ([2844abe](https://github.com/gameguild-gg/website/commit/2844abed34a5d0575dc262005e1db25886392cd0))
+* **Auth:** Add base module. ([46bcd0a](https://github.com/gameguild-gg/website/commit/46bcd0aee1f02b274556ad76b104ad505d17c3a7))
+* **auth:** improve profile fields ([b1e8cac](https://github.com/gameguild-gg/website/commit/b1e8cac11328e0a7e9ec5e5b890216e49989439a))
+* **auth:** wip fix web3 login ([d259624](https://github.com/gameguild-gg/website/commit/d259624571078e39dc7331b9c30d0ac04266f9ec))
+* automatically install apiclient on web after a bockend change ([46beb6a](https://github.com/gameguild-gg/website/commit/46beb6a5afbaa3e6da3ab13df0621e74f7d1688a))
+* **backend:** add competition backend WiP; ([a84b650](https://github.com/gameguild-gg/website/commit/a84b650341ed98a670a40df2025fcae6b8b76446))
+* beginning of course system UI ([7c1b8cd](https://github.com/gameguild-gg/website/commit/7c1b8cd9cd1f96464aacf5f3a937bb231c9bc04f))
+* blog first version. ([6021e65](https://github.com/gameguild-gg/website/commit/6021e65e62fe347a6cecb4c4a8c4df07adff68a7))
+* blog reading ([6f4a5ea](https://github.com/gameguild-gg/website/commit/6f4a5ea5cfd692672a9408e3f8a5fc967c7418fd))
+* boilerplate ([2016b44](https://github.com/gameguild-gg/website/commit/2016b441c7a13a169d8494143f90482229c75e88))
+* challenge a bot ([83488f2](https://github.com/gameguild-gg/website/commit/83488f2b10c84be175f81fb2eb84c2c31c9b594d))
+* Changed DefaultLayout, create Navbar and Footer. ([6d62b0d](https://github.com/gameguild-gg/website/commit/6d62b0d6a9c320f6f0b06e3205b6e81b5526ae59))
+* chess play now can set who is the player ([a919f9c](https://github.com/gameguild-gg/website/commit/a919f9c1e3a6ff901a0ec3e4c56274b461337756))
+* chess random movement agent ([f6e3377](https://github.com/gameguild-gg/website/commit/f6e3377b0053c8cde312fb7fc692b7dfff23e3d7))
+* **chess:** accept submissions, zip and store on the db the binary ([cfcc80b](https://github.com/gameguild-gg/website/commit/cfcc80ba28660efcf8ca8ebc94f27c1183101072))
+* **chess:** add match run system ([7f08e3d](https://github.com/gameguild-gg/website/commit/7f08e3d250f8a26935439da4ee8bd96d769c896c))
+* **chess:** api for requesting a move for an user ([e1393f9](https://github.com/gameguild-gg/website/commit/e1393f977fc8da2090cb04e4d256d1a343cf367c))
+* **chess:** get match id ([fc72dc1](https://github.com/gameguild-gg/website/commit/fc72dc166da92fa4709d616803ddf42ef1b84015))
+* **chess:** now matches are searchable ([6e34172](https://github.com/gameguild-gg/website/commit/6e34172b629f0215c66155ff012f8b07582f73e7))
+* chose the bot you want to play against ([0670ea5](https://github.com/gameguild-gg/website/commit/0670ea5c3031ba8f7e2596e7162214ad88ad2bf3))
+* cms test ([17c564d](https://github.com/gameguild-gg/website/commit/17c564d3a7fa8cbc6f036748f0e7f4ffe42ae319))
+* competition report ([67fb5aa](https://github.com/gameguild-gg/website/commit/67fb5aa5ae141a2f13fe2075865e01dcfe529808))
+* competition reports ([e9a2216](https://github.com/gameguild-gg/website/commit/e9a221643fc9ac22bb6fa3449d0cc06d3d91f136))
+* competition reports ([42a4e1a](https://github.com/gameguild-gg/website/commit/42a4e1a8b26c836eb6b4ae6eea0d7a06a8dc4ef2))
+* **competition:** add competition dashboard ([52d13fe](https://github.com/gameguild-gg/website/commit/52d13fed4f2cff8fe99b1abf7d8ca2286f4f6ddd))
+* compile ([e0d6ada](https://github.com/gameguild-gg/website/commit/e0d6ada462dc0683def1ba009522a535cd72806b))
+* comptition rework ([fad3557](https://github.com/gameguild-gg/website/commit/fad35577bdd4dffd22a09d13dc6ca31411634f72))
+* container and autentication page ([7ff9504](https://github.com/gameguild-gg/website/commit/7ff95041509013a516e5d399373cce543aa04015))
+* content management system ([c70f008](https://github.com/gameguild-gg/website/commit/c70f00856768e6c77368a5a7429cc085a9622c5b))
+* content management system ([dad5bbc](https://github.com/gameguild-gg/website/commit/dad5bbc05d1a87e8d0e53cd2e07434994fa3821d))
+* course chapter ([35533e5](https://github.com/gameguild-gg/website/commit/35533e57a7e2fc09763daf58e7f629deddb6a40e))
+* creation of enumerations. ([f3df378](https://github.com/gameguild-gg/website/commit/f3df37813d25d42e8e116069b88c5ec170cf0a75))
+* dashboard and new header. ([a4ef86e](https://github.com/gameguild-gg/website/commit/a4ef86ec0d7f7c4325365cd6b2a155e0caf6bdae))
+* debug log the username when the movement fails ([ed97566](https://github.com/gameguild-gg/website/commit/ed975664067918db9c477e836985b64a47a03cf8))
+* email validation ([5644266](https://github.com/gameguild-gg/website/commit/56442665b462a176279eb6f4420c1f9ae4c185f0))
+* **Entities:** Add base entities. ([1ef09c7](https://github.com/gameguild-gg/website/commit/1ef09c7805dd3bb0db3f9261f047f78e680108e5))
+* **Event:** Add base module. ([5a529d3](https://github.com/gameguild-gg/website/commit/5a529d3d49f68f938472c8a7735069571cb0d1ca))
+* **Event:** Add base module. ([12d7126](https://github.com/gameguild-gg/website/commit/12d7126cb6458047fcbea7e8d9d00cde837d4cb6))
+* extract profile from user ([e32eb6f](https://github.com/gameguild-gg/website/commit/e32eb6f4038f2273849c062ac674a31efdc87024))
+* fetching Jobs ([701efab](https://github.com/gameguild-gg/website/commit/701efab1acb42314cd764ab9c52c440c102674b1))
+* first migration ([5e12e24](https://github.com/gameguild-gg/website/commit/5e12e24b1e7c4c25ef2d4cd6885cb22a00c4c5de))
+* first time on atomic design pattern ([d0469a6](https://github.com/gameguild-gg/website/commit/d0469a6fba5d3f637744386a2c2f0b330c5668ff))
+* fix backend for create project ([753dc68](https://github.com/gameguild-gg/website/commit/753dc68af7c6b37948d136ca9ea377bf5c9f425f))
+* fix docker build with stockfish ([300c3da](https://github.com/gameguild-gg/website/commit/300c3da35b0ec8da4e7608405ff6a9ec85282083))
+* fixed isolation between nest and next errors ([095ef38](https://github.com/gameguild-gg/website/commit/095ef387727ace4ea1b3876d389b520439c841de))
+* folder sync for dtos ([82d92a9](https://github.com/gameguild-gg/website/commit/82d92a93ecdf3eb0c3b76c26ea4e0af1664870a0))
+* folder sync for dtos ([800273f](https://github.com/gameguild-gg/website/commit/800273f6e7166f9c1ef9d0dd211a78ff7612e5c2))
+* force the player to always chose himself as a player when challenging a bot ([8a58154](https://github.com/gameguild-gg/website/commit/8a581544083364d37e4d34f0fcf86011b7e8732f))
+* **Front:** Add base front layouts. ([87b12fd](https://github.com/gameguild-gg/website/commit/87b12fd0fcef6570cdcb0a0bfdeaebd1a277a740))
+* **Front:** Add base front layouts. ([fcf8eda](https://github.com/gameguild-gg/website/commit/fcf8edaf874c3b1784da65148cea2fcb5669aee1))
+* **front:** add front to dockercompose ([8a9f465](https://github.com/gameguild-gg/website/commit/8a9f4653008cd44bcc3390df1328e062851d7dce))
+* **front:** add new template ([38aca24](https://github.com/gameguild-gg/website/commit/38aca249e7f659c31e6a3a8ac4217df9a3f2d7aa))
+* game-version ([17ed824](https://github.com/gameguild-gg/website/commit/17ed824e97e310277afee93504e964844f3b3d10))
+* generate dbml ([a9466d6](https://github.com/gameguild-gg/website/commit/a9466d6024dd4bc9cd3d07c168e9d3aeff13c9a2))
+* generated new apicontent package extracted from nestjs swagger ([c6e3cad](https://github.com/gameguild-gg/website/commit/c6e3cad1545d1030220464e5f028342e243e8674))
+* get match and replay it ([170e8b8](https://github.com/gameguild-gg/website/commit/170e8b8b9db4675e7e0f189845e08cdee8953433))
+* google login button ([38def8c](https://github.com/gameguild-gg/website/commit/38def8ce2d633eb54fa77a57857684185dd689e6))
+* **google-auth:** connect front and back login ([eaa2840](https://github.com/gameguild-gg/website/commit/eaa2840c5cf9fa5edae684cf8609095175aae87e))
+* initial gtl pages ([a30adcc](https://github.com/gameguild-gg/website/commit/a30adccc92349bf0cf4c97bd13c4cc0dfe68450e))
+* intl, auth and cookies ([41aecf4](https://github.com/gameguild-gg/website/commit/41aecf4833656da015091c6c89f7d33ca9de76b6))
+* ipfs storage ([650931c](https://github.com/gameguild-gg/website/commit/650931c5135826c6de44dde727002778d6bb63a9))
+* isolate ghost api ([c5ae1cf](https://github.com/gameguild-gg/website/commit/c5ae1cf2dc55bb09809ff62337030b3c37cdf95d))
+* job aplication basic functionality ([c5dfabc](https://github.com/gameguild-gg/website/commit/c5dfabcb1a14c97b237f8a9ef4b0659fcce5a392))
+* job aplication progress first UI ([0fa0ff2](https://github.com/gameguild-gg/website/commit/0fa0ff237855466e2bb2572adddcf2a7f13935c3))
+* Job Tag system working for Job creation and viewing ([af2856f](https://github.com/gameguild-gg/website/commit/af2856f6a7d50eabac62dd1753ba6aceb431693e))
+* Job typeorm initial structure ([cc35625](https://github.com/gameguild-gg/website/commit/cc35625070a6aaadfc98eafa23da390a8170b7a2))
+* jobs page first draft ([d54b5ba](https://github.com/gameguild-gg/website/commit/d54b5ba501f88e41125bd46b22132ea1be6df20d))
+* leaderboard ([06199ff](https://github.com/gameguild-gg/website/commit/06199ff376a214aaf31594d847030e45d97115f4))
+* leaderboard ([ad0bd67](https://github.com/gameguild-gg/website/commit/ad0bd675fe5672245ebafcb55ce0ec849761a8ca))
+* list last matches ([8e71d6e](https://github.com/gameguild-gg/website/commit/8e71d6eec2c87214c3805ae94c84e85bda626918))
+* login / register ([0983627](https://github.com/gameguild-gg/website/commit/0983627af906bf9dfb54e9bfdb474d4aed3f7911))
+* login and route to dashboard ([2ba2f6c](https://github.com/gameguild-gg/website/commit/2ba2f6c34b61747e737fb42149666833a9983463))
+* login page ([255e0f3](https://github.com/gameguild-gg/website/commit/255e0f3d23bb4addd9a8d432b3148773fe8fd71e))
+* **login:** rework on login / signup page ([d4c67da](https://github.com/gameguild-gg/website/commit/d4c67daca34086c5fd003f412505c25124adef05))
+* **magic-link:** wip magic link frontend ([b996c2a](https://github.com/gameguild-gg/website/commit/b996c2ae4f93d07aaff09ead6f25b8eed1181462))
+* mail sender and errors for user registering ([562d212](https://github.com/gameguild-gg/website/commit/562d212e1226ae83cd727906f11a1cf30d1defb7))
+* make human play against ai bots ([3c99304](https://github.com/gameguild-gg/website/commit/3c993040ed50ecc49135993119cee196ae19e114))
+* meamask page connect by ethers ([48e0917](https://github.com/gameguild-gg/website/commit/48e091735c690fb815720e5f01968c6d78abda58))
+* merge alec work and add competition tab ([af3386f](https://github.com/gameguild-gg/website/commit/af3386f4e6e6fb794afb85864c0cc330f454b2a3))
+* **Module:** Add base modules. ([24fa8d1](https://github.com/gameguild-gg/website/commit/24fa8d15e17bff005a53540e5b2ac9153ed73c94))
+* move front to a subfolder ([d95ccd0](https://github.com/gameguild-gg/website/commit/d95ccd0d4fa9786f0bc37e7b497fac3f47edcc1c))
+* new feed and main dashboard pages ([f9130eb](https://github.com/gameguild-gg/website/commit/f9130eb8aa8514c6d40cbb4cd6528904cc888e0f))
+* new grid ([285fdee](https://github.com/gameguild-gg/website/commit/285fdee09872020b8a54c138b55f0bd7f143771a))
+* notification component for frontend ([f54364a](https://github.com/gameguild-gg/website/commit/f54364a0b9dc740f0d71c71ce103f31fabdc12a9))
+* **Post:** Add base module. ([f2e584c](https://github.com/gameguild-gg/website/commit/f2e584c19a72d9ceca615db04fbd1488495a34c8))
+* projects ([7a2a4a9](https://github.com/gameguild-gg/website/commit/7a2a4a90286d117890c24a3a4be9373f4f5930a4))
+* proposal ([556fe4d](https://github.com/gameguild-gg/website/commit/556fe4d158cc638fc585a9f723c4e86e109f47f7))
+* refactor to use dtos properly from swagger ([0d5a510](https://github.com/gameguild-gg/website/commit/0d5a51079663bfcb351a4162e13adba55f7a495d))
+* refresh token ([be949fc](https://github.com/gameguild-gg/website/commit/be949fcb2a2b7de9f2beca3c72553e2924736270))
+* remove symlinks ([c7e74fb](https://github.com/gameguild-gg/website/commit/c7e74fb37736547024aeee2c7d29b62d6ab2381a))
+* remove symlinks ([eefa381](https://github.com/gameguild-gg/website/commit/eefa381e4d7c6efa0df2ba0877e8283f70b1c260))
+* remove tailwind and add mui ([fa6cebd](https://github.com/gameguild-gg/website/commit/fa6cebd979cf33e393f67a394750a2cdc542f088))
+* rename user to userdata ([4a19e22](https://github.com/gameguild-gg/website/commit/4a19e224d1aaa93141d400b7ead3a962f8f413de))
+* replay match ([54abcc1](https://github.com/gameguild-gg/website/commit/54abcc1b6b779958f939be87acbb29d73aa86fca))
+* search in bread cumb, no aton yet ([ab8414f](https://github.com/gameguild-gg/website/commit/ab8414fee5b218229cd51a3599137003ed6381ca))
+* signup page ([8e89247](https://github.com/gameguild-gg/website/commit/8e8924741bf5bcc672abec1b7482f1b1d841be3b))
+* simplified boileplate ([bb0bbc5](https://github.com/gameguild-gg/website/commit/bb0bbc5a73e4c5b543bd5f34ad7658cc60871aed))
+* slugify the title on creation ([35ab483](https://github.com/gameguild-gg/website/commit/35ab483c6bebd1527c1095e07864bba1c7e04f10))
+* start of individual course page ([5c98ef5](https://github.com/gameguild-gg/website/commit/5c98ef561338bb52a7c0218e251e34a1bef8fe13))
+* start page rework for GTL ([8bf8661](https://github.com/gameguild-gg/website/commit/8bf8661cc5da104de2e20f6ed43426cd182b0a9b))
+* summary description ([a1d6a31](https://github.com/gameguild-gg/website/commit/a1d6a31ca5c9c0d82d8210f6faf37e3fcfd4677c))
+* swagger ([a05dc88](https://github.com/gameguild-gg/website/commit/a05dc88fc501fe35ff8408cf7b69ec78c3809b6f))
+* **swagger:** add automation for sdk generation to import swagger and create bindings on web ([8899ba1](https://github.com/gameguild-gg/website/commit/8899ba178f2de1edaecbffc1c3617a0377a0aedb))
+* tailwind boilerplate ([f2a0e08](https://github.com/gameguild-gg/website/commit/f2a0e0801267df5ac16e21f5d45f492e50da6954))
+* transport error in plain sight ([edef699](https://github.com/gameguild-gg/website/commit/edef699c48dfdc87c3e405ca499b46d72fe754f7))
+* typeorm scaffold ([6c3d68e](https://github.com/gameguild-gg/website/commit/6c3d68e08f2cad3656992e8c05868f480822fb3a))
+* upload bot ([e2f0b0d](https://github.com/gameguild-gg/website/commit/e2f0b0dbe795bfc853a793bd8710589e9038ecb1))
+* **Upload:** Add base abstract service. ([c39691c](https://github.com/gameguild-gg/website/commit/c39691c5cabd9e2f3c518e3f833f5e9913cbb92a))
+* user settings area ([a168b08](https://github.com/gameguild-gg/website/commit/a168b08a3cf97708be122cfc29749a78ae778132))
+* web3 auth ([d5f3775](https://github.com/gameguild-gg/website/commit/d5f37750bcc4d5ea9d4dd4962491006bc2367f8f))
+* **web3:** [back] auth with web3 and save in cache the message and wallet to valitate later ([b4a166c](https://github.com/gameguild-gg/website/commit/b4a166c2fef559d5c64584c7f592a4acf5c4acf0))
+* **web3aut:** controller for challenge and login with web3 eth ([77af186](https://github.com/gameguild-gg/website/commit/77af1868186219ccc4ff46ba1ca09ee0d0f4e48a))
+* **web3auth:** api - sign message with wallet ([8b6b747](https://github.com/gameguild-gg/website/commit/8b6b7478ce13bdc1d99814bdde259b4a59650cb3))
+* **web3auth:** controller for challenge and login with web3 eth ([7a958d1](https://github.com/gameguild-gg/website/commit/7a958d1ef195013aa4cab43144a4d894329d806e))
+* wip auth process ([3a948d8](https://github.com/gameguild-gg/website/commit/3a948d882a7069d39e2caa9d65547b8baee43d78))
+* WiP DAO white paper ([9abaf7f](https://github.com/gameguild-gg/website/commit/9abaf7f9d778b5a4f9aa8c2482593ef467bf3f54))
+* with-roles refactor ([c67e8b0](https://github.com/gameguild-gg/website/commit/c67e8b02c26b8d8741da774aa02199ef28bfb597))
+* withroles ([1cb4e4b](https://github.com/gameguild-gg/website/commit/1cb4e4b3e024692fbe79fc248d77cc8f01521c87))
+* workflow for stale issues ([6230cd6](https://github.com/gameguild-gg/website/commit/6230cd6a4d3d48e06ccb35c4079df8b0ccc061af))
+
+
+### Performance Improvements
+
+* create-project.dto ([d0f1afd](https://github.com/gameguild-gg/website/commit/d0f1afd178274a7c573abbae302109da4fbec1bf))

@@ -46,3 +46,5 @@ chessSubmissions
 # dtos
 services/web/.env.local
 services/web/.env
+/contributors/gource.mp4
+/contributors/gource.txt

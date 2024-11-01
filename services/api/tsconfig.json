@@ -13,13 +13,13 @@
     "incremental": true,
     "skipLibCheck": true,
     "strictNullChecks": false,
-    "noImplicitAny": true,
+    "noImplicitAny": false,
     "strictBindCallApply": false,
     "forceConsistentCasingInFileNames": false,
     "noFallthroughCasesInSwitch": false,
     "strict": true,
     "noImplicitReturns": true,
     "alwaysStrict": true,
-    "strictFunctionTypes": true,
+    "strictFunctionTypes": true
   },
 }

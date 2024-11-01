@@ -23,7 +23,7 @@ export namespace Api {
 		path: string;
 		msg: string;
 		name: string;
-		message: Api.ApiErrorResponseDto.Message;
+		message: Api.ErrorMessage[];
 		error: Api.ApiErrorResponseDto.Error;
 		stack: Api.ApiErrorResponseDto.Stack;
 		raw: Api.ApiErrorResponseDto.Raw;
@@ -34,9 +34,6 @@ export namespace Api {
 	 * @namespace ApiErrorResponseDto
 	 */
 	export namespace ApiErrorResponseDto {
-		export interface Message {
-		}
-	
 		export interface Error {
 		}
 	
@@ -296,6 +293,44 @@ export namespace Api {
 	
 	}
 
+	export interface CreateProjectDto {
+		slug: string;
+		title: string;
+		summary: string;
+		body: string;
+		visibility: Api.CreateProjectDto.Visibility;
+		thumbnail: string;
+	}
+	
+	/**
+	 * @export
+	 * @namespace CreateProjectDto
+	 */
+	export namespace CreateProjectDto {
+		export type Visibility =
+			'DRAFT' |
+			'PUBLISHED' |
+			'FUTURE' |
+			'PENDING' |
+			'PRIVATE' |
+			'TRASH'
+		
+		export namespace Visibility {
+			export enum Enum {
+				DRAFT = 'DRAFT',
+				PUBLISHED = 'PUBLISHED',
+				FUTURE = 'FUTURE',
+				PENDING = 'PENDING',
+				PRIVATE = 'PRIVATE',
+				TRASH = 'TRASH'
+			}
+		}
+	
+	}
+
+	export interface CreateTicketDto {
+	}
+
 	export interface EditorRequestDto {
 		id: string;
 		editor: Api.IdDto;
@@ -303,6 +338,22 @@ export namespace Api {
 
 	export interface EmailDto {
 		email: string;
+	}
+
+	export interface ErrorMessage {
+		target: Api.ErrorMessage.Target;
+		property: string;
+		constraints: ({ [name: string]: string })[];
+	}
+	
+	/**
+	 * @export
+	 * @namespace ErrorMessage
+	 */
+	export namespace ErrorMessage {
+		export interface Target {
+		}
+	
 	}
 
 	export interface EthereumSigninChallengeRequestDto {
@@ -316,6 +367,78 @@ export namespace Api {
 	export interface EthereumSigninValidateRequestDto {
 		address: string;
 		signature: string;
+	}
+
+	export interface GetManyJobApplicationEntityResponseDto {
+		data: Api.JobApplicationEntity[];
+		/**
+		 * @type {number}
+		 * @memberof GetManyJobApplicationEntityResponseDto
+		 */
+		count: number;
+		/**
+		 * @type {number}
+		 * @memberof GetManyJobApplicationEntityResponseDto
+		 */
+		total: number;
+		/**
+		 * @type {number}
+		 * @memberof GetManyJobApplicationEntityResponseDto
+		 */
+		page: number;
+		/**
+		 * @type {number}
+		 * @memberof GetManyJobApplicationEntityResponseDto
+		 */
+		pageCount: number;
+	}
+
+	export interface GetManyJobPostEntityResponseDto {
+		data: Api.JobPostEntity[];
+		/**
+		 * @type {number}
+		 * @memberof GetManyJobPostEntityResponseDto
+		 */
+		count: number;
+		/**
+		 * @type {number}
+		 * @memberof GetManyJobPostEntityResponseDto
+		 */
+		total: number;
+		/**
+		 * @type {number}
+		 * @memberof GetManyJobPostEntityResponseDto
+		 */
+		page: number;
+		/**
+		 * @type {number}
+		 * @memberof GetManyJobPostEntityResponseDto
+		 */
+		pageCount: number;
+	}
+
+	export interface GetManyJobTagEntityResponseDto {
+		data: Api.JobTagEntity[];
+		/**
+		 * @type {number}
+		 * @memberof GetManyJobTagEntityResponseDto
+		 */
+		count: number;
+		/**
+		 * @type {number}
+		 * @memberof GetManyJobTagEntityResponseDto
+		 */
+		total: number;
+		/**
+		 * @type {number}
+		 * @memberof GetManyJobTagEntityResponseDto
+		 */
+		page: number;
+		/**
+		 * @type {number}
+		 * @memberof GetManyJobTagEntityResponseDto
+		 */
+		pageCount: number;
 	}
 
 	export interface GetManyProjectEntityResponseDto {
@@ -366,8 +489,160 @@ export namespace Api {
 		pageCount: number;
 	}
 
+	export interface GetManyTicketEntityResponseDto {
+		data: Api.TicketEntity[];
+		/**
+		 * @type {number}
+		 * @memberof GetManyTicketEntityResponseDto
+		 */
+		count: number;
+		/**
+		 * @type {number}
+		 * @memberof GetManyTicketEntityResponseDto
+		 */
+		total: number;
+		/**
+		 * @type {number}
+		 * @memberof GetManyTicketEntityResponseDto
+		 */
+		page: number;
+		/**
+		 * @type {number}
+		 * @memberof GetManyTicketEntityResponseDto
+		 */
+		pageCount: number;
+	}
+
 	export interface IdDto {
 		id: string;
+	}
+
+	export interface JobAplicationCreateDto {
+		job: Api.JobPostEntity;
+	}
+
+	export interface JobApplicationEntity {
+		id: string;
+		createdAt: string;
+		updatedAt: string;
+		applicant: Api.UserEntity;
+		job: Api.JobPostEntity;
+	}
+
+	export interface JobPostCreateDto {
+		id: string;
+		createdAt: string;
+		updatedAt: string;
+		owner: Api.UserEntity;
+		editors: Api.UserEntity[];
+		slug: string;
+		title: string;
+		summary: string;
+		body: string;
+		visibility: Api.JobPostCreateDto.Visibility;
+		thumbnail: string;
+		location: string;
+		'job_type': Api.JobPostCreateDto.JobType;
+		'job_tags': Api.JobTagEntity[];
+		'job_tag_ids': string[];
+	}
+	
+	/**
+	 * @export
+	 * @namespace JobPostCreateDto
+	 */
+	export namespace JobPostCreateDto {
+		export type Visibility =
+			'DRAFT' |
+			'PUBLISHED' |
+			'FUTURE' |
+			'PENDING' |
+			'PRIVATE' |
+			'TRASH'
+		
+		export namespace Visibility {
+			export enum Enum {
+				DRAFT = 'DRAFT',
+				PUBLISHED = 'PUBLISHED',
+				FUTURE = 'FUTURE',
+				PENDING = 'PENDING',
+				PRIVATE = 'PRIVATE',
+				TRASH = 'TRASH'
+			}
+		}
+	
+		export type JobType =
+			'CONTINUOUS' |
+			'TASK'
+		
+		export namespace JobType {
+			export enum Enum {
+				CONTINUOUS = 'CONTINUOUS',
+				TASK = 'TASK'
+			}
+		}
+	
+	}
+
+	export interface JobPostEntity {
+		id: string;
+		createdAt: string;
+		updatedAt: string;
+		owner: Api.UserEntity;
+		editors: Api.UserEntity[];
+		slug: string;
+		title: string;
+		summary: string;
+		body: string;
+		visibility: Api.JobPostEntity.Visibility;
+		thumbnail: string;
+		location: string;
+		'job_type': Api.JobPostEntity.JobType;
+		'job_tags': Api.JobTagEntity[];
+	}
+	
+	/**
+	 * @export
+	 * @namespace JobPostEntity
+	 */
+	export namespace JobPostEntity {
+		export type Visibility =
+			'DRAFT' |
+			'PUBLISHED' |
+			'FUTURE' |
+			'PENDING' |
+			'PRIVATE' |
+			'TRASH'
+		
+		export namespace Visibility {
+			export enum Enum {
+				DRAFT = 'DRAFT',
+				PUBLISHED = 'PUBLISHED',
+				FUTURE = 'FUTURE',
+				PENDING = 'PENDING',
+				PRIVATE = 'PRIVATE',
+				TRASH = 'TRASH'
+			}
+		}
+	
+		export type JobType =
+			'CONTINUOUS' |
+			'TASK'
+		
+		export namespace JobType {
+			export enum Enum {
+				CONTINUOUS = 'CONTINUOUS',
+				TASK = 'TASK'
+			}
+		}
+	
+	}
+
+	export interface JobTagEntity {
+		id: string;
+		createdAt: string;
+		updatedAt: string;
+		name: string;
 	}
 
 	export interface LectureEntity {
@@ -415,12 +690,6 @@ export namespace Api {
 			}
 		}
 	
-	}
-
-	export interface LocalSignInDto {
-		email: string;
-		password: string;
-		username: string;
 	}
 
 	export interface LocalSignInResponseDto {
@@ -516,6 +785,7 @@ export namespace Api {
 		visibility: Api.ProjectEntity.Visibility;
 		thumbnail: string;
 		versions: Api.ProjectVersionEntity[];
+		tickets: Api.TicketEntity[];
 	}
 	
 	/**
@@ -793,7 +1063,91 @@ export namespace Api {
 		responses: Api.ProjectFeedbackResponseEntity[];
 	}
 
+	export interface Promise {
+	}
+
 	export interface TerminalDto {
+	}
+
+	export interface TicketEntity {
+		id: string;
+		createdAt: string;
+		updatedAt: string;
+		owner: Api.UserEntity;
+		editors: Api.UserEntity[];
+		/**
+		 * @description <p>Title of the ticket</p>
+		 * @type {string}
+		 * @memberof TicketEntity
+		 */
+		title: string;
+		/**
+		 * @description <p>Description of the ticket</p>
+		 * @type {string}
+		 * @memberof TicketEntity
+		 */
+		description: string;
+		/**
+		 * @description <p>Description of the ticket</p>
+		 * @type {string}
+		 * @memberof TicketEntity
+		 */
+		projectId: string;
+		/**
+		 * @description <p>Status of the ticket</p>
+		 * @type {Api.TicketEntity.Status}
+		 * @memberof TicketEntity
+		 */
+		status: Api.TicketEntity.Status;
+		/**
+		 * @description <p>Priority of the ticket</p>
+		 * @type {Api.TicketEntity.Priority}
+		 * @memberof TicketEntity
+		 */
+		priority: Api.TicketEntity.Priority;
+	}
+	
+	/**
+	 * @export
+	 * @namespace TicketEntity
+	 */
+	export namespace TicketEntity {
+		/**
+		 * <p>Status of the ticket</p>
+		 */
+		export type Status =
+			'OPEN' |
+			'IN_PROGRESS' |
+			'RESOLVED' |
+			'CLOSED'
+		
+		export namespace Status {
+			export enum Enum {
+				OPEN = 'OPEN',
+				INPROGRESS = 'IN_PROGRESS',
+				RESOLVED = 'RESOLVED',
+				CLOSED = 'CLOSED'
+			}
+		}
+	
+		/**
+		 * <p>Priority of the ticket</p>
+		 */
+		export type Priority =
+			'LOW' |
+			'MEDIUM' |
+			'HIGH' |
+			'CRITICAL'
+		
+		export namespace Priority {
+			export enum Enum {
+				LOW = 'LOW',
+				MEDIUM = 'MEDIUM',
+				HIGH = 'HIGH',
+				CRITICAL = 'CRITICAL'
+			}
+		}
+	
 	}
 
 	export interface TransferOwnershipRequestDto {

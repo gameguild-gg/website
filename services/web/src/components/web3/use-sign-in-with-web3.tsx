@@ -7,7 +7,12 @@ import { signInWithWeb3 } from '@/lib/auth/sign-in-with-web3';
 import { getSession } from 'next-auth/react';
 import { AuthApi } from '@game-guild/apiclient';
 
-export function useSignInWithWeb3() {
+export enum Web3ProviderChoice {
+  METAMASK = 'METAMASK',
+  TORUS = 'TORUS',
+}
+
+export function useSignInWithWeb3(choice: Web3ProviderChoice) {
   const api = new AuthApi({
     basePath: process.env.NEXT_PUBLIC_API_URL,
   });
@@ -22,7 +27,9 @@ export function useSignInWithWeb3() {
   }, [state.provider, connectToWallet]);
 
   useEffect(() => {
-    const tryToSignIn = async () => {
+    const tryToSignInTorus = async () => {};
+
+    const tryToSignInMetamask = async () => {
       if (state.provider && state.accountAddress) {
         // TODO: validate the chain id.
         const chain = await state.provider.getNetwork();
@@ -54,8 +61,8 @@ export function useSignInWithWeb3() {
         }
       }
     };
-
-    tryToSignIn();
+    if (choice === Web3ProviderChoice.METAMASK) tryToSignInMetamask();
+    else tryToSignInTorus();
   }, [state, dispatch]);
 
   return [signIn];

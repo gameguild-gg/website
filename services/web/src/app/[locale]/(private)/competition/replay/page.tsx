@@ -36,13 +36,13 @@ export default function ReplayPage() {
 
     const response = await api.competitionControllerGetChessMatchResult(
       matchId,
-      { headers: { Authorization: `Bearer ${session?.accessToken}` } },
+      { headers: { Authorization: `Bearer ${session?.user?.accessToken}` } },
     );
 
     if (response.status === 401) {
       message.error('You are not authorized to view this page.');
       setTimeout(() => {
-        router.push('/connect');
+        router.push('/disconnect');
       }, 1000);
       setMatchFetched(true);
       return;

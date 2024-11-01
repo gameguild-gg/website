@@ -50,7 +50,7 @@ export default function PlayPage() {
         },
         {
           headers: {
-            Authorization: `Bearer ${session?.accessToken}`,
+            Authorization: `Bearer ${session?.user?.accessToken}`,
           },
         },
       );
@@ -59,7 +59,7 @@ export default function PlayPage() {
       if (response.status === 401) {
         message.error('You are not authorized to view this page.');
         setTimeout(() => {
-          router.push('/connect');
+          router.push('/disconnect');
         }, 1000);
         return;
       }
@@ -87,14 +87,14 @@ export default function PlayPage() {
       console.log('before request');
       const response = await api.competitionControllerListChessAgents({
         headers: {
-          Authorization: `Bearer ${session?.accessToken}`,
+          Authorization: `Bearer ${session?.user?.accessToken}`,
         },
       });
 
       if (response.status === 401) {
         message.error('You are not authorized to view this page.');
         setTimeout(() => {
-          router.push('/connect');
+          router.push('/disconnect');
         }, 1000);
         return;
       }

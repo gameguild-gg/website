@@ -14,6 +14,7 @@ import { useSearchParams } from 'next/navigation';
 import { signInWithMagicLink } from '@/lib/auth/sign-in-with-magic-link';
 import { getSession } from 'next-auth/react';
 import { Session } from 'next-auth';
+import TorusSignInButton from '@/components/others/web3/torus-sign-in-button';
 
 export default function ConnectForm() {
   const searchParams = useSearchParams();
@@ -23,7 +24,6 @@ export default function ConnectForm() {
   });
   const { toast } = useToast();
   const [sendMagicLinkClicked, setSendMagicLinkClicked] = useState(false);
-
   const [email, setEmail] = useState<string>('');
 
   async function magicLinkProcess(token: string | null) {
@@ -39,6 +39,10 @@ export default function ConnectForm() {
   //on mount
   useEffect(() => {
     const token = searchParams.get('token');
+    const err = searchParams.get('error');
+    // show the error in red
+    if (err) toast({ title: 'Error', description: err });
+
     magicLinkProcess(token).then();
   }, []);
 
@@ -85,7 +89,10 @@ export default function ConnectForm() {
         />
         Google
       </Button>
-      <MetaMaskSignInButton />
+      <div className="flex w-full">
+        <MetaMaskSignInButton />
+        <TorusSignInButton />
+      </div>
       <div className="text-center text-sm text-muted-foreground">or</div>
       <p className="text-balance text-muted-foreground">
         Send a magic link to your email

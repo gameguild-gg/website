@@ -1,5 +1,5 @@
 import { Body, Controller, Logger } from '@nestjs/common';
-import { ApiBody, ApiTags } from '@nestjs/swagger';
+import { ApiBody, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ProjectService } from './project.service';
 import { Auth } from '../auth/decorators/http.decorator';
 import { ProjectEntity } from './entities/project.entity';
@@ -10,29 +10,25 @@ import {
   Override,
   ParsedRequest,
 } from '@dataui/crud';
-import {
-  AuthenticatedRoute,
-  ManagerRoute,
-  OwnerRoute,
-} from '../auth/auth.enum';
+import { AuthenticatedRoute, EditorRoute, OwnerRoute } from '../auth/auth.enum';
 import { BodyOwnerInject } from '../common/decorators/parameter.decorator';
-import {
-  OwnershipEmptyInterceptor,
-  PartialWithoutFields,
-} from './interceptors/ownership-empty-interceptor.service';
-import { ExcludeFieldsPipe } from './pipes/exclude-fields.pipe';
+import { OwnershipEmptyInterceptor } from './interceptors/ownership-empty-interceptor.service';
 import { WithRolesController } from './with-roles.controller';
+import { CreateProjectDto } from './dtos/create-project.dto';
 
 @Crud({
   model: {
     type: ProjectEntity,
   },
   params: {
-    id: {
-      field: 'id',
-      type: 'uuid',
+    slug: {
+      field: 'slug',
+      type: 'string',
       primary: true,
     },
+  },
+  dto: {
+    create: CreateProjectDto,
   },
   routes: {
     exclude: [
@@ -51,7 +47,7 @@ import { WithRolesController } from './with-roles.controller';
       decorators: [Auth(AuthenticatedRoute)],
     },
     updateOneBase: {
-      decorators: [Auth<ProjectEntity>(ManagerRoute<ProjectEntity>)],
+      decorators: [Auth<ProjectEntity>(EditorRoute<ProjectEntity>)],
       interceptors: [OwnershipEmptyInterceptor],
     },
     deleteOneBase: {
@@ -60,7 +56,7 @@ import { WithRolesController } from './with-roles.controller';
   },
 })
 @Controller('project')
-@ApiTags('project')
+@ApiTags('Project')
 export class ProjectController
   extends WithRolesController<ProjectEntity>
   implements CrudController<ProjectEntity>
@@ -75,16 +71,26 @@ export class ProjectController
     return this;
   }
 
-  // we need to override to guarantee the user is being injected as owner and editor
   @Override()
   @Auth(AuthenticatedRoute)
-  @ApiBody({ type: ProjectEntity })
+  async getMany(@ParsedRequest() req: CrudRequest): Promise<ProjectEntity[]> {
+    // todo: check if this is working, it seems wrong, without paginations and filters
+    return this.service.find({
+      relations: ['owner', 'tickets'],
+    });
+  }
+  @Override()
+  @Auth(AuthenticatedRoute)
+  @ApiBody({ type: CreateProjectDto })
+  @ApiResponse({ type: ProjectEntity })
   async createOne(
     @ParsedRequest() crudReq: CrudRequest,
-    // todo: remove id and other unwanted fields
-    @BodyOwnerInject() body: ProjectEntity,
+    @BodyOwnerInject(CreateProjectDto) body: CreateProjectDto,
   ) {
-    const res = await this.base.createOneBase(crudReq, body);
+    const res = await this.service.createOne(
+      crudReq,
+      body as Partial<ProjectEntity>,
+    );
     return this.service.findOne({
       where: { id: res.id },
       relations: { owner: true, editors: true },
@@ -92,23 +98,12 @@ export class ProjectController
   }
 
   @Override()
-  @Auth<ProjectEntity>(ManagerRoute<ProjectEntity>)
-  @ApiBody({ type: ProjectEntity })
+  @Auth<ProjectEntity>(EditorRoute<ProjectEntity>)
+  @ApiBody({ type: CreateProjectDto })
+  @ApiResponse({ type: ProjectEntity })
   async updateOne(
     @ParsedRequest() req: CrudRequest,
-    @Body(
-      new ExcludeFieldsPipe<ProjectEntity>([
-        'owner',
-        'editors',
-        'versions',
-        'createdAt',
-        'updatedAt',
-      ]),
-    )
-    dto: PartialWithoutFields<
-      ProjectEntity,
-      'owner' | 'editors' | 'versions' | 'createdAt' | 'updatedAt'
-    >,
+    @Body() dto: CreateProjectDto,
   ): Promise<ProjectEntity> {
     return this.base.updateOneBase(req, dto);
   }

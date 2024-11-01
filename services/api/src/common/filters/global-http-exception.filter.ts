@@ -9,6 +9,23 @@ import { HttpAdapterHost } from '@nestjs/core';
 import { ApiConfigService } from '../config.service';
 import { ApiProperty } from '@nestjs/swagger';
 
+export class ErrorMessage {
+  @ApiProperty()
+  target: object;
+  @ApiProperty()
+  property: string;
+  @ApiProperty({
+    type: 'array',
+    items: {
+      type: 'object',
+      additionalProperties: {
+        type: 'string',
+      },
+    },
+  })
+  constraints: Record<string, string>[];
+}
+
 // todo: improve error handling type
 export class ApiErrorResponseDto {
   @ApiProperty()
@@ -21,8 +38,8 @@ export class ApiErrorResponseDto {
   msg: string;
   @ApiProperty()
   name: string;
-  @ApiProperty()
-  message: any;
+  @ApiProperty({ type: ErrorMessage, isArray: true })
+  message: [ErrorMessage] | any;
   @ApiProperty()
   error: any;
   @ApiProperty()

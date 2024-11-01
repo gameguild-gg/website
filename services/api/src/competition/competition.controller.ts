@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Logger,
   Param,
   ParseUUIDPipe,
   PayloadTooLargeException,
@@ -45,7 +46,7 @@ import { AuthenticatedRoute } from '../auth/auth.enum';
 @ApiTags('competitions')
 export class CompetitionController {
   constructor(public service: CompetitionService) {}
-
+  logger: Logger = new Logger(CompetitionController.name);
   // @Post('/CTC/submit')
   // @ApiConsumes('multipart/form-data')
   // @UseInterceptors(FileInterceptor('file'))
@@ -126,8 +127,8 @@ export class CompetitionController {
     try {
       return this.service.prepareLastChessSubmission(user);
     } catch (e) {
-      console.error(e);
-      console.error(JSON.stringify(e));
+      this.logger.error(e);
+      this.logger.error(JSON.stringify(e));
       throw e;
     }
   }
@@ -218,17 +219,16 @@ export class CompetitionController {
     // convert array of CompetitionMatchEntity to MatchSearchResponseDto
     const converted: MatchSearchResponseDto[] = ret.map(
       (match: CompetitionMatchEntity) => {
-        const convertedMatch: MatchSearchResponseDto =
-          new MatchSearchResponseDto({
-            id: match.id,
-            winner: match.winner,
-            lastState: match.lastState,
-            players: [
-              match.p1submission.user.username,
-              match.p2submission.user.username,
-            ],
-          });
-        return convertedMatch;
+        const convertedMatch = {
+          id: match.id,
+          winner: match.winner,
+          lastState: match.lastState,
+          players: [
+            match.p1submission.user.username,
+            match.p2submission.user.username,
+          ],
+        };
+        return convertedMatch as MatchSearchResponseDto;
       },
     );
 

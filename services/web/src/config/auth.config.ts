@@ -4,6 +4,34 @@ import Credentials from 'next-auth/providers/credentials';
 import { environment } from '@/config/environment';
 import { Api, AuthApi } from '@game-guild/apiclient';
 import { signOut } from 'next-auth/react';
+import type { Provider } from 'next-auth/providers';
+import { NextResponse } from 'next/server';
+import { jwtDecode } from 'jwt-decode';
+import LocalSignInResponseDto = Api.LocalSignInResponseDto;
+
+// list of providers
+const providers: Provider[] = [];
+
+if (
+  !environment.GoogleClientId ||
+  !environment.GoogleClientSecret ||
+  !environment.SignInGoogleCallbackUrl
+) {
+  throw new Error(
+    'GoogleClientId, GoogleClientSecret, and SignInGoogleCallbackUrl must be set in the environment. Please check your .env file. Or talk with us to provide them to you.',
+  );
+}
+providers.push(
+  Google({
+    clientId: environment.GoogleClientId,
+    clientSecret: environment.GoogleClientSecret,
+    authorization: {
+      params: {
+        request_uri: environment.SignInGoogleCallbackUrl,
+      },
+    },
+  }),
+);
 
 export const authConfig = {
   trustHost: true, // todo: fix [auth][error] UntrustedHost: Host must be trusted. URL was: https://localhost:3000/api/auth/session. Read more at https://errors.authjs.dev#untrustedhost
@@ -32,45 +60,67 @@ export const authConfig = {
           return false;
         }
 
-        user.id = response.body.user.id;
-        user.email = response.body.user.email;
-        user.accessToken = response.body.accessToken;
-        user.refreshToken = response.body.refreshToken;
+        const body = response.body as Api.LocalSignInResponseDto;
+
+        user.id = body.user.id;
+        user.email = body.user.email;
+        user.accessToken = body.accessToken;
+        user.refreshToken = body.refreshToken;
 
         return true;
       } else if (account?.provider === 'web-3') {
         return Boolean(user.wallet && user.accessToken && user.refreshToken);
       } else if (account?.provider === 'magic-link') {
-        return Boolean(user.accessToken && user.refreshToken);
+        return Boolean(user.email && user.accessToken && user.refreshToken);
       }
       return false;
     },
-    jwt: async ({ token, user, trigger, session, account }) => {
+    jwt: async ({ token, user, account, profile, trigger, session }) => {
       if (account) {
-        token.accessToken = user.accessToken;
-        token.refreshToken = user.refreshToken;
+        // First-time login, save the `access_token`, its expiry and the `refresh_token`
+        return {
+          ...token,
+          // ...account,
+          access_token: account.access_token,
+          refresh_token: account.refresh_token,
+          user: user,
+          profile: profile,
+        };
       }
 
-      // refresh the token if it is about to expire(5m), or if it is expired already
-      if (token?.exp && Date.now() + 300000 > token.exp * 1000) {
-        const api = new AuthApi({
-          basePath: process.env.NEXT_PUBLIC_API_URL,
-        });
+      if (user || token.user) {
+        // combine user and token.user to include the user object
+        // avoid TS2698: Spread types may only be created from object types.
+        const u = { ...(user ?? {}), ...(token?.user ?? {}) };
+        const decoded = jwtDecode(u.accessToken as string);
+        const exp = decoded.exp as number;
 
-        // try to refresh the session
-        const response = await api.authControllerRefreshToken({
-          headers: { Authorization: `Bearer ${token.refreshToken}` },
-        });
-
-        if (response.status >= 400) {
-          console.error(JSON.stringify(response.body));
-          // logout the user if the refresh token is invalid
-          await signOut();
-          return {};
-        } else {
-          const body = response.body as Api.LocalSignInResponseDto;
-          token.accessToken = body.accessToken;
-          token.refreshToken = body.refreshToken;
+        // 1 minute before the token expires, refresh the token
+        if (exp && Date.now() > exp * 1000 - 60 * 1000) {
+          // refresh the token
+          const api = new AuthApi({
+            basePath: process.env.NEXT_PUBLIC_API_URL,
+          });
+          let r: LocalSignInResponseDto;
+          try {
+            const response = await api.authControllerRefreshToken({
+              headers: {
+                Authorization: `Bearer ${u.refreshToken}`,
+              },
+            });
+            if (response.status >= 400) {
+              console.error('error refreshing token', response.body);
+              return null;
+            }
+            r = response.body as Api.LocalSignInResponseDto;
+          } catch (e) {
+            console.error(e);
+            token.error = e;
+            return null;
+          }
+          u.accessToken = r.accessToken;
+          u.refreshToken = r.refreshToken;
+          token.user = u;
         }
       }
 
@@ -79,19 +129,21 @@ export const authConfig = {
     session: async ({ session, token, user }) => {
       session = {
         ...session,
-        user: { ...session.user, ...user },
+        user: { ...session?.user, ...user },
         ...token,
       };
+
       return session;
     },
   },
   pages: {
     signIn: '/connect',
-    // error: '/api/auth/error',
+    error: '/connect',
     // verifyRequest: '/api/auth/verify-request',
     // signOut: '/api/auth/signout',
   },
   providers: [
+    ...providers,
     Credentials({
       type: 'credentials',
       id: 'magic-link',
@@ -188,22 +240,14 @@ export const authConfig = {
           id: user.id,
           email: user.email,
           name: user.username,
-          image: user.profile.picture,
+          image: user.profile?.picture,
           wallet: user.walletAddress,
           accessToken,
           refreshToken,
         };
       },
     }),
-    Google({
-      clientId: environment.GoogleClientId,
-      clientSecret: environment.GoogleClientSecret,
-      authorization: {
-        params: {
-          request_uri: environment.SignInGoogleCallbackUrl,
-        },
-      },
-    }),
+    ...providers,
   ],
   session: {
     strategy: 'jwt',
@@ -219,6 +263,7 @@ declare module 'next-auth' {
 declare module 'next-auth' {
   interface JWT {
     accessToken?: string;
+    error?: any;
   }
 }
 
@@ -229,7 +274,9 @@ declare module 'next-auth' {
     email?: string | null;
     image?: string | null;
     wallet?: string | null;
+    // access token to be used with the API. This is not the JWT token.
     accessToken?: string | null;
+    // access token to be used with the API. This is not the JWT token.
     refreshToken?: string | null;
   }
 }

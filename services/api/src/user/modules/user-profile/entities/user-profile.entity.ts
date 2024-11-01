@@ -63,8 +63,8 @@ export class UserProfileEntity extends EntityBase {
   @IsUrl({}, { message: 'error.IsUrl: picture should be a URL' })
   picture?: string;
 
-  constructor(partial?: Partial<UserProfileEntity>) {
-    super(partial);
-    Object.assign(this, partial);
-  }
+  // constructor(partial?: Partial<UserProfileEntity>) {
+  //   super(partial);
+  //   Object.assign(this, partial);
+  // }
 }

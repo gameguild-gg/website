@@ -1,4 +1,4 @@
-import { Body, Post } from '@nestjs/common';
+import { Body, Get, Post } from '@nestjs/common';
 import { Auth, AuthUser } from '../auth';
 import { OwnerRoute } from '../auth/auth.enum';
 import { WithRolesEntity } from '../auth/entities/with-roles.entity';
@@ -6,6 +6,7 @@ import { TransferOwnershipRequestDto } from './dtos/transfer-ownership.request.d
 import { WithRolesService } from './with-roles.service';
 import { UserEntity } from '../user/entities';
 import { EditorRequestDto } from './dtos/editor-request.dto';
+import { ApiOkResponse, ApiOperation, getSchemaPath } from '@nestjs/swagger';
 
 export class WithRolesController<T extends WithRolesEntity = never> {
   constructor(private withRolesService: WithRolesService<T>) {}
@@ -39,4 +40,25 @@ export class WithRolesController<T extends WithRolesEntity = never> {
   ) {
     return this.withRolesService.RemoveEditor(body.id, body.editor.id);
   }
+
+  @Get('get-owned-by-me')
+  @ApiOperation({description: "Obtains all items the current users owns."})
+  @ApiOkResponse({status:200})
+  @Auth<T>(OwnerRoute<T>)
+  async ownedByMe(
+    @AuthUser() user: UserEntity,
+  ) {
+    return this.withRolesService.getAllOwnedByMe(user.id);
+  }
+
+  @Get('get-editable-by-me')
+  @ApiOperation({description: "Obtains all items the current users has permission to edit."})
+  @ApiOkResponse({status:200})
+  @Auth<T>(OwnerRoute<T>)
+  async ICanEdit(
+    @AuthUser() user: UserEntity,
+  ) {
+    return this.withRolesService.getAllEditableByMe(user.id);
+  }
+
 }

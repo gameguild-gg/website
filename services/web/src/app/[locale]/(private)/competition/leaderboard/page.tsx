@@ -33,14 +33,14 @@ export default function LeaderboardPage(): JSX.Element {
 
     const response = await api.competitionControllerGetChessLeaderboard({
       headers: {
-        Authorization: `Bearer ${session?.accessToken}`,
+        Authorization: `Bearer ${session?.user?.accessToken}`,
       },
     });
 
     if (response.status === 401) {
       message.error('You are not authorized to view this page.');
       setTimeout(() => {
-        router.push('/connect');
+        router.push('/disconnect');
       }, 1000);
       setLeaderboardFetched(true);
       return;

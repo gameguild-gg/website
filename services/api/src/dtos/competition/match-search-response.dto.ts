@@ -9,8 +9,8 @@ export class MatchSearchResponseDto extends EntityBase {
   @ApiProperty({ type: [String] })
   players: string[];
 
-  constructor(partial: Partial<MatchSearchResponseDto>) {
-    super(partial);
-    Object.assign(this, partial);
-  }
+  // constructor(partial: Partial<MatchSearchResponseDto>) {
+  //   super(partial);
+  //   Object.assign(this, partial);
+  // }
 }

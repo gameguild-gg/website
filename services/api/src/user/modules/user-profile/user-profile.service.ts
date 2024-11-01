@@ -13,6 +13,6 @@ export class UserProfileService {
   ) {}
   // create
   async save(profile: Partial<UserProfileEntity>): Promise<UserProfileEntity> {
-    return new UserProfileEntity(await this.repository.save(profile));
+    return this.repository.save(profile);
   }
 }

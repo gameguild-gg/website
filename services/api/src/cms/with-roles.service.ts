@@ -85,4 +85,22 @@ export class WithRolesService<
       }),
     );
   }
+
+  async getAllOwnedByMe(myId: string): Promise<void> {
+    await this.repo.find({
+      where: [
+        {owner: { id: myId } },
+      ] as FindOptionsWhere<T>[],
+    })
+  }
+
+  async getAllEditableByMe(myId: string): Promise<void> {
+    await this.repo.find({
+      where: [
+        {owner: { id: myId } },
+        {editors: { id: myId } },
+      ] as FindOptionsWhere<T>[],
+    })
+  }
+
 }

@@ -80,7 +80,7 @@ export default function MatchesPage() {
       } as MatchSearchRequestDto,
       {
         headers: {
-          Authorization: `Bearer ${session?.accessToken}`,
+          Authorization: `Bearer ${session?.user?.accessToken}`,
         },
       },
     );
@@ -88,7 +88,7 @@ export default function MatchesPage() {
     if (response.status === 401) {
       message.error('You are not authorized to view this page.');
       setTimeout(() => {
-        router.push('/connect');
+        router.push('/disconnect');
       }, 1000);
       return;
     }

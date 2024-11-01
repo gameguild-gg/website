@@ -34,12 +34,12 @@ const ChallengePage: React.FC = () => {
 
     const response = await api.competitionControllerListChessAgents({
       headers: {
-        Authorization: `Bearer ${session?.accessToken}`,
+        Authorization: `Bearer ${session?.user?.accessToken}`,
       },
     });
 
     if (!response || response.status === 401) {
-      router.push('/connect');
+      router.push('/disconnect');
       return;
     }
 
@@ -96,7 +96,7 @@ const ChallengePage: React.FC = () => {
       },
       {
         headers: {
-          Authorization: `Bearer ${session?.accessToken}`,
+          Authorization: `Bearer ${session?.user?.accessToken}`,
         },
       },
     );
@@ -113,7 +113,7 @@ const ChallengePage: React.FC = () => {
     if (response.status === 401) {
       message.error('Unauthorized. Please login again.');
       setTimeout(() => {
-        router.push('/connect');
+        router.push('/disconnect');
       }, 1000);
       return;
     }

@@ -109,9 +109,4 @@ export class ProjectVersionEntity extends EntityBase {
   @ValidateNested({ each: true })
   @Type(() => ProjectFeedbackResponseEntity)
   responses: ProjectFeedbackResponseEntity[];
-
-  constructor(partial: Partial<ProjectVersionEntity>) {
-    super(partial);
-    Object.assign(this, partial);
-  }
 }
