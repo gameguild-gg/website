@@ -1,3 +1,10 @@
+## [1.1.10](https://github.com/gameguild-gg/website/compare/v1.1.9...v1.1.10) (2024-11-01)
+
+
+### Bug Fixes
+
+* make project form receive props about create or edit ([c0d8f67](https://github.com/gameguild-gg/website/commit/c0d8f6797e26eba7b3bdda375da2b10a839b5564))
+
 ## [1.1.9](https://github.com/gameguild-gg/website/compare/v1.1.8...v1.1.9) (2024-10-31)
 
 
