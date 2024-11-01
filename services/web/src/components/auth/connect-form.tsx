@@ -24,7 +24,6 @@ export default function ConnectForm() {
   });
   const { toast } = useToast();
   const [sendMagicLinkClicked, setSendMagicLinkClicked] = useState(false);
-
   const [email, setEmail] = useState<string>('');
 
   async function magicLinkProcess(token: string | null) {
@@ -40,6 +39,10 @@ export default function ConnectForm() {
   //on mount
   useEffect(() => {
     const token = searchParams.get('token');
+    const err = searchParams.get('error');
+    // show the error in red
+    if (err) toast({ title: 'Error', description: err });
+
     magicLinkProcess(token).then();
   }, []);
 

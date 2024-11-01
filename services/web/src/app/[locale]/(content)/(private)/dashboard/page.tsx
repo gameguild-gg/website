@@ -72,7 +72,7 @@ export default function CreatorDashboard() {
         router.push('/jobs/post');
         break;
       case ContentTypes.GAMES:
-        router.push('/dashboard/projects/create');
+        router.push('/projects/create');
         break;
       default:
         alert(

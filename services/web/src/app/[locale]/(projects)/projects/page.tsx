@@ -5,11 +5,11 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { GameCard } from '@/components/testing-lab/game-card';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import CreateProjectForm from '@/components/project/create-project-form';
-import { Api, ProjectApi } from '@game-guild/apiclient';
-import ProjectEntity = Api.ProjectEntity;
+import ProjectForm from '@/components/project/project-form';
 import { getSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import { Api, ProjectApi } from '@game-guild/apiclient';
+import ProjectEntity = Api.ProjectEntity;
 
 export default async function Page() {
   const [projects, setProjects] = useState<ProjectEntity[] | null>(null);
@@ -128,7 +128,7 @@ export default async function Page() {
                     </Button>
                   </SheetTrigger>
                   <SheetContent className="min-w-full">
-                    <CreateProjectForm />
+                    <ProjectForm formAction={'update'} />
                   </SheetContent>
                 </Sheet>
                 <div className="mt-4">
@@ -142,7 +142,7 @@ export default async function Page() {
               </div>
             )}
             {projects?.map((project) => (
-              <Link key={project.slug} href={`/projects/${project.slug}`}>
+              <Link key={project.slug} href={`/project/${project.slug}`}>
                 <GameCard game={project} />
               </Link>
             ))}

@@ -1,9 +1,9 @@
 'use client';
 import React, { useEffect, useState } from 'react';
 import { PropsWithLocaleParams, PropsWithSlugParams } from '@/types';
-import { Api, ProjectApi } from '@game-guild/apiclient';
 import { getSession } from 'next-auth/react';
 import { Session } from 'next-auth';
+import { Api, ProjectApi } from '@game-guild/apiclient';
 
 type Props = PropsWithLocaleParams<PropsWithSlugParams>;
 

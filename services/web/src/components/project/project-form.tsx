@@ -18,7 +18,16 @@ import { getSession } from 'next-auth/react';
 import ApiErrorResponseDto = Api.ApiErrorResponseDto;
 import slugify from 'slugify';
 
-export default function CreateProjectForm() {
+export interface ProjectFormProps {
+  formAction: 'create' | 'update';
+}
+
+// reference: https://itch.io/game/new
+
+// receive params to specify if the form is for creating or updating a project
+export default function ProjectForm({
+  formAction,
+}: Readonly<ProjectFormProps>) {
   const [project, setProject] = React.useState<Api.CreateProjectDto | null>();
   const [errors, setErrors] = React.useState<ApiErrorResponseDto | null>();
   const router = useRouter();
@@ -36,7 +45,7 @@ export default function CreateProjectForm() {
       if (response.status === 201) {
         // redirect to the project page
         const project = response.body as Api.ProjectEntity;
-        router.push(`/projects/${project.slug}`);
+        router.push(`/project/${project.slug}`);
       } else if (response.status === 401) {
         router.push(`/disconnect`);
       } else {
@@ -80,6 +89,7 @@ export default function CreateProjectForm() {
                   lower: true,
                   strict: true,
                   locale: 'en',
+                  trim: true,
                 }),
               } as Api.CreateProjectDto)
             }
@@ -90,23 +100,28 @@ export default function CreateProjectForm() {
           {/*)}*/}
         </div>
         <div className="space-y-2">
-          <Label htmlFor="slug">Slug</Label>
-          <Input
-            id="slug"
-            name="slug"
-            placeholder="Enter project name"
-            value={project?.slug}
-            onChange={(e) =>
-              setProject({
-                ...project,
-                slug: slugify(e.target.value),
-              } as Api.CreateProjectDto)
-            }
-            required
-          />
-          {/*{state.errors?.slug && (*/}
-          {/*  <p className="text-red-500">{state.errors.slug}</p>*/}
-          {/*)}*/}
+          <Label htmlFor="slug">Project Slug</Label>
+          <div className="flex items-center space-x-2">
+            <span className="text-gray-500">https://gameguild.gg/project/</span>
+            <Input
+              id="slug"
+              name="slug"
+              placeholder="Enter project name"
+              value={project?.slug}
+              onChange={(e) =>
+                setProject({
+                  ...project,
+                  slug: slugify(e.target.value, {
+                    trim: false,
+                    lower: true,
+                    strict: true,
+                    locale: 'en',
+                  }),
+                } as Api.CreateProjectDto)
+              }
+              required
+            />
+          </div>
         </div>
         <div className="space-y-2">
           <Label htmlFor="summary">Summary</Label>
