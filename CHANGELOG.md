@@ -1,3 +1,18 @@
+# [1.2.0](https://github.com/gameguild-gg/website/compare/v1.1.10...v1.2.0) (2024-11-04)
+
+
+### Bug Fixes
+
+* form actions ([c5c0561](https://github.com/gameguild-gg/website/commit/c5c05610d36c1687caf9c710f72b416dc7aaa40a))
+* routing for creating a project ([bf952bd](https://github.com/gameguild-gg/website/commit/bf952bdb115dfe8255fc142521e82a86744f9533))
+* show error on connect page ([65bdf57](https://github.com/gameguild-gg/website/commit/65bdf576398570077220a810df687906aebfe596))
+
+
+### Features
+
+* create project flow ([ac7592d](https://github.com/gameguild-gg/website/commit/ac7592dc14c383181ba5a794b6a0fc9ce2f671e1))
+* **slug:** project page slug ([276edf5](https://github.com/gameguild-gg/website/commit/276edf5cb95900aef6ecaf80cb82e3f723c8c84a))
+
 ## [1.1.10](https://github.com/gameguild-gg/website/compare/v1.1.9...v1.1.10) (2024-11-01)
 
 
