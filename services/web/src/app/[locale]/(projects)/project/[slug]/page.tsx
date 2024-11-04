@@ -7,18 +7,82 @@ import { Api, ProjectApi } from '@game-guild/apiclient';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CalendarIcon, Download, MessageSquare } from 'lucide-react';
+import { CalendarIcon, Download, MessageSquare, Edit } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+
+// import type { Metadata, ResolvingMetadata } from 'next';
+//
+// export async function generateMetadata(
+//   { params }: PropsWithLocaleSlugParams,
+//   parent: ResolvingMetadata,
+// ): Promise<Metadata> {
+//   const session = await getSession();
+//   const api = new ProjectApi({
+//     basePath: process.env.NEXT_PUBLIC_API_URL,
+//   });
+//   const projectResponse = await api.getOneBaseProjectControllerProjectEntity(
+//     { slug: params.slug },
+//     {
+//       headers: { Authorization: `Bearer ${session?.user?.accessToken}` },
+//     },
+//   );
+//   if (projectResponse.status >= 400) {
+//     console.log(projectResponse.body);
+//     return {};
+//   }
+//   const project = projectResponse.body as Api.ProjectEntity;
+//
+//   return {
+//     title: project.title,
+//     openGraph: {
+//       images: [project.thumbnail],
+//     },
+//     description: project.summary,
+//   };
+// }
 
 // get locale and slug from the URL
 export default function Page(params: PropsWithLocaleSlugParams) {
   const { slug, locale } = params.params;
   const [project, setProject] = useState<Api.ProjectEntity | null>(null);
   const [session, setSession] = useState<Session | null>();
-  const [lastestVersion, setLastVersion] =
+  const router = useRouter();
+  const [latestVersion, setLastVersion] =
     useState<Api.ProjectVersionEntity | null>(null);
+
+  // button to edit visible if the user is the owner of the project
+  const IsOwnerButton = () => {
+    if (session?.user?.id === project?.owner?.id) {
+      // redirect to `/project/${slug}/edit`
+      return (
+        <Button
+          className="w-full mb-4 text-lg py-6"
+          size="lg"
+          onClick={() => router.push(`/project/${slug}/edit`)}
+        >
+          <Edit className="mr-2" /> Edit Project
+        </Button>
+      );
+    }
+    return null;
+  };
+
+  const SubmitNewVersionButton = () => {
+    if (session?.user?.id === project?.owner?.id) {
+      return (
+        <Button
+          className="w-full mb-4 text-lg py-6"
+          size="lg"
+          onClick={() => router.push(`/project/${slug}/edit`)}
+        >
+          <Edit className="mr-2" /> Submit New Version
+        </Button>
+      );
+    }
+    return null;
+  };
 
   const getProject = async () => {
     const session = await getSession();
@@ -27,7 +91,7 @@ export default function Page(params: PropsWithLocaleSlugParams) {
       basePath: process.env.NEXT_PUBLIC_API_URL,
     });
     const game = await api.getOneBaseProjectControllerProjectEntity(
-      { slug: slug },
+      { slug: slug, join: ['owner'] },
       {
         headers: { Authorization: `Bearer ${session?.user?.accessToken}` },
       },
@@ -65,59 +129,54 @@ export default function Page(params: PropsWithLocaleSlugParams) {
       <main className="container mx-auto px-4 py-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div className="md:col-span-2">
-            {/* Featured Images and Videos */}
-            <Tabs defaultValue="images" className="mb-8">
-              <TabsList>
-                <TabsTrigger value="images">Images</TabsTrigger>
-                <TabsTrigger value="videos">Videos</TabsTrigger>
-              </TabsList>
-              <TabsContent value="images">
-                <div className="grid grid-cols-2 gap-4">
-                  <Image
-                    src="https://placehold.co/200x300.svg"
-                    alt="Featured Image 1"
-                    width={300}
-                    height={200}
-                    className="rounded-lg"
-                  />
-                  <Image
-                    src="https://placehold.co/200x300.svg"
-                    alt="Featured Image 2"
-                    width={300}
-                    height={200}
-                    className="rounded-lg"
-                  />
-                  <Image
-                    src="https://placehold.co/200x300.svg"
-                    alt="Featured Image 3"
-                    width={300}
-                    height={200}
-                    className="rounded-lg"
-                  />
-                  <Image
-                    src="https://placehold.co/200x300.svg"
-                    alt="Featured Image 4"
-                    width={300}
-                    height={200}
-                    className="rounded-lg"
-                  />
-                </div>
-              </TabsContent>
-              <TabsContent value="videos">
-                <div className="aspect-video">
-                  <iframe
-                    width="100%"
-                    height="100%"
-                    src="https://www.youtube.com/embed/dQw4w9WgXcQ"
-                    title="Game Trailer"
-                    frameBorder="0"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                    className="rounded-lg"
-                  ></iframe>
-                </div>
-              </TabsContent>
-            </Tabs>
+            {/* Featured Video and Images */}
+            <div className="mb-8">
+              {/* Video */}
+              <div className="aspect-video mb-4">
+                <iframe
+                  width="100%"
+                  height="100%"
+                  src="https://www.youtube.com/embed/dQw4w9WgXcQ"
+                  title="Game Trailer"
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  className="rounded-lg"
+                ></iframe>
+              </div>
+
+              {/* Images */}
+              <div className="grid grid-cols-2 gap-4">
+                <Image
+                  src="https://placehold.co/300x200.svg"
+                  alt="Featured Image 1"
+                  width={300}
+                  height={200}
+                  className="rounded-lg"
+                />
+                <Image
+                  src="https://placehold.co/300x200.svg"
+                  alt="Featured Image 2"
+                  width={300}
+                  height={200}
+                  className="rounded-lg"
+                />
+                <Image
+                  src="https://placehold.co/300x200.svg"
+                  alt="Featured Image 3"
+                  width={300}
+                  height={200}
+                  className="rounded-lg"
+                />
+                <Image
+                  src="https://placehold.co/300x200.svg"
+                  alt="Featured Image 4"
+                  width={300}
+                  height={200}
+                  className="rounded-lg"
+                />
+              </div>
+            </div>
 
             {/* Game Description */}
             <Card className="mb-8">
@@ -125,14 +184,17 @@ export default function Page(params: PropsWithLocaleSlugParams) {
                 <CardTitle>About {project?.title}</CardTitle>
               </CardHeader>
               <CardContent>
-                <p>{project?.summary}</p>
+                <p>{project?.body}</p>
               </CardContent>
             </Card>
 
             {/* Previous Versions */}
             <Card>
               <CardHeader>
-                <CardTitle>Previous Versions</CardTitle>
+                <CardTitle>Versions</CardTitle>
+              </CardHeader>
+              <CardHeader>
+                <SubmitNewVersionButton />
               </CardHeader>
               <CardContent>
                 <ul className="space-y-2">
@@ -143,7 +205,7 @@ export default function Page(params: PropsWithLocaleSlugParams) {
                     >
                       <span>{version.version}</span>
                       <span className="text-muted-foreground">
-                        {version.updatedAt}
+                        {version.createdAt}
                       </span>
                     </li>
                   ))}
@@ -153,9 +215,11 @@ export default function Page(params: PropsWithLocaleSlugParams) {
           </div>
 
           <div>
+            {/* Edit Button */}
+            <IsOwnerButton />
             {/* Download Button */}
             <Button className="w-full mb-4 text-lg py-6" size="lg">
-              <Download className="mr-2" /> Download {lastestVersion?.version}
+              <Download className="mr-2" /> Download {latestVersion?.version}
             </Button>
 
             {/* Latest Release Info */}
@@ -165,10 +229,10 @@ export default function Page(params: PropsWithLocaleSlugParams) {
               </CardHeader>
               <CardContent>
                 <p>
-                  <strong>Version:</strong> {lastestVersion?.version}
+                  <strong>Version:</strong> {latestVersion?.version}
                 </p>
                 <p>
-                  <strong>Release Date:</strong> {lastestVersion?.updatedAt}
+                  <strong>Release Date:</strong> {latestVersion?.createdAt}
                 </p>
                 <p>
                   <strong>Developer:</strong> {project?.owner?.username}
@@ -190,7 +254,7 @@ export default function Page(params: PropsWithLocaleSlugParams) {
                 </Link>
                 <p className="mt-2 text-sm text-muted-foreground">
                   <CalendarIcon className="inline mr-1" />
-                  Deadline: {lastestVersion?.feedback_deadline}
+                  Deadline: {latestVersion?.feedback_deadline}
                 </p>
               </CardContent>
             </Card>

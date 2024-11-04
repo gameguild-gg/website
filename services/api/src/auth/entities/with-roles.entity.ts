@@ -9,10 +9,8 @@ import { CrudValidationGroups } from '@dataui/crud';
 // todo: change this to be more efficient and generic to different types of roles
 export class WithRolesEntity extends EntityBase {
   @ApiProperty({ type: () => UserEntity })
-  @IsOptional({
-    groups: [CrudValidationGroups.CREATE],
-  })
-  @ManyToOne(() => UserEntity, { nullable: true, eager: false })
+  @ManyToOne(() => UserEntity, { nullable: true, eager: true })
+  @JoinTable()
   @IsOptional()
   @IsEmpty({
     groups: [CrudValidationGroups.CREATE, CrudValidationGroups.UPDATE],
@@ -20,7 +18,7 @@ export class WithRolesEntity extends EntityBase {
   owner: UserEntity;
 
   @ApiProperty({ type: () => UserEntity, isArray: true })
-  @ManyToMany(() => UserEntity, { nullable: true, eager: false })
+  @ManyToMany(() => UserEntity, { nullable: true, eager: true })
   @JoinTable()
   @IsOptional()
   @IsEmpty({

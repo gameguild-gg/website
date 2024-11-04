@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { SubmitButton } from '@/components/ui/submit-button';
 import {
   Card,
@@ -35,6 +35,50 @@ export default function ProjectForm({
   const [errors, setErrors] = React.useState<ApiErrorResponseDto | null>();
   const router = useRouter();
   const toast = useToast();
+
+  const fetchProject = async () => {
+    const session = await getSession();
+    const api = new ProjectApi({
+      basePath: process.env.NEXT_PUBLIC_API_URL,
+    });
+    const response = await api.getOneBaseProjectControllerProjectEntity(
+      { slug },
+      {
+        headers: { Authorization: `Bearer ${session?.user?.accessToken}` },
+      },
+    );
+    if (response.status === 200) {
+      setProject(response.body as Api.CreateProjectDto);
+    } else if (response.status === 401) {
+      router.push(`/disconnect`);
+    } else {
+      const error = response.body as ApiErrorResponseDto;
+      let message = '';
+      if (error.msg) {
+        message = error.msg + `;\n`;
+      }
+      if (error.message && typeof error.message === 'string') {
+        message += error.message + `;\n`;
+      }
+      if (error.message && typeof error.message === 'object') {
+        for (const key in error.message) {
+          message += `${key}: ${error.message[key]};\n`;
+        }
+      }
+
+      toast.toast({
+        title: 'Error',
+        description: message,
+      });
+      setErrors(response.body as ApiErrorResponseDto);
+    }
+  };
+
+  useState(() => {
+    if (action === 'update' && slug) {
+      fetchProject();
+    }
+  });
 
   const createProject = async () => {
     if (project) {
@@ -79,9 +123,13 @@ export default function ProjectForm({
   return (
     <Card className="w-full max-w-md">
       <CardHeader>
-        <CardTitle>Create a New Project</CardTitle>
+        <CardTitle>
+          {action === 'create' ? 'Create Project' : 'Update Project'}
+        </CardTitle>
         <CardDescription>
-          Fill in the details to create a new project.
+          {action === 'create'
+            ? 'Create a new project to share with the community'
+            : 'Update an existing project'}
         </CardDescription>
       </CardHeader>
       {/*<form action={formAction}>*/}

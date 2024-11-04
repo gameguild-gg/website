@@ -1,4 +1,10 @@
-import { Body, ConflictException, Controller, Logger } from '@nestjs/common';
+import {
+  Body,
+  ConflictException,
+  Controller,
+  Logger,
+  Param,
+} from '@nestjs/common';
 import { ApiBody, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ProjectService } from './project.service';
 import { Auth } from '../auth/decorators/http.decorator';
@@ -79,6 +85,7 @@ export class ProjectController
       relations: ['owner', 'tickets'],
     });
   }
+
   @Override()
   @Auth(AuthenticatedRoute)
   @ApiBody({ type: CreateProjectDto })
@@ -101,6 +108,20 @@ export class ProjectController
     return this.service.findOne({
       where: { id: res.id },
       relations: { owner: true, editors: true },
+    });
+  }
+
+  // override getOneBase to include relations
+  @Override()
+  @Auth(AuthenticatedRoute)
+  @ApiResponse({ type: ProjectEntity })
+  async getOne(
+    @ParsedRequest() req: CrudRequest,
+    @Param('slug') slug: string,
+  ): Promise<ProjectEntity> {
+    return this.service.findOne({
+      where: { slug: slug },
+      relations: ['owner', 'editors', 'versions', 'tickets'],
     });
   }
 

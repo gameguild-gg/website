@@ -9407,6 +9407,7 @@ export namespace ProjectApi {
 		| GetOneBaseProjectControllerProjectEntity409Response
 		| GetOneBaseProjectControllerProjectEntity422Response
 		| GetOneBaseProjectControllerProjectEntity500Response
+		| GetOneBaseProjectControllerProjectEntityDefaultResponse
 	
 	export interface GetOneBaseProjectControllerProjectEntity200Response {
 		status: 200
@@ -9461,6 +9462,13 @@ export namespace ProjectApi {
 		status: 500
 		contentType: 'application/json'
 		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface GetOneBaseProjectControllerProjectEntityDefaultResponse {
+		status: number
+		contentType: 'application/json'
+		body: Api.ProjectEntity
 		headers?: undefined
 	}
 	
@@ -10787,6 +10795,14 @@ export const ProjectApiFp = function(configuration?: Configuration) {
 						}
 					}
 					throw response;
+				}
+				/* Catch-all response */
+				if (mimeType === 'application/json') {
+					return {
+						status: response.status,
+						contentType: 'application/json',
+						body: await response.json() as Api.ProjectEntity,
+					}
 				}
 				throw response;
 			};
