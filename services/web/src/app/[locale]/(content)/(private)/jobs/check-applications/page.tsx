@@ -13,35 +13,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 
 
-function ProgressBar({ progress, failed }: { progress: number; failed: boolean }) {
-  const steps = [0, 1, 2, 3, 4]
-  return (
-    <div className="flex justify-between mt-2">
-      {steps.map((step) => (
-        <div
-          key={step}
-          className={`w-12 h-6 flex items-center justify-center ${
-            progress >= step
-              ? failed && step === progress
-                ? "bg-red-500"
-                : "bg-green-500"
-              : "bg-gray-300"
-          }`}
-        >
-          {progress >= step && (
-            failed && step === progress ? (
-              <X className="w-4 h-4 text-white" />
-            ) : (
-              <Check className="w-4 h-4 text-white" />
-            )
-          )}
-        </div>
-      ))}
-    </div>
-  )
-}
-
-export default function MyJobApplications() {
+export default function CheckApplications() {
   const [jobTags, setJobTags] = useState<Api.JobTagEntity[] | any>([]);
   const [jobApplications, setJobApplicatons] = useState<Api.JobApplicationEntity[]>([])
   const [totalPages, setTotalPages] = useState<number>(1)
@@ -84,9 +56,9 @@ export default function MyJobApplications() {
       { headers: { Authorization: `Bearer ${session.user.accessToken}` } },
     );
     // console.log('API Response:\n',response)
-    if (response.status == 200 && (response.body)?.length >0) {
-      setJobApplicatons(response.body);
-      setTotalPages(Math.ceil((response.body).length/12))
+    if (response.status == 200 && (response.body as Api.JobApplicationEntity[])?.length >0) {
+      setJobApplicatons(response.body as Api.JobApplicationEntity[]);
+      setTotalPages(Math.ceil((response.body as any[]).length/12))
     } else {
       router.push('/connect');
     }
@@ -139,7 +111,7 @@ export default function MyJobApplications() {
 
         {/* Main content */}
         <main className="flex-1 flex-grow min-h-full p-6">
-          <h1 className="text-3xl font-bold mb-6">My Job Applications</h1>
+          <h1 className="text-3xl font-bold mb-6">My Job Posts</h1>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {jobApplications.length>0 && jobApplications.slice(0, 16).map((app) => (
               <div key={app.id} className="bg-card rounded-lg shadow-md p-4 flex flex-col h-full">
@@ -161,11 +133,9 @@ export default function MyJobApplications() {
                   </div>
                 </div>
                 <div className="mt-auto mb-0">
-                  <div className="font-bold mt-2">Progress</div>
-                  <ProgressBar progress={app.progress+1} failed={app.rejected} />
                   <div className="flex justify-between mt-3">
                     <Button onClick={()=>handleLearnMoreButton(app?.job?.slug)}>Learn More</Button>
-                    <Button onClick={()=>handleGiveUpButton(app)} variant="destructive">Give Up</Button>
+                    <Button onClick={()=>handleGiveUpButton(app)} variant="destructive">Cancel</Button>
                   </div>
                 </div>
               </div>

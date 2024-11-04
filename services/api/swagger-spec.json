@@ -4747,7 +4747,10 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Promise"
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/JobPostWithAppliedDto"
+                  }
                 }
               }
             }
@@ -4847,6 +4850,19 @@
           }
         ],
         "responses": {
+          "200": {
+            "schema": {
+              "$ref": "#/components/schemas/JobPostEntity"
+            },
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobPostEntity"
+                }
+              }
+            }
+          },
           "400": {
             "description": "Bad request",
             "content": {
@@ -4942,6 +4958,19 @@
           }
         ],
         "responses": {
+          "200": {
+            "schema": {
+              "$ref": "#/components/schemas/JobPostEntity"
+            },
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobPostEntity"
+                }
+              }
+            }
+          },
           "400": {
             "description": "Bad request",
             "content": {
@@ -6803,7 +6832,10 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Promise"
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/JobApplicationEntity"
+                  }
                 }
               }
             }
@@ -6911,7 +6943,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Promise"
+                  "$ref": "#/components/schemas/JobApplicationEntity"
                 }
               }
             }
@@ -7020,7 +7052,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Promise"
+                  "$ref": "#/components/schemas/JobApplicationEntity"
                 }
               }
             }
@@ -7129,7 +7161,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Promise"
+                  "$ref": "#/components/schemas/JobApplicationEntity"
                 }
               }
             }
@@ -7238,7 +7270,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Promise"
+                  "$ref": "#/components/schemas/JobApplicationEntity"
                 }
               }
             }
@@ -7347,7 +7379,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Promise"
+                  "$ref": "#/components/schemas/JobApplicationEntity"
                 }
               }
             }
@@ -7456,7 +7488,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Promise"
+                  "$ref": "#/components/schemas/JobApplicationEntity"
                 }
               }
             }
@@ -9409,9 +9441,40 @@
           "job_tag_ids"
         ]
       },
-      "Promise": {
+      "JobPostWithAppliedDto": {
         "type": "object",
-        "properties": {}
+        "properties": {
+          "location": {
+            "type": "varchar",
+            "nullable": false,
+            "default": "Remote"
+          },
+          "job_type": {
+            "type": "string",
+            "enum": [
+              "CONTINUOUS",
+              "TASK"
+            ],
+            "default": "TASK",
+            "nullable": false
+          },
+          "job_tags": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/JobTagEntity"
+            }
+          },
+          "applied": {
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "required": [
+          "location",
+          "job_type",
+          "job_tags",
+          "applied"
+        ]
       },
       "JobAplicationCreateDto": {
         "type": "object",

@@ -118,7 +118,7 @@ export default function Header() {
                 </Avatar>
               </DropdownMenuTrigger>
               <DropdownMenuContent>
-                <DropdownMenuItem>Profile</DropdownMenuItem>
+                <DropdownMenuItem onClick={()=>router.push('/user/edit-profile')}>Profile</DropdownMenuItem>
                 <DropdownMenuItem>Settings</DropdownMenuItem>
                 <DropdownMenuItem onClick={()=>signOut()}>Logout</DropdownMenuItem>
               </DropdownMenuContent>

@@ -1070,9 +1070,6 @@ export namespace Api {
 		responses: Api.ProjectFeedbackResponseEntity[];
 	}
 
-	export interface Promise {
-	}
-
 	export interface TerminalDto {
 	}
 

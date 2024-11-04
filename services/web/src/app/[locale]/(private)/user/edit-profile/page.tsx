@@ -1,7 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useLayoutEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { getSession } from 'next-auth/react'
+import { Api, AuthApi } from '@game-guild/apiclient'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -11,12 +13,36 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useToast } from "@/components/ui/use-toast"
 
 export default function ProfileEdit() {
+  const [user, setUser] = useState<Api.UserEntity>()
   const [avatar, setAvatar] = useState<string | null>(null)
   const [name, setName] = useState('')
   const [bio, setBio] = useState('')
   
   const { toast } = useToast()
   const router = useRouter()
+
+  const authApi = new AuthApi({
+    basePath: process.env.NEXT_PUBLIC_API_URL,
+  });
+
+  useLayoutEffect(()=>{
+    loadCurrentUser()
+  },[])
+
+  const loadCurrentUser = async () =>{
+    const session: any = await getSession();
+    if (!session) {
+      router.push('/connect');
+      return;
+    }
+    const response = await authApi.authControllerGetCurrentUser(
+      { headers: { Authorization: `Bearer ${session.user.accessToken}` } },
+    )
+    if (response.status == 200){
+      console.log("response.body: ",response.body)
+      setUser(response.body)
+    }
+  }
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -30,6 +56,14 @@ export default function ProfileEdit() {
   }
 
   const handleSave = async () => {
+    const session: any = await getSession();
+    if (!session) {
+      router.push('/connect');
+      return;
+    }
+    const response = authApi.authControllerGetCurrentUser({
+
+    })
     try {
       // Simulating an API call
       await new Promise((resolve, reject) => {

@@ -1,7 +1,9 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useEffect, useLayoutEffect, useState } from 'react'
+import { useRouter } from 'next/navigation';
+import { getSession } from "next-auth/react"
+import { Api, JobTagsApi, JobApplicationsApi, JobPostsApi } from '@game-guild/apiclient';
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -16,6 +18,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { ArrowRight, RotateCcw, UserSearch, X } from 'lucide-react'
+import { useToast } from '@/components/ui/use-toast';
 
 // Define the structure for an applicant
 interface Applicant {
@@ -36,6 +40,7 @@ const stages = [
 ]
 
 export default function JobApplicantManagement({params}) {
+  const [jobPost, setJobPost] = useState<Api.JobPostEntity>()
   // Sample job data
   const job = {
     title: "Senior Frontend Developer",
@@ -55,13 +60,55 @@ export default function JobApplicantManagement({params}) {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [currentAction, setCurrentAction] = useState<{ type: 'advance' | 'reject', applicantId: number } | null>(null)
   
-  const router = useRouter()
+  const { toast } = useToast();
+  const router = useRouter();
+  const jobPostsApi = new JobPostsApi({
+    basePath: process.env.NEXT_PUBLIC_API_URL,
+  });
+  const jobTagsApi = new JobTagsApi({
+    basePath: process.env.NEXT_PUBLIC_API_URL,
+  });
+  const jobApplicationApi = new JobApplicationsApi({
+    basePath: process.env.NEXT_PUBLIC_API_URL,
+  });
   const { jobPostSlug } = params
-  console.log("SLUG:\n",jobPostSlug)
+
+  useLayoutEffect(()=>{
+    loadJobPosts()
+  },[])
+
+  const loadJobPosts = async () => {
+    const session: any = await getSession();
+    if (!session) {
+      router.push('/connect');
+      return;
+    }
+    const response = await jobPostsApi.jobPostControllerGetBySlug(jobPostSlug)
+    if (response.status == 200) {
+      setJobPost(response.body)
+    }
+    //
+  }
 
   const handleCheckProfile = () => {
     // Open new tab to check user profile
     // BASE_URL+profile/user-slug?
+  }
+
+  const handleAdvanceCandidate = () => {
+    //
+  }
+
+  const handleUndoAdvanceCandidate = () => {
+    //
+  }
+
+  const handleReject = () => {
+    //
+  }
+
+  const handleUndoReject = () => {
+    //
   }
 
   const handleAction = (type: 'advance' | 'reject', applicantId: number) => {
@@ -123,19 +170,29 @@ export default function JobApplicantManagement({params}) {
                     <span className="ml-3 font-medium">{applicant.name}</span>
                   </div>
                   <div className="space-x-2">
-                    <Button variant="outline">Check Profile</Button>
+                    <a target="_blank" href={process.env.NEXT_PUBLIC_WEB_URL+'/user/'+'(user.username)'} rel="noopener noreferrer">{/*Open on new tab*/}
+                      <Button variant="outline">
+                        <UserSearch/>Check Profile
+                      </Button>
+                    </a>
                     <Button
                       onClick={() => handleAction('advance', applicant.id)}
                       disabled={applicant.rejected || applicant.stage === stages.length - 1}
                     >
-                      Advance Process
+                      <ArrowRight/> Advance Process
+                    </Button>
+                    <Button variant='outline'>
+                      <RotateCcw/>Undo
                     </Button>
                     <Button
                       variant="destructive"
                       onClick={() => handleAction('reject', applicant.id)}
                       disabled={applicant.rejected}
                     >
-                      Reject
+                      <X/>Reject
+                    </Button>
+                    <Button variant='outline'>
+                    <RotateCcw/>Undo
                     </Button>
                   </div>
                 </CardContent>

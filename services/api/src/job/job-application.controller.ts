@@ -107,7 +107,7 @@ export class JobApplicationController
   @Get('my-applications')
   @Auth(AuthenticatedRoute)
   @ApiResponse({
-    type: Promise<JobApplicationEntity[]>,
+    type: [JobApplicationEntity],
     schema: { $ref: getSchemaPath(Array<JobApplicationEntity>) },
     status: 200,
   })
@@ -120,7 +120,7 @@ export class JobApplicationController
   @Get('my-application-by-slug/:slug')
   @Auth(AuthenticatedRoute)
   @ApiResponse({
-    type: Promise<JobApplicationEntity[]>,
+    type: JobApplicationEntity,
     schema: { $ref: getSchemaPath(JobApplicationEntity) },
     status: 200,
   })
@@ -135,7 +135,7 @@ export class JobApplicationController
   @Auth(AuthenticatedRoute)
   @ApiBody({ type: JobApplicationEntity })
   @ApiResponse({
-    type: Promise<JobApplicationEntity>,
+    type: JobApplicationEntity,
     schema: { $ref: getSchemaPath(JobApplicationEntity) },
     status: 200,
   })
@@ -150,7 +150,7 @@ export class JobApplicationController
   @Auth(AuthenticatedRoute)
   @ApiBody({ type: JobApplicationEntity })
   @ApiResponse({
-    type: Promise<JobApplicationEntity>,
+    type: JobApplicationEntity,
     schema: { $ref: getSchemaPath(JobApplicationEntity) },
     status: 200,
   })
@@ -165,7 +165,7 @@ export class JobApplicationController
   @Auth(AuthenticatedRoute)
   @ApiBody({ type: JobApplicationEntity })
   @ApiResponse({
-    type: Promise<JobApplicationEntity>,
+    type: JobApplicationEntity,
     schema: { $ref: getSchemaPath(JobApplicationEntity) },
     status: 200,
   })
@@ -180,7 +180,7 @@ export class JobApplicationController
   @Auth(AuthenticatedRoute)
   @ApiBody({ type: JobApplicationEntity })
   @ApiResponse({
-    type: Promise<JobApplicationEntity>,
+    type: JobApplicationEntity,
     schema: { $ref: getSchemaPath(JobApplicationEntity) },
     status: 200,
   })
@@ -195,7 +195,7 @@ export class JobApplicationController
   @Auth(AuthenticatedRoute)
   @ApiBody({ type: JobApplicationEntity })
   @ApiResponse({
-    type: Promise<JobApplicationEntity>,
+    type: JobApplicationEntity,
     schema: { $ref: getSchemaPath(JobApplicationEntity) },
     status: 200,
   })

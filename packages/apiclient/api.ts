@@ -3881,7 +3881,7 @@ export namespace JobApplicationsApi {
 	export interface JobApplicationControllerAdvanceCandidate200Response {
 		status: 200
 		contentType: 'application/json'
-		body: Api.Promise
+		body: Api.JobApplicationEntity
 		headers?: undefined
 	}
 	
@@ -3947,7 +3947,7 @@ export namespace JobApplicationsApi {
 	export interface JobApplicationControllerMoveBackCandidate200Response {
 		status: 200
 		contentType: 'application/json'
-		body: Api.Promise
+		body: Api.JobApplicationEntity
 		headers?: undefined
 	}
 	
@@ -4013,7 +4013,7 @@ export namespace JobApplicationsApi {
 	export interface JobApplicationControllerMyApplicationBySlug200Response {
 		status: 200
 		contentType: 'application/json'
-		body: Api.Promise
+		body: Api.JobApplicationEntity
 		headers?: undefined
 	}
 	
@@ -4079,7 +4079,7 @@ export namespace JobApplicationsApi {
 	export interface JobApplicationControllerMyApplications200Response {
 		status: 200
 		contentType: 'application/json'
-		body: Api.Promise
+		body: Api.JobApplicationEntity[]
 		headers?: undefined
 	}
 	
@@ -4145,7 +4145,7 @@ export namespace JobApplicationsApi {
 	export interface JobApplicationControllerRejectCandidate200Response {
 		status: 200
 		contentType: 'application/json'
-		body: Api.Promise
+		body: Api.JobApplicationEntity
 		headers?: undefined
 	}
 	
@@ -4211,7 +4211,7 @@ export namespace JobApplicationsApi {
 	export interface JobApplicationControllerUndoRejectCandidate200Response {
 		status: 200
 		contentType: 'application/json'
-		body: Api.Promise
+		body: Api.JobApplicationEntity
 		headers?: undefined
 	}
 	
@@ -4277,7 +4277,7 @@ export namespace JobApplicationsApi {
 	export interface JobApplicationControllerWithdraw200Response {
 		status: 200
 		contentType: 'application/json'
-		body: Api.Promise
+		body: Api.JobApplicationEntity
 		headers?: undefined
 	}
 	
@@ -5452,7 +5452,7 @@ export const JobApplicationsApiFp = function(configuration?: Configuration) {
 						return {
 							status: response.status,
 							contentType: 'application/json',
-							body: await response.json() as Api.Promise,
+							body: await response.json() as Api.JobApplicationEntity,
 						}
 					}
 					throw response;
@@ -5547,7 +5547,7 @@ export const JobApplicationsApiFp = function(configuration?: Configuration) {
 						return {
 							status: response.status,
 							contentType: 'application/json',
-							body: await response.json() as Api.Promise,
+							body: await response.json() as Api.JobApplicationEntity,
 						}
 					}
 					throw response;
@@ -5642,7 +5642,7 @@ export const JobApplicationsApiFp = function(configuration?: Configuration) {
 						return {
 							status: response.status,
 							contentType: 'application/json',
-							body: await response.json() as Api.Promise,
+							body: await response.json() as Api.JobApplicationEntity,
 						}
 					}
 					throw response;
@@ -5736,7 +5736,7 @@ export const JobApplicationsApiFp = function(configuration?: Configuration) {
 						return {
 							status: response.status,
 							contentType: 'application/json',
-							body: await response.json() as Api.Promise,
+							body: await response.json() as Api.JobApplicationEntity[],
 						}
 					}
 					throw response;
@@ -5831,7 +5831,7 @@ export const JobApplicationsApiFp = function(configuration?: Configuration) {
 						return {
 							status: response.status,
 							contentType: 'application/json',
-							body: await response.json() as Api.Promise,
+							body: await response.json() as Api.JobApplicationEntity,
 						}
 					}
 					throw response;
@@ -5926,7 +5926,7 @@ export const JobApplicationsApiFp = function(configuration?: Configuration) {
 						return {
 							status: response.status,
 							contentType: 'application/json',
-							body: await response.json() as Api.Promise,
+							body: await response.json() as Api.JobApplicationEntity,
 						}
 					}
 					throw response;
@@ -6021,7 +6021,7 @@ export const JobApplicationsApiFp = function(configuration?: Configuration) {
 						return {
 							status: response.status,
 							contentType: 'application/json',
-							body: await response.json() as Api.Promise,
+							body: await response.json() as Api.JobApplicationEntity,
 						}
 					}
 					throw response;
@@ -6792,6 +6792,7 @@ export namespace JobPostsApi {
 	}
 	
 	export type JobPostControllerGetBySlugResponse =
+		| JobPostControllerGetBySlug200Response
 		| JobPostControllerGetBySlug400Response
 		| JobPostControllerGetBySlug401Response
 		| JobPostControllerGetBySlug403Response
@@ -6799,6 +6800,13 @@ export namespace JobPostsApi {
 		| JobPostControllerGetBySlug409Response
 		| JobPostControllerGetBySlug422Response
 		| JobPostControllerGetBySlug500Response
+	
+	export interface JobPostControllerGetBySlug200Response {
+		status: 200
+		contentType: 'application/json'
+		body: Api.JobPostEntity
+		headers?: undefined
+	}
 	
 	export interface JobPostControllerGetBySlug400Response {
 		status: 400
@@ -6850,6 +6858,7 @@ export namespace JobPostsApi {
 	}
 	
 	export type JobPostControllerGetBySlugForOwnerResponse =
+		| JobPostControllerGetBySlugForOwner200Response
 		| JobPostControllerGetBySlugForOwner400Response
 		| JobPostControllerGetBySlugForOwner401Response
 		| JobPostControllerGetBySlugForOwner403Response
@@ -6857,6 +6866,13 @@ export namespace JobPostsApi {
 		| JobPostControllerGetBySlugForOwner409Response
 		| JobPostControllerGetBySlugForOwner422Response
 		| JobPostControllerGetBySlugForOwner500Response
+	
+	export interface JobPostControllerGetBySlugForOwner200Response {
+		status: 200
+		contentType: 'application/json'
+		body: Api.JobPostEntity
+		headers?: undefined
+	}
 	
 	export interface JobPostControllerGetBySlugForOwner400Response {
 		status: 400
@@ -6975,7 +6991,7 @@ export namespace JobPostsApi {
 	export interface JobPostControllerGetManyWithApplied200Response {
 		status: 200
 		contentType: 'application/json'
-		body: Api.Promise
+		body: unknown[]
 		headers?: undefined
 	}
 	
@@ -8489,6 +8505,16 @@ export const JobPostsApiFp = function(configuration?: Configuration) {
 				const contentType = response.headers.get('Content-Type');
 				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
 				
+				if (response.status === 200) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.JobPostEntity,
+						}
+					}
+					throw response;
+				}
 				if (response.status === 400) {
 					if (mimeType === 'application/json') {
 						return {
@@ -8574,6 +8600,16 @@ export const JobPostsApiFp = function(configuration?: Configuration) {
 				const contentType = response.headers.get('Content-Type');
 				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
 				
+				if (response.status === 200) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.JobPostEntity,
+						}
+					}
+					throw response;
+				}
 				if (response.status === 400) {
 					if (mimeType === 'application/json') {
 						return {
@@ -8673,7 +8709,7 @@ export const JobPostsApiFp = function(configuration?: Configuration) {
 						return {
 							status: response.status,
 							contentType: 'application/json',
-							body: await response.json() as Api.Promise,
+							body: await response.json() as unknown[],
 						}
 					}
 					throw response;

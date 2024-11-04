@@ -137,7 +137,7 @@ export class JobPostController
   @Auth(AuthenticatedRoute)
   @ApiResponse({
     status: 200,
-    type: Promise<JobPostWithAppliedDto[]>,
+    type: [JobPostWithAppliedDto],
     schema: { $ref: getSchemaPath(Array<JobPostWithAppliedDto>) },
   })
   async getManyWithApplied(
@@ -149,6 +149,11 @@ export class JobPostController
 
   @Get('get-by-slug/:slug')
   @Auth(AuthenticatedRoute)
+  @ApiResponse({
+    type: JobPostEntity,
+    schema: { $ref: getSchemaPath(JobPostEntity) },
+    status: 200,
+  })
   async getBySlug(
     @Param('slug') slug: string,
   ):Promise<JobPostEntity> {
@@ -157,6 +162,11 @@ export class JobPostController
 
   @Get('get-by-slug-for-owner/:slug')
   @Auth(AuthenticatedRoute)
+  @ApiResponse({
+    type: JobPostEntity,
+    schema: { $ref: getSchemaPath(JobPostEntity) },
+    status: 200,
+  })
   async getBySlugForOwner(
     @Param('slug') slug: string,
     @UserInject() user: UserEntity,
