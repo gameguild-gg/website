@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { SubmitButton } from '@/components/ui/submit-button';
 import {
   Card,
@@ -17,11 +17,71 @@ import { Api, ProjectApi } from '@game-guild/apiclient';
 import { getSession } from 'next-auth/react';
 import ApiErrorResponseDto = Api.ApiErrorResponseDto;
 import slugify from 'slugify';
+import { useToast } from '@/components/ui/use-toast';
 
-export default function CreateProjectForm() {
+export interface ProjectFormProps {
+  action: 'create' | 'update';
+  slug?: string;
+}
+
+// reference: https://itch.io/game/new
+
+// receive params to specify if the form is for creating or updating a project
+export default function ProjectForm({
+  action,
+  slug,
+}: Readonly<ProjectFormProps>) {
   const [project, setProject] = React.useState<Api.CreateProjectDto | null>();
   const [errors, setErrors] = React.useState<ApiErrorResponseDto | null>();
   const router = useRouter();
+  const toast = useToast();
+
+  const fetchProject = async () => {
+    if (!slug) {
+      return;
+    }
+    const session = await getSession();
+    const api = new ProjectApi({
+      basePath: process.env.NEXT_PUBLIC_API_URL,
+    });
+    const response = await api.getOneBaseProjectControllerProjectEntity(
+      { slug: slug },
+      {
+        headers: { Authorization: `Bearer ${session?.user?.accessToken}` },
+      },
+    );
+    if (response.status === 200) {
+      setProject(response.body as Api.CreateProjectDto);
+    } else if (response.status === 401) {
+      router.push(`/disconnect`);
+    } else {
+      const error = response.body as ApiErrorResponseDto;
+      let message = '';
+      if (error.msg) {
+        message = error.msg + `;\n`;
+      }
+      if (error.message && typeof error.message === 'string') {
+        message += error.message + `;\n`;
+      }
+      if (error.message && typeof error.message === 'object') {
+        for (const key in error.message) {
+          message += `${key}: ${error.message[key]};\n`;
+        }
+      }
+
+      toast.toast({
+        title: 'Error',
+        description: message,
+      });
+      setErrors(response.body as ApiErrorResponseDto);
+    }
+  };
+
+  useState(() => {
+    if (action === 'update' && slug) {
+      fetchProject();
+    }
+  });
 
   const createProject = async () => {
     if (project) {
@@ -36,10 +96,28 @@ export default function CreateProjectForm() {
       if (response.status === 201) {
         // redirect to the project page
         const project = response.body as Api.ProjectEntity;
-        router.push(`/projects/${project.slug}`);
+        router.push(`/project/${project.slug}`);
       } else if (response.status === 401) {
         router.push(`/disconnect`);
       } else {
+        const error = response.body as ApiErrorResponseDto;
+        let message = '';
+        if (error.msg) {
+          message = error.msg + `;\n`;
+        }
+        if (error.message && typeof error.message === 'string') {
+          message += error.message + `;\n`;
+        }
+        if (error.message && typeof error.message === 'object') {
+          for (const key in error.message) {
+            message += `${key}: ${error.message[key]};\n`;
+          }
+        }
+
+        toast.toast({
+          title: 'Error',
+          description: message,
+        });
         setErrors(response.body as ApiErrorResponseDto);
       }
     }
@@ -48,23 +126,17 @@ export default function CreateProjectForm() {
   return (
     <Card className="w-full max-w-md">
       <CardHeader>
-        <CardTitle>Create a New Project</CardTitle>
+        <CardTitle>
+          {action === 'create' ? 'Create Project' : 'Update Project'}
+        </CardTitle>
         <CardDescription>
-          Fill in the details to create a new project.
+          {action === 'create'
+            ? 'Create a new project to share with the community'
+            : 'Update an existing project'}
         </CardDescription>
       </CardHeader>
       {/*<form action={formAction}>*/}
       <CardContent className="space-y-4">
-        {// for all constraints error, display only the error message not the keys
-        errors?.message.map((m) => {
-          return (
-            <div key={m.property}>
-              {Object.values(m.constraints).map((c) => {
-                return <p className="text-red-500">{JSON.stringify(c)}</p>;
-              })}
-            </div>
-          );
-        })}
         <div className="space-y-2">
           <Label htmlFor="title">Project Name</Label>
           <Input
@@ -80,6 +152,7 @@ export default function CreateProjectForm() {
                   lower: true,
                   strict: true,
                   locale: 'en',
+                  trim: true,
                 }),
               } as Api.CreateProjectDto)
             }
@@ -90,23 +163,28 @@ export default function CreateProjectForm() {
           {/*)}*/}
         </div>
         <div className="space-y-2">
-          <Label htmlFor="slug">Slug</Label>
-          <Input
-            id="slug"
-            name="slug"
-            placeholder="Enter project name"
-            value={project?.slug}
-            onChange={(e) =>
-              setProject({
-                ...project,
-                slug: slugify(e.target.value),
-              } as Api.CreateProjectDto)
-            }
-            required
-          />
-          {/*{state.errors?.slug && (*/}
-          {/*  <p className="text-red-500">{state.errors.slug}</p>*/}
-          {/*)}*/}
+          <Label htmlFor="slug">Project Slug</Label>
+          <div className="flex items-center space-x-2">
+            <span className="text-gray-500">https://gameguild.gg/project/</span>
+            <Input
+              id="slug"
+              name="slug"
+              placeholder="Enter project name"
+              value={project?.slug}
+              onChange={(e) =>
+                setProject({
+                  ...project,
+                  slug: slugify(e.target.value, {
+                    trim: false,
+                    lower: true,
+                    strict: true,
+                    locale: 'en',
+                  }),
+                } as Api.CreateProjectDto)
+              }
+              required
+            />
+          </div>
         </div>
         <div className="space-y-2">
           <Label htmlFor="summary">Summary</Label>

@@ -7,8 +7,7 @@ export default async function Layout({
   return (
     <div className="flex flex-1 flex-col">
       <Header />
-      {children}
-      {/*<Footer/>*/}
+      <div className="flex flex-1 min-h-full">{children}</div>
     </div>
   );
 }

@@ -1,3 +1,47 @@
+# [1.2.0](https://github.com/gameguild-gg/website/compare/v1.1.10...v1.2.0) (2024-11-04)
+
+
+### Bug Fixes
+
+* form actions ([c5c0561](https://github.com/gameguild-gg/website/commit/c5c05610d36c1687caf9c710f72b416dc7aaa40a))
+* routing for creating a project ([bf952bd](https://github.com/gameguild-gg/website/commit/bf952bdb115dfe8255fc142521e82a86744f9533))
+* show error on connect page ([65bdf57](https://github.com/gameguild-gg/website/commit/65bdf576398570077220a810df687906aebfe596))
+
+
+### Features
+
+* create project flow ([ac7592d](https://github.com/gameguild-gg/website/commit/ac7592dc14c383181ba5a794b6a0fc9ce2f671e1))
+* **slug:** project page slug ([276edf5](https://github.com/gameguild-gg/website/commit/276edf5cb95900aef6ecaf80cb82e3f723c8c84a))
+
+## [1.1.10](https://github.com/gameguild-gg/website/compare/v1.1.9...v1.1.10) (2024-11-01)
+
+
+### Bug Fixes
+
+* make project form receive props about create or edit ([c0d8f67](https://github.com/gameguild-gg/website/commit/c0d8f6797e26eba7b3bdda375da2b10a839b5564))
+
+## [1.1.9](https://github.com/gameguild-gg/website/compare/v1.1.8...v1.1.9) (2024-10-31)
+
+
+### Bug Fixes
+
+* **courses:** better courses routing for web ([041645d](https://github.com/gameguild-gg/website/commit/041645d5c1bc804fec8fd2fdf64d8ed76152e2e4))
+* disable middleware redirect if it is not logged in ([d91a90b](https://github.com/gameguild-gg/website/commit/d91a90be685ee2e240fb99cee499fa1c263a66c7))
+
+## [1.1.8](https://github.com/gameguild-gg/website/compare/v1.1.7...v1.1.8) (2024-10-30)
+
+
+### Bug Fixes
+
+* jwt import ([68cba9f](https://github.com/gameguild-gg/website/commit/68cba9ff022c54ed671587e073a21ebfb80e3735))
+
+## [1.1.7](https://github.com/gameguild-gg/website/compare/v1.1.6...v1.1.7) (2024-10-30)
+
+
+### Bug Fixes
+
+* **private:** private path ([7f91d71](https://github.com/gameguild-gg/website/commit/7f91d71f7e7d756dd1371eeb20321d2b34fd2a6f))
+
 ## [1.1.6](https://github.com/gameguild-gg/website/compare/v1.1.5...v1.1.6) (2024-10-25)
 
 

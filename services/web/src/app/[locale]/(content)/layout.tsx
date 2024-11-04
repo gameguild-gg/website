@@ -8,11 +8,9 @@ export default async function Layout({
 }: Readonly<PropsWithChildren>) {
   return (
     <div className="flex flex-1 flex-col bg-neutral-100">
-      <SessionProvider>
         <Header />
         {children}
         {/*<Footer/>*/}
-      </SessionProvider>
     </div>
   );
 }

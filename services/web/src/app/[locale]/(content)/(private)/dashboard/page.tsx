@@ -72,7 +72,7 @@ export default function CreatorDashboard() {
         router.push('/jobs/post');
         break;
       case ContentTypes.GAMES:
-        router.push('/dashboard/projects/create');
+        router.push('/projects/create');
         break;
       default:
         alert(
@@ -94,13 +94,12 @@ export default function CreatorDashboard() {
 
       <Tabs
         value={activeTab}
-        onValueChange={() => {
-          setActiveTab(activeTab);
+        onValueChange={(str) => {
+          setActiveTab(str as ContentTypes);
         }}
         className="w-full"
       >
         <TabsList className="grid grid-cols-4 lg:grid-cols-8 mb-6">
-          <TabsTrigger value="All">All</TabsTrigger>
           {
             // iterate over all enum values
             Object.values(ContentTypes).map((type) => (
