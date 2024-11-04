@@ -128,7 +128,7 @@ export default async function Page() {
                     </Button>
                   </SheetTrigger>
                   <SheetContent className="min-w-full">
-                    <ProjectForm formAction={'update'} />
+                    <ProjectForm action={'update'} />
                   </SheetContent>
                 </Sheet>
                 <div className="mt-4">
