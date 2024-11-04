@@ -9445,7 +9445,7 @@
         "type": "object",
         "properties": {
           "location": {
-            "type": "varchar",
+            "type": "string",
             "nullable": false,
             "default": "Remote"
           },

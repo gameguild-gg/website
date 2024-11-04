@@ -645,6 +645,31 @@ export namespace Api {
 	
 	}
 
+	export interface JobPostWithAppliedDto {
+		location: string;
+		'job_type': Api.JobPostWithAppliedDto.JobType;
+		'job_tags': Api.JobTagEntity[];
+		applied: boolean;
+	}
+	
+	/**
+	 * @export
+	 * @namespace JobPostWithAppliedDto
+	 */
+	export namespace JobPostWithAppliedDto {
+		export type JobType =
+			'CONTINUOUS' |
+			'TASK'
+		
+		export namespace JobType {
+			export enum Enum {
+				CONTINUOUS = 'CONTINUOUS',
+				TASK = 'TASK'
+			}
+		}
+	
+	}
+
 	export interface JobTagEntity {
 		id: string;
 		createdAt: string;

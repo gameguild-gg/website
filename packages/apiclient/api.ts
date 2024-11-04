@@ -6991,7 +6991,7 @@ export namespace JobPostsApi {
 	export interface JobPostControllerGetManyWithApplied200Response {
 		status: 200
 		contentType: 'application/json'
-		body: unknown[]
+		body: Api.JobPostWithAppliedDto[]
 		headers?: undefined
 	}
 	
@@ -8709,7 +8709,7 @@ export const JobPostsApiFp = function(configuration?: Configuration) {
 						return {
 							status: response.status,
 							contentType: 'application/json',
-							body: await response.json() as unknown[],
+							body: await response.json() as Api.JobPostWithAppliedDto[],
 						}
 					}
 					throw response;

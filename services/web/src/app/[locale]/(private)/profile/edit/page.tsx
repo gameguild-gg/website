@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useToast } from "@/components/ui/use-toast"
 
-export default function ProfileEdit() {
+export default function EditProfile() {
   const [user, setUser] = useState<Api.UserEntity>()
   const [avatar, setAvatar] = useState<string | null>(null)
   const [name, setName] = useState('')
