@@ -10,13 +10,14 @@ import { useToast } from '@/components/ui/use-toast';
 
 import MetaMaskSignInButton from '@/components/others/web3/meta-mask-sign-in-button';
 import { Api, AuthApi } from '@game-guild/apiclient';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { signInWithMagicLink } from '@/lib/auth/sign-in-with-magic-link';
 import { getSession } from 'next-auth/react';
 import { Session } from 'next-auth';
 import TorusSignInButton from '@/components/others/web3/torus-sign-in-button';
 
 export default function ConnectForm() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   let session: Session | null;
   const api = new AuthApi({
@@ -41,7 +42,11 @@ export default function ConnectForm() {
     const token = searchParams.get('token');
     const err = searchParams.get('error');
     // show the error in red
-    if (err) toast({ title: 'Error', description: err });
+    if (err) {
+      // remove the error from the URL
+      toast({ title: 'Error', description: err });
+      router.replace('/connect');
+    }
 
     magicLinkProcess(token).then();
   }, []);

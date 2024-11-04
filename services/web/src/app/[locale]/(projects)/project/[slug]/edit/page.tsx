@@ -4,10 +4,9 @@ type Props = {
   };
 };
 
+import React from 'react';
+import ProjectForm from '@/components/project/project-form';
+
 export default function Component({ params: { slug } }: Readonly<Props>) {
-  return (
-    <div>
-      <h1>{slug}</h1>
-    </div>
-  );
+  return <ProjectForm action={'update'} slug={slug} />;
 }

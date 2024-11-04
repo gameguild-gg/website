@@ -35,7 +35,7 @@ export const pathMapping: Record<string, string> = {
   "/gtl/tester": "/[locale]/(private)/gtl/tester/page.tsx",
   "/profile/settings": "/[locale]/(private)/profile/settings/page.tsx",
   "/project/edit": "/[locale]/(projects)/project/[slug]/edit/page.tsx",
-  "/project": "/[locale]/(projects)/project/[slug]/page.tsx",
+  "/project": "/[locale]/(projects)/project/page.tsx",
   "/projects/create": "/[locale]/(projects)/projects/create/page.tsx",
   "/projects": "/[locale]/(projects)/projects/page.tsx",
   "/onboarding": "/[locale]/(public)/(testing-lab)/onboarding/page.tsx",
