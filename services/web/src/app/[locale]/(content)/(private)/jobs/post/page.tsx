@@ -50,7 +50,7 @@ export default function JobPost() {
     }
     const response = await jobTagsApi.getManyBaseJobTagControllerJobTagEntity(
       {},
-      { headers: { Authorization: `Bearer ${session.accessToken}` } },
+      { headers: { Authorization: `Bearer ${session.user.accessToken}` } },
     );
     // console.log('All Jobs Response:\n',response)
     if (response.status == 200) {
@@ -97,7 +97,7 @@ export default function JobPost() {
           job_tag_ids: selectedSkills,
         } as Api.JobPostCreateDto,
         {
-          headers: { Authorization: `Bearer ${session.accessToken}` },
+          headers: { Authorization: `Bearer ${session.user.accessToken}` },
         },
       );
     if (response.status == 201) {
@@ -106,8 +106,8 @@ export default function JobPost() {
         description: 'Job Post was sucessfully Created', // + JSON.stringify(response.body),
       });
       setTitle('');
-      setDescription('');
-      setLocation('');
+      setDescription(''); 
+      setLocation('Remote');
       setSelectedSkills([]);
     } else {
       toast({

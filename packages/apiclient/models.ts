@@ -527,6 +527,13 @@ export namespace Api {
 		updatedAt: string;
 		applicant: Api.UserEntity;
 		job: Api.JobPostEntity;
+		/**
+		 * @type {number}
+		 * @memberof JobApplicationEntity
+		 */
+		progress: number;
+		rejected: boolean;
+		withdrawn: boolean;
 	}
 
 	export interface JobPostCreateDto {
@@ -625,6 +632,31 @@ export namespace Api {
 			}
 		}
 	
+		export type JobType =
+			'CONTINUOUS' |
+			'TASK'
+		
+		export namespace JobType {
+			export enum Enum {
+				CONTINUOUS = 'CONTINUOUS',
+				TASK = 'TASK'
+			}
+		}
+	
+	}
+
+	export interface JobPostWithAppliedDto {
+		location: string;
+		'job_type': Api.JobPostWithAppliedDto.JobType;
+		'job_tags': Api.JobTagEntity[];
+		applied: boolean;
+	}
+	
+	/**
+	 * @export
+	 * @namespace JobPostWithAppliedDto
+	 */
+	export namespace JobPostWithAppliedDto {
 		export type JobType =
 			'CONTINUOUS' |
 			'TASK'
@@ -1061,9 +1093,6 @@ export namespace Api {
 		'feedback_deadline': string;
 		project: Api.ProjectEntity;
 		responses: Api.ProjectFeedbackResponseEntity[];
-	}
-
-	export interface Promise {
 	}
 
 	export interface TerminalDto {

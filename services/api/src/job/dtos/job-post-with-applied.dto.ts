@@ -15,7 +15,7 @@ import { JobTypeEnum } from '../entities/job-type.enum';
 export class JobPostWithAppliedDto {
   // Location
   @Index({ unique: false })
-  @ApiProperty({ nullable: false, default: 'Remote', type: 'varchar' })
+  @ApiProperty({ nullable: false, default: 'Remote', type: 'string' })
   @MaxLength(64, { message: 'error.maxLength: location is too long, max 64' })
   @IsNotEmpty({ message: 'error.isNotEmpty: location is required' })
   @IsString({ message: 'error.isString: location must be a string' })
