@@ -1,7 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
+  IsEnum,
   IsMimeType,
   IsNotEmpty,
+  IsOptional,
   IsPositive,
   IsString,
   MaxLength,
@@ -10,8 +12,43 @@ import { Column, Index } from 'typeorm';
 import { EntityBase } from '../common/entities/entity.base';
 import { IsIntegerNumber } from '../common/decorators/validator.decorator';
 
+export enum AssetSourceType {
+  S3 = 's3',
+  IPFS = 'ipfs',
+  CLOUDINARY = 'cloudinary',
+  EXTERNAL = 'external',
+}
+
+export class ResourceReference {
+  // resource type, it can be the table, type or any other reference
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  readonly type: string;
+
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  readonly id: string;
+}
+
+// Base asset entity. This should be extended by other entities that need to store assets.
 export class AssetEntity extends EntityBase {
-  // filename
+  // this source name is the same on from the env var
+  @ApiProperty()
+  @IsNotEmpty()
+  @IsString()
+  @Column({ nullable: false })
+  @Index({ unique: false })
+  readonly source: string;
+
+  // the full path to the asset on the source
+  @ApiProperty()
+  @IsNotEmpty()
+  @IsString()
+  @Column({ nullable: false, default: '' })
+  readonly path: string;
+
   @ApiProperty()
   @IsString({ message: 'error.invalidFilename: Filename must be a string.' })
   @IsNotEmpty({ message: 'error.invalidFilename: Filename must not be empty.' })
@@ -48,14 +85,15 @@ export class AssetEntity extends EntityBase {
   @Column({ nullable: false, type: 'integer', default: 0 })
   readonly sizeBytes: number;
 
-  // url
   @ApiProperty()
-  @IsNotEmpty({ message: 'error.invalidUrl: Url must not be empty.' })
-  @IsString({ message: 'error.invalidUrl: Url must be a string.' })
-  @MaxLength(2048, {
-    message:
-      'error.invalidUrl: Url must be shorter than or equal to 2048 characters.',
-  })
-  @Column({ nullable: false, length: 2048, default: '' })
-  readonly url: string;
+  @IsNotEmpty()
+  @Column({ nullable: false })
+  @Index({ unique: false })
+  readonly hash: string;
+
+  // todo: add index to jsonb field
+  @ApiProperty()
+  @IsOptional()
+  @Column({ nullable: false, type: 'jsonb', default: null })
+  readonly references: ResourceReference[];
 }
