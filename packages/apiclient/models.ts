@@ -45,6 +45,34 @@ export namespace Api {
 	
 	}
 
+	export interface AssetControllerUploadImageRequest {
+		file?: string | Blob;
+		body?: Api.ContentBase;
+	}
+	
+	/**
+	 * @export
+	 * @namespace AssetControllerUploadImageRequest
+	 */
+	export namespace AssetControllerUploadImageRequest {
+		export interface MultipartFormData {
+			file?: Api.AssetControllerUploadImageRequest.MultipartFormData.FilePart;
+			body?: Api.ContentBase;
+		}
+		
+		/**
+		 * @export
+		 * @namespace MultipartFormData
+		 */
+		export namespace MultipartFormData {
+			export interface FilePart {
+				value: string | Blob;
+			}
+		
+		}
+	
+	}
+
 	export interface ChapterEntity {
 		id: string;
 		createdAt: string;
@@ -242,6 +270,46 @@ export namespace Api {
 		id: string;
 		createdAt: string;
 		updatedAt: string;
+	}
+
+	export interface ContentBase {
+		id: string;
+		createdAt: string;
+		updatedAt: string;
+		owner: Api.UserEntity;
+		editors: Api.UserEntity[];
+		slug: string;
+		title: string;
+		summary: string;
+		body: string;
+		visibility: Api.ContentBase.Visibility;
+		thumbnail: string;
+	}
+	
+	/**
+	 * @export
+	 * @namespace ContentBase
+	 */
+	export namespace ContentBase {
+		export type Visibility =
+			'DRAFT' |
+			'PUBLISHED' |
+			'FUTURE' |
+			'PENDING' |
+			'PRIVATE' |
+			'TRASH'
+		
+		export namespace Visibility {
+			export enum Enum {
+				DRAFT = 'DRAFT',
+				PUBLISHED = 'PUBLISHED',
+				FUTURE = 'FUTURE',
+				PENDING = 'PENDING',
+				PRIVATE = 'PRIVATE',
+				TRASH = 'TRASH'
+			}
+		}
+	
 	}
 
 	export interface CourseEntity {
@@ -515,6 +583,34 @@ export namespace Api {
 
 	export interface IdDto {
 		id: string;
+	}
+
+	export interface ImageEntity {
+		id: string;
+		createdAt: string;
+		updatedAt: string;
+		source: string;
+		path: string;
+		filename: string;
+		mimetype: string;
+		/**
+		 * @type {number}
+		 * @memberof ImageEntity
+		 */
+		sizeBytes: number;
+		hash: string;
+		references: string[];
+		/**
+		 * @type {number}
+		 * @memberof ImageEntity
+		 */
+		width: number;
+		/**
+		 * @type {number}
+		 * @memberof ImageEntity
+		 */
+		height: number;
+		description: string;
 	}
 
 	export interface JobAplicationCreateDto {

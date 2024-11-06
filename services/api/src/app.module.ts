@@ -17,6 +17,7 @@ import { JobModule } from './job/job.module';
 import { TagModule } from './tag/tag.module';
 import { ClsModule } from 'nestjs-cls';
 import { DataSource } from 'typeorm';
+import { AssetModule } from './asset';
 
 @Module({
   imports: [
@@ -54,6 +55,7 @@ import { DataSource } from 'typeorm';
     HealthcheckModule,
     TagModule,
     JobModule,
+    AssetModule,
     // IpfsModule,
   ],
   controllers: [AppController],

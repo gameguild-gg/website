@@ -33,7 +33,7 @@ export class ResourceReference {
 }
 
 // Base asset entity. This should be extended by other entities that need to store assets.
-export class AssetEntity extends EntityBase {
+export class AssetBase extends EntityBase {
   // this source name is the same on from the env var
   @ApiProperty()
   @IsNotEmpty()

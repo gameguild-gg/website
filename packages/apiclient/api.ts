@@ -18,6 +18,276 @@ import { Api } from "./models";
 
 export type FactoryFunction<T> = (configuration?: Configuration, basePath?: string, fetch?: FetchAPI) => T;
 
+export namespace AssetApi {
+	export type AssetControllerUploadImageResponse =
+		| AssetControllerUploadImage400Response
+		| AssetControllerUploadImage401Response
+		| AssetControllerUploadImage403Response
+		| AssetControllerUploadImage404Response
+		| AssetControllerUploadImage409Response
+		| AssetControllerUploadImage422Response
+		| AssetControllerUploadImage500Response
+		| AssetControllerUploadImageDefaultResponse
+	
+	export interface AssetControllerUploadImage400Response {
+		status: 400
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface AssetControllerUploadImage401Response {
+		status: 401
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface AssetControllerUploadImage403Response {
+		status: 403
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface AssetControllerUploadImage404Response {
+		status: 404
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface AssetControllerUploadImage409Response {
+		status: 409
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface AssetControllerUploadImage422Response {
+		status: 422
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface AssetControllerUploadImage500Response {
+		status: 500
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface AssetControllerUploadImageDefaultResponse {
+		status: number
+		contentType: 'application/json'
+		body: Api.ImageEntity
+		headers?: undefined
+	}
+	
+}
+
+/**
+ * AssetApi - fetch parameter creator
+ * @export
+ */
+export const AssetApiFetchParamCreator = function (configuration?: Configuration) {
+	return {
+		/**
+		 * @param {Api.AssetControllerUploadImageRequest.MultipartFormData} [request]
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		assetControllerUploadImage(request: Api.AssetControllerUploadImageRequest.MultipartFormData | undefined, options: RequestInit = {}): FetchArgs {
+
+			let localVarPath = `/asset/upload`;
+			const localVarPathQueryStart = localVarPath.indexOf("?");
+			const localVarRequestOptions: RequestInit = Object.assign({ method: 'POST' }, options);
+			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
+			const localVarQueryParameter = new URLSearchParams(localVarPathQueryStart !== -1 ? localVarPath.substring(localVarPathQueryStart + 1) : "");
+			if (localVarPathQueryStart !== -1) {
+				localVarPath = localVarPath.substring(0, localVarPathQueryStart);
+			}
+
+			// authentication bearer required
+			// http authorization required
+			if (configuration && configuration.authorization) {
+				const localVarAuthorizationValue = typeof configuration.authorization === 'function'
+					? configuration.authorization('bearer')
+					: configuration.authorization;
+				if (localVarAuthorizationValue !== null) {
+					localVarHeaderParameter.set("Authorization", "Bearer " + localVarAuthorizationValue);
+				}
+			}
+			localVarHeaderParameter.set('Content-Type', 'multipart/form-data');
+
+			localVarRequestOptions.headers = localVarHeaderParameter;
+	
+			if (request !== undefined) {
+				const localVarFormData = new FormData();
+				if (request.file !== undefined) {
+					localVarFormData.append('file', request.file.value);
+				}
+				if (request.body !== undefined) {
+					localVarFormData.append('body', JSON.stringify(request.body));
+				}
+				localVarRequestOptions.body = localVarFormData;
+			}
+
+			const localVarQueryParameterString = localVarQueryParameter.toString();
+			if (localVarQueryParameterString) {
+				localVarPath += "?" + localVarQueryParameterString;
+			}
+			return {
+				url: localVarPath,
+				options: localVarRequestOptions,
+			};
+		},
+	}
+};
+
+/**
+ * AssetApi - functional programming interface
+ * @export
+ */
+export const AssetApiFp = function(configuration?: Configuration) {
+	return {
+		/**
+		 * @param {Api.AssetControllerUploadImageRequest.MultipartFormData} [request]
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		assetControllerUploadImage(request: Api.AssetControllerUploadImageRequest.MultipartFormData | undefined, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<AssetApi.AssetControllerUploadImageResponse> {
+			const localVarFetchArgs = AssetApiFetchParamCreator(configuration).assetControllerUploadImage(request, options);
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				if (response.status === 400) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 401) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 403) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 404) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 409) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 422) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 500) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				/* Catch-all response */
+				if (mimeType === 'application/json') {
+					return {
+						status: response.status,
+						contentType: 'application/json',
+						body: await response.json() as Api.ImageEntity,
+					}
+				}
+				throw response;
+			};
+		},
+	}
+};
+
+/**
+ * AssetApi - factory interface
+ * @export
+ */
+export const AssetApiFactory: FactoryFunction<AssetApiInterface> = function (configuration?: Configuration, basePath?: string, fetch?: FetchAPI) {
+	return new AssetApi(configuration, basePath, fetch);
+};
+
+/**
+ * AssetApi - interface
+ * @export
+ * @interface AssetApi
+ */
+export interface AssetApiInterface {
+	/**
+	 * @param {Api.AssetControllerUploadImageRequest.MultipartFormData} [request]
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	assetControllerUploadImage(request: Api.AssetControllerUploadImageRequest.MultipartFormData | undefined, options?: RequestInit): Promise<AssetApi.AssetControllerUploadImageResponse>
+
+}
+
+/**
+ * AssetApi - object-oriented interface
+ * @export
+ * @class AssetApi
+ * @extends {BaseAPI}
+ */
+export class AssetApi extends BaseAPI implements AssetApiInterface {
+	/**
+	 * @param {Api.AssetControllerUploadImageRequest.MultipartFormData} [request]
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	public assetControllerUploadImage(request: Api.AssetControllerUploadImageRequest.MultipartFormData | undefined, options?: RequestInit) {
+		return AssetApiFp(this.configuration).assetControllerUploadImage(request, options)(this.fetch, this.basePath);
+	}
+
+}
 export namespace AuthApi {
 	export type AuthControllerGetCurrentUserResponse =
 		| AuthControllerGetCurrentUser400Response

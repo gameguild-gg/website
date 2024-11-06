@@ -1,20 +1,22 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { AssetEntity } from './asset.entity';
+import { AssetBase } from './asset.base';
 import { Repository } from 'typeorm';
 import { TypeOrmCrudService } from '@dataui/crud-typeorm';
 import { ApiConfigService } from '../common/config.service';
+import { ImageEntity } from './image.entity';
 
 @Injectable()
-export class AssetService extends TypeOrmCrudService<AssetEntity> {
+export class AssetService {
   private readonly logger = new Logger(AssetService.name);
+  private readonly tempFolder;
 
   constructor(
-    @InjectRepository(AssetEntity)
-    private readonly assetRepository: Repository<AssetEntity>,
+    // @InjectRepository(AssetBase)
+    // private readonly imageRepository: Repository<AssetBase>,
     private readonly configService: ApiConfigService,
   ) {
-    super(assetRepository);
+    // super(assetRepository);
     this.mountS3();
   }
 
@@ -29,5 +31,10 @@ export class AssetService extends TypeOrmCrudService<AssetEntity> {
     }
 
     // mount-s3 DOC-EXAMPLE-BUCKET /path/to/mount
+  }
+
+  private async store(file: Express.Multer.File): Promise<ImageEntity> {
+    // save it to temp folder
+    return new ImageEntity();
   }
 }

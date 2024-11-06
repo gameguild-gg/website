@@ -1,12 +1,24 @@
 import { Column, Entity, Index } from 'typeorm';
-import { AssetEntity } from './asset.entity';
+import { AssetBase } from './asset.base';
 import { ApiProperty } from '@nestjs/swagger';
-import { IsOptional, IsString } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsIntegerNumber } from '../common/decorators/validator.decorator';
 
-@Entity()
+@Entity({ name: 'images' })
 @Index('pathUniqueness', ['path', 'source'], { unique: true })
-export class ImageEntity extends AssetEntity {
+export class ImageEntity extends AssetBase {
+  @ApiProperty({ type: 'integer' })
+  @IsNotEmpty()
+  @IsIntegerNumber()
+  @Column({ nullable: false, type: 'integer' })
+  @Index({ unique: false })
   readonly width: number;
+
+  @ApiProperty()
+  @IsNotEmpty()
+  @IsIntegerNumber()
+  @Column({ nullable: false, type: 'integer' })
+  @Index({ unique: false })
   readonly height: number;
 
   // to be used on the frontend to display the asset as alt tag
