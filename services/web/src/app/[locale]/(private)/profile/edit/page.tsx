@@ -1,9 +1,9 @@
 'use client'
 
-import { useLayoutEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { getSession } from 'next-auth/react'
-import { Api, AuthApi } from '@game-guild/apiclient'
+import { Api, UserProfileApi } from '@game-guild/apiclient'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -13,21 +13,28 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useToast } from "@/components/ui/use-toast"
 
 export default function EditProfile() {
-  const [user, setUser] = useState<Api.UserEntity>()
+  const [profile, setProfile] = useState<Api.UserProfileEntity>()
   const [avatar, setAvatar] = useState<string | null>(null)
   const [name, setName] = useState('')
+  const [picture, setPicture] = useState('')
   const [bio, setBio] = useState('')
   
   const { toast } = useToast()
   const router = useRouter()
 
-  const authApi = new AuthApi({
+  const userProfileApi = new UserProfileApi({
     basePath: process.env.NEXT_PUBLIC_API_URL,
   });
 
-  useLayoutEffect(()=>{
+  useEffect(()=>{
     loadCurrentUser()
   },[])
+
+  useEffect(()=>{
+    setName(profile?.name||'')
+    setPicture(profile?.picture||'')
+    setBio(profile?.bio||'')
+  },[profile])
 
   const loadCurrentUser = async () =>{
     const session: any = await getSession();
@@ -35,12 +42,12 @@ export default function EditProfile() {
       router.push('/connect');
       return;
     }
-    const response = await authApi.authControllerGetCurrentUser(
+    const response = await userProfileApi.userProfileControllerGetCurrentUserProfile(
       { headers: { Authorization: `Bearer ${session.user.accessToken}` } },
     )
     if (response.status == 200){
       console.log("response.body: ",response.body)
-      setUser(response.body)
+      setProfile(response.body)
     }
   }
 
@@ -61,35 +68,39 @@ export default function EditProfile() {
       router.push('/connect');
       return;
     }
-    const response = authApi.authControllerGetCurrentUser({
-
-    })
-    try {
-      // Simulating an API call
-      await new Promise((resolve, reject) => {
-        setTimeout(() => {
-          if (Math.random() > 0.5) {
-            resolve('Success')
-          } else {
-            reject('Error')
-          }
-        }, 1000)
-      })
-
-      // If the promise resolves, show success toast
-      toast({
-        title: "Profile Saved",
-        description: "Your profile has been updated successfully.",
-        duration: 3000,
-      })
-    } catch (error) {
-      // If the promise rejects, show error toast
-      toast({
-        title: "Error",
-        description: "Failed to save profile. Please try again.",
-        variant: "destructive",
-        duration: 3000,
-      })
+    
+    if (profile){
+      profile.picture = picture
+      profile.name = name
+      profile.bio = bio
+      console.log("save profile Test:")
+      console.log({
+        picture: picture,
+        name: name,
+        bio: bio,
+      } as Api.UserProfilePatchDto,)
+      const response = await userProfileApi.userProfileControllerPatchCurrentUserProfile(
+        {
+          picture: picture,
+          name: name,
+          bio: bio,
+        } as Api.UserProfilePatchDto,
+        { headers: { Authorization: `Bearer ${session.user.accessToken}` } },
+      )
+      if (response.status = 200){
+        toast({
+          title: "Profile Saved",
+          description: "Your profile has been updated successfully.",
+          duration: 3000,
+        })
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to save profile. Please try again.",
+          variant: "destructive",
+          duration: 3000,
+        })
+      }
     }
   }
 
@@ -104,6 +115,7 @@ export default function EditProfile() {
           <CardTitle className="text-2xl font-bold">Profile</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          {/*
           <div className="flex flex-col items-center space-y-2">
             <Avatar className="w-32 h-32">
               <AvatarImage src={avatar || '/placeholder.svg'} alt="Profile picture" />
@@ -118,6 +130,16 @@ export default function EditProfile() {
               accept="image/*" 
               className="hidden" 
               onChange={handleAvatarChange}
+            />
+          </div>
+          */}
+          <div className="space-y-2">
+            <Label htmlFor="name">Profile Image URL</Label>
+            <Input 
+              id="name" 
+              value={picture} 
+              onChange={(e) => setName(e.target.value)} 
+              placeholder="Enter an URL for your profile image"
             />
           </div>
           <div className="space-y-2">

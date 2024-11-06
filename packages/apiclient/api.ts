@@ -15724,6 +15724,485 @@ export class TicketApi extends BaseAPI implements TicketApiInterface {
 	}
 
 }
+export namespace UserProfileApi {
+	export type UserProfileControllerGetCurrentUserProfileResponse =
+		| UserProfileControllerGetCurrentUserProfile200Response
+		| UserProfileControllerGetCurrentUserProfile400Response
+		| UserProfileControllerGetCurrentUserProfile401Response
+		| UserProfileControllerGetCurrentUserProfile403Response
+		| UserProfileControllerGetCurrentUserProfile404Response
+		| UserProfileControllerGetCurrentUserProfile409Response
+		| UserProfileControllerGetCurrentUserProfile422Response
+		| UserProfileControllerGetCurrentUserProfile500Response
+	
+	export interface UserProfileControllerGetCurrentUserProfile200Response {
+		status: 200
+		contentType: 'application/json'
+		body: Api.UserProfileEntity
+		headers?: undefined
+	}
+	
+	export interface UserProfileControllerGetCurrentUserProfile400Response {
+		status: 400
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface UserProfileControllerGetCurrentUserProfile401Response {
+		status: 401
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface UserProfileControllerGetCurrentUserProfile403Response {
+		status: 403
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface UserProfileControllerGetCurrentUserProfile404Response {
+		status: 404
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface UserProfileControllerGetCurrentUserProfile409Response {
+		status: 409
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface UserProfileControllerGetCurrentUserProfile422Response {
+		status: 422
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface UserProfileControllerGetCurrentUserProfile500Response {
+		status: 500
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export type UserProfileControllerPatchCurrentUserProfileResponse =
+		| UserProfileControllerPatchCurrentUserProfile200Response
+		| UserProfileControllerPatchCurrentUserProfile400Response
+		| UserProfileControllerPatchCurrentUserProfile401Response
+		| UserProfileControllerPatchCurrentUserProfile403Response
+		| UserProfileControllerPatchCurrentUserProfile404Response
+		| UserProfileControllerPatchCurrentUserProfile409Response
+		| UserProfileControllerPatchCurrentUserProfile422Response
+		| UserProfileControllerPatchCurrentUserProfile500Response
+	
+	export interface UserProfileControllerPatchCurrentUserProfile200Response {
+		status: 200
+		contentType: 'application/json'
+		body: Api.UserProfileEntity
+		headers?: undefined
+	}
+	
+	export interface UserProfileControllerPatchCurrentUserProfile400Response {
+		status: 400
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface UserProfileControllerPatchCurrentUserProfile401Response {
+		status: 401
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface UserProfileControllerPatchCurrentUserProfile403Response {
+		status: 403
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface UserProfileControllerPatchCurrentUserProfile404Response {
+		status: 404
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface UserProfileControllerPatchCurrentUserProfile409Response {
+		status: 409
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface UserProfileControllerPatchCurrentUserProfile422Response {
+		status: 422
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface UserProfileControllerPatchCurrentUserProfile500Response {
+		status: 500
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+}
+
+/**
+ * UserProfileApi - fetch parameter creator
+ * @export
+ */
+export const UserProfileApiFetchParamCreator = function (configuration?: Configuration) {
+	return {
+		/**
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		userProfileControllerGetCurrentUserProfile(options: RequestInit = {}): FetchArgs {
+
+			let localVarPath = `/user-profile/me`;
+			const localVarPathQueryStart = localVarPath.indexOf("?");
+			const localVarRequestOptions: RequestInit = Object.assign({ method: 'GET' }, options);
+			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
+			const localVarQueryParameter = new URLSearchParams(localVarPathQueryStart !== -1 ? localVarPath.substring(localVarPathQueryStart + 1) : "");
+			if (localVarPathQueryStart !== -1) {
+				localVarPath = localVarPath.substring(0, localVarPathQueryStart);
+			}
+
+			// authentication bearer required
+			// http authorization required
+			if (configuration && configuration.authorization) {
+				const localVarAuthorizationValue = typeof configuration.authorization === 'function'
+					? configuration.authorization('bearer')
+					: configuration.authorization;
+				if (localVarAuthorizationValue !== null) {
+					localVarHeaderParameter.set("Authorization", "Bearer " + localVarAuthorizationValue);
+				}
+			}
+			localVarRequestOptions.headers = localVarHeaderParameter;
+
+			const localVarQueryParameterString = localVarQueryParameter.toString();
+			if (localVarQueryParameterString) {
+				localVarPath += "?" + localVarQueryParameterString;
+			}
+			return {
+				url: localVarPath,
+				options: localVarRequestOptions,
+			};
+		},
+		/**
+		 * @param {Api.UserProfilePatchDto} request
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		userProfileControllerPatchCurrentUserProfile(request: Api.UserProfilePatchDto, options: RequestInit = {}): FetchArgs {
+			// verify required parameter 'request' is not null or undefined
+			if (request === null || request === undefined) {
+				throw new RequiredError('request', 'Required parameter request was null or undefined when calling userProfileControllerPatchCurrentUserProfile.');
+			}
+
+			let localVarPath = `/user-profile/me`;
+			const localVarPathQueryStart = localVarPath.indexOf("?");
+			const localVarRequestOptions: RequestInit = Object.assign({ method: 'PATCH' }, options);
+			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
+			const localVarQueryParameter = new URLSearchParams(localVarPathQueryStart !== -1 ? localVarPath.substring(localVarPathQueryStart + 1) : "");
+			if (localVarPathQueryStart !== -1) {
+				localVarPath = localVarPath.substring(0, localVarPathQueryStart);
+			}
+
+			// authentication bearer required
+			// http authorization required
+			if (configuration && configuration.authorization) {
+				const localVarAuthorizationValue = typeof configuration.authorization === 'function'
+					? configuration.authorization('bearer')
+					: configuration.authorization;
+				if (localVarAuthorizationValue !== null) {
+					localVarHeaderParameter.set("Authorization", "Bearer " + localVarAuthorizationValue);
+				}
+			}
+			localVarHeaderParameter.set('Content-Type', 'application/json');
+
+			localVarRequestOptions.headers = localVarHeaderParameter;
+	
+			if (request !== undefined) {
+				localVarRequestOptions.body = JSON.stringify(request || {});
+			}
+
+			const localVarQueryParameterString = localVarQueryParameter.toString();
+			if (localVarQueryParameterString) {
+				localVarPath += "?" + localVarQueryParameterString;
+			}
+			return {
+				url: localVarPath,
+				options: localVarRequestOptions,
+			};
+		},
+	}
+};
+
+/**
+ * UserProfileApi - functional programming interface
+ * @export
+ */
+export const UserProfileApiFp = function(configuration?: Configuration) {
+	return {
+		/**
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		userProfileControllerGetCurrentUserProfile(options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<UserProfileApi.UserProfileControllerGetCurrentUserProfileResponse> {
+			const localVarFetchArgs = UserProfileApiFetchParamCreator(configuration).userProfileControllerGetCurrentUserProfile(options);
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				if (response.status === 200) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.UserProfileEntity,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 400) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 401) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 403) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 404) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 409) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 422) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 500) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				throw response;
+			};
+		},
+		/**
+		 * @param {Api.UserProfilePatchDto} request
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		userProfileControllerPatchCurrentUserProfile(request: Api.UserProfilePatchDto, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<UserProfileApi.UserProfileControllerPatchCurrentUserProfileResponse> {
+			const localVarFetchArgs = UserProfileApiFetchParamCreator(configuration).userProfileControllerPatchCurrentUserProfile(request, options);
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				if (response.status === 200) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.UserProfileEntity,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 400) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 401) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 403) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 404) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 409) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 422) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 500) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				throw response;
+			};
+		},
+	}
+};
+
+/**
+ * UserProfileApi - factory interface
+ * @export
+ */
+export const UserProfileApiFactory: FactoryFunction<UserProfileApiInterface> = function (configuration?: Configuration, basePath?: string, fetch?: FetchAPI) {
+	return new UserProfileApi(configuration, basePath, fetch);
+};
+
+/**
+ * UserProfileApi - interface
+ * @export
+ * @interface UserProfileApi
+ */
+export interface UserProfileApiInterface {
+	/**
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	userProfileControllerGetCurrentUserProfile(options?: RequestInit): Promise<UserProfileApi.UserProfileControllerGetCurrentUserProfileResponse>
+
+	/**
+	 * @param {Api.UserProfilePatchDto} request
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	userProfileControllerPatchCurrentUserProfile(request: Api.UserProfilePatchDto, options?: RequestInit): Promise<UserProfileApi.UserProfileControllerPatchCurrentUserProfileResponse>
+
+}
+
+/**
+ * UserProfileApi - object-oriented interface
+ * @export
+ * @class UserProfileApi
+ * @extends {BaseAPI}
+ */
+export class UserProfileApi extends BaseAPI implements UserProfileApiInterface {
+	/**
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	public userProfileControllerGetCurrentUserProfile(options?: RequestInit) {
+		return UserProfileApiFp(this.configuration).userProfileControllerGetCurrentUserProfile(options)(this.fetch, this.basePath);
+	}
+
+	/**
+	 * @param {Api.UserProfilePatchDto} request
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	public userProfileControllerPatchCurrentUserProfile(request: Api.UserProfilePatchDto, options?: RequestInit) {
+		return UserProfileApiFp(this.configuration).userProfileControllerPatchCurrentUserProfile(request, options)(this.fetch, this.basePath);
+	}
+
+}
 
 /**
  * We sometimes represent dates as strings (in models) and as Dates (in parameters) so this

@@ -1223,5 +1223,11 @@ export namespace Api {
 		picture: string;
 	}
 
+	export interface UserProfilePatchDto {
+		picture: string;
+		name: string;
+		bio: string;
+	}
+
 }
 
