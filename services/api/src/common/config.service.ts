@@ -178,17 +178,56 @@ export class ApiConfigService {
   //     };
   // }
 
-  get s3Config(): {
-    accessKeyId: string;
-    secretAccessKey: string;
-    region: string;
-    bucket: string;
-  } {
-    return {
-      accessKeyId: ormconfig.getEnvString('AWS_ACCESS_KEY_ID'),
-      secretAccessKey: ormconfig.getEnvString('AWS_SECRET_ACCESS_KEY'),
-      region: ormconfig.getEnvString('AWS_REGION'),
-      bucket: ormconfig.getEnvString('AWS_BUCKET_NAME'),
-    };
+  get assetSourceInfoMap(): Map<string, SourceInfo> {
+    // iterate over all env vars and get all env vars beginning with ASSET_SOURCE_.
+    // `ASSET_SOURCE_XXXX_TYPE` - Source type (s3, IPFS, Cloudinary...)
+    // `ASSET_SOURCE_XXXX_ENDPOINT` - Source server API URL
+    // `ASSET_SOURCE_XXXX_KEY` - Source key, email or username if applicable
+    // `ASSET_SOURCE_XXXX_SECRET` - Source password or secret if applicable
+    // `ASSET_SOURCE_XXXX_BUCKET` - Source bucket or path if applicable
+    // where XXXX is the source name
+
+    const sources: Map<string, SourceInfo> = {};
+
+    // get all env vars
+    const env = process.env;
+
+    // iterate over all env vars
+    Object.keys(env).forEach((key: string) => {
+      // check if the env var starts with ASSET_SOURCE_
+      if (key.startsWith('ASSET_SOURCE_')) {
+        // get the source name
+        const sourceName = key.replace('ASSET_SOURCE_', '');
+        // get the source type
+        const type = env[`ASSET_SOURCE_${sourceName}_TYPE`];
+        // get the source endpoint
+        const endpoint = env[`ASSET_SOURCE_${sourceName}_ENDPOINT`];
+        // get the access key
+        const accessKey = env[`ASSET_SOURCE_${sourceName}_ACCESS_KEY`];
+        // get the source secret
+        const secretKey = env[`ASSET_SOURCE_${sourceName}_SECRET_KEY`];
+        // get the source bucket
+        const bucket = env[`ASSET_SOURCE_${sourceName}_BUCKET`];
+
+        // add the source to the sources object
+        sources[sourceName] = {
+          type,
+          endpoint,
+          accessKey,
+          secretKey,
+          bucket,
+        };
+      }
+    });
+
+    return sources;
   }
 }
+
+export type SourceInfo = {
+  type: string;
+  endpoint: string;
+  accessKey: string;
+  secretKey: string;
+  bucket: string;
+};
