@@ -77,6 +77,7 @@ services:
         mc alias set minio http://127.0.0.1:9000 minio-user minio-password # setup Minio client
         mc mb minio/gameguild || true                                      # create a test bucket
         mc anonymous set public minio/gameguild                            # make the test bucket public
+        mc admin accesskey create minio/ --access-key minio --secret-key minio-password # create access token 
         kill -s INT $(cat /tmp/minio.pid) && rm /tmp/minio.pid             # stop Minio
         while isAlive; do sleep 0.1; done                                  # wait until Minio is stopped
         exec minio $0 "$@"                                                 # start Minio in the foreground

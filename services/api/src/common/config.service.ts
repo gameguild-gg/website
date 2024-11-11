@@ -187,40 +187,72 @@ export class ApiConfigService {
     // `ASSET_SOURCE_XXXX_BUCKET` - Source bucket or path if applicable
     // where XXXX is the source name
 
-    const sources: Map<string, SourceInfo> = {};
+    const sources: Map<string, SourceInfo> = new Map();
 
     // get all env vars
     const env = process.env;
 
-    // iterate over all env vars
+    // get all possible sources
+    const sourceNames: string[] = [];
     Object.keys(env).forEach((key: string) => {
-      // check if the env var starts with ASSET_SOURCE_
       if (key.startsWith('ASSET_SOURCE_')) {
-        // get the source name
         const sourceName = key.replace('ASSET_SOURCE_', '');
-        // get the source type
-        const type = env[`ASSET_SOURCE_${sourceName}_TYPE`];
-        // get the source endpoint
-        const endpoint = env[`ASSET_SOURCE_${sourceName}_ENDPOINT`];
-        // get the access key
-        const accessKey = env[`ASSET_SOURCE_${sourceName}_ACCESS_KEY`];
-        // get the source secret
-        const secretKey = env[`ASSET_SOURCE_${sourceName}_SECRET_KEY`];
-        // get the source bucket
-        const bucket = env[`ASSET_SOURCE_${sourceName}_BUCKET`];
-
-        // add the source to the sources object
-        sources[sourceName] = {
-          type,
-          endpoint,
-          accessKey,
-          secretKey,
-          bucket,
-        };
+        // remove everything after the first underscore
+        const source = sourceName.split('_')[0];
+        if (!sourceNames.includes(source)) {
+          sourceNames.push(source);
+        }
       }
     });
 
+    // iterate over all sources
+    sourceNames.forEach((sourceName) => {
+      const type = ormconfig.getEnvString(`ASSET_SOURCE_${sourceName}_TYPE`);
+      // get the source endpoint
+      const endpoint = ormconfig.getEnvString(
+        `ASSET_SOURCE_${sourceName}_ENDPOINT`,
+      );
+      // get the access key
+      const accessKey = ormconfig.getEnvString(
+        `ASSET_SOURCE_${sourceName}_KEY`,
+      );
+      // get the source secret
+      const secretKey = ormconfig.getEnvString(
+        `ASSET_SOURCE_${sourceName}_SECRET`,
+      );
+      // get the source bucket
+      const bucket = ormconfig.getEnvString(
+        `ASSET_SOURCE_${sourceName}_BUCKET`,
+      );
+      // get the source port
+      const port = ormconfig.getEnvNumber(
+        `ASSET_SOURCE_${sourceName}_PORT`,
+        443,
+      );
+
+      // add the source to the sources object
+      sources[sourceName] = {
+        type,
+        endpoint,
+        accessKey,
+        secretKey,
+        bucket,
+      };
+    });
+
     return sources;
+  }
+
+  get assetCacheDir(): string {
+    return ormconfig.getEnvString('ASSET_CACHE_DIR', '/tmp'); // default to /tmp
+  }
+
+  get assetCacheTTL(): number {
+    return ormconfig.getEnvNumber('ASSET_CACHE_TTL', 60 * 60 * 24); // 24 hours
+  }
+
+  get assetCacheSize(): number {
+    return ormconfig.getEnvNumber('ASSET_CACHE_SIZE', 1024 * 1024 * 1024 * 10); // 10GB
   }
 }
 
@@ -230,4 +262,5 @@ export type SourceInfo = {
   accessKey: string;
   secretKey: string;
   bucket: string;
+  port: number;
 };
