@@ -81,9 +81,9 @@ const nextConfig = {
 
     return config;
   },
-  // typescript: {
-  //   ignoreBuildErrors: false,
-  // },
+  typescript: {
+    ignoreBuildErrors: false,
+  },
   experimental: {
     externalDir: false,
   },
