@@ -5,6 +5,7 @@ import { execSync } from 'child_process';
 import { ApiConfigService } from './common/config.service';
 import * as fs from 'node:fs';
 import * as process from 'node:process';
+import { spawn } from 'child_process';
 
 const logger: Logger = new Logger('SetupSwagger');
 
@@ -52,28 +53,44 @@ export function setupSwagger(app: INestApplication): void {
 
   try {
     logger.log('Generating api client');
-    execSync('npm run openapigenerator', { stdio: 'ignore' });
-    logger.log('Client generated successfully');
-    fixOpenApiGeneratorPlus();
-    logger.log('OpenApiPlus fixed');
+    const generateClient = spawn('npm', ['run', 'openapigenerator'], {
+      stdio: 'ignore',
+      detached: true,
+    });
+    generateClient.unref();
+    generateClient.on('close', (code) => {
+      if (code === 0) {
+        logger.log('Client generated successfully');
+        fixOpenApiGeneratorPlus();
+        logger.log('OpenApiPlus fixed');
+
+        if (process.env.NODE_ENV === 'development') {
+          try {
+            logger.log('Installing apiclient in web');
+            const installClient = spawn(
+              'npm',
+              ['run', 'install:apiclient', '--prefix', '../../'],
+              { stdio: 'ignore', detached: true },
+            );
+            installClient.unref();
+            installClient.on('close', (code) => {
+              if (code === 0) {
+                logger.log('apiclient installed successfully on web');
+              } else {
+                logger.error(JSON.stringify(code));
+              }
+            });
+          } catch (e) {
+            logger.error(JSON.stringify(e));
+          }
+        }
+      } else {
+        logger.error('Error generating API client.');
+      }
+    });
   } catch (e) {
-    logger.error(
-      'Error generating client. Do you have installed java runtime?',
-    );
+    logger.error('Error generating API client.');
   }
-
-  if (process.env.NODE_ENV === 'development') {
-    try {
-      logger.log('Installing apiclient in web');
-      execSync('npm run install:apiclient --prefix ../../', {
-        stdio: 'ignore',
-      });
-      logger.log('apiclient installed successfully on web');
-    } catch (e) {
-      logger.error(JSON.stringify(e));
-    }
-  }
-
   logger.verbose(
     `Documentation: http://localhost:${configService.appConfig.port}/documentation`,
   );
