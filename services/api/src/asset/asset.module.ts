@@ -7,11 +7,13 @@ import { ImageEntity } from './image.entity';
 import { S3ImageStorage } from './storages/s3.image.storage';
 import { ApiConfigService } from '../common/config.service';
 import { ConfigModule } from '@nestjs/config';
+import { CommonModule } from '../common/common.module';
+import { FileCacheStorageService } from './storages/filecache.storage';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([ImageEntity])],
+  imports: [TypeOrmModule.forFeature([ImageEntity]), CommonModule],
   controllers: [AssetController],
-  providers: [AssetService],
+  providers: [AssetService, FileCacheStorageService, S3ImageStorage],
   exports: [AssetService],
 })
 export class AssetModule {}

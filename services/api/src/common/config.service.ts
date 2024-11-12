@@ -185,6 +185,7 @@ export class ApiConfigService {
     // `ASSET_SOURCE_XXXX_KEY` - Source key, email or username if applicable
     // `ASSET_SOURCE_XXXX_SECRET` - Source password or secret if applicable
     // `ASSET_SOURCE_XXXX_BUCKET` - Source bucket or path if applicable
+    // `ASSET_SOURCE_XXXX_PORT` - Source server port if applicable
     // where XXXX is the source name
 
     const sources: Map<string, SourceInfo> = new Map();
