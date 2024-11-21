@@ -9,11 +9,17 @@ import { ApiConfigService } from '../common/config.service';
 import { ConfigModule } from '@nestjs/config';
 import { CommonModule } from '../common/common.module';
 import { FileCacheStorageService } from './storages/filecache.storage';
+import { CompressImageService } from './compress.image.service';
 
 @Module({
   imports: [TypeOrmModule.forFeature([ImageEntity]), CommonModule],
   controllers: [AssetController],
-  providers: [AssetService, FileCacheStorageService, S3ImageStorage],
+  providers: [
+    AssetService,
+    FileCacheStorageService,
+    S3ImageStorage,
+    CompressImageService,
+  ],
   exports: [AssetService],
 })
 export class AssetModule {}

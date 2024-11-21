@@ -18,6 +18,8 @@ import { TagModule } from './tag/tag.module';
 import { ClsModule } from 'nestjs-cls';
 import { DataSource } from 'typeorm';
 import { AssetModule } from './asset';
+import { MulterModule } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
 
 @Module({
   imports: [
@@ -56,7 +58,15 @@ import { AssetModule } from './asset';
     TagModule,
     JobModule,
     AssetModule,
-    // IpfsModule,
+    MulterModule.register({
+      storage: diskStorage({
+        destination: '/tmp/uploads',
+        filename: (req, file, cb) => {
+          const filename = `${Date.now()}-${file.originalname}`;
+          cb(null, filename);
+        },
+      }),
+    }),
   ],
   controllers: [AppController],
   providers: [

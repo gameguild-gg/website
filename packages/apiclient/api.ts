@@ -20,63 +20,7 @@ export type FactoryFunction<T> = (configuration?: Configuration, basePath?: stri
 
 export namespace AssetApi {
 	export type AssetControllerUploadImageResponse =
-		| AssetControllerUploadImage400Response
-		| AssetControllerUploadImage401Response
-		| AssetControllerUploadImage403Response
-		| AssetControllerUploadImage404Response
-		| AssetControllerUploadImage409Response
-		| AssetControllerUploadImage422Response
-		| AssetControllerUploadImage500Response
 		| AssetControllerUploadImageDefaultResponse
-	
-	export interface AssetControllerUploadImage400Response {
-		status: 400
-		contentType: 'application/json'
-		body: Api.ApiErrorResponseDto
-		headers?: undefined
-	}
-	
-	export interface AssetControllerUploadImage401Response {
-		status: 401
-		contentType: 'application/json'
-		body: Api.ApiErrorResponseDto
-		headers?: undefined
-	}
-	
-	export interface AssetControllerUploadImage403Response {
-		status: 403
-		contentType: 'application/json'
-		body: Api.ApiErrorResponseDto
-		headers?: undefined
-	}
-	
-	export interface AssetControllerUploadImage404Response {
-		status: 404
-		contentType: 'application/json'
-		body: Api.ApiErrorResponseDto
-		headers?: undefined
-	}
-	
-	export interface AssetControllerUploadImage409Response {
-		status: 409
-		contentType: 'application/json'
-		body: Api.ApiErrorResponseDto
-		headers?: undefined
-	}
-	
-	export interface AssetControllerUploadImage422Response {
-		status: 422
-		contentType: 'application/json'
-		body: Api.ApiErrorResponseDto
-		headers?: undefined
-	}
-	
-	export interface AssetControllerUploadImage500Response {
-		status: 500
-		contentType: 'application/json'
-		body: Api.ApiErrorResponseDto
-		headers?: undefined
-	}
 	
 	export interface AssetControllerUploadImageDefaultResponse {
 		status: number
@@ -109,16 +53,6 @@ export const AssetApiFetchParamCreator = function (configuration?: Configuration
 				localVarPath = localVarPath.substring(0, localVarPathQueryStart);
 			}
 
-			// authentication bearer required
-			// http authorization required
-			if (configuration && configuration.authorization) {
-				const localVarAuthorizationValue = typeof configuration.authorization === 'function'
-					? configuration.authorization('bearer')
-					: configuration.authorization;
-				if (localVarAuthorizationValue !== null) {
-					localVarHeaderParameter.set("Authorization", "Bearer " + localVarAuthorizationValue);
-				}
-			}
 			localVarHeaderParameter.set('Content-Type', 'multipart/form-data');
 
 			localVarRequestOptions.headers = localVarHeaderParameter;
@@ -127,9 +61,6 @@ export const AssetApiFetchParamCreator = function (configuration?: Configuration
 				const localVarFormData = new FormData();
 				if (request.file !== undefined) {
 					localVarFormData.append('file', request.file.value);
-				}
-				if (request.body !== undefined) {
-					localVarFormData.append('body', JSON.stringify(request.body));
 				}
 				localVarRequestOptions.body = localVarFormData;
 			}
@@ -164,76 +95,6 @@ export const AssetApiFp = function(configuration?: Configuration) {
 				const contentType = response.headers.get('Content-Type');
 				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
 				
-				if (response.status === 400) {
-					if (mimeType === 'application/json') {
-						return {
-							status: response.status,
-							contentType: 'application/json',
-							body: await response.json() as Api.ApiErrorResponseDto,
-						}
-					}
-					throw response;
-				}
-				if (response.status === 401) {
-					if (mimeType === 'application/json') {
-						return {
-							status: response.status,
-							contentType: 'application/json',
-							body: await response.json() as Api.ApiErrorResponseDto,
-						}
-					}
-					throw response;
-				}
-				if (response.status === 403) {
-					if (mimeType === 'application/json') {
-						return {
-							status: response.status,
-							contentType: 'application/json',
-							body: await response.json() as Api.ApiErrorResponseDto,
-						}
-					}
-					throw response;
-				}
-				if (response.status === 404) {
-					if (mimeType === 'application/json') {
-						return {
-							status: response.status,
-							contentType: 'application/json',
-							body: await response.json() as Api.ApiErrorResponseDto,
-						}
-					}
-					throw response;
-				}
-				if (response.status === 409) {
-					if (mimeType === 'application/json') {
-						return {
-							status: response.status,
-							contentType: 'application/json',
-							body: await response.json() as Api.ApiErrorResponseDto,
-						}
-					}
-					throw response;
-				}
-				if (response.status === 422) {
-					if (mimeType === 'application/json') {
-						return {
-							status: response.status,
-							contentType: 'application/json',
-							body: await response.json() as Api.ApiErrorResponseDto,
-						}
-					}
-					throw response;
-				}
-				if (response.status === 500) {
-					if (mimeType === 'application/json') {
-						return {
-							status: response.status,
-							contentType: 'application/json',
-							body: await response.json() as Api.ApiErrorResponseDto,
-						}
-					}
-					throw response;
-				}
 				/* Catch-all response */
 				if (mimeType === 'application/json') {
 					return {

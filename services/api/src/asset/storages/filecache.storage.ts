@@ -4,11 +4,20 @@ import { ApiConfigService, SourceInfo } from '../../common/config.service';
 import { rimraf } from 'rimraf';
 import * as fs from 'fs';
 import { AssetBase } from '../asset.base';
+import * as Stream from 'node:stream';
 const fsp = fs.promises;
+import { lookup } from 'mime-types';
 
 export class AssetOnDisk {
   path: string;
   hash: string;
+  size: number;
+  mime: string;
+}
+
+export class AssetOnDiskWithWidthAndHeight extends AssetOnDisk {
+  width: number;
+  height: number;
 }
 
 @Injectable()
@@ -72,28 +81,48 @@ export class FileCacheStorageService implements Storage {
       await fsp.mkdir(targetFolder, { recursive: true });
       // move the file to the target folder
       await fsp.rename(file.path, targetPath);
-      return { path: targetPath, hash: hash };
     } else {
       // touch the file to update the mtime
       await fsp.utimes(targetPath, new Date(), new Date());
       // delete the temp file
       await fsp.unlink(file.path);
-      return { path: targetPath, hash: hash };
     }
+
+    const mime = await lookup(targetPath);
+    return { path: targetPath, hash: hash, size: file.size, mime: mime };
   }
   delete() {}
-  get(asset: Partial<AssetBase>) {}
+  async get(asset: Partial<AssetBase>): Promise<AssetOnDisk | null> {
+    // use asset to get the right path of the file
+    const outerFolder = asset.hash.substring(0, 2);
+    const innerFolder = asset.hash.substring(2, 4);
+    const targetFolder = `${this.assetCacheDir}/${outerFolder}/${innerFolder}`;
+    const filename = `${asset.hash}-${asset.filename}`;
+    const targetPath = `${targetFolder}/${filename}`;
 
-  // store(file: Express.Multer.File) {
-  //   const nowms = new Date().getTime();
-  //   // const tempFilePath = path.join(this.assetCacheDir, file.originalname);
-  //
-  //   const path = `${this.tempFolder}/${nowms}${file.originalname}`;
-  // }
-  // delete(): Promise<OkDto> {
-  //   throw new Error('Method not implemented.');
-  // }
-  // get(asset): Promise<AssetBase> {
-  //   throw new Error('Method not implemented.');
-  // }
+    // if the file exists on cache, return it
+    if (fs.existsSync(targetPath)) {
+      // if the last touched time is older than the 5m, touch the file
+      const stats = await fsp.stat(targetPath);
+      if (stats.mtime.getTime() < new Date().getTime() - 5 * 60 * 1000) {
+        // touch the file to update the mtime
+        await fsp.utimes(targetPath, new Date(), new Date());
+      }
+      return {
+        path: targetPath,
+        hash: asset.hash,
+        size: asset.sizeBytes,
+        mime: asset.mimetype,
+      };
+    }
+    return null;
+  }
+
+  async saveToDisk(assetOnS3: Stream, filePath: string) {
+    // create the target folder if it does not exist. async is used
+    const targetFolder = filePath.substring(0, filePath.lastIndexOf('/'));
+    await fsp.mkdir(targetFolder, { recursive: true });
+    // write the file to disk
+    const fileStream = await fsp.writeFile(filePath, assetOnS3);
+  }
 }

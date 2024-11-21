@@ -7,6 +7,7 @@ import { ApiConfigService, SourceInfo } from '../common/config.service';
 import { ImageEntity } from './image.entity';
 import * as fs from 'node:fs';
 import * as path from 'path';
+import { S3ImageStorage } from './storages/s3.image.storage';
 
 @Injectable()
 export class AssetService {
@@ -18,9 +19,10 @@ export class AssetService {
   private maxCacheSize: number;
 
   constructor(
-    // @InjectRepository(AssetBase)
-    // private readonly imageRepository: Repository<AssetBase>,
+    @InjectRepository(ImageEntity)
+    private readonly imageRepository: Repository<ImageEntity>,
     private readonly configService: ApiConfigService,
+    private imageStorage: S3ImageStorage,
   ) {
     this.assetSourceMap = configService.assetSourceInfoMap;
     this.assetCacheDir = configService.assetCacheDir;
@@ -28,14 +30,21 @@ export class AssetService {
     this.ttl = configService.assetCacheTTL;
   }
 
-  private async store(file: Express.Multer.File): Promise<ImageEntity> {
-    // save the file to the temp/uploads folder without any processing
-    const nowms = new Date().getTime();
-    // const tempFilePath = path.join(this.assetCacheDir, file.originalname);
+  public async storeImage(file: Express.Multer.File): Promise<ImageEntity> {
+    // check if image already exists
+    // todo: implement megaupload hashing system to avoid duplicates
 
-    const path = `${this.tempFolder}/${nowms}${file.originalname}`;
+    const assetOnDisk = await this.imageStorage.store(file);
+    const folder =
+      assetOnDisk.hash.substring(0, 2) + '/' + assetOnDisk.hash.substring(2, 4);
 
-    // save it to temp folder
-    return new ImageEntity();
+    const image = await this.imageRepository.save({
+      width: assetOnDisk.width,
+      height: assetOnDisk.height,
+      mimetype: assetOnDisk.mime,
+      path: folder,
+    });
+
+    return image;
   }
 }

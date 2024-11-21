@@ -3,6 +3,7 @@ import {
   Controller,
   Logger,
   Post,
+  UnprocessableEntityException,
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
@@ -15,7 +16,7 @@ import {
 } from '@nestjs/swagger';
 import { AssetService } from './asset.service';
 import { Auth, AuthUser } from '../auth';
-import { AuthenticatedRoute } from '../auth/auth.enum';
+import { AuthenticatedRoute, PublicRoute } from '../auth/auth.enum';
 import { UserEntity } from '../user/entities';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiFile } from '../common/decorators/api-file.decorator';
@@ -29,24 +30,39 @@ export class AssetController {
   private readonly logger = new Logger(AssetController.name);
   constructor(private readonly assetService: AssetService) {}
 
-  // @Auth(AuthenticatedRoute)
-  @UseInterceptors(FileInterceptor('file'))
-  @ApiFile()
+  @ApiFile({
+    fileFilter(
+      req: any,
+      file: {
+        fieldname: string;
+        originalname: string;
+        encoding: string;
+        mimetype: string;
+        size: number;
+        destination: string;
+        filename: string;
+        path: string;
+        buffer: Buffer;
+      },
+      callback: (error: Error | null, acceptFile: boolean) => void,
+    ) {
+      //only allow images, accept all types of images
+      if (!file.mimetype.startsWith('image')) {
+        return callback(
+          new UnprocessableEntityException('Only images are allowed!'),
+          false,
+        );
+      }
+      callback(null, true);
+    },
+  })
   @Post('upload')
-  @Auth(AuthenticatedRoute)
+  // @Auth(AuthenticatedRoute)
   @ApiResponse({ type: ImageEntity })
   async uploadImage(
     @AuthUser() user: UserEntity,
-    @Body() body: ContentBase,
     @UploadedFile() file: Express.Multer.File,
   ) {
-    const ret = {
-      filename: file.originalname,
-      size: file.size,
-      mimeType: file.mimetype,
-    };
-
-    console.log('ret', ret);
-    return ret;
+    return this.assetService.storeImage(file);
   }
 }

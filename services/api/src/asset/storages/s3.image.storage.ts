@@ -4,9 +4,14 @@ import { Storage } from '../storage';
 import * as Minio from 'minio';
 import { ImageEntity } from '../image.entity';
 import { ApiConfigService } from '../../common/config.service';
-import { FileCacheStorageService } from './filecache.storage';
-import * as gm from 'gm';
-import { Inject, Logger } from '@nestjs/common';
+import {
+  AssetOnDisk,
+  AssetOnDiskWithWidthAndHeight,
+  FileCacheStorageService,
+} from './filecache.storage';
+import { Inject, Injectable, Logger } from '@nestjs/common';
+const sharp = require('sharp');
+import { lookup } from 'mime-types';
 
 export type S3StorageConfig = {
   endpoint: string;
@@ -16,6 +21,7 @@ export type S3StorageConfig = {
   port: number;
 };
 
+@Injectable()
 export class S3ImageStorage extends Storage {
   client: Minio.Client;
   assetFolder: string;
@@ -46,21 +52,10 @@ export class S3ImageStorage extends Storage {
     this.assetFolder = configService.assetCacheDir;
   }
 
-  checkIfGmIsInstalled() {
-    gm('version', (err, version) => {
-      if (err) {
-        const message = 'GraphicsMagick is not installed. Please install it.';
-        this.logger.error(message);
-        throw new Error(message);
-      } else {
-        this.logger.verbose(
-          'GraphicsMagick is installed with with version: ' + version,
-        );
-      }
-    });
-  }
-
-  async store(file: Express.Multer.File) {
+  async store(
+    file: Express.Multer.File,
+  ): Promise<AssetOnDiskWithWidthAndHeight> {
+    const metadata = await sharp(file.path).metadata();
     const cached = await this.filecache.store(file);
 
     // upload the file to minio
@@ -70,29 +65,37 @@ export class S3ImageStorage extends Storage {
       `${cached.hash.substring(0, 2)}/${cached.hash.substring(2, 4)}/${cached.hash}-${file.originalname}`,
       {
         'Content-Type': file.mimetype,
-        Size: file.size,
+        Size: cached.size,
         Hash: cached.hash,
+        Width: metadata.width,
+        Height: metadata.height,
       },
     );
 
-    // get the dimensions of the image
-    const dimensions = await new Promise<{ width: number; height: number }>(
-      (resolve, reject) => {
-        gm(file.path).size((err, size) => {
-          if (err) {
-            reject(err);
-          }
-          resolve(size);
-        });
-      },
-    );
-
-    return {};
+    return { ...cached, width: metadata.width, height: metadata.height };
   }
   delete(): Promise<OkDto> {
     throw new Error('Method not implemented.');
   }
-  get(asset: Partial<AssetBase>): Promise<AssetBase> {
-    throw new Error('Method not implemented.');
+  async get(asset: Partial<AssetBase>): Promise<AssetOnDisk> {
+    // fetch from filecache first, then from s3
+    const fileOnDisk = await this.filecache.get(asset);
+    if (fileOnDisk) return fileOnDisk;
+    // fetch from s3
+    const assetOnS3 = await this.client.getObject(
+      this.config.bucket,
+      `${asset.hash.substring(0, 2)}/${asset.hash.substring(2, 4)}/${asset.hash}-${asset.filename}`,
+    );
+
+    // save the file to disk
+    const targetFolder = `${this.assetFolder}/${asset.hash.substring(0, 2)}/${asset.hash.substring(2, 4)}`;
+    const targetPath = `${targetFolder}/${asset.hash}-${asset.filename}`;
+    await this.filecache.saveToDisk(assetOnS3, targetPath);
+    return {
+      path: targetPath,
+      hash: asset.hash,
+      size: asset.sizeBytes,
+      mime: asset.mimetype,
+    };
   }
 }

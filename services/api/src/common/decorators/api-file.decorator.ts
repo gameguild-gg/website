@@ -1,4 +1,4 @@
-import { applyDecorators, Type } from '@nestjs/common';
+import { applyDecorators, Type, UseInterceptors } from '@nestjs/common';
 import {
   ApiBody,
   ApiConsumes,
@@ -10,6 +10,8 @@ import {
   PARAMTYPES_METADATA,
 } from '@nestjs/common/constants';
 import { RouteParamtypes } from '@nestjs/common/enums/route-paramtypes.enum';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { MulterOptions } from '@nestjs/platform-express/multer/interfaces/multer-options.interface';
 
 function getBodyDtoType(
   instance: Object,
@@ -39,7 +41,8 @@ function getBodyDtoType(
   return null;
 }
 
-export function ApiFile(): MethodDecorator {
+export function ApiFile(options: MulterOptions = { dest: '/tmp/uploads' }) {
+  options.dest = options.dest || '/tmp/uploads';
   return (target, propertyKey, descriptor: PropertyDescriptor) => {
     const dtoType = getBodyDtoType(target, propertyKey);
 
@@ -49,6 +52,7 @@ export function ApiFile(): MethodDecorator {
 
     applyDecorators(
       ApiConsumes('multipart/form-data'),
+      UseInterceptors(FileInterceptor('file', options)),
       ApiBody({
         schema: {
           type: 'object',

@@ -8,6 +8,7 @@ import * as ormconfig from '../../ormconfig';
 import * as dotenv from 'dotenv';
 import * as process from 'node:process';
 import { decodeBase64 } from 'ethers';
+import * as fsp from 'fs/promises';
 
 @Injectable()
 export class ApiConfigService {
@@ -16,7 +17,6 @@ export class ApiConfigService {
     // note: This is a workaround to mimic the next dotenv behavior.
     // for some reason the app module is not able to read .env.local files, so I am rewriting everything here.
     // if you found a better solution to this, please let me know on gh: tolstenko
-
     const processEnv = process.env;
     const defaultConfig =
       dotenv.config({ path: '.env', override: false }).parsed || {};
@@ -54,6 +54,12 @@ export class ApiConfigService {
     Object.keys(env).forEach((key) => {
       process.env[key] = env[key];
     });
+
+    // ensure temp folders exist
+    fsp.mkdir('/tmp/uploads', { recursive: true }).then();
+
+    // ensure cache folder exists
+    fsp.mkdir(this.assetCacheDir, { recursive: true }).then();
   }
 
   get sendGridApiKey(): string {
