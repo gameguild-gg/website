@@ -33,27 +33,16 @@ export class AssetController {
   @ApiFile({
     fileFilter(
       req: any,
-      file: {
-        fieldname: string;
-        originalname: string;
-        encoding: string;
-        mimetype: string;
-        size: number;
-        destination: string;
-        filename: string;
-        path: string;
-        buffer: Buffer;
-      },
+      file: Express.Multer.File,
       callback: (error: Error | null, acceptFile: boolean) => void,
     ) {
-      //only allow images, accept all types of images
       if (!file.mimetype.startsWith('image')) {
         return callback(
           new UnprocessableEntityException('Only images are allowed!'),
           false,
         );
       }
-      callback(null, true);
+      return callback(null, true);
     },
   })
   @Post('upload')

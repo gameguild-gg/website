@@ -94,6 +94,6 @@ export class AssetBase extends EntityBase {
   // todo: add index to jsonb field
   @ApiProperty()
   @IsOptional()
-  @Column({ nullable: false, type: 'jsonb', default: null })
+  @Column({ nullable: true, type: 'jsonb', default: null })
   readonly references: ResourceReference[];
 }

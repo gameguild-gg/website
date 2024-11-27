@@ -1,8 +1,11 @@
 import { OkDto } from 'src/common/dtos/ok.dto';
 import { AssetBase } from '../asset.base';
 import { Storage } from '../storage';
-import * as Minio from 'minio';
-import { ImageEntity } from '../image.entity';
+import {
+  GetObjectCommand,
+  PutObjectCommand,
+  S3Client,
+} from '@aws-sdk/client-s3';
 import { ApiConfigService } from '../../common/config.service';
 import {
   AssetOnDisk,
@@ -10,20 +13,21 @@ import {
   FileCacheStorageService,
 } from './filecache.storage';
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import * as fs from 'node:fs';
+
 const sharp = require('sharp');
-import { lookup } from 'mime-types';
 
 export type S3StorageConfig = {
   endpoint: string;
-  accessKeyId: string;
-  secretAccessKey: string;
+  accessKey: string;
+  secretKey: string;
   bucket: string;
   port: number;
 };
 
 @Injectable()
 export class S3ImageStorage extends Storage {
-  client: Minio.Client;
+  client: S3Client;
   assetFolder: string;
   private readonly logger = new Logger(S3ImageStorage.name);
   private config: S3StorageConfig;
@@ -40,14 +44,18 @@ export class S3ImageStorage extends Storage {
       this.logger.error(msg);
       throw new Error(msg);
     }
-    const minio = sourceInfo['MINIO'];
+    this.config = sourceInfo['MINIO'];
 
     // init s3 client
-    this.client = new Minio.Client({
-      endPoint: minio.endpoint,
-      port: minio.port,
-      accessKey: minio.accessKey,
-      secretKey: minio.secretKey,
+    this.client = new S3Client({
+      region: 'us-east-1',
+      credentials: {
+        accessKeyId: this.config.accessKey,
+        secretAccessKey: this.config.secretKey,
+      },
+      endpoint: this.config.endpoint,
+      forcePathStyle: true,
+      tls: this.config.endpoint.startsWith('https'),
     });
     this.assetFolder = configService.assetCacheDir;
   }
@@ -58,19 +66,25 @@ export class S3ImageStorage extends Storage {
     const metadata = await sharp(file.path).metadata();
     const cached = await this.filecache.store(file);
 
-    // upload the file to minio
-    await this.client.fPutObject(
-      this.config.bucket,
-      cached.hash,
-      `${cached.hash.substring(0, 2)}/${cached.hash.substring(2, 4)}/${cached.hash}-${file.originalname}`,
-      {
-        'Content-Type': file.mimetype,
-        Size: cached.size,
+    const fileStream = fs.createReadStream(cached.path);
+    const path = `${cached.hash.substring(0, 2)}/${cached.hash.substring(2, 4)}`;
+
+    const command = new PutObjectCommand({
+      Bucket: this.config.bucket,
+      Key: `${path}/${cached.hash}-${file.originalname}`,
+      Body: fileStream,
+      ContentType: cached.mime,
+      Metadata: {
+        Size: cached.size.toString(),
         Hash: cached.hash,
-        Width: metadata.width,
-        Height: metadata.height,
+        Width: metadata.width.toString(),
+        Height: metadata.height.toString(),
       },
-    );
+    });
+
+    await this.client.send(command);
+
+    fileStream.close();
 
     return { ...cached, width: metadata.width, height: metadata.height };
   }
@@ -81,16 +95,22 @@ export class S3ImageStorage extends Storage {
     // fetch from filecache first, then from s3
     const fileOnDisk = await this.filecache.get(asset);
     if (fileOnDisk) return fileOnDisk;
-    // fetch from s3
-    const assetOnS3 = await this.client.getObject(
-      this.config.bucket,
-      `${asset.hash.substring(0, 2)}/${asset.hash.substring(2, 4)}/${asset.hash}-${asset.filename}`,
-    );
+
+    // fetch from s3 and store in filecache
+    const command = new GetObjectCommand({
+      Bucket: this.config.bucket,
+      Key: `${asset.path}`,
+    });
+
+    // fetch the asset from s3
+    const assetOnS3 = await this.client.send(command);
 
     // save the file to disk
     const targetFolder = `${this.assetFolder}/${asset.hash.substring(0, 2)}/${asset.hash.substring(2, 4)}`;
     const targetPath = `${targetFolder}/${asset.hash}-${asset.filename}`;
-    await this.filecache.saveToDisk(assetOnS3, targetPath);
+    const stream = assetOnS3.Body.transformToWebStream();
+    await this.filecache.saveToDisk(stream, targetPath);
+    await stream.cancel();
     return {
       path: targetPath,
       hash: asset.hash,

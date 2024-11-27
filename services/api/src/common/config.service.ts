@@ -231,11 +231,6 @@ export class ApiConfigService {
       const bucket = ormconfig.getEnvString(
         `ASSET_SOURCE_${sourceName}_BUCKET`,
       );
-      // get the source port
-      const port = ormconfig.getEnvNumber(
-        `ASSET_SOURCE_${sourceName}_PORT`,
-        443,
-      );
 
       // add the source to the sources object
       sources[sourceName] = {
@@ -269,5 +264,4 @@ export type SourceInfo = {
   accessKey: string;
   secretKey: string;
   bucket: string;
-  port: number;
 };

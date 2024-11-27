@@ -118,7 +118,7 @@ export class FileCacheStorageService implements Storage {
     return null;
   }
 
-  async saveToDisk(assetOnS3: Stream, filePath: string) {
+  async saveToDisk(assetOnS3: ReadableStream<any>, filePath: string) {
     // create the target folder if it does not exist. async is used
     const targetFolder = filePath.substring(0, filePath.lastIndexOf('/'));
     await fsp.mkdir(targetFolder, { recursive: true });

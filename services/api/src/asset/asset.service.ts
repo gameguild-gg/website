@@ -43,6 +43,10 @@ export class AssetService {
       height: assetOnDisk.height,
       mimetype: assetOnDisk.mime,
       path: folder,
+      source: 'MINIO',
+      hash: assetOnDisk.hash,
+      filename: assetOnDisk.hash + '-' + file.originalname,
+      sizeBytes: assetOnDisk.size,
     });
 
     return image;
