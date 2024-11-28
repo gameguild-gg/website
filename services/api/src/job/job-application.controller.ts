@@ -11,12 +11,12 @@ import {
   Override,
   ParsedRequest,
 } from '@dataui/crud';
-import { PartialWithoutFields } from 'src/cms/interceptors/ownership-empty-interceptor.service';
 import { ExcludeFieldsPipe } from 'src/cms/pipes/exclude-fields.pipe';
 import { BodyApplicantInject } from './decorators/body-applicant-injection.decorator';
 import { JobAplicationCreateDto } from './dtos/job-aplication-create.dto';
 import { UserInject } from 'src/common/decorators/user-injection.decorator';
 import { UserEntity } from 'src/user/entities';
+import { PartialWithoutFields } from '../types';
 
 @Crud({
   model: {
@@ -59,9 +59,9 @@ import { UserEntity } from 'src/user/entities';
       },
       job: {
         eager: true,
-      }
-    }
-  }
+      },
+    },
+  },
 })
 @Controller('job-applications')
 @ApiTags('Job Applications')
@@ -142,7 +142,7 @@ export class JobApplicationController
   async advanceCandidate(
     @Body() application: JobApplicationEntity,
     @UserInject() jobManager: UserEntity,
-  ):Promise<JobApplicationEntity> {
+  ): Promise<JobApplicationEntity> {
     return this.service.advanceCandidate(application, jobManager.id);
   }
 
@@ -157,7 +157,7 @@ export class JobApplicationController
   async moveBackCandidate(
     @Body() application: JobApplicationEntity,
     @UserInject() jobManager: UserEntity,
-  ):Promise<JobApplicationEntity> {
+  ): Promise<JobApplicationEntity> {
     return this.service.undoAdvanceCandidate(application, jobManager.id);
   }
 
@@ -172,7 +172,7 @@ export class JobApplicationController
   async rejectCandidate(
     @Body() application: JobApplicationEntity,
     @UserInject() jobManager: UserEntity,
-  ):Promise<JobApplicationEntity> {
+  ): Promise<JobApplicationEntity> {
     return this.service.rejectCandidate(application, jobManager.id);
   }
 
@@ -187,7 +187,7 @@ export class JobApplicationController
   async undoRejectCandidate(
     @Body() application: JobApplicationEntity,
     @UserInject() jobManager: UserEntity,
-  ):Promise<JobApplicationEntity> {
+  ): Promise<JobApplicationEntity> {
     return this.service.undoRejectCandidate(application, jobManager.id);
   }
 
@@ -202,8 +202,7 @@ export class JobApplicationController
   async withdraw(
     @Body() application: JobApplicationEntity,
     @UserInject() applicant: UserEntity,
-  ):Promise<JobApplicationEntity> {
+  ): Promise<JobApplicationEntity> {
     return this.service.withdraw(application, applicant.id);
   }
-
 }

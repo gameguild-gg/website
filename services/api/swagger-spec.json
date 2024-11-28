@@ -557,6 +557,99 @@
         ]
       }
     },
+    "/user-profile": {
+      "patch": {
+        "operationId": "UserProfileController_update",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateUserProfileDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Already exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/content/course/create": {
       "post": {
         "operationId": "ContentController_createEmptyCourse",
@@ -7583,43 +7676,6 @@
           }
         ]
       }
-    },
-    "/asset/upload": {
-      "post": {
-        "operationId": "AssetController_uploadImage",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "multipart/form-data": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "file": {
-                    "type": "string",
-                    "format": "binary"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "default": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ImageEntity"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "asset"
-        ]
-      }
     }
   },
   "info": {
@@ -8296,6 +8352,25 @@
         "required": [
           "address",
           "signature"
+        ]
+      },
+      "UpdateUserProfileDto": {
+        "type": "object",
+        "properties": {
+          "bio": {
+            "type": "string"
+          },
+          "givenName": {
+            "type": "string"
+          },
+          "familyName": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "bio",
+          "givenName",
+          "familyName"
         ]
       },
       "CreateProjectDto": {
@@ -9610,71 +9685,6 @@
           "progress",
           "rejected",
           "withdrawn"
-        ]
-      },
-      "ImageEntity": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "createdAt": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "updatedAt": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "source": {
-            "type": "string"
-          },
-          "path": {
-            "type": "string"
-          },
-          "filename": {
-            "type": "string"
-          },
-          "mimetype": {
-            "type": "string"
-          },
-          "sizeBytes": {
-            "type": "number"
-          },
-          "hash": {
-            "type": "string"
-          },
-          "references": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "width": {
-            "type": "integer"
-          },
-          "height": {
-            "type": "number"
-          },
-          "description": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "createdAt",
-          "updatedAt",
-          "source",
-          "path",
-          "filename",
-          "mimetype",
-          "sizeBytes",
-          "hash",
-          "references",
-          "width",
-          "height",
-          "description"
         ]
       }
     }

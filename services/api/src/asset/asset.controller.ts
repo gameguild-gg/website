@@ -30,28 +30,28 @@ export class AssetController {
   private readonly logger = new Logger(AssetController.name);
   constructor(private readonly assetService: AssetService) {}
 
-  @ApiFile({
-    fileFilter(
-      req: any,
-      file: Express.Multer.File,
-      callback: (error: Error | null, acceptFile: boolean) => void,
-    ) {
-      if (!file.mimetype.startsWith('image')) {
-        return callback(
-          new UnprocessableEntityException('Only images are allowed!'),
-          false,
-        );
-      }
-      return callback(null, true);
-    },
-  })
-  @Post('upload')
+  // @ApiFile({
+  //   fileFilter(
+  //     req: any,
+  //     file: Express.Multer.File,
+  //     callback: (error: Error | null, acceptFile: boolean) => void,
+  //   ) {
+  //     if (!file.mimetype.startsWith('image')) {
+  //       return callback(
+  //         new UnprocessableEntityException('Only images are allowed!'),
+  //         false,
+  //       );
+  //     }
+  //     return callback(null, true);
+  //   },
+  // })
+  // @Post('upload')
   // @Auth(AuthenticatedRoute)
-  @ApiResponse({ type: ImageEntity })
-  async uploadImage(
-    @AuthUser() user: UserEntity,
-    @UploadedFile() file: Express.Multer.File,
-  ) {
-    return this.assetService.storeImage(file);
-  }
+  // @ApiResponse({ type: ImageEntity })
+  // async uploadImage(
+  //   @AuthUser() user: UserEntity,
+  //   @UploadedFile() file: Express.Multer.File,
+  // ) {
+  //   return this.assetService.storeImage(file);
+  // }
 }

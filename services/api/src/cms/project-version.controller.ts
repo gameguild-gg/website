@@ -21,7 +21,7 @@ import { ProjectService } from './project.service';
 import { UserEntity } from '../user/entities';
 import { AuthUser } from '../auth';
 import { ExcludeFieldsPipe } from './pipes/exclude-fields.pipe';
-import { PartialWithoutFields } from './interceptors/ownership-empty-interceptor.service';
+import { PartialWithoutFields } from '../types';
 
 @Crud({
   model: {

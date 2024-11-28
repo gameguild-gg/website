@@ -45,32 +45,6 @@ export namespace Api {
 	
 	}
 
-	export interface AssetControllerUploadImageRequest {
-		file?: string | Blob;
-	}
-	
-	/**
-	 * @export
-	 * @namespace AssetControllerUploadImageRequest
-	 */
-	export namespace AssetControllerUploadImageRequest {
-		export interface MultipartFormData {
-			file?: Api.AssetControllerUploadImageRequest.MultipartFormData.FilePart;
-		}
-		
-		/**
-		 * @export
-		 * @namespace MultipartFormData
-		 */
-		export namespace MultipartFormData {
-			export interface FilePart {
-				value: string | Blob;
-			}
-		
-		}
-	
-	}
-
 	export interface ChapterEntity {
 		id: string;
 		createdAt: string;
@@ -541,34 +515,6 @@ export namespace Api {
 
 	export interface IdDto {
 		id: string;
-	}
-
-	export interface ImageEntity {
-		id: string;
-		createdAt: string;
-		updatedAt: string;
-		source: string;
-		path: string;
-		filename: string;
-		mimetype: string;
-		/**
-		 * @type {number}
-		 * @memberof ImageEntity
-		 */
-		sizeBytes: number;
-		hash: string;
-		references: string[];
-		/**
-		 * @type {number}
-		 * @memberof ImageEntity
-		 */
-		width: number;
-		/**
-		 * @type {number}
-		 * @memberof ImageEntity
-		 */
-		height: number;
-		description: string;
 	}
 
 	export interface JobAplicationCreateDto {
@@ -1236,6 +1182,12 @@ export namespace Api {
 	export interface TransferOwnershipRequestDto {
 		id: string;
 		newUser: Api.IdDto;
+	}
+
+	export interface UpdateUserProfileDto {
+		bio: string;
+		givenName: string;
+		familyName: string;
 	}
 
 	export interface UserEntity {

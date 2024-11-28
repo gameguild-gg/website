@@ -14,6 +14,7 @@ import { Type } from 'class-transformer';
 
 @Entity({ name: 'user_profile' })
 export class UserProfileEntity extends EntityBase {
+  @IsOptional()
   @OneToOne(() => UserEntity, (user) => user.profile)
   @ApiProperty({ type: () => UserEntity })
   @ValidateNested()

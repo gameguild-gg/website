@@ -62,7 +62,8 @@ export class UserService extends TypeOrmCrudService<UserEntity> {
       emailVerified: false,
       passwordHash: data.passwordHash,
       passwordSalt: data.passwordSalt,
-      profile: await this.profileService.save({}),
+      // todo: dont access the repository directly
+      profile: await this.profileService.repository.save({}),
     });
   }
 
@@ -79,7 +80,8 @@ export class UserService extends TypeOrmCrudService<UserEntity> {
       return await this.save({
         walletAddress: walletAddress,
         username: generateUsername('-', 8),
-        profile: await this.profileService.save({}),
+        // todo: dont access repository directly
+        profile: await this.profileService.repository.save({}),
       });
     }
   }
@@ -124,12 +126,12 @@ export class UserService extends TypeOrmCrudService<UserEntity> {
       email: payload.email,
       emailVerified: true,
       username: generateFromEmail(payload.email, 8),
-      profile: await this.profileService.save({
+      profile: await this.repository.save({
         name: payload.name,
         givenName: payload.given_name,
         familyName: payload.family_name,
         picture: payload.picture,
-      }),
+      } as UserProfileEntity),
     });
   }
 
@@ -148,7 +150,8 @@ export class UserService extends TypeOrmCrudService<UserEntity> {
       email: email,
       emailVerified: false,
       username: generateFromEmail(email, 8),
-      profile: await this.profileService.save({}),
+      // todo: dont access the profile service directly
+      profile: await this.profileService.repository.save({}),
     });
   }
 }

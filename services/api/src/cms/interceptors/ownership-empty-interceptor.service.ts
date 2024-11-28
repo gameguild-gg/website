@@ -1,11 +1,5 @@
 import { CallHandler, ExecutionContext, Injectable } from '@nestjs/common';
 
-export type OmitFields<T, K extends keyof T> = Omit<T, K>;
-
-export type PartialWithoutFields<T, K extends keyof T> = Partial<
-  OmitFields<T, K>
->;
-
 @Injectable()
 export class OwnershipEmptyInterceptor {
   intercept(context: ExecutionContext, next: CallHandler) {
