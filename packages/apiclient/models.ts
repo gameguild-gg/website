@@ -517,6 +517,33 @@ export namespace Api {
 		id: string;
 	}
 
+	export interface ImageEntity {
+		id: string;
+		createdAt: string;
+		updatedAt: string;
+		source: string;
+		path: string;
+		filename: string;
+		mimetype: string;
+		/**
+		 * @type {number}
+		 * @memberof ImageEntity
+		 */
+		sizeBytes: number;
+		hash: string;
+		/**
+		 * @type {number}
+		 * @memberof ImageEntity
+		 */
+		width: number;
+		/**
+		 * @type {number}
+		 * @memberof ImageEntity
+		 */
+		height: number;
+		description: string;
+	}
+
 	export interface JobAplicationCreateDto {
 		job: Api.JobPostEntity;
 	}
@@ -1217,6 +1244,32 @@ export namespace Api {
 		courses: Api.CourseEntity[];
 	}
 
+	export interface UserProfileControllerUpdateProfilePictureRequest {
+		file?: string | Blob;
+	}
+	
+	/**
+	 * @export
+	 * @namespace UserProfileControllerUpdateProfilePictureRequest
+	 */
+	export namespace UserProfileControllerUpdateProfilePictureRequest {
+		export interface MultipartFormData {
+			file?: Api.UserProfileControllerUpdateProfilePictureRequest.MultipartFormData.FilePart;
+		}
+		
+		/**
+		 * @export
+		 * @namespace MultipartFormData
+		 */
+		export namespace MultipartFormData {
+			export interface FilePart {
+				value: string | Blob;
+			}
+		
+		}
+	
+	}
+
 	export interface UserProfileEntity {
 		id: string;
 		createdAt: string;
@@ -1226,7 +1279,7 @@ export namespace Api {
 		name: string;
 		givenName: string;
 		familyName: string;
-		picture: string;
+		picture: Api.ImageEntity;
 	}
 
 }

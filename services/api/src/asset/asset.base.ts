@@ -13,40 +13,32 @@ import { EntityBase } from '../common/entities/entity.base';
 import { IsIntegerNumber } from '../common/decorators/validator.decorator';
 
 export enum AssetSourceType {
-  S3 = 's3',
-  IPFS = 'ipfs',
-  CLOUDINARY = 'cloudinary',
-  EXTERNAL = 'external',
-}
-
-export class ResourceReference {
-  // resource type, it can be the table, type or any other reference
-  @ApiProperty()
-  @IsString()
-  @IsNotEmpty()
-  readonly type: string;
-
-  @ApiProperty()
-  @IsString()
-  @IsNotEmpty()
-  readonly id: string;
+  S3 = 'S3',
+  IPFS = 'IPFS',
+  CLOUDINARY = 'CLOUDNARY',
+  EXTERNAL = 'EXTERNAL',
 }
 
 // Base asset entity. This should be extended by other entities that need to store assets.
+@Index('asset_source_path_filename_idx', ['source', 'path', 'filename'], {
+  unique: true,
+})
 export class AssetBase extends EntityBase {
   // this source name is the same on from the env var
   @ApiProperty()
   @IsNotEmpty()
-  @IsString()
+  @IsEnum(AssetSourceType)
   @Column({ nullable: false })
   @Index({ unique: false })
-  readonly source: string;
+  readonly source: AssetSourceType;
 
-  // the full path to the asset on the source
+  // the path to the asset on the source without the filename
+  // if external, path will be the full url
   @ApiProperty()
   @IsNotEmpty()
   @IsString()
   @Column({ nullable: false, default: '' })
+  @Index({ unique: false })
   readonly path: string;
 
   @ApiProperty()
@@ -90,10 +82,4 @@ export class AssetBase extends EntityBase {
   @Column({ nullable: false })
   @Index({ unique: false })
   readonly hash: string;
-
-  // todo: add index to jsonb field
-  @ApiProperty()
-  @IsOptional()
-  @Column({ nullable: true, type: 'jsonb', default: null })
-  readonly references: ResourceReference[];
 }

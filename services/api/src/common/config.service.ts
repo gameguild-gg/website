@@ -186,7 +186,6 @@ export class ApiConfigService {
 
   get assetSourceInfoMap(): Map<string, SourceInfo> {
     // iterate over all env vars and get all env vars beginning with ASSET_SOURCE_.
-    // `ASSET_SOURCE_XXXX_TYPE` - Source type (s3, IPFS, Cloudinary...)
     // `ASSET_SOURCE_XXXX_ENDPOINT` - Source server API URL
     // `ASSET_SOURCE_XXXX_KEY` - Source key, email or username if applicable
     // `ASSET_SOURCE_XXXX_SECRET` - Source password or secret if applicable
@@ -214,7 +213,6 @@ export class ApiConfigService {
 
     // iterate over all sources
     sourceNames.forEach((sourceName) => {
-      const type = ormconfig.getEnvString(`ASSET_SOURCE_${sourceName}_TYPE`);
       // get the source endpoint
       const endpoint = ormconfig.getEnvString(
         `ASSET_SOURCE_${sourceName}_ENDPOINT`,
@@ -234,7 +232,6 @@ export class ApiConfigService {
 
       // add the source to the sources object
       sources[sourceName] = {
-        type,
         endpoint,
         accessKey,
         secretKey,
@@ -259,7 +256,6 @@ export class ApiConfigService {
 }
 
 export type SourceInfo = {
-  type: string;
   endpoint: string;
   accessKey: string;
   secretKey: string;

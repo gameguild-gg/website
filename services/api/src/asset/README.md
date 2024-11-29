@@ -17,7 +17,6 @@
 - `ASSET_CACHE_DIR` - Directory to cache assets
 - `ASSET_CACHE_TTL` - Cache TTL in seconds
 - `ASSET_CACHE_SIZE` - Cache size in MB, if it is bigger than this, delete old assets
-- `ASSET_SOURCE_XXXX_TYPE` - Source type (s3, IPFS, Cloudinary...)
 - `ASSET_SOURCE_XXXX_ENDPOINT` - Source server API domain, IP or URL
 - `ASSET_SOURCE_XXXX_KEY` - Source key, email or username if applicable
 - `ASSET_SOURCE_XXXX_SECRET` - Source password or secret if applicable

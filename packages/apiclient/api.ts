@@ -15724,7 +15724,7 @@ export class TicketApi extends BaseAPI implements TicketApiInterface {
 	}
 
 }
-export namespace UserProfileApi {
+export namespace UsersApi {
 	export type UserProfileControllerUpdateResponse =
 		| UserProfileControllerUpdate400Response
 		| UserProfileControllerUpdate401Response
@@ -15783,13 +15783,79 @@ export namespace UserProfileApi {
 		headers?: undefined
 	}
 	
+	export type UserProfileControllerUpdateProfilePictureResponse =
+		| UserProfileControllerUpdateProfilePicture400Response
+		| UserProfileControllerUpdateProfilePicture401Response
+		| UserProfileControllerUpdateProfilePicture403Response
+		| UserProfileControllerUpdateProfilePicture404Response
+		| UserProfileControllerUpdateProfilePicture409Response
+		| UserProfileControllerUpdateProfilePicture422Response
+		| UserProfileControllerUpdateProfilePicture500Response
+		| UserProfileControllerUpdateProfilePictureDefaultResponse
+	
+	export interface UserProfileControllerUpdateProfilePicture400Response {
+		status: 400
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface UserProfileControllerUpdateProfilePicture401Response {
+		status: 401
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface UserProfileControllerUpdateProfilePicture403Response {
+		status: 403
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface UserProfileControllerUpdateProfilePicture404Response {
+		status: 404
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface UserProfileControllerUpdateProfilePicture409Response {
+		status: 409
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface UserProfileControllerUpdateProfilePicture422Response {
+		status: 422
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface UserProfileControllerUpdateProfilePicture500Response {
+		status: 500
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface UserProfileControllerUpdateProfilePictureDefaultResponse {
+		status: number
+		contentType: 'application/json'
+		body: Api.UserProfileEntity
+		headers?: undefined
+	}
+	
 }
 
 /**
- * UserProfileApi - fetch parameter creator
+ * UsersApi - fetch parameter creator
  * @export
  */
-export const UserProfileApiFetchParamCreator = function (configuration?: Configuration) {
+export const UsersApiFetchParamCreator = function (configuration?: Configuration) {
 	return {
 		/**
 		 * @param {Api.UpdateUserProfileDto} request
@@ -15802,7 +15868,7 @@ export const UserProfileApiFetchParamCreator = function (configuration?: Configu
 				throw new RequiredError('request', 'Required parameter request was null or undefined when calling userProfileControllerUpdate.');
 			}
 
-			let localVarPath = `/user-profile`;
+			let localVarPath = `/user-profile/me`;
 			const localVarPathQueryStart = localVarPath.indexOf("?");
 			const localVarRequestOptions: RequestInit = Object.assign({ method: 'PATCH' }, options);
 			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
@@ -15838,22 +15904,69 @@ export const UserProfileApiFetchParamCreator = function (configuration?: Configu
 				options: localVarRequestOptions,
 			};
 		},
+		/**
+		 * @param {Api.UserProfileControllerUpdateProfilePictureRequest.MultipartFormData} [request]
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		userProfileControllerUpdateProfilePicture(request: Api.UserProfileControllerUpdateProfilePictureRequest.MultipartFormData | undefined, options: RequestInit = {}): FetchArgs {
+
+			let localVarPath = `/user-profile/profile-picture`;
+			const localVarPathQueryStart = localVarPath.indexOf("?");
+			const localVarRequestOptions: RequestInit = Object.assign({ method: 'PATCH' }, options);
+			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
+			const localVarQueryParameter = new URLSearchParams(localVarPathQueryStart !== -1 ? localVarPath.substring(localVarPathQueryStart + 1) : "");
+			if (localVarPathQueryStart !== -1) {
+				localVarPath = localVarPath.substring(0, localVarPathQueryStart);
+			}
+
+			// authentication bearer required
+			// http authorization required
+			if (configuration && configuration.authorization) {
+				const localVarAuthorizationValue = typeof configuration.authorization === 'function'
+					? configuration.authorization('bearer')
+					: configuration.authorization;
+				if (localVarAuthorizationValue !== null) {
+					localVarHeaderParameter.set("Authorization", "Bearer " + localVarAuthorizationValue);
+				}
+			}
+			localVarHeaderParameter.set('Content-Type', 'multipart/form-data');
+
+			localVarRequestOptions.headers = localVarHeaderParameter;
+	
+			if (request !== undefined) {
+				const localVarFormData = new FormData();
+				if (request.file !== undefined) {
+					localVarFormData.append('file', request.file.value);
+				}
+				localVarRequestOptions.body = localVarFormData;
+			}
+
+			const localVarQueryParameterString = localVarQueryParameter.toString();
+			if (localVarQueryParameterString) {
+				localVarPath += "?" + localVarQueryParameterString;
+			}
+			return {
+				url: localVarPath,
+				options: localVarRequestOptions,
+			};
+		},
 	}
 };
 
 /**
- * UserProfileApi - functional programming interface
+ * UsersApi - functional programming interface
  * @export
  */
-export const UserProfileApiFp = function(configuration?: Configuration) {
+export const UsersApiFp = function(configuration?: Configuration) {
 	return {
 		/**
 		 * @param {Api.UpdateUserProfileDto} request
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		userProfileControllerUpdate(request: Api.UpdateUserProfileDto, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<UserProfileApi.UserProfileControllerUpdateResponse> {
-			const localVarFetchArgs = UserProfileApiFetchParamCreator(configuration).userProfileControllerUpdate(request, options);
+		userProfileControllerUpdate(request: Api.UpdateUserProfileDto, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<UsersApi.UserProfileControllerUpdateResponse> {
+			const localVarFetchArgs = UsersApiFetchParamCreator(configuration).userProfileControllerUpdate(request, options);
 			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
 				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
 				const contentType = response.headers.get('Content-Type');
@@ -15932,46 +16045,155 @@ export const UserProfileApiFp = function(configuration?: Configuration) {
 				throw response;
 			};
 		},
+		/**
+		 * @param {Api.UserProfileControllerUpdateProfilePictureRequest.MultipartFormData} [request]
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		userProfileControllerUpdateProfilePicture(request: Api.UserProfileControllerUpdateProfilePictureRequest.MultipartFormData | undefined, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<UsersApi.UserProfileControllerUpdateProfilePictureResponse> {
+			const localVarFetchArgs = UsersApiFetchParamCreator(configuration).userProfileControllerUpdateProfilePicture(request, options);
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				if (response.status === 400) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 401) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 403) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 404) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 409) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 422) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 500) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				/* Catch-all response */
+				if (mimeType === 'application/json') {
+					return {
+						status: response.status,
+						contentType: 'application/json',
+						body: await response.json() as Api.UserProfileEntity,
+					}
+				}
+				throw response;
+			};
+		},
 	}
 };
 
 /**
- * UserProfileApi - factory interface
+ * UsersApi - factory interface
  * @export
  */
-export const UserProfileApiFactory: FactoryFunction<UserProfileApiInterface> = function (configuration?: Configuration, basePath?: string, fetch?: FetchAPI) {
-	return new UserProfileApi(configuration, basePath, fetch);
+export const UsersApiFactory: FactoryFunction<UsersApiInterface> = function (configuration?: Configuration, basePath?: string, fetch?: FetchAPI) {
+	return new UsersApi(configuration, basePath, fetch);
 };
 
 /**
- * UserProfileApi - interface
+ * UsersApi - interface
  * @export
- * @interface UserProfileApi
+ * @interface UsersApi
  */
-export interface UserProfileApiInterface {
+export interface UsersApiInterface {
 	/**
 	 * @param {Api.UpdateUserProfileDto} request
 	 * @param {RequestInit} [options] Override http request option.
 	 * @throws {RequiredError}
 	 */
-	userProfileControllerUpdate(request: Api.UpdateUserProfileDto, options?: RequestInit): Promise<UserProfileApi.UserProfileControllerUpdateResponse>
+	userProfileControllerUpdate(request: Api.UpdateUserProfileDto, options?: RequestInit): Promise<UsersApi.UserProfileControllerUpdateResponse>
+
+	/**
+	 * @param {Api.UserProfileControllerUpdateProfilePictureRequest.MultipartFormData} [request]
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	userProfileControllerUpdateProfilePicture(request: Api.UserProfileControllerUpdateProfilePictureRequest.MultipartFormData | undefined, options?: RequestInit): Promise<UsersApi.UserProfileControllerUpdateProfilePictureResponse>
 
 }
 
 /**
- * UserProfileApi - object-oriented interface
+ * UsersApi - object-oriented interface
  * @export
- * @class UserProfileApi
+ * @class UsersApi
  * @extends {BaseAPI}
  */
-export class UserProfileApi extends BaseAPI implements UserProfileApiInterface {
+export class UsersApi extends BaseAPI implements UsersApiInterface {
 	/**
 	 * @param {Api.UpdateUserProfileDto} request
 	 * @param {RequestInit} [options] Override http request option.
 	 * @throws {RequiredError}
 	 */
 	public userProfileControllerUpdate(request: Api.UpdateUserProfileDto, options?: RequestInit) {
-		return UserProfileApiFp(this.configuration).userProfileControllerUpdate(request, options)(this.fetch, this.basePath);
+		return UsersApiFp(this.configuration).userProfileControllerUpdate(request, options)(this.fetch, this.basePath);
+	}
+
+	/**
+	 * @param {Api.UserProfileControllerUpdateProfilePictureRequest.MultipartFormData} [request]
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	public userProfileControllerUpdateProfilePicture(request: Api.UserProfileControllerUpdateProfilePictureRequest.MultipartFormData | undefined, options?: RequestInit) {
+		return UsersApiFp(this.configuration).userProfileControllerUpdateProfilePicture(request, options)(this.fetch, this.basePath);
 	}
 
 }

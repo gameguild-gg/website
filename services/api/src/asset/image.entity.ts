@@ -8,16 +8,16 @@ import { IsIntegerNumber } from '../common/decorators/validator.decorator';
 @Index('pathUniqueness', ['path', 'source'], { unique: true })
 export class ImageEntity extends AssetBase {
   @ApiProperty({ type: 'integer' })
-  @IsNotEmpty()
+  @IsOptional()
   @IsIntegerNumber()
-  @Column({ nullable: false, type: 'integer' })
+  @Column({ nullable: true, type: 'integer' })
   @Index({ unique: false })
   readonly width: number;
 
-  @ApiProperty()
-  @IsNotEmpty()
+  @ApiProperty({ type: 'integer' })
+  @IsOptional()
   @IsIntegerNumber()
-  @Column({ nullable: false, type: 'integer' })
+  @Column({ nullable: true, type: 'integer' })
   @Index({ unique: false })
   readonly height: number;
 

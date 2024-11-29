@@ -39,12 +39,12 @@ export class S3ImageStorage extends Storage {
     super();
     // bug: configservice is arriving as undefined
     const sourceInfo = this.configService.assetSourceInfoMap;
-    if (!sourceInfo || !sourceInfo['MINIO']) {
-      const msg = 'Minio connection info not found. Check your env variables.';
+    if (!sourceInfo || !sourceInfo['S3']) {
+      const msg = 'S3 connection info not found. Check your env variables.';
       this.logger.error(msg);
       throw new Error(msg);
     }
-    this.config = sourceInfo['MINIO'];
+    this.config = sourceInfo['S3'];
 
     // init s3 client
     this.client = new S3Client({

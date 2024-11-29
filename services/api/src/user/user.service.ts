@@ -10,6 +10,7 @@ import { UserProfileService } from './modules/user-profile/user-profile.service'
 import { TokenPayload } from 'google-auth-library';
 
 import { generateFromEmail, generateUsername } from 'unique-username-generator';
+import { AssetService } from '../asset';
 
 @Injectable()
 export class UserService extends TypeOrmCrudService<UserEntity> {
@@ -19,6 +20,7 @@ export class UserService extends TypeOrmCrudService<UserEntity> {
     @InjectRepository(UserEntity)
     private readonly repository: Repository<UserEntity>,
     private readonly profileService: UserProfileService,
+    private readonly assetService: AssetService,
   ) {
     super(repository);
   }
@@ -77,7 +79,7 @@ export class UserService extends TypeOrmCrudService<UserEntity> {
     if (user) {
       return user;
     } else {
-      return await this.save({
+      return this.save({
         walletAddress: walletAddress,
         username: generateUsername('-', 8),
         // todo: dont access repository directly
@@ -120,6 +122,14 @@ export class UserService extends TypeOrmCrudService<UserEntity> {
         `The email '${payload.email}' is already associated with an existing user. Merging accounts is not supported yet. Send us a message on Discord.`,
       );
     }
+    let picture = await this.assetService.findExternalImageURL(payload.picture);
+
+    if (!picture) {
+      picture = await this.assetService.StoreImageFromURL(
+        payload.picture,
+        payload.name,
+      );
+    }
 
     return this.save({
       googleId: payload.sub,
@@ -127,10 +137,10 @@ export class UserService extends TypeOrmCrudService<UserEntity> {
       emailVerified: true,
       username: generateFromEmail(payload.email, 8),
       profile: await this.repository.save({
-        name: payload.name,
+        name: payload.name ? payload.name : payload.given_name,
         givenName: payload.given_name,
         familyName: payload.family_name,
-        picture: payload.picture,
+        picture: picture,
       } as UserProfileEntity),
     });
   }
