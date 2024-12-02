@@ -1,21 +1,39 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Play, PlayCircle, FileText, Lock } from 'lucide-react'
+import { ImageCarousel } from '@/components/courses/imageCarousel'
 
 type Props = {
-  params: {
-    slug: string;
+  params?: {
+    slug?: string;
   };
 };
 
-export default function Component({params: {slug}}: Readonly<Props>) {
+export default function Component({ params }: Readonly<Props>) {
+  const slug = params?.slug || 'default-slug'
   const [isPurchased, setIsPurchased] = useState(false)
+  const [courseImages, setCourseImages] = useState<string[]>([])
+
+  useEffect(() => {
+    // This is a placeholder for fetching images from the server
+    // In a real application, you would make an API call to get the image list
+    const fetchImages = async () => {
+      // Simulating an API call
+      const images = [
+        '/assets/images/placeholder.svg',
+        '/assets/images/header1.jpeg',
+        '/assets/images/header3.jpeg',
+      ]
+      setCourseImages(images)
+    }
+
+    fetchImages()
+  }, [])
 
   const handlePurchase = () => {
     setIsPurchased(true)
@@ -25,13 +43,7 @@ export default function Component({params: {slug}}: Readonly<Props>) {
     <div className="container mx-auto px-4 py-8">
       <div className="grid gap-6 lg:grid-cols-2">
         <div>
-          <Image
-            src="/assets/images/placeholder.svg"
-            alt="Course Cover Image"
-            width={600}
-            height={400}
-            className="rounded-lg object-cover w-full"
-          />
+          <ImageCarousel images={courseImages} />
         </div>
         <div className="flex flex-col justify-between">
           <div>
@@ -97,4 +109,5 @@ const courseContent = [
   { type: 'text', title: 'Performance Optimization Techniques' },
   { type: 'video', title: 'Building a Full-stack Application' },
   { type: 'video', title: 'Course Wrap-up and Next Steps' },
-] 
+]
+
