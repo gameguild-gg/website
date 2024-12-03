@@ -99,4 +99,3 @@ const courseContent = [
   { type: 'video', title: 'Building a Full-stack Application' },
   { type: 'video', title: 'Course Wrap-up and Next Steps' },
 ]
-
