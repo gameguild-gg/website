@@ -1,3 +1,64 @@
+## [1.3.1](https://github.com/gameguild-gg/website/compare/v1.3.0...v1.3.1) (2024-11-11)
+
+
+### Bug Fixes
+
+* private layout ([e09a953](https://github.com/gameguild-gg/website/commit/e09a953be75e9e4650b9bbda9e241e8dd6430be7))
+
+# [1.3.0](https://github.com/gameguild-gg/website/compare/v1.2.0...v1.3.0) (2024-11-04)
+
+
+### Bug Fixes
+
+* add <Header> to <SessionProvider> to get user information like avatar on the header. ([c7602d4](https://github.com/gameguild-gg/website/commit/c7602d4647c1dba39537f4fb2a8a61c57f630205))
+* browse jobs page minor adjustments ([663dad7](https://github.com/gameguild-gg/website/commit/663dad721929b7d56f825fea8e6497a42158f041))
+* missin JobApplicationEntity properties on frontend api ([f802e3b](https://github.com/gameguild-gg/website/commit/f802e3b15b9ca7009cbb60b560e502775c6a1d11))
+* move edit profile page ([b5e80fc](https://github.com/gameguild-gg/website/commit/b5e80fc72a05b5c8ad2e61a78d9dcb78de6716e8))
+* post-merge fixes ([dc9b086](https://github.com/gameguild-gg/website/commit/dc9b0860684f2161e4d9af19819f3535d69901c9))
+* session authentication errors ([fc50e1c](https://github.com/gameguild-gg/website/commit/fc50e1cb83c4e84a759774658479c669ae1d97a6))
+* withdrawn collumn migration ([10ef688](https://github.com/gameguild-gg/website/commit/10ef688e51fc254839c4cfddbaab8528387bde83))
+* wrong job application information on job board ([016800b](https://github.com/gameguild-gg/website/commit/016800ba613d6529a9a6123e76afa17758d6ce3e))
+
+
+### Features
+
+* 2 buttons per card on 'my applications' page ([2237daf](https://github.com/gameguild-gg/website/commit/2237dafcc0fa250ac171f5f91ed6b92660c06001))
+* all job applications page now uses real data ([c30e24e](https://github.com/gameguild-gg/website/commit/c30e24e6c38b7dd2d9455f32aa241242bfd1606b))
+* check many job applications page ([3a4f30b](https://github.com/gameguild-gg/website/commit/3a4f30b9027948cd7aef5460dea9927249a7ef79))
+* edit profile page ([105cce5](https://github.com/gameguild-gg/website/commit/105cce543227cb77bcb5ae37ff2b64fe9f2c68b6))
+* job applicant management page ([63ae9b2](https://github.com/gameguild-gg/website/commit/63ae9b26b99284ae83c25e42dd5f8a3212067ba8))
+* job application withdraw feature on backend ([739b5ad](https://github.com/gameguild-gg/website/commit/739b5adfd342bf66886a8fc28ca669fb1e995644))
+* my application page basic backend interaction ([74b9ddb](https://github.com/gameguild-gg/website/commit/74b9ddb5ecdc2af95690df9c44fb5713e995f9b5))
+* my individual job application now takes real data ([2b1f84f](https://github.com/gameguild-gg/website/commit/2b1f84f7775f81a5c91ded74311dc6c5dc2b7552))
+* my job applications ([3326262](https://github.com/gameguild-gg/website/commit/33262620477c8b8e434256a78efc0eb26c442944))
+* new api calls for the jobs system. ([71f49b9](https://github.com/gameguild-gg/website/commit/71f49b9e127b021dad4e46f1eea460ef330cf049))
+* new header and job application progress page ([69273d1](https://github.com/gameguild-gg/website/commit/69273d1ab87bbb8ce256ef92da4c7e15abc8b433))
+* new header first draft ([1b4c3c6](https://github.com/gameguild-gg/website/commit/1b4c3c66e334adc0067afa6e17f3a0c0ac19ef0c))
+* new pagination system on feed and my applications ([e3ad2c8](https://github.com/gameguild-gg/website/commit/e3ad2c88be3ea30dd356d54a56129f9c0390f28d))
+* return button on my job application detailed page ([83ff470](https://github.com/gameguild-gg/website/commit/83ff4701312b3dc6b1631805cd1e6a54c80ace2e))
+
+# [1.2.0](https://github.com/gameguild-gg/website/compare/v1.1.10...v1.2.0) (2024-11-04)
+
+
+### Bug Fixes
+
+* form actions ([c5c0561](https://github.com/gameguild-gg/website/commit/c5c05610d36c1687caf9c710f72b416dc7aaa40a))
+* routing for creating a project ([bf952bd](https://github.com/gameguild-gg/website/commit/bf952bdb115dfe8255fc142521e82a86744f9533))
+* show error on connect page ([65bdf57](https://github.com/gameguild-gg/website/commit/65bdf576398570077220a810df687906aebfe596))
+
+
+### Features
+
+* create project flow ([ac7592d](https://github.com/gameguild-gg/website/commit/ac7592dc14c383181ba5a794b6a0fc9ce2f671e1))
+* **slug:** project page slug ([276edf5](https://github.com/gameguild-gg/website/commit/276edf5cb95900aef6ecaf80cb82e3f723c8c84a))
+
+## [1.1.10](https://github.com/gameguild-gg/website/compare/v1.1.9...v1.1.10) (2024-11-01)
+
+
+### Bug Fixes
+
+* make project form receive props about create or edit ([c0d8f67](https://github.com/gameguild-gg/website/commit/c0d8f6797e26eba7b3bdda375da2b10a839b5564))
+
 ## [1.1.9](https://github.com/gameguild-gg/website/compare/v1.1.8...v1.1.9) (2024-10-31)
 
 

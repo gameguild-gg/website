@@ -35,7 +35,7 @@ type Props = VariantProps<typeof Variants> & {
 
 export default function DashboardSidebar() {
   return (
-    <aside className="flex h-full w-14 flex-col">
+    <aside className="flex h-[calc(100vh-80px)] w-14 flex-col">
       {/* <aside className="fixed inset-y-0 left-0 z-10 hidden w-14 flex-col sm:flex">*/}
       <nav className="flex flex-col items-center gap-4 px-2 sm:py-5">
         <Link

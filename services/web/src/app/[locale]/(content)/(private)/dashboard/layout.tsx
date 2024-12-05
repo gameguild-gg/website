@@ -5,16 +5,14 @@ export default async function Layout({
   children,
 }: Readonly<PropsWithChildren>) {
   return (
-    /*
     <Dashboard>
       <Dashboard.Sidebar />
       <Dashboard.Content size="compact">
-        <Dashboard.Header />
+        {/*<Dashboard.Header />*/}
         <Dashboard.Viewport>{children}</Dashboard.Viewport>
-        <Dashboard.Footer />
+        {/*<Dashboard.Footer />*/}
       </Dashboard.Content>
     </Dashboard>
-    */
-    <>{children}</>
+    //<div className='w-full bg-gray-100'>{children}</div>
   );
 }

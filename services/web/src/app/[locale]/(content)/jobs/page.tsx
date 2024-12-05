@@ -29,6 +29,8 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { useToast } from '@/components/ui/use-toast';
+import Link from 'next/link';
+import { Pagination, PaginationContent, PaginationItem, PaginationPrevious, PaginationLink, PaginationEllipsis, PaginationNext } from '@/components/ui/pagination';
 
 const job_types = [
   { value: 'CONTINUOUS', label: 'Continuous' },
@@ -42,6 +44,7 @@ export default function JobBoard() {
   const [selectedJob, setSelectedJob] = useState<Api.JobPostEntity | any>();
   const [selectedJobTypes, setSelectedJobTypes] = useState<string[]>([]);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [totalPages, setTotalPages] = useState<number>(1)
 
   const { toast } = useToast();
   const router = useRouter();
@@ -56,10 +59,8 @@ export default function JobBoard() {
     basePath: process.env.NEXT_PUBLIC_API_URL,
   });
 
-  // On load page
   useEffect(() => {
     getAllJobTags();
-    getAllJobs();
   }, []);
 
   // On search parameters change
@@ -76,10 +77,10 @@ export default function JobBoard() {
     }
     const response = await jobTagsApi.getManyBaseJobTagControllerJobTagEntity(
       {},
-      { headers: { Authorization: `Bearer ${session.accessToken}` } },
+      { headers: { Authorization: `Bearer ${session.user.accessToken}` } },
     );
     if ((response.status = 200)) {
-      setJobTags(response.body as Api.JobTagEntity[]);
+      setJobTags(response.body as Api.JobTagEntity[]||[]);
     }
   };
 
@@ -93,13 +94,13 @@ export default function JobBoard() {
     const response = await jobPostsApi.jobPostControllerGetManyWithApplied(
       {
         // TODO add 'fields' prperty here to to filter fields and improve performance
-        // TODO create a pagination or 'Load More' syste for handling job ammounts over the limit.
+        // TODO create a pagination or 'Load More' system for handling job ammounts over the limit.
         limit: 50,
       },
-      { headers: { Authorization: `Bearer ${session.accessToken}` },},
+      { headers: { Authorization: `Bearer ${session.user.accessToken}` },},
     );
     if (response.status == 200) {
-      console.log('All jobs body:\n', response.body);
+      // console.log('All jobs body:\n', response.body);
       setJobs(response.body ?? []);
       setSelectedJob(jobs[0] || null);
     } else {
@@ -135,11 +136,11 @@ export default function JobBoard() {
         limit: 50,
       },
       {
-        headers: { Authorization: `Bearer ${session.accessToken}` },
+        headers: { Authorization: `Bearer ${session.user.accessToken}` },
       },
     );
     if (response.status == 200) {
-      console.log('SearchJobs response body:', response.body);
+      // console.log('SearchJobs response body:', response.body);
       setJobs(response.body ?? []);
       setSelectedJob(jobs[0] || null);
     } else {
@@ -174,7 +175,7 @@ export default function JobBoard() {
         {
           job: selectedJob,
         },
-        { headers: { Authorization: `Bearer ${session.accessToken}` } },
+        { headers: { Authorization: `Bearer ${session.user.accessToken}` } },
       );
     if (response.status == 201) {
       toast({
@@ -192,7 +193,7 @@ export default function JobBoard() {
   };
 
   const handleLearnMoreButton = (slug: string) => {
-    router.push('/jobs/application/'+slug)
+    router.push('/jobs/my-applications/'+slug)
   }
 
   const timeAgo = (dateString: string): string => {
@@ -216,7 +217,7 @@ export default function JobBoard() {
   };
 
   return (
-    <div className="min-h-[calc(100vh-150px)] bg-gray-100">
+    <div className="min-h-[calc(100vh-80px)] bg-gray-100">
       <div className="container mx-auto p-4">
         <div className="mb-6 flex space-x-4">
           <div className="relative flex-grow">
@@ -276,7 +277,7 @@ export default function JobBoard() {
             <PopoverTrigger asChild>
               <Button
                 variant="outline"
-                className="w-[250px] justify-start overflow-auto"
+                className="w-[250px] justify-start"
               >
                 {selectedTags.length > 0 ? `${selectedTags}` : 'Skills'}
               </Button>
@@ -287,7 +288,7 @@ export default function JobBoard() {
                 <CommandList>
                   <CommandEmpty>No tags found.</CommandEmpty>
                   <CommandGroup>
-                    {jobTags.map((tag: Api.JobTagEntity) => (
+                    {jobTags || jobTags?.map((tag: Api.JobTagEntity) => (
                       <CommandItem
                         key={tag.id}
                         onSelect={() => {
@@ -318,7 +319,10 @@ export default function JobBoard() {
         </div>
         <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
           <div className="md:col-span-1">
-            <ScrollArea className="h-[calc(100vh-300px)]">
+            <ScrollArea className="h-[calc(100vh-200px)]">
+              {(jobs.length == 0) &&
+                <div>There are no available jobs at this time.</div>
+              }
               {jobs.map((job) => (
                 <Card
                   key={job.id}
@@ -327,18 +331,15 @@ export default function JobBoard() {
                 >
                   <CardContent className="flex items-start space-x-4 p-4">
                     <Avatar>
-                      <AvatarImage src={job.thumbnail} alt={job?.company} />
+                      <AvatarImage src={job.thumbnail} alt={job?.title} />
                       <AvatarFallback>{job?.title[0]}</AvatarFallback>
-                      {/*company */}
                     </Avatar>
                     <div>
                       <h3 className="font-semibold">{job.title}</h3>
                       <p className="text-sm text-gray-500">
                         {job?.owner?.email}
                       </p>
-                      {/*company */}
                       <p className="text-sm text-gray-500">{job?.location}</p>
-                      {/*location */}
                       <p className="text-sm text-gray-500">
                         {timeAgo(job?.createdAt)}
                       </p>
@@ -346,6 +347,36 @@ export default function JobBoard() {
                   </CardContent>
                 </Card>
               ))}
+              {/* Pagination */}
+              <div className="flex justify-center mt-5">
+                <Pagination>
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious href="#" />
+                    </PaginationItem>
+                    {[...Array(totalPages)].map((_, i) => (
+                      <PaginationItem key={i}>
+                        <PaginationLink href="#" isActive={i === 0}>
+                          {i + 1}
+                        </PaginationLink>
+                      </PaginationItem>
+                    )).slice(0, 3)}
+                    {totalPages > 3 && (
+                      <>
+                        <PaginationItem>
+                          <PaginationEllipsis />
+                        </PaginationItem>
+                        <PaginationItem>
+                          <PaginationLink href="#">{totalPages}</PaginationLink>
+                        </PaginationItem>
+                      </>
+                    )}
+                    <PaginationItem>
+                      <PaginationNext href="#" />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+              </div>
             </ScrollArea>
           </div>
           <div className="md:col-span-2">
@@ -391,7 +422,7 @@ export default function JobBoard() {
                   {selectedJob.applied && (
                     <p className="mb-6 bg-gray-100 flex">
                       Already Applied.
-                      <p className="ml-2 font-semibold text-blue-500 underline" onClick={()=>handleLearnMoreButton(selectedJob.slug)}>Learn more.</p>
+                      <Link className="ml-2 font-semibold text-blue-500 hover:underline cursor-pointer" href={'/jobs/my-applications/'+selectedJob.slug}>Learn more.</Link>
                     </p>
                   )}
                   {!selectedJob.applied && (
@@ -402,7 +433,9 @@ export default function JobBoard() {
                 </CardContent>
               </Card>
             )}
+            
           </div>
+          
         </div>
       </div>
     </div>
