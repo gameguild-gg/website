@@ -369,6 +369,30 @@ export namespace Api {
 		signature: string;
 	}
 
+	export interface GetManyCourseEntityResponseDto {
+		data: Api.CourseEntity[];
+		/**
+		 * @type {number}
+		 * @memberof GetManyCourseEntityResponseDto
+		 */
+		count: number;
+		/**
+		 * @type {number}
+		 * @memberof GetManyCourseEntityResponseDto
+		 */
+		total: number;
+		/**
+		 * @type {number}
+		 * @memberof GetManyCourseEntityResponseDto
+		 */
+		page: number;
+		/**
+		 * @type {number}
+		 * @memberof GetManyCourseEntityResponseDto
+		 */
+		pageCount: number;
+	}
+
 	export interface GetManyJobApplicationEntityResponseDto {
 		data: Api.JobApplicationEntity[];
 		/**
