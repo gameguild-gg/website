@@ -322,4 +322,13 @@ export class AuthService {
       refreshToken,
     };
   }
+
+  async getUserWithProfile(id: string): Promise<UserEntity> {
+    return this.userService.findOne({
+      where: { id },
+      relations: {
+        profile: true,
+      },
+    });
+  }
 }

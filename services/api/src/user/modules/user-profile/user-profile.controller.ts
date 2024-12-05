@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Get,
   Patch,
   UnprocessableEntityException,
   UploadedFile,
@@ -27,6 +28,15 @@ export class UserProfileController {
     @Body() data: UpdateUserProfileDto,
   ) {
     return this.service.repository.update(user, data);
+  }
+
+  @Get('me')
+  @Auth(AuthenticatedRoute)
+  @ApiResponse({ type: UserProfileEntity })
+  async get(@AuthUser() user: UserEntity) {
+    return this.service.repository.findOne({
+      where: { user: { id: user.id } },
+    });
   }
 
   @Patch('profile-picture')
