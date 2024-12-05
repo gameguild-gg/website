@@ -15,8 +15,8 @@ export class ProjectService extends WithRolesService<ProjectEntity> {
   ) {
     super(gameRepository);
   }
-  save(project: ProjectEntity): Promise<ProjectEntity> {
-    this.gameRepository.save(project);
+  async save(project: ProjectEntity): Promise<ProjectEntity> {
+    await this.gameRepository.save(project);
     return this.gameRepository.findOne({ where: { id: project.id } });
   }
 }
