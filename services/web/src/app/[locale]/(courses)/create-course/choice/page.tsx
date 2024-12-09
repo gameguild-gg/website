@@ -3,25 +3,27 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import CourseTabs from '../edit/page';
-import {CoursesApi} from "@game-guild/apiclient";
-import {auth} from "@/auth";
-import {Api} from "@game-guild/apiclient";
+import { CoursesApi } from '@game-guild/apiclient';
+import { auth } from '@/auth';
+import { Api } from '@game-guild/apiclient';
 
 export default function CoursePage() {
   const [courses, setCourses] = useState<Api.CourseEntity[]>([]);
   const [selectedCourse, setSelectedCourse] = useState<string | null>(null);
   const api = new CoursesApi({
     basePath: process.env.NEXT_PUBLIC_API_URL,
-  })
-    // Fetch courses from the server
-    const fetchCourses = async () => {
-      const session = await auth();
-      const response = await api.getManyBaseCoursesControllerCourseEntity({page: 0, limit: 10}, { headers: "Bearer " + session?.user?.accessToken });
-      setCourses(response.body as Api.CourseEntity[]);
-    };
+  });
+  // Fetch courses from the server
+  const fetchCourses = async () => {
+    const session = await auth();
+    const response = await api.getManyBaseCoursesControllerCourseEntity(
+      { page: 0, limit: 10 },
+      { headers: 'Bearer ' + session?.user?.accessToken },
+    );
+    setCourses(response.body as Api.CourseEntity[]);
+  };
 
-    fetchCourses();
-  }, []);
+  fetchCourses();
 
   const handleNewCourse = () => {
     setSelectedCourse('new');
