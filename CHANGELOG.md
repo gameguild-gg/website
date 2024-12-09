@@ -1,3 +1,10 @@
+## [1.3.1](https://github.com/gameguild-gg/website/compare/v1.3.0...v1.3.1) (2024-11-11)
+
+
+### Bug Fixes
+
+* private layout ([e09a953](https://github.com/gameguild-gg/website/commit/e09a953be75e9e4650b9bbda9e241e8dd6430be7))
+
 # [1.3.0](https://github.com/gameguild-gg/website/compare/v1.2.0...v1.3.0) (2024-11-04)
 
 

@@ -62,4 +62,11 @@ export class CourseEntity extends ContentBase {
   @ValidateNested({ each: true })
   @Type(() => ChapterEntity)
   chapters: ChapterEntity[];
+
+  // todo: denormalize the number of lectures, chapters, and students
+  // enrollments
+  // rating, feedback, and reviews
+  // hours of content, including video and estimated time of words per lecture
+  // estimated time for homeworks and projects
+  // number of entries / lessons / lectures
 }

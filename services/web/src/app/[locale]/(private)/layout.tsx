@@ -1,9 +1,9 @@
 import React, { PropsWithChildren } from 'react';
 // import Header from '@/components/common/header'
 import Header from '@/components/header';
-import { SessionProvider } from 'next-auth/react';
+import { withAuth } from '@/components/auth/with-auth';
 
-export default async function Layout({
+async function Layout({
   children,
 }: Readonly<PropsWithChildren>) {
   return (
@@ -14,3 +14,5 @@ export default async function Layout({
     </div>
   );
 }
+
+export default withAuth(Layout);

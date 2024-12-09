@@ -1,31 +1,68 @@
 import { INestApplication, Logger } from '@nestjs/common';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { DocumentBuilder, OpenAPIObject, SwaggerModule } from '@nestjs/swagger';
 import { CommonModule } from './common/common.module';
 import { execSync } from 'child_process';
 import { ApiConfigService } from './common/config.service';
 import * as fs from 'node:fs';
 import * as process from 'node:process';
-import { spawn } from 'child_process';
+// fsp is a promisified version of fs
+import { promises as fsp } from 'fs';
+
+import { exec } from 'child_process';
+import { promisify } from 'util';
+
+const execAsync = promisify(exec);
 
 const logger: Logger = new Logger('SetupSwagger');
 
-function replaceInFile(path: string, from: string, to: string) {
-  const content = fs.readFileSync(path, 'utf8');
+async function replaceInFile(path: string, from: string, to: string) {
+  const content = await fsp.readFile(path, 'utf8');
   const result = content.replace(from, to);
-  fs.writeFileSync(path, result, 'utf8');
+  await fsp.writeFile(path, result, 'utf8');
 }
 
-function fixOpenApiGeneratorPlus() {
-  replaceInFile(
+async function fixOpenApiGeneratorPlus() {
+  await replaceInFile(
     process.cwd() + '/../../packages/apiclient/runtime.ts',
     'import "whatwg-fetch";',
     '',
   );
-  replaceInFile(
+  await replaceInFile(
     process.cwd() + '/../../packages/apiclient/runtime.ts',
     'window.fetch',
     'fetch',
   );
+}
+
+async function SetupDevelopmentConfigs(document: OpenAPIObject) {
+  await fsp.writeFile('./swagger-spec.json', JSON.stringify(document, null, 2));
+  logger.log('Swagger documentation generated successfully');
+
+  try {
+    logger.verbose('Generating api client');
+    await execAsync('npm run openapigenerator');
+    logger.log('Client generated successfully');
+    await fixOpenApiGeneratorPlus();
+    logger.log('OpenApiPlus fixed');
+  } catch (e) {
+    logger.error(
+      'Error generating client. Do you have installed java runtime?',
+    );
+  }
+
+  if (process.env.NODE_ENV === 'development') {
+    try {
+      logger.verbose('Installing apiclient in web');
+      await execAsync('npm run install:apiclient --prefix ../../');
+      logger.log('apiclient installed successfully on web');
+
+      logger.verbose('Generating dbml schema');
+      await execAsync('npm run db:diagram');
+      logger.log('DBML schema generated successfully');
+    } catch (e) {
+      logger.error(JSON.stringify(e));
+    }
+  }
 }
 
 export function setupSwagger(app: INestApplication): void {
@@ -48,49 +85,10 @@ export function setupSwagger(app: INestApplication): void {
   });
   const configService = app.select(CommonModule).get(ApiConfigService);
 
-  fs.writeFileSync('./swagger-spec.json', JSON.stringify(document, null, 2));
-  logger.log('Swagger documentation generated successfully');
+  SetupDevelopmentConfigs(document).catch((e) => {
+    logger.error(e);
+  });
 
-  try {
-    logger.log('Generating api client');
-    const generateClient = spawn('npm', ['run', 'openapigenerator'], {
-      stdio: 'ignore',
-      detached: true,
-    });
-    generateClient.unref();
-    generateClient.on('close', (code) => {
-      if (code === 0) {
-        logger.log('Client generated successfully');
-        fixOpenApiGeneratorPlus();
-        logger.log('OpenApiPlus fixed');
-
-        if (process.env.NODE_ENV === 'development') {
-          try {
-            logger.log('Installing apiclient in web');
-            const installClient = spawn(
-              'npm',
-              ['run', 'install:apiclient', '--prefix', '../../'],
-              { stdio: 'ignore', detached: true },
-            );
-            installClient.unref();
-            installClient.on('close', (code) => {
-              if (code === 0) {
-                logger.log('apiclient installed successfully on web');
-              } else {
-                logger.error(JSON.stringify(code));
-              }
-            });
-          } catch (e) {
-            logger.error(JSON.stringify(e));
-          }
-        }
-      } else {
-        logger.error('Error generating API client.');
-      }
-    });
-  } catch (e) {
-    logger.error('Error generating API client.');
-  }
   logger.verbose(
     `Documentation: http://localhost:${configService.appConfig.port}/documentation`,
   );

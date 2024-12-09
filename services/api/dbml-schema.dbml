@@ -201,17 +201,20 @@ Table JobPostEntity {
   visibility enum
   thumbnail varchar
   location varchar
+  job_type enum
   owner UserEntity
   editors UserEntity
-  tags JobTagEntity
+  job_tags JobTagEntity
 }
 
-Table JobAplicationEntity {
+Table JobApplicationEntity {
   id uuid
   createdAt timestamp
   updatedAt timestamp
-  progress int
-  aplicant UserEntity
+  progress integer
+  rejected boolean
+  withdrawn boolean
+  applicant UserEntity
   job JobPostEntity
 }
 
@@ -264,6 +267,21 @@ Table ProjectEntity {
   owner UserEntity
   editors UserEntity
   versions ProjectVersionEntity
+  tickets TicketEntity
+}
+
+Table TicketEntity {
+  id uuid
+  createdAt timestamp
+  updatedAt timestamp
+  title varchar
+  description text
+  projectId uuid
+  status enum
+  priority enum
+  owner UserEntity
+  editors UserEntity
+  project ProjectEntity
 }
 
 Table post_editors_user {
@@ -301,13 +319,18 @@ Table job-post_editors_user {
   user_id uuid
 }
 
-Table job-post_tags_job-tag {
+Table job-post_job_tags_job-tag {
   job-post_id uuid
   job-tag_id uuid
 }
 
 Table project_editors_user {
   project_id uuid
+  user_id uuid
+}
+
+Table ticket_editors_user {
+  ticket_id uuid
   user_id uuid
 }
 
@@ -337,9 +360,9 @@ Ref: ProposalEntity.owner > UserEntity.id
 Ref: ProposalEntity.editors <> UserEntity.id
 Ref: JobPostEntity.owner > UserEntity.id
 Ref: JobPostEntity.editors <> UserEntity.id
-Ref: JobPostEntity.tags <> JobTagEntity.id
-Ref: JobAplicationEntity.aplicant > UserEntity.id
-Ref: JobAplicationEntity.job > JobPostEntity.tags
+Ref: JobPostEntity.job_tags <> JobTagEntity.id
+Ref: JobApplicationEntity.applicant > UserEntity.id
+Ref: JobApplicationEntity.job > JobPostEntity.id
 Ref: EventEntity.owner > UserEntity.id
 Ref: EventEntity.editors <> UserEntity.id
 Ref: ProjectFeedbackResponseEntity.version > ProjectVersionEntity.responses
@@ -347,3 +370,6 @@ Ref: ProjectFeedbackResponseEntity.user > UserEntity.id
 Ref: ProjectVersionEntity.project > ProjectEntity.versions
 Ref: ProjectEntity.owner > UserEntity.id
 Ref: ProjectEntity.editors <> UserEntity.id
+Ref: ProjectEntity.tickets < TicketEntity.project
+Ref: TicketEntity.owner > UserEntity.id
+Ref: TicketEntity.editors <> UserEntity.id
