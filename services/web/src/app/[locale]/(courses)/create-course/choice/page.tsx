@@ -1,42 +1,43 @@
-'use client'
+'use client';
 
-import { useState, useEffect } from 'react'
-import { Button } from "@/components/ui/button"
-import CourseTabs from '../edit/page'
-
-interface Course {
-  id: string;
-  information: {
-    title: string;
-  };
-}
+import { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import CourseTabs from '../edit/page';
+import {CoursesApi} from "@game-guild/apiclient";
+import {auth} from "@/auth";
+import {Api} from "@game-guild/apiclient";
 
 export default function CoursePage() {
-  const [courses, setCourses] = useState<Course[]>([])
-  const [selectedCourse, setSelectedCourse] = useState<string | null>(null)
-
-  useEffect(() => {
+  const [courses, setCourses] = useState<Api.CourseEntity[]>([]);
+  const [selectedCourse, setSelectedCourse] = useState<string | null>(null);
+  const api = new CoursesApi({
+    basePath: process.env.NEXT_PUBLIC_API_URL,
+  })
     // Fetch courses from the server
     const fetchCourses = async () => {
-      // Replace this with actual API call
-      const response = await fetch('/api/courses')
-      const data = await response.json()
-      setCourses(data)
-    }
+      const session = await auth();
+      const response = await api.getManyBaseCoursesControllerCourseEntity({page: 0, limit: 10}, { headers: "Bearer " + session?.user?.accessToken });
+      setCourses(response.body as Api.CourseEntity[]);
+    };
 
-    fetchCourses()
-  }, [])
+    fetchCourses();
+  }, []);
 
   const handleNewCourse = () => {
-    setSelectedCourse('new')
-  }
+    setSelectedCourse('new');
+  };
 
   const handleSelectCourse = (id: string) => {
-    setSelectedCourse(id)
-  }
+    setSelectedCourse(id);
+  };
 
   if (selectedCourse) {
-    return <CourseTabs courseId={selectedCourse} onBack={() => setSelectedCourse(null)} />
+    return (
+      <CourseTabs
+        courseId={selectedCourse}
+        onBack={() => setSelectedCourse(null)}
+      />
+    );
   }
 
   return (
@@ -46,14 +47,21 @@ export default function CoursePage() {
         <h2 className="text-xl font-semibold">Existing Courses</h2>
         <ul className="space-y-2">
           {courses.map((course) => (
-            <li key={course.id} className="flex items-center justify-between bg-gray-100 p-3 rounded-md">
+            <li
+              key={course.id}
+              className="flex items-center justify-between bg-gray-100 p-3 rounded-md"
+            >
               <span>{course.information.title}</span>
-              <Button onClick={() => handleSelectCourse(course.id)} variant="outline">Edit</Button>
+              <Button
+                onClick={() => handleSelectCourse(course.id)}
+                variant="outline"
+              >
+                Edit
+              </Button>
             </li>
           ))}
         </ul>
       </div>
     </div>
-  )
+  );
 }
-
