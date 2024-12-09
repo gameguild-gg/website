@@ -1,48 +1,55 @@
-'use client'
+'use client';
 
-import { useEffect, useState } from 'react'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { getSession, signOut } from 'next-auth/react';
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { ChevronUp, ChevronDown, Search, X, Globe, Bell, Menu } from 'lucide-react'
+} from '@/components/ui/dropdown-menu';
+import {
+  ChevronUp,
+  ChevronDown,
+  Search,
+  X,
+  Globe,
+  Bell,
+  Menu,
+} from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 
 /**
  * Main Header
  */
 export default function Header() {
-  const [user, setUser] = useState<any>(null)
-  const [isSearchOpen, setIsSearchOpen] = useState(false)
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-  const [isMoreOpen, setIsMoreOpen] = useState(false)
+  const [user, setUser] = useState<any>(null);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isMoreOpen, setIsMoreOpen] = useState(false);
 
   const menuItems = ['Blog', 'Courses', 'Games', 'Tests', 'Jams', 'Jobs']
   const moreItems = ['Item 1', 'Item 2', 'Item 3']
   const languages = ['English', 'Spanish', 'French', 'German']
 
   const router = useRouter();
-  
-  useEffect(()=>{
-    getUserData()
-  },[])
 
-  const getUserData = async () =>{
+  useEffect(() => {
+    getUserData();
+  }, []);
+
+  const getUserData = async () => {
     const session = await getSession();
-    if (session && session.user){
+    if (session && session.user) {
       // console.log('session.user: ',session?.user)
-      setUser(session.user)
+      setUser(session.user);
     }
-  }
-
+  };
 
   return (
     <header className="bg-neutral-900 h-[70px] flex items-center justify-between px-4 text-white">
@@ -55,15 +62,24 @@ export default function Header() {
         </Link>
         <nav className="hidden md:flex space-x-2 h-[50px] p-0">
           {menuItems.map((item) => (
-            <button key={item} onClick={()=>router.push(`/${item.toLowerCase()}`)} className="px-2 my-0 hover:text-gray-400 transition-colors h-full">
+            <button
+              key={item}
+              onClick={() => router.push(`/${item.toLowerCase()}`)}
+              className="px-2 my-0 hover:text-gray-400 transition-colors h-full"
+            >
               {item}
             </button>
           ))}
           <DropdownMenu open={isMoreOpen} onOpenChange={setIsMoreOpen}>
             <DropdownMenuTrigger className="flex px-2 items-center hover:text-gray-400 transition-colors">
-              More {isMoreOpen ? <ChevronUp className="ml-1 h-4 w-4" /> : <ChevronDown className="ml-1 h-4 w-4" />}
+              More{' '}
+              {isMoreOpen ? (
+                <ChevronUp className="ml-1 h-4 w-4" />
+              ) : (
+                <ChevronDown className="ml-1 h-4 w-4" />
+              )}
             </DropdownMenuTrigger>
-            <DropdownMenuContent className='bg-neutral-900 text-white border-0'>
+            <DropdownMenuContent className="bg-neutral-900 text-white border-0">
               {moreItems.map((item) => (
                 <DropdownMenuItem key={item}>{item}</DropdownMenuItem>
               ))}
@@ -88,7 +104,10 @@ export default function Header() {
             </button>
           </div>
         ) : (
-          <button onClick={() => setIsSearchOpen(true)} className="hover:text-gray-200 transition-colors">
+          <button
+            onClick={() => setIsSearchOpen(true)}
+            className="hover:text-gray-200 transition-colors"
+          >
             <Search />
           </button>
         )}
@@ -115,27 +134,47 @@ export default function Header() {
             <DropdownMenu>
               <DropdownMenuTrigger>
                 {/*<img src={user.avatar} alt={user.name[0]} className="w-8 h-8 rounded-full" />*/}
-                <Avatar className='mx-2'>
+                <Avatar className="mx-2">
                   <AvatarImage src={user.image} alt={user.name} />
-                  <AvatarFallback className='bg-neutral-50 text-neutral-950'>{user.name[0]}</AvatarFallback>
+                  <AvatarFallback className="bg-neutral-50 text-neutral-950">
+                    {user.name[0]}
+                  </AvatarFallback>
                 </Avatar>
               </DropdownMenuTrigger>
               <DropdownMenuContent>
-                <DropdownMenuItem onClick={()=>router.push('/profile/edit')}>Profile</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => router.push('/profile/edit')}>
+                  Profile
+                </DropdownMenuItem>
                 <DropdownMenuItem>Settings</DropdownMenuItem>
-                <DropdownMenuItem onClick={()=>signOut()}>Logout</DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={
+                    // redirect to /disconnect
+                    async () => {
+                      router.push('/disconnect');
+                    }
+                  }
+                >
+                  Logout
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
         ) : (
-          <Button onClick={()=>router.push('/connect')} variant="outline" className="bg-white text-black font-semibold text-base rounded-md hover:bg-gray-200">
+          <Button
+            onClick={() => router.push('/connect')}
+            variant="outline"
+            className="bg-white text-black font-semibold text-base rounded-md hover:bg-gray-200"
+          >
             Connect
           </Button>
         )}
       </div>
       <div className="md:hidden">
-        <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="text-white items-center">
-          {isMobileMenuOpen ? <X size={42}/> : <Menu size={42}/>}
+        <button
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          className="text-white items-center"
+        >
+          {isMobileMenuOpen ? <X size={42} /> : <Menu size={42} />}
         </button>
       </div>
       {isMobileMenuOpen && (
@@ -171,7 +210,11 @@ export default function Header() {
                 </DropdownMenu>
                 <DropdownMenu>
                   <DropdownMenuTrigger className="flex items-center space-x-2">
-                    <img src={user.avatar} alt={user.name} className="w-8 h-8 rounded-full" />
+                    <img
+                      src={user.avatar}
+                      alt={user.name}
+                      className="w-8 h-8 rounded-full"
+                    />
                     <span>{user.name}</span>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent>
@@ -182,12 +225,20 @@ export default function Header() {
                 </DropdownMenu>
               </>
             ) : (
-              <Button onClick={()=>router.push('/connect')} variant="outline" className="bg-white text-black font-semibold rounded-md hover:bg-gray-200 w-full">
+              <Button
+                onClick={() => router.push('/connect')}
+                variant="outline"
+                className="bg-white text-black font-semibold rounded-md hover:bg-gray-200 w-full"
+              >
                 Connect
               </Button>
             )}
             {menuItems.map((item) => (
-              <Link key={item} href={`/${item.toLowerCase()}`} className="hover:text-gray-400 transition-colors">
+              <Link
+                key={item}
+                href={`/${item.toLowerCase()}`}
+                className="hover:text-gray-400 transition-colors"
+              >
                 {item}
               </Link>
             ))}
@@ -196,7 +247,7 @@ export default function Header() {
                 <span>More</span>
                 <ChevronDown className="h-4 w-4" />
               </DropdownMenuTrigger>
-              <DropdownMenuContent className='bg-neutral-900 text-white'>
+              <DropdownMenuContent className="bg-neutral-900 text-white">
                 {moreItems.map((item) => (
                   <DropdownMenuItem key={item}>{item}</DropdownMenuItem>
                 ))}
@@ -206,5 +257,5 @@ export default function Header() {
         </div>
       )}
     </header>
-  )
+  );
 }
