@@ -13,6 +13,13 @@ Game Guild is a game dev community. We aim to revolutionize the way game develop
 5. run `npm install` on the root of the repo to install the dependencies;
 6. run `npm run start:both` on the root of the repo to start both front and back-end;
 
+<<<<<<<
+## How to create a new page
+
+## How to create e new api
+
+
+=======
 ### Setup GNU/Linux:
 
 1. Install Docker, view: https://docs.docker.com/engine/install/
@@ -39,3 +46,4 @@ npm -v # should print `10.8.2`
 - Run `npm run start:both` on the root of the repo to start both front and back-end; or
 
 - Run `npm run start:both` to start back-end and in new terminal, run `npm run dev:web` to start front-end;
+>>>>>>>
