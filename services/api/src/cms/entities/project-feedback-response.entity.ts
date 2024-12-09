@@ -26,5 +26,5 @@ export class ProjectFeedbackResponseEntity extends EntityBase {
   @ApiProperty()
   @IsArray()
   @Column({ type: 'jsonb', nullable: false })
-  responses: [string | string[] | number];
+  responses: [string | string[] | number | number[]];
 }

@@ -37,7 +37,8 @@
     "start:web": "npm run start --workspace=services/web",
     "start:both": "concurrently \"npm:dev:api\" \"npm:dev:web\"",
     "open:tests": "npm run cy:open --workspace=tests",
-    "gource": "./contributors/gource.sh"
+    "gource": "./contributors/gource.sh",
+    "db:diagram": "npm run db:diagram --workspace=services/api"
   },
   "devDependencies": {
     "@game-guild/apiclient": "*",
