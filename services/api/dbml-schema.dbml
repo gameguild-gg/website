@@ -5,6 +5,21 @@ Table TagEntity {
   tag string
 }
 
+Table ImageEntity {
+  id uuid
+  createdAt timestamp
+  updatedAt timestamp
+  source string
+  path string
+  filename string
+  mimetype string
+  sizeBytes integer
+  hash string
+  width integer
+  height integer
+  description string
+}
+
 Table UserProfileEntity {
   id uuid
   createdAt timestamp
@@ -13,7 +28,7 @@ Table UserProfileEntity {
   name varchar
   givenName varchar
   familyName varchar
-  picture varchar
+  picture ImageEntity
   user UserEntity
 }
 
@@ -335,6 +350,7 @@ Table ticket_editors_user {
 }
 
 Ref: UserProfileEntity.user - UserEntity.profile
+Ref: UserProfileEntity.picture - ImageEntity.id
 Ref: CompetitionRunSubmissionReportEntity.run > CompetitionRunEntity.reports
 Ref: CompetitionRunSubmissionReportEntity.submission > CompetitionSubmissionEntity.submissionReports
 Ref: CompetitionRunSubmissionReportEntity.user > UserEntity.id
