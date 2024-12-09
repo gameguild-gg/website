@@ -11,6 +11,8 @@ export const pathMapping: Record<string, string> = {
   "/course/chapter": "/[locale]/(courses)/course/[slug]/chapter/[chapter]/page.tsx",
   "/course": "/[locale]/(courses)/course/[slug]/page.tsx",
   "/courses": "/[locale]/(courses)/courses/page.tsx",
+  "/create-course/choice": "/[locale]/(courses)/create-course/choice/page.tsx",
+  "/create-course/edit": "/[locale]/(courses)/create-course/edit/page.tsx",
   "/create-course": "/[locale]/(courses)/create-course/page.tsx",
   "/legal": "/[locale]/(legal)/legal/page.tsx",
   "/polices": "/[locale]/(legal)/polices/page.tsx",
