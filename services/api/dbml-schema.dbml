@@ -20,6 +20,12 @@ Table ImageEntity {
   description string
 }
 
+Table VoteEntity {
+  id uuid
+  createdAt timestamp
+  updatedAt timestamp
+}
+
 Table UserProfileEntity {
   id uuid
   createdAt timestamp
@@ -178,12 +184,6 @@ Table UserEntity {
   courses CourseEntity
 }
 
-Table VoteEntity {
-  id uuid
-  createdAt timestamp
-  updatedAt timestamp
-}
-
 Table ProposalEntity {
   id uuid
   createdAt timestamp
@@ -222,17 +222,6 @@ Table JobPostEntity {
   job_tags JobTagEntity
 }
 
-Table JobApplicationEntity {
-  id uuid
-  createdAt timestamp
-  updatedAt timestamp
-  progress integer
-  rejected boolean
-  withdrawn boolean
-  applicant UserEntity
-  job JobPostEntity
-}
-
 Table EventEntity {
   id uuid
   createdAt timestamp
@@ -245,6 +234,17 @@ Table EventEntity {
   thumbnail varchar
   owner UserEntity
   editors UserEntity
+}
+
+Table JobApplicationEntity {
+  id uuid
+  createdAt timestamp
+  updatedAt timestamp
+  progress integer
+  rejected boolean
+  withdrawn boolean
+  applicant UserEntity
+  job JobPostEntity
 }
 
 Table ProjectFeedbackResponseEntity {
@@ -377,10 +377,10 @@ Ref: ProposalEntity.editors <> UserEntity.id
 Ref: JobPostEntity.owner > UserEntity.id
 Ref: JobPostEntity.editors <> UserEntity.id
 Ref: JobPostEntity.job_tags <> JobTagEntity.id
-Ref: JobApplicationEntity.applicant > UserEntity.id
-Ref: JobApplicationEntity.job > JobPostEntity.id
 Ref: EventEntity.owner > UserEntity.id
 Ref: EventEntity.editors <> UserEntity.id
+Ref: JobApplicationEntity.applicant > UserEntity.id
+Ref: JobApplicationEntity.job > JobPostEntity.id
 Ref: ProjectFeedbackResponseEntity.version > ProjectVersionEntity.responses
 Ref: ProjectFeedbackResponseEntity.user > UserEntity.id
 Ref: ProjectVersionEntity.project > ProjectEntity.versions

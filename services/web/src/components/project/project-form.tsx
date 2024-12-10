@@ -18,6 +18,7 @@ import { getSession } from 'next-auth/react';
 import ApiErrorResponseDto = Api.ApiErrorResponseDto;
 import slugify from 'slugify';
 import { useToast } from '@/components/ui/use-toast';
+import { getSession } from 'next-auth/react';
 
 export interface ProjectFormProps {
   action: 'create' | 'update';
@@ -84,6 +85,10 @@ export default function ProjectForm({
   });
 
   const createProject = async () => {
+    if (project && project.thumbnail === '') {
+      // remove thumbnail from the project
+      //delete project.thumbnail;
+    }
     if (project) {
       const session = await getSession();
       const api = new ProjectApi({
@@ -225,7 +230,7 @@ export default function ProjectForm({
             onChange={(e) =>
               setProject({
                 ...project,
-                thumbnail: e.target.value,
+                thumbnail: e.target.value != '' ? e.target.value : undefined,
               } as Api.CreateProjectDto)
             }
             required
