@@ -15,7 +15,6 @@ interface ContentLink {
 }
 
 interface Lesson {
-  id: string,
   moduleId: string;
   order: string;
   title: string;
@@ -49,29 +48,6 @@ export default function LessonsTab({ lessons, modules, updateData }) {
   const [expandedModules, setExpandedModules] = useState<string[]>([])
   const [expandedUnassigned, setExpandedUnassigned] = useState(false)
 
-  const getNextId = () => {
-    if (modules.length === 0) return '10';
-    const maxId = Math.max(...modules.map(m => parseInt(m.id)));
-    return (maxId + 1).toString();
-  }
-
-  const onSubmit = (data: Module) => {
-    if (editingIndex === -1) {
-      const newModule = { ...data, id: getNextId() };
-      updateData([...modules, newModule])
-    } else {
-      const updatedModules = [...modules]
-      updatedModules[editingIndex] = { ...data, id: modules[editingIndex].id }
-      updateData(updatedModules)
-      setEditingIndex(-1)
-    }
-    reset()
-  }
-
-  const handleEdit = (index) => {
-    setEditingIndex(index)
-    reset(modules[index])
-  }
   useEffect(() => {
     if (editingIndex !== -1 && lessons[editingIndex]) {
       reset(lessons[editingIndex])
