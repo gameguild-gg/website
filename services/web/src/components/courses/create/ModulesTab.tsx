@@ -7,16 +7,31 @@ import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 
+interface Module {
+  id: string;
+  order: string;
+  title: string;
+  description: string;
+  thumbnail: string;
+}
+
 export default function ModulesTab({ modules, updateData }) {
   const { register, handleSubmit, reset } = useForm()
   const [editingIndex, setEditingIndex] = useState(-1)
 
-  const onSubmit = (data) => {
+  const getNextId = () => {
+    if (modules.length === 0) return '10';
+    const maxId = Math.max(...modules.map(m => parseInt(m.id)));
+    return (maxId + 1).toString();
+  }
+
+  const onSubmit = (data: Module) => {
     if (editingIndex === -1) {
-      updateData([...modules, data])
+      const newModule = { ...data, id: getNextId() };
+      updateData([...modules, newModule])
     } else {
       const updatedModules = [...modules]
-      updatedModules[editingIndex] = data
+      updatedModules[editingIndex] = { ...data, id: modules[editingIndex].id }
       updateData(updatedModules)
       setEditingIndex(-1)
     }
@@ -58,10 +73,11 @@ export default function ModulesTab({ modules, updateData }) {
         <h3 className="text-lg font-semibold mb-2">Saved Modules</h3>
         <ul className="space-y-2">
           {modules.map((module, index) => (
-            <li key={index} className="flex justify-between items-center bg-gray-100 p-2 rounded-md">
+            <li key={module.id} className="flex justify-between items-center bg-gray-100 p-2 rounded-md">
               <div>
                 <span className="font-semibold">{module.title}</span>
                 <p className="text-sm text-gray-600">{module.description.slice(0, 50)}...</p>
+                <p className="text-xs text-gray-500">ID: {module.id}</p>
               </div>
               <div className="flex space-x-2">
                 <Button onClick={() => handleEdit(index)} variant="outline" size="sm">Edit</Button>

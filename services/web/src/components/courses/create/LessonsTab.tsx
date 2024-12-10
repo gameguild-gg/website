@@ -15,7 +15,8 @@ interface ContentLink {
 }
 
 interface Lesson {
-  module: string;
+  id: string,
+  moduleId: string;
   order: string;
   title: string;
   description: string;
@@ -23,10 +24,16 @@ interface Lesson {
   additionalText: string;
 }
 
+interface Module {
+  id: string;
+  order: string;
+  title: string;
+}
+
 export default function LessonsTab({ lessons, modules, updateData }) {
   const { register, control, handleSubmit, reset, setValue } = useForm<Lesson>({
     defaultValues: {
-      module: '',
+      moduleId: '',
       order: '',
       title: '',
       description: '',
@@ -40,7 +47,31 @@ export default function LessonsTab({ lessons, modules, updateData }) {
   })
   const [editingIndex, setEditingIndex] = useState(-1)
   const [expandedModules, setExpandedModules] = useState<string[]>([])
+  const [expandedUnassigned, setExpandedUnassigned] = useState(false)
 
+  const getNextId = () => {
+    if (modules.length === 0) return '10';
+    const maxId = Math.max(...modules.map(m => parseInt(m.id)));
+    return (maxId + 1).toString();
+  }
+
+  const onSubmit = (data: Module) => {
+    if (editingIndex === -1) {
+      const newModule = { ...data, id: getNextId() };
+      updateData([...modules, newModule])
+    } else {
+      const updatedModules = [...modules]
+      updatedModules[editingIndex] = { ...data, id: modules[editingIndex].id }
+      updateData(updatedModules)
+      setEditingIndex(-1)
+    }
+    reset()
+  }
+
+  const handleEdit = (index) => {
+    setEditingIndex(index)
+    reset(modules[index])
+  }
   useEffect(() => {
     if (editingIndex !== -1 && lessons[editingIndex]) {
       reset(lessons[editingIndex])
@@ -48,11 +79,16 @@ export default function LessonsTab({ lessons, modules, updateData }) {
   }, [editingIndex, lessons, reset])
 
   const onSubmit = (data: Lesson) => {
+    const submissionData = {
+      ...data,
+      moduleId: data.moduleId === 'none' ? '' : data.moduleId,
+    };
+
     if (editingIndex === -1) {
-      updateData([...lessons, data])
+      updateData([...lessons, submissionData])
     } else {
       const updatedLessons = [...lessons]
-      updatedLessons[editingIndex] = data
+      updatedLessons[editingIndex] = submissionData
       updateData(updatedLessons)
       setEditingIndex(-1)
     }
@@ -76,11 +112,16 @@ export default function LessonsTab({ lessons, modules, updateData }) {
     )
   }
 
+  const toggleUnassigned = () => {
+    setExpandedUnassigned(!expandedUnassigned)
+  }
+
   const groupedLessons = lessons.reduce((acc, lesson) => {
-    if (!acc[lesson.module]) {
-      acc[lesson.module] = []
+    const moduleId = lesson.moduleId || 'Unassigned';
+    if (!acc[moduleId]) {
+      acc[moduleId] = []
     }
-    acc[lesson.module].push(lesson)
+    acc[moduleId].push(lesson)
     return acc
   }, {} as Record<string, Lesson[]>)
 
@@ -90,18 +131,19 @@ export default function LessonsTab({ lessons, modules, updateData }) {
     <div className="grid md:grid-cols-2 gap-4">
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div>
-          <Label htmlFor="module">Module</Label>
+          <Label htmlFor="moduleId">Module</Label>
           <Controller
-            name="module"
+            name="moduleId"
             control={control}
             render={({ field }) => (
-              <Select onValueChange={field.onChange} value={field.value || ""}>
+              <Select onValueChange={field.onChange} value={field.value}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select module" />
                 </SelectTrigger>
                 <SelectContent>
-                  {modules.map((module, index) => (
-                    <SelectItem key={index} value={module.title}>
+                  <SelectItem value="none">None</SelectItem>
+                  {modules.map((module) => (
+                    <SelectItem key={module.id} value={module.id}>
                       {module.title}
                     </SelectItem>
                   ))}
@@ -159,12 +201,56 @@ export default function LessonsTab({ lessons, modules, updateData }) {
       <div>
         <h3 className="text-lg font-semibold mb-2">Saved Lessons</h3>
         <ul className="space-y-2">
+          {groupedLessons['Unassigned'] && (
+            <li className="bg-gray-100 p-4 rounded-md">
+              <div 
+                className="flex items-center justify-between cursor-pointer"
+                onClick={toggleUnassigned}
+              >
+                <span className="font-semibold">
+                  {expandedUnassigned ? <ChevronDown className="inline mr-2" /> : <ChevronRight className="inline mr-2" />}
+                  Unassigned Lessons
+                </span>
+                <span>{groupedLessons['Unassigned'].length} lesson(s)</span>
+              </div>
+              {expandedUnassigned && (
+                <ul className="mt-2 space-y-2">
+                  {groupedLessons['Unassigned']
+                    .sort((a, b) => Number(a.order) - Number(b.order))
+                    .map((lesson, lessonIndex) => (
+                      <li key={lessonIndex} className="bg-white p-3 rounded-md">
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="font-semibold">Lesson {lesson.order}: {lesson.title}</span>
+                          <div className="space-x-2">
+                            <Button onClick={() => handleEdit(lessons.findIndex(l => l === lesson))} variant="outline" size="sm">Edit</Button>
+                            <Button onClick={() => handleRemove(lessons.findIndex(l => l === lesson))} variant="destructive" size="sm">Remove</Button>
+                          </div>
+                        </div>
+                        <p className="text-sm text-gray-600 mb-2">{lesson.description}</p>
+                        <div className="text-sm">
+                          <strong>Content Links:</strong>
+                          <ul className="list-disc pl-5">
+                            {lesson.contentLinks && lesson.contentLinks
+                              .sort((a, b) => Number(a.order) - Number(b.order))
+                              .map((item, linkIndex) => (
+                                <li key={linkIndex}>
+                                  Order: {item.order}, Link: <a href={item.link} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">{item.link}</a>
+                                </li>
+                            ))}
+                          </ul>
+                        </div>
+                      </li>
+                  ))}
+                </ul>
+              )}
+            </li>
+          )}
           {sortedModules.map((module) => {
-            const moduleLessons = groupedLessons[module.title] || []
+            const moduleLessons = groupedLessons[module.id] || []
             if (moduleLessons.length === 0) return null
             
             return (
-              <li key={module.title} className="bg-gray-100 p-4 rounded-md">
+              <li key={module.id} className="bg-gray-100 p-4 rounded-md">
                 <div 
                   className="flex items-center justify-between cursor-pointer"
                   onClick={() => toggleModule(module.title)}

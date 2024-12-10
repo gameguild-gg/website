@@ -1,14 +1,17 @@
-'use client'
+'use client';
 
-import { useState, useEffect } from 'react'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Button } from "@/components/ui/button"
-import InformationTab from '@/components/courses/create/InformationTab'
-import ModulesTab from '@/components/courses/create/ModulesTab'
-import LessonsTab from '@/components/courses/create/LessonsTab'
-import ExercisesTab from '@/components/courses/create/ExercisesTab'
-import PricingTab from '@/components/courses/create/PricingTab'
-import FinalTab from '@/components/courses/create/FinalTab'
+import { useState, useEffect } from 'react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import InformationTab from '@/components/courses/create/InformationTab';
+import ModulesTab from '@/components/courses/create/ModulesTab';
+import LessonsTab from '@/components/courses/create/LessonsTab';
+import ExercisesTab from '@/components/courses/create/ExercisesTab';
+import PricingTab from '@/components/courses/create/PricingTab';
+import FinalTab from '@/components/courses/create/FinalTab';
+import { CoursesApi } from '@game-guild/apiclient';
+import { auth } from '@/auth';
+import { Api } from '@game-guild/apiclient';
 
 interface ContentLink {
   order: string;
@@ -79,19 +82,38 @@ export default function CourseTabs({ courseId, onBack }: { courseId: string, onB
     }
   })
 
+
   useEffect(() => {
     if (courseId !== 'new') {
-      // Fetch course data from the server
-      const fetchCourseData = async () => {
-        // Replace this with actual API call
-        const response = await fetch(`/api/courses/${courseId}`)
-        const data = await response.json()
-        setCourseData(data)
-      }
+      const api = new CoursesApi({
+        basePath: process.env.NEXT_PUBLIC_API_URL,
+      });
 
-      fetchCourseData()
+      const fetchCourseData = async () => {
+        try {
+          const session = await auth();
+          if (!session || !session.user?.accessToken) {
+            throw new Error('No valid session found');
+          }
+
+          const response = await api.getOneBaseCoursesControllerCourseEntity(
+            { slug: courseId }, // Ajuste para utilizar o ID do curso
+            { headers: { Authorization: `Bearer ${session.user.accessToken}` } }
+          );
+
+          // Atualiza o estado com os dados do curso retornados
+          setCourseData((prev) => ({
+            ...prev,
+            ...response.body,
+          }));
+        } catch (error) {
+          console.error('Error fetching course data:', error);
+        }
+      };
+
+      fetchCourseData();
     }
-  }, [courseId])
+  }, [courseId]);
 
   const updateCourseData = (tab: keyof CourseData, data: any) => {
     setCourseData(prev => {
@@ -147,7 +169,7 @@ export default function CourseTabs({ courseId, onBack }: { courseId: string, onB
           <ExercisesTab 
             exercises={courseData.exercises} 
             modules={courseData.modules}
-            lessons={courseData.lessons.filter(lesson => lesson.hasExercise)}
+            lessons={courseData.lessons}
             updateData={(data) => updateCourseData('exercises', data)} 
           />
         </TabsContent>
@@ -161,4 +183,3 @@ export default function CourseTabs({ courseId, onBack }: { courseId: string, onB
     </div>
   )
 }
-
