@@ -63,6 +63,8 @@ export class CourseEntity extends ContentBase {
   @Type(() => ChapterEntity)
   chapters: ChapterEntity[];
 
+  // todo: add quizzes, assignments, projects and all other types of content for course
+
   // todo: denormalize the number of lectures, chapters, and students
   // enrollments
   // rating, feedback, and reviews

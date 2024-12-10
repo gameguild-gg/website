@@ -1,8 +1,9 @@
 import { ContentBase } from './content.base';
 import { FormShortAnswerDto } from '../dtos/form-short-answer.dto';
-import { Column, Entity, OneToMany } from 'typeorm';
+import { Column, Entity, ManyToOne, OneToMany } from 'typeorm';
 import { FormLongAnswerDto } from '../dtos/form-long-answer.dto';
 import { ApiExtraModels, ApiProperty, getSchemaPath } from '@nestjs/swagger';
+import { CourseEntity } from './course.entity';
 
 @ApiExtraModels(FormShortAnswerDto, FormLongAnswerDto)
 @Entity({ name: 'quiz' })
@@ -18,4 +19,6 @@ export class QuizEntity extends ContentBase {
     isArray: true,
   })
   questions: (FormShortAnswerDto | FormLongAnswerDto)[];
+
+  // todo: add more fields to this entity, such as answers, course relationship, etc.
 }
