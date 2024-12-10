@@ -14,10 +14,10 @@ import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { useRouter } from 'next/navigation';
 import { Api, ProjectApi } from '@game-guild/apiclient';
-import { getSession } from 'next-auth/react';
 import ApiErrorResponseDto = Api.ApiErrorResponseDto;
 import slugify from 'slugify';
 import { useToast } from '@/components/ui/use-toast';
+import { auth } from '@/auth';
 
 export interface ProjectFormProps {
   action: 'create' | 'update';
@@ -40,7 +40,7 @@ export default function ProjectForm({
     if (!slug) {
       return;
     }
-    const session = await getSession();
+    const session = await auth();
     const api = new ProjectApi({
       basePath: process.env.NEXT_PUBLIC_API_URL,
     });
@@ -84,6 +84,10 @@ export default function ProjectForm({
   });
 
   const createProject = async () => {
+    if (project && project.thumbnail === '') {
+      // remove thumbnail from the project
+      delete project.thumbnail;
+    }
     if (project) {
       const session = await getSession();
       const api = new ProjectApi({

@@ -16596,6 +16596,891 @@ export class ProjectVersionApi extends BaseAPI implements ProjectVersionApiInter
 	}
 
 }
+export namespace QuizApi {
+	export type CreateManyBaseQuizControllerQuizEntityResponse =
+		| CreateManyBaseQuizControllerQuizEntity201Response
+	
+	export interface CreateManyBaseQuizControllerQuizEntity201Response {
+		status: 201
+		contentType: 'application/json'
+		body: Api.QuizEntity[]
+		headers?: undefined
+	}
+	
+	export type CreateOneBaseQuizControllerQuizEntityResponse =
+		| CreateOneBaseQuizControllerQuizEntity201Response
+	
+	export interface CreateOneBaseQuizControllerQuizEntity201Response {
+		status: 201
+		contentType: 'application/json'
+		body: Api.QuizEntity
+		headers?: undefined
+	}
+	
+	export type DeleteOneBaseQuizControllerQuizEntityResponse =
+		| DeleteOneBaseQuizControllerQuizEntity200Response
+	
+	export interface DeleteOneBaseQuizControllerQuizEntity200Response {
+		status: 200
+		body?: undefined
+		headers?: undefined
+	}
+	
+	export interface GetManyBaseQuizControllerQuizEntityParameters {
+		/**
+		 * @description <p>Selects resource fields. <a href="https://github.com/nestjsx/crud/wiki/Requests#select" target="_blank">Docs</a></p>
+		 * @type {string[]}
+		 */
+		fields?: string[]
+		/**
+		 * @description <p>Adds search condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#search" target="_blank">Docs</a></p>
+		 * @type {string}
+		 */
+		s?: string
+		/**
+		 * @description <p>Adds filter condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#filter" target="_blank">Docs</a></p>
+		 * @type {string[]}
+		 */
+		filter?: string[]
+		/**
+		 * @description <p>Adds OR condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#or" target="_blank">Docs</a></p>
+		 * @type {string[]}
+		 */
+		or?: string[]
+		/**
+		 * @description <p>Adds sort by field. <a href="https://github.com/nestjsx/crud/wiki/Requests#sort" target="_blank">Docs</a></p>
+		 * @type {string[]}
+		 */
+		sort?: string[]
+		/**
+		 * @description <p>Adds relational resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#join" target="_blank">Docs</a></p>
+		 * @type {string[]}
+		 */
+		join?: string[]
+		/**
+		 * @description <p>Limit amount of resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#limit" target="_blank">Docs</a></p>
+		 * @type {number}
+		 */
+		limit?: number
+		/**
+		 * @description <p>Offset amount of resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#offset" target="_blank">Docs</a></p>
+		 * @type {number}
+		 */
+		offset?: number
+		/**
+		 * @description <p>Page portion of resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#page" target="_blank">Docs</a></p>
+		 * @type {number}
+		 */
+		page?: number
+		/**
+		 * @description <p>Reset cache (if was enabled). <a href="https://github.com/nestjsx/crud/wiki/Requests#cache" target="_blank">Docs</a></p>
+		 * @type {number}
+		 * minimum: 0
+		 * maximum: 1
+		 */
+		cache?: number
+	}
+	
+	export type GetManyBaseQuizControllerQuizEntityResponse =
+		| GetManyBaseQuizControllerQuizEntity200Response
+	
+	export interface GetManyBaseQuizControllerQuizEntity200Response {
+		status: 200
+		contentType: 'application/json'
+		body: Api.GetManyQuizEntityResponseDto | Api.QuizEntity[]
+		headers?: undefined
+	}
+	
+	export interface GetOneBaseQuizControllerQuizEntityParameters {
+		id: string
+		/**
+		 * @description <p>Selects resource fields. <a href="https://github.com/nestjsx/crud/wiki/Requests#select" target="_blank">Docs</a></p>
+		 * @type {string[]}
+		 */
+		fields?: string[]
+		/**
+		 * @description <p>Adds relational resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#join" target="_blank">Docs</a></p>
+		 * @type {string[]}
+		 */
+		join?: string[]
+		/**
+		 * @description <p>Reset cache (if was enabled). <a href="https://github.com/nestjsx/crud/wiki/Requests#cache" target="_blank">Docs</a></p>
+		 * @type {number}
+		 * minimum: 0
+		 * maximum: 1
+		 */
+		cache?: number
+	}
+	
+	export type GetOneBaseQuizControllerQuizEntityResponse =
+		| GetOneBaseQuizControllerQuizEntity200Response
+	
+	export interface GetOneBaseQuizControllerQuizEntity200Response {
+		status: 200
+		contentType: 'application/json'
+		body: Api.QuizEntity
+		headers?: undefined
+	}
+	
+	export type ReplaceOneBaseQuizControllerQuizEntityResponse =
+		| ReplaceOneBaseQuizControllerQuizEntity200Response
+	
+	export interface ReplaceOneBaseQuizControllerQuizEntity200Response {
+		status: 200
+		contentType: 'application/json'
+		body: Api.QuizEntity
+		headers?: undefined
+	}
+	
+	export type UpdateOneBaseQuizControllerQuizEntityResponse =
+		| UpdateOneBaseQuizControllerQuizEntity200Response
+	
+	export interface UpdateOneBaseQuizControllerQuizEntity200Response {
+		status: 200
+		contentType: 'application/json'
+		body: Api.QuizEntity
+		headers?: undefined
+	}
+	
+}
+
+/**
+ * QuizApi - fetch parameter creator
+ * @export
+ */
+export const QuizApiFetchParamCreator = function (configuration?: Configuration) {
+	return {
+		/**
+		 * @summary Create multiple QuizEntities
+		 * @param {Api.CreateManyQuizEntityDto} request
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		createManyBaseQuizControllerQuizEntity(request: Api.CreateManyQuizEntityDto, options: RequestInit = {}): FetchArgs {
+			// verify required parameter 'request' is not null or undefined
+			if (request === null || request === undefined) {
+				throw new RequiredError('request', 'Required parameter request was null or undefined when calling createManyBaseQuizControllerQuizEntity.');
+			}
+
+			let localVarPath = `/courses/{courseid}/quiz/bulk`;
+			const localVarPathQueryStart = localVarPath.indexOf("?");
+			const localVarRequestOptions: RequestInit = Object.assign({ method: 'POST' }, options);
+			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
+			const localVarQueryParameter = new URLSearchParams(localVarPathQueryStart !== -1 ? localVarPath.substring(localVarPathQueryStart + 1) : "");
+			if (localVarPathQueryStart !== -1) {
+				localVarPath = localVarPath.substring(0, localVarPathQueryStart);
+			}
+
+			localVarHeaderParameter.set('Content-Type', 'application/json');
+
+			localVarRequestOptions.headers = localVarHeaderParameter;
+	
+			if (request !== undefined) {
+				localVarRequestOptions.body = JSON.stringify(request || {});
+			}
+
+			const localVarQueryParameterString = localVarQueryParameter.toString();
+			if (localVarQueryParameterString) {
+				localVarPath += "?" + localVarQueryParameterString;
+			}
+			return {
+				url: localVarPath,
+				options: localVarRequestOptions,
+			};
+		},
+		/**
+		 * @summary Create a single QuizEntity
+		 * @param {Api.QuizEntity} request
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		createOneBaseQuizControllerQuizEntity(request: Api.QuizEntity, options: RequestInit = {}): FetchArgs {
+			// verify required parameter 'request' is not null or undefined
+			if (request === null || request === undefined) {
+				throw new RequiredError('request', 'Required parameter request was null or undefined when calling createOneBaseQuizControllerQuizEntity.');
+			}
+
+			let localVarPath = `/courses/{courseid}/quiz`;
+			const localVarPathQueryStart = localVarPath.indexOf("?");
+			const localVarRequestOptions: RequestInit = Object.assign({ method: 'POST' }, options);
+			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
+			const localVarQueryParameter = new URLSearchParams(localVarPathQueryStart !== -1 ? localVarPath.substring(localVarPathQueryStart + 1) : "");
+			if (localVarPathQueryStart !== -1) {
+				localVarPath = localVarPath.substring(0, localVarPathQueryStart);
+			}
+
+			localVarHeaderParameter.set('Content-Type', 'application/json');
+
+			localVarRequestOptions.headers = localVarHeaderParameter;
+	
+			if (request !== undefined) {
+				localVarRequestOptions.body = JSON.stringify(request || {});
+			}
+
+			const localVarQueryParameterString = localVarQueryParameter.toString();
+			if (localVarQueryParameterString) {
+				localVarPath += "?" + localVarQueryParameterString;
+			}
+			return {
+				url: localVarPath,
+				options: localVarRequestOptions,
+			};
+		},
+		/**
+		 * @summary Delete a single QuizEntity
+		 * @param {string} id
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		deleteOneBaseQuizControllerQuizEntity(id: string, options: RequestInit = {}): FetchArgs {
+			// verify required parameter 'id' is not null or undefined
+			if (id === null || id === undefined) {
+				throw new RequiredError('id', 'Required parameter id was null or undefined when calling deleteOneBaseQuizControllerQuizEntity.');
+			}
+
+			let localVarPath = `/courses/{courseid}/quiz/{id}`
+				.replace('{id}', encodeURIComponent(String(id)));
+			const localVarPathQueryStart = localVarPath.indexOf("?");
+			const localVarRequestOptions: RequestInit = Object.assign({ method: 'DELETE' }, options);
+			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
+			const localVarQueryParameter = new URLSearchParams(localVarPathQueryStart !== -1 ? localVarPath.substring(localVarPathQueryStart + 1) : "");
+			if (localVarPathQueryStart !== -1) {
+				localVarPath = localVarPath.substring(0, localVarPathQueryStart);
+			}
+
+			localVarRequestOptions.headers = localVarHeaderParameter;
+
+			const localVarQueryParameterString = localVarQueryParameter.toString();
+			if (localVarQueryParameterString) {
+				localVarPath += "?" + localVarQueryParameterString;
+			}
+			return {
+				url: localVarPath,
+				options: localVarRequestOptions,
+			};
+		},
+		/**
+		 * @summary Retrieve multiple QuizEntities
+		 * @param {string[]} [fields] <p>Selects resource fields. <a href="https://github.com/nestjsx/crud/wiki/Requests#select" target="_blank">Docs</a></p>
+		 * @param {string} [s] <p>Adds search condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#search" target="_blank">Docs</a></p>
+		 * @param {string[]} [filter] <p>Adds filter condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#filter" target="_blank">Docs</a></p>
+		 * @param {string[]} [or] <p>Adds OR condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#or" target="_blank">Docs</a></p>
+		 * @param {string[]} [sort] <p>Adds sort by field. <a href="https://github.com/nestjsx/crud/wiki/Requests#sort" target="_blank">Docs</a></p>
+		 * @param {string[]} [join] <p>Adds relational resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#join" target="_blank">Docs</a></p>
+		 * @param {number} [limit] <p>Limit amount of resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#limit" target="_blank">Docs</a></p>
+		 * @param {number} [offset] <p>Offset amount of resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#offset" target="_blank">Docs</a></p>
+		 * @param {number} [page] <p>Page portion of resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#page" target="_blank">Docs</a></p>
+		 * @param {number} [cache] <p>Reset cache (if was enabled). <a href="https://github.com/nestjsx/crud/wiki/Requests#cache" target="_blank">Docs</a></p>
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		getManyBaseQuizControllerQuizEntity(__params: QuizApi.GetManyBaseQuizControllerQuizEntityParameters, options: RequestInit = {}): FetchArgs {
+
+			let localVarPath = `/courses/{courseid}/quiz`;
+			const localVarPathQueryStart = localVarPath.indexOf("?");
+			const localVarRequestOptions: RequestInit = Object.assign({ method: 'GET' }, options);
+			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
+			const localVarQueryParameter = new URLSearchParams(localVarPathQueryStart !== -1 ? localVarPath.substring(localVarPathQueryStart + 1) : "");
+			if (localVarPathQueryStart !== -1) {
+				localVarPath = localVarPath.substring(0, localVarPathQueryStart);
+			}
+
+			if (__params.fields !== undefined) {
+				/* array form */
+				localVarQueryParameter.append('fields', __params.fields.map(localVarArrayMapElement => escape(String(localVarArrayMapElement))).join(','));
+			}
+
+			if (__params.s !== undefined) {
+				localVarQueryParameter.append('s', String(__params.s));
+			}
+
+			if (__params.filter !== undefined) {
+				/* array form exploded */
+				for (const localVarArrayElement of __params.filter) {
+					if (localVarArrayElement !== undefined) {
+						localVarQueryParameter.append('filter', localVarArrayElement !== null ? String(localVarArrayElement) : '');
+					}
+				}
+			}
+
+			if (__params.or !== undefined) {
+				/* array form exploded */
+				for (const localVarArrayElement of __params.or) {
+					if (localVarArrayElement !== undefined) {
+						localVarQueryParameter.append('or', localVarArrayElement !== null ? String(localVarArrayElement) : '');
+					}
+				}
+			}
+
+			if (__params.sort !== undefined) {
+				/* array form exploded */
+				for (const localVarArrayElement of __params.sort) {
+					if (localVarArrayElement !== undefined) {
+						localVarQueryParameter.append('sort', localVarArrayElement !== null ? String(localVarArrayElement) : '');
+					}
+				}
+			}
+
+			if (__params.join !== undefined) {
+				/* array form exploded */
+				for (const localVarArrayElement of __params.join) {
+					if (localVarArrayElement !== undefined) {
+						localVarQueryParameter.append('join', localVarArrayElement !== null ? String(localVarArrayElement) : '');
+					}
+				}
+			}
+
+			if (__params.limit !== undefined) {
+				localVarQueryParameter.append('limit', String(__params.limit));
+			}
+
+			if (__params.offset !== undefined) {
+				localVarQueryParameter.append('offset', String(__params.offset));
+			}
+
+			if (__params.page !== undefined) {
+				localVarQueryParameter.append('page', String(__params.page));
+			}
+
+			if (__params.cache !== undefined) {
+				localVarQueryParameter.append('cache', String(__params.cache));
+			}
+
+			localVarRequestOptions.headers = localVarHeaderParameter;
+
+			const localVarQueryParameterString = localVarQueryParameter.toString();
+			if (localVarQueryParameterString) {
+				localVarPath += "?" + localVarQueryParameterString;
+			}
+			return {
+				url: localVarPath,
+				options: localVarRequestOptions,
+			};
+		},
+		/**
+		 * @summary Retrieve a single QuizEntity
+		 * @param {string} id
+		 * @param {string[]} [fields] <p>Selects resource fields. <a href="https://github.com/nestjsx/crud/wiki/Requests#select" target="_blank">Docs</a></p>
+		 * @param {string[]} [join] <p>Adds relational resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#join" target="_blank">Docs</a></p>
+		 * @param {number} [cache] <p>Reset cache (if was enabled). <a href="https://github.com/nestjsx/crud/wiki/Requests#cache" target="_blank">Docs</a></p>
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		getOneBaseQuizControllerQuizEntity(__params: QuizApi.GetOneBaseQuizControllerQuizEntityParameters, options: RequestInit = {}): FetchArgs {
+			// verify required parameter 'id' is not null or undefined
+			if (__params.id === null || __params.id === undefined) {
+				throw new RequiredError('id', 'Required parameter id was null or undefined when calling getOneBaseQuizControllerQuizEntity.');
+			}
+
+			let localVarPath = `/courses/{courseid}/quiz/{id}`
+				.replace('{id}', encodeURIComponent(String(__params.id)));
+			const localVarPathQueryStart = localVarPath.indexOf("?");
+			const localVarRequestOptions: RequestInit = Object.assign({ method: 'GET' }, options);
+			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
+			const localVarQueryParameter = new URLSearchParams(localVarPathQueryStart !== -1 ? localVarPath.substring(localVarPathQueryStart + 1) : "");
+			if (localVarPathQueryStart !== -1) {
+				localVarPath = localVarPath.substring(0, localVarPathQueryStart);
+			}
+
+			if (__params.fields !== undefined) {
+				/* array form */
+				localVarQueryParameter.append('fields', __params.fields.map(localVarArrayMapElement => escape(String(localVarArrayMapElement))).join(','));
+			}
+
+			if (__params.join !== undefined) {
+				/* array form exploded */
+				for (const localVarArrayElement of __params.join) {
+					if (localVarArrayElement !== undefined) {
+						localVarQueryParameter.append('join', localVarArrayElement !== null ? String(localVarArrayElement) : '');
+					}
+				}
+			}
+
+			if (__params.cache !== undefined) {
+				localVarQueryParameter.append('cache', String(__params.cache));
+			}
+
+			localVarRequestOptions.headers = localVarHeaderParameter;
+
+			const localVarQueryParameterString = localVarQueryParameter.toString();
+			if (localVarQueryParameterString) {
+				localVarPath += "?" + localVarQueryParameterString;
+			}
+			return {
+				url: localVarPath,
+				options: localVarRequestOptions,
+			};
+		},
+		/**
+		 * @summary Replace a single QuizEntity
+		 * @param {string} id
+		 * @param {Api.QuizEntity} request
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		replaceOneBaseQuizControllerQuizEntity(id: string, request: Api.QuizEntity, options: RequestInit = {}): FetchArgs {
+			// verify required parameter 'id' is not null or undefined
+			if (id === null || id === undefined) {
+				throw new RequiredError('id', 'Required parameter id was null or undefined when calling replaceOneBaseQuizControllerQuizEntity.');
+			}
+			// verify required parameter 'request' is not null or undefined
+			if (request === null || request === undefined) {
+				throw new RequiredError('request', 'Required parameter request was null or undefined when calling replaceOneBaseQuizControllerQuizEntity.');
+			}
+
+			let localVarPath = `/courses/{courseid}/quiz/{id}`
+				.replace('{id}', encodeURIComponent(String(id)));
+			const localVarPathQueryStart = localVarPath.indexOf("?");
+			const localVarRequestOptions: RequestInit = Object.assign({ method: 'PUT' }, options);
+			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
+			const localVarQueryParameter = new URLSearchParams(localVarPathQueryStart !== -1 ? localVarPath.substring(localVarPathQueryStart + 1) : "");
+			if (localVarPathQueryStart !== -1) {
+				localVarPath = localVarPath.substring(0, localVarPathQueryStart);
+			}
+
+			localVarHeaderParameter.set('Content-Type', 'application/json');
+
+			localVarRequestOptions.headers = localVarHeaderParameter;
+	
+			if (request !== undefined) {
+				localVarRequestOptions.body = JSON.stringify(request || {});
+			}
+
+			const localVarQueryParameterString = localVarQueryParameter.toString();
+			if (localVarQueryParameterString) {
+				localVarPath += "?" + localVarQueryParameterString;
+			}
+			return {
+				url: localVarPath,
+				options: localVarRequestOptions,
+			};
+		},
+		/**
+		 * @summary Update a single QuizEntity
+		 * @param {string} id
+		 * @param {Api.QuizEntity} request
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		updateOneBaseQuizControllerQuizEntity(id: string, request: Api.QuizEntity, options: RequestInit = {}): FetchArgs {
+			// verify required parameter 'id' is not null or undefined
+			if (id === null || id === undefined) {
+				throw new RequiredError('id', 'Required parameter id was null or undefined when calling updateOneBaseQuizControllerQuizEntity.');
+			}
+			// verify required parameter 'request' is not null or undefined
+			if (request === null || request === undefined) {
+				throw new RequiredError('request', 'Required parameter request was null or undefined when calling updateOneBaseQuizControllerQuizEntity.');
+			}
+
+			let localVarPath = `/courses/{courseid}/quiz/{id}`
+				.replace('{id}', encodeURIComponent(String(id)));
+			const localVarPathQueryStart = localVarPath.indexOf("?");
+			const localVarRequestOptions: RequestInit = Object.assign({ method: 'PATCH' }, options);
+			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
+			const localVarQueryParameter = new URLSearchParams(localVarPathQueryStart !== -1 ? localVarPath.substring(localVarPathQueryStart + 1) : "");
+			if (localVarPathQueryStart !== -1) {
+				localVarPath = localVarPath.substring(0, localVarPathQueryStart);
+			}
+
+			localVarHeaderParameter.set('Content-Type', 'application/json');
+
+			localVarRequestOptions.headers = localVarHeaderParameter;
+	
+			if (request !== undefined) {
+				localVarRequestOptions.body = JSON.stringify(request || {});
+			}
+
+			const localVarQueryParameterString = localVarQueryParameter.toString();
+			if (localVarQueryParameterString) {
+				localVarPath += "?" + localVarQueryParameterString;
+			}
+			return {
+				url: localVarPath,
+				options: localVarRequestOptions,
+			};
+		},
+	}
+};
+
+/**
+ * QuizApi - functional programming interface
+ * @export
+ */
+export const QuizApiFp = function(configuration?: Configuration) {
+	return {
+		/**
+		 * @summary Create multiple QuizEntities
+		 * @param {Api.CreateManyQuizEntityDto} request
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		createManyBaseQuizControllerQuizEntity(request: Api.CreateManyQuizEntityDto, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<QuizApi.CreateManyBaseQuizControllerQuizEntityResponse> {
+			const localVarFetchArgs = QuizApiFetchParamCreator(configuration).createManyBaseQuizControllerQuizEntity(request, options);
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				if (response.status === 201) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.QuizEntity[],
+						}
+					}
+					throw response;
+				}
+				throw response;
+			};
+		},
+		/**
+		 * @summary Create a single QuizEntity
+		 * @param {Api.QuizEntity} request
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		createOneBaseQuizControllerQuizEntity(request: Api.QuizEntity, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<QuizApi.CreateOneBaseQuizControllerQuizEntityResponse> {
+			const localVarFetchArgs = QuizApiFetchParamCreator(configuration).createOneBaseQuizControllerQuizEntity(request, options);
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				if (response.status === 201) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.QuizEntity,
+						}
+					}
+					throw response;
+				}
+				throw response;
+			};
+		},
+		/**
+		 * @summary Delete a single QuizEntity
+		 * @param {string} id
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		deleteOneBaseQuizControllerQuizEntity(id: string, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<QuizApi.DeleteOneBaseQuizControllerQuizEntityResponse> {
+			const localVarFetchArgs = QuizApiFetchParamCreator(configuration).deleteOneBaseQuizControllerQuizEntity(id, options);
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				if (response.status === 200) {
+					return {
+						status: response.status,
+						/* No content */
+					}
+				}
+				throw response;
+			};
+		},
+		/**
+		 * @summary Retrieve multiple QuizEntities
+		 * @param {string[]} [fields] <p>Selects resource fields. <a href="https://github.com/nestjsx/crud/wiki/Requests#select" target="_blank">Docs</a></p>
+		 * @param {string} [s] <p>Adds search condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#search" target="_blank">Docs</a></p>
+		 * @param {string[]} [filter] <p>Adds filter condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#filter" target="_blank">Docs</a></p>
+		 * @param {string[]} [or] <p>Adds OR condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#or" target="_blank">Docs</a></p>
+		 * @param {string[]} [sort] <p>Adds sort by field. <a href="https://github.com/nestjsx/crud/wiki/Requests#sort" target="_blank">Docs</a></p>
+		 * @param {string[]} [join] <p>Adds relational resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#join" target="_blank">Docs</a></p>
+		 * @param {number} [limit] <p>Limit amount of resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#limit" target="_blank">Docs</a></p>
+		 * @param {number} [offset] <p>Offset amount of resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#offset" target="_blank">Docs</a></p>
+		 * @param {number} [page] <p>Page portion of resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#page" target="_blank">Docs</a></p>
+		 * @param {number} [cache] <p>Reset cache (if was enabled). <a href="https://github.com/nestjsx/crud/wiki/Requests#cache" target="_blank">Docs</a></p>
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		getManyBaseQuizControllerQuizEntity(__params: QuizApi.GetManyBaseQuizControllerQuizEntityParameters, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<QuizApi.GetManyBaseQuizControllerQuizEntityResponse> {
+			const localVarFetchArgs = QuizApiFetchParamCreator(configuration).getManyBaseQuizControllerQuizEntity(__params, options);
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				if (response.status === 200) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.GetManyQuizEntityResponseDto | Api.QuizEntity[],
+						}
+					}
+					throw response;
+				}
+				throw response;
+			};
+		},
+		/**
+		 * @summary Retrieve a single QuizEntity
+		 * @param {string} id
+		 * @param {string[]} [fields] <p>Selects resource fields. <a href="https://github.com/nestjsx/crud/wiki/Requests#select" target="_blank">Docs</a></p>
+		 * @param {string[]} [join] <p>Adds relational resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#join" target="_blank">Docs</a></p>
+		 * @param {number} [cache] <p>Reset cache (if was enabled). <a href="https://github.com/nestjsx/crud/wiki/Requests#cache" target="_blank">Docs</a></p>
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		getOneBaseQuizControllerQuizEntity(__params: QuizApi.GetOneBaseQuizControllerQuizEntityParameters, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<QuizApi.GetOneBaseQuizControllerQuizEntityResponse> {
+			const localVarFetchArgs = QuizApiFetchParamCreator(configuration).getOneBaseQuizControllerQuizEntity(__params, options);
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				if (response.status === 200) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.QuizEntity,
+						}
+					}
+					throw response;
+				}
+				throw response;
+			};
+		},
+		/**
+		 * @summary Replace a single QuizEntity
+		 * @param {string} id
+		 * @param {Api.QuizEntity} request
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		replaceOneBaseQuizControllerQuizEntity(id: string, request: Api.QuizEntity, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<QuizApi.ReplaceOneBaseQuizControllerQuizEntityResponse> {
+			const localVarFetchArgs = QuizApiFetchParamCreator(configuration).replaceOneBaseQuizControllerQuizEntity(id, request, options);
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				if (response.status === 200) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.QuizEntity,
+						}
+					}
+					throw response;
+				}
+				throw response;
+			};
+		},
+		/**
+		 * @summary Update a single QuizEntity
+		 * @param {string} id
+		 * @param {Api.QuizEntity} request
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		updateOneBaseQuizControllerQuizEntity(id: string, request: Api.QuizEntity, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<QuizApi.UpdateOneBaseQuizControllerQuizEntityResponse> {
+			const localVarFetchArgs = QuizApiFetchParamCreator(configuration).updateOneBaseQuizControllerQuizEntity(id, request, options);
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				if (response.status === 200) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.QuizEntity,
+						}
+					}
+					throw response;
+				}
+				throw response;
+			};
+		},
+	}
+};
+
+/**
+ * QuizApi - factory interface
+ * @export
+ */
+export const QuizApiFactory: FactoryFunction<QuizApiInterface> = function (configuration?: Configuration, basePath?: string, fetch?: FetchAPI) {
+	return new QuizApi(configuration, basePath, fetch);
+};
+
+/**
+ * QuizApi - interface
+ * @export
+ * @interface QuizApi
+ */
+export interface QuizApiInterface {
+	/**
+	 * @summary Create multiple QuizEntities
+	 * @param {Api.CreateManyQuizEntityDto} request
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	createManyBaseQuizControllerQuizEntity(request: Api.CreateManyQuizEntityDto, options?: RequestInit): Promise<QuizApi.CreateManyBaseQuizControllerQuizEntityResponse>
+
+	/**
+	 * @summary Create a single QuizEntity
+	 * @param {Api.QuizEntity} request
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	createOneBaseQuizControllerQuizEntity(request: Api.QuizEntity, options?: RequestInit): Promise<QuizApi.CreateOneBaseQuizControllerQuizEntityResponse>
+
+	/**
+	 * @summary Delete a single QuizEntity
+	 * @param {string} id
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	deleteOneBaseQuizControllerQuizEntity(id: string, options?: RequestInit): Promise<QuizApi.DeleteOneBaseQuizControllerQuizEntityResponse>
+
+	/**
+	 * @summary Retrieve multiple QuizEntities
+	 * @param {string[]} [fields] <p>Selects resource fields. <a href="https://github.com/nestjsx/crud/wiki/Requests#select" target="_blank">Docs</a></p>
+	 * @param {string} [s] <p>Adds search condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#search" target="_blank">Docs</a></p>
+	 * @param {string[]} [filter] <p>Adds filter condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#filter" target="_blank">Docs</a></p>
+	 * @param {string[]} [or] <p>Adds OR condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#or" target="_blank">Docs</a></p>
+	 * @param {string[]} [sort] <p>Adds sort by field. <a href="https://github.com/nestjsx/crud/wiki/Requests#sort" target="_blank">Docs</a></p>
+	 * @param {string[]} [join] <p>Adds relational resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#join" target="_blank">Docs</a></p>
+	 * @param {number} [limit] <p>Limit amount of resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#limit" target="_blank">Docs</a></p>
+	 * @param {number} [offset] <p>Offset amount of resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#offset" target="_blank">Docs</a></p>
+	 * @param {number} [page] <p>Page portion of resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#page" target="_blank">Docs</a></p>
+	 * @param {number} [cache] <p>Reset cache (if was enabled). <a href="https://github.com/nestjsx/crud/wiki/Requests#cache" target="_blank">Docs</a></p>
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	getManyBaseQuizControllerQuizEntity(__params: QuizApi.GetManyBaseQuizControllerQuizEntityParameters, options?: RequestInit): Promise<QuizApi.GetManyBaseQuizControllerQuizEntityResponse>
+
+	/**
+	 * @summary Retrieve a single QuizEntity
+	 * @param {string} id
+	 * @param {string[]} [fields] <p>Selects resource fields. <a href="https://github.com/nestjsx/crud/wiki/Requests#select" target="_blank">Docs</a></p>
+	 * @param {string[]} [join] <p>Adds relational resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#join" target="_blank">Docs</a></p>
+	 * @param {number} [cache] <p>Reset cache (if was enabled). <a href="https://github.com/nestjsx/crud/wiki/Requests#cache" target="_blank">Docs</a></p>
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	getOneBaseQuizControllerQuizEntity(__params: QuizApi.GetOneBaseQuizControllerQuizEntityParameters, options?: RequestInit): Promise<QuizApi.GetOneBaseQuizControllerQuizEntityResponse>
+
+	/**
+	 * @summary Replace a single QuizEntity
+	 * @param {string} id
+	 * @param {Api.QuizEntity} request
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	replaceOneBaseQuizControllerQuizEntity(id: string, request: Api.QuizEntity, options?: RequestInit): Promise<QuizApi.ReplaceOneBaseQuizControllerQuizEntityResponse>
+
+	/**
+	 * @summary Update a single QuizEntity
+	 * @param {string} id
+	 * @param {Api.QuizEntity} request
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	updateOneBaseQuizControllerQuizEntity(id: string, request: Api.QuizEntity, options?: RequestInit): Promise<QuizApi.UpdateOneBaseQuizControllerQuizEntityResponse>
+
+}
+
+/**
+ * QuizApi - object-oriented interface
+ * @export
+ * @class QuizApi
+ * @extends {BaseAPI}
+ */
+export class QuizApi extends BaseAPI implements QuizApiInterface {
+	/**
+	 * @summary Create multiple QuizEntities
+	 * @param {Api.CreateManyQuizEntityDto} request
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	public createManyBaseQuizControllerQuizEntity(request: Api.CreateManyQuizEntityDto, options?: RequestInit) {
+		return QuizApiFp(this.configuration).createManyBaseQuizControllerQuizEntity(request, options)(this.fetch, this.basePath);
+	}
+
+	/**
+	 * @summary Create a single QuizEntity
+	 * @param {Api.QuizEntity} request
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	public createOneBaseQuizControllerQuizEntity(request: Api.QuizEntity, options?: RequestInit) {
+		return QuizApiFp(this.configuration).createOneBaseQuizControllerQuizEntity(request, options)(this.fetch, this.basePath);
+	}
+
+	/**
+	 * @summary Delete a single QuizEntity
+	 * @param {string} id
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	public deleteOneBaseQuizControllerQuizEntity(id: string, options?: RequestInit) {
+		return QuizApiFp(this.configuration).deleteOneBaseQuizControllerQuizEntity(id, options)(this.fetch, this.basePath);
+	}
+
+	/**
+	 * @summary Retrieve multiple QuizEntities
+	 * @param {string[]} [fields] <p>Selects resource fields. <a href="https://github.com/nestjsx/crud/wiki/Requests#select" target="_blank">Docs</a></p>
+	 * @param {string} [s] <p>Adds search condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#search" target="_blank">Docs</a></p>
+	 * @param {string[]} [filter] <p>Adds filter condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#filter" target="_blank">Docs</a></p>
+	 * @param {string[]} [or] <p>Adds OR condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#or" target="_blank">Docs</a></p>
+	 * @param {string[]} [sort] <p>Adds sort by field. <a href="https://github.com/nestjsx/crud/wiki/Requests#sort" target="_blank">Docs</a></p>
+	 * @param {string[]} [join] <p>Adds relational resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#join" target="_blank">Docs</a></p>
+	 * @param {number} [limit] <p>Limit amount of resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#limit" target="_blank">Docs</a></p>
+	 * @param {number} [offset] <p>Offset amount of resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#offset" target="_blank">Docs</a></p>
+	 * @param {number} [page] <p>Page portion of resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#page" target="_blank">Docs</a></p>
+	 * @param {number} [cache] <p>Reset cache (if was enabled). <a href="https://github.com/nestjsx/crud/wiki/Requests#cache" target="_blank">Docs</a></p>
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	public getManyBaseQuizControllerQuizEntity(__params: QuizApi.GetManyBaseQuizControllerQuizEntityParameters, options?: RequestInit) {
+		return QuizApiFp(this.configuration).getManyBaseQuizControllerQuizEntity(__params, options)(this.fetch, this.basePath);
+	}
+
+	/**
+	 * @summary Retrieve a single QuizEntity
+	 * @param {string} id
+	 * @param {string[]} [fields] <p>Selects resource fields. <a href="https://github.com/nestjsx/crud/wiki/Requests#select" target="_blank">Docs</a></p>
+	 * @param {string[]} [join] <p>Adds relational resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#join" target="_blank">Docs</a></p>
+	 * @param {number} [cache] <p>Reset cache (if was enabled). <a href="https://github.com/nestjsx/crud/wiki/Requests#cache" target="_blank">Docs</a></p>
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	public getOneBaseQuizControllerQuizEntity(__params: QuizApi.GetOneBaseQuizControllerQuizEntityParameters, options?: RequestInit) {
+		return QuizApiFp(this.configuration).getOneBaseQuizControllerQuizEntity(__params, options)(this.fetch, this.basePath);
+	}
+
+	/**
+	 * @summary Replace a single QuizEntity
+	 * @param {string} id
+	 * @param {Api.QuizEntity} request
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	public replaceOneBaseQuizControllerQuizEntity(id: string, request: Api.QuizEntity, options?: RequestInit) {
+		return QuizApiFp(this.configuration).replaceOneBaseQuizControllerQuizEntity(id, request, options)(this.fetch, this.basePath);
+	}
+
+	/**
+	 * @summary Update a single QuizEntity
+	 * @param {string} id
+	 * @param {Api.QuizEntity} request
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	public updateOneBaseQuizControllerQuizEntity(id: string, request: Api.QuizEntity, options?: RequestInit) {
+		return QuizApiFp(this.configuration).updateOneBaseQuizControllerQuizEntity(id, request, options)(this.fetch, this.basePath);
+	}
+
+}
 export namespace TicketApi {
 	export type CreateOneBaseTicketControllerTicketEntityResponse =
 		| CreateOneBaseTicketControllerTicketEntity201Response
