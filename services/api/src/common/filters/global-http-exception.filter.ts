@@ -92,6 +92,8 @@ export class GlobalHttpExceptionFilter implements ExceptionFilter {
       responseBody.raw = exception;
     }
 
+    console.log(responseBody);
+
     response.status(httpStatus).json(responseBody);
   }
 }

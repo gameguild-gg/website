@@ -37,12 +37,15 @@ export default function ProjectForm({
   const toast = useToast();
 
   const fetchProject = async () => {
+    if (!slug) {
+      return;
+    }
     const session = await getSession();
     const api = new ProjectApi({
       basePath: process.env.NEXT_PUBLIC_API_URL,
     });
     const response = await api.getOneBaseProjectControllerProjectEntity(
-      { slug },
+      { slug: slug },
       {
         headers: { Authorization: `Bearer ${session?.user?.accessToken}` },
       },

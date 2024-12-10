@@ -369,6 +369,30 @@ export namespace Api {
 		signature: string;
 	}
 
+	export interface GetManyCourseEntityResponseDto {
+		data: Api.CourseEntity[];
+		/**
+		 * @type {number}
+		 * @memberof GetManyCourseEntityResponseDto
+		 */
+		count: number;
+		/**
+		 * @type {number}
+		 * @memberof GetManyCourseEntityResponseDto
+		 */
+		total: number;
+		/**
+		 * @type {number}
+		 * @memberof GetManyCourseEntityResponseDto
+		 */
+		page: number;
+		/**
+		 * @type {number}
+		 * @memberof GetManyCourseEntityResponseDto
+		 */
+		pageCount: number;
+	}
+
 	export interface GetManyJobApplicationEntityResponseDto {
 		data: Api.JobApplicationEntity[];
 		/**
@@ -517,6 +541,33 @@ export namespace Api {
 		id: string;
 	}
 
+	export interface ImageEntity {
+		id: string;
+		createdAt: string;
+		updatedAt: string;
+		source: string;
+		path: string;
+		filename: string;
+		mimetype: string;
+		/**
+		 * @type {number}
+		 * @memberof ImageEntity
+		 */
+		sizeBytes: number;
+		hash: string;
+		/**
+		 * @type {number}
+		 * @memberof ImageEntity
+		 */
+		width: number;
+		/**
+		 * @type {number}
+		 * @memberof ImageEntity
+		 */
+		height: number;
+		description: string;
+	}
+
 	export interface JobAplicationCreateDto {
 		job: Api.JobPostEntity;
 	}
@@ -527,6 +578,13 @@ export namespace Api {
 		updatedAt: string;
 		applicant: Api.UserEntity;
 		job: Api.JobPostEntity;
+		/**
+		 * @type {number}
+		 * @memberof JobApplicationEntity
+		 */
+		progress: number;
+		rejected: boolean;
+		withdrawn: boolean;
 	}
 
 	export interface JobPostCreateDto {
@@ -625,6 +683,31 @@ export namespace Api {
 			}
 		}
 	
+		export type JobType =
+			'CONTINUOUS' |
+			'TASK'
+		
+		export namespace JobType {
+			export enum Enum {
+				CONTINUOUS = 'CONTINUOUS',
+				TASK = 'TASK'
+			}
+		}
+	
+	}
+
+	export interface JobPostWithAppliedDto {
+		location: string;
+		'job_type': Api.JobPostWithAppliedDto.JobType;
+		'job_tags': Api.JobTagEntity[];
+		applied: boolean;
+	}
+	
+	/**
+	 * @export
+	 * @namespace JobPostWithAppliedDto
+	 */
+	export namespace JobPostWithAppliedDto {
 		export type JobType =
 			'CONTINUOUS' |
 			'TASK'
@@ -1063,9 +1146,6 @@ export namespace Api {
 		responses: Api.ProjectFeedbackResponseEntity[];
 	}
 
-	export interface Promise {
-	}
-
 	export interface TerminalDto {
 	}
 
@@ -1155,6 +1235,12 @@ export namespace Api {
 		newUser: Api.IdDto;
 	}
 
+	export interface UpdateUserProfileDto {
+		bio: string;
+		givenName: string;
+		familyName: string;
+	}
+
 	export interface UserEntity {
 		id: string;
 		createdAt: string;
@@ -1182,6 +1268,32 @@ export namespace Api {
 		courses: Api.CourseEntity[];
 	}
 
+	export interface UserProfileControllerUpdateProfilePictureRequest {
+		file?: string | Blob;
+	}
+	
+	/**
+	 * @export
+	 * @namespace UserProfileControllerUpdateProfilePictureRequest
+	 */
+	export namespace UserProfileControllerUpdateProfilePictureRequest {
+		export interface MultipartFormData {
+			file?: Api.UserProfileControllerUpdateProfilePictureRequest.MultipartFormData.FilePart;
+		}
+		
+		/**
+		 * @export
+		 * @namespace MultipartFormData
+		 */
+		export namespace MultipartFormData {
+			export interface FilePart {
+				value: string | Blob;
+			}
+		
+		}
+	
+	}
+
 	export interface UserProfileEntity {
 		id: string;
 		createdAt: string;
@@ -1191,7 +1303,7 @@ export namespace Api {
 		name: string;
 		givenName: string;
 		familyName: string;
-		picture: string;
+		picture: Api.ImageEntity;
 	}
 
 }

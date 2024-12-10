@@ -1,5 +1,5 @@
-import { Body, Controller, Logger, Post } from '@nestjs/common';
-import { ApiBody, ApiTags } from '@nestjs/swagger';
+import { Body, Controller, Get, Logger, Param, Post } from '@nestjs/common';
+import { ApiBody, ApiResponse, ApiTags, getSchemaPath } from '@nestjs/swagger';
 import { JobApplicationService } from './job-application.service';
 import { Auth } from '../auth/decorators/http.decorator';
 import { JobApplicationEntity } from './entities/job-application.entity';
@@ -11,13 +11,12 @@ import {
   Override,
   ParsedRequest,
 } from '@dataui/crud';
-import { PartialWithoutFields } from 'src/cms/interceptors/ownership-empty-interceptor.service';
 import { ExcludeFieldsPipe } from 'src/cms/pipes/exclude-fields.pipe';
 import { BodyApplicantInject } from './decorators/body-applicant-injection.decorator';
 import { JobAplicationCreateDto } from './dtos/job-aplication-create.dto';
 import { UserInject } from 'src/common/decorators/user-injection.decorator';
-import { JobPostEntity } from './entities/job-post.entity';
 import { UserEntity } from 'src/user/entities';
+import { PartialWithoutFields } from '../types';
 
 @Crud({
   model: {
@@ -51,6 +50,16 @@ import { UserEntity } from 'src/user/entities';
     },
     deleteOneBase: {
       decorators: [Auth(AuthenticatedRoute)],
+    },
+  },
+  query: {
+    join: {
+      applicant: {
+        eager: true,
+      },
+      job: {
+        eager: true,
+      },
     },
   },
 })
@@ -95,12 +104,105 @@ export class JobApplicationController
     return this.base.updateOneBase(req, dto);
   }
 
-  @Post('check-applied')
+  @Get('my-applications')
   @Auth(AuthenticatedRoute)
-  async checkIfUserApplied(
+  @ApiResponse({
+    type: [JobApplicationEntity],
+    schema: { $ref: getSchemaPath(Array<JobApplicationEntity>) },
+    status: 200,
+  })
+  async myApplications(
     @UserInject() user: UserEntity,
-    @Body() jobPosts: JobPostEntity[],
-  ): Promise<boolean[]> {
-    return this.service.checkIfUserAppliedToJobs(user.id, jobPosts);
+  ): Promise<JobApplicationEntity[]> {
+    return this.service.myApplications(user.id);
+  }
+
+  @Get('my-application-by-slug/:slug')
+  @Auth(AuthenticatedRoute)
+  @ApiResponse({
+    type: JobApplicationEntity,
+    schema: { $ref: getSchemaPath(JobApplicationEntity) },
+    status: 200,
+  })
+  async myApplicationBySlug(
+    @Param('slug') slug: string,
+    @UserInject() user: UserEntity,
+  ): Promise<JobApplicationEntity> {
+    return this.service.myApplicationBySlug(slug, user.id);
+  }
+
+  @Post('advance-candidate')
+  @Auth(AuthenticatedRoute)
+  @ApiBody({ type: JobApplicationEntity })
+  @ApiResponse({
+    type: JobApplicationEntity,
+    schema: { $ref: getSchemaPath(JobApplicationEntity) },
+    status: 200,
+  })
+  async advanceCandidate(
+    @Body() application: JobApplicationEntity,
+    @UserInject() jobManager: UserEntity,
+  ): Promise<JobApplicationEntity> {
+    return this.service.advanceCandidate(application, jobManager.id);
+  }
+
+  @Post('undo-advance-candidate')
+  @Auth(AuthenticatedRoute)
+  @ApiBody({ type: JobApplicationEntity })
+  @ApiResponse({
+    type: JobApplicationEntity,
+    schema: { $ref: getSchemaPath(JobApplicationEntity) },
+    status: 200,
+  })
+  async moveBackCandidate(
+    @Body() application: JobApplicationEntity,
+    @UserInject() jobManager: UserEntity,
+  ): Promise<JobApplicationEntity> {
+    return this.service.undoAdvanceCandidate(application, jobManager.id);
+  }
+
+  @Post('reject-candidate')
+  @Auth(AuthenticatedRoute)
+  @ApiBody({ type: JobApplicationEntity })
+  @ApiResponse({
+    type: JobApplicationEntity,
+    schema: { $ref: getSchemaPath(JobApplicationEntity) },
+    status: 200,
+  })
+  async rejectCandidate(
+    @Body() application: JobApplicationEntity,
+    @UserInject() jobManager: UserEntity,
+  ): Promise<JobApplicationEntity> {
+    return this.service.rejectCandidate(application, jobManager.id);
+  }
+
+  @Post('undo-reject-candidate')
+  @Auth(AuthenticatedRoute)
+  @ApiBody({ type: JobApplicationEntity })
+  @ApiResponse({
+    type: JobApplicationEntity,
+    schema: { $ref: getSchemaPath(JobApplicationEntity) },
+    status: 200,
+  })
+  async undoRejectCandidate(
+    @Body() application: JobApplicationEntity,
+    @UserInject() jobManager: UserEntity,
+  ): Promise<JobApplicationEntity> {
+    return this.service.undoRejectCandidate(application, jobManager.id);
+  }
+
+  @Post('withdraw')
+  @Auth(AuthenticatedRoute)
+  @ApiBody({ type: JobApplicationEntity })
+  @ApiResponse({
+    type: JobApplicationEntity,
+    schema: { $ref: getSchemaPath(JobApplicationEntity) },
+    status: 200,
+  })
+  async withdraw(
+    @Body() application: JobApplicationEntity,
+    @UserInject() applicant: UserEntity,
+  ): Promise<JobApplicationEntity> {
+    return this.service.withdraw(application, applicant.id);
   }
 }

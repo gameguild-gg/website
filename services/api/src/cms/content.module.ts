@@ -19,6 +19,8 @@ import { ProjectVersionService } from './project-version.service';
 import { TicketEntity } from './entities/ticket.entity';
 import { TicketController } from './ticket.controller';
 import { TicketService } from './ticket.service';
+import { CoursesController } from './courses.controller';
+import { CourseService } from './courses.service';
 
 @Module({
   imports: [
@@ -39,18 +41,21 @@ import { TicketService } from './ticket.service';
     ProjectController,
     ProjectVersionController,
     TicketController,
+    CoursesController,
   ],
   providers: [
     ContentService,
     ProjectService,
     ProjectVersionService,
     TicketService,
+    CourseService,
   ],
   exports: [
     ContentService,
     ProjectService,
     ProjectVersionService,
     TicketService,
+    CourseService,
   ],
 })
 export class ContentModule {}

@@ -1,14 +1,18 @@
-import { Body, Controller, Get, Logger, UseInterceptors } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Logger,
+  Param,
+  UseInterceptors,
+} from '@nestjs/common';
 import { ApiBody, ApiResponse, ApiTags, getSchemaPath } from '@nestjs/swagger';
 import { Swagger } from '@dataui/crud/lib/crud';
 import { JobPostService } from './job-post.service';
 import { Auth } from '../auth/decorators/http.decorator';
 import { JobPostEntity } from './entities/job-post.entity';
 import { AuthenticatedRoute, OwnerRoute } from '../auth/auth.enum';
-import {
-  OwnershipEmptyInterceptor,
-  PartialWithoutFields,
-} from '../cms/interceptors/ownership-empty-interceptor.service';
+import { OwnershipEmptyInterceptor } from '../cms/interceptors/ownership-empty-interceptor.service';
 import { WithRolesController } from 'src/cms/with-roles.controller';
 import {
   CrudController,
@@ -24,6 +28,8 @@ import { BodyOwnerInject } from 'src/common/decorators/parameter.decorator';
 import { JobPostWithAppliedDto } from './dtos/job-post-with-applied.dto';
 import { UserEntity } from 'src/user/entities';
 import { UserInject } from 'src/common/decorators/user-injection.decorator';
+import { JobPostWithApplicationsDto } from './dtos/job-post-with-applications.dto';
+import { PartialWithoutFields } from '../types';
 
 @Crud({
   model: {
@@ -107,11 +113,6 @@ export class JobPostController
     @ParsedRequest() crudReq: CrudRequest,
     @BodyOwnerInject(JobPostCreateDto) body: JobPostCreateDto,
   ) {
-    //const res = await this.service.createOne(crudReq, body);
-    //return this.service.findOne({
-    //  where: { id: res.id },
-    //  relations: { owner: true, editors: true },
-    //});
     return await this.service.createOneJob(crudReq, body);
   }
 
@@ -141,7 +142,7 @@ export class JobPostController
   @Auth(AuthenticatedRoute)
   @ApiResponse({
     status: 200,
-    type: Promise<JobPostWithAppliedDto[]>,
+    type: [JobPostWithAppliedDto],
     schema: { $ref: getSchemaPath(Array<JobPostWithAppliedDto>) },
   })
   async getManyWithApplied(
@@ -149,5 +150,30 @@ export class JobPostController
     @UserInject() user: UserEntity,
   ): Promise<JobPostWithAppliedDto[]> {
     return this.service.getManyWithApplied(req, user.id);
+  }
+
+  @Get('get-by-slug/:slug')
+  @Auth(AuthenticatedRoute)
+  @ApiResponse({
+    type: JobPostEntity,
+    schema: { $ref: getSchemaPath(JobPostEntity) },
+    status: 200,
+  })
+  async getBySlug(@Param('slug') slug: string): Promise<JobPostEntity> {
+    return this.service.getBySlug(slug);
+  }
+
+  @Get('get-by-slug-for-owner/:slug')
+  @Auth(AuthenticatedRoute)
+  @ApiResponse({
+    type: JobPostEntity,
+    schema: { $ref: getSchemaPath(JobPostEntity) },
+    status: 200,
+  })
+  async getBySlugForOwner(
+    @Param('slug') slug: string,
+    @UserInject() user: UserEntity,
+  ): Promise<JobPostWithApplicationsDto> {
+    return this.service.getBySlugForOwner(slug, user.id);
   }
 }

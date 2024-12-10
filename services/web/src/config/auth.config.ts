@@ -9,6 +9,9 @@ import { NextResponse } from 'next/server';
 import { jwtDecode } from 'jwt-decode';
 import LocalSignInResponseDto = Api.LocalSignInResponseDto;
 
+// todo: add logic to refresh token!!! refresh token should be done in the jwt or session callback
+// https://authjs.dev/guides/refresh-token-rotation
+
 // list of providers
 const providers: Provider[] = [];
 

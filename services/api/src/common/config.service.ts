@@ -8,6 +8,7 @@ import * as ormconfig from '../../ormconfig';
 import * as dotenv from 'dotenv';
 import * as process from 'node:process';
 import { decodeBase64 } from 'ethers';
+import * as fsp from 'fs/promises';
 
 @Injectable()
 export class ApiConfigService {
@@ -16,7 +17,6 @@ export class ApiConfigService {
     // note: This is a workaround to mimic the next dotenv behavior.
     // for some reason the app module is not able to read .env.local files, so I am rewriting everything here.
     // if you found a better solution to this, please let me know on gh: tolstenko
-
     const processEnv = process.env;
     const defaultConfig =
       dotenv.config({ path: '.env', override: false }).parsed || {};
@@ -54,6 +54,12 @@ export class ApiConfigService {
     Object.keys(env).forEach((key) => {
       process.env[key] = env[key];
     });
+
+    // ensure temp folders exist
+    fsp.mkdir('/tmp/uploads', { recursive: true }).then();
+
+    // ensure cache folder exists
+    fsp.mkdir(this.assetCacheDir, { recursive: true }).then();
   }
 
   get sendGridApiKey(): string {
@@ -178,17 +184,80 @@ export class ApiConfigService {
   //     };
   // }
 
-  get s3Config(): {
-    accessKeyId: string;
-    secretAccessKey: string;
-    region: string;
-    bucket: string;
-  } {
-    return {
-      accessKeyId: ormconfig.getEnvString('AWS_ACCESS_KEY_ID'),
-      secretAccessKey: ormconfig.getEnvString('AWS_SECRET_ACCESS_KEY'),
-      region: ormconfig.getEnvString('AWS_REGION'),
-      bucket: ormconfig.getEnvString('AWS_BUCKET_NAME'),
-    };
+  get assetSourceInfoMap(): Map<string, SourceInfo> {
+    // iterate over all env vars and get all env vars beginning with ASSET_SOURCE_.
+    // `ASSET_SOURCE_XXXX_ENDPOINT` - Source server API URL
+    // `ASSET_SOURCE_XXXX_KEY` - Source key, email or username if applicable
+    // `ASSET_SOURCE_XXXX_SECRET` - Source password or secret if applicable
+    // `ASSET_SOURCE_XXXX_BUCKET` - Source bucket or path if applicable
+    // `ASSET_SOURCE_XXXX_PORT` - Source server port if applicable
+    // where XXXX is the source name
+
+    const sources: Map<string, SourceInfo> = new Map();
+
+    // get all env vars
+    const env = process.env;
+
+    // get all possible sources
+    const sourceNames: string[] = [];
+    Object.keys(env).forEach((key: string) => {
+      if (key.startsWith('ASSET_SOURCE_')) {
+        const sourceName = key.replace('ASSET_SOURCE_', '');
+        // remove everything after the first underscore
+        const source = sourceName.split('_')[0];
+        if (!sourceNames.includes(source)) {
+          sourceNames.push(source);
+        }
+      }
+    });
+
+    // iterate over all sources
+    sourceNames.forEach((sourceName) => {
+      // get the source endpoint
+      const endpoint = ormconfig.getEnvString(
+        `ASSET_SOURCE_${sourceName}_ENDPOINT`,
+      );
+      // get the access key
+      const accessKey = ormconfig.getEnvString(
+        `ASSET_SOURCE_${sourceName}_KEY`,
+      );
+      // get the source secret
+      const secretKey = ormconfig.getEnvString(
+        `ASSET_SOURCE_${sourceName}_SECRET`,
+      );
+      // get the source bucket
+      const bucket = ormconfig.getEnvString(
+        `ASSET_SOURCE_${sourceName}_BUCKET`,
+      );
+
+      // add the source to the sources object
+      sources[sourceName] = {
+        endpoint,
+        accessKey,
+        secretKey,
+        bucket,
+      };
+    });
+
+    return sources;
+  }
+
+  get assetCacheDir(): string {
+    return ormconfig.getEnvString('ASSET_CACHE_DIR', '/tmp'); // default to /tmp
+  }
+
+  get assetCacheTTL(): number {
+    return ormconfig.getEnvNumber('ASSET_CACHE_TTL', 60 * 60 * 24); // 24 hours
+  }
+
+  get assetCacheSize(): number {
+    return ormconfig.getEnvNumber('ASSET_CACHE_SIZE', 1024 * 1024 * 1024 * 10); // 10GB
   }
 }
+
+export type SourceInfo = {
+  endpoint: string;
+  accessKey: string;
+  secretKey: string;
+  bucket: string;
+};

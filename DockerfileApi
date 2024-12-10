@@ -6,7 +6,7 @@ WORKDIR /app
 
 RUN apt-get clean && apt-get update
 
-RUN apt install -y build-essential cmake git unzip wget
+RUN apt install -y build-essential cmake git unzip wget graphicsmagick
 
 # copy all files to the container
 COPY . /app

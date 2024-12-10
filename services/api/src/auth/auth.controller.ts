@@ -76,7 +76,7 @@ export class AuthController {
   public async getCurrentUser(
     @AuthUser() user: UserEntity,
   ): Promise<UserEntity> {
-    return user;
+    return this.authService.getUserWithProfile(user.id);
   }
 
   @Get('refresh-token')
