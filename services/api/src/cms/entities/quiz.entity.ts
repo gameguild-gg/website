@@ -4,6 +4,7 @@ import { Column, Entity, ManyToOne, OneToMany } from 'typeorm';
 import { FormLongAnswerDto } from '../dtos/form-long-answer.dto';
 import { ApiExtraModels, ApiProperty, getSchemaPath } from '@nestjs/swagger';
 import { CourseEntity } from './course.entity';
+import { IsOptional, IsString } from 'class-validator';
 
 @ApiExtraModels(FormShortAnswerDto, FormLongAnswerDto)
 @Entity({ name: 'quiz' })
@@ -19,6 +20,13 @@ export class QuizEntity extends ContentBase {
     isArray: true,
   })
   questions: (FormShortAnswerDto | FormLongAnswerDto)[];
+
+  // Instructions for an AI, tutor to grade the quiz
+  @Column({ nullable: true })
+  @IsOptional()
+  @IsString()
+  @ApiProperty()
+  gradingInstructions?: string;
 
   // todo: add more fields to this entity, such as answers, course relationship, etc.
 }
