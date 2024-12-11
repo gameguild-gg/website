@@ -1,3 +1,11 @@
+## [1.3.2](https://github.com/gameguild-gg/website/compare/v1.3.1...v1.3.2) (2024-12-09)
+
+
+### Bug Fixes
+
+* improved code generation ([e12c746](https://github.com/gameguild-gg/website/commit/e12c746d07493e8bd357a8da177b28a78025ff41))
+* withAuth HOC ([438a534](https://github.com/gameguild-gg/website/commit/438a5342466e4681c16af00e40f460331b2c8f7d))
+
 ## [1.3.1](https://github.com/gameguild-gg/website/compare/v1.3.0...v1.3.1) (2024-11-11)
 
 

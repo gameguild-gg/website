@@ -15,7 +15,7 @@ import {
 import { TicketService } from './ticket.service';
 import { TicketEntity } from './entities/ticket.entity';
 import { ApiBody, ApiTags } from '@nestjs/swagger';
-import { CreateTicketDto } from './dtos/Create-Ticket.dto';
+import { CreateTicketDto } from './dtos/create-ticket.dto';
 import { AuthenticatedRoute, OwnerRoute } from '../auth/auth.enum';
 import { OwnershipEmptyInterceptor } from './interceptors/ownership-empty-interceptor.service';
 import { ProjectService } from './project.service';

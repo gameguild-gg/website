@@ -299,6 +299,21 @@ Table TicketEntity {
   project ProjectEntity
 }
 
+Table QuizEntity {
+  id uuid
+  createdAt timestamp
+  updatedAt timestamp
+  slug varchar
+  title varchar
+  summary string
+  body text
+  visibility enum
+  thumbnail varchar
+  questions jsonb
+  owner UserEntity
+  editors UserEntity
+}
+
 Table post_editors_user {
   post_id uuid
   user_id uuid
@@ -349,6 +364,11 @@ Table ticket_editors_user {
   user_id uuid
 }
 
+Table quiz_editors_user {
+  quiz_id uuid
+  user_id uuid
+}
+
 Ref: UserProfileEntity.user - UserEntity.profile
 Ref: UserProfileEntity.picture - ImageEntity.id
 Ref: CompetitionRunSubmissionReportEntity.run > CompetitionRunEntity.reports
@@ -389,3 +409,5 @@ Ref: ProjectEntity.editors <> UserEntity.id
 Ref: ProjectEntity.tickets < TicketEntity.project
 Ref: TicketEntity.owner > UserEntity.id
 Ref: TicketEntity.editors <> UserEntity.id
+Ref: QuizEntity.owner > UserEntity.id
+Ref: QuizEntity.editors <> UserEntity.id

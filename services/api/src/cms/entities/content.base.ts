@@ -65,5 +65,5 @@ export abstract class ContentBase extends WithRolesEntity {
   @ApiProperty()
   @IsOptional()
   @IsUrl({ require_protocol: true })
-  thumbnail: string;
+  thumbnail?: string;
 }
