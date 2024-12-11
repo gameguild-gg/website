@@ -183,3 +183,4 @@ export default function CourseTabs({ courseId, onBack }: { courseId: string, onB
     </div>
   )
 }
+

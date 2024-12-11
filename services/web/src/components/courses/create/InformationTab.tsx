@@ -1,21 +1,18 @@
 'use client'
 
 import { useEffect } from 'react'
-import { useForm, useFieldArray, Controller } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
+import ContentLinks from '../ContentLinks'
 
 export default function InformationTab({ data, updateData }) {
   const { register, control, handleSubmit, reset } = useForm({
     defaultValues: {
       contentDemoLinks: [{ order: '', link: '' }]
     }
-  })
-  const { fields, append, remove } = useFieldArray({
-    control,
-    name: "contentDemoLinks"
   })
 
   useEffect(() => {
@@ -51,31 +48,7 @@ export default function InformationTab({ data, updateData }) {
         </div>
         <div>
           <Label>Content Demo Links</Label>
-          {fields.map((field, index) => (
-            <div key={field.id} className="flex items-center space-x-2 mt-2">
-              <Input
-                {...register(`contentDemoLinks.${index}.order`)}
-                placeholder="Order"
-                type="number"
-              />
-              <Input
-                {...register(`contentDemoLinks.${index}.link`)}
-                placeholder="Link"
-              />
-              <Button type="button" onClick={() => remove(index)} variant="destructive" size="sm">
-                Remove
-              </Button>
-            </div>
-          ))}
-          <Button
-            type="button"
-            onClick={() => append({ order: '', link: '' })}
-            variant="outline"
-            size="sm"
-            className="mt-2"
-          >
-            Add New Content
-          </Button>
+          <ContentLinks control={control} name="contentDemoLinks" />
         </div>
         <Button type="submit">Save Data</Button>
       </form>

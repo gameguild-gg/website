@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ChevronDown, ChevronRight } from 'lucide-react'
+import ContentLinks from '../ContentLinks'
 
 interface ContentLink {
   order: string;
@@ -15,6 +16,7 @@ interface ContentLink {
 }
 
 interface Lesson {
+  id: string;
   moduleId: string;
   order: string;
   title: string;
@@ -36,8 +38,9 @@ export default function LessonsTab({ lessons, modules, updateData }) {
       order: '',
       title: '',
       description: '',
-      contentLinks: [{ order: '', link: '' }],
+      contentLinks: [], // Changed from [{ order: '', link: '' }] to an empty array
       additionalText: '',
+      id: ''
     }
   })
   const { fields, append, remove } = useFieldArray({
@@ -47,6 +50,12 @@ export default function LessonsTab({ lessons, modules, updateData }) {
   const [editingIndex, setEditingIndex] = useState(-1)
   const [expandedModules, setExpandedModules] = useState<string[]>([])
   const [expandedUnassigned, setExpandedUnassigned] = useState(false)
+
+  const getNextLessonId = () => {
+    if (lessons.length === 0) return '10';
+    const maxId = Math.max(...lessons.map(l => parseInt(l.id)));
+    return (maxId + 1).toString();
+  }
 
   useEffect(() => {
     if (editingIndex !== -1 && lessons[editingIndex]) {
@@ -58,6 +67,7 @@ export default function LessonsTab({ lessons, modules, updateData }) {
     const submissionData = {
       ...data,
       moduleId: data.moduleId === 'none' ? '' : data.moduleId,
+      id: editingIndex === -1 ? getNextLessonId() : lessons[editingIndex].id
     };
 
     if (editingIndex === -1) {
@@ -142,31 +152,7 @@ export default function LessonsTab({ lessons, modules, updateData }) {
         </div>
         <div>
           <Label>Content Links</Label>
-          {fields.map((field, index) => (
-            <div key={field.id} className="flex items-center space-x-2 mt-2">
-              <Input
-                {...register(`contentLinks.${index}.order`)}
-                placeholder="Order"
-                type="number"
-              />
-              <Input
-                {...register(`contentLinks.${index}.link`)}
-                placeholder="Link"
-              />
-              <Button type="button" onClick={() => remove(index)} variant="destructive" size="sm">
-                Remove
-              </Button>
-            </div>
-          ))}
-          <Button
-            type="button"
-            onClick={() => append({ order: '', link: '' })}
-            variant="outline"
-            size="sm"
-            className="mt-2"
-          >
-            Add New Content
-          </Button>
+          <ContentLinks control={control} name="contentLinks" />
         </div>
         <div>
           <Label htmlFor="additionalText">Additional Text</Label>
@@ -241,8 +227,8 @@ export default function LessonsTab({ lessons, modules, updateData }) {
                   <ul className="mt-2 space-y-2">
                     {moduleLessons
                       .sort((a, b) => Number(a.order) - Number(b.order))
-                      .map((lesson, lessonIndex) => (
-                        <li key={lessonIndex} className="bg-white p-3 rounded-md">
+                      .map((lesson) => (
+                        <li key={lesson.id} className="bg-white p-3 rounded-md">
                           <div className="flex justify-between items-center mb-2">
                             <span className="font-semibold">Lesson {lesson.order}: {lesson.title}</span>
                             <div className="space-x-2">

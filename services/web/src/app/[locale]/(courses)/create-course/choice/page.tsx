@@ -1,8 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
+import { Button } from "@/components/ui/button"
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import CourseTabs from '../edit/page';
+import { PlusCircle, Edit } from 'lucide-react'
 import { CoursesApi } from '@game-guild/apiclient';
 import { auth } from '@/auth';
 import { Api } from '@game-guild/apiclient';
@@ -45,35 +47,49 @@ export default function CoursePage() {
 
   if (selectedCourse) {
     return (
-      <CourseTabs
-        courseId={selectedCourse}
-        onBack={() => setSelectedCourse(null)}
-      />
-    );
+      <div className="space-y-4">
+        <Button onClick={() => setSelectedCourse(null)} variant="outline" size="sm">
+          ← Back to Course List
+        </Button>
+        <CourseTabs courseId={selectedCourse} onBack={() => setSelectedCourse(null)} />
+      </div>
+    )
   }
 
   return (
-    <div className="space-y-6">
-      <Button onClick={handleNewCourse}>New Course</Button>
-      <div className="space-y-2">
-        <h2 className="text-xl font-semibold">Existing Courses</h2>
-        <ul className="space-y-2">
-          {courses.map((course) => (
-            <li
-              key={course.id}
-              className="flex items-center justify-between bg-gray-100 p-3 rounded-md"
-            >
-              <span>{course.information.title}</span>
-              <Button
-                onClick={() => handleSelectCourse(course.id)}
-                variant="outline"
-              >
-                Edit
-              </Button>
-            </li>
-          ))}
-        </ul>
-      </div>
+    <div className="space-y-8">
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-2xl">Course Management</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Button onClick={handleNewCourse} className="w-full sm:w-auto">
+            <PlusCircle className="mr-2 h-4 w-4" /> Create New Course
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-xl">Existing Courses</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {courses.length === 0 ? (
+            <p className="text-muted-foreground">No courses available. Create a new course to get started.</p>
+          ) : (
+            <ul className="space-y-4">
+              {courses.map((course) => (
+                <li key={course.id} className="flex items-center justify-between bg-muted p-4 rounded-lg">
+                  <span className="font-medium">{course.information.title}</span>
+                  <Button onClick={() => handleSelectCourse(course.id)} variant="outline" size="sm">
+                    <Edit className="mr-2 h-4 w-4" /> Edit
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
     </div>
-  );
+  )
 }

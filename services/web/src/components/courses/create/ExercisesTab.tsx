@@ -7,27 +7,34 @@ import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Checkbox } from "@/components/ui/checkbox"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { ChevronDown, ChevronRight } from 'lucide-react'
+import ShortAnswerQuestion from './question-types/ShortAnswerQuestion'
+import LongAnswerQuestion from './question-types/LongAnswerQuestion'
+import EssayQuestion from './question-types/EssayQuestion'
+import MultipleAnswersQuestion from './question-types/MultipleAnswersQuestion'
+import NumericalAnswersQuestion from './question-types/NumericalAnswersQuestion'
+import CompleteSentenceQuestion from './question-types/CompleteSentenceQuestion'
+import MultipleChoiceQuestion from './question-types/MultipleChoiceQuestion'
+import TrueFalseQuestion from './question-types/TrueFalseQuestion'
+import MatchingQuestion from './question-types/MatchingQuestion'
+import CodeValidationQuestion from './question-types/CodeValidationQuestion'
+import FileAnswerQuestion from './question-types/FileAnswerQuestion'
+import ContentLinks from '../ContentLinks'
 
 interface ContentLink {
   order: string;
   link: string;
 }
 
-interface QuestionOption {
-  text: string;
-  isCorrect: boolean;
-}
-
 interface Question {
   order: number;
-  type: 'text' | 'multiple-choice';
+  type: string;
   question: string;
-  answer?: string;
-  options?: QuestionOption[];
-  score: number;
+  correctScore: number;
+  incorrectScore: number;
+  time: number;
+  contentLinks: ContentLink[];
+  // Additional fields will be added dynamically based on the question type
 }
 
 interface Exercise {
@@ -39,6 +46,11 @@ interface Exercise {
   description: string;
   contentLinks: ContentLink[];
   questions: Question[];
+  time: {
+    hours: number;
+    minutes: number;
+  };
+  averageGrades: 'no average' | 'lesson average' | 'module average' | 'course average';
 }
 
 interface Module {
@@ -55,20 +67,26 @@ interface Lesson {
 }
 
 export default function ExercisesTab({ exercises, modules, lessons, updateData }) {
-  const { register, control, handleSubmit, reset, watch } = useForm<Exercise>({
+  const { register, control, handleSubmit, reset, watch, setValue } = useForm<Exercise>({
     defaultValues: {
       moduleId: '',
       lessonId: '',
       order: '',
       title: '',
       description: '',
-      contentLinks: [{ order: '', link: '' }],
-      questions: [{ order: 1, type: 'text', question: '', answer: '', score: 1 }]
+      contentLinks: [], 
+      questions: [{
+        order: 1,
+        type: 'short answer',
+        question: '',
+        correctScore: 0,
+        incorrectScore: 0,
+        time: 0,
+        contentLinks: []
+      }],
+      time: { hours: 0, minutes: 0 },
+      averageGrades: 'no average'
     }
-  })
-  const { fields: contentLinkFields, append: appendContentLink, remove: removeContentLink } = useFieldArray({
-    control,
-    name: "contentLinks"
   })
   const { fields: questionFields, append: appendQuestion, remove: removeQuestion } = useFieldArray({
     control,
@@ -81,24 +99,34 @@ export default function ExercisesTab({ exercises, modules, lessons, updateData }
 
   const watchQuestionTypes = watch("questions");
   const watchModuleId = watch("moduleId");
+  const watchLessonId = watch("lessonId");
 
   useEffect(() => {
     if (watchModuleId === 'none') {
       reset((formValues) => ({
         ...formValues,
-        lessonId: 'none'
+        lessonId: 'none',
+        averageGrades: 'no average'
       }));
     } else {
-      // Reset lessonId if the selected lesson is not in the current module
-      const currentLesson = lessons.find(lesson => lesson.id === watch('lessonId'));
+      const currentLesson = lessons.find(lesson => lesson.id === watchLessonId);
       if (currentLesson && currentLesson.moduleId !== watchModuleId) {
         reset((formValues) => ({
           ...formValues,
-          lessonId: 'none'
+          lessonId: 'none',
+          averageGrades: 'module average'
         }));
+      } else {
+        setValue('averageGrades', 'module average');
       }
     }
-  }, [watchModuleId, reset, lessons, watch]);
+  }, [watchModuleId, reset, lessons, watchLessonId, setValue]);
+
+  useEffect(() => {
+    if (watchLessonId && watchLessonId !== 'none') {
+      setValue('averageGrades', 'lesson average');
+    }
+  }, [watchLessonId, setValue]);
 
   const onSubmit = (data: Exercise) => {
     const submissionData = {
@@ -170,54 +198,86 @@ export default function ExercisesTab({ exercises, modules, lessons, updateData }
 
   const sortedModules = modules ? [...modules].sort((a, b) => Number(a.order) - Number(b.order)) : [];
 
+  const renderQuestionFields = (questionIndex: number) => {
+    const questionType = watchQuestionTypes[questionIndex]?.type;
+    switch (questionType) {
+      case 'short answer':
+        return <ShortAnswerQuestion control={control} index={questionIndex} />;
+      case 'long answer':
+        return <LongAnswerQuestion control={control} index={questionIndex} />;
+      case 'essay':
+        return <EssayQuestion control={control} index={questionIndex} />;
+      case 'multiple answers':
+        return <MultipleAnswersQuestion control={control} index={questionIndex} />;
+      case 'numerical answers':
+        return <NumericalAnswersQuestion control={control} index={questionIndex} />;
+      case 'complete sentence':
+        return <CompleteSentenceQuestion control={control} index={questionIndex} />;
+      case 'multiple choice':
+        return <MultipleChoiceQuestion control={control} index={questionIndex} />;
+      case 'true/false':
+        return <TrueFalseQuestion control={control} index={questionIndex} />;
+      case 'matching':
+        return <MatchingQuestion control={control} index={questionIndex} />;
+      case 'code validation':
+        return <CodeValidationQuestion control={control} index={questionIndex} />;
+      case 'file answer':
+        return <FileAnswerQuestion control={control} index={questionIndex} />;
+      default:
+        return null;
+    }
+  };
+
   return (
     <div className="grid md:grid-cols-2 gap-4">
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        <div>
-          <Label htmlFor="module">Module (Optional)</Label>
-          <Controller
-            name="moduleId"
-            control={control}
-            render={({ field }) => (
-              <Select onValueChange={field.onChange} value={field.value || undefined}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select module" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">None</SelectItem>
-                  {modules && modules.map((module) => (
-                    <SelectItem key={module.id} value={module.id}>
-                      {module.title}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-          />
-        </div>
-        <div>
-          <Label htmlFor="lesson">Lesson (Optional)</Label>
-          <Controller
-            name="lessonId"
-            control={control}
-            render={({ field }) => (
-              <Select onValueChange={field.onChange} value={field.value || undefined}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select lesson" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">None</SelectItem>
-                  {lessons
-                    .filter(lesson => watchModuleId === 'none' || lesson.moduleId === watchModuleId)
-                    .map((lesson) => (
-                      <SelectItem key={lesson.id} value={lesson.id}>
-                        {lesson.title || `Untitled Lesson ${lesson.order}`}
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="module">Module (Optional)</Label>
+            <Controller
+              name="moduleId"
+              control={control}
+              render={({ field }) => (
+                <Select onValueChange={field.onChange} value={field.value || undefined}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select module" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">None</SelectItem>
+                    {modules && modules.map((module) => (
+                      <SelectItem key={module.id} value={module.id}>
+                        {module.title}
                       </SelectItem>
                     ))}
-                </SelectContent>
-              </Select>
-            )}
-          />
+                  </SelectContent>
+                </Select>
+              )}
+            />
+          </div>
+          <div>
+            <Label htmlFor="lesson">Lesson (Optional)</Label>
+            <Controller
+              name="lessonId"
+              control={control}
+              render={({ field }) => (
+                <Select onValueChange={field.onChange} value={field.value || undefined}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select lesson" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">None</SelectItem>
+                    {lessons
+                      .filter(lesson => watchModuleId === 'none' || lesson.moduleId === watchModuleId)
+                      .map((lesson) => (
+                        <SelectItem key={lesson.id} value={lesson.id}>
+                          {lesson.title || `Untitled Lesson ${lesson.order}`}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
+          </div>
         </div>
         <div>
           <Label htmlFor="order">Order</Label>
@@ -231,63 +291,54 @@ export default function ExercisesTab({ exercises, modules, lessons, updateData }
           <Label htmlFor="description">Description</Label>
           <Textarea id="description" {...register('description')} />
         </div>
+        <div className="grid grid-cols-3 gap-4">
+          <div>
+            <Label>Time (Hours)</Label>
+            <Input
+              type="number"
+              {...register('time.hours', { valueAsNumber: true })}
+              placeholder="Hours"
+            />
+          </div>
+          <div>
+            <Label>Time (Minutes)</Label>
+            <Input
+              type="number"
+              {...register('time.minutes', { valueAsNumber: true })}
+              placeholder="Minutes"
+            />
+          </div>
+          <div>
+            <Label htmlFor="averageGrades">Average Grades</Label>
+            <Controller
+              name="averageGrades"
+              control={control}
+              render={({ field }) => (
+                <Select onValueChange={field.onChange} value={field.value}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select average type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="no average">No Average</SelectItem>
+                    <SelectItem value="lesson average">Lesson Average</SelectItem>
+                    <SelectItem value="module average">Module Average</SelectItem>
+                    <SelectItem value="course average">Course Average</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
+            />
+          </div>
+        </div>
         <div>
           <Label>Content Links</Label>
-          {contentLinkFields.map((field, index) => (
-            <div key={field.id} className="flex items-center space-x-2 mt-2">
-              <Input
-                {...register(`contentLinks.${index}.order` as const)}
-                placeholder="Order"
-                type="number"
-              />
-              <Input
-                {...register(`contentLinks.${index}.link` as const)}
-                placeholder="Link"
-              />
-              <Button type="button" onClick={() => removeContentLink(index)} variant="destructive" size="sm">
-                Remove
-              </Button>
-            </div>
-          ))}
-          <Button
-            type="button"
-            onClick={() => appendContentLink({ order: '', link: '' })}
-            variant="outline"
-            size="sm"
-            className="mt-2"
-          >
-            Add Content Link
-          </Button>
+          <ContentLinks control={control} name="contentLinks" />
         </div>
         <div>
           <Label>Questions</Label>
           {questionFields.map((field, index) => (
-            <div key={field.id} className="space-y-2 border p-4 rounded-md mt-4">
-              <div className="flex items-center space-x-2">
-                <Label>Question Type</Label>
-                <Controller
-                  name={`questions.${index}.type` as const}
-                  control={control}
-                  render={({ field }) => (
-                    <RadioGroup
-                      onValueChange={field.onChange}
-                      value={field.value}
-                      className="flex space-x-4"
-                    >
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="text" id={`text-${index}`} />
-                        <Label htmlFor={`text-${index}`}>Text</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="multiple-choice" id={`multiple-choice-${index}`} />
-                        <Label htmlFor={`multiple-choice-${index}`}>Multiple Choice</Label>
-                      </div>
-                    </RadioGroup>
-                  )}
-                />
-              </div>
-              <div className="flex space-x-2">
-                <div className="w-24">
+            <div key={field.id} className="space-y-4 border p-4 rounded-md mt-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
                   <Label>Order</Label>
                   <Input 
                     type="number" 
@@ -295,82 +346,124 @@ export default function ExercisesTab({ exercises, modules, lessons, updateData }
                     placeholder="Order" 
                   />
                 </div>
-                <div className="flex-grow">
-                  <Label>Question</Label>
-                  <Input {...register(`questions.${index}.question` as const)} placeholder="Question" />
-                </div>
-                <div className="w-24">
-                  <Label>Score</Label>
-                  <Input 
-                    type="number" 
-                    {...register(`questions.${index}.score` as const, { valueAsNumber: true })} 
-                    placeholder="Score" 
-                  />
-                </div>
-              </div>
-              {watchQuestionTypes[index]?.type === 'text' && (
                 <div>
-                  <Label>Answer</Label>
-                  <Input {...register(`questions.${index}.answer` as const)} placeholder="Answer" />
-                </div>
-              )}
-              {watchQuestionTypes[index]?.type === 'multiple-choice' && (
-                <div>
-                  <Label>Options</Label>
+                  <Label>Question Type</Label>
                   <Controller
-                    name={`questions.${index}.options` as const}
+                    name={`questions.${index}.type` as const}
                     control={control}
-                    defaultValue={[]}
                     render={({ field }) => (
-                      <>
-                        {field.value?.map((option, optionIndex) => (
-                          <div key={optionIndex} className="flex items-center space-x-2 mt-2">
-                            <Input
-                              value={option.text}
-                              onChange={(e) => {
-                                const newOptions = [...field.value];
-                                newOptions[optionIndex].text = e.target.value;
-                                field.onChange(newOptions);
-                              }}
-                              placeholder={`Option ${optionIndex + 1}`}
-                            />
-                            <Checkbox
-                              checked={option.isCorrect}
-                              onCheckedChange={(checked) => {
-                                const newOptions = [...field.value];
-                                newOptions[optionIndex].isCorrect = checked as boolean;
-                                field.onChange(newOptions);
-                              }}
-                            />
-                            <Button
-                              type="button"
-                              onClick={() => {
-                                const newOptions = field.value.filter((_, i) => i !== optionIndex);
-                                field.onChange(newOptions);
-                              }}
-                              variant="destructive"
-                              size="sm"
-                            >
-                              Remove
-                            </Button>
-                          </div>
-                        ))}
-                        <Button
-                          type="button"
-                          onClick={() => {
-                            field.onChange([...field.value, { text: '', isCorrect: false }]);
-                          }}
-                          variant="outline"
-                          size="sm"
-                          className="mt-2"
-                        >
-                          Add Option
-                        </Button>
-                      </>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select question type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="short answer">Short Answer</SelectItem>
+                          <SelectItem value="long answer">Long Answer</SelectItem>
+                          <SelectItem value="essay">Essay</SelectItem>
+                          <SelectItem value="multiple answers">Multiple Answers</SelectItem>
+                          <SelectItem value="numerical answers">Numerical Answers</SelectItem>
+                          <SelectItem value="complete sentence">Complete Sentence</SelectItem>
+                          <SelectItem value="multiple choice">Multiple Choice</SelectItem>
+                          <SelectItem value="true/false">True/False</SelectItem>
+                          <SelectItem value="matching">Matching</SelectItem>
+                          <SelectItem value="code validation">Code Validation</SelectItem>
+                          <SelectItem value="file answer">File Answer</SelectItem>
+                        </SelectContent>
+                      </Select>
                     )}
                   />
                 </div>
-              )}
+              </div>
+              <div>
+                <Label>Question</Label>
+                <Textarea {...register(`questions.${index}.question` as const)} placeholder="Question" />
+              </div>
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <Label>Correct Score</Label>
+                  <Input 
+                    type="number" 
+                    {...register(`questions.${index}.correctScore` as const, { valueAsNumber: true })} 
+                    placeholder="Correct Score" 
+                  />
+                </div>
+                <div>
+                  <Label>Incorrect Score</Label>
+                  <Input 
+                    type="number" 
+                    {...register(`questions.${index}.incorrectScore` as const, { valueAsNumber: true })} 
+                    placeholder="Incorrect Score" 
+                  />
+                </div>
+                <div>
+                  <Label>Time (minutes)</Label>
+                  <Input 
+                    type="number" 
+                    {...register(`questions.${index}.time` as const, { valueAsNumber: true })} 
+                    placeholder="Time" 
+                  />
+                </div>
+              </div>
+              <div>
+                <Label>Content Links</Label>
+                <Controller
+                  name={`questions.${index}.contentLinks` as const}
+                  control={control}
+                  defaultValue={[]}
+                  render={({ field }) => (
+                    <>
+                      {field.value.map((link, linkIndex) => (
+                        <div key={linkIndex} className="flex items-center space-x-2 mt-2">
+                          <Input
+                            value={link.order}
+                            onChange={(e) => {
+                              const newLinks = [...field.value];
+                              newLinks[linkIndex].order = e.target.value;
+                              field.onChange(newLinks);
+                            }}
+                            placeholder="Order"
+                            type="number"
+                            className="w-20"
+                          />
+                          <Input
+                            value={link.link}
+                            onChange={(e) => {
+                              const newLinks = [...field.value];
+                              newLinks[linkIndex].link = e.target.value;
+                              field.onChange(newLinks);
+                            }}
+                            placeholder="Link"
+                            className="flex-grow"
+                          />
+                          <Button
+                            type="button"
+                            onClick={() => {
+                              const newLinks = field.value.filter((_, i) => i !== linkIndex);
+                              field.onChange(newLinks);
+                            }}
+                            variant="destructive"
+                            size="sm"
+                          >
+                            Remove
+                          </Button>
+                        </div>
+                      ))}
+                      <Button
+                        type="button"
+                        onClick={() => {
+                          field.onChange([...field.value, { order: '', link: '' }]);
+                        }}
+                        variant="outline"
+                        size="sm"
+                        className="mt-2"
+                      >
+                        Add Content Link
+                      </Button>
+                    </>
+                  )}
+                />
+              </div>
+              {renderQuestionFields(index)}
               <Button type="button" onClick={() => removeQuestion(index)} variant="destructive" size="sm">
                 Remove Question
               </Button>
@@ -378,7 +471,15 @@ export default function ExercisesTab({ exercises, modules, lessons, updateData }
           ))}
           <Button
             type="button"
-            onClick={() => appendQuestion({ order: questionFields.length + 1, type: 'text', question: '', answer: '', score: 1 })}
+            onClick={() => appendQuestion({ 
+              order: questionFields.length + 1, 
+              type: 'short answer', 
+              question: '', 
+              correctScore: 0,
+              incorrectScore: 0,
+              time: 0,
+              contentLinks: []
+            })}
             variant="outline"
             className="mt-4"
           >
@@ -417,6 +518,8 @@ export default function ExercisesTab({ exercises, modules, lessons, updateData }
                         </div>
                         <p className="text-sm text-gray-600 mb-2">{exercise.description}</p>
                         <div className="text-sm">
+                          <p><strong>Time:</strong> {exercise.time.hours}h {exercise.time.minutes}m</p>
+                          <p><strong>Average Grades:</strong> {exercise.averageGrades}</p>
                           <strong>Content Links:</strong>
                           <ul className="list-disc pl-5">
                             {exercise.contentLinks && exercise.contentLinks
@@ -434,17 +537,12 @@ export default function ExercisesTab({ exercises, modules, lessons, updateData }
                               .map((q, qIndex) => (
                                 <li key={qIndex}>
                                   <p><strong>Order:</strong> {q.order}</p>
-                                  <p><strong>Q:</strong> {q.question} (Score: {q.score})</p>
-                                  {q.type === 'text' && <p><strong>A:</strong> {q.answer}</p>}
-                                  {q.type === 'multiple-choice' && (
-                                    <ul className="list-circle pl-5">
-                                      {q.options && q.options.map((option, optionIndex) => (
-                                        <li key={optionIndex} className={option.isCorrect ? 'font-bold' : ''}>
-                                          {option.text} {option.isCorrect && '(Correct)'}
-                                        </li>
-                                      ))}
-                                    </ul>
-                                  )}
+                                  <p><strong>Type:</strong> {q.type}</p>
+                                  <p><strong>Q:</strong> {q.question}</p>
+                                  <p><strong>Correct Score:</strong> {q.correctScore}</p>
+                                  <p><strong>Incorrect Score:</strong> {q.incorrectScore}</p>
+                                  <p><strong>Time:</strong> {q.time} minutes</p>
+                                  {/* Render question-specific fields here */}
                                 </li>
                               ))}
                           </ul>
@@ -502,6 +600,8 @@ export default function ExercisesTab({ exercises, modules, lessons, updateData }
                                     </div>
                                     <p className="text-sm text-gray-600 mb-2">{exercise.description}</p>
                                     <div className="text-sm">
+                                      <p><strong>Time:</strong> {exercise.time.hours}h {exercise.time.minutes}m</p>
+                                      <p><strong>Average Grades:</strong> {exercise.averageGrades}</p>
                                       <strong>Content Links:</strong>
                                       <ul className="list-disc pl-5">
                                         {exercise.contentLinks && exercise.contentLinks
@@ -519,17 +619,12 @@ export default function ExercisesTab({ exercises, modules, lessons, updateData }
                                           .map((q, qIndex) => (
                                             <li key={qIndex}>
                                               <p><strong>Order:</strong> {q.order}</p>
-                                              <p><strong>Q:</strong> {q.question} (Score: {q.score})</p>
-                                              {q.type === 'text' && <p><strong>A:</strong> {q.answer}</p>}
-                                              {q.type === 'multiple-choice' && (
-                                                <ul className="list-circle pl-5">
-                                                  {q.options && q.options.map((option, optionIndex) => (
-                                                    <li key={optionIndex} className={option.isCorrect ? 'font-bold' : ''}>
-                                                      {option.text} {option.isCorrect && '(Correct)'}
-                                                    </li>
-                                                  ))}
-                                                </ul>
-                                              )}
+                                              <p><strong>Type:</strong> {q.type}</p>
+                                              <p><strong>Q:</strong> {q.question}</p>
+                                              <p><strong>Correct Score:</strong> {q.correctScore}</p>
+                                              <p><strong>Incorrect Score:</strong> {q.incorrectScore}</p>
+                                              <p><strong>Time:</strong> {q.time} minutes</p>
+                                              {/* Render question-specific fields here */}
                                             </li>
                                           ))}
                                       </ul>
