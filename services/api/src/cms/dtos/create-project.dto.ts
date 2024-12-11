@@ -13,7 +13,10 @@ import { ContentBase } from '../entities/content.base';
 
 export class CreateProjectDto
   implements
-    Omit<ContentBase, 'createdAt' | 'editors' | 'owner' | 'id' | 'updatedAt'>
+    Omit<
+      ContentBase,
+      'createdAt' | 'editors' | 'owner' | 'id' | 'updatedAt' | 'thumbnail'
+    >
 {
   @ApiProperty()
   @IsNotEmpty()
@@ -44,10 +47,4 @@ export class CreateProjectDto
   @IsOptional()
   @IsEnum(VisibilityEnum)
   visibility: VisibilityEnum;
-
-  // asset image
-  @ApiProperty()
-  @IsOptional()
-  @IsUrl({ require_protocol: true })
-  thumbnail: string;
 }

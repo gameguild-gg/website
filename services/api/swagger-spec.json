@@ -9363,7 +9363,7 @@
             ]
           },
           "thumbnail": {
-            "type": "string"
+            "$ref": "#/components/schemas/ImageEntity"
           }
         },
         "required": [
@@ -9458,7 +9458,7 @@
             ]
           },
           "thumbnail": {
-            "type": "string"
+            "$ref": "#/components/schemas/ImageEntity"
           },
           "order": {
             "type": "number"
@@ -9535,7 +9535,7 @@
             ]
           },
           "thumbnail": {
-            "type": "string"
+            "$ref": "#/components/schemas/ImageEntity"
           },
           "order": {
             "type": "number"
@@ -9615,7 +9615,7 @@
             ]
           },
           "thumbnail": {
-            "type": "string"
+            "$ref": "#/components/schemas/ImageEntity"
           },
           "price": {
             "type": "number"
@@ -9857,9 +9857,6 @@
               "PRIVATE",
               "TRASH"
             ]
-          },
-          "thumbnail": {
-            "type": "string"
           }
         },
         "required": [
@@ -9867,8 +9864,7 @@
           "title",
           "summary",
           "body",
-          "visibility",
-          "thumbnail"
+          "visibility"
         ]
       },
       "GetManyProjectEntityResponseDto": {
@@ -10398,7 +10394,7 @@
             ]
           },
           "thumbnail": {
-            "type": "string"
+            "$ref": "#/components/schemas/ImageEntity"
           },
           "versions": {
             "type": "array",
@@ -10895,7 +10891,7 @@
             ]
           },
           "thumbnail": {
-            "type": "string"
+            "$ref": "#/components/schemas/ImageEntity"
           },
           "location": {
             "type": "string"
@@ -10979,7 +10975,7 @@
             ]
           },
           "thumbnail": {
-            "type": "string"
+            "$ref": "#/components/schemas/ImageEntity"
           },
           "location": {
             "type": "string"

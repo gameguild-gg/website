@@ -1,4 +1,4 @@
-import { Column, Index } from 'typeorm';
+import { Column, Index, ManyToOne, OneToMany } from 'typeorm';
 import { VisibilityEnum } from './visibility.enum';
 import { ApiProperty } from '@nestjs/swagger';
 import { IsSlug } from '../../common/decorators/isslug.decorator';
@@ -12,6 +12,7 @@ import {
 } from 'class-validator';
 import { WithRolesEntity } from '../../auth/entities/with-roles.entity';
 import { CrudValidationGroups } from '@dataui/crud';
+import { ImageEntity } from '../../asset';
 
 // todo: move some of these fields to a more basic entity and add abstract classes to specific intents
 export abstract class ContentBase extends WithRolesEntity {
@@ -61,9 +62,9 @@ export abstract class ContentBase extends WithRolesEntity {
   visibility: VisibilityEnum;
 
   // asset image
-  @Column({ nullable: true, default: '', type: 'varchar', length: 1024 })
-  @ApiProperty()
+  @ApiProperty({ type: ImageEntity })
   @IsOptional()
-  @IsUrl({ require_protocol: true })
-  thumbnail: string;
+  // relation to asset
+  @ManyToOne(() => ImageEntity)
+  thumbnail: ImageEntity;
 }

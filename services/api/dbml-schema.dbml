@@ -20,12 +20,6 @@ Table ImageEntity {
   description string
 }
 
-Table VoteEntity {
-  id uuid
-  createdAt timestamp
-  updatedAt timestamp
-}
-
 Table UserProfileEntity {
   id uuid
   createdAt timestamp
@@ -101,9 +95,9 @@ Table PostEntity {
   summary string
   body text
   visibility enum
-  thumbnail varchar
   PostType enum
   owner UserEntity
+  thumbnail ImageEntity
   editors UserEntity
   owners UserEntity
 }
@@ -117,9 +111,9 @@ Table LectureEntity {
   summary string
   body text
   visibility enum
-  thumbnail varchar
   order float
   owner UserEntity
+  thumbnail ImageEntity
   course CourseEntity
   chapter CourseEntity
   editors UserEntity
@@ -134,9 +128,9 @@ Table ChapterEntity {
   summary string
   body text
   visibility enum
-  thumbnail varchar
   order float
   owner UserEntity
+  thumbnail ImageEntity
   course CourseEntity
   editors UserEntity
   lectures LectureEntity
@@ -151,10 +145,10 @@ Table CourseEntity {
   summary string
   body text
   visibility enum
-  thumbnail varchar
   price decimal
   subscriptionAccess boolean
   owner UserEntity
+  thumbnail ImageEntity
   author UserEntity
   editors UserEntity
   lectures LectureEntity
@@ -184,6 +178,12 @@ Table UserEntity {
   courses CourseEntity
 }
 
+Table VoteEntity {
+  id uuid
+  createdAt timestamp
+  updatedAt timestamp
+}
+
 Table ProposalEntity {
   id uuid
   createdAt timestamp
@@ -193,8 +193,8 @@ Table ProposalEntity {
   summary string
   body text
   visibility enum
-  thumbnail varchar
   owner UserEntity
+  thumbnail ImageEntity
   editors UserEntity
 }
 
@@ -214,26 +214,12 @@ Table JobPostEntity {
   summary string
   body text
   visibility enum
-  thumbnail varchar
   location varchar
   job_type enum
   owner UserEntity
+  thumbnail ImageEntity
   editors UserEntity
   job_tags JobTagEntity
-}
-
-Table EventEntity {
-  id uuid
-  createdAt timestamp
-  updatedAt timestamp
-  slug varchar
-  title varchar
-  summary string
-  body text
-  visibility enum
-  thumbnail varchar
-  owner UserEntity
-  editors UserEntity
 }
 
 Table JobApplicationEntity {
@@ -245,6 +231,20 @@ Table JobApplicationEntity {
   withdrawn boolean
   applicant UserEntity
   job JobPostEntity
+}
+
+Table EventEntity {
+  id uuid
+  createdAt timestamp
+  updatedAt timestamp
+  slug varchar
+  title varchar
+  summary string
+  body text
+  visibility enum
+  owner UserEntity
+  thumbnail ImageEntity
+  editors UserEntity
 }
 
 Table ProjectFeedbackResponseEntity {
@@ -278,8 +278,8 @@ Table ProjectEntity {
   summary string
   body text
   visibility enum
-  thumbnail varchar
   owner UserEntity
+  thumbnail ImageEntity
   editors UserEntity
   versions ProjectVersionEntity
   tickets TicketEntity
@@ -360,32 +360,40 @@ Ref: CompetitionMatchEntity.p2submission > CompetitionSubmissionEntity.matchesAs
 Ref: CompetitionSubmissionEntity.user > UserEntity.competitionSubmissions
 Ref: PostEntity.owner > UserEntity.id
 Ref: PostEntity.editors <> UserEntity.id
+Ref: PostEntity.thumbnail > ImageEntity.id
 Ref: PostEntity.owners <> UserEntity.posts
 Ref: LectureEntity.owner > UserEntity.id
 Ref: LectureEntity.editors <> UserEntity.id
+Ref: LectureEntity.thumbnail > ImageEntity.id
 Ref: LectureEntity.course > CourseEntity.lectures
 Ref: LectureEntity.chapter > CourseEntity.chapters
 Ref: ChapterEntity.owner > UserEntity.id
 Ref: ChapterEntity.editors <> UserEntity.id
+Ref: ChapterEntity.thumbnail > ImageEntity.id
 Ref: ChapterEntity.course > CourseEntity.chapters
 Ref: ChapterEntity.lectures < LectureEntity.chapter
 Ref: CourseEntity.owner > UserEntity.id
 Ref: CourseEntity.editors <> UserEntity.id
+Ref: CourseEntity.thumbnail > ImageEntity.id
 Ref: CourseEntity.author > UserEntity.courses
 Ref: ProposalEntity.owner > UserEntity.id
 Ref: ProposalEntity.editors <> UserEntity.id
+Ref: ProposalEntity.thumbnail > ImageEntity.id
 Ref: JobPostEntity.owner > UserEntity.id
 Ref: JobPostEntity.editors <> UserEntity.id
+Ref: JobPostEntity.thumbnail > ImageEntity.id
 Ref: JobPostEntity.job_tags <> JobTagEntity.id
-Ref: EventEntity.owner > UserEntity.id
-Ref: EventEntity.editors <> UserEntity.id
 Ref: JobApplicationEntity.applicant > UserEntity.id
 Ref: JobApplicationEntity.job > JobPostEntity.id
+Ref: EventEntity.owner > UserEntity.id
+Ref: EventEntity.editors <> UserEntity.id
+Ref: EventEntity.thumbnail > ImageEntity.id
 Ref: ProjectFeedbackResponseEntity.version > ProjectVersionEntity.responses
 Ref: ProjectFeedbackResponseEntity.user > UserEntity.id
 Ref: ProjectVersionEntity.project > ProjectEntity.versions
 Ref: ProjectEntity.owner > UserEntity.id
 Ref: ProjectEntity.editors <> UserEntity.id
+Ref: ProjectEntity.thumbnail > ImageEntity.id
 Ref: ProjectEntity.tickets < TicketEntity.project
 Ref: TicketEntity.owner > UserEntity.id
 Ref: TicketEntity.editors <> UserEntity.id

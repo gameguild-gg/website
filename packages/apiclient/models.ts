@@ -56,7 +56,7 @@ export namespace Api {
 		summary: string;
 		body: string;
 		visibility: Api.ChapterEntity.Visibility;
-		thumbnail: string;
+		thumbnail: Api.ImageEntity;
 		/**
 		 * @type {number}
 		 * @memberof ChapterEntity
@@ -255,7 +255,7 @@ export namespace Api {
 		summary: string;
 		body: string;
 		visibility: Api.CourseEntity.Visibility;
-		thumbnail: string;
+		thumbnail: Api.ImageEntity;
 		/**
 		 * @type {number}
 		 * @memberof CourseEntity
@@ -299,7 +299,6 @@ export namespace Api {
 		summary: string;
 		body: string;
 		visibility: Api.CreateProjectDto.Visibility;
-		thumbnail: string;
 	}
 	
 	/**
@@ -598,7 +597,7 @@ export namespace Api {
 		summary: string;
 		body: string;
 		visibility: Api.JobPostCreateDto.Visibility;
-		thumbnail: string;
+		thumbnail: Api.ImageEntity;
 		location: string;
 		'job_type': Api.JobPostCreateDto.JobType;
 		'job_tags': Api.JobTagEntity[];
@@ -653,7 +652,7 @@ export namespace Api {
 		summary: string;
 		body: string;
 		visibility: Api.JobPostEntity.Visibility;
-		thumbnail: string;
+		thumbnail: Api.ImageEntity;
 		location: string;
 		'job_type': Api.JobPostEntity.JobType;
 		'job_tags': Api.JobTagEntity[];
@@ -739,7 +738,7 @@ export namespace Api {
 		summary: string;
 		body: string;
 		visibility: Api.LectureEntity.Visibility;
-		thumbnail: string;
+		thumbnail: Api.ImageEntity;
 		/**
 		 * @type {number}
 		 * @memberof LectureEntity
@@ -826,7 +825,7 @@ export namespace Api {
 		summary: string;
 		body: string;
 		visibility: Api.PostEntity.Visibility;
-		thumbnail: string;
+		thumbnail: Api.ImageEntity;
 	}
 	
 	/**
@@ -866,7 +865,7 @@ export namespace Api {
 		summary: string;
 		body: string;
 		visibility: Api.ProjectEntity.Visibility;
-		thumbnail: string;
+		thumbnail: Api.ImageEntity;
 		versions: Api.ProjectVersionEntity[];
 		tickets: Api.TicketEntity[];
 	}
