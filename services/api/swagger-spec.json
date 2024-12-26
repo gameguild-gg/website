@@ -9233,9 +9233,6 @@
           }
         },
         "required": [
-          "id",
-          "createdAt",
-          "updatedAt",
           "source",
           "path",
           "filename",
@@ -9282,9 +9279,6 @@
           }
         },
         "required": [
-          "id",
-          "createdAt",
-          "updatedAt",
           "user",
           "bio",
           "name",
@@ -9308,12 +9302,7 @@
             "format": "date-time",
             "type": "string"
           }
-        },
-        "required": [
-          "id",
-          "createdAt",
-          "updatedAt"
-        ]
+        }
       },
       "PostEntity": {
         "type": "object",
@@ -9367,17 +9356,8 @@
           }
         },
         "required": [
-          "id",
-          "createdAt",
-          "updatedAt",
-          "owner",
-          "editors",
           "slug",
-          "title",
-          "summary",
-          "body",
-          "visibility",
-          "thumbnail"
+          "title"
         ]
       },
       "GetManyCourseEntityResponseDto": {
@@ -9471,17 +9451,8 @@
           }
         },
         "required": [
-          "id",
-          "createdAt",
-          "updatedAt",
-          "owner",
-          "editors",
           "slug",
           "title",
-          "summary",
-          "body",
-          "visibility",
-          "thumbnail",
           "order",
           "course",
           "chapter"
@@ -9538,7 +9509,8 @@
             "$ref": "#/components/schemas/ImageEntity"
           },
           "order": {
-            "type": "number"
+            "type": "number",
+            "default": 0
           },
           "course": {
             "$ref": "#/components/schemas/CourseEntity"
@@ -9551,20 +9523,9 @@
           }
         },
         "required": [
-          "id",
-          "createdAt",
-          "updatedAt",
-          "owner",
-          "editors",
           "slug",
           "title",
-          "summary",
-          "body",
-          "visibility",
-          "thumbnail",
-          "order",
-          "course",
-          "lectures"
+          "course"
         ]
       },
       "CourseEntity": {
@@ -9640,17 +9601,8 @@
           }
         },
         "required": [
-          "id",
-          "createdAt",
-          "updatedAt",
-          "owner",
-          "editors",
           "slug",
           "title",
-          "summary",
-          "body",
-          "visibility",
-          "thumbnail",
           "price",
           "subscriptionAccess",
           "author",
@@ -9735,9 +9687,6 @@
           }
         },
         "required": [
-          "id",
-          "createdAt",
-          "updatedAt",
           "username",
           "email",
           "emailVerified",
@@ -10162,9 +10111,6 @@
           }
         },
         "required": [
-          "id",
-          "createdAt",
-          "updatedAt",
           "version",
           "user",
           "responses"
@@ -10234,9 +10180,6 @@
           }
         },
         "required": [
-          "id",
-          "createdAt",
-          "updatedAt",
           "version",
           "archive_url",
           "notes_url",
@@ -10334,11 +10277,6 @@
           }
         },
         "required": [
-          "id",
-          "createdAt",
-          "updatedAt",
-          "owner",
-          "editors",
           "title",
           "description",
           "projectId",
@@ -10407,22 +10345,20 @@
             "items": {
               "$ref": "#/components/schemas/TicketEntity"
             }
+          },
+          "banner": {
+            "$ref": "#/components/schemas/ImageEntity"
+          },
+          "screenshots": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ImageEntity"
+            }
           }
         },
         "required": [
-          "id",
-          "createdAt",
-          "updatedAt",
-          "owner",
-          "editors",
           "slug",
-          "title",
-          "summary",
-          "body",
-          "visibility",
-          "thumbnail",
-          "versions",
-          "tickets"
+          "title"
         ]
       },
       "IdDto": {
@@ -10654,9 +10590,6 @@
           }
         },
         "required": [
-          "id",
-          "createdAt",
-          "updatedAt",
           "winner",
           "lastState",
           "players"
@@ -10677,7 +10610,7 @@
           "elo"
         ]
       },
-      "CompetitionRunEntity": {
+      "CompetitionMatchEntity": {
         "type": "object",
         "properties": {
           "id": {
@@ -10691,12 +10624,53 @@
           "updatedAt": {
             "format": "date-time",
             "type": "string"
+          },
+          "run": {
+            "$ref": "#/components/schemas/CompetitionRunEntity"
+          },
+          "p1submission": {
+            "$ref": "#/components/schemas/CompetitionSubmissionEntity"
+          },
+          "p2submission": {
+            "$ref": "#/components/schemas/CompetitionSubmissionEntity"
+          },
+          "winner": {
+            "type": "string",
+            "enum": [
+              "Player1",
+              "Player2"
+            ]
+          },
+          "p1Points": {
+            "type": "number"
+          },
+          "p2Points": {
+            "type": "number"
+          },
+          "p1Turns": {
+            "type": "number"
+          },
+          "p2Turns": {
+            "type": "number"
+          },
+          "logs": {
+            "type": "string"
+          },
+          "lastState": {
+            "type": "string"
           }
         },
         "required": [
-          "id",
-          "createdAt",
-          "updatedAt"
+          "run",
+          "p1submission",
+          "p2submission",
+          "winner",
+          "p1Points",
+          "p2Points",
+          "p1Turns",
+          "p2Turns",
+          "logs",
+          "lastState"
         ]
       },
       "CompetitionRunSubmissionReportEntity": {
@@ -10743,9 +10717,6 @@
           }
         },
         "required": [
-          "id",
-          "createdAt",
-          "updatedAt",
           "winsAsP1",
           "winsAsP2",
           "totalWins",
@@ -10755,6 +10726,53 @@
           "run",
           "submission",
           "user"
+        ]
+      },
+      "CompetitionRunEntity": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "NOT_STARTED",
+              "RUNNING",
+              "FINISHED",
+              "FAILED"
+            ]
+          },
+          "gameType": {
+            "type": "string"
+          },
+          "matches": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CompetitionMatchEntity"
+            }
+          },
+          "reports": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CompetitionRunSubmissionReportEntity"
+            }
+          }
+        },
+        "required": [
+          "state",
+          "gameType",
+          "matches",
+          "reports"
         ]
       },
       "GetManyJobPostEntityResponseDto": {
@@ -10837,9 +10855,6 @@
           }
         },
         "required": [
-          "id",
-          "createdAt",
-          "updatedAt",
           "name"
         ]
       },
@@ -10911,17 +10926,8 @@
           }
         },
         "required": [
-          "id",
-          "createdAt",
-          "updatedAt",
-          "owner",
-          "editors",
           "slug",
           "title",
-          "summary",
-          "body",
-          "visibility",
-          "thumbnail",
           "location",
           "job_type",
           "job_tags"
@@ -11001,17 +11007,8 @@
           }
         },
         "required": [
-          "id",
-          "createdAt",
-          "updatedAt",
-          "owner",
-          "editors",
           "slug",
           "title",
-          "summary",
-          "body",
-          "visibility",
-          "thumbnail",
           "location",
           "job_type",
           "job_tags",
@@ -11132,9 +11129,6 @@
           }
         },
         "required": [
-          "id",
-          "createdAt",
-          "updatedAt",
           "applicant",
           "job",
           "progress",

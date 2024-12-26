@@ -1,122 +1,6 @@
-Table TagEntity {
-  id uuid
-  createdAt timestamp
-  updatedAt timestamp
-  tag string
-}
-
-Table ImageEntity {
-  id uuid
-  createdAt timestamp
-  updatedAt timestamp
-  source string
-  path string
-  filename string
-  mimetype string
-  sizeBytes integer
-  hash string
-  width integer
-  height integer
-  description string
-}
-
-Table UserProfileEntity {
-  id uuid
-  createdAt timestamp
-  updatedAt timestamp
-  bio varchar
-  name varchar
-  givenName varchar
-  familyName varchar
-  picture ImageEntity
-  user UserEntity
-}
-
-Table CompetitionRunSubmissionReportEntity {
-  id uuid
-  createdAt timestamp
-  updatedAt timestamp
-  winsAsP1 integer
-  winsAsP2 integer
-  totalWins integer
-  pointsAsP1 float8
-  pointsAsP2 float8
-  totalPoints float8
-  run CompetitionRunEntity
-  submission CompetitionSubmissionEntity
-  user UserEntity
-}
-
-Table CompetitionRunEntity {
-  id uuid
-  createdAt timestamp
-  updatedAt timestamp
-  state enum
-  gameType string
-  matches CompetitionMatchEntity
-  reports CompetitionRunSubmissionReportEntity
-}
-
-Table CompetitionMatchEntity {
-  id uuid
-  createdAt timestamp
-  updatedAt timestamp
-  winner enum
-  p1Points float
-  p2Points float
-  p1Turns integer
-  p2Turns integer
-  logs text
-  lastState text
-  run CompetitionRunEntity
-  p1submission CompetitionSubmissionEntity
-  p2submission CompetitionSubmissionEntity
-}
-
-Table CompetitionSubmissionEntity {
-  id uuid
-  createdAt timestamp
-  updatedAt timestamp
-  sourceCodeZip bytea
-  executable bytea
-  gameType enum
-  user UserEntity
-  matchesAsP1 CompetitionMatchEntity
-  matchesAsP2 CompetitionMatchEntity
-  submissionReports CompetitionRunSubmissionReportEntity
-}
-
-Table PostEntity {
-  id uuid
-  createdAt timestamp
-  updatedAt timestamp
-  slug varchar
-  title varchar
-  summary string
-  body text
-  visibility enum
-  PostType enum
-  owner UserEntity
-  thumbnail ImageEntity
-  editors UserEntity
-  owners UserEntity
-}
-
-Table LectureEntity {
-  id uuid
-  createdAt timestamp
-  updatedAt timestamp
-  slug varchar
-  title varchar
-  summary string
-  body text
-  visibility enum
-  order float
-  owner UserEntity
-  thumbnail ImageEntity
-  course CourseEntity
-  chapter CourseEntity
-  editors UserEntity
+Table chapter_editors_user {
+  chapter_id uuid
+  user_id uuid
 }
 
 Table ChapterEntity {
@@ -136,6 +20,65 @@ Table ChapterEntity {
   lectures LectureEntity
 }
 
+Table CompetitionMatchEntity {
+  id uuid
+  createdAt timestamp
+  updatedAt timestamp
+  winner enum
+  p1Points float
+  p2Points float
+  p1Turns integer
+  p2Turns integer
+  logs text
+  lastState text
+  run CompetitionRunEntity
+  p1submission CompetitionSubmissionEntity
+  p2submission CompetitionSubmissionEntity
+}
+
+Table CompetitionRunEntity {
+  id uuid
+  createdAt timestamp
+  updatedAt timestamp
+  state enum
+  gameType string
+  matches CompetitionMatchEntity
+  reports CompetitionRunSubmissionReportEntity
+}
+
+Table CompetitionRunSubmissionReportEntity {
+  id uuid
+  createdAt timestamp
+  updatedAt timestamp
+  winsAsP1 integer
+  winsAsP2 integer
+  totalWins integer
+  pointsAsP1 float8
+  pointsAsP2 float8
+  totalPoints float8
+  run CompetitionRunEntity
+  submission CompetitionSubmissionEntity
+  user UserEntity
+}
+
+Table CompetitionSubmissionEntity {
+  id uuid
+  createdAt timestamp
+  updatedAt timestamp
+  sourceCodeZip bytea
+  executable bytea
+  gameType enum
+  user UserEntity
+  matchesAsP1 CompetitionMatchEntity
+  matchesAsP2 CompetitionMatchEntity
+  submissionReports CompetitionRunSubmissionReportEntity
+}
+
+Table course_editors_user {
+  course_id uuid
+  user_id uuid
+}
+
 Table CourseEntity {
   id uuid
   createdAt timestamp
@@ -153,6 +96,223 @@ Table CourseEntity {
   editors UserEntity
   lectures LectureEntity
   chapters ChapterEntity
+}
+
+Table EventEntity {
+  id uuid
+  createdAt timestamp
+  updatedAt timestamp
+  slug varchar
+  title varchar
+  summary string
+  body text
+  visibility enum
+  owner UserEntity
+  thumbnail ImageEntity
+  editors UserEntity
+}
+
+Table ImageEntity {
+  id uuid
+  createdAt timestamp
+  updatedAt timestamp
+  source string
+  path string
+  filename string
+  mimetype string
+  sizeBytes integer
+  hash string
+  width integer
+  height integer
+  description string
+}
+
+Table job-post_editors_user {
+  job-post_id uuid
+  user_id uuid
+}
+
+Table job-post_job_tags_job-tag {
+  job-post_id uuid
+  job-tag_id uuid
+}
+
+Table JobApplicationEntity {
+  id uuid
+  createdAt timestamp
+  updatedAt timestamp
+  progress integer
+  rejected boolean
+  withdrawn boolean
+  applicant UserEntity
+  job JobPostEntity
+}
+
+Table JobPostEntity {
+  id uuid
+  createdAt timestamp
+  updatedAt timestamp
+  slug varchar
+  title varchar
+  summary string
+  body text
+  visibility enum
+  location varchar
+  job_type enum
+  owner UserEntity
+  thumbnail ImageEntity
+  editors UserEntity
+  job_tags JobTagEntity
+}
+
+Table JobTagEntity {
+  id uuid
+  createdAt timestamp
+  updatedAt timestamp
+  name varchar
+}
+
+Table lecture_editors_user {
+  lecture_id uuid
+  user_id uuid
+}
+
+Table LectureEntity {
+  id uuid
+  createdAt timestamp
+  updatedAt timestamp
+  slug varchar
+  title varchar
+  summary string
+  body text
+  visibility enum
+  order float
+  owner UserEntity
+  thumbnail ImageEntity
+  course CourseEntity
+  chapter CourseEntity
+  editors UserEntity
+}
+
+Table post_editors_user {
+  post_id uuid
+  user_id uuid
+}
+
+Table PostEntity {
+  id uuid
+  createdAt timestamp
+  updatedAt timestamp
+  slug varchar
+  title varchar
+  summary string
+  body text
+  visibility enum
+  PostType enum
+  owner UserEntity
+  thumbnail ImageEntity
+  editors UserEntity
+  owners UserEntity
+}
+
+Table project_editors_user {
+  project_id uuid
+  user_id uuid
+}
+
+Table project_screenshots_images {
+  project_id uuid
+  images_id uuid
+}
+
+Table ProjectEntity {
+  id uuid
+  createdAt timestamp
+  updatedAt timestamp
+  slug varchar
+  title varchar
+  summary string
+  body text
+  visibility enum
+  owner UserEntity
+  thumbnail ImageEntity
+  banner ImageEntity
+  editors UserEntity
+  versions ProjectVersionEntity
+  tickets TicketEntity
+  screenshots ImageEntity
+}
+
+Table ProjectFeedbackResponseEntity {
+  id uuid
+  createdAt timestamp
+  updatedAt timestamp
+  responses jsonb
+  version ProjectVersionEntity
+  user UserEntity
+}
+
+Table ProjectVersionEntity {
+  id uuid
+  createdAt timestamp
+  updatedAt timestamp
+  version string
+  archive_url string
+  notes_url string
+  feedback_form jsonb
+  feedback_deadline timestamptz
+  project ProjectEntity
+  responses ProjectFeedbackResponseEntity
+}
+
+Table proposal_editors_user {
+  proposal_id uuid
+  user_id uuid
+}
+
+Table ProposalEntity {
+  id uuid
+  createdAt timestamp
+  updatedAt timestamp
+  slug varchar
+  title varchar
+  summary string
+  body text
+  visibility enum
+  owner UserEntity
+  thumbnail ImageEntity
+  editors UserEntity
+}
+
+Table TagEntity {
+  id uuid
+  createdAt timestamp
+  updatedAt timestamp
+  tag string
+}
+
+Table ticket_editors_user {
+  ticket_id uuid
+  user_id uuid
+}
+
+Table TicketEntity {
+  id uuid
+  createdAt timestamp
+  updatedAt timestamp
+  title varchar
+  description text
+  projectId uuid
+  status enum
+  priority enum
+  owner UserEntity
+  editors UserEntity
+  project ProjectEntity
+}
+
+Table user_posts_post {
+  user_id uuid
+  post_id uuid
 }
 
 Table UserEntity {
@@ -178,222 +338,71 @@ Table UserEntity {
   courses CourseEntity
 }
 
+Table UserProfileEntity {
+  id uuid
+  createdAt timestamp
+  updatedAt timestamp
+  bio varchar
+  name varchar
+  givenName varchar
+  familyName varchar
+  picture ImageEntity
+  user UserEntity
+}
+
 Table VoteEntity {
   id uuid
   createdAt timestamp
   updatedAt timestamp
 }
 
-Table ProposalEntity {
-  id uuid
-  createdAt timestamp
-  updatedAt timestamp
-  slug varchar
-  title varchar
-  summary string
-  body text
-  visibility enum
-  owner UserEntity
-  thumbnail ImageEntity
-  editors UserEntity
-}
-
-Table JobTagEntity {
-  id uuid
-  createdAt timestamp
-  updatedAt timestamp
-  name varchar
-}
-
-Table JobPostEntity {
-  id uuid
-  createdAt timestamp
-  updatedAt timestamp
-  slug varchar
-  title varchar
-  summary string
-  body text
-  visibility enum
-  location varchar
-  job_type enum
-  owner UserEntity
-  thumbnail ImageEntity
-  editors UserEntity
-  job_tags JobTagEntity
-}
-
-Table JobApplicationEntity {
-  id uuid
-  createdAt timestamp
-  updatedAt timestamp
-  progress integer
-  rejected boolean
-  withdrawn boolean
-  applicant UserEntity
-  job JobPostEntity
-}
-
-Table EventEntity {
-  id uuid
-  createdAt timestamp
-  updatedAt timestamp
-  slug varchar
-  title varchar
-  summary string
-  body text
-  visibility enum
-  owner UserEntity
-  thumbnail ImageEntity
-  editors UserEntity
-}
-
-Table ProjectFeedbackResponseEntity {
-  id uuid
-  createdAt timestamp
-  updatedAt timestamp
-  responses jsonb
-  version ProjectVersionEntity
-  user UserEntity
-}
-
-Table ProjectVersionEntity {
-  id uuid
-  createdAt timestamp
-  updatedAt timestamp
-  version string
-  archive_url string
-  notes_url string
-  feedback_form jsonb
-  feedback_deadline timestamptz
-  project ProjectEntity
-  responses ProjectFeedbackResponseEntity
-}
-
-Table ProjectEntity {
-  id uuid
-  createdAt timestamp
-  updatedAt timestamp
-  slug varchar
-  title varchar
-  summary string
-  body text
-  visibility enum
-  owner UserEntity
-  thumbnail ImageEntity
-  editors UserEntity
-  versions ProjectVersionEntity
-  tickets TicketEntity
-}
-
-Table TicketEntity {
-  id uuid
-  createdAt timestamp
-  updatedAt timestamp
-  title varchar
-  description text
-  projectId uuid
-  status enum
-  priority enum
-  owner UserEntity
-  editors UserEntity
-  project ProjectEntity
-}
-
-Table post_editors_user {
-  post_id uuid
-  user_id uuid
-}
-
-Table lecture_editors_user {
-  lecture_id uuid
-  user_id uuid
-}
-
-Table chapter_editors_user {
-  chapter_id uuid
-  user_id uuid
-}
-
-Table course_editors_user {
-  course_id uuid
-  user_id uuid
-}
-
-Table user_posts_post {
-  user_id uuid
-  post_id uuid
-}
-
-Table proposal_editors_user {
-  proposal_id uuid
-  user_id uuid
-}
-
-Table job-post_editors_user {
-  job-post_id uuid
-  user_id uuid
-}
-
-Table job-post_job_tags_job-tag {
-  job-post_id uuid
-  job-tag_id uuid
-}
-
-Table project_editors_user {
-  project_id uuid
-  user_id uuid
-}
-
-Table ticket_editors_user {
-  ticket_id uuid
-  user_id uuid
-}
-
-Ref: UserProfileEntity.user - UserEntity.profile
-Ref: UserProfileEntity.picture - ImageEntity.id
-Ref: CompetitionRunSubmissionReportEntity.run > CompetitionRunEntity.reports
-Ref: CompetitionRunSubmissionReportEntity.submission > CompetitionSubmissionEntity.submissionReports
-Ref: CompetitionRunSubmissionReportEntity.user > UserEntity.id
-Ref: CompetitionRunEntity.matches < CompetitionMatchEntity.run
-Ref: CompetitionMatchEntity.p1submission > CompetitionSubmissionEntity.matchesAsP1
-Ref: CompetitionMatchEntity.p2submission > CompetitionSubmissionEntity.matchesAsP2
-Ref: CompetitionSubmissionEntity.user > UserEntity.competitionSubmissions
-Ref: PostEntity.owner > UserEntity.id
-Ref: PostEntity.editors <> UserEntity.id
-Ref: PostEntity.thumbnail > ImageEntity.id
-Ref: PostEntity.owners <> UserEntity.posts
-Ref: LectureEntity.owner > UserEntity.id
-Ref: LectureEntity.editors <> UserEntity.id
-Ref: LectureEntity.thumbnail > ImageEntity.id
-Ref: LectureEntity.course > CourseEntity.lectures
-Ref: LectureEntity.chapter > CourseEntity.chapters
 Ref: ChapterEntity.owner > UserEntity.id
 Ref: ChapterEntity.editors <> UserEntity.id
 Ref: ChapterEntity.thumbnail > ImageEntity.id
 Ref: ChapterEntity.course > CourseEntity.chapters
 Ref: ChapterEntity.lectures < LectureEntity.chapter
+Ref: CompetitionMatchEntity.run > CompetitionRunEntity.matches
+Ref: CompetitionMatchEntity.p1submission > CompetitionSubmissionEntity.matchesAsP1
+Ref: CompetitionMatchEntity.p2submission > CompetitionSubmissionEntity.matchesAsP2
+Ref: CompetitionRunEntity.reports < CompetitionRunSubmissionReportEntity.run
+Ref: CompetitionRunSubmissionReportEntity.submission > CompetitionSubmissionEntity.submissionReports
+Ref: CompetitionRunSubmissionReportEntity.user > UserEntity.id
+Ref: CompetitionSubmissionEntity.user > UserEntity.competitionSubmissions
 Ref: CourseEntity.owner > UserEntity.id
 Ref: CourseEntity.editors <> UserEntity.id
 Ref: CourseEntity.thumbnail > ImageEntity.id
 Ref: CourseEntity.author > UserEntity.courses
-Ref: ProposalEntity.owner > UserEntity.id
-Ref: ProposalEntity.editors <> UserEntity.id
-Ref: ProposalEntity.thumbnail > ImageEntity.id
+Ref: CourseEntity.lectures < LectureEntity.course
+Ref: EventEntity.owner > UserEntity.id
+Ref: EventEntity.editors <> UserEntity.id
+Ref: EventEntity.thumbnail > ImageEntity.id
+Ref: JobApplicationEntity.applicant > UserEntity.id
+Ref: JobApplicationEntity.job > JobPostEntity.id
 Ref: JobPostEntity.owner > UserEntity.id
 Ref: JobPostEntity.editors <> UserEntity.id
 Ref: JobPostEntity.thumbnail > ImageEntity.id
 Ref: JobPostEntity.job_tags <> JobTagEntity.id
-Ref: JobApplicationEntity.applicant > UserEntity.id
-Ref: JobApplicationEntity.job > JobPostEntity.id
-Ref: EventEntity.owner > UserEntity.id
-Ref: EventEntity.editors <> UserEntity.id
-Ref: EventEntity.thumbnail > ImageEntity.id
-Ref: ProjectFeedbackResponseEntity.version > ProjectVersionEntity.responses
-Ref: ProjectFeedbackResponseEntity.user > UserEntity.id
-Ref: ProjectVersionEntity.project > ProjectEntity.versions
+Ref: LectureEntity.owner > UserEntity.id
+Ref: LectureEntity.editors <> UserEntity.id
+Ref: LectureEntity.thumbnail > ImageEntity.id
+Ref: LectureEntity.chapter > CourseEntity.chapters
+Ref: PostEntity.owner > UserEntity.id
+Ref: PostEntity.editors <> UserEntity.id
+Ref: PostEntity.thumbnail > ImageEntity.id
+Ref: PostEntity.owners <> UserEntity.posts
 Ref: ProjectEntity.owner > UserEntity.id
 Ref: ProjectEntity.editors <> UserEntity.id
 Ref: ProjectEntity.thumbnail > ImageEntity.id
+Ref: ProjectEntity.versions < ProjectVersionEntity.project
 Ref: ProjectEntity.tickets < TicketEntity.project
+Ref: ProjectEntity.banner > ImageEntity.id
+Ref: ProjectEntity.screenshots <> ImageEntity.id
+Ref: ProjectFeedbackResponseEntity.version > ProjectVersionEntity.responses
+Ref: ProjectFeedbackResponseEntity.user > UserEntity.id
+Ref: ProposalEntity.owner > UserEntity.id
+Ref: ProposalEntity.editors <> UserEntity.id
+Ref: ProposalEntity.thumbnail > ImageEntity.id
 Ref: TicketEntity.owner > UserEntity.id
 Ref: TicketEntity.editors <> UserEntity.id
+Ref: UserEntity.profile - UserProfileEntity.user
+Ref: UserProfileEntity.picture - ImageEntity.id

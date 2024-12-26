@@ -18,7 +18,7 @@ import { ImageEntity } from '../../asset';
 export abstract class ContentBase extends WithRolesEntity {
   @Column({ length: 255, nullable: false, type: 'varchar' })
   @Index({ unique: true })
-  @ApiProperty()
+  @ApiProperty({ required: true })
   @IsOptional({ groups: [CrudValidationGroups.UPDATE] })
   @IsNotEmpty({ groups: [CrudValidationGroups.CREATE] })
   @IsString()
@@ -28,7 +28,7 @@ export abstract class ContentBase extends WithRolesEntity {
 
   @Column({ length: 255, nullable: false, type: 'varchar' })
   @Index({ unique: false })
-  @ApiProperty()
+  @ApiProperty({ required: true })
   @IsOptional()
   @IsNotEmpty({ groups: [CrudValidationGroups.CREATE] })
   @IsString()
@@ -36,14 +36,14 @@ export abstract class ContentBase extends WithRolesEntity {
   title: string;
 
   @Column({ length: 1024, nullable: true })
-  @ApiProperty()
+  @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
   @MaxLength(1024)
   summary: string;
 
   @Column({ type: 'text', nullable: true })
-  @ApiProperty()
+  @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
   @MaxLength(1024 * 64)
@@ -56,13 +56,13 @@ export abstract class ContentBase extends WithRolesEntity {
     default: VisibilityEnum.DRAFT,
     nullable: false,
   })
-  @ApiProperty({ enum: VisibilityEnum })
+  @ApiProperty({ enum: VisibilityEnum, required: false })
   @IsOptional()
   @IsEnum(VisibilityEnum)
   visibility: VisibilityEnum;
 
   // asset image
-  @ApiProperty({ type: ImageEntity })
+  @ApiProperty({ type: ImageEntity, required: false })
   @IsOptional()
   // relation to asset
   @ManyToOne(() => ImageEntity)

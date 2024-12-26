@@ -25,6 +25,8 @@ export class UpdateProjectDto
       | 'versions'
       | 'tickets'
       | 'thumbnail'
+      | 'banner'
+      | 'screenshots'
     >
 {
   @ApiProperty()

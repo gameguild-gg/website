@@ -14,6 +14,9 @@ async function generateDbml() {
 
   const entities = dataSource.entityMetadatas; // Use entity metadata from the initialized data source
 
+  // sort entities by name
+  entities.sort((a, b) => a.name.localeCompare(b.name));
+
   // Generate tables with columns
   entities.forEach((entity) => {
     // if the entity is not in the registry, add it

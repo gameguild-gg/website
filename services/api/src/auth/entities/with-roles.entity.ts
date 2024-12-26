@@ -8,7 +8,7 @@ import { CrudValidationGroups } from '@dataui/crud';
 // to be used in inheritance of entities that require roles
 // todo: change this to be more efficient and generic to different types of roles
 export class WithRolesEntity extends EntityBase {
-  @ApiProperty({ type: () => UserEntity })
+  @ApiProperty({ type: () => UserEntity, required: false })
   @ManyToOne(() => UserEntity, { nullable: true, eager: true })
   @JoinTable()
   @IsOptional()
@@ -17,7 +17,7 @@ export class WithRolesEntity extends EntityBase {
   })
   owner: UserEntity;
 
-  @ApiProperty({ type: () => UserEntity, isArray: true })
+  @ApiProperty({ type: () => UserEntity, isArray: true, required: false })
   @ManyToMany(() => UserEntity, { nullable: true, eager: true })
   @JoinTable()
   @IsOptional()
