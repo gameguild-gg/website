@@ -1,3 +1,18 @@
+## [1.3.3](https://github.com/gameguild-gg/website/compare/v1.3.2...v1.3.3) (2024-12-26)
+
+
+### Bug Fixes
+
+* revert middleware ([d79a0b6](https://github.com/gameguild-gg/website/commit/d79a0b621e11039fe3f0446b987c19e7601f8820))
+
+## [1.3.2](https://github.com/gameguild-gg/website/compare/v1.3.1...v1.3.2) (2024-12-09)
+
+
+### Bug Fixes
+
+* improved code generation ([e12c746](https://github.com/gameguild-gg/website/commit/e12c746d07493e8bd357a8da177b28a78025ff41))
+* withAuth HOC ([438a534](https://github.com/gameguild-gg/website/commit/438a5342466e4681c16af00e40f460331b2c8f7d))
+
 ## [1.3.1](https://github.com/gameguild-gg/website/compare/v1.3.0...v1.3.1) (2024-11-11)
 
 
