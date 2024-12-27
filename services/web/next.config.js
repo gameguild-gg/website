@@ -12,6 +12,15 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  images: {
+    domains: [
+      'localhost',
+      'cdn.jsdelivr.net',
+      'avatars.githubusercontent.com',
+      'gameguild.gg',
+      'web.gameguild.gg',
+    ],
+  },
   webpack: (config, { isServer }) => {
     if (process.env.NODE_ENV === 'development') {
       generatePathMapping();
