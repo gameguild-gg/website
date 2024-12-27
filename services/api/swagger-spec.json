@@ -559,7 +559,7 @@
     },
     "/users/me": {
       "get": {
-        "operationId": "UserController_get",
+        "operationId": "UserController_me",
         "parameters": [],
         "responses": {
           "400": {

@@ -13,7 +13,7 @@ export class UserController {
   @Get('me')
   @Auth(AuthenticatedRoute)
   @ApiResponse({ type: UserEntity })
-  async get(@AuthUser() user: UserEntity) {
+  async me(@AuthUser() user: UserEntity): Promise<UserEntity> {
     return this.userService.findOne({
       where: { id: user.id },
       relations: { profile: true },

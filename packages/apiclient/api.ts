@@ -17969,66 +17969,66 @@ export class TicketApi extends BaseAPI implements TicketApiInterface {
 
 }
 export namespace UsersApi {
-	export type UserControllerGetResponse =
-		| UserControllerGet400Response
-		| UserControllerGet401Response
-		| UserControllerGet403Response
-		| UserControllerGet404Response
-		| UserControllerGet409Response
-		| UserControllerGet422Response
-		| UserControllerGet500Response
-		| UserControllerGetDefaultResponse
+	export type UserControllerMeResponse =
+		| UserControllerMe400Response
+		| UserControllerMe401Response
+		| UserControllerMe403Response
+		| UserControllerMe404Response
+		| UserControllerMe409Response
+		| UserControllerMe422Response
+		| UserControllerMe500Response
+		| UserControllerMeDefaultResponse
 	
-	export interface UserControllerGet400Response {
+	export interface UserControllerMe400Response {
 		status: 400
 		contentType: 'application/json'
 		body: Api.ApiErrorResponseDto
 		headers?: undefined
 	}
 	
-	export interface UserControllerGet401Response {
+	export interface UserControllerMe401Response {
 		status: 401
 		contentType: 'application/json'
 		body: Api.ApiErrorResponseDto
 		headers?: undefined
 	}
 	
-	export interface UserControllerGet403Response {
+	export interface UserControllerMe403Response {
 		status: 403
 		contentType: 'application/json'
 		body: Api.ApiErrorResponseDto
 		headers?: undefined
 	}
 	
-	export interface UserControllerGet404Response {
+	export interface UserControllerMe404Response {
 		status: 404
 		contentType: 'application/json'
 		body: Api.ApiErrorResponseDto
 		headers?: undefined
 	}
 	
-	export interface UserControllerGet409Response {
+	export interface UserControllerMe409Response {
 		status: 409
 		contentType: 'application/json'
 		body: Api.ApiErrorResponseDto
 		headers?: undefined
 	}
 	
-	export interface UserControllerGet422Response {
+	export interface UserControllerMe422Response {
 		status: 422
 		contentType: 'application/json'
 		body: Api.ApiErrorResponseDto
 		headers?: undefined
 	}
 	
-	export interface UserControllerGet500Response {
+	export interface UserControllerMe500Response {
 		status: 500
 		contentType: 'application/json'
 		body: Api.ApiErrorResponseDto
 		headers?: undefined
 	}
 	
-	export interface UserControllerGetDefaultResponse {
+	export interface UserControllerMeDefaultResponse {
 		status: number
 		contentType: 'application/json'
 		body: Api.UserEntity
@@ -18245,7 +18245,7 @@ export const UsersApiFetchParamCreator = function (configuration?: Configuration
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		userControllerGet(options: RequestInit = {}): FetchArgs {
+		userControllerMe(options: RequestInit = {}): FetchArgs {
 
 			let localVarPath = `/users/me`;
 			const localVarPathQueryStart = localVarPath.indexOf("?");
@@ -18420,8 +18420,8 @@ export const UsersApiFp = function(configuration?: Configuration) {
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		userControllerGet(options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<UsersApi.UserControllerGetResponse> {
-			const localVarFetchArgs = UsersApiFetchParamCreator(configuration).userControllerGet(options);
+		userControllerMe(options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<UsersApi.UserControllerMeResponse> {
+			const localVarFetchArgs = UsersApiFetchParamCreator(configuration).userControllerMe(options);
 			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
 				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
 				const contentType = response.headers.get('Content-Type');
@@ -18807,7 +18807,7 @@ export interface UsersApiInterface {
 	 * @param {RequestInit} [options] Override http request option.
 	 * @throws {RequiredError}
 	 */
-	userControllerGet(options?: RequestInit): Promise<UsersApi.UserControllerGetResponse>
+	userControllerMe(options?: RequestInit): Promise<UsersApi.UserControllerMeResponse>
 
 	/**
 	 * @param {RequestInit} [options] Override http request option.
@@ -18842,8 +18842,8 @@ export class UsersApi extends BaseAPI implements UsersApiInterface {
 	 * @param {RequestInit} [options] Override http request option.
 	 * @throws {RequiredError}
 	 */
-	public userControllerGet(options?: RequestInit) {
-		return UsersApiFp(this.configuration).userControllerGet(options)(this.fetch, this.basePath);
+	public userControllerMe(options?: RequestInit) {
+		return UsersApiFp(this.configuration).userControllerMe(options)(this.fetch, this.basePath);
 	}
 
 	/**
