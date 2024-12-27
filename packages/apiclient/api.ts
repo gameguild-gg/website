@@ -18109,6 +18109,7 @@ export namespace UsersApi {
 		| UserProfileControllerUpdate409Response
 		| UserProfileControllerUpdate422Response
 		| UserProfileControllerUpdate500Response
+		| UserProfileControllerUpdateDefaultResponse
 	
 	export interface UserProfileControllerUpdate400Response {
 		status: 400
@@ -18156,6 +18157,13 @@ export namespace UsersApi {
 		status: 500
 		contentType: 'application/json'
 		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface UserProfileControllerUpdateDefaultResponse {
+		status: number
+		contentType: 'application/json'
+		body: Api.UserProfileEntity
 		headers?: undefined
 	}
 	
@@ -18384,8 +18392,8 @@ export const UsersApiFetchParamCreator = function (configuration?: Configuration
 	
 			if (request !== undefined) {
 				const localVarFormData = new FormData();
-				if (request.file !== undefined) {
-					localVarFormData.append('file', request.file.value);
+				if (request.profilePicture !== undefined) {
+					localVarFormData.append('profilePicture', request.profilePicture.value);
 				}
 				localVarRequestOptions.body = localVarFormData;
 			}
@@ -18673,6 +18681,14 @@ export const UsersApiFp = function(configuration?: Configuration) {
 						}
 					}
 					throw response;
+				}
+				/* Catch-all response */
+				if (mimeType === 'application/json') {
+					return {
+						status: response.status,
+						contentType: 'application/json',
+						body: await response.json() as Api.UserProfileEntity,
+					}
 				}
 				throw response;
 			};

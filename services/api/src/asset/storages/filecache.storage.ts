@@ -7,6 +7,7 @@ import { AssetBase } from '../asset.base';
 import * as Stream from 'node:stream';
 const fsp = fs.promises;
 import { lookup } from 'mime-types';
+import { OkDto } from '../../common/dtos/ok.dto';
 
 export class AssetOnDisk {
   path: string;
@@ -91,7 +92,20 @@ export class FileCacheStorageService implements Storage {
     const mime = await lookup(targetPath);
     return { path: targetPath, hash: hash, size: file.size, mime: mime };
   }
-  delete() {}
+  async delete(asset: Partial<AssetBase>): Promise<OkDto> {
+    // use asset to get the right path of the file
+    const outerFolder = asset.hash.substring(0, 2);
+    const innerFolder = asset.hash.substring(2, 4);
+    const targetFolder = `${this.assetCacheDir}/${outerFolder}/${innerFolder}`;
+    const filename = `${asset.hash}-${asset.originalFilename}`;
+    const targetPath = `${targetFolder}/${filename}`;
+
+    // if the file exists on cache, delete it
+    if (fs.existsSync(targetPath)) {
+      await fsp.unlink(targetPath);
+    }
+    return { success: true };
+  }
   async get(asset: Partial<AssetBase>): Promise<AssetOnDisk | null> {
     // use asset to get the right path of the file
     const outerFolder = asset.hash.substring(0, 2);

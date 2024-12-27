@@ -737,6 +737,16 @@
                 }
               }
             }
+          },
+          "default": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserProfileEntity"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -854,7 +864,7 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "file": {
+                  "profilePicture": {
                     "type": "string",
                     "format": "binary"
                   }
@@ -9210,6 +9220,9 @@
           "path": {
             "type": "string"
           },
+          "originalFilename": {
+            "type": "string"
+          },
           "filename": {
             "type": "string"
           },
@@ -9235,6 +9248,7 @@
         "required": [
           "source",
           "path",
+          "originalFilename",
           "filename",
           "mimetype",
           "sizeBytes",
@@ -9774,12 +9788,7 @@
           "familyName": {
             "type": "string"
           }
-        },
-        "required": [
-          "bio",
-          "givenName",
-          "familyName"
-        ]
+        }
       },
       "CreateProjectDto": {
         "type": "object",

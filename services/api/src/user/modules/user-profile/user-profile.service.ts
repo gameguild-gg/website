@@ -25,7 +25,13 @@ export class UserProfileService {
     if (!profile) {
       throw new NotFoundException('User profile not found');
     }
+
+    // if there is a picture, delete it
+    if (profile.picture) await this.assetService.deleteImage(profile.picture);
+
     const img = await this.assetService.storeImage(file);
+
+    // store and update profile picture
     profile.picture = img;
     await this.repository.update({ id: profile.id }, { picture: img });
     return profile;

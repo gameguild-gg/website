@@ -30,7 +30,7 @@ export class AssetController {
   private readonly logger = new Logger(AssetController.name);
   constructor(private readonly assetService: AssetService) {}
 
-  // @ApiFile({
+  // @ApiFiles({
   //   fileFilter(
   //     req: any,
   //     file: Express.Multer.File,

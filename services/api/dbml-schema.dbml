@@ -118,6 +118,7 @@ Table ImageEntity {
   updatedAt timestamp
   source string
   path string
+  originalFilename string
   filename string
   mimetype string
   sizeBytes integer

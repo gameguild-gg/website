@@ -16,19 +16,19 @@ type AllowedFields = 'bio' | 'familyName' | 'givenName';
 export class UpdateUserProfileDto
   implements IPickFields<UserProfileEntity, AllowedFields>
 {
-  @ApiProperty()
+  @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
   @Length(1, 256)
   bio: string;
 
-  @ApiProperty()
+  @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
   @Length(1, 256)
   givenName: string;
 
-  @ApiProperty()
+  @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
   @Length(1, 256)

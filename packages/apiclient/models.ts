@@ -622,6 +622,7 @@ export namespace Api {
 		updatedAt?: string;
 		source: string;
 		path: string;
+		originalFilename: string;
 		filename: string;
 		mimetype: string;
 		/**
@@ -1313,9 +1314,9 @@ export namespace Api {
 	}
 
 	export interface UpdateUserProfileDto {
-		bio: string;
-		givenName: string;
-		familyName: string;
+		bio?: string;
+		givenName?: string;
+		familyName?: string;
 	}
 
 	export interface UserEntity {
@@ -1346,7 +1347,7 @@ export namespace Api {
 	}
 
 	export interface UserProfileControllerUpdateProfilePictureRequest {
-		file?: string | Blob;
+		profilePicture?: string | Blob;
 	}
 	
 	/**
@@ -1355,7 +1356,7 @@ export namespace Api {
 	 */
 	export namespace UserProfileControllerUpdateProfilePictureRequest {
 		export interface MultipartFormData {
-			file?: Api.UserProfileControllerUpdateProfilePictureRequest.MultipartFormData.FilePart;
+			profilePicture?: Api.UserProfileControllerUpdateProfilePictureRequest.MultipartFormData.ProfilePicturePart;
 		}
 		
 		/**
@@ -1363,7 +1364,7 @@ export namespace Api {
 		 * @namespace MultipartFormData
 		 */
 		export namespace MultipartFormData {
-			export interface FilePart {
+			export interface ProfilePicturePart {
 				value: string | Blob;
 			}
 		

@@ -61,6 +61,16 @@ export class AssetService {
       hash: assetOnDisk.hash,
       filename: assetOnDisk.hash + '-' + file.originalname,
       sizeBytes: assetOnDisk.size,
+      originalFilename: file.originalname,
     });
+  }
+
+  async deleteImage(picture: ImageEntity) {
+    // todo: deal with different sources
+    // parallel await
+    await Promise.all([
+      this.imageStorage.delete(picture),
+      this.imageRepository.delete(picture.id),
+    ]);
   }
 }

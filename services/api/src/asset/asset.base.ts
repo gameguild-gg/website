@@ -20,9 +20,6 @@ export enum AssetSourceType {
 }
 
 // Base asset entity. This should be extended by other entities that need to store assets.
-@Index('asset_source_path_filename_idx', ['source', 'path', 'filename'], {
-  unique: true,
-})
 export class AssetBase extends EntityBase {
   // this source name is the same on from the env var
   @ApiProperty()
@@ -40,6 +37,13 @@ export class AssetBase extends EntityBase {
   @Column({ nullable: false, default: '' })
   @Index({ unique: false })
   readonly path: string;
+
+  @ApiProperty()
+  @IsNotEmpty()
+  @IsString()
+  @Column({ nullable: false, default: '' })
+  @Index({ unique: false })
+  readonly originalFilename: string;
 
   @ApiProperty()
   @IsString({ message: 'error.invalidFilename: Filename must be a string.' })
