@@ -5772,6 +5772,125 @@ export class CoursesApi extends BaseAPI implements CoursesApiInterface {
 	}
 
 }
+export namespace HealthcheckApi {
+	export type HealthcheckControllerGitstatsResponse =
+		| HealthcheckControllerGitstats200Response
+	
+	export interface HealthcheckControllerGitstats200Response {
+		status: 200
+		contentType: 'application/json'
+		body: Api.GitStats[]
+		headers?: undefined
+	}
+	
+}
+
+/**
+ * HealthcheckApi - fetch parameter creator
+ * @export
+ */
+export const HealthcheckApiFetchParamCreator = function (configuration?: Configuration) {
+	return {
+		/**
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		healthcheckControllerGitstats(options: RequestInit = {}): FetchArgs {
+
+			let localVarPath = `/healthcheck/gitstats`;
+			const localVarPathQueryStart = localVarPath.indexOf("?");
+			const localVarRequestOptions: RequestInit = Object.assign({ method: 'GET' }, options);
+			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
+			const localVarQueryParameter = new URLSearchParams(localVarPathQueryStart !== -1 ? localVarPath.substring(localVarPathQueryStart + 1) : "");
+			if (localVarPathQueryStart !== -1) {
+				localVarPath = localVarPath.substring(0, localVarPathQueryStart);
+			}
+
+			localVarRequestOptions.headers = localVarHeaderParameter;
+
+			const localVarQueryParameterString = localVarQueryParameter.toString();
+			if (localVarQueryParameterString) {
+				localVarPath += "?" + localVarQueryParameterString;
+			}
+			return {
+				url: localVarPath,
+				options: localVarRequestOptions,
+			};
+		},
+	}
+};
+
+/**
+ * HealthcheckApi - functional programming interface
+ * @export
+ */
+export const HealthcheckApiFp = function(configuration?: Configuration) {
+	return {
+		/**
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		healthcheckControllerGitstats(options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<HealthcheckApi.HealthcheckControllerGitstatsResponse> {
+			const localVarFetchArgs = HealthcheckApiFetchParamCreator(configuration).healthcheckControllerGitstats(options);
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				if (response.status === 200) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.GitStats[],
+						}
+					}
+					throw response;
+				}
+				throw response;
+			};
+		},
+	}
+};
+
+/**
+ * HealthcheckApi - factory interface
+ * @export
+ */
+export const HealthcheckApiFactory: FactoryFunction<HealthcheckApiInterface> = function (configuration?: Configuration, basePath?: string, fetch?: FetchAPI) {
+	return new HealthcheckApi(configuration, basePath, fetch);
+};
+
+/**
+ * HealthcheckApi - interface
+ * @export
+ * @interface HealthcheckApi
+ */
+export interface HealthcheckApiInterface {
+	/**
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	healthcheckControllerGitstats(options?: RequestInit): Promise<HealthcheckApi.HealthcheckControllerGitstatsResponse>
+
+}
+
+/**
+ * HealthcheckApi - object-oriented interface
+ * @export
+ * @class HealthcheckApi
+ * @extends {BaseAPI}
+ */
+export class HealthcheckApi extends BaseAPI implements HealthcheckApiInterface {
+	/**
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	public healthcheckControllerGitstats(options?: RequestInit) {
+		return HealthcheckApiFp(this.configuration).healthcheckControllerGitstats(options)(this.fetch, this.basePath);
+	}
+
+}
 export namespace JobApplicationsApi {
 	export type CreateOneBaseJobApplicationControllerJobApplicationEntityResponse =
 		| CreateOneBaseJobApplicationControllerJobApplicationEntity201Response

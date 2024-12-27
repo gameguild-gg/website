@@ -5489,6 +5489,27 @@
         ]
       }
     },
+    "/healthcheck/gitstats": {
+      "get": {
+        "operationId": "HealthcheckController_gitstats",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/GitStats"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/job-posts": {
       "post": {
         "operationId": "createOneBaseJobPostControllerJobPostEntity",
@@ -10782,6 +10803,25 @@
           "gameType",
           "matches",
           "reports"
+        ]
+      },
+      "GitStats": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string"
+          },
+          "additions": {
+            "type": "number"
+          },
+          "deletions": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "username",
+          "additions",
+          "deletions"
         ]
       },
       "GetManyJobPostEntityResponseDto": {
