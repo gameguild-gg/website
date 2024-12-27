@@ -1,3 +1,10 @@
+# [1.4.0](https://github.com/gameguild-gg/website/compare/v1.3.3...v1.4.0) (2024-12-27)
+
+
+### Features
+
+* **contributors:** add contributors page ([d0df3a4](https://github.com/gameguild-gg/website/commit/d0df3a4849b0c822275ddf3545169c56e7ee0f07))
+
 ## [1.3.3](https://github.com/gameguild-gg/website/compare/v1.3.2...v1.3.3) (2024-12-26)
 
 
