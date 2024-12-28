@@ -39,3 +39,7 @@ npm -v # should print `10.8.2`
 - Run `npm run start:both` on the root of the repo to start both front and back-end; or
 
 - Run `npm run start:both` to start back-end and in new terminal, run `npm run dev:web` to start front-end;
+
+## Under construction
+Here are some current stages of the website.
+![Website 1](./documentation/Page 1.png)
