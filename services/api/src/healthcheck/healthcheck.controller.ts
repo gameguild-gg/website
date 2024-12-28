@@ -1,6 +1,12 @@
-import { Controller, Get, InternalServerErrorException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Inject,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { simpleGit } from 'simple-git';
 import { ApiOkResponse, ApiProperty, ApiResponse } from '@nestjs/swagger';
+import { CACHE_MANAGER, CacheKey, CacheTTL } from '@nestjs/cache-manager';
 
 export class GitStats {
   @ApiProperty()
@@ -13,8 +19,10 @@ export class GitStats {
 
 @Controller('healthcheck')
 export class HealthcheckController {
-  constructor() {}
+  constructor(@Inject(CACHE_MANAGER) private cacheManager: Cache) {}
 
+  @CacheKey('gitstats')
+  @CacheTTL(60 * 60 * 1000)
   @Get('gitstats')
   @ApiOkResponse({ type: GitStats, isArray: true })
   async gitstats(): Promise<GitStats[]> {
@@ -97,5 +105,32 @@ export class HealthcheckController {
       console.error('Error fetching Git stats:', error);
       throw new InternalServerErrorException('Failed to fetch Git stats');
     }
+  }
+
+  // db healthcheck
+  @Get('db')
+  @ApiResponse({ status: 200, description: 'DB is healthy' })
+  @ApiResponse({ status: 500, description: 'DB is unhealthy' })
+  async db(): Promise<void> {
+    // check db health
+    // throw error if db is unhealthy
+  }
+
+  // redis healthcheck
+  @Get('redis')
+  @ApiResponse({ status: 200, description: 'Redis is healthy' })
+  @ApiResponse({ status: 500, description: 'Redis is unhealthy' })
+  async redis(): Promise<void> {
+    // check redis health
+    // throw error if redis is unhealthy
+  }
+
+  // s3 healthcheck
+  @Get('s3')
+  @ApiResponse({ status: 200, description: 'S3 is healthy' })
+  @ApiResponse({ status: 500, description: 'S3 is unhealthy' })
+  async s3(): Promise<void> {
+    // check s3 health
+    // throw error if s3 is unhealthy
   }
 }

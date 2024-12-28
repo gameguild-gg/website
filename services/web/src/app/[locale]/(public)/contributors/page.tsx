@@ -15,10 +15,11 @@ async function getContributors(): Promise<Contributor[]> {
     .body as Api.GitStats[];
 
   if (!res.ok) throw new Error('Failed to fetch contributors');
-  // remove users semantic-release-bot and dependabot[bot] from contributors
+  // remove users semantic-release-bot and dependabot[bot] and LMD9977 from contributors
   const contributors = (await res.json()).filter(
     (contributor: Contributor) =>
       contributor.login !== 'semantic-release-bot' &&
+      contributor.login !== 'LMD9977' &&
       contributor.login !== 'dependabot[bot]',
   );
 
