@@ -5,6 +5,8 @@
 ![Last Commit](https://img.shields.io/github/last-commit/gameguild-gg/website)
 ![Contributors](https://img.shields.io/github/contributors/gameguild-gg/website)
 ![Languages](https://img.shields.io/github/languages/top/gameguild-gg/website)
+![Website Uptime 30d](https://status.gameguild.gg/api/badge/1/uptime/720?label=Uptime%20Web%20(30d))
+![Api Uptime 30d](https://status.gameguild.gg/api/badge/3/uptime/720?label=Uptime%20Api%20(30d))
 
 # Game Guild Platform
 
