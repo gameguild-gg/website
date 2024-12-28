@@ -1,4 +1,4 @@
-![GitHub Stars](https://img.shields.io/github/stars/username/repo?style=social)
+![GitHub Stars](https://img.shields.io/github/stars/gameguild-gg/website?style=social)
 <div style="display: inline_block">
   <!-- ![Build Status](https://img.shields.io/github/actions/workflow/status/username/repo/ci.yml?branch=main)
   ![Version](https://img.shields.io/github/package-json/v/username/repo)
