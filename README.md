@@ -62,13 +62,13 @@ Help increase visibility, attracting more contributors and collaborators.
 Join a growing community shaping the future of game development.
 
 <div style="text-align: center; margin-top: 20px;">
-  <a href="https://www.youtube.com/channel/example" target="_blank" style="text-decoration: none; margin: 0 15px;">
+  <!-- <a href="" target="_blank" style="text-decoration: none; margin: 0 15px;">
     <img src="https://img.icons8.com/color/48/000000/youtube-play.png" alt="YouTube" style="vertical-align: middle;"/>
-  </a>
-  <a href="https://wa.me/your-number" target="_blank" style="text-decoration: none; margin: 0 15px;">
+  </a> -->
+  <a href="https://chat.whatsapp.com/CAboWKtosP673f9EkzxKNb" target="_blank" style="text-decoration: none; margin: 0 15px;">
     <img src="https://img.icons8.com/color/48/000000/whatsapp.png" alt="WhatsApp" style="vertical-align: middle;"/>
   </a>
-  <a href="https://discord.gg/your-invite-code" target="_blank" style="text-decoration: none; margin: 0 15px;">
+  <a href="https://discord.com/invite/9CdJeQ2XKB?ref=gameguild.gg" target="_blank" style="text-decoration: none; margin: 0 15px;">
     <img src="https://img.icons8.com/color/48/000000/discord-logo.png" alt="Discord" style="vertical-align: middle;"/>
   </a>
 </div>
