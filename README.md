@@ -5,10 +5,6 @@
 ![Last Commit](https://img.shields.io/github/last-commit/gameguild-gg/website)
 ![Contributors](https://img.shields.io/github/contributors/gameguild-gg/website)
 ![Languages](https://img.shields.io/github/languages/top/gameguild-gg/website)
-![Next.js](https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)
-![NestJS](https://img.shields.io/badge/NestJS-E0234E?style=for-the-badge&logo=nestjs&logoColor=white)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)
-![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
 
 # Game Guild Platform
 
@@ -65,6 +61,11 @@ We’re actively seeking contributors to help us improve and expand the platform
 - **Report Issues**: Found a bug or have a suggestion? Open an issue!
 - **Contribute Code**: Take on issues labeled good first issue.
 - **Share the Project**: Star the repo and spread the word to fellow developers!
+
+![Next.js](https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)
+![NestJS](https://img.shields.io/badge/NestJS-E0234E?style=for-the-badge&logo=nestjs&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
 
 ## Why Star This Project?
 By starring this repository, you:
