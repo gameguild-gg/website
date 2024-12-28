@@ -1,3 +1,18 @@
+<div style="display: inline_block">
+  <!-- ![Build Status](https://img.shields.io/github/actions/workflow/status/username/repo/ci.yml?branch=main)
+  ![Version](https://img.shields.io/github/package-json/v/username/repo)
+  ![Repo Size](https://img.shields.io/github/repo-size/username/repo)
+  ![GitHub Issues](https://img.shields.io/github/issues/username/repo)
+  ![Last Commit](https://img.shields.io/github/last-commit/username/repo)
+  ![Contributors](https://img.shields.io/github/contributors/username/repo)
+  ![GitHub Stars](https://img.shields.io/github/stars/username/repo?style=social)
+  ![License](https://img.shields.io/github/license/username/repo)
+  ![Languages](https://img.shields.io/github/languages/top/username/repo) -->
+  <a href="https://nextjs.org/docs"><img height= "35" src= "https://img.shields.io/badge/Next%20years-green?style=plastic&logo=next"></a>
+  <a href="https://docs.nestjs.com/"><img height= "35" src= "https://img.shields.io/badge/Nest%20years-green?style=plastic&logo=nestjs"></a>
+  <a href="https://www.postgresql.org/"><img height= "35" src= "https://img.shields.io/badge/PostgreSQL%20years-green?style=plastic&logo=postgresql"></a>
+</div>
+
 # Game Guild Platform
 
 Game Guild is a game dev community.
@@ -56,10 +71,9 @@ We’re actively seeking contributors to help us improve and expand the platform
 
 ## Why Star This Project?
 By starring this repository, you:
-
-Show support for the project.
-Help increase visibility, attracting more contributors and collaborators.
-Join a growing community shaping the future of game development.
+- Show support for the project.
+- Help increase visibility, attracting more contributors and collaborators.
+- Join a growing community shaping the future of game development.
 
 <div style="text-align: center; margin-top: 20px;">
   <!-- <a href="" target="_blank" style="text-decoration: none; margin: 0 15px;">
