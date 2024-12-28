@@ -1,3 +1,4 @@
+![GitHub Stars](https://img.shields.io/github/stars/username/repo?style=social)
 <div style="display: inline_block">
   <!-- ![Build Status](https://img.shields.io/github/actions/workflow/status/username/repo/ci.yml?branch=main)
   ![Version](https://img.shields.io/github/package-json/v/username/repo)
@@ -7,7 +8,6 @@
   ![Contributors](https://img.shields.io/github/contributors/username/repo)
   ![License](https://img.shields.io/github/license/username/repo)
   ![Languages](https://img.shields.io/github/languages/top/username/repo) -->
-  ![GitHub Stars](https://img.shields.io/github/stars/username/repo?style=social)
   <a href=""><img height= "35" src= "https://img.shields.io/badge/Next%20years-green?style=plastic&logo=next"></a>
   <a href="https://nextjs.org/docs"><img height= "35" src= "https://img.shields.io/badge/Next%20years-green?style=plastic&logo=next"></a>
   <a href="https://docs.nestjs.com/"><img height= "35" src= "https://img.shields.io/badge/Nest%20years-green?style=plastic&logo=nestjs"></a>
