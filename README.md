@@ -1,11 +1,9 @@
 ![GitHub Stars](https://img.shields.io/github/stars/gameguild-gg/website?style=social)
-![Build Status](https://img.shields.io/github/actions/workflow/status/gameguild-gg/website/ci.yml?branch=main)
 ![Version](https://img.shields.io/github/package-json/v/gameguild-gg/website)
 ![Repo Size](https://img.shields.io/github/repo-size/gameguild-gg/website)
 ![GitHub Issues](https://img.shields.io/github/issues/gameguild-gg/website)
 ![Last Commit](https://img.shields.io/github/last-commit/gameguild-gg/website)
 ![Contributors](https://img.shields.io/github/contributors/gameguild-gg/website)
-![License](https://img.shields.io/github/license/gameguild-gg/website)
 ![Languages](https://img.shields.io/github/languages/top/gameguild-gg/website)
 
 # Game Guild Platform
