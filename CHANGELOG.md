@@ -1,3 +1,10 @@
+## [1.4.1](https://github.com/gameguild-gg/website/compare/v1.4.0...v1.4.1) (2024-12-28)
+
+
+### Bug Fixes
+
+* **feed:** try to fix bug "Page changed from static to dynamic at runtime" ([8b164de](https://github.com/gameguild-gg/website/commit/8b164deffcc8b2ed3a3401318912125e66f45d04))
+
 # [1.4.0](https://github.com/gameguild-gg/website/compare/v1.3.3...v1.4.0) (2024-12-27)
 
 
