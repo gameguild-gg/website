@@ -42,4 +42,4 @@ npm -v # should print `10.8.2`
 
 ## Under construction
 Here are some current stages of the website.
-![Website 1](./documentation/Page 1.png)
+![Website 1](documentation/Page 1.png)
