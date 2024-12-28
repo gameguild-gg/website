@@ -14,7 +14,18 @@ import {
   Briefcase,
   Code,
 } from 'lucide-react';
-import { Pagination, PaginationContent, PaginationItem, PaginationPrevious, PaginationLink, PaginationEllipsis, PaginationNext } from '@/components/ui/pagination';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationPrevious,
+  PaginationLink,
+  PaginationEllipsis,
+  PaginationNext,
+} from '@/components/ui/pagination';
+
+// todo: I have no idea why this is necessary, if we are already stating use client
+export const dynamic = 'force-dynamic';
 
 const contentTypes = [
   { name: 'Games', icon: Joystick },
@@ -166,13 +177,15 @@ export default function ContentFeed() {
                 <PaginationItem>
                   <PaginationPrevious href="#" />
                 </PaginationItem>
-                {[...Array(totalPages)].map((_, i) => (
-                  <PaginationItem key={i}>
-                    <PaginationLink href="#" isActive={i === 0}>
-                      {i + 1}
-                    </PaginationLink>
-                  </PaginationItem>
-                )).slice(0, 3)}
+                {[...Array(totalPages)]
+                  .map((_, i) => (
+                    <PaginationItem key={i}>
+                      <PaginationLink href="#" isActive={i === 0}>
+                        {i + 1}
+                      </PaginationLink>
+                    </PaginationItem>
+                  ))
+                  .slice(0, 3)}
                 {totalPages > 3 && (
                   <>
                     <PaginationItem>
