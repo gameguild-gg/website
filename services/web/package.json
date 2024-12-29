@@ -9,7 +9,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint --fix",
-    "ui:add": "npx shadcn-ui@latest add"
+    "ui:add": "npx shadcn-ui@latest add",
+    "buildAndRun": "npm run build && npm run start"
   },
   "dependencies": {
     "@codeium/react-code-editor": "^1.0.12",
