@@ -1,3 +1,11 @@
+## [1.4.5](https://github.com/gameguild-gg/website/compare/v1.4.4...v1.4.5) (2025-01-06)
+
+
+### Bug Fixes
+
+* **contributors:** allow .git folder to persist on docker so the api can generate statistics ([c0ae1e1](https://github.com/gameguild-gg/website/commit/c0ae1e160544e8795785b1ca5e42e4a391e6b631))
+* **dbml:** generate dbml sorted to maintain consistency ([c96b6c3](https://github.com/gameguild-gg/website/commit/c96b6c30e00ea1dfa11de45df8cc295069d9b670))
+
 ## [1.4.4](https://github.com/gameguild-gg/website/compare/v1.4.3...v1.4.4) (2025-01-06)
 
 
