@@ -1,3 +1,10 @@
+## [1.4.6](https://github.com/gameguild-gg/website/compare/v1.4.5...v1.4.6) (2025-01-06)
+
+
+### Bug Fixes
+
+* **contributors:** try fix git processing on backend ([9914ef7](https://github.com/gameguild-gg/website/commit/9914ef7543ba9b6e3ef6149744c4f98ab37f0d46))
+
 ## [1.4.5](https://github.com/gameguild-gg/website/compare/v1.4.4...v1.4.5) (2025-01-06)
 
 
