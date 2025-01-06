@@ -1,0 +1,20 @@
+{
+  "id": 6,
+  "format_ver": "1.0.0",
+  "type": "multiple-choice",
+  "rules": [],
+  "status": 1,
+  "subject": ["javascript", "DOM"],
+  "score": [10, 0],
+  "title": "Querying the DOM",
+  "description": "This question tests your understanding of DOM querying methods in JavaScript.",
+  "question": "Which of the following methods is NOT used for querying the DOM in JavaScript?",
+  "answers": [
+    {"id": "a", "text": "querySelector"},
+    {"id": "b", "text": "querySelectorAll"},
+    {"id": "c", "text": "getElementById"},
+    {"id": "d", "text": "eval"}
+  ],
+  "correctAnswers": ["d"]
+}
+
