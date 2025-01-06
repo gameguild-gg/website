@@ -1,3 +1,10 @@
+## [1.4.9](https://github.com/gameguild-gg/website/compare/v1.4.8...v1.4.9) (2025-01-06)
+
+
+### Bug Fixes
+
+* **gource:** improve gif generation ([ea3014d](https://github.com/gameguild-gg/website/commit/ea3014d672391305c39c9d8e96023249900faf2a))
+
 ## [1.4.8](https://github.com/gameguild-gg/website/compare/v1.4.7...v1.4.8) (2025-01-06)
 
 
