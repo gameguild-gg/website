@@ -4015,6 +4015,69 @@
         ]
       }
     },
+    "/healthcheck/gitstats": {
+      "get": {
+        "operationId": "HealthcheckController_gitstats",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/GitStats"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/healthcheck/db": {
+      "get": {
+        "operationId": "HealthcheckController_db",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "DB is healthy"
+          },
+          "500": {
+            "description": "DB is unhealthy"
+          }
+        }
+      }
+    },
+    "/healthcheck/redis": {
+      "get": {
+        "operationId": "HealthcheckController_redis",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Redis is healthy"
+          },
+          "500": {
+            "description": "Redis is unhealthy"
+          }
+        }
+      }
+    },
+    "/healthcheck/s3": {
+      "get": {
+        "operationId": "HealthcheckController_s3",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "S3 is healthy"
+          },
+          "500": {
+            "description": "S3 is unhealthy"
+          }
+        }
+      }
+    },
     "/job-posts": {
       "post": {
         "operationId": "createOneBaseJobPostControllerJobPostEntity",
@@ -9188,6 +9251,25 @@
           "run",
           "submission",
           "user"
+        ]
+      },
+      "GitStats": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string"
+          },
+          "additions": {
+            "type": "number"
+          },
+          "deletions": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "username",
+          "additions",
+          "deletions"
         ]
       },
       "GetManyJobPostEntityResponseDto": {

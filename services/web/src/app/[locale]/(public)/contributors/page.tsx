@@ -1,11 +1,7 @@
-import ContributorCard from '@/components/contributors/ContributorCard';
-
-interface Contributor {
-  login: string;
-  avatar_url: string;
-  contributions: number;
-  html_url: string;
-}
+import ContributorCard, {
+  Contributor,
+} from '@/components/contributors/ContributorCard';
+import { Api, HealthcheckApi } from '@game-guild/apiclient';
 
 async function getContributors(): Promise<Contributor[]> {
   const res = await fetch(
@@ -13,7 +9,32 @@ async function getContributors(): Promise<Contributor[]> {
     { next: { revalidate: 3600 } },
   );
   if (!res.ok) throw new Error('Failed to fetch contributors');
-  return res.json();
+  // remove users semantic-release-bot and dependabot[bot] and LMD9977 from contributors
+  const contributors = (await res.json()).filter(
+    (contributor: Contributor) =>
+      contributor.login !== 'semantic-release-bot' &&
+      contributor.login !== 'LMD9977' &&
+      contributor.login !== 'dependabot[bot]',
+  ) as Contributor[];
+
+  // get the stats from gitstats
+  const api = new HealthcheckApi({
+    basePath: process.env.NEXT_PUBLIC_API_URL,
+  });
+  const statsRes = await api.healthcheckControllerGitstats();
+  if (statsRes.status !== 200) throw new Error('Failed to fetch git stats');
+  const stats = statsRes.body;
+
+  // get additions and deletions from gitstats and add them to the contributors
+  for (const contributor of contributors) {
+    const stat = stats.find((stat) => stat.username === contributor.login);
+    if (stat) {
+      contributor.additions = stat.additions;
+      contributor.deletions = stat.deletions;
+    }
+  }
+
+  return contributors;
 }
 
 export default async function ContributorsPage() {
@@ -29,9 +50,11 @@ export default async function ContributorsPage() {
           <ContributorCard
             key={contributor.login}
             username={contributor.login}
-            avatarUrl={contributor.avatar_url}
-            contributions={contributor.contributions}
             profileUrl={contributor.html_url}
+            contributions={contributor.contributions}
+            additions={contributor.additions}
+            deletions={contributor.deletions}
+            avatarUrl={contributor.avatar_url}
           />
         ))}
       </div>

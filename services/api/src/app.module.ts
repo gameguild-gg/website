@@ -39,7 +39,7 @@ import { DataSource } from 'typeorm';
       isGlobal: true, // globally available
       useFactory: (configService: ApiConfigService) => ({
         store: 'memory',
-        ttl: 5 * 60, // 5 minutes
+        ttl: 5 * 60 * 1000, // 5 minutes
         max: 10000, // 10k requests in 5 minutes is a nice limit
       }),
     }),

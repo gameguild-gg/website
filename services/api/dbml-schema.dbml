@@ -163,12 +163,6 @@ Table UserEntity {
   courses CourseEntity
 }
 
-Table VoteEntity {
-  id uuid
-  createdAt timestamp
-  updatedAt timestamp
-}
-
 Table ProposalEntity {
   id uuid
   createdAt timestamp
@@ -181,6 +175,12 @@ Table ProposalEntity {
   thumbnail varchar
   owner UserEntity
   editors UserEntity
+}
+
+Table VoteEntity {
+  id uuid
+  createdAt timestamp
+  updatedAt timestamp
 }
 
 Table JobTagEntity {

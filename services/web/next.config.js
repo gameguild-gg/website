@@ -17,6 +17,7 @@ const nextConfig = {
       'localhost',
       'cdn.jsdelivr.net',
       'avatars.githubusercontent.com',
+      'github.com',
       'gameguild.gg',
       'web.gameguild.gg',
     ],
