@@ -86,3 +86,7 @@ By starring this repository, you:
     <img src="https://img.icons8.com/color/48/000000/discord-logo.png" alt="Discord" style="vertical-align: middle;"/>
   </a>
 </div>
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=gameguild-gg/website&type=Date)](https://star-history.com/#gameguild-gg/website&Date)
