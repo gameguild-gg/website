@@ -112,6 +112,21 @@ Table EventEntity {
   editors UserEntity
 }
 
+Table ImageEntity {
+  createdAt timestamp
+  description string
+  filename string
+  hash string
+  height integer
+  id uuid
+  mimetype string
+  path string
+  sizeBytes integer
+  source string
+  updatedAt timestamp
+  width integer
+}
+
 Table job-post_editors_user {
   job-post_id uuid
   user_id uuid
@@ -221,22 +236,6 @@ Table ProjectEntity {
   versions ProjectVersionEntity
 }
 
-Table QuizEntity {
-  id uuid
-  createdAt timestamp
-  updatedAt timestamp
-  slug varchar
-  title varchar
-  summary string
-  body text
-  visibility enum
-  thumbnail varchar
-  questions jsonb
-  gradingInstructions string
-  owner UserEntity
-  editors UserEntity
-}
-
 Table ProjectFeedbackResponseEntity {
   createdAt timestamp
   id uuid
@@ -269,6 +268,27 @@ Table ProposalEntity {
   createdAt timestamp
   id uuid
   owner UserEntity
+  slug varchar
+  summary string
+  thumbnail varchar
+  title varchar
+  updatedAt timestamp
+  visibility enum
+  editors UserEntity
+}
+
+Table quiz_editors_user {
+  quiz_id uuid
+  user_id uuid
+}
+
+Table QuizEntity {
+  body text
+  createdAt timestamp
+  gradingInstructions string
+  id uuid
+  owner UserEntity
+  questions jsonb
   slug varchar
   summary string
   thumbnail varchar
@@ -339,7 +359,7 @@ Table UserProfileEntity {
   givenName varchar
   id uuid
   name varchar
-  picture varchar
+  picture ImageEntity
   updatedAt timestamp
   user UserEntity
 }
@@ -386,6 +406,9 @@ Ref: ProjectFeedbackResponseEntity.user > UserEntity.id
 Ref: ProjectFeedbackResponseEntity.version > ProjectVersionEntity.responses
 Ref: ProposalEntity.editors <> UserEntity.id
 Ref: ProposalEntity.owner > UserEntity.id
+Ref: QuizEntity.editors <> UserEntity.id
+Ref: QuizEntity.owner > UserEntity.id
 Ref: TicketEntity.editors <> UserEntity.id
 Ref: TicketEntity.owner > UserEntity.id
 Ref: UserEntity.profile - UserProfileEntity.user
+Ref: UserProfileEntity.picture - ImageEntity.id
