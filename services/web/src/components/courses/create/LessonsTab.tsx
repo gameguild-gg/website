@@ -7,8 +7,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ChevronDown, ChevronRight } from 'lucide-react'
 import ContentLinks from '../ContentLinks'
+import SavedItemsDisplay from '../SavedItemsDisplay'
 
 interface ContentLink {
   order: string;
@@ -38,18 +38,12 @@ export default function LessonsTab({ lessons, modules, updateData }) {
       order: '',
       title: '',
       description: '',
-      contentLinks: [], // Changed from [{ order: '', link: '' }] to an empty array
+      contentLinks: [],
       additionalText: '',
       id: ''
     }
   })
-  const { fields, append, remove } = useFieldArray({
-    control,
-    name: "contentLinks"
-  })
   const [editingIndex, setEditingIndex] = useState(-1)
-  const [expandedModules, setExpandedModules] = useState<string[]>([])
-  const [expandedUnassigned, setExpandedUnassigned] = useState(false)
 
   const getNextLessonId = () => {
     if (lessons.length === 0) return '10';
@@ -90,28 +84,32 @@ export default function LessonsTab({ lessons, modules, updateData }) {
     updateData(updatedLessons)
   }
 
-  const toggleModule = (moduleTitle: string) => {
-    setExpandedModules(prev => 
-      prev.includes(moduleTitle)
-        ? prev.filter(title => title !== moduleTitle)
-        : [...prev, moduleTitle]
-    )
+  const getChildLessons = (lesson: Lesson) => {
+    return []; // Lessons don't have child items
   }
 
-  const toggleUnassigned = () => {
-    setExpandedUnassigned(!expandedUnassigned)
+  const renderSpecificFields = (lesson: Lesson) => {
+    return (
+      <>
+        <div className="text-sm">
+          <strong>Content Links:</strong>
+          <ul className="list-disc pl-5">
+            {lesson.contentLinks && lesson.contentLinks
+              .sort((a, b) => Number(a.order) - Number(b.order))
+              .map((item, linkIndex) => (
+                <li key={linkIndex}>
+                  Order: {item.order}, Link: <a href={item.link} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">{item.link}</a>
+                </li>
+              ))}
+          </ul>
+        </div>
+        <div className="mt-2">
+          <strong>Additional Text:</strong>
+          <p className="text-sm">{lesson.additionalText}</p>
+        </div>
+      </>
+    );
   }
-
-  const groupedLessons = lessons.reduce((acc, lesson) => {
-    const moduleId = lesson.moduleId || 'Unassigned';
-    if (!acc[moduleId]) {
-      acc[moduleId] = []
-    }
-    acc[moduleId].push(lesson)
-    return acc
-  }, {} as Record<string, Lesson[]>)
-
-  const sortedModules = [...modules].sort((a, b) => Number(a.order) - Number(b.order))
 
   return (
     <div className="grid md:grid-cols-2 gap-4">
@@ -160,104 +158,15 @@ export default function LessonsTab({ lessons, modules, updateData }) {
         </div>
         <Button type="submit">Save Lesson</Button>
       </form>
-      <div>
-        <h3 className="text-lg font-semibold mb-2">Saved Lessons</h3>
-        <ul className="space-y-2">
-          {groupedLessons['Unassigned'] && (
-            <li className="bg-gray-100 p-4 rounded-md">
-              <div 
-                className="flex items-center justify-between cursor-pointer"
-                onClick={toggleUnassigned}
-              >
-                <span className="font-semibold">
-                  {expandedUnassigned ? <ChevronDown className="inline mr-2" /> : <ChevronRight className="inline mr-2" />}
-                  Unassigned Lessons
-                </span>
-                <span>{groupedLessons['Unassigned'].length} lesson(s)</span>
-              </div>
-              {expandedUnassigned && (
-                <ul className="mt-2 space-y-2">
-                  {groupedLessons['Unassigned']
-                    .sort((a, b) => Number(a.order) - Number(b.order))
-                    .map((lesson, lessonIndex) => (
-                      <li key={lessonIndex} className="bg-white p-3 rounded-md">
-                        <div className="flex justify-between items-center mb-2">
-                          <span className="font-semibold">Lesson {lesson.order}: {lesson.title}</span>
-                          <div className="space-x-2">
-                            <Button onClick={() => handleEdit(lessons.findIndex(l => l === lesson))} variant="outline" size="sm">Edit</Button>
-                            <Button onClick={() => handleRemove(lessons.findIndex(l => l === lesson))} variant="destructive" size="sm">Remove</Button>
-                          </div>
-                        </div>
-                        <p className="text-sm text-gray-600 mb-2">{lesson.description}</p>
-                        <div className="text-sm">
-                          <strong>Content Links:</strong>
-                          <ul className="list-disc pl-5">
-                            {lesson.contentLinks && lesson.contentLinks
-                              .sort((a, b) => Number(a.order) - Number(b.order))
-                              .map((item, linkIndex) => (
-                                <li key={linkIndex}>
-                                  Order: {item.order}, Link: <a href={item.link} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">{item.link}</a>
-                                </li>
-                            ))}
-                          </ul>
-                        </div>
-                      </li>
-                  ))}
-                </ul>
-              )}
-            </li>
-          )}
-          {sortedModules.map((module) => {
-            const moduleLessons = groupedLessons[module.id] || []
-            if (moduleLessons.length === 0) return null
-            
-            return (
-              <li key={module.id} className="bg-gray-100 p-4 rounded-md">
-                <div 
-                  className="flex items-center justify-between cursor-pointer"
-                  onClick={() => toggleModule(module.title)}
-                >
-                  <span className="font-semibold">
-                    {expandedModules.includes(module.title) ? <ChevronDown className="inline mr-2" /> : <ChevronRight className="inline mr-2" />}
-                    Module {module.order}: {module.title}
-                  </span>
-                  <span>{moduleLessons.length} lesson(s)</span>
-                </div>
-                {expandedModules.includes(module.title) && (
-                  <ul className="mt-2 space-y-2">
-                    {moduleLessons
-                      .sort((a, b) => Number(a.order) - Number(b.order))
-                      .map((lesson) => (
-                        <li key={lesson.id} className="bg-white p-3 rounded-md">
-                          <div className="flex justify-between items-center mb-2">
-                            <span className="font-semibold">Lesson {lesson.order}: {lesson.title}</span>
-                            <div className="space-x-2">
-                              <Button onClick={() => handleEdit(lessons.findIndex(l => l === lesson))} variant="outline" size="sm">Edit</Button>
-                              <Button onClick={() => handleRemove(lessons.findIndex(l => l === lesson))} variant="destructive" size="sm">Remove</Button>
-                            </div>
-                          </div>
-                          <p className="text-sm text-gray-600 mb-2">{lesson.description}</p>
-                          <div className="text-sm">
-                            <strong>Content Links:</strong>
-                            <ul className="list-disc pl-5">
-                              {lesson.contentLinks && lesson.contentLinks
-                                .sort((a, b) => Number(a.order) - Number(b.order))
-                                .map((item, linkIndex) => (
-                                  <li key={linkIndex}>
-                                    Order: {item.order}, Link: <a href={item.link} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">{item.link}</a>
-                                  </li>
-                              ))}
-                            </ul>
-                          </div>
-                        </li>
-                    ))}
-                  </ul>
-                )}
-              </li>
-            )
-          })}
-        </ul>
-      </div>
+      <SavedItemsDisplay
+        items={lessons}
+        itemType="lesson"
+        onEdit={handleEdit}
+        onRemove={handleRemove}
+        renderSpecificFields={renderSpecificFields}
+        groupByParent={true}
+        parentItems={modules}
+      />
     </div>
   )
 }

@@ -1330,6 +1330,7 @@ export namespace Api {
 		visibility: Api.QuizEntity.Visibility;
 		thumbnail: string;
 		questions: (Api.FormShortAnswerDto | Api.FormLongAnswerDto)[];
+		gradingInstructions: string;
 	}
 	
 	/**

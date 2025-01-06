@@ -1,37 +1,45 @@
 'use client'
 
 import { useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import SavedItemsDisplay from '../SavedItemsDisplay'
 
 interface Module {
   id: string;
+  parentId?: string;
   order: string;
   title: string;
   description: string;
   thumbnail: string;
 }
 
-export default function ModulesTab({ modules, updateData }) {
-  const { register, handleSubmit, reset } = useForm()
+export default function ModulesTab({ modules: allModules, updateData }) {
+  const { register, handleSubmit, reset, control } = useForm()
   const [editingIndex, setEditingIndex] = useState(-1)
 
   const getNextId = () => {
-    if (modules.length === 0) return '10';
-    const maxId = Math.max(...modules.map(m => parseInt(m.id)));
+    if (allModules.length === 0) return '10';
+    const maxId = Math.max(...allModules.map(m => parseInt(m.id)));
     return (maxId + 1).toString();
   }
 
   const onSubmit = (data: Module) => {
+    const submissionData = {
+      ...data,
+      id: editingIndex === -1 ? getNextId() : allModules[editingIndex].id,
+      parentId: data.parentId === "none" ? undefined : data.parentId,
+    };
+
     if (editingIndex === -1) {
-      const newModule = { ...data, id: getNextId() };
-      updateData([...modules, newModule])
+      updateData([...allModules, submissionData])
     } else {
-      const updatedModules = [...modules]
-      updatedModules[editingIndex] = { ...data, id: modules[editingIndex].id }
+      const updatedModules = [...allModules]
+      updatedModules[editingIndex] = submissionData
       updateData(updatedModules)
       setEditingIndex(-1)
     }
@@ -40,12 +48,34 @@ export default function ModulesTab({ modules, updateData }) {
 
   const handleEdit = (index) => {
     setEditingIndex(index)
-    reset(modules[index])
+    reset(allModules[index])
   }
 
   const handleRemove = (index) => {
-    const updatedModules = modules.filter((_, i) => i !== index)
+    const updatedModules = allModules.filter((_, i) => i !== index)
     updateData(updatedModules)
+  }
+
+  const getChildModules = (module: Module) => {
+    return allModules.filter(m => m.parentId === module.id);
+  }
+
+  const renderAdditionalInfo = (module: Module) => {
+    return (
+      <>
+        {module.parentId && (
+          <p className="text-xs text-gray-500">Parent: {allModules.find(m => m.id === module.parentId)?.title || 'Unknown'}</p>
+        )}
+      </>
+    );
+  }
+
+  const renderSpecificFields = (module: Module) => {
+    return (
+      <>
+        {module.thumbnail && <img src={module.thumbnail} alt={`Thumbnail for ${module.title}`} className="w-20 h-20 object-cover rounded mt-2" />}
+      </>
+    );
   }
 
   return (
@@ -67,27 +97,40 @@ export default function ModulesTab({ modules, updateData }) {
           <Label htmlFor="thumbnail">Thumbnail Image URL</Label>
           <Input id="thumbnail" {...register('thumbnail')} />
         </div>
+        <div>
+          <Label htmlFor="parentId">Parent Module (Optional)</Label>
+          <Controller
+            name="parentId"
+            control={control}
+            defaultValue="none"
+            render={({ field }) => (
+              <Select onValueChange={field.onChange} value={field.value}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select parent module" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">None</SelectItem>
+                  {allModules.map((module) => (
+                    <SelectItem key={module.id} value={module.id}>
+                      {module.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          />
+        </div>
         <Button type="submit">Save Module</Button>
       </form>
-      <div>
-        <h3 className="text-lg font-semibold mb-2">Saved Modules</h3>
-        <ul className="space-y-2">
-          {modules.map((module, index) => (
-            <li key={module.id} className="flex justify-between items-center bg-gray-100 p-2 rounded-md">
-              <div>
-                <span className="font-semibold">{module.title}</span>
-                <p className="text-sm text-gray-600">{module.description.slice(0, 50)}...</p>
-                <p className="text-xs text-gray-500">ID: {module.id}</p>
-              </div>
-              <div className="flex space-x-2">
-                <Button onClick={() => handleEdit(index)} variant="outline" size="sm">Edit</Button>
-                <Button onClick={() => handleRemove(index)} variant="destructive" size="sm">Remove</Button>
-                {module.thumbnail && <img src={module.thumbnail} alt={`Thumbnail for ${module.title}`} className="w-10 h-10 object-cover rounded" />}
-              </div>
-            </li>
-          ))}
-        </ul>
-      </div>
+      <SavedItemsDisplay
+        items={allModules}
+        itemType="module"
+        onEdit={handleEdit}
+        onRemove={handleRemove}
+        getChildItems={getChildModules}
+        renderAdditionalInfo={renderAdditionalInfo}
+        renderSpecificFields={renderSpecificFields}
+      />
     </div>
   )
 }

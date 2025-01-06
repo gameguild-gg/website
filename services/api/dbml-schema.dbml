@@ -247,6 +247,22 @@ Table EventEntity {
   editors UserEntity
 }
 
+Table QuizEntity {
+  id uuid
+  createdAt timestamp
+  updatedAt timestamp
+  slug varchar
+  title varchar
+  summary string
+  body text
+  visibility enum
+  thumbnail varchar
+  questions jsonb
+  gradingInstructions string
+  owner UserEntity
+  editors UserEntity
+}
+
 Table ProjectFeedbackResponseEntity {
   id uuid
   createdAt timestamp
@@ -269,22 +285,6 @@ Table ProjectVersionEntity {
   responses ProjectFeedbackResponseEntity
 }
 
-Table ProjectEntity {
-  id uuid
-  createdAt timestamp
-  updatedAt timestamp
-  slug varchar
-  title varchar
-  summary string
-  body text
-  visibility enum
-  thumbnail varchar
-  owner UserEntity
-  editors UserEntity
-  versions ProjectVersionEntity
-  tickets TicketEntity
-}
-
 Table TicketEntity {
   id uuid
   createdAt timestamp
@@ -299,7 +299,7 @@ Table TicketEntity {
   project ProjectEntity
 }
 
-Table QuizEntity {
+Table ProjectEntity {
   id uuid
   createdAt timestamp
   updatedAt timestamp
@@ -309,9 +309,10 @@ Table QuizEntity {
   body text
   visibility enum
   thumbnail varchar
-  questions jsonb
   owner UserEntity
   editors UserEntity
+  versions ProjectVersionEntity
+  tickets TicketEntity
 }
 
 Table post_editors_user {
@@ -354,8 +355,8 @@ Table job-post_job_tags_job-tag {
   job-tag_id uuid
 }
 
-Table project_editors_user {
-  project_id uuid
+Table quiz_editors_user {
+  quiz_id uuid
   user_id uuid
 }
 
@@ -364,8 +365,8 @@ Table ticket_editors_user {
   user_id uuid
 }
 
-Table quiz_editors_user {
-  quiz_id uuid
+Table project_editors_user {
+  project_id uuid
   user_id uuid
 }
 
@@ -401,13 +402,13 @@ Ref: JobApplicationEntity.applicant > UserEntity.id
 Ref: JobApplicationEntity.job > JobPostEntity.id
 Ref: EventEntity.owner > UserEntity.id
 Ref: EventEntity.editors <> UserEntity.id
+Ref: QuizEntity.owner > UserEntity.id
+Ref: QuizEntity.editors <> UserEntity.id
 Ref: ProjectFeedbackResponseEntity.version > ProjectVersionEntity.responses
 Ref: ProjectFeedbackResponseEntity.user > UserEntity.id
 Ref: ProjectVersionEntity.project > ProjectEntity.versions
-Ref: ProjectEntity.owner > UserEntity.id
-Ref: ProjectEntity.editors <> UserEntity.id
-Ref: ProjectEntity.tickets < TicketEntity.project
 Ref: TicketEntity.owner > UserEntity.id
 Ref: TicketEntity.editors <> UserEntity.id
-Ref: QuizEntity.owner > UserEntity.id
-Ref: QuizEntity.editors <> UserEntity.id
+Ref: TicketEntity.project > ProjectEntity.tickets
+Ref: ProjectEntity.owner > UserEntity.id
+Ref: ProjectEntity.editors <> UserEntity.id

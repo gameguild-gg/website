@@ -1,17 +1,17 @@
-'use client';
+'use client'
 
-import { useState, useEffect } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
-import InformationTab from '@/components/courses/create/InformationTab';
-import ModulesTab from '@/components/courses/create/ModulesTab';
-import LessonsTab from '@/components/courses/create/LessonsTab';
-import ExercisesTab from '@/components/courses/create/ExercisesTab';
-import PricingTab from '@/components/courses/create/PricingTab';
-import FinalTab from '@/components/courses/create/FinalTab';
-import { CoursesApi } from '@game-guild/apiclient';
-import { auth } from '@/auth';
-import { Api } from '@game-guild/apiclient';
+import { useState, useEffect } from 'react'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Button } from "@/components/ui/button"
+import InformationTab from '@/components/courses/create/InformationTab'
+import ModulesTab from '@/components/courses/create/ModulesTab'
+import LessonsTab from '@/components/courses/create/LessonsTab'
+import ExercisesTab from '@/components/courses/create/ExercisesTab'
+import QuestionsTab from '@/components/courses/create/QuestionsTab'
+import PricingTab from '@/components/courses/create/PricingTab'
+import FinalTab from '@/components/courses/create/FinalTab'
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { AlertCircle, CheckCircle2 } from 'lucide-react'
 
 interface ContentLink {
   order: string;
@@ -19,13 +19,41 @@ interface ContentLink {
 }
 
 interface Lesson {
-  module: string;
+  id: string;
+  moduleId: string;
   order: string;
   title: string;
   description: string;
   contentLinks: ContentLink[];
   additionalText: string;
-  hasExercise: boolean;
+}
+
+interface Exercise {
+  id: string;
+  moduleId?: string;
+  lessonId?: string;
+  order: string;
+  title: string;
+  description: string;
+  contentLinks: ContentLink[];
+  time: {
+    hours: number;
+    minutes: number;
+  };
+  averageGrades: 'no average' | 'lesson average' | 'module average' | 'course average';
+}
+
+interface Question {
+  id: string;
+  exerciseId: string;
+  order: number;
+  type: string;
+  question: string;
+  correctScore: number | undefined;
+  incorrectScore: number | undefined;
+  time: number | undefined;
+  contentLinks: ContentLink[];
+  // Additional fields will be added dynamically based on the question type
 }
 
 interface PriceInstallment {
@@ -54,7 +82,8 @@ interface CourseData {
   };
   modules: any[];
   lessons: Lesson[];
-  exercises: any[];
+  exercises: Exercise[];
+  questions: Question[];
   pricing: PricingData;
 }
 
@@ -72,6 +101,7 @@ export default function CourseTabs({ courseId, onBack }: { courseId: string, onB
     modules: [],
     lessons: [],
     exercises: [],
+    questions: [],
     pricing: {
       priceInstallments: [],
       fullPrice: 0,
@@ -81,6 +111,8 @@ export default function CourseTabs({ courseId, onBack }: { courseId: string, onB
       closingDate: ''
     }
   })
+  const [unsavedChanges, setUnsavedChanges] = useState(false)
+  const [saveConfirmed, setSaveConfirmed] = useState(false)
 
 
   useEffect(() => {
@@ -122,6 +154,9 @@ export default function CourseTabs({ courseId, onBack }: { courseId: string, onB
       saveCourseData(newData)
       return newData
     })
+    setUnsavedChanges(false)
+    setSaveConfirmed(true)
+    setTimeout(() => setSaveConfirmed(false), 3000) // Hide the confirmation after 3 seconds
   }
 
   const saveCourseData = async (data: CourseData) => {
@@ -138,13 +173,32 @@ export default function CourseTabs({ courseId, onBack }: { courseId: string, onB
   return (
     <div className="space-y-4">
       <Button onClick={onBack} variant="outline">Back to Course List</Button>
+      {unsavedChanges && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Warning</AlertTitle>
+          <AlertDescription>
+            You have unsaved changes. Please save your data before leaving this page.
+          </AlertDescription>
+        </Alert>
+      )}
+      {saveConfirmed && (
+        <Alert variant="default" className="bg-green-50 border-green-200">
+          <CheckCircle2 className="h-4 w-4 text-green-500" />
+          <AlertTitle>Success</AlertTitle>
+          <AlertDescription>
+            Your changes have been saved successfully.
+          </AlertDescription>
+        </Alert>
+      )}
       <Tabs defaultValue="information" className="w-full">
         <div className="flex justify-center mb-6">
-          <TabsList className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+          <TabsList className="grid grid-cols-3 sm:grid-cols-7 gap-2">
             <TabsTrigger value="information">Information</TabsTrigger>
             <TabsTrigger value="modules">Modules</TabsTrigger>
             <TabsTrigger value="lessons">Lessons</TabsTrigger>
             <TabsTrigger value="exercises">Exercises</TabsTrigger>
+            <TabsTrigger value="questions">Questions</TabsTrigger>
             <TabsTrigger value="pricing">Pricing</TabsTrigger>
             <TabsTrigger value="final">Final</TabsTrigger>
           </TabsList>
@@ -173,8 +227,19 @@ export default function CourseTabs({ courseId, onBack }: { courseId: string, onB
             updateData={(data) => updateCourseData('exercises', data)} 
           />
         </TabsContent>
+        <TabsContent value="questions">
+          <QuestionsTab 
+            questions={courseData.questions}
+            exercises={courseData.exercises}
+            updateData={(data) => updateCourseData('questions', data)}
+          />
+        </TabsContent>
         <TabsContent value="pricing">
-          <PricingTab data={courseData.pricing} updateData={(data) => updateCourseData('pricing', data)} />
+          <PricingTab 
+            data={courseData.pricing} 
+            updateData={(data) => updateCourseData('pricing', data)} 
+            setUnsavedChanges={setUnsavedChanges}
+          />
         </TabsContent>
         <TabsContent value="final">
           <FinalTab courseData={courseData} />
@@ -183,4 +248,3 @@ export default function CourseTabs({ courseId, onBack }: { courseId: string, onB
     </div>
   )
 }
-

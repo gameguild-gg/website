@@ -11060,6 +11060,9 @@
                 }
               ]
             }
+          },
+          "gradingInstructions": {
+            "type": "string"
           }
         },
         "required": [
@@ -11074,7 +11077,8 @@
           "body",
           "visibility",
           "thumbnail",
-          "questions"
+          "questions",
+          "gradingInstructions"
         ]
       },
       "CreateManyQuizEntityDto": {
