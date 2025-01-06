@@ -1,20 +1,33 @@
-'use client'
-import { useEffect, useState } from "react"
+'use client';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { getSession } from "next-auth/react"
+import { getSession } from 'next-auth/react';
 import { Api, JobTagsApi, JobApplicationsApi } from '@game-guild/apiclient';
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Check, X } from "lucide-react"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Check, X } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from '@/components/ui/pagination';
 
-
-function ProgressBar({ progress, failed }: { progress: number; failed: boolean }) {
-  const steps = [0, 1, 2, 3, 4]
+function ProgressBar({
+  progress,
+  failed,
+}: {
+  progress: number;
+  failed: boolean;
+}) {
+  const steps = [0, 1, 2, 3, 4];
   return (
     <div className="flex justify-between mt-2">
       {steps.map((step) => (
@@ -23,30 +36,31 @@ function ProgressBar({ progress, failed }: { progress: number; failed: boolean }
           className={`w-12 h-6 flex items-center justify-center ${
             progress >= step
               ? failed && step === progress
-                ? "bg-red-500"
-                : "bg-green-500"
-              : "bg-gray-300"
+                ? 'bg-red-500'
+                : 'bg-green-500'
+              : 'bg-gray-300'
           }`}
         >
-          {progress >= step && (
-            failed && step === progress ? (
+          {progress >= step &&
+            (failed && step === progress ? (
               <X className="w-4 h-4 text-white" />
             ) : (
               <Check className="w-4 h-4 text-white" />
-            )
-          )}
+            ))}
         </div>
       ))}
     </div>
-  )
+  );
 }
 
 export default function MyJobApplications() {
   const [jobTags, setJobTags] = useState<Api.JobTagEntity[] | any>([]);
-  const [jobApplications, setJobApplicatons] = useState<Api.JobApplicationEntity[]>([])
-  const [totalPages, setTotalPages] = useState<number>(1)
-  
-  const router = useRouter()
+  const [jobApplications, setJobApplicatons] = useState<
+    Api.JobApplicationEntity[]
+  >([]);
+  const [totalPages, setTotalPages] = useState<number>(1);
+
+  const router = useRouter();
   const jobTagsApi = new JobTagsApi({
     basePath: process.env.NEXT_PUBLIC_API_URL,
   });
@@ -56,8 +70,8 @@ export default function MyJobApplications() {
 
   useEffect(() => {
     getAllJobTags();
-    loadJobApplications()
-  },[]);
+    loadJobApplications();
+  }, []);
 
   const getAllJobTags = async () => {
     const session: any = await getSession();
@@ -70,45 +84,46 @@ export default function MyJobApplications() {
       { headers: { Authorization: `Bearer ${session.user.accessToken}` } },
     );
     if ((response.status = 200)) {
-      setJobTags(response.body as Api.JobTagEntity[]||[]);
+      setJobTags((response.body as Api.JobTagEntity[]) || []);
     }
   };
-  
+
   const loadJobApplications = async () => {
     const session: any = await getSession();
     if (!session) {
       router.push('/connect');
       return;
     }
-    const response = await jobApplicationApi.jobApplicationControllerMyApplications(
-      { headers: { Authorization: `Bearer ${session.user.accessToken}` } },
-    );
+    const response =
+      await jobApplicationApi.jobApplicationControllerMyApplications({
+        headers: { Authorization: `Bearer ${session.user.accessToken}` },
+      });
     // console.log('API Response:\n',response)
-    if (response.status == 200 && (response.body)?.length >0) {
+    if (response.status == 200 && response.body?.length > 0) {
       setJobApplicatons(response.body);
-      setTotalPages(Math.ceil((response.body).length/12))
+      setTotalPages(Math.ceil(response.body.length / 12));
     } else {
       router.push('/connect');
     }
-  }
+  };
 
-  const handleLearnMoreButton = (slug:string) => {
-    router.push('/jobs/my-applications/'+slug)
-  }
+  const handleLearnMoreButton = (slug: string) => {
+    router.push('/jobs/my-applications/' + slug);
+  };
 
-  const handleGiveUpButton = async (app:Api.JobApplicationEntity) => {
+  const handleGiveUpButton = async (app: Api.JobApplicationEntity) => {
     // TODO: Add Warning
     const session: any = await getSession();
     const response = await jobApplicationApi.jobApplicationControllerWithdraw(
       app,
       { headers: { Authorization: `Bearer ${session.user.accessToken}` } },
-    )
-    if (response.status == 200){
+    );
+    if (response.status == 200) {
       // TODO: sucess toaster
     } else {
       // TODO: error toaster
     }
-  }
+  };
 
   return (
     <div className="min-h-[calc(100vh-70px)] bg-gray-100">
@@ -127,7 +142,7 @@ export default function MyJobApplications() {
           <div>
             <Label>Tags</Label>
             <div className="grid grid-cols-2 gap-2 mt-2">
-              {jobTags.map((tag:Api.JobTagEntity) => (
+              {jobTags.map((tag: Api.JobTagEntity) => (
                 <div key={tag.id} className="flex items-center space-x-2">
                   <Checkbox id={tag.id} />
                   <Label htmlFor={tag.name}>{tag.name}</Label>
@@ -141,70 +156,95 @@ export default function MyJobApplications() {
         <main className="flex-1 flex-grow min-h-full p-6">
           <h1 className="text-3xl font-bold mb-6">My Job Applications</h1>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {jobApplications.length>0 && jobApplications.slice(0, 16).map((app) => (
-              <div key={app.id} className="bg-card rounded-lg shadow-md p-4 flex flex-col h-full">
-                <div className="flex-grow">
-                  <div className="flex items-center mb-2">
-                    <Avatar>
-                      <AvatarImage src={app?.job?.thumbnail} alt={app?.job?.title} />
-                      <AvatarFallback>{app?.job?.title[0]}</AvatarFallback>
-                    </Avatar>
-                    <span className="font-semibold ml-2">{app?.job?.title}</span>
+            {jobApplications.length > 0 &&
+              jobApplications.slice(0, 16).map((app) => (
+                <div
+                  key={app.id}
+                  className="bg-card rounded-lg shadow-md p-4 flex flex-col h-full"
+                >
+                  <div className="flex-grow">
+                    <div className="flex items-center mb-2">
+                      <Avatar>
+                        <AvatarImage
+                          // src={app?.job?.thumbnail}
+                          src={'/placeholder.svg'}
+                          alt={app?.job?.title}
+                        />
+                        <AvatarFallback>{app?.job?.title[0]}</AvatarFallback>
+                      </Avatar>
+                      <span className="font-semibold ml-2">
+                        {app?.job?.title}
+                      </span>
+                    </div>
+                    <h3 className="font-bold text-lg mb-2">
+                      {app?.job?.title}
+                    </h3>
+                    <div className="flex flex-wrap gap-1 mb-2">
+                      {app?.job?.job_tags.map((tag) => (
+                        <Badge key={tag.id} variant="secondary">
+                          {tag.name}
+                        </Badge>
+                      ))}
+                    </div>
                   </div>
-                  <h3 className="font-bold text-lg mb-2">{app?.job?.title}</h3>
-                  <div className="flex flex-wrap gap-1 mb-2">
-                    {app?.job?.job_tags.map((tag) => (
-                      <Badge key={tag.id} variant="secondary">
-                        {tag.name}
-                      </Badge>
-                    ))}
+                  <div className="mt-auto mb-0">
+                    <div className="font-bold mt-2">Progress</div>
+                    <ProgressBar
+                      progress={app.progress + 1}
+                      failed={app.rejected}
+                    />
+                    <div className="flex justify-between mt-3">
+                      <Button
+                        onClick={() => handleLearnMoreButton(app?.job?.slug)}
+                      >
+                        Learn More
+                      </Button>
+                      <Button
+                        onClick={() => handleGiveUpButton(app)}
+                        variant="destructive"
+                      >
+                        Give Up
+                      </Button>
+                    </div>
                   </div>
                 </div>
-                <div className="mt-auto mb-0">
-                  <div className="font-bold mt-2">Progress</div>
-                  <ProgressBar progress={app.progress+1} failed={app.rejected} />
-                  <div className="flex justify-between mt-3">
-                    <Button onClick={()=>handleLearnMoreButton(app?.job?.slug)}>Learn More</Button>
-                    <Button onClick={()=>handleGiveUpButton(app)} variant="destructive">Give Up</Button>
-                  </div>
-                </div>
-              </div>
-            ))}
+              ))}
           </div>
 
-        {/* Pagination */}
-        <div className="flex justify-center mt-auto">
-          <Pagination>
-            <PaginationContent>
-              <PaginationItem>
-                <PaginationPrevious href="#" />
-              </PaginationItem>
-              {[...Array(totalPages)].map((_, i) => (
-                <PaginationItem key={i}>
-                  <PaginationLink href="#" isActive={i === 0}>
-                    {i + 1}
-                  </PaginationLink>
+          {/* Pagination */}
+          <div className="flex justify-center mt-auto">
+            <Pagination>
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious href="#" />
                 </PaginationItem>
-              )).slice(0, 3)}
-              {totalPages > 3 && (
-                <>
-                  <PaginationItem>
-                    <PaginationEllipsis />
-                  </PaginationItem>
-                  <PaginationItem>
-                    <PaginationLink href="#">{totalPages}</PaginationLink>
-                  </PaginationItem>
-                </>
-              )}
-              <PaginationItem>
-                <PaginationNext href="#" />
-              </PaginationItem>
-            </PaginationContent>
-          </Pagination>
-        </div>
-
+                {[...Array(totalPages)]
+                  .map((_, i) => (
+                    <PaginationItem key={i}>
+                      <PaginationLink href="#" isActive={i === 0}>
+                        {i + 1}
+                      </PaginationLink>
+                    </PaginationItem>
+                  ))
+                  .slice(0, 3)}
+                {totalPages > 3 && (
+                  <>
+                    <PaginationItem>
+                      <PaginationEllipsis />
+                    </PaginationItem>
+                    <PaginationItem>
+                      <PaginationLink href="#">{totalPages}</PaginationLink>
+                    </PaginationItem>
+                  </>
+                )}
+                <PaginationItem>
+                  <PaginationNext href="#" />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          </div>
         </main>
       </div>
     </div>
-  )
+  );
 }

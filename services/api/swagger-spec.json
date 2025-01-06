@@ -5864,6 +5864,69 @@
         ]
       }
     },
+    "/healthcheck/gitstats": {
+      "get": {
+        "operationId": "HealthcheckController_gitstats",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/GitStats"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/healthcheck/db": {
+      "get": {
+        "operationId": "HealthcheckController_db",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "DB is healthy"
+          },
+          "500": {
+            "description": "DB is unhealthy"
+          }
+        }
+      }
+    },
+    "/healthcheck/redis": {
+      "get": {
+        "operationId": "HealthcheckController_redis",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Redis is healthy"
+          },
+          "500": {
+            "description": "Redis is unhealthy"
+          }
+        }
+      }
+    },
+    "/healthcheck/s3": {
+      "get": {
+        "operationId": "HealthcheckController_s3",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "S3 is healthy"
+          },
+          "500": {
+            "description": "S3 is unhealthy"
+          }
+        }
+      }
+    },
     "/job-posts": {
       "post": {
         "operationId": "createOneBaseJobPostControllerJobPostEntity",
@@ -9640,12 +9703,12 @@
             "format": "uuid"
           },
           "createdAt": {
-            "format": "date-time",
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "updatedAt": {
-            "format": "date-time",
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "user": {
             "$ref": "#/components/schemas/UserEntity"
@@ -9686,12 +9749,12 @@
             "format": "uuid"
           },
           "createdAt": {
-            "format": "date-time",
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "updatedAt": {
-            "format": "date-time",
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           }
         },
         "required": [
@@ -9708,12 +9771,12 @@
             "format": "uuid"
           },
           "createdAt": {
-            "format": "date-time",
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "updatedAt": {
-            "format": "date-time",
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "owner": {
             "$ref": "#/components/schemas/UserEntity"
@@ -9803,12 +9866,12 @@
             "format": "uuid"
           },
           "createdAt": {
-            "format": "date-time",
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "updatedAt": {
-            "format": "date-time",
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "owner": {
             "$ref": "#/components/schemas/UserEntity"
@@ -9880,12 +9943,12 @@
             "format": "uuid"
           },
           "createdAt": {
-            "format": "date-time",
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "updatedAt": {
-            "format": "date-time",
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "owner": {
             "$ref": "#/components/schemas/UserEntity"
@@ -9960,12 +10023,12 @@
             "format": "uuid"
           },
           "createdAt": {
-            "format": "date-time",
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "updatedAt": {
-            "format": "date-time",
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "owner": {
             "$ref": "#/components/schemas/UserEntity"
@@ -10051,12 +10114,12 @@
             "format": "uuid"
           },
           "createdAt": {
-            "format": "date-time",
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "updatedAt": {
-            "format": "date-time",
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "username": {
             "type": "string"
@@ -10530,12 +10593,12 @@
             "format": "uuid"
           },
           "createdAt": {
-            "format": "date-time",
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "updatedAt": {
-            "format": "date-time",
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "version": {
             "$ref": "#/components/schemas/ProjectVersionEntity"
@@ -10567,12 +10630,12 @@
             "format": "uuid"
           },
           "createdAt": {
-            "format": "date-time",
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "updatedAt": {
-            "format": "date-time",
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "version": {
             "type": "string"
@@ -10673,12 +10736,12 @@
             "format": "uuid"
           },
           "createdAt": {
-            "format": "date-time",
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "updatedAt": {
-            "format": "date-time",
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "owner": {
             "$ref": "#/components/schemas/UserEntity"
@@ -10743,12 +10806,12 @@
             "format": "uuid"
           },
           "createdAt": {
-            "format": "date-time",
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "updatedAt": {
-            "format": "date-time",
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "owner": {
             "$ref": "#/components/schemas/UserEntity"
@@ -11255,12 +11318,12 @@
             "format": "uuid"
           },
           "createdAt": {
-            "format": "date-time",
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "updatedAt": {
-            "format": "date-time",
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "winner": {
             "type": "string"
@@ -11307,12 +11370,12 @@
             "format": "uuid"
           },
           "createdAt": {
-            "format": "date-time",
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "updatedAt": {
-            "format": "date-time",
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           }
         },
         "required": [
@@ -11329,12 +11392,12 @@
             "format": "uuid"
           },
           "createdAt": {
-            "format": "date-time",
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "updatedAt": {
-            "format": "date-time",
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "winsAsP1": {
             "type": "number"
@@ -11377,6 +11440,25 @@
           "run",
           "submission",
           "user"
+        ]
+      },
+      "GitStats": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string"
+          },
+          "additions": {
+            "type": "number"
+          },
+          "deletions": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "username",
+          "additions",
+          "deletions"
         ]
       },
       "GetManyJobPostEntityResponseDto": {
@@ -11447,12 +11529,12 @@
             "format": "uuid"
           },
           "createdAt": {
-            "format": "date-time",
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "updatedAt": {
-            "format": "date-time",
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "name": {
             "type": "string"
@@ -11473,12 +11555,12 @@
             "format": "uuid"
           },
           "createdAt": {
-            "format": "date-time",
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "updatedAt": {
-            "format": "date-time",
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "owner": {
             "$ref": "#/components/schemas/UserEntity"
@@ -11557,12 +11639,12 @@
             "format": "uuid"
           },
           "createdAt": {
-            "format": "date-time",
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "updatedAt": {
-            "format": "date-time",
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "owner": {
             "$ref": "#/components/schemas/UserEntity"
@@ -11724,12 +11806,12 @@
             "format": "uuid"
           },
           "createdAt": {
-            "format": "date-time",
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "updatedAt": {
-            "format": "date-time",
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "applicant": {
             "$ref": "#/components/schemas/UserEntity"

@@ -18,7 +18,7 @@ export abstract class EntityBase {
   @IsUUID('4')
   readonly id: string;
 
-  @ApiProperty()
+  @ApiProperty({ type: 'string', format: 'date-time' })
   @CreateDateColumn({ type: 'timestamp' })
   @IsOptional()
   @IsEmpty({
@@ -26,7 +26,7 @@ export abstract class EntityBase {
   })
   readonly createdAt: Date;
 
-  @ApiProperty()
+  @ApiProperty({ type: 'string', format: 'date-time' })
   @UpdateDateColumn({ type: 'timestamp' })
   @IsOptional()
   @IsEmpty({

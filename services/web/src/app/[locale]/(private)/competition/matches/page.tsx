@@ -111,7 +111,7 @@ export default function MatchesPage() {
       const match = data[i];
       tableData.push({
         key: i,
-        matchId: match.id,
+        matchId: match.id || '',
         winner:
           match.winner == null
             ? 'DRAW'

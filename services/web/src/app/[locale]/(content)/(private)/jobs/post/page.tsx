@@ -106,7 +106,7 @@ export default function JobPost() {
         description: 'Job Post was sucessfully Created', // + JSON.stringify(response.body),
       });
       setTitle('');
-      setDescription(''); 
+      setDescription('');
       setLocation('Remote');
       setSelectedSkills([]);
     } else {
@@ -178,8 +178,11 @@ export default function JobPost() {
                     <div key={skill.id} className="flex items-center space-x-2">
                       <Checkbox
                         id={skill.id}
-                        checked={selectedSkills.includes(skill.id)}
-                        onCheckedChange={() => handleSkillSelection(skill.id)}
+                        // checked={selectedSkills.includes(skill.id)}
+                        checked={selectedSkills.includes(skill.id ?? '')}
+                        onCheckedChange={() =>
+                          handleSkillSelection(skill.id ?? '')
+                        }
                       />
                       <Label htmlFor={skill.id}>{skill.name}</Label>
                     </div>
