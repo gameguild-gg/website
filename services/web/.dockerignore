@@ -1,7 +1,6 @@
 **/.classpath
 **/.dockerignore
 **/.env.dockerignore copy
-**/.git
 **/.gitignore
 **/.project
 **/.settings

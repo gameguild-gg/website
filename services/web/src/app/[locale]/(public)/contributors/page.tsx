@@ -3,6 +3,7 @@ import ContributorCard, {
 } from '@/components/contributors/ContributorCard';
 import { Api, HealthcheckApi } from '@game-guild/apiclient';
 
+// todo: move this logic to the backend and cache the result
 async function getContributors(): Promise<Contributor[]> {
   const res = await fetch(
     'https://api.github.com/repos/gameguild-gg/website/contributors',

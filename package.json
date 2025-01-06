@@ -33,7 +33,7 @@
     "test:api": "npm run test --workspace=services/api",
     "test:web": "npm run test --workspace=services/web",
     "start": "npm run start --workspaces --if-present",
-    "start:api": "npm run start --workspace=services/api",
+    "start:api": "npm run start:prod --workspace=services/api",
     "start:web": "npm run start --workspace=services/web",
     "start:both": "concurrently \"npm:dev:api\" \"npm:dev:web\"",
     "open:tests": "npm run cy:open --workspace=tests",
