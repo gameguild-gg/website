@@ -1,3 +1,10 @@
+## [1.4.10](https://github.com/gameguild-gg/website/compare/v1.4.9...v1.4.10) (2025-01-06)
+
+
+### Bug Fixes
+
+* **contributors:** sort contributors by LoC ([2326dcc](https://github.com/gameguild-gg/website/commit/2326dccf53789ae967de6216629e9b3cb14fe618))
+
 ## [1.4.9](https://github.com/gameguild-gg/website/compare/v1.4.8...v1.4.9) (2025-01-06)
 
 
