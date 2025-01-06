@@ -1,3 +1,10 @@
+## [1.4.7](https://github.com/gameguild-gg/website/compare/v1.4.6...v1.4.7) (2025-01-06)
+
+
+### Bug Fixes
+
+* **readme:** add star history ([e5d9321](https://github.com/gameguild-gg/website/commit/e5d9321640c66cf8a628f504acba1cc1cc8f8ea8))
+
 ## [1.4.6](https://github.com/gameguild-gg/website/compare/v1.4.5...v1.4.6) (2025-01-06)
 
 
