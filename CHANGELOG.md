@@ -1,3 +1,10 @@
+## [1.4.2](https://github.com/gameguild-gg/website/compare/v1.4.1...v1.4.2) (2025-01-06)
+
+
+### Bug Fixes
+
+* **jobs:** fix jobs build ([5dbbe82](https://github.com/gameguild-gg/website/commit/5dbbe82f100803a0f8eebcfae170f80ba9ed0968))
+
 ## [1.4.1](https://github.com/gameguild-gg/website/compare/v1.4.0...v1.4.1) (2024-12-28)
 
 
