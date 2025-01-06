@@ -35,6 +35,11 @@ async function getContributors(): Promise<Contributor[]> {
     }
   }
 
+  // sort contributors by number of additions and deletions
+  contributors.sort(
+    (a, b) => b.additions + b.deletions - (a.additions + a.deletions),
+  );
+
   return contributors;
 }
 
