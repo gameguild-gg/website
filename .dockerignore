@@ -6,3 +6,4 @@ services/web/node_modules
 services/web/.next
 packages/apiclient/node_modules
 web3/node_modules
+.git
