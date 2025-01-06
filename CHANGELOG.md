@@ -1,3 +1,11 @@
+## [1.4.3](https://github.com/gameguild-gg/website/compare/v1.4.2...v1.4.3) (2025-01-06)
+
+
+### Bug Fixes
+
+* private route dynamic SSR ([5abfbd8](https://github.com/gameguild-gg/website/commit/5abfbd86b448b3844813d49a44e012c1db3bc223))
+* removed _app.tsx ([037625a](https://github.com/gameguild-gg/website/commit/037625a7fe9a6c4b2b1e573c8ce4fe555b131106))
+
 ## [1.4.2](https://github.com/gameguild-gg/website/compare/v1.4.1...v1.4.2) (2025-01-06)
 
 
