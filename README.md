@@ -90,3 +90,7 @@ By starring this repository, you:
 ## Star History
 
 [![Star History Chart](https://api.star-history.com/svg?repos=gameguild-gg/website&type=Date)](https://star-history.com/#gameguild-gg/website&Date)
+
+## Gource
+
+[![Gource](https://gameguild-gg.github.io/website/gource.gif)](https://gameguild-gg.github.io/website/gource.mp4)
