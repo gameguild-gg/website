@@ -1,3 +1,10 @@
+## [1.4.8](https://github.com/gameguild-gg/website/compare/v1.4.7...v1.4.8) (2025-01-06)
+
+
+### Bug Fixes
+
+* **gource:** add gif to gource ([70ab3d4](https://github.com/gameguild-gg/website/commit/70ab3d4d8192e01973099dc04878dbd5e1fa56fb))
+
 ## [1.4.7](https://github.com/gameguild-gg/website/compare/v1.4.6...v1.4.7) (2025-01-06)
 
 
