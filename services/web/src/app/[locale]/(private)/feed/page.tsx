@@ -1,4 +1,5 @@
 'use client';
+
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -25,7 +26,7 @@ import {
 } from '@/components/ui/pagination';
 
 // todo: I have no idea why this is necessary, if we are already stating use client
-export const dynamic = 'force-dynamic';
+// export const dynamic = 'force-dynamic';
 
 const contentTypes = [
   { name: 'Games', icon: Joystick },
