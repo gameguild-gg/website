@@ -1,3 +1,10 @@
+## [1.4.4](https://github.com/gameguild-gg/website/compare/v1.4.3...v1.4.4) (2025-01-06)
+
+
+### Bug Fixes
+
+* **contributors:** add LoC on contributors page ([98d4dae](https://github.com/gameguild-gg/website/commit/98d4daed8cdea4b50a38eca8cd79f57f23822f31))
+
 ## [1.4.3](https://github.com/gameguild-gg/website/compare/v1.4.2...v1.4.3) (2025-01-06)
 
 
