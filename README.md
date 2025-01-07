@@ -94,3 +94,12 @@ By starring this repository, you:
 ## Gource
 
 [![Gource](https://gameguild-gg.github.io/website/gource.gif)](https://gameguild-gg.github.io/website/gource.mp4)
+
+## License
+
+This project is available under a dual-license model:
+
+- **Open Source License**: [AGPL License](./LICENSE) for personal use, non-commercial or commercial up to 1000 users; 
+- **Commercial License**: For organizations or projects exceeding 1000 users, a [commercial license](./COMMERCIAL_LICENSE.md) is required.
+
+For inquiries about the commercial license, please contact tolstenko on Discord.
