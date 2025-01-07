@@ -16,6 +16,7 @@ Option 1: Financial Support through Open Collective
 
 The Licensee agrees to pay $1 USD per user per month for all users of the Software.
 Payments must be made through the Licensor’s Open Collective account: [Insert Open Collective Link].
+
 Option 2: Developer Support
 
 The Licensee is responsible for hiring and paying developers to support the project.
