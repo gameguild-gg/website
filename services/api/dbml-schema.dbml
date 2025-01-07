@@ -12,7 +12,7 @@ Table ChapterEntity {
   owner UserEntity
   slug varchar
   summary string
-  thumbnail varchar
+  thumbnail ImageEntity
   title varchar
   updatedAt timestamp
   visibility enum
@@ -89,7 +89,7 @@ Table CourseEntity {
   slug varchar
   subscriptionAccess boolean
   summary string
-  thumbnail varchar
+  thumbnail ImageEntity
   title varchar
   updatedAt timestamp
   visibility enum
@@ -105,11 +105,27 @@ Table EventEntity {
   owner UserEntity
   slug varchar
   summary string
-  thumbnail varchar
+  thumbnail ImageEntity
   title varchar
   updatedAt timestamp
   visibility enum
   editors UserEntity
+}
+
+Table ImageEntity {
+  createdAt timestamp
+  description string
+  filename string
+  hash string
+  height integer
+  id uuid
+  mimetype string
+  originalFilename string
+  path string
+  sizeBytes integer
+  source string
+  updatedAt timestamp
+  width integer
 }
 
 Table job-post_editors_user {
@@ -142,7 +158,7 @@ Table JobPostEntity {
   owner UserEntity
   slug varchar
   summary string
-  thumbnail varchar
+  thumbnail ImageEntity
   title varchar
   updatedAt timestamp
   visibility enum
@@ -172,7 +188,7 @@ Table LectureEntity {
   owner UserEntity
   slug varchar
   summary string
-  thumbnail varchar
+  thumbnail ImageEntity
   title varchar
   updatedAt timestamp
   visibility enum
@@ -192,7 +208,7 @@ Table PostEntity {
   PostType enum
   slug varchar
   summary string
-  thumbnail varchar
+  thumbnail ImageEntity
   title varchar
   updatedAt timestamp
   visibility enum
@@ -205,18 +221,25 @@ Table project_editors_user {
   user_id uuid
 }
 
+Table project_screenshots_images {
+  images_id uuid
+  project_id uuid
+}
+
 Table ProjectEntity {
+  banner ImageEntity
   body text
   createdAt timestamp
   id uuid
   owner UserEntity
   slug varchar
   summary string
-  thumbnail varchar
+  thumbnail ImageEntity
   title varchar
   updatedAt timestamp
   visibility enum
   editors UserEntity
+  screenshots ImageEntity
   tickets TicketEntity
   versions ProjectVersionEntity
 }
@@ -255,7 +278,7 @@ Table ProposalEntity {
   owner UserEntity
   slug varchar
   summary string
-  thumbnail varchar
+  thumbnail ImageEntity
   title varchar
   updatedAt timestamp
   visibility enum
@@ -323,7 +346,7 @@ Table UserProfileEntity {
   givenName varchar
   id uuid
   name varchar
-  picture varchar
+  picture ImageEntity
   updatedAt timestamp
   user UserEntity
 }
@@ -338,6 +361,7 @@ Ref: ChapterEntity.course > CourseEntity.chapters
 Ref: ChapterEntity.editors <> UserEntity.id
 Ref: ChapterEntity.lectures < LectureEntity.chapter
 Ref: ChapterEntity.owner > UserEntity.id
+Ref: ChapterEntity.thumbnail > ImageEntity.id
 Ref: CompetitionMatchEntity.p1submission > CompetitionSubmissionEntity.matchesAsP1
 Ref: CompetitionMatchEntity.p2submission > CompetitionSubmissionEntity.matchesAsP2
 Ref: CompetitionMatchEntity.run > CompetitionRunEntity.matches
@@ -349,27 +373,37 @@ Ref: CourseEntity.author > UserEntity.courses
 Ref: CourseEntity.editors <> UserEntity.id
 Ref: CourseEntity.lectures < LectureEntity.course
 Ref: CourseEntity.owner > UserEntity.id
+Ref: CourseEntity.thumbnail > ImageEntity.id
 Ref: EventEntity.editors <> UserEntity.id
 Ref: EventEntity.owner > UserEntity.id
+Ref: EventEntity.thumbnail > ImageEntity.id
 Ref: JobApplicationEntity.applicant > UserEntity.id
 Ref: JobApplicationEntity.job > JobPostEntity.id
 Ref: JobPostEntity.editors <> UserEntity.id
 Ref: JobPostEntity.job_tags <> JobTagEntity.id
 Ref: JobPostEntity.owner > UserEntity.id
+Ref: JobPostEntity.thumbnail > ImageEntity.id
 Ref: LectureEntity.chapter > CourseEntity.chapters
 Ref: LectureEntity.editors <> UserEntity.id
 Ref: LectureEntity.owner > UserEntity.id
+Ref: LectureEntity.thumbnail > ImageEntity.id
 Ref: PostEntity.editors <> UserEntity.id
 Ref: PostEntity.owner > UserEntity.id
 Ref: PostEntity.owners <> UserEntity.posts
+Ref: PostEntity.thumbnail > ImageEntity.id
+Ref: ProjectEntity.banner > ImageEntity.id
 Ref: ProjectEntity.editors <> UserEntity.id
 Ref: ProjectEntity.owner > UserEntity.id
+Ref: ProjectEntity.screenshots <> ImageEntity.id
+Ref: ProjectEntity.thumbnail > ImageEntity.id
 Ref: ProjectEntity.tickets < TicketEntity.project
 Ref: ProjectEntity.versions < ProjectVersionEntity.project
 Ref: ProjectFeedbackResponseEntity.user > UserEntity.id
 Ref: ProjectFeedbackResponseEntity.version > ProjectVersionEntity.responses
 Ref: ProposalEntity.editors <> UserEntity.id
 Ref: ProposalEntity.owner > UserEntity.id
+Ref: ProposalEntity.thumbnail > ImageEntity.id
 Ref: TicketEntity.editors <> UserEntity.id
 Ref: TicketEntity.owner > UserEntity.id
 Ref: UserEntity.profile - UserProfileEntity.user
+Ref: UserProfileEntity.picture - ImageEntity.id

@@ -28,15 +28,6 @@ export interface Contributor {
   deletions: number;
 }
 
-interface ContributorCardProps {
-  username: string;
-  avatarUrl: string;
-  contributions: number;
-  profileUrl: string;
-  additions: number;
-  deletions: number;
-}
-
 // convert the number to a string with K if it is over 1000, and M if it is over 1,000,000 and round to 1 decimal.
 function contributionsToString(contributions: number): string {
   if (contributions) {
@@ -52,26 +43,33 @@ function contributionsToString(contributions: number): string {
   }
 }
 
-export default function ContributorCard(contributor: ContributorCardProps) {
+export default function ContributorCard(contributor: Contributor) {
+  if (!contributor) return null;
+
   return (
     // make all cards clicable to the user's github profile url
-    <Link href={contributor.profileUrl || ''}>
-      <div className="bg-white shadow-md rounded-lg overflow-hidden">
-        <div className="p-4">
+
+    <div className="bg-white shadow-md rounded-lg overflow-hidden">
+      <div className="p-4">
+        <Link href={contributor.html_url || ''}>
           <Image
-            src={contributor.avatarUrl}
-            alt={`${contributor.username}'s avatar`}
+            src={contributor.avatar_url}
+            alt={`${contributor.login}'s avatar`}
             width={100}
             height={100}
             className="w-24 h-24 rounded-full mx-auto mb-4"
           />
           <h2 className="text-xl font-semibold text-center mb-2">
-            {contributor.username}
+            {contributor.login}
           </h2>
-          <p className="text-gray-600 text-center mb-4">
+        </Link>
+        <Link
+          href={`https://github.com/gameguild-gg/website/commits/main?author=${contributor.login}`}
+        >
+          <p className="text-gray-600 text-center">
             Contributions: {contributionsToString(contributor.contributions)}
           </p>
-          <p className="text-gray-600 text-center mb-4">
+          <p className="text-gray-600 text-center">
             LoC:{' '}
             <span className="text-blue-500 font-bold">
               {contributionsToString(
@@ -88,8 +86,8 @@ export default function ContributorCard(contributor: ContributorCardProps) {
             </span>
             )
           </p>
-        </div>
+        </Link>
       </div>
-    </Link>
+    </div>
   );
 }

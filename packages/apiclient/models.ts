@@ -47,8 +47,8 @@ export namespace Api {
 
 	export interface ChapterEntity {
 		id?: string;
-		createdAt?: string;
-		updatedAt?: string;
+		createdAt: string;
+		updatedAt: string;
 		owner?: Api.UserEntity;
 		editors?: Api.UserEntity[];
 		slug: string;
@@ -169,8 +169,8 @@ export namespace Api {
 
 	export interface CompetitionMatchEntity {
 		id?: string;
-		createdAt?: string;
-		updatedAt?: string;
+		createdAt: string;
+		updatedAt: string;
 		run: Api.CompetitionRunEntity;
 		p1submission: Api.CompetitionSubmissionEntity;
 		p2submission: Api.CompetitionSubmissionEntity;
@@ -219,8 +219,8 @@ export namespace Api {
 
 	export interface CompetitionRunEntity {
 		id?: string;
-		createdAt?: string;
-		updatedAt?: string;
+		createdAt: string;
+		updatedAt: string;
 		state: Api.CompetitionRunEntity.State;
 		gameType: string;
 		matches: Api.CompetitionMatchEntity[];
@@ -251,8 +251,8 @@ export namespace Api {
 
 	export interface CompetitionRunSubmissionReportEntity {
 		id?: string;
-		createdAt?: string;
-		updatedAt?: string;
+		createdAt: string;
+		updatedAt: string;
 		/**
 		 * @type {number}
 		 * @memberof CompetitionRunSubmissionReportEntity
@@ -316,14 +316,14 @@ export namespace Api {
 
 	export interface CompetitionSubmissionEntity {
 		id?: string;
-		createdAt?: string;
-		updatedAt?: string;
+		createdAt: string;
+		updatedAt: string;
 	}
 
 	export interface CourseEntity {
 		id?: string;
-		createdAt?: string;
-		updatedAt?: string;
+		createdAt: string;
+		updatedAt: string;
 		owner?: Api.UserEntity;
 		editors?: Api.UserEntity[];
 		slug: string;
@@ -632,8 +632,8 @@ export namespace Api {
 
 	export interface ImageEntity {
 		id?: string;
-		createdAt?: string;
-		updatedAt?: string;
+		createdAt: string;
+		updatedAt: string;
 		source: string;
 		path: string;
 		originalFilename: string;
@@ -664,8 +664,8 @@ export namespace Api {
 
 	export interface JobApplicationEntity {
 		id?: string;
-		createdAt?: string;
-		updatedAt?: string;
+		createdAt: string;
+		updatedAt: string;
 		applicant: Api.UserEntity;
 		job: Api.JobPostEntity;
 		/**
@@ -679,8 +679,8 @@ export namespace Api {
 
 	export interface JobPostCreateDto {
 		id?: string;
-		createdAt?: string;
-		updatedAt?: string;
+		createdAt: string;
+		updatedAt: string;
 		owner?: Api.UserEntity;
 		editors?: Api.UserEntity[];
 		slug: string;
@@ -734,8 +734,8 @@ export namespace Api {
 
 	export interface JobPostEntity {
 		id?: string;
-		createdAt?: string;
-		updatedAt?: string;
+		createdAt: string;
+		updatedAt: string;
 		owner?: Api.UserEntity;
 		editors?: Api.UserEntity[];
 		slug: string;
@@ -813,15 +813,15 @@ export namespace Api {
 
 	export interface JobTagEntity {
 		id?: string;
-		createdAt?: string;
-		updatedAt?: string;
+		createdAt: string;
+		updatedAt: string;
 		name: string;
 	}
 
 	export interface LectureEntity {
 		id?: string;
-		createdAt?: string;
-		updatedAt?: string;
+		createdAt: string;
+		updatedAt: string;
 		owner?: Api.UserEntity;
 		editors?: Api.UserEntity[];
 		slug: string;
@@ -893,8 +893,8 @@ export namespace Api {
 
 	export interface MatchSearchResponseDto {
 		id?: string;
-		createdAt?: string;
-		updatedAt?: string;
+		createdAt: string;
+		updatedAt: string;
 		winner: string;
 		lastState: string;
 		players: string[];
@@ -907,8 +907,8 @@ export namespace Api {
 
 	export interface PostEntity {
 		id?: string;
-		createdAt?: string;
-		updatedAt?: string;
+		createdAt: string;
+		updatedAt: string;
 		owner?: Api.UserEntity;
 		editors?: Api.UserEntity[];
 		slug: string;
@@ -947,8 +947,8 @@ export namespace Api {
 
 	export interface ProjectEntity {
 		id?: string;
-		createdAt?: string;
-		updatedAt?: string;
+		createdAt: string;
+		updatedAt: string;
 		owner?: Api.UserEntity;
 		editors?: Api.UserEntity[];
 		slug: string;
@@ -991,8 +991,8 @@ export namespace Api {
 
 	export interface ProjectFeedbackResponseEntity {
 		id?: string;
-		createdAt?: string;
-		updatedAt?: string;
+		createdAt: string;
+		updatedAt: string;
 		version: Api.ProjectVersionEntity;
 		user: Api.UserEntity;
 		responses: string[];
@@ -1227,8 +1227,8 @@ export namespace Api {
 
 	export interface ProjectVersionEntity {
 		id?: string;
-		createdAt?: string;
-		updatedAt?: string;
+		createdAt: string;
+		updatedAt: string;
 		version: string;
 		'archive_url': string;
 		'notes_url': string;
@@ -1243,8 +1243,8 @@ export namespace Api {
 
 	export interface TicketEntity {
 		id?: string;
-		createdAt?: string;
-		updatedAt?: string;
+		createdAt: string;
+		updatedAt: string;
 		owner?: Api.UserEntity;
 		editors?: Api.UserEntity[];
 		/**
@@ -1335,8 +1335,8 @@ export namespace Api {
 
 	export interface UserEntity {
 		id?: string;
-		createdAt?: string;
-		updatedAt?: string;
+		createdAt: string;
+		updatedAt: string;
 		username: string;
 		email: string;
 		emailVerified: boolean;
@@ -1388,8 +1388,8 @@ export namespace Api {
 
 	export interface UserProfileEntity {
 		id?: string;
-		createdAt?: string;
-		updatedAt?: string;
+		createdAt: string;
+		updatedAt: string;
 		user: Api.UserEntity;
 		bio: string;
 		name: string;

@@ -2,6 +2,8 @@ import ContributorCard, {
   Contributor,
 } from '@/components/contributors/ContributorCard';
 import { Api, HealthcheckApi } from '@game-guild/apiclient';
+import { Github } from 'lucide-react';
+import { Metadata } from 'next';
 
 // todo: move this logic to the backend and cache the result
 async function getContributors(): Promise<Contributor[]> {
@@ -23,10 +25,6 @@ async function getContributors(): Promise<Contributor[]> {
       contributor.login !== 'dependabot[bot]',
   ) as Contributor[];
 
-  // get the stats from gitstats
-  const api = new HealthcheckApi({
-    basePath: process.env.NEXT_PUBLIC_API_URL,
-  });
   const statsRes = await api.healthcheckControllerGitstats();
   if (statsRes.status !== 200) throw new Error('Failed to fetch git stats');
   const stats = statsRes.body;
@@ -53,20 +51,12 @@ export default async function ContributorsPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold text-center mb-8">
-        Github Contributors
-      </h1>
+      <h2 className="text-3xl font-bold text-center mb-8 flex items-center justify-center gap-1">
+        <Github /> Github Contributors
+      </h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {contributors.map((contributor) => (
-          <ContributorCard
-            key={contributor.login}
-            username={contributor.login}
-            profileUrl={contributor.html_url}
-            contributions={contributor.contributions}
-            additions={contributor.additions}
-            deletions={contributor.deletions}
-            avatarUrl={contributor.avatar_url}
-          />
+          <ContributorCard key={contributor.login} {...contributor} />
         ))}
       </div>
     </div>

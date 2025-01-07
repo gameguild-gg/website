@@ -14,15 +14,6 @@ import {
 } from '@nestjs/cache-manager';
 import { GitStats } from './GitStats.dto';
 
-export class GitStats {
-  @ApiProperty()
-  username: string;
-  @ApiProperty()
-  additions: number;
-  @ApiProperty()
-  deletions: number;
-}
-
 @Controller('healthcheck')
 export class HealthcheckController {
   constructor(@Inject(CACHE_MANAGER) private cacheManager: Cache) {}

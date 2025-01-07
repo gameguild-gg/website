@@ -9270,12 +9270,12 @@
             "format": "uuid"
           },
           "createdAt": {
-            "format": "date-time",
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "updatedAt": {
-            "format": "date-time",
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "source": {
             "type": "string"
@@ -9309,6 +9309,8 @@
           }
         },
         "required": [
+          "createdAt",
+          "updatedAt",
           "source",
           "path",
           "originalFilename",
@@ -9356,6 +9358,8 @@
           }
         },
         "required": [
+          "createdAt",
+          "updatedAt",
           "user",
           "bio",
           "name",
@@ -9379,7 +9383,11 @@
             "type": "string",
             "format": "date-time"
           }
-        }
+        },
+        "required": [
+          "createdAt",
+          "updatedAt"
+        ]
       },
       "PostEntity": {
         "type": "object",
@@ -9433,6 +9441,8 @@
           }
         },
         "required": [
+          "createdAt",
+          "updatedAt",
           "slug",
           "title"
         ]
@@ -9528,6 +9538,8 @@
           }
         },
         "required": [
+          "createdAt",
+          "updatedAt",
           "slug",
           "title",
           "order",
@@ -9600,6 +9612,8 @@
           }
         },
         "required": [
+          "createdAt",
+          "updatedAt",
           "slug",
           "title",
           "course"
@@ -9678,6 +9692,8 @@
           }
         },
         "required": [
+          "createdAt",
+          "updatedAt",
           "slug",
           "title",
           "price",
@@ -9764,6 +9780,8 @@
           }
         },
         "required": [
+          "createdAt",
+          "updatedAt",
           "username",
           "email",
           "emailVerified",
@@ -10183,6 +10201,8 @@
           }
         },
         "required": [
+          "createdAt",
+          "updatedAt",
           "version",
           "user",
           "responses"
@@ -10252,6 +10272,8 @@
           }
         },
         "required": [
+          "createdAt",
+          "updatedAt",
           "version",
           "archive_url",
           "notes_url",
@@ -10349,6 +10371,8 @@
           }
         },
         "required": [
+          "createdAt",
+          "updatedAt",
           "title",
           "description",
           "projectId",
@@ -10429,6 +10453,8 @@
           }
         },
         "required": [
+          "createdAt",
+          "updatedAt",
           "slug",
           "title"
         ]
@@ -10662,6 +10688,8 @@
           }
         },
         "required": [
+          "createdAt",
+          "updatedAt",
           "winner",
           "lastState",
           "players"
@@ -10696,9 +10724,45 @@
           "updatedAt": {
             "type": "string",
             "format": "date-time"
+          },
+          "run": {
+            "$ref": "#/components/schemas/CompetitionRunEntity"
+          },
+          "p1submission": {
+            "$ref": "#/components/schemas/CompetitionSubmissionEntity"
+          },
+          "p2submission": {
+            "$ref": "#/components/schemas/CompetitionSubmissionEntity"
+          },
+          "winner": {
+            "type": "string",
+            "enum": [
+              "Player1",
+              "Player2"
+            ]
+          },
+          "p1Points": {
+            "type": "number"
+          },
+          "p2Points": {
+            "type": "number"
+          },
+          "p1Turns": {
+            "type": "number"
+          },
+          "p2Turns": {
+            "type": "number"
+          },
+          "logs": {
+            "type": "string"
+          },
+          "lastState": {
+            "type": "string"
           }
         },
         "required": [
+          "createdAt",
+          "updatedAt",
           "run",
           "p1submission",
           "p2submission",
@@ -10755,6 +10819,8 @@
           }
         },
         "required": [
+          "createdAt",
+          "updatedAt",
           "winsAsP1",
           "winsAsP2",
           "totalWins",
@@ -10764,6 +10830,55 @@
           "run",
           "submission",
           "user"
+        ]
+      },
+      "CompetitionRunEntity": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "NOT_STARTED",
+              "RUNNING",
+              "FINISHED",
+              "FAILED"
+            ]
+          },
+          "gameType": {
+            "type": "string"
+          },
+          "matches": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CompetitionMatchEntity"
+            }
+          },
+          "reports": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CompetitionRunSubmissionReportEntity"
+            }
+          }
+        },
+        "required": [
+          "createdAt",
+          "updatedAt",
+          "state",
+          "gameType",
+          "matches",
+          "reports"
         ]
       },
       "GitStats": {
@@ -10865,6 +10980,8 @@
           }
         },
         "required": [
+          "createdAt",
+          "updatedAt",
           "name"
         ]
       },
@@ -10936,6 +11053,8 @@
           }
         },
         "required": [
+          "createdAt",
+          "updatedAt",
           "slug",
           "title",
           "location",
@@ -11017,6 +11136,8 @@
           }
         },
         "required": [
+          "createdAt",
+          "updatedAt",
           "slug",
           "title",
           "location",
@@ -11139,6 +11260,8 @@
           }
         },
         "required": [
+          "createdAt",
+          "updatedAt",
           "applicant",
           "job",
           "progress",

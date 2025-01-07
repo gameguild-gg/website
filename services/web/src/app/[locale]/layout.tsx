@@ -14,6 +14,20 @@ export async function generateMetadata(): Promise<Metadata> {
       default: 'Game Guild',
     },
     description: 'A awesome game development community',
+    openGraph: {
+      type: 'website',
+      locale: 'en_US',
+      url: 'https://gameguild.gg',
+      siteName: 'Game Guild',
+      images: [
+        {
+          url: './assets/images/logo-icon.png',
+          width: 338,
+          height: 121,
+          alt: 'Game Guild Logo',
+        },
+      ],
+    },
   };
 }
 
