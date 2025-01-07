@@ -1,4 +1,4 @@
-import { Column, Index } from 'typeorm';
+import { Column, Index, ManyToOne, OneToMany } from 'typeorm';
 import { VisibilityEnum } from './visibility.enum';
 import { ApiProperty } from '@nestjs/swagger';
 import { IsSlug } from '../../common/decorators/isslug.decorator';
@@ -12,12 +12,13 @@ import {
 } from 'class-validator';
 import { WithRolesEntity } from '../../auth/entities/with-roles.entity';
 import { CrudValidationGroups } from '@dataui/crud';
+import { ImageEntity } from '../../asset';
 
 // todo: move some of these fields to a more basic entity and add abstract classes to specific intents
 export abstract class ContentBase extends WithRolesEntity {
   @Column({ length: 255, nullable: false, type: 'varchar' })
   @Index({ unique: true })
-  @ApiProperty()
+  @ApiProperty({ required: true })
   @IsOptional({ groups: [CrudValidationGroups.UPDATE] })
   @IsNotEmpty({ groups: [CrudValidationGroups.CREATE] })
   @IsString()
@@ -27,7 +28,7 @@ export abstract class ContentBase extends WithRolesEntity {
 
   @Column({ length: 255, nullable: false, type: 'varchar' })
   @Index({ unique: false })
-  @ApiProperty()
+  @ApiProperty({ required: true })
   @IsOptional()
   @IsNotEmpty({ groups: [CrudValidationGroups.CREATE] })
   @IsString()
@@ -35,14 +36,14 @@ export abstract class ContentBase extends WithRolesEntity {
   title: string;
 
   @Column({ length: 1024, nullable: true })
-  @ApiProperty()
+  @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
   @MaxLength(1024)
   summary: string;
 
   @Column({ type: 'text', nullable: true })
-  @ApiProperty()
+  @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
   @MaxLength(1024 * 64)
@@ -55,15 +56,15 @@ export abstract class ContentBase extends WithRolesEntity {
     default: VisibilityEnum.DRAFT,
     nullable: false,
   })
-  @ApiProperty({ enum: VisibilityEnum })
+  @ApiProperty({ enum: VisibilityEnum, required: false })
   @IsOptional()
   @IsEnum(VisibilityEnum)
   visibility: VisibilityEnum;
 
   // asset image
-  @Column({ nullable: true, default: '', type: 'varchar', length: 1024 })
-  @ApiProperty()
+  @ApiProperty({ type: ImageEntity, required: false })
   @IsOptional()
-  @IsUrl({ require_protocol: true })
-  thumbnail: string;
+  // relation to asset
+  @ManyToOne(() => ImageEntity)
+  thumbnail: ImageEntity;
 }

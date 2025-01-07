@@ -24,6 +24,9 @@ export class UpdateProjectDto
       | 'updatedAt'
       | 'versions'
       | 'tickets'
+      | 'thumbnail'
+      | 'banner'
+      | 'screenshots'
     >
 {
   @ApiProperty()
@@ -72,17 +75,6 @@ export class UpdateProjectDto
     message: 'error.isEnum: visibility must be a valid enum',
   })
   visibility: VisibilityEnum;
-
-  // asset image
-  @ApiProperty()
-  @IsOptional()
-  @IsUrl(
-    { require_protocol: true },
-    {
-      message: 'error.isUrl: thumbnail must be a fully qualified and valid url',
-    },
-  )
-  thumbnail: string;
 }
 
 // the generated type does not contain the decorators.

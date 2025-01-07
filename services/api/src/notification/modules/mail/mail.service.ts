@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import * as sendGridEmail from '@sendgrid/mail';
+import sendGridEmail from '@sendgrid/mail';
 import { ApiConfigService } from '../../../common/config.service';
 
 @Injectable()

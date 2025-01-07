@@ -1,7 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
+  IsEnum,
   IsMimeType,
   IsNotEmpty,
+  IsOptional,
   IsPositive,
   IsString,
   MaxLength,
@@ -10,8 +12,39 @@ import { Column, Index } from 'typeorm';
 import { EntityBase } from '../common/entities/entity.base';
 import { IsIntegerNumber } from '../common/decorators/validator.decorator';
 
-export class AssetEntity extends EntityBase {
-  // filename
+export enum AssetSourceType {
+  S3 = 'S3',
+  IPFS = 'IPFS',
+  CLOUDINARY = 'CLOUDNARY',
+  EXTERNAL = 'EXTERNAL',
+}
+
+// Base asset entity. This should be extended by other entities that need to store assets.
+export class AssetBase extends EntityBase {
+  // this source name is the same on from the env var
+  @ApiProperty()
+  @IsNotEmpty()
+  @IsEnum(AssetSourceType)
+  @Column({ nullable: false })
+  @Index({ unique: false })
+  readonly source: AssetSourceType;
+
+  // the path to the asset on the source without the filename
+  // if external, path will be the full url
+  @ApiProperty()
+  @IsNotEmpty()
+  @IsString()
+  @Column({ nullable: false, default: '' })
+  @Index({ unique: false })
+  readonly path: string;
+
+  @ApiProperty()
+  @IsNotEmpty()
+  @IsString()
+  @Column({ nullable: false, default: '' })
+  @Index({ unique: false })
+  readonly originalFilename: string;
+
   @ApiProperty()
   @IsString({ message: 'error.invalidFilename: Filename must be a string.' })
   @IsNotEmpty({ message: 'error.invalidFilename: Filename must not be empty.' })
@@ -48,14 +81,9 @@ export class AssetEntity extends EntityBase {
   @Column({ nullable: false, type: 'integer', default: 0 })
   readonly sizeBytes: number;
 
-  // url
   @ApiProperty()
-  @IsNotEmpty({ message: 'error.invalidUrl: Url must not be empty.' })
-  @IsString({ message: 'error.invalidUrl: Url must be a string.' })
-  @MaxLength(2048, {
-    message:
-      'error.invalidUrl: Url must be shorter than or equal to 2048 characters.',
-  })
-  @Column({ nullable: false, length: 2048, default: '' })
-  readonly url: string;
+  @IsNotEmpty()
+  @Column({ nullable: false })
+  @Index({ unique: false })
+  readonly hash: string;
 }

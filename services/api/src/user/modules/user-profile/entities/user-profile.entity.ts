@@ -1,4 +1,4 @@
-import { Column, Entity, OneToOne } from 'typeorm';
+import { Column, Entity, JoinColumn, OneToOne, VirtualColumn } from 'typeorm';
 import { EntityBase } from '../../../../common/entities/entity.base';
 import { UserEntity } from '../../../entities/user.entity';
 import { ApiProperty } from '@nestjs/swagger';
@@ -11,9 +11,11 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
+import { ImageEntity } from '../../../../asset';
 
 @Entity({ name: 'user_profile' })
 export class UserProfileEntity extends EntityBase {
+  @IsOptional()
   @OneToOne(() => UserEntity, (user) => user.profile)
   @ApiProperty({ type: () => UserEntity })
   @ValidateNested()
@@ -29,6 +31,7 @@ export class UserProfileEntity extends EntityBase {
   })
   bio?: string;
 
+  // todo: make this a virtual column and concatenate given and family name
   @Column({ nullable: true, default: null, type: 'varchar', length: 256 })
   @ApiProperty()
   @IsOptional()
@@ -56,15 +59,10 @@ export class UserProfileEntity extends EntityBase {
   })
   familyName?: string;
 
-  @Column({ nullable: true, default: null, type: 'varchar', length: 256 })
+  // picture is a relationship to an asset
   @ApiProperty()
   @IsOptional()
-  @IsString({ message: 'error.IsString: location should be a string' })
-  @IsUrl({}, { message: 'error.IsUrl: picture should be a URL' })
-  picture?: string;
-
-  // constructor(partial?: Partial<UserProfileEntity>) {
-  //   super(partial);
-  //   Object.assign(this, partial);
-  // }
+  @OneToOne(() => ImageEntity)
+  @JoinColumn()
+  picture?: ImageEntity;
 }

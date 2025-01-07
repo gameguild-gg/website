@@ -1,33 +1,76 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { AssetEntity } from './asset.entity';
+import { AssetSourceType } from './asset.base';
 import { Repository } from 'typeorm';
-import { TypeOrmCrudService } from '@dataui/crud-typeorm';
-import { ApiConfigService } from '../common/config.service';
+import { ApiConfigService, SourceInfo } from '../common/config.service';
+import { ImageEntity } from './image.entity';
+import { S3ImageStorage } from './storages/s3.image.storage';
 
 @Injectable()
-export class AssetService extends TypeOrmCrudService<AssetEntity> {
+export class AssetService {
   private readonly logger = new Logger(AssetService.name);
+  private readonly tempFolder;
+  private assetSourceMap: Map<string, SourceInfo>;
+  private assetCacheDir: string;
+  private ttl: number;
+  private maxCacheSize: number;
 
   constructor(
-    @InjectRepository(AssetEntity)
-    private readonly assetRepository: Repository<AssetEntity>,
+    @InjectRepository(ImageEntity)
+    private readonly imageRepository: Repository<ImageEntity>,
     private readonly configService: ApiConfigService,
+    private imageStorage: S3ImageStorage,
   ) {
-    super(assetRepository);
-    this.mountS3();
+    this.assetSourceMap = configService.assetSourceInfoMap;
+    this.assetCacheDir = configService.assetCacheDir;
+    this.maxCacheSize = configService.assetCacheSize;
+    this.ttl = configService.assetCacheTTL;
   }
 
-  private async mountS3() {
-    try {
-      const s3 = this.configService.s3Config;
-    } catch (error) {
-      this.logger.error('Error mounting S3', error);
-      throw new Error(
-        'Error mounting S3, did you forget to set the S3 env variables?',
-      );
-    }
+  public async findExternalImageURL(url: string): Promise<ImageEntity> {
+    return this.imageRepository.findOne({
+      where: { source: AssetSourceType.EXTERNAL, path: url },
+    });
+  }
 
-    // mount-s3 DOC-EXAMPLE-BUCKET /path/to/mount
+  public async StoreImageFromURL(
+    url: string,
+    description: string = '',
+  ): Promise<ImageEntity> {
+    return this.imageRepository.save({
+      source: AssetSourceType.EXTERNAL,
+      path: url,
+      description: description,
+    });
+  }
+
+  public async storeImage(file: Express.Multer.File): Promise<ImageEntity> {
+    // check if image already exists
+    // todo: implement megaupload hashing system to avoid duplicates
+
+    const asset = await this.imageStorage.store(file);
+    const folder =
+      asset.hash.substring(0, 2) + '/' + asset.hash.substring(2, 4);
+
+    return this.imageRepository.save({
+      width: asset.width,
+      height: asset.height,
+      mimetype: asset.mime,
+      path: folder,
+      source: AssetSourceType.S3,
+      hash: asset.hash,
+      filename: asset.hash + '-' + file.originalname,
+      sizeBytes: asset.size,
+      originalFilename: file.originalname,
+    });
+  }
+
+  async deleteImage(picture: ImageEntity) {
+    // todo: deal with different sources
+    // parallel await
+    await Promise.all([
+      this.imageStorage.delete(picture),
+      this.imageRepository.delete(picture.id),
+    ]);
   }
 }

@@ -1,5 +1,5 @@
 import React, { PropsWithChildren } from 'react';
-import Header from '@/components/common/header';
+import Header from '@/components/header';
 import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
 

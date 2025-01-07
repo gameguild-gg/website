@@ -1,9 +1,22 @@
-import { Controller } from '@nestjs/common';
+import { Controller, Get, Patch } from '@nestjs/common';
 import { UserService } from './user.service';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Auth, AuthUser } from '../auth';
+import { AuthenticatedRoute } from '../auth/auth.enum';
+import { UserEntity } from './entities';
 
 @Controller('users')
 @ApiTags('users')
 export class UserController {
   constructor(private readonly userService: UserService) {}
+
+  @Get('me')
+  @Auth(AuthenticatedRoute)
+  @ApiResponse({ type: UserEntity })
+  async me(@AuthUser() user: UserEntity): Promise<UserEntity> {
+    return this.userService.findOne({
+      where: { id: user.id },
+      relations: { profile: true },
+    });
+  }
 }

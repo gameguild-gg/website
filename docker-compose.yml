@@ -58,16 +58,52 @@ services:
     networks:
       - game-guild-network
   
+  minio:
+    image: minio/minio
+    container_name: minio
+    restart: always
+    ports:
+      - "9000:9000"
+      - "9090:9090"
+    environment:
+      MINIO_ROOT_USER: minio-user
+      MINIO_ROOT_PASSWORD: minio-password
+      MINIO_UPDATE: off
+    entrypoint: >
+      /bin/sh -c '
+        isAlive() { curl -sf http://127.0.0.1:9000/minio/health/live; }    # check if Minio is alive
+        minio $0 "$@" --quiet & echo $! > /tmp/minio.pid                   # start Minio in the background
+        while ! isAlive; do sleep 0.1; done                                # wait until Minio is alive
+        mc alias set minio http://127.0.0.1:9000 minio-user minio-password # setup Minio client
+        mc mb minio/gameguild || true                                      # create a test bucket
+        mc anonymous set public minio/gameguild                            # make the test bucket public
+        mc admin accesskey create minio/ --access-key minio --secret-key minio-password # create access token 
+        kill -s INT $(cat /tmp/minio.pid) && rm /tmp/minio.pid             # stop Minio
+        while isAlive; do sleep 0.1; done                                  # wait until Minio is stopped
+        exec minio $0 "$@"                                                 # start Minio in the foreground
+      '
+    command: server /data --json --console-address ":9090"
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: [ 'CMD', 'curl', '-f', 'http://127.0.0.1:9000/minio/health/live' ]
+      interval: 10s
+      start_period: 10s
+#      start_interval: 1s
+    security_opt: ['no-new-privileges:true']
+
   adminer:
     image: adminer
     restart: always
     ports:
-      - 9090:8080
+      - 8081:8080
     depends_on:
       - postgres
     networks:
       - game-guild-network
 
 volumes:
+  minio-data:
+    driver: local
   postgres:
     driver: local
