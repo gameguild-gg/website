@@ -1,4 +1,5 @@
 import React from 'react';
+import Link from 'next/link';
 
 type Props = React.HTMLAttributes<HTMLDivElement> & {
   children?: React.ReactNode;
@@ -33,14 +34,16 @@ function PageFooter({ children }: Readonly<Props>) {
             </a>
           </div>
           <div>Game Guild © 2024 All Rights Reserved</div>
-          <div>
+          <div className="text-white">
             <a href="#" className="text-white">
               Privacy Policy
             </a>{' '}
-            |{' '}
+            {' | '}
             <a href="#" className="text-white">
               Terms of Service
             </a>
+            {' | '}
+            <Link href={'/contributors'}>Contributors</Link>
           </div>
         </div>
       </div>

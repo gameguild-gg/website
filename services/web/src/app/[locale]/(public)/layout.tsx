@@ -22,7 +22,7 @@ export default function Layout({ children }: Readonly<Props>) {
 
       <PageFooter />
 
-      <CookieConsent />
+      {/*<CookieConsent />*/}
     </div>
   );
 }
