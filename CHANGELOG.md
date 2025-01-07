@@ -1,3 +1,10 @@
+## [1.4.11](https://github.com/gameguild-gg/website/compare/v1.4.10...v1.4.11) (2025-01-07)
+
+
+### Bug Fixes
+
+* **auth:** hack to avoid infinite redirect. increase the token life time ([d2f024e](https://github.com/gameguild-gg/website/commit/d2f024e2593b8105c287920376741673008bd412))
+
 ## [1.4.10](https://github.com/gameguild-gg/website/compare/v1.4.9...v1.4.10) (2025-01-06)
 
 
