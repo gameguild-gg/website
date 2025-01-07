@@ -1,3 +1,11 @@
+## [1.5.1](https://github.com/gameguild-gg/website/compare/v1.5.0...v1.5.1) (2025-01-07)
+
+
+### Bug Fixes
+
+* **contributors:** add gource to contributors ([f5ac100](https://github.com/gameguild-gg/website/commit/f5ac100cd4940e47e835856da134bcee377b2dd6))
+* **footer:** remove cookies consent for now ([899aa36](https://github.com/gameguild-gg/website/commit/899aa36d6de6c91f7653696a9b0a3a3168cde511))
+
 # [1.5.0](https://github.com/gameguild-gg/website/compare/v1.4.11...v1.5.0) (2025-01-07)
 
 
