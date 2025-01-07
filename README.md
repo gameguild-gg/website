@@ -99,7 +99,11 @@ By starring this repository, you:
 
 This project is available under a dual-license model:
 
-- **Open Source License**: [AGPL License](./LICENSE) for personal use, non-commercial or commercial up to 1000 users; 
-- **Commercial License**: For organizations or projects exceeding 1000 users, a [commercial license](./COMMERCIAL_LICENSE.md) is required.
+1. **Open Source License:** [GNU AGPL v3.0](./LICENSE)
+    - For non-commercial, open-source use or commercial with less than 1000 users.
+    - Must comply with AGPL terms, including providing source code for modifications.
 
-For inquiries about the commercial license, please contact tolstenko on Discord.
+2. **Commercial License:** [Commercial License](./COMMERCIAL_LICENSE.md)
+    - For commercial use exceeding 1000 users.
+    - Contact us for terms on discord.
+ 
