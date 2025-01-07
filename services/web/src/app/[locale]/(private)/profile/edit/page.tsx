@@ -16,11 +16,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/components/ui/use-toast';
-import { Api } from '@apiclient/models';
-import { UsersApi } from '@apiclient/api';
-import { Matches } from 'class-validator';
-import UserEntity = Api.UserEntity;
 import Link from 'next/link';
+import { Api, UsersApi } from '@game-guild/apiclient';
 
 export default function EditProfile() {
   const [originalUser, setOriginalUser] = useState<Api.UserEntity>();
@@ -119,10 +116,7 @@ export default function EditProfile() {
         <CardContent className="space-y-4">
           <div className="flex flex-col items-center space-y-2">
             <Avatar className="w-32 h-32">
-              <AvatarImage
-                src={user?.profile?.picture || '/placeholder.svg'}
-                alt="Profile picture"
-              />
+              <AvatarImage src={'/placeholder.svg'} alt="Profile picture" />
               <AvatarFallback>Avatar</AvatarFallback>
             </Avatar>
             <Label
@@ -151,7 +145,10 @@ export default function EditProfile() {
                     'Username must contain only lowercase alphanumeric characters, underscores, periods, hyphens, and be between 3 and 32 characters.',
                   );
                 else setUsernameError(null);
-                setUser({ ...user, username: e.target.value } as UserEntity);
+                setUser({
+                  ...user,
+                  username: e.target.value,
+                } as Api.UserEntity);
               }}
               placeholder="Enter your username"
             />
@@ -190,7 +187,7 @@ export default function EditProfile() {
                 setUser({
                   ...user,
                   profile: { ...user?.profile, bio: e.target.value },
-                } as UserEntity);
+                } as Api.UserEntity);
               }}
               placeholder="Tell us about yourself"
               rows={4}

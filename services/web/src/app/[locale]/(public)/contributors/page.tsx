@@ -53,21 +53,31 @@ async function getContributors(): Promise<Contributor[]> {
 //   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 // };
 
-export async function generateMetadata(
-  // { params, searchParams }: Props,
-  parent: ResolvingMetadata,
-): Promise<Metadata> {
-  const parentMetadata = await parent;
-
+export async function generateMetadata(): Promise<Metadata> {
   return {
-    ...parentMetadata,
     title: {
       template: '%s | Contributors',
       default: 'Contributors',
     },
     description: 'List of contributors to the Game Guild website',
-  } as Metadata;
+  };
 }
+
+// export async function generateMetadata(
+//   // { params, searchParams }: Props,
+//   parent: Promise<Metadata>,
+// ): Promise<Metadata> {
+//   const parentMetadata = await parent;
+//
+//   return {
+//     ...parentMetadata,
+//     title: {
+//       template: '%s | Contributors',
+//       default: 'Contributors',
+//     },
+//     description: 'List of contributors to the Game Guild website',
+//   } as Metadata;
+// }
 
 export default async function ContributorsPage() {
   const contributors = await getContributors();

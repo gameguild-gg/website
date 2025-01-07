@@ -132,7 +132,7 @@ export default function ProjectForm({
     });
 
     const response = await api.createOneBaseProjectControllerProjectEntity(
-      project,
+      project as Api.CreateProjectDto,
       {
         headers: { Authorization: `Bearer ${session?.user?.accessToken}` },
       },
