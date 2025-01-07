@@ -1,3 +1,82 @@
+## [1.4.9](https://github.com/gameguild-gg/website/compare/v1.4.8...v1.4.9) (2025-01-06)
+
+
+### Bug Fixes
+
+* **gource:** improve gif generation ([ea3014d](https://github.com/gameguild-gg/website/commit/ea3014d672391305c39c9d8e96023249900faf2a))
+
+## [1.4.8](https://github.com/gameguild-gg/website/compare/v1.4.7...v1.4.8) (2025-01-06)
+
+
+### Bug Fixes
+
+* **gource:** add gif to gource ([70ab3d4](https://github.com/gameguild-gg/website/commit/70ab3d4d8192e01973099dc04878dbd5e1fa56fb))
+
+## [1.4.7](https://github.com/gameguild-gg/website/compare/v1.4.6...v1.4.7) (2025-01-06)
+
+
+### Bug Fixes
+
+* **readme:** add star history ([e5d9321](https://github.com/gameguild-gg/website/commit/e5d9321640c66cf8a628f504acba1cc1cc8f8ea8))
+
+## [1.4.6](https://github.com/gameguild-gg/website/compare/v1.4.5...v1.4.6) (2025-01-06)
+
+
+### Bug Fixes
+
+* **contributors:** try fix git processing on backend ([9914ef7](https://github.com/gameguild-gg/website/commit/9914ef7543ba9b6e3ef6149744c4f98ab37f0d46))
+
+## [1.4.5](https://github.com/gameguild-gg/website/compare/v1.4.4...v1.4.5) (2025-01-06)
+
+
+### Bug Fixes
+
+* **contributors:** allow .git folder to persist on docker so the api can generate statistics ([c0ae1e1](https://github.com/gameguild-gg/website/commit/c0ae1e160544e8795785b1ca5e42e4a391e6b631))
+* **dbml:** generate dbml sorted to maintain consistency ([c96b6c3](https://github.com/gameguild-gg/website/commit/c96b6c30e00ea1dfa11de45df8cc295069d9b670))
+
+## [1.4.4](https://github.com/gameguild-gg/website/compare/v1.4.3...v1.4.4) (2025-01-06)
+
+
+### Bug Fixes
+
+* **contributors:** add LoC on contributors page ([98d4dae](https://github.com/gameguild-gg/website/commit/98d4daed8cdea4b50a38eca8cd79f57f23822f31))
+
+## [1.4.3](https://github.com/gameguild-gg/website/compare/v1.4.2...v1.4.3) (2025-01-06)
+
+
+### Bug Fixes
+
+* private route dynamic SSR ([5abfbd8](https://github.com/gameguild-gg/website/commit/5abfbd86b448b3844813d49a44e012c1db3bc223))
+* removed _app.tsx ([037625a](https://github.com/gameguild-gg/website/commit/037625a7fe9a6c4b2b1e573c8ce4fe555b131106))
+
+## [1.4.2](https://github.com/gameguild-gg/website/compare/v1.4.1...v1.4.2) (2025-01-06)
+
+
+### Bug Fixes
+
+* **jobs:** fix jobs build ([5dbbe82](https://github.com/gameguild-gg/website/commit/5dbbe82f100803a0f8eebcfae170f80ba9ed0968))
+
+## [1.4.1](https://github.com/gameguild-gg/website/compare/v1.4.0...v1.4.1) (2024-12-28)
+
+
+### Bug Fixes
+
+* **feed:** try to fix bug "Page changed from static to dynamic at runtime" ([8b164de](https://github.com/gameguild-gg/website/commit/8b164deffcc8b2ed3a3401318912125e66f45d04))
+
+# [1.4.0](https://github.com/gameguild-gg/website/compare/v1.3.3...v1.4.0) (2024-12-27)
+
+
+### Features
+
+* **contributors:** add contributors page ([d0df3a4](https://github.com/gameguild-gg/website/commit/d0df3a4849b0c822275ddf3545169c56e7ee0f07))
+
+## [1.3.3](https://github.com/gameguild-gg/website/compare/v1.3.2...v1.3.3) (2024-12-26)
+
+
+### Bug Fixes
+
+* revert middleware ([d79a0b6](https://github.com/gameguild-gg/website/commit/d79a0b621e11039fe3f0446b987c19e7601f8820))
+
 ## [1.3.2](https://github.com/gameguild-gg/website/compare/v1.3.1...v1.3.2) (2024-12-09)
 
 

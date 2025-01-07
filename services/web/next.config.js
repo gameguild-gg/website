@@ -11,6 +11,16 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  images: {
+    domains: [
+      'localhost',
+      'cdn.jsdelivr.net',
+      'avatars.githubusercontent.com',
+      'github.com',
+      'gameguild.gg',
+      'web.gameguild.gg',
+    ],
+  },
   webpack: (config, { isServer }) => {
     if (!isServer) {
       config.externals = config.externals || [];

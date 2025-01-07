@@ -14,12 +14,18 @@ async function generateDbml() {
 
   const entities = dataSource.entityMetadatas; // Use entity metadata from the initialized data source
 
+  // sort entities by name
+  entities.sort((a, b) => a.name.localeCompare(b.name));
+
   // Generate tables with columns
   entities.forEach((entity) => {
     // if the entity is not in the registry, add it
     if (!TableRegistry[entity.name]) {
       TableRegistry[entity.name] = {};
     }
+
+    // sort columns by name
+    entity.columns.sort((a, b) => a.propertyName.localeCompare(b.propertyName));
 
     entity.columns.forEach((column) => {
       let columnType: ColumnType = column.type;
@@ -35,6 +41,11 @@ async function generateDbml() {
       // Add the column to the registry
       TableRegistry[entity.name][column.propertyName] = columnType.toString();
     });
+
+    // sort relations by name
+    entity.relations.sort((a, b) =>
+      a.propertyName.localeCompare(b.propertyName),
+    );
 
     // Ensure all relations are included as fields with type of the related entity
     // if it is an array, add [] to the type

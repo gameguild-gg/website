@@ -11,7 +11,7 @@ type Props = {
   children: React.ReactNode;
 };
 
-export default function Layout({children}: Readonly<Props>) {
+export default function Layout({ children }: Readonly<Props>) {
   return (
     <div className="h-full w-full p-0 m-0">
       {/*<PageHeader/>*/}
@@ -20,9 +20,9 @@ export default function Layout({children}: Readonly<Props>) {
 
       <PageContent>{children}</PageContent>
 
-      <PageFooter/>
+      <PageFooter />
 
-      <CookieConsent/>
+      <CookieConsent />
     </div>
   );
 }
