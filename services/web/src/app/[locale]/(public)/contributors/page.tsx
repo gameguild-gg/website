@@ -127,6 +127,19 @@ export default async function ContributorsPage() {
         ))}
       </div>
       <h2 className="text-3xl font-bold text-center mb-8 flex items-center justify-center gap-6 mt-8">
+        Gource Visualization
+      </h2>
+      <video
+        className="w-full max-w-lg mx-auto"
+        src="https://gameguild-gg.github.io/website/gource.mp4"
+        controls
+        loop
+        autoPlay
+        muted
+      >
+        Your browser does not support the video tag.
+      </video>
+      <h2 className="text-3xl font-bold text-center mb-8 flex items-center justify-center gap-6 mt-8">
         OpenCollective Contributors
       </h2>
       <p>
