@@ -1,3 +1,42 @@
+# [1.5.0](https://github.com/gameguild-gg/website/compare/v1.4.11...v1.5.0) (2025-01-07)
+
+
+### Bug Fixes
+
+* **api:** fix minor typo preventing api build ([cdd07d2](https://github.com/gameguild-gg/website/commit/cdd07d2592034e814591e729daf4600e3f01d829))
+* **asset:** minio port config ([e47cd83](https://github.com/gameguild-gg/website/commit/e47cd83636a1866da231f656d8b0a9404d42734a))
+* **asset:** now data can be stored properly on S3 compatible api such as minio ([c48cd57](https://github.com/gameguild-gg/website/commit/c48cd57bf6d1b66f78144e3cde502ae0a3e257df))
+* **assets:** asset key var ([b839353](https://github.com/gameguild-gg/website/commit/b83935372a67373708422d05f62a663ab61449ad))
+* **auth:** hack to avoid infinite redirect. increase the token life time ([f0ac1dc](https://github.com/gameguild-gg/website/commit/f0ac1dc7b0a34f0f7929fd8d05877a670c849ce3))
+* **contributors:** add cache manager and fix contributor card ([1d77891](https://github.com/gameguild-gg/website/commit/1d778911789509747dc76497f4bc77ff540403b2))
+* **contributors:** add meta tags ([68d1394](https://github.com/gameguild-gg/website/commit/68d1394cba23b09bccdc82e9aa0078eb90d4fea3))
+* logout ([347074a](https://github.com/gameguild-gg/website/commit/347074aab4220e65ffd023c2cc25be48cb353924))
+* **metadata:** improved metadata generation for contributors ([2c72611](https://github.com/gameguild-gg/website/commit/2c72611c21b167da056c4cf9efad82533ec2ff63))
+* **pathmap:** remove function to generate map of paths from the web ([a99fed8](https://github.com/gameguild-gg/website/commit/a99fed80e16850e7e7db053e2ed3e6ec003b63b7))
+* **projects:** fix project creation ([46e2afe](https://github.com/gameguild-gg/website/commit/46e2afe8fe27aeae0d0d796b69e188b357aa895f))
+* **swagger:** lazy load swagger generation and api update in order to speedup the nest startup ([588a995](https://github.com/gameguild-gg/website/commit/588a995cd39e9481f0ceeb2e62cdbb255983ad59))
+* **types:** add routes to change profile picture ([e547b40](https://github.com/gameguild-gg/website/commit/e547b40100f5fb63619b369ed2126dd5ecccefc6))
+* **types:** fix some random type issues preventing to compile ([20f0a4c](https://github.com/gameguild-gg/website/commit/20f0a4c04eaf9be2ca4d26d896da7f6aa38fd56b))
+
+
+### Features
+
+* **asset:** add minio to docker-compose ([dd68f12](https://github.com/gameguild-gg/website/commit/dd68f1281d4431616c4fd65b091adc8140322baa))
+* **asset:** profile image api storage ([d4431cc](https://github.com/gameguild-gg/website/commit/d4431cce676d044d5cf35764f564da930e56f52c))
+* **assets:** api rework to accept multiple file upload ([3321dba](https://github.com/gameguild-gg/website/commit/3321dbacd5662fcec3562f3a8e35771b6e09dc2d))
+* **assets:** asset management brainstorm and scaffold ([d3bbc13](https://github.com/gameguild-gg/website/commit/d3bbc13030ad4cc5a08579070dfb31f7c10dedbb))
+* **assets:** enable data compression gzip ([329bb97](https://github.com/gameguild-gg/website/commit/329bb974c8421842aeed8f6ca3a024b3cdab528a))
+* **assets:** upload base function ([2c29dbf](https://github.com/gameguild-gg/website/commit/2c29dbf3f0d31a77c3e954939000aa79b6a44244))
+* **contributors:** add details to code contributors ([096f832](https://github.com/gameguild-gg/website/commit/096f832e68c1f468ce1776bb762b415664ae6086))
+* **courses:** courses api ([135c749](https://github.com/gameguild-gg/website/commit/135c74954d243c98b8c9ce0eef13eb276f1e3dc9))
+* **funding:** add funding descriptions and options ([52c4f9e](https://github.com/gameguild-gg/website/commit/52c4f9e396b8f8d73f5ede6b51bcdb076c173870))
+* **license:** add dual-licencing model ([ee492f6](https://github.com/gameguild-gg/website/commit/ee492f69fcbe248cb9ff00aba991a54159197013))
+* **minio:** add minio control functions ([9aba488](https://github.com/gameguild-gg/website/commit/9aba488202e448b8a30dea6ca684a8fb76c153d7))
+* **profile:** better edit profile validation fields ([a3254e1](https://github.com/gameguild-gg/website/commit/a3254e103848d2337cf94d99ce21bb0d1f464e5c))
+* **profile:** improvements on profile edit in order to be able to change profile picture ([0686b83](https://github.com/gameguild-gg/website/commit/0686b83dc43e0b9629746dda1060affda875cd89))
+* **project:** content base thumbnail is now an ImageEntity ([8f60445](https://github.com/gameguild-gg/website/commit/8f604457f0af07294ca7c55bb49a52d31c0bfaa7))
+* **projects:** new interface for projects submission form ([3863a4e](https://github.com/gameguild-gg/website/commit/3863a4e198c735da08d480ca06cdb50401cdb0a4))
+
 ## [1.4.11](https://github.com/gameguild-gg/website/compare/v1.4.10...v1.4.11) (2025-01-07)
 
 
