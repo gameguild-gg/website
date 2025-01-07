@@ -4,7 +4,7 @@ import path from 'path';
 
 export async function GET() {
   try {
-    const filePath = path.join(process.cwd(), 'docs', 'sandbox', 'questionX.json');
+    const filePath = path.join(process.cwd(), 'src', 'docs', 'sandbox', 'questionX.json');
     const fileContents = await fs.readFile(filePath, 'utf8');
     const sandboxData = JSON.parse(fileContents);
     return NextResponse.json(sandboxData);

@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import fs from 'fs/promises';
 import path from 'path';
-import { LessonUpdateRequestv1_0_0, LessonUpdateResponsev1_0_0 } from '@/interface-base/lesson.update.v1.0.0';
-import { LessonBasev1_0_0 } from '@/interface-base/lesson.base.v1.0.0';
+import { LessonUpdateRequestv1_0_0, LessonUpdateResponsev1_0_0 } from '@/lib/interface-base/lesson.update.v1.0.0';
+import { LessonBasev1_0_0 } from '@/lib/interface-base/lesson.base.v1.0.0';
 
 export async function PUT(
   request: Request,
@@ -11,7 +11,7 @@ export async function PUT(
   try {
     const updateData: LessonUpdateRequestv1_0_0 = await request.json();
 
-    const filePath = path.join(process.cwd(), 'docs', 'course', 'lessons', `lesson${params.id}.json`);
+    const filePath = path.join(process.cwd(), 'src', 'docs', 'course', 'lessons', `lesson${params.id}.json`);
     const fileContents = await fs.readFile(filePath, 'utf8');
     const lessonData: LessonBasev1_0_0 = JSON.parse(fileContents);
 

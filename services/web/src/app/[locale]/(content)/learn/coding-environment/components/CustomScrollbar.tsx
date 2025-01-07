@@ -30,20 +30,21 @@ const CustomScrollbar: React.FC<CustomScrollbarProps> = ({ children, className, 
     }
   };
 
-  return (
-    <Scrollbar
-      style={{ width: '100%', height: '100%' }}
-      className={className}
-      trackYProps={{
-        style: getTrackStyle()
-      }}
-      thumbYProps={{
-        style: getThumbStyle()
-      }}
-    >
-      {children}
-    </Scrollbar>
-  );
+  // return (
+  //   <Scrollbar
+  //     style={{ width: '100%', height: '100%' }}
+  //     className={className}
+  //     trackYProps={{
+  //       style: getTrackStyle()
+  //     }}
+  //     thumbYProps={{
+  //       style: getThumbStyle()
+  //     }}
+  //   >
+  //     {children}
+  //   </Scrollbar>
+  // );
+  return(<></>)
 };
 
 export default CustomScrollbar;

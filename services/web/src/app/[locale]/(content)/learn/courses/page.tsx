@@ -2,12 +2,13 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { UserBasev1_0_0 } from '@/interface-base/user.base.v1.0.0'
-import { CourseBasev1_0_0 } from '@/interface-base/course.base.v1.0.0'
-import { HierarchyBasev1_0_0 } from '@/interface-base/structure.base.v1.0.0'
+import { UserBasev1_0_0 } from '@/lib/interface-base/user.base.v1.0.0'
+import { CourseBasev1_0_0 } from '@/lib/interface-base/course.base.v1.0.0'
+import { HierarchyBasev1_0_0 } from '@/lib/interface-base/structure.base.v1.0.0'
 import RoleSelectionModal from './components/RoleSelectionModal'
 import { Sun, Moon, ZapOff } from 'lucide-react'
 import Image from 'next/image'
+import Link from 'next/link'
 
 export default function CoursesPage() {
   const [user, setUser] = useState<UserBasev1_0_0 | null>(null)
@@ -21,6 +22,7 @@ export default function CoursesPage() {
   const searchParams = useSearchParams()
   const userId = searchParams.get('userId')
   const [mode, setMode] = useState<'light' | 'dark' | 'high-contrast'>('dark')
+  const [role, setRole] = useState<'student' | 'teacher' | null>(null); // Added state for role
 
   useEffect(() => {
     const fetchData = async () => {
@@ -28,7 +30,7 @@ export default function CoursesPage() {
         setIsLoading(true)
         
         // Fetch user data
-        const userResponse = await fetch(`/api/user/${userId}`)
+        const userResponse = await fetch(`../../api/learn/user/${userId}`)
         if (!userResponse.ok) {
           const errorData = await userResponse.json()
           throw new Error(`Failed to fetch user data: ${errorData.error}. Details: ${errorData.details}`)
@@ -38,7 +40,7 @@ export default function CoursesPage() {
 
         // Fetch courses data
         const coursesPromises = userData.idCourses.map(courseId => 
-          fetch(`/api/course/${courseId}`).then(async (res) => {
+          fetch(`../../api/learn/course/${courseId}`).then(async (res) => {
             if (!res.ok) {
               const errorData = await res.json()
               throw new Error(`Failed to fetch course ${courseId}: ${errorData.error}. Details: ${errorData.details}`)
@@ -79,19 +81,20 @@ export default function CoursesPage() {
       idRole: course.teachRole.includes(userId!) ? 'teacher' : 'student'
     }
     setHierarchy(newHierarchy)
+    setRole(course.teachRole.includes(userId!) ? 'teacher' : 'student'); // Set role
 
     if (course.teachRole.includes(userId!)) {
       setSelectedCourse(course)
       setIsModalOpen(true)
     } else {
-      router.push(`/course/${course.id}?userId=${userId}&role=student`)
+      router.push(`/learn/course/${course.id}?userId=${userId}&role=student`)
     }
   }
 
   const handleRoleSelection = (role: 'student' | 'teacher') => {
     setIsModalOpen(false)
     if (selectedCourse) {
-      router.push(`/course/${selectedCourse.id}?userId=${userId}&role=${role}`)
+      router.push(`/learn/course/${selectedCourse.id}?userId=${userId}&role=${role}`)
     }
   }
 
@@ -128,6 +131,15 @@ export default function CoursesPage() {
       <div className="max-w-5xl mx-auto">
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-3xl font-bold">Available Courses</h1>
+          <Link href={`/learn/coding-environment?id=0&type=sandbox&userId=${userId}&role=${role}`}>
+            <button className={`p-2 rounded-full transition-colors duration-200 mr-2 ${
+              mode === 'light' ? 'bg-gray-200 text-gray-800 hover:bg-gray-300' :
+              mode === 'dark' ? 'bg-gray-700 text-gray-200 hover:bg-gray-600' :
+              'bg-yellow-300 text-black hover:bg-yellow-400'
+            }`}>
+              Sandbox
+            </button>
+          </Link>
           <button onClick={toggleMode} className={`p-2 rounded-full transition-colors duration-200 ${
             mode === 'light' ? 'bg-gray-200 text-gray-800 hover:bg-gray-300' :
             mode === 'dark' ? 'bg-gray-700 text-gray-200 hover:bg-gray-600' :

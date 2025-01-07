@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server'
 import fs from 'fs/promises'
 import path from 'path'
-import { ModuleBasev1_0_0 } from '@/interface-base/module.base.v1.0.0'
-import { AssessmentBasev1_0_0 } from '@/interface-base/assessment.base.v1.0.0'
-import { QuestionBasev1_0_0 } from '@/interface-base/question.base.v1.0.0'
-import { LessonBasev1_0_0 } from '@/interface-base/lesson.base.v1.0.0'
+import { ModuleBasev1_0_0 } from '@/lib/interface-base/module.base.v1.0.0'
+import { AssessmentBasev1_0_0 } from '@/lib/interface-base/assessment.base.v1.0.0'
+import { QuestionBasev1_0_0 } from '@/lib/interface-base/question.base.v1.0.0'
+import { LessonBasev1_0_0 } from '@/lib/interface-base/lesson.base.v1.0.0'
 
 export async function GET(
   request: Request,
@@ -20,27 +20,27 @@ export async function GET(
 
     switch (params.type) {
       case 'module':
-        filePath = path.join(process.cwd(), 'docs', 'course', 'modules', `module${params.id}.json`)
+        filePath = path.join(process.cwd(), 'src', 'docs', 'course', 'modules', `module${params.id}.json`)
         contentType = 'module'
         break
       case 'assessment':
-        filePath = path.join(process.cwd(), 'docs', 'course', 'assessments', `assessment${params.id}.json`)
+        filePath = path.join(process.cwd(), 'src', 'docs', 'course', 'assessments', `assessment${params.id}.json`)
         contentType = 'assessment'
         break
       case 'question':
-        filePath = path.join(process.cwd(), 'docs', 'course', 'questions', `question${params.id}.json`)
+        filePath = path.join(process.cwd(), 'src', 'docs', 'course', 'questions', `question${params.id}.json`)
         contentType = 'question'
         break
       case 'sandbox':
-        filePath = path.join(process.cwd(), 'docs', 'sandbox', 'questionX.json')
+        filePath = path.join(process.cwd(), 'src', 'docs', 'sandbox', 'questionX.json')
         contentType = 'sandbox'
         break
       case 'lesson':
-        filePath = path.join(process.cwd(), 'docs', 'course', 'lessons', `lesson${params.id}.json`)
+        filePath = path.join(process.cwd(), 'src', 'docs', 'course', 'lessons', `lesson${params.id}.json`)
         contentType = 'lesson'
         break
       case 'submission':
-        filePath = path.join(process.cwd(), 'docs', 'teach', 'userSubmission', `question${questionId}user${userId}.json`)
+        filePath = path.join(process.cwd(), 'src', 'docs', 'teach', 'userSubmission', `question${questionId}user${userId}.json`)
         contentType = 'submission'
         break
       default:

@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server'
 import fs from 'fs/promises'
 import path from 'path'
-import { ModuleBasev1_0_0 } from '@/interface-base/module.base.v1.0.0'
-import { AssessmentBasev1_0_0 } from '@/interface-base/assessment.base.v1.0.0'
-import { QuestionBasev1_0_0 } from '@/interface-base/question.base.v1.0.0'
+import { ModuleBasev1_0_0 } from '@/lib/interface-base/module.base.v1.0.0'
+import { AssessmentBasev1_0_0 } from '@/lib/interface-base/assessment.base.v1.0.0'
+import { QuestionBasev1_0_0 } from '@/lib/interface-base/question.base.v1.0.0'
 
 async function readDirectoryStructure(dir: string): Promise<any> {
   const items = await fs.readdir(dir, { withFileTypes: true })
@@ -24,7 +24,7 @@ async function readDirectoryStructure(dir: string): Promise<any> {
 
 export async function GET() {
   try {
-    const coursePath = path.join(process.cwd(), 'docs', 'course')
+    const coursePath = path.join(process.cwd(), 'src', 'docs', 'course')
     const structure = {
       modules: await readDirectoryStructure(path.join(coursePath, 'modules')),
       assessments: await readDirectoryStructure(path.join(coursePath, 'assessments')),

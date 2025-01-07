@@ -14,9 +14,9 @@ export default function Home() {
 
     if (userId) {
       try {
-        const response = await fetch(`/api/user/${userId}`)
+        const response = await fetch(`../../api/learn/user/${userId}`)
         if (response.ok) {
-          router.push(`/courses?userId=${encodeURIComponent(userId)}`)
+          router.push(`learn/courses?userId=${encodeURIComponent(userId)}`)
         } else {
           setError('Unable to connect to this user. Please check the ID and try again.')
         }

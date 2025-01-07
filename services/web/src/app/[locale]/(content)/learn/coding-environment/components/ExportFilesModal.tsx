@@ -1,5 +1,5 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/learn/ui/button"
 
 interface ExportFilesModalProps {
   isOpen: boolean

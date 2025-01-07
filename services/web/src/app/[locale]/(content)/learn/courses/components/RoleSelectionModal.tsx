@@ -1,6 +1,6 @@
 import React from 'react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/learn/ui/dialog"
+import { Button } from "@/components/learn/ui/button"
 
 interface RoleSelectionModalProps {
   isOpen: boolean

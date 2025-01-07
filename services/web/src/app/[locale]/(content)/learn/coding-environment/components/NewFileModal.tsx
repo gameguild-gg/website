@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Button } from "@/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { toast } from "@/components/ui/use-toast"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/learn/ui/dialog"
+import { Input } from "@/components/learn/ui/input"
+import { Label } from "@/components/learn/ui/label"
+import { Button } from "@/components/learn/ui/button"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/learn/ui/select"
+import { toast } from "@/components/learn/ui/use-toast"
 
 interface NewFileModalProps {
   isOpen: boolean;

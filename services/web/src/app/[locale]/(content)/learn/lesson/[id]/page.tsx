@@ -4,14 +4,14 @@ import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import ReactMarkdown from 'react-markdown'
-import { LessonBasev1_0_0 } from '@/interface-base/lesson.base.v1.0.0'
-import { LessonUpdateRequestv1_0_0, LessonUpdateResponsev1_0_0 } from '@/interface-base/lesson.update.v1.0.0';
+import { LessonBasev1_0_0 } from '@/lib/interface-base/lesson.base.v1.0.0'
+import { LessonUpdateRequestv1_0_0, LessonUpdateResponsev1_0_0 } from '@/lib/interface-base/lesson.update.v1.0.0';
 import { Sun, Moon, ZapOff, ChevronLeft } from 'lucide-react'
-import PageHeader from '@/components/PageHeader'
-import MarkdownEditor from '@/components/MarkdownEditor'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent } from "@/components/ui/card"
-import { toast } from '@/components/ui/use-toast'
+import PageHeader from '@/components/learn/PageHeader'
+import MarkdownEditor from '@/components/learn/MarkdownEditor'
+import { Button } from '@/components/learn/ui/button'
+import { Card, CardContent } from "@/components/learn/ui/card"
+import { toast } from '@/components/learn/ui/use-toast'
 
 export default function LessonPage({ params }: { params: { id: string } }) {
   const [lesson, setLesson] = useState<LessonBasev1_0_0 | null>(null)
@@ -32,7 +32,7 @@ export default function LessonPage({ params }: { params: { id: string } }) {
     const fetchLesson = async () => {
       try {
         setIsLoading(true)
-        const response = await fetch(`/api/content/lesson/${params.id}`)
+        const response = await fetch(`../../../api/learn/content/lesson/${params.id}`)
         if (!response.ok) {
           throw new Error(`Failed to fetch lesson: ${response.statusText}`)
         }
@@ -77,7 +77,7 @@ export default function LessonPage({ params }: { params: { id: string } }) {
         content: updatedContent,
       };
 
-      const response = await fetch(`/api/lesson/${params.id}`, {
+      const response = await fetch(`../../../api/learn/lesson/${params.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -135,7 +135,7 @@ export default function LessonPage({ params }: { params: { id: string } }) {
         <h1 className="text-2xl font-bold mb-4 text-red-600">Error</h1>
         <p className="text-red-500">{error}</p>
         <div className="mt-4">
-          <Link href={`/course/${courseId}?userId=${userId}&role=${role}`}>
+          <Link href={`/learn/course/${courseId}?userId=${userId}&role=${role}`}>
             <span className="text-blue-500 hover:underline">Return to Course</span>
           </Link>
         </div>
@@ -266,7 +266,7 @@ export default function LessonPage({ params }: { params: { id: string } }) {
       <div className="max-w-5xl mx-auto">
         <PageHeader
           title={lesson?.title || 'Loading...'}
-          backLink={`/course/${courseId}?userId=${userId}&role=${role}`}
+          backLink={`/learn/course/${courseId}?userId=${userId}&role=${role}`}
           userId={userId}
           mode={mode}
           onModeToggle={toggleMode}
@@ -279,7 +279,7 @@ export default function LessonPage({ params }: { params: { id: string } }) {
           ))}
         </div>
         <div className="mt-8">
-          <Link href={`/course/${courseId}?userId=${userId}&role=${role}`}>
+          <Link href={`/learn/course/${courseId}?userId=${userId}&role=${role}`}>
             <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
               Return to Course
             </button>

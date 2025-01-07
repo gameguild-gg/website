@@ -1,5 +1,5 @@
 import React from 'react'
-import { QuestionTypev1_0_0, QuestionStatus } from '@/interface-base/question.base.v1.0.0'
+import { QuestionTypev1_0_0, QuestionStatus } from '@/lib/interface-base/question.base.v1.0.0'
 import { QuestionScore } from './QuestionScore'
 import { QuestionStatusDisplay } from './QuestionStatusDisplay'
 

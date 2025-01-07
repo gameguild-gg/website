@@ -9,7 +9,7 @@ export async function POST(request: Request) {
     // In a real application, you would update the score in your database
     // For this example, we'll simulate updating a JSON file
 
-    const filePath = path.join(process.cwd(), 'docs', 'teach', `userListQuestion${questionId}.json`);
+    const filePath = path.join(process.cwd(), 'src', 'docs', 'teach', `userListQuestion${questionId}.json`);
     const fileContents = await fs.readFile(filePath, 'utf8');
     const data = JSON.parse(fileContents);
 

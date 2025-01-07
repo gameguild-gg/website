@@ -1,5 +1,5 @@
 import React from 'react'
-import { QuestionStatus } from '@/interface-base/question.base.v1.0.0'
+import { QuestionStatus } from '@/lib/interface-base/question.base.v1.0.0'
 
 interface QuestionStatusDisplayProps {
   status?: QuestionStatus;

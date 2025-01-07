@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server'
 import fs from 'fs/promises'
 import path from 'path'
-import { UserListQuestionv1_0_0 } from '@/interface-base/user.list.question.v1.0.0';
-import { UserBasev1_0_0 } from '@/interface-base/user.base.v1.0.0';
+import { UserListQuestionv1_0_0 } from '@/lib/interface-base/user.list.question.v1.0.0';
+import { UserBasev1_0_0 } from '@/lib/interface-base/user.base.v1.0.0';
 
 async function getUserData(userId: string): Promise<UserBasev1_0_0 | null> {
   try {
-    const filePath = path.join(process.cwd(), 'docs', 'users', `user${userId}.json`);
+    const filePath = path.join(process.cwd(), 'src', 'docs', 'users', `user${userId}.json`);
     const fileContents = await fs.readFile(filePath, 'utf8');
     return JSON.parse(fileContents);
   } catch (error) {
@@ -22,7 +22,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
       return NextResponse.json({ error: 'courseId is required' }, { status: 400 });
     }
 
-    const filePath = path.join(process.cwd(), 'docs', 'teach', `userListQuestion${params.id}.json`);
+    const filePath = path.join(process.cwd(), 'src', 'docs', 'teach', `userListQuestion${params.id}.json`);
     
     let fileContents: string;
     try {

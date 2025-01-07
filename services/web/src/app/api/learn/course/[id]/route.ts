@@ -1,14 +1,14 @@
 import { NextResponse } from 'next/server'
 import fs from 'fs/promises'
 import path from 'path'
-import { CourseBasev1_0_0 } from '@/interface-base/course.base.v1.0.0'
+import { CourseBasev1_0_0 } from '@/lib/interface-base/course.base.v1.0.0'
 
 export async function GET(
   request: Request,
   { params }: { params: { id: string } }
 ) {
   try {
-    const filePath = path.join(process.cwd(), 'docs', 'course', 'course', `course${params.id}.json`)
+    const filePath = path.join(process.cwd(), 'src', 'docs', 'course', 'course', `course${params.id}.json`)
     console.log(`Attempting to read file: ${filePath}`)
     
     const fileContents = await fs.readFile(filePath, 'utf8')

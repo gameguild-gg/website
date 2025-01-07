@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import dynamic from 'next/dynamic'
-import { QuestionBasev1_0_0 } from '@/interface-base/question.base.v1.0.0'
-import { QuestionSubmission } from '@/interface-base/question.submission.v1.0.0'
+import { CodeQuestionv1_0_0 } from '@/lib/interface-base/question.base.v1.0.0'
+import { QuestionSubmissionv1_0_0 } from '@/lib/interface-base/question.submission.v1.0.0'
 import TopMenu from './TopMenu'
 import BottomMenu from './BottomMenu'
 import CodeTabs from './CodeTabs'
@@ -12,22 +12,22 @@ import LessonPanel from './LessonPanel'
 import { CharacterCount } from './CharacterCount'
 import { Panel, PanelGroup, PanelResizeHandle, ImperativePanelHandle } from 'react-resizable-panels'
 import JSZip from 'jszip';
-import { toast } from '@/components/ui/use-toast'
+import { toast } from '@/components/learn/ui/use-toast'
 import { SubmissionWarningDialog } from './SubmissionWarningDialog'
 import { History, CodeFile } from '../types/codeEditor';
 import { Undo, Redo, AlertCircle } from 'lucide-react';
-import * as monaco from 'monaco-editor';
+//import * as monaco from 'monaco-editor';
 import SettingsModal, { Settings } from './SettingsModal'
-import { EditorPanel } from './EditorPanel'
-import { loader } from '@monaco-editor/react';
+//import { EditorPanel } from './EditorPanel'
+//import { loader } from '@monaco-editor/react';
 import { insertInputs } from './InputInserter';
 import { ConfirmSubmissionDialog } from './ConfirmSubmissionDialog';
 import { AbortController } from 'node-abort-controller'
 import { SplitViewFileSelector } from './SplitViewFileSelector';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { useRouter, useSearchParams } from 'next/navigation'
-import { HierarchyBasev1_0_0 } from '@/interface-base/structure.base.v1.0.0'
-import { UserListQuestionv1_0_0, StudentSubmission } from '@/interface-base/user.list.question.v1.0.0';
+import { HierarchyBasev1_0_0 } from '@/lib/interface-base/structure.base.v1.0.0'
+import { UserListQuestionv1_0_0, StudentSubmission } from '@/lib/interface-base/user.list.question.v1.0.0';
 
 // Add this function after the existing imports
 const getFileCharLimit = (fileName: string, rules: string[]): number => {
@@ -39,26 +39,26 @@ const getFileCharLimit = (fileName: string, rules: string[]): number => {
 }
 
 const saveStateToLocalStorage = (state: any, courseId: string | null, moduleId: string | null, assessmentId: string | null) => {
-  if (!courseId || !moduleId || !assessmentId || !state.assignment) return; // Return early if IDs are missing
+  if (!courseId || !moduleId || !assessmentId || !state.codeQuestion) return; // Return early if IDs are missing
 
-  const { id } = state.assignment;
+  const { id } = state.codeQuestion;
   const storageKey = `assignmentState_${courseId}_${moduleId}_${assessmentId}_${id}`;
   localStorage.setItem(storageKey, JSON.stringify(state));
 };
 
 const MonacoEditor = dynamic(() => import('@monaco-editor/react'), { ssr: false })
-
+/*
 interface CodeFile {
   name: string;
   language: string;
   content: string;
   history: History;
 }
-
+*/
 interface CodeEditorPanelProps {
-  assignment: QuestionBasev1_0_0
+  codeQuestion: CodeQuestionv1_0_0
   onReturn: () => void
-  onSubmit: (submission: QuestionSubmission) => void
+  onSubmit: (submission: QuestionSubmissionv1_0_0) => void
   hierarchy?: HierarchyBasev1_0_0
 }
 
@@ -80,7 +80,8 @@ const languageMap: { [key: string]: string } = {
   xml: 'xml',
   rb: 'ruby',
   rs: 'rust',
-  cs: 'csharp'
+  cs: 'csharp',
+  lua: 'lua'
 }
 
 const getLanguageFromExtension = (filename: string): string => {
@@ -88,8 +89,8 @@ const getLanguageFromExtension = (filename: string): string => {
   return languageMap[extension] || 'plaintext'
 }
 
-const DEFAULT_MAX_FILES = 10
-const DEFAULT_MAX_CHARS = 50000
+const DEFAULT_MAX_FILES = 6
+const DEFAULT_MAX_CHARS = 500000
 
 const defaultSettings: Settings = {
   runSettings: {
@@ -103,6 +104,8 @@ const defaultSettings: Settings = {
       '.java': 'Internal output',
       '.cpp': 'Internal output',
       '.c': 'Internal output',
+      '.rb': 'Internal output',
+      '.lua': 'Internal output'
     },
     applicationFileName: 'index',
   },
@@ -116,14 +119,14 @@ const calculateTotalChars = (files: CodeFile[], rules: string[]): number => {
   }, 0)
 }
 
-export default function CodeEditorPanel({ assignment, onSubmit, hierarchy = {} }: CodeEditorPanelProps) {
+export default function CodeEditorPanel({ codeQuestion, onSubmit, hierarchy = {} }: CodeEditorPanelProps) {
   const [codeFiles, setCodeFiles] = useState<CodeFile[]>([])
   const [activeFileIndex, setActiveFileIndex] = useState(0)
   const [activeTab, setActiveTab] = useState<'output' | 'problems' | 'testResults' | null>(null)
   const [output, setOutput] = useState('')
   const [testResults, setTestResults] = useState<any[]>([])
   const [mode, setMode] = useState<'light' | 'dark' | 'high-contrast'>(hierarchy.colorMode)
-  const [submissionData, setSubmissionData] = useState<Partial<QuestionSubmission>>({
+  const [submissionData, setSubmissionData] = useState<Partial<QuestionSubmissionv1_0_0>>({
     submittedCode: [],
     output: '',
     testResults: []
@@ -169,23 +172,23 @@ export default function CodeEditorPanel({ assignment, onSubmit, hierarchy = {} }
   const [studentSubmission, setStudentSubmission] = useState<StudentSubmission | null>(null);
   const submissionId = searchParams.get('submissionId');
 
-  if (!assignment) {
+  if (!codeQuestion) {
     return <div>Loading...</div>;
   }
 
   // Modify the existing maxChars calculation
-  const maxChars = assignment.rules && assignment.rules.find(rule => rule.startsWith('chars:'))
-    ? parseInt(assignment.rules.find(rule => rule.startsWith('chars:'))!.split(':')[1].trim())
+  const maxChars = codeQuestion.rules && codeQuestion.rules.find(rule => rule.startsWith('chars:'))
+    ? parseInt(codeQuestion.rules.find(rule => rule.startsWith('chars:'))!.split(':')[1].trim())
     : DEFAULT_MAX_CHARS
 
-  const maxFiles = assignment.rules && assignment.rules.find(rule => rule.startsWith('files:'))
-    ? parseInt(assignment.rules.find(rule => rule.startsWith('files:'))!.split(':')[1].trim())
+  const maxFiles = codeQuestion.rules && codeQuestion.rules.find(rule => rule.startsWith('files:'))
+    ? parseInt(codeQuestion.rules.find(rule => rule.startsWith('files:'))!.split(':')[1].trim())
     : DEFAULT_MAX_FILES
 
 
-  const getFileCharLimit = (fileName: string): number => {
-    if (!assignment.rules) return maxChars;
-    const fileSpecificRule = assignment.rules.find(rule => rule.startsWith(`chars-${fileName}:`))
+  const getFileCharLimit = (fileName: string, rules: string[]): number => {
+    if (!codeQuestion.rules) return maxChars;
+    const fileSpecificRule = codeQuestion.rules.find(rule => rule.startsWith(`chars-${fileName}:`))
     if (fileSpecificRule) {
       return parseInt(fileSpecificRule.split(':')[1].trim())
     }
@@ -193,9 +196,9 @@ export default function CodeEditorPanel({ assignment, onSubmit, hierarchy = {} }
   }
 
   useEffect(() => {
-    if (!assignment || !courseId || !moduleId || !assessmentId) return;
+    if (!codeQuestion || !courseId || !moduleId || !assessmentId) return;
 
-    const savedState = localStorage.getItem(`assignmentState_${courseId}_${moduleId}_${assessmentId}_${assignment.id}`);
+    const savedState = localStorage.getItem(`assignmentState_${courseId}_${moduleId}_${assessmentId}_${codeQuestion.id}`);
 
     if (savedState) {
       const parsedState = JSON.parse(savedState);
@@ -205,12 +208,12 @@ export default function CodeEditorPanel({ assignment, onSubmit, hierarchy = {} }
       setActiveFileIndex(parsedState.activeFileIndex);
     } else {
       let initialFiles: CodeFile[] = []
-      if (Array.isArray(assignment.initialCode) && assignment.initialCode.length > 0) {
-        initialFiles = assignment.initialCode.map((code, index) => {
-          const fileName = (assignment.codeName && assignment.codeName[index]) || `File ${index + 1}`;
+      if (Array.isArray(codeQuestion.initialCode) && codeQuestion.initialCode.length > 0) {
+        initialFiles = codeQuestion.initialCode.map((code, index) => {
+          const fileName = (codeQuestion.codeName && codeQuestion.codeName[index]) || `File ${index + 1}`;
           const language = getLanguageFromExtension(fileName);
-          const content = assignment.rules.includes('inputs: y')
-            ? insertInputs(code, assignment.inputs, language, index)
+          const content = codeQuestion.rules.includes('inputs: y')
+            ? insertInputs(code, codeQuestion.inputs, language, index)
             : code;
           return {
             name: fileName,
@@ -219,12 +222,12 @@ export default function CodeEditorPanel({ assignment, onSubmit, hierarchy = {} }
             history: { past: [], future: [] },
           };
         });
-      } else if (typeof assignment.initialCode === 'string') {
-        const fileName = (assignment.codeName && assignment.codeName[0]) || 'File 1';
+      } else if (typeof codeQuestion.initialCode === 'string') {
+        const fileName = (codeQuestion.codeName && codeQuestion.codeName[0]) || 'File 1';
         const language = getLanguageFromExtension(fileName);
-        const content = assignment.rules.includes('inputs: y')
-          ? insertInputs(assignment.initialCode, assignment.inputs, language, 0)
-          : assignment.initialCode;
+        const content = codeQuestion.rules.includes('inputs: y')
+          ? insertInputs(codeQuestion.initialCode, codeQuestion.inputs, language, 0)
+          : codeQuestion.initialCode;
         initialFiles = [{
           name: fileName,
           language: language,
@@ -236,25 +239,25 @@ export default function CodeEditorPanel({ assignment, onSubmit, hierarchy = {} }
       setCodeFiles(initialFiles);
 
       // Initialize character counts
-      const initialTotalChars = calculateTotalChars(initialFiles, assignment.rules)
+      const initialTotalChars = calculateTotalChars(initialFiles, codeQuestion.rules)
       setTotalChars(initialTotalChars)
       setCurrentFileChars(initialFiles[0]?.content.length || 0)
     }
 
     setSubmissionData({
-      ...assignment,
+      ...codeQuestion,
       submittedCode: [],
       output: '',
       testResults: []
     });
 
     // Check if the submit button should be hidden
-    setIsSubmitHidden(assignment.rules.includes('submit: n'));
-  }, [assignment, courseId, moduleId, assessmentId]); // Add IDs to dependency array
+    setIsSubmitHidden(codeQuestion.rules.includes('submit: n'));
+  }, [codeQuestion, courseId, moduleId, assessmentId]); // Add IDs to dependency array
 
   useEffect(() => {
     const updateCharCounts = () => {
-      const newTotalChars = calculateTotalChars(codeFiles, assignment.rules);
+      const newTotalChars = calculateTotalChars(codeFiles, codeQuestion.rules);
       setTotalChars(newTotalChars);
       setCurrentFileChars(codeFiles[activeFileIndex]?.content.length || 0);
     };
@@ -262,13 +265,13 @@ export default function CodeEditorPanel({ assignment, onSubmit, hierarchy = {} }
     const intervalId = setInterval(updateCharCounts, 500);
 
     return () => clearInterval(intervalId);
-  }, [codeFiles, activeFileIndex, assignment.rules]);
+  }, [codeFiles, activeFileIndex, codeQuestion.rules]);
   
   useEffect(() => {
     const fetchData = async () => {
       if (submissionId) {
         try {
-          const response = await fetch(`/api/teach/question/${assignment.id}?courseId=${courseId}`);
+          const response = await fetch(`../../../api/learn/teach/question/${codeQuestion.id}?courseId=${courseId}`);
           if (!response.ok) {
             throw new Error('Failed to fetch student submission');
           }
@@ -295,13 +298,13 @@ export default function CodeEditorPanel({ assignment, onSubmit, hierarchy = {} }
     };
 
     fetchData();
-  }, [assignment.id, submissionId, courseId]);
+  }, [codeQuestion.id, submissionId, courseId]);
 
   const handleEditorChange = (value: string | undefined) => {
     if (value !== undefined) {
       updateFileHistory(activeFileIndex, value);
 
-      const fileLimit = getFileCharLimit(codeFiles[activeFileIndex].name, assignment.rules);
+      const fileLimit = getFileCharLimit(codeFiles[activeFileIndex].name, codeQuestion.rules);
       const effectiveLimit = fileLimit === 0 ? maxChars : fileLimit;
       if (value.length > effectiveLimit) {
         toast({
@@ -317,7 +320,7 @@ export default function CodeEditorPanel({ assignment, onSubmit, hierarchy = {} }
       setCodeFiles(updatedCodeFiles);
 
       // Update total character count
-      const newTotalChars = calculateTotalChars(updatedCodeFiles, assignment.rules);
+      const newTotalChars = calculateTotalChars(updatedCodeFiles, codeQuestion.rules);
       setTotalChars(newTotalChars);
       setCurrentFileChars(value.length);
 
@@ -328,7 +331,7 @@ export default function CodeEditorPanel({ assignment, onSubmit, hierarchy = {} }
 
       // Trigger an immediate save
       const currentState = {
-      assignment,
+      codeQuestion,
       codeFiles: updatedCodeFiles,
       output,
       testResults,
@@ -427,8 +430,8 @@ export default function CodeEditorPanel({ assignment, onSubmit, hierarchy = {} }
           const func = new Function('console', currentFile.content);
           func(customConsole);
 
-          if (assignment.rules.includes('outputs: y') && !newAbortController.signal.aborted) {
-            const results = compareOutputs([capturedOutput.join('\n')], assignment.outputs);
+          if (codeQuestion.rules.includes('outputs: y') && !newAbortController.signal.aborted) {
+            const results = compareOutputs([capturedOutput.join('\n')], codeQuestion.outputs);
             setTestResults(results);
           }
         } catch (error) {
@@ -663,8 +666,8 @@ export default function CodeEditorPanel({ assignment, onSubmit, hierarchy = {} }
           const func = new Function('console', indexFile.content);
           func(customConsole);
 
-          if (assignment.rules.includes('outputs: y') && !newAbortController.signal.aborted) {
-            const results = compareOutputs([capturedOutput.join('\n')], assignment.outputs);
+          if (codeQuestion.rules.includes('outputs: y') && !newAbortController.signal.aborted) {
+            const results = compareOutputs([capturedOutput.join('\n')], codeQuestion.outputs);
             setTestResults(results);
           }
         } catch (error) {
@@ -695,7 +698,7 @@ export default function CodeEditorPanel({ assignment, onSubmit, hierarchy = {} }
     const conflicts: { fileName: string; reason: string }[] = [];
 
     codeFiles.forEach(file => {
-      const fileLimit = getFileCharLimit(file.name, assignment.rules);
+      const fileLimit = getFileCharLimit(file.name, codeQuestion.rules);
       if (file.content.length > fileLimit) {
         conflicts.push({
           fileName: file.name,
@@ -749,10 +752,10 @@ export default function CodeEditorPanel({ assignment, onSubmit, hierarchy = {} }
     onSubmit({
       ...submissionData,
       output: output
-    } as QuestionSubmission);
+    } as QuestionSubmissionv1_0_0);
     
     // Navigate back to the assessment page
-    router.push(`/assessment/${assessmentId}?userId=${userId}&role=${role}&courseId=${courseId}&moduleId=${moduleId}`);
+    router.push(`/learn/assessment/${assessmentId}?userId=${userId}&role=${role}&courseId=${courseId}&moduleId=${moduleId}`);
   }
 
   const handleCloseWarningDialog = () => {
@@ -780,7 +783,7 @@ export default function CodeEditorPanel({ assignment, onSubmit, hierarchy = {} }
     setSubmissionData(prev => ({
       ...prev,
       submittedCode: updatedCodeFiles.map(file => file.content),
-      codeName: [...(prev.codeName || []), name]
+      codeName: [...(codeQuestion.codeName || []), name]
     }));
   };
 
@@ -826,7 +829,7 @@ export default function CodeEditorPanel({ assignment, onSubmit, hierarchy = {} }
     }
     try {
       const content = await file.text();
-      const fileLimit = getFileCharLimit(file.name, assignment.rules);
+      const fileLimit = getFileCharLimit(file.name, codeQuestion.rules);
       const effectiveLimit = fileLimit === 0 ? maxChars : fileLimit;
       if (content.length > effectiveLimit) {
         toast({
@@ -848,7 +851,7 @@ export default function CodeEditorPanel({ assignment, onSubmit, hierarchy = {} }
       setSubmissionData(prev => ({
         ...prev,
         submittedCode: updatedCodeFiles.map(file => file.content),
-        codeName: [...(prev.codeName || []), file.name]
+        codeName: [...(codeQuestion.codeName || []), file.name]
       }));
     } catch (error) {
       console.error('Error reading file:', error);
@@ -862,7 +865,7 @@ export default function CodeEditorPanel({ assignment, onSubmit, hierarchy = {} }
 
   const handleExportFiles = async (exportAll: boolean, singleFileName?: string) => {
     const zip = new JSZip();
-    const folder = zip.folder(assignment.title);
+    const folder = zip.folder(codeQuestion.title);
 
     if (folder) {
       if (exportAll) {
@@ -881,8 +884,8 @@ export default function CodeEditorPanel({ assignment, onSubmit, hierarchy = {} }
       const a = document.createElement('a');
       a.href = url;
       a.download = exportAll
-        ? `${assignment.title}.zip`
-        : `${assignment.title}_${singleFileName}.zip`;
+        ? `${codeQuestion.title}.zip`
+        : `${codeQuestion.title}_${singleFileName}.zip`;
       a.click();
       window.URL.revokeObjectURL(url);
     }
@@ -890,14 +893,14 @@ export default function CodeEditorPanel({ assignment, onSubmit, hierarchy = {} }
 
   const renderBottomPanel = () => {
     if (!activeTab) return null
-    const hideTestOutputs = assignment.rules.includes('tests-outputs: n');
+    const hideTestOutputs = codeQuestion.rules.includes('tests-outputs: n');
     return (
       <div className={`h-full overflow-auto p-4 ${
         mode === 'light' ? 'bg-white text-gray-800' :
         mode === 'dark' ? 'bg-gray-800 text-gray-200' :
         'bg-black text-white'
       }`}>
-        {activeTab === 'problems' && <ProblemsTab assignment={assignment} mode={mode} />}
+        {activeTab === 'problems' && <ProblemsTab codeQuestion={codeQuestion} mode={mode} />}
         {activeTab === 'output' && <OutputTab output={output} mode={mode} />}
         {activeTab === 'testResults' && <TestResultsTab testResults={testResults} mode={mode} hideTestOutputs={hideTestOutputs} />}
       </div>
@@ -905,8 +908,8 @@ export default function CodeEditorPanel({ assignment, onSubmit, hierarchy = {} }
   }
 
   const handleReset = () => {
-    if (assignment && courseId && moduleId && assessmentId) { // Check if IDs are available
-      localStorage.removeItem(`assignmentState_${courseId}_${moduleId}_${assessmentId}_${assignment.id}`);
+    if (codeQuestion && courseId && moduleId && assessmentId) { // Check if IDs are available
+      localStorage.removeItem(`assignmentState_${courseId}_${moduleId}_${assessmentId}_${codeQuestion.id}`);
     }
     window.location.reload();
   };
@@ -1068,21 +1071,21 @@ export default function CodeEditorPanel({ assignment, onSubmit, hierarchy = {} }
   }, [abortController]);
 
   useEffect(() => {
-    if (!assignment) return;
+    if (!codeQuestion) return;
 
     const autoSaveTimer = setInterval(() => {
       const currentState = {
-        assignment,
+        codeQuestion,
         codeFiles,
         output,
         testResults,
         activeFileIndex
       };
       saveStateToLocalStorage(currentState);
-    }, 5000); // Auto-save every 5 seconds
+    }, 3000); // Auto-save every 3 seconds
 
     return () =>clearInterval(autoSaveTimer);
-  }, [assignment, codeFiles, output, testResults, activeFileIndex]);
+  }, [codeQuestion, codeFiles, output, testResults, activeFileIndex]);
 
   const handleToggleSplitView = () => {
     if (isSplitViewActive) {
@@ -1134,7 +1137,7 @@ export default function CodeEditorPanel({ assignment, onSubmit, hierarchy = {} }
           onExpand={() => setIsLessonCollapsed(false)}
         >
           <LessonPanel
-            assignment={assignment}
+            codeQuestion={codeQuestion}
             onReturn={handleReturn}
             onSubmit={handleSubmit}
             onReset={handleReset}
@@ -1276,7 +1279,7 @@ export default function CodeEditorPanel({ assignment, onSubmit, hierarchy = {} }
                   </div>
                   <CharacterCount
                     currentFileChars={currentFileChars}
-                    maxFileChars={getFileCharLimit(codeFiles[activeFileIndex]?.name, assignment.rules) || maxChars}
+                    maxFileChars={getFileCharLimit(codeFiles[activeFileIndex]?.name, codeQuestion.rules) || maxChars}
                     totalChars={totalChars}
                     maxTotalChars={maxChars}
                     currentFileCount={codeFiles.length}
@@ -1293,7 +1296,7 @@ export default function CodeEditorPanel({ assignment, onSubmit, hierarchy = {} }
             }`} />
             <Panel defaultSize={25} minSize={0}> {/* UPDATED LINE */}
               <div className="flex flex-col h-full">
-                <BottomMenu activeTab={activeTab} setActiveTab={handleSetActiveTab} mode={mode} hideTestOutputs={assignment.rules.includes('tests-outputs: n')}/>
+                <BottomMenu activeTab={activeTab} setActiveTab={handleSetActiveTab} mode={mode} hideTestOutputs={codeQuestion.rules.includes('tests-outputs: n')}/>
                 <div className="flex-grow overflow-auto">
                   {renderBottomPanel()}
                 </div>
@@ -1335,8 +1338,8 @@ export default function CodeEditorPanel({ assignment, onSubmit, hierarchy = {} }
   )
 }
 
-const ProblemsTab = ({ assignment, mode }: { assignment: QuestionBasev1_0_0, mode: string }) => {
-  const hideTestOutputs = assignment.rules.includes('tests-outputs: n');
+const ProblemsTab = ({ codeQuestion, mode }: { codeQuestion: CodeQuestionv1_0_0, mode: string }) => {
+  const hideTestOutputs = codeQuestion.rules.includes('tests-outputs: n');
 
   return (
     <div>
@@ -1345,7 +1348,7 @@ const ProblemsTab = ({ assignment, mode }: { assignment: QuestionBasev1_0_0, mod
         mode === 'dark' ? 'text-gray-200' :
         'text-white'
       }`}>Problem Details</h2>
-      {assignment.rules.includes('inputs: y') && (
+      {codeQuestion.rules.includes('inputs: y') && (
         <div className="mb-4">
           <h3 className={`text-lg font-semibold ${
             mode === 'light' ? 'text-gray-800' :
@@ -1353,7 +1356,7 @@ const ProblemsTab = ({ assignment, mode }: { assignment: QuestionBasev1_0_0, mod
             'text-white'
           }`}>Inputs:</h3>
           <ul className="list-disc list-inside">
-            {assignment.inputs.map((input, index) => (
+            {codeQuestion.inputs.map((input, index) => (
               <li key={index} className={
                 mode === 'light' ? 'text-gray-800' :
                 mode === 'dark' ? 'text-gray-200' :
@@ -1363,7 +1366,7 @@ const ProblemsTab = ({ assignment, mode }: { assignment: QuestionBasev1_0_0, mod
           </ul>
         </div>
       )}
-      {assignment.rules.includes('outputs: y') && !hideTestOutputs && (
+      {codeQuestion.rules.includes('outputs: y') && !hideTestOutputs && (
         <div>
           <h3 className={`text-lg font-semibold ${
             mode === 'light' ? 'text-gray-800' :
@@ -1371,7 +1374,7 @@ const ProblemsTab = ({ assignment, mode }: { assignment: QuestionBasev1_0_0, mod
             'text-white'
           }`}>Expected Outputs:</h3>
           <ul className="list-disc list-inside">
-            {assignment.outputs.map((output, index) => (
+            {codeQuestion.outputs.map((output, index) => (
               <li key={index} className={
                 mode === 'light' ? 'text-gray-800' :
                 mode === 'dark' ? 'text-gray-200' :
@@ -1409,8 +1412,8 @@ interface TestResultsTabProps {
   mode: string;
   hideTestOutputs: boolean;
 }
-
-const TestResultsTab = ({ testResults, mode, hideTestOutputs }: TestResultsTabProps) => {
+/*
+const TestResultsTab2 = ({ testResults, mode, hideTestOutputs }: TestResultsTabProps) => {
   const getColorClass = (passed: boolean) => {
     if (mode === 'light') {
       return passed ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
@@ -1488,3 +1491,4 @@ const TestResultsTab = ({ testResults, mode, hideTestOutputs }: TestResultsTabPr
   )
 }
 
+*/

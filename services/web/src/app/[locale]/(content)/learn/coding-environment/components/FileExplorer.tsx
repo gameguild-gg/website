@@ -1,10 +1,10 @@
 'use client'
 
-import { Tree, FileTree } from '@/components/ui/tree'
+//import { Tree, FileTree } from '@/components/learn/ui/tree'
 import { ChevronDown, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { HierarchyBasev1_0_0 } from '@/interface-base/structure.base.v1.0.0';
+import { HierarchyBasev1_0_0 } from '@/lib/interface-base/structure.base.v1.0.0';
 import { CodeFile } from '../types/codeEditor';
 
 interface FileExplorerProps {

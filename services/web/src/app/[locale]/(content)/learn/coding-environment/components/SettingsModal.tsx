@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/learn/ui/dialog"
+import { Button } from "@/components/learn/ui/button"
+import { Input } from "@/components/learn/ui/input"
+import { Label } from "@/components/learn/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/learn/ui/select"
 
 interface SettingsModalProps {
   isOpen: boolean;

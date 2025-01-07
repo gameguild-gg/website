@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { QuestionTypev1_0_0, CodeQuestionv1_0_0, AnswerQuestionv1_0_0, QuestionStatus, MultipleChoiceQuestionv1_0_0, EssayQuestionv1_0_0 } from '@/interface-base/question.base.v1.0.0'
+import { QuestionTypev1_0_0, CodeQuestionv1_0_0, AnswerQuestionv1_0_0, QuestionStatus, MultipleChoiceQuestionv1_0_0, EssayQuestionv1_0_0 } from '@/lib/interface-base/question.base.v1.0.0'
 import Link from 'next/link'
 import ReactMarkdown from 'react-markdown'
-import { Checkbox } from '@/components/ui/checkbox'
-import { toast } from '@/components/ui/use-toast'
+import { Checkbox } from '@/components/learn/ui/checkbox'
+import { toast } from '@/components/learn/ui/use-toast'
 import TeacherQuestionDetail from './TeacherQuestionDetail'
-import RichTextEditor from '@/components/RichTextEditor'
+import RichTextEditor from '@/components/learn/RichTextEditor'
 
 interface QuestionDetailProps {
   question: QuestionTypev1_0_0
@@ -97,7 +97,7 @@ const QuestionDetail: React.FC<QuestionDetailProps> = ({
 
       console.log('Submitting answer:', submission);
 
-      const response = await fetch('/api/submit-assignment', {
+      const response = await fetch('../../../../api/learn/submit-assignment', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -118,7 +118,7 @@ const QuestionDetail: React.FC<QuestionDetailProps> = ({
         description: "Your answer has been submitted successfully.",
       })
 
-      router.push(`/assessment/${assessmentId}?userId=${userId}&role=${role}&courseId=${courseId}&moduleId=${moduleId}`)
+      router.push(`/learn/assessment/${assessmentId}?userId=${userId}&role=${role}&courseId=${courseId}&moduleId=${moduleId}`)
     } catch (error: any) {
       console.error('Error submitting answer:', error)
       toast({
@@ -136,7 +136,7 @@ const QuestionDetail: React.FC<QuestionDetailProps> = ({
         <ReactMarkdown>{question.description}</ReactMarkdown>
       </div>
       <div className="mb-4">
-        <Link href={`/coding-environment?id=${question.id}&type=question&userId=${userId}&role=${role}&courseId=${courseId}&moduleId=${moduleId}&assessmentId=${assessmentId}`}>
+        <Link href={`/learn/coding-environment?id=${question.id}&type=question&userId=${userId}&role=${role}&courseId=${courseId}&moduleId=${moduleId}&assessmentId=${assessmentId}`}>
           <button className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
             Access Code Environment
           </button>

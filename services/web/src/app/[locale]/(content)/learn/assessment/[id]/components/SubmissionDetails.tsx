@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Button, UIButton } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/learn/ui/dialog";
+import { Button, UIButton } from "@/components/learn/ui/button";
+import { Input } from "@/components/learn/ui/input";
 import { QuestionBasev1_0_0, CodeQuestionv1_0_0, AnswerQuestionv1_0_0, MultipleChoiceQuestionv1_0_0, EssayQuestionv1_0_0 } from '@/interface-base/question.base.v1.0.0';
 import ReactMarkdown from 'react-markdown';
-import RichTextEditor from '@/components/RichTextEditor';
+import RichTextEditor from '@/components/learn/RichTextEditor';
 import Link from 'next/link';
 
 interface SubmissionDetailsProps {
@@ -65,7 +65,7 @@ const SubmissionDetails: React.FC<SubmissionDetailsProps> = ({
                 </pre>
               </div>
             )}
-            <Link href={`/coding-environment?id=${submission.id}&type=submission&userId=${userId}&role=${role}&courseId=${courseId}&moduleId=${moduleId}&assessmentId=${assessmentId}&submissionId=${submissionId}`}>
+            <Link href={`/learn/coding-environment?id=${submission.id}&type=submission&userId=${userId}&role=${role}&courseId=${courseId}&moduleId=${moduleId}&assessmentId=${assessmentId}&submissionId=${submissionId}`}>
               <UIButton>View Student Code</UIButton>
             </Link>
           </div>

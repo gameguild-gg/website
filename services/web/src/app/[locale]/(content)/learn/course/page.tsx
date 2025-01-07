@@ -3,10 +3,10 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { ModuleBasev1_0_0 } from '@/interface-base/module.base.v1.0.0'
-import { AssessmentBasev1_0_0 } from '@/interface-base/assessment.base.v1.0.0'
-import { CourseBasev1_0_0 } from '@/interface-base/course.base.v1.0.0'
-import { LessonBasev1_0_0 } from '@/interface-base/lesson.base.v1.0.0'
+import { ModuleBasev1_0_0 } from '@/lib/interface-base/module.base.v1.0.0'
+import { AssessmentBasev1_0_0 } from '@/lib/interface-base/assessment.base.v1.0.0'
+import { CourseBasev1_0_0 } from '@/lib/interface-base/course.base.v1.0.0'
+import { LessonBasev1_0_0 } from '@/lib/interface-base/lesson.base.v1.0.0'
 import { ChevronRight, Sun, Moon, ZapOff, FileText, CheckCircle } from 'lucide-react'
 
 export default function CoursePage({ params }: { params: { id: string } }) {
@@ -28,7 +28,7 @@ export default function CoursePage({ params }: { params: { id: string } }) {
         setIsLoading(true)
 
         // Fetch course data
-        const courseResponse = await fetch(`/api/course/${params.id}`)
+        const courseResponse = await fetch(`../../api/learn/course/${params.id}`)
         if (!courseResponse.ok) {
           const errorData = await courseResponse.json()
           throw new Error(`Failed to fetch course: ${errorData.error}. Details: ${errorData.details}`)
@@ -38,7 +38,7 @@ export default function CoursePage({ params }: { params: { id: string } }) {
 
         // Fetch modules data
         const modulesPromises = courseData.idModules.map(moduleId =>
-          fetch(`/api/content/module/${moduleId}`).then(res => {
+          fetch(`../../api/learn/content/module/${moduleId}`).then(res => {
             if (!res.ok) {
               throw new Error(`Failed to fetch module ${moduleId}: ${res.statusText}`)
             }
@@ -51,7 +51,7 @@ export default function CoursePage({ params }: { params: { id: string } }) {
         // Fetch lessons for each module
         const lessonPromises = modulesData.flatMap((module: ModuleBasev1_0_0) =>
           module.idLessons.map((id: number) =>
-            fetch(`/api/content/lesson/${id}`).then(res => {
+            fetch(`../../api/learn/content/lesson/${id}`).then(res => {
               if (!res.ok) {
                 throw new Error(`Failed to fetch lesson ${id}: ${res.statusText}`)
               }
@@ -70,7 +70,7 @@ export default function CoursePage({ params }: { params: { id: string } }) {
         // Fetch assessments for each module
         const assessmentPromises = modulesData.flatMap((module: ModuleBasev1_0_0) =>
           module.idAssessments.map((id: number) => 
-            fetch(`/api/content/assessment/${id}`).then(res => {
+            fetch(`../../api/learn/content/assessment/${id}`).then(res => {
               if (!res.ok) {
                 throw new Error(`Failed to fetch assessment ${id}: ${res.statusText}`)
               }
@@ -107,7 +107,7 @@ export default function CoursePage({ params }: { params: { id: string } }) {
   }, [mode])
 
   const handleSandboxClick = useCallback(() => {
-    router.push(`/coding-environment?id=0&type=sandbox&userId=${userId}&role=${role}`);
+    router.push(`learn/coding-environment?id=0&type=sandbox&userId=${userId}&role=${role}`);
   }, [userId, role, router]);
 
   const toggleMode = () => {
@@ -163,7 +163,7 @@ export default function CoursePage({ params }: { params: { id: string } }) {
                   const lesson = lessons[lessonId]
                   return lesson ? (
                     <div key={lesson.id} className="border rounded-md">
-                      <Link href={`/lesson/${lesson.id}?userId=${userId}&role=${role}&courseId=${params.id}&moduleId=${module.id}`}> {/* Added userId and courseId */}
+                      <Link href={`learn/lesson/${lesson.id}?userId=${userId}&role=${role}&courseId=${params.id}&moduleId=${module.id}`}> {/* Added userId and courseId */}
                         <div className="w-full text-left px-4 py-2 flex items-center justify-between hover:bg-gray-50">
                           <div className="flex items-center">
                             <FileText className="w-5 h-5 mr-2" />
@@ -188,7 +188,7 @@ export default function CoursePage({ params }: { params: { id: string } }) {
 
                   return (
                     <div key={assessment.id} className="border rounded-md flex"> {/* Added flex container */}
-                      <Link href={`/assessment/${assessment.id}?userId=${userId}&role=${role}&courseId=${params.id}&moduleId=${module.id}`} className="grow">
+                      <Link href={`learn/assessment/${assessment.id}?userId=${userId}&role=${role}&courseId=${params.id}&moduleId=${module.id}`} className="grow">
                         <div className="w-full text-left px-4 py-2 flex items-center justify-between hover:bg-gray-50">
                           <div className="flex items-center">
                             <CheckCircle className="w-5 h-5 mr-2" />
@@ -210,7 +210,7 @@ export default function CoursePage({ params }: { params: { id: string } }) {
           ))}
         </div>
         <div className="fixed bottom-4 left-4">
-          <Link href={`/courses?userId=${userId}`}>
+          <Link href={`learn/courses?userId=${userId}`}>
             <button className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">
               Return to Course Selection
             </button>

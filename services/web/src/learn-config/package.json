@@ -66,8 +66,8 @@
     "@monaco-editor/react": "latest",
     "node-abort-controller": "latest",
     "react-scrollbars-custom": "latest",
-    "react-mde": "latest",
-    "react-quill": "latest"
+    "react-quill": "latest",
+    "@uiw/react-md-editor": "^3.23.3"
   },
   "devDependencies": {
     "@types/node": "^22",

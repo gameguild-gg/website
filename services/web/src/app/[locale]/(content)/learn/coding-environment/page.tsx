@@ -3,13 +3,13 @@
 import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import CodeEditorPanel from './components/CodeEditorPanel'
-import { QuestionBasev1_0_0, QuestionStatus } from '@/interface-base/question.base.v1.0.0'
-import { QuestionSubmission } from '@/interface-base/question.submission.v1.0.0'
+import { QuestionStatus, CodeQuestionv1_0_0 } from '@/lib/interface-base/question.base.v1.0.0'
+import { QuestionSubmissionv1_0_0 } from '@/lib/interface-base/question.submission.v1.0.0'
 import { toast } from '@/components/ui/use-toast'
-import { HierarchyBasev1_0_0 } from '@/interface-base/structure.base.v1.0.0'; // Import HierarchyBasev1_0_0
+import { HierarchyBasev1_0_0 } from '@/lib/interface-base/structure.base.v1.0.0'; // Import HierarchyBasev1_0_0
 
 export default function CodingEnvironment() {
-  const [question, setQuestion] = useState<QuestionBasev1_0_0 | null>(null)
+  const [question, setQuestion] = useState<CodeQuestionv1_0_0 | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
@@ -35,7 +35,7 @@ export default function CodingEnvironment() {
       setIsLoading(true)
       setError(null)
       try {
-        const response = await fetch(`/api/content/${exerciseType}/${exerciseId}`);
+        const response = await fetch(`../../api/learn/content/${exerciseType}/${exerciseId}`);
         if (!response.ok) {
           const errorData = await response.json();
           throw new Error(`HTTP error! status: ${response.status}, message: ${errorData.error}`);
@@ -71,16 +71,16 @@ export default function CodingEnvironment() {
 
   const handleReturn = () => {
     if (assessmentId && courseId && moduleId && userId && role)
-      router.push(`/assessment/${assessmentId}?userId=${userId}&role=${role}&courseId=${courseId}&moduleId=${moduleId}`)
-    else router.push('/courses')
+      router.push(`/learn/assessment/${assessmentId}?userId=${userId}&role=${role}&courseId=${courseId}&moduleId=${moduleId}`)
+    else router.push('/learn/courses')
   }
 
-  const handleSubmit = async (submission: QuestionSubmission) => {
+  const handleSubmit = async (submission: QuestionSubmissionv1_0_0) => {
     try {
       // Update the submission status
       submission.status = QuestionStatus.Submitted;
 
-      const response = await fetch('/api/submit-assignment', {
+      const response = await fetch('../../api/learn/submit-codeQuestion', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -95,17 +95,17 @@ export default function CodingEnvironment() {
         })
 
         if (assessmentId && courseId && moduleId && userId && role)
-          router.push(`/assessment/${assessmentId}?userId=${userId}&role=${role}&courseId=${courseId}&moduleId=${moduleId}`)
-        else router.push('/courses')
+          router.push(`/learn/assessment/${assessmentId}?userId=${userId}&role=${role}&courseId=${courseId}&moduleId=${moduleId}`)
+        else router.push('/learn/courses')
       } else {
         const errorData = await response.json();
-        throw new Error(`Failed to submit assignment: ${errorData.error}`);
+        throw new Error(`Failed to submit codeQuestion: ${errorData.error}`);
       }
     } catch (error) {
-      console.error('Error submitting assignment:', error)
+      console.error('Error submitting codeQuestion:', error)
       toast({
         title: "Error",
-        description: `Failed to submit assignment: ${error.message}`,
+        description: `Failed to submit codeQuestion: ${error.message}`,
         variant: "destructive",
       })
     }
@@ -120,7 +120,7 @@ export default function CodingEnvironment() {
   }
 
   if (!question) {
-    return <div>No assignment data available.</div>
+    return <div>No codeQuestion data available.</div>
   }
   
   // Construct hierarchy object
@@ -134,11 +134,11 @@ export default function CodingEnvironment() {
   return (
     <div className="h-screen flex flex-col">
       <CodeEditorPanel
-        assignment={question}
+        codeQuestion={question}
         onReturn={handleReturn}
         onSubmit={handleSubmit}
         hierarchy={hierarchy} // Pass hierarchy to CodeEditorPanel
-      />
+        />
     </div>
   )
 }

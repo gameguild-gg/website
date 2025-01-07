@@ -30,8 +30,8 @@ export default async function Layout({
 }: Readonly<PropsWithChildren>) {
   return (
     <div className="flex flex-auto flex-col">
-      <Header />
-      <div className="flex flex-auto h-full w-full">{children}</div>
+      
+      <div className="h-full w-full">{children}</div>
     </div>
   );
 }

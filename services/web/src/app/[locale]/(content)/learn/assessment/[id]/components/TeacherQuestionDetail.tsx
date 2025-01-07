@@ -1,19 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { QuestionTypev1_0_0, CodeQuestionv1_0_0, AnswerQuestionv1_0_0, MultipleChoiceQuestionv1_0_0, QuestionStatus } from '@/interface-base/question.base.v1.0.0';
-import { UserListQuestionv1_0_0 } from '@/interface-base/user.list.question.v1.0.0';
-import { toast } from '@/components/ui/use-toast';
-import { UserBasev1_0_0 } from '@/interface-base/user.base.v1.0.0';
+import { QuestionTypev1_0_0, CodeQuestionv1_0_0, AnswerQuestionv1_0_0, MultipleChoiceQuestionv1_0_0, QuestionStatus } from '@/lib/interface-base/question.base.v1.0.0';
+import { UserListQuestionv1_0_0 } from '@/lib/interface-base/user.list.question.v1.0.0';
+import { toast } from '@/components/learn/ui/use-toast';
+import { UserBasev1_0_0 } from '@/lib/interface-base/user.base.v1.0.0';
 import Link from 'next/link';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/learn/ui/dialog"
 import Image from "next/image"
 import ReactMarkdown from 'react-markdown';
-import { Button as UIButton } from "@/components/ui/button";
-import { Input } from '@/components/ui/input'; // Import Input component
+import { Button as UIButton } from "@/components/learn/ui/button";
+import { Input } from '@/components/learn/ui/input'; // Import Input component
 import { useState as useState2 } from 'react'; //removing duplicate import
 import { Dialog as Dialog2, DialogContent as DialogContent2, DialogHeader as DialogHeader2, DialogTitle as DialogTitle2, DialogFooter as DialogFooter2 } from "@/components/ui/dialog"; //removing duplicate import
-import { Button } from "@/components/ui/button";
-import SubmissionDetails from './SubmissionDetails';
+import { Button } from "@/components/learn/ui/button";
+//import SubmissionDetails from './SubmissionDetails';
 /*
 enum QuestionStatus {
   Corrected = 'corrected'
@@ -238,7 +238,7 @@ const handleViewCode = () => {
               </table>
 
               <div className="mt-4">
-                <Link href={`/coding-environment?id=${submissionId}&type=submission&userId=${userId}&role=${role}&courseId=${courseId}&moduleId=${moduleId}&assessmentId=${assessmentId}&submissionId=${submission.id}`}>
+                <Link href={`/learn/coding-environment?id=${submissionId}&type=submission&userId=${userId}&role=${role}&courseId=${courseId}&moduleId=${moduleId}&assessmentId=${assessmentId}&submissionId=${submission.id}`}>
                   <UIButton>View Student Code</UIButton>
                 </Link>
               </div>
@@ -312,7 +312,7 @@ const TeacherQuestionDetail = ({ question, mode, courseId }: TeacherQuestionDeta
     const fetchSubmissions = async () => {
       try {
         setIsLoading(true);
-        const response = await fetch(`/api/teach/question/${question.id}?courseId=${courseId}`);
+        const response = await fetch(`../../../../api/learn/teach/question/${question.id}?courseId=${courseId}`);
         if (!response.ok) {
           throw new Error('Failed to fetch student submissions');
         }
@@ -412,7 +412,7 @@ const TeacherQuestionDetail = ({ question, mode, courseId }: TeacherQuestionDeta
           maxScore={submissions[viewingSubmission].maxScore}
           onScoreChange={async (newScore) => {
             try {
-              const response = await fetch(`/api/update-score`, {
+              const response = await fetch(`../../../../api/learn/update-score`, {
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json',

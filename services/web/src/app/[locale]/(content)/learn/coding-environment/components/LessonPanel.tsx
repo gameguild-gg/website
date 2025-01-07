@@ -1,22 +1,23 @@
 import React, { useState } from 'react'
 import ReactMarkdown from 'react-markdown'
-import { QuestionBasev1_0_0 } from '@/assignments/question.base.v1.0.0'
-import { Button } from '@/components/ui/button'
+import { CodeQuestionv1_0_0 } from '@/lib/interface-base/question.base.v1.0.0'
+import { Button } from '@/components/learn/ui/button'
 import CustomScrollbar from './CustomScrollbar'
-import { HierarchyBasev1_0_0 } from '@/assignments/hierarchy.base.v1.0.0'; // Import HierarchyBasev1_0_0
+import { HierarchyBasev1_0_0 } from '@/lib/interface-base/structure.base.v1.0.0'; // Import HierarchyBasev1_0_0
 
 interface LessonPanelProps {
-  assignment: QuestionBasev1_0_0
+  codeQuestion: CodeQuestionv1_0_0
   onReturn: () => void
   onSubmit: () => void
   onReset: () => void
   mode: 'light' | 'dark' | 'high-contrast'
   isSubmitDisabled: boolean
-  isSubmitHidden: boolean
   hierarchy: HierarchyBasev1_0_0 // Added hierarchy
 }
 
-export default function LessonPanel({ assignment, onReturn, onSubmit, onReset, mode, isSubmitDisabled, isSubmitHidden, hierarchy }: LessonPanelProps) { // Updated destructuring
+export default function LessonPanel({ codeQuestion, onReturn, onSubmit, onReset, mode, isSubmitDisabled, hierarchy }: LessonPanelProps) { // Updated destructuring
+  const shouldHideSubmit = codeQuestion.rules.includes('submit: n');
+
   // const [isResetDialogOpen, setIsResetDialogOpen] = useState(false)
 
   // const handleResetClick = () => {
@@ -40,7 +41,7 @@ export default function LessonPanel({ assignment, onReturn, onSubmit, onReset, m
             mode === 'dark' ? 'bg-gray-700 text-gray-100 hover:bg-gray-600' :
             'bg-yellow-300 text-black hover:bg-yellow-400 border-2 border-yellow-300'}
         `}>
-          Retornar a lista
+          Return
         </Button>
         {/* <Button onClick={handleResetClick} variant="destructive" size="sm" className={`
           ${mode === 'light' ? 'bg-red-500 text-white hover:bg-red-600' :
@@ -52,16 +53,16 @@ export default function LessonPanel({ assignment, onReturn, onSubmit, onReset, m
       </div>
       <CustomScrollbar mode={mode} className="flex-grow">
         <div className="p-4">
-          <h1 className="text-2xl font-bold mb-4">{assignment.title}</h1>
+          <h1 className="text-2xl font-bold mb-4">{codeQuestion.title}</h1>
           <ReactMarkdown className={`prose max-w-none ${
             mode === 'light' ? 'prose-gray' :
             mode === 'dark' ? 'prose-invert' :
             'prose-yellow prose-invert'
-          }`}>{assignment.description}</ReactMarkdown>
+          }`}>{codeQuestion.description}</ReactMarkdown>
         </div>
       </CustomScrollbar>
       <div className="p-4 border-t">
-        {!isSubmitHidden && (
+        {!shouldHideSubmit && (
           <Button 
             onClick={onSubmit} 
             className={`w-full ${
@@ -71,7 +72,7 @@ export default function LessonPanel({ assignment, onReturn, onSubmit, onReset, m
             }`}
             disabled={isSubmitDisabled}
           >
-            Submeter
+            Submit
           </Button>
         )}
       </div>

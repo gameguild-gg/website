@@ -3,13 +3,13 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { AssessmentBasev1_0_0 } from '@/interface-base/assessment.base.v1.0.0'
-import { QuestionBasev1_0_0, QuestionStatus } from '@/interface-base/question.base.v1.0.0'
+import { AssessmentBasev1_0_0 } from '@/lib/interface-base/assessment.base.v1.0.0'
+import { QuestionBasev1_0_0, QuestionStatus } from '@/lib/interface-base/question.base.v1.0.0'
 import QuestionList from './components/QuestionList'
 import QuestionDetail from './components/QuestionDetail'
 import { Sun, Moon, ZapOff, ChevronLeft } from 'lucide-react'
-import { HierarchyBasev1_0_0 } from '@/interface-base/structure.base.v1.0.0'
-import PageHeader from '@/components/PageHeader'
+import { HierarchyBasev1_0_0 } from '@/lib/interface-base/structure.base.v1.0.0'
+import PageHeader from '@/components/learn/PageHeader'
 
 export default function AssessmentPage({ params }: { params: { id: string } }) {
   const [assessment, setAssessment] = useState<AssessmentBasev1_0_0 | null>(null)
@@ -31,7 +31,7 @@ export default function AssessmentPage({ params }: { params: { id: string } }) {
     try {
       setIsLoading(true)
 
-      const assessmentResponse = await fetch(`/api/content/assessment/${params.id}`)
+      const assessmentResponse = await fetch(`../../../api/learn/content/assessment/${params.id}`)
       if (!assessmentResponse.ok) {
         throw new Error(`Failed to fetch assessment: ${assessmentResponse.statusText}`)
       }
@@ -42,7 +42,7 @@ export default function AssessmentPage({ params }: { params: { id: string } }) {
       const uniqueQuestionIds = Array.from(new Set(assessmentData.idQuestions.flatMap(tab => tab.questions)));
       
       const questionPromises = uniqueQuestionIds.map((id: number) =>
-        fetch(`/api/content/question/${id}`).then(res => {
+        fetch(`../../../api/learn/content/question/${id}`).then(res => {
           if (!res.ok) {
             throw new Error(`Failed to fetch question ${id}: ${res.statusText}`)
           }
@@ -117,7 +117,7 @@ export default function AssessmentPage({ params }: { params: { id: string } }) {
         <h1 className="text-2xl font-bold mb-4 text-red-600">Error</h1>
         <p className="text-red-500">{error}</p>
         <div className="mt-4">
-          <Link href={`/course/${courseId}?userId=${userId}&role=${role}`}>
+          <Link href={`/learn/course/${courseId}?userId=${userId}&role=${role}`}>
             <span className="text-blue-500 hover:underline">Return to Course</span>
           </Link>
         </div>
@@ -155,7 +155,7 @@ export default function AssessmentPage({ params }: { params: { id: string } }) {
       <div className="max-w-5xl mx-auto">
         <PageHeader
           title={assessment.title}
-          backLink={`/course/${courseId}?userId=${userId}&role=${role}`}
+          backLink={`/learn/course/${courseId}?userId=${userId}&role=${role}`}
           userId={userId}
           mode={mode}
           onModeToggle={toggleMode}
@@ -248,7 +248,7 @@ export default function AssessmentPage({ params }: { params: { id: string } }) {
         </div>
 
         <div className="mt-8">
-          <Link href={`/course/${courseId}?userId=${userId}&role=${role}`}>
+          <Link href={`/learn/course/${courseId}?userId=${userId}&role=${role}`}>
             <button className={`w-full md:w-auto font-bold py-2 px-4 rounded transition-colors duration-200 ${
               mode === 'light' ? 'bg-blue-500 hover:bg-blue-700 text-white' :
               mode === 'dark' ? 'bg-blue-700 hover:bg-blue-900 text-white' :

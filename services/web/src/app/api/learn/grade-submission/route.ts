@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { QuestionSubmission } from '@/interface-base/question.submission.v1.0.0'
+import { QuestionSubmission } from '@/lib/interface-base/question.submission.v1.0.0'
 
 interface GradeSubmission extends QuestionSubmission {
   grade: number;
