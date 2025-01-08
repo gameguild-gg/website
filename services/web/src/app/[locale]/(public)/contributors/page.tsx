@@ -120,6 +120,14 @@ export default async function ContributorsPage() {
             />
           </Link>
         </Button>
+        <Button>
+          <Link href="https://discord.gg/tac5fZ2bGh">
+            <img
+              alt="Discord chat"
+              src="https://img.shields.io/discord/956922983727915078?logo=discord"
+            />
+          </Link>
+        </Button>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {contributors.map((contributor) => (
@@ -127,18 +135,31 @@ export default async function ContributorsPage() {
         ))}
       </div>
       <h2 className="text-3xl font-bold text-center mb-8 flex items-center justify-center gap-6 mt-8">
-        Gource Visualization
+        Repo Visualization
       </h2>
-      <video
-        className="w-full max-w-lg mx-auto"
-        src="https://gameguild-gg.github.io/website/gource.mp4"
-        controls
-        loop
-        autoPlay
-        muted
-      >
-        Your browser does not support the video tag.
-      </video>
+      <div className="flex flex-wrap justify-center gap-4">
+        <img
+          src="https://api.star-history.com/svg?repos=gameguild-gg/website&type=Date"
+          style={{
+            width: '30%',
+            height: 'auto',
+            minWidth: '600px',
+            minHeight: '400px',
+          }}
+          className="w-full max-w-lg mx-auto"
+          alt="star history"
+        />
+        <video
+          className="w-full max-w-lg mx-auto"
+          src="https://gameguild-gg.github.io/website/gource.mp4"
+          controls
+          loop
+          autoPlay
+          muted
+        >
+          Your browser does not support the video tag.
+        </video>
+      </div>
       <h2 className="text-3xl font-bold text-center mb-8 flex items-center justify-center gap-6 mt-8">
         OpenCollective Contributors
       </h2>
