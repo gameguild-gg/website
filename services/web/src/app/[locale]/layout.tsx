@@ -6,11 +6,12 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { Toaster } from '@/components/ui/toaster';
 import { ParamsWithLocale, PropsWithLocaleParams } from '@/types';
 import { environment } from '@/config/environment';
-import { headers } from 'next/headers';
 
 export async function generateMetadata(): Promise<Metadata> {
-  const headersList = headers();
-  const host = headersList.get('host');
+  const host =
+    process.env.NODE_ENV === 'production'
+      ? 'web.gameguild.gg'
+      : 'localhost:3000';
   const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
   const baseUrl = `${protocol}://${host}`;
 

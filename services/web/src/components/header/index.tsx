@@ -31,7 +31,11 @@ export default function Header() {
   const [isMoreOpen, setIsMoreOpen] = useState(false);
 
   const menuItems = ['Blog', 'Games', 'Tests', 'Jams', 'Jobs'];
-  const moreItems = ['Roadmap', 'Contributors', 'About', 'Contact'];
+  const moreItems = [
+    'Roadmap',
+    'Contributors',
+    'Issues' /*'Contact', 'About'*/,
+  ];
   const languages = ['English', 'Spanish', 'French', 'German'];
 
   const router = useRouter();
