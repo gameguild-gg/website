@@ -6,8 +6,14 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { Toaster } from '@/components/ui/toaster';
 import { ParamsWithLocale, PropsWithLocaleParams } from '@/types';
 import { environment } from '@/config/environment';
+import { headers } from 'next/headers';
 
 export async function generateMetadata(): Promise<Metadata> {
+  const headersList = headers();
+  const host = headersList.get('host');
+  const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
+  const baseUrl = `${protocol}://${host}`;
+
   return {
     title: {
       template: '%s | Game Guild',
@@ -17,11 +23,11 @@ export async function generateMetadata(): Promise<Metadata> {
     openGraph: {
       type: 'website',
       locale: 'en_US',
-      url: 'https://gameguild.gg',
+      url: baseUrl,
       siteName: 'Game Guild',
       images: [
         {
-          url: './assets/images/logo-icon.png',
+          url: `${baseUrl}/assets/images/logo-icon.png`,
           width: 338,
           height: 121,
           alt: 'Game Guild Logo',
