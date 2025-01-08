@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { Octokit } from 'octokit';
 import NodeCache from 'node-cache';
 
+export const dynamic = 'force-dynamic';
+
 const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN }).rest;
 const cache = new NodeCache({ stdTTL: 3600 }); // 1 hour TTL
 
@@ -37,15 +39,14 @@ async function fetchAllIssues(state: 'open' | 'closed' | 'all') {
 
 export async function GET(request: NextRequest) {
   try {
-    const url = new URL(request.url);
-    const issueType = url.searchParams.get('issueType') || 'all';
-    const assignee = url.searchParams.get('assignee') || 'all';
-    const labels =
-      url.searchParams.get('labels')?.split(',').filter(Boolean) || [];
-    const sort = url.searchParams.get('sort') || 'newest';
-    const page = parseInt(url.searchParams.get('page') || '1', 10);
-    const pageSize = parseInt(url.searchParams.get('pageSize') || '25', 10);
-    const state = url.searchParams.get('state') || 'open';
+    const searchParams = request.nextUrl.searchParams;
+    const issueType = searchParams.get('issueType') || 'all';
+    const assignee = searchParams.get('assignee') || 'all';
+    const labels = searchParams.get('labels')?.split(',').filter(Boolean) || [];
+    const sort = searchParams.get('sort') || 'newest';
+    const page = parseInt(searchParams.get('page') || '1', 10);
+    const pageSize = parseInt(searchParams.get('pageSize') || '25', 10);
+    const state = searchParams.get('state') || 'open';
 
     const allIssues = await fetchAllIssues(state as 'open' | 'closed' | 'all');
 

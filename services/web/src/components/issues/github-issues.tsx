@@ -155,7 +155,20 @@ export default function GitHubIssues() {
             .flatMap((issue) => issue.labels || [])
             .map((label) => JSON.stringify(label)),
         ),
-      ).map((label) => JSON.parse(label));
+      )
+        .map((labelString) => {
+          if (typeof labelString !== 'string') {
+            console.error('Unexpected non-string label:', labelString);
+            return null;
+          }
+          try {
+            return JSON.parse(labelString) as Label;
+          } catch {
+            console.error('Failed to parse label:', labelString);
+            return null;
+          }
+        })
+        .filter((label): label is Label => label !== null);
 
       setAssignees(uniqueAssignees as string[]);
       setLabels(uniqueLabels);
