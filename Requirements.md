@@ -51,6 +51,7 @@ Course Player:
 
 - A responsive and user-friendly interface for consuming course content.
 - Bookmarking, note-taking, and progress tracking features.
+- Gamification and tokenization of courses for engagement
 
 ### 2.3 Game Testing Functionality
 
@@ -68,6 +69,17 @@ Game Marketplace:
 
 - A section of the platform where users can discover and playtest new games.
 - Option for developers to monetize games through in-game purchases, ads, or premium versions.
+
+### 2.4 Events
+
+Weekly events:
+
+- A roll of events that take place every week created by the users.
+- An user can 'buy' with platform tokens any event from anyone that has ever submited that event.
+
+Game Jams:
+
+- Events that can be organized inside the community
 
 ## 3. DAO Governance
 
