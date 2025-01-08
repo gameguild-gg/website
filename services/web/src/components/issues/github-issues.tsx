@@ -477,13 +477,13 @@ export default function GitHubIssues() {
           ))}
         </TableBody>
       </Table>
-      <div className="mt-4 flex justify-between items-center">
-        <div>
+      <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center">
+        <div className="text-sm text-gray-700 dark:text-gray-300">
           Showing {(currentPage - 1) * pageSize + 1} to{' '}
           {Math.min(currentPage * pageSize, totalIssues)} of {totalIssues}{' '}
           issues
         </div>
-        <div className="flex items-center space-x-2">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           <Select
             value={pageSize.toString()}
             onValueChange={(value) => {
@@ -492,7 +492,7 @@ export default function GitHubIssues() {
               fetchIssues();
             }}
           >
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-full sm:w-[180px]">
               <SelectValue placeholder="Items per page" />
             </SelectTrigger>
             <SelectContent>
@@ -501,24 +501,28 @@ export default function GitHubIssues() {
               <SelectItem value="100">100 per page</SelectItem>
             </SelectContent>
           </Select>
-          <Button
-            onClick={() => {
-              setCurrentPage((prev) => Math.max(prev - 1, 1));
-              fetchIssues();
-            }}
-            disabled={currentPage === 1}
-          >
-            <ChevronLeft className="mr-2 h-4 w-4" /> Previous
-          </Button>
-          <Button
-            onClick={() => {
-              setCurrentPage((prev) => Math.min(prev + 1, totalPages));
-              fetchIssues();
-            }}
-            disabled={currentPage === totalPages}
-          >
-            Next <ChevronRight className="ml-2 h-4 w-4" />
-          </Button>
+          <div className="flex justify-between sm:justify-start gap-2">
+            <Button
+              onClick={() => {
+                setCurrentPage((prev) => Math.max(prev - 1, 1));
+                fetchIssues();
+              }}
+              disabled={currentPage === 1}
+              className="flex-1 sm:flex-initial"
+            >
+              <ChevronLeft className="mr-2 h-4 w-4" /> Previous
+            </Button>
+            <Button
+              onClick={() => {
+                setCurrentPage((prev) => Math.min(prev + 1, totalPages));
+                fetchIssues();
+              }}
+              disabled={currentPage === totalPages}
+              className="flex-1 sm:flex-initial"
+            >
+              Next <ChevronRight className="ml-2 h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </div>
     </div>
