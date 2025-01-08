@@ -1,3 +1,10 @@
+## [1.5.3](https://github.com/gameguild-gg/website/compare/v1.5.2...v1.5.3) (2025-01-08)
+
+
+### Bug Fixes
+
+* **contributors:** add better metadata generation to get the right domain ([29c848c](https://github.com/gameguild-gg/website/commit/29c848cb6f1acbcbe8dddac1d999a3ef0dc81058))
+
 ## [1.5.2](https://github.com/gameguild-gg/website/compare/v1.5.1...v1.5.2) (2025-01-08)
 
 
