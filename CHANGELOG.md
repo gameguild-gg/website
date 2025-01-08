@@ -1,3 +1,11 @@
+## [1.5.2](https://github.com/gameguild-gg/website/compare/v1.5.1...v1.5.2) (2025-01-08)
+
+
+### Bug Fixes
+
+* **contributors:** add video gource to the contributors page ([6e985ad](https://github.com/gameguild-gg/website/commit/6e985ad62aff3188491f7daa13486ba0ea961ac5))
+* **headers:** add institutional headers ([6173c16](https://github.com/gameguild-gg/website/commit/6173c16fd14bb053b4dd2af7b6c70f5131c8b257))
+
 ## [1.5.1](https://github.com/gameguild-gg/website/compare/v1.5.0...v1.5.1) (2025-01-07)
 
 
