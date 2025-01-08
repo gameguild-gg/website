@@ -1,3 +1,17 @@
+# [1.6.0](https://github.com/gameguild-gg/website/compare/v1.5.3...v1.6.0) (2025-01-08)
+
+
+### Bug Fixes
+
+* **issues:** fix dynamic api ([4e248b2](https://github.com/gameguild-gg/website/commit/4e248b23dd57ce1192604023faffb743da8500aa))
+* **issues:** fix github issues page ([89a71fe](https://github.com/gameguild-gg/website/commit/89a71fe299a427aa666177137f2ce26645c4ca91))
+* **issues:** github issues footer ([f35763f](https://github.com/gameguild-gg/website/commit/f35763fb8036ef1b310b022a8f16cdffffef0f5f))
+
+
+### Features
+
+* **issues:** add issues page to track the project progress publicly ([0b13d49](https://github.com/gameguild-gg/website/commit/0b13d49f8cf546596f2e4a054f2bf2f75f313fc3))
+
 ## [1.5.3](https://github.com/gameguild-gg/website/compare/v1.5.2...v1.5.3) (2025-01-08)
 
 
