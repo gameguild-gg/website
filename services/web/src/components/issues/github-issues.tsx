@@ -50,6 +50,8 @@ interface Issue {
   title: string;
   user: User;
   assignees: User[];
+  reviewers?: User[];
+  requested_reviewers?: User[];
   labels: Label[];
   reactions: {
     total_count: number;
@@ -65,10 +67,10 @@ export default function GitHubIssues() {
   const searchParams = useSearchParams();
 
   const [issues, setIssues] = useState<Issue[]>([]);
-  const [assignees, setAssignees] = useState<string[]>([]);
+  const [users, setUsers] = useState<string[]>([]);
   const [labels, setLabels] = useState<Label[]>([]);
-  const [selectedAssignee, setSelectedAssignee] = useState(
-    searchParams.get('assignee') || 'all',
+  const [selectedUser, setSelectedUser] = useState(
+    searchParams.get('user') || 'all',
   );
   const [selectedLabels, setSelectedLabels] = useState<string[]>(
     searchParams.get('labels')?.split(',').filter(Boolean) || [],
@@ -94,7 +96,7 @@ export default function GitHubIssues() {
   const updateURL = useCallback(() => {
     const params = new URLSearchParams();
     if (issueType !== 'issue') params.set('issueType', issueType);
-    if (selectedAssignee !== 'all') params.set('assignee', selectedAssignee);
+    if (selectedUser !== 'all') params.set('user', selectedUser);
     if (selectedLabels.length > 0)
       params.set('labels', selectedLabels.join(','));
     if (sort !== 'newest') params.set('sort', sort);
@@ -105,7 +107,7 @@ export default function GitHubIssues() {
     router.push(`?${params.toString()}`, { scroll: false });
   }, [
     issueType,
-    selectedAssignee,
+    selectedUser,
     selectedLabels,
     sort,
     pageSize,
@@ -120,7 +122,7 @@ export default function GitHubIssues() {
 
     const queryParams = new URLSearchParams({
       issueType,
-      assignee: selectedAssignee,
+      user: selectedUser,
       labels: selectedLabels.join(','),
       sort,
       page: currentPage.toString(),
@@ -141,12 +143,16 @@ export default function GitHubIssues() {
       setTotalPages(data.totalPages);
       setTotalIssues(data.totalIssues);
 
-      // Extract unique assignees and labels
-      const uniqueAssignees = Array.from(
+      // Extract unique users and labels
+      const uniqueUsers = Array.from(
         new Set(
-          data.issues.flatMap(
-            (issue) => issue.assignees?.map((assignee) => assignee.login) || [],
-          ),
+          data.issues.flatMap((issue) => [
+            issue.user.login,
+            ...(issue.assignees?.map((assignee) => assignee.login) || []),
+            ...(issue.reviewers?.map((reviewer) => reviewer.login) || []),
+            ...(issue.requested_reviewers?.map((reviewer) => reviewer.login) ||
+              []),
+          ]),
         ),
       );
       const uniqueLabels = Array.from(
@@ -170,7 +176,7 @@ export default function GitHubIssues() {
         })
         .filter((label): label is Label => label !== null);
 
-      setAssignees(uniqueAssignees as string[]);
+      setUsers(uniqueUsers as string[]);
       setLabels(uniqueLabels);
 
       updateURL();
@@ -182,7 +188,7 @@ export default function GitHubIssues() {
     }
   }, [
     issueType,
-    selectedAssignee,
+    selectedUser,
     selectedLabels,
     sort,
     currentPage,
@@ -208,9 +214,9 @@ export default function GitHubIssues() {
     [fetchIssues],
   );
 
-  const handleAvatarClick = useCallback(
+  const handleUserClick = useCallback(
     (username: string) => {
-      setSelectedAssignee((prev) => (prev === username ? 'all' : username));
+      setSelectedUser((prev) => (prev === username ? 'all' : username));
       setCurrentPage(1);
       fetchIssues();
     },
@@ -218,7 +224,26 @@ export default function GitHubIssues() {
   );
 
   const createIssueUrl = (template: string) => {
-    return `https://github.com/gameguild-gg/website/issues/new?assignees=&labels=&projects=&template=${template}.md&title=`;
+    // if feature_request, the title should start as "[Feature Request] " and the label should be "enhancement";
+    // if bug_report, the title should start as "[Bug Report] " and the label should be "bug";
+    // if Question, the title should start as "[Question] " and the label should be "question".
+    let label = '';
+    let title = '';
+    switch (template) {
+      case 'bug_report':
+        label = 'bug';
+        title = '[Bug Report] ';
+        break;
+      case 'feature_request':
+        label = 'enhancement';
+        title = '[Feature Request] ';
+        break;
+      case 'question':
+        label = 'question';
+        title = '[Question] ';
+        break;
+    }
+    return `https://github.com/gameguild-gg/website/issues/new?assignees=&labels=&projects=&template=${template}.md&title=${title}&labels=${label}`;
   };
 
   if (isLoading) {
@@ -287,48 +312,48 @@ export default function GitHubIssues() {
           </SelectContent>
         </Select>
         <Select
-          value={selectedAssignee}
+          value={selectedUser}
           onValueChange={(value) => {
-            setSelectedAssignee(value);
+            setSelectedUser(value);
             setCurrentPage(1);
             fetchIssues();
           }}
         >
           <SelectTrigger className="w-[200px]">
             <SelectValue>
-              {selectedAssignee !== 'all' ? (
+              {selectedUser !== 'all' ? (
                 <div className="flex items-center gap-2">
                   <Avatar className="h-6 w-6">
                     <AvatarImage
-                      src={`https://github.com/${selectedAssignee}.png`}
-                      alt={selectedAssignee}
+                      src={`https://github.com/${selectedUser}.png`}
+                      alt={selectedUser}
                     />
                     <AvatarFallback>
-                      {selectedAssignee.slice(0, 2).toUpperCase()}
+                      {selectedUser.slice(0, 2).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
-                  <span>{selectedAssignee}</span>
+                  <span>{selectedUser}</span>
                 </div>
               ) : (
-                'All Assignees'
+                'All Users'
               )}
             </SelectValue>
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Assignees</SelectItem>
-            {assignees.map((assignee) => (
-              <SelectItem key={assignee} value={assignee}>
+            <SelectItem value="all">All Users</SelectItem>
+            {users.map((user) => (
+              <SelectItem key={user} value={user}>
                 <div className="flex items-center gap-2">
                   <Avatar className="h-6 w-6">
                     <AvatarImage
-                      src={`https://github.com/${assignee}.png`}
-                      alt={assignee}
+                      src={`https://github.com/${user}.png`}
+                      alt={user}
                     />
                     <AvatarFallback>
-                      {assignee.slice(0, 2).toUpperCase()}
+                      {user.slice(0, 2).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
-                  <span>{assignee}</span>
+                  <span>{user}</span>
                 </div>
               </SelectItem>
             ))}
@@ -408,37 +433,50 @@ export default function GitHubIssues() {
               </TableCell>
               <TableCell className="py-4">
                 <div className="flex flex-wrap gap-1">
-                  {[issue.user, ...issue.assignees]
+                  {[
+                    { user: issue.user, role: 'Author' },
+                    ...(issue.assignees?.map((assignee) => ({
+                      user: assignee,
+                      role: 'Assignee',
+                    })) || []),
+                    ...(issue.reviewers?.map((reviewer) => ({
+                      user: reviewer,
+                      role: 'Reviewer',
+                    })) || []),
+                    ...(issue.requested_reviewers?.map((reviewer) => ({
+                      user: reviewer,
+                      role: 'Requested Reviewer',
+                    })) || []),
+                  ]
                     .filter(
                       (person, index, self) =>
                         index ===
-                        self.findIndex((t) => t.login === person.login),
+                        self.findIndex(
+                          (t) => t.user.login === person.user.login,
+                        ),
                     )
-                    .map((person) => (
-                      <TooltipProvider key={`${issue.number}-${person.login}`}>
+                    .map(({ user, role }) => (
+                      <TooltipProvider key={`${issue.number}-${user.login}`}>
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <button
-                              onClick={() => handleAvatarClick(person.login)}
-                              className={`relative ${selectedAssignee === person.login ? 'ring-2 ring-blue-500 rounded-full' : ''}`}
+                              onClick={() => handleUserClick(user.login)}
+                              className={`relative ${selectedUser === user.login ? 'ring-2 ring-blue-500 rounded-full' : ''}`}
                             >
                               <Avatar className="h-6 w-6 cursor-pointer">
                                 <AvatarImage
-                                  src={person.avatar_url}
-                                  alt={person.login}
+                                  src={user.avatar_url}
+                                  alt={user.login}
                                 />
                                 <AvatarFallback>
-                                  {person.login.slice(0, 2).toUpperCase()}
+                                  {user.login.slice(0, 2).toUpperCase()}
                                 </AvatarFallback>
                               </Avatar>
                             </button>
                           </TooltipTrigger>
                           <TooltipContent>
                             <p>
-                              {person.login === issue.user.login
-                                ? 'Author'
-                                : 'Assignee'}
-                              : {person.login}
+                              {role}: {user.login}
                             </p>
                           </TooltipContent>
                         </Tooltip>

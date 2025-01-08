@@ -1,8 +1,8 @@
+export const dynamic = 'force-dynamic';
+
 import { NextRequest, NextResponse } from 'next/server';
 import { Octokit } from 'octokit';
 import NodeCache from 'node-cache';
-
-export const dynamic = 'force-dynamic';
 
 const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN }).rest;
 const cache = new NodeCache({ stdTTL: 3600 }); // 1 hour TTL
@@ -20,16 +20,62 @@ async function fetchAllIssues(state: 'open' | 'closed' | 'all') {
   let hasNextPage = true;
 
   while (hasNextPage) {
-    const response = await octokit.issues.listForRepo({
-      owner: 'gameguild-gg',
-      repo: 'website',
-      state: state,
-      per_page: 100,
-      page: page,
-    });
+    const [issuesResponse, pullsResponse] = await Promise.all([
+      octokit.issues.listForRepo({
+        owner: 'gameguild-gg',
+        repo: 'website',
+        state: state,
+        per_page: 100,
+        page: page,
+      }),
+      octokit.pulls.list({
+        owner: 'gameguild-gg',
+        repo: 'website',
+        state: state,
+        per_page: 100,
+        page: page,
+      }),
+    ]);
 
-    allIssues = [...allIssues, ...response.data];
-    hasNextPage = response.data.length === 100;
+    const issuesWithReviews = await Promise.all(
+      issuesResponse.data.map(async (issue) => {
+        if (issue.pull_request) {
+          // Get both requested reviewers and actual reviews
+          const [requestedReviewers, reviews] = await Promise.all([
+            octokit.pulls.listRequestedReviewers({
+              owner: 'gameguild-gg',
+              repo: 'website',
+              pull_number: issue.number,
+            }),
+            octokit.pulls.listReviews({
+              owner: 'gameguild-gg',
+              repo: 'website',
+              pull_number: issue.number,
+            }),
+          ]);
+
+          // Get unique reviewers from both requested and completed reviews
+          const allReviewers = [
+            ...requestedReviewers.data.users,
+            ...reviews.data.map((review) => review.user),
+          ].filter(
+            (reviewer, index, self) =>
+              reviewer && // ensure reviewer exists
+              index === self.findIndex((r) => r && r.login === reviewer.login), // deduplicate
+          );
+
+          return {
+            ...issue,
+            reviewers: allReviewers,
+            requested_reviewers: requestedReviewers.data.users,
+          };
+        }
+        return issue;
+      }),
+    );
+
+    allIssues = [...allIssues, ...issuesWithReviews];
+    hasNextPage = issuesResponse.data.length === 100;
     page++;
   }
 
@@ -41,7 +87,7 @@ export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const issueType = searchParams.get('issueType') || 'all';
-    const assignee = searchParams.get('assignee') || 'all';
+    const user = searchParams.get('user') || 'all';
     const labels = searchParams.get('labels')?.split(',').filter(Boolean) || [];
     const sort = searchParams.get('sort') || 'newest';
     const page = parseInt(searchParams.get('page') || '1', 10);
@@ -67,10 +113,14 @@ export async function GET(request: NextRequest) {
       filteredIssues = filteredIssues.filter((issue) => issue.pull_request);
     }
 
-    if (assignee && assignee !== 'all') {
+    if (user && user !== 'all') {
       filteredIssues = filteredIssues.filter(
         (issue) =>
-          issue.assignees && issue.assignees.some((a) => a.login === assignee),
+          (issue.user && issue.user.login === user) ||
+          (issue.assignees && issue.assignees.some((a) => a.login === user)) ||
+          (issue.reviewers && issue.reviewers.some((r) => r.login === user)) ||
+          (issue.requested_reviewers &&
+            issue.requested_reviewers.some((r) => r.login === user)),
       );
     }
 
