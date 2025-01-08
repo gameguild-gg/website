@@ -1,3 +1,10 @@
+# [1.7.0](https://github.com/gameguild-gg/website/compare/v1.6.0...v1.7.0) (2025-01-08)
+
+
+### Features
+
+* **issues:** add better links to issue generation on github ([c4de113](https://github.com/gameguild-gg/website/commit/c4de113824eb17fbe19228b66de30f0842498dbe))
+
 # [1.6.0](https://github.com/gameguild-gg/website/compare/v1.5.3...v1.6.0) (2025-01-08)
 
 
