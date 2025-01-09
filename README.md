@@ -31,6 +31,13 @@ Our platform will provide a space for developers to showcase their games, connec
 5. run `npm install` on the root of the repo to install the dependencies;
 6. run `npm run start:both` on the root of the repo to start both front and back-end;
 
+<<<<<<<
+## How to create a new page
+
+## How to create e new api
+
+
+=======
 ### Setup GNU/Linux:
 
 1. Install Docker, view: https://docs.docker.com/engine/install/

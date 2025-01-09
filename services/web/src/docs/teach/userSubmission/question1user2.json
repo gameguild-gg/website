@@ -1,0 +1,25 @@
+{
+  "id": 1,
+  "format_ver": "1.0.0",
+  "type": "code",
+  "rules": ["inputs: y", "outputs: y", "chars: 500"],
+  "status": 2,
+  "subject": ["javascript", "basic math"],
+  "title": "Sum of Two Numbers",
+  "description": "Write a function that takes two numbers as input and returns their sum.",
+  "initialCode": [
+    "//Submitted\nfunction sum(a, b) {return a + b;}\n// Do not modify the code below\nconsole.log(sum(inputs[0][0], inputs[0][1]));console.log(sum(inputs[1][0], inputs[1][1]));"
+  ],
+  "codeName": ["sum.js"],
+  "inputs": [
+    [[5, 3],
+    [10, -2]]
+  ],
+  "outputs": [
+    "8",
+    "8"
+  ],
+  "outputsScore": [5, 5],
+  "score": [10, 0]
+}
+

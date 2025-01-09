@@ -369,6 +369,10 @@ export namespace Api {
 	
 	}
 
+	export interface CreateManyQuizEntityDto {
+		bulk: Api.QuizEntity[];
+	}
+
 	export interface CreateProjectDto {
 		slug: string;
 		title: string;
@@ -442,6 +446,149 @@ export namespace Api {
 	export interface EthereumSigninValidateRequestDto {
 		address: string;
 		signature: string;
+	}
+
+	export interface FormLongAnswerDto {
+		question: string;
+		/**
+		 * @type {number}
+		 * @memberof FormLongAnswerDto
+		 */
+		order: number;
+		/**
+		 * @type {number}
+		 * @memberof FormLongAnswerDto
+		 */
+		points: number;
+		/**
+		 * @type {number}
+		 * @memberof FormLongAnswerDto
+		 */
+		minLimit: number;
+		/**
+		 * @type {number}
+		 * @memberof FormLongAnswerDto
+		 */
+		maxLimit: number;
+		answer: string;
+		'type': Api.FormLongAnswerDto.Type;
+	}
+	
+	/**
+	 * @export
+	 * @namespace FormLongAnswerDto
+	 */
+	export namespace FormLongAnswerDto {
+		export type Type =
+			'MULTIPLE_CHOICE' |
+			'TRUE_FALSE' |
+			'MULTIPLE_TRUE_FALSE' |
+			'SHORT_ANSWER' |
+			'LONG_ANSWER' |
+			'FILL_IN_THE_BLANK' |
+			'FILL_IN_THE_BLANK_DROPDOWN' |
+			'FILL_IN_MULTIPLE_BLANKS_DROPDOWN' |
+			'FILL_IN_MULTIPLE_BLANK_TEXT' |
+			'MATCHING' |
+			'NUMERICAL' |
+			'FORMULA' |
+			'ESSAY' |
+			'FILE_UPLOAD' |
+			'TEXT_NO_QUESTION' |
+			'ORDERING' |
+			'CODE'
+		
+		export namespace Type {
+			export enum Enum {
+				MULTIPLECHOICE = 'MULTIPLE_CHOICE',
+				TRUEFALSE = 'TRUE_FALSE',
+				MULTIPLETRUEFALSE = 'MULTIPLE_TRUE_FALSE',
+				SHORTANSWER = 'SHORT_ANSWER',
+				LONGANSWER = 'LONG_ANSWER',
+				FILLINTHEBLANK = 'FILL_IN_THE_BLANK',
+				FILLINTHEBLANKDROPDOWN = 'FILL_IN_THE_BLANK_DROPDOWN',
+				FILLINMULTIPLEBLANKSDROPDOWN = 'FILL_IN_MULTIPLE_BLANKS_DROPDOWN',
+				FILLINMULTIPLEBLANKTEXT = 'FILL_IN_MULTIPLE_BLANK_TEXT',
+				MATCHING = 'MATCHING',
+				NUMERICAL = 'NUMERICAL',
+				FORMULA = 'FORMULA',
+				ESSAY = 'ESSAY',
+				FILEUPLOAD = 'FILE_UPLOAD',
+				TEXTNOQUESTION = 'TEXT_NO_QUESTION',
+				ORDERING = 'ORDERING',
+				CODE = 'CODE'
+			}
+		}
+	
+	}
+
+	export interface FormShortAnswerDto {
+		question: string;
+		/**
+		 * @type {number}
+		 * @memberof FormShortAnswerDto
+		 */
+		order: number;
+		/**
+		 * @type {number}
+		 * @memberof FormShortAnswerDto
+		 */
+		points: number;
+		/**
+		 * @type {number}
+		 * @memberof FormShortAnswerDto
+		 */
+		limit: number;
+		answer: string;
+		'type': Api.FormShortAnswerDto.Type;
+	}
+	
+	/**
+	 * @export
+	 * @namespace FormShortAnswerDto
+	 */
+	export namespace FormShortAnswerDto {
+		export type Type =
+			'MULTIPLE_CHOICE' |
+			'TRUE_FALSE' |
+			'MULTIPLE_TRUE_FALSE' |
+			'SHORT_ANSWER' |
+			'LONG_ANSWER' |
+			'FILL_IN_THE_BLANK' |
+			'FILL_IN_THE_BLANK_DROPDOWN' |
+			'FILL_IN_MULTIPLE_BLANKS_DROPDOWN' |
+			'FILL_IN_MULTIPLE_BLANK_TEXT' |
+			'MATCHING' |
+			'NUMERICAL' |
+			'FORMULA' |
+			'ESSAY' |
+			'FILE_UPLOAD' |
+			'TEXT_NO_QUESTION' |
+			'ORDERING' |
+			'CODE'
+		
+		export namespace Type {
+			export enum Enum {
+				MULTIPLECHOICE = 'MULTIPLE_CHOICE',
+				TRUEFALSE = 'TRUE_FALSE',
+				MULTIPLETRUEFALSE = 'MULTIPLE_TRUE_FALSE',
+				SHORTANSWER = 'SHORT_ANSWER',
+				LONGANSWER = 'LONG_ANSWER',
+				FILLINTHEBLANK = 'FILL_IN_THE_BLANK',
+				FILLINTHEBLANKDROPDOWN = 'FILL_IN_THE_BLANK_DROPDOWN',
+				FILLINMULTIPLEBLANKSDROPDOWN = 'FILL_IN_MULTIPLE_BLANKS_DROPDOWN',
+				FILLINMULTIPLEBLANKTEXT = 'FILL_IN_MULTIPLE_BLANK_TEXT',
+				MATCHING = 'MATCHING',
+				NUMERICAL = 'NUMERICAL',
+				FORMULA = 'FORMULA',
+				ESSAY = 'ESSAY',
+				FILEUPLOAD = 'FILE_UPLOAD',
+				TEXTNOQUESTION = 'TEXT_NO_QUESTION',
+				ORDERING = 'ORDERING',
+				CODE = 'CODE'
+			}
+		}
+	
 	}
 
 	export interface GetManyCourseEntityResponseDto {
@@ -588,6 +735,30 @@ export namespace Api {
 		pageCount: number;
 	}
 
+	export interface GetManyQuizEntityResponseDto {
+		data: Api.QuizEntity[];
+		/**
+		 * @type {number}
+		 * @memberof GetManyQuizEntityResponseDto
+		 */
+		count: number;
+		/**
+		 * @type {number}
+		 * @memberof GetManyQuizEntityResponseDto
+		 */
+		total: number;
+		/**
+		 * @type {number}
+		 * @memberof GetManyQuizEntityResponseDto
+		 */
+		page: number;
+		/**
+		 * @type {number}
+		 * @memberof GetManyQuizEntityResponseDto
+		 */
+		pageCount: number;
+	}
+
 	export interface GetManyTicketEntityResponseDto {
 		data: Api.TicketEntity[];
 		/**
@@ -610,20 +781,6 @@ export namespace Api {
 		 * @memberof GetManyTicketEntityResponseDto
 		 */
 		pageCount: number;
-	}
-
-	export interface GitStats {
-		username: string;
-		/**
-		 * @type {number}
-		 * @memberof GitStats
-		 */
-		additions: number;
-		/**
-		 * @type {number}
-		 * @memberof GitStats
-		 */
-		deletions: number;
 	}
 
 	export interface IdDto {
@@ -1236,6 +1393,48 @@ export namespace Api {
 		'feedback_deadline': string;
 		project: Api.ProjectEntity;
 		responses: Api.ProjectFeedbackResponseEntity[];
+	}
+
+	export interface QuizEntity {
+		id: string;
+		createdAt: string;
+		updatedAt: string;
+		owner: Api.UserEntity;
+		editors: Api.UserEntity[];
+		slug: string;
+		title: string;
+		summary: string;
+		body: string;
+		visibility: Api.QuizEntity.Visibility;
+		thumbnail: string;
+		questions: (Api.FormShortAnswerDto | Api.FormLongAnswerDto)[];
+		gradingInstructions: string;
+	}
+	
+	/**
+	 * @export
+	 * @namespace QuizEntity
+	 */
+	export namespace QuizEntity {
+		export type Visibility =
+			'DRAFT' |
+			'PUBLISHED' |
+			'FUTURE' |
+			'PENDING' |
+			'PRIVATE' |
+			'TRASH'
+		
+		export namespace Visibility {
+			export enum Enum {
+				DRAFT = 'DRAFT',
+				PUBLISHED = 'PUBLISHED',
+				FUTURE = 'FUTURE',
+				PENDING = 'PENDING',
+				PRIVATE = 'PRIVATE',
+				TRASH = 'TRASH'
+			}
+		}
+	
 	}
 
 	export interface TerminalDto {

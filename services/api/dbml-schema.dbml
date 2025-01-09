@@ -285,6 +285,27 @@ Table ProposalEntity {
   editors UserEntity
 }
 
+Table quiz_editors_user {
+  quiz_id uuid
+  user_id uuid
+}
+
+Table QuizEntity {
+  body text
+  createdAt timestamp
+  gradingInstructions string
+  id uuid
+  owner UserEntity
+  questions jsonb
+  slug varchar
+  summary string
+  thumbnail varchar
+  title varchar
+  updatedAt timestamp
+  visibility enum
+  editors UserEntity
+}
+
 Table TagEntity {
   createdAt timestamp
   id uuid

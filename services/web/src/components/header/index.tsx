@@ -24,6 +24,9 @@ import {
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 
+/**
+ * Main Header
+ */
 export default function Header() {
   const [user, setUser] = useState<any>(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);

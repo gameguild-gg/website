@@ -1,0 +1,9 @@
+{
+  "idUser": "2",
+  "email": "jane@email.com",
+  "firstName": "Jane",
+  "middleName": "Elizabeth",
+  "lastName": "Smith",
+  "idCourses": [1, 11001]
+}
+

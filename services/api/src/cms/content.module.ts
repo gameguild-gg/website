@@ -21,6 +21,9 @@ import { TicketController } from './ticket.controller';
 import { TicketService } from './ticket.service';
 import { CoursesController } from './courses.controller';
 import { CourseService } from './courses.service';
+import { QuizEntity } from './entities/quiz.entity';
+import { QuizController } from './quiz.controller';
+import { QuizService } from './quiz.service';
 
 @Module({
   imports: [
@@ -33,6 +36,7 @@ import { CourseService } from './courses.service';
       ProjectVersionEntity,
       ProjectFeedbackResponseEntity,
       TicketEntity,
+      QuizEntity,
     ]),
     forwardRef(() => UserModule),
   ],
@@ -42,6 +46,7 @@ import { CourseService } from './courses.service';
     ProjectVersionController,
     TicketController,
     CoursesController,
+    QuizController,
   ],
   providers: [
     ContentService,
@@ -49,6 +54,7 @@ import { CourseService } from './courses.service';
     ProjectVersionService,
     TicketService,
     CourseService,
+    QuizService,
   ],
   exports: [
     ContentService,
@@ -56,6 +62,7 @@ import { CourseService } from './courses.service';
     ProjectVersionService,
     TicketService,
     CourseService,
+    QuizService,
   ],
 })
 export class ContentModule {}

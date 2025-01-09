@@ -4571,6 +4571,391 @@
         ]
       }
     },
+    "/courses/{courseid}/quiz/{id}": {
+      "get": {
+        "operationId": "getOneBaseQuizControllerQuizEntity",
+        "summary": "Retrieve a single QuizEntity",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "fields",
+            "description": "Selects resource fields. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#select\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": false
+          },
+          {
+            "name": "join",
+            "description": "Adds relational resources. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#join\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "cache",
+            "description": "Reset cache (if was enabled). <a href=\"https://github.com/nestjsx/crud/wiki/Requests#cache\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Get one base response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuizEntity"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "quiz"
+        ]
+      },
+      "patch": {
+        "operationId": "updateOneBaseQuizControllerQuizEntity",
+        "summary": "Update a single QuizEntity",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QuizEntity"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuizEntity"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "quiz"
+        ]
+      },
+      "put": {
+        "operationId": "replaceOneBaseQuizControllerQuizEntity",
+        "summary": "Replace a single QuizEntity",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QuizEntity"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuizEntity"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "quiz"
+        ]
+      },
+      "delete": {
+        "operationId": "deleteOneBaseQuizControllerQuizEntity",
+        "summary": "Delete a single QuizEntity",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Delete one base response"
+          }
+        },
+        "tags": [
+          "quiz"
+        ]
+      }
+    },
+    "/courses/{courseid}/quiz": {
+      "get": {
+        "operationId": "getManyBaseQuizControllerQuizEntity",
+        "summary": "Retrieve multiple QuizEntities",
+        "parameters": [
+          {
+            "name": "fields",
+            "description": "Selects resource fields. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#select\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": false
+          },
+          {
+            "name": "s",
+            "description": "Adds search condition. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#search\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filter",
+            "description": "Adds filter condition. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#filter\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "or",
+            "description": "Adds OR condition. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#or\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "sort",
+            "description": "Adds sort by field. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#sort\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "join",
+            "description": "Adds relational resources. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#join\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "limit",
+            "description": "Limit amount of resources. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#limit\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "offset",
+            "description": "Offset amount of resources. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#offset\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "page",
+            "description": "Page portion of resources. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#page\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "cache",
+            "description": "Reset cache (if was enabled). <a href=\"https://github.com/nestjsx/crud/wiki/Requests#cache\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Get many base response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/GetManyQuizEntityResponseDto"
+                    },
+                    {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/QuizEntity"
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "quiz"
+        ]
+      },
+      "post": {
+        "operationId": "createOneBaseQuizControllerQuizEntity",
+        "summary": "Create a single QuizEntity",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QuizEntity"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Get create one base response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuizEntity"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "quiz"
+        ]
+      }
+    },
+    "/courses/{courseid}/quiz/bulk": {
+      "post": {
+        "operationId": "createManyBaseQuizControllerQuizEntity",
+        "summary": "Create multiple QuizEntities",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateManyQuizEntityDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Get create many base response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/QuizEntity"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "quiz"
+        ]
+      }
+    },
     "/Competitions/Chess/submit": {
       "post": {
         "operationId": "CompetitionController_submitChessAgent",
@@ -5487,69 +5872,6 @@
             "bearer": []
           }
         ]
-      }
-    },
-    "/healthcheck/gitstats": {
-      "get": {
-        "operationId": "HealthcheckController_gitstats",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/GitStats"
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/healthcheck/db": {
-      "get": {
-        "operationId": "HealthcheckController_db",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "DB is healthy"
-          },
-          "500": {
-            "description": "DB is unhealthy"
-          }
-        }
-      }
-    },
-    "/healthcheck/redis": {
-      "get": {
-        "operationId": "HealthcheckController_redis",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "Redis is healthy"
-          },
-          "500": {
-            "description": "Redis is unhealthy"
-          }
-        }
-      }
-    },
-    "/healthcheck/s3": {
-      "get": {
-        "operationId": "HealthcheckController_s3",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "S3 is healthy"
-          },
-          "500": {
-            "description": "S3 is unhealthy"
-          }
-        }
       }
     },
     "/job-posts": {
@@ -9331,12 +9653,12 @@
             "format": "uuid"
           },
           "createdAt": {
-            "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "type": "string"
           },
           "updatedAt": {
-            "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "type": "string"
           },
           "user": {
             "$ref": "#/components/schemas/UserEntity"
@@ -9376,12 +9698,12 @@
             "format": "uuid"
           },
           "createdAt": {
-            "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "type": "string"
           },
           "updatedAt": {
-            "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "type": "string"
           }
         },
         "required": [
@@ -9397,12 +9719,12 @@
             "format": "uuid"
           },
           "createdAt": {
-            "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "type": "string"
           },
           "updatedAt": {
-            "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "type": "string"
           },
           "owner": {
             "$ref": "#/components/schemas/UserEntity"
@@ -9485,12 +9807,12 @@
             "format": "uuid"
           },
           "createdAt": {
-            "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "type": "string"
           },
           "updatedAt": {
-            "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "type": "string"
           },
           "owner": {
             "$ref": "#/components/schemas/UserEntity"
@@ -9555,12 +9877,12 @@
             "format": "uuid"
           },
           "createdAt": {
-            "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "type": "string"
           },
           "updatedAt": {
-            "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "type": "string"
           },
           "owner": {
             "$ref": "#/components/schemas/UserEntity"
@@ -9627,12 +9949,12 @@
             "format": "uuid"
           },
           "createdAt": {
-            "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "type": "string"
           },
           "updatedAt": {
-            "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "type": "string"
           },
           "owner": {
             "$ref": "#/components/schemas/UserEntity"
@@ -9711,12 +10033,12 @@
             "format": "uuid"
           },
           "createdAt": {
-            "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "type": "string"
           },
           "updatedAt": {
-            "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "type": "string"
           },
           "username": {
             "type": "string"
@@ -10180,12 +10502,12 @@
             "format": "uuid"
           },
           "createdAt": {
-            "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "type": "string"
           },
           "updatedAt": {
-            "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "type": "string"
           },
           "version": {
             "$ref": "#/components/schemas/ProjectVersionEntity"
@@ -10216,12 +10538,12 @@
             "format": "uuid"
           },
           "createdAt": {
-            "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "type": "string"
           },
           "updatedAt": {
-            "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "type": "string"
           },
           "version": {
             "type": "string"
@@ -10321,12 +10643,12 @@
             "format": "uuid"
           },
           "createdAt": {
-            "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "type": "string"
           },
           "updatedAt": {
-            "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "type": "string"
           },
           "owner": {
             "$ref": "#/components/schemas/UserEntity"
@@ -10388,12 +10710,12 @@
             "format": "uuid"
           },
           "createdAt": {
-            "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "type": "string"
           },
           "updatedAt": {
-            "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "type": "string"
           },
           "owner": {
             "$ref": "#/components/schemas/UserEntity"
@@ -10506,6 +10828,239 @@
       "CreateTicketDto": {
         "type": "object",
         "properties": {}
+      },
+      "FormShortAnswerDto": {
+        "type": "object",
+        "properties": {
+          "question": {
+            "type": "string"
+          },
+          "order": {
+            "type": "number"
+          },
+          "points": {
+            "type": "number"
+          },
+          "limit": {
+            "type": "integer"
+          },
+          "answer": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "MULTIPLE_CHOICE",
+              "TRUE_FALSE",
+              "MULTIPLE_TRUE_FALSE",
+              "SHORT_ANSWER",
+              "LONG_ANSWER",
+              "FILL_IN_THE_BLANK",
+              "FILL_IN_THE_BLANK_DROPDOWN",
+              "FILL_IN_MULTIPLE_BLANKS_DROPDOWN",
+              "FILL_IN_MULTIPLE_BLANK_TEXT",
+              "MATCHING",
+              "NUMERICAL",
+              "FORMULA",
+              "ESSAY",
+              "FILE_UPLOAD",
+              "TEXT_NO_QUESTION",
+              "ORDERING",
+              "CODE"
+            ],
+            "default": "SHORT_ANSWER"
+          }
+        },
+        "required": [
+          "question",
+          "order",
+          "points",
+          "limit",
+          "answer",
+          "type"
+        ]
+      },
+      "FormLongAnswerDto": {
+        "type": "object",
+        "properties": {
+          "question": {
+            "type": "string"
+          },
+          "order": {
+            "type": "number"
+          },
+          "points": {
+            "type": "number"
+          },
+          "minLimit": {
+            "type": "integer"
+          },
+          "maxLimit": {
+            "type": "integer"
+          },
+          "answer": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "MULTIPLE_CHOICE",
+              "TRUE_FALSE",
+              "MULTIPLE_TRUE_FALSE",
+              "SHORT_ANSWER",
+              "LONG_ANSWER",
+              "FILL_IN_THE_BLANK",
+              "FILL_IN_THE_BLANK_DROPDOWN",
+              "FILL_IN_MULTIPLE_BLANKS_DROPDOWN",
+              "FILL_IN_MULTIPLE_BLANK_TEXT",
+              "MATCHING",
+              "NUMERICAL",
+              "FORMULA",
+              "ESSAY",
+              "FILE_UPLOAD",
+              "TEXT_NO_QUESTION",
+              "ORDERING",
+              "CODE"
+            ],
+            "default": "LONG_ANSWER"
+          }
+        },
+        "required": [
+          "question",
+          "order",
+          "points",
+          "minLimit",
+          "maxLimit",
+          "answer",
+          "type"
+        ]
+      },
+      "GetManyQuizEntityResponseDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/QuizEntity"
+            }
+          },
+          "count": {
+            "type": "number"
+          },
+          "total": {
+            "type": "number"
+          },
+          "page": {
+            "type": "number"
+          },
+          "pageCount": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "data",
+          "count",
+          "total",
+          "page",
+          "pageCount"
+        ]
+      },
+      "QuizEntity": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "owner": {
+            "$ref": "#/components/schemas/UserEntity"
+          },
+          "editors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UserEntity"
+            }
+          },
+          "slug": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "summary": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "DRAFT",
+              "PUBLISHED",
+              "FUTURE",
+              "PENDING",
+              "PRIVATE",
+              "TRASH"
+            ]
+          },
+          "thumbnail": {
+            "type": "string"
+          },
+          "questions": {
+            "type": "array",
+            "items": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/FormShortAnswerDto"
+                },
+                {
+                  "$ref": "#/components/schemas/FormLongAnswerDto"
+                }
+              ]
+            }
+          },
+          "gradingInstructions": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "createdAt",
+          "updatedAt",
+          "owner",
+          "editors",
+          "slug",
+          "title",
+          "summary",
+          "body",
+          "visibility",
+          "thumbnail",
+          "questions",
+          "gradingInstructions"
+        ]
+      },
+      "CreateManyQuizEntityDto": {
+        "type": "object",
+        "properties": {
+          "bulk": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/QuizEntity"
+            }
+          }
+        },
+        "required": [
+          "bulk"
+        ]
       },
       "CompetitionSubmissionDto": {
         "type": "object",
@@ -10667,12 +11222,12 @@
             "format": "uuid"
           },
           "createdAt": {
-            "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "type": "string"
           },
           "updatedAt": {
-            "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "type": "string"
           },
           "winner": {
             "type": "string"
@@ -10718,8 +11273,8 @@
             "format": "uuid"
           },
           "createdAt": {
-            "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "type": "string"
           },
           "updatedAt": {
             "type": "string",
@@ -10783,12 +11338,12 @@
             "format": "uuid"
           },
           "createdAt": {
-            "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "type": "string"
           },
           "updatedAt": {
-            "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "type": "string"
           },
           "winsAsP1": {
             "type": "number"
@@ -10968,12 +11523,12 @@
             "format": "uuid"
           },
           "createdAt": {
-            "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "type": "string"
           },
           "updatedAt": {
-            "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "type": "string"
           },
           "name": {
             "type": "string"
@@ -10993,12 +11548,12 @@
             "format": "uuid"
           },
           "createdAt": {
-            "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "type": "string"
           },
           "updatedAt": {
-            "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "type": "string"
           },
           "owner": {
             "$ref": "#/components/schemas/UserEntity"
@@ -11070,12 +11625,12 @@
             "format": "uuid"
           },
           "createdAt": {
-            "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "type": "string"
           },
           "updatedAt": {
-            "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "type": "string"
           },
           "owner": {
             "$ref": "#/components/schemas/UserEntity"
@@ -11230,12 +11785,12 @@
             "format": "uuid"
           },
           "createdAt": {
-            "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "type": "string"
           },
           "updatedAt": {
-            "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "type": "string"
           },
           "applicant": {
             "$ref": "#/components/schemas/UserEntity"
