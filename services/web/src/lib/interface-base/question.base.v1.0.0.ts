@@ -1,3 +1,5 @@
+import { ReactNode } from "react";
+
 export interface QuestionBasev1_0_0 {
     id: number;
     format_ver: "1.0.0";
@@ -11,6 +13,7 @@ export interface QuestionBasev1_0_0 {
 }
 
 export interface CodeQuestionv1_0_0 extends QuestionBasev1_0_0 {
+    testResults: any;
     content: any;
     type: "code";
     initialCode: string | string[];
@@ -21,6 +24,7 @@ export interface CodeQuestionv1_0_0 extends QuestionBasev1_0_0 {
 }
 
 export interface AnswerQuestionv1_0_0 extends QuestionBasev1_0_0 {
+    submittedAnswer: ReactNode;
     type: "answer";
     question: string;
     answer: string;
@@ -35,6 +39,7 @@ export interface EssayQuestionv1_0_0 extends QuestionBasev1_0_0 {
 }
 
 export interface MultipleChoiceQuestionv1_0_0 extends QuestionBasev1_0_0 {
+    submittedAnswers: any;
     type: "multiple-choice";
     question: string;
     answers: { id: string; text: string }[];
