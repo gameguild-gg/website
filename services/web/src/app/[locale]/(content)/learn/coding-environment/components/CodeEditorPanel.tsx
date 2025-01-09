@@ -177,6 +177,7 @@ export default function CodeEditorPanel({ codeQuestion, onSubmit, hierarchy = {
   const submissionId = searchParams.get('submissionId');
 
   const [pyodide, setPyodide] = useState<any>(null);
+  const [rubyWasm, setRubyWasm] = useState<any>(null);
 
   if (!codeQuestion) {
     return <div>Loading...</div>;
@@ -403,12 +404,28 @@ export default function CodeEditorPanel({ codeQuestion, onSubmit, hierarchy = {
     }
     return pyodide;
   };
-/*
+
   const loadRubyWasm = async () => {
-  const RubyModule = await import('@wasmer/ruby-wasm'); // Substitua pelo módulo correto
-  return RubyModule;
-};
-*/
+    if (!rubyWasm) {
+      const script = document.createElement("script");
+      script.src = "https://cdn.jsdelivr.net/npm/@ruby/wasm-wasi@2.7.0/dist/browser.umd.js";
+      script.async = true;
+
+      await new Promise((resolve, reject) => {
+        script.onload = resolve;
+        script.onerror = reject;
+        document.body.appendChild(script);
+      });
+
+      const instance = await (window as any).DefaultRubyVM();
+      setRubyWasm(instance);
+      return instance;
+    }
+    return rubyWasm;
+  };
+
+
+
 
   //RUN FILE
   const runFile = () => {
@@ -499,10 +516,16 @@ export default function CodeEditorPanel({ codeQuestion, onSubmit, hierarchy = {
 
       // Run Python
       } else if (currentFile.language === 'python') {
+        
         const executePython = async (code: string) => {
           try {
+
+            setOutput((prev) => prev + '\nLoading Python runtime...');
+
             const pyodideInstance = await loadPyodideInstance();
-      
+
+            setOutput((prev) => prev.replace('\nLoading Python runtime...', ''));
+
             // Variáveis para capturar o stdout e stderr
             let capturedOutput = '';
             let capturedError = '';
@@ -564,19 +587,19 @@ export default function CodeEditorPanel({ codeQuestion, onSubmit, hierarchy = {
         });
       // Run Ruby
       } else if (currentFile.language === 'ruby') {
-        /*
+        
         const executeRuby = async (code: string) => {
           try {
             // Carregar o ruby.wasm (certifique-se de que a instância esteja configurada corretamente)
+            
             const rubyModule = await loadRubyWasm(); // Função personalizada para carregar ruby.wasm
-            const rubyVM = rubyModule.RubyVM();
       
             // Variáveis para capturar stdout e stderr
             let capturedOutput = '';
             let capturedError = '';
       
             // Redirecionar stdout
-            rubyVM.stdout = {
+            rubyModule.stdout = {
               write: (output: string) => {
                 capturedOutput += output;
                 if (!newAbortController.signal.aborted) {
@@ -586,7 +609,7 @@ export default function CodeEditorPanel({ codeQuestion, onSubmit, hierarchy = {
             };
       
             // Redirecionar stderr
-            rubyVM.stderr = {
+            rubyModule.stderr = {
               write: (error: string) => {
                 capturedError += error;
       
@@ -603,7 +626,7 @@ export default function CodeEditorPanel({ codeQuestion, onSubmit, hierarchy = {
             };
       
             // Executar o código Ruby
-            rubyVM.eval(code);
+            rubyModule.eval(code);
       
             // Retornar saída capturada
             return { capturedOutput, capturedError };
@@ -637,7 +660,7 @@ export default function CodeEditorPanel({ codeQuestion, onSubmit, hierarchy = {
             setOutput((prev) => prev + `\nUnhandled Ruby Error: ${error}\n`);
           }
         });
-        */
+        
       } else if (currentFile.language === 'lua') {
         
       // Run HTML

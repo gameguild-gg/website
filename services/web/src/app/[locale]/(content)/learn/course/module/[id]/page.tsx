@@ -121,3 +121,11 @@ export default function ModuleDetail({ params }: { params: { id: string } }) {
   
 }
 
+function setLessons(lessonMap: any) {
+  throw new Error('Function not implemented.')
+}
+
+function setIsLoading(arg0: boolean) {
+  throw new Error('Function not implemented.')
+}
+
