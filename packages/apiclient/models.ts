@@ -783,6 +783,20 @@ export namespace Api {
 		pageCount: number;
 	}
 
+	export interface GitStats {
+		username: string;
+		/**
+		 * @type {number}
+		 * @memberof GitStats
+		 */
+		additions: number;
+		/**
+		 * @type {number}
+		 * @memberof GitStats
+		 */
+		deletions: number;
+	}
+
 	export interface IdDto {
 		id: string;
 	}
@@ -1396,17 +1410,17 @@ export namespace Api {
 	}
 
 	export interface QuizEntity {
-		id: string;
+		id?: string;
 		createdAt: string;
 		updatedAt: string;
-		owner: Api.UserEntity;
-		editors: Api.UserEntity[];
+		owner?: Api.UserEntity;
+		editors?: Api.UserEntity[];
 		slug: string;
 		title: string;
-		summary: string;
-		body: string;
-		visibility: Api.QuizEntity.Visibility;
-		thumbnail: string;
+		summary?: string;
+		body?: string;
+		visibility?: Api.QuizEntity.Visibility;
+		thumbnail?: Api.ImageEntity;
 		questions: (Api.FormShortAnswerDto | Api.FormLongAnswerDto)[];
 		gradingInstructions: string;
 	}
