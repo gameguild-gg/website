@@ -24,7 +24,7 @@ export default function LessonPage({ params }: { params: { id: string } }) {
   const role = searchParams.get('role')
   const courseId = searchParams.get('courseId')
   const moduleId = searchParams.get('moduleId')
-  const [mode, setMode] = useState<'light' | 'dark' | 'high-contrast'>('dark')
+  const [mode, setMode] = useState<'light' | 'dark' | 'high-contrast'>('light')
   const [editingSections, setEditingSections] = useState<{[key: number]: boolean}>({})
   const [activeTab, setActiveTab] = useState(0)
 
@@ -150,12 +150,12 @@ export default function LessonPage({ params }: { params: { id: string } }) {
   const renderContent = (contentItem: string | { content: string } | { title: string; content: string }[], index: number) => {
     const isEditing = editingSections[index] || false;
 
-    const handleEdit = () => {
+    const handleEdit = (index: number) => {
       setOriginalContent(prev => ({ ...prev, [index]: lesson.content[index] }));
       setEditingSections(prev => ({ ...prev, [index]: true }));
     };
 
-    const handleCancelEdit = () => {
+    const handleCancelEdit = (index: number) => {
       setEditingSections(prev => ({ ...prev, [index]: false }));
       if (originalContent[index]) {
         const updatedContent = [...lesson.content];
@@ -258,7 +258,7 @@ export default function LessonPage({ params }: { params: { id: string } }) {
   };
 
   return (
-    <div className={`min-h-screen p-8 ${
+    <div className={`p-8 ${
       mode === 'light' ? 'bg-gray-100 text-gray-900' :
       mode === 'dark' ? 'bg-gray-800 text-gray-100' :
       'bg-black text-yellow-300'

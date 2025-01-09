@@ -11,6 +11,7 @@ export interface QuestionBasev1_0_0 {
 }
 
 export interface CodeQuestionv1_0_0 extends QuestionBasev1_0_0 {
+    content: any;
     type: "code";
     initialCode: string | string[];
     codeName: string[];

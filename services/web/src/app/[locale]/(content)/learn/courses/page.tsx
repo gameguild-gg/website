@@ -21,7 +21,7 @@ export default function CoursesPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const userId = searchParams.get('userId')
-  const [mode, setMode] = useState<'light' | 'dark' | 'high-contrast'>('dark')
+  const [mode, setMode] = useState<'light' | 'dark' | 'high-contrast'>('light')
   const [role, setRole] = useState<'student' | 'teacher' | null>(null); // Added state for role
 
   useEffect(() => {
@@ -123,7 +123,7 @@ export default function CoursesPage() {
   }
 
   return (
-    <div className={`min-h-screen p-8 ${
+    <div className={`p-8 ${
       mode === 'light' ? 'bg-gray-100 text-gray-900' :
       mode === 'dark' ? 'bg-gray-800 text-gray-100' :
       'bg-black text-yellow-300'

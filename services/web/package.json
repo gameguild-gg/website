@@ -106,7 +106,7 @@
     "vaul": "^0.9.6",
     "fs": "latest",
     "path": "latest",
-    "react-markdown": "latest",
+    "react-markdown": "9.0.3",
     "monaco-editor": "latest",
     "@monaco-editor/react": "latest",
     "node-abort-controller": "latest",

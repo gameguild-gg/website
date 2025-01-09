@@ -24,7 +24,7 @@ export default function AssessmentPage({ params }: { params: { id: string } }) {
   const role = searchParams.get('role')
   const courseId = searchParams.get('courseId')
   const moduleId = searchParams.get('moduleId')
-  const [mode, setMode] = useState<'light' | 'dark' | 'high-contrast'>('dark')
+  const [mode, setMode] = useState<'light' | 'dark' | 'high-contrast'>('light')
   const [activeTab, setActiveTab] = useState(0);
 
   const fetchData = useCallback(async () => {
@@ -147,7 +147,7 @@ export default function AssessmentPage({ params }: { params: { id: string } }) {
   const totalQuestions = assessment.idQuestions.reduce((sum, tab) => sum + tab.questions.length, 0);
 
   return (
-    <div className={`min-h-screen p-8 ${
+    <div className={`p-8 ${
       mode === 'light' ? 'bg-gray-100 text-gray-900' :
       mode === 'dark' ? 'bg-gray-800 text-gray-100' :
       'bg-black text-yellow-300'

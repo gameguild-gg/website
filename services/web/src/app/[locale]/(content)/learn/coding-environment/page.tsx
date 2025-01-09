@@ -21,7 +21,7 @@ export default function CodingEnvironment() {
   const role = searchParams.get('role')
   const courseId = searchParams.get('courseId')
   const moduleId = searchParams.get('moduleId')
-  const [mode, setMode] = useState<'light' | 'dark' | 'high-contrast'>('dark') // State for color mode
+  const [mode, setMode] = useState<'light' | 'dark' | 'high-contrast'>('light') // State for color mode
 
 
   useEffect(() => {
@@ -35,7 +35,7 @@ export default function CodingEnvironment() {
       setIsLoading(true)
       setError(null)
       try {
-        const response = await fetch(`../../api/learn/content/${exerciseType}/${exerciseId}`);
+        const response = await fetch(`../../../api/learn/content/${exerciseType}/${exerciseId}`);
         if (!response.ok) {
           const errorData = await response.json();
           throw new Error(`HTTP error! status: ${response.status}, message: ${errorData.error}`);
@@ -80,7 +80,7 @@ export default function CodingEnvironment() {
       // Update the submission status
       submission.status = QuestionStatus.Submitted;
 
-      const response = await fetch('../../api/learn/submit-codeQuestion', {
+      const response = await fetch('../../../api/learn/submit-codeQuestion', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -132,7 +132,7 @@ export default function CodingEnvironment() {
   };
 
   return (
-    <div className="h-screen flex flex-col">
+    <div className="fixed w-full flex flex-col">
       <CodeEditorPanel
         codeQuestion={question}
         onReturn={handleReturn}

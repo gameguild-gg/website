@@ -20,7 +20,7 @@ export default function CoursePage({ params }: { params: { id: string } }) {
   const searchParams = useSearchParams()
   const userId = searchParams.get('userId')
   const role = searchParams.get('role')
-  const [mode, setMode] = useState<'light' | 'dark' | 'high-contrast'>('dark')
+  const [mode, setMode] = useState<'light' | 'dark' | 'high-contrast'>('light')
 
   useEffect(() => {
     const fetchData = async () => {

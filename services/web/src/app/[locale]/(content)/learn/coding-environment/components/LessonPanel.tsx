@@ -65,7 +65,7 @@ export default function LessonPanel({ codeQuestion, onReturn, onSubmit, onReset,
         {!shouldHideSubmit && (
           <Button 
             onClick={onSubmit} 
-            className={`w-full ${
+            className={`w-full mb-20 ${
               mode === 'light' ? 'bg-blue-500 hover:bg-blue-600 text-white' :
               mode === 'dark' ? 'bg-blue-600 hover:bg-blue-700 text-white' :
               'bg-yellow-300 hover:bg-yellow-400 text-black'

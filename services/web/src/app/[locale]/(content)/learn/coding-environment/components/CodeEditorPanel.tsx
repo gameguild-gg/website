@@ -89,8 +89,8 @@ const getLanguageFromExtension = (filename: string): string => {
   return languageMap[extension] || 'plaintext'
 }
 
-const DEFAULT_MAX_FILES = 6
-const DEFAULT_MAX_CHARS = 500000
+const DEFAULT_MAX_FILES = Infinity
+const DEFAULT_MAX_CHARS = Infinity
 
 const defaultSettings: Settings = {
   runSettings: {
@@ -177,7 +177,9 @@ export default function CodeEditorPanel({ codeQuestion, onSubmit, hierarchy = {
   const submissionId = searchParams.get('submissionId');
 
   const [pyodide, setPyodide] = useState<any>(null);
-  const [rubyWasm, setRubyWasm] = useState<any>(null);
+
+  const [rubyVM, setRubyVM] = useState<any>(null);
+  
 
   if (!codeQuestion) {
     return <div>Loading...</div>;
@@ -405,8 +407,9 @@ export default function CodeEditorPanel({ codeQuestion, onSubmit, hierarchy = {
     return pyodide;
   };
 
-  const loadRubyWasm = async () => {
-    if (!rubyWasm) {
+  // Carregar o Ruby WebAssembly
+  const loadRubyInstance = async () => {
+    if (!rubyVM) {
       const script = document.createElement("script");
       script.src = "https://cdn.jsdelivr.net/npm/@ruby/wasm-wasi@2.7.0/dist/browser.umd.js";
       script.async = true;
@@ -417,11 +420,12 @@ export default function CodeEditorPanel({ codeQuestion, onSubmit, hierarchy = {
         document.body.appendChild(script);
       });
 
-      const instance = await (window as any).DefaultRubyVM();
-      setRubyWasm(instance);
-      return instance;
+      const response = await fetch("https://cdn.jsdelivr.net/npm/@ruby/3.3-wasm-wasi@2.7.0/dist/ruby+stdlib.wasm");
+      const module = await WebAssembly.compileStreaming(response);
+      const { DefaultRubyVM } = window["ruby-wasm-wasi"];
+      const { vm } = await DefaultRubyVM(module);
+      setRubyVM(vm);
     }
-    return rubyWasm;
   };
 
 
@@ -587,12 +591,65 @@ export default function CodeEditorPanel({ codeQuestion, onSubmit, hierarchy = {
         });
       // Run Ruby
       } else if (currentFile.language === 'ruby') {
+/*
+        const executeRuby = async (code: string) => {
+          if (!rubyVM) return;
+      
+          try {
+            setOutput((prev) => prev + '\nLoading Ruby runtime...');
+      
+            // Captura de stdout e stderr
+            let capturedOutput = '';
+            let capturedError = '';
+      
+            // Redirecionar a saída padrão
+            rubyVM.set_stdout((output: string) => {
+              capturedOutput += output;
+              setOutput((prev) => prev + output);
+            });
+      
+            // Redirecionar os erros
+            rubyVM.set_stderr((error: string) => {
+              capturedError += error;
+              setOutput((prev) => prev + `Error: ${error}\n`);
+            });
+      
+            // Executar código Ruby
+            await rubyVM.eval(code);
+      
+            // Retornar o output e erro capturados
+            return { capturedOutput, capturedError };
+          } catch (error) {
+            return { capturedOutput: '', capturedError: (error as Error).message };
+          }
+        };
+
+        const executeAndCaptureRuby = async () => {
+          const currentCode = codeQuestion.content;  // Supondo que `content` contenha o código Ruby
+          console.log("Content: " + currentCode);
+      
+          const { capturedOutput, capturedError } = await executeRuby(currentCode);
+      
+          console.log("Captured Output: " + capturedOutput);
+          console.log("Captured Error: " + capturedError);
+      
+          if (capturedError) {
+            setOutput((prev) => prev + `\nCaptured Error:\n${capturedError}`);
+          }
+      
+          if (codeQuestion.rules.includes('outputs: y')) {
+            const results = compareOutputs([capturedOutput], codeQuestion.outputs);
+            setTestResults(results);
+          }
+        };
+        */
         
+        /*
         const executeRuby = async (code: string) => {
           try {
             // Carregar o ruby.wasm (certifique-se de que a instância esteja configurada corretamente)
             
-            const rubyModule = await loadRubyWasm(); // Função personalizada para carregar ruby.wasm
+            const rubyModule = await initializeRuby(); // Função personalizada para carregar ruby.wasm
       
             // Variáveis para capturar stdout e stderr
             let capturedOutput = '';
@@ -654,6 +711,7 @@ export default function CodeEditorPanel({ codeQuestion, onSubmit, hierarchy = {
             setTestResults(results);
           }
         };
+        */
       
         executeAndCaptureRuby().catch((error) => {
           if (!newAbortController.signal.aborted) {
@@ -1295,7 +1353,11 @@ export default function CodeEditorPanel({ codeQuestion, onSubmit, hierarchy = {
       }
     };
   }, [abortController]);
-
+/*
+  useEffect(() => {
+    loadRubyInstance();
+  }, []);
+*/
   useEffect(() => {
     if (!codeQuestion) return;
 
@@ -1609,7 +1671,7 @@ const ProblemsTab = ({ codeQuestion, mode }: { codeQuestion: CodeQuestionv1_0_0,
             mode === 'dark' ?'text-gray-200' :
             'text-white'
           }`}>Expected Outputs:</h3>
-          <ul className="list-disc list-inside">
+          <ul className="list-disc list-inside mb-16">
             {codeQuestion.outputs.map((output, index) => (
               <li key={index} className={
                 mode === 'light' ? 'text-gray-800' :
@@ -1632,7 +1694,7 @@ const OutputTab = ({ output, mode }: { output: string, mode: string }) => {
                 mode ==='dark' ? 'text-gray-200' :
         'text-white'
       }`}>Output</h2>
-      <pre className={`p-2 rounded ${
+      <pre className={`p-2 mb-20 rounded ${
         mode === 'light' ? 'bg-gray-100 text-gray-800' :
         mode === 'dark' ? 'bg-gray-800 text-gray-200' :
         'bg-black text-white'

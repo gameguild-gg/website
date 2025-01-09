@@ -54,7 +54,7 @@ export default function TestResultsTab({ testResults, mode, hideTestOutputs }: T
               </div>
             </div>
           ))}
-          <p className={`mt-4 font-bold ${
+          <p className={`mt-4 mb-20 font-bold ${
             mode === 'light' ? 'text-gray-800' :
             mode === 'dark' ? 'text-gray-200' :
             'text-yellow-300'
