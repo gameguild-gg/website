@@ -110,9 +110,10 @@
     "monaco-editor": "latest",
     "@monaco-editor/react": "latest",
     "node-abort-controller": "latest",
-    "react-scrollbars-custom": "latest",
+    "react-custom-scrollbars-2": "latest",
     "react-quill": "latest",
-    "@uiw/react-md-editor": "^3.23.3"
+    "@uiw/react-md-editor": "^3.23.3",
+    "pyodide": "^0.27.0"
   },
   "devDependencies": {
     "@game-guild/eslint-config": "*",

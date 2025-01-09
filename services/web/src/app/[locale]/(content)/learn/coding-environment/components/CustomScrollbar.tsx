@@ -1,5 +1,5 @@
 import React, { ReactNode } from 'react';
-import { Scrollbar } from 'react-scrollbars-custom';
+import { Scrollbars } from 'react-custom-scrollbars-2';
 
 interface CustomScrollbarProps {
   children: ReactNode;
@@ -30,21 +30,22 @@ const CustomScrollbar: React.FC<CustomScrollbarProps> = ({ children, className, 
     }
   };
 
-  // return (
-  //   <Scrollbar
-  //     style={{ width: '100%', height: '100%' }}
-  //     className={className}
-  //     trackYProps={{
-  //       style: getTrackStyle()
-  //     }}
-  //     thumbYProps={{
-  //       style: getThumbStyle()
-  //     }}
-  //   >
-  //     {children}
-  //   </Scrollbar>
-  // );
-  return(<></>)
+  return (
+    <Scrollbars
+      className={className}
+      renderTrackVertical={({ style, ...props }) => (
+        <div {...props} style={{ ...style, ...getTrackStyle(), right: 2, bottom: 2, top: 2, width: 8 }} />
+      )}
+      renderThumbVertical={({ style, ...props }) => (
+        <div {...props} style={{ ...style, ...getThumbStyle(), borderRadius: 4 }} />
+      )}
+      renderView={props => (
+        <div {...props} style={{ ...props.style, overflowX: 'hidden' }} />
+      )}
+    >
+      {children}
+    </Scrollbars>
+  );
 };
 
 export default CustomScrollbar;

@@ -7,16 +7,28 @@
         "firstName": "Jane",
         "middleName": "Elizabeth",
         "lastName": "Smith",
-        "idCourses": [1]
+        "idCourses": [
+          1
+        ]
       },
       "submission": {
         "id": 1,
         "format_ver": "1.0.0",
         "type": "code",
-        "rules": ["inputs: y", "outputs: y", "chars: 500"],
+        "rules": [
+          "inputs: y",
+          "outputs: y",
+          "chars: 500"
+        ],
         "status": 2,
-        "subject": ["javascript", "basic math"],
-        "score": [0,10],
+        "subject": [
+          "javascript",
+          "basic math"
+        ],
+        "score": [
+          0,
+          10
+        ],
         "title": "Sum of Two Numbers",
         "description": "Write a function that takes two numbers as input and returns their sum.",
         "submittedCode": [
@@ -37,7 +49,7 @@
         ]
       },
       "maxScore": 10,
-      "score": 0
+      "score": 8
     },
     "3": {
       "user": {
@@ -46,11 +58,12 @@
         "firstName": "Alice",
         "middleName": "Grace",
         "lastName": "Johnson",
-        "idCourses": [1]
+        "idCourses": [
+          1
+        ]
       },
       "maxScore": 10,
       "score": 0
     }
   }
 }
-

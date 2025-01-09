@@ -119,7 +119,11 @@ const calculateTotalChars = (files: CodeFile[], rules: string[]): number => {
   }, 0)
 }
 
-export default function CodeEditorPanel({ codeQuestion, onSubmit, hierarchy = {} }: CodeEditorPanelProps) {
+export default function CodeEditorPanel({ codeQuestion, onSubmit, hierarchy = {
+  idHierarchy: [],
+  idUser: '',
+  idRole: ''
+} }: CodeEditorPanelProps) {
   const [codeFiles, setCodeFiles] = useState<CodeFile[]>([])
   const [activeFileIndex, setActiveFileIndex] = useState(0)
   const [activeTab, setActiveTab] = useState<'output' | 'problems' | 'testResults' | null>(null)
@@ -172,6 +176,8 @@ export default function CodeEditorPanel({ codeQuestion, onSubmit, hierarchy = {}
   const [studentSubmission, setStudentSubmission] = useState<StudentSubmission | null>(null);
   const submissionId = searchParams.get('submissionId');
 
+  const [pyodide, setPyodide] = useState<any>(null);
+
   if (!codeQuestion) {
     return <div>Loading...</div>;
   }
@@ -194,6 +200,7 @@ export default function CodeEditorPanel({ codeQuestion, onSubmit, hierarchy = {}
     }
     return maxChars
   }
+
 
   useEffect(() => {
     if (!codeQuestion || !courseId || !moduleId || !assessmentId) return;
@@ -376,6 +383,34 @@ export default function CodeEditorPanel({ codeQuestion, onSubmit, hierarchy = {}
     return window !== null && !window.closed;
   };
 
+  // Load Pyodide on component mount
+  const loadPyodideInstance = async () => {
+    if (!pyodide) {
+      const script = document.createElement("script");
+      script.src = "https://cdn.jsdelivr.net/pyodide/v0.27.0/full/pyodide.js";
+      script.async = true;
+
+      await new Promise((resolve, reject) => {
+        script.onload = resolve;
+        script.onerror = reject;
+        document.body.appendChild(script);
+      });
+
+      // @ts-ignore - `loadPyodide` será disponibilizado globalmente pelo script
+      const instance = await (window as any).loadPyodide();
+      setPyodide(instance);
+      return instance;
+    }
+    return pyodide;
+  };
+/*
+  const loadRubyWasm = async () => {
+  const RubyModule = await import('@wasmer/ruby-wasm'); // Substitua pelo módulo correto
+  return RubyModule;
+};
+*/
+
+  //RUN FILE
   const runFile = () => {
     setIsRunAnimating(true);
     if (abortController) {
@@ -407,6 +442,28 @@ export default function CodeEditorPanel({ codeQuestion, onSubmit, hierarchy = {}
     };
 
     const handleInternalOutput = () => {
+      /*
+      switch (currentFile.language){
+        case 'javascript':
+          executeJavaScript(currentFile.content);
+          break;
+        case 'typescript':
+          break;
+        case 'python':
+          break;
+        case 'lua':
+          break;
+        case 'ruby':
+          break;
+        case 'c':
+        case 'cpp':
+          break;
+        case 'html':
+          break;
+      }
+      */
+
+      // Run Javascript
       if (currentFile.language === 'javascript') {
         const capturedOutput: string[] = [];
         const customConsole = {
@@ -439,6 +496,151 @@ export default function CodeEditorPanel({ codeQuestion, onSubmit, hierarchy = {}
             setOutput(`Error executing JavaScript: ${error}\n`);
           }
         }
+
+      // Run Python
+      } else if (currentFile.language === 'python') {
+        const executePython = async (code: string) => {
+          try {
+            const pyodideInstance = await loadPyodideInstance();
+      
+            // Variáveis para capturar o stdout e stderr
+            let capturedOutput = '';
+            let capturedError = '';
+      
+            // Redirecionar o stdout
+            pyodideInstance.setStdout({
+              batched: (output: string) => {
+                capturedOutput += output;
+                if (!newAbortController.signal.aborted) {
+                  setOutput((prev) => prev + output);
+                }
+              },
+            });
+      
+            // Redirecionar o stderr
+            pyodideInstance.setStderr({
+              batched: (error: string) => {
+                capturedError += error;
+                if (!newAbortController.signal.aborted) {
+                  setOutput((prev) => prev + `Error: ${error}\n`);
+                }
+              },
+            });
+      
+            // Executar o código Python
+            await pyodideInstance.runPythonAsync(code);
+      
+            // Retornar o output e erro capturados
+            return { capturedOutput, capturedError };
+          } catch (error) {
+            return { capturedOutput: '', capturedError: (error as Error).message };
+          }
+        };
+      
+        const executeAndCapture = async () => {
+          const currentCode = currentFile.content;
+          console.log("Content: " + currentCode);
+      
+          const { capturedOutput, capturedError } = await executePython(currentCode);
+      
+          console.log("Captured Output: " + capturedOutput);
+          console.log("Captured Error: " + capturedError);
+      
+          // Adicionar o erro capturado ao output, se houver
+          if (capturedError && !newAbortController.signal.aborted) {
+            setOutput((prev) => prev + `\nCaptured Error:\n${capturedError}`);
+          }
+      
+          if (codeQuestion.rules.includes('outputs: y') && !newAbortController.signal.aborted) {
+            const results = compareOutputs([capturedOutput], codeQuestion.outputs);
+            setTestResults(results);
+          }
+        };
+      
+        executeAndCapture().catch((error) => {
+          if (!newAbortController.signal.aborted) {
+            setOutput((prev) => prev + `\nUnhandled Error: ${error}\n`);
+          }
+        });
+      // Run Ruby
+      } else if (currentFile.language === 'ruby') {
+        /*
+        const executeRuby = async (code: string) => {
+          try {
+            // Carregar o ruby.wasm (certifique-se de que a instância esteja configurada corretamente)
+            const rubyModule = await loadRubyWasm(); // Função personalizada para carregar ruby.wasm
+            const rubyVM = rubyModule.RubyVM();
+      
+            // Variáveis para capturar stdout e stderr
+            let capturedOutput = '';
+            let capturedError = '';
+      
+            // Redirecionar stdout
+            rubyVM.stdout = {
+              write: (output: string) => {
+                capturedOutput += output;
+                if (!newAbortController.signal.aborted) {
+                  setOutput((prev) => prev + output);
+                }
+              },
+            };
+      
+            // Redirecionar stderr
+            rubyVM.stderr = {
+              write: (error: string) => {
+                capturedError += error;
+      
+                if (!newAbortController.signal.aborted) {
+                  // Filtrar apenas linhas relevantes do erro
+                  const relevantLines = error
+                    .split('\n')
+                    .filter((line) => line.includes('(eval)') || line.startsWith('SyntaxError') || line.includes('Error'));
+      
+                  const filteredError = relevantLines.join('\n');
+                  setOutput((prev) => prev + `Error:\n${filteredError}\n`);
+                }
+              },
+            };
+      
+            // Executar o código Ruby
+            rubyVM.eval(code);
+      
+            // Retornar saída capturada
+            return { capturedOutput, capturedError };
+          } catch (error) {
+            return { capturedOutput: '', capturedError: (error as Error).message };
+          }
+        };
+      
+        const executeAndCaptureRuby = async () => {
+          const currentCode = currentFile.content;
+          console.log("Ruby Content: " + currentCode);
+      
+          const { capturedOutput, capturedError } = await executeRuby(currentCode);
+      
+          console.log("Captured Ruby Output: " + capturedOutput);
+          console.log("Filtered Ruby Error: " + capturedError);
+      
+          // Adicionar erro filtrado ao output
+          if (capturedError && !newAbortController.signal.aborted) {
+            setOutput((prev) => prev + `\nFiltered Ruby Error:\n${capturedError}`);
+          }
+      
+          if (codeQuestion.rules.includes('outputs: y') && !newAbortController.signal.aborted) {
+            const results = compareOutputs([capturedOutput], codeQuestion.outputs);
+            setTestResults(results);
+          }
+        };
+      
+        executeAndCaptureRuby().catch((error) => {
+          if (!newAbortController.signal.aborted) {
+            setOutput((prev) => prev + `\nUnhandled Ruby Error: ${error}\n`);
+          }
+        });
+        */
+      } else if (currentFile.language === 'lua') {
+        
+      // Run HTML
       } else if (currentFile.language === 'html') {
         const processedHTML = processHTML(currentFile.content);
         if (!newAbortController.signal.aborted) {
@@ -469,6 +671,7 @@ export default function CodeEditorPanel({ codeQuestion, onSubmit, hierarchy = {}
     setTimeout(() => setIsRunAnimating(false), 1000); // Stop animation after 1 second
   };
 
+  // RUN THIS
   const runThis = () => {
     setIsRunThisAnimating(true);
     if (abortController) {
@@ -921,13 +1124,13 @@ export default function CodeEditorPanel({ codeQuestion, onSubmit, hierarchy = {}
     const minCodeEditorWidth = 300; // Minimum width for the code editor panel
 
     if (lessonPanelWidth > totalWidth - minCodeEditorWidth) {
-      const newLessonPanelSize = ((totalWidth - minCodeEditorWidth) /totalWidth) * 100;
+      const newLessonPanelSize = ((totalWidth - minCodeEditorWidth) / totalWidth) * 100;
       lessonPanelRef.current?.resize(newLessonPanelSize);
-    } else if (lessonPanelWidth < 300 && !isLessonCollapsed) {
+    } else if (lessonPanelWidth < 250 && !isLessonCollapsed) {
       setIsLessonCollapsed(true);
       setPrevLessonPanelSize(lessonPanelSize);
       lessonPanelRef.current?.collapse();
-    } else if (lessonPanelWidth >= 300 && isLessonCollapsed) {
+    } else if (lessonPanelWidth >= 250 && isLessonCollapsed) {
       setIsLessonCollapsed(false);
     }
   }, [isLessonCollapsed]);
@@ -1219,6 +1422,16 @@ export default function CodeEditorPanel({ codeQuestion, onSubmit, hierarchy = {}
                                   format: {
                                     tabSize: 2,
                                     insertSpaces: true,
+                                    wrapLineLength: 0,
+                                    unformatted: '',
+                                    contentUnformatted: '',
+                                    indentInnerHtml: false,
+                                    preserveNewLines: false,
+                                    maxPreserveNewLines: undefined,
+                                    indentHandlebars: false,
+                                    endWithNewline: false,
+                                    extraLiners: '',
+                                    wrapAttributes: 'auto'
                                   },
                                   suggest: {
                                     html5: true,

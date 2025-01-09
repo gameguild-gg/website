@@ -4,10 +4,15 @@ export interface QuestionSubmissionBasev1_0_0 {
   id: number;
   format_ver: "1.0.0";
   type: "code" | "answer" | "multiple-choice" | "essay";
+  rules: string[];
   status: number;
+  subject: string[];
+  score: number[];
+  title: string;
+  description: string;
 }
 
-export interface CodeQuestionSubmissionv1_0_0 extends QuestionSubmissionBasev1_0_0, CodeQuestionv1_0_0 {
+export interface CodeQuestionSubmissionv1_0_0 extends QuestionSubmissionBasev1_0_0 {
   type: "code";
   submittedCode: string[];
   output: string;
@@ -18,17 +23,20 @@ export interface CodeQuestionSubmissionv1_0_0 extends QuestionSubmissionBasev1_0
   }[];
 }
 
-export interface AnswerQuestionSubmissionv1_0_0 extends QuestionSubmissionBasev1_0_0, AnswerQuestionv1_0_0 {
+export interface AnswerQuestionSubmissionv1_0_0 extends QuestionSubmissionBasev1_0_0 {
+  answer: any;
   type: "answer";
   submittedAnswer: string;
 }
 
-export interface EssayQuestionSubmissionv1_0_0 extends QuestionSubmissionBasev1_0_0, AnswerQuestionv1_0_0 {
+export interface EssayQuestionSubmissionv1_0_0 extends QuestionSubmissionBasev1_0_0 {
   type: "essay";
   submittedEssay: string;
 }
 
-export interface MultipleChoiceQuestionSubmissionv1_0_0 extends QuestionSubmissionBasev1_0_0, MultipleChoiceQuestionv1_0_0 {
+export interface MultipleChoiceQuestionSubmissionv1_0_0 extends QuestionSubmissionBasev1_0_0 {
+    selectedOption: any;
+    options: any;
     type: "multiple-choice";
     submittedAnswers: string[];
 }

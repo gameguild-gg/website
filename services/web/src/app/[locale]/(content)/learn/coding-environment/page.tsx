@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import CodeEditorPanel from './components/CodeEditorPanel'
 import { QuestionStatus, CodeQuestionv1_0_0 } from '@/lib/interface-base/question.base.v1.0.0'
 import { QuestionSubmissionv1_0_0 } from '@/lib/interface-base/question.submission.v1.0.0'
-import { toast } from '@/components/ui/use-toast'
+import { toast } from '@/components/learn/ui/use-toast'
 import { HierarchyBasev1_0_0 } from '@/lib/interface-base/structure.base.v1.0.0'; // Import HierarchyBasev1_0_0
 
 export default function CodingEnvironment() {
@@ -44,10 +44,10 @@ export default function CodingEnvironment() {
         setQuestion(data);
       } catch (error) {
         console.error('Error fetching question:', error);
-        setError(`Failed to load question: ${error.message}`);
+        setError(`Failed to load question: ${error}`);
         toast({
           title: "Error",
-          description: `Failed to load question: ${error.message}`,
+          description: `Failed to load question: ${error}`,
           variant: "destructive",
         });
       } finally {
@@ -105,7 +105,7 @@ export default function CodingEnvironment() {
       console.error('Error submitting codeQuestion:', error)
       toast({
         title: "Error",
-        description: `Failed to submit codeQuestion: ${error.message}`,
+        description: `Failed to submit codeQuestion: ${error}`,
         variant: "destructive",
       })
     }
