@@ -72,14 +72,38 @@ Game Marketplace:
 
 ### 2.4 Events
 
-Weekly events:
+General Events:
 
-- A roll of events that take place every week created by the users.
-- An user can 'buy' with platform tokens any event from anyone that has ever submited that event.
+- Events can be created by any logged-in user on the platform at any time.
+- Users can submit events for evaluation, including workshops, lectures, or other activities related to game development.
+- Once approved, events are available for the community to view, attend, and participate in.
+
+Elected Meetings:
+
+- Every week, the community votes on one event to become the "Elected Meeting," a highlighted event in the weekly calendar.
+- The "Elected Meeting" is chosen based on votes from the community using platform tokens.
+- These meetings are special, community-driven events that receive additional visibility and rewards.
 
 Game Jams:
 
-- Events that can be organized inside the community
+- Game Jams are time-limited events focused on collaborative game development, where participants work together or individually to create games based on a specific theme or challenge.
+- Users can propose Game Jam events, which will follow the same submission and approval process as other events.
+- Game Jams can be scheduled to run over a weekend, a week, or another defined period, depending on the event proposal.
+- Participants in Game Jams may receive platform tokens or other rewards based on community votes or judging criteria defined by the event organizer.
+
+Interaction with Events:
+
+- Users can browse a rolling list of available events, including previously approved submissions.
+- Platform tokens can be used to "buy" access or reserve spots in events submitted by any user.
+- Historical events remain in the database, allowing users to reengage with past events if the creator reactivates or republishes them.
+
+### 2.5 Content Creators
+
+Blog Functionality:
+
+- A dedicated blog where invited content creators can share articles, tutorials, and other relevant content.
+- Only creators invited by the community or platform administrators can post on the blog.
+- Blog posts serve as a hub for educational material and community discussions, fostering engagement and knowledge-sharing.
 
 ## 3. DAO Governance
 
