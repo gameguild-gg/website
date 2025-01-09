@@ -1,5 +1,7 @@
-import {HttpClient, HttpRequest, HttpResponse} from '@/lib/core/http';
-import {auth} from "@/auth";
+import { HttpClient, HttpRequest, HttpResponse } from '@/lib/core/http';
+import { auth } from '@/auth';
+
+export const dynamic = 'force-dynamic';
 
 export class FetchHttpClientAdapter implements HttpClient {
   async request<T>(data: HttpRequest): Promise<HttpResponse<T>> {
@@ -9,10 +11,10 @@ export class FetchHttpClientAdapter implements HttpClient {
       method: data.method,
       body: data.body ? JSON.stringify(data.body) : undefined,
       headers: {
-        "Authorization": `Bearer ${session?.user?.accessToken}`,
-        "Content-Type": "application/json",
+        Authorization: `Bearer ${session?.user?.accessToken}`,
+        'Content-Type': 'application/json',
         ...data.headers,
-      }
+      },
     });
 
     const body = await response.json();

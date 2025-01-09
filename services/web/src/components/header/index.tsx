@@ -34,7 +34,9 @@ export default function Header() {
   const moreItems = [
     'Roadmap',
     'Contributors',
-    'Issues' /*'Contact', 'About'*/,
+    'Issues',
+    'Privacy Policy',
+    'Terms of Service' /*'Contact', 'About'*/,
   ];
   const languages = ['English', 'Spanish', 'French', 'German'];
 
@@ -83,7 +85,9 @@ export default function Header() {
             <DropdownMenuContent className="bg-neutral-900 text-white border-0">
               {moreItems.map((item) => (
                 <DropdownMenuItem key={item}>
-                  <Link href={`./` + item.toLowerCase()}> {item}</Link>
+                  <Link href={`./` + item.toLowerCase().replace(/\s/g, '')}>
+                    {item}
+                  </Link>
                 </DropdownMenuItem>
               ))}
             </DropdownMenuContent>

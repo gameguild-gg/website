@@ -16,6 +16,8 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 
+export const dynamic = 'force-dynamic';
+
 // todo: use the types from the api client!!
 enum ContentTypes {
   ALL = 'All',

@@ -6,6 +6,7 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { Toaster } from '@/components/ui/toaster';
 import { ParamsWithLocale, PropsWithLocaleParams } from '@/types';
 import { environment } from '@/config/environment';
+import { FloatingFeedbackButton } from '@/components/floating-issue-button/floating-issue-button';
 
 export async function generateMetadata(): Promise<Metadata> {
   const host =
@@ -54,6 +55,7 @@ export default async function Layout({
         {/*<ThemeProvider>*/}
         <Web3Provider>
           <TooltipProvider>{children}</TooltipProvider>
+          <FloatingFeedbackButton />
           <Toaster />
         </Web3Provider>
         {/*</ThemeProvider>*/}

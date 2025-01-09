@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { SubmitButton } from '@/components/ui/submit-button';
+
 import {
   Card,
   CardContent,
@@ -21,10 +21,10 @@ import Image from 'next/image';
 
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Select } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Upload, DollarSign, Tag, Users, X, Plus } from 'lucide-react';
+import { X, Plus } from 'lucide-react';
 import { FileUploader } from '@/components/ui/file-uploader';
+
+export const dynamic = 'force-dynamic';
 
 export interface ProjectFormProps {
   action: 'create' | 'update';
