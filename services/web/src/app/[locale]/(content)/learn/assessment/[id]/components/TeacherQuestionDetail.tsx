@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { QuestionTypev1_0_0, CodeQuestionv1_0_0, AnswerQuestionv1_0_0, MultipleChoiceQuestionv1_0_0, QuestionStatus } from '@/lib/interface-base/question.base.v1.0.0';
 import { UserListQuestionv1_0_0 } from '@/lib/interface-base/user.list.question.v1.0.0';
@@ -9,9 +9,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import Image from "next/image"
 import ReactMarkdown from 'react-markdown';
 import { Button as UIButton } from "@/components/learn/ui/button";
-import { Input } from '@/components/learn/ui/input'; // Import Input component
-import { useState as useState2 } from 'react'; //removing duplicate import
-import { Dialog as Dialog2, DialogContent as DialogContent2, DialogHeader as DialogHeader2, DialogTitle as DialogTitle2, DialogFooter as DialogFooter2 } from "@/components/ui/dialog"; //removing duplicate import
+import { Input } from '@/components/learn/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/learn/ui/select"
+import { Label } from "@/components/learn/ui/label"
+import { useState as useState2 } from 'react';
+import { Dialog as Dialog2, DialogContent as DialogContent2, DialogHeader as DialogHeader2, DialogTitle as DialogTitle2, DialogFooter as DialogFooter2 } from "@/components/learn/ui/dialog";
 import { Button } from "@/components/learn/ui/button";
 //import SubmissionDetails from './SubmissionDetails';
 /*
@@ -43,54 +45,43 @@ interface SubmissionDetailsProps {
   initialScore: number;
   maxScore: number;
   onScoreChange: (newScore: number) => void;
-  question: QuestionTypev1_0_0; // Add this line
+  question: QuestionTypev1_0_0;
 }
 
 const SubmissionDetails: React.FC<SubmissionDetailsProps> = ({ submission, mode, onClose, courseId, assessmentId, userId, role, moduleId, initialScore, maxScore, onScoreChange, question }) => {
   const [score, setScore] = useState<number>(() => {
-  const initialScoreNumber = Number(initialScore);
-  return isNaN(initialScoreNumber) ? 0 : initialScoreNumber;
-});
+    const initialScoreNumber = Number(initialScore);
+    return isNaN(initialScoreNumber) ? 0 : initialScoreNumber;
+  });
   const actualOutput = submission.type === 'code' ? (submission as CodeQuestionv1_0_0)?.testResults?.map(result => result.actualOutput).join('\n') : '';
   const expectedOutput = submission.type === 'code' ? (submission as CodeQuestionv1_0_0)?.testResults?.map(result => result.expectedOutput).join('\n') : '';
   const testResults = submission.type === 'code' ? (submission as CodeQuestionv1_0_0)?.testResults || [] : [];
   const submissionId = `${submission.id}user${userId}`;
-/*
-const handleScoreChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newScore = Math.min(Math.max(0, parseInt(e.target.value) || 0), maxScore);
-    setScore(newScore);
-  };
 
-  const handleSaveScore = () => { // Define handleSaveScore within SubmissionDetails
-    onScoreChange(score);
-    onClose();
-  };
-*/
-const handleViewCode = () => {
+  const handleViewCode = () => {
     setShowStudentCode(true);
   };
 
   const handleCloseCode = () => {
     setShowStudentCode(false);
   };
-  
-  const [calculatedScore, setCalculatedScore] = useState(0); // Nota calculada pelos outputs
-  const [additionalScore, setAdditionalScore] = useState(0); // Nota adicional inserida manualmente
+
+  const [calculatedScore, setCalculatedScore] = useState(0);
+  const [additionalScore, setAdditionalScore] = useState(0);
 
   useEffect(() => {
-    // Cálculo inicial da nota com base nos outputs
     const totalScore = submission.type === 'code'
       ? submission.testResults.reduce((acc, result, index) => {
-          if (result.actualOutput === result.expectedOutput) {
-            const score = question.outputsScore?.[index] || 0;
-            return acc + score;
-          }
-          return acc;
-        }, 0)
+        if (result.actualOutput === result.expectedOutput) {
+          const score = question.outputsScore?.[index] || 0;
+          return acc + score;
+        }
+        return acc;
+      }, 0)
       : 0;
 
     setCalculatedScore(Math.min(totalScore, maxScore));
-    setAdditionalScore(Number(initialScore) - totalScore); // Define o adicional como diferença
+    setAdditionalScore(Number(initialScore) - totalScore);
   }, [submission, question, initialScore, maxScore]);
 
   const handleScoreChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -101,46 +92,7 @@ const handleViewCode = () => {
   const handleSaveScore = () => {
     const finalScore = Math.min(calculatedScore + additionalScore, maxScore);
     onScoreChange(finalScore);
-    /*
-    try {
-      // Send updated score and status to the server
-      const response = await fetch('/api/update-score', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          courseId,
-          questionId: submission.id,
-          userId,
-          newScore: finalScore,
-          newStatus: QuestionStatus.Corrected // Update status to Corrected
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to update score and status');
-      }
-
-      onScoreChange(finalScore); // Update the score locally
-      onClose(); // Close the dialog
-
-      toast({
-        title: 'Score and Status Updated',
-        description: 'The submission has been graded successfully.',
-      });
-    } catch (error) {
-      console.error('Error updating score and status:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to grade the submission. Please try again.',
-        variant: 'destructive',
-      });
-    }
-    */
-    
-     onClose(); // Close the dialog
-    
+    onClose();
   };
 
   return (
@@ -150,7 +102,6 @@ const handleViewCode = () => {
           <DialogTitle>Submission Details</DialogTitle>
         </DialogHeader>
         <div className="mt-4">
-          {/* Score Display */}
           <div className="mb-4 flex items-center space-x-4">
             <div>
               <label htmlFor="calculatedScore" className="block text-sm font-medium text-gray-700">
@@ -182,7 +133,7 @@ const handleViewCode = () => {
               </span>
             </div>
           </div>
-              
+
 
           {submission.type === 'code' && (
             <>
@@ -208,14 +159,14 @@ const handleViewCode = () => {
                     <tr key={index}>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {result.actualOutput === result.expectedOutput ? (
-                            <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                              Pass
-                            </span>
-                          ) : (
-                            <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
-                              Fail
-                            </span>
-                          )}
+                          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                            Pass
+                          </span>
+                        ) : (
+                          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                            Fail
+                          </span>
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         <pre className="whitespace-pre-wrap">{result.actualOutput}</pre>
@@ -238,23 +189,22 @@ const handleViewCode = () => {
               </table>
 
               <div className="mt-4">
-                <Link href={`/learn/coding-environment?id=${submissionId}&type=submission&userId=${userId}&role=${role}&courseId=${courseId}&moduleId=${moduleId}&assessmentId=${assessmentId}&submissionId=${submission.id}`}>
+                <Link href={`learn/coding-environment?id=${submissionId}&type=submission&userId=${userId}&role=${role}&courseId=${courseId}&moduleId=${moduleId}&assessmentId=${assessmentId}&submissionId=${submission.id}`}>
                   <UIButton>View Student Code</UIButton>
                 </Link>
               </div>
             </>
           )}
 
-          {/* Render content for other question types (answer, multiple-choice, etc.) */}
           {submission.type === 'answer' && (
             <>
               <div>
                 <h3 className="text-lg font-semibold mb-2">Submitted Answer:</h3>
-                <p>{(submission as AnswerQuestionv1_0_0).submittedAnswer}</p> {/* Type assertion */}
+                <p>{(submission as AnswerQuestionv1_0_0).submittedAnswer}</p>
               </div>
               <div className="mt-4">
                 <h3 className="text-lg font-semibold mb-2">Expected Answer:</h3>
-                <p>{(submission as AnswerQuestionv1_0_0).answer}</p> {/* Type assertion */}
+                <p>{(submission as AnswerQuestionv1_0_0).answer}</p>
               </div>
             </>
           )}
@@ -282,15 +232,14 @@ const handleViewCode = () => {
             <>
               <div>
                 <h3 className="text-lg font-semibold mb-2">Submitted Essay:</h3>
-                <ReactMarkdown>{(submission as EssayQuestionv1_0_0).submittedEssay}</ReactMarkdown>
+                <ReactMarkdown>{(submission as any).submittedEssay}</ReactMarkdown>
               </div>
               <div className="mt-4">
                 <h3 className="text-lg font-semibold mb-2">Expected Answer:</h3>
-                <p>{(submission as EssayQuestionv1_0_0).answer}</p>
+                <p>{(submission as any).answer}</p>
               </div>
             </>
           )}
-          {/* Add similar blocks for other question types */}
         </div>
         <DialogFooter>
           <UIButton onClick={onClose}>Close</UIButton>
@@ -306,13 +255,25 @@ const TeacherQuestionDetail = ({ question, mode, courseId }: TeacherQuestionDeta
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [viewingSubmission, setViewingSubmission] = useState<string | null>(null);
-  const [showStudentDetails, setShowStudentDetails] = useState<string | null>(null); // State to control student details modal
+  const [showStudentDetails, setShowStudentDetails] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+
+  const filteredSubmissions = useMemo(() => {
+    if (statusFilter === 'all') {
+      return submissions;
+    }
+    return Object.fromEntries(
+      Object.entries(submissions).filter(([_, submissionData]) =>
+        submissionData.submission && submissionData.submission.status.toString() === statusFilter
+      )
+    );
+  }, [submissions, statusFilter]);
 
   useEffect(() => {
     const fetchSubmissions = async () => {
       try {
         setIsLoading(true);
-        const response = await fetch(`../../../../api/learn/teach/question/${question.id}?courseId=${courseId}`);
+        const response = await fetch(`../../../api/learn/teach/question/${question.id}?courseId=${courseId}`);
         if (!response.ok) {
           throw new Error('Failed to fetch student submissions');
         }
@@ -340,7 +301,22 @@ const TeacherQuestionDetail = ({ question, mode, courseId }: TeacherQuestionDeta
   return (
     <div>
       <h2 className="text-xl font-semibold mb-4">Student Submissions</h2>
-      {Object.keys(submissions).length > 0 ? (
+      <div className="mb-4 flex items-center">
+        <Label htmlFor="status-filter" className="mr-2">Filter by status:</Label>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger id="status-filter" className="w-[180px]">
+            <SelectValue placeholder="Select status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All</SelectItem>
+            <SelectItem value="0">Unavailable</SelectItem>
+            <SelectItem value="1">Available</SelectItem>
+            <SelectItem value="2">Submitted</SelectItem>
+            <SelectItem value="3">Corrected</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      {Object.keys(filteredSubmissions).length > 0 ? (
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
@@ -351,18 +327,16 @@ const TeacherQuestionDetail = ({ question, mode, courseId }: TeacherQuestionDeta
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {Object.entries(submissions).map(([userId, submissionData]) => {
+            {Object.entries(filteredSubmissions).map(([userId, submissionData]) => {
               const { user, submission, maxScore, score } = submissionData;
               return (
-                
                 <tr key={user.idUser}>
-                  
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
-                      <div className="flex-shrink-0 h-10 w-10 cursor-pointer" onClick={() => setShowStudentDetails(userId)}> {/* Click to open modal */}
+                      <div className="flex-shrink-0 h-10 w-10 cursor-pointer" onClick={() => setShowStudentDetails(userId)}>
                         <img className="h-10 w-10 rounded-full" src={user.profilePicture || '/placeholder.svg'} alt="" />
                       </div>
-                      <div className="ml-4 cursor-pointer" onClick={() => setShowStudentDetails(userId)}> {/* Click to open modal */}
+                      <div className="ml-4 cursor-pointer" onClick={() => setShowStudentDetails(userId)}>
                         <div className="text-sm font-medium text-gray-900">{`${user.firstName} ${user.lastName}`}</div>
                       </div>
                     </div>
@@ -376,7 +350,7 @@ const TeacherQuestionDetail = ({ question, mode, courseId }: TeacherQuestionDeta
                     {score} / {maxScore}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                   {submission ? (
+                    {submission ? (
                       <Button
                         variant="link"
                         onClick={() => setViewingSubmission(userId)}
@@ -389,13 +363,12 @@ const TeacherQuestionDetail = ({ question, mode, courseId }: TeacherQuestionDeta
                     )}
                   </td>
                 </tr>
-                
               );
             })}
           </tbody>
         </table>
       ) : (
-        <p>No submissions yet.</p>
+        <p>No submissions matching the selected filter.</p>
       )}
 
       {viewingSubmission && submissions[viewingSubmission]?.submission && (
@@ -412,7 +385,7 @@ const TeacherQuestionDetail = ({ question, mode, courseId }: TeacherQuestionDeta
           maxScore={submissions[viewingSubmission].maxScore}
           onScoreChange={async (newScore) => {
             try {
-              const response = await fetch(`../../../../api/learn/update-score`, {
+              const response = await fetch(`../../../api/learn/update-score`, {
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json',
@@ -429,7 +402,6 @@ const TeacherQuestionDetail = ({ question, mode, courseId }: TeacherQuestionDeta
                 throw new Error('Failed to update score');
               }
 
-              // Update the local state
               setSubmissions(prev => ({
                 ...prev,
                 [viewingSubmission]: {
@@ -451,11 +423,11 @@ const TeacherQuestionDetail = ({ question, mode, courseId }: TeacherQuestionDeta
               });
             }
           }}
-          question={question} // Add this line
+          question={question}
         />
       )}
-      
-      {showStudentDetails && ( // Conditionally render the student details modal
+
+      {showStudentDetails && (
         <Dialog open={true} onOpenChange={() => setShowStudentDetails(null)}>
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
@@ -471,7 +443,6 @@ const TeacherQuestionDetail = ({ question, mode, courseId }: TeacherQuestionDeta
                   <div className="text-sm text-gray-500">{submissions[showStudentDetails].user.email}</div>
                 </div>
               </div>
-              {/* Add more student details here as needed */}
             </div>
             <DialogFooter>
               <UIButton onClick={() => setShowStudentDetails(null)}>Close</UIButton>
@@ -484,4 +455,8 @@ const TeacherQuestionDetail = ({ question, mode, courseId }: TeacherQuestionDeta
 };
 
 export default TeacherQuestionDetail;
+
+function setShowStudentCode(arg0: boolean) {
+  throw new Error('Function not implemented.');
+}
 
