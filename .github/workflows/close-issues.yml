@@ -24,11 +24,9 @@ jobs:
           days-before-issue-close: 60
           stale-issue-message: "This issue is stale because it has been open for 30 days with no activity."
           close-issue-message: "This issue was closed because it has been inactive for 60 days since being marked as stale."
-          days-before-pr-stale: -1
-          days-before-pr-close: -1
+          days-before-pr-stale: 30
+          days-before-pr-close: 60
           remove-issue-stale-when-updated: true
           remove-stale-when-updated: true
-          exempt-issue-labels: "back-end,bug,design-&-marketing,documentation,enhancement,front-end,good first issue,web3,full-stack,help wanted"
-
 
 

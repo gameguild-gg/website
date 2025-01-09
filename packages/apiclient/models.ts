@@ -46,24 +46,24 @@ export namespace Api {
 	}
 
 	export interface ChapterEntity {
-		id: string;
+		id?: string;
 		createdAt: string;
 		updatedAt: string;
-		owner: Api.UserEntity;
-		editors: Api.UserEntity[];
+		owner?: Api.UserEntity;
+		editors?: Api.UserEntity[];
 		slug: string;
 		title: string;
-		summary: string;
-		body: string;
-		visibility: Api.ChapterEntity.Visibility;
-		thumbnail: string;
+		summary?: string;
+		body?: string;
+		visibility?: Api.ChapterEntity.Visibility;
+		thumbnail?: Api.ImageEntity;
 		/**
 		 * @type {number}
 		 * @memberof ChapterEntity
 		 */
-		order: number;
+		order?: number;
 		course: Api.CourseEntity;
-		lectures: Api.LectureEntity[];
+		lectures?: Api.LectureEntity[];
 	}
 	
 	/**
@@ -167,14 +167,90 @@ export namespace Api {
 		fen: string;
 	}
 
-	export interface CompetitionRunEntity {
-		id: string;
+	export interface CompetitionMatchEntity {
+		id?: string;
 		createdAt: string;
 		updatedAt: string;
+		run: Api.CompetitionRunEntity;
+		p1submission: Api.CompetitionSubmissionEntity;
+		p2submission: Api.CompetitionSubmissionEntity;
+		winner: Api.CompetitionMatchEntity.Winner;
+		/**
+		 * @type {number}
+		 * @memberof CompetitionMatchEntity
+		 */
+		p1Points: number;
+		/**
+		 * @type {number}
+		 * @memberof CompetitionMatchEntity
+		 */
+		p2Points: number;
+		/**
+		 * @type {number}
+		 * @memberof CompetitionMatchEntity
+		 */
+		p1Turns: number;
+		/**
+		 * @type {number}
+		 * @memberof CompetitionMatchEntity
+		 */
+		p2Turns: number;
+		logs: string;
+		lastState: string;
+	}
+	
+	/**
+	 * @export
+	 * @namespace CompetitionMatchEntity
+	 */
+	export namespace CompetitionMatchEntity {
+		export type Winner =
+			'Player1' |
+			'Player2'
+		
+		export namespace Winner {
+			export enum Enum {
+				Player1 = 'Player1',
+				Player2 = 'Player2'
+			}
+		}
+	
+	}
+
+	export interface CompetitionRunEntity {
+		id?: string;
+		createdAt: string;
+		updatedAt: string;
+		state: Api.CompetitionRunEntity.State;
+		gameType: string;
+		matches: Api.CompetitionMatchEntity[];
+		reports: Api.CompetitionRunSubmissionReportEntity[];
+	}
+	
+	/**
+	 * @export
+	 * @namespace CompetitionRunEntity
+	 */
+	export namespace CompetitionRunEntity {
+		export type State =
+			'NOT_STARTED' |
+			'RUNNING' |
+			'FINISHED' |
+			'FAILED'
+		
+		export namespace State {
+			export enum Enum {
+				NOTSTARTED = 'NOT_STARTED',
+				RUNNING = 'RUNNING',
+				FINISHED = 'FINISHED',
+				FAILED = 'FAILED'
+			}
+		}
+	
 	}
 
 	export interface CompetitionRunSubmissionReportEntity {
-		id: string;
+		id?: string;
 		createdAt: string;
 		updatedAt: string;
 		/**
@@ -239,23 +315,23 @@ export namespace Api {
 	}
 
 	export interface CompetitionSubmissionEntity {
-		id: string;
+		id?: string;
 		createdAt: string;
 		updatedAt: string;
 	}
 
 	export interface CourseEntity {
-		id: string;
+		id?: string;
 		createdAt: string;
 		updatedAt: string;
-		owner: Api.UserEntity;
-		editors: Api.UserEntity[];
+		owner?: Api.UserEntity;
+		editors?: Api.UserEntity[];
 		slug: string;
 		title: string;
-		summary: string;
-		body: string;
-		visibility: Api.CourseEntity.Visibility;
-		thumbnail: string;
+		summary?: string;
+		body?: string;
+		visibility?: Api.CourseEntity.Visibility;
+		thumbnail?: Api.ImageEntity;
 		/**
 		 * @type {number}
 		 * @memberof CourseEntity
@@ -303,7 +379,6 @@ export namespace Api {
 		summary: string;
 		body: string;
 		visibility: Api.CreateProjectDto.Visibility;
-		thumbnail: string;
 	}
 	
 	/**
@@ -708,16 +783,31 @@ export namespace Api {
 		pageCount: number;
 	}
 
+	export interface GitStats {
+		username: string;
+		/**
+		 * @type {number}
+		 * @memberof GitStats
+		 */
+		additions: number;
+		/**
+		 * @type {number}
+		 * @memberof GitStats
+		 */
+		deletions: number;
+	}
+
 	export interface IdDto {
 		id: string;
 	}
 
 	export interface ImageEntity {
-		id: string;
+		id?: string;
 		createdAt: string;
 		updatedAt: string;
 		source: string;
 		path: string;
+		originalFilename: string;
 		filename: string;
 		mimetype: string;
 		/**
@@ -744,7 +834,7 @@ export namespace Api {
 	}
 
 	export interface JobApplicationEntity {
-		id: string;
+		id?: string;
 		createdAt: string;
 		updatedAt: string;
 		applicant: Api.UserEntity;
@@ -759,17 +849,17 @@ export namespace Api {
 	}
 
 	export interface JobPostCreateDto {
-		id: string;
+		id?: string;
 		createdAt: string;
 		updatedAt: string;
-		owner: Api.UserEntity;
-		editors: Api.UserEntity[];
+		owner?: Api.UserEntity;
+		editors?: Api.UserEntity[];
 		slug: string;
 		title: string;
-		summary: string;
-		body: string;
-		visibility: Api.JobPostCreateDto.Visibility;
-		thumbnail: string;
+		summary?: string;
+		body?: string;
+		visibility?: Api.JobPostCreateDto.Visibility;
+		thumbnail?: Api.ImageEntity;
 		location: string;
 		'job_type': Api.JobPostCreateDto.JobType;
 		'job_tags': Api.JobTagEntity[];
@@ -814,17 +904,17 @@ export namespace Api {
 	}
 
 	export interface JobPostEntity {
-		id: string;
+		id?: string;
 		createdAt: string;
 		updatedAt: string;
-		owner: Api.UserEntity;
-		editors: Api.UserEntity[];
+		owner?: Api.UserEntity;
+		editors?: Api.UserEntity[];
 		slug: string;
 		title: string;
-		summary: string;
-		body: string;
-		visibility: Api.JobPostEntity.Visibility;
-		thumbnail: string;
+		summary?: string;
+		body?: string;
+		visibility?: Api.JobPostEntity.Visibility;
+		thumbnail?: Api.ImageEntity;
 		location: string;
 		'job_type': Api.JobPostEntity.JobType;
 		'job_tags': Api.JobTagEntity[];
@@ -893,24 +983,24 @@ export namespace Api {
 	}
 
 	export interface JobTagEntity {
-		id: string;
+		id?: string;
 		createdAt: string;
 		updatedAt: string;
 		name: string;
 	}
 
 	export interface LectureEntity {
-		id: string;
+		id?: string;
 		createdAt: string;
 		updatedAt: string;
-		owner: Api.UserEntity;
-		editors: Api.UserEntity[];
+		owner?: Api.UserEntity;
+		editors?: Api.UserEntity[];
 		slug: string;
 		title: string;
-		summary: string;
-		body: string;
-		visibility: Api.LectureEntity.Visibility;
-		thumbnail: string;
+		summary?: string;
+		body?: string;
+		visibility?: Api.LectureEntity.Visibility;
+		thumbnail?: Api.ImageEntity;
 		/**
 		 * @type {number}
 		 * @memberof LectureEntity
@@ -973,7 +1063,7 @@ export namespace Api {
 	}
 
 	export interface MatchSearchResponseDto {
-		id: string;
+		id?: string;
 		createdAt: string;
 		updatedAt: string;
 		winner: string;
@@ -987,17 +1077,17 @@ export namespace Api {
 	}
 
 	export interface PostEntity {
-		id: string;
+		id?: string;
 		createdAt: string;
 		updatedAt: string;
-		owner: Api.UserEntity;
-		editors: Api.UserEntity[];
+		owner?: Api.UserEntity;
+		editors?: Api.UserEntity[];
 		slug: string;
 		title: string;
-		summary: string;
-		body: string;
-		visibility: Api.PostEntity.Visibility;
-		thumbnail: string;
+		summary?: string;
+		body?: string;
+		visibility?: Api.PostEntity.Visibility;
+		thumbnail?: Api.ImageEntity;
 	}
 	
 	/**
@@ -1027,19 +1117,21 @@ export namespace Api {
 	}
 
 	export interface ProjectEntity {
-		id: string;
+		id?: string;
 		createdAt: string;
 		updatedAt: string;
-		owner: Api.UserEntity;
-		editors: Api.UserEntity[];
+		owner?: Api.UserEntity;
+		editors?: Api.UserEntity[];
 		slug: string;
 		title: string;
-		summary: string;
-		body: string;
-		visibility: Api.ProjectEntity.Visibility;
-		thumbnail: string;
-		versions: Api.ProjectVersionEntity[];
-		tickets: Api.TicketEntity[];
+		summary?: string;
+		body?: string;
+		visibility?: Api.ProjectEntity.Visibility;
+		thumbnail?: Api.ImageEntity;
+		versions?: Api.ProjectVersionEntity[];
+		tickets?: Api.TicketEntity[];
+		banner?: Api.ImageEntity;
+		screenshots?: Api.ImageEntity[];
 	}
 	
 	/**
@@ -1069,7 +1161,7 @@ export namespace Api {
 	}
 
 	export interface ProjectFeedbackResponseEntity {
-		id: string;
+		id?: string;
 		createdAt: string;
 		updatedAt: string;
 		version: Api.ProjectVersionEntity;
@@ -1305,7 +1397,7 @@ export namespace Api {
 	}
 
 	export interface ProjectVersionEntity {
-		id: string;
+		id?: string;
 		createdAt: string;
 		updatedAt: string;
 		version: string;
@@ -1318,17 +1410,17 @@ export namespace Api {
 	}
 
 	export interface QuizEntity {
-		id: string;
+		id?: string;
 		createdAt: string;
 		updatedAt: string;
-		owner: Api.UserEntity;
-		editors: Api.UserEntity[];
+		owner?: Api.UserEntity;
+		editors?: Api.UserEntity[];
 		slug: string;
 		title: string;
-		summary: string;
-		body: string;
-		visibility: Api.QuizEntity.Visibility;
-		thumbnail: string;
+		summary?: string;
+		body?: string;
+		visibility?: Api.QuizEntity.Visibility;
+		thumbnail?: Api.ImageEntity;
 		questions: (Api.FormShortAnswerDto | Api.FormLongAnswerDto)[];
 		gradingInstructions: string;
 	}
@@ -1363,11 +1455,11 @@ export namespace Api {
 	}
 
 	export interface TicketEntity {
-		id: string;
+		id?: string;
 		createdAt: string;
 		updatedAt: string;
-		owner: Api.UserEntity;
-		editors: Api.UserEntity[];
+		owner?: Api.UserEntity;
+		editors?: Api.UserEntity[];
 		/**
 		 * @description <p>Title of the ticket</p>
 		 * @type {string}
@@ -1449,13 +1541,13 @@ export namespace Api {
 	}
 
 	export interface UpdateUserProfileDto {
-		bio: string;
-		givenName: string;
-		familyName: string;
+		bio?: string;
+		givenName?: string;
+		familyName?: string;
 	}
 
 	export interface UserEntity {
-		id: string;
+		id?: string;
 		createdAt: string;
 		updatedAt: string;
 		username: string;
@@ -1482,7 +1574,7 @@ export namespace Api {
 	}
 
 	export interface UserProfileControllerUpdateProfilePictureRequest {
-		file?: string | Blob;
+		profilePicture?: string | Blob;
 	}
 	
 	/**
@@ -1491,7 +1583,7 @@ export namespace Api {
 	 */
 	export namespace UserProfileControllerUpdateProfilePictureRequest {
 		export interface MultipartFormData {
-			file?: Api.UserProfileControllerUpdateProfilePictureRequest.MultipartFormData.FilePart;
+			profilePicture?: Api.UserProfileControllerUpdateProfilePictureRequest.MultipartFormData.ProfilePicturePart;
 		}
 		
 		/**
@@ -1499,7 +1591,7 @@ export namespace Api {
 		 * @namespace MultipartFormData
 		 */
 		export namespace MultipartFormData {
-			export interface FilePart {
+			export interface ProfilePicturePart {
 				value: string | Blob;
 			}
 		
@@ -1508,7 +1600,7 @@ export namespace Api {
 	}
 
 	export interface UserProfileEntity {
-		id: string;
+		id?: string;
 		createdAt: string;
 		updatedAt: string;
 		user: Api.UserEntity;

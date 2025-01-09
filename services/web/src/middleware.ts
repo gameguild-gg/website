@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getToken } from 'next-auth/jwt';
 import createIntlMiddleware from 'next-intl/middleware';
 import { locales } from '@/data/locales';
-import { pathMapping } from '@/pathMapping';
+import NextAuth from 'next-auth';
+import { authConfig } from '@/config/auth.config';
+import { NextRequest, NextResponse } from 'next/server';
 
 // Create the i18n middleware
 const i18nMiddleware = createIntlMiddleware({
@@ -12,136 +12,30 @@ const i18nMiddleware = createIntlMiddleware({
   defaultLocale: 'en',
 });
 
+// Create the NextAuth middleware
+const authMiddleware = NextAuth(authConfig);
+
 export async function middleware(request: NextRequest) {
-  // const secret = process.env.NEXTAUTH_SECRET as string;
+  // 1. Handle internationalization first
+  const i18nResponse = await i18nMiddleware(request);
+
+  // 2. If i18nMiddleware redirected, return the response
+  if (i18nResponse) {
+    return i18nResponse;
+  }
+
+  // // 3. Handle authentication
+  // const authResponse = await authMiddleware(request);
   //
-  // // Get the token from the request, passing the secret
-  // const token = await getToken({ req: request, secret: secret });
-  // let url = request.nextUrl.pathname;
-  // // locale is optional 1st param if it is there, remove it from the url
-  // const firstParam = url.split('/')[1];
-  // // remove locale from url
-  // if (locales.includes(firstParam)) url = url.replace(`/${firstParam}`, '');
-  //
-  // let page: string = '';
-  // // remove the last part of the url while no page is found or we reach / (root)
-  // while (url.length > 0) {
-  //   if (pathMapping[url]) {
-  //     page = pathMapping[url];
-  //     break;
-  //   }
-  //   url = url.substring(0, url.lastIndexOf('/'));
+  // // 4. If authMiddleware redirected, return the response
+  // if (authResponse) {
+  //   return authResponse;
   // }
 
-  // Log the request path and authentication status
-  console.log(`ROUTE: ${request.nextUrl.pathname}`);
-  // console.log(`PAGE: ${page}`);
-  // console.log(`SIGNED-IN: ${Boolean(token)}`);
-
-  // Handle private routes that require authentication
-  // todo: please try to improve this
-  // if (page.includes('(private)')) {
-  //   if (
-  //     !token ||
-  //     !token.user ||
-  //     !token.user['accessToken'] ||
-  //     !token.user['refreshToken']
-  //   ) {
-  //     return NextResponse.redirect(new URL(`/connect`, request.url));
-  //   }
-  //   // check if the token.user.accessToken is expired
-  //   // decode the token.user.refereshToken to get the exp
-  // }
-
-  // For public and auth routes, no redirection needed
-  // For example, you could add specific rules here if needed for the public or auth routes
-
-  // Handle internationalization middleware
-  const response = i18nMiddleware(request);
-
-  return response;
+  // 5. If no redirects, continue to your application
+  return NextResponse.next();
 }
 
 export const config = {
   matcher: ['/((?!api|_next/static|_next/image|assets|favicon.ico).*)'],
 };
-
-/*
-import {NextRequest} from 'next/server';
-// import { getToken } from 'next-auth/jwt';
-import createIntlMiddleware from 'next-intl/middleware';
-import {locales} from '@/data/locales';
-import NextAuth from "next-auth";
-import {authConfig} from "@/config/auth.config";
-// import { pathMapping } from '@/pathMapping';
-
-// Create the i18n middleware
-const i18nMiddleware = createIntlMiddleware({
-  locales: locales,
-  localeDetection: true,
-  localePrefix: 'as-needed',
-  defaultLocale: 'en',
-});
-
-export default NextAuth(authConfig).auth((request) => {
-  // TODO: Handle the request here.
-  console.log(`ROUTE: ${request.nextUrl.pathname}`);
-  console.log(`SIGNED-IN: ${request.auth}`);
-
-  return i18nMiddleware(request);
-});
-//
-// export async function middleware(request: NextRequest) {
-//   // const secret = process.env.NEXTAUTH_SECRET as string;
-//   //
-//   // // Get the token from the request, passing the secret
-//   // const token = await getToken({ req: request, secret: secret });
-//   // let url = request.nextUrl.pathname;
-//   // // locale is optional 1st param if it is there, remove it from the url
-//   // const firstParam = url.split('/')[1];
-//   // // remove locale from url
-//   // if (locales.includes(firstParam)) url = url.replace(`/${firstParam}`, '');
-//   //
-//   // let page: string = '';
-//   // // remove the last part of the url while no page is found or we reach / (root)
-//   // while (url.length > 0) {
-//   //   if (pathMapping[url]) {
-//   //     page = pathMapping[url];
-//   //     break;
-//   //   }
-//   //   url = url.substring(0, url.lastIndexOf('/'));
-//   // }
-//
-//   // Log the request path and authentication status
-//   console.log(`ROUTE: ${request.nextUrl.pathname}`);
-//   // console.log(`PAGE: ${page}`);
-//   // console.log(`SIGNED-IN: ${Boolean(token)}`);
-//
-//   // Handle private routes that require authentication
-//   // todo: please try to improve this
-//   // if (page.includes('(private)')) {
-//   //   if (
-//   //     !token ||
-//   //     !token.user ||
-//   //     !token.user['accessToken'] ||
-//   //     !token.user['refreshToken']
-//   //   ) {
-//   //     return NextResponse.redirect(new URL(`/connect`, request.url));
-//   //   }
-//   //   // check if the token.user.accessToken is expired
-//   //   // decode the token.user.refereshToken to get the exp
-//   // }
-//
-//   // For public and auth routes, no redirection needed
-//   // For example, you could add specific rules here if needed for the public or auth routes
-//
-//   // Handle internationalization middleware
-//   const response = i18nMiddleware(request);
-//
-//   return response;
-// }
-
-export const config = {
-  matcher: ['/((?!api|_next/static|_next/image|assets|favicon.ico).*)'],
-};
- */

@@ -14,13 +14,14 @@
     "emitDecoratorMetadata": true,
     "moduleResolution": "bundler",
     "noImplicitAny": false,
+    "strictNullChecks": false,
+    "strictPropertyInitialization": false,
     "lib": [
       "dom",
       "dom.iterable",
       "esnext",
       "WebWorker"
     ],
-    "strictPropertyInitialization": false,
     "allowJs": true,
     "noEmit": true,
     "resolveJsonModule": true,

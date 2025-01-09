@@ -12,11 +12,17 @@ import { CommonModule } from './common/common.module';
 import { ApiConfigService } from './common/config.service';
 import { setupSwagger } from './setup-swagger';
 import { GlobalHttpExceptionFilter } from './common/filters/global-http-exception.filter';
+import compression from 'compression';
 
 export async function bootstrap(): Promise<INestApplication> {
   const app = await NestFactory.create(AppModule, { cors: true });
+  app.use(compression({}));
   app.enableCors({
-    origin: ['http://localhost:3000', 'https://web.gameguild.gg'],
+    origin: [
+      'http://localhost:3000',
+      'https://web.gameguild.gg',
+      'https://gameguild.gg',
+    ],
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     preflightContinue: false,
     optionsSuccessStatus: 204,

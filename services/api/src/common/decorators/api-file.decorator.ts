@@ -1,74 +1,129 @@
-import { applyDecorators, Type, UseInterceptors } from '@nestjs/common';
 import {
-  ApiBody,
-  ApiConsumes,
-  ApiExtraModels,
-  getSchemaPath,
-} from '@nestjs/swagger';
-import {
-  ROUTE_ARGS_METADATA,
-  PARAMTYPES_METADATA,
-} from '@nestjs/common/constants';
-import { RouteParamtypes } from '@nestjs/common/enums/route-paramtypes.enum';
-import { FileInterceptor } from '@nestjs/platform-express';
+  applyDecorators,
+  UnprocessableEntityException,
+  UseInterceptors,
+} from '@nestjs/common';
+import { ApiBody, ApiConsumes } from '@nestjs/swagger';
+import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { MulterOptions } from '@nestjs/platform-express/multer/interfaces/multer-options.interface';
+import { SchemaObject } from '@nestjs/swagger/dist/interfaces/open-api-spec.interface';
 
-function getBodyDtoType(
-  instance: Object,
-  propertyKey: string | symbol,
-): Type<unknown> | null {
-  // Get parameter types for the route method
-  const paramTypes: Array<Type<unknown>> = Reflect.getMetadata(
-    PARAMTYPES_METADATA,
-    instance,
-    propertyKey,
-  );
-  const routeArgsMetadata =
-    Reflect.getMetadata(
-      ROUTE_ARGS_METADATA,
-      instance.constructor,
-      propertyKey,
-    ) || {};
-
-  // Look for a parameter marked as `@Body`
-  for (const [key, param] of Object.entries(routeArgsMetadata)) {
-    const [paramType] = key.split(':');
-    if (Number(paramType) === RouteParamtypes.BODY) {
-      return paramTypes[(param as any).index]; // Type assertion here
-    }
-  }
-
-  return null;
+export class ApiFileOptions {
+  maxFileSize?: number = 1024 * 1024 * 2; // 2MB by default
+  minFileSize?: number = 1; // 1 byte by default
+  destination?: string = '/tmp/uploads'; // '/tmp/uploads' by default
+  acceptedMimeTypes?: string[] = []; // empty array by default accepts all
+  acceptedFileExtensions?: string[] = []; // empty array by default accepts all
+  fieldOptions?: ApiFileFieldOptions | ApiFileFieldOptions[] = {
+    maxCount: 1,
+    fieldName: 'file',
+  };
 }
 
-export function ApiFile(options: MulterOptions = { dest: '/tmp/uploads' }) {
-  options.dest = options.dest || '/tmp/uploads';
-  return (target, propertyKey, descriptor: PropertyDescriptor) => {
-    const dtoType = getBodyDtoType(target, propertyKey);
+export class ApiFileFieldOptions {
+  maxCount?: number = 1; // 1 file by default
+  fieldName?: string = 'file'; // 'file' by default
+}
 
-    if (dtoType) {
-      ApiExtraModels(dtoType)(target, propertyKey, descriptor);
-    }
+export function ApiFile(options: ApiFileOptions) {
+  const isMultipleFields = Array.isArray(options.fieldOptions);
+  const fieldOptions = isMultipleFields
+    ? (options.fieldOptions as ApiFileFieldOptions[])
+    : [options.fieldOptions as ApiFileFieldOptions];
 
-    applyDecorators(
-      ApiConsumes('multipart/form-data'),
-      UseInterceptors(FileInterceptor('file', options)),
-      ApiBody({
-        schema: {
-          type: 'object',
-          properties: {
-            file: {
-              type: 'string',
-              format: 'binary',
-            },
-            ...(dtoType
-              ? {
-                  body: { $ref: getSchemaPath(dtoType) },
-                }
-              : {}),
-          },
-        },
-      }),
-    )(target, propertyKey, descriptor);
+  options.destination = options.destination || '/tmp/uploads';
+  options.maxFileSize = options.maxFileSize || 1024 * 1024 * 2;
+  options.minFileSize = options.minFileSize || 1;
+  options.acceptedMimeTypes = options.acceptedMimeTypes || [];
+  options.acceptedFileExtensions = options.acceptedFileExtensions || [];
+
+  const multerOptions: MulterOptions = {
+    dest: options.destination,
+    limits: {
+      fileSize: options.maxFileSize,
+    },
+    fileFilter: (req, file, cb) => {
+      const fileExtension = file.originalname.split('.').pop();
+      if (
+        options.acceptedFileExtensions.length > 0 &&
+        !options.acceptedFileExtensions.includes(fileExtension)
+      ) {
+        return cb(
+          new UnprocessableEntityException(
+            `File extension not allowed. Accepted extensions: ${options.acceptedFileExtensions.join(
+              ', ',
+            )}`,
+          ),
+          false,
+        );
+      }
+
+      if (
+        options.acceptedMimeTypes.length > 0 &&
+        !options.acceptedMimeTypes.includes(file.mimetype)
+      ) {
+        return cb(
+          new UnprocessableEntityException(
+            `File type not allowed. Accepted types: ${options.acceptedMimeTypes.join(
+              ', ',
+            )}`,
+          ),
+          false,
+        );
+      }
+
+      cb(null, true);
+    },
   };
+
+  const decorators = [
+    ApiConsumes('multipart/form-data'),
+    ApiBody({
+      schema: {
+        type: 'object',
+        properties: fieldOptions.reduce<Record<string, SchemaObject>>(
+          (acc, field) => {
+            const isArray = (field.maxCount || 1) > 1;
+            acc[field.fieldName || 'file'] = isArray
+              ? {
+                  type: 'array',
+                  items: {
+                    type: 'string',
+                    format: 'binary',
+                  },
+                }
+              : {
+                  type: 'string',
+                  format: 'binary',
+                };
+            return acc;
+          },
+          {},
+        ),
+      },
+    }),
+  ];
+
+  if (isMultipleFields) {
+    decorators.push(
+      UseInterceptors(
+        ...fieldOptions.map((field) =>
+          FilesInterceptor(
+            field.fieldName || 'file',
+            field.maxCount,
+            multerOptions,
+          ),
+        ),
+      ),
+    );
+  } else {
+    const singleField = fieldOptions[0];
+    decorators.push(
+      UseInterceptors(
+        FileInterceptor(singleField.fieldName || 'file', multerOptions),
+      ),
+    );
+  }
+
+  return applyDecorators(...decorators);
 }

@@ -9,7 +9,7 @@ import { IsEmpty, IsOptional, IsUUID } from 'class-validator';
 import { CrudValidationGroups } from '@dataui/crud';
 
 export abstract class EntityBase {
-  @ApiProperty({ type: 'string', format: 'uuid' })
+  @ApiProperty({ type: 'string', format: 'uuid', required: false })
   @PrimaryGeneratedColumn('uuid')
   @IsOptional()
   @IsEmpty({

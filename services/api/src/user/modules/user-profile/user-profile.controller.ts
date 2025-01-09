@@ -1,11 +1,4 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Patch,
-  UnprocessableEntityException,
-  UploadedFile,
-} from '@nestjs/common';
+import { Body, Controller, Get, Patch, UploadedFile } from '@nestjs/common';
 import { UserProfileService } from './user-profile.service';
 import { Auth, AuthUser } from '../../../auth';
 import { AuthenticatedRoute } from '../../../auth/auth.enum';
@@ -23,11 +16,17 @@ export class UserProfileController {
   // update user profile
   @Patch('me')
   @Auth(AuthenticatedRoute)
+  @ApiResponse({ type: UserProfileEntity })
   async update(
     @AuthUser() user: UserEntity,
-    @Body() data: UpdateUserProfileDto,
-  ) {
-    return this.service.repository.update(user, data);
+    @Body() body: UpdateUserProfileDto,
+  ): Promise<UserProfileEntity> {
+    const profile = await this.service.repository.findOne({
+      where: { user: { id: user.id } },
+      select: { id: true },
+    });
+    await this.service.repository.update(profile.id, body);
+    return this.service.repository.findOne({ where: { id: profile.id } });
   }
 
   @Get('me')
@@ -42,19 +41,9 @@ export class UserProfileController {
   @Patch('profile-picture')
   @Auth(AuthenticatedRoute)
   @ApiFile({
-    fileFilter(
-      req: any,
-      file: Express.Multer.File,
-      callback: (error: Error | null, acceptFile: boolean) => void,
-    ) {
-      if (!file.mimetype.startsWith('image')) {
-        return callback(
-          new UnprocessableEntityException('Only images are allowed!'),
-          false,
-        );
-      }
-      return callback(null, true);
-    },
+    acceptedFileExtensions: ['jpg', 'jpeg', 'png'],
+    fieldOptions: { maxCount: 1, fieldName: 'profilePicture' },
+    maxFileSize: 1024 * 1024 * 2,
   })
   @ApiResponse({ type: UserProfileEntity })
   async updateProfilePicture(

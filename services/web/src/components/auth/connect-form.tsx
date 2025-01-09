@@ -45,7 +45,7 @@ export default function ConnectForm() {
     if (err) {
       // remove the error from the URL
       toast({ title: 'Error', description: err });
-      router.replace('/connect');
+      router.replace('/connect'); // todo: we are already at /connect, so this is redundant!!!
     }
 
     magicLinkProcess(token).then();

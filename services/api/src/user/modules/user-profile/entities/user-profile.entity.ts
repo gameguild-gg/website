@@ -1,4 +1,4 @@
-import { Column, Entity, JoinColumn, OneToOne } from 'typeorm';
+import { Column, Entity, JoinColumn, OneToOne, VirtualColumn } from 'typeorm';
 import { EntityBase } from '../../../../common/entities/entity.base';
 import { UserEntity } from '../../../entities/user.entity';
 import { ApiProperty } from '@nestjs/swagger';
@@ -31,6 +31,7 @@ export class UserProfileEntity extends EntityBase {
   })
   bio?: string;
 
+  // todo: make this a virtual column and concatenate given and family name
   @Column({ nullable: true, default: null, type: 'varchar', length: 256 })
   @ApiProperty()
   @IsOptional()
@@ -64,9 +65,4 @@ export class UserProfileEntity extends EntityBase {
   @OneToOne(() => ImageEntity)
   @JoinColumn()
   picture?: ImageEntity;
-
-  // constructor(partial?: Partial<UserProfileEntity>) {
-  //   super(partial);
-  //   Object.assign(this, partial);
-  // }
 }

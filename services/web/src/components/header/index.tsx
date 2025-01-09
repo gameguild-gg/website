@@ -33,9 +33,15 @@ export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMoreOpen, setIsMoreOpen] = useState(false);
 
-  const menuItems = ['Blog', 'Courses', 'Games', 'Tests', 'Jams', 'Jobs']
-  const moreItems = ['Item 1', 'Item 2', 'Item 3']
-  const languages = ['English', 'Spanish', 'French', 'German']
+  const menuItems = ['Blog', 'Games', 'Tests', 'Jams', 'Jobs'];
+  const moreItems = [
+    'Roadmap',
+    'Contributors',
+    'Issues',
+    'Privacy Policy',
+    'Terms of Service' /*'Contact', 'About'*/,
+  ];
+  const languages = ['English', 'Spanish', 'French', 'German'];
 
   const router = useRouter();
 
@@ -72,7 +78,7 @@ export default function Header() {
           ))}
           <DropdownMenu open={isMoreOpen} onOpenChange={setIsMoreOpen}>
             <DropdownMenuTrigger className="flex px-2 items-center hover:text-gray-400 transition-colors">
-              More{' '}
+              Institutional{' '}
               {isMoreOpen ? (
                 <ChevronUp className="ml-1 h-4 w-4" />
               ) : (
@@ -81,7 +87,11 @@ export default function Header() {
             </DropdownMenuTrigger>
             <DropdownMenuContent className="bg-neutral-900 text-white border-0">
               {moreItems.map((item) => (
-                <DropdownMenuItem key={item}>{item}</DropdownMenuItem>
+                <DropdownMenuItem key={item}>
+                  <Link href={`./` + item.toLowerCase().replace(/\s/g, '')}>
+                    {item}
+                  </Link>
+                </DropdownMenuItem>
               ))}
             </DropdownMenuContent>
           </DropdownMenu>
