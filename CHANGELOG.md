@@ -1,3 +1,10 @@
+# [1.8.0](https://github.com/gameguild-gg/website/compare/v1.7.0...v1.8.0) (2025-01-09)
+
+
+### Features
+
+* **issues): Add feedback button. fix(dynamic-pages:** add force-dynamic to some pages ([039bff5](https://github.com/gameguild-gg/website/commit/039bff5ee95e5d0c99eb91b9ee17e5385066fd3e))
+
 # [1.7.0](https://github.com/gameguild-gg/website/compare/v1.6.0...v1.7.0) (2025-01-08)
 
 
