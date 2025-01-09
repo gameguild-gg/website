@@ -1,17 +1,20 @@
-'use client'
+'use client';
 
-import { useState, useEffect } from 'react'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Button } from "@/components/ui/button"
-import InformationTab from '@/components/courses/create/InformationTab'
-import ModulesTab from '@/components/courses/create/ModulesTab'
-import LessonsTab from '@/components/courses/create/LessonsTab'
-import ExercisesTab from '@/components/courses/create/ExercisesTab'
-import QuestionsTab from '@/components/courses/create/QuestionsTab'
-import PricingTab from '@/components/courses/create/PricingTab'
-import FinalTab from '@/components/courses/create/FinalTab'
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { AlertCircle, CheckCircle2 } from 'lucide-react'
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/router';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import InformationTab from '@/components/courses/create/InformationTab';
+import ModulesTab from '@/components/courses/create/ModulesTab';
+import LessonsTab from '@/components/courses/create/LessonsTab';
+import ExercisesTab from '@/components/courses/create/ExercisesTab';
+import QuestionsTab from '@/components/courses/create/QuestionsTab';
+import PricingTab from '@/components/courses/create/PricingTab';
+import FinalTab from '@/components/courses/create/FinalTab';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { AlertCircle, CheckCircle2 } from 'lucide-react';
+import { CoursesApi } from '@game-guild/apiclient';
+import { auth } from '@/auth';
 
 interface ContentLink {
   order: string;
@@ -40,7 +43,11 @@ interface Exercise {
     hours: number;
     minutes: number;
   };
-  averageGrades: 'no average' | 'lesson average' | 'module average' | 'course average';
+  averageGrades:
+    | 'no average'
+    | 'lesson average'
+    | 'module average'
+    | 'course average';
 }
 
 interface Question {
@@ -87,16 +94,19 @@ interface CourseData {
   pricing: PricingData;
 }
 
-export default function CourseTabs({ courseId, onBack }: { courseId: string, onBack: () => void }) {
+export default function CourseTabs() {
+  const router = useRouter();
+  const { courseId } = router.query;
+
   const [courseData, setCourseData] = useState<CourseData>({
-    id: courseId,
+    id: courseId as string,
     information: {
       title: '',
       shortDescription: '',
       fullDescription: '',
       customUrl: '',
       thumbnail: '',
-      contentDemoLinks: []
+      contentDemoLinks: [],
     },
     modules: [],
     lessons: [],
@@ -108,12 +118,11 @@ export default function CourseTabs({ courseId, onBack }: { courseId: string, onB
       maxDiscount: 0,
       maxUnits: 0,
       launchDate: '',
-      closingDate: ''
-    }
-  })
-  const [unsavedChanges, setUnsavedChanges] = useState(false)
-  const [saveConfirmed, setSaveConfirmed] = useState(false)
-
+      closingDate: '',
+    },
+  });
+  const [unsavedChanges, setUnsavedChanges] = useState(false);
+  const [saveConfirmed, setSaveConfirmed] = useState(false);
 
   useEffect(() => {
     if (courseId !== 'new') {
@@ -129,8 +138,10 @@ export default function CourseTabs({ courseId, onBack }: { courseId: string, onB
           }
 
           const response = await api.getOneBaseCoursesControllerCourseEntity(
-            { slug: courseId }, // Ajuste para utilizar o ID do curso
-            { headers: { Authorization: `Bearer ${session.user.accessToken}` } }
+            { slug: courseId as string }, // Ajuste para utilizar o ID do curso
+            {
+              headers: { Authorization: `Bearer ${session.user.accessToken}` },
+            },
           );
 
           // Atualiza o estado com os dados do curso retornados
@@ -148,16 +159,16 @@ export default function CourseTabs({ courseId, onBack }: { courseId: string, onB
   }, [courseId]);
 
   const updateCourseData = (tab: keyof CourseData, data: any) => {
-    setCourseData(prev => {
-      const newData = { ...prev, [tab]: data }
+    setCourseData((prev) => {
+      const newData = { ...prev, [tab]: data };
       // Auto-save logic
-      saveCourseData(newData)
-      return newData
-    })
-    setUnsavedChanges(false)
-    setSaveConfirmed(true)
-    setTimeout(() => setSaveConfirmed(false), 3000) // Hide the confirmation after 3 seconds
-  }
+      saveCourseData(newData);
+      return newData;
+    });
+    setUnsavedChanges(false);
+    setSaveConfirmed(true);
+    setTimeout(() => setSaveConfirmed(false), 3000); // Hide the confirmation after 3 seconds
+  };
 
   const saveCourseData = async (data: CourseData) => {
     // Replace this with actual API call
@@ -167,18 +178,25 @@ export default function CourseTabs({ courseId, onBack }: { courseId: string, onB
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(data),
-    })
-  }
+    });
+  };
+
+  const handleBack = () => {
+    router.back();
+  };
 
   return (
     <div className="space-y-4">
-      <Button onClick={onBack} variant="outline">Back to Course List</Button>
+      <Button onClick={handleBack} variant="outline">
+        Back to Course List
+      </Button>
       {unsavedChanges && (
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Warning</AlertTitle>
           <AlertDescription>
-            You have unsaved changes. Please save your data before leaving this page.
+            You have unsaved changes. Please save your data before leaving this
+            page.
           </AlertDescription>
         </Alert>
       )}
@@ -204,40 +222,43 @@ export default function CourseTabs({ courseId, onBack }: { courseId: string, onB
           </TabsList>
         </div>
         <TabsContent value="information">
-          <InformationTab data={courseData.information} updateData={(data) => updateCourseData('information', data)} />
+          <InformationTab
+            data={courseData.information}
+            updateData={(data) => updateCourseData('information', data)}
+          />
         </TabsContent>
         <TabsContent value="modules">
-          <ModulesTab 
-            modules={courseData.modules} 
-            updateData={(data) => updateCourseData('modules', data)} 
+          <ModulesTab
+            modules={courseData.modules}
+            updateData={(data) => updateCourseData('modules', data)}
           />
         </TabsContent>
         <TabsContent value="lessons">
-          <LessonsTab 
-            lessons={courseData.lessons} 
+          <LessonsTab
+            lessons={courseData.lessons}
             modules={courseData.modules}
-            updateData={(data) => updateCourseData('lessons', data)} 
+            updateData={(data) => updateCourseData('lessons', data)}
           />
         </TabsContent>
         <TabsContent value="exercises">
-          <ExercisesTab 
-            exercises={courseData.exercises} 
+          <ExercisesTab
+            exercises={courseData.exercises}
             modules={courseData.modules}
             lessons={courseData.lessons}
-            updateData={(data) => updateCourseData('exercises', data)} 
+            updateData={(data) => updateCourseData('exercises', data)}
           />
         </TabsContent>
         <TabsContent value="questions">
-          <QuestionsTab 
+          <QuestionsTab
             questions={courseData.questions}
             exercises={courseData.exercises}
             updateData={(data) => updateCourseData('questions', data)}
           />
         </TabsContent>
         <TabsContent value="pricing">
-          <PricingTab 
-            data={courseData.pricing} 
-            updateData={(data) => updateCourseData('pricing', data)} 
+          <PricingTab
+            data={courseData.pricing}
+            updateData={(data) => updateCourseData('pricing', data)}
             setUnsavedChanges={setUnsavedChanges}
           />
         </TabsContent>
@@ -246,5 +267,5 @@ export default function CourseTabs({ courseId, onBack }: { courseId: string, onB
         </TabsContent>
       </Tabs>
     </div>
-  )
+  );
 }

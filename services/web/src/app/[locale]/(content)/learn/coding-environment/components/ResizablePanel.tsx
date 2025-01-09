@@ -1,78 +1,83 @@
-'use client'
+'use client';
 
-import React, { useState, useCallback, useEffect, useRef } from 'react'
-import { GripVertical, GripHorizontal } from 'lucide-react'
+import React, { useState, useCallback, useEffect, useRef } from 'react';
+import { GripVertical, GripHorizontal } from 'lucide-react';
 
 const debounce = (func: Function, wait: number) => {
-  let timeout: NodeJS.Timeout
+  let timeout: NodeJS.Timeout;
   return (...args: any[]) => {
-    clearTimeout(timeout)
-    timeout = setTimeout(() => func(...args), wait)
-  }
-}
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func(...args), wait);
+  };
+};
 
 interface ResizablePanelProps {
-  left?: React.ReactNode
-  right?: React.ReactNode
-  top?: React.ReactNode
-  bottom?: React.ReactNode
-  direction: 'horizontal' | 'vertical'
-  initialSize?: number
-  minSize?: number
-  maxSize?: number
+  left?: React.ReactNode;
+  right?: React.ReactNode;
+  top?: React.ReactNode;
+  bottom?: React.ReactNode;
+  direction: 'horizontal' | 'vertical';
+  initialSize?: number;
+  minSize?: number;
+  maxSize?: number;
+  isDarkMode: boolean;
+  setIsDarkMode: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-const ResizablePanel: React.FC<ResizablePanelProps> = ({ 
-  left, 
-  right, 
-  top, 
-  bottom, 
-  direction, 
+const ResizablePanel: React.FC<ResizablePanelProps> = ({
+  left,
+  right,
+  top,
+  bottom,
+  direction,
   initialSize = 50,
   minSize = 10,
-  maxSize = 90
+  maxSize = 90,
 }) => {
-  const [size, setSize] = useState(initialSize)
-  const panelRef = useRef<HTMLDivElement>(null)
+  const [size, setSize] = useState(initialSize);
+  const panelRef = useRef<HTMLDivElement>(null);
 
   const handleResize = useCallback(
     debounce(() => {
-      if (!panelRef.current) return
-      const { width, height } = panelRef.current.getBoundingClientRect()
+      if (!panelRef.current) return;
+      const { width, height } = panelRef.current.getBoundingClientRect();
       if (direction === 'horizontal') {
-        setSize((width / window.innerWidth) * 100)
+        setSize((width / window.innerWidth) * 100);
       } else {
-        setSize((height / window.innerHeight) * 100)
+        setSize((height / window.innerHeight) * 100);
       }
     }, 16),
-    [direction]
-  )
+    [direction],
+  );
 
   useEffect(() => {
-    window.addEventListener('resize', handleResize)
-    return () => window.removeEventListener('resize', handleResize)
-  }, [handleResize])
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [handleResize]);
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    e.preventDefault()
-    document.addEventListener('mousemove', handleMouseMove)
-    document.addEventListener('mouseup', handleMouseUp)
-  }, [])
+    e.preventDefault();
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  }, []);
 
-  const handleMouseMove = useCallback((e: MouseEvent) => {
-    if (direction === 'horizontal') {
-      const newSize = (e.clientX / window.innerWidth) * 100
-      setSize(Math.min(Math.max(newSize, minSize), maxSize))
-    } else {
-      const newSize = (e.clientY / window.innerHeight) * 100
-      setSize(Math.min(Math.max(newSize, minSize), maxSize))
-    }
-  }, [direction, minSize, maxSize])
+  const handleMouseMove = useCallback(
+    (e: MouseEvent) => {
+      if (direction === 'horizontal') {
+        const newSize = (e.clientX / window.innerWidth) * 100;
+        setSize(Math.min(Math.max(newSize, minSize), maxSize));
+      } else {
+        const newSize = (e.clientY / window.innerHeight) * 100;
+        setSize(Math.min(Math.max(newSize, minSize), maxSize));
+      }
+    },
+    [direction, minSize, maxSize],
+  );
 
   const handleMouseUp = useCallback(() => {
-    document.removeEventListener('mousemove', handleMouseMove)
-    document.removeEventListener('mouseup', handleMouseUp)
-  }, [handleMouseMove])
+    document.removeEventListener('mousemove', handleMouseMove);
+    document.removeEventListener('mouseup', handleMouseUp);
+  }, [handleMouseMove]);
 
   if (direction === 'horizontal') {
     return (
@@ -90,10 +95,13 @@ const ResizablePanel: React.FC<ResizablePanelProps> = ({
           {right}
         </div>
       </div>
-    )
+    );
   } else {
     return (
-      <div ref={panelRef} className="flex flex-col h-full bg-[#1E1E1E] text-[#D4D4D4]">
+      <div
+        ref={panelRef}
+        className="flex flex-col h-full bg-[#1E1E1E] text-[#D4D4D4]"
+      >
         <div style={{ height: `${size}%` }} className="overflow-auto">
           {top}
         </div>
@@ -107,9 +115,8 @@ const ResizablePanel: React.FC<ResizablePanelProps> = ({
           {bottom}
         </div>
       </div>
-    )
+    );
   }
-}
+};
 
-export default ResizablePanel
-
+export default ResizablePanel;

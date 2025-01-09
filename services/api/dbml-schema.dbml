@@ -299,7 +299,7 @@ Table QuizEntity {
   questions jsonb
   slug varchar
   summary string
-  thumbnail varchar
+  thumbnail ImageEntity
   title varchar
   updatedAt timestamp
   visibility enum
@@ -424,6 +424,9 @@ Ref: ProjectFeedbackResponseEntity.version > ProjectVersionEntity.responses
 Ref: ProposalEntity.editors <> UserEntity.id
 Ref: ProposalEntity.owner > UserEntity.id
 Ref: ProposalEntity.thumbnail > ImageEntity.id
+Ref: QuizEntity.editors <> UserEntity.id
+Ref: QuizEntity.owner > UserEntity.id
+Ref: QuizEntity.thumbnail > ImageEntity.id
 Ref: TicketEntity.editors <> UserEntity.id
 Ref: TicketEntity.owner > UserEntity.id
 Ref: UserEntity.profile - UserProfileEntity.user

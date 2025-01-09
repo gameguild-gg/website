@@ -1,44 +1,59 @@
-'use client'
+'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react'
-import dynamic from 'next/dynamic'
-import { CodeQuestionv1_0_0 } from '@/lib/interface-base/question.base.v1.0.0'
-import { QuestionSubmissionv1_0_0 } from '@/lib/interface-base/question.submission.v1.0.0'
-import TopMenu from './TopMenu'
-import BottomMenu from './BottomMenu'
-import CodeTabs from './CodeTabs'
-import TestResultsTab from './TestResultsTab'
-import LessonPanel from './LessonPanel'
-import { CharacterCount } from './CharacterCount'
-import { Panel, PanelGroup, PanelResizeHandle, ImperativePanelHandle } from 'react-resizable-panels'
+import { useState, useEffect, useRef, useCallback } from 'react';
+import dynamic from 'next/dynamic';
+import { CodeQuestionv1_0_0 } from '@/lib/interface-base/question.base.v1.0.0';
+import { QuestionSubmissionv1_0_0 } from '@/lib/interface-base/question.submission.v1.0.0';
+import TopMenu from './TopMenu';
+import BottomMenu from './BottomMenu';
+import CodeTabs from './CodeTabs';
+import TestResultsTab from './TestResultsTab';
+import LessonPanel from './LessonPanel';
+import { CharacterCount } from './CharacterCount';
+import {
+  Panel,
+  PanelGroup,
+  PanelResizeHandle,
+  ImperativePanelHandle,
+} from 'react-resizable-panels';
 import JSZip from 'jszip';
-import { toast } from '@/components/learn/ui/use-toast'
-import { SubmissionWarningDialog } from './SubmissionWarningDialog'
+import { toast } from '@/components/learn/ui/use-toast';
+import { SubmissionWarningDialog } from './SubmissionWarningDialog';
 import { History, CodeFile } from '../types/codeEditor';
 import { Undo, Redo, AlertCircle } from 'lucide-react';
 //import * as monaco from 'monaco-editor';
-import SettingsModal, { Settings } from './SettingsModal'
+import SettingsModal, { Settings } from './SettingsModal';
 //import { EditorPanel } from './EditorPanel'
 //import { loader } from '@monaco-editor/react';
 import { insertInputs } from './InputInserter';
 import { ConfirmSubmissionDialog } from './ConfirmSubmissionDialog';
-import { AbortController } from 'node-abort-controller'
+import { AbortController } from 'node-abort-controller';
 import { SplitViewFileSelector } from './SplitViewFileSelector';
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { useRouter, useSearchParams } from 'next/navigation'
-import { HierarchyBasev1_0_0 } from '@/lib/interface-base/structure.base.v1.0.0'
-import { UserListQuestionv1_0_0, StudentSubmission } from '@/lib/interface-base/user.list.question.v1.0.0';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { HierarchyBasev1_0_0 } from '@/lib/interface-base/structure.base.v1.0.0';
+import {
+  UserListQuestionv1_0_0,
+  StudentSubmission,
+} from '@/lib/interface-base/user.list.question.v1.0.0';
 
 // Add this function after the existing imports
 const getFileCharLimit = (fileName: string, rules: string[]): number => {
-  const fileSpecificRule = rules.find(rule => rule.startsWith(`chars-${fileName}:`))
+  const fileSpecificRule = rules.find((rule) =>
+    rule.startsWith(`chars-${fileName}:`),
+  );
   if (fileSpecificRule) {
-    return parseInt(fileSpecificRule.split(':')[1].trim())
+    return parseInt(fileSpecificRule.split(':')[1].trim());
   }
-  return 0 // Return 0 if no specific limit is set for this file
-}
+  return 0; // Return 0 if no specific limit is set for this file
+};
 
-const saveStateToLocalStorage = (state: any, courseId: string | null, moduleId: string | null, assessmentId: string | null) => {
+const saveStateToLocalStorage = (
+  state: any,
+  courseId: string | null,
+  moduleId: string | null,
+  assessmentId: string | null,
+) => {
   if (!courseId || !moduleId || !assessmentId || !state.codeQuestion) return; // Return early if IDs are missing
 
   const { id } = state.codeQuestion;
@@ -46,7 +61,9 @@ const saveStateToLocalStorage = (state: any, courseId: string | null, moduleId: 
   localStorage.setItem(storageKey, JSON.stringify(state));
 };
 
-const MonacoEditor = dynamic(() => import('@monaco-editor/react'), { ssr: false })
+const MonacoEditor = dynamic(() => import('@monaco-editor/react'), {
+  ssr: false,
+});
 /*
 interface CodeFile {
   name: string;
@@ -56,10 +73,10 @@ interface CodeFile {
 }
 */
 interface CodeEditorPanelProps {
-  codeQuestion: CodeQuestionv1_0_0
-  onReturn: () => void
-  onSubmit: (submission: QuestionSubmissionv1_0_0) => void
-  hierarchy?: HierarchyBasev1_0_0
+  codeQuestion: CodeQuestionv1_0_0;
+  onReturn: () => void;
+  onSubmit: (submission: QuestionSubmissionv1_0_0) => void;
+  hierarchy?: HierarchyBasev1_0_0;
 }
 
 const languageMap: { [key: string]: string } = {
@@ -81,16 +98,16 @@ const languageMap: { [key: string]: string } = {
   rb: 'ruby',
   rs: 'rust',
   cs: 'csharp',
-  lua: 'lua'
-}
+  lua: 'lua',
+};
 
 const getLanguageFromExtension = (filename: string): string => {
-  const extension = filename.split('.').pop()?.toLowerCase() || ''
-  return languageMap[extension] || 'plaintext'
-}
+  const extension = filename.split('.').pop()?.toLowerCase() || '';
+  return languageMap[extension] || 'plaintext';
+};
 
-const DEFAULT_MAX_FILES = Infinity
-const DEFAULT_MAX_CHARS = Infinity
+const DEFAULT_MAX_FILES = Infinity;
+const DEFAULT_MAX_CHARS = Infinity;
 
 const defaultSettings: Settings = {
   runSettings: {
@@ -105,7 +122,7 @@ const defaultSettings: Settings = {
       '.cpp': 'Internal output',
       '.c': 'Internal output',
       '.rb': 'Internal output',
-      '.lua': 'Internal output'
+      '.lua': 'Internal output',
     },
     applicationFileName: 'index',
   },
@@ -114,37 +131,49 @@ const defaultSettings: Settings = {
 // Add this function to calculate total character count
 const calculateTotalChars = (files: CodeFile[], rules: string[]): number => {
   return files.reduce((sum, file) => {
-    const fileLimit = getFileCharLimit(file.name, rules)
-    return fileLimit === 0 ? sum + file.content.length : sum
-  }, 0)
-}
+    const fileLimit = getFileCharLimit(file.name, rules);
+    return fileLimit === 0 ? sum + file.content.length : sum;
+  }, 0);
+};
 
-export default function CodeEditorPanel({ codeQuestion, onSubmit, hierarchy = {
-  idHierarchy: [],
-  idUser: '',
-  idRole: ''
-} }: CodeEditorPanelProps) {
-  const [codeFiles, setCodeFiles] = useState<CodeFile[]>([])
-  const [activeFileIndex, setActiveFileIndex] = useState(0)
-  const [activeTab, setActiveTab] = useState<'output' | 'problems' | 'testResults' | null>(null)
-  const [output, setOutput] = useState('')
-  const [testResults, setTestResults] = useState<any[]>([])
-  const [mode, setMode] = useState<'light' | 'dark' | 'high-contrast'>(hierarchy.colorMode)
-  const [submissionData, setSubmissionData] = useState<Partial<QuestionSubmissionv1_0_0>>({
+export default function CodeEditorPanel({
+  codeQuestion,
+  onSubmit,
+  hierarchy = {
+    idHierarchy: [],
+    idUser: '',
+    idRole: '',
+  },
+}: CodeEditorPanelProps) {
+  const [codeFiles, setCodeFiles] = useState<CodeFile[]>([]);
+  const [activeFileIndex, setActiveFileIndex] = useState(0);
+  const [activeTab, setActiveTab] = useState<
+    'output' | 'problems' | 'testResults' | null
+  >(null);
+  const [output, setOutput] = useState('');
+  const [testResults, setTestResults] = useState<any[]>([]);
+  const [mode, setMode] = useState<'light' | 'dark' | 'high-contrast'>(
+    hierarchy.colorMode,
+  );
+  const [submissionData, setSubmissionData] = useState<
+    Partial<QuestionSubmissionv1_0_0>
+  >({
     submittedCode: [],
     output: '',
-    testResults: []
+    testResults: [],
   });
-  const editorRef = useRef<any>(null)
-  const [currentFileChars, setCurrentFileChars] = useState(0)
-  const [totalChars, setTotalChars] = useState(0)
-  const [isWarningDialogOpen, setIsWarningDialogOpen] = useState(false)
-  const [submissionConflicts, setSubmissionConflicts] = useState<{ fileName: string; reason: string }[]>([])
-  const [isSubmitDisabled, setIsSubmitDisabled] = useState(false)
-  const [lessonPanelSize, setLessonPanelSize] = useState(30)
-  const [isLessonCollapsed, setIsLessonCollapsed] = useState(false)
+  const editorRef = useRef<any>(null);
+  const [currentFileChars, setCurrentFileChars] = useState(0);
+  const [totalChars, setTotalChars] = useState(0);
+  const [isWarningDialogOpen, setIsWarningDialogOpen] = useState(false);
+  const [submissionConflicts, setSubmissionConflicts] = useState<
+    { fileName: string; reason: string }[]
+  >([]);
+  const [isSubmitDisabled, setIsSubmitDisabled] = useState(false);
+  const [lessonPanelSize, setLessonPanelSize] = useState(30);
+  const [isLessonCollapsed, setIsLessonCollapsed] = useState(false);
   const [prevLessonPanelSize, setPrevLessonPanelSize] = useState(30);
-  const lessonPanelRef = useRef<ImperativePanelHandle>(null)
+  const lessonPanelRef = useRef<ImperativePanelHandle>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [settings, setSettings] = useState<Settings>(defaultSettings);
   const [isUndoing, setIsUndoing] = useState(false);
@@ -152,63 +181,84 @@ export default function CodeEditorPanel({ codeQuestion, onSubmit, hierarchy = {
   const undoTimerRef = useRef<NodeJS.Timeout | null>(null);
   const redoTimerRef = useRef<NodeJS.Timeout | null>(null);
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
-  const [abortController, setAbortController] = useState<AbortController | null>(null);
+  const [abortController, setAbortController] =
+    useState<AbortController | null>(null);
   const [isSplitViewActive, setIsSplitViewActive] = useState(false);
-  const [splitViewFileName, setSplitViewFileName] = useState<string | null>(null);
+  const [splitViewFileName, setSplitViewFileName] = useState<string | null>(
+    null,
+  );
   const [isFileSelectorOpen, setIsFileSelectorOpen] = useState(false);
   const [openedWindow, setOpenedWindow] = useState<Window | null>(null);
   const [isRunAnimating, setIsRunAnimating] = useState(false);
   const [isRunThisAnimating, setIsRunThisAnimating] = useState(false);
   const [isRunAppAnimating, setIsRunAppAnimating] = useState(false);
-  const [failedTests, setFailedTests] = useState(0)
-  const [totalTests, setTotalTests] = useState(0)
+  const [failedTests, setFailedTests] = useState(0);
+  const [totalTests, setTotalTests] = useState(0);
   const [testResultsViewed, setTestResultsViewed] = useState(false); // Added state
   const [isSubmitHidden, setIsSubmitHidden] = useState(false); // Added state
-  const [splitViewFileIndex, setSplitViewFileIndex] = useState<number | null>(null); // Added state
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const assessmentId = searchParams.get('assessmentId')
-  const userId = searchParams.get('userId')
-  const role = searchParams.get('role')
-  const courseId = searchParams.get('courseId')
-  const moduleId = searchParams.get('moduleId')
-  
-  const [studentSubmission, setStudentSubmission] = useState<StudentSubmission | null>(null);
+  const [splitViewFileIndex, setSplitViewFileIndex] = useState<number | null>(
+    null,
+  ); // Added state
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const assessmentId = searchParams.get('assessmentId');
+  const userId = searchParams.get('userId');
+  const role = searchParams.get('role');
+  const courseId = searchParams.get('courseId');
+  const moduleId = searchParams.get('moduleId');
+
+  const [studentSubmission, setStudentSubmission] =
+    useState<StudentSubmission | null>(null);
   const submissionId = searchParams.get('submissionId');
 
   const [pyodide, setPyodide] = useState<any>(null);
 
   const [rubyVM, setRubyVM] = useState<any>(null);
-  
 
   if (!codeQuestion) {
     return <div>Loading...</div>;
   }
 
   // Modify the existing maxChars calculation
-  const maxChars = codeQuestion.rules && codeQuestion.rules.find(rule => rule.startsWith('chars:'))
-    ? parseInt(codeQuestion.rules.find(rule => rule.startsWith('chars:'))!.split(':')[1].trim())
-    : DEFAULT_MAX_CHARS
+  const maxChars =
+    codeQuestion.rules &&
+    codeQuestion.rules.find((rule) => rule.startsWith('chars:'))
+      ? parseInt(
+          codeQuestion.rules
+            .find((rule) => rule.startsWith('chars:'))!
+            .split(':')[1]
+            .trim(),
+        )
+      : DEFAULT_MAX_CHARS;
 
-  const maxFiles = codeQuestion.rules && codeQuestion.rules.find(rule => rule.startsWith('files:'))
-    ? parseInt(codeQuestion.rules.find(rule => rule.startsWith('files:'))!.split(':')[1].trim())
-    : DEFAULT_MAX_FILES
-
+  const maxFiles =
+    codeQuestion.rules &&
+    codeQuestion.rules.find((rule) => rule.startsWith('files:'))
+      ? parseInt(
+          codeQuestion.rules
+            .find((rule) => rule.startsWith('files:'))!
+            .split(':')[1]
+            .trim(),
+        )
+      : DEFAULT_MAX_FILES;
 
   const getFileCharLimit = (fileName: string, rules: string[]): number => {
     if (!codeQuestion.rules) return maxChars;
-    const fileSpecificRule = codeQuestion.rules.find(rule => rule.startsWith(`chars-${fileName}:`))
+    const fileSpecificRule = codeQuestion.rules.find((rule) =>
+      rule.startsWith(`chars-${fileName}:`),
+    );
     if (fileSpecificRule) {
-      return parseInt(fileSpecificRule.split(':')[1].trim())
+      return parseInt(fileSpecificRule.split(':')[1].trim());
     }
-    return maxChars
-  }
-
+    return maxChars;
+  };
 
   useEffect(() => {
     if (!codeQuestion || !courseId || !moduleId || !assessmentId) return;
 
-    const savedState = localStorage.getItem(`assignmentState_${courseId}_${moduleId}_${assessmentId}_${codeQuestion.id}`);
+    const savedState = localStorage.getItem(
+      `assignmentState_${courseId}_${moduleId}_${assessmentId}_${codeQuestion.id}`,
+    );
 
     if (savedState) {
       const parsedState = JSON.parse(savedState);
@@ -217,10 +267,15 @@ export default function CodeEditorPanel({ codeQuestion, onSubmit, hierarchy = {
       setTestResults(parsedState.testResults);
       setActiveFileIndex(parsedState.activeFileIndex);
     } else {
-      let initialFiles: CodeFile[] = []
-      if (Array.isArray(codeQuestion.initialCode) && codeQuestion.initialCode.length > 0) {
+      let initialFiles: CodeFile[] = [];
+      if (
+        Array.isArray(codeQuestion.initialCode) &&
+        codeQuestion.initialCode.length > 0
+      ) {
         initialFiles = codeQuestion.initialCode.map((code, index) => {
-          const fileName = (codeQuestion.codeName && codeQuestion.codeName[index]) || `File ${index + 1}`;
+          const fileName =
+            (codeQuestion.codeName && codeQuestion.codeName[index]) ||
+            `File ${index + 1}`;
           const language = getLanguageFromExtension(fileName);
           const content = codeQuestion.rules.includes('inputs: y')
             ? insertInputs(code, codeQuestion.inputs, language, index)
@@ -233,32 +288,43 @@ export default function CodeEditorPanel({ codeQuestion, onSubmit, hierarchy = {
           };
         });
       } else if (typeof codeQuestion.initialCode === 'string') {
-        const fileName = (codeQuestion.codeName && codeQuestion.codeName[0]) || 'File 1';
+        const fileName =
+          (codeQuestion.codeName && codeQuestion.codeName[0]) || 'File 1';
         const language = getLanguageFromExtension(fileName);
         const content = codeQuestion.rules.includes('inputs: y')
-          ? insertInputs(codeQuestion.initialCode, codeQuestion.inputs, language, 0)
+          ? insertInputs(
+              codeQuestion.initialCode,
+              codeQuestion.inputs,
+              language,
+              0,
+            )
           : codeQuestion.initialCode;
-        initialFiles = [{
-          name: fileName,
-          language: language,
-          content: content,
-          history: { past: [], future: [] },
-        }];
+        initialFiles = [
+          {
+            name: fileName,
+            language: language,
+            content: content,
+            history: { past: [], future: [] },
+          },
+        ];
       }
 
       setCodeFiles(initialFiles);
 
       // Initialize character counts
-      const initialTotalChars = calculateTotalChars(initialFiles, codeQuestion.rules)
-      setTotalChars(initialTotalChars)
-      setCurrentFileChars(initialFiles[0]?.content.length || 0)
+      const initialTotalChars = calculateTotalChars(
+        initialFiles,
+        codeQuestion.rules,
+      );
+      setTotalChars(initialTotalChars);
+      setCurrentFileChars(initialFiles[0]?.content.length || 0);
     }
 
     setSubmissionData({
       ...codeQuestion,
       submittedCode: [],
       output: '',
-      testResults: []
+      testResults: [],
     });
 
     // Check if the submit button should be hidden
@@ -276,25 +342,30 @@ export default function CodeEditorPanel({ codeQuestion, onSubmit, hierarchy = {
 
     return () => clearInterval(intervalId);
   }, [codeFiles, activeFileIndex, codeQuestion.rules]);
-  
+
   useEffect(() => {
     const fetchData = async () => {
       if (submissionId) {
         try {
-          const response = await fetch(`../../../api/learn/teach/question/${codeQuestion.id}?courseId=${courseId}`);
+          const response = await fetch(
+            `../../../api/learn/teach/question/${codeQuestion.id}?courseId=${courseId}`,
+          );
           if (!response.ok) {
             throw new Error('Failed to fetch student submission');
           }
           const data: UserListQuestionv1_0_0 = await response.json();
-          const submission = data.submissions[submissionId]?.submission as StudentSubmission;
+          const submission = data.submissions[submissionId]
+            ?.submission as StudentSubmission;
           if (submission) {
             setStudentSubmission(submission);
-            setCodeFiles(submission.submittedCode.map((content, index) => ({
-              name: `file${index + 1}.js`,
-              language: 'javascript',
-              content,
-              history: { past: [], future: [] },
-            })));
+            setCodeFiles(
+              submission.submittedCode.map((content, index) => ({
+                name: `file${index + 1}.js`,
+                language: 'javascript',
+                content,
+                history: { past: [], future: [] },
+              })),
+            );
           }
         } catch (error) {
           console.error('Error fetching student submission:', error);
@@ -314,13 +385,16 @@ export default function CodeEditorPanel({ codeQuestion, onSubmit, hierarchy = {
     if (value !== undefined) {
       updateFileHistory(activeFileIndex, value);
 
-      const fileLimit = getFileCharLimit(codeFiles[activeFileIndex].name, codeQuestion.rules);
+      const fileLimit = getFileCharLimit(
+        codeFiles[activeFileIndex].name,
+        codeQuestion.rules,
+      );
       const effectiveLimit = fileLimit === 0 ? maxChars : fileLimit;
       if (value.length > effectiveLimit) {
         toast({
-          title: "Character limit exceeded",
+          title: 'Character limit exceeded',
           description: `You have exceeded the maximum character limit of ${effectiveLimit} for this file. Please reduce the content.`,
-          variant: "destructive",
+          variant: 'destructive',
         });
         return;
       }
@@ -330,56 +404,68 @@ export default function CodeEditorPanel({ codeQuestion, onSubmit, hierarchy = {
       setCodeFiles(updatedCodeFiles);
 
       // Update total character count
-      const newTotalChars = calculateTotalChars(updatedCodeFiles, codeQuestion.rules);
+      const newTotalChars = calculateTotalChars(
+        updatedCodeFiles,
+        codeQuestion.rules,
+      );
       setTotalChars(newTotalChars);
       setCurrentFileChars(value.length);
 
-      setSubmissionData(prev => ({
+      setSubmissionData((prev) => ({
         ...prev,
-        submittedCode: updatedCodeFiles.map(file => file.content)
+        submittedCode: updatedCodeFiles.map((file) => file.content),
       }));
 
       // Trigger an immediate save
       const currentState = {
-      codeQuestion,
-      codeFiles: updatedCodeFiles,
-      output,
-      testResults,
-      activeFileIndex
-    };
-    saveStateToLocalStorage(currentState, courseId, moduleId, assessmentId); // Pass IDs to save function
-  }
-  }
+        codeQuestion,
+        codeFiles: updatedCodeFiles,
+        output,
+        testResults,
+        activeFileIndex,
+      };
+      saveStateToLocalStorage(currentState, courseId, moduleId, assessmentId); // Pass IDs to save function
+    }
+  };
 
   const handleTabChange = (index: number) => {
     setActiveFileIndex(index);
   };
 
-  const compareOutputs = (actualOutputs: string[], expectedOutputs: any[]): any[] => {
+  const compareOutputs = (
+    actualOutputs: string[],
+    expectedOutputs: any[],
+  ): any[] => {
     // If expectedOutputs is not an array of arrays, wrap it in an array
-    const normalizedExpectedOutputs = Array.isArray(expectedOutputs[0]) ? expectedOutputs : [expectedOutputs];
+    const normalizedExpectedOutputs = Array.isArray(expectedOutputs[0])
+      ? expectedOutputs
+      : [expectedOutputs];
 
-    return normalizedExpectedOutputs.flatMap((expectedFileOutputs, fileIndex) => {
-      const actualFileOutput = actualOutputs[fileIndex] || '';
-      const actualLines = actualFileOutput.trim().split('\n');
+    return normalizedExpectedOutputs.flatMap(
+      (expectedFileOutputs, fileIndex) => {
+        const actualFileOutput = actualOutputs[fileIndex] || '';
+        const actualLines = actualFileOutput.trim().split('\n');
 
-      // If expectedFileOutputs is empty, no outputs are expected for this file
-      if (!expectedFileOutputs || expectedFileOutputs.length === 0) {
-        return [{
+        // If expectedFileOutputs is empty, no outputs are expected for this file
+        if (!expectedFileOutputs || expectedFileOutputs.length === 0) {
+          return [
+            {
+              fileIndex,
+              expectedOutput: 'No output expected',
+              actualOutput: actualFileOutput,
+              passed: actualFileOutput.trim() === '',
+            },
+          ];
+        }
+
+        return expectedFileOutputs.map((expected: string, index: number) => ({
           fileIndex,
-          expectedOutput: 'No output expected',
-          actualOutput: actualFileOutput,
-          passed: actualFileOutput.trim() === ''
-        }];
-      }
-
-      return expectedFileOutputs.map((expected: string, index: number) => ({
-        fileIndex,
-        expectedOutput: expected,
-        actualOutput: actualLines[index] || '',
-        passed: actualLines[index]?.trim() === expected.trim()
-      }));
-    });
+          expectedOutput: expected,
+          actualOutput: actualLines[index] || '',
+          passed: actualLines[index]?.trim() === expected.trim(),
+        }));
+      },
+    );
   };
 
   const isWindowOpen = (window: Window | null): boolean => {
@@ -389,8 +475,8 @@ export default function CodeEditorPanel({ codeQuestion, onSubmit, hierarchy = {
   // Load Pyodide on component mount
   const loadPyodideInstance = async () => {
     if (!pyodide) {
-      const script = document.createElement("script");
-      script.src = "https://cdn.jsdelivr.net/pyodide/v0.27.0/full/pyodide.js";
+      const script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/pyodide/v0.27.0/full/pyodide.js';
       script.async = true;
 
       await new Promise((resolve, reject) => {
@@ -410,8 +496,9 @@ export default function CodeEditorPanel({ codeQuestion, onSubmit, hierarchy = {
   // Carregar o Ruby WebAssembly
   const loadRubyInstance = async () => {
     if (!rubyVM) {
-      const script = document.createElement("script");
-      script.src = "https://cdn.jsdelivr.net/npm/@ruby/wasm-wasi@2.7.0/dist/browser.umd.js";
+      const script = document.createElement('script');
+      script.src =
+        'https://cdn.jsdelivr.net/npm/@ruby/wasm-wasi@2.7.0/dist/browser.umd.js';
       script.async = true;
 
       await new Promise((resolve, reject) => {
@@ -420,16 +507,15 @@ export default function CodeEditorPanel({ codeQuestion, onSubmit, hierarchy = {
         document.body.appendChild(script);
       });
 
-      const response = await fetch("https://cdn.jsdelivr.net/npm/@ruby/3.3-wasm-wasi@2.7.0/dist/ruby+stdlib.wasm");
+      const response = await fetch(
+        'https://cdn.jsdelivr.net/npm/@ruby/3.3-wasm-wasi@2.7.0/dist/ruby+stdlib.wasm',
+      );
       const module = await WebAssembly.compileStreaming(response);
-      const { DefaultRubyVM } = window["ruby-wasm-wasi"];
+      const { DefaultRubyVM } = window['ruby-wasm-wasi'];
       const { vm } = await DefaultRubyVM(module);
       setRubyVM(vm);
     }
   };
-
-
-
 
   //RUN FILE
   const runFile = () => {
@@ -442,7 +528,8 @@ export default function CodeEditorPanel({ codeQuestion, onSubmit, hierarchy = {
 
     const currentFile = codeFiles[activeFileIndex];
     const fileExtension = `.${currentFile.name.split('.').pop()}`;
-    const runType = settings.runSettings.fileExtensions[fileExtension] || 'Internal output';
+    const runType =
+      settings.runSettings.fileExtensions[fileExtension] || 'Internal output';
 
     setOutput('');
     setTestResults([]);
@@ -492,24 +579,30 @@ export default function CodeEditorPanel({ codeQuestion, onSubmit, hierarchy = {
             const output = args.join(' ');
             capturedOutput.push(output);
             if (!newAbortController.signal.aborted) {
-              setOutput(prev => prev + output + '\n');
+              setOutput((prev) => prev + output + '\n');
             }
           },
           error: (...args: any[]) => {
             const output = 'Error: ' + args.join(' ');
             capturedOutput.push(output);
             if (!newAbortController.signal.aborted) {
-              setOutput(prev => prev + output + '\n');
+              setOutput((prev) => prev + output + '\n');
             }
-          }
+          },
         };
 
         try {
           const func = new Function('console', currentFile.content);
           func(customConsole);
 
-          if (codeQuestion.rules.includes('outputs: y') && !newAbortController.signal.aborted) {
-            const results = compareOutputs([capturedOutput.join('\n')], codeQuestion.outputs);
+          if (
+            codeQuestion.rules.includes('outputs: y') &&
+            !newAbortController.signal.aborted
+          ) {
+            const results = compareOutputs(
+              [capturedOutput.join('\n')],
+              codeQuestion.outputs,
+            );
             setTestResults(results);
           }
         } catch (error) {
@@ -518,22 +611,22 @@ export default function CodeEditorPanel({ codeQuestion, onSubmit, hierarchy = {
           }
         }
 
-      // Run Python
+        // Run Python
       } else if (currentFile.language === 'python') {
-        
         const executePython = async (code: string) => {
           try {
-
             setOutput((prev) => prev + '\nLoading Python runtime...');
 
             const pyodideInstance = await loadPyodideInstance();
 
-            setOutput((prev) => prev.replace('\nLoading Python runtime...', ''));
+            setOutput((prev) =>
+              prev.replace('\nLoading Python runtime...', ''),
+            );
 
             // Variáveis para capturar o stdout e stderr
             let capturedOutput = '';
             let capturedError = '';
-      
+
             // Redirecionar o stdout
             pyodideInstance.setStdout({
               batched: (output: string) => {
@@ -543,7 +636,7 @@ export default function CodeEditorPanel({ codeQuestion, onSubmit, hierarchy = {
                 }
               },
             });
-      
+
             // Redirecionar o stderr
             pyodideInstance.setStderr({
               batched: (error: string) => {
@@ -553,45 +646,55 @@ export default function CodeEditorPanel({ codeQuestion, onSubmit, hierarchy = {
                 }
               },
             });
-      
+
             // Executar o código Python
             await pyodideInstance.runPythonAsync(code);
-      
+
             // Retornar o output e erro capturados
             return { capturedOutput, capturedError };
           } catch (error) {
-            return { capturedOutput: '', capturedError: (error as Error).message };
+            return {
+              capturedOutput: '',
+              capturedError: (error as Error).message,
+            };
           }
         };
-      
+
         const executeAndCapture = async () => {
           const currentCode = currentFile.content;
-          console.log("Content: " + currentCode);
-      
-          const { capturedOutput, capturedError } = await executePython(currentCode);
-      
-          console.log("Captured Output: " + capturedOutput);
-          console.log("Captured Error: " + capturedError);
-      
+          console.log('Content: ' + currentCode);
+
+          const { capturedOutput, capturedError } =
+            await executePython(currentCode);
+
+          console.log('Captured Output: ' + capturedOutput);
+          console.log('Captured Error: ' + capturedError);
+
           // Adicionar o erro capturado ao output, se houver
           if (capturedError && !newAbortController.signal.aborted) {
             setOutput((prev) => prev + `\nCaptured Error:\n${capturedError}`);
           }
-      
-          if (codeQuestion.rules.includes('outputs: y') && !newAbortController.signal.aborted) {
-            const results = compareOutputs([capturedOutput], codeQuestion.outputs);
+
+          if (
+            codeQuestion.rules.includes('outputs: y') &&
+            !newAbortController.signal.aborted
+          ) {
+            const results = compareOutputs(
+              [capturedOutput],
+              codeQuestion.outputs,
+            );
             setTestResults(results);
           }
         };
-      
+
         executeAndCapture().catch((error) => {
           if (!newAbortController.signal.aborted) {
             setOutput((prev) => prev + `\nUnhandled Error: ${error}\n`);
           }
         });
-      // Run Ruby
+        // Run Ruby
       } else if (currentFile.language === 'ruby') {
-/*
+        /*
         const executeRuby = async (code: string) => {
           if (!rubyVM) return;
       
@@ -643,7 +746,6 @@ export default function CodeEditorPanel({ codeQuestion, onSubmit, hierarchy = {
           }
         };
         */
-        
         /*
         const executeRuby = async (code: string) => {
           try {
@@ -712,16 +814,13 @@ export default function CodeEditorPanel({ codeQuestion, onSubmit, hierarchy = {
           }
         };
         */
-      
-        executeAndCaptureRuby().catch((error) => {
-          if (!newAbortController.signal.aborted) {
-            setOutput((prev) => prev + `\nUnhandled Ruby Error: ${error}\n`);
-          }
-        });
-        
+        // executeAndCaptureRuby().catch((error) => {
+        //   if (!newAbortController.signal.aborted) {
+        //     setOutput((prev) => prev + `\nUnhandled Ruby Error: ${error}\n`);
+        //   }
+        // });
       } else if (currentFile.language === 'lua') {
-        
-      // Run HTML
+        // Run HTML
       } else if (currentFile.language === 'html') {
         const processedHTML = processHTML(currentFile.content);
         if (!newAbortController.signal.aborted) {
@@ -729,7 +828,9 @@ export default function CodeEditorPanel({ codeQuestion, onSubmit, hierarchy = {
         }
       } else {
         if (!newAbortController.signal.aborted) {
-          setOutput(`Running ${currentFile.name}...\n\nContent:\n${currentFile.content}\n\nNote: Execution for ${currentFile.language} files is not implemented in this environment.`);
+          setOutput(
+            `Running ${currentFile.name}...\n\nContent:\n${currentFile.content}\n\nNote: Execution for ${currentFile.language} files is not implemented in this environment.`,
+          );
         }
       }
       if (!newAbortController.signal.aborted) {
@@ -763,7 +864,8 @@ export default function CodeEditorPanel({ codeQuestion, onSubmit, hierarchy = {
 
     const currentFile = codeFiles[activeFileIndex];
     const fileExtension = `.${currentFile.name.split('.').pop()}`;
-    const runType = settings.runSettings.fileExtensions[fileExtension] || 'Internal output';
+    const runType =
+      settings.runSettings.fileExtensions[fileExtension] || 'Internal output';
 
     setOutput('');
     setTestResults([]);
@@ -791,16 +893,16 @@ export default function CodeEditorPanel({ codeQuestion, onSubmit, hierarchy = {
             const output = args.join(' ');
             capturedOutput.push(output);
             if (!newAbortController.signal.aborted) {
-              setOutput(prev => prev + output + '\n');
+              setOutput((prev) => prev + output + '\n');
             }
           },
           error: (...args: any[]) => {
             const output = 'Error: ' + args.join(' ');
             capturedOutput.push(output);
             if (!newAbortController.signal.aborted) {
-              setOutput(prev => prev + output + '\n');
+              setOutput((prev) => prev + output + '\n');
             }
-          }
+          },
         };
 
         try {
@@ -817,7 +919,9 @@ export default function CodeEditorPanel({ codeQuestion, onSubmit, hierarchy = {
         }
       } else {
         if (!newAbortController.signal.aborted) {
-          setOutput(`Running ${currentFile.name}...\n\nContent:\n${currentFile.content}\n\nNote: Execution for ${currentFile.language} files is not implemented in this environment.`);
+          setOutput(
+            `Running ${currentFile.name}...\n\nContent:\n${currentFile.content}\n\nNote: Execution for ${currentFile.language} files is not implemented in this environment.`,
+          );
         }
       }
     };
@@ -842,10 +946,10 @@ export default function CodeEditorPanel({ codeQuestion, onSubmit, hierarchy = {
 
     // Process CSS
     const styleLinks = doc.querySelectorAll('link[rel="stylesheet"]');
-    styleLinks.forEach(link => {
+    styleLinks.forEach((link) => {
       const href = link.getAttribute('href');
       if (href) {
-        const cssFile = codeFiles.find(file => file.name === href);
+        const cssFile = codeFiles.find((file) => file.name === href);
         if (cssFile) {
           const style = doc.createElement('style');
           style.textContent = cssFile.content;
@@ -856,10 +960,10 @@ export default function CodeEditorPanel({ codeQuestion, onSubmit, hierarchy = {
 
     // Process JS
     const scripts = doc.querySelectorAll('script');
-    scripts.forEach(script => {
+    scripts.forEach((script) => {
       const src = script.getAttribute('src');
       if (src) {
-        const jsFile = codeFiles.find(file => file.name === src);
+        const jsFile = codeFiles.find((file) => file.name === src);
         if (jsFile) {
           script.removeAttribute('src');
           script.textContent = jsFile.content;
@@ -870,7 +974,6 @@ export default function CodeEditorPanel({ codeQuestion, onSubmit, hierarchy = {
     return doc.documentElement.outerHTML;
   };
 
-
   const runApplication = (fileName: string) => {
     setIsRunAppAnimating(true);
     if (abortController) {
@@ -880,20 +983,21 @@ export default function CodeEditorPanel({ codeQuestion, onSubmit, hierarchy = {
     setAbortController(newAbortController);
 
     const indexFileName = settings.runSettings.applicationFileName || fileName;
-    const indexFile = codeFiles.find(file => file.name === indexFileName);
-    
+    const indexFile = codeFiles.find((file) => file.name === indexFileName);
+
     if (!indexFile) {
       toast({
-        title: "Application file not found",
+        title: 'Application file not found',
         description: `Could not find the file "${indexFileName}". Please check your settings.`,
-        variant: "destructive",
+        variant: 'destructive',
       });
       setIsRunAppAnimating(false);
       return;
     }
 
     const indexExtension = `.${indexFile.name.split('.').pop()}`;
-    const outputType = settings.runSettings.fileExtensions[indexExtension] || 'Internal output';
+    const outputType =
+      settings.runSettings.fileExtensions[indexExtension] || 'Internal output';
 
     setOutput('');
     setOutput(`Running application (${indexFile.name})...\n\n`);
@@ -926,7 +1030,7 @@ export default function CodeEditorPanel({ codeQuestion, onSubmit, hierarchy = {
     if (outputType === 'Internal output' || outputType === 'Both') {
       if (indexFile.name.endsWith('.html')) {
         const processedHTML = processHTML(indexFile.content);
-        setOutput(prev => prev + `Processed HTML:\n\n${processedHTML}\n`);
+        setOutput((prev) => prev + `Processed HTML:\n\n${processedHTML}\n`);
       } else {
         const capturedOutput: string[] = [];
         const customConsole = {
@@ -934,24 +1038,30 @@ export default function CodeEditorPanel({ codeQuestion, onSubmit, hierarchy = {
             const output = args.join(' ');
             capturedOutput.push(output);
             if (!newAbortController.signal.aborted) {
-              setOutput(prev => prev + output + '\n');
+              setOutput((prev) => prev + output + '\n');
             }
           },
           error: (...args: any[]) => {
             const output = 'Error: ' + args.join(' ');
             capturedOutput.push(output);
             if (!newAbortController.signal.aborted) {
-              setOutput(prev => prev + output + '\n');
+              setOutput((prev) => prev + output + '\n');
             }
-          }
+          },
         };
 
         try {
           const func = new Function('console', indexFile.content);
           func(customConsole);
 
-          if (codeQuestion.rules.includes('outputs: y') && !newAbortController.signal.aborted) {
-            const results = compareOutputs([capturedOutput.join('\n')], codeQuestion.outputs);
+          if (
+            codeQuestion.rules.includes('outputs: y') &&
+            !newAbortController.signal.aborted
+          ) {
+            const results = compareOutputs(
+              [capturedOutput.join('\n')],
+              codeQuestion.outputs,
+            );
             setTestResults(results);
           }
         } catch (error) {
@@ -972,21 +1082,24 @@ export default function CodeEditorPanel({ codeQuestion, onSubmit, hierarchy = {
     const currentState = {
       codeFiles,
       output,
-      testResults
-    }
+      testResults,
+    };
     saveStateToLocalStorage(currentState, courseId, moduleId, assessmentId); // Save state before returning
-    router.back()
+    router.back();
   };
 
-  const checkSubmissionConflicts = (): { fileName: string; reason: string }[] => {
+  const checkSubmissionConflicts = (): {
+    fileName: string;
+    reason: string;
+  }[] => {
     const conflicts: { fileName: string; reason: string }[] = [];
 
-    codeFiles.forEach(file => {
+    codeFiles.forEach((file) => {
       const fileLimit = getFileCharLimit(file.name, codeQuestion.rules);
       if (file.content.length > fileLimit) {
         conflicts.push({
           fileName: file.name,
-          reason: `Exceeds character limit of ${fileLimit}`
+          reason: `Exceeds character limit of ${fileLimit}`,
         });
       }
     });
@@ -994,20 +1107,22 @@ export default function CodeEditorPanel({ codeQuestion, onSubmit, hierarchy = {
     if (codeFiles.length > maxFiles) {
       conflicts.push({
         fileName: 'Project',
-        reason: `Exceeds maximum number of files (${maxFiles})`
+        reason: `Exceeds maximum number of files (${maxFiles})`,
       });
     }
 
     // Check for failed tests only if they have been viewed
     if (testResultsViewed) {
-      const failedTestsCount = testResults.filter(result => !result.passed).length;
+      const failedTestsCount = testResults.filter(
+        (result) => !result.passed,
+      ).length;
       setFailedTests(failedTestsCount);
       setTotalTests(testResults.length);
-    
+
       if (failedTestsCount > 0) {
         conflicts.push({
           fileName: 'Tests',
-          reason: `${failedTestsCount} out of ${testResults.length} tests failed`
+          reason: `${failedTestsCount} out of ${testResults.length} tests failed`,
         });
       }
     }
@@ -1022,25 +1137,27 @@ export default function CodeEditorPanel({ codeQuestion, onSubmit, hierarchy = {
       setSubmissionConflicts(conflicts);
       setIsWarningDialogOpen(true);
     } else {
-      setSubmissionData(prev => ({
+      setSubmissionData((prev) => ({
         ...prev,
         testResults: testResults,
-        output: output
+        output: output,
       }));
       setIsConfirmDialogOpen(true);
     }
-  }
+  };
 
   const handleConfirmSubmit = () => {
     setIsConfirmDialogOpen(false);
     onSubmit({
       ...submissionData,
-      output: output
+      output: output,
     } as QuestionSubmissionv1_0_0);
-    
+
     // Navigate back to the assessment page
-    router.push(`/learn/assessment/${assessmentId}?userId=${userId}&role=${role}&courseId=${courseId}&moduleId=${moduleId}`);
-  }
+    router.push(
+      `/learn/assessment/${assessmentId}?userId=${userId}&role=${role}&courseId=${courseId}&moduleId=${moduleId}`,
+    );
+  };
 
   const handleCloseWarningDialog = () => {
     setIsWarningDialogOpen(false);
@@ -1049,9 +1166,9 @@ export default function CodeEditorPanel({ codeQuestion, onSubmit, hierarchy = {
   const handleNewFile = (name: string, language: string) => {
     if (codeFiles.length >= maxFiles) {
       toast({
-        title: "File limit reached",
+        title: 'File limit reached',
         description: `You have reached the maximum number of files (${maxFiles}). Please delete a file before creating a new one.`,
-        variant: "destructive",
+        variant: 'destructive',
       });
       return;
     }
@@ -1059,35 +1176,37 @@ export default function CodeEditorPanel({ codeQuestion, onSubmit, hierarchy = {
       name,
       language,
       content: '',
-      history: { past: [], future: [] }
+      history: { past: [], future: [] },
     };
     const updatedCodeFiles = [...codeFiles, newFile];
     setCodeFiles(updatedCodeFiles);
     setActiveFileIndex(updatedCodeFiles.length - 1);
-    setSubmissionData(prev => ({
+    setSubmissionData((prev) => ({
       ...prev,
-      submittedCode: updatedCodeFiles.map(file => file.content),
-      codeName: [...(codeQuestion.codeName || []), name]
+      submittedCode: updatedCodeFiles.map((file) => file.content),
+      codeName: [...(codeQuestion.codeName || []), name],
     }));
   };
 
   const onRenameFile = (oldName: string, newName: string) => {
-    const updatedCodeFiles = codeFiles.map(file =>
-      file.name === oldName ? { ...file, name: newName } : file
+    const updatedCodeFiles = codeFiles.map((file) =>
+      file.name === oldName ? { ...file, name: newName } : file,
     );
     setCodeFiles(updatedCodeFiles);
-    setActiveFileIndex(updatedCodeFiles.findIndex(file => file.name === newName));
-    setSubmissionData(prev => ({
+    setActiveFileIndex(
+      updatedCodeFiles.findIndex((file) => file.name === newName),
+    );
+    setSubmissionData((prev) => ({
       ...prev,
-      codeName: updatedCodeFiles.map(file => file.name)
-    }))
+      codeName: updatedCodeFiles.map((file) => file.name),
+    }));
   };
 
   const onDeleteFile = (name: string) => {
-    const fileIndex = codeFiles.findIndex(file => file.name === name);
+    const fileIndex = codeFiles.findIndex((file) => file.name === name);
     if (fileIndex === -1) return;
 
-    const updatedCodeFiles = codeFiles.filter(file => file.name !== name);
+    const updatedCodeFiles = codeFiles.filter((file) => file.name !== name);
 
     setCodeFiles(updatedCodeFiles);
 
@@ -1095,19 +1214,19 @@ export default function CodeEditorPanel({ codeQuestion, onSubmit, hierarchy = {
       setActiveFileIndex(updatedCodeFiles.length - 1);
     }
 
-    setSubmissionData(prev => ({
+    setSubmissionData((prev) => ({
       ...prev,
-      submittedCode: updatedCodeFiles.map(file => file.content),
-      codeName: updatedCodeFiles.map(file => file.name)
+      submittedCode: updatedCodeFiles.map((file) => file.content),
+      codeName: updatedCodeFiles.map((file) => file.name),
     }));
   };
 
   const onImportFile = async (file: File) => {
     if (codeFiles.length >= maxFiles) {
       toast({
-        title: "File limit reached",
+        title: 'File limit reached',
         description: `You have reached the maximum number of files (${maxFiles}). Please delete a file before importing a new one.`,
-        variant: "destructive",
+        variant: 'destructive',
       });
       return;
     }
@@ -1117,9 +1236,9 @@ export default function CodeEditorPanel({ codeQuestion, onSubmit, hierarchy = {
       const effectiveLimit = fileLimit === 0 ? maxChars : fileLimit;
       if (content.length > effectiveLimit) {
         toast({
-          title: "Character limit exceeded",
+          title: 'Character limit exceeded',
           description: `Importing this file would exceed the maximum character limit of ${effectiveLimit} for this file. Please reduce the content before importing.`,
-          variant: "destructive",
+          variant: 'destructive',
         });
         return;
       }
@@ -1127,43 +1246,49 @@ export default function CodeEditorPanel({ codeQuestion, onSubmit, hierarchy = {
         name: file.name,
         language: getLanguageFromExtension(file.name),
         content: content,
-        history: { past: [], future: [] }
+        history: { past: [], future: [] },
       };
       const updatedCodeFiles = [...codeFiles, newFile];
       setCodeFiles(updatedCodeFiles);
       setActiveFileIndex(updatedCodeFiles.length - 1);
-      setSubmissionData(prev => ({
+      setSubmissionData((prev) => ({
         ...prev,
-        submittedCode: updatedCodeFiles.map(file => file.content),
-        codeName: [...(codeQuestion.codeName || []), file.name]
+        submittedCode: updatedCodeFiles.map((file) => file.content),
+        codeName: [...(codeQuestion.codeName || []), file.name],
       }));
     } catch (error) {
       console.error('Error reading file:', error);
       toast({
-        title: "Error importing file",
-        description: "An error occurred while importing the file. Please try again.",
-        variant: "destructive",
+        title: 'Error importing file',
+        description:
+          'An error occurred while importing the file. Please try again.',
+        variant: 'destructive',
       });
     }
   };
 
-  const handleExportFiles = async (exportAll: boolean, singleFileName?: string) => {
+  const handleExportFiles = async (
+    exportAll: boolean,
+    singleFileName?: string,
+  ) => {
     const zip = new JSZip();
     const folder = zip.folder(codeQuestion.title);
 
     if (folder) {
       if (exportAll) {
-        codeFiles.forEach(file => {
+        codeFiles.forEach((file) => {
           folder.file(file.name, file.content);
         });
       } else if (singleFileName) {
-        const fileToExport = codeFiles.find(file => file.name === singleFileName);
+        const fileToExport = codeFiles.find(
+          (file) => file.name === singleFileName,
+        );
         if (fileToExport) {
           folder.file(fileToExport.name, fileToExport.content);
         }
       }
 
-      const content = await zip.generateAsync({ type: "blob" });
+      const content = await zip.generateAsync({ type: 'blob' });
       const url = window.URL.createObjectURL(content);
       const a = document.createElement('a');
       a.href = url;
@@ -1176,45 +1301,64 @@ export default function CodeEditorPanel({ codeQuestion, onSubmit, hierarchy = {
   };
 
   const renderBottomPanel = () => {
-    if (!activeTab) return null
+    if (!activeTab) return null;
     const hideTestOutputs = codeQuestion.rules.includes('tests-outputs: n');
     return (
-      <div className={`h-full overflow-auto p-4 ${
-        mode === 'light' ? 'bg-white text-gray-800' :
-        mode === 'dark' ? 'bg-gray-800 text-gray-200' :
-        'bg-black text-white'
-      }`}>
-        {activeTab === 'problems' && <ProblemsTab codeQuestion={codeQuestion} mode={mode} />}
+      <div
+        className={`h-full overflow-auto p-4 ${
+          mode === 'light'
+            ? 'bg-white text-gray-800'
+            : mode === 'dark'
+              ? 'bg-gray-800 text-gray-200'
+              : 'bg-black text-white'
+        }`}
+      >
+        {activeTab === 'problems' && (
+          <ProblemsTab codeQuestion={codeQuestion} mode={mode} />
+        )}
         {activeTab === 'output' && <OutputTab output={output} mode={mode} />}
-        {activeTab === 'testResults' && <TestResultsTab testResults={testResults} mode={mode} hideTestOutputs={hideTestOutputs} />}
+        {activeTab === 'testResults' && (
+          <TestResultsTab
+            testResults={testResults}
+            mode={mode}
+            hideTestOutputs={hideTestOutputs}
+          />
+        )}
       </div>
-    )
-  }
+    );
+  };
 
   const handleReset = () => {
-    if (codeQuestion && courseId && moduleId && assessmentId) { // Check if IDs are available
-      localStorage.removeItem(`assignmentState_${courseId}_${moduleId}_${assessmentId}_${codeQuestion.id}`);
+    if (codeQuestion && courseId && moduleId && assessmentId) {
+      // Check if IDs are available
+      localStorage.removeItem(
+        `assignmentState_${courseId}_${moduleId}_${assessmentId}_${codeQuestion.id}`,
+      );
     }
     window.location.reload();
   };
 
-  const handlePanelLayout = useCallback((sizes: number[]) => {
-    const lessonPanelSize = sizes[0];
-    const totalWidth = window.innerWidth;
-    const lessonPanelWidth = (lessonPanelSize / 100) * totalWidth;
-    const minCodeEditorWidth = 300; // Minimum width for the code editor panel
+  const handlePanelLayout = useCallback(
+    (sizes: number[]) => {
+      const lessonPanelSize = sizes[0];
+      const totalWidth = window.innerWidth;
+      const lessonPanelWidth = (lessonPanelSize / 100) * totalWidth;
+      const minCodeEditorWidth = 300; // Minimum width for the code editor panel
 
-    if (lessonPanelWidth > totalWidth - minCodeEditorWidth) {
-      const newLessonPanelSize = ((totalWidth - minCodeEditorWidth) / totalWidth) * 100;
-      lessonPanelRef.current?.resize(newLessonPanelSize);
-    } else if (lessonPanelWidth < 250 && !isLessonCollapsed) {
-      setIsLessonCollapsed(true);
-      setPrevLessonPanelSize(lessonPanelSize);
-      lessonPanelRef.current?.collapse();
-    } else if (lessonPanelWidth >= 250 && isLessonCollapsed) {
-      setIsLessonCollapsed(false);
-    }
-  }, [isLessonCollapsed]);
+      if (lessonPanelWidth > totalWidth - minCodeEditorWidth) {
+        const newLessonPanelSize =
+          ((totalWidth - minCodeEditorWidth) / totalWidth) * 100;
+        lessonPanelRef.current?.resize(newLessonPanelSize);
+      } else if (lessonPanelWidth < 250 && !isLessonCollapsed) {
+        setIsLessonCollapsed(true);
+        setPrevLessonPanelSize(lessonPanelSize);
+        lessonPanelRef.current?.collapse();
+      } else if (lessonPanelWidth >= 250 && isLessonCollapsed) {
+        setIsLessonCollapsed(false);
+      }
+    },
+    [isLessonCollapsed],
+  );
 
   const handleResizeHandleDoubleClick = useCallback(() => {
     if (isLessonCollapsed) {
@@ -1255,7 +1399,7 @@ export default function CodeEditorPanel({ codeQuestion, onSubmit, hierarchy = {
     const updatedFiles = [...codeFiles];
     const currentFile = updatedFiles[activeFileIndex];
 
-    if (currentFile.history.past.length >0) {
+    if (currentFile.history.past.length > 0) {
       const previousContent = currentFile.history.past.pop()!;
       currentFile.history.future.push(currentFile.content);
       currentFile.content = previousContent;
@@ -1335,9 +1479,11 @@ export default function CodeEditorPanel({ codeQuestion, onSubmit, hierarchy = {
       // Criar um contexto isolado para execução
       const context = {
         console: {
-          log: (...args: any[]) => setOutput(prev => prev + args.join(' ') + '\n'),
-          error: (...args: any[]) => setOutput(prev => prev + 'Error: ' + args.join(' ') + '\n'),
-        }
+          log: (...args: any[]) =>
+            setOutput((prev) => prev + args.join(' ') + '\n'),
+          error: (...args: any[]) =>
+            setOutput((prev) => prev + 'Error: ' + args.join(' ') + '\n'),
+        },
       };
       const func = new Function('context', `with(context){${code}}`);
       func(context);
@@ -1353,7 +1499,7 @@ export default function CodeEditorPanel({ codeQuestion, onSubmit, hierarchy = {
       }
     };
   }, [abortController]);
-/*
+  /*
   useEffect(() => {
     loadRubyInstance();
   }, []);
@@ -1367,13 +1513,22 @@ export default function CodeEditorPanel({ codeQuestion, onSubmit, hierarchy = {
         codeFiles,
         output,
         testResults,
-        activeFileIndex
+        activeFileIndex,
       };
-      saveStateToLocalStorage(currentState);
+      saveStateToLocalStorage(currentState, courseId, moduleId, assessmentId); // Pass IDs to save function
     }, 3000); // Auto-save every 3 seconds
 
-    return () =>clearInterval(autoSaveTimer);
-  }, [codeQuestion, codeFiles, output, testResults, activeFileIndex]);
+    return () => clearInterval(autoSaveTimer);
+  }, [
+    codeQuestion,
+    codeFiles,
+    output,
+    testResults,
+    activeFileIndex,
+    courseId,
+    moduleId,
+    assessmentId,
+  ]);
 
   const handleToggleSplitView = () => {
     if (isSplitViewActive) {
@@ -1385,7 +1540,7 @@ export default function CodeEditorPanel({ codeQuestion, onSubmit, hierarchy = {
   };
 
   const handleSelectSplitViewFile = (fileName: string) => {
-    const fileIndex = codeFiles.findIndex(file => file.name === fileName);
+    const fileIndex = codeFiles.findIndex((file) => file.name === fileName);
     if (fileIndex !== -1) {
       setSplitViewFileIndex(fileIndex);
       setIsSplitViewActive(true);
@@ -1401,7 +1556,9 @@ export default function CodeEditorPanel({ codeQuestion, onSubmit, hierarchy = {
     }
   };
 
-  const handleSetActiveTab = (tab: 'problems' | 'output' | 'testResults' | null) => {
+  const handleSetActiveTab = (
+    tab: 'problems' | 'output' | 'testResults' | null,
+  ) => {
     setActiveTab(tab);
     if (tab === 'testResults') {
       setTestResultsViewed(true);
@@ -1409,11 +1566,15 @@ export default function CodeEditorPanel({ codeQuestion, onSubmit, hierarchy = {
   };
 
   return (
-    <div className={`h-screen ${
-      mode === 'light' ? 'bg-gray-100 text-gray-800' :
-      mode === 'dark' ? 'bg-gray-900 text-gray-200' :
-      'bg-black text-white'
-    }`}>
+    <div
+      className={`h-screen ${
+        mode === 'light'
+          ? 'bg-gray-100 text-gray-800'
+          : mode === 'dark'
+            ? 'bg-gray-900 text-gray-200'
+            : 'bg-black text-white'
+      }`}
+    >
       <PanelGroup direction="horizontal" onLayout={handlePanelLayout}>
         <Panel
           ref={lessonPanelRef}
@@ -1435,13 +1596,14 @@ export default function CodeEditorPanel({ codeQuestion, onSubmit, hierarchy = {
             hierarchy={hierarchy}
           />
         </Panel>
-        <PanelResizeHandle className={`transition-colors ${
-          mode === 'light'
-            ? 'bg-gray-300 hover:bg-gray-400'
-            : mode === 'dark'
-            ? 'bg-gray-700 hover:bg-gray-600'
-            : 'bg-yellow-500 hover:bg-yellow-400'
-        } ${isLessonCollapsed ? 'w-4 cursor-pointer' : 'w-2'}`}
+        <PanelResizeHandle
+          className={`transition-colors ${
+            mode === 'light'
+              ? 'bg-gray-300 hover:bg-gray-400'
+              : mode === 'dark'
+                ? 'bg-gray-700 hover:bg-gray-600'
+                : 'bg-yellow-500 hover:bg-yellow-400'
+          } ${isLessonCollapsed ? 'w-4 cursor-pointer' : 'w-2'}`}
           onDoubleClick={handleResizeHandleDoubleClick}
           onClick={handleResizeHandleClick}
         />
@@ -1471,7 +1633,9 @@ export default function CodeEditorPanel({ codeQuestion, onSubmit, hierarchy = {
                   isUndoing={isUndoing}
                   isRedoing={isRedoing}
                   canUndo={codeFiles[activeFileIndex]?.history.past.length > 0}
-                  canRedo={codeFiles[activeFileIndex]?.history.future.length > 0}
+                  canRedo={
+                    codeFiles[activeFileIndex]?.history.future.length > 0
+                  }
                   onOpenSettings={handleOpenSettings}
                   onRunThis={runThis}
                   onToggleSplitView={handleToggleSplitView}
@@ -1483,26 +1647,57 @@ export default function CodeEditorPanel({ codeQuestion, onSubmit, hierarchy = {
                   onReset={handleReset} // Added onReset prop
                 />
                 <div className="flex-grow flex flex-col overflow-hidden">
-                  <CodeTabs files={codeFiles} activeIndex={activeFileIndex} onTabChange={handleTabChange} mode={mode} />
+                  <CodeTabs
+                    files={codeFiles}
+                    activeIndex={activeFileIndex}
+                    onTabChange={handleTabChange}
+                    mode={mode}
+                  />
                   <div className="flex-grow overflow-hidden">
                     {codeFiles.length > 0 ? (
-                      <div className={`flex h-full ${isSplitViewActive ? 'space-x-2' : ''}`}>
-                        <div className={`${isSplitViewActive ? 'w-1/2' : 'w-full'}`}>
+                      <div
+                        className={`flex h-full ${isSplitViewActive ? 'space-x-2' : ''}`}
+                      >
+                        <div
+                          className={`${isSplitViewActive ? 'w-1/2' : 'w-full'}`}
+                        >
                           <MonacoEditor
                             height="100%"
-                            language={codeFiles[activeFileIndex]?.language || 'plaintext'}
+                            language={
+                              codeFiles[activeFileIndex]?.language ||
+                              'plaintext'
+                            }
                             value={codeFiles[activeFileIndex]?.content || ''}
-                            theme={mode === 'light' ? 'vs-light' : mode === 'dark' ? 'vs-dark' : 'hc-black'}
+                            theme={
+                              mode === 'light'
+                                ? 'vs-light'
+                                : mode === 'dark'
+                                  ? 'vs-dark'
+                                  : 'hc-black'
+                            }
                             onChange={handleEditorChange}
                             onMount={(editor, monaco) => {
                               editorRef.current = editor;
                               // Disable undo/redo keyboard shortcuts
-                              editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyZ, () => null);
-                              editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyY, () => null);
-                              editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.KeyZ, () => null);
+                              editor.addCommand(
+                                monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyZ,
+                                () => null,
+                              );
+                              editor.addCommand(
+                                monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyY,
+                                () => null,
+                              );
+                              editor.addCommand(
+                                monaco.KeyMod.CtrlCmd |
+                                  monaco.KeyMod.Shift |
+                                  monaco.KeyCode.KeyZ,
+                                () => null,
+                              );
 
                               // Add HTML-specific features
-                              if (codeFiles[activeFileIndex]?.language === 'html') {
+                              if (
+                                codeFiles[activeFileIndex]?.language === 'html'
+                              ) {
                                 monaco.languages.html.htmlDefaults.setOptions({
                                   format: {
                                     tabSize: 2,
@@ -1516,7 +1711,7 @@ export default function CodeEditorPanel({ codeQuestion, onSubmit, hierarchy = {
                                     indentHandlebars: false,
                                     endWithNewline: false,
                                     extraLiners: '',
-                                    wrapAttributes: 'auto'
+                                    wrapAttributes: 'auto',
                                   },
                                   suggest: {
                                     html5: true,
@@ -1529,7 +1724,7 @@ export default function CodeEditorPanel({ codeQuestion, onSubmit, hierarchy = {
                               fontSize: 14,
                               scrollBeyondLastLine: false,
                               automaticLayout: true,
-                              undoStop: false,
+                              // undoStop: false,
                               wordWrap: 'on',
                               autoClosingBrackets: 'always',
                               autoClosingQuotes: 'always',
@@ -1545,7 +1740,13 @@ export default function CodeEditorPanel({ codeQuestion, onSubmit, hierarchy = {
                               language={codeFiles[splitViewFileIndex].language}
                               value={codeFiles[splitViewFileIndex].content}
                               onChange={handleSplitViewEditorChange}
-                              theme={mode === 'light' ? 'vs-light' : mode === 'dark' ? 'vs-dark' : 'hc-black'}
+                              theme={
+                                mode === 'light'
+                                  ? 'vs-light'
+                                  : mode === 'dark'
+                                    ? 'vs-dark'
+                                    : 'hc-black'
+                              }
                               options={{
                                 minimap: { enabled: false },
                                 fontSize: 14,
@@ -1559,17 +1760,29 @@ export default function CodeEditorPanel({ codeQuestion, onSubmit, hierarchy = {
                       </div>
                     ) : (
                       <div className="flex-grow overflow-auto flex items-center justify-center p-4">
-                        <Alert variant={mode === 'high-contrast' ? 'destructive' : 'default'} className={`w-full max-w-md ${
-                          mode === 'light' ? 'bg-white border-gray-200 text-gray-800' :
-                          mode === 'dark' ? 'bg-gray-800 border-gray-700 text-gray-200' :
-                          'bg-black border-yellow-300 text-yellow-300'
-                        }`}>
-                          <AlertCircle className={`h-4 w-4 ${
-                            mode === 'high-contrast' ? 'text-yellow-300' : ''
-                          }`} />
-                          <AlertTitle className="mb-2">No code files</AlertTitle>
+                        <Alert
+                          variant={
+                            mode === 'high-contrast' ? 'destructive' : 'default'
+                          }
+                          className={`w-full max-w-md ${
+                            mode === 'light'
+                              ? 'bg-white border-gray-200 text-gray-800'
+                              : mode === 'dark'
+                                ? 'bg-gray-800 border-gray-700 text-gray-200'
+                                : 'bg-black border-yellow-300 text-yellow-300'
+                          }`}
+                        >
+                          <AlertCircle
+                            className={`h-4 w-4 ${
+                              mode === 'high-contrast' ? 'text-yellow-300' : ''
+                            }`}
+                          />
+                          <AlertTitle className="mb-2">
+                            No code files
+                          </AlertTitle>
                           <AlertDescription>
-                            There are no code files available. Create a new file to start coding.
+                            There are no code files available. Create a new file
+                            to start coding.
                           </AlertDescription>
                         </Alert>
                       </div>
@@ -1577,7 +1790,12 @@ export default function CodeEditorPanel({ codeQuestion, onSubmit, hierarchy = {
                   </div>
                   <CharacterCount
                     currentFileChars={currentFileChars}
-                    maxFileChars={getFileCharLimit(codeFiles[activeFileIndex]?.name, codeQuestion.rules) || maxChars}
+                    maxFileChars={
+                      getFileCharLimit(
+                        codeFiles[activeFileIndex]?.name,
+                        codeQuestion.rules,
+                      ) || maxChars
+                    }
                     totalChars={totalChars}
                     maxTotalChars={maxChars}
                     currentFileCount={codeFiles.length}
@@ -1587,14 +1805,27 @@ export default function CodeEditorPanel({ codeQuestion, onSubmit, hierarchy = {
                 </div>
               </div>
             </Panel>
-            <PanelResizeHandle className={`h-2 transition-colors ${
-              mode === 'light' ? 'bg-gray-300 hover:bg-gray-400' :
-              mode === 'dark' ? 'bg-gray-700 hover:bg-gray-600' :
-              'bg-yellow-500 hover:bg-yellow-400'
-            }`} />
-            <Panel defaultSize={25} minSize={0}> {/* UPDATED LINE */}
+            <PanelResizeHandle
+              className={`h-2 transition-colors ${
+                mode === 'light'
+                  ? 'bg-gray-300 hover:bg-gray-400'
+                  : mode === 'dark'
+                    ? 'bg-gray-700 hover:bg-gray-600'
+                    : 'bg-yellow-500 hover:bg-yellow-400'
+              }`}
+            />
+            <Panel defaultSize={25} minSize={0}>
+              {' '}
+              {/* UPDATED LINE */}
               <div className="flex flex-col h-full">
-                <BottomMenu activeTab={activeTab} setActiveTab={handleSetActiveTab} mode={mode} hideTestOutputs={codeQuestion.rules.includes('tests-outputs: n')}/>
+                <BottomMenu
+                  activeTab={activeTab}
+                  setActiveTab={handleSetActiveTab}
+                  mode={mode}
+                  hideTestOutputs={codeQuestion.rules.includes(
+                    'tests-outputs: n',
+                  )}
+                />
                 <div className="flex-grow overflow-auto">
                   {renderBottomPanel()}
                 </div>
@@ -1633,77 +1864,125 @@ export default function CodeEditorPanel({ codeQuestion, onSubmit, hierarchy = {
         mode={mode}
       />
     </div>
-  )
+  );
 }
 
-const ProblemsTab = ({ codeQuestion, mode }: { codeQuestion: CodeQuestionv1_0_0, mode: string }) => {
+const ProblemsTab = ({
+  codeQuestion,
+  mode,
+}: {
+  codeQuestion: CodeQuestionv1_0_0;
+  mode: string;
+}) => {
   const hideTestOutputs = codeQuestion.rules.includes('tests-outputs: n');
 
   return (
     <div>
-      <h2 className={`text-xl font-bold mb-2 ${
-        mode === 'light' ? 'text-gray-800' :
-        mode === 'dark' ? 'text-gray-200' :
-        'text-white'
-      }`}>Problem Details</h2>
+      <h2
+        className={`text-xl font-bold mb-2 ${
+          mode === 'light'
+            ? 'text-gray-800'
+            : mode === 'dark'
+              ? 'text-gray-200'
+              : 'text-white'
+        }`}
+      >
+        Problem Details
+      </h2>
       {codeQuestion.rules.includes('inputs: y') && (
         <div className="mb-4">
-          <h3 className={`text-lg font-semibold ${
-            mode === 'light' ? 'text-gray-800' :
-            mode === 'dark' ? 'text-gray-200' :
-            'text-white'
-          }`}>Inputs:</h3>
+          <h3
+            className={`text-lg font-semibold ${
+              mode === 'light'
+                ? 'text-gray-800'
+                : mode === 'dark'
+                  ? 'text-gray-200'
+                  : 'text-white'
+            }`}
+          >
+            Inputs:
+          </h3>
           <ul className="list-disc list-inside">
             {codeQuestion.inputs.map((input, index) => (
-              <li key={index} className={
-                mode === 'light' ? 'text-gray-800' :
-                mode === 'dark' ? 'text-gray-200' :
-                'text-white'
-              }>{JSON.stringify(input)}</li>
+              <li
+                key={index}
+                className={
+                  mode === 'light'
+                    ? 'text-gray-800'
+                    : mode === 'dark'
+                      ? 'text-gray-200'
+                      : 'text-white'
+                }
+              >
+                {JSON.stringify(input)}
+              </li>
             ))}
           </ul>
         </div>
       )}
       {codeQuestion.rules.includes('outputs: y') && !hideTestOutputs && (
         <div>
-          <h3 className={`text-lg font-semibold ${
-            mode === 'light' ? 'text-gray-800' :
-            mode === 'dark' ?'text-gray-200' :
-            'text-white'
-          }`}>Expected Outputs:</h3>
+          <h3
+            className={`text-lg font-semibold ${
+              mode === 'light'
+                ? 'text-gray-800'
+                : mode === 'dark'
+                  ? 'text-gray-200'
+                  : 'text-white'
+            }`}
+          >
+            Expected Outputs:
+          </h3>
           <ul className="list-disc list-inside mb-16">
             {codeQuestion.outputs.map((output, index) => (
-              <li key={index} className={
-                mode === 'light' ? 'text-gray-800' :
-                mode === 'dark' ? 'text-gray-200' :
-                'text-white'
-              }>{output}</li>
+              <li
+                key={index}
+                className={
+                  mode === 'light'
+                    ? 'text-gray-800'
+                    : mode === 'dark'
+                      ? 'text-gray-200'
+                      : 'text-white'
+                }
+              >
+                {output}
+              </li>
             ))}
           </ul>
         </div>
       )}
     </div>
-  )
-}
+  );
+};
 
-const OutputTab = ({ output, mode }: { output: string, mode: string }) => {
+const OutputTab = ({ output, mode }: { output: string; mode: string }) => {
   return (
     <div>
-      <h2 className={`text-xl font-bold mb-2 ${
-        mode === 'light' ? 'text-gray-800' :
-                mode ==='dark' ? 'text-gray-200' :
-        'text-white'
-      }`}>Output</h2>
-      <pre className={`p-2 mb-20 rounded ${
-        mode === 'light' ? 'bg-gray-100 text-gray-800' :
-        mode === 'dark' ? 'bg-gray-800 text-gray-200' :
-        'bg-black text-white'
-      }`}>
+      <h2
+        className={`text-xl font-bold mb-2 ${
+          mode === 'light'
+            ? 'text-gray-800'
+            : mode === 'dark'
+              ? 'text-gray-200'
+              : 'text-white'
+        }`}
+      >
+        Output
+      </h2>
+      <pre
+        className={`p-2 mb-20 rounded ${
+          mode === 'light'
+            ? 'bg-gray-100 text-gray-800'
+            : mode === 'dark'
+              ? 'bg-gray-800 text-gray-200'
+              : 'bg-black text-white'
+        }`}
+      >
         {output || 'No output yet. Run your code to see the results.'}
       </pre>
     </div>
-  )
-}
+  );
+};
 
 interface TestResultsTabProps {
   testResults: any[];
