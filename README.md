@@ -78,7 +78,7 @@ By starring this repository, you:
 
 ## Follow our socials
 
-<div style="display: grid; grid-template-columns: repeat(3, 1fr); text-align: center; margin-top: 20px;">
+<div style="display: grid; gap: 16px; grid-template-columns: repeat(3, 1fr); text-align: center;">
   <!-- YouTube -->
   <a href="https://www.youtube.com/@AwesomeGamedevGuild" target="_blank" style="text-decoration: none; margin: 0 15px;">
     <img style="width: 64px;" src="https://img.icons8.com/color/48/000000/youtube-play.png" alt="YouTube" style="vertical-align: middle;"/>
@@ -140,6 +140,7 @@ By starring this repository, you:
     <img style="width: 64px;" src="https://img.icons8.com/?size=100&id=QxjoLwAXiCXT&format=png&color=000000" alt="GameJolt" style="vertical-align: middle;"/>
   </a>
 </div>
+
 Icons by [Icons8](https://icons8.com/)
 
 ## Star History
