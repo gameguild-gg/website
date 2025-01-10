@@ -79,8 +79,14 @@ By starring this repository, you:
   #socialicon img{
     width: 64px;
   }
+  .social-links {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    text-align: center;
+    margin-top: 20px;
+  }
 </style>
-<div style="text-align: center; margin-top: 20px;">
+<div class="social-links">
   <!-- YouTube -->
   <a id="socialicon" href="https://www.youtube.com/@AwesomeGamedevGuild" target="_blank" style="text-decoration: none; margin: 0 15px;">
     <img src="https://img.icons8.com/color/48/000000/youtube-play.png" alt="YouTube" style="vertical-align: middle;"/>
