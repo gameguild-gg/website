@@ -28,7 +28,7 @@ body:
       placeholder: |
         1. 
         2. 
-        3. 
+        3.
     validations:
       required: true
 
@@ -67,3 +67,21 @@ body:
       label: "Additional Information"
       description: "Provide any other relevant details about the issue."
       placeholder: "Additional context or observations."
+      
+  - type: textarea
+    attributes:
+      label: "🛠️ Possible Solution (Optional)"
+      description: "If you have any idea about how this could be resolved, please share it here."
+      placeholder: "Describe your possible solution here."
+
+  - type: textarea
+    attributes:
+      label: "🔗 Related Issues (Optional)"
+      description: "If this issue is related to another issue, link it here."
+      placeholder: "Example: This bug might be related to #123."
+
+  - type: textarea
+    attributes:
+      label: "🚧 Workarounds (Optional)"
+      description: "If you have found any workarounds or fixes for this issue, please share them here."
+      placeholder: "Describe any workarounds or fixes here."    
