@@ -54,7 +54,7 @@ jobs:
         uses: cycjimmy/semantic-release-action@v2
         with:
           semantic_version: 19.0.2
-            # You can specify specifying version range for the extra plugins if you prefer.
+          # You can specify specifying version range for the extra plugins if you prefer.
           extra_plugins: |
             @semantic-release/changelog@6.0.2
             @semantic-release/git@10.0.1
@@ -62,5 +62,21 @@ jobs:
             @semantic-release/github@8.0.7
             @semantic-release/npm@9.0.1
             @semantic-release/release-notes-generator@10.0.3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  post:
+    needs: build
+    if: failure()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Revert commit
+        run: |
+          git revert -m 1 HEAD
+          git push origin main --force
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
