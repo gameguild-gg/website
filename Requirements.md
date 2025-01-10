@@ -72,17 +72,18 @@ Game Marketplace:
 
 ### 2.4 Events
 
-General Events:
+General Meetings:
 
-- Events can be created by any logged-in user on the platform at any time.
-- Users can submit events for evaluation, including workshops, lectures, or other activities related to game development.
-- Once approved, events are available for the community to view, attend, and participate in.
+- Meetings can be created by any logged-in user on the platform at any time.
+- Users can submit meetings for evaluation, including workshops, lectures, or other activities related to game development.
+- Once approved, meetings are available for the community to view, attend, and participate in.
 
-Elected Meetings:
+Choice Casts:
 
-- Every week, the community votes on one event to become the "Elected Meeting," a highlighted event in the weekly calendar.
-- The "Elected Meeting" is chosen based on votes from the community using platform tokens.
+- Every week, the community votes on one event to become the "Choice Cast", a highlighted meeting in the calendar.
+- The "Choice Cast" is chosen based on votes from the community using platform votes.
 - These meetings are special, community-driven events that receive additional visibility and rewards.
+- The chosen "Choice Cast" will be repeated according to the demand of the community and those present at previous meetings
 
 Game Jams:
 
