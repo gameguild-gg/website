@@ -5,7 +5,7 @@ import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
 import { IsIntegerNumber } from '../common/decorators/validator.decorator';
 
 @Entity({ name: 'images' })
-@Index('pathUniqueness', ['path', 'source'], { unique: true })
+@Index('pathUniqueness', ['path', 'filename', 'source'], { unique: true })
 export class ImageEntity extends AssetBase {
   @ApiProperty({ type: 'integer' })
   @IsOptional()

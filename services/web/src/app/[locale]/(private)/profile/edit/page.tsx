@@ -1,6 +1,6 @@
 'use client';
 
-import { useLayoutEffect, useState } from 'react';
+import React, { useLayoutEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getSession } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
@@ -16,11 +16,15 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/components/ui/use-toast';
-import { Api } from '@apiclient/models';
-import { UsersApi } from '@apiclient/api';
+import Link from 'next/link';
+import { Api, UsersApi } from '@game-guild/apiclient';
 
 export default function EditProfile() {
+  const [originalUser, setOriginalUser] = useState<Api.UserEntity>();
   const [user, setUser] = useState<Api.UserEntity>();
+  const [usernameError, setUsernameError] = useState<string | null>(null);
+  const [bioError, setBioError] = useState<string | null>(null);
+  const [emailError, setEmailError] = useState<string | null>(null);
 
   const { toast } = useToast();
   const router = useRouter();
@@ -34,18 +38,20 @@ export default function EditProfile() {
   }, []);
 
   const loadCurrentUser = async () => {
-    const session: any = await getSession();
+    const session = await getSession();
+    console.log('session: ', session);
     if (!session) {
       router.push('/connect');
       return;
     }
-    const response = await usersApi.userControllerGet({
-      headers: { Authorization: `Bearer ${session.user.accessToken}` },
+    const response = await usersApi.userControllerMe({
+      headers: { Authorization: `Bearer ${session.user?.accessToken}` },
     });
     console.log('response: ', response);
     if (response.status == 200) {
       console.log('response.body: ', response.body);
-      setUser(response.body);
+      setOriginalUser(response.body as Api.UserEntity);
+      setUser(response.body as Api.UserEntity);
     }
     console.log(response);
   };
@@ -110,10 +116,7 @@ export default function EditProfile() {
         <CardContent className="space-y-4">
           <div className="flex flex-col items-center space-y-2">
             <Avatar className="w-32 h-32">
-              <AvatarImage
-                src={user?.profile?.picture || '/placeholder.svg'}
-                alt="Profile picture"
-              />
+              <AvatarImage src={'/placeholder.svg'} alt="Profile picture" />
               <AvatarFallback>Avatar</AvatarFallback>
             </Avatar>
             <Label
@@ -136,10 +139,40 @@ export default function EditProfile() {
               id="username"
               value={user?.username}
               onChange={(e) => {
-                // setName(e.target.value);
+                // should match /^[a-z0-9_.-]{1,32}$/
+                if (!/^[a-z0-9_.-]{3,32}$/.test(e.target.value))
+                  setUsernameError(
+                    'Username must contain only lowercase alphanumeric characters, underscores, periods, hyphens, and be between 3 and 32 characters.',
+                  );
+                else setUsernameError(null);
+                setUser({
+                  ...user,
+                  username: e.target.value,
+                } as Api.UserEntity);
               }}
               placeholder="Enter your username"
             />
+            <p className="text-sm text-gray-500 mt-1">
+              Publicly visible. Change it if want to stay anonymous.
+            </p>
+            {usernameError && (
+              <p className="text-sm text-red-500">{usernameError}</p>
+            )}
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="email">Email</Label>
+            <Input id="email" value={user?.email} disabled />
+            <p className="text-sm text-gray-500 mt-1">
+              Your email address is not publicly visible. Currently disabled,
+              but you can code it to be editable{' '}
+              <Link
+                className={'text-blue-500 hover:text-blue-600'}
+                href={'https://github.com/gameguild-gg/website/'}
+              >
+                here
+              </Link>
+              .
+            </p>
           </div>
           <div className="space-y-2">
             <Label htmlFor="bio">Biography</Label>
@@ -147,11 +180,22 @@ export default function EditProfile() {
               id="bio"
               value={user?.profile?.bio}
               onChange={(e) => {
-                // setBio(e.target.value)
+                if (e.target.value.length > 256)
+                  setBioError('Bio should be at most 256 characters');
+                else setBioError(null);
+
+                setUser({
+                  ...user,
+                  profile: { ...user?.profile, bio: e.target.value },
+                } as Api.UserEntity);
               }}
               placeholder="Tell us about yourself"
               rows={4}
             />
+            <p className="text-sm text-gray-500 mt-1">
+              Introduce yourself to the community.
+            </p>
+            {bioError && <p className="text-sm text-red-500">{bioError}</p>}
           </div>
         </CardContent>
         <CardFooter className="flex justify-between">

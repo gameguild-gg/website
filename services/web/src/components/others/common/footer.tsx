@@ -1,5 +1,8 @@
 'use client';
 
+import Link from 'next/link';
+import React from 'react';
+
 function Footer() {
   return (
     <div className="text-white text-center bg-[#2a2a2a]">
@@ -20,10 +23,11 @@ function Footer() {
             </a>
           </div>
           <div>Game Guild © 2024 All Rights Reserved</div>
-          <div>
+          <div className="text-white">
             <a href="#">Privacy Policy</a>
             {' | '}
             <a href="#">Terms of Service</a>
+            {' | '}| <Link href={'/contributors'}>Contributors</Link>
           </div>
         </div>
       </div>

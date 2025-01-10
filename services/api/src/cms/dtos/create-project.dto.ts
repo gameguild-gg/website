@@ -10,10 +10,23 @@ import {
 import { IsSlug } from '../../common/decorators/isslug.decorator';
 import { VisibilityEnum } from '../entities/visibility.enum';
 import { ContentBase } from '../entities/content.base';
+import { ProjectEntity } from '../entities/project.entity';
 
 export class CreateProjectDto
   implements
-    Omit<ContentBase, 'createdAt' | 'editors' | 'owner' | 'id' | 'updatedAt'>
+    Omit<
+      ProjectEntity,
+      | 'createdAt'
+      | 'editors'
+      | 'owner'
+      | 'id'
+      | 'updatedAt'
+      | 'thumbnail'
+      | 'banner'
+      | 'screenshots'
+      | 'versions'
+      | 'tickets'
+    >
 {
   @ApiProperty()
   @IsNotEmpty()
@@ -44,10 +57,4 @@ export class CreateProjectDto
   @IsOptional()
   @IsEnum(VisibilityEnum)
   visibility: VisibilityEnum;
-
-  // asset image
-  @ApiProperty()
-  @IsOptional()
-  @IsUrl({ require_protocol: true })
-  thumbnail: string;
 }

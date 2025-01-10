@@ -48,19 +48,29 @@ export class AssetService {
     // check if image already exists
     // todo: implement megaupload hashing system to avoid duplicates
 
-    const assetOnDisk = await this.imageStorage.store(file);
+    const asset = await this.imageStorage.store(file);
     const folder =
-      assetOnDisk.hash.substring(0, 2) + '/' + assetOnDisk.hash.substring(2, 4);
+      asset.hash.substring(0, 2) + '/' + asset.hash.substring(2, 4);
 
     return this.imageRepository.save({
-      width: assetOnDisk.width,
-      height: assetOnDisk.height,
-      mimetype: assetOnDisk.mime,
+      width: asset.width,
+      height: asset.height,
+      mimetype: asset.mime,
       path: folder,
       source: AssetSourceType.S3,
-      hash: assetOnDisk.hash,
-      filename: assetOnDisk.hash + '-' + file.originalname,
-      sizeBytes: assetOnDisk.size,
+      hash: asset.hash,
+      filename: asset.hash + '-' + file.originalname,
+      sizeBytes: asset.size,
+      originalFilename: file.originalname,
     });
+  }
+
+  async deleteImage(picture: ImageEntity) {
+    // todo: deal with different sources
+    // parallel await
+    await Promise.all([
+      this.imageStorage.delete(picture),
+      this.imageRepository.delete(picture.id),
+    ]);
   }
 }

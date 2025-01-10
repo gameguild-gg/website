@@ -2,6 +2,8 @@ import React, { ComponentType, PropsWithChildren, ReactElement } from 'react';
 import { redirect } from 'next/navigation';
 import { auth } from '@/auth';
 
+export const dynamic = 'force-dynamic';
+
 export function withAuth<TProps extends PropsWithChildren>(
   WrappedComponent: ComponentType<TProps>,
 ): ComponentType<TProps> {

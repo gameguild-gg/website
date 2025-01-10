@@ -94,7 +94,10 @@ export const authConfig = {
       if (user || token.user) {
         // combine user and token.user to include the user object
         // avoid TS2698: Spread types may only be created from object types.
-        const u = { ...(user ?? {}), ...(token?.user ?? {}) };
+        const u = {
+          ...(user && typeof user === 'object' ? user : {}),
+          ...(token?.user && typeof token.user === 'object' ? token.user : {}),
+        };
         const decoded = jwtDecode(u.accessToken as string);
         const exp = decoded.exp as number;
 
@@ -192,7 +195,7 @@ export const authConfig = {
           id: user.id,
           email: user.email,
           name: user.username,
-          image: user.profile?.picture,
+          // image: user.profile?.picture,
           wallet: user.walletAddress,
           accessToken,
           refreshToken,
@@ -243,7 +246,7 @@ export const authConfig = {
           id: user.id,
           email: user.email,
           name: user.username,
-          image: user.profile?.picture,
+          // image: user.profile?.picture,
           wallet: user.walletAddress,
           accessToken,
           refreshToken,

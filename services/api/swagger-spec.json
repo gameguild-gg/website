@@ -559,7 +559,7 @@
     },
     "/users/me": {
       "get": {
-        "operationId": "UserController_get",
+        "operationId": "UserController_me",
         "parameters": [],
         "responses": {
           "400": {
@@ -737,6 +737,16 @@
                 }
               }
             }
+          },
+          "default": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserProfileEntity"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -854,7 +864,7 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "file": {
+                  "profilePicture": {
                     "type": "string",
                     "format": "binary"
                   }
@@ -5864,6 +5874,69 @@
         ]
       }
     },
+    "/healthcheck/gitstats": {
+      "get": {
+        "operationId": "HealthcheckController_gitstats",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/GitStats"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/healthcheck/db": {
+      "get": {
+        "operationId": "HealthcheckController_db",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "DB is healthy"
+          },
+          "500": {
+            "description": "DB is unhealthy"
+          }
+        }
+      }
+    },
+    "/healthcheck/redis": {
+      "get": {
+        "operationId": "HealthcheckController_redis",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Redis is healthy"
+          },
+          "500": {
+            "description": "Redis is unhealthy"
+          }
+        }
+      }
+    },
+    "/healthcheck/s3": {
+      "get": {
+        "operationId": "HealthcheckController_s3",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "S3 is healthy"
+          },
+          "500": {
+            "description": "S3 is unhealthy"
+          }
+        }
+      }
+    },
     "/job-posts": {
       "post": {
         "operationId": "createOneBaseJobPostControllerJobPostEntity",
@@ -9582,17 +9655,20 @@
             "format": "uuid"
           },
           "createdAt": {
-            "format": "date-time",
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "updatedAt": {
-            "format": "date-time",
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "source": {
             "type": "string"
           },
           "path": {
+            "type": "string"
+          },
+          "originalFilename": {
             "type": "string"
           },
           "filename": {
@@ -9618,11 +9694,11 @@
           }
         },
         "required": [
-          "id",
           "createdAt",
           "updatedAt",
           "source",
           "path",
+          "originalFilename",
           "filename",
           "mimetype",
           "sizeBytes",
@@ -9640,12 +9716,12 @@
             "format": "uuid"
           },
           "createdAt": {
-            "format": "date-time",
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "updatedAt": {
-            "format": "date-time",
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "user": {
             "$ref": "#/components/schemas/UserEntity"
@@ -9667,7 +9743,6 @@
           }
         },
         "required": [
-          "id",
           "createdAt",
           "updatedAt",
           "user",
@@ -9686,16 +9761,15 @@
             "format": "uuid"
           },
           "createdAt": {
-            "format": "date-time",
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "updatedAt": {
-            "format": "date-time",
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           }
         },
         "required": [
-          "id",
           "createdAt",
           "updatedAt"
         ]
@@ -9708,12 +9782,12 @@
             "format": "uuid"
           },
           "createdAt": {
-            "format": "date-time",
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "updatedAt": {
-            "format": "date-time",
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "owner": {
             "$ref": "#/components/schemas/UserEntity"
@@ -9748,21 +9822,14 @@
             ]
           },
           "thumbnail": {
-            "type": "string"
+            "$ref": "#/components/schemas/ImageEntity"
           }
         },
         "required": [
-          "id",
           "createdAt",
           "updatedAt",
-          "owner",
-          "editors",
           "slug",
-          "title",
-          "summary",
-          "body",
-          "visibility",
-          "thumbnail"
+          "title"
         ]
       },
       "GetManyCourseEntityResponseDto": {
@@ -9803,12 +9870,12 @@
             "format": "uuid"
           },
           "createdAt": {
-            "format": "date-time",
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "updatedAt": {
-            "format": "date-time",
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "owner": {
             "$ref": "#/components/schemas/UserEntity"
@@ -9843,7 +9910,7 @@
             ]
           },
           "thumbnail": {
-            "type": "string"
+            "$ref": "#/components/schemas/ImageEntity"
           },
           "order": {
             "type": "number"
@@ -9856,17 +9923,10 @@
           }
         },
         "required": [
-          "id",
           "createdAt",
           "updatedAt",
-          "owner",
-          "editors",
           "slug",
           "title",
-          "summary",
-          "body",
-          "visibility",
-          "thumbnail",
           "order",
           "course",
           "chapter"
@@ -9880,12 +9940,12 @@
             "format": "uuid"
           },
           "createdAt": {
-            "format": "date-time",
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "updatedAt": {
-            "format": "date-time",
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "owner": {
             "$ref": "#/components/schemas/UserEntity"
@@ -9920,10 +9980,11 @@
             ]
           },
           "thumbnail": {
-            "type": "string"
+            "$ref": "#/components/schemas/ImageEntity"
           },
           "order": {
-            "type": "number"
+            "type": "number",
+            "default": 0
           },
           "course": {
             "$ref": "#/components/schemas/CourseEntity"
@@ -9936,20 +9997,11 @@
           }
         },
         "required": [
-          "id",
           "createdAt",
           "updatedAt",
-          "owner",
-          "editors",
           "slug",
           "title",
-          "summary",
-          "body",
-          "visibility",
-          "thumbnail",
-          "order",
-          "course",
-          "lectures"
+          "course"
         ]
       },
       "CourseEntity": {
@@ -9960,12 +10012,12 @@
             "format": "uuid"
           },
           "createdAt": {
-            "format": "date-time",
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "updatedAt": {
-            "format": "date-time",
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "owner": {
             "$ref": "#/components/schemas/UserEntity"
@@ -10000,7 +10052,7 @@
             ]
           },
           "thumbnail": {
-            "type": "string"
+            "$ref": "#/components/schemas/ImageEntity"
           },
           "price": {
             "type": "number"
@@ -10025,17 +10077,10 @@
           }
         },
         "required": [
-          "id",
           "createdAt",
           "updatedAt",
-          "owner",
-          "editors",
           "slug",
           "title",
-          "summary",
-          "body",
-          "visibility",
-          "thumbnail",
           "price",
           "subscriptionAccess",
           "author",
@@ -10051,12 +10096,12 @@
             "format": "uuid"
           },
           "createdAt": {
-            "format": "date-time",
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "updatedAt": {
-            "format": "date-time",
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "username": {
             "type": "string"
@@ -10120,7 +10165,6 @@
           }
         },
         "required": [
-          "id",
           "createdAt",
           "updatedAt",
           "username",
@@ -10210,12 +10254,7 @@
           "familyName": {
             "type": "string"
           }
-        },
-        "required": [
-          "bio",
-          "givenName",
-          "familyName"
-        ]
+        }
       },
       "CreateProjectDto": {
         "type": "object",
@@ -10242,9 +10281,6 @@
               "PRIVATE",
               "TRASH"
             ]
-          },
-          "thumbnail": {
-            "type": "string"
           }
         },
         "required": [
@@ -10252,8 +10288,7 @@
           "title",
           "summary",
           "body",
-          "visibility",
-          "thumbnail"
+          "visibility"
         ]
       },
       "GetManyProjectEntityResponseDto": {
@@ -10530,12 +10565,12 @@
             "format": "uuid"
           },
           "createdAt": {
-            "format": "date-time",
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "updatedAt": {
-            "format": "date-time",
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "version": {
             "$ref": "#/components/schemas/ProjectVersionEntity"
@@ -10551,7 +10586,6 @@
           }
         },
         "required": [
-          "id",
           "createdAt",
           "updatedAt",
           "version",
@@ -10567,12 +10601,12 @@
             "format": "uuid"
           },
           "createdAt": {
-            "format": "date-time",
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "updatedAt": {
-            "format": "date-time",
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "version": {
             "type": "string"
@@ -10623,7 +10657,6 @@
           }
         },
         "required": [
-          "id",
           "createdAt",
           "updatedAt",
           "version",
@@ -10673,12 +10706,12 @@
             "format": "uuid"
           },
           "createdAt": {
-            "format": "date-time",
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "updatedAt": {
-            "format": "date-time",
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "owner": {
             "$ref": "#/components/schemas/UserEntity"
@@ -10723,11 +10756,8 @@
           }
         },
         "required": [
-          "id",
           "createdAt",
           "updatedAt",
-          "owner",
-          "editors",
           "title",
           "description",
           "projectId",
@@ -10743,12 +10773,12 @@
             "format": "uuid"
           },
           "createdAt": {
-            "format": "date-time",
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "updatedAt": {
-            "format": "date-time",
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "owner": {
             "$ref": "#/components/schemas/UserEntity"
@@ -10783,7 +10813,7 @@
             ]
           },
           "thumbnail": {
-            "type": "string"
+            "$ref": "#/components/schemas/ImageEntity"
           },
           "versions": {
             "type": "array",
@@ -10796,22 +10826,22 @@
             "items": {
               "$ref": "#/components/schemas/TicketEntity"
             }
+          },
+          "banner": {
+            "$ref": "#/components/schemas/ImageEntity"
+          },
+          "screenshots": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ImageEntity"
+            }
           }
         },
         "required": [
-          "id",
           "createdAt",
           "updatedAt",
-          "owner",
-          "editors",
           "slug",
-          "title",
-          "summary",
-          "body",
-          "visibility",
-          "thumbnail",
-          "versions",
-          "tickets"
+          "title"
         ]
       },
       "IdDto": {
@@ -11006,12 +11036,12 @@
             "format": "uuid"
           },
           "createdAt": {
-            "format": "date-time",
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "updatedAt": {
-            "format": "date-time",
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "owner": {
             "$ref": "#/components/schemas/UserEntity"
@@ -11046,7 +11076,7 @@
             ]
           },
           "thumbnail": {
-            "type": "string"
+            "$ref": "#/components/schemas/ImageEntity"
           },
           "questions": {
             "type": "array",
@@ -11066,17 +11096,10 @@
           }
         },
         "required": [
-          "id",
           "createdAt",
           "updatedAt",
-          "owner",
-          "editors",
           "slug",
           "title",
-          "summary",
-          "body",
-          "visibility",
-          "thumbnail",
           "questions",
           "gradingInstructions"
         ]
@@ -11255,12 +11278,12 @@
             "format": "uuid"
           },
           "createdAt": {
-            "format": "date-time",
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "updatedAt": {
-            "format": "date-time",
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "winner": {
             "type": "string"
@@ -11276,7 +11299,6 @@
           }
         },
         "required": [
-          "id",
           "createdAt",
           "updatedAt",
           "winner",
@@ -11299,7 +11321,7 @@
           "elo"
         ]
       },
-      "CompetitionRunEntity": {
+      "CompetitionMatchEntity": {
         "type": "object",
         "properties": {
           "id": {
@@ -11307,18 +11329,61 @@
             "format": "uuid"
           },
           "createdAt": {
-            "format": "date-time",
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "updatedAt": {
-            "format": "date-time",
+            "type": "string",
+            "format": "date-time"
+          },
+          "run": {
+            "$ref": "#/components/schemas/CompetitionRunEntity"
+          },
+          "p1submission": {
+            "$ref": "#/components/schemas/CompetitionSubmissionEntity"
+          },
+          "p2submission": {
+            "$ref": "#/components/schemas/CompetitionSubmissionEntity"
+          },
+          "winner": {
+            "type": "string",
+            "enum": [
+              "Player1",
+              "Player2"
+            ]
+          },
+          "p1Points": {
+            "type": "number"
+          },
+          "p2Points": {
+            "type": "number"
+          },
+          "p1Turns": {
+            "type": "number"
+          },
+          "p2Turns": {
+            "type": "number"
+          },
+          "logs": {
+            "type": "string"
+          },
+          "lastState": {
             "type": "string"
           }
         },
         "required": [
-          "id",
           "createdAt",
-          "updatedAt"
+          "updatedAt",
+          "run",
+          "p1submission",
+          "p2submission",
+          "winner",
+          "p1Points",
+          "p2Points",
+          "p1Turns",
+          "p2Turns",
+          "logs",
+          "lastState"
         ]
       },
       "CompetitionRunSubmissionReportEntity": {
@@ -11329,12 +11394,12 @@
             "format": "uuid"
           },
           "createdAt": {
-            "format": "date-time",
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "updatedAt": {
-            "format": "date-time",
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "winsAsP1": {
             "type": "number"
@@ -11365,7 +11430,6 @@
           }
         },
         "required": [
-          "id",
           "createdAt",
           "updatedAt",
           "winsAsP1",
@@ -11377,6 +11441,74 @@
           "run",
           "submission",
           "user"
+        ]
+      },
+      "CompetitionRunEntity": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "NOT_STARTED",
+              "RUNNING",
+              "FINISHED",
+              "FAILED"
+            ]
+          },
+          "gameType": {
+            "type": "string"
+          },
+          "matches": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CompetitionMatchEntity"
+            }
+          },
+          "reports": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CompetitionRunSubmissionReportEntity"
+            }
+          }
+        },
+        "required": [
+          "createdAt",
+          "updatedAt",
+          "state",
+          "gameType",
+          "matches",
+          "reports"
+        ]
+      },
+      "GitStats": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string"
+          },
+          "additions": {
+            "type": "number"
+          },
+          "deletions": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "username",
+          "additions",
+          "deletions"
         ]
       },
       "GetManyJobPostEntityResponseDto": {
@@ -11447,19 +11579,18 @@
             "format": "uuid"
           },
           "createdAt": {
-            "format": "date-time",
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "updatedAt": {
-            "format": "date-time",
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "name": {
             "type": "string"
           }
         },
         "required": [
-          "id",
           "createdAt",
           "updatedAt",
           "name"
@@ -11473,12 +11604,12 @@
             "format": "uuid"
           },
           "createdAt": {
-            "format": "date-time",
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "updatedAt": {
-            "format": "date-time",
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "owner": {
             "$ref": "#/components/schemas/UserEntity"
@@ -11513,7 +11644,7 @@
             ]
           },
           "thumbnail": {
-            "type": "string"
+            "$ref": "#/components/schemas/ImageEntity"
           },
           "location": {
             "type": "string"
@@ -11533,17 +11664,10 @@
           }
         },
         "required": [
-          "id",
           "createdAt",
           "updatedAt",
-          "owner",
-          "editors",
           "slug",
           "title",
-          "summary",
-          "body",
-          "visibility",
-          "thumbnail",
           "location",
           "job_type",
           "job_tags"
@@ -11557,12 +11681,12 @@
             "format": "uuid"
           },
           "createdAt": {
-            "format": "date-time",
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "updatedAt": {
-            "format": "date-time",
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "owner": {
             "$ref": "#/components/schemas/UserEntity"
@@ -11597,7 +11721,7 @@
             ]
           },
           "thumbnail": {
-            "type": "string"
+            "$ref": "#/components/schemas/ImageEntity"
           },
           "location": {
             "type": "string"
@@ -11623,17 +11747,10 @@
           }
         },
         "required": [
-          "id",
           "createdAt",
           "updatedAt",
-          "owner",
-          "editors",
           "slug",
           "title",
-          "summary",
-          "body",
-          "visibility",
-          "thumbnail",
           "location",
           "job_type",
           "job_tags",
@@ -11724,12 +11841,12 @@
             "format": "uuid"
           },
           "createdAt": {
-            "format": "date-time",
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "updatedAt": {
-            "format": "date-time",
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "applicant": {
             "$ref": "#/components/schemas/UserEntity"
@@ -11754,7 +11871,6 @@
           }
         },
         "required": [
-          "id",
           "createdAt",
           "updatedAt",
           "applicant",

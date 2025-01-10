@@ -6,14 +6,36 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { Toaster } from '@/components/ui/toaster';
 import { ParamsWithLocale, PropsWithLocaleParams } from '@/types';
 import { environment } from '@/config/environment';
+import { FloatingFeedbackButton } from '@/components/floating-issue-button/floating-issue-button';
 
 export async function generateMetadata(): Promise<Metadata> {
+  const host =
+    process.env.NODE_ENV === 'production'
+      ? 'web.gameguild.gg'
+      : 'localhost:3000';
+  const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
+  const baseUrl = `${protocol}://${host}`;
+
   return {
     title: {
       template: '%s | Game Guild',
       default: 'Game Guild',
     },
     description: 'A awesome game development community',
+    openGraph: {
+      type: 'website',
+      locale: 'en_US',
+      url: baseUrl,
+      siteName: 'Game Guild',
+      images: [
+        {
+          url: `${baseUrl}/assets/images/logo-icon.png`,
+          width: 338,
+          height: 121,
+          alt: 'Game Guild Logo',
+        },
+      ],
+    },
   };
 }
 
@@ -33,6 +55,7 @@ export default async function Layout({
         {/*<ThemeProvider>*/}
         <Web3Provider>
           <TooltipProvider>{children}</TooltipProvider>
+          <FloatingFeedbackButton />
           <Toaster />
         </Web3Provider>
         {/*</ThemeProvider>*/}

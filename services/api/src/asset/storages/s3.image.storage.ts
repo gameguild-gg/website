@@ -4,6 +4,7 @@ import { Storage } from '../storage';
 import {
   GetObjectCommand,
   PutObjectCommand,
+  DeleteObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3';
 import { ApiConfigService } from '../../common/config.service';
@@ -88,8 +89,16 @@ export class S3ImageStorage extends Storage {
 
     return { ...cached, width: metadata.width, height: metadata.height };
   }
-  delete(): Promise<OkDto> {
-    throw new Error('Method not implemented.');
+
+  async delete(asset: Partial<AssetBase>): Promise<OkDto> {
+    const command = new DeleteObjectCommand({
+      Bucket: this.config.bucket,
+      Key: `${asset.path}/${asset.filename}`,
+    });
+
+    const result = await this.client.send(command);
+
+    return { success: true };
   }
   async get(asset: Partial<AssetBase>): Promise<AssetOnDisk> {
     // fetch from filecache first, then from s3
@@ -99,7 +108,7 @@ export class S3ImageStorage extends Storage {
     // fetch from s3 and store in filecache
     const command = new GetObjectCommand({
       Bucket: this.config.bucket,
-      Key: `${asset.path}`,
+      Key: `${asset.path}/${asset.filename}`,
     });
 
     // fetch the asset from s3
