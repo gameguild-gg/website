@@ -23,6 +23,14 @@ async function getVersion() {
 }
 
 export async function GET() {
-  const version = await getVersion();
-  return NextResponse.json({ version });
+  try {
+    const version = await getVersion();
+    return NextResponse.json({ version });
+  } catch (error) {
+    console.error('Error in version API:', error);
+    return NextResponse.json(
+      { version: 'v0.0.1', error: 'Failed to fetch version' },
+      { status: 500 },
+    );
+  }
 }

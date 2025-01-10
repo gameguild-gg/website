@@ -7,6 +7,7 @@ import {
   Lightbulb,
   MessageCircle,
   ListChecks,
+  MessageSquare,
 } from 'lucide-react';
 import {
   Tooltip,
@@ -32,32 +33,40 @@ export function FloatingFeedbackButton({
   className,
 }: FloatingFeedbackButtonProps) {
   const [version, setVersion] = useState('v0.0.1');
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetch('/api/version')
-      .then((response) => response.json())
-      .then((data) => setVersion(data.version))
-      .catch((error) => console.error('Error fetching version:', error));
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then((data) => {
+        if (data.version) {
+          setVersion(data.version);
+        } else {
+          throw new Error('Version not found in response');
+        }
+      })
+      .catch((error) => {
+        console.error('Error fetching version:', error);
+        setError('Failed to fetch version');
+      });
   }, []);
 
-  const createIssueUrl = (template: string) => {
-    let label = '';
-    let title = '';
-    switch (template) {
+  const getActionUrl = (
+    action: 'bug_report' | 'feature_request' | 'discussion',
+  ) => {
+    switch (action) {
       case 'bug_report':
-        label = 'bug';
-        title = '[Bug Report] ';
-        break;
+        return `https://github.com/gameguild-gg/website/issues/new?assignees=&labels=bug&projects=&template=bug_report.md&title=${encodeURIComponent('[Bug Report] ')}`;
       case 'feature_request':
-        label = 'enhancement';
-        title = '[Feature Request] ';
-        break;
-      case 'question':
-        label = 'question';
-        title = '[Question] ';
-        break;
+        return `https://github.com/gameguild-gg/website/issues/new?assignees=&labels=enhancement&projects=&template=feature_request.md&title=${encodeURIComponent('[Feature Request] ')}`;
+      case 'discussion':
+        return 'https://discord.gg/9CdJeQ2XKB';
     }
-    return `https://github.com/gameguild-gg/website/issues/new?assignees=&labels=${label}&projects=&template=${template}.md&title=${encodeURIComponent(title)}`;
   };
 
   const openIssuesUrl = '/issues';
@@ -76,7 +85,9 @@ export function FloatingFeedbackButton({
                   <MessageCircle className="h-5 w-5" />
                   <span className="flex flex-col items-start">
                     <span>Give Feedback</span>
-                    <span className="text-xs opacity-70">{version}</span>
+                    <span className="text-xs opacity-70">
+                      {error ? 'Version unavailable' : version}
+                    </span>
                   </span>
                   <span className="sr-only">Open feedback menu</span>
                 </Button>
@@ -92,30 +103,28 @@ export function FloatingFeedbackButton({
             className="w-[200px]"
           >
             <DropdownMenuItem
-              onClick={() =>
-                window.open(createIssueUrl('bug_report'), '_blank')
-              }
+              onClick={() => window.open(getActionUrl('bug_report'), '_blank')}
             >
               <Bug className="mr-2 h-4 w-4" />
               Report Bug
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() =>
-                window.open(createIssueUrl('feature_request'), '_blank')
+                window.open(getActionUrl('feature_request'), '_blank')
               }
             >
               <Lightbulb className="mr-2 h-4 w-4" />
               Request Feature
             </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => window.open(createIssueUrl('question'), '_blank')}
-            >
-              <HelpCircle className="mr-2 h-4 w-4" />
-              Ask Question
-            </DropdownMenuItem>
             <DropdownMenuItem onClick={() => window.open(openIssuesUrl)}>
               <ListChecks className="mr-2 h-4 w-4" />
               View Open Issues
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => window.open(getActionUrl('discussion'), '_blank')}
+            >
+              <MessageSquare className="mr-2 h-4 w-4" />
+              Discord Discussion
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

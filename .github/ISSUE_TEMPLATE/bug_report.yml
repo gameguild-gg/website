@@ -1,5 +1,5 @@
 name: "🐞 Bug Report"
-description: "File a new bug report to help us improve GameGuild."
+description: "File a new bug report to help us improve GameGuild, prioritize your report with an attached bounty."
 title: "[Bug]: "
 labels: ["bug", "triage"]
 body:
@@ -9,6 +9,7 @@ body:
         > [!IMPORTANT]
         > **Ensure you are using the latest version of GameGuild before submitting an issue, as the bug may already be resolved in a recent update.**  
         > If the bug occurs in the latest version but was not present in previous versions, please specify this below.
+        > Before creating a new bug report, please check the [existing issues](https://github.com/gameguild-gg/website/issues) to see if the bug has already been reported.
 
         # 💎 Bounty Program
         You can prioritize the resolution of this issue by adding a bounty through our [Bounty Program](https://console.algora.io/org/GameGuild/bounties/new).
@@ -48,17 +49,18 @@ body:
 
   - type: dropdown
     attributes:
-      label: "Are you using GameGuild Self-Hosted?"
+      label: "Are you using GameGuild Cloud or Self-Hosted?"
       description: "Specify whether you are using the GameGuild Cloud or a self-hosted version."
       options:
-        - "No (self-hosted)"
-        - "Yes (GameGuild Cloud)"
+        - "GameGuild Cloud"
+        - "self-hosted"
+
     validations:
       required: true
 
   - type: input
     attributes:
-      label: "Operating System and Version (self-hosted)"
+      label: "Operating System and Version (if self-hosted)"
       description: "Run `cat /etc/os-release` or `lsb_release -a` in your terminal to find your operating system and version."
       placeholder: "Ubuntu 22.04"
 
