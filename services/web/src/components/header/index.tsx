@@ -32,13 +32,16 @@ export default function Header() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMoreOpen, setIsMoreOpen] = useState(false);
+  const [isComplexOpen, setIsComplexOpen] = useState(false);
 
   const menuItems = ['Blog', 'Courses', 'Games', 'Tests', 'Jams', 'Jobs']
-  const moreItems = [
+  const moreItems = ['Item 1', 'Item 2', 'Item 3']
+
+  const complexItems = [
     { name: 'Learn', href: `/learn` },
-    { name: 'Code', href: '/learn/coding-environment?id=0&type=sandbox&userId=&role=' },
-    { name: 'Challenges', href: '/under-construction' }
+    { name: 'Code', href: '/learn/coding-environment?id=0&type=sandbox&userId=&role=' }
   ];
+
   const languages = ['English', 'Spanish', 'Portuguese', 'French', 'German']
 
   const router = useRouter();
@@ -85,8 +88,23 @@ export default function Header() {
             </DropdownMenuTrigger>
             <DropdownMenuContent className="bg-neutral-900 text-white border-0">
               {moreItems.map((item) => (
+                <DropdownMenuItem key={item}>{item}</DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <DropdownMenu open={isComplexOpen} onOpenChange={setIsComplexOpen}>
+            <DropdownMenuTrigger className="flex px-2 items-center hover:text-gray-400 transition-colors">
+              Learn{' '}
+              {isMoreOpen ? (
+                <ChevronUp className="ml-1 h-4 w-4" />
+              ) : (
+                <ChevronDown className="ml-1 h-4 w-4" />
+              )}
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="bg-neutral-900 text-white border-0">
+              {complexItems.map((item) => (
                 <DropdownMenuItem key={item.name}>
-                  <Link href={item.href} className="w-full px-4 py-2 hover:text-gray-400 transition-colors">
+                  <Link href={item.href} className=" hover:text-gray-400 transition-colors">
                     {item.name}
                   </Link>
                 </DropdownMenuItem>
@@ -257,12 +275,8 @@ export default function Header() {
               </DropdownMenuTrigger>
               <DropdownMenuContent className="bg-neutral-900 text-white">
                 {moreItems.map((item) => (
-                <DropdownMenuItem key={item.name}>
-                  <Link href={item.href} className="w-full px-4 py-2 hover:text-gray-500 transition-colors">
-                    {item.name}
-                  </Link>
-                </DropdownMenuItem>
-              ))}
+                  <DropdownMenuItem key={item}>{item}</DropdownMenuItem>
+                ))}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
@@ -271,3 +285,6 @@ export default function Header() {
     </header>
   );
 }
+
+
+          

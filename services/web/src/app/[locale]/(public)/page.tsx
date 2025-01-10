@@ -30,7 +30,7 @@ function Home() {
         <div>
           <img
             src="/assets/images/header2.jpeg"
-            className="w-full lg:max-w-[480px] w-full"
+            className="lg:max-w-[480px] w-full"
           />
         </div>
         <div>
@@ -55,7 +55,7 @@ function Home() {
         <div>
           <img
             src="/assets/images/header3.jpeg"
-            className="w-full lg:max-w-[480px] w-full"
+            className="lg:max-w-[480px] w-full"
           />
         </div>
       </div>
@@ -66,7 +66,7 @@ function Home() {
         <div>
           <img
             src="/assets/images/header1.jpeg"
-            className="w-full lg:max-w-[480px] w-full"
+            className="lg:max-w-[480px] w-full"
           />
         </div>
         <div>
@@ -82,7 +82,7 @@ function Home() {
       <div className="h-10"></div>
 
       <div
-        className="relative justify-between max-w-[1440px] w-full items-center bg-[#18181c] lg:flex justify-between mx-auto z-30">
+        className="relative max-w-[1440px] w-full items-center bg-[#18181c] lg:flex justify-between mx-auto z-30">
         <div></div>
 
         <div>
