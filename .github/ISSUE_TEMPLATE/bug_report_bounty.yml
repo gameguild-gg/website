@@ -1,5 +1,5 @@
-name: 🐞 Bug Report
-description: "File a new bug report."
+name: "🐞 Bug Report"
+description: "File a new bug report to help us improve GameGuild."
 title: "[Bug]: "
 labels: ["bug", "triage"]
 body:
@@ -7,46 +7,49 @@ body:
     attributes:
       value: |
         > [!IMPORTANT]
-        > **Please ensure you are using the latest version of GameGuild before submitting an issue, as the bug may have already been fixed in a recent update.** (Of course, if you're experiencing an issue on the latest version that wasn't present in a previous version, please let us know.)
+        > **Ensure you are using the latest version of GameGuild before submitting an issue, as the bug may already be resolved in a recent update.**  
+        > If the bug occurs in the latest version but was not present in previous versions, please specify this below.
 
-        # 💎 Bounty Program (with [algora.io](https://console.algora.io/org/GameGuild/bounties/new))
-          - If you would like to prioritize the issue resolution, consider adding a bounty to this issue through our [Bounty Program](https://console.algora.io/org/GameGuild/bounties/new).
+        # 💎 Bounty Program
+        You can prioritize the resolution of this issue by adding a bounty through our [Bounty Program](https://console.algora.io/org/GameGuild/bounties/new).
 
   - type: textarea
     attributes:
-      label: Error Message, Logs or Screenshots
-      description: Provide a detailed description of the error or exception you encountered, along with any relevant log output.
+      label: "Bug description, Error Message, Logs, and/or Screenshots"
+      description: "Provide a detailed description of the error or exception encountered. Include relevant log outputs or screenshots."
+      placeholder: "Paste error logs or attach screenshots here."
     validations:
       required: true
 
   - type: textarea
     attributes:
-      label: Steps to Reproduce
-      description: Please provide a step-by-step guide to reproduce the issue. Be as detailed as possible, otherwise we may not be able to assist you. Record videos or GIFs if necessary or easier.
-      value: |
-        1.
-        2.
-        3.
-        4.
+      label: "Steps to Reproduce"
+      description: "Provide a step-by-step guide to reproduce the issue. Be as detailed as possible. [Optional] Attach a short video or gif showing the problem"
+      placeholder: |
+        1. 
+        2. 
+        3. 
     validations:
       required: true
 
   - type: input
     attributes:
-      label: Example URL
-      description: If applicable, provide a URL to a repository demonstrating the issue. Or the main route URL where the issue occurs.
+      label: "Example URL"
+      description: "Provide a URL demonstrating the issue, if applicable. Or the route URL where the issue occurs."
+      placeholder: "https://gameguild.gg/route"
 
   - type: input
     attributes:
-      label: GameGuild Version
-      description: Please provide the GameGuild version you are using. This can be found in the top left corner of your GameGuild dashboard.
-      placeholder: "v4.0.0-beta.335"
+      label: "GameGuild Version"
+      description: "Specify the version of GameGuild you are using. Found in the bottom right corner of your GameGuild page."
+      placeholder: "v1.2.3.abcdef12"
     validations:
       required: true
 
   - type: dropdown
     attributes:
-      label: Are you using GameGuild Cloud?
+      label: "Are you using GameGuild Self-Hosted?"
+      description: "Specify whether you are using the GameGuild Cloud or a self-hosted version."
       options:
         - "No (self-hosted)"
         - "Yes (GameGuild Cloud)"
@@ -55,11 +58,12 @@ body:
 
   - type: input
     attributes:
-      label: Operating System and Version (self-hosted)
-      description: Run `cat /etc/os-release` or `lsb_release -a` in your terminal and provide the operating system and version.
+      label: "Operating System and Version (self-hosted)"
+      description: "Run `cat /etc/os-release` or `lsb_release -a` in your terminal to find your operating system and version."
       placeholder: "Ubuntu 22.04"
 
   - type: textarea
     attributes:
-      label: Additional Information
-      description: Any other relevant details about the issue.
+      label: "Additional Information"
+      description: "Provide any other relevant details about the issue."
+      placeholder: "Additional context or observations."
