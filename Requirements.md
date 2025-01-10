@@ -80,7 +80,7 @@ General Meetings:
 
 Choice Casts:
 
-- Every week, the community votes on one event to become the "Choice Cast", a highlighted meeting in the calendar.
+- The community votes on one event to become the "Choice Cast", a highlighted meeting in the calendar.
 - The "Choice Cast" is chosen based on votes from the community using platform votes.
 - These meetings are special, community-driven events that receive additional visibility and rewards.
 - The chosen "Choice Cast" will be repeated according to the demand of the community and those present at previous meetings
