@@ -1,3 +1,10 @@
+## [1.8.1](https://github.com/gameguild-gg/website/compare/v1.8.0...v1.8.1) (2025-01-10)
+
+
+### Bug Fixes
+
+* **issues:** improve issues reporting ([f2ccc9e](https://github.com/gameguild-gg/website/commit/f2ccc9e02da2b368b21daf459b1ab36ec37379fc))
+
 # [1.8.0](https://github.com/gameguild-gg/website/compare/v1.7.0...v1.8.0) (2025-01-09)
 
 
