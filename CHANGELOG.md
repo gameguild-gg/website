@@ -1,3 +1,10 @@
+## [1.8.2](https://github.com/gameguild-gg/website/compare/v1.8.1...v1.8.2) (2025-01-10)
+
+
+### Bug Fixes
+
+* **issues:** move server version to an api ([9da9ced](https://github.com/gameguild-gg/website/commit/9da9ced39e40185837482c7070c1e518424f86a0))
+
 ## [1.8.1](https://github.com/gameguild-gg/website/compare/v1.8.0...v1.8.1) (2025-01-10)
 
 
