@@ -30,8 +30,5 @@ RUN git clone https://github.com/gameguild-gg/website.git /app
 RUN npm run install:web
 RUN npm run build:web
 
-# get the latest git tag and export as an env var as NEXT_PUBLIC_VERSION and concatenate with the hash of the latest commit
-RUN export NEXT_PUBLIC_VERSION=$(git describe --abbrev=0 --tags).$(git rev-parse --short HEAD)
-
 # start the app
 CMD ["npm", "run", "start:web"]

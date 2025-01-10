@@ -31,6 +31,15 @@ interface FloatingFeedbackButtonProps {
 export function FloatingFeedbackButton({
   className,
 }: FloatingFeedbackButtonProps) {
+  const [version, setVersion] = useState('v0.0.1');
+
+  useEffect(() => {
+    fetch('/api/version')
+      .then((response) => response.json())
+      .then((data) => setVersion(data.version))
+      .catch((error) => console.error('Error fetching version:', error));
+  }, []);
+
   const createIssueUrl = (template: string) => {
     let label = '';
     let title = '';
@@ -52,12 +61,6 @@ export function FloatingFeedbackButton({
   };
 
   const openIssuesUrl = '/issues';
-
-  const [version, setVersion] = useState('v0.0.1');
-
-  useEffect(() => {
-    setVersion(process.env.NEXT_PUBLIC_VERSION || 'v0.0.1');
-  }, []);
 
   return (
     <div className={cn('fixed bottom-4 right-4 z-50', className)}>
