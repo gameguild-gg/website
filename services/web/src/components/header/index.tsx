@@ -34,8 +34,12 @@ export default function Header() {
   const [isMoreOpen, setIsMoreOpen] = useState(false);
 
   const menuItems = ['Blog', 'Courses', 'Games', 'Tests', 'Jams', 'Jobs']
-  const moreItems = ['Item 1', 'Item 2', 'Item 3']
-  const languages = ['English', 'Spanish', 'French', 'German']
+  const moreItems = [
+    { name: 'Learn', href: `/learn` },
+    { name: 'Code', href: '/learn/coding-environment?id=0&type=sandbox&userId=&role=' },
+    { name: 'Challenges', href: '/under-construction' }
+  ];
+  const languages = ['English', 'Spanish', 'Portuguese', 'French', 'German']
 
   const router = useRouter();
 
@@ -81,7 +85,11 @@ export default function Header() {
             </DropdownMenuTrigger>
             <DropdownMenuContent className="bg-neutral-900 text-white border-0">
               {moreItems.map((item) => (
-                <DropdownMenuItem key={item}>{item}</DropdownMenuItem>
+                <DropdownMenuItem key={item.name}>
+                  <Link href={item.href} className="w-full px-4 py-2 hover:text-gray-400 transition-colors">
+                    {item.name}
+                  </Link>
+                </DropdownMenuItem>
               ))}
             </DropdownMenuContent>
           </DropdownMenu>
@@ -249,8 +257,12 @@ export default function Header() {
               </DropdownMenuTrigger>
               <DropdownMenuContent className="bg-neutral-900 text-white">
                 {moreItems.map((item) => (
-                  <DropdownMenuItem key={item}>{item}</DropdownMenuItem>
-                ))}
+                <DropdownMenuItem key={item.name}>
+                  <Link href={item.href} className="w-full px-4 py-2 hover:text-gray-500 transition-colors">
+                    {item.name}
+                  </Link>
+                </DropdownMenuItem>
+              ))}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>

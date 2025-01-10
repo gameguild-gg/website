@@ -148,7 +148,7 @@ export default function CoursesPage() {
             {mode === 'light' ? <Sun className="w-5 h-5" /> : mode === 'dark' ? <Moon className="w-5 h-5" /> : <ZapOff className="w-5 h-5" />}
           </button>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-52">
           {courses.map(course => (
             <div key={course.id} className="bg-white p-6 rounded-lg shadow-md relative w-72" style={{ width: '384px', height: '384px' }}>
               <h3 className="text-lg font-semibold mb-2">{course.title}</h3>
