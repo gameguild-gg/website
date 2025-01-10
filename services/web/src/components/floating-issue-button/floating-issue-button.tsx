@@ -22,6 +22,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useEffect, useState } from 'react';
 
 interface FloatingFeedbackButtonProps {
   className?: string;
@@ -52,6 +53,12 @@ export function FloatingFeedbackButton({
 
   const openIssuesUrl = '/issues';
 
+  const [version, setVersion] = useState('v0.0.1');
+
+  useEffect(() => {
+    setVersion(process.env.NEXT_PUBLIC_VERSION || 'v0.0.1');
+  }, []);
+
   return (
     <div className={cn('fixed bottom-4 right-4 z-50', className)}>
       <TooltipProvider>
@@ -64,7 +71,10 @@ export function FloatingFeedbackButton({
                   className="rounded-full shadow-lg flex items-center gap-2"
                 >
                   <MessageCircle className="h-5 w-5" />
-                  Give Feedback
+                  <span className="flex flex-col items-start">
+                    <span>Give Feedback</span>
+                    <span className="text-xs opacity-70">{version}</span>
+                  </span>
                   <span className="sr-only">Open feedback menu</span>
                 </Button>
               </DropdownMenuTrigger>

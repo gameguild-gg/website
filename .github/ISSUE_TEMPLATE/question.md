@@ -2,7 +2,7 @@
 name: "💬 General Question"
 about: "Ask a question or seek clarification about this project."
 title: "[Question] "
-labels: "question"
+labels: ["question", "triage"]
 assignees: ""
 
 ---
