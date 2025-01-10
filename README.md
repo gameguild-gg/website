@@ -75,77 +75,69 @@ By starring this repository, you:
 - Help increase visibility, attracting more contributors and collaborators.
 - Join a growing community shaping the future of game development.
 
-<div class="social-links">
-  <style>
-    #socialicon img{
-      width: 64px;
-    }
-    .social-links {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      text-align: center;
-      margin-top: 20px;
-    }
-  </style>
+
+## Follow our socials
+
+<div style="display: grid; grid-template-columns: repeat(3, 1fr); text-align: center; margin-top: 20px;">
   <!-- YouTube -->
-  <a id="socialicon" href="https://www.youtube.com/@AwesomeGamedevGuild" target="_blank" style="text-decoration: none; margin: 0 15px;">
-    <img src="https://img.icons8.com/color/48/000000/youtube-play.png" alt="YouTube" style="vertical-align: middle;"/>
+  <a href="https://www.youtube.com/@AwesomeGamedevGuild" target="_blank" style="text-decoration: none; margin: 0 15px;">
+    <img style="width: 64px;" src="https://img.icons8.com/color/48/000000/youtube-play.png" alt="YouTube" style="vertical-align: middle;"/>
   </a>
   <!-- WhatsApp -->
-  <a id="socialicon" href="https://chat.whatsapp.com/CAboWKtosP673f9EkzxKNb" target="_blank" style="text-decoration: none; margin: 0 15px;">
-    <img src="https://img.icons8.com/color/48/000000/whatsapp.png" alt="WhatsApp" style="vertical-align: middle;"/>
+  <a href="https://chat.whatsapp.com/CAboWKtosP673f9EkzxKNb" target="_blank" style="text-decoration: none; margin: 0 15px;">
+    <img style="width: 64px;" src="https://img.icons8.com/color/48/000000/whatsapp.png" alt="WhatsApp" style="vertical-align: middle;"/>
   </a>
   <!-- Instagram -->
-  <a id="socialicon" href="" target="_blank" style="text-decoration: none; margin: 0 15px;">
-    <img src="https://img.icons8.com/?size=100&id=zezJrErrmcwx&format=png&color=000000" alt="Instagram" style="vertical-align: middle;"/>
+  <a href="" target="_blank" style="text-decoration: none; margin: 0 15px;">
+    <img style="width: 64px;" src="https://img.icons8.com/?size=100&id=zezJrErrmcwx&format=png&color=000000" alt="Instagram" style="vertical-align: middle;"/>
   </a>
   <!-- Facebook -->
-  <!-- <a id="socialicon" href="https://x.com/GameGuildDev" target="_blank" style="text-decoration: none; margin: 0 15px;">
-    <img src="https://img.icons8.com/?size=100&id=13912&format=png&color=000000" alt="Facebook" style="vertical-align: middle;"/>
+  <!-- <a href="https://x.com/GameGuildDev" target="_blank" style="text-decoration: none; margin: 0 15px;">
+    <img style="width: 64px;" src="https://img.icons8.com/?size=100&id=13912&format=png&color=000000" alt="Facebook" style="vertical-align: middle;"/>
   </a> -->
   <!-- LinkedIn -->
-  <!-- <a id="socialicon" href="https://x.com/GameGuildDev" target="_blank" style="text-decoration: none; margin: 0 15px;">
-    <img src="https://img.icons8.com/?size=100&id=8808&format=png&color=000000" alt="LinkedIn" style="vertical-align: middle;"/>
+  <!-- <a href="https://x.com/GameGuildDev" target="_blank" style="text-decoration: none; margin: 0 15px;">
+    <img style="width: 64px;" src="https://img.icons8.com/?size=100&id=8808&format=png&color=000000" alt="LinkedIn" style="vertical-align: middle;"/>
   </a> -->
   <!-- X -->
-  <a id="socialicon" href="https://x.com/GameGuildDev" target="_blank" style="text-decoration: none; margin: 0 15px;">
-    <img src="https://img.icons8.com/?size=100&id=phOKFKYpe00C&format=png&color=000000" alt="X" style="vertical-align: middle;"/>
+  <a href="https://x.com/GameGuildDev" target="_blank" style="text-decoration: none; margin: 0 15px;">
+    <img style="width: 64px;" src="https://img.icons8.com/?size=100&id=phOKFKYpe00C&format=png&color=000000" alt="X" style="vertical-align: middle;"/>
   </a>
   <!-- Threads -->
-  <!-- <a id="socialicon" href="" target="_blank" style="text-decoration: none; margin: 0 15px;">
-    <img src="https://img.icons8.com/?size=100&id=oykyblY20T6o&format=png&color=000000" alt="Threads" style="vertical-align: middle;"/>
+  <!-- <a href="" target="_blank" style="text-decoration: none; margin: 0 15px;">
+    <img style="width: 64px;" src="https://img.icons8.com/?size=100&id=oykyblY20T6o&format=png&color=000000" alt="Threads" style="vertical-align: middle;"/>
   </a> -->
   <!-- Discord -->
-  <a id="socialicon" href="https://discord.com/invite/9CdJeQ2XKB?ref=gameguild.gg" target="_blank" style="text-decoration: none; margin: 0 15px;">
-    <img src="https://img.icons8.com/color/48/000000/discord-logo.png" alt="Discord" style="vertical-align: middle;"/>
+  <a href="https://discord.com/invite/9CdJeQ2XKB?ref=gameguild.gg" target="_blank" style="text-decoration: none; margin: 0 15px;">
+    <img style="width: 64px;" src="https://img.icons8.com/color/48/000000/discord-logo.png" alt="Discord" style="vertical-align: middle;"/>
   </a>
   <!-- BlueSky -->
-  <a id="socialicon" href="https://bsky.app/profile/gameguild.bsky.social" target="_blank" style="text-decoration: none; margin: 0 15px;">
-    <img src="https://img.icons8.com/?size=100&id=3ovMFy5JDSWq&format=png&color=000000" alt="BlueSky" style="vertical-align: middle;"/>
+  <a href="https://bsky.app/profile/gameguild.bsky.social" target="_blank" style="text-decoration: none; margin: 0 15px;">
+    <img style="width: 64px;" src="https://img.icons8.com/?size=100&id=3ovMFy5JDSWq&format=png&color=000000" alt="BlueSky" style="vertical-align: middle;"/>
   </a>
   <!-- TikTok -->
-  <a id="socialicon" href="https://www.tiktok.com/@awesomegameguild" target="_blank" style="text-decoration: none; margin: 0 15px;">
-    <img src="https://img.icons8.com/?size=100&id=3veRWJpxPPDH&format=png&color=000000" alt="TikTok" style="vertical-align: middle;"/>
+  <a href="https://www.tiktok.com/@awesomegameguild" target="_blank" style="text-decoration: none; margin: 0 15px;">
+    <img style="width: 64px;" src="https://img.icons8.com/?size=100&id=3veRWJpxPPDH&format=png&color=000000" alt="TikTok" style="vertical-align: middle;"/>
   </a>
   <!-- Patreon -->
-  <a id="socialicon" href="https://mastodon.social/@gameguild" target="_blank" style="text-decoration: none; margin: 0 15px;">
-    <img src="https://img.icons8.com/?size=100&id=I49RSKuKXYoP&format=png&color=000000" alt="Patreon" style="vertical-align: middle;"/>
+  <a href="https://mastodon.social/@gameguild" target="_blank" style="text-decoration: none; margin: 0 15px;">
+    <img style="width: 64px;" src="https://img.icons8.com/?size=100&id=I49RSKuKXYoP&format=png&color=000000" alt="Patreon" style="vertical-align: middle;"/>
   </a>
   <!-- Mastodon -->
-  <a id="socialicon" href="https://mastodon.social/@gameguild" target="_blank" style="text-decoration: none; margin: 0 15px;">
-    <img src="https://img.icons8.com/?size=100&id=SjG6BzZwdP2-&format=png&color=000000" alt="Mastodon" style="vertical-align: middle;"/>
+  <a href="https://mastodon.social/@gameguild" target="_blank" style="text-decoration: none; margin: 0 15px;">
+    <img style="width: 64px;" src="https://img.icons8.com/?size=100&id=SjG6BzZwdP2-&format=png&color=000000" alt="Mastodon" style="vertical-align: middle;"/>
   </a>
   <!-- Twitch -->
-  <a id="socialicon" href="https://www.twitch.tv/awesomegamedevguild" target="_blank" style="text-decoration: none; margin: 0 15px;">
-    <img src="https://img.icons8.com/?size=100&id=MFZCdvQbJtV1&format=png&color=000000" alt="Twitch" style="vertical-align: middle;"/>
+  <a href="https://www.twitch.tv/awesomegamedevguild" target="_blank" style="text-decoration: none; margin: 0 15px;">
+    <img style="width: 64px;" src="https://img.icons8.com/?size=100&id=MFZCdvQbJtV1&format=png&color=000000" alt="Twitch" style="vertical-align: middle;"/>
   </a>
   <!-- Itch.io -->
-  <a id="socialicon" href="http://gameguild.itch.io/" target="_blank" style="text-decoration: none; margin: 0 15px;">
-    <img src="https://img.icons8.com/?size=100&id=XrWrgAx9pAYM&format=png&color=000000" alt="Itch.io" style="vertical-align: middle;"/>
+  <a href="http://gameguild.itch.io/" target="_blank" style="text-decoration: none; margin: 0 15px;">
+    <img style="width: 64px;" src="https://img.icons8.com/?size=100&id=XrWrgAx9pAYM&format=png&color=000000" alt="Itch.io" style="vertical-align: middle;"/>
   </a>
   <!-- GameJolt -->
-  <a id="socialicon" href="https://gamejolt.com/@GameGuild" target="_blank" style="text-decoration: none; margin: 0 15px;">
-    <img src="https://img.icons8.com/?size=100&id=QxjoLwAXiCXT&format=png&color=000000" alt="GameJolt" style="vertical-align: middle;"/>
+  <a href="https://gamejolt.com/@GameGuild" target="_blank" style="text-decoration: none; margin: 0 15px;">
+    <img style="width: 64px;" src="https://img.icons8.com/?size=100&id=QxjoLwAXiCXT&format=png&color=000000" alt="GameJolt" style="vertical-align: middle;"/>
   </a>
 </div>
 Icons by [Icons8](https://icons8.com/)
