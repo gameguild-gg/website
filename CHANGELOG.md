@@ -1,3 +1,15 @@
+# [1.9.0](https://github.com/gameguild-gg/website/compare/v1.8.3...v1.9.0) (2025-01-11)
+
+
+### Bug Fixes
+
+* **courses:** remove old style courses without permissions ([3a57f68](https://github.com/gameguild-gg/website/commit/3a57f68c98f304498b6c76b7412c2d3a77d2c542))
+
+
+### Features
+
+* **courses:** minimum functioning courses webpage ([fd9b081](https://github.com/gameguild-gg/website/commit/fd9b081a40ba20983e6d5608cef331737cb4ee6a))
+
 ## [1.8.3](https://github.com/gameguild-gg/website/compare/v1.8.2...v1.8.3) (2025-01-11)
 
 
