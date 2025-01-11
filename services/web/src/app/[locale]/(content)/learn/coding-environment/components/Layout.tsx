@@ -7,17 +7,18 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const [isDarkMode, setIsDarkMode] = useState(true);
 
   const memoizedChildren = {
-    left: children[0],
-    right: children[1],
+    leftPanel: children[0],
+    rightPanel: children[1],
   };
 
   return (
     <div className={`flex h-screen w-screen ${isDarkMode ? 'dark' : ''}`}>
       <ResizablePanel
-        left={memoizedChildren.left}
-        right={memoizedChildren.right}
+        left={memoizedChildren.leftPanel}
+        right={memoizedChildren.rightPanel}
         isDarkMode={isDarkMode}
         setIsDarkMode={setIsDarkMode}
+        direction="horizontal"
       />
     </div>
   );

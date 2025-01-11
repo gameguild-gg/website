@@ -14,21 +14,19 @@ const debounce = (func: Function, wait: number) => {
 interface ResizablePanelProps {
   left?: React.ReactNode;
   right?: React.ReactNode;
-  top?: React.ReactNode;
-  bottom?: React.ReactNode;
+  isDarkMode: boolean;
+  setIsDarkMode: React.Dispatch<React.SetStateAction<boolean>>;
   direction: 'horizontal' | 'vertical';
   initialSize?: number;
   minSize?: number;
   maxSize?: number;
-  isDarkMode: boolean;
-  setIsDarkMode: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 const ResizablePanel: React.FC<ResizablePanelProps> = ({
   left,
   right,
-  top,
-  bottom,
+  isDarkMode,
+  setIsDarkMode,
   direction,
   initialSize = 50,
   minSize = 10,
@@ -103,7 +101,7 @@ const ResizablePanel: React.FC<ResizablePanelProps> = ({
         className="flex flex-col h-full bg-[#1E1E1E] text-[#D4D4D4]"
       >
         <div style={{ height: `${size}%` }} className="overflow-auto">
-          {top}
+          {left}
         </div>
         <div
           className="h-2 bg-[#3C3C3C] cursor-row-resize flex items-center justify-center"
@@ -112,7 +110,7 @@ const ResizablePanel: React.FC<ResizablePanelProps> = ({
           <GripHorizontal className="w-4 h-4 text-[#6A6A6A]" />
         </div>
         <div style={{ height: `${100 - size}%` }} className="overflow-auto">
-          {bottom}
+          {right}
         </div>
       </div>
     );

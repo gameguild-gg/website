@@ -1,13 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Button } from "@/components/ui/button"
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
+import React, { useState, useEffect } from 'react';
 import CourseTabs from '../edit/page';
-import { PlusCircle, Edit } from 'lucide-react'
+import { PlusCircle, Edit } from 'lucide-react';
 import { CoursesApi } from '@game-guild/apiclient';
 import { auth } from '@/auth';
 import { Api } from '@game-guild/apiclient';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function CoursePage() {
   const [courses, setCourses] = useState<Api.CourseEntity[]>([]);
@@ -22,7 +22,7 @@ export default function CoursePage() {
       try {
         const session = await auth();
         if (!session || !session.user?.accessToken) {
-          throw new Error("No valid session found");
+          throw new Error('No valid session found');
         }
         const response = await api.getManyBaseCoursesControllerCourseEntity(
           { page: 0, limit: 10 },
@@ -30,7 +30,7 @@ export default function CoursePage() {
         );
         setCourses(response.body as Api.CourseEntity[]);
       } catch (error) {
-        console.error("Error fetching courses or authenticating:", error);
+        console.error('Error fetching courses or authenticating:', error);
       }
     };
 
@@ -48,12 +48,19 @@ export default function CoursePage() {
   if (selectedCourse) {
     return (
       <div className="space-y-4">
-        <Button onClick={() => setSelectedCourse(null)} variant="outline" size="sm">
+        <Button
+          onClick={() => setSelectedCourse(null)}
+          variant="outline"
+          size="sm"
+        >
           ← Back to Course List
         </Button>
-        <CourseTabs courseId={selectedCourse} onBack={() => setSelectedCourse(null)} />
+        <CourseTabs
+          courseId={selectedCourse}
+          onBack={() => setSelectedCourse(null)}
+        />
       </div>
-    )
+    );
   }
 
   return (
@@ -75,13 +82,24 @@ export default function CoursePage() {
         </CardHeader>
         <CardContent>
           {courses.length === 0 ? (
-            <p className="text-muted-foreground">No courses available. Create a new course to get started.</p>
+            <p className="text-muted-foreground">
+              No courses available. Create a new course to get started.
+            </p>
           ) : (
             <ul className="space-y-4">
               {courses.map((course) => (
-                <li key={course.id} className="flex items-center justify-between bg-muted p-4 rounded-lg">
-                  <span className="font-medium">{course.information.title}</span>
-                  <Button onClick={() => handleSelectCourse(course.id)} variant="outline" size="sm">
+                <li
+                  key={course.id}
+                  className="flex items-center justify-between bg-muted p-4 rounded-lg"
+                >
+                  <span className="font-medium">
+                    {course.information.title}
+                  </span>
+                  <Button
+                    onClick={() => handleSelectCourse(course.id)}
+                    variant="outline"
+                    size="sm"
+                  >
                     <Edit className="mr-2 h-4 w-4" /> Edit
                   </Button>
                 </li>
@@ -91,5 +109,5 @@ export default function CoursePage() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }
