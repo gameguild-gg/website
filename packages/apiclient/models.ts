@@ -835,7 +835,7 @@ export namespace Api {
 		 */
 		order: number;
 		course: Api.CourseEntity;
-		chapter: Api.CourseEntity;
+		chapter: Api.ChapterEntity;
 	}
 	
 	/**

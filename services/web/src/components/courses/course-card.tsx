@@ -1,55 +1,55 @@
-'use client';
+import Link from 'next/link';
+import Image from 'next/image';
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Api } from '@game-guild/apiclient';
+import CourseEntity = Api.CourseEntity;
 
-import React from 'react';
-import { useRouter } from 'next/navigation';
-import { PostOrPage, Tag } from '@tryghost/content-api';
+interface CourseCardProps {
+  course: CourseEntity;
+}
 
-type Props = {
-  post: PostOrPage;
-};
-
-export function CourseCard({ post }: Readonly<Props>) {
-  const router = useRouter();
-
-  const onClick = () => {
-    router.push(`/course/${post.slug}`);
-  };
+export function CourseCard({ course }: CourseCardProps) {
+  const imageUrl = course.thumbnail
+    ? `${course.thumbnail.path}/${course.thumbnail.filename}`
+    : '/placeholder.svg?height=200&width=300';
 
   return (
-    <div
-      className="p-[10px] align-top overflow-hidden text-white text-left cursor-pointer"
-      key={post.id}
-      onClick={() => onClick()}
-    >
-      {post.feature_image && post.title && (
-        <img
-          src={post.feature_image}
-          alt={post.title}
-          className="object-cover w-full md:w-[380px] h-[253px]"
-        />
-      )}
-
-      {post.tags &&
-        post.tags.map((tag: Tag) => (
-          <span
-            className="text-neutral-500 p-1 py-0 mr-1 mt-2 ml-[-4px]"
-            key={tag.id}
-          >
-            {tag.name}
-          </span>
-        ))}
-
-      <div className="text-2xl">{post.title}</div>
-      <br />
-      <div>{post.custom_excerpt || post.excerpt}</div>
-      {post.published_at && (
-        <div className="text-neutral-500 p-1 py-0 ml-[-4px] pt-2">
-          {new Date(post.published_at).toLocaleDateString('pt-BR', {
-            dateStyle: 'short',
-          })}{' '}
-          • {post.reading_time} min. de leitura
-        </div>
-      )}
-    </div>
+    <Card className="overflow-hidden">
+      <Image
+        src={imageUrl}
+        alt={course.thumbnail?.description || course.title}
+        width={course.thumbnail?.width || 300}
+        height={course.thumbnail?.height || 200}
+        className="w-full object-cover h-48"
+      />
+      <CardHeader>
+        <CardTitle>{course.title}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <p className="text-sm text-gray-600">{course.summary}</p>
+        <p className="mt-2 font-semibold">
+          {course.price === 0 ? (
+            <span className="text-green-600">Free Course</span>
+          ) : (
+            <span>${course.price.toFixed(2)}</span>
+          )}
+        </p>
+        {course.subscriptionAccess && (
+          <p className="text-sm text-blue-600">Requires Subscription</p>
+        )}
+      </CardContent>
+      <CardFooter>
+        <Link href={`/course/${course.slug}`} passHref>
+          <Button>View Course</Button>
+        </Link>
+      </CardFooter>
+    </Card>
   );
 }

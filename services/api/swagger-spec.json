@@ -9573,76 +9573,6 @@
           "pageCount"
         ]
       },
-      "LectureEntity": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "updatedAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "owner": {
-            "$ref": "#/components/schemas/UserEntity"
-          },
-          "editors": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/UserEntity"
-            }
-          },
-          "slug": {
-            "type": "string"
-          },
-          "title": {
-            "type": "string"
-          },
-          "summary": {
-            "type": "string"
-          },
-          "body": {
-            "type": "string"
-          },
-          "visibility": {
-            "type": "string",
-            "enum": [
-              "DRAFT",
-              "PUBLISHED",
-              "FUTURE",
-              "PENDING",
-              "PRIVATE",
-              "TRASH"
-            ]
-          },
-          "thumbnail": {
-            "$ref": "#/components/schemas/ImageEntity"
-          },
-          "order": {
-            "type": "number"
-          },
-          "course": {
-            "$ref": "#/components/schemas/CourseEntity"
-          },
-          "chapter": {
-            "$ref": "#/components/schemas/CourseEntity"
-          }
-        },
-        "required": [
-          "createdAt",
-          "updatedAt",
-          "slug",
-          "title",
-          "order",
-          "course",
-          "chapter"
-        ]
-      },
       "ChapterEntity": {
         "type": "object",
         "properties": {
@@ -9713,6 +9643,76 @@
           "slug",
           "title",
           "course"
+        ]
+      },
+      "LectureEntity": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "owner": {
+            "$ref": "#/components/schemas/UserEntity"
+          },
+          "editors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UserEntity"
+            }
+          },
+          "slug": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "summary": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "DRAFT",
+              "PUBLISHED",
+              "FUTURE",
+              "PENDING",
+              "PRIVATE",
+              "TRASH"
+            ]
+          },
+          "thumbnail": {
+            "$ref": "#/components/schemas/ImageEntity"
+          },
+          "order": {
+            "type": "number"
+          },
+          "course": {
+            "$ref": "#/components/schemas/CourseEntity"
+          },
+          "chapter": {
+            "$ref": "#/components/schemas/ChapterEntity"
+          }
+        },
+        "required": [
+          "createdAt",
+          "updatedAt",
+          "slug",
+          "title",
+          "order",
+          "course",
+          "chapter"
         ]
       },
       "CourseEntity": {

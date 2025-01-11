@@ -179,7 +179,7 @@ Table lecture_editors_user {
 
 Table LectureEntity {
   body text
-  chapter CourseEntity
+  chapter ChapterEntity
   course CourseEntity
   createdAt timestamp
   id uuid
@@ -373,7 +373,6 @@ Ref: JobPostEntity.editors <> UserEntity.id
 Ref: JobPostEntity.job_tags <> JobTagEntity.id
 Ref: JobPostEntity.owner > UserEntity.id
 Ref: JobPostEntity.thumbnail > ImageEntity.id
-Ref: LectureEntity.chapter > CourseEntity.chapters
 Ref: LectureEntity.editors <> UserEntity.id
 Ref: LectureEntity.owner > UserEntity.id
 Ref: LectureEntity.thumbnail > ImageEntity.id

@@ -4,6 +4,7 @@ import { CourseEntity } from './course.entity';
 import { ApiProperty } from '@nestjs/swagger';
 import { IsArray, IsNotEmpty, IsNumber, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
+import { ChapterEntity } from './chapter.entity';
 
 @Entity({ name: 'lecture' })
 export class LectureEntity extends ContentBase {
@@ -23,9 +24,9 @@ export class LectureEntity extends ContentBase {
   course: CourseEntity;
 
   // a lecture belongs to a chapter
-  @ManyToOne(() => CourseEntity, (course) => course.chapters)
-  @ApiProperty({ type: () => CourseEntity })
+  @ManyToOne(() => ChapterEntity, (chapter) => chapter.lectures)
+  @ApiProperty({ type: () => ChapterEntity })
   @ValidateNested()
-  @Type(() => CourseEntity)
-  chapter: CourseEntity;
+  @Type(() => ChapterEntity)
+  chapter: ChapterEntity;
 }

@@ -6,14 +6,17 @@ export const COURSES: CourseEntity[] = [
   {
     id: '1',
     slug: 'python',
-    author: {
+    owner: {
       username: 'tolstenko',
     } as UserEntity,
-
-    description: 'A JavaScript library for building user interfaces',
-    thumbnailUrl:
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/React-icon.svg/320px-React-icon.svg.png',
-  },
+    title: 'Python to Programming through Python',
+    summary:
+      'Students will learn the history and basics of computing as well as the fundamentals of Python programming. General topics include: the history of computing, number systems, Boolean logic, algorithm design and implementation, and modern computer organization. Programming topics include: memory and variables, data types, mathematical operations, basic file I/O, decision-making, repetitions, functions, and list basics.',
+    thumbnail: {
+      path: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/Python-logo-notext.svg',
+      filename: 'Python-logo-notext.svg',
+    } as Api.ImageEntity,
+  } as CourseEntity,
   // {
   //   id: '2',
   //   slug: 'vue',
