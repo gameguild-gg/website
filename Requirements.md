@@ -75,7 +75,7 @@ Game Marketplace:
 General Meetings:
 
 - Meetings can be created by any logged-in user on the platform at any time.
-- Users can submit meetings any meeting including workshops, lectures, or other activities related to game development.
+- Users can submit any meetings including workshops, lectures, or other activities related to game development.
 - The meetings are available for the community to view, attend, and participate in.
 
 Choice Casts:
