@@ -338,7 +338,6 @@ export namespace Api {
 		 */
 		price: number;
 		subscriptionAccess: boolean;
-		author: Api.UserEntity;
 		lectures: Api.LectureEntity[];
 		chapters: Api.ChapterEntity[];
 	}
@@ -905,46 +904,6 @@ export namespace Api {
 		message: string;
 	}
 
-	export interface PostEntity {
-		id?: string;
-		createdAt: string;
-		updatedAt: string;
-		owner?: Api.UserEntity;
-		editors?: Api.UserEntity[];
-		slug: string;
-		title: string;
-		summary?: string;
-		body?: string;
-		visibility?: Api.PostEntity.Visibility;
-		thumbnail?: Api.ImageEntity;
-	}
-	
-	/**
-	 * @export
-	 * @namespace PostEntity
-	 */
-	export namespace PostEntity {
-		export type Visibility =
-			'DRAFT' |
-			'PUBLISHED' |
-			'FUTURE' |
-			'PENDING' |
-			'PRIVATE' |
-			'TRASH'
-		
-		export namespace Visibility {
-			export enum Enum {
-				DRAFT = 'DRAFT',
-				PUBLISHED = 'PUBLISHED',
-				FUTURE = 'FUTURE',
-				PENDING = 'PENDING',
-				PRIVATE = 'PRIVATE',
-				TRASH = 'TRASH'
-			}
-		}
-	
-	}
-
 	export interface ProjectEntity {
 		id?: string;
 		createdAt: string;
@@ -1356,8 +1315,6 @@ export namespace Api {
 		 * @memberof UserEntity
 		 */
 		elo: number;
-		posts: Api.PostEntity[];
-		courses: Api.CourseEntity[];
 	}
 
 	export interface UserProfileControllerUpdateProfilePictureRequest {

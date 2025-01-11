@@ -30,7 +30,7 @@ export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMoreOpen, setIsMoreOpen] = useState(false);
 
-  const menuItems = ['Blog', 'Games', 'Tests', 'Jams', 'Jobs'];
+  const menuItems = ['Courses', 'Blog', 'Projects', 'Tests', 'Jams', 'Jobs'];
   const moreItems = [
     'Roadmap',
     'Contributors',

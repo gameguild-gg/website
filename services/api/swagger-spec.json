@@ -9389,7 +9389,7 @@
           "updatedAt"
         ]
       },
-      "PostEntity": {
+      "UserEntity": {
         "type": "object",
         "properties": {
           "id": {
@@ -9404,48 +9404,144 @@
             "type": "string",
             "format": "date-time"
           },
-          "owner": {
-            "$ref": "#/components/schemas/UserEntity"
+          "username": {
+            "type": "string"
           },
-          "editors": {
+          "email": {
+            "type": "string"
+          },
+          "emailVerified": {
+            "type": "boolean"
+          },
+          "passwordHash": {
+            "type": "string"
+          },
+          "passwordSalt": {
+            "type": "string"
+          },
+          "facebookId": {
+            "type": "string"
+          },
+          "googleId": {
+            "type": "string"
+          },
+          "githubId": {
+            "type": "string"
+          },
+          "appleId": {
+            "type": "string"
+          },
+          "linkedinId": {
+            "type": "string"
+          },
+          "twitterId": {
+            "type": "string"
+          },
+          "walletAddress": {
+            "type": "string"
+          },
+          "profile": {
+            "$ref": "#/components/schemas/UserProfileEntity"
+          },
+          "competitionSubmissions": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/UserEntity"
+              "$ref": "#/components/schemas/CompetitionSubmissionEntity"
             }
           },
-          "slug": {
-            "type": "string"
-          },
-          "title": {
-            "type": "string"
-          },
-          "summary": {
-            "type": "string"
-          },
-          "body": {
-            "type": "string"
-          },
-          "visibility": {
-            "type": "string",
-            "enum": [
-              "DRAFT",
-              "PUBLISHED",
-              "FUTURE",
-              "PENDING",
-              "PRIVATE",
-              "TRASH"
-            ]
-          },
-          "thumbnail": {
-            "$ref": "#/components/schemas/ImageEntity"
+          "elo": {
+            "type": "number"
           }
         },
         "required": [
           "createdAt",
           "updatedAt",
-          "slug",
-          "title"
+          "username",
+          "email",
+          "emailVerified",
+          "passwordHash",
+          "passwordSalt",
+          "facebookId",
+          "googleId",
+          "githubId",
+          "appleId",
+          "linkedinId",
+          "twitterId",
+          "walletAddress",
+          "profile",
+          "competitionSubmissions",
+          "elo"
         ]
+      },
+      "LocalSignInResponseDto": {
+        "type": "object",
+        "properties": {
+          "accessToken": {
+            "type": "string"
+          },
+          "refreshToken": {
+            "type": "string"
+          },
+          "user": {
+            "$ref": "#/components/schemas/UserEntity"
+          }
+        },
+        "required": [
+          "accessToken",
+          "refreshToken",
+          "user"
+        ]
+      },
+      "EthereumSigninChallengeRequestDto": {
+        "type": "object",
+        "properties": {
+          "address": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "address"
+        ]
+      },
+      "EthereumSigninChallengeResponseDto": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "message"
+        ]
+      },
+      "EthereumSigninValidateRequestDto": {
+        "type": "object",
+        "properties": {
+          "address": {
+            "type": "string"
+          },
+          "signature": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "address",
+          "signature"
+        ]
+      },
+      "UpdateUserProfileDto": {
+        "type": "object",
+        "properties": {
+          "bio": {
+            "type": "string"
+          },
+          "givenName": {
+            "type": "string"
+          },
+          "familyName": {
+            "type": "string"
+          }
+        }
       },
       "GetManyCourseEntityResponseDto": {
         "type": "object",
@@ -9675,9 +9771,6 @@
           "subscriptionAccess": {
             "type": "boolean"
           },
-          "author": {
-            "$ref": "#/components/schemas/UserEntity"
-          },
           "lectures": {
             "type": "array",
             "items": {
@@ -9698,178 +9791,9 @@
           "title",
           "price",
           "subscriptionAccess",
-          "author",
           "lectures",
           "chapters"
         ]
-      },
-      "UserEntity": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "updatedAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "username": {
-            "type": "string"
-          },
-          "email": {
-            "type": "string"
-          },
-          "emailVerified": {
-            "type": "boolean"
-          },
-          "passwordHash": {
-            "type": "string"
-          },
-          "passwordSalt": {
-            "type": "string"
-          },
-          "facebookId": {
-            "type": "string"
-          },
-          "googleId": {
-            "type": "string"
-          },
-          "githubId": {
-            "type": "string"
-          },
-          "appleId": {
-            "type": "string"
-          },
-          "linkedinId": {
-            "type": "string"
-          },
-          "twitterId": {
-            "type": "string"
-          },
-          "walletAddress": {
-            "type": "string"
-          },
-          "profile": {
-            "$ref": "#/components/schemas/UserProfileEntity"
-          },
-          "competitionSubmissions": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/CompetitionSubmissionEntity"
-            }
-          },
-          "elo": {
-            "type": "number"
-          },
-          "posts": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/PostEntity"
-            }
-          },
-          "courses": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/CourseEntity"
-            }
-          }
-        },
-        "required": [
-          "createdAt",
-          "updatedAt",
-          "username",
-          "email",
-          "emailVerified",
-          "passwordHash",
-          "passwordSalt",
-          "facebookId",
-          "googleId",
-          "githubId",
-          "appleId",
-          "linkedinId",
-          "twitterId",
-          "walletAddress",
-          "profile",
-          "competitionSubmissions",
-          "elo",
-          "posts",
-          "courses"
-        ]
-      },
-      "LocalSignInResponseDto": {
-        "type": "object",
-        "properties": {
-          "accessToken": {
-            "type": "string"
-          },
-          "refreshToken": {
-            "type": "string"
-          },
-          "user": {
-            "$ref": "#/components/schemas/UserEntity"
-          }
-        },
-        "required": [
-          "accessToken",
-          "refreshToken",
-          "user"
-        ]
-      },
-      "EthereumSigninChallengeRequestDto": {
-        "type": "object",
-        "properties": {
-          "address": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "address"
-        ]
-      },
-      "EthereumSigninChallengeResponseDto": {
-        "type": "object",
-        "properties": {
-          "message": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "message"
-        ]
-      },
-      "EthereumSigninValidateRequestDto": {
-        "type": "object",
-        "properties": {
-          "address": {
-            "type": "string"
-          },
-          "signature": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "address",
-          "signature"
-        ]
-      },
-      "UpdateUserProfileDto": {
-        "type": "object",
-        "properties": {
-          "bio": {
-            "type": "string"
-          },
-          "givenName": {
-            "type": "string"
-          },
-          "familyName": {
-            "type": "string"
-          }
-        }
       },
       "CreateProjectDto": {
         "type": "object",

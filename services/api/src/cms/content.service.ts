@@ -27,7 +27,8 @@ export class ContentService {
   async createEmptyCourse(user: UserEntity): Promise<CourseEntity> {
     let course = new CourseEntity();
     user = await this.userService.findOne({ where: { id: user.id } });
-    course.author = user;
+    course.owner = user;
+    course.editors = [user];
     course = await this.courseRepository.save(course);
 
     return this.courseRepository.findOne({
