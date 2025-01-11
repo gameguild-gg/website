@@ -1,3 +1,10 @@
+## [1.8.3](https://github.com/gameguild-gg/website/compare/v1.8.2...v1.8.3) (2025-01-11)
+
+
+### Bug Fixes
+
+* **contributors:** add a link to the stargazers ([6ed6cf4](https://github.com/gameguild-gg/website/commit/6ed6cf4048eb0860db02258870011018b06f7a86))
+
 ## [1.8.2](https://github.com/gameguild-gg/website/compare/v1.8.1...v1.8.2) (2025-01-10)
 
 
