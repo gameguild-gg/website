@@ -138,17 +138,19 @@ export default async function ContributorsPage() {
         Repo Visualization
       </h2>
       <div className="flex flex-wrap justify-center gap-4">
-        <img
-          src="https://api.star-history.com/svg?repos=gameguild-gg/website&type=Date"
-          style={{
-            width: '30%',
-            height: 'auto',
-            minWidth: '600px',
-            minHeight: '400px',
-          }}
-          className="w-full max-w-lg mx-auto"
-          alt="star history"
-        />
+        <Link href="https://github.com/gameguild-gg/website/stargazers">
+          <img
+            src="https://api.star-history.com/svg?repos=gameguild-gg/website&type=Date"
+            style={{
+              width: '30%',
+              height: 'auto',
+              minWidth: '600px',
+              minHeight: '400px',
+            }}
+            className="w-full max-w-lg mx-auto"
+            alt="star history"
+          />
+        </Link>
         <video
           className="w-full max-w-lg mx-auto"
           src="https://gameguild-gg.github.io/website/gource.mp4"
