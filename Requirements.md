@@ -74,7 +74,7 @@ Game Marketplace:
 
 General Meetings:
 
-- Meetings can be created by any logged-in user on the platform at any time.
+- Meetings can be created by any logged-in user on the platform anytime.
 - Users can submit any meetings including workshops, lectures, or other activities related to game development.
 - The meetings are available for the community to view, attend, and participate in.
 
@@ -95,7 +95,7 @@ Game Jams:
 Interaction with Events:
 
 - Users can browse a rolling list of available events, including previously approved submissions.
-- Platform tokens can be used to "buy" access or reserve spots in events submitted by any user.
+- Platform tokens can be used to purchase access or reserve spots for events submitted by any user.
 - Historical events remain in the database, allowing users to reengage with past events if the creator reactivates or republishes them.
 
 ### 2.5 Content Creators
