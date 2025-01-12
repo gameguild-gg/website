@@ -28,6 +28,10 @@ const nextConfig = {
     }
     config.module.rules.push(
       {
+        test: /\.md$/,
+        use: 'raw-loader',
+      },
+      {
         test: /\.wasm$/,
         type: 'asset/resource',
       },
