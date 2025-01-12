@@ -1,3 +1,10 @@
+## [1.9.1](https://github.com/gameguild-gg/website/compare/v1.9.0...v1.9.1) (2025-01-12)
+
+
+### Bug Fixes
+
+* **domain:** fix domain url ([33c43aa](https://github.com/gameguild-gg/website/commit/33c43aa85674c47bdffff381513a1e21c7e21962))
+
 # [1.9.0](https://github.com/gameguild-gg/website/compare/v1.8.3...v1.9.0) (2025-01-11)
 
 
