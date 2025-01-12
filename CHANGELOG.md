@@ -1,3 +1,10 @@
+# [1.10.0](https://github.com/gameguild-gg/website/compare/v1.9.1...v1.10.0) (2025-01-12)
+
+
+### Features
+
+* **markdown:** add support of local markdown files via raw-loader ([a9424eb](https://github.com/gameguild-gg/website/commit/a9424eb6256dfdd027c8574cd40f8fe65f397153))
+
 ## [1.9.1](https://github.com/gameguild-gg/website/compare/v1.9.0...v1.9.1) (2025-01-12)
 
 
