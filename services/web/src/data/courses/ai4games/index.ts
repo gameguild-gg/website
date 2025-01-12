@@ -4,31 +4,30 @@ import CourseEntity = Api.CourseEntity;
 import ImageEntity = Api.ImageEntity;
 import UserEntity = Api.UserEntity;
 import LectureEntity = Api.LectureEntity;
-
 import syllabusBody from './syllabus.md';
 
-/*
-Week 1: 1/13 - 1/17
-Week 2*: 1/20 - 1/24
-Week 3: 1/27 - 1/31
-Week 4: 2/3 - 2/7
-Week 5: 2/10 - 2/14
-Week 6: 2/17 - 2/21
-Week 7: 2/24 - 2/28
-Week 8: 3/3 - 3/7
-Week 9*: Spring Break 3/10 - 3/14
-Week 10: 3/17 - 3/21
-Week 11: 3/24 - 3/28
-Week 12: 3/31 - 4/4
-Week 13*: 4/7 - 4/11
-Week 14: 4/14 - 4/18
-Week 15: 4/21 - 4/25
-Week 16: Final Exams 4/28 - 5/2
-Semester begins Monday 1/13 | No Classes MLK Day: Monday, 1/20 | Spring Break 3/10-14  |  No Classes: Friday 4/11
-*/
+const course: CourseEntity = {} as CourseEntity;
 
-const syllabus: LectureEntity = {} as LectureEntity;
+course.title = 'AI for Games';
+course.slug = 'ai4games';
+course.summary =
+  'Students with a firm foundation in the basic techniques of artificial intelligence for games will apply their skills to program advanced pathfinding algorithms, artificial opponents, scripting tools and other real-time drivers for non-playable agents. The goal of the course is to provide finely-tuned artificial competition for players using all the rules followed by a human.';
+course.owner = {
+  id: '1',
+  username: 'admin',
+} as UserEntity;
 
-syllabus.body = syllabusBody;
+course.body = syllabusBody;
 
-export default syllabus;
+const lectures: LectureEntity[] = [];
+const chapters: ChapterEntity[] = [];
+
+course.chapters = chapters;
+course.lectures = lectures;
+course.thumbnail = {
+  filename: 'ai-in-gaming-main-1600-1.jpg',
+  path: 'https://pixelplex.io/wp-content/uploads/2021/11',
+  description: 'AI for Games course thumbnail',
+} as ImageEntity;
+
+export default course;

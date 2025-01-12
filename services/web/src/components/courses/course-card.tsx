@@ -35,7 +35,7 @@ export function CourseCard({ course }: CourseCardProps) {
       <CardContent>
         <p className="text-sm text-gray-600">{course.summary}</p>
         <p className="mt-2 font-semibold">
-          {course.price === 0 ? (
+          {course.price === 0 || course.price === undefined ? (
             <span className="text-green-600">Free Course</span>
           ) : (
             <span>${course.price.toFixed(2)}</span>

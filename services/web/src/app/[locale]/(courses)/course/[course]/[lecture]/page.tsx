@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import { courses } from '@/data/courses';
+import MarkdownRenderer from '@/components/markdown-renderer/markdown-renderer';
 
 export default function CourseLecturePage({
   params,
@@ -30,12 +31,7 @@ export default function CourseLecturePage({
       <p className="mb-4">
         Lecture {lecture.order} in Chapter {lecture.chapter.order}
       </p>
-      {lecture.body && (
-        <div
-          className="prose max-w-none"
-          dangerouslySetInnerHTML={{ __html: lecture.body }}
-        />
-      )}
+      {lecture.body && <MarkdownRenderer markdown={lecture.body} />}
     </div>
   );
 }

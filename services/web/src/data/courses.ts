@@ -4,6 +4,8 @@ import CourseEntity = Api.CourseEntity;
 import ImageEntity = Api.ImageEntity;
 import UserEntity = Api.UserEntity;
 import LectureEntity = Api.LectureEntity;
+// import course from '@/data/courses/ai4games' and name it ai4games
+import ai4games from '@/data/courses/ai4games';
 
 // Mock user data
 const mockUser: UserEntity = {
@@ -174,6 +176,7 @@ export const courses: CourseEntity[] = [
     subscriptionAccess: false,
     chapters: chapters,
   } as CourseEntity,
+  ai4games,
 ];
 
 // Associate the course to chapters and lectures

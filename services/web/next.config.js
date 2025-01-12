@@ -12,13 +12,15 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
   images: {
-    domains: [
-      'localhost',
-      'cdn.jsdelivr.net',
-      'avatars.githubusercontent.com',
-      'github.com',
-      'gameguild.gg',
-      'web.gameguild.gg',
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**',
+      },
+      {
+        protocol: 'http',
+        hostname: '**',
+      },
     ],
   },
   webpack: (config, { isServer }) => {

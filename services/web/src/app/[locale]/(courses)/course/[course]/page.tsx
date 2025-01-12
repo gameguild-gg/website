@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import { courses } from '@/data/courses';
+import MarkdownRenderer from '@/components/markdown-renderer/markdown-renderer';
 
 export default function CourseHomePage({
   params,
@@ -33,28 +34,29 @@ export default function CourseHomePage({
       <h2 className="text-2xl font-semibold mb-4">Welcome to {course.title}</h2>
       <p className="mb-4">{course.summary}</p>
       <div className="mb-4">
-        {course.price === 0 ? (
-          <p className="font-semibold text-green-600">This course is free!</p>
-        ) : (
+        {course.price ? (
           <p className="font-semibold">Price: ${course.price.toFixed(2)}</p>
+        ) : (
+          <p className="font-semibold text-green-600">This course is free!</p>
         )}
         {course.subscriptionAccess && (
           <p className="text-blue-600">This course requires a subscription</p>
         )}
       </div>
       <h3 className="text-xl font-semibold mb-2">Course Contents:</h3>
-      <ul className="list-disc pl-6">
-        {course.chapters.map((chapter) => (
-          <li key={chapter.id}>
-            {chapter.title}
-            <ul className="list-circle pl-6">
-              {chapter.lectures?.map((lecture) => (
-                <li key={lecture.id}>{lecture.title}</li>
-              ))}
-            </ul>
-          </li>
-        ))}
-      </ul>
+      <MarkdownRenderer markdown={course.body} />
+      {/*<ul className="list-disc pl-6">*/}
+      {/*  {course.chapters.map((chapter) => (*/}
+      {/*    <li key={chapter.id}>*/}
+      {/*      {chapter.title}*/}
+      {/*      <ul className="list-circle pl-6">*/}
+      {/*        {chapter.lectures?.map((lecture) => (*/}
+      {/*          <li key={lecture.id}>{lecture.title}</li>*/}
+      {/*        ))}*/}
+      {/*      </ul>*/}
+      {/*    </li>*/}
+      {/*  ))}*/}
+      {/*</ul>*/}
     </div>
   );
 }
