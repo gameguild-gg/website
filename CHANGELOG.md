@@ -1,3 +1,10 @@
+## [1.10.1](https://github.com/gameguild-gg/website/compare/v1.10.0...v1.10.1) (2025-01-12)
+
+
+### Bug Fixes
+
+* **markdown:** add markdown support for courses ([e349609](https://github.com/gameguild-gg/website/commit/e3496097c55f32d4c45c6f9635f1641c50499e50))
+
 # [1.10.0](https://github.com/gameguild-gg/website/compare/v1.9.1...v1.10.0) (2025-01-12)
 
 
