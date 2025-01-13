@@ -1,3 +1,10 @@
+## [1.10.6](https://github.com/gameguild-gg/website/compare/v1.10.5...v1.10.6) (2025-01-13)
+
+
+### Bug Fixes
+
+* **issues:** fix bug report link ([1e1e18d](https://github.com/gameguild-gg/website/commit/1e1e18d6674e04b523629649c1e0ee22618991f5))
+
 ## [1.10.5](https://github.com/gameguild-gg/website/compare/v1.10.4...v1.10.5) (2025-01-13)
 
 
