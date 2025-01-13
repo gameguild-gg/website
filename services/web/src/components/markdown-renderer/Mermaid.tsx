@@ -8,24 +8,41 @@ interface MermaidProps {
 }
 
 const Mermaid: React.FC<MermaidProps> = ({ chart }) => {
-  const ref = useRef<HTMLDivElement>(null);
-  console.log(chart);
-
-  const [svg, setSvg] = useState<string | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    mermaid.initialize({ startOnLoad: true });
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: 'dark',
+      securityLevel: 'strict',
+    });
 
-    if (ref.current) {
-      mermaid.render('mermaid', chart).then((result) => {
-        console.log(result);
-        ref.current!.innerHTML = result.svg;
-        setSvg(result.svg);
-      });
-    }
-  }, [chart, svg]);
+    const renderChart = async () => {
+      if (!containerRef.current) return;
 
-  return <div ref={ref} />;
+      try {
+        containerRef.current.innerHTML = '';
+        const { svg } = await mermaid.render(
+          `mermaid-${Math.random().toString(36).substr(2, 9)}`,
+          chart,
+        );
+        containerRef.current.innerHTML = svg;
+        setError(null);
+      } catch (err) {
+        console.error('Mermaid rendering failed:', err);
+        setError('Failed to render the diagram. Please check your syntax.');
+      }
+    };
+
+    renderChart();
+  }, [chart]);
+
+  if (error) {
+    return <div className="text-red-500">{error}</div>;
+  }
+
+  return <div ref={containerRef} className="mermaid-container" />;
 };
 
 export default Mermaid;
