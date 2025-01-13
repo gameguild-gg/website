@@ -31,7 +31,7 @@ export default function CourseLecturePage({
       <p className="mb-4">
         Lecture {lecture.order} in Chapter {lecture.chapter.order}
       </p>
-      {lecture.body && <MarkdownRenderer markdown={lecture.body} />}
+      {lecture.body && <MarkdownRenderer content={lecture.body} />}
     </div>
   );
 }

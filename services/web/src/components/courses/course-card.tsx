@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import Image from 'next/image';
 import {
   Card,
@@ -16,40 +15,46 @@ interface CourseCardProps {
 }
 
 export function CourseCard({ course }: CourseCardProps) {
-  const imageUrl = course.thumbnail
-    ? `${course.thumbnail.path}/${course.thumbnail.filename}`
-    : '/placeholder.svg?height=200&width=300';
+  console.log(`Rendering CourseCard for course: ${course.id}`);
 
-  return (
-    <Card className="overflow-hidden">
-      <Image
-        src={imageUrl}
-        alt={course.thumbnail?.description || course.title}
-        width={course.thumbnail?.width || 300}
-        height={course.thumbnail?.height || 200}
-        className="w-full object-cover h-48"
-      />
-      <CardHeader>
-        <CardTitle>{course.title}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <p className="text-sm text-gray-600">{course.summary}</p>
-        <p className="mt-2 font-semibold">
-          {course.price === 0 || course.price === undefined ? (
-            <span className="text-green-600">Free Course</span>
-          ) : (
-            <span>${course.price.toFixed(2)}</span>
+  try {
+    const imageUrl = course.thumbnail
+      ? `${course.thumbnail.path}/${course.thumbnail.filename}`
+      : '/placeholder.svg?height=200&width=300';
+
+    return (
+      <Card className="overflow-hidden h-full flex flex-col">
+        <div className="relative h-48">
+          <Image
+            src={imageUrl}
+            alt={course.thumbnail?.description || course.title}
+            fill
+            className="object-cover"
+          />
+        </div>
+        <CardHeader>
+          <CardTitle>{course.title}</CardTitle>
+        </CardHeader>
+        <CardContent className="flex-grow">
+          <p className="text-sm text-gray-600">{course.summary}</p>
+          <p className="mt-2 font-semibold">
+            {course.price ? (
+              <span>${course.price.toFixed(2)}</span>
+            ) : (
+              <span className="text-green-600">Free Course</span>
+            )}
+          </p>
+          {course.subscriptionAccess && (
+            <p className="text-sm text-blue-600">Requires Subscription</p>
           )}
-        </p>
-        {course.subscriptionAccess && (
-          <p className="text-sm text-blue-600">Requires Subscription</p>
-        )}
-      </CardContent>
-      <CardFooter>
-        <Link href={`/course/${course.slug}`} passHref>
-          <Button>View Course</Button>
-        </Link>
-      </CardFooter>
-    </Card>
-  );
+        </CardContent>
+        <CardFooter>
+          <Button className="w-full">View Course</Button>
+        </CardFooter>
+      </Card>
+    );
+  } catch (error) {
+    console.error(`Error rendering CourseCard for course ${course.id}:`, error);
+    return <div>Error rendering course card</div>;
+  }
 }

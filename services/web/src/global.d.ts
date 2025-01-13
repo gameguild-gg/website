@@ -7,8 +7,3 @@ declare global {
     Comlink: typeof Comlink;
   }
 }
-
-declare module 'remark-admonitions' {
-  const remarkAdmonitions: any;
-  export default remarkAdmonitions;
-}

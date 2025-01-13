@@ -30,9 +30,9 @@ Upon completion of the Advanced AI for Games, students should be able to:
 - **Integrate** advanced AI seamlessly into game systems for cohesive environments;
 - **Consider** societal impact and consequences of AI applications in gaming;
 
-!!! Warning
-
-    This is a work in progress schedule. It is subject to change. Every change will be communicated in class.
+:::warning
+This is a work in progress schedule. It is subject to change. Every change will be communicated in class.
+::::
 
 ## Schedule for Spring 2025
 

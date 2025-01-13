@@ -32,7 +32,9 @@ export default function CourseHomePage({
         className="w-full object-cover h-64 rounded-lg mb-6"
       />
       <h2 className="text-2xl font-semibold mb-4">Welcome to {course.title}</h2>
-      <p className="mb-4">{course.summary}</p>
+      <div className="mb-4">
+        <MarkdownRenderer content={course.summary || ''} />
+      </div>
       <div className="mb-4">
         {course.price ? (
           <p className="font-semibold">Price: ${course.price.toFixed(2)}</p>
@@ -44,19 +46,24 @@ export default function CourseHomePage({
         )}
       </div>
       <h3 className="text-xl font-semibold mb-2">Course Contents:</h3>
-      <MarkdownRenderer markdown={course.body} />
-      {/*<ul className="list-disc pl-6">*/}
-      {/*  {course.chapters.map((chapter) => (*/}
-      {/*    <li key={chapter.id}>*/}
-      {/*      {chapter.title}*/}
-      {/*      <ul className="list-circle pl-6">*/}
-      {/*        {chapter.lectures?.map((lecture) => (*/}
-      {/*          <li key={lecture.id}>{lecture.title}</li>*/}
-      {/*        ))}*/}
-      {/*      </ul>*/}
-      {/*    </li>*/}
-      {/*  ))}*/}
-      {/*</ul>*/}
+      <ul className="list-disc pl-6">
+        {course.chapters.map((chapter) => (
+          <li key={chapter.id}>
+            {chapter.title}
+            <ul className="list-circle pl-6">
+              {chapter.lectures?.map((lecture) => (
+                <li key={lecture.id}>{lecture.title}</li>
+              ))}
+            </ul>
+          </li>
+        ))}
+      </ul>
+      {course.body && (
+        <div className="mt-8">
+          <h3 className="text-xl font-semibold mb-2">Course Description:</h3>
+          <MarkdownRenderer content={course.body} />
+        </div>
+      )}
     </div>
   );
 }

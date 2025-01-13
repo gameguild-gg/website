@@ -1,6 +1,7 @@
+'use client';
 import Link from 'next/link';
-
 import { notFound } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { courses } from '@/data/courses';
 
 export default function CourseLayout({
@@ -20,6 +21,8 @@ export default function CourseLayout({
     notFound();
   }
 
+  const pathname = usePathname();
+
   return (
     <div className="container mx-auto py-8">
       <h1 className="text-3xl font-bold mb-6">{course.title}</h1>
@@ -30,15 +33,35 @@ export default function CourseLayout({
               <li className="mb-4 sm:mb-2">
                 <Link
                   href={`/course/${course.slug}`}
-                  className="text-blue-600 hover:underline font-semibold block py-2 px-3 bg-gray-100 rounded-md"
+                  className={`text-blue-600 hover:underline font-semibold block py-2 px-3 rounded-md ${
+                    pathname === `/course/${course.slug}`
+                      ? 'bg-blue-100 text-blue-800'
+                      : 'bg-gray-100'
+                  }`}
                 >
                   Course Home
                 </Link>
               </li>
               {course.chapters.map((chapter) => (
                 <li key={chapter.id} className="mb-4 sm:mb-2">
-                  <details className="group">
-                    <summary className="font-semibold cursor-pointer list-none flex items-center justify-between p-3 bg-gray-100 rounded-md">
+                  <details
+                    className="group"
+                    open={chapter.lectures.some(
+                      (lecture) =>
+                        pathname === `/course/${course.slug}/${lecture.slug}`,
+                    )}
+                  >
+                    <summary
+                      className={`font-semibold cursor-pointer list-none flex items-center justify-between p-3 rounded-md ${
+                        chapter.lectures.some(
+                          (lecture) =>
+                            pathname ===
+                            `/course/${course.slug}/${lecture.slug}`,
+                        )
+                          ? 'bg-blue-100 text-blue-800'
+                          : 'bg-gray-100'
+                      }`}
+                    >
                       <span className="flex-grow">{chapter.title}</span>
                       <svg
                         className="w-5 h-5 transition-transform group-open:rotate-90"
@@ -58,7 +81,12 @@ export default function CourseLayout({
                         <li key={lecture.id}>
                           <Link
                             href={`/course/${course.slug}/${lecture.slug}`}
-                            className="text-blue-600 hover:underline block py-2 px-3 bg-gray-50 rounded-md"
+                            className={`block py-2 px-3 rounded-md ${
+                              pathname ===
+                              `/course/${course.slug}/${lecture.slug}`
+                                ? 'bg-blue-100 text-blue-800 font-bold'
+                                : 'bg-gray-50 text-blue-600 hover:underline'
+                            }`}
                           >
                             {lecture.title}
                           </Link>
