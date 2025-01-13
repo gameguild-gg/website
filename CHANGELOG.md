@@ -1,3 +1,10 @@
+## [1.10.2](https://github.com/gameguild-gg/website/compare/v1.10.1...v1.10.2) (2025-01-13)
+
+
+### Bug Fixes
+
+* replacing video with optimized Next/Image ([bdf68e3](https://github.com/gameguild-gg/website/commit/bdf68e36bd23efb5326b8c4a9e14cbde99fbfdbc))
+
 ## [1.10.1](https://github.com/gameguild-gg/website/compare/v1.10.0...v1.10.1) (2025-01-12)
 
 
