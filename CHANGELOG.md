@@ -1,3 +1,10 @@
+## [1.10.3](https://github.com/gameguild-gg/website/compare/v1.10.2...v1.10.3) (2025-01-13)
+
+
+### Bug Fixes
+
+* **code-highlight:** improved code higlight ([bf39613](https://github.com/gameguild-gg/website/commit/bf39613a72722864873b68c5448df65452bdd7ea))
+
 ## [1.10.2](https://github.com/gameguild-gg/website/compare/v1.10.1...v1.10.2) (2025-01-13)
 
 
