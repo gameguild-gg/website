@@ -21,9 +21,9 @@ const mockImage: ImageEntity = {
   createdAt: '2023-01-01T00:00:00Z',
   updatedAt: '2023-01-01T00:00:00Z',
   source: 'local',
-  path: '/images/courses',
+  path: 'https://www.python.org/static/community_logos/',
   originalFilename: 'python-course.jpg',
-  filename: 'python-course-1234567890.jpg',
+  filename: 'python-logo.png',
   mimetype: 'image/jpeg',
   sizeBytes: 1024000,
   hash: 'abc123def456',
@@ -178,7 +178,7 @@ Welcome to this comprehensive course on programming fundamentals using Python!
 
 This course will guide you through the fundamentals of programming using Python. You'll start with the basics and progress to more advanced concepts, all while building practical skills that you can apply to real-world problems.
 
-::: important "For Beginners"
+::: abstract "For Beginners"
 This course is designed for beginners. No prior programming experience is required!
 :::
 

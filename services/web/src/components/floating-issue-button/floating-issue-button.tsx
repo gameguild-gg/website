@@ -61,9 +61,9 @@ export function FloatingFeedbackButton({
   ) => {
     switch (action) {
       case 'bug_report':
-        return `https://github.com/gameguild-gg/website/issues/new?assignees=&labels=bug&projects=&template=bug_report.md&title=${encodeURIComponent('[Bug Report] ')}`;
+        return `https://github.com/gameguild-gg/website/issues/new?assignees=&labels=bug&projects=&template=bug_report.yml&title=${encodeURIComponent('[Bug Report] ')}`;
       case 'feature_request':
-        return `https://github.com/gameguild-gg/website/issues/new?assignees=&labels=enhancement&projects=&template=feature_request.md&title=${encodeURIComponent('[Feature Request] ')}`;
+        return `https://github.com/gameguild-gg/website/issues/new?assignees=&labels=enhancement&projects=&template=feature_request.yml&title=${encodeURIComponent('[Feature Request] ')}`;
       case 'discussion':
         return 'https://discord.gg/9CdJeQ2XKB';
     }
