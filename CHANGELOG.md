@@ -1,3 +1,10 @@
+## [1.10.4](https://github.com/gameguild-gg/website/compare/v1.10.3...v1.10.4) (2025-01-13)
+
+
+### Bug Fixes
+
+* **mermaid:** mermaid issue ([5de3658](https://github.com/gameguild-gg/website/commit/5de3658444d32d597a4fcadea53e503a3bedea1e))
+
 ## [1.10.3](https://github.com/gameguild-gg/website/compare/v1.10.2...v1.10.3) (2025-01-13)
 
 
