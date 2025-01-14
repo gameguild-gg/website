@@ -5,7 +5,7 @@ type Props = React.HTMLAttributes<HTMLDivElement> & {
 };
 
 function PageContent({ children }: Readonly<Props>) {
-  return <div className="w-full p-0 m-0">{children}</div>;
+  return <div className="w-full p-12 m-2">{children}</div>;
 }
 
 export { PageContent };

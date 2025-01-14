@@ -35,10 +35,15 @@ export default function Header() {
     'Roadmap',
     'Contributors',
     'Issues',
+    'Code of Conduct',
+    'Security',
     'Privacy Policy',
-    'Terms of Service' /*'Contact', 'About'*/,
+    'Terms of Service',
+    'Contact',
+    'About',
+    'License'
   ];
-  const languages = ['English', 'Spanish', 'French', 'German'];
+  const languages = ['English', 'Spanish', 'Portuguese', 'French', 'German'];
 
   const router = useRouter();
 
