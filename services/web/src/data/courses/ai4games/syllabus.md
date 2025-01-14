@@ -12,10 +12,9 @@ Students with a firm foundation in the basic techniques of artificial intelligen
 
 ## Student-centered Learning Outcomes
 
-<figure markdown>
-  [![Bloom's Taxonomy](https://cdn.vanderbilt.edu/vu-wp0/wp-content/uploads/sites/59/2019/03/27124326/Blooms-Taxonomy-650x366.jpg){ loading=lazy width="600" }](https://cft.vanderbilt.edu/guides-sub-pages/blooms-taxonomy/)
-  <figcaption><a href="https://cft.vanderbilt.edu/guides-sub-pages/blooms-taxonomy/">Bloom's Taxonomy on Learning Outcomes</a></figcaption>
-</figure>
+
+[![Bloom's Taxonomy](https://cdn.vanderbilt.edu/vu-wp0/wp-content/uploads/sites/59/2019/03/27124326/Blooms-Taxonomy-650x366.jpg)](https://cft.vanderbilt.edu/guides-sub-pages/blooms-taxonomy/)
+[Reference](https://cft.vanderbilt.edu/guides-sub-pages/blooms-taxonomy/)
 
 Upon completion of the Advanced AI for Games, students should be able to:
 
