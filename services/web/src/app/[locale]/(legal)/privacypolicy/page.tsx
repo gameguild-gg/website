@@ -68,7 +68,7 @@ export default async function Page() {
         <li>Objection: Object to the processing of your data for specific purposes.</li>
     </ul>
     <p>
-        To exercise these rights, please contact us at <a href="discord.com">Discord</a>, by user @tolstenko.
+        To exercise these rights, please contact us at <a href="https://discord.gg/QtRTgYRm">Discord</a>, by user @tolstenko.
     </p>
 
     <h2>6. Cookies</h2>
@@ -98,7 +98,7 @@ export default async function Page() {
     <h2>10. Contact Us</h2>
     <p>
         If you have any questions or concerns about this Privacy Policy, please contact us at 
-        <a href="discord.com">Discord</a>, by user @tolstenko.
+        <a href="https://discord.gg/QtRTgYRm">Discord</a>, by user @tolstenko.
     </p>
 
     <footer>

@@ -66,7 +66,7 @@ export default async function Page() {
     <h2>Attribution</h2>
     <p>
         This Code of Conduct is adapted from the <a href="http://contributor-covenant.org" target="_blank">Contributor Covenant</a>, 
-        version 1.4, available at <a href="http://contributor-covenant.org/version/1/4/" target="_blank">http://contributor-covenant.org/version/1/4</a>.
+        version 1.4, available at <a href="http://contributor-covenant.org/version/1/4/" target="_blank">http://contributor-covenant.org/version/1/4/code-of-conduct/</a>.
     </p>
 
     </div>

@@ -17,7 +17,7 @@ export default async function Page() {
           maintainers:
       </p>
       <ul>
-          <li>@tolstenko (<a href="mailto:tolstenko@gmail.com">email</a>)</li>
+          <li><a href="https://discord.gg/QtRTgYRm">Discord</a>, by user @tolstenko</li>
       </ul>
       <p>
           When reporting a security vulnerability, please provide as much detail as possible, including:

@@ -70,7 +70,7 @@ export default async function Page() {
       <h2>8. Contact Us</h2>
       <p>
           If you have any questions about these Terms, please contact us at 
-          <a href="mailto:support@yourplatform.com">support@yourplatform.com</a>.
+          <a href="https://discord.gg/QtRTgYRm">Discord</a>, by user @tolstenko
       </p>
 
       <h2>9. Governing Law</h2>
