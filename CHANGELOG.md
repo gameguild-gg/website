@@ -1,3 +1,10 @@
+## [1.10.8](https://github.com/gameguild-gg/website/compare/v1.10.7...v1.10.8) (2025-01-14)
+
+
+### Bug Fixes
+
+* **contributors:** better filtering to remove some generated files ([540f465](https://github.com/gameguild-gg/website/commit/540f465a6e195e54763ceb2c237b8d620188dd26))
+
 ## [1.10.7](https://github.com/gameguild-gg/website/compare/v1.10.6...v1.10.7) (2025-01-14)
 
 
