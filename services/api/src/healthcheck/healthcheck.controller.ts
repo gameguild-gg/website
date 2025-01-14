@@ -27,7 +27,15 @@ export class HealthcheckController {
       const git = simpleGit();
 
       // Get the log with stats
-      const log = await git.raw(['log', '--numstat', '--format=%an']);
+      const log = await git.raw([
+        'log',
+        '--numstat',
+        '--format=%an',
+        '--',
+        ':(exclude)node_modules/*',
+        ':(exclude)**/package-lock.json',
+        ':(exclude)**/yarn.lock',
+      ]);
 
       // Parse the log to calculate stats
       const stats = {};
