@@ -1,3 +1,11 @@
+## [1.10.7](https://github.com/gameguild-gg/website/compare/v1.10.6...v1.10.7) (2025-01-14)
+
+
+### Bug Fixes
+
+* **contributors:** improve line count ([45b5abb](https://github.com/gameguild-gg/website/commit/45b5abbde0df91e4c812bfd1c336e0efb7c1bf8a))
+* **courses:** ai image ([33f0b72](https://github.com/gameguild-gg/website/commit/33f0b728760d29eeda27aa3dc9742c88d777bb58))
+
 ## [1.10.6](https://github.com/gameguild-gg/website/compare/v1.10.5...v1.10.6) (2025-01-13)
 
 
