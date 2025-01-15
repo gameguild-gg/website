@@ -10,6 +10,7 @@ const course: CourseEntity = {} as CourseEntity;
 
 course.title = 'AI for Games';
 course.slug = 'ai4games';
+course.id = '1';
 course.summary =
   'Students with a firm foundation in the basic techniques of artificial intelligence for games will apply their skills to program advanced pathfinding algorithms, artificial opponents, scripting tools and other real-time drivers for non-playable agents. The goal of the course is to provide finely-tuned artificial competition for players using all the rules followed by a human.';
 course.owner = {

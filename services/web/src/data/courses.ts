@@ -98,7 +98,7 @@ const courses: CourseEntity[] = [
   ai4games,
   portfolio,
   {
-    id: '1',
+    id: '3',
     createdAt: '2023-01-01T00:00:00Z',
     updatedAt: '2023-01-01T00:00:00Z',
     owner: mockUser,

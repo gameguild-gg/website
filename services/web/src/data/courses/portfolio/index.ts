@@ -8,10 +8,10 @@ import syllabusBody from './syllabus.md';
 import lecture01 from './chapters/week01/lecture.md';
 import assignment01 from './chapters/week01/assignment01.md';
 import assignment02 from './chapters/week01/assignment02.md';
-import { createLecture } from '@/data/coursesLib';
+import { createChapter, createLecture, mockImage } from '@/data/coursesLib';
 
 const course: CourseEntity = {} as CourseEntity;
-
+course.id = '2';
 course.title = `Game Developer's Portfolio`;
 course.slug = 'portfolio';
 course.summary =
@@ -20,6 +20,10 @@ course.owner = {
   id: '1',
   username: 'admin',
 } as UserEntity;
+course.visibility = Api.CourseEntity.Visibility.Enum.PUBLISHED;
+course.thumbnail = mockImage;
+course.price = 0;
+course.subscriptionAccess = false;
 
 course.body = syllabusBody;
 
@@ -58,7 +62,15 @@ week01lectures.push(
 const chapters: ChapterEntity[] = [];
 
 chapters.push(
-  createLecture('1', 'Week 1', 'Week 1', 'Week 1', '', 1) as ChapterEntity,
+  createChapter(
+    '1',
+    'week01',
+    'Week 01: Introduction to Portfolio',
+    'This week we will introduce the course, plan deliverables and analyze portfolios.',
+    1,
+    ['1-1', '1-2', '1-3'],
+    week01lectures,
+  ) as ChapterEntity,
 );
 
 for (let i = 0; i < week01lectures.length; i++) {

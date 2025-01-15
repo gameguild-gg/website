@@ -37,9 +37,9 @@ heard when I was young.
 source: https://www.betterup.com/blog/what-is-ikigai
 
 
-??? note
-
-    The above image links to a very good reference to understand the drives that you should be aware while taking decisions on your future career. Visit it.
+::: note
+The above image links to a very good reference to understand the drives that you should be aware while taking decisions on your future career. Visit it.
+:::
 
 You are a complex being and hard to define. I know. It is hard to put yourself in a frame or box, but this process is
 relevant to make the life of the others to evaluate if they want more you or not. If for some reason a person is
@@ -90,9 +90,9 @@ If you didnt published yot your projects on itchio, github, or any other platfor
 
 It is a good practice to always take screenshots, use web archive or any means to prove what you are stating. Some games got lost in time, they die or become unavailable in the long term.
 
-??? note "Personal advice"
-
-    In my case, we developed a very successful game in the past, and because of some problems with investors and judicial dispute, we had to shut down the game. But it was one of the most successful games in that year, it was nominated to Unity Awards and it was the most downloaded racing game. The only things that I can showcase now are print-screens, recorded videos and web-archive pages. So it is something that can make you survive the questions.
+::: note "Personal advice"
+In my case, we developed a very successful game in the past, and because of some problems with investors and judicial dispute, we had to shut down the game. But it was one of the most successful games in that year, it was nominated to Unity Awards and it was the most downloaded racing game. The only things that I can showcase now are print-screens, recorded videos and web-archive pages. So it is something that can make you survive the questions.
+:::
 
 ## Videos, photos, or lightweight web builds
 
