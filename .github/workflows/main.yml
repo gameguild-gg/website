@@ -76,6 +76,8 @@ jobs:
 
       - name: Revert commit
         run: |
+          git config --global user.email "revert@bot.com"
+          git config --global user.name "CI Bot"
           git revert -m 1 HEAD
           git push origin main --force
         env:
