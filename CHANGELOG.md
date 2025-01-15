@@ -1,3 +1,10 @@
+## [1.10.9](https://github.com/gameguild-gg/website/compare/v1.10.8...v1.10.9) (2025-01-15)
+
+
+### Bug Fixes
+
+* **apiclient:** regenerate api client ([37a5f00](https://github.com/gameguild-gg/website/commit/37a5f001cf6e4dcb8099937760a986613f99fb3d))
+
 ## [1.10.8](https://github.com/gameguild-gg/website/compare/v1.10.7...v1.10.8) (2025-01-14)
 
 
