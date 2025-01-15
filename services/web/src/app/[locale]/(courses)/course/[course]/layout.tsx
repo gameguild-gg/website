@@ -46,14 +46,14 @@ export default function CourseLayout({
                 <li key={chapter.id} className="mb-4 sm:mb-2">
                   <details
                     className="group"
-                    open={chapter.lectures.some(
+                    open={chapter.lectures?.some(
                       (lecture) =>
                         pathname === `/course/${course.slug}/${lecture.slug}`,
                     )}
                   >
                     <summary
                       className={`font-semibold cursor-pointer list-none flex items-center justify-between p-3 rounded-md ${
-                        chapter.lectures.some(
+                        chapter.lectures?.some(
                           (lecture) =>
                             pathname ===
                             `/course/${course.slug}/${lecture.slug}`,

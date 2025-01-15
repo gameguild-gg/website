@@ -1,57 +1,17 @@
-import ai4games from '@/data/courses/ai4games';
 import { Api } from '@game-guild/apiclient';
 import UserEntity = Api.UserEntity;
 import ImageEntity = Api.ImageEntity;
 import CourseEntity = Api.CourseEntity;
 import ChapterEntity = Api.ChapterEntity;
 import LectureEntity = Api.LectureEntity;
-
-// Mock user data
-const mockUser: UserEntity = {
-  id: '1',
-  createdAt: '2023-01-01T00:00:00Z',
-  updatedAt: '2023-01-01T00:00:00Z',
-  username: 'johndoe',
-  email: 'john@example.com',
-} as UserEntity;
-
-// Mock image data
-const mockImage: ImageEntity = {
-  id: '1',
-  createdAt: '2023-01-01T00:00:00Z',
-  updatedAt: '2023-01-01T00:00:00Z',
-  source: 'local',
-  path: 'https://www.python.org/static/community_logos/',
-  originalFilename: 'python-course.jpg',
-  filename: 'python-logo.png',
-  mimetype: 'image/jpeg',
-  sizeBytes: 1024000,
-  hash: 'abc123def456',
-  width: 1200,
-  height: 800,
-  description: 'Python programming course thumbnail',
-};
-
-// Create lectures (without course and chapter references initially)
-const createLecture = (
-  id: string,
-  slug: string,
-  title: string,
-  summary: string,
-  body: string,
-  order: number,
-): Omit<LectureEntity, 'course' | 'chapter'> => ({
-  id,
-  createdAt: '2023-01-01T00:00:00Z',
-  updatedAt: '2023-01-01T00:00:00Z',
-  owner: mockUser,
-  slug,
-  title,
-  summary,
-  body,
-  visibility: Api.CourseEntity.Visibility.Enum.PUBLISHED,
-  order,
-});
+import portfolio from '@/data/courses/portfolio';
+import ai4games from '@/data/courses/ai4games';
+import {
+  createChapter,
+  createLecture,
+  mockImage,
+  mockUser,
+} from '@/data/coursesLib';
 
 const lecturesData = [
   createLecture(
@@ -121,31 +81,6 @@ Remember to practice regularly and experiment with different code examples to re
   ),
 ];
 
-// Create chapters (without course reference initially)
-const createChapter = (
-  id: string,
-  slug: string,
-  title: string,
-  summary: string,
-  order: number,
-  lectureIds: string[],
-): Omit<ChapterEntity, 'course'> => ({
-  id,
-  createdAt: '2023-01-01T00:00:00Z',
-  updatedAt: '2023-01-01T00:00:00Z',
-  owner: mockUser,
-  slug,
-  title,
-  summary,
-  visibility: Api.CourseEntity.Visibility.Enum.PUBLISHED,
-  order,
-  lectures: lectureIds.map((id) => ({
-    ...lecturesData.find((l) => l.id === id)!,
-    course: {} as CourseEntity,
-    chapter: {} as ChapterEntity,
-  })),
-});
-
 const chaptersData = [
   createChapter(
     '1',
@@ -154,12 +89,14 @@ const chaptersData = [
     'Introduction to Python and setting up your environment',
     1,
     ['1-1', '1-2', '1-3'],
+    lecturesData as LectureEntity[],
   ),
 ];
 
 // Create the course
 const courses: CourseEntity[] = [
   ai4games,
+  portfolio,
   {
     id: '1',
     createdAt: '2023-01-01T00:00:00Z',
@@ -263,7 +200,7 @@ Let's embark on this exciting journey into the world of programming with Python!
 courses.forEach((course) => {
   course.chapters.forEach((chapter) => {
     (chapter as ChapterEntity).course = course;
-    chapter.lectures.forEach((lecture) => {
+    chapter.lectures?.forEach((lecture) => {
       (lecture as LectureEntity).course = course;
       (lecture as LectureEntity).chapter = chapter as ChapterEntity;
     });
