@@ -29,19 +29,20 @@ Upon completion of the Advanced AI for Games, students should be able to:
 - **Integrate** advanced AI seamlessly into game systems for cohesive environments;
 - **Consider** societal impact and consequences of AI applications in gaming;
 
-:::warning
+::: warning
 This is a work in progress schedule. It is subject to change. Every change will be communicated in class.
 ::::
 
 ## Schedule for Spring 2025
 
-Special dates:
+## Special dates:
 
 - Semester begins Monday 1/13 
 - No Classes MLK Day: Monday, 1/20
 - Spring Break 3/10-14  
 - No Classes: Friday 4/11
 
+### Weekly Schedule
 
 - Week 1:
     - 2025/01/14: Introduction to AI for Games

@@ -5,10 +5,10 @@ import ImageEntity = Api.ImageEntity;
 import UserEntity = Api.UserEntity;
 import LectureEntity = Api.LectureEntity;
 import syllabusBody from './syllabus.md';
+import { createChapter, createLecture, mockImage } from '@/data/coursesLib';
 import lecture01 from './chapters/week01/lecture.md';
 import assignment01 from './chapters/week01/assignment01.md';
 import assignment02 from './chapters/week01/assignment02.md';
-import { createChapter, createLecture, mockImage } from '@/data/coursesLib';
 
 const course: CourseEntity = {} as CourseEntity;
 course.id = '2';
