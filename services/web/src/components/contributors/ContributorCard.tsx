@@ -86,6 +86,15 @@ export default function ContributorCard(contributor: Contributor) {
             </span>
             )
           </p>
+          <p className="text-gray-600 text-center">
+            {'LoC/Contribs: '}
+            <span className="text-blue-500 font-bold">
+              {(
+                (contributor.additions + contributor.deletions) /
+                contributor.contributions
+              ).toFixed(2)}
+            </span>
+          </p>
         </Link>
       </div>
     </div>
