@@ -15,8 +15,6 @@ interface CourseCardProps {
 }
 
 export function CourseCard({ course }: CourseCardProps) {
-  console.log(`Rendering CourseCard for course: ${course.id}`);
-
   try {
     const imageUrl = course.thumbnail
       ? `${course.thumbnail.path}/${course.thumbnail.filename}`
@@ -54,7 +52,6 @@ export function CourseCard({ course }: CourseCardProps) {
       </Card>
     );
   } catch (error) {
-    console.error(`Error rendering CourseCard for course ${course.id}:`, error);
     return <div>Error rendering course card</div>;
   }
 }
