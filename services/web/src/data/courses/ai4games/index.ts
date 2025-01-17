@@ -5,6 +5,8 @@ import ImageEntity = Api.ImageEntity;
 import UserEntity = Api.UserEntity;
 import LectureEntity = Api.LectureEntity;
 import syllabusBody from './syllabus.md';
+import { createChapter, createLecture } from '@/data/coursesLib';
+import lecture01 from './chapters/week01/lecture.md';
 
 const course: CourseEntity = {} as CourseEntity;
 
@@ -30,5 +32,34 @@ course.thumbnail = {
   path: 'https://pixelplex.io/wp-content/uploads/2021/11',
   description: 'AI for Games course thumbnail',
 } as ImageEntity;
+
+const week01lectures: LectureEntity[] = [];
+week01lectures.push(
+  createLecture(
+    '1-1',
+    'randomness',
+    'Random and Noise',
+    'Random and Noise!',
+    lecture01,
+    1,
+  ) as LectureEntity,
+);
+
+chapters.push(
+  createChapter(
+    '1',
+    'week01',
+    'Week 1: Noise and Randomness',
+    'This week we will review basic concepts of AI for games and introduce the topics.',
+    1,
+    ['1-1'],
+    week01lectures,
+  ) as ChapterEntity,
+);
+
+for (let i = 0; i < week01lectures.length; i++) {
+  week01lectures[i].chapter = chapters[0];
+  week01lectures[i].course = course;
+}
 
 export default course;
