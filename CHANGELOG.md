@@ -1,3 +1,21 @@
+# [1.11.0](https://github.com/gameguild-gg/website/compare/v1.10.9...v1.11.0) (2025-01-18)
+
+
+### Bug Fixes
+
+* ci workflows ([fdd3610](https://github.com/gameguild-gg/website/commit/fdd36104cd2947bcce2de8fcc81a278294d66bdc))
+* **contributors:** add ratio of LoC and contributions ([8b3be0c](https://github.com/gameguild-gg/website/commit/8b3be0c764e6eb03ae4a1b3522105a284dcf7854))
+* **courses:** add courses material ([b6a1ceb](https://github.com/gameguild-gg/website/commit/b6a1ceb6908c01fc58b2e8d884a442f9f0d1f821))
+* **courses:** collapsible sections on course navigation ([491a187](https://github.com/gameguild-gg/website/commit/491a1870a0966e43033c88641cf46350a087d751))
+* **courses:** fix ai course syllabus and add lecture ([aaab8a2](https://github.com/gameguild-gg/website/commit/aaab8a23666c10df6fc22a34fa2462ae7d112a71))
+* **portfolio:** render properly the portfolio pages ([d4086ce](https://github.com/gameguild-gg/website/commit/d4086cec1c9d0ddae219e407fe08e170f1b049ed))
+* **python:** add python content ([5c127a1](https://github.com/gameguild-gg/website/commit/5c127a16661ab62cde2b42ab03689f4c4b11f0c9))
+
+
+### Features
+
+* **portfolio:** add new course entry: portfolio ([871eaf9](https://github.com/gameguild-gg/website/commit/871eaf9df234ce435c7f834623b82c9ce7f21bc0))
+
 ## [1.10.9](https://github.com/gameguild-gg/website/compare/v1.10.8...v1.10.9) (2025-01-15)
 
 
