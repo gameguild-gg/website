@@ -1,5 +1,11 @@
 # Introduction
 
+<details>
+<summary>Teacher notes</summary>
+- Day 1: Teacher Introduction; Course Overview; Expectations; FERPA Waiver consent form for using github; Form for receiving feedback about their expectations and topics; 
+- Day 2: Review expectations in class; Introduction to Randomness and Noise; Invite to explore fastnoise2 repo;
+</details>
+
 > A game developer portfolio is a collection of materials that showcase a game developer's skills, experience, and
 accomplishments. It is typically used by game developers to demonstrate their abilities to potential employers,
 clients, or partners, and may include a variety of materials such as:

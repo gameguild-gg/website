@@ -5,10 +5,9 @@ import ImageEntity = Api.ImageEntity;
 import UserEntity = Api.UserEntity;
 import LectureEntity = Api.LectureEntity;
 import syllabusBody from './syllabus.md';
-import { createChapter, createLecture, mockImage } from '@/data/coursesLib';
-import lecture01 from './chapters/week01/lecture.md';
-import assignment01 from './chapters/week01/assignment01.md';
-import assignment02 from './chapters/week01/assignment02.md';
+import { mockImage } from '@/data/coursesLib';
+
+import chapter01 from './chapters/week01/index';
 
 const course: CourseEntity = {} as CourseEntity;
 course.id = '2';
@@ -27,61 +26,18 @@ course.subscriptionAccess = false;
 
 course.body = syllabusBody;
 
-const week01lectures: LectureEntity[] = [];
-week01lectures.push(
-  createLecture(
-    '1-1',
-    'portfolio',
-    'Introduction to Portfolio',
-    'Welcome to the Game Developer Portfolio course!',
-    lecture01,
-    1,
-  ) as LectureEntity,
-);
-week01lectures.push(
-  createLecture(
-    '1-2',
-    'assignment-01',
-    'Assignment 01',
-    'Solo Project Proposal',
-    assignment01,
-    2,
-  ) as LectureEntity,
-);
-week01lectures.push(
-  createLecture(
-    '1-3',
-    'assignment-02',
-    'Assignment 02',
-    'Portfolio Analysis',
-    assignment02,
-    3,
-  ) as LectureEntity,
-);
-
 const chapters: ChapterEntity[] = [];
+chapters.push(chapter01);
 
-chapters.push(
-  createChapter(
-    '1',
-    'week01',
-    'Week 01: Introduction to Portfolio',
-    'This week we will introduce the course, plan deliverables and analyze portfolios.',
-    1,
-    ['1-1', '1-2', '1-3'],
-    week01lectures,
-  ) as ChapterEntity,
-);
+const lectures: LectureEntity[] = [];
+lectures.push(...chapter01.lectures);
 
-for (let i = 0; i < week01lectures.length; i++) {
-  week01lectures[i].chapter = chapters[0];
-  week01lectures[i].course = course;
-}
-
-chapters[0].course = course;
-
+// set course for all lectures and chapters
+lectures.forEach((lecture) => (lecture.course = course));
+chapters.forEach((chapter) => (chapter.course = course));
 course.chapters = chapters;
-course.lectures = week01lectures;
+course.lectures = lectures;
+
 course.thumbnail = {
   filename: 'sddefault.jpg',
   path: 'https://i.ytimg.com/vi/gh_uqsNakZc',

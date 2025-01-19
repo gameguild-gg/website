@@ -25,16 +25,11 @@ export default function CourseLayout({
   }
 
   const pathname = usePathname();
-  const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth >= 768);
-  const mainContentRef = useRef<HTMLDivElement>(null);
-
-  const scrollToContent = () => {
-    if (mainContentRef.current && window.innerWidth < 768) {
-      mainContentRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
-  };
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   useEffect(() => {
+    setIsSidebarOpen(window.innerWidth >= 768);
+
     const handleResize = () => {
       setIsSidebarOpen(window.innerWidth >= 768);
     };
@@ -42,6 +37,14 @@ export default function CourseLayout({
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  const mainContentRef = useRef<HTMLDivElement>(null);
+
+  const scrollToContent = () => {
+    if (mainContentRef.current && !isSidebarOpen) {
+      mainContentRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
 
   return (
     <div className="container mx-auto py-8">
@@ -52,7 +55,7 @@ export default function CourseLayout({
         >
           <nav className="sticky top-8 w-full">
             <ul className="space-y-4 sm:space-y-2">
-              {isSidebarOpen && window.innerWidth >= 768 && (
+              {isSidebarOpen && (
                 <li className="mb-4 sm:mb-2 hidden md:block">
                   <Button
                     variant="outline"
@@ -67,7 +70,7 @@ export default function CourseLayout({
                   </Button>
                 </li>
               )}
-              {!isSidebarOpen && window.innerWidth >= 768 && (
+              {!isSidebarOpen && (
                 <Button
                   variant="outline"
                   size="icon"

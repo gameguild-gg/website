@@ -34,7 +34,7 @@ Upot completion of the Python Programming course, students should be able to:
 
 ::: warning
 This is a work in progress schedule. It is subject to change. Every change will be communicated in class.
-::::
+:::
 
 ## Special dates:
 

@@ -333,3 +333,34 @@ code.hljs {
     text-decoration: underline;
 }
 
+
+/* Styles for details and summary tags */
+details {
+    border: 1px solid #e2e8f0;
+    border-radius: 0.375rem;
+    padding: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+summary {
+    font-weight: bold;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 0.25rem;
+    background-color: #f7fafc;
+    transition: background-color 0.3s ease;
+}
+
+summary:hover {
+    background-color: #edf2f7;
+}
+
+details[open] summary {
+    border-bottom: 1px solid #e2e8f0;
+    margin-bottom: 0.5rem;
+}
+
+details[open] {
+    padding-bottom: 0.5rem;
+}
+

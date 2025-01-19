@@ -1,5 +1,13 @@
 # Random and Noise
 
+<details>
+<summary>Teacher notes</summary>
+
+- **Day 1**: Teacher Introduction; Course Overview; Expectations; FERPA Waiver consent form for using github; Form for receiving feedback about their expectations and topics; 
+- **Day 2**: Review expectations in class; Introduction to Randomness and Noise; Invite to explore fastnoise2 repo and share their generations with noise transformations;
+
+</details>
+
 ## Randomness in Games
 
 Randomness gives diversity and unpredictability to games, which in many times might increase the fun and replayability of a game. However, randomness can also be a double-edged sword, as it can lead to unfairness, frustration, and lack of control for players. So we need to fine tune and control randomness in a way it can enhance the gameplay experience. For more information about the psychology behind it, check out this [Octalysis article](https://octalysisgroup.com/2015/06/unpredictability-curiosity-yang-and-ying-of-gamification/).
@@ -93,3 +101,11 @@ Randomness can be measured in different ways, and some of the most common metric
 6. Run the executable
 7. Go to the [repo home](https://github.com/Auburn/FastNoise2) and try to implement the same scenario with the same blocks
 8. Share your results with the class
+
+Some generated content by the students on class can be found [here](https://imgur.com/gallery/procedural-content-generation-with-noise-eT3hhyL)
+
+![a](https://i.imgur.com/oIVoWs5.png)
+![b](https://i.imgur.com/7n09Awy.png)
+![c](https://i.imgur.com/KVQEcME.png)
+![d](https://i.imgur.com/PgEKKOn.png)
+![e](https://i.imgur.com/J9iqPi5.png)

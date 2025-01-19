@@ -31,7 +31,7 @@ Upon completion of the Advanced AI for Games, students should be able to:
 
 ::: warning
 This is a work in progress schedule. It is subject to change. Every change will be communicated in class.
-::::
+:::
 
 ## Schedule for Spring 2025
 
