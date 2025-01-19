@@ -1,3 +1,10 @@
+## [1.11.2](https://github.com/gameguild-gg/website/compare/v1.11.1...v1.11.2) (2025-01-19)
+
+
+### Bug Fixes
+
+* **courses:** python course ([205eaf0](https://github.com/gameguild-gg/website/commit/205eaf0076216a98f70c73e6e513439e2f0010e0))
+
 ## [1.11.1](https://github.com/gameguild-gg/website/compare/v1.11.0...v1.11.1) (2025-01-19)
 
 
