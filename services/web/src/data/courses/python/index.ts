@@ -3,10 +3,10 @@ import ChapterEntity = Api.ChapterEntity;
 import CourseEntity = Api.CourseEntity;
 import ImageEntity = Api.ImageEntity;
 import UserEntity = Api.UserEntity;
-import LectureEntity = Api.LectureEntity;
 import syllabusBody from './syllabus.md';
-import { createChapter, createLecture, mockUser } from '@/data/coursesLib';
-import week01 from './chapters/week01/lecture.md';
+import { mockUser } from '@/data/coursesLib';
+import chapter01 from './chapters/week01';
+import LectureEntity = Api.LectureEntity;
 
 export const mockImage: ImageEntity = {
   id: '1',
@@ -42,49 +42,17 @@ const course: CourseEntity = {
   subscriptionAccess: false,
 };
 
-const chapter: ChapterEntity = {
-  id: '1',
-  slug: 'week01',
-  title: 'Week 01',
-  summary: 'Introduction to Python',
-  course,
-  lectures: [],
-} as ChapterEntity;
-
-const week01lectures: LectureEntity[] = [];
-week01lectures.push(
-  createLecture(
-    '1-1',
-    'intro',
-    'Course Introduction',
-    'Welcome to the Python Programming course!',
-    week01,
-    1,
-  ) as LectureEntity,
-);
-
 const chapters: ChapterEntity[] = [];
+chapters.push(chapter01);
 
-chapters.push(
-  createChapter(
-    '1',
-    'week01',
-    'Week 01: Introduction to Python',
-    'This week we will introduce the course, ',
-    1,
-    ['1-1'],
-    week01lectures,
-  ) as ChapterEntity,
-);
+const lectures: LectureEntity[] = [];
+lectures.push(...chapter01.lectures);
 
-for (let i = 0; i < week01lectures.length; i++) {
-  week01lectures[i].chapter = chapters[0];
-  week01lectures[i].course = course;
-}
-
-chapters[0].course = course;
+// set the course for each chapter and lecture
+for (let i = 0; i < chapters.length; i++) chapters[i].course = course;
+for (let i = 0; i < lectures.length; i++) lectures[i].course = course;
 
 course.chapters = chapters;
-course.lectures = week01lectures;
+course.lectures = lectures;
 
 export default course;
