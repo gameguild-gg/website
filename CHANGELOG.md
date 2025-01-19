@@ -1,3 +1,10 @@
+## [1.11.1](https://github.com/gameguild-gg/website/compare/v1.11.0...v1.11.1) (2025-01-19)
+
+
+### Bug Fixes
+
+* **courses:** ai courses week01 ([f8ebd50](https://github.com/gameguild-gg/website/commit/f8ebd50776ee231a496efdadfd9f822970505e8f))
+
 # [1.11.0](https://github.com/gameguild-gg/website/compare/v1.10.9...v1.11.0) (2025-01-18)
 
 
