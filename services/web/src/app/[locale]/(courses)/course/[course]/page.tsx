@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import { courses } from '@/data/courses';
 import MarkdownRenderer from '@/components/markdown-renderer/markdown-renderer';
+import { Api } from '@game-guild/apiclient';
 
 export default function CourseHomePage({
   params,

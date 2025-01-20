@@ -27,6 +27,10 @@ const nextConfig = {
     if (!isServer) {
       config.externals = config.externals || [];
       config.externals = [...config.externals, 'apiclient'];
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+      };
     }
     config.module.rules.push(
       {

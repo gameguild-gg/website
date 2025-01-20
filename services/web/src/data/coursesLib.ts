@@ -39,6 +39,7 @@ export const createLecture = (
   summary: string,
   body: string,
   order: number,
+  type: LectureEntity.Type.Enum = LectureEntity.Type.Enum.Markdown,
 ): Omit<LectureEntity, 'course' | 'chapter'> => ({
   id,
   createdAt: '2023-01-01T00:00:00Z',
@@ -50,6 +51,7 @@ export const createLecture = (
   body,
   visibility: Api.CourseEntity.Visibility.Enum.PUBLISHED,
   order,
+  type,
 });
 
 // Create chapters (without course reference initially)

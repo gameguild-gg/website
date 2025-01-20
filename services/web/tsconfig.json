@@ -33,11 +33,11 @@
       }
     ],
     "paths": {
-      "@apiclient/*": [
-        "../../packages/apiclient/*"
-      ],
       "@/*": [
         "./src/*"
+      ],
+      "*": [
+        "node_modules/*"
       ]
     },
   },

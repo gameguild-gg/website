@@ -7,12 +7,26 @@ import rehypeRaw from 'rehype-raw';
 import rehypeHighlight from 'rehype-highlight';
 import Mermaid from './Mermaid';
 import { Admonition } from './Admonition';
+import RevealJS from './RevealJS';
+import { Api } from '@game-guild/apiclient';
 
 interface MarkdownRendererProps {
   content: string;
+  type?: Api.LectureEntity['type'];
 }
 
-const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content }) => {
+const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
+  content,
+  type = Api.LectureEntity.Type.Enum.Markdown,
+}) => {
+  if (type === Api.LectureEntity['type']?.RevealJS) {
+    return (
+      <div className="gameguild-revealjs-wrapper">
+        <RevealJS content={content} />
+      </div>
+    );
+  }
+
   const processedContent = content.replace(
     /:::\s*(note|abstract|info|tip|success|question|warning|failure|danger|bug|example|quote)(?:\s+"([^"]*)")?\n([\s\S]*?):::/g,
     (_, type, title, body) =>
