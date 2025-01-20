@@ -37,7 +37,7 @@ function contributionsToString(contributions: number): string {
     if (contributions > 1000) {
       return `${(contributions / 1000).toFixed(1)}K`;
     }
-    return contributions.toString();
+    return contributions.toFixed(1);
   } else {
     return '0';
   }
@@ -89,10 +89,10 @@ export default function ContributorCard(contributor: Contributor) {
           <p className="text-gray-600 text-center">
             {'LoC/Contribs: '}
             <span className="text-blue-500 font-bold">
-              {(
+              {contributionsToString(
                 (contributor.additions + contributor.deletions) /
-                contributor.contributions
-              ).toFixed(2)}
+                  contributor.contributions,
+              )}
             </span>
           </p>
         </Link>
