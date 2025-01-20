@@ -1,3 +1,10 @@
+## [1.11.3](https://github.com/gameguild-gg/website/compare/v1.11.2...v1.11.3) (2025-01-20)
+
+
+### Bug Fixes
+
+* **homepage:** fix homepage layout. fix [#89](https://github.com/gameguild-gg/website/issues/89) ([b34e8bd](https://github.com/gameguild-gg/website/commit/b34e8bd84a22f0d6a998d731e2c7ed5a9650b7b0))
+
 ## [1.11.2](https://github.com/gameguild-gg/website/compare/v1.11.1...v1.11.2) (2025-01-19)
 
 
