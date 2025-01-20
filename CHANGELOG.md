@@ -1,3 +1,10 @@
+## [1.11.6](https://github.com/gameguild-gg/website/compare/v1.11.5...v1.11.6) (2025-01-20)
+
+
+### Bug Fixes
+
+* **courses:** fix support to revealjs presentation ([780a0f5](https://github.com/gameguild-gg/website/commit/780a0f5fbb205199412e42dec3f02c96d77044d8))
+
 ## [1.11.5](https://github.com/gameguild-gg/website/compare/v1.11.4...v1.11.5) (2025-01-20)
 
 
