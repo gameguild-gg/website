@@ -834,6 +834,7 @@ export namespace Api {
 		 * @memberof LectureEntity
 		 */
 		order: number;
+		'type': Api.LectureEntity.Type;
 		course: Api.CourseEntity;
 		chapter: Api.ChapterEntity;
 	}
@@ -859,6 +860,35 @@ export namespace Api {
 				PENDING = 'PENDING',
 				PRIVATE = 'PRIVATE',
 				TRASH = 'TRASH'
+			}
+		}
+	
+		export type Type =
+			'markdown' |
+			'youtube' |
+			'lexical' |
+			'reveal' |
+			'html' |
+			'pdf' |
+			'image' |
+			'video' |
+			'audio' |
+			'code' |
+			'link'
+		
+		export namespace Type {
+			export enum Enum {
+				Markdown = 'markdown',
+				Youtube = 'youtube',
+				Lexical = 'lexical',
+				Reveal = 'reveal',
+				Html = 'html',
+				Pdf = 'pdf',
+				Image = 'image',
+				Video = 'video',
+				Audio = 'audio',
+				Code = 'code',
+				Link = 'link'
 			}
 		}
 	

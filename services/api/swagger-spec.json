@@ -9698,6 +9698,23 @@
           "order": {
             "type": "number"
           },
+          "type": {
+            "type": "string",
+            "enum": [
+              "markdown",
+              "youtube",
+              "lexical",
+              "reveal",
+              "html",
+              "pdf",
+              "image",
+              "video",
+              "audio",
+              "code",
+              "link"
+            ],
+            "default": "markdown"
+          },
           "course": {
             "$ref": "#/components/schemas/CourseEntity"
           },
@@ -9711,6 +9728,7 @@
           "slug",
           "title",
           "order",
+          "type",
           "course",
           "chapter"
         ]
