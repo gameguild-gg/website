@@ -17,7 +17,6 @@ week01lectures.push(
   ) as LectureEntity,
 );
 
-// todo: bug, this not being rendered
 week01lectures.push(
   createLecture(
     '1-2',

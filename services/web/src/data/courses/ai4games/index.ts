@@ -5,8 +5,8 @@ import ImageEntity = Api.ImageEntity;
 import UserEntity = Api.UserEntity;
 import LectureEntity = Api.LectureEntity;
 import syllabusBody from './syllabus.md';
-import { createChapter } from '@/data/coursesLib';
 import Chapter01 from './chapters/week01/';
+import Chapter02 from './chapters/week02/';
 
 const course: CourseEntity = {} as CourseEntity;
 
@@ -24,9 +24,10 @@ course.body = syllabusBody;
 
 const chapters: ChapterEntity[] = [];
 chapters.push(Chapter01);
+chapters.push(Chapter02);
 
 const lectures: LectureEntity[] = [];
-lectures.push(...Chapter01.lectures);
+lectures.push(...Chapter01.lectures, ...Chapter02.lectures);
 
 // set course for all lectures and chapters
 lectures.forEach((lecture) => (lecture.course = course));

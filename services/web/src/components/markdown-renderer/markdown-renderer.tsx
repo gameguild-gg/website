@@ -12,14 +12,14 @@ import { Api } from '@game-guild/apiclient';
 
 interface MarkdownRendererProps {
   content: string;
-  type?: Api.LectureEntity['type'];
+  type?: Api.LectureEntity.Type;
 }
 
 const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
   content,
   type = Api.LectureEntity.Type.Enum.Markdown,
 }) => {
-  if (type === Api.LectureEntity['type']?.RevealJS) {
+  if (type === Api.LectureEntity.Type.Enum.Reveal) {
     return (
       <div className="gameguild-revealjs-wrapper">
         <RevealJS content={content} />

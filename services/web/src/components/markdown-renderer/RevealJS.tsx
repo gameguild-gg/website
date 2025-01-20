@@ -20,6 +20,10 @@ const RevealJS: React.FC<RevealJSProps> = ({ content }) => {
   const [isSyncing, setIsSyncing] = useState(false);
 
   useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
     if (revealRef.current && !deckRef.current) {
       const initReveal = async () => {
         try {
