@@ -1,3 +1,11 @@
+## [1.11.5](https://github.com/gameguild-gg/website/compare/v1.11.4...v1.11.5) (2025-01-20)
+
+
+### Bug Fixes
+
+* **courses:** add lecture type to be able to switch between render reveal and markdown ([904de04](https://github.com/gameguild-gg/website/commit/904de045df95006721a985893a7a14676ac54445))
+* **courses:** render with revealjs ([72edea0](https://github.com/gameguild-gg/website/commit/72edea069b73ba20120978eef4136a5503b803d7))
+
 ## [1.11.4](https://github.com/gameguild-gg/website/compare/v1.11.3...v1.11.4) (2025-01-20)
 
 
