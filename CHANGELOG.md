@@ -1,3 +1,10 @@
+## [1.11.4](https://github.com/gameguild-gg/website/compare/v1.11.3...v1.11.4) (2025-01-20)
+
+
+### Bug Fixes
+
+* **contributors:** improve contributor loc/contrib counter ([a52ebd3](https://github.com/gameguild-gg/website/commit/a52ebd33b139a9853f2c92087c9c54ee3cf599cf))
+
 ## [1.11.3](https://github.com/gameguild-gg/website/compare/v1.11.2...v1.11.3) (2025-01-20)
 
 
