@@ -1,3 +1,10 @@
+## [1.11.7](https://github.com/gameguild-gg/website/compare/v1.11.6...v1.11.7) (2025-01-20)
+
+
+### Bug Fixes
+
+* **courses:** add pcg presentation ([f849a5b](https://github.com/gameguild-gg/website/commit/f849a5bd469df231c98e41e11c6e5a17f27751fc))
+
 ## [1.11.6](https://github.com/gameguild-gg/website/compare/v1.11.5...v1.11.6) (2025-01-20)
 
 
