@@ -1,3 +1,10 @@
+## [1.11.8](https://github.com/gameguild-gg/website/compare/v1.11.7...v1.11.8) (2025-01-21)
+
+
+### Bug Fixes
+
+* **courses:** add wave function collapse ([84da4ab](https://github.com/gameguild-gg/website/commit/84da4abcf374eed2d0ce1be8c17499fa7bf4f3f6))
+
 ## [1.11.7](https://github.com/gameguild-gg/website/compare/v1.11.6...v1.11.7) (2025-01-20)
 
 
