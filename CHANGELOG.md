@@ -1,3 +1,10 @@
+## [1.11.9](https://github.com/gameguild-gg/website/compare/v1.11.8...v1.11.9) (2025-01-21)
+
+
+### Bug Fixes
+
+* **header:** fix header institutional links ([67240f4](https://github.com/gameguild-gg/website/commit/67240f4b048d42a5ed139dc2022dc0289831f5be))
+
 ## [1.11.8](https://github.com/gameguild-gg/website/compare/v1.11.7...v1.11.8) (2025-01-21)
 
 
