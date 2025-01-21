@@ -1,3 +1,10 @@
+## [1.11.10](https://github.com/gameguild-gg/website/compare/v1.11.9...v1.11.10) (2025-01-21)
+
+
+### Bug Fixes
+
+* **courses:** rename type to renderer ([0371358](https://github.com/gameguild-gg/website/commit/0371358b086954a5c1d11bf9915035638e3d20d9))
+
 ## [1.11.9](https://github.com/gameguild-gg/website/compare/v1.11.8...v1.11.9) (2025-01-21)
 
 
