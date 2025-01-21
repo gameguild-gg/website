@@ -14,7 +14,7 @@ week02lectures.push(
     'Procedural Content Generation',
     pcg,
     1,
-    Api.LectureEntity.Type.Enum.Reveal,
+    Api.LectureEntity.Renderer.Enum.Reveal,
   ) as LectureEntity,
 );
 
@@ -26,7 +26,7 @@ week02lectures.push(
     'Wave Function Collapse in Games',
     wfc,
     2,
-    Api.LectureEntity.Type.Enum.Markdown,
+    Api.LectureEntity.Renderer.Enum.Markdown,
   ) as LectureEntity,
 );
 

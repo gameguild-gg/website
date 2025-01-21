@@ -32,7 +32,7 @@ export default function CourseLecturePage({
         Lecture {lecture.order} in Chapter {lecture.chapter.order}
       </p>
       {lecture.body && (
-        <MarkdownRenderer content={lecture.body} type={lecture.type} />
+        <MarkdownRenderer content={lecture.body} renderer={lecture.renderer} />
       )}
     </div>
   );

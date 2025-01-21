@@ -185,11 +185,11 @@ Table LectureEntity {
   id uuid
   order float
   owner UserEntity
+  renderer enum
   slug varchar
   summary string
   thumbnail ImageEntity
   title varchar
-  type enum
   updatedAt timestamp
   visibility enum
   editors UserEntity

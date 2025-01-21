@@ -1,5 +1,11 @@
 # Algorithms
 
+<details>
+<summary> Teacher notes </summary>
+- Icebreakers; Intro to the Instructor; Form pairs and Introduce each other; Fill the form about python; Introduce the class routines: weekly activities, read before class, assignments, etc.; Introduce canvas; Create github account; Install tools such as pycharm, python 3.11, and git;
+- Intro to Algorithmic thinking; What is an algorithm?; Example: Sorting; Example: Mazes;
+<details>
+
 ## What is an algorithm?
 
 An algorithm is an ordered sed of instructions used to solve a problem or perform a task. Think of an algorithm as a recipe. A recipe is a set of instructions that tells you how to prepare a dish.

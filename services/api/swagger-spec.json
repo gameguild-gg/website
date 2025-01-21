@@ -9698,7 +9698,7 @@
           "order": {
             "type": "number"
           },
-          "type": {
+          "renderer": {
             "type": "string",
             "enum": [
               "markdown",
@@ -9728,7 +9728,7 @@
           "slug",
           "title",
           "order",
-          "type",
+          "renderer",
           "course",
           "chapter"
         ]

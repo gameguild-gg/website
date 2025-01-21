@@ -834,7 +834,7 @@ export namespace Api {
 		 * @memberof LectureEntity
 		 */
 		order: number;
-		'type': Api.LectureEntity.Type;
+		renderer: Api.LectureEntity.Renderer;
 		course: Api.CourseEntity;
 		chapter: Api.ChapterEntity;
 	}
@@ -863,7 +863,7 @@ export namespace Api {
 			}
 		}
 	
-		export type Type =
+		export type Renderer =
 			'markdown' |
 			'youtube' |
 			'lexical' |
@@ -876,7 +876,7 @@ export namespace Api {
 			'code' |
 			'link'
 		
-		export namespace Type {
+		export namespace Renderer {
 			export enum Enum {
 				Markdown = 'markdown',
 				Youtube = 'youtube',

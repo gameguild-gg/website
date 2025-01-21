@@ -47,7 +47,7 @@ export class LectureEntity extends ContentBase {
   @Index({ unique: false })
   @IsOptional()
   @IsEnum(LectureType)
-  type: LectureType;
+  renderer: LectureType;
 
   // a lecture belongs to a course
   @ManyToOne(() => CourseEntity, (course) => course.lectures)
