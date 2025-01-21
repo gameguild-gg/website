@@ -176,6 +176,8 @@
 
 .markdown-content pre code {
     @apply block bg-transparent p-0 overflow-visible rounded-none;
+    white-space: pre-wrap;
+    word-wrap: break-word;
 }
 
 .markdown-content ul {
@@ -273,6 +275,8 @@ code.hljs {
 .hljs {
     color: #abb2bf;
     background: #282c34;
+    white-space: pre-wrap;
+    word-wrap: break-word;
 }
 
 .hljs-comment,
