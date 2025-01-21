@@ -41,7 +41,7 @@ export default function Header() {
     'Terms of Service',
     'Contact',
     'About',
-    'License'
+    'License',
   ];
   const languages = ['English', 'Spanish', 'Portuguese', 'French', 'German'];
 
@@ -90,7 +90,7 @@ export default function Header() {
             <DropdownMenuContent className="bg-neutral-900 text-white border-0">
               {moreItems.map((item) => (
                 <DropdownMenuItem key={item}>
-                  <Link href={`./` + item.toLowerCase().replace(/\s/g, '')}>
+                  <Link href={`/` + item.toLowerCase().replace(/\s/g, '')}>
                     {item}
                   </Link>
                 </DropdownMenuItem>
