@@ -1,3 +1,85 @@
+## [1.11.8](https://github.com/gameguild-gg/website/compare/v1.11.7...v1.11.8) (2025-01-21)
+
+
+### Bug Fixes
+
+* **courses:** add wave function collapse ([84da4ab](https://github.com/gameguild-gg/website/commit/84da4abcf374eed2d0ce1be8c17499fa7bf4f3f6))
+
+## [1.11.7](https://github.com/gameguild-gg/website/compare/v1.11.6...v1.11.7) (2025-01-20)
+
+
+### Bug Fixes
+
+* **courses:** add pcg presentation ([f849a5b](https://github.com/gameguild-gg/website/commit/f849a5bd469df231c98e41e11c6e5a17f27751fc))
+
+## [1.11.6](https://github.com/gameguild-gg/website/compare/v1.11.5...v1.11.6) (2025-01-20)
+
+
+### Bug Fixes
+
+* **courses:** fix support to revealjs presentation ([780a0f5](https://github.com/gameguild-gg/website/commit/780a0f5fbb205199412e42dec3f02c96d77044d8))
+
+## [1.11.5](https://github.com/gameguild-gg/website/compare/v1.11.4...v1.11.5) (2025-01-20)
+
+
+### Bug Fixes
+
+* **courses:** add lecture type to be able to switch between render reveal and markdown ([904de04](https://github.com/gameguild-gg/website/commit/904de045df95006721a985893a7a14676ac54445))
+* **courses:** render with revealjs ([72edea0](https://github.com/gameguild-gg/website/commit/72edea069b73ba20120978eef4136a5503b803d7))
+
+## [1.11.4](https://github.com/gameguild-gg/website/compare/v1.11.3...v1.11.4) (2025-01-20)
+
+
+### Bug Fixes
+
+* **contributors:** improve contributor loc/contrib counter ([a52ebd3](https://github.com/gameguild-gg/website/commit/a52ebd33b139a9853f2c92087c9c54ee3cf599cf))
+
+## [1.11.3](https://github.com/gameguild-gg/website/compare/v1.11.2...v1.11.3) (2025-01-20)
+
+
+### Bug Fixes
+
+* **homepage:** fix homepage layout. fix [#89](https://github.com/gameguild-gg/website/issues/89) ([b34e8bd](https://github.com/gameguild-gg/website/commit/b34e8bd84a22f0d6a998d731e2c7ed5a9650b7b0))
+
+## [1.11.2](https://github.com/gameguild-gg/website/compare/v1.11.1...v1.11.2) (2025-01-19)
+
+
+### Bug Fixes
+
+* **courses:** python course ([205eaf0](https://github.com/gameguild-gg/website/commit/205eaf0076216a98f70c73e6e513439e2f0010e0))
+
+## [1.11.1](https://github.com/gameguild-gg/website/compare/v1.11.0...v1.11.1) (2025-01-19)
+
+
+### Bug Fixes
+
+* **courses:** ai courses week01 ([f8ebd50](https://github.com/gameguild-gg/website/commit/f8ebd50776ee231a496efdadfd9f822970505e8f))
+
+# [1.11.0](https://github.com/gameguild-gg/website/compare/v1.10.9...v1.11.0) (2025-01-18)
+
+
+### Bug Fixes
+
+* ci workflows ([fdd3610](https://github.com/gameguild-gg/website/commit/fdd36104cd2947bcce2de8fcc81a278294d66bdc))
+* **contributors:** add ratio of LoC and contributions ([8b3be0c](https://github.com/gameguild-gg/website/commit/8b3be0c764e6eb03ae4a1b3522105a284dcf7854))
+* **courses:** add courses material ([b6a1ceb](https://github.com/gameguild-gg/website/commit/b6a1ceb6908c01fc58b2e8d884a442f9f0d1f821))
+* **courses:** collapsible sections on course navigation ([491a187](https://github.com/gameguild-gg/website/commit/491a1870a0966e43033c88641cf46350a087d751))
+* **courses:** fix ai course syllabus and add lecture ([aaab8a2](https://github.com/gameguild-gg/website/commit/aaab8a23666c10df6fc22a34fa2462ae7d112a71))
+* **portfolio:** render properly the portfolio pages ([d4086ce](https://github.com/gameguild-gg/website/commit/d4086cec1c9d0ddae219e407fe08e170f1b049ed))
+* **python:** add python content ([5c127a1](https://github.com/gameguild-gg/website/commit/5c127a16661ab62cde2b42ab03689f4c4b11f0c9))
+
+
+### Features
+
+* **portfolio:** add new course entry: portfolio ([871eaf9](https://github.com/gameguild-gg/website/commit/871eaf9df234ce435c7f834623b82c9ce7f21bc0))
+
+## [1.10.9](https://github.com/gameguild-gg/website/compare/v1.10.8...v1.10.9) (2025-01-15)
+
+
+### Bug Fixes
+
+* **apiclient:** regenerate api client ([37a5f00](https://github.com/gameguild-gg/website/commit/37a5f001cf6e4dcb8099937760a986613f99fb3d))
+
 ## [1.10.8](https://github.com/gameguild-gg/website/compare/v1.10.7...v1.10.8) (2025-01-14)
 
 

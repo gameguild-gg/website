@@ -3,6 +3,8 @@ import Image from 'next/image';
 import { courses } from '@/data/courses';
 import MarkdownRenderer from '@/components/markdown-renderer/markdown-renderer';
 
+export const dynamic = 'force-dynamic';
+
 export default function CourseHomePage({
   params,
 }: {

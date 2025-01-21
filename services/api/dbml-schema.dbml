@@ -189,6 +189,7 @@ Table LectureEntity {
   summary string
   thumbnail ImageEntity
   title varchar
+  type enum
   updatedAt timestamp
   visibility enum
   editors UserEntity

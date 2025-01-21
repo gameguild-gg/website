@@ -99,7 +99,19 @@
 }
 
 
-
+/* Dark mode variables */
+.dark {
+    --background-color: #1a1a1a;
+    --text-color: #e0e0e0;
+    --code-background: #2d2d2d;
+    --code-color: #f8f8f2;
+    --link-color: #58a6ff;
+    --warning-foreground: 0 0% 9%;
+    --ring: 240 3.7% 15.9%;
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+}
 
 /* Base styles for markdown content */
 .markdown-content {
@@ -155,15 +167,17 @@
 }
 
 .markdown-content code {
-    @apply font-mono text-sm inline bg-gray-700 text-gray-200 rounded px-1 py-0.5;
+    @apply font-mono text-sm inline bg-gray-200 rounded px-1 py-0.5;
 }
 
 .markdown-content pre {
-    @apply bg-gray-800 rounded p-4;
+    @apply bg-gray-100 rounded p-4;
 }
 
 .markdown-content pre code {
-    @apply block bg-gray-800 p-0 overflow-visible rounded-none text-gray-200;
+    @apply block bg-transparent p-0 overflow-visible rounded-none;
+    white-space: pre-wrap;
+    word-wrap: break-word;
 }
 
 .markdown-content ul {
@@ -261,6 +275,8 @@ code.hljs {
 .hljs {
     color: #abb2bf;
     background: #282c34;
+    white-space: pre-wrap;
+    word-wrap: break-word;
 }
 
 .hljs-comment,
@@ -333,3 +349,126 @@ code.hljs {
     text-decoration: underline;
 }
 
+.mermaid-container {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.mermaid-container svg {
+    max-width: 100%;
+    height: auto;
+}
+
+/* RevealJS styles */
+.gameguild-revealjs-wrapper {
+    width: 100%;
+    height: 100%;
+    min-height: 600px;
+    position: relative;
+}
+
+.reveal-container {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+.reveal {
+    height: 100%;
+}
+
+.reveal .slides {
+    text-align: left;
+}
+
+.reveal .slides section {
+    height: 100%;
+    padding: 20px;
+}
+
+.reveal h1,
+.reveal h2,
+.reveal h3,
+.reveal h4,
+.reveal h5,
+.reveal h6 {
+    margin-bottom: 20px;
+    font-weight: bold;
+}
+
+.reveal h1 {
+    font-size: 2.5em;
+}
+.reveal h2 {
+    font-size: 2em;
+}
+.reveal h3 {
+    font-size: 1.75em;
+}
+.reveal h4 {
+    font-size: 1.5em;
+}
+.reveal h5 {
+    font-size: 1.25em;
+}
+.reveal h6 {
+    font-size: 1em;
+}
+
+.reveal p {
+    margin-bottom: 10px;
+}
+
+.reveal ul,
+.reveal ol {
+    display: block;
+    margin-left: 40px;
+    margin-bottom: 10px;
+}
+
+.reveal li {
+    margin-bottom: 5px;
+}
+
+.reveal pre {
+    margin: 15px 0;
+    width: 100%;
+    box-shadow: none;
+}
+
+.reveal pre code {
+    padding: 15px;
+    max-height: none;
+}
+
+/* Styles for details and summary tags */
+details {
+    border: 1px solid #e2e8f0;
+    border-radius: 0.375rem;
+    padding: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+summary {
+    font-weight: bold;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 0.25rem;
+    background-color: #f7fafc;
+    transition: background-color 0.3s ease;
+}
+
+summary:hover {
+    background-color: #edf2f7;
+}
+
+details[open] summary {
+    border-bottom: 1px solid #e2e8f0;
+    margin-bottom: 0.5rem;
+}
+
+details[open] {
+    padding-bottom: 0.5rem;
+}

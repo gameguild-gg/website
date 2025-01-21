@@ -14,7 +14,7 @@ const Mermaid: React.FC<MermaidProps> = ({ chart }) => {
   useEffect(() => {
     mermaid.initialize({
       startOnLoad: false,
-      theme: 'dark',
+      theme: 'default',
       securityLevel: 'strict',
     });
 
