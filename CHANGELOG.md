@@ -1,3 +1,10 @@
+## [1.11.12](https://github.com/gameguild-gg/website/compare/v1.11.11...v1.11.12) (2025-01-22)
+
+
+### Bug Fixes
+
+* **courses:** add link to figma templates ([93eda9b](https://github.com/gameguild-gg/website/commit/93eda9b842138482aa0951a700300e1d4f8d3f90))
+
 ## [1.11.11](https://github.com/gameguild-gg/website/compare/v1.11.10...v1.11.11) (2025-01-22)
 
 
