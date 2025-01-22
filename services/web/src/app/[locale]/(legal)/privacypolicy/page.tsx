@@ -55,7 +55,7 @@ You have the following rights regarding your personal data:
 - **Deletion:** Request the deletion of your personal data, subject to legal obligations.
 - **Objection:** Object to the processing of your data for specific purposes.
 
-To exercise these rights, please contact us at [Discord](https://discord.gg/QtRTgYRm), by user @tolstenko.
+To exercise these rights, please contact us at [**Discord**](https://discord.com/invite/9CdJeQ2XKB?ref=gameguild.gg), by user @tolstenko.
 
 ---
 
@@ -85,11 +85,13 @@ We may update this Privacy Policy from time to time. Changes will be effective u
 
 ## 10. Contact Us
 
-If you have any questions or concerns about this Privacy Policy, please contact us at [Discord](https://discord.gg/QtRTgYRm), by user @tolstenko.
+If you have any questions or concerns about this Privacy Policy, please contact us at [**Discord**](https://discord.com/invite/9CdJeQ2XKB?ref=gameguild.gg), by user @tolstenko.
 
 ---
 
 © Game Guild. All rights reserved.
+
+Dual Licensed under [AGPLv3](https://www.gnu.org/licenses/agpl-3.0.en.html) and [COMMERCIAL](https://github.com/gameguild-gg/website/blob/main/COMMERCIAL_LICENSE.md)
 
 `;
 

@@ -61,19 +61,17 @@ We reserve the right to update or modify these Terms at any time. Changes will b
 
 ## 8. Contact Us
 
-If you have any questions about these Terms, please contact us at [Discord](https://discord.gg/QtRTgYRm), by user @tolstenko.
+If you have any questions about these Terms, please contact us at [**Discord**](https://discord.com/invite/9CdJeQ2XKB?ref=gameguild.gg), by user @tolstenko.
 
 ---
 
 ## 9. Governing Law
 
-These Terms are governed by and construed in accordance with the laws of [Your Country/State], without regard to its conflict of law provisions.
+These Terms are governed by and construed in accordance with the laws of [Brazil], without regard to its conflict of law provisions.
 
 ---
 
-### Footer
-
-© [Your Platform Name]. Licensed under [AGPLv3](https://www.gnu.org/licenses/agpl-3.0.en.html).
+© [GameGuild](gameguild.gg). Dual Licensed under [AGPLv3](https://www.gnu.org/licenses/agpl-3.0.en.html) and [COMMERCIAL](https://github.com/gameguild-gg/website/blob/main/COMMERCIAL_LICENSE.md)
 
 
 `;
