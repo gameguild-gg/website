@@ -3,7 +3,7 @@ import React from 'react';
 import MarkdownRenderer from '@/components/markdown-renderer-new/markdown-renderer-new';
 
 const markdownContent: string = `
-# Security Policy
+# Security
 
 ---
 
@@ -17,7 +17,7 @@ The GameGuild is committed to ensuring the security and integrity of our users' 
 
 If you discover a security vulnerability in the Postiz app, please report it to us privately via email to one of the maintainers:
 
-- [Discord](https://discord.gg/QtRTgYRm), by user @tolstenko
+- [**Discord**](https://discord.com/invite/9CdJeQ2XKB?ref=gameguild.gg), by user @tolstenko
 
 When reporting a security vulnerability, please provide as much detail as possible, including:
 

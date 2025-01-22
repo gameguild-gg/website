@@ -16,6 +16,8 @@ const markdownContent: string = `
 We aim to be a hub for creativity and innovation in the gaming industry, empowering individuals to turn their ideas into reality.
 
 &copy; 2025 GameGuild. All rights reserved.
+
+Dual Licensed under [AGPLv3](https://www.gnu.org/licenses/agpl-3.0.en.html) and [COMMERCIAL](https://github.com/gameguild-gg/website/blob/main/COMMERCIAL_LICENSE.md)
 `;
 
 export default function Page(): JSX.Element {
