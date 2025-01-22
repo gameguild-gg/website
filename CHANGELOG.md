@@ -1,3 +1,15 @@
+## [1.11.11](https://github.com/gameguild-gg/website/compare/v1.11.10...v1.11.11) (2025-01-22)
+
+
+### Bug Fixes
+
+* **courses:** add one more assignment to portfolio classes ([4a45581](https://github.com/gameguild-gg/website/commit/4a45581f2baa91bdbd1bcf580518e0417ad06c6c))
+* **courses:** add portfolio class week02 ([93786bd](https://github.com/gameguild-gg/website/commit/93786bd47d138ef282d64d9cdfb8838fe27b19ee))
+* **legal:** html to markdown text ([bd3ebe1](https://github.com/gameguild-gg/website/commit/bd3ebe1c59ca16c2774bd4bad51b7aadbe36f1fa))
+* **legal:** html to markdown text ([7cfba9d](https://github.com/gameguild-gg/website/commit/7cfba9dd787def1b96aa480ab71826e7e43806ef))
+* **legal:** links and new terms ([6408d82](https://github.com/gameguild-gg/website/commit/6408d82395d5e3ebd7449c02f7bcd04f5f7cf3ea))
+* **legal:** links and new terms ([8c382e0](https://github.com/gameguild-gg/website/commit/8c382e08ed01fc97e0454959097a71c806e57add))
+
 ## [1.11.10](https://github.com/gameguild-gg/website/compare/v1.11.9...v1.11.10) (2025-01-21)
 
 
