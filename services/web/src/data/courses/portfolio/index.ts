@@ -8,6 +8,7 @@ import syllabusBody from './syllabus.md';
 import { mockImage } from '@/data/coursesLib';
 
 import chapter01 from './chapters/week01/index';
+import chapter02 from './chapters/week02/index';
 
 const course: CourseEntity = {} as CourseEntity;
 course.id = '2';
@@ -28,9 +29,10 @@ course.body = syllabusBody;
 
 const chapters: ChapterEntity[] = [];
 chapters.push(chapter01);
+chapters.push(chapter02);
 
 const lectures: LectureEntity[] = [];
-lectures.push(...chapter01.lectures);
+lectures.push(...chapter01.lectures, ...chapter02.lectures);
 
 // set course for all lectures and chapters
 lectures.forEach((lecture) => (lecture.course = course));

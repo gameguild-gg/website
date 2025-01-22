@@ -1,5 +1,5 @@
 import { createChapter, createLecture } from '@/data/coursesLib';
-import lecture01 from './lecture.md';
+import lecture01 from './lecture01.md';
 import assignment01 from './assignment01.md';
 import assignment02 from './assignment02.md';
 import { Api } from '@game-guild/apiclient';

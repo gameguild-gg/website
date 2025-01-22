@@ -4,7 +4,7 @@
 <summary> Teacher notes </summary>
 - Icebreakers; Intro to the Instructor; Form pairs and Introduce each other; Fill the form about python; Introduce the class routines: weekly activities, read before class, assignments, etc.; Introduce canvas; Create github account; Install tools such as pycharm, python 3.11, and git;
 - Intro to Algorithmic thinking; What is an algorithm?; Example: Sorting; Example: Mazes;
-<details>
+</details>
 
 ## What is an algorithm?
 
