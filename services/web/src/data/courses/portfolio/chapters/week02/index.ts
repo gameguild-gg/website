@@ -1,6 +1,7 @@
 import { createChapter, createLecture } from '@/data/coursesLib';
 import lecture02 from './lecture02.md';
 import assignment03 from './assignment03.md';
+import assignment04 from './assignment04.md';
 import { Api } from '@game-guild/apiclient';
 import LectureEntity = Api.LectureEntity;
 import ChapterEntity = Api.ChapterEntity;
@@ -34,7 +35,7 @@ week02lectures.push(
     'assignment-04',
     'Assignment 04',
     'Portfolio Website Prototype',
-    assignment03,
+    assignment04,
     3,
   ) as LectureEntity,
 );
