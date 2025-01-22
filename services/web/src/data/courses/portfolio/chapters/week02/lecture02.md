@@ -13,7 +13,7 @@ There are many tools and frameworks available for building a portfolio website. 
 
 ### Design Tools
 
-- [Figma](https://www.figma.com/): A web-based design tool that allows you to create wireframes, mockups, and prototypes.
+- [Figma](https://www.figma.com/): A web-based design tool that allows you to create wireframes, mockups, and prototypes. Search for some free templates to start your design [here](https://www.figma.com/community/portfolio-templates).
 - [Adobe XD](https://www.adobe.com/products/xd.html): A design tool that allows you to create wireframes, mockups, and prototypes.
 - [Sketch](https://www.sketch.com/): A design tool that allows you to create wireframes, mockups, and prototypes.
 
