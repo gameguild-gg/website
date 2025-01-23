@@ -33,7 +33,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
       `<div class="admonition admonition-${type}"${title ? ` data-title="${title}"` : ''}>\n\n${body}\n\n</div>`,
   );
 
-  const components: Components = {
+  const components: Record<string, React.FC<any>> = {
     h1: (props) => <h1 className="text-4xl font-bold mt-6 mb-4" {...props} />,
     h2: (props) => (
       <h2 className="text-3xl font-semibold mt-5 mb-3" {...props} />
@@ -69,18 +69,31 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
         return <Mermaid chart={String(children).replace(/\n$/, '')} />;
       }
 
-      return 'inline' in props ? (
-        <code className="bg-gray-100 rounded px-1 py-0.5" {...props}>
-          {children}
-        </code>
-      ) : (
-        <pre className="mb-4">
-          <code className={className} {...props}>
+      const codeContent = String(children).replace(/\n$/, '');
+      const isInline = !codeContent.includes('\n');
+
+      if (isInline) {
+        return (
+          <code
+            className="bg-gray-100 rounded px-1 py-0.5 font-mono text-sm inline"
+            {...props}
+          >
             {children}
           </code>
-        </pre>
+        );
+      }
+
+      return (
+        <code className={`block ${className}`} {...props}>
+          {children}
+        </code>
       );
     },
+    pre: ({ children }) => (
+      <pre className="mb-4 p-4 bg-gray-100 rounded overflow-x-auto">
+        {children}
+      </pre>
+    ),
     div: ({ className, children, ...props }) => {
       if (className?.includes('admonition')) {
         const type = className.split('-')[1] as
