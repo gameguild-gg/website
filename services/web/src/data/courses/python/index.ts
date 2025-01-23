@@ -6,6 +6,7 @@ import UserEntity = Api.UserEntity;
 import syllabusBody from './syllabus.md';
 import { mockUser } from '@/data/coursesLib';
 import chapter01 from './chapters/week01';
+import chapter02 from './chapters/week02';
 import LectureEntity = Api.LectureEntity;
 
 export const mockImage: ImageEntity = {
@@ -44,9 +45,10 @@ const course: CourseEntity = {
 
 const chapters: ChapterEntity[] = [];
 chapters.push(chapter01);
+chapters.push(chapter02);
 
 const lectures: LectureEntity[] = [];
-lectures.push(...chapter01.lectures);
+lectures.push(...chapter01.lectures, ...chapter02.lectures);
 
 // set the course for each chapter and lecture
 for (let i = 0; i < chapters.length; i++) chapters[i].course = course;
