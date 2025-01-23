@@ -1,3 +1,11 @@
+## [1.11.13](https://github.com/gameguild-gg/website/compare/v1.11.12...v1.11.13) (2025-01-23)
+
+
+### Bug Fixes
+
+* **courses:** add python week 2 class ([7f0b888](https://github.com/gameguild-gg/website/commit/7f0b888c460a3bf747a3df2de610d147117940af))
+* **courses:** markdown renderer ([d469025](https://github.com/gameguild-gg/website/commit/d469025a502bb57149375f50117c57b0166f0ee5))
+
 ## [1.11.12](https://github.com/gameguild-gg/website/compare/v1.11.11...v1.11.12) (2025-01-22)
 
 
