@@ -1,3 +1,5 @@
+`use client`;
+
 import type React from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -78,8 +80,20 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
             style={vscDarkPlus}
             language={lang}
             PreTag="div"
-            className="mb-4 p-4 rounded overflow-x-auto max-w-full"
-            {...props}
+            customStyle={{
+              padding: '1rem',
+              borderRadius: '0.375rem',
+              marginBottom: '1rem',
+            }}
+            codeTagProps={{
+              style: {
+                whiteSpace: 'pre-wrap',
+                wordBreak: 'keep-all',
+                overflowWrap: 'break-word',
+              },
+            }}
+            wrapLines={true}
+            className="syntax-highlighter"
           >
             {String(children).replace(/\n$/, '')}
           </SyntaxHighlighter>
@@ -127,14 +141,26 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
   };
 
   return (
-    <ReactMarkdown
-      className="markdown-content"
-      remarkPlugins={[remarkGfm]}
-      rehypePlugins={[rehypeRaw]}
-      components={components}
-    >
-      {processedContent}
-    </ReactMarkdown>
+    <>
+      <ReactMarkdown
+        className="markdown-content"
+        remarkPlugins={[remarkGfm]}
+        rehypePlugins={[rehypeRaw]}
+        components={components}
+      >
+        {processedContent}
+      </ReactMarkdown>
+      <style jsx global>{`
+        .syntax-highlighter {
+          overflow-x: auto;
+        }
+        .syntax-highlighter pre {
+          white-space: pre-wrap !important;
+          word-break: keep-all !important;
+          overflow-wrap: break-word !important;
+        }
+      `}</style>
+    </>
   );
 };
 

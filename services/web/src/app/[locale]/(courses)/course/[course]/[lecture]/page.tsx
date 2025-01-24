@@ -1,3 +1,5 @@
+'use client';
+
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { courses } from '@/data/courses';
@@ -10,23 +12,23 @@ interface CourseLecturePageProps {
   params: { course?: string; lecture?: string };
 }
 
-export async function generateMetadata({
-  params,
-}: CourseLecturePageProps): Promise<Metadata> {
-  const course = courses.find((c) => c.slug === params.course);
-  const lecture = course?.chapters
-    .flatMap((chapter) => chapter.lectures || [])
-    .find((l) => l.slug === params.lecture);
-
-  if (!course || !lecture) {
-    return {};
-  }
-
-  return {
-    title: `${lecture.title} - ${course.title}`,
-    description: lecture.summary,
-  };
-}
+// export async function generateMetadata({
+//   params,
+// }: CourseLecturePageProps): Promise<Metadata> {
+//   const course = courses.find((c) => c.slug === params.course);
+//   const lecture = course?.chapters
+//     .flatMap((chapter) => chapter.lectures || [])
+//     .find((l) => l.slug === params.lecture);
+//
+//   if (!course || !lecture) {
+//     return {};
+//   }
+//
+//   return {
+//     title: `${lecture.title} - ${course.title}`,
+//     description: lecture.summary,
+//   };
+// }
 
 export default function CourseLecturePage({ params }: CourseLecturePageProps) {
   if (!params.course || !params.lecture) {
