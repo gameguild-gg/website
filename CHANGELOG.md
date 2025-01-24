@@ -1,3 +1,10 @@
+## [1.11.17](https://github.com/gameguild-gg/website/compare/v1.11.16...v1.11.17) (2025-01-24)
+
+
+### Bug Fixes
+
+* **courses:** reveal is now markdown ([f805d99](https://github.com/gameguild-gg/website/commit/f805d9978a09cedeadde649728e4eef3ca9e4b12))
+
 ## [1.11.16](https://github.com/gameguild-gg/website/compare/v1.11.15...v1.11.16) (2025-01-24)
 
 
