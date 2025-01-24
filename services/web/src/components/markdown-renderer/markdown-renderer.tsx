@@ -1,25 +1,25 @@
-'use client';
-
-import React from 'react';
-import ReactMarkdown, { Components } from 'react-markdown';
+import type React from 'react';
+import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
-import rehypeHighlight from 'rehype-highlight';
-import Mermaid from './Mermaid';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { Admonition } from './Admonition';
+import Mermaid from './Mermaid';
 import RevealJS from './RevealJS';
 import { Api } from '@game-guild/apiclient';
+import LectureEntity = Api.LectureEntity;
 
 interface MarkdownRendererProps {
   content: string;
-  renderer?: Api.LectureEntity.Renderer;
+  renderer?: LectureEntity.Renderer;
 }
 
 const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
   content,
-  renderer = Api.LectureEntity.Renderer.Enum.Markdown,
+  renderer = LectureEntity.Renderer.Enum.Markdown,
 }) => {
-  if (renderer === Api.LectureEntity.Renderer.Enum.Reveal) {
+  if (renderer === LectureEntity.Renderer.Enum.Reveal) {
     return (
       <div className="gameguild-revealjs-wrapper">
         <RevealJS content={content} />
@@ -61,43 +61,41 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
         {...props}
       />
     ),
-    code: ({ className, children, ...props }) => {
+    code: ({ node, className, children, ...props }) => {
       const match = /language-(\w+)/.exec(className || '');
-      const language = match ? match[1] : '';
+      const lang = match && match[1] ? match[1] : '';
 
-      if (language === 'mermaid') {
+      if (lang === 'mermaid') {
         return <Mermaid chart={String(children).replace(/\n$/, '')} />;
       }
 
       const codeContent = String(children).replace(/\n$/, '');
-      const isInline = !codeContent.includes('\n');
+      const inline = !codeContent.includes('\n');
 
-      if (isInline) {
+      if (!inline) {
         return (
-          <code
-            className="bg-gray-100 border border-gray-300 rounded-full px-2 py-1 font-mono text-sm inline whitespace-pre-wrap break-words"
+          <SyntaxHighlighter
+            style={vscDarkPlus}
+            language={lang}
+            PreTag="div"
+            className="mb-4 p-4 rounded overflow-x-auto max-w-full"
             {...props}
           >
-            {children}
-          </code>
+            {String(children).replace(/\n$/, '')}
+          </SyntaxHighlighter>
         );
       }
 
       return (
         <code
-          className="block font-mono text-sm whitespace-pre-wrap break-words"
+          className="bg-gray-100 border border-gray-300 rounded-full px-2 py-1 font-mono text-sm inline whitespace-nowrap"
           {...props}
         >
           {children}
         </code>
       );
     },
-    pre: ({ children }) => (
-      <pre className="mb-4 p-4 bg-gray-100 rounded overflow-x-auto max-w-full">
-        {children}
-      </pre>
-    ),
-
+    pre: ({ children }) => <>{children}</>,
     div: ({ className, children, ...props }) => {
       if (className?.includes('admonition')) {
         const type = className.split('-')[1] as
@@ -132,7 +130,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
     <ReactMarkdown
       className="markdown-content"
       remarkPlugins={[remarkGfm]}
-      rehypePlugins={[rehypeRaw, rehypeHighlight]}
+      rehypePlugins={[rehypeRaw]}
       components={components}
     >
       {processedContent}
