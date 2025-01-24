@@ -1,3 +1,10 @@
+## [1.11.20](https://github.com/gameguild-gg/website/compare/v1.11.19...v1.11.20) (2025-01-24)
+
+
+### Bug Fixes
+
+* **courses:** improve syntax highlight on the markdown renderer ([07dd3bc](https://github.com/gameguild-gg/website/commit/07dd3bc5288870a015a04e4c6d5f0af0f1cfe0a6))
+
 ## [1.11.19](https://github.com/gameguild-gg/website/compare/v1.11.18...v1.11.19) (2025-01-24)
 
 
