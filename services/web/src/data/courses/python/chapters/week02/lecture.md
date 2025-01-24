@@ -4,8 +4,8 @@
 <summary> Teacher notes </summary>
 
 - Python REPL: Read-Eval-Print Loop;
-- Python basic operators: +, -, *, /, //, %, **;
-- Python variables: int, float, str, bool;
+- Python basic operators: `+`, `-`, `*`, `/`, `//`, `%`, `**`;
+- Python variables: `int`, `float`, `str`, `bool`;
 - Python terminal: How to run python scripts;
 
 </details>
