@@ -1,3 +1,11 @@
+## [1.11.21](https://github.com/gameguild-gg/website/compare/v1.11.20...v1.11.21) (2025-01-24)
+
+
+### Bug Fixes
+
+* **courses:** code is now soft wrapping properly ([17f18bf](https://github.com/gameguild-gg/website/commit/17f18bfe80104624c5330dd6fb309d37a50a0c27))
+* **courses:** fix minor typo on the python courses ([b0db6be](https://github.com/gameguild-gg/website/commit/b0db6bee7e604e0ae1f78b0ef9b07d05c4e315e5))
+
 ## [1.11.20](https://github.com/gameguild-gg/website/compare/v1.11.19...v1.11.20) (2025-01-24)
 
 
