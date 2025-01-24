@@ -1,3 +1,10 @@
+## [1.11.22](https://github.com/gameguild-gg/website/compare/v1.11.21...v1.11.22) (2025-01-24)
+
+
+### Bug Fixes
+
+* **deploy:** hack to ensure new versions are being published properly ([c1b1d50](https://github.com/gameguild-gg/website/commit/c1b1d50fa4a2ef26192b6ed50eb018253628bbfb))
+
 ## [1.11.21](https://github.com/gameguild-gg/website/compare/v1.11.20...v1.11.21) (2025-01-24)
 
 
