@@ -1,3 +1,10 @@
+## [1.11.16](https://github.com/gameguild-gg/website/compare/v1.11.15...v1.11.16) (2025-01-24)
+
+
+### Bug Fixes
+
+* **courses:** fix full screen presentations ([24d06e9](https://github.com/gameguild-gg/website/commit/24d06e9138a8374a5ca600eb274f0f3bd15cf2bb))
+
 ## [1.11.15](https://github.com/gameguild-gg/website/compare/v1.11.14...v1.11.15) (2025-01-24)
 
 
