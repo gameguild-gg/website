@@ -53,7 +53,7 @@ const RevealJS: React.FC<RevealJSProps> = ({ content }) => {
     const initializeReveal = async () => {
       try {
         // Ensure the content is wrapped in `<section>` tags for Reveal.js
-        slidesRef.current!.innerHTML = content;
+        slidesRef.current!.innerHTML = `<section data-markdown><textarea data-template>${content}</textarea></section>`;
 
         // Initialize Reveal.js
         const revealInstance = new Reveal(containerRef.current, {
@@ -71,9 +71,8 @@ const RevealJS: React.FC<RevealJSProps> = ({ content }) => {
           controlsLayout: 'bottom-right',
           center: true,
           touch: true,
-          minScale: 1,
-          maxScale: 2,
-          disableLayout: false,
+          minScale: 0.2,
+          maxScale: 2.0,
         });
 
         await revealInstance.initialize();
@@ -97,7 +96,7 @@ const RevealJS: React.FC<RevealJSProps> = ({ content }) => {
     const updateContent = async () => {
       if (revealInstanceRef.current && slidesRef.current) {
         try {
-          slidesRef.current.innerHTML = content;
+          slidesRef.current.innerHTML = `<section data-markdown><textarea data-template>${content}</textarea></section>`;
           await revealInstanceRef.current.sync();
         } catch (err) {
           setError(`Error syncing Reveal.js: ${err}`);
@@ -131,7 +130,7 @@ const RevealJS: React.FC<RevealJSProps> = ({ content }) => {
   return (
     <div
       ref={containerRef}
-      className="reveal-container"
+      className="reveal-container relative"
       style={{
         width: '100%',
         height: '100vh',
