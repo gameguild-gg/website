@@ -1,3 +1,10 @@
+## [1.11.14](https://github.com/gameguild-gg/website/compare/v1.11.13...v1.11.14) (2025-01-24)
+
+
+### Bug Fixes
+
+* **courses:** better sidebar ([6724d65](https://github.com/gameguild-gg/website/commit/6724d65e9b25e6b7b3c1fdd6db717346365664e0))
+
 ## [1.11.13](https://github.com/gameguild-gg/website/compare/v1.11.12...v1.11.13) (2025-01-23)
 
 
