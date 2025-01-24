@@ -2,6 +2,7 @@ name: 💎 Feature Request
 description: "Propose a new feature, service, or improvement, prioritize your request with an attached bounty."
 title: "[Enhancement]: "
 labels: ["enhancement", "triage"]
+type: feature
 body:
   - type: markdown
     attributes:

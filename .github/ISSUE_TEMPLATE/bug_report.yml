@@ -2,6 +2,7 @@ name: "🐞 Bug Report"
 description: "File a new bug report to help us improve GameGuild, prioritize your report with an attached bounty."
 title: "[Bug]: "
 labels: ["bug", "triage"]
+type: bug
 body:
   - type: markdown
     attributes:
