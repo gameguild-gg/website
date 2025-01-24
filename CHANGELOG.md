@@ -1,3 +1,10 @@
+## [1.11.15](https://github.com/gameguild-gg/website/compare/v1.11.14...v1.11.15) (2025-01-24)
+
+
+### Bug Fixes
+
+* **courses:** fix reveal full screen and navigation ([a4d7acb](https://github.com/gameguild-gg/website/commit/a4d7acba7e52b7f16ee54f2cf48647e68eaa449c))
+
 ## [1.11.14](https://github.com/gameguild-gg/website/compare/v1.11.13...v1.11.14) (2025-01-24)
 
 
