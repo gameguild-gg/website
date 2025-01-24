@@ -1,3 +1,10 @@
+## [1.11.19](https://github.com/gameguild-gg/website/compare/v1.11.18...v1.11.19) (2025-01-24)
+
+
+### Bug Fixes
+
+* **blog:** fix [#91](https://github.com/gameguild-gg/website/issues/91) blog renderer, now it will redirect to the proper domain ([aa6a212](https://github.com/gameguild-gg/website/commit/aa6a212ca3136ea1929ca205f3fdfc6ace96483a))
+
 ## [1.11.18](https://github.com/gameguild-gg/website/compare/v1.11.17...v1.11.18) (2025-01-24)
 
 
