@@ -1,3 +1,10 @@
+## [1.11.18](https://github.com/gameguild-gg/website/compare/v1.11.17...v1.11.18) (2025-01-24)
+
+
+### Bug Fixes
+
+* **courses:** add syntax highlight to reveal ([73625ec](https://github.com/gameguild-gg/website/commit/73625ecea482392de9ebd98b3b63ea4822124ff9))
+
 ## [1.11.17](https://github.com/gameguild-gg/website/compare/v1.11.16...v1.11.17) (2025-01-24)
 
 
