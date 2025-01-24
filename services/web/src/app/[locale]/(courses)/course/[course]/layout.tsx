@@ -1,19 +1,19 @@
 'use client';
 import { useState } from 'react';
-import { notFound } from 'next/navigation';
+import { notFound, useParams } from 'next/navigation';
 import { Menu, ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { courses } from '@/data/courses';
 import { CourseNavigation } from '@/components/courses/CourseNavigation';
+import { Api } from '@game-guild/apiclient';
 
 export default function CourseLayout({
   children,
-  params,
 }: {
   children: React.ReactNode;
-  params: { course?: string };
 }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const params = useParams();
 
   if (!params.course) {
     notFound();
@@ -24,6 +24,13 @@ export default function CourseLayout({
   if (!course) {
     notFound();
   }
+
+  const lecture = courses
+    .find((c) => c.slug === params.course)
+    ?.chapters.flatMap((ch) => ch.lectures)
+    .find((l) => l.slug === params.lecture);
+  const isRevealJSLecture =
+    lecture?.renderer === Api.LectureEntity.Renderer.Enum.Reveal;
 
   return (
     <div className="flex h-screen overflow-hidden">
@@ -44,7 +51,11 @@ export default function CourseLayout({
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <CourseNavigation course={course} isOpen={true} />
+          <CourseNavigation
+            course={course}
+            isOpen={true}
+            onNavigate={() => setIsSidebarOpen(false)}
+          />
         </div>
       </aside>
 
@@ -66,7 +77,9 @@ export default function CourseLayout({
           className={`flex-1 overflow-x-hidden overflow-y-auto bg-white transition-all duration-200 ${isSidebarOpen ? 'lg:ml-64' : ''}`}
         >
           <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <h1 className="text-3xl font-bold mb-6">{course.title}</h1>
+            {!isRevealJSLecture && (
+              <h1 className="text-3xl font-bold mb-6">{course.title}</h1>
+            )}
             {children}
           </div>
         </main>

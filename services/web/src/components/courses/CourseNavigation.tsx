@@ -10,12 +10,14 @@ interface CourseNavigationProps {
   course: CourseEntity;
   isOpen: boolean;
   className?: string;
+  onNavigate?: () => void;
 }
 
 export function CourseNavigation({
   course,
   isOpen,
   className = '',
+  onNavigate,
 }: CourseNavigationProps) {
   const pathname = usePathname();
 
@@ -67,6 +69,7 @@ export function CourseNavigation({
                         ? 'bg-blue-100 text-blue-800 font-bold'
                         : 'hover:bg-gray-200 text-blue-600 hover:underline'
                     }`}
+                    onClick={onNavigate}
                   >
                     {lecture.title}
                   </Link>

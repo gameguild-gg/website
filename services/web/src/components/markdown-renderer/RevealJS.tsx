@@ -28,6 +28,28 @@ const RevealJS: React.FC<RevealJSProps> = ({ content }) => {
       return;
     }
 
+    const handleResize = () => {
+      if (revealInstanceRef.current) {
+        revealInstanceRef.current.layout();
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (
+      typeof window === 'undefined' ||
+      !containerRef.current ||
+      !slidesRef.current
+    ) {
+      return;
+    }
+
     const initializeReveal = async () => {
       try {
         // Ensure the content is wrapped in `<section>` tags for Reveal.js
@@ -41,8 +63,17 @@ const RevealJS: React.FC<RevealJSProps> = ({ content }) => {
           margin: 0.04,
           embedded: true,
           hash: false,
-          mouseWheel: false,
+          mouseWheel: true,
           transition: 'none',
+          controls: true,
+          progress: true,
+          controlsTutorial: true,
+          controlsLayout: 'bottom-right',
+          center: true,
+          touch: true,
+          minScale: 1,
+          maxScale: 2,
+          disableLayout: false,
         });
 
         await revealInstance.initialize();
@@ -81,9 +112,15 @@ const RevealJS: React.FC<RevealJSProps> = ({ content }) => {
     if (!document.fullscreenElement) {
       containerRef.current?.requestFullscreen();
       setIsFullscreen(true);
+      if (revealInstanceRef.current) {
+        revealInstanceRef.current.configure({ embedded: false });
+      }
     } else {
       document.exitFullscreen();
       setIsFullscreen(false);
+      if (revealInstanceRef.current) {
+        revealInstanceRef.current.configure({ embedded: true });
+      }
     }
   };
 
@@ -94,8 +131,13 @@ const RevealJS: React.FC<RevealJSProps> = ({ content }) => {
   return (
     <div
       ref={containerRef}
-      className="reveal-container relative"
-      style={{ width: '100%', height: '600px', overflow: 'hidden' }}
+      className="reveal-container"
+      style={{
+        width: '100%',
+        height: '100vh',
+        maxHeight: '600px',
+        overflow: 'hidden',
+      }}
     >
       <div className="reveal">
         <div className="slides" ref={slidesRef}></div>

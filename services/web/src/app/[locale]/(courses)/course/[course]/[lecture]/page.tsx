@@ -49,17 +49,16 @@ export default function CourseLecturePage({ params }: CourseLecturePageProps) {
 
   return (
     <div className="w-full">
-      <h2 className="text-2xl font-semibold mb-4">{lecture.title}</h2>
-      <p className="mb-4">
-        Lecture {lecture.order} in Chapter {lecture.chapter.order}
-      </p>
+      {lecture.renderer !== Api.LectureEntity.Renderer.Enum.Reveal && (
+        <>
+          <h2 className="text-2xl font-semibold mb-4">{lecture.title}</h2>
+          <p className="mb-4">
+            Lecture {lecture.order} in Chapter {lecture.chapter.order}
+          </p>
+        </>
+      )}
       {lecture.body && (
-        <MarkdownRenderer
-          content={lecture.body}
-          renderer={
-            lecture.renderer || Api.LectureEntity.Renderer.Enum.Markdown
-          }
-        />
+        <MarkdownRenderer content={lecture.body} renderer={lecture.renderer} />
       )}
     </div>
   );

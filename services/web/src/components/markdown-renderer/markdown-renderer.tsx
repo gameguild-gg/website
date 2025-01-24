@@ -75,7 +75,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
       if (isInline) {
         return (
           <code
-            className="bg-gray-100 rounded px-1 py-0.5 font-mono text-sm inline"
+            className="bg-gray-100 border border-gray-300 rounded-full px-2 py-1 font-mono text-sm inline whitespace-pre-wrap break-words"
             {...props}
           >
             {children}
@@ -84,16 +84,20 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
       }
 
       return (
-        <code className={`block ${className}`} {...props}>
+        <code
+          className="block font-mono text-sm whitespace-pre-wrap break-words"
+          {...props}
+        >
           {children}
         </code>
       );
     },
     pre: ({ children }) => (
-      <pre className="mb-4 p-4 bg-gray-100 rounded overflow-x-auto">
+      <pre className="mb-4 p-4 bg-gray-100 rounded overflow-x-auto max-w-full">
         {children}
       </pre>
     ),
+
     div: ({ className, children, ...props }) => {
       if (className?.includes('admonition')) {
         const type = className.split('-')[1] as
