@@ -1,12 +1,34 @@
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { courses } from '@/data/courses';
 import MarkdownRenderer from '@/components/markdown-renderer/markdown-renderer';
+import { Api } from '@game-guild/apiclient';
 
-export default function CourseLecturePage({
-  params,
-}: {
+export const dynamic = 'force-dynamic';
+
+interface CourseLecturePageProps {
   params: { course?: string; lecture?: string };
-}) {
+}
+
+export async function generateMetadata({
+  params,
+}: CourseLecturePageProps): Promise<Metadata> {
+  const course = courses.find((c) => c.slug === params.course);
+  const lecture = course?.chapters
+    .flatMap((chapter) => chapter.lectures || [])
+    .find((l) => l.slug === params.lecture);
+
+  if (!course || !lecture) {
+    return {};
+  }
+
+  return {
+    title: `${lecture.title} - ${course.title}`,
+    description: lecture.summary,
+  };
+}
+
+export default function CourseLecturePage({ params }: CourseLecturePageProps) {
   if (!params.course || !params.lecture) {
     notFound();
   }
@@ -26,13 +48,18 @@ export default function CourseLecturePage({
   }
 
   return (
-    <div>
+    <div className="w-full">
       <h2 className="text-2xl font-semibold mb-4">{lecture.title}</h2>
       <p className="mb-4">
         Lecture {lecture.order} in Chapter {lecture.chapter.order}
       </p>
       {lecture.body && (
-        <MarkdownRenderer content={lecture.body} renderer={lecture.renderer} />
+        <MarkdownRenderer
+          content={lecture.body}
+          renderer={
+            lecture.renderer || Api.LectureEntity.Renderer.Enum.Markdown
+          }
+        />
       )}
     </div>
   );
