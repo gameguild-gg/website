@@ -261,92 +261,86 @@
     @apply bg-gray-50 border-gray-500;
 }
 
+
 /* Syntax highlighting */
-pre code.hljs {
+.hljs {
     display: block;
     overflow-x: auto;
+    padding: 0.5em;
+    background: #272822;
+    color: #f8f8f2;
 }
 
-code.hljs {
-    padding: 3px 5px;
-}
-
-.hljs {
-    color: #abb2bf;
-    background: #282c34;
-    white-space: pre-wrap;
-    word-wrap: break-word;
-}
-
-.hljs-comment,
-.hljs-quote {
-    color: #5c6370;
-    font-style: italic;
-}
-
-.hljs-doctag,
-.hljs-keyword,
-.hljs-formula {
-    color: #c678dd;
-}
-
-.hljs-section,
-.hljs-name,
-.hljs-selector-tag,
-.hljs-deletion,
+.hljs-tag,
 .hljs-subst {
-    color: #e06c75;
+    color: #f8f8f2;
 }
 
-.hljs-literal {
-    color: #56b6c2;
-}
-
-.hljs-string,
-.hljs-regexp,
-.hljs-addition,
-.hljs-attribute,
-.hljs-meta .hljs-string {
-    color: #98c379;
-}
-
-.hljs-attr,
-.hljs-variable,
-.hljs-template-variable,
-.hljs-type,
-.hljs-selector-class,
-.hljs-selector-attr,
-.hljs-selector-pseudo,
-.hljs-number {
-    color: #d19a66;
-}
-
-.hljs-symbol,
-.hljs-bullet,
-.hljs-link,
-.hljs-meta,
-.hljs-selector-id,
-.hljs-title {
-    color: #61aeee;
-}
-
-.hljs-built_in,
-.hljs-title.class_,
-.hljs-class .hljs-title {
-    color: #e6c07b;
-}
-
+.hljs-strong,
 .hljs-emphasis {
-    font-style: italic;
+    color: #a8a8a2;
+}
+
+.hljs-bullet,
+.hljs-quote,
+.hljs-number,
+.hljs-regexp,
+.hljs-literal,
+.hljs-link {
+    color: #ae81ff;
+}
+
+.hljs-code,
+.hljs-title,
+.hljs-section,
+.hljs-selector-class {
+    color: #a6e22e;
 }
 
 .hljs-strong {
     font-weight: bold;
 }
 
-.hljs-link {
-    text-decoration: underline;
+.hljs-emphasis {
+    font-style: italic;
 }
+
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-name,
+.hljs-attr {
+    color: #f92672;
+}
+
+.hljs-symbol,
+.hljs-attribute {
+    color: #66d9ef;
+}
+
+.hljs-params,
+.hljs-class .hljs-title {
+    color: #f8f8f2;
+}
+
+.hljs-string,
+.hljs-type,
+.hljs-built_in,
+.hljs-builtin-name,
+.hljs-selector-id,
+.hljs-selector-attr,
+.hljs-selector-pseudo,
+.hljs-addition,
+.hljs-variable,
+.hljs-template-variable {
+    color: #e6db74;
+}
+
+.hljs-comment,
+.hljs-deletion,
+.hljs-meta {
+    color: #75715e;
+}
+
 
 .mermaid-container {
     width: 100%;
@@ -435,11 +429,16 @@ code.hljs {
     margin: 15px 0;
     width: 100%;
     box-shadow: none;
+    background-color: #272822;
+    color: #f8f8f2;
+    padding: 15px;
 }
 
 .reveal pre code {
-    padding: 15px;
     max-height: none;
+    padding: 0;
+    font-size: 1em;
+    line-height: 1.5;
 }
 
 /* Styles for details and summary tags */

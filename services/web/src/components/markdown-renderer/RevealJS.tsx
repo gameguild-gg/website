@@ -7,6 +7,7 @@ import Highlight from 'reveal.js/plugin/highlight/highlight.esm.js';
 import { Maximize2, Minimize2 } from 'lucide-react';
 import 'reveal.js/dist/reveal.css';
 import 'reveal.js/dist/theme/white.css';
+import 'highlight.js/styles/monokai.css';
 
 interface RevealJSProps {
   content: string;
@@ -73,6 +74,10 @@ const RevealJS: React.FC<RevealJSProps> = ({ content }) => {
           touch: true,
           minScale: 0.2,
           maxScale: 2.0,
+          highlight: {
+            highlightOnLoad: true,
+            excapeHTML: false,
+          },
         });
 
         await revealInstance.initialize();
