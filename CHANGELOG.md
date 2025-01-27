@@ -1,3 +1,10 @@
+## [1.11.23](https://github.com/gameguild-gg/website/compare/v1.11.22...v1.11.23) (2025-01-27)
+
+
+### Bug Fixes
+
+* **courses:** add python week03 lectures ([cbe496a](https://github.com/gameguild-gg/website/commit/cbe496abc1fd45ff6431cdc565c9a347fe3066de))
+
 ## [1.11.22](https://github.com/gameguild-gg/website/compare/v1.11.21...v1.11.22) (2025-01-24)
 
 
