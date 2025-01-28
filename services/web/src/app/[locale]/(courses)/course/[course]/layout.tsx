@@ -33,7 +33,7 @@ export default function CourseLayout({
     lecture?.renderer === Api.LectureEntity.Renderer.Enum.Reveal;
 
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div className="flex overflow-hidden">
       {/* Sidebar */}
       <aside
         className={`
