@@ -1,3 +1,10 @@
+## [1.11.24](https://github.com/gameguild-gg/website/compare/v1.11.23...v1.11.24) (2025-01-28)
+
+
+### Bug Fixes
+
+* **courses:** add game ai lectures ([2d3303f](https://github.com/gameguild-gg/website/commit/2d3303ffaf120c5d4fe1082dc34795ff6eaa3ced))
+
 ## [1.11.23](https://github.com/gameguild-gg/website/compare/v1.11.22...v1.11.23) (2025-01-27)
 
 
