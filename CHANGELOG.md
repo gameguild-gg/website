@@ -1,3 +1,10 @@
+## [1.11.25](https://github.com/gameguild-gg/website/compare/v1.11.24...v1.11.25) (2025-01-28)
+
+
+### Bug Fixes
+
+* **courses:** fix [#97](https://github.com/gameguild-gg/website/issues/97) double scroll bars on courses layout ([e547d5c](https://github.com/gameguild-gg/website/commit/e547d5c4c333b65eab5cc177496b31ecb6273213))
+
 ## [1.11.24](https://github.com/gameguild-gg/website/compare/v1.11.23...v1.11.24) (2025-01-28)
 
 
