@@ -7,6 +7,7 @@ import LectureEntity = Api.LectureEntity;
 import syllabusBody from './syllabus.md';
 import Chapter01 from './chapters/week01/';
 import Chapter02 from './chapters/week02/';
+import Chapter03 from '@/data/courses/ai4games/chapters/week03';
 
 const course: CourseEntity = {} as CourseEntity;
 
@@ -25,9 +26,14 @@ course.body = syllabusBody;
 const chapters: ChapterEntity[] = [];
 chapters.push(Chapter01);
 chapters.push(Chapter02);
+chapters.push(Chapter03);
 
 const lectures: LectureEntity[] = [];
-lectures.push(...Chapter01.lectures, ...Chapter02.lectures);
+lectures.push(
+  ...Chapter01.lectures,
+  ...Chapter02.lectures,
+  ...Chapter03.lectures,
+);
 
 // set course for all lectures and chapters
 lectures.forEach((lecture) => (lecture.course = course));
