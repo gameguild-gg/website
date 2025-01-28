@@ -1,3 +1,10 @@
+## [1.11.26](https://github.com/gameguild-gg/website/compare/v1.11.25...v1.11.26) (2025-01-28)
+
+
+### Bug Fixes
+
+* **institutional:** delete deprecated pages ([11dc136](https://github.com/gameguild-gg/website/commit/11dc136b018501b569ae04488eedaa552a383bfb))
+
 ## [1.11.25](https://github.com/gameguild-gg/website/compare/v1.11.24...v1.11.25) (2025-01-28)
 
 
