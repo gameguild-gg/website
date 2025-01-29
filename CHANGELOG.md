@@ -1,3 +1,10 @@
+## [1.11.28](https://github.com/gameguild-gg/website/compare/v1.11.27...v1.11.28) (2025-01-29)
+
+
+### Bug Fixes
+
+* **courses:** portfolio assignment reference ([52e2108](https://github.com/gameguild-gg/website/commit/52e21086160835046532b244e7784c12728f859e))
+
 ## [1.11.27](https://github.com/gameguild-gg/website/compare/v1.11.26...v1.11.27) (2025-01-29)
 
 
