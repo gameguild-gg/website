@@ -3,7 +3,7 @@ import { Api } from '@game-guild/apiclient';
 import LectureEntity = Api.LectureEntity;
 import ChapterEntity = Api.ChapterEntity;
 import lecture03 from './lecture.md';
-import assignment04 from './assignment.md';
+import assignment05 from './assignment05.md';
 
 const week03lectures: LectureEntity[] = [];
 week03lectures.push(
@@ -19,11 +19,11 @@ week03lectures.push(
 
 week03lectures.push(
   createLecture(
-    '2-2',
-    'assignment-04',
-    'Assignment 04',
+    '3-2',
+    'assignment-05',
+    'Assignment 05',
     'LinkedIn Profile Assignment',
-    assignment04,
+    assignment05,
     2,
   ) as LectureEntity,
 );
