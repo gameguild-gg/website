@@ -1,16 +1,18 @@
-'use client'
+"use client"
 
-import { useState, useEffect } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
-import { UserBasev1_0_0 } from '@/lib/interface-base/user.base.v1.0.0'
-import { CourseBasev1_0_0 } from '@/lib/interface-base/course.base.v1.0.0'
-import { HierarchyBasev1_0_0 } from '@/lib/interface-base/structure.base.v1.0.0'
-import RoleSelectionModal from './components/RoleSelectionModal'
-import { Sun, Moon, ZapOff } from 'lucide-react'
-import Image from 'next/image'
-import Link from 'next/link'
+import { useState, useEffect, Suspense } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
+import type { UserBasev1_0_0 } from "@/lib/interface-base/user.base.v1.0.0"
+import type { CourseBasev1_0_0 } from "@/lib/interface-base/course.base.v1.0.0"
+import type { HierarchyBasev1_0_0 } from "@/lib/interface-base/structure.base.v1.0.0"
+import RoleSelectionModal from "./components/RoleSelectionModal"
+import { Sun, Moon, ZapOff } from "lucide-react"
+import Image from "next/image"
+import Link from "next/link"
+import Loading from "../loading"
 
 export default function CoursesPage() {
+  const router = useRouter()
   const [user, setUser] = useState<UserBasev1_0_0 | null>(null)
   const [courses, setCourses] = useState<CourseBasev1_0_0[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -18,19 +20,18 @@ export default function CoursesPage() {
   const [selectedCourse, setSelectedCourse] = useState<CourseBasev1_0_0 | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [hierarchy, setHierarchy] = useState<HierarchyBasev1_0_0 | null>(null)
-  const router = useRouter()
   const searchParams = useSearchParams()
-  const userId = searchParams.get('userId')
-  const [mode, setMode] = useState<'light' | 'dark' | 'high-contrast'>('light')
-  const [role, setRole] = useState<'student' | 'teacher' | null>(null); // Added state for role
+  const userId = searchParams ? searchParams.get("userId") : null
+  const [mode, setMode] = useState<"light" | "dark" | "high-contrast">("dark")
+  const [role, setRole] = useState<"student" | "teacher" | null>(null)
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setIsLoading(true)
-        
+
         // Fetch user data
-        const userResponse = await fetch(`../../api/learn/user/${userId}`)
+        const userResponse = await fetch(`../../../api/learn/user/${userId}`)
         if (!userResponse.ok) {
           const errorData = await userResponse.json()
           throw new Error(`Failed to fetch user data: ${errorData.error}. Details: ${errorData.details}`)
@@ -39,20 +40,20 @@ export default function CoursesPage() {
         setUser(userData)
 
         // Fetch courses data
-        const coursesPromises = userData.idCourses.map(courseId => 
-          fetch(`../../api/learn/course/${courseId}`).then(async (res) => {
+        const coursesPromises = userData.idCourses.map((courseId) =>
+          fetch(`../../../api/learn/course/${courseId}`).then(async (res) => {
             if (!res.ok) {
               const errorData = await res.json()
               throw new Error(`Failed to fetch course ${courseId}: ${errorData.error}. Details: ${errorData.details}`)
             }
             return res.json()
-          })
+          }),
         )
         const coursesData = await Promise.all(coursesPromises)
         setCourses(coursesData)
       } catch (error) {
-        console.error('Error fetching data:', error)
-        setError(error instanceof Error ? error.message : 'An unknown error occurred')
+        console.error("Error fetching data:", error)
+        setError(error instanceof Error ? error.message : "An unknown error occurred")
       } finally {
         setIsLoading(false)
       }
@@ -64,24 +65,24 @@ export default function CoursesPage() {
   }, [userId])
 
   useEffect(() => {
-    const storedMode = localStorage.getItem('colorMode') as 'light' | 'dark' | 'high-contrast' | null
+    const storedMode = localStorage.getItem("colorMode") as "light" | "dark" | "high-contrast" | null
     if (storedMode) {
       setMode(storedMode)
     }
   }, [])
 
   useEffect(() => {
-    localStorage.setItem('colorMode', mode)
+    localStorage.setItem("colorMode", mode)
   }, [mode])
 
   const handleCourseSelect = (course: CourseBasev1_0_0) => {
     const newHierarchy: HierarchyBasev1_0_0 = {
       idHierarchy: [course.id],
       idUser: userId!,
-      idRole: course.teachRole.includes(userId!) ? 'teacher' : 'student'
+      idRole: course.teachRole.includes(userId!) ? "teacher" : "student",
     }
     setHierarchy(newHierarchy)
-    setRole(course.teachRole.includes(userId!) ? 'teacher' : 'student'); // Set role
+    setRole(course.teachRole.includes(userId!) ? "teacher" : "student")
 
     if (course.teachRole.includes(userId!)) {
       setSelectedCourse(course)
@@ -91,7 +92,7 @@ export default function CoursesPage() {
     }
   }
 
-  const handleRoleSelection = (role: 'student' | 'teacher') => {
+  const handleRoleSelection = (role: "student" | "teacher") => {
     setIsModalOpen(false)
     if (selectedCourse) {
       router.push(`/learn/course/${selectedCourse.id}?userId=${userId}&role=${role}`)
@@ -99,12 +100,12 @@ export default function CoursesPage() {
   }
 
   const toggleMode = () => {
-    const newMode = mode === 'light' ? 'dark' : mode === 'dark' ? 'high-contrast' : 'light'
+    const newMode = mode === "light" ? "dark" : mode === "dark" ? "high-contrast" : "light"
     setMode(newMode)
   }
 
   if (isLoading) {
-    return <div className="min-h-screen bg-gray-100 p-8">Loading courses...</div> 
+    return <Loading />
   }
 
   if (error) {
@@ -123,42 +124,65 @@ export default function CoursesPage() {
   }
 
   return (
-    <div className={`p-8 ${
-      mode === 'light' ? 'bg-gray-100 text-gray-900' :
-      mode === 'dark' ? 'bg-gray-800 text-gray-100' :
-      'bg-black text-yellow-300'
-    }`}>
+    <div
+      className={`min-h-screen p-8 ${
+        mode === "light"
+          ? "bg-gray-100 text-gray-900"
+          : mode === "dark"
+            ? "bg-gray-800 text-gray-100"
+            : "bg-black text-yellow-300"
+      }`}
+    >
       <div className="max-w-5xl mx-auto">
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-3xl font-bold">Available Courses</h1>
           <Link href={`/learn/coding-environment?id=0&type=sandbox&userId=${userId}&role=${role}`}>
-            <button className={`p-2 rounded-full transition-colors duration-200 mr-2 ${
-              mode === 'light' ? 'bg-gray-200 text-gray-800 hover:bg-gray-300' :
-              mode === 'dark' ? 'bg-gray-700 text-gray-200 hover:bg-gray-600' :
-              'bg-yellow-300 text-black hover:bg-yellow-400'
-            }`}>
+            <button
+              className={`p-2 rounded-full transition-colors duration-200 mr-2 ${
+                mode === "light"
+                  ? "bg-gray-200 text-gray-800 hover:bg-gray-300"
+                  : mode === "dark"
+                    ? "bg-gray-700 text-gray-200 hover:bg-gray-600"
+                    : "bg-yellow-300 text-black hover:bg-yellow-400"
+              }`}
+            >
               Sandbox
             </button>
           </Link>
-          <button onClick={toggleMode} className={`p-2 rounded-full transition-colors duration-200 ${
-            mode === 'light' ? 'bg-gray-200 text-gray-800 hover:bg-gray-300' :
-            mode === 'dark' ? 'bg-gray-700 text-gray-200 hover:bg-gray-600' :
-            'bg-yellow-300 text-black hover:bg-yellow-400'
-          }`}>
-            {mode === 'light' ? <Sun className="w-5 h-5" /> : mode === 'dark' ? <Moon className="w-5 h-5" /> : <ZapOff className="w-5 h-5" />}
+          <button
+            onClick={toggleMode}
+            className={`p-2 rounded-full transition-colors duration-200 ${
+              mode === "light"
+                ? "bg-gray-200 text-gray-800 hover:bg-gray-300"
+                : mode === "dark"
+                  ? "bg-gray-700 text-gray-200 hover:bg-gray-600"
+                  : "bg-yellow-300 text-black hover:bg-yellow-400"
+            }`}
+          >
+            {mode === "light" ? (
+              <Sun className="w-5 h-5" />
+            ) : mode === "dark" ? (
+              <Moon className="w-5 h-5" />
+            ) : (
+              <ZapOff className="w-5 h-5" />
+            )}
           </button>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-52">
-          {courses.map(course => (
-            <div key={course.id} className="bg-white p-6 rounded-lg shadow-md relative w-72" style={{ width: '384px', height: '384px' }}>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {courses.map((course) => (
+            <div
+              key={course.id}
+              className="bg-white p-6 rounded-lg shadow-md relative w-72"
+              style={{ width: "384px", height: "384px" }}
+            >
               <h3 className="text-lg font-semibold mb-2">{course.title}</h3>
-              <div className="mb-4 relative" style={{ height: '140px' }}>
+              <div className="mb-4 relative" style={{ height: "140px" }}>
                 {course.thumbnail ? (
                   <Image
-                    src={course.thumbnail}
+                    src={course.thumbnail || "/placeholder.svg"}
                     alt={`Thumbnail for ${course.title}`}
                     fill
-                    style={{ objectFit: 'cover' }}
+                    style={{ objectFit: "cover" }}
                     className="rounded-md"
                   />
                 ) : (
@@ -166,7 +190,7 @@ export default function CoursesPage() {
                     src="/placeholder.svg"
                     alt="Placeholder Thumbnail"
                     fill
-                    style={{ objectFit: 'cover' }}
+                    style={{ objectFit: "cover" }}
                     className="rounded-md bg-gray-200"
                   />
                 )}

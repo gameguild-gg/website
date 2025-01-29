@@ -4,11 +4,12 @@
   "type": "code",
   "rules": ["inputs: y", "outputs: y", "submit: n"],
   "title": "Sandbox",
-  "description": "## Welcome to the Coding Sandbox! This environment allows you to experiment with code freely. Here's how to use it:\n\n1. Write your code in the editor.\n2. Use the 'Run' button to execute your code.\n3. View the output in the console below.\n4. You can create, rename, or delete files as needed.\n5. Experiment with different programming languages.\n\nFeel free to test ideas, practice coding, or work on small projects. Happy coding!",
-  "initialCode": [],
+  "description": "Welcome to the Coding Sandbox! This environment allows you to experiment with code freely. Here's how to use it:\n\n1. Write your code in the editor.\n2. Use the 'Run' button to execute your code.\n3. View the output in the console below.\n4. You can create, rename, or delete files as needed.\n5. Experiment with different programming languages.\n\nFeel free to test ideas, practice coding, or work on small projects. Happy coding!",
+  "initialCode": {},
   "codeName": [],
-  "inputs": [],
-  "outputs": [],
+  "inputs": {},
+  "outputs": {},
+  "outputsScore": {},
   "score": [0,0]
 }
 

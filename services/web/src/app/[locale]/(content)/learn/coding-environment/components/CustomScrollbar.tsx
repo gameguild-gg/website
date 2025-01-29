@@ -1,4 +1,4 @@
-import React, { ReactNode } from 'react';
+import React, { ReactNode, useRef, useEffect } from 'react';
 import { Scrollbars } from 'react-custom-scrollbars-2';
 
 interface CustomScrollbarProps {
@@ -8,6 +8,8 @@ interface CustomScrollbarProps {
 }
 
 const CustomScrollbar: React.FC<CustomScrollbarProps> = ({ children, className, mode }) => {
+  const contentRef = useRef<HTMLDivElement>(null);
+
   const getTrackStyle = () => {
     switch (mode) {
       case 'light':
@@ -16,6 +18,8 @@ const CustomScrollbar: React.FC<CustomScrollbarProps> = ({ children, className, 
         return { backgroundColor: '#2a2a2a' };
       case 'high-contrast':
         return { backgroundColor: '#000000' };
+      default:
+        return { backgroundColor: '#f1f1f1' }; // Default to light mode
     }
   };
 
@@ -27,8 +31,15 @@ const CustomScrollbar: React.FC<CustomScrollbarProps> = ({ children, className, 
         return { backgroundColor: '#555555' };
       case 'high-contrast':
         return { backgroundColor: '#ffff00' };
+      default:
+        return { backgroundColor: '#888888' }; // Default to light mode
     }
   };
+
+  useEffect(() => {
+    // Log the contentRef to check if it's correctly referencing the child element
+    console.log("contentRef:", contentRef);
+  }, []);
 
   return (
     <Scrollbars
@@ -40,7 +51,7 @@ const CustomScrollbar: React.FC<CustomScrollbarProps> = ({ children, className, 
         <div {...props} style={{ ...style, ...getThumbStyle(), borderRadius: 4 }} />
       )}
       renderView={props => (
-        <div {...props} style={{ ...props.style, overflowX: 'hidden' }} />
+        <div {...props} ref={contentRef} style={{ ...props.style, overflowX: 'hidden' }} />
       )}
     >
       {children}

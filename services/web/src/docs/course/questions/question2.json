@@ -2,22 +2,41 @@
   "id": 2,
   "format_ver": "1.0.0",
   "type": "code",
-  "rules": ["inputs: y", "outputs: y", "chars: 800"],
+  "rules": [
+    "inputs: y",
+    "outputs: y",
+    "chars: 800"
+  ],
   "status": 1,
-  "subject": ["javascript", "factorial"],
+  "subject": [
+    "javascript",
+    "factorial"
+  ],
   "title": "Factorial Calculator",
   "description": "Write a function that calculates the factorial of a given number.",
-  "initialCode": [
-    "function factorial(n) {\n  if (n === 0 || n === 1) {\n    return 1;\n  }\n  return n * factorial(n - 1);\n}\n\n// Do not modify the code below\nconsole.log(factorial(inputs[0]));\nconsole.log(factorial(inputs[1]));"
+  "initialCode": {
+    "factorial.js": "function factorial(n) {\n  if (n === 0 || n === 1) {\n    return 1;\n  }\n  return n * factorial(n - 1);\n}\n\n// Do not modify the code below\nconsole.log(factorial(inputs[0]));\nconsole.log(factorial(inputs[1]));"
+  },
+  "codeName": [
+    {
+      "id": "factorial.js",
+      "name": "factorial.js"
+    }
   ],
-  "codeName": ["factorial.js"],
   "inputs": [
-    [[5,0]]
+    [
+      5,
+      0
+    ]
   ],
   "outputs": [
     "120",
     "1"
   ],
-  "score": [10, 0]
+  "outputsScore": [5, 5],
+  "score": [
+    10,
+    0
+  ]
 }
 

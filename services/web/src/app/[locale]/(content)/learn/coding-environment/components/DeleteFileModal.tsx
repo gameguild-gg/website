@@ -1,4 +1,4 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/learn/ui/dialog"
 import { Button } from "@/components/learn/ui/button"
 
 interface DeleteFileModalProps {

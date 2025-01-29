@@ -15,3 +15,4 @@ export interface LessonUpdateResponsev1_0_0 {
   message: string;
   updatedLesson: LessonBasev1_0_0;
 }
+

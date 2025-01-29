@@ -2,23 +2,47 @@
   "id": 3,
   "format_ver": "1.0.0",
   "type": "code",
-  "rules": ["inputs: y", "outputs: y", "chars: 1000", "files: 2"],
+  "rules": [
+    "inputs: y",
+    "outputs: y",
+    "chars: 1000",
+    "files: 2"
+  ],
   "status": 3,
-  "subject": ["javascript", "palindrome"],
+  "subject": [
+    "javascript",
+    "palindrome"
+  ],
   "title": "Palindrome Checker",
   "description": "Write a function that checks if a given string is a palindrome.",
-  "initialCode": [
-    "function isPalindrome(str) {\n  const cleanStr = str.toLowerCase().replace(/[^a-z0-9]/g, '');\n  return cleanStr === cleanStr.split('').reverse().join('');\n}\n\n// Do not modify the code below\nconsole.log(isPalindrome(inputs[0]));\nconsole.log(isPalindrome(inputs[1]));",
-    "// This file can be used for helper functions if needed\nfunction removeNonAlphanumeric(str) {\n  return str.replace(/[^a-z0-9]/gi, '');\n}\n\nfunction reverseString(str) {\n  return str.split('').reverse().join('');\n}"
+  "initialCode": {
+    "palindrome.js": "function isPalindrome(str) {\n  const cleanStr = str.toLowerCase().replace(/[^a-z0-9]/g, '');\n  return cleanStr === cleanStr.split('').reverse().join('');\n}\n\n// Do not modify the code below\nconsole.log(isPalindrome(inputs[0]));\nconsole.log(isPalindrome(inputs[1]));",
+    "helpers.js": "// This file can be used for helper functions if needed\nfunction removeNonAlphanumeric(str) {\n  return str.replace(/[^a-z0-9]/gi, '');\n}\n\nfunction reverseString(str) {\n  return str.split('').reverse().join('');\n}"
+  },
+  "codeName": [
+    {
+      "id": "palindrome.js",
+      "name": "palindrome.js"
+    },
+    {
+      "id": "helpers.js",
+      "name": "helpers.js"
+    }
   ],
-  "codeName": ["palindrome.js", "helpers.js"],
   "inputs": [
-    [["racecar","hello"]]
+    [
+      "racecar",
+      "hello"
+    ]
   ],
   "outputs": [
     "true",
     "false"
   ],
-  "score": [10, 0]
+  "outputsScore": [5, 5],
+  "score": [
+    10,
+    0
+  ]
 }
 

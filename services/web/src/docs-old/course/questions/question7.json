@@ -1,0 +1,15 @@
+{
+  "id": 7,
+  "format_ver": "1.0.0",
+  "type": "essay",
+  "rules": ["maxWords: 500"],
+  "status": 1,
+  "subject": ["javascript", "history"],
+  "score": [20, 0],
+  "title": "The History of JavaScript",
+  "description": "Discuss the history and evolution of JavaScript, including its key milestones and influences.",
+  "question": "Provide a comprehensive overview of the history of JavaScript, from its inception to its current state. Include key figures, important dates, and major developments that have shaped the language.",
+  "answer": "A comprehensive history of JavaScript should cover its origins at Netscape, the influence of Brendan Eich, standardization efforts with ECMAScript, the rise of AJAX and dynamic web pages, the impact of Node.js on server-side development, and the modern landscape with frameworks like React, Angular, and Vue.js.",
+  "maxWords": 350
+}
+

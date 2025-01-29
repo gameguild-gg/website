@@ -1,0 +1,15 @@
+{
+  "id": 5,
+  "format_ver": "1.0.0",
+  "type": "answer",
+  "rules": [],
+  "status": 1,
+  "subject": ["javascript", "objects"],
+  "score": [10, 0],
+  "title": "Creating Objects in JavaScript",
+  "description": "This question explores different ways to create objects in JavaScript.",
+  "question": "What are the two main ways to create objects in JavaScript?",
+  "answer": "The two main ways to create objects in JavaScript are using object literals and constructor functions.",
+  "maxLetters": 200
+}
+

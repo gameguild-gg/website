@@ -21,7 +21,7 @@ export default function CoursePage({ params }: { params: { id: string } }) {
   const searchParams = useSearchParams()
   const userId = searchParams.get('userId')
   const role = searchParams.get('role')
-  const [mode, setMode] = useState<'light' | 'dark' | 'high-contrast'>('light')
+  const [mode, setMode] = useState<'light' | 'dark' | 'high-contrast'>('dark')
 
   useEffect(() => {
     const fetchData = async () => {
@@ -136,7 +136,7 @@ export default function CoursePage({ params }: { params: { id: string } }) {
   }
 
   return (
-    <div className={`p-8 ${
+    <div className={`min-h-screen p-8 ${
       mode === 'light' ? 'bg-gray-100 text-gray-900' :
       mode === 'dark' ? 'bg-gray-800 text-gray-100' :
       'bg-black text-yellow-300'

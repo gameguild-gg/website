@@ -4,6 +4,7 @@ export interface History {
 }
 
 export interface CodeFile {
+  id: string;
   name: string;
   language: string;
   content: string;

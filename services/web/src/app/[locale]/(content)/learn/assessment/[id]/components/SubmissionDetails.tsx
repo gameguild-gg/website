@@ -1,30 +1,14 @@
 import React, { useState } from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/learn/ui/dialog';
-import { Button } from '@/components/learn/ui/button';
-import { Input } from '@/components/learn/ui/input';
-import {
-  QuestionBasev1_0_0,
-  CodeQuestionv1_0_0,
-  AnswerQuestionv1_0_0,
-  MultipleChoiceQuestionv1_0_0,
-  EssayQuestionv1_0_0,
-} from '@/lib/interface-base/question.base.v1.0.0';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/learn/ui/dialog";
+import { Button } from "@/components/learn/ui/button";
+import { Input } from "@/components/learn/ui/input";
+import { QuestionBasev1_0_0, CodeQuestionv1_0_0, AnswerQuestionv1_0_0, MultipleChoiceQuestionv1_0_0, EssayQuestionv1_0_0 } from '@/lib/interface-base/question.base.v1.0.0';
 import ReactMarkdown from 'react-markdown';
 import RichTextEditor from '@/components/learn/RichTextEditor';
 import Link from 'next/link';
 
 interface SubmissionDetailsProps {
-  submission:
-    | CodeQuestionv1_0_0
-    | AnswerQuestionv1_0_0
-    | MultipleChoiceQuestionv1_0_0
-    | EssayQuestionv1_0_0;
+  submission: CodeQuestionv1_0_0 | AnswerQuestionv1_0_0 | MultipleChoiceQuestionv1_0_0 | EssayQuestionv1_0_0;
   mode: 'light' | 'dark' | 'high-contrast';
   onClose: () => void;
   courseId: string;
@@ -53,10 +37,7 @@ const SubmissionDetails: React.FC<SubmissionDetailsProps> = ({
   const [score, setScore] = useState(initialScore);
 
   const handleScoreChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newScore = Math.min(
-      Math.max(0, parseInt(e.target.value) || 0),
-      maxScore,
-    );
+    const newScore = Math.min(Math.max(0, parseInt(e.target.value) || 0), maxScore);
     setScore(newScore);
   };
 
@@ -74,9 +55,7 @@ const SubmissionDetails: React.FC<SubmissionDetailsProps> = ({
           <div>
             <h3 className="text-lg font-semibold mb-2">Submitted Code:</h3>
             <pre className="bg-gray-100 p-4 rounded-md overflow-x-auto">
-              <code>
-                {(submission as CodeQuestionv1_0_0).submittedCode.join('\n')}
-              </code>
+              <code>{(submission as CodeQuestionv1_0_0).submittedCode.join('\n')}</code>
             </pre>
             {(submission as CodeQuestionv1_0_0).output && (
               <div className="mt-4">
@@ -86,9 +65,7 @@ const SubmissionDetails: React.FC<SubmissionDetailsProps> = ({
                 </pre>
               </div>
             )}
-            <Link
-              href={`/learn/coding-environment?id=${submission.id}&type=submission&userId=${userId}&role=${role}&courseId=${courseId}&moduleId=${moduleId}&assessmentId=${assessmentId}&submissionId=${submissionId}`}
-            >
+            <Link href={`/learn/coding-environment?id=${submission.id}&type=submission&userId=${userId}&role=${role}&courseId=${courseId}&moduleId=${moduleId}&assessmentId=${assessmentId}&submissionId=${submissionId}`}>
               <Button>View Student Code</Button>
             </Link>
           </div>
@@ -97,9 +74,7 @@ const SubmissionDetails: React.FC<SubmissionDetailsProps> = ({
         return (
           <div>
             <h3 className="text-lg font-semibold mb-2">Submitted Answer:</h3>
-            <ReactMarkdown>
-              {(submission as AnswerQuestionv1_0_0).submittedAnswer}
-            </ReactMarkdown>
+            <ReactMarkdown>{(submission as AnswerQuestionv1_0_0).submittedAnswer}</ReactMarkdown>
           </div>
         );
       case 'multiple-choice':
@@ -107,9 +82,7 @@ const SubmissionDetails: React.FC<SubmissionDetailsProps> = ({
           <div>
             <h3 className="text-lg font-semibold mb-2">Selected Answers:</h3>
             <ul className="list-disc list-inside">
-              {(
-                submission as MultipleChoiceQuestionv1_0_0
-              ).submittedAnswers.map((answerId, index) => (
+              {(submission as MultipleChoiceQuestionv1_0_0).submittedAnswers.map((answerId, index) => (
                 <li key={index}>{answerId}</li>
               ))}
             </ul>
@@ -119,9 +92,7 @@ const SubmissionDetails: React.FC<SubmissionDetailsProps> = ({
         return (
           <div>
             <h3 className="text-lg font-semibold mb-2">Submitted Essay:</h3>
-            <ReactMarkdown>
-              {(submission as EssayQuestionv1_0_0).submittedEssay}
-            </ReactMarkdown>
+            <ReactMarkdown>{(submission as EssayQuestionv1_0_0).submittedEssay}</ReactMarkdown>
           </div>
         );
       default:
@@ -131,15 +102,11 @@ const SubmissionDetails: React.FC<SubmissionDetailsProps> = ({
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent
-        className={`${
-          mode === 'light'
-            ? 'bg-white text-gray-900'
-            : mode === 'dark'
-              ? 'bg-gray-800 text-gray-100'
-              : 'bg-black text-yellow-300'
-        } max-w-3xl`}
-      >
+      <DialogContent className={`${
+        mode === 'light' ? 'bg-white text-gray-900' :
+        mode === 'dark' ? 'bg-gray-800 text-gray-100' :
+        'bg-black text-yellow-300'
+      } max-w-3xl`}>
         <DialogHeader>
           <DialogTitle>Submission Details</DialogTitle>
         </DialogHeader>
@@ -165,9 +132,7 @@ const SubmissionDetails: React.FC<SubmissionDetailsProps> = ({
           </div>
         </div>
         <DialogFooter>
-          <Button onClick={onClose} variant="outline">
-            Cancel
-          </Button>
+          <Button onClick={onClose} variant="outline">Cancel</Button>
           <Button onClick={handleSaveScore}>Save Score</Button>
         </DialogFooter>
       </DialogContent>
@@ -176,3 +141,4 @@ const SubmissionDetails: React.FC<SubmissionDetailsProps> = ({
 };
 
 export default SubmissionDetails;
+

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
-import { CodeQuestionSubmissionv1_0_0 } from '@/lib/interface-base/question.submission.v1.0.0'
+import { QuestionSubmission } from '@/lib/interface-base/question.submission.v1.0.0'
 
-interface GradeSubmission extends CodeQuestionSubmissionv1_0_0 {
+interface GradeSubmission extends QuestionSubmission {
   grade: number;
   feedback: string;
 }

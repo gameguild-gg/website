@@ -20,7 +20,7 @@ export default function RootLayout({
     </html>
   )
 }
-  */
+*/
 
 import React, { PropsWithChildren } from 'react';
 import Header from '@/components/common/header';
@@ -35,5 +35,3 @@ export default async function Layout({
     </div>
   );
 }
-
-

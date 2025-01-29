@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { X, ChevronLeft, ChevronRight } from 'lucide-react'
+import { X, ChevronLeft, ChevronRight, FileText } from 'lucide-react'
 
 interface CodeFile {
   name: string
@@ -11,19 +11,22 @@ interface CodeTabsProps {
   files: CodeFile[]
   activeIndex: number
   onTabChange: (index: number) => void
+  onCloseTab: (index: number) => void
   mode: 'light' | 'dark' | 'high-contrast'
 }
 
-export default function CodeTabs({ files, activeIndex, onTabChange, mode }: CodeTabsProps) {
+export default function CodeTabs({ files, activeIndex, onTabChange, onCloseTab, mode }: CodeTabsProps) {
   const tabsRef = useRef<HTMLDivElement>(null)
   const [showLeftArrow, setShowLeftArrow] = useState(false)
   const [showRightArrow, setShowRightArrow] = useState(false)
 
   const checkForArrows = () => {
-    if (tabsRef.current) {
-      const { scrollLeft, scrollWidth, clientWidth } = tabsRef.current
-      setShowLeftArrow(scrollLeft > 0)
-      setShowRightArrow(scrollLeft < scrollWidth - clientWidth)
+    if (tabsRef?.current) { // Add optional chaining
+      const { scrollLeft, scrollWidth, clientWidth } = tabsRef.current;
+      if (scrollLeft && scrollWidth && clientWidth) { // Add conditional check
+        setShowLeftArrow(scrollLeft > 0);
+        setShowRightArrow(scrollLeft < scrollWidth - clientWidth);
+      }
     }
   }
 
@@ -68,9 +71,10 @@ export default function CodeTabs({ files, activeIndex, onTabChange, mode }: Code
         onScroll={checkForArrows}
       >
         {files.map((file, index) => (
-          <button
+          <div
             key={index}
-            className={`px-3 py-2 text-sm font-medium flex items-center whitespace-nowrap ${
+            onClick={() => onTabChange(index)}
+            className={`px-3 py-2 text-sm font-medium flex items-center whitespace-nowrap group cursor-pointer ${
               index === activeIndex
                 ? mode === 'light'
                   ? 'bg-white text-blue-600 border-t-2 border-blue-500'
@@ -83,13 +87,24 @@ export default function CodeTabs({ files, activeIndex, onTabChange, mode }: Code
                 ? 'bg-gray-700 text-gray-400 hover:bg-gray-600'
                 : 'bg-gray-900 text-gray-300 hover:bg-gray-800'
             }`}
-            onClick={() => onTabChange(index)}
           >
-            {file.name}
-            {files.length > 1 && (
-              <X className="ml-2 w-4 h-4 opacity-0 group-hover:opacity-100" />
-            )}
-          </button>
+            <span>{file.name}</span>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onCloseTab(index);
+              }}
+              className={`ml-2 p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity ${
+                mode === 'light'
+                  ? 'hover:bg-gray-300'
+                  : mode === 'dark'
+                  ? 'hover:bg-gray-500'
+                  : 'hover:bg-gray-700'
+              }`}
+            >
+              <X className="w-3 h-3" />
+            </button>
+          </div>
         ))}
       </div>
       {showRightArrow && (

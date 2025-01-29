@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server'
 import { QuestionSubmissionv1_0_0, CodeQuestionSubmissionv1_0_0, AnswerQuestionSubmissionv1_0_0, MultipleChoiceQuestionSubmissionv1_0_0 } from '@/lib/interface-base/question.submission.v1.0.0'
-//import { QuestionStatus } from '@/lib/interface-base/question.base.v1.0.0'; // Import the enum
+import { QuestionStatus } from '@/lib/interface-base/question.base.v1.0.0'; // Import the enum
 
 export async function POST(request: Request) {
   try {
     const submission: QuestionSubmissionv1_0_0 = await request.json()
-
+    
     if (submission.type === 'code') {
       // Handle code submission
       const codeSubmission = submission as CodeQuestionSubmissionv1_0_0;

@@ -136,15 +136,33 @@ function validateQuestion(data: any): asserts data is QuestionBasev1_0_0 {
   }
 
   if (data.type === 'code') {
-    if (
-      !Array.isArray(data.initialCode) ||
-      !Array.isArray(data.codeName) ||
-      !Array.isArray(data.inputs) ||
-      !Array.isArray(data.outputs)
-    ) {
-      console.error('Invalid code question data:', data);
-      throw new Error('Invalid code question data');
+    if (data.id === 0) {
+      // Sandbox question
+      if (
+        typeof data.initialCode !== 'object' ||
+        !Array.isArray(data.codeName) ||
+        typeof data.inputs !== 'object' ||
+        typeof data.outputs !== 'object'
+      ) {
+        console.error('Invalid sandbox question data:', data);
+        throw new Error('Invalid sandbox question data');
+      }
+    } else {
+      // Regular code question
+      if (
+        typeof data.initialCode !== 'object' ||
+        Object.keys(data.initialCode).length === 0 ||
+        !Array.isArray(data.codeName) ||
+        data.codeName.length === 0 ||
+        typeof data.inputs !== 'object' ||
+        typeof data.outputs !== 'object' ||
+        typeof data.outputsScore !== 'object'
+      ) {
+        console.error('Invalid code question data:', data);
+        throw new Error('Invalid code question data');
+      }
     }
+    
   } else if (data.type === 'answer') {
     if (
       typeof data.question !== 'string' ||

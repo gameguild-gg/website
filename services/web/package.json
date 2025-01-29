@@ -129,7 +129,10 @@
     "vaul": "^0.9.6",
     "worker-loader": "^3.0.8",
     "zod": "^3.22.4",
-    "zustand": "^5.0.2"
+    "zustand": "^5.0.2",
+
+    "re-resizable": "latest",
+    "@uiw/react-markdown-preview": "latest"
   },
   "devDependencies": {
     "@game-guild/eslint-config": "*",

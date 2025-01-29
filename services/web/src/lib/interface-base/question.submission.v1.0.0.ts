@@ -16,6 +16,7 @@ export interface CodeQuestionSubmissionv1_0_0 extends QuestionSubmissionBasev1_0
   type: "code";
   submittedCode: string[];
   output: string;
+  codeName: { id: string; name: string }[];
   testResults: {
     expectedOutput: string;
     actualOutput: string;

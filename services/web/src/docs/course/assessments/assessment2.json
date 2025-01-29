@@ -1,7 +1,7 @@
 {
   "id": 2,
   "idQuestions": [
-    { "title": "Tab 1", "questions": [1, 2] },
+    { "title": "Tab 1", "questions": [2] },
     { "title": "Tab 2", "questions": [3, 4] },
     { "title": "All Questions", "questions": [5, 6] }
   ],

@@ -1,0 +1,41 @@
+{
+  "id": 9,
+  "format_ver": "1.0.0",
+  "type": "code",
+  "rules": ["inputs: n", "outputs: y", "chars: 3000", "files: 10"],
+  "status": 1,
+  "subject": ["multi-language", "file organization"],
+  "title": "Organized Code Samples",
+  "description": "This question demonstrates file organization with containers.",
+  "initialCode": {
+    "/javascript/hello.js": "// JavaScript Hello World\nconsole.log('Hello, World!');",
+    "/javascript/utils/math.js": "// JavaScript Math Utils\nconst sum = (a, b) => a + b;\nconsole.log(sum(2, 3));",
+    "/python/hello.py": "# Python Hello World\nprint('Hello, World!')",
+    "/python/utils/math.py": "# Python Math Utils\ndef sum(a, b):\n  return a + b\nprint(sum(2, 3))",
+    "main.js": "// Main JavaScript file\nimport { sum } from './javascript/utils/math.js';\nconsole.log('Result:', sum(5, 7));"
+  },
+  "codeName": [
+    { "id": "/javascript/hello.js", "name": "src/hello.js" },
+    { "id": "/javascript/utils/math.js", "name": "src/math.js" },
+    { "id": "/python/hello.py", "name": "src/hello.py" },
+    { "id": "/python/utils/math.py", "name": "src/math.py" },
+    { "id": "main.js", "name": "main.js" }
+  ],
+  "inputs": {},
+  "outputs": {
+    "/javascript/hello.js": ["Hello, World!"],
+    "/javascript/utils/math.js": ["5"],
+    "/python/hello.py": ["Hello, World!"],
+    "/python/utils/math.py": ["5"],
+    "main.js": ["Result: 12"]
+  },
+  "outputsScore": {
+    "/javascript/hello.js": [2],
+    "/javascript/utils/math.js": [2],
+    "/python/hello.py": [2],
+    "/python/utils/math.py": [2],
+    "main.js": [2]
+  },
+  "score": [10, 0]
+}
+

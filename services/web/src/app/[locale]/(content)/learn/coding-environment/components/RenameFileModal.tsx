@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/learn/ui/dialog"
 import { Input } from "@/components/learn/ui/input"
 import { Label } from "@/components/learn/ui/label"
@@ -14,14 +14,27 @@ interface RenameFileModalProps {
 
 export default function RenameFileModal({ isOpen, onClose, onRenameFile, activeFileName, mode }: RenameFileModalProps) {
   const [newFileName, setNewFileName] = useState(activeFileName)
+  const [newExtension, setNewExtension] = useState('')
+
+  const fileNameWithoutExtension = useMemo(() => {
+    const parts = activeFileName.split('.')
+    if (parts.length > 1) {
+      setNewExtension('.' + parts.pop())
+      return parts.join('.')
+    }
+    return activeFileName
+  }, [activeFileName])
 
   useEffect(() => {
-    setNewFileName(activeFileName)
+    setNewFileName(fileNameWithoutExtension)
   }, [activeFileName])
 
   const handleConfirmRename = () => {
-    if (newFileName && newFileName !== activeFileName) {
-      onRenameFile(activeFileName, newFileName)
+    if (newFileName) {
+      const newNameWithExtension = newFileName + newExtension
+      if (newNameWithExtension !== activeFileName) {
+        onRenameFile(activeFileName, newNameWithExtension)
+      }
       onClose()
     }
   }
@@ -91,6 +104,20 @@ export default function RenameFileModal({ isOpen, onClose, onRenameFile, activeF
               value={newFileName}
               onChange={(e) => setNewFileName(e.target.value)}
               className={`col-span-3 ${getInputStyles()}`}
+            />
+          </div>
+        </div>
+        <div className="grid gap-4 py-4">
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="extension" className={`text-right ${mode === 'high-contrast' ? 'text-yellow-300' : ''}`}>
+              Extension
+            </Label>
+            <Input
+              id="extension"
+              value={newExtension}
+              onChange={(e) => setNewExtension(e.target.value)}
+              className={`col-span-3 ${getInputStyles()}`}
+              placeholder="Enter the new extension (e.g., .js)"
             />
           </div>
         </div>
