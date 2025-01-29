@@ -1,3 +1,10 @@
+## [1.11.27](https://github.com/gameguild-gg/website/compare/v1.11.26...v1.11.27) (2025-01-29)
+
+
+### Bug Fixes
+
+* **courses:** linkedin content ([659afa8](https://github.com/gameguild-gg/website/commit/659afa8fff3c1ecc8cb018718fdb69837fa32f1c))
+
 ## [1.11.26](https://github.com/gameguild-gg/website/compare/v1.11.25...v1.11.26) (2025-01-28)
 
 
