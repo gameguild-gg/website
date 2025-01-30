@@ -264,7 +264,7 @@ export default function CodeEditorPanel({ assignment, onSubmit, hierarchy = {
             id,
             name,
             language,
-            content: codeQuestion.rules.includes("inputs: y")
+            content: codeQuestion.rules.includes("addinput")
               ? insertInputs(content, codeQuestion.inputs[id] || [], language, 0)
               : content,
             history: { past: [], future: [] },
@@ -1344,7 +1344,7 @@ export default function CodeEditorPanel({ assignment, onSubmit, hierarchy = {
         activeFileIndex,
       }
       saveStateToLocalStorage(currentState, courseId, moduleId, assessmentId)
-    }, 5000) // Auto-save every 5 seconds
+    }, 3000) // Auto-save every 3 seconds
 
     return () => clearInterval(autoSaveTimer)
   }, [assignment, codeFiles, globalCodeFiles, output, testResults, activeFileIndex, courseId, moduleId, assessmentId])
