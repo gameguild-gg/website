@@ -1,3 +1,10 @@
+## [1.11.29](https://github.com/gameguild-gg/website/compare/v1.11.28...v1.11.29) (2025-01-30)
+
+
+### Bug Fixes
+
+* **courses:** added generateMetadata and SSR as possible on the courses pages. ([afcefd4](https://github.com/gameguild-gg/website/commit/afcefd4f043d483b1854a84e0e2830c2282d2830))
+
 ## [1.11.28](https://github.com/gameguild-gg/website/compare/v1.11.27...v1.11.28) (2025-01-29)
 
 
