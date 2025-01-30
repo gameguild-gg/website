@@ -24,7 +24,7 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ value, onChange, mode }
         onChange={(val) => onChange(val)}
         preview="edit"
         height={400}
-        theme={editorTheme}
+        data-color-mode={editorTheme}
       />
       <style jsx global>{`
         .markdown-editor.light .w-md-editor {

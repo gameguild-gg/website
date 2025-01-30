@@ -33,7 +33,7 @@ export async function GET() {
     return NextResponse.json(structure)
   } catch (error) {
     console.error('Error reading course structure:', error)
-    return NextResponse.json({ error: 'Failed to load course structure', details: error.message }, { status: 500 })
+    return NextResponse.json({ error: 'Failed to load course structure', details: (error as Error).message }, { status: 500 })
   }
 }
 

@@ -1,14 +1,15 @@
 import { NextResponse } from 'next/server'
-import { QuestionSubmission } from '@/lib/interface-base/question.submission.v1.0.0'
+import { QuestionSubmissionv1_0_0 } from '@/lib/interface-base/question.submission.v1.0.0'
 
-interface GradeSubmission extends QuestionSubmission {
-  grade: number;
-  feedback: string;
-}
+// interface GradeSubmission extends QuestionSubmissionv1_0_0 {
+//   [x: string]: any;
+//   grade: number;
+//   feedback: string;
+// }
 
 export async function POST(request: Request) {
   try {
-    const gradeSubmission: GradeSubmission = await request.json()
+    const gradeSubmission: QuestionSubmissionv1_0_0 = await request.json()
     
     // Validate the grade submission
     if (

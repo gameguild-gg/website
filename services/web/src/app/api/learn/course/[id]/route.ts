@@ -19,7 +19,7 @@ export async function GET(
       courseData = JSON.parse(fileContents)
     } catch (parseError) {
       console.error(`Error parsing JSON:`, parseError)
-      return NextResponse.json({ error: 'Invalid JSON in course file', details: parseError.message }, { status: 500 })
+      return NextResponse.json({ error: 'Invalid JSON in course file', details: (parseError as Error).message }, { status: 500 })
     }
 
     return NextResponse.json(courseData)

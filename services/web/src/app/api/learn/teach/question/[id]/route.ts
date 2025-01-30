@@ -17,7 +17,8 @@ async function getUserData(userId: string): Promise<UserBasev1_0_0 | null> {
 
 export async function GET(request: Request, { params }: { params: { id: string } }) {
   try {
-    const courseId = request.nextUrl.searchParams.get('courseId');
+    const url = new URL(request.url);
+    const courseId = url.searchParams.get('courseId');
     if (!courseId) {
       return NextResponse.json({ error: 'courseId is required' }, { status: 400 });
     }
@@ -36,24 +37,24 @@ export async function GET(request: Request, { params }: { params: { id: string }
 
     const userListData: UserListQuestionv1_0_0 = JSON.parse(fileContents);
 
-    const filteredSubmissions = await Promise.all(
+    const filteredSubmissions = (await Promise.all(
       Object.entries(userListData.submissions).map(async ([userId, submissionData]) => {
         const userData = await getUserData(userId);
         if (userData && userData.idCourses.includes(parseInt(courseId))) {
-          return [userId, submissionData];
+          return { userId, submissionData };
         }
         return null;
       })
-    );
+    )).filter(Boolean);
+    
 
     const filteredUserList: UserListQuestionv1_0_0 = {
       submissions: filteredSubmissions.reduce((acc, submission) => {
-        if (submission) {
-          acc[submission[0]] = submission[1];
-        }
+        acc[submission.userId] = submission.submissionData;
         return acc;
       }, {} as { [userId: string]: any })
     };
+    
 
     return NextResponse.json(filteredUserList);
   } catch (error) {
