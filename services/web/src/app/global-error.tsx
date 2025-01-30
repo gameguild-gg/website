@@ -1,4 +1,4 @@
-'use client' // Error boundaries must be Client Components
+'use client'; // Error boundaries must be Client Components
 
 import React from 'react';
 
@@ -7,7 +7,7 @@ type Props = {
   reset: () => void;
 };
 
-export default function GlobalError({error, reset}: Readonly<Props>) {
+export default function GlobalError({ error, reset }: Readonly<Props>) {
   return (
     // global-error must include html and body tags
     // TODO: Refactor this to use a better GlobalError layout

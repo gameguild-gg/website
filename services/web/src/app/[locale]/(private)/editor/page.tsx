@@ -1,6 +1,6 @@
 'use client';
 
-import { CodeiumEditor, Language, Document } from '@codeium/react-code-editor';
+import { CodeiumEditor } from '@codeium/react-code-editor';
 import { editor } from 'monaco-editor';
 import { Monaco } from '@monaco-editor/react';
 import React, { useEffect, useRef, useState } from 'react';

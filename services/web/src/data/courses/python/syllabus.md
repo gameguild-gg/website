@@ -1,6 +1,10 @@
 # Python Programming
 
-Students will learn the history and basics of computing as well as the fundamentals of Python programming. General topics include: the history of computing, number systems, Boolean logic, algorithm design and implementation, and modern computer organization. Programming topics include: memory and variables, data types, mathematical operations, basic file I/O, decision-making, repetitions, functions, and list basics. [Source](https://classlist.champlain.edu/show/course/number/CSI_160)
+Students will learn the history and basics of computing as well as the fundamentals of Python programming. General
+topics include: the history of computing, number systems, Boolean logic, algorithm design and implementation, and modern
+computer organization. Programming topics include: memory and variables, data types, mathematical operations, basic file
+I/O, decision-making, repetitions, functions, and list
+basics. [Source](https://classlist.champlain.edu/show/course/number/CSI_160)
 
 ## Prerequisites
 
@@ -11,7 +15,6 @@ Students will learn the history and basics of computing as well as the fundament
 - None
 
 ## Student-centered Learning Outcomes
-
 
 [![Bloom's Taxonomy](https://cdn.vanderbilt.edu/vu-wp0/wp-content/uploads/sites/59/2019/03/27124326/Blooms-Taxonomy-650x366.jpg)](https://cft.vanderbilt.edu/guides-sub-pages/blooms-taxonomy/)
 [Reference](https://cft.vanderbilt.edu/guides-sub-pages/blooms-taxonomy/)
@@ -26,10 +29,13 @@ Upot completion of the Python Programming course, students should be able to:
 - **Describe** the significance of accessibility in programming and how it impacts users.
 - **Demonstrate** the ability to manipulate files using basic input and output operations in Python.
 - **Apply** the concepts of number systems by converting values between binary, decimal, hexadecimal, and other formats.
-- **Compare** and evaluate various conditional constructs to determine the most appropriate for solving specific programming problems.
+- **Compare** and evaluate various conditional constructs to determine the most appropriate for solving specific
+  programming problems.
 - **Analyze** different iteration constructs and select the one that best suits a given programming scenario.
-- **Assess** the correctness and efficiency of programs by designing, implementing, testing, and debugging them to meet specified requirements.
-- **Develop** modular programs using the principles of structured (functional) decomposition to break down complex problems into smaller, manageable parts.
+- **Assess** the correctness and efficiency of programs by designing, implementing, testing, and debugging them to meet
+  specified requirements.
+- **Develop** modular programs using the principles of structured (functional) decomposition to break down complex
+  problems into smaller, manageable parts.
 - **Design** and **implement** algorithms to solve problems using the Python programming language.
 
 ::: warning
@@ -49,7 +55,7 @@ This is a work in progress schedule. It is subject to change. Every change will 
     - Syllabus, Impostor syndrome, the Dunning-Kruger effect, Curiosity and the Growth Mindset
     - Problem-solving and Algorithmic thinking, Mazes, and the Maze-solving problem
 - Week 2: 2025/01/20 - 2025/01/24
-    - Introduction to Python and toolset 
+    - Introduction to Python and toolset
     - Variables, data types, and operators
 - Week 3: 2025/01/27 - 2025/01/31
     - Functions
@@ -71,7 +77,7 @@ This is a work in progress schedule. It is subject to change. Every change will 
     - Functions
     - Midterm Exam
 - Week 9: 2025/03/10 - 2025/03/14
-    - Spring break 
+    - Spring break
 - Week 10: 2025/03/17 - 2025/03/21
     - Dictionaries
     - ASCII

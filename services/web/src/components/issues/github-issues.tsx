@@ -1,38 +1,14 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Link from 'next/link';
-import {
-  ChevronLeft,
-  ChevronRight,
-  Bug,
-  Lightbulb,
-  HelpCircle,
-} from 'lucide-react';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
+import { Bug, ChevronLeft, ChevronRight, HelpCircle, Lightbulb } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface User {
   login: string;
@@ -158,23 +134,23 @@ export default function GitHubIssues() {
       const uniqueLabels = Array.from(
         new Set(
           data.issues
-            .flatMap((issue) => issue.labels || [])
-            .map((label) => JSON.stringify(label)),
+          .flatMap((issue) => issue.labels || [])
+          .map((label) => JSON.stringify(label)),
         ),
       )
-        .map((labelString) => {
-          if (typeof labelString !== 'string') {
-            console.error('Unexpected non-string label:', labelString);
-            return null;
-          }
-          try {
-            return JSON.parse(labelString) as Label;
-          } catch {
-            console.error('Failed to parse label:', labelString);
-            return null;
-          }
-        })
-        .filter((label): label is Label => label !== null);
+      .map((labelString) => {
+        if (typeof labelString !== 'string') {
+          console.error('Unexpected non-string label:', labelString);
+          return null;
+        }
+        try {
+          return JSON.parse(labelString) as Label;
+        } catch {
+          console.error('Failed to parse label:', labelString);
+          return null;
+        }
+      })
+      .filter((label): label is Label => label !== null);
 
       setUsers(uniqueUsers as string[]);
       setLabels(uniqueLabels);
@@ -448,40 +424,40 @@ export default function GitHubIssues() {
                       role: 'Requested Reviewer',
                     })) || []),
                   ]
-                    .filter(
-                      (person, index, self) =>
-                        index ===
-                        self.findIndex(
-                          (t) => t.user.login === person.user.login,
-                        ),
-                    )
-                    .map(({ user, role }) => (
-                      <TooltipProvider key={`${issue.number}-${user.login}`}>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <button
-                              onClick={() => handleUserClick(user.login)}
-                              className={`relative ${selectedUser === user.login ? 'ring-2 ring-blue-500 rounded-full' : ''}`}
-                            >
-                              <Avatar className="h-6 w-6 cursor-pointer">
-                                <AvatarImage
-                                  src={user.avatar_url}
-                                  alt={user.login}
-                                />
-                                <AvatarFallback>
-                                  {user.login.slice(0, 2).toUpperCase()}
-                                </AvatarFallback>
-                              </Avatar>
-                            </button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>
-                              {role}: {user.login}
-                            </p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    ))}
+                  .filter(
+                    (person, index, self) =>
+                      index ===
+                      self.findIndex(
+                        (t) => t.user.login === person.user.login,
+                      ),
+                  )
+                  .map(({ user, role }) => (
+                    <TooltipProvider key={`${issue.number}-${user.login}`}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button
+                            onClick={() => handleUserClick(user.login)}
+                            className={`relative ${selectedUser === user.login ? 'ring-2 ring-blue-500 rounded-full' : ''}`}
+                          >
+                            <Avatar className="h-6 w-6 cursor-pointer">
+                              <AvatarImage
+                                src={user.avatar_url}
+                                alt={user.login}
+                              />
+                              <AvatarFallback>
+                                {user.login.slice(0, 2).toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>
+                            {role}: {user.login}
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  ))}
                 </div>
               </TableCell>
               <TableCell className="hidden sm:table-cell py-4">

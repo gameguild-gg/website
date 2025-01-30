@@ -8,7 +8,8 @@ export type FetchCourses = {
 };
 
 export class FetchCoursesGateway implements FetchCourses {
-  constructor(readonly httpClient: HttpClient) {}
+  constructor(readonly httpClient: HttpClient) {
+  }
 
   public fetchCourses(): Promise<ReadonlyArray<CourseEntity>> {
     return Promise.resolve(COURSES);

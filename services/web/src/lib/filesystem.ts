@@ -8,27 +8,6 @@ class MemFS {
   }
 
   /**
-   * Resolve the path and return the parent directory and target name.
-   * @param path Full path to resolve.
-   */
-  private resolvePath(path: string): { parent: Directory; target: string } {
-    const parts = path.split('/').filter(Boolean);
-    if (parts.length === 0) throw new Error('Invalid path');
-
-    const target = parts.pop()!;
-    let current: Directory = this.root;
-
-    for (const part of parts) {
-      if (typeof current[part] === 'string') {
-        throw new Error(`Path contains a file: ${part}`);
-      }
-      current = current[part] as Directory;
-    }
-
-    return { parent: current, target };
-  }
-
-  /**
    * Create a file with content.
    * @param path Path of the file to create.
    * @param content Content of the file.
@@ -128,5 +107,26 @@ class MemFS {
     traverse(dir, path);
 
     return files;
+  }
+
+  /**
+   * Resolve the path and return the parent directory and target name.
+   * @param path Full path to resolve.
+   */
+  private resolvePath(path: string): { parent: Directory; target: string } {
+    const parts = path.split('/').filter(Boolean);
+    if (parts.length === 0) throw new Error('Invalid path');
+
+    const target = parts.pop()!;
+    let current: Directory = this.root;
+
+    for (const part of parts) {
+      if (typeof current[part] === 'string') {
+        throw new Error(`Path contains a file: ${part}`);
+      }
+      current = current[part] as Directory;
+    }
+
+    return { parent: current, target };
   }
 }

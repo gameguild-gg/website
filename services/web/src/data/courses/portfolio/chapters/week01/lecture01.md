@@ -7,12 +7,13 @@
 </details>
 
 > A game developer portfolio is a collection of materials that showcase a game developer's skills, experience, and
-accomplishments. It is typically used by game developers to demonstrate their abilities to potential employers,
-clients, or partners, and may include a variety of materials such as:
+> accomplishments. It is typically used by game developers to demonstrate their abilities to potential employers,
+> clients, or partners, and may include a variety of materials such as:
 >
 > - A resume or CV: This should highlight your education, work experience, and skills relevant to game development.
 > - Examples of your work: This can include demos, prototypes, or completed games that you have developed or
-    contributed to. It's a good idea to include links to any online versions of your work, as well as screenshots or video trailers.
+    contributed to. It's a good idea to include links to any online versions of your work, as well as screenshots or
+    video trailers.
 > - A portfolio website: Many game developers choose to create a website specifically for their portfolio, which can
     include additional information about their skills and experience, as well as links to their work.
 > - Blogs, articles, or other writing: If you have written about game development or related topics, you may want to
@@ -21,8 +22,8 @@ clients, or partners, and may include a variety of materials such as:
     quality of your work.
 >
 > Overall, a game developer portfolio should be designed to demonstrate your abilities and accomplishments in a
-clear and concise way, and should be tailored to the specific needs and goals of the person or organization you
-are presenting it to.
+> clear and concise way, and should be tailored to the specific needs and goals of the person or organization you
+> are presenting it to.
 
 Building a portfolio is not only about you, it is about making the life easier of the ones interested on you by
 giving insights if they should hire you, follow you or anything else. In order to make people understand you, you
@@ -38,13 +39,12 @@ doing**. I will be briefly vague here to point some emotional support and reason
 **If you are clear about that, please skip this entire section**. Here goes a small amount of advices I wish I have
 heard when I was young.
 
-
 ![](https://www.betterup.com/hs-fs/hubfs/Imported_Blog_Media/ikigai%20-%20sample%20ikigai%20diagram-1.png?width=2480&height=1418&name=ikigai%20-%20sample%20ikigai%20diagram-1.png)
 source: https://www.betterup.com/blog/what-is-ikigai
 
-
 ::: note
-The above image links to a very good reference to understand the drives that you should be aware while taking decisions on your future career. Visit it.
+The above image links to a very good reference to understand the drives that you should be aware while taking decisions
+on your future career. Visit it.
 :::
 
 You are a complex being and hard to define. I know. It is hard to put yourself in a frame or box, but this process is
@@ -81,6 +81,7 @@ accept yourself, don't push too hard, and do some basic stuff. Just accept the c
 fancy, but relevant to build your career.
 
 ## Define and state your mission and goal
+
 - Are you a generalist or a specialist type?
 - What position you are looking for?
 - What kind of person you want to become?
@@ -90,16 +91,24 @@ fancy, but relevant to build your career.
 In order to build a good portfolio, you will need to gather information about yourself and your work. In the process
 you will discover yourself. It will feels like looking to a mirror for the first time.
 
-If you didnt published yot your projects on itchio, github, or any other platform, now it is a good moment for doing it. Pay attention that if you are going to share your code publicly, you have to avoid sharing content that do not belong to you. In other words, avoid copyright infringements.
+If you didnt published yot your projects on itchio, github, or any other platform, now it is a good moment for doing it.
+Pay attention that if you are going to share your code publicly, you have to avoid sharing content that do not belong to
+you. In other words, avoid copyright infringements.
 
 ## Proof of your accomplishments
 
-It is a good practice to always take screenshots, use web archive or any means to prove what you are stating. Some games got lost in time, they die or become unavailable in the long term.
+It is a good practice to always take screenshots, use web archive or any means to prove what you are stating. Some games
+got lost in time, they die or become unavailable in the long term.
 
 ::: note "Personal advice"
-In my case, we developed a very successful game in the past, and because of some problems with investors and judicial dispute, we had to shut down the game. But it was one of the most successful games in that year, it was nominated to Unity Awards and it was the most downloaded racing game. The only things that I can showcase now are print-screens, recorded videos and web-archive pages. So it is something that can make you survive the questions.
+In my case, we developed a very successful game in the past, and because of some problems with investors and judicial
+dispute, we had to shut down the game. But it was one of the most successful games in that year, it was nominated to
+Unity Awards and it was the most downloaded racing game. The only things that I can showcase now are print-screens,
+recorded videos and web-archive pages. So it is something that can make you survive the questions.
 :::
 
 ## Videos, photos, or lightweight web builds
 
-A good way to express your work is to show it in a form of videos, or photos. If your game is small enough to be embedded, or you can strip the most relevant part of it and built for web(webgl, wasm etc), try to publish the relevant part of it online, but do not over-do it, because it will take too much time to craft a good interaction.
+A good way to express your work is to show it in a form of videos, or photos. If your game is small enough to be
+embedded, or you can strip the most relevant part of it and built for web(webgl, wasm etc), try to publish the relevant
+part of it online, but do not over-do it, because it will take too much time to craft a good interaction.

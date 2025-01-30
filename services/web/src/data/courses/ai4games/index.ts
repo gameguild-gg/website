@@ -1,13 +1,13 @@
 import { Api } from '@game-guild/apiclient';
+import syllabusBody from './syllabus.md';
+import Chapter01 from './chapters/week01/';
+import Chapter02 from './chapters/week02/';
+import Chapter03 from '@/data/courses/ai4games/chapters/week03';
 import ChapterEntity = Api.ChapterEntity;
 import CourseEntity = Api.CourseEntity;
 import ImageEntity = Api.ImageEntity;
 import UserEntity = Api.UserEntity;
 import LectureEntity = Api.LectureEntity;
-import syllabusBody from './syllabus.md';
-import Chapter01 from './chapters/week01/';
-import Chapter02 from './chapters/week02/';
-import Chapter03 from '@/data/courses/ai4games/chapters/week03';
 
 const course: CourseEntity = {} as CourseEntity;
 

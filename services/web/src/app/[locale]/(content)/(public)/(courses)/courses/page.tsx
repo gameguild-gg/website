@@ -2,7 +2,11 @@ import Link from 'next/link';
 import { courses } from '@/data/courses';
 import { CourseCard } from '@/components/courses/course-card';
 
-export default function CoursesPage() {
+export async function generateMetadata({ params }) {
+  return {};
+}
+
+export default function Page() {
   if (!courses || courses.length === 0) {
     return (
       <div className="container mx-auto py-8">

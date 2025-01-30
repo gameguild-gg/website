@@ -1,4 +1,4 @@
-import React, { createContext, useContext, ReactNode } from 'react';
+import React, { createContext, ReactNode, useContext } from 'react';
 
 type NotificationContextProps = {
   name: string;
@@ -14,8 +14,8 @@ type NotificationProviderProps = {
 };
 
 export const NotificationProvider: React.FC<NotificationProviderProps> = ({
-  children,
-}) => {
+                                                                            children,
+                                                                          }) => {
   const [name, setName] = React.useState('Default');
 
   const value: NotificationContextProps = {

@@ -18,9 +18,9 @@ interface MarkdownRendererProps {
 }
 
 const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
-  content,
-  renderer = LectureEntity.Renderer.Enum.Markdown,
-}) => {
+                                                             content,
+                                                             renderer = LectureEntity.Renderer.Enum.Markdown,
+                                                           }) => {
   if (renderer === LectureEntity.Renderer.Enum.Reveal) {
     return (
       <div className="gameguild-revealjs-wrapper">
@@ -151,14 +151,15 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
         {processedContent}
       </ReactMarkdown>
       <style jsx global>{`
-        .syntax-highlighter {
-          overflow-x: auto;
-        }
-        .syntax-highlighter pre {
-          white-space: pre-wrap !important;
-          word-break: keep-all !important;
-          overflow-wrap: break-word !important;
-        }
+          .syntax-highlighter {
+              overflow-x: auto;
+          }
+
+          .syntax-highlighter pre {
+              white-space: pre-wrap !important;
+              word-break: keep-all !important;
+              overflow-wrap: break-word !important;
+          }
       `}</style>
     </>
   );

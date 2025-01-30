@@ -1,6 +1,9 @@
 # Artificial Intelligence
 
-Students with a firm foundation in the basic techniques of artificial intelligence for games will apply their skills to program advanced pathfinding algorithms, artificial opponents, scripting tools and other real-time drivers for non-playable agents. The goal of the course is to provide finely-tuned artificial competition for players using all the rules followed by a human.
+Students with a firm foundation in the basic techniques of artificial intelligence for games will apply their skills to
+program advanced pathfinding algorithms, artificial opponents, scripting tools and other real-time drivers for
+non-playable agents. The goal of the course is to provide finely-tuned artificial competition for players using all the
+rules followed by a human.
 
 ## Requirements
 
@@ -11,7 +14,6 @@ Students with a firm foundation in the basic techniques of artificial intelligen
 - AI for Games, Third Edition: 9781138483972: Millington, Ian
 
 ## Student-centered Learning Outcomes
-
 
 [![Bloom's Taxonomy](https://cdn.vanderbilt.edu/vu-wp0/wp-content/uploads/sites/59/2019/03/27124326/Blooms-Taxonomy-650x366.jpg)](https://cft.vanderbilt.edu/guides-sub-pages/blooms-taxonomy/)
 [Reference](https://cft.vanderbilt.edu/guides-sub-pages/blooms-taxonomy/)
@@ -37,9 +39,9 @@ This is a work in progress schedule. It is subject to change. Every change will 
 
 ## Special dates:
 
-- Semester begins Monday 1/13 
+- Semester begins Monday 1/13
 - No Classes MLK Day: Monday, 1/20
-- Spring Break 3/10-14  
+- Spring Break 3/10-14
 - No Classes: Friday 4/11
 
 ### Weekly Schedule
@@ -63,11 +65,11 @@ This is a work in progress schedule. It is subject to change. Every change will 
     - 2025/02/18: Testing your AI Agent, building meaningful tests, metrics, evaluation and machinations
     - 2025/02/21: Testing your AI Agent, building meaningful tests, metrics, evaluation and machinations
 - Week 7:
-   - 2025/02/25: MidTerms / Work sessions
-   - 2025/02/28: MidTerms / Work sessions
+    - 2025/02/25: MidTerms / Work sessions
+    - 2025/02/28: MidTerms / Work sessions
 - Week 8:
-    - 2025/03/04: Believable agents Techniques / Stealth games / Tactical games / Steering Behaviors Orchestration  
-        - Fable example on Believable agents 
+    - 2025/03/04: Believable agents Techniques / Stealth games / Tactical games / Steering Behaviors Orchestration
+        - Fable example on Believable agents
     - 2025/03/07: Believable agents Techniques / Stealth games / Tactical games / Steering Behaviors Orchestration
 - Week 9:
     - 2025/03/11: Spring BREAK. No classes this week.

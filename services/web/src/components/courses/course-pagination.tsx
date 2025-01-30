@@ -1,8 +1,6 @@
 'use client';
 
 import React from 'react';
-import { useRouter } from 'next/navigation';
-import { PostOrPage, Tag } from '@tryghost/content-api';
 import Link from 'next/link';
 
 type Props = {

@@ -1,13 +1,13 @@
 import { Api } from '@game-guild/apiclient';
-import ChapterEntity = Api.ChapterEntity;
-import CourseEntity = Api.CourseEntity;
-import ImageEntity = Api.ImageEntity;
-import UserEntity = Api.UserEntity;
 import syllabusBody from './syllabus.md';
 import { mockUser } from '@/data/coursesLib';
 import chapter01 from './chapters/week01';
 import chapter02 from './chapters/week02';
 import chapter03 from './chapters/week03';
+import ChapterEntity = Api.ChapterEntity;
+import CourseEntity = Api.CourseEntity;
+import ImageEntity = Api.ImageEntity;
+import UserEntity = Api.UserEntity;
 import LectureEntity = Api.LectureEntity;
 
 export const mockImage: ImageEntity = {

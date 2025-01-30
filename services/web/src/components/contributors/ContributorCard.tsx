@@ -91,7 +91,7 @@ export default function ContributorCard(contributor: Contributor) {
             <span className="text-blue-500 font-bold">
               {contributionsToString(
                 (contributor.additions + contributor.deletions) /
-                  contributor.contributions,
+                contributor.contributions,
               )}
             </span>
           </p>

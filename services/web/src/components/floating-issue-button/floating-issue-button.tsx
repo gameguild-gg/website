@@ -1,20 +1,9 @@
 'use client';
 
 import * as React from 'react';
-import {
-  Bug,
-  HelpCircle,
-  Lightbulb,
-  MessageCircle,
-  ListChecks,
-  MessageSquare,
-} from 'lucide-react';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
+import { useEffect, useState } from 'react';
+import { Bug, Lightbulb, ListChecks, MessageCircle, MessageSquare } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,37 +12,36 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { useEffect, useState } from 'react';
 
 interface FloatingFeedbackButtonProps {
   className?: string;
 }
 
 export function FloatingFeedbackButton({
-  className,
-}: FloatingFeedbackButtonProps) {
+                                         className,
+                                       }: FloatingFeedbackButtonProps) {
   const [version, setVersion] = useState('v0.0.1');
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetch('/api/version')
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return response.json();
-      })
-      .then((data) => {
-        if (data.version) {
-          setVersion(data.version);
-        } else {
-          throw new Error('Version not found in response');
-        }
-      })
-      .catch((error) => {
-        console.error('Error fetching version:', error);
-        setError('Failed to fetch version');
-      });
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return response.json();
+    })
+    .then((data) => {
+      if (data.version) {
+        setVersion(data.version);
+      } else {
+        throw new Error('Version not found in response');
+      }
+    })
+    .catch((error) => {
+      console.error('Error fetching version:', error);
+      setError('Failed to fetch version');
+    });
   }, []);
 
   const getActionUrl = (

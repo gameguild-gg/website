@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { notFound, useParams } from 'next/navigation';
-import { Menu, ChevronLeft } from 'lucide-react';
+import { ChevronLeft, Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { courses } from '@/data/courses';
 import { CourseNavigation } from '@/components/courses/CourseNavigation';

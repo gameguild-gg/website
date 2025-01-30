@@ -1,12 +1,15 @@
 # End-of-Semester Deliverables Plan
 
-The goal of this assignment is to outline what I will deliver by the end of the semester. This draft serves as a starting point for planning and organizing the deliverables. Precision and detailed execution are not required at this stage. The focus is on conceptualizing the deliverables and setting a direction.
+The goal of this assignment is to outline what I will deliver by the end of the semester. This draft serves as a
+starting point for planning and organizing the deliverables. Precision and detailed execution are not required at this
+stage. The focus is on conceptualizing the deliverables and setting a direction.
 
 ---
 
 ## Deliverables Plan
 
 ### **Portfolio Page**
+
 - **Objective:** Develop a portfolio page that showcases my skills, projects, and professional achievements.
 - **Production Method:**
     - Plan to build the page using [GitHub Pages](https://pages.github.com/) by coding it myself.
@@ -18,6 +21,7 @@ The goal of this assignment is to outline what I will deliver by the end of the 
 ---
 
 ### **Projects**
+
 - **Objective:** Identify and plan projects to build and showcase on the portfolio.
 - **Project Examples:**
     - A game demo that highlights technical programming skills.
@@ -27,9 +31,11 @@ The goal of this assignment is to outline what I will deliver by the end of the 
 ---
 
 ### **Videos and Demo Reels**
+
 - **Objective:** Create high-quality videos to demonstrate my work effectively.
 - **Required Deliverables:**
-    - A demo reel for submission to the [Champlain College Game Studio Gallery](https://gamestudio.champlain.edu/gallery/).
+    - A demo reel for submission to
+      the [Champlain College Game Studio Gallery](https://gamestudio.champlain.edu/gallery/).
     - Portfolio-specific demo reels that highlight my most impressive projects.
 - **Optional Deliverables:**
     - Gameplay videos or showcases for projects hosted on platforms like Itch.io or YouTube.
@@ -37,6 +43,7 @@ The goal of this assignment is to outline what I will deliver by the end of the 
 ---
 
 ### **LinkedIn and Online Profiles (Optional)**
+
 - **Objective:** Audit and improve professional online presence.
 - **Platforms to Consider:**
     - LinkedIn: Ensure it reflects my updated projects, skills, and achievements.
@@ -46,6 +53,7 @@ The goal of this assignment is to outline what I will deliver by the end of the 
 ---
 
 ### **Resume and Cover Letter**
+
 - **Resume:**
     - Targeted for a specific job position and company.
     - Highlight relevant experience, skills, and accomplishments tailored to the role.
@@ -59,6 +67,7 @@ The goal of this assignment is to outline what I will deliver by the end of the 
 ---
 
 ### **Sample Project**
+
 - **Objective:** Plan a project that demonstrates my strongest abilities to potential recruiters.
 - **Skill Showcase:**
     - Highlight technical skills (e.g., programming, AI, or design).
@@ -69,6 +78,7 @@ The goal of this assignment is to outline what I will deliver by the end of the 
 ---
 
 ### **Additional Considerations**
+
 - Anything that can showcase my abilities and make a strong impression on potential employers, such as:
     - Tutorials, blogs, or write-ups that demonstrate thought leadership.
     - Testimonials or feedback from peers and mentors.
@@ -76,6 +86,7 @@ The goal of this assignment is to outline what I will deliver by the end of the 
 ---
 
 ## Submission Details
+
 - **Format:** A document or plain text (e.g., Google Docs, `.txt`, or similar).
 - **Action Items:** Focus on planning and describing each deliverable without starting execution yet.
 

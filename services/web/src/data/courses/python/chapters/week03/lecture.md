@@ -11,25 +11,33 @@
 </details>
 
 ## What Are Functions?
-Functions are blocks of reusable code that perform a specific task. In Python, functions allow us to organize code into logical, manageable chunks. This not only makes our programs easier to read and maintain but also reduces redundancy.
+
+Functions are blocks of reusable code that perform a specific task. In Python, functions allow us to organize code into
+logical, manageable chunks. This not only makes our programs easier to read and maintain but also reduces redundancy.
 
 ### Key Characteristics:
+
 - Defined using the `def` keyword.
 - Can take input arguments.
 - May or may not return a value using the `return` keyword.
 - Help encapsulate functionality.
 
 ::: tip "Why Use Functions?"
-Functions make your code modular, reusable, and easier to debug. By dividing logic into smaller pieces, you can work on specific parts without affecting others.
+Functions make your code modular, reusable, and easier to debug. By dividing logic into smaller pieces, you can work on
+specific parts without affecting others.
 :::
 
 ---
 
 ## Defining and Calling Functions
-To define a function in Python, use the `def` keyword followed by the function name and parentheses. Indentation is crucial in Python; the body of the function must be indented consistently.
+
+To define a function in Python, use the `def` keyword followed by the function name and parentheses. Indentation is
+crucial in Python; the body of the function must be indented consistently.
 
 ### Indentation in Functions
-Python relies on indentation to define the scope of blocks. In functions, every line of the body must have the same level of indentation, typically four spaces:
+
+Python relies on indentation to define the scope of blocks. In functions, every line of the body must have the same
+level of indentation, typically four spaces:
 
 ```python
 # Correct indentation
@@ -44,6 +52,7 @@ print("Hello, world!")  # This will raise an IndentationError
 ```
 
 ### Function with Arguments
+
 Functions can accept arguments to make them more flexible:
 
 ```python
@@ -57,15 +66,18 @@ greet_person("Alice")
 
 ::: tip "Using Default Arguments"
 You can provide default values to arguments. This way, if no value is passed, the default is used:
+
 ```python
 def greet_person(name="Guest"):
     print(f"Hello, {name}!")
 
 greet_person()  # Outputs: Hello, Guest!
 ```
+
 :::
 
 ### Function with a Return Value
+
 Functions can return values using the `return` keyword:
 
 ```python
@@ -78,6 +90,7 @@ print("The sum is:", result)
 ```
 
 ### Longer Example
+
 Here’s a more detailed example of a function with multiple lines:
 
 ```python
@@ -105,9 +118,11 @@ print("The average score is:", average)
 ---
 
 ## Comments in Functions
+
 Comments are critical for explaining the purpose of functions and their parameters.
 
 ### Single-line Comments
+
 Use `#` for single-line comments:
 
 ```python
@@ -117,6 +132,7 @@ def multiply(a, b):
 ```
 
 ### Docstrings
+
 Use triple quotes (`"""` or `'''`) for multi-line documentation strings:
 
 ```python
@@ -133,7 +149,9 @@ def divide(a, b):
 ```
 
 ### Multi-line Comments
-For longer explanations, you can use multiple single-line comments or a multi-line string (though the latter is not executed as a comment):
+
+For longer explanations, you can use multiple single-line comments or a multi-line string (though the latter is not
+executed as a comment):
 
 ```python
 """
@@ -151,6 +169,7 @@ Good comments clarify intent, especially in complex logic or when collaborating 
 ---
 
 ## Using the `math` Module
+
 The `math` module provides many useful mathematical functions and constants. To use it, import the module:
 
 ```python
@@ -162,6 +181,7 @@ print("Value of pi:", math.pi)
 ```
 
 ### Common `math` Functions:
+
 - `math.sqrt(x)` — Returns the square root of `x`.
 - `math.pow(x, y)` — Raises `x` to the power of `y`.
 - `math.sin(x)` — Computes the sine of `x` (radians).
@@ -170,20 +190,24 @@ print("Value of pi:", math.pi)
 
 ::: tip "Importing Specific Functions"
 You can import specific functions from the `math` module to avoid prefixing them with `math.`:
+
 ```python
 from math import sqrt, pi
 
 print("Square root of 25:", sqrt(25))
 print("Value of pi:", pi)
 ```
+
 :::
 
 ---
 
 ## Number Representations
+
 Python supports multiple number formats, such as binary, hexadecimal, negative, and floating-point numbers.
 
 ### Binary Numbers
+
 Binary numbers use base-2 and are prefixed with `0b`:
 
 ```python
@@ -192,6 +216,7 @@ print("Binary number:", binary_num)
 ```
 
 ### Hexadecimal Numbers
+
 Hexadecimal numbers use base-16 and are prefixed with `0x`:
 
 ```python
@@ -200,6 +225,7 @@ print("Hexadecimal number:", hex_num)
 ```
 
 ### Negative Numbers
+
 Negative numbers are straightforward:
 
 ```python
@@ -208,6 +234,7 @@ print("Negative number:", negative_num)
 ```
 
 ### Floating-Point Numbers
+
 Floating-point numbers are used for decimal values and can represent very large or very small numbers:
 
 ```python
@@ -219,16 +246,20 @@ print("Scientific notation:", scientific_notation)
 
 ::: tip "Floating-Point Precision"
 Floating-point numbers are not always precise due to how they are stored in memory. Avoid comparing them directly:
+
 ```python
 x = 0.1 + 0.2
 print(x == 0.3)  # False due to precision issues
 ```
+
 :::
 
 ---
 
 ## Using IDE Autocomplete
-Modern IDEs provide autocomplete features that significantly speed up development. When you type a variable or module name followed by a dot (`.`), a list of available attributes and methods appears.
+
+Modern IDEs provide autocomplete features that significantly speed up development. When you type a variable or module
+name followed by a dot (`.`), a list of available attributes and methods appears.
 
 ### Example:
 
@@ -242,10 +273,11 @@ print(square_root)
 
 ::: tip "Explore Autocomplete"
 Use autocomplete to:
+
 - Discover available methods in a module or object.
 - Avoid syntax errors by selecting from valid options.
 - Speed up development by reducing typing.
-:::
+  :::
 
 ---
 

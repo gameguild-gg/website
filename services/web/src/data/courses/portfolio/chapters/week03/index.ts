@@ -1,9 +1,9 @@
 import { createChapter, createLecture } from '@/data/coursesLib';
 import { Api } from '@game-guild/apiclient';
-import LectureEntity = Api.LectureEntity;
-import ChapterEntity = Api.ChapterEntity;
 import lecture03 from './lecture.md';
 import assignment05 from './assignment05.md';
+import LectureEntity = Api.LectureEntity;
+import ChapterEntity = Api.ChapterEntity;
 
 const week03lectures: LectureEntity[] = [];
 week03lectures.push(

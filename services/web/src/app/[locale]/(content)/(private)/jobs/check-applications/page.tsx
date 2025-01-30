@@ -2,14 +2,13 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getSession } from 'next-auth/react';
-import { Api, JobTagsApi, JobApplicationsApi } from '@game-guild/apiclient';
+import { Api, JobApplicationsApi, JobTagsApi } from '@game-guild/apiclient';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Check, X } from 'lucide-react';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
   Pagination,
   PaginationContent,
@@ -180,14 +179,14 @@ export default function CheckApplications() {
                   <PaginationPrevious href="#" />
                 </PaginationItem>
                 {[...Array(totalPages)]
-                  .map((_, i) => (
-                    <PaginationItem key={i}>
-                      <PaginationLink href="#" isActive={i === 0}>
-                        {i + 1}
-                      </PaginationLink>
-                    </PaginationItem>
-                  ))
-                  .slice(0, 3)}
+                .map((_, i) => (
+                  <PaginationItem key={i}>
+                    <PaginationLink href="#" isActive={i === 0}>
+                      {i + 1}
+                    </PaginationLink>
+                  </PaginationItem>
+                ))
+                .slice(0, 3)}
                 {totalPages > 3 && (
                   <>
                     <PaginationItem>

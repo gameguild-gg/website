@@ -1,6 +1,5 @@
 'use client';
 
-import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { courses } from '@/data/courses';
 import MarkdownRenderer from '@/components/markdown-renderer/markdown-renderer';
@@ -42,8 +41,8 @@ export default function CourseLecturePage({ params }: CourseLecturePageProps) {
   }
 
   const lecture = course.chapters
-    .flatMap((chapter) => chapter.lectures || [])
-    .find((l) => l.slug === params.lecture);
+  .flatMap((chapter) => chapter.lectures || [])
+  .find((l) => l.slug === params.lecture);
 
   if (!lecture) {
     notFound();

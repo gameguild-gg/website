@@ -1,11 +1,13 @@
 # Game AI Engine
 
-An AI engine can be understood as a system that manages and executes AI algorithms in a game. It acts as the brain of the game, controlling various aspects of AI behavior, decision-making, and interactions with the game world.
+An AI engine can be understood as a system that manages and executes AI algorithms in a game. It acts as the brain of
+the game, controlling various aspects of AI behavior, decision-making, and interactions with the game world.
 
 The most common classes of AI engines commonly used in game development are:
 
 - **Tree based**: Behavior Trees, Decision trees and State Machines;
-- **Search-Based Systems**: A-star, Goal Oriented Action Planning, Hierarchical Task Networks, Hierarchical Task Networks, MinMax, Alpha-Beta Pruning, Monte Carlo Tree Search
+- **Search-Based Systems**: A-star, Goal Oriented Action Planning, Hierarchical Task Networks, Hierarchical Task
+  Networks, MinMax, Alpha-Beta Pruning, Monte Carlo Tree Search
 - **Learning Based Systems**: Neural Networks, Reinforcement Learning, Genetic Algorithms, Q-Learning
 
 ``` mermaid

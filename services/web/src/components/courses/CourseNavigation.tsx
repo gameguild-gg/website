@@ -14,11 +14,11 @@ interface CourseNavigationProps {
 }
 
 export function CourseNavigation({
-  course,
-  isOpen,
-  className = '',
-  onNavigate,
-}: CourseNavigationProps) {
+                                   course,
+                                   isOpen,
+                                   className = '',
+                                   onNavigate,
+                                 }: CourseNavigationProps) {
   const pathname = usePathname();
 
   if (!isOpen) {

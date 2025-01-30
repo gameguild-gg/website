@@ -3,9 +3,7 @@ import Google from 'next-auth/providers/google';
 import Credentials from 'next-auth/providers/credentials';
 import { environment } from '@/config/environment';
 import { Api, AuthApi } from '@game-guild/apiclient';
-import { signOut } from 'next-auth/react';
 import type { Provider } from 'next-auth/providers';
-import { NextResponse } from 'next/server';
 import { jwtDecode } from 'jwt-decode';
 import LocalSignInResponseDto = Api.LocalSignInResponseDto;
 

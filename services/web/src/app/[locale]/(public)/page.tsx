@@ -1,15 +1,16 @@
 'use client';
 import React from 'react';
-import Image from 'next/image'
+import Image from 'next/image';
 
 function Home() {
   return (
-    <div className="text-center block text-[#ffffff] bg-[#101014] items-center content-center overflow-hidden w-full z-5">
+    <div
+      className="text-center block text-[#ffffff] bg-[#101014] items-center content-center overflow-hidden w-full z-5">
 
       <div className="absolute h-[600px] w-full object-none overflow-hidden -z-5">
         <Image
           src="/assets/images/background-hexagons-1.jpg"
-          alt='background'
+          alt="background"
           layout="fill"
           objectFit="cover"
           objectPosition="center"
@@ -20,9 +21,9 @@ function Home() {
       <div
         className="absolute w-full lg:flex h-[400px] overflow-hidden items-center grid grid-cols-1 mx-auto z-10">
 
-        <div className='z-10 text-black mx-auto'>
+        <div className="z-10 text-black mx-auto">
           <div className="text-7xl font-semibold  text-shadow-lg shadow-white">Let's Build Dreams Together!</div>
-          <br/>
+          <br />
           <span className="text-2xl">The All-in-One Game Dev Toolkit</span>
         </div>
       </div>
@@ -35,7 +36,7 @@ function Home() {
         <div>
           <Image
             src="/assets/images/header2.jpeg"
-            alt='header2'
+            alt="header2"
             width={480}
             height={480}
             className="w-full"
@@ -63,7 +64,7 @@ function Home() {
         <div>
           <Image
             src="/assets/images/header3.jpeg"
-            alt='header3'
+            alt="header3"
             width={480}
             height={480}
             className="w-full"
@@ -77,7 +78,7 @@ function Home() {
         <div>
           <Image
             src="/assets/images/header1.jpeg"
-            alt='header1'
+            alt="header1"
             width={480}
             height={480}
             className="w-full lg:max-w-[480px]"

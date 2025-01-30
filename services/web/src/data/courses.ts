@@ -1,12 +1,10 @@
 import { Api } from '@game-guild/apiclient';
-import UserEntity = Api.UserEntity;
-import ImageEntity = Api.ImageEntity;
-import CourseEntity = Api.CourseEntity;
-import ChapterEntity = Api.ChapterEntity;
-import LectureEntity = Api.LectureEntity;
 import portfolio from '@/data/courses/portfolio';
 import ai4games from '@/data/courses/ai4games';
 import python from '@/data/courses/python';
+import CourseEntity = Api.CourseEntity;
+import ChapterEntity = Api.ChapterEntity;
+import LectureEntity = Api.LectureEntity;
 
 // Create the course
 const courses: CourseEntity[] = [ai4games, portfolio, python];

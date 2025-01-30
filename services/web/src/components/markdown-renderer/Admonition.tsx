@@ -1,14 +1,14 @@
 import React from 'react';
 import {
   AlertCircle,
-  Info,
   AlertTriangle,
+  BookOpen,
+  Bug,
   CheckCircle,
   HelpCircle,
-  XCircle,
-  Bug,
-  BookOpen,
+  Info,
   Quote,
+  XCircle,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 

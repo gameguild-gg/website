@@ -1,9 +1,9 @@
 import { createChapter, createLecture } from '@/data/coursesLib';
 import { Api } from '@game-guild/apiclient';
-import LectureEntity = Api.LectureEntity;
-import ChapterEntity = Api.ChapterEntity;
 import pcg from './pcg.md';
 import wfc from './lecture.md';
+import LectureEntity = Api.LectureEntity;
+import ChapterEntity = Api.ChapterEntity;
 
 const week02lectures: LectureEntity[] = [];
 week02lectures.push(

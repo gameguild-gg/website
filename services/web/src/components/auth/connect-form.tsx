@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { SignInFormState, signInWithGoogle } from '@/lib/auth';
+import { signInWithGoogle } from '@/lib/auth';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -9,7 +9,7 @@ import { Sparkles } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 
 import MetaMaskSignInButton from '@/components/others/web3/meta-mask-sign-in-button';
-import { Api, AuthApi } from '@game-guild/apiclient';
+import { AuthApi } from '@game-guild/apiclient';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { signInWithMagicLink } from '@/lib/auth/sign-in-with-magic-link';
 import { getSession } from 'next-auth/react';
@@ -77,7 +77,7 @@ export default function ConnectForm() {
     toast({
       title: 'Sent',
       description:
-        "We've sent you a magic link to your email. Please go check it.",
+        'We\'ve sent you a magic link to your email. Please go check it.',
     });
   };
 

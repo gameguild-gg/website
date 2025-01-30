@@ -1,12 +1,8 @@
 import { Api } from '@game-guild/apiclient';
-import ChapterEntity = Api.ChapterEntity;
-import CourseEntity = Api.CourseEntity;
-import ImageEntity = Api.ImageEntity;
-import UserEntity = Api.UserEntity;
-import LectureEntity = Api.LectureEntity;
 import { createChapter, createLecture } from '@/data/coursesLib';
 import lecture from './lecture.md';
-import Chapter02 from '@/data/courses/ai4games/chapters/week02';
+import ChapterEntity = Api.ChapterEntity;
+import LectureEntity = Api.LectureEntity;
 
 const week03lectures: LectureEntity[] = [];
 

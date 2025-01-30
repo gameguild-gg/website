@@ -1,9 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
-import Reveal from 'reveal.js';
-import Markdown from 'reveal.js/plugin/markdown/markdown.esm.js';
-import Highlight from 'reveal.js/plugin/highlight/highlight.esm.js';
+import dynamic from 'next/dynamic';
 import { Maximize2, Minimize2 } from 'lucide-react';
 import 'reveal.js/dist/reveal.css';
 import 'reveal.js/dist/theme/white.css';
@@ -16,47 +14,35 @@ interface RevealJSProps {
 const RevealJS: React.FC<RevealJSProps> = ({ content }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const slidesRef = useRef<HTMLDivElement>(null);
-  const revealInstanceRef = useRef<Reveal.Api | null>(null);
+  const revealInstanceRef = useRef<any>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (
-      typeof window === 'undefined' ||
-      !containerRef.current ||
-      !slidesRef.current
-    ) {
-      return;
-    }
+    let Reveal: any;
+    let Markdown: any;
+    let Highlight: any;
 
-    const handleResize = () => {
-      if (revealInstanceRef.current) {
-        revealInstanceRef.current.layout();
-      }
-    };
-
-    window.addEventListener('resize', handleResize);
-
-    return () => {
-      window.removeEventListener('resize', handleResize);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (
-      typeof window === 'undefined' ||
-      !containerRef.current ||
-      !slidesRef.current
-    ) {
-      return;
-    }
-
-    const initializeReveal = async () => {
+    const loadRevealJS = async () => {
       try {
-        // Ensure the content is wrapped in `<section>` tags for Reveal.js
-        slidesRef.current!.innerHTML = `<section data-markdown><textarea data-template>${content}</textarea></section>`;
+        // Importação dinâmica
+        const revealModule = await import('reveal.js');
+        const markdownModule = await import(
+          'reveal.js/plugin/markdown/markdown.esm.js'
+        );
+        const highlightModule = await import(
+          'reveal.js/plugin/highlight/highlight.esm.js'
+        );
 
-        // Initialize Reveal.js
+        Reveal = revealModule.default;
+        Markdown = markdownModule.default;
+        Highlight = highlightModule.default;
+
+        if (!containerRef.current || !slidesRef.current) return;
+
+        slidesRef.current.innerHTML = `<section data-markdown><textarea data-template>${content}</textarea></section>`;
+
+        // Inicializa o Reveal.js
         const revealInstance = new Reveal(containerRef.current, {
           plugins: [Markdown, Highlight],
           width: '100%',
@@ -76,7 +62,7 @@ const RevealJS: React.FC<RevealJSProps> = ({ content }) => {
           maxScale: 2.0,
           highlight: {
             highlightOnLoad: true,
-            excapeHTML: false,
+            escapeHTML: false,
           },
         });
 
@@ -87,7 +73,7 @@ const RevealJS: React.FC<RevealJSProps> = ({ content }) => {
       }
     };
 
-    initializeReveal();
+    loadRevealJS();
 
     return () => {
       if (revealInstanceRef.current) {

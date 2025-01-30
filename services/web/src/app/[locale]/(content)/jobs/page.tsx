@@ -2,12 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getSession } from 'next-auth/react';
-import {
-  Api,
-  JobPostsApi,
-  JobTagsApi,
-  JobApplicationsApi,
-} from '@game-guild/apiclient';
+import { Api, JobApplicationsApi, JobPostsApi, JobTagsApi } from '@game-guild/apiclient';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -15,22 +10,19 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Check, Search } from 'lucide-react';
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from '@/components/ui/command';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useToast } from '@/components/ui/use-toast';
 import Link from 'next/link';
-import { Pagination, PaginationContent, PaginationItem, PaginationPrevious, PaginationLink, PaginationEllipsis, PaginationNext } from '@/components/ui/pagination';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from '@/components/ui/pagination';
 
 const job_types = [
   { value: 'CONTINUOUS', label: 'Continuous' },
@@ -44,7 +36,7 @@ export default function JobBoard() {
   const [selectedJob, setSelectedJob] = useState<Api.JobPostEntity | any>();
   const [selectedJobTypes, setSelectedJobTypes] = useState<string[]>([]);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [totalPages, setTotalPages] = useState<number>(1)
+  const [totalPages, setTotalPages] = useState<number>(1);
 
   const { toast } = useToast();
   const router = useRouter();
@@ -80,7 +72,7 @@ export default function JobBoard() {
       { headers: { Authorization: `Bearer ${session.user.accessToken}` } },
     );
     if ((response.status = 200)) {
-      setJobTags(response.body as Api.JobTagEntity[]||[]);
+      setJobTags(response.body as Api.JobTagEntity[] || []);
     }
   };
 
@@ -97,7 +89,7 @@ export default function JobBoard() {
         // TODO create a pagination or 'Load More' system for handling job ammounts over the limit.
         limit: 50,
       },
-      { headers: { Authorization: `Bearer ${session.user.accessToken}` },},
+      { headers: { Authorization: `Bearer ${session.user.accessToken}` } },
     );
     if (response.status == 200) {
       // console.log('All jobs body:\n', response.body);
@@ -182,7 +174,7 @@ export default function JobBoard() {
         title: 'Sucess!',
         description: 'Job was aplied to sucessfully.', // + JSON.stringify(response.body),
       });
-      (selectedJob as any).applied = true
+      (selectedJob as any).applied = true;
     } else {
       toast({
         variant: 'destructive',
@@ -193,8 +185,8 @@ export default function JobBoard() {
   };
 
   const handleLearnMoreButton = (slug: string) => {
-    router.push('/jobs/my-applications/'+slug)
-  }
+    router.push('/jobs/my-applications/' + slug);
+  };
 
   const timeAgo = (dateString: string): string => {
     const now = new Date();
@@ -422,7 +414,8 @@ export default function JobBoard() {
                   {selectedJob.applied && (
                     <p className="mb-6 bg-gray-100 flex">
                       Already Applied.
-                      <Link className="ml-2 font-semibold text-blue-500 hover:underline cursor-pointer" href={'/jobs/my-applications/'+selectedJob.slug}>Learn more.</Link>
+                      <Link className="ml-2 font-semibold text-blue-500 hover:underline cursor-pointer"
+                            href={'/jobs/my-applications/' + selectedJob.slug}>Learn more.</Link>
                     </p>
                   )}
                   {!selectedJob.applied && (
@@ -433,9 +426,9 @@ export default function JobBoard() {
                 </CardContent>
               </Card>
             )}
-            
+
           </div>
-          
+
         </div>
       </div>
     </div>

@@ -1,14 +1,13 @@
 'use client';
 
 import React from 'react';
-import { getCookie } from 'cookies-next';
 import { useRouter } from 'next/navigation';
 import { Button, message, Table, TableColumnsType, Typography } from 'antd';
 import { RedoOutlined } from '@ant-design/icons';
 import moment from 'moment-timezone';
 import { Api, CompetitionsApi } from '@game-guild/apiclient';
-import CompetitionRunSubmissionReportEntity = Api.CompetitionRunSubmissionReportEntity;
 import { getSession } from 'next-auth/react';
+import CompetitionRunSubmissionReportEntity = Api.CompetitionRunSubmissionReportEntity;
 
 export default function TournamentPage() {
   const api = new CompetitionsApi({

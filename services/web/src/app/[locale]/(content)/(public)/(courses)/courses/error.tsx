@@ -3,9 +3,9 @@
 import { useEffect } from 'react';
 
 export default function CourseError({
-  error,
-  reset,
-}: {
+                                      error,
+                                      reset,
+                                    }: {
   error: Error;
   reset: () => void;
 }) {
