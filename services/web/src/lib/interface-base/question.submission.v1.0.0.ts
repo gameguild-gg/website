@@ -10,13 +10,6 @@ export interface QuestionSubmissionBasev1_0_0 {
   score: number[];
   title: string;
   description: string;
-}
-
-export interface CodeQuestionSubmissionv1_0_0 extends QuestionSubmissionBasev1_0_0 {
-  type: "code";
-  submittedCode: string[];
-  output: string;
-  codeName: { id: string; name: string }[];
   testResults: {
     expectedOutput: string;
     actualOutput: string;
@@ -24,21 +17,28 @@ export interface CodeQuestionSubmissionv1_0_0 extends QuestionSubmissionBasev1_0
   }[];
 }
 
+export interface CodeQuestionSubmissionv1_0_0 extends QuestionSubmissionBasev1_0_0 {
+  type: "code";
+  submittedCode: string[];
+  output: string;
+  codeName: { id: string; name: string }[];
+}
+
 export interface AnswerQuestionSubmissionv1_0_0 extends QuestionSubmissionBasev1_0_0 {
   answer: any;
-  type: "answer";
+  //type: "answer";
   submittedAnswer: string;
 }
 
 export interface EssayQuestionSubmissionv1_0_0 extends QuestionSubmissionBasev1_0_0 {
-  type: "essay";
+  //type: "essay";
   submittedEssay: string;
 }
 
 export interface MultipleChoiceQuestionSubmissionv1_0_0 extends QuestionSubmissionBasev1_0_0 {
     selectedOption: any;
     options: any;
-    type: "multiple-choice";
+    //type: "multiple-choice";
     submittedAnswers: string[];
 }
 

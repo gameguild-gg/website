@@ -1,10 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import { ResizablePanel } from './ResizablePanel'
+import ResizablePanel from './ResizablePanel'
 
 export default function Layout({ children }: { children: React.ReactNode }) {
-  const [isDarkMode, setIsDarkMode] = useState(true)
+  //const [isDarkMode, setIsDarkMode] = useState(true)
 
   const memoizedChildren = {
     leftPanel: children[0],
@@ -12,12 +12,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className={`flex h-screen w-screen ${isDarkMode ? 'dark' : ''}`}>
+    <div className={`flex h-screen w-screen`}>
       <ResizablePanel
         leftPanel={memoizedChildren.leftPanel}
-        rightPanel={memoizedChildren.rightPanel}
-        isDarkMode={isDarkMode}
-        setIsDarkMode={setIsDarkMode}
+        rightPanel={memoizedChildren.rightPanel} direction={'horizontal'}        //isDarkMode={isDarkMode}
+        //setIsDarkMode={setIsDarkMode}
       />
     </div>
   )

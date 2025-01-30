@@ -76,21 +76,27 @@ export default function CoursesPage() {
   }, [mode])
 
   const handleCourseSelect = (course: CourseBasev1_0_0) => {
+    const userIdString = String(userId) // Garante que userId é string
+  
+    const isTeacher = course.teachRole.map(String).includes(userIdString)
+  
     const newHierarchy: HierarchyBasev1_0_0 = {
       idHierarchy: [course.id],
-      idUser: userId!,
-      idRole: course.teachRole.includes(userId!) ? "teacher" : "student",
+      idUser: userIdString, // Mantém coerência de tipo
+      idRole: isTeacher ? "teacher" : "student",
     }
+  
     setHierarchy(newHierarchy)
-    setRole(course.teachRole.includes(userId!) ? "teacher" : "student")
-
-    if (course.teachRole.includes(userId!)) {
+    setRole(isTeacher ? "teacher" : "student")
+  
+    if (isTeacher) {
       setSelectedCourse(course)
       setIsModalOpen(true)
     } else {
-      router.push(`/learn/course/${course.id}?userId=${userId}&role=student`)
+      router.push(`/learn/course/${course.id}?userId=${userIdString}&role=student`)
     }
   }
+  
 
   const handleRoleSelection = (role: "student" | "teacher") => {
     setIsModalOpen(false)

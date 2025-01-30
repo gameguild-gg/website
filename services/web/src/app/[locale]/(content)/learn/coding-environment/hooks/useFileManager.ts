@@ -17,6 +17,7 @@ export function useFileManager(initialFiles: CodeFile[], maxFiles: number, maxCh
       return;
     }
     const newFile = {
+      id: crypto.randomUUID(),
       name,
       language,
       content: '',
@@ -64,6 +65,7 @@ export function useFileManager(initialFiles: CodeFile[], maxFiles: number, maxCh
         return;
       }
       const newFile: CodeFile = {
+        id: '',
         name: file.name,
         language: getLanguageFromExtension(file.name),
         content: content,

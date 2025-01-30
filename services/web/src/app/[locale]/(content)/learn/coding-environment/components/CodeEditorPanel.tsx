@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react"
 import dynamic from "next/dynamic"
-import type { CodeQuestionv1_0_0 } from "@/lib/interface-base/question.base.v1.0.0"
+import { QuestionStatus, type CodeQuestionv1_0_0 } from "@/lib/interface-base/question.base.v1.0.0"
 import type { CodeQuestionSubmissionv1_0_0 } from "@/lib/interface-base/question.submission.v1.0.0"
 import TopMenu from "./TopMenu"
 import BottomMenu from "./BottomMenu"
@@ -14,7 +14,7 @@ import { Panel, PanelGroup, PanelResizeHandle, type ImperativePanelHandle } from
 import JSZip from "jszip"
 import { toast } from "@/components/learn/ui/use-toast"
 import { SubmissionWarningDialog } from "./SubmissionWarningDialog"
-import { type History, CodeFile } from "../types/codeEditor"
+import { type History } from "../types/codeEditor"
 import { Undo, Redo, AlertCircle } from "lucide-react"
 import * as monaco from "monaco-editor"
 import SettingsModal, { type Settings } from "./SettingsModal"
@@ -281,7 +281,7 @@ export default function CodeEditorPanel({ assignment, onSubmit, hierarchy = {
     }
 
     setSubmissionData({
-      ...assignment,
+      //...assignment,  //comentar resolve para build, mas nao resolve para processo de submissao
       submittedCode: [],
       output: "",
       testResults: [],
@@ -1157,7 +1157,7 @@ export default function CodeEditorPanel({ assignment, onSubmit, hierarchy = {
             testResults={testResults}
             mode={mode}
             hideTestOutputs={hideTestOutputs}
-            codeFiles={codeFiles}
+            //codeFiles={codeFiles}
           />
         )}
       </div>
@@ -1623,7 +1623,7 @@ export default function CodeEditorPanel({ assignment, onSubmit, hierarchy = {
                               fontSize: 14,
                               scrollBeyondLastLine: false,
                               automaticLayout: true,
-                              undoStop: false,
+                              //undoStop: false, // Builda, mas nao sei se implica em outro erro menor
                               wordWrap: "on",
                               autoClosingBrackets: "always",
                               autoClosingQuotes: "always",

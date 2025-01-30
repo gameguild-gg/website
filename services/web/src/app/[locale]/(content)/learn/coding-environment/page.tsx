@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import CodeEditorPanel from "./components/CodeEditorPanel"
 import { type CodeQuestionv1_0_0, QuestionStatus } from "@/lib/interface-base/question.base.v1.0.0"
-import type { CodeQuestionSubmissionv1_0_0 } from "@/lib/interface-base/question.submission.v1.0.0"
+import type { CodeQuestionSubmissionv1_0_0, QuestionSubmissionBasev1_0_0 } from "@/lib/interface-base/question.submission.v1.0.0"
 import { toast } from "@/components/ui/use-toast"
 import type { HierarchyBasev1_0_0 } from "@/lib/interface-base/structure.base.v1.0.0"
 import Loading from "../loading"
@@ -54,10 +54,11 @@ export default function CodingEnvironment() {
         setQuestion(data)
       } catch (error) {
         console.error("Error fetching question:", error)
-        setError(`Failed to load question: ${error.message}`)
+        setError(`Failed to load question: ${(error as Error).message}`)
+
         toast({
           title: "Error",
-          description: `Failed to load question: ${error.message}`,
+          description: `Failed to load question: ${(error as Error).message}`,
           variant: "destructive",
         })
       } finally {
@@ -118,7 +119,7 @@ export default function CodingEnvironment() {
       console.error("Error submitting assignment:", error)
       toast({
         title: "Error",
-        description: `Failed to submit assignment: ${error.message}`,
+        description: `Failed to load question: ${(error as Error).message}`,
         variant: "destructive",
       })
     }
@@ -151,7 +152,8 @@ export default function CodingEnvironment() {
         hierarchy={hierarchy}
         isSandboxMode={isSandboxMode} onReturn={function (): void {
           throw new Error("Function not implemented.")
-        } }      />
+        } }
+        />
     </div>
   )
 }

@@ -57,7 +57,7 @@ export async function GET(
       contentData = JSON.parse(fileContents)
     } catch (parseError) {
       console.error('Error parsing JSON:', parseError)
-      return NextResponse.json({ error: 'Invalid JSON in file', details: parseError.message }, { status: 500 })
+      return NextResponse.json({ error: 'Invalid JSON in file', details: (parseError as Error).message }, { status: 500 })
     }
 
     // Validate the content data against the appropriate interface
@@ -80,7 +80,7 @@ export async function GET(
       }
     } catch (validationError) {
       console.error('Validation error:', validationError)
-      return NextResponse.json({ error: 'Content validation failed', details: validationError.message }, { status: 500 })
+      return NextResponse.json({ error: 'Content validation failed', details: (validationError as Error).message }, { status: 500 })
     }
 
     return NextResponse.json(contentData)

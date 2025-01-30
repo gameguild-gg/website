@@ -35,6 +35,7 @@ import {
   DialogFooter as DialogFooter2,
 } from "@/components/learn/ui/dialog"
 import { Button } from "@/components/learn/ui/button"
+import { EssayQuestionSubmissionv1_0_0 } from "@/lib/interface-base/question.submission.v1.0.0"
 // import SubmissionDetails from './SubmissionDetails';
 
 interface TeacherQuestionDetailProps {
@@ -50,7 +51,7 @@ interface StudentDetails {
 }
 
 interface SubmissionDetailsProps {
-  submission: CodeQuestionv1_0_0 | AnswerQuestionv1_0_0 | MultipleChoiceQuestionv1_0_0
+  submission: CodeQuestionv1_0_0 | AnswerQuestionv1_0_0 | MultipleChoiceQuestionv1_0_0 | EssayQuestionSubmissionv1_0_0
   mode: "light" | "dark" | "high-contrast"
   onClose: () => void
   courseId: string
@@ -110,7 +111,7 @@ const SubmissionDetailsComponent: React.FC<SubmissionDetailsProps> = ({
         ? submission.testResults.reduce((acc, result, index) => {
             if (result.actualOutput === result.expectedOutput) {
               const score = question.outputsScore?.[index] || 0
-              return acc + score
+              return acc + score[index];
             }
             return acc
           }, 0)
@@ -225,7 +226,7 @@ const SubmissionDetailsComponent: React.FC<SubmissionDetailsProps> = ({
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {question?.outputsScore ? (
-                          question.outputsScore.length === 1 ? (
+                          question.outputsScore[index].length === 1 ? ( //passa, mas averiguar se [index] garante que em casos de apenas um valor seja aceito
                             question.outputsScore[0]
                           ) : (
                             question.outputsScore[index]
