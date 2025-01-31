@@ -1,3 +1,42 @@
+# [1.12.0](https://github.com/gameguild-gg/website/compare/v1.11.33...v1.12.0) (2025-01-31)
+
+
+### Bug Fixes
+
+* **contributors:** add a link to the stargazers ([d7cfa8f](https://github.com/gameguild-gg/website/commit/d7cfa8f01e71be4634db6a74e2d92e67094ea6ad))
+* **course/page:** include carousel system ([121c9c1](https://github.com/gameguild-gg/website/commit/121c9c158d5de4a6ab73f8cf68ad86e04620a244))
+* **courses:** improve ai engine graph ([f56ee32](https://github.com/gameguild-gg/website/commit/f56ee325bbb25d9b85fea504cc98aff297ac165c))
+* **courses:** markdown content ([9d9e130](https://github.com/gameguild-gg/website/commit/9d9e13058b4bc5a97efa9bf23bd887c062009f49))
+* dbml schema and swagger ([230de22](https://github.com/gameguild-gg/website/commit/230de22c88ea2150c69438544458ae5f129b1127))
+* **edutech:** fix types ([b3a788d](https://github.com/gameguild-gg/website/commit/b3a788d8894f669f51d0b3d56b26a36244fcbaa1))
+* **edutech:** merge edutech into main ([f0e8d53](https://github.com/gameguild-gg/website/commit/f0e8d5373103d4e6733d4e47eba65b31602e5daf))
+* fetch courses ([c9d2fe5](https://github.com/gameguild-gg/website/commit/c9d2fe5a75daa83b098e5bc0628d23ab5ff0fab8))
+* **header/index:** include 'Courses' button ([4a13e3c](https://github.com/gameguild-gg/website/commit/4a13e3c40817cdf058b270ca6f256c9313008323))
+* improved code generation ([aad0f94](https://github.com/gameguild-gg/website/commit/aad0f94cfd0977007bd6d7962441864a93aae6f2))
+* **learn:** "add run python language" ([c937a5d](https://github.com/gameguild-gg/website/commit/c937a5da541af809ea27951b71d770c142c56767))
+* **learn:** "layouts visible" ([fdb939d](https://github.com/gameguild-gg/website/commit/fdb939d50908d80153d9555ae4d2a1dae6457848))
+* **learn:** 3s to local save and 'addinput' to add input to code ([55e5062](https://github.com/gameguild-gg/website/commit/55e506263e3d5d6a459a724c8894e74cfb9fbc5c))
+* **learn:** add filter submissions ([c8c7f2f](https://github.com/gameguild-gg/website/commit/c8c7f2ff460b0dfb9667131cb2452d8615317868))
+* **learn:** build run ([6ae9a6c](https://github.com/gameguild-gg/website/commit/6ae9a6c9dd7111b11af20ccc56825d2bd79ac62c))
+* **learn:** code flux adjusts ([8442742](https://github.com/gameguild-gg/website/commit/8442742a7298973bce585e5fb769edb1a84ec03f))
+* **learn:** fix layouts ([bfb29f7](https://github.com/gameguild-gg/website/commit/bfb29f74a28250b28ea96884113f956ac7b94607))
+* **learn:** fix links ([cefd547](https://github.com/gameguild-gg/website/commit/cefd5471afc484a05cc2a1ab4d66db69ea047814))
+* **learn:** menu links for Learn and Code also page construction ([4340d50](https://github.com/gameguild-gg/website/commit/4340d501c6f06842352d26568265dd72f3e18923))
+* **learn:** more fixes ([e9061d2](https://github.com/gameguild-gg/website/commit/e9061d2c2b1006651fef0592753f3ad09072b1dc))
+* **learn:** python run message and initial implementation to run Ruby ([3d3ffd4](https://github.com/gameguild-gg/website/commit/3d3ffd4d0536da99645855439906b67a1d080409))
+* **merge:** fixing some merging issues ([6bd64c3](https://github.com/gameguild-gg/website/commit/6bd64c3200c9aceb6d2d0697116f52399ec5537b))
+* **projects:** fix project creation ([d0fff66](https://github.com/gameguild-gg/website/commit/d0fff66468214d79858bf5cb710f8db4d33ba91e))
+* **routing:** fix recursive routing issue ([6bee09d](https://github.com/gameguild-gg/website/commit/6bee09d44dc6048acecdf539a507ef90f9ac3b9e))
+
+
+### Features
+
+* **code:** new feature added code editor. it is wip, but it is starting to get stable ([9da6d5d](https://github.com/gameguild-gg/website/commit/9da6d5dd747c179c79a4960e394297a47ae3b9fe))
+* **courses:** add grading instructions to quiz ([be67c64](https://github.com/gameguild-gg/website/commit/be67c64d6a4fbab552da833b32af2fdecb195ceb))
+* **courses:** courses api base ([107ed9f](https://github.com/gameguild-gg/website/commit/107ed9fd9154bd95acbf595951c0e0552803e82f))
+* **courses:** courses api base ([4ebc47a](https://github.com/gameguild-gg/website/commit/4ebc47a50e488b7006e842623f098bcc99354cfc))
+* **quiz:** boilerplate for the quiz api ([471779e](https://github.com/gameguild-gg/website/commit/471779e4ea9949057a23864bc7f12e42a25bd1c5))
+
 ## [1.11.33](https://github.com/gameguild-gg/website/compare/v1.11.32...v1.11.33) (2025-01-31)
 
 
