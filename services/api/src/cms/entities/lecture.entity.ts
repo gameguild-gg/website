@@ -2,8 +2,30 @@ import { Column, Entity, Index, ManyToOne } from 'typeorm';
 import { ContentBase } from './content.base';
 import { CourseEntity } from './course.entity';
 import { ApiProperty } from '@nestjs/swagger';
-import { IsArray, IsNotEmpty, IsNumber, ValidateNested } from 'class-validator';
+import {
+  IsArray,
+  IsEnum,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  ValidateNested,
+} from 'class-validator';
 import { Type } from 'class-transformer';
+import { ChapterEntity } from './chapter.entity';
+
+export enum LectureType {
+  MARKDOWN = 'markdown',
+  YOUTUBE = 'youtube',
+  LEXICAL = 'lexical',
+  REVEAL = 'reveal',
+  HTML = 'html',
+  PDF = 'pdf',
+  IMAGE = 'image',
+  VIDEO = 'video',
+  AUDIO = 'audio',
+  CODE = 'code',
+  LINK = 'link',
+}
 
 @Entity({ name: 'lecture' })
 export class LectureEntity extends ContentBase {
@@ -15,6 +37,18 @@ export class LectureEntity extends ContentBase {
   @IsNumber({}, { message: 'error.IsNumber: order should be a number' })
   order: number;
 
+  @ApiProperty({ enum: LectureType, default: LectureType.MARKDOWN })
+  @Column({
+    nullable: false,
+    type: 'enum',
+    enum: LectureType,
+    default: LectureType.MARKDOWN,
+  })
+  @Index({ unique: false })
+  @IsOptional()
+  @IsEnum(LectureType)
+  renderer: LectureType;
+
   // a lecture belongs to a course
   @ManyToOne(() => CourseEntity, (course) => course.lectures)
   @ApiProperty({ type: () => CourseEntity })
@@ -23,9 +57,9 @@ export class LectureEntity extends ContentBase {
   course: CourseEntity;
 
   // a lecture belongs to a chapter
-  @ManyToOne(() => CourseEntity, (course) => course.chapters)
-  @ApiProperty({ type: () => CourseEntity })
+  @ManyToOne(() => ChapterEntity, (chapter) => chapter.lectures)
+  @ApiProperty({ type: () => ChapterEntity })
   @ValidateNested()
-  @Type(() => CourseEntity)
-  chapter: CourseEntity;
+  @Type(() => ChapterEntity)
+  chapter: ChapterEntity;
 }

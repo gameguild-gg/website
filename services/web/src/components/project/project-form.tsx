@@ -2,18 +2,11 @@
 
 import React, { useState } from 'react';
 
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '../ui/card';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '../ui/card';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { useRouter } from 'next/navigation';
 import { Api, ProjectApi } from '@game-guild/apiclient';
-import ApiErrorResponseDto = Api.ApiErrorResponseDto;
 import slugify from 'slugify';
 import { useToast } from '@/components/ui/use-toast';
 import { getSession } from 'next-auth/react';
@@ -21,8 +14,9 @@ import Image from 'next/image';
 
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { X, Plus } from 'lucide-react';
+import { Plus, X } from 'lucide-react';
 import { FileUploader } from '@/components/ui/file-uploader';
+import ApiErrorResponseDto = Api.ApiErrorResponseDto;
 
 export const dynamic = 'force-dynamic';
 
@@ -47,9 +41,9 @@ const imageOrFileToUrl = (imageOrFile: ImageOrFile) => {
 
 // receive params to specify if the form is for creating or updating a project
 export default function ProjectForm({
-  action,
-  slug,
-}: Readonly<ProjectFormProps>) {
+                                      action,
+                                      slug,
+                                    }: Readonly<ProjectFormProps>) {
   const [project, setProject] = React.useState<Api.ProjectEntity | null>();
   const [errorApi, setErrorApi] = React.useState<ApiErrorResponseDto | null>();
   const router = useRouter();
@@ -164,8 +158,10 @@ export default function ProjectForm({
       });
     }
   };
-  const updateProject = async () => {};
-  const updateImages = async () => {};
+  const updateProject = async () => {
+  };
+  const updateImages = async () => {
+  };
 
   const submit = async () => {
     if (!project) {
@@ -443,7 +439,8 @@ export default function ProjectForm({
                       htmlFor="screenshot-upload"
                       className="cursor-pointer"
                     >
-                      <div className="w-full h-[150px] border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center">
+                      <div
+                        className="w-full h-[150px] border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center">
                         <Plus className="h-12 w-12 text-gray-400" />
                       </div>
                       <input

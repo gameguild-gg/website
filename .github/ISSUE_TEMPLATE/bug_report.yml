@@ -1,0 +1,90 @@
+name: "🐞 Bug Report"
+description: "File a new bug report to help us improve GameGuild, prioritize your report with an attached bounty."
+title: "[Bug]: "
+labels: ["bug", "triage"]
+type: bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        > [!IMPORTANT]
+        > **Ensure you are using the latest version of GameGuild before submitting an issue, as the bug may already be resolved in a recent update.**  
+        > If the bug occurs in the latest version but was not present in previous versions, please specify this below.
+        > Before creating a new bug report, please check the [existing issues](https://github.com/gameguild-gg/website/issues) to see if the bug has already been reported.
+
+        # 💎 Bounty Program
+        You can prioritize the resolution of this issue by adding a bounty through our [Bounty Program](https://console.algora.io/org/GameGuild/bounties/new).
+
+  - type: textarea
+    attributes:
+      label: "Bug description, Error Message, Logs, and/or Screenshots"
+      description: "Provide a detailed description of the error or exception encountered. Include relevant log outputs or screenshots."
+      placeholder: "Paste error logs or attach screenshots here."
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: "Steps to Reproduce"
+      description: "Provide a step-by-step guide to reproduce the issue. Be as detailed as possible. [Optional] Attach a short video or gif showing the problem"
+      placeholder: |
+        1. 
+        2. 
+        3.
+    validations:
+      required: true
+
+  - type: input
+    attributes:
+      label: "Example URL"
+      description: "Provide a URL demonstrating the issue, if applicable. Or the route URL where the issue occurs."
+      placeholder: "https://gameguild.gg/route"
+
+  - type: input
+    attributes:
+      label: "GameGuild Version"
+      description: "Specify the version of GameGuild you are using. Found in the bottom right corner of your GameGuild page."
+      placeholder: "v1.2.3.abcdef12"
+    validations:
+      required: true
+
+  - type: dropdown
+    attributes:
+      label: "Are you using GameGuild Cloud or Self-Hosted?"
+      description: "Specify whether you are using the GameGuild Cloud or a self-hosted version."
+      options:
+        - "GameGuild Cloud"
+        - "self-hosted"
+
+    validations:
+      required: true
+
+  - type: input
+    attributes:
+      label: "Operating System and Version (if self-hosted)"
+      description: "Run `cat /etc/os-release` or `lsb_release -a` in your terminal to find your operating system and version."
+      placeholder: "Ubuntu 22.04"
+
+  - type: textarea
+    attributes:
+      label: "Additional Information"
+      description: "Provide any other relevant details about the issue."
+      placeholder: "Additional context or observations."
+      
+  - type: textarea
+    attributes:
+      label: "🛠️ Possible Solution (Optional)"
+      description: "If you have any idea about how this could be resolved, please share it here."
+      placeholder: "Describe your possible solution here."
+
+  - type: textarea
+    attributes:
+      label: "🔗 Related Issues (Optional)"
+      description: "If this issue is related to another issue, link it here."
+      placeholder: "Example: This bug might be related to #123."
+
+  - type: textarea
+    attributes:
+      label: "🚧 Workarounds (Optional)"
+      description: "If you have found any workarounds or fixes for this issue, please share them here."
+      placeholder: "Describe any workarounds or fixes here."    

@@ -8,10 +8,11 @@ import JSZip from 'jszip';
 import React, { useEffect, useState } from 'react';
 import { getSession } from 'next-auth/react';
 import { CompetitionsApi } from '@game-guild/apiclient';
+
 const { Dragger } = Upload;
 
 // todo: convert to typescript style
-const canUpload = function (file: any, fileList: any[] = []) {
+const canUpload = function(file: any, fileList: any[] = []) {
   const isZip = file.type === 'application/zip' || file.name.endsWith('.zip');
   const isCppOrH =
     file.name.endsWith('.cpp') ||

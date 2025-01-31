@@ -9,9 +9,9 @@ type Props = React.ButtonHTMLAttributes<HTMLButtonElement> & {
 };
 
 export function SubmitButton({
-  children = 'Submit',
-  onClick,
-}: Readonly<Props>) {
+                               children = 'Submit',
+                               onClick,
+                             }: Readonly<Props>) {
   const { pending } = useFormStatus();
 
   return (

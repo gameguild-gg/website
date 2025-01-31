@@ -1,9 +1,7 @@
-import ContributorCard, {
-  Contributor,
-} from '@/components/contributors/ContributorCard';
+import ContributorCard, { Contributor } from '@/components/contributors/ContributorCard';
 import { Api, HealthcheckApi } from '@game-guild/apiclient';
 import { Github } from 'lucide-react';
-import { Metadata, ResolvingMetadata } from 'next';
+import { Metadata } from 'next';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 

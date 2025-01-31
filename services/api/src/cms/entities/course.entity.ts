@@ -40,13 +40,6 @@ export class CourseEntity extends ContentBase {
 
   // social tags. todo: create a tag entity
 
-  // author
-  @ManyToOne(() => UserEntity, (user) => user.courses)
-  @ApiProperty({ type: () => UserEntity })
-  @ValidateNested()
-  @Type(() => UserEntity)
-  author: UserEntity;
-
   // a course have many lectures
   @OneToMany(() => LectureEntity, (lecture) => lecture.course)
   @ApiProperty({ type: LectureEntity, isArray: true })

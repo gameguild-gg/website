@@ -13,8 +13,4 @@ export class PostEntity extends ContentBase {
     nullable: false,
   })
   PostType: PostTypeEnum;
-
-  // A post can be owned by many users
-  @ManyToMany(() => UserEntity, (user) => user.posts)
-  owners: UserEntity[];
 }

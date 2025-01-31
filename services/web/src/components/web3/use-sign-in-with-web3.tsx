@@ -27,7 +27,8 @@ export function useSignInWithWeb3(choice: Web3ProviderChoice) {
   }, [state.provider, connectToWallet]);
 
   useEffect(() => {
-    const tryToSignInTorus = async () => {};
+    const tryToSignInTorus = async () => {
+    };
 
     const tryToSignInMetamask = async () => {
       if (state.provider && state.accountAddress) {

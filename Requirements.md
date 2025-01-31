@@ -51,6 +51,7 @@ Course Player:
 
 - A responsive and user-friendly interface for consuming course content.
 - Bookmarking, note-taking, and progress tracking features.
+- Gamification and tokenization of courses for engagement
 
 ### 2.3 Game Testing Functionality
 
@@ -68,6 +69,42 @@ Game Marketplace:
 
 - A section of the platform where users can discover and playtest new games.
 - Option for developers to monetize games through in-game purchases, ads, or premium versions.
+
+### 2.4 Events
+
+General Meetings:
+
+- Meetings can be created by any logged-in user on the platform anytime.
+- Users can submit any meetings including workshops, lectures, or other activities related to game development.
+- The meetings are available for the community to view, attend, and participate in.
+
+Choice Casts:
+
+- The community votes on one event to become the "Choice Cast", a highlighted meeting in the calendar.
+- The "Choice Cast" is chosen based on votes from the community using platform votes.
+- These meetings are special, community-driven events that receive additional visibility and rewards.
+- The chosen "Choice Cast" will be repeated according to the demand of the community and those present at previous meetings
+
+Game Jams:
+
+- Game Jams are time-limited events focused on collaborative game development, where participants work together or individually to create games based on a specific theme or challenge.
+- Users can propose Game Jam events, which will follow the same submission and approval process as other events.
+- Game Jams can be scheduled to run over a weekend, a week, or another defined period, depending on the event proposal.
+- Participants in Game Jams may receive platform tokens or other rewards based on community votes or judging criteria defined by the event organizer.
+
+Interaction with Events:
+
+- Users can browse a rolling list of available events, including previously approved submissions.
+- Platform tokens can be used to purchase access or reserve spots for events submitted by any user.
+- Historical events remain in the database, allowing users to reengage with past events if the creator reactivates or republishes them.
+
+### 2.5 Content Creators
+
+Blog Functionality:
+
+- A dedicated blog where invited content creators can share articles, tutorials, and other relevant content.
+- Only creators invited by the community or platform administrators can post on the blog.
+- Blog posts serve as a hub for educational material and community discussions, fostering engagement and knowledge-sharing.
 
 ## 3. DAO Governance
 

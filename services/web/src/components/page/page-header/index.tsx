@@ -1,20 +1,8 @@
 import React from 'react';
-import { PageHeaderRoot } from '@/components/page/page-header/page-header-root';
 import { PageHeaderMenu } from '@/components/page/page-header/page-header-menu';
-import { UserOutlined } from '@ant-design/icons';
-import {
-  Globe,
-  Sun,
-  Moon,
-  SunMoon,
-  Search,
-  Bell,
-  ShoppingCart,
-  ChevronDown,
-} from 'lucide-react';
+import { Bell, Globe, Search, ShoppingCart } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { getSession } from 'next-auth/react';
 
 type Props = React.HTMLAttributes<HTMLDivElement> & {
   children?: React.ReactNode;
@@ -114,7 +102,8 @@ const PageHeader: React.FunctionComponent<Readonly<Props>> & {
           </Button>
 
           <a href="/connect">
-            <button className="py-auto bg-white text-black border rounded-lg font-semibold p-1 hover:bg-neutral-900 hover:text-white">
+            <button
+              className="py-auto bg-white text-black border rounded-lg font-semibold p-1 hover:bg-neutral-900 hover:text-white">
               Connect
               <br />
             </button>

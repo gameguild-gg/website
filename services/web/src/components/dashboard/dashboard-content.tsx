@@ -16,8 +16,8 @@ const Variants = cva('flex flex-grow', {
 
 type Props = React.HTMLAttributes<HTMLDivElement> &
   VariantProps<typeof Variants> & {
-    children?: React.ReactNode;
-  };
+  children?: React.ReactNode;
+};
 
 export default function DashboardContent({ children, size }: Readonly<Props>) {
   return (

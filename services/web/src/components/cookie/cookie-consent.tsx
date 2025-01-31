@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { CookieIcon } from 'lucide-react';
 
 type CookieConsentProps = {};

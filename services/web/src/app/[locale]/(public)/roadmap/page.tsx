@@ -1,26 +1,18 @@
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
-  CheckCircle,
-  Clock,
-  Rocket,
-  Target,
-  Users,
-  Zap,
   AlertTriangle,
   Bot,
-  Rss,
+  CheckCircle,
+  Clock,
   LayoutDashboard,
   MonitorPlay,
   ReceiptText,
+  Rss,
+  Target,
+  Users,
+  Zap,
 } from 'lucide-react';
-import Link from 'next/link';
 import { ReactNode } from 'react';
 
 export default function StartupRoadmap() {
@@ -118,12 +110,12 @@ interface RoadmapItemProps {
 
 // todo: fix typings. Type error: Binding element 'icon' implicitly has an 'any' type.
 function RoadmapItem({
-  icon,
-  title,
-  description,
-  status,
-  date,
-}: RoadmapItemProps) {
+                       icon,
+                       title,
+                       description,
+                       status,
+                       date,
+                     }: RoadmapItemProps) {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'done':

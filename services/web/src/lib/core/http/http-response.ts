@@ -1,4 +1,4 @@
-import {HttpStatusCode} from '@/lib/core/http/http-status-code';
+import { HttpStatusCode } from '@/lib/core/http/http-status-code';
 
 export type HttpResponse<T = any> = {
   statusCode: HttpStatusCode;

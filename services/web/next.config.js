@@ -12,21 +12,31 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
   images: {
-    domains: [
-      'localhost',
-      'cdn.jsdelivr.net',
-      'avatars.githubusercontent.com',
-      'github.com',
-      'gameguild.gg',
-      'web.gameguild.gg',
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**',
+      },
+      {
+        protocol: 'http',
+        hostname: '**',
+      },
     ],
   },
   webpack: (config, { isServer }) => {
     if (!isServer) {
       config.externals = config.externals || [];
       config.externals = [...config.externals, 'apiclient'];
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+      };
     }
     config.module.rules.push(
+      {
+        test: /\.md$/,
+        use: 'raw-loader',
+      },
       {
         test: /\.wasm$/,
         type: 'asset/resource',

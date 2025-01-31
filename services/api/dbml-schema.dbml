@@ -80,7 +80,6 @@ Table course_editors_user {
 }
 
 Table CourseEntity {
-  author UserEntity
   body text
   createdAt timestamp
   id uuid
@@ -180,12 +179,13 @@ Table lecture_editors_user {
 
 Table LectureEntity {
   body text
-  chapter CourseEntity
+  chapter ChapterEntity
   course CourseEntity
   createdAt timestamp
   id uuid
   order float
   owner UserEntity
+  renderer enum
   slug varchar
   summary string
   thumbnail ImageEntity
@@ -213,7 +213,6 @@ Table PostEntity {
   updatedAt timestamp
   visibility enum
   editors UserEntity
-  owners UserEntity
 }
 
 Table project_editors_user {
@@ -332,11 +331,6 @@ Table TicketEntity {
   project ProjectEntity
 }
 
-Table user_posts_post {
-  post_id uuid
-  user_id uuid
-}
-
 Table UserEntity {
   appleId string
   createdAt timestamp
@@ -356,8 +350,6 @@ Table UserEntity {
   username varchar
   walletAddress string
   competitionSubmissions CompetitionSubmissionEntity
-  courses CourseEntity
-  posts PostEntity
 }
 
 Table UserProfileEntity {
@@ -390,7 +382,6 @@ Ref: CompetitionRunEntity.reports < CompetitionRunSubmissionReportEntity.run
 Ref: CompetitionRunSubmissionReportEntity.submission > CompetitionSubmissionEntity.submissionReports
 Ref: CompetitionRunSubmissionReportEntity.user > UserEntity.id
 Ref: CompetitionSubmissionEntity.user > UserEntity.competitionSubmissions
-Ref: CourseEntity.author > UserEntity.courses
 Ref: CourseEntity.editors <> UserEntity.id
 Ref: CourseEntity.lectures < LectureEntity.course
 Ref: CourseEntity.owner > UserEntity.id
@@ -404,13 +395,11 @@ Ref: JobPostEntity.editors <> UserEntity.id
 Ref: JobPostEntity.job_tags <> JobTagEntity.id
 Ref: JobPostEntity.owner > UserEntity.id
 Ref: JobPostEntity.thumbnail > ImageEntity.id
-Ref: LectureEntity.chapter > CourseEntity.chapters
 Ref: LectureEntity.editors <> UserEntity.id
 Ref: LectureEntity.owner > UserEntity.id
 Ref: LectureEntity.thumbnail > ImageEntity.id
 Ref: PostEntity.editors <> UserEntity.id
 Ref: PostEntity.owner > UserEntity.id
-Ref: PostEntity.owners <> UserEntity.posts
 Ref: PostEntity.thumbnail > ImageEntity.id
 Ref: ProjectEntity.banner > ImageEntity.id
 Ref: ProjectEntity.editors <> UserEntity.id

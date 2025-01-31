@@ -16,6 +16,17 @@ const i18nMiddleware = createIntlMiddleware({
 const authMiddleware = NextAuth(authConfig);
 
 export async function middleware(request: NextRequest) {
+  const oldDomains = ['web.gameguild.gg', 'gamedevguild.org', 'gameguild.gg'];
+  const newDomain = 'gameguild.gg';
+
+  if (oldDomains.includes(request.nextUrl.hostname)) {
+    // redirect to the new domain keeping the path, search and query string
+    const url = new URL(
+      request.nextUrl.href.replace(request.nextUrl.hostname, newDomain),
+    );
+    return NextResponse.redirect(url, 308); // 308 ensures permanent redirect and preserves method
+  }
+
   // 1. Handle internationalization first
   const i18nResponse = await i18nMiddleware(request);
 
