@@ -35,7 +35,7 @@ const Chapter03 = createChapter(
   'Week 3: AI Engines',
   'AI Engines in games.',
   3,
-  ['3-1'],
+  ['3-1', '3-2'],
   week03lectures,
 ) as ChapterEntity;
 
