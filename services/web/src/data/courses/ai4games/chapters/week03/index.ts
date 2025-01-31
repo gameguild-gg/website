@@ -1,6 +1,7 @@
 import { Api } from '@game-guild/apiclient';
 import { createChapter, createLecture } from '@/data/coursesLib';
 import lecture from './lecture.md';
+import astar from './a-star.md';
 import ChapterEntity = Api.ChapterEntity;
 import LectureEntity = Api.LectureEntity;
 
@@ -14,6 +15,17 @@ week03lectures.push(
     'AI Engines in games.',
     lecture,
     1,
+  ) as LectureEntity,
+);
+
+week03lectures.push(
+  createLecture(
+    '3-2',
+    'a-star',
+    'A* Pathfinding',
+    'A* Pathfinding algorithm',
+    astar,
+    2,
   ) as LectureEntity,
 );
 
