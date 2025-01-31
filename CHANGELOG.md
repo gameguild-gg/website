@@ -1,3 +1,10 @@
+## [1.11.33](https://github.com/gameguild-gg/website/compare/v1.11.32...v1.11.33) (2025-01-31)
+
+
+### Bug Fixes
+
+* **routing:** trying to fix the issue with multiple domains ([3c81465](https://github.com/gameguild-gg/website/commit/3c81465c0727f7b8dcf74525cb5d9deefccc9159))
+
 ## [1.11.32](https://github.com/gameguild-gg/website/compare/v1.11.31...v1.11.32) (2025-01-31)
 
 
