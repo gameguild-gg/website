@@ -131,6 +131,7 @@
     "zod": "^3.22.4",
     "zustand": "^5.0.2",
 
+    "react-icons": "^5.4.0",
     "re-resizable": "latest",
     "@uiw/react-markdown-preview": "latest"
   },

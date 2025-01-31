@@ -95,7 +95,7 @@ export default function FileExplorer({ codeFiles, activeFileIndex, onTabChange, 
             onClick={() => scroll('right')}
             className={`p-2 ${
               mode === 'light' ? 'text-gray-600 hover:bg-gray-200' :
-              mode === 'dark' ? 'text-gray-400 hover:bg-gray-700' :
+              mode === 'dark' ? 'text-gray-200 hover:bg-gray-700' :
               'text-yellow-300 hover:bg-gray-800'
             }`}
           >

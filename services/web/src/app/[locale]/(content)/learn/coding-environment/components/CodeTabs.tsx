@@ -77,10 +77,10 @@ export default function CodeTabs({ files, activeIndex, onTabChange, onCloseTab, 
             className={`px-3 py-2 text-sm font-medium flex items-center whitespace-nowrap group cursor-pointer ${
               index === activeIndex
                 ? mode === 'light'
-                  ? 'bg-white text-blue-600 border-t-2 border-blue-500'
+                  ? 'bg-white text-blue-600 border-t-2 border-r-2 border-l-2 border-blue-500'
                   : mode === 'dark'
-                  ? 'bg-[#1e1e1e] text-white border-t-2 border-blue-500'
-                  : 'bg-black text-yellow-300 border-t-2 border-yellow-300'
+                  ? 'bg-[#1e1e1e] text-white border-t-2 border-r-2 border-l-2 border-blue-500'
+                  : 'bg-black text-yellow-300 border-t-2 border-r-2 border-l-2 border-yellow-300'
                 : mode === 'light'
                 ? 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 : mode === 'dark'

@@ -70,7 +70,7 @@ export default function ExportFilesModal({
               onExportFiles(false, activeFileName)
               onClose()
             }}
-            className="flex flex-col items-center justify-center w-36 h-24 rounded transition-colors duration-200 bg-blue-500 text-white hover:bg-blue-600"
+            className="flex flex-col items-center justify-center w-36 h-24 rounded transition-colors duration-200 bg-gray-200 text-gray-800 hover:bg-gray-300"
           >
             <File className="w-8 h-8 mb-2" />
             <span className="text-sm">Export Current File</span>
