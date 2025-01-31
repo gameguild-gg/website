@@ -1,3 +1,10 @@
+## [1.11.32](https://github.com/gameguild-gg/website/compare/v1.11.31...v1.11.32) (2025-01-31)
+
+
+### Bug Fixes
+
+* **courses:** add missing cstdint on the a-star example ([f955c59](https://github.com/gameguild-gg/website/commit/f955c59e57d1b29358126168d9c86110666d3874))
+
 ## [1.11.31](https://github.com/gameguild-gg/website/compare/v1.11.30...v1.11.31) (2025-01-31)
 
 
