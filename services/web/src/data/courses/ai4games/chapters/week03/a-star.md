@@ -138,6 +138,7 @@ In order to build an A-star pathfinding algorithm, we need to define some data s
 #include <cmath>
 #include <vector>
 #include <queue>
+#include <cstdint>
 
 using std::pair;
 
