@@ -1,3 +1,10 @@
+## [1.11.31](https://github.com/gameguild-gg/website/compare/v1.11.30...v1.11.31) (2025-01-31)
+
+
+### Bug Fixes
+
+* **courses:** add a-star content ([5276fcd](https://github.com/gameguild-gg/website/commit/5276fcd5d165852986304c1b5f18d525c721db43))
+
 ## [1.11.30](https://github.com/gameguild-gg/website/compare/v1.11.29...v1.11.30) (2025-01-31)
 
 
