@@ -13,7 +13,15 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Bell, ChevronDown, ChevronUp, Globe, Menu, Search, X } from 'lucide-react';
+import {
+  Bell,
+  ChevronDown,
+  ChevronUp,
+  Globe,
+  Menu,
+  Search,
+  X,
+} from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 
 /**
@@ -39,14 +47,16 @@ export default function Header() {
     'About',
     'License',
   ];
-  const languages = ['English', 'Spanish', 'Portuguese', 'French', 'German'];
 
   const complexItems = [
     { name: 'Learn', href: `/learn` },
-    { name: 'Code', href: '/learn/coding-environment?id=0&type=sandbox&userId=&role=' }
+    {
+      name: 'Code',
+      href: '/learn/coding-environment?id=0&type=sandbox&userId=&role=',
+    },
   ];
 
-  const languages = ['English', 'Spanish', 'Portuguese', 'French', 'German']
+  const languages = ['English', 'Spanish', 'Portuguese', 'French', 'German'];
 
   const router = useRouter();
 
@@ -112,7 +122,10 @@ export default function Header() {
             <DropdownMenuContent className="bg-neutral-900 text-white border-0">
               {complexItems.map((item) => (
                 <DropdownMenuItem key={item.name}>
-                  <Link href={item.href} className=" hover:text-gray-400 transition-colors">
+                  <Link
+                    href={item.href}
+                    className=" hover:text-gray-400 transition-colors"
+                  >
                     {item.name}
                   </Link>
                 </DropdownMenuItem>
@@ -293,6 +306,3 @@ export default function Header() {
     </header>
   );
 }
-
-
-          
