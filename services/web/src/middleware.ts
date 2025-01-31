@@ -16,7 +16,7 @@ const i18nMiddleware = createIntlMiddleware({
 const authMiddleware = NextAuth(authConfig);
 
 export async function middleware(request: NextRequest) {
-  const oldDomains = ['web.gameguild.gg', 'gamedevguild.org', 'gameguild.gg'];
+  const oldDomains = ['web.gameguild.gg', 'gamedevguild.org'];
   const newDomain = 'gameguild.gg';
 
   if (oldDomains.includes(request.nextUrl.hostname)) {
