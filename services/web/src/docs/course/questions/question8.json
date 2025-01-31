@@ -1,0 +1,61 @@
+{
+  "id": 8,
+  "format_ver": "1.0.0",
+  "type": "code",
+  "rules": ["inputs: n", "outputs: y", "chars: 2000", "files: 10"],
+  "status": 1,
+  "subject": ["multi-language", "hello world"],
+  "title": "Multi-Language Hello World",
+  "description": "Implement 'Hello, World!' in multiple programming languages. Each file should print 'Hello, World!' using the standard output method for that language.",
+  "initialCode": {
+    "hello.js": "// JavaScript\nconsole.log('Hello, World!');",
+    "hello.ts": "// TypeScript\nconsole.log('Hello, World!');",
+    "hello.py": "# Python\nprint('Hello, World!')",
+    "hello.rb": "# Ruby\nputs 'Hello, World!'",
+    "hello.lua": "-- Lua\nprint('Hello, World!')",
+    "hello.c": "// C\n#include <stdio.h>\n\nint main() {\n    printf(\"Hello, World!\\n\");\n    return 0;\n}",
+    "hello.cpp": "// C++\n#include <iostream>\n\nint main() {\n    std::cout << \"Hello, World!\" << std::endl;\n    return 0;\n}",
+    "hello.java": "// Java\npublic class HelloWorld {\n    public static void main(String[] args) {\n        System.out.println(\"Hello, World!\");\n    }\n}",
+    "hello.cs": "// C#\nusing System;\n\nclass HelloWorld\n{\n    static void Main()\n    {\n        Console.WriteLine(\"Hello, World!\");\n    }\n}",
+    "hello.rs": "// Rust\nfn main() {\n    println!(\"Hello, World!\");\n}"
+  },
+  "codeName": [
+    { "id": "hello.js", "name": "hello.js" },
+    { "id": "hello.ts", "name": "hello.ts" },
+    { "id": "hello.py", "name": "hello.py" },
+    { "id": "hello.rb", "name": "hello.rb" },
+    { "id": "hello.lua", "name": "hello.lua" },
+    { "id": "hello.c", "name": "hello.c" },
+    { "id": "hello.cpp", "name": "hello.cpp" },
+    { "id": "hello.java", "name": "hello.java" },
+    { "id": "hello.cs", "name": "hello.cs" },
+    { "id": "hello.rs", "name": "hello.rs" }
+  ],
+  "inputs": {},
+  "outputs": {
+    "hello.js": ["Hello, World!"],
+    "hello.ts": ["Hello, World!"],
+    "hello.py": ["Hello, World!"],
+    "hello.rb": ["Hello, World!"],
+    "hello.lua": ["Hello, World!"],
+    "hello.c": ["Hello, World!"],
+    "hello.cpp": ["Hello, World!"],
+    "hello.java": ["Hello, World!"],
+    "hello.cs": ["Hello, World!"],
+    "hello.rs": ["Hello, World!"]
+  },
+  "outputsScore": {
+    "hello.js": [1],
+    "hello.ts": [1],
+    "hello.py": [1],
+    "hello.rb": [1],
+    "hello.lua": [1],
+    "hello.c": [1],
+    "hello.cpp": [1],
+    "hello.java": [1],
+    "hello.cs": [1],
+    "hello.rs": [1]
+  },
+  "score": [10, 0]
+}
+

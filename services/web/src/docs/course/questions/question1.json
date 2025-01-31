@@ -1,0 +1,27 @@
+{
+  "id": 1,
+  "format_ver": "1.0.0",
+  "type": "code",
+  "rules": ["inputs: y", "outputs: y", "chars: 500"],
+  "status": 2,
+  "subject": ["javascript", "basic math"],
+  "title": "Sum of Two Numbers",
+  "description": "Write a function that takes two numbers as input and returns their sum.",
+  "initialCode": {
+    "1": "const inputs = [[5, 3], [10, -2]];\n\nfunction sum(a, b) {\n  return a + b;\n}\n\n// Do not modify the code below\nconsole.log(sum(inputs[0][0], inputs[0][1]));\nconsole.log(sum(inputs[1][0], inputs[1][1]));"
+  },
+  "codeName": [
+    { "id": "1", "name": "sum.js" }
+  ],
+  "inputs": {
+    "1": [[5, 3], [10, -2]]
+  },
+  "outputs": {
+    "1": ["8", "8"]
+  },
+  "outputsScore": {
+    "1": [5, 5]
+  },
+  "score": [10, 0]
+}
+

@@ -13,14 +13,26 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Bell, ChevronDown, ChevronUp, Globe, Menu, Search, X } from 'lucide-react';
+import {
+  Bell,
+  ChevronDown,
+  ChevronUp,
+  Globe,
+  Menu,
+  Search,
+  X,
+} from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 
+/**
+ * Main Header
+ */
 export default function Header() {
   const [user, setUser] = useState<any>(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMoreOpen, setIsMoreOpen] = useState(false);
+  const [isComplexOpen, setIsComplexOpen] = useState(false);
 
   const menuItems = ['Blog', 'Courses']; // ToDo: Jams, Events, Jobs, Tests, Projects
   const moreItems = [
@@ -35,6 +47,15 @@ export default function Header() {
     'About',
     'License',
   ];
+
+  const complexItems = [
+    { name: 'Learn', href: `/learn` },
+    {
+      name: 'Code',
+      href: '/learn/coding-environment?id=0&type=sandbox&userId=&role=',
+    },
+  ];
+
   const languages = ['English', 'Spanish', 'Portuguese', 'French', 'German'];
 
   const router = useRouter();
@@ -84,6 +105,28 @@ export default function Header() {
                 <DropdownMenuItem key={item}>
                   <Link href={`/` + item.toLowerCase().replace(/\s/g, '')}>
                     {item}
+                  </Link>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <DropdownMenu open={isComplexOpen} onOpenChange={setIsComplexOpen}>
+            <DropdownMenuTrigger className="flex px-2 items-center hover:text-gray-400 transition-colors">
+              Learn{' '}
+              {isMoreOpen ? (
+                <ChevronUp className="ml-1 h-4 w-4" />
+              ) : (
+                <ChevronDown className="ml-1 h-4 w-4" />
+              )}
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="bg-neutral-900 text-white border-0">
+              {complexItems.map((item) => (
+                <DropdownMenuItem key={item.name}>
+                  <Link
+                    href={item.href}
+                    className=" hover:text-gray-400 transition-colors"
+                  >
+                    {item.name}
                   </Link>
                 </DropdownMenuItem>
               ))}

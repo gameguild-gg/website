@@ -1,0 +1,24 @@
+{
+  "id": 1,
+  "title": "Introduction to Variables and Data Types",
+  "description": "This lesson covers the fundamental concepts of variables and data types in JavaScript.",
+  "content": [
+    {
+      "content": "In JavaScript, variables are used to store data values. Data types describe the kind of values that can be stored in these variables."
+    },
+    [
+      {
+        "title": "Declaring Variables",
+        "content": "You can declare variables in JavaScript using `var`, `let`, or `const`."
+      },
+      {
+        "title": "Data Types",
+        "content": "JavaScript has several primitive data types: Number, String, Boolean, Null, Undefined, Symbol, and BigInt."
+      }
+    ],
+    {
+      "content": "This lesson provides a basic overview of variables and data types in JavaScript. In the following lessons, you will learn more about how to work with these concepts."
+    }
+  ]
+}
+

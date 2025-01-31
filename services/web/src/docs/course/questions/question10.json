@@ -1,0 +1,40 @@
+{
+  "id": 10,
+  "format_ver": "1.0.0",
+  "type": "code",
+  "rules": ["inputs: n", "outputs: y", "chars: 5000", "files: 5"],
+  "status": 1,
+  "subject": ["html", "css", "bootstrap", "landing page"],
+  "title": "Bootstrap 5 Landing Page",
+  "description": "Create a complete landing page using Bootstrap 5. The page should include a navigation bar, hero section, features section, a footer, and two SVG images. Organize your code into separate HTML, CSS, and SVG files within appropriate folders.",
+  "initialCode": {
+    "/index.html": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>My Awesome Landing Page</title>\n    <link href=\"https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css\" rel=\"stylesheet\">\n    <link href=\"/css/styles.css\" rel=\"stylesheet\">\n</head>\n<body>\n    <!-- Navigation -->\n    <nav class=\"navbar navbar-expand-lg navbar-light bg-light\">\n        <div class=\"container\">\n            <a class=\"navbar-brand\" href=\"#\">My Company</a>\n            <button class=\"navbar-toggler\" type=\"button\" data-bs-toggle=\"collapse\" data-bs-target=\"#navbarNav\" aria-controls=\"navbarNav\" aria-expanded=\"false\" aria-label=\"Toggle navigation\">\n                <span class=\"navbar-toggler-icon\"></span>\n            </button>\n            <div class=\"collapse navbar-collapse\" id=\"navbarNav\">\n                <ul class=\"navbar-nav ms-auto\">\n                    <li class=\"nav-item\"><a class=\"nav-link\" href=\"#home\">Home</a></li>\n                    <li class=\"nav-item\"><a class=\"nav-link\" href=\"#features\">Features</a></li>\n                    <li class=\"nav-item\"><a class=\"nav-link\" href=\"#contact\">Contact</a></li>\n                </ul>\n            </div>\n        </div>\n    </nav>\n\n    <!-- Hero Section -->\n    <header id=\"home\" class=\"hero-section text-center py-5\">\n        <div class=\"container\">\n            <h1 class=\"display-4\">Welcome to Our Awesome Product</h1>\n            <img src=\"/images/hero-image.svg\" alt=\"Hero Image\" class=\"img-fluid mb-4\">\n            <p class=\"lead\">Discover the amazing features that will revolutionize your workflow.</p>\n            <a href=\"#features\" class=\"btn btn-primary btn-lg\">Learn More</a>\n        </div>\n    </header>\n\n    <!-- Features Section -->\n    <section id=\"features\" class=\"py-5\">\n        <div class=\"container\">\n            <h2 class=\"text-center mb-5\">Our Features</h2>\n            <div class=\"row\">\n                <div class=\"col-md-4 mb-4\">\n                    <div class=\"card h-100\">\n                        <img src=\"/images/feature-image1.svg\" alt=\"Feature 1\" class=\"card-img-top\">\n                        <div class=\"card-body\">\n                            <h5 class=\"card-title\">Easy to Use</h5>\n                            <p class=\"card-text\">Our intuitive interface makes it simple for anyone to get started.</p>\n                        </div>\n                    </div>\n                </div>\n                <div class=\"col-md-4 mb-4\">\n                    <div class=\"card h-100\">\n                        <div class=\"card-body\">\n                            <h5 class=\"card-title\">Powerful Analytics</h5>\n                            <p class=\"card-text\">Gain valuable insights with our advanced analytics tools.</p>\n                        </div>\n                    </div>\n                </div>\n                <div class=\"col-md-4 mb-4\">\n                    <div class=\"card h-100\">\n                        <div class=\"card-body\">\n                            <h5 class=\"card-title\">24/7 Support</h5>\n                            <p class=\"card-text\">Our dedicated team is always here to help you succeed.</p>\n                        </div>\n                    </div>\n                </div>\n            </div>\n        </div>\n    </section>\n\n    <!-- Contact Section -->\n    <section id=\"contact\" class=\"bg-light py-5\">\n        <div class=\"container\">\n            <h2 class=\"text-center mb-5\">Contact Us</h2>\n            <div class=\"row justify-content-center\">\n                <div class=\"col-md-6\">\n                    <form>\n                        <div class=\"mb-3\">\n                            <input type=\"text\" class=\"form-control\" placeholder=\"Your Name\" required>\n                        </div>\n                        <div class=\"mb-3\">\n                            <input type=\"email\" class=\"form-control\" placeholder=\"Your Email\" required>\n                        </div>\n                        <div class=\"mb-3\">\n                            <textarea class=\"form-control\" rows=\"4\" placeholder=\"Your Message\" required></textarea>\n                        </div>\n                        <div class=\"text-center\">\n                            <button type=\"submit\" class=\"btn btn-primary\">Send Message</button>\n                        </div>\n                    </form>\n                </div>\n            </div>\n        </div>\n    </section>\n\n    <!-- Footer -->\n    <footer class=\"bg-dark text-white text-center py-3\">\n        <div class=\"container\">\n            <p>&copy; 2023 My Company. All rights reserved.</p>\n        </div>\n    </footer>\n\n    <script src=\"https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js\"></script>\n    <script src=\"/js/main.js\"></script>\n</body>\n</html>",
+    "/css/styles.css": "/* Custom styles */\n.hero-section {\n    background-color: #f8f9fa;\n    padding: 100px 0;\n}\n\n.hero-section h1 {\n    margin-bottom: 20px;\n}\n\n.card {\n    transition: transform 0.3s;\n}\n\n.card:hover {\n    transform: translateY(-5px);\n}\n\n/* Add more custom styles as needed */",
+    "/js/main.js": "// Custom JavaScript\ndocument.addEventListener('DOMContentLoaded', function() {\n    // Smooth scrolling for navigation links\n    document.querySelectorAll('a[href^=\"#\"]').forEach(anchor => {\n        anchor.addEventListener('click', function (e) {\n            e.preventDefault();\n            document.querySelector(this.getAttribute('href')).scrollIntoView({\n                behavior: 'smooth'\n            });\n        });\n    });\n\n    // Add more custom JavaScript as needed\n});",
+    "/images/hero-image.svg": "<svg width=\"400\" height=\"200\" xmlns=\"http://www.w3.org/2000/svg\">\n  <rect width=\"400\" height=\"200\" fill=\"#eee\" />\n  <circle cx=\"200\" cy=\"100\" r=\"50\" fill=\"#4285f4\" />\n</svg>",
+    "/images/feature-image1.svg": "<svg width=\"100\" height=\"100\" xmlns=\"http://www.w3.org/2000/svg\">\n  <rect width=\"100\" height=\"100\" fill=\"#eee\" />\n  <polygon points=\"50,10 90,90 10,90\" fill=\"#0f9d58\" />\n</svg>"
+  },
+  "codeName": [
+    { "id": "/index.html", "name": "index.html" },
+    { "id": "/css/styles.css", "name": "css/styles.css" },
+    { "id": "/css/styles.css", "name": "css/styles2.css" },
+    { "id": "/js/main.js", "name": "js/main.js" },
+    { "id": "/images/hero-image.svg", "name": "images/hero-image.svg" },
+    { "id": "/images/feature-image1.svg", "name": "images/feature-image1.svg" }
+  ],
+  "inputs": {},
+  "outputs": {
+    "/index.html": ["<!DOCTYPE html>"],
+    "/css/styles.css": [".hero-section {"],
+    "/js/main.js": ["document.addEventListener"],
+    "/images/hero-image.svg": ["<svg width=\"400\""],
+    "/images/feature-image1.svg": ["<svg width=\"100\""]
+  },
+  "outputsScore": {
+    "/index.html": [4],
+    "/css/styles.css": [3],
+    "/js/main.js": [3]
+  },
+  "score": [10, 0]
+}
+
