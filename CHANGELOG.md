@@ -1,3 +1,12 @@
+## [1.12.1](https://github.com/gameguild-gg/website/compare/v1.12.0...v1.12.1) (2025-02-01)
+
+
+### Bug Fixes
+
+* **ci:** github actions are failing with the latest ubuntu version ([42221af](https://github.com/gameguild-gg/website/commit/42221afcdbefff080492d0f0667796e355db8aa3))
+* **errors:** fix [#14](https://github.com/gameguild-gg/website/issues/14), fix [#15](https://github.com/gameguild-gg/website/issues/15) error pages ([812e714](https://github.com/gameguild-gg/website/commit/812e714cf80b77e4ffc16e617a3fc4e71f3ff944))
+* **routes:** redirect ([5c91c8b](https://github.com/gameguild-gg/website/commit/5c91c8bedf811a2a9de5dd4db7394b0ad34da87e))
+
 # [1.12.0](https://github.com/gameguild-gg/website/compare/v1.11.33...v1.12.0) (2025-01-31)
 
 
