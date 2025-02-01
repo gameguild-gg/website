@@ -1,12 +1,15 @@
 import React, { PropsWithChildren } from 'react';
 import { Metadata } from 'next';
 import { GoogleAnalytics, GoogleTagManager } from '@next/third-parties/google';
+
 import { Web3Provider } from '@/components/web3/web3-context';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Toaster } from '@/components/ui/toaster';
-import { ParamsWithLocale, PropsWithLocaleParams } from '@/types';
-import { environment } from '@/config/environment';
 import { FloatingFeedbackButton } from '@/components/floating-issue-button/floating-issue-button';
+import { WebVitals } from '@/components/analytics';
+import { ThemeProvider } from '@/components/theme';
+import { environment } from '@/config/environment';
+import { PropsWithLocaleParams } from '@/types';
 
 export async function generateMetadata(): Promise<Metadata> {
   const host =
@@ -37,27 +40,25 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export async function generateStaticParams(): Promise<ParamsWithLocale[]> {
-  return [];
-}
-
-export default async function Layout({
-                                       children,
-                                       params: { locale },
-                                     }: Readonly<PropsWithChildren<PropsWithLocaleParams>>): Promise<JSX.Element> {
+async function Layout({ children, params: { locale } }: Readonly<PropsWithChildren<PropsWithLocaleParams>>) {
   return (
     <html lang={locale}>
-    <body className="p-0 m-0">
-    <GoogleAnalytics gaId={environment.GoogleAnalyticsMeasurementId} />
-    <GoogleTagManager gtmId={environment.GoogleTagManagerId} />
-    {/*<ThemeProvider>*/}
-    <Web3Provider>
-      <TooltipProvider>{children}</TooltipProvider>
-      <FloatingFeedbackButton />
-      <Toaster />
-    </Web3Provider>
-    {/*</ThemeProvider>*/}
-    </body>
+      <body>
+        <GoogleAnalytics gaId={environment.GoogleAnalyticsMeasurementId} />
+        <GoogleTagManager gtmId={environment.GoogleTagManagerId} />
+        <WebVitals />
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+          <Web3Provider>
+            <TooltipProvider>
+              {children}
+            </TooltipProvider>
+            <Toaster />
+            <FloatingFeedbackButton />
+          </Web3Provider>
+        </ThemeProvider>
+      </body>
     </html>
   );
 }
+
+export default Layout;
