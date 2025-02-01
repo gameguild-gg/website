@@ -1,3 +1,11 @@
+## [1.12.2](https://github.com/gameguild-gg/website/compare/v1.12.1...v1.12.2) (2025-02-01)
+
+
+### Bug Fixes
+
+* **learn:** fix coding environment style ([6f2b5b0](https://github.com/gameguild-gg/website/commit/6f2b5b0849add59de3cde6b26c3cdb97b60a17be))
+* **packages:** fix package location ([280682e](https://github.com/gameguild-gg/website/commit/280682ef3109c6a4f0a9b85d5c6eaa581665b360))
+
 ## [1.12.1](https://github.com/gameguild-gg/website/compare/v1.12.0...v1.12.1) (2025-02-01)
 
 
