@@ -1,3 +1,10 @@
+# [1.13.0](https://github.com/gameguild-gg/website/compare/v1.12.2...v1.13.0) (2025-02-01)
+
+
+### Features
+
+* **analytics:** Added a boilerplate for web-vitals ([b81f1c6](https://github.com/gameguild-gg/website/commit/b81f1c69748ccd2c46b56bf1ece0c2b61b13fef6))
+
 ## [1.12.2](https://github.com/gameguild-gg/website/compare/v1.12.1...v1.12.2) (2025-02-01)
 
 
