@@ -1,20 +1,14 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { getSession } from 'next-auth/react';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ChevronLeft, ChevronRight, Ticket } from 'lucide-react';
-import { TicketApi, AuthApi } from '@game-guild/apiclient/api';
+import { AuthApi, TicketApi } from '@game-guild/apiclient/api';
 
 const gameCover = '/assets/images/game_cover.png';
 

@@ -155,7 +155,7 @@ export default function MyJobApplicationSlug({ params }) {
                             jobApplication.progress >= step
                               ? 'bg-green-100 ring-8 ring-white'
                               : jobApplication.progress == step - 1 &&
-                                  jobApplication.rejected
+                              jobApplication.rejected
                                 ? 'bg-red-100'
                                 : 'bg-gray-100'
                           }`}
@@ -186,7 +186,7 @@ export default function MyJobApplicationSlug({ params }) {
                               jobApplication.progress >= step + 1
                                 ? 'bg-green-500'
                                 : jobApplication.progress == step &&
-                                    jobApplication.rejected
+                                jobApplication.rejected
                                   ? 'bg-red-500'
                                   : 'bg-gray-200'
                             }`}

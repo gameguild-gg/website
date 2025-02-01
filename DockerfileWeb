@@ -23,6 +23,9 @@ WORKDIR /app
 
 RUN apt-get clean && apt-get update
 
+# copy all files to the container. Hack to ensure the .git is present there
+RUN git clone https://github.com/gameguild-gg/website.git /app
+# hack to disable cache
 COPY . /app
 
 # install dependencies
@@ -30,5 +33,4 @@ RUN npm run install:web
 RUN npm run build:web
 
 # start the app
-# CMD ["npm", "run", "buildAndRun:web"]
 CMD ["npm", "run", "start:web"]

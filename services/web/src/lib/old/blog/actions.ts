@@ -23,10 +23,10 @@ export const fetchPosts = async (page: number = 1, limit: string = '15') => {
 
   const {
     posts,
-    meta: {pagination},
+    meta: { pagination },
   } = await response.json();
 
-  return {posts, pagination};
+  return { posts, pagination };
 };
 
 export const fetchPost = async (slug: string) => {
@@ -47,7 +47,7 @@ export const fetchPost = async (slug: string) => {
     throw new Error('Failed to fetch post');
   }
 
-  const {posts} = await response.json();
+  const { posts } = await response.json();
 
   return posts[0];
 };

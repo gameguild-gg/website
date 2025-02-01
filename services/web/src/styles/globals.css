@@ -120,6 +120,312 @@ body {
     }
 
 }
+
+
+/* Dark mode variables */
+.dark {
+    --background-color: #1a1a1a;
+    --text-color: #e0e0e0;
+    --code-background: #2d2d2d;
+    --code-color: #f8f8f2;
+    --link-color: #58a6ff;
+    --warning-foreground: 0 0% 9%;
+    --ring: 240 3.7% 15.9%;
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+}
+
+/* Base styles for markdown content */
+.markdown-content {
+    @apply text-gray-900 leading-normal break-words;
+}
+
+.markdown-content > * + * {
+    @apply mt-0 mb-4;
+}
+
+.markdown-content li + li {
+    @apply mt-1;
+}
+
+.markdown-content li > p + p {
+    @apply mt-6;
+}
+
+.markdown-content strong {
+    @apply font-semibold;
+}
+
+.markdown-content a {
+    @apply text-blue-600 font-semibold;
+}
+
+.markdown-content strong a {
+    @apply font-bold;
+}
+
+.markdown-content h1 {
+    @apply text-4xl font-bold mt-6 mb-4;
+}
+
+.markdown-content h2 {
+    @apply text-3xl font-semibold mt-5 mb-3;
+}
+
+.markdown-content h3 {
+    @apply text-2xl font-semibold mt-4 mb-2;
+}
+
+.markdown-content h4 {
+    @apply text-xl font-semibold mt-3 mb-2;
+}
+
+.markdown-content h5 {
+    @apply text-lg font-semibold mt-2 mb-1;
+}
+
+.markdown-content h6 {
+    @apply text-base font-semibold mt-2 mb-1;
+}
+
+.markdown-content code {
+    @apply font-mono text-sm inline rounded px-1 py-0.5;
+}
+
+.markdown-content pre {
+    @apply bg-gray-100 rounded p-4;
+}
+
+.markdown-content pre code {
+    @apply block bg-transparent p-0 overflow-visible rounded-none;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+.markdown-content ul {
+    @apply list-disc pl-5 mb-4;
+}
+
+.markdown-content ol {
+    @apply list-decimal pl-5 mb-4;
+}
+
+.markdown-content kbd {
+    @apply text-xs inline-block rounded border px-1 py-0.5 align-middle font-normal font-mono shadow;
+}
+
+.markdown-content table {
+    @apply text-base border-gray-600;
+}
+
+.markdown-content th {
+    @apply border py-1 px-3;
+}
+
+.markdown-content td {
+    @apply border py-1 px-3;
+}
+
+/* Admonition styles */
+.admonition {
+    @apply mb-4 p-4 border-l-4 rounded-r;
+}
+
+.admonition-title {
+    @apply font-bold mb-2 text-lg;
+}
+
+.admonition-note {
+    @apply bg-blue-50 border-blue-500;
+}
+
+.admonition-abstract {
+    @apply bg-purple-50 border-purple-500;
+}
+
+.admonition-info {
+    @apply bg-cyan-50 border-cyan-500;
+}
+
+.admonition-tip {
+    @apply bg-green-50 border-green-500;
+}
+
+.admonition-success {
+    @apply bg-green-50 border-green-500;
+}
+
+.admonition-question {
+    @apply bg-yellow-50 border-yellow-500;
+}
+
+.admonition-warning {
+    @apply bg-amber-50 border-amber-500;
+}
+
+.admonition-failure {
+    @apply bg-red-50 border-red-500;
+}
+
+.admonition-danger {
+    @apply bg-red-50 border-red-500;
+}
+
+.admonition-bug {
+    @apply bg-rose-50 border-rose-500;
+}
+
+.admonition-example {
+    @apply bg-indigo-50 border-indigo-500;
+}
+
+.admonition-quote {
+    @apply bg-gray-50 border-gray-500;
+}
+
+pre {
+    border-radius: 0.375rem;
+    margin-bottom: 1rem;
+}
+
+code {
+    font-family: Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+.mermaid-container {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.mermaid-container svg {
+    max-width: 100%;
+    height: auto;
+}
+
+/* RevealJS styles */
+.gameguild-revealjs-wrapper {
+    width: 100%;
+    height: 100%;
+    min-height: 600px;
+    position: relative;
+}
+
+.reveal-container {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+.reveal {
+    height: 100%;
+}
+
+.reveal .slides {
+    text-align: left;
+}
+
+.reveal .slides section {
+    height: 100%;
+    padding: 20px;
+}
+
+.reveal h1,
+.reveal h2,
+.reveal h3,
+.reveal h4,
+.reveal h5,
+.reveal h6 {
+    margin-bottom: 20px;
+    font-weight: bold;
+}
+
+.reveal h1 {
+    font-size: 2.5em;
+}
+
+.reveal h2 {
+    font-size: 2em;
+}
+
+.reveal h3 {
+    font-size: 1.75em;
+}
+
+.reveal h4 {
+    font-size: 1.5em;
+}
+
+.reveal h5 {
+    font-size: 1.25em;
+}
+
+.reveal h6 {
+    font-size: 1em;
+}
+
+.reveal p {
+    margin-bottom: 10px;
+}
+
+.reveal ul,
+.reveal ol {
+    display: block;
+    margin-left: 40px;
+    margin-bottom: 10px;
+}
+
+.reveal li {
+    margin-bottom: 5px;
+}
+
+.reveal pre {
+    margin: 15px 0;
+    width: 100%;
+    box-shadow: none;
+    background-color: #272822;
+    color: #f8f8f2;
+    padding: 15px;
+}
+
+.reveal pre code {
+    max-height: none;
+    padding: 0;
+    font-size: 1em;
+    line-height: 1.5;
+}
+
+/* Styles for details and summary tags */
+details {
+    border: 1px solid #e2e8f0;
+    border-radius: 0.375rem;
+    padding: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+summary {
+    font-weight: bold;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 0.25rem;
+    background-color: #f7fafc;
+    transition: background-color 0.3s ease;
+}
+
+summary:hover {
+    background-color: #edf2f7;
+}
+
+details[open] summary {
+    border-bottom: 1px solid #e2e8f0;
+    margin-bottom: 0.5rem;
+}
+
+details[open] {
+    padding-bottom: 0.5rem;
+}
   
   @layer utilities {
     .text-balance {

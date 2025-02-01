@@ -1,6 +1,5 @@
 import React, { PropsWithChildren } from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
-import Link from 'next/link';
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -10,9 +9,16 @@ import {
   NavigationMenuTrigger,
 } from '@/components/ui/navigation-menu';
 import { cn } from '@/lib/utils';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Bell } from 'lucide-react'
+import { Bell } from 'lucide-react';
 
 const headerVariants = cva('', {
   variants: {},
@@ -190,13 +196,13 @@ const Header: React.FunctionComponent<Readonly<Props>> & {
                 </NavigationMenuItem>
               </NavigationMenuList>
             </NavigationMenu>
-            
+
           </div>
           {/*Right Side*/}
-          <div className='flex'>
+          <div className="flex">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Bell className='my-auto mr-3'/>
+                <Bell className="my-auto mr-3" />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuLabel>Empty</DropdownMenuLabel>
@@ -222,9 +228,9 @@ const Header: React.FunctionComponent<Readonly<Props>> & {
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-          
+
         </div>
-        
+
         {children}
       </div>
     </div>

@@ -6,23 +6,15 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import {
-  Joystick,
-  Box,
-  FileText,
-  FlaskConical,
-  Trophy,
-  Briefcase,
-  Code,
-} from 'lucide-react';
+import { Box, Briefcase, Code, FileText, FlaskConical, Joystick, Trophy } from 'lucide-react';
 import {
   Pagination,
   PaginationContent,
-  PaginationItem,
-  PaginationPrevious,
-  PaginationLink,
   PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
   PaginationNext,
+  PaginationPrevious,
 } from '@/components/ui/pagination';
 
 // todo: I have no idea why this is necessary, if we are already stating use client
@@ -57,7 +49,7 @@ const contentItems = [
   {
     type: 'Tests',
     title: 'Performance Test',
-    description: "Test your game's performance",
+    description: 'Test your game\'s performance',
   },
   {
     type: 'Jams',
@@ -67,7 +59,7 @@ const contentItems = [
   {
     type: 'Jobs',
     title: 'Game Designer Wanted',
-    description: "We're hiring a game designer",
+    description: 'We\'re hiring a game designer',
   },
   {
     type: 'Code Battles',
@@ -179,14 +171,14 @@ export default function ContentFeed() {
                   <PaginationPrevious href="#" />
                 </PaginationItem>
                 {[...Array(totalPages)]
-                  .map((_, i) => (
-                    <PaginationItem key={i}>
-                      <PaginationLink href="#" isActive={i === 0}>
-                        {i + 1}
-                      </PaginationLink>
-                    </PaginationItem>
-                  ))
-                  .slice(0, 3)}
+                .map((_, i) => (
+                  <PaginationItem key={i}>
+                    <PaginationLink href="#" isActive={i === 0}>
+                      {i + 1}
+                    </PaginationLink>
+                  </PaginationItem>
+                ))
+                .slice(0, 3)}
                 {totalPages > 3 && (
                   <>
                     <PaginationItem>

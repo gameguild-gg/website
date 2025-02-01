@@ -1,8 +1,8 @@
 'use client';
-import React, {useEffect, useState} from 'react';
-import {Search, Settings2} from 'lucide-react';
-import {CoursePagination} from '@/components/courses/course-pagination';
-import {fetchCourses} from '@/lib/old/courses/actions';
+import React, { useEffect, useState } from 'react';
+import { Search, Settings2 } from 'lucide-react';
+import { CoursePagination } from '@/components/courses/course-pagination';
+import { fetchCourses } from '@/lib/old/courses/actions';
 
 const placeholder_courses = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 
@@ -43,10 +43,10 @@ export default async function Page() {
           />
 
           <button onClick={handleSearchButton} className="px-2">
-            <Search/>
+            <Search />
           </button>
           <button onClick={handleSearchSettingsButton}>
-            <Settings2/>
+            <Settings2 />
           </button>
         </div>
         {/*Search Settings*/}
@@ -72,7 +72,7 @@ export default async function Page() {
           ))}
         </div>
         <div>
-          <CoursePagination page={1} pages={pages}/>
+          <CoursePagination page={1} pages={pages} />
         </div>
       </div>
     </div>

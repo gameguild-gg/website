@@ -95,8 +95,8 @@ const items: MenuItemProps[] = [
 ];
 
 export default function CompetitionPage({
-  children,
-}: {
+                                          children,
+                                        }: {
   children: React.ReactNode;
 }) {
   const router = useRouter();

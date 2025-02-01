@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { getSession, signOut } from 'next-auth/react';
+import { getSession } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -14,13 +14,13 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
-  ChevronUp,
+  Bell,
   ChevronDown,
+  ChevronUp,
+  Globe,
+  Menu,
   Search,
   X,
-  Globe,
-  Bell,
-  Menu,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 
@@ -34,21 +34,29 @@ export default function Header() {
   const [isMoreOpen, setIsMoreOpen] = useState(false);
   const [isComplexOpen, setIsComplexOpen] = useState(false);
 
-  const menuItems = ['Blog', 'Games', 'Tests', 'Jams', 'Jobs'];
+  const menuItems = ['Blog', 'Courses']; // ToDo: Jams, Events, Jobs, Tests, Projects
   const moreItems = [
     'Roadmap',
     'Contributors',
     'Issues',
+    'Code of Conduct',
+    'Security',
     'Privacy Policy',
-    'Terms of Service' /*'Contact', 'About'*/,
+    'Terms of Service',
+    'Contact',
+    'About',
+    'License',
   ];
 
   const complexItems = [
     { name: 'Learn', href: `/learn` },
-    { name: 'Code', href: '/learn/coding-environment?id=0&type=sandbox&userId=&role=' }
+    {
+      name: 'Code',
+      href: '/learn/coding-environment?id=0&type=sandbox&userId=&role=',
+    },
   ];
 
-  const languages = ['English', 'Spanish', 'Portuguese', 'French', 'German']
+  const languages = ['English', 'Spanish', 'Portuguese', 'French', 'German'];
 
   const router = useRouter();
 
@@ -95,7 +103,7 @@ export default function Header() {
             <DropdownMenuContent className="bg-neutral-900 text-white border-0">
               {moreItems.map((item) => (
                 <DropdownMenuItem key={item}>
-                  <Link href={`./` + item.toLowerCase().replace(/\s/g, '')}>
+                  <Link href={`/` + item.toLowerCase().replace(/\s/g, '')}>
                     {item}
                   </Link>
                 </DropdownMenuItem>
@@ -114,7 +122,10 @@ export default function Header() {
             <DropdownMenuContent className="bg-neutral-900 text-white border-0">
               {complexItems.map((item) => (
                 <DropdownMenuItem key={item.name}>
-                  <Link href={item.href} className=" hover:text-gray-400 transition-colors">
+                  <Link
+                    href={item.href}
+                    className=" hover:text-gray-400 transition-colors"
+                  >
                     {item.name}
                   </Link>
                 </DropdownMenuItem>
@@ -295,6 +306,3 @@ export default function Header() {
     </header>
   );
 }
-
-
-          

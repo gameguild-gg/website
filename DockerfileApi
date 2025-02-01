@@ -10,6 +10,8 @@ RUN apt install -y build-essential cmake git unzip wget graphicsmagick
 
 # copy all files to the container. Hack to ensure the .git is present there
 RUN git clone https://github.com/gameguild-gg/website.git /app
+# hack to disable cache
+COPY . /app
 
 # install dependencies
 RUN NODE_ENV=development npm install

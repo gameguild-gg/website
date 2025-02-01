@@ -10,9 +10,7 @@ import { FloatingFeedbackButton } from '@/components/floating-issue-button/float
 
 export async function generateMetadata(): Promise<Metadata> {
   const host =
-    process.env.NODE_ENV === 'production'
-      ? 'web.gameguild.gg'
-      : 'localhost:3000';
+    process.env.NODE_ENV === 'production' ? 'gameguild.gg' : 'localhost:3000';
   const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
   const baseUrl = `${protocol}://${host}`;
 
@@ -44,22 +42,22 @@ export async function generateStaticParams(): Promise<ParamsWithLocale[]> {
 }
 
 export default async function Layout({
-  children,
-  params: { locale },
-}: Readonly<PropsWithChildren<PropsWithLocaleParams>>): Promise<JSX.Element> {
+                                       children,
+                                       params: { locale },
+                                     }: Readonly<PropsWithChildren<PropsWithLocaleParams>>): Promise<JSX.Element> {
   return (
     <html lang={locale}>
-      <body className="p-0 m-0">
-        <GoogleAnalytics gaId={environment.GoogleAnalyticsMeasurementId} />
-        <GoogleTagManager gtmId={environment.GoogleTagManagerId} />
-        {/*<ThemeProvider>*/}
-        <Web3Provider>
-          <TooltipProvider>{children}</TooltipProvider>
-          <FloatingFeedbackButton />
-          <Toaster />
-        </Web3Provider>
-        {/*</ThemeProvider>*/}
-      </body>
+    <body className="p-0 m-0">
+    <GoogleAnalytics gaId={environment.GoogleAnalyticsMeasurementId} />
+    <GoogleTagManager gtmId={environment.GoogleTagManagerId} />
+    {/*<ThemeProvider>*/}
+    <Web3Provider>
+      <TooltipProvider>{children}</TooltipProvider>
+      <FloatingFeedbackButton />
+      <Toaster />
+    </Web3Provider>
+    {/*</ThemeProvider>*/}
+    </body>
     </html>
   );
 }

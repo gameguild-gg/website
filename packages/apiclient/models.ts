@@ -338,7 +338,6 @@ export namespace Api {
 		 */
 		price: number;
 		subscriptionAccess: boolean;
-		author: Api.UserEntity;
 		lectures: Api.LectureEntity[];
 		chapters: Api.ChapterEntity[];
 	}
@@ -1006,8 +1005,9 @@ export namespace Api {
 		 * @memberof LectureEntity
 		 */
 		order: number;
+		renderer: Api.LectureEntity.Renderer;
 		course: Api.CourseEntity;
-		chapter: Api.CourseEntity;
+		chapter: Api.ChapterEntity;
 	}
 	
 	/**
@@ -1031,6 +1031,35 @@ export namespace Api {
 				PENDING = 'PENDING',
 				PRIVATE = 'PRIVATE',
 				TRASH = 'TRASH'
+			}
+		}
+	
+		export type Renderer =
+			'markdown' |
+			'youtube' |
+			'lexical' |
+			'reveal' |
+			'html' |
+			'pdf' |
+			'image' |
+			'video' |
+			'audio' |
+			'code' |
+			'link'
+		
+		export namespace Renderer {
+			export enum Enum {
+				Markdown = 'markdown',
+				Youtube = 'youtube',
+				Lexical = 'lexical',
+				Reveal = 'reveal',
+				Html = 'html',
+				Pdf = 'pdf',
+				Image = 'image',
+				Video = 'video',
+				Audio = 'audio',
+				Code = 'code',
+				Link = 'link'
 			}
 		}
 	
@@ -1074,46 +1103,6 @@ export namespace Api {
 	export interface OkDto {
 		success: boolean;
 		message: string;
-	}
-
-	export interface PostEntity {
-		id?: string;
-		createdAt: string;
-		updatedAt: string;
-		owner?: Api.UserEntity;
-		editors?: Api.UserEntity[];
-		slug: string;
-		title: string;
-		summary?: string;
-		body?: string;
-		visibility?: Api.PostEntity.Visibility;
-		thumbnail?: Api.ImageEntity;
-	}
-	
-	/**
-	 * @export
-	 * @namespace PostEntity
-	 */
-	export namespace PostEntity {
-		export type Visibility =
-			'DRAFT' |
-			'PUBLISHED' |
-			'FUTURE' |
-			'PENDING' |
-			'PRIVATE' |
-			'TRASH'
-		
-		export namespace Visibility {
-			export enum Enum {
-				DRAFT = 'DRAFT',
-				PUBLISHED = 'PUBLISHED',
-				FUTURE = 'FUTURE',
-				PENDING = 'PENDING',
-				PRIVATE = 'PRIVATE',
-				TRASH = 'TRASH'
-			}
-		}
-	
 	}
 
 	export interface ProjectEntity {
@@ -1569,8 +1558,6 @@ export namespace Api {
 		 * @memberof UserEntity
 		 */
 		elo: number;
-		posts: Api.PostEntity[];
-		courses: Api.CourseEntity[];
 	}
 
 	export interface UserProfileControllerUpdateProfilePictureRequest {

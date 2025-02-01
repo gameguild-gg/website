@@ -1,6 +1,6 @@
 'use client';
 
-import {Button} from '@/components/ui/button';
+import { Button } from '@/components/ui/button';
 
 
 type Props = {
@@ -8,7 +8,7 @@ type Props = {
   reset: () => void;
 };
 
-export default function Error({error, reset}: Readonly<Props>) {
+export default function Error({ error, reset }: Readonly<Props>) {
   return (
     <div>
       <Button onClick={reset}>Reset</Button>

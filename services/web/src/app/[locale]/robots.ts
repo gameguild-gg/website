@@ -1,4 +1,4 @@
-import {MetadataRoute} from 'next';
+import { MetadataRoute } from 'next';
 
 export default async function robots(): Promise<MetadataRoute.Robots> {
   const host = '';

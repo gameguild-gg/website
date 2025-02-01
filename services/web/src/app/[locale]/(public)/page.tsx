@@ -1,23 +1,29 @@
 'use client';
 import React from 'react';
+import Image from 'next/image';
 
 function Home() {
   return (
-    <div className="text-center block text-[#ffffff] bg-[#101014] items-center content-center overflow-hidden w-full">
-      <video
-        className="absolute h-[600px] w-full object-none overflow-hidden"
-        autoPlay
-        loop
-        muted
-      >
-        <source src="assets/videos/hexagon-bg.mp4" type="video/mp4"/>
-      </video>
-      <div
-        className="absolute w-full lg:flex h-[400px] overflow-hidden items-center grid grid-cols-1 mx-auto block z-10">
+    <div
+      className="text-center block text-[#ffffff] bg-[#101014] items-center content-center overflow-hidden w-full z-5">
 
-        <div className='z-10 text-black mx-auto'>
+      <div className="absolute h-[600px] w-full object-none overflow-hidden -z-5">
+        <Image
+          src="/assets/images/background-hexagons-1.jpg"
+          alt="background"
+          layout="fill"
+          objectFit="cover"
+          objectPosition="center"
+          quality={60}
+        />
+      </div>
+
+      <div
+        className="absolute w-full lg:flex h-[400px] overflow-hidden items-center grid grid-cols-1 mx-auto z-10">
+
+        <div className="z-10 text-black mx-auto">
           <div className="text-7xl font-semibold  text-shadow-lg shadow-white">Let's Build Dreams Together!</div>
-          <br/>
+          <br />
           <span className="text-2xl">The All-in-One Game Dev Toolkit</span>
         </div>
       </div>
@@ -28,9 +34,12 @@ function Home() {
 
       <div className="relative justify-between max-w-[1440px] w-full items-center bg-[#18181c] lg:flex mx-auto z-30">
         <div>
-          <img
+          <Image
             src="/assets/images/header2.jpeg"
-            className="lg:max-w-[480px] w-full"
+            alt="header2"
+            width={480}
+            height={480}
+            className="w-full"
           />
         </div>
         <div>
@@ -53,9 +62,12 @@ function Home() {
           </div>
         </div>
         <div>
-          <img
+          <Image
             src="/assets/images/header3.jpeg"
-            className="lg:max-w-[480px] w-full"
+            alt="header3"
+            width={480}
+            height={480}
+            className="w-full"
           />
         </div>
       </div>
@@ -64,9 +76,12 @@ function Home() {
 
       <div className="justify-between max-w-[1440px] w-full mx-auto lg:flex items-center content-center bg-[#18181c]">
         <div>
-          <img
+          <Image
             src="/assets/images/header1.jpeg"
-            className="lg:max-w-[480px] w-full"
+            alt="header1"
+            width={480}
+            height={480}
+            className="w-full lg:max-w-[480px]"
           />
         </div>
         <div>
@@ -82,7 +97,7 @@ function Home() {
       <div className="h-10"></div>
 
       <div
-        className="relative max-w-[1440px] w-full items-center bg-[#18181c] lg:flex justify-between mx-auto z-30">
+        className="relative justify-between max-w-[1440px] w-full items-center bg-[#18181c] lg:flex mx-auto z-30">
         <div></div>
 
         <div>

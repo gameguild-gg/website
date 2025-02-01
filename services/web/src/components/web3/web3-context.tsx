@@ -6,9 +6,9 @@ import { BrowserProvider } from 'ethers';
 type Action =
   | { type: 'CONNECT_TO_PROVIDER_INITIAL' }
   | {
-      type: 'CONNECT_TO_PROVIDER_SUCCESS';
-      payload: { provider: BrowserProvider; accountAddress: string };
-    }
+  type: 'CONNECT_TO_PROVIDER_SUCCESS';
+  payload: { provider: BrowserProvider; accountAddress: string };
+}
   | { type: 'CONNECT_TO_PROVIDER_FAILURE'; payload: { error: string } }
   | { type: 'FETCH_INITIAL' }
   | { type: 'FETCH_SUCCESS'; payload: {} }
@@ -62,7 +62,8 @@ const InitialState: State = {
 export function Web3Provider({ children }: Readonly<Props>) {
   const [state, dispatch] = React.useReducer(web3Reducer, InitialState);
 
-  React.useEffect(() => {}, []);
+  React.useEffect(() => {
+  }, []);
 
   const value = { state, dispatch };
 

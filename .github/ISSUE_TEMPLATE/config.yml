@@ -1,0 +1,18 @@
+blank_issues_enabled: false
+
+contact_links:
+  - name: 🤔 Questions and Community Support
+    url: https://discord.gg/9CdJeQ2XKB
+    about: If you have any questions, reach out to us on Discord inside the "#support" channel.
+
+  - name: 💡 Feature Request
+    url: https://github.com/gameguild-gg/website/discussions/categories/feature-requests
+    about: Suggest a new feature for GameGuild.
+
+  - name: ⚙️ Service Request
+    url: https://github.com/gameguild-gg/website/discussions/categories/service-requests
+    about: Request a new service integration for GameGuild.
+
+  - name: 🔧 Improvements
+    url: https://github.com/gameguild-gg/website/discussions/categories/improvements
+    about: Suggest improvements to existing features for GameGuild.

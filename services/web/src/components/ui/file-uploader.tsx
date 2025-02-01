@@ -1,6 +1,6 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Upload, X } from 'lucide-react';
+import { Upload } from 'lucide-react';
 
 interface FileUploaderProps {
   accept?: string;
@@ -10,11 +10,11 @@ interface FileUploaderProps {
 }
 
 export function FileUploader({
-  accept,
-  multiple,
-  id,
-  onFileSelect,
-}: FileUploaderProps) {
+                               accept,
+                               multiple,
+                               id,
+                               onFileSelect,
+                             }: FileUploaderProps) {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       onFileSelect(e.target.files[0]);

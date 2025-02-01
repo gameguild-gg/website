@@ -1,6 +1,5 @@
 import React from 'react';
 import Link from 'next/link';
-import { UserProfile } from '@/components/page/user-profile';
 
 type HeaderMenuLink = {
   label: string;

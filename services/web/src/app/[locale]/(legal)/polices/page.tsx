@@ -1,5 +1,5 @@
 import React from 'react';
-import {ParamsWithLocale} from "@/types";
+import { ParamsWithLocale } from '@/types';
 
 export async function generateStaticParams(): Promise<ParamsWithLocale[]> {
   return [];

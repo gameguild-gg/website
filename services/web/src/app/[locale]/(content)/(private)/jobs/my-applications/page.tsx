@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getSession } from 'next-auth/react';
-import { Api, JobTagsApi, JobApplicationsApi } from '@game-guild/apiclient';
+import { Api, JobApplicationsApi, JobTagsApi } from '@game-guild/apiclient';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -21,9 +21,9 @@ import {
 } from '@/components/ui/pagination';
 
 function ProgressBar({
-  progress,
-  failed,
-}: {
+                       progress,
+                       failed,
+                     }: {
   progress: number;
   failed: boolean;
 }) {
@@ -219,14 +219,14 @@ export default function MyJobApplications() {
                   <PaginationPrevious href="#" />
                 </PaginationItem>
                 {[...Array(totalPages)]
-                  .map((_, i) => (
-                    <PaginationItem key={i}>
-                      <PaginationLink href="#" isActive={i === 0}>
-                        {i + 1}
-                      </PaginationLink>
-                    </PaginationItem>
-                  ))
-                  .slice(0, 3)}
+                .map((_, i) => (
+                  <PaginationItem key={i}>
+                    <PaginationLink href="#" isActive={i === 0}>
+                      {i + 1}
+                    </PaginationLink>
+                  </PaginationItem>
+                ))
+                .slice(0, 3)}
                 {totalPages > 3 && (
                   <>
                     <PaginationItem>

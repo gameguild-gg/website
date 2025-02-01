@@ -1,10 +1,11 @@
 'use server';
 
-import {Course} from "@/lib/course/course";
-import {httpClientFactory} from "@/lib/core/http";
-import {FetchCoursesGateway} from "@/lib/course/fetch-courses.gateway";
+import { httpClientFactory } from '@/lib/core/http';
+import { FetchCoursesGateway } from '@/lib/course/fetch-courses.gateway';
+import { Api } from '@game-guild/apiclient';
+import CourseEntity = Api.CourseEntity;
 
-export async function fetchCourses(): Promise<ReadonlyArray<Course>> {
+export async function fetchCourses(): Promise<ReadonlyArray<CourseEntity>> {
   const gateway = new FetchCoursesGateway(httpClientFactory());
 
   return gateway.fetchCourses();

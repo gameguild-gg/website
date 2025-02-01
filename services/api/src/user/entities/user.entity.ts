@@ -14,7 +14,6 @@ import { EntityBase } from '../../common/entities/entity.base';
 import { UserProfileEntity } from '../modules/user-profile/entities/user-profile.entity';
 import { CompetitionSubmissionEntity } from '../../competition/entities/competition.submission.entity';
 import { PostEntity } from '../../cms/entities/post.entity';
-import { CourseEntity } from '../../cms/entities/course.entity';
 import {
   IsEmail,
   IsUsername,
@@ -134,21 +133,4 @@ export class UserEntity extends EntityBase {
   @Column({ type: 'float', default: 400 })
   @ApiProperty()
   elo: number;
-
-  // relation to posts many to many
-  @ManyToMany(() => PostEntity, (post) => post.owners)
-  @JoinTable()
-  @ApiProperty({ type: PostEntity, isArray: true })
-  @IsArray({ message: 'error.IsArray: posts should be an array' })
-  @ValidateNested({ each: true })
-  @Type(() => PostEntity)
-  posts: PostEntity[];
-
-  // relation to courses
-  @OneToMany(() => CourseEntity, (course) => course.author)
-  @ApiProperty({ type: CourseEntity, isArray: true })
-  @IsArray({ message: 'error.IsArray: courses should be an array' })
-  @ValidateNested({ each: true })
-  @Type(() => CourseEntity)
-  courses: CourseEntity[];
 }

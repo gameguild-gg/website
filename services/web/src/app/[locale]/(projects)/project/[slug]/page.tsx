@@ -7,7 +7,7 @@ import { Api, ProjectApi } from '@game-guild/apiclient';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { CalendarIcon, Download, MessageSquare, Edit } from 'lucide-react';
+import { CalendarIcon, Download, Edit, MessageSquare } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';

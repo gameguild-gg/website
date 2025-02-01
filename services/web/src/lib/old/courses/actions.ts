@@ -116,7 +116,7 @@ export const fetchCourses = async (page: number = 1, limit: string = '12') => {
 
   //const { posts, meta: { pagination } } = await response.json();
 
-  return {courses, pages};
+  return { courses, pages };
 };
 
 export const fetchPost = async (slug: string) => {
@@ -137,7 +137,7 @@ export const fetchPost = async (slug: string) => {
     throw new Error('Failed to fetch post');
   }
 
-  const {posts} = await response.json();
+  const { posts } = await response.json();
 
   return posts[0];
 };
