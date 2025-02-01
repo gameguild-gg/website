@@ -1,13 +1,16 @@
-import React, { useState, useRef, useCallback, useEffect } from "react"
-import ReactMarkdown from "react-markdown"
-import type { QuestionBasev1_0_0 } from "@/lib/interface-base/question.base.v1.0.0"
-import { Button } from "@/components/learn/ui/button"
-import CustomScrollbar from "./CustomScrollbar"
-import type { HierarchyBasev1_0_0 } from "@/lib/interface-base/structure.base.v1.0.0"
-import { ChevronDown, ChevronRight, FileText, Folder, FileCode, FileJson, FileIcon as FileHtml, FileCodeIcon as FileCss, Coffee, BracesIcon, FileType, Gem, Moon, FileTerminal, Cpu, Hash } from 'lucide-react'
-import { Resizable } from "re-resizable"
-import type { CodeFile } from "../types/codeEditor"
-import { PanelGroup, Panel, PanelResizeHandle } from "react-resizable-panels"
+import React, { useState, useRef, useCallback, useEffect } from "react";
+import ReactMarkdown from "react-markdown";
+import type { QuestionBasev1_0_0 } from "@/lib/interface-base/question.base.v1.0.0";
+import { Button } from "@/components/learn/ui/button";
+import CustomScrollbar from "./CustomScrollbar";
+import type { HierarchyBasev1_0_0 } from "@/lib/interface-base/structure.base.v1.0.0";
+import { ChevronDown, ChevronRight, FileText, Folder, FileCode, FileJson, FileCodeIcon as FileCss, Coffee, FileType, Gem, Moon, FileTerminal, Hash, CogIcon } from 'lucide-react';
+import { DiCss3, DiHtml5, DiJava, DiPerl, DiPython, DiRuby, DiScriptcs } from "react-icons/di";
+import { SiC, SiCashapp, SiCplusplus, SiJavascript, SiJpeg, SiJson, SiLua, SiPython, SiRust, SiSvg, SiTypescript, SiWasmer, SiWebassembly, SiXml } from "react-icons/si";
+import { Resizable } from "re-resizable";
+import type { CodeFile } from "../types/codeEditor";
+import { PanelGroup, Panel, PanelResizeHandle } from "react-resizable-panels";
+import { SidebarGroupLabel } from "@/components/learn/ui/sidebar";
 
 interface LessonPanelProps {
   assignment: QuestionBasev1_0_0
@@ -29,39 +32,52 @@ interface File {
   children?: File[]
 }
 
-const FileIcon = ({ file }: { file: File }) => {
+const FileIcon = ({ file, mode }: { file: File; mode: string }) => {
+
   if (file.type === "folder") {
-    return <Folder className="w-4 h-4 text-yellow-500 dark:text-yellow-400 high-contrast:text-yellow-300" />
+    return <Folder className={`w-4 h-4 ${mode === "light" ? "text-gray-700" : mode === "dark" ? "text-gray-200" : "text-yellow-300"}`} />
   } else {
     const extension = file.name.split(".").pop()?.toLowerCase()
     switch (extension) {
       case "js":
-        return <Coffee className="w-4 h-4 text-yellow-500 dark:text-yellow-400 high-contrast:text-yellow-300" />
+        return <SiJavascript className={`w-4 h-4 ${mode === "light" ? "text-yellow-400" : mode === "dark" ? "text-yellow-400" : "text-yellow-400"}`} />
       case "ts":
-        return <FileCode className="w-4 h-4 text-blue-500 dark:text-blue-400 high-contrast:text-blue-300" />
+        return <SiTypescript className={`w-4 h-4 ${mode === "light" ? "text-blue-400" : mode === "dark" ? "text-blue-400" : "text-yellow-400"}`} />
       case "json":
-        return <FileJson className="w-4 h-4 text-green-500 dark:text-green-400 high-contrast:text-green-300" />
+        return <SiJson className={`w-4 h-4 ${mode === "light" ? "text-green-400" : mode === "dark" ? "text-green-400" : "text-yellow-400"}`} />
+      case "xml":
+        return <SiXml className={`w-4 h-4 ${mode === "light" ? "text-green-400" : mode === "dark" ? "text-green-400" : "text-yellow-400"}`} />
+      case "svg":
+        return <SiSvg className={`w-4 h-4 ${mode === "light" ? "text-green-400" : mode === "dark" ? "text-green-400" : "text-yellow-400"}`} />
+      case "jpeg":
+      case "jpg":
+        return <SiJpeg className={`w-4 h-4 ${mode === "light" ? "text-green-400" : mode === "dark" ? "text-green-400" : "text-yellow-400"}`} />
       case "html":
-        return <FileHtml className="w-4 h-4 text-orange-500 dark:text-orange-400 high-contrast:text-orange-300" />
+        return <DiHtml5 className={`w-4 h-4 ${mode === "light" ? "text-green-400" : mode === "dark" ? "text-green-400" : "text-yellow-400"}`} />
       case "css":
-        return <FileCss className="w-4 h-4 text-blue-500 dark:text-blue-400 high-contrast:text-blue-300" />
+        return <DiCss3 className={`w-4 h-4 ${mode === "light" ? "text-green-400" : mode === "dark" ? "text-green-400" : "text-yellow-400"}`} />
       case "py":
-        return <FileType className="w-4 h-4 text-green-600 dark:text-green-400 high-contrast:text-green-300" />
+        return <SiPython className={`w-4 h-4 ${mode === "light" ? "text-blue-400" : mode === "dark" ? "text-blue-400" : "text-yellow-400"}`} />
       case "rb":
-        return <Gem className="w-4 h-4 text-red-500 dark:text-red-400 high-contrast:text-red-300" />
+        return <DiRuby className={`w-4 h-4 ${mode === "light" ? "text-red-500" : mode === "dark" ? "text-red-400" : "text-yellow-400"}`} />
       case "lua":
-        return <Moon className="w-4 h-4 text-blue-400 dark:text-blue-300 high-contrast:text-blue-200" />
+        return <SiLua className={`w-4 h-4 ${mode === "light" ? "text-blue-400" : mode === "dark" ? "text-blue-400" : "text-yellow-400"}`} />
       case "c":
+        return <SiC className={`w-4 h-4 ${mode === "light" ? "text-gray-400" : mode === "dark" ? "text-gray-400" : "text-yellow-400"}`} />
       case "cpp":
-        return <FileTerminal className="w-4 h-4 text-purple-500 dark:text-purple-400 high-contrast:text-purple-300" />
+        return <SiCplusplus className={`w-4 h-4 ${mode === "light" ? "text-gray-400" : mode === "dark" ? "text-gray-400" : "text-yellow-400"}`} />
       case "rs":
-        return <Cpu className="w-4 h-4 text-orange-600 dark:text-orange-400 high-contrast:text-orange-300" />
+        return <SiRust className={`w-4 h-4 ${mode === "light" ? "text-amber-600" : mode === "dark" ? "text-amber-600" : "text-yellow-400"}`} />
       case "java":
-        return <Coffee className="w-4 h-4 text-brown-500 dark:text-brown-400 high-contrast:text-brown-300" />
+        return <DiJava className={`w-4 h-4 ${mode === "light" ? "text-blue-700" : mode === "dark" ? "text-blue-400" : "text-yellow-400"}`} />
       case "cs":
-        return <Hash className="w-4 h-4 text-purple-500 dark:text-purple-400 high-contrast:text-purple-300" />
+        return <DiScriptcs className={`w-4 h-4 ${mode === "light" ? "text-purple-600" : mode === "dark" ? "text-purple-400" : "text-yellow-400"}`} />
+      case "perl":
+        return <DiPerl className={`w-4 h-4 ${mode === "light" ? "text-amber-400" : mode === "dark" ? "text-amber-400" : "text-yellow-400"}`} />
+      case "wasm":
+        return <SiWebassembly className={`w-4 h-4 ${mode === "light" ? "text-blue-400" : mode === "dark" ? "text-blue-400" : "text-yellow-400"}`} />
       default:
-        return <FileText className="w-4 h-4 text-gray-500 dark:text-gray-400 high-contrast:text-gray-300" />
+        return <FileText className={`w-4 h-4 ${mode === "light" ? "text-gray-400" : mode === "dark" ? "text-gray-400" : "text-yellow-400"}`} />
     }
   }
 }
@@ -87,31 +103,31 @@ const FileExplorer = ({
     )
   }
 
-  const getFileStateClasses = (file: File) => {
+  const getFileStateClasses = (file: File, mode: string) => {
     const isOpen = codeFiles.some((f) => f.name.split("/").pop() === file.name.split("/").pop())
     const isModified = globalCodeFiles.some(
       (f) => f.name.split("/").pop() === file.name.split("/").pop() && f.content !== "",
     )
-    const baseClasses = "transition-all duration-200 ease-in-out"
+    const baseClasses = "transition-all duration-100 ease-in-out"
 
     if (isOpen) {
-      return `${baseClasses} font-semibold text-blue-500 bg-blue-100 dark:bg-blue-900 dark:text-blue-300 high-contrast:bg-yellow-900 high-contrast:text-yellow-300 rounded-md`
+      return `${baseClasses} font-semibold ${mode === "light" ? "text-blue-800 bg-blue-100" : mode === "dark" ? "bg-blue-950 text-blue-100" : "bg-yellow-950 text-yellow-300"} rounded-md`
     } else if (isModified) {
-      return `${baseClasses} font-medium text-green-600 dark:text-green-400 high-contrast:text-yellow-400`
+      return `${baseClasses} font-medium ${mode === "light" ? "text-green-800" : mode === "dark" ? "text-green-300" : "text-yellow-400"}`
     } else {
-      return `${baseClasses} text-gray-700 dark:text-gray-300 high-contrast:text-gray-400`
+      return `${baseClasses} ${mode === "light" ? "text-gray-700" : mode === "dark" ? "text-gray-300" : "text-gray-400"}`
     }
   }
 
   const renderFile = (file: File, path: string) => {
     const isFolder = file.type === "folder"
     const isExpanded = expandedFolders.includes(path)
-    const stateClasses = getFileStateClasses(file)
+    const stateClasses = getFileStateClasses(file,mode)
 
     return (
       <div key={path} className="relative">
         <div
-          className={`flex items-center p-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 high-contrast:hover:bg-gray-800 ${stateClasses}`}
+          className={`flex items-center m-1 p-1 cursor-pointer rounded-md hover:${mode === "light" ? "bg-blue-200" : mode === "dark" ? "bg-blue-900" : "bg-yellow-900"} ${stateClasses}`}
           onClick={() => {
             if (isFolder) {
               handleToggleFolder(path)
@@ -120,14 +136,14 @@ const FileExplorer = ({
             }
           }}
         >
-          <FileIcon file={file} />
+          <FileIcon file={file} mode={mode} />
           <span className="ml-2 text-sm font-medium">{file.name}</span>
           {isFolder && (
             <ChevronDown className={`ml-auto transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`} />
           )}
         </div>
         {isFolder && isExpanded && (
-          <div className="ml-4 border-l border-gray-200 dark:border-gray-600 high-contrast:border-gray-700">
+          <div className={`ml-2 border-l-2 ${mode === "light" ? "border-gray-200" : mode === "dark" ? "border-gray-600" : "border-gray-700"}`}>
             {file.children?.map((child) => renderFile(child, `${path}/${child.name}`))}
           </div>
         )}
@@ -136,7 +152,7 @@ const FileExplorer = ({
   }
 
   return (
-    <div className="p-2 overflow-y-auto h-full scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-200 dark:scrollbar-thumb-gray-600 dark:scrollbar-track-gray-800 high-contrast:scrollbar-thumb-yellow-500 high-contrast:scrollbar-track-gray-900">
+    <div className={`p-2 overflow-y-auto h-full scrollbar-thin ${mode === "light" ? "scrollbar-thumb-gray-400 scrollbar-track-gray-200" : mode === "dark" ? "scrollbar-thumb-gray-600 scrollbar-track-gray-800" : "scrollbar-thumb-yellow-500 scrollbar-track-gray-900"}`}>
       {files.map((file) => renderFile(file, file.name))}
     </div>
   )
@@ -177,7 +193,7 @@ export default function LessonPanel({
         mode === "light"
           ? "bg-white text-gray-800 border-gray-300"
           : mode === "dark"
-            ? "bg-gray-900 text-gray-100 border-gray-700"
+            ? "bg-gray-900 text-gray-200 border-gray-700"
             : "bg-black text-yellow-300 border-yellow-300"
       }`}
     >
@@ -255,8 +271,8 @@ export default function LessonPanel({
               mode === "light"
                 ? "bg-blue-500 hover:bg-blue-600 text-white"
                 : mode === "dark"
-                  ? "bg-blue-600 hover:bg-blue-700 text-white"
-                  : "bg-yellow-300 hover:bg-yellow-400 text-black"
+                  ? "bg-blue-700 hover:bg-blue-800 text-white"
+                  : "bg-yellow-500 hover:bg-yellow-200 text-black"
             }`}
             disabled={isSubmitDisabled}
           >

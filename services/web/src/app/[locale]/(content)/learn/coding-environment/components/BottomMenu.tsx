@@ -30,7 +30,7 @@ export default function BottomMenu({ activeTab, setActiveTab, mode, hideTestOutp
               'hover:bg-gray-800'
         }`}
       >
-        Problems
+        Expected - I/O
       </button>
       <button
         onClick={() => handleTabClick('output')}

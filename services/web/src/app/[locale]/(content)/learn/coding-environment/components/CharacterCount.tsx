@@ -56,7 +56,7 @@ export function CharacterCount({
           </span>
           <span>|</span>
           <span>
-            Files: <span className={getColorClass(fileCount, maxFiles)}>{fileCount}</span> / {maxFiles}
+            Total Files: <span className={getColorClass(fileCount, maxFiles)}>{fileCount}</span> / {maxFiles}
           </span>
         </>
       )}

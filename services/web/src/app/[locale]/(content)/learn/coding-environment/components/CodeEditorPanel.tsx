@@ -1494,7 +1494,7 @@ export default function CodeEditorPanel({ assignment, onSubmit, hierarchy = {
       <PanelGroup direction="horizontal" onLayout={handlePanelLayout}>
             <Panel
               ref={lessonPanelRef}
-              defaultSize={30}
+              defaultSize={20}
               minSize={0}
               maxSize={70}
               collapsible={true}
