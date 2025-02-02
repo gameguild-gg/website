@@ -1,3 +1,10 @@
+## [1.13.1](https://github.com/gameguild-gg/website/compare/v1.13.0...v1.13.1) (2025-02-02)
+
+
+### Bug Fixes
+
+* **courses:** add metadata to courses and lectures. fix [#104](https://github.com/gameguild-gg/website/issues/104) ([bae8b46](https://github.com/gameguild-gg/website/commit/bae8b46de204b24c1c869a4a2afefa5234832537))
+
 # [1.13.0](https://github.com/gameguild-gg/website/compare/v1.12.2...v1.13.0) (2025-02-01)
 
 
