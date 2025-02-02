@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { CourseDescription } from '@/components/course-description';
 import { CourseSummary } from '@/components/course-summary';
 import { getCourseBySlug, getCourses } from '../../actions';
+import { OGImageDescriptor } from '@/types';
 
 type Props = {
   params: {
@@ -36,8 +37,21 @@ export async function generateMetadata(
     };
   }
 
-  // const previousImages = (await parent).openGraph?.images || [];
-
+  let thumbnail: OGImageDescriptor;
+  if (course.thumbnail)
+    thumbnail = {
+      url: `${course.thumbnail.path}/${course.thumbnail.filename}`,
+      width: course.thumbnail.width,
+      height: course.thumbnail.height,
+      alt: course.thumbnail.description,
+    };
+  else
+    thumbnail = {
+      url: `/assets/images/logo-icon.png`,
+      width: 338,
+      height: 121,
+      alt: 'Game Guild Logo',
+    };
   return {
     title: course.title,
     description:
@@ -47,30 +61,21 @@ export async function generateMetadata(
       description: course.summary || 'Learn new skills with this course.',
       url: `https://gameguild.gg/course/${course.slug}`,
       siteName: 'Game Guild',
-      // images: course.thumbnail
-      //   ? [
-      //       {
-      //         // url: course.thumbnail.url,
-      //         width: 1200,
-      //         height: 630,
-      //         alt: course.title,
-      //       },
-      //     ]
-      //   : previousImages,
+      images: thumbnail,
       type: 'website',
     },
     twitter: {
       card: 'summary_large_image',
       title: course.title,
       description: course.summary || 'Expand your knowledge with this course.',
-      // images: course.thumbnail ? [course.thumbnail.url] : [],
+      images: thumbnail,
     },
     alternates: {
       canonical: `https://gameguild.gg/course/${course.slug}`,
     },
     robots: {
-      // index: course.visibility === 'public',
-      // follow: course.visibility === 'public',
+      index: course.visibility === 'PUBLISHED',
+      follow: course.visibility === 'PUBLISHED',
     },
     metadataBase: new URL('https://gameguild.gg'),
   };

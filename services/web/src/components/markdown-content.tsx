@@ -1,11 +1,13 @@
 'use client';
 
-import MarkdownRenderer from '@/components/markdown-renderer/markdown-renderer';
+import MarkdownRenderer, {
+  MarkdownRendererProps,
+} from '@/components/markdown-renderer/markdown-renderer';
+import { Api } from '@game-guild/apiclient';
 
-type Props = {
-  content: string;
-};
-
-export function MarkdownContent({ content }: Readonly<Props>): JSX.Element {
-  return <MarkdownRenderer content={content} />;
+export function MarkdownContent({
+  content,
+  renderer = Api.LectureEntity.Renderer.Enum.Markdown,
+}: Readonly<MarkdownRendererProps>): JSX.Element {
+  return <MarkdownRenderer content={content} renderer={renderer} />;
 }

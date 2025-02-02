@@ -11,3 +11,10 @@ export type PropsWithLocaleParams<P = unknown> = P & {
 export type PropsWithLocaleSlugParams<P = unknown> = P & {
   params: P & { locale: string; slug: string };
 };
+
+export type OGImageDescriptor = {
+  url: string | URL;
+  alt?: string;
+  width?: string | number;
+  height?: string | number;
+};
