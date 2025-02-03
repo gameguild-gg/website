@@ -1,3 +1,10 @@
+## [1.13.4](https://github.com/gameguild-gg/website/compare/v1.13.3...v1.13.4) (2025-02-03)
+
+
+### Bug Fixes
+
+* **courses:** fix quizes renderer ([d22c90d](https://github.com/gameguild-gg/website/commit/d22c90df12ee10c5051aa369f198da71a5587155))
+
 ## [1.13.3](https://github.com/gameguild-gg/website/compare/v1.13.2...v1.13.3) (2025-02-03)
 
 
