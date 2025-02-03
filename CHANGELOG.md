@@ -1,3 +1,10 @@
+## [1.13.3](https://github.com/gameguild-gg/website/compare/v1.13.2...v1.13.3) (2025-02-03)
+
+
+### Bug Fixes
+
+* **course:** add python lecture about loops and conditionals ([07e9914](https://github.com/gameguild-gg/website/commit/07e9914eb3b4ccf640b668ff52ea442bd6654b3b))
+
 ## [1.13.2](https://github.com/gameguild-gg/website/compare/v1.13.1...v1.13.2) (2025-02-03)
 
 
