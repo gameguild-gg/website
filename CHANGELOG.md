@@ -1,3 +1,10 @@
+## [1.13.2](https://github.com/gameguild-gg/website/compare/v1.13.1...v1.13.2) (2025-02-03)
+
+
+### Bug Fixes
+
+* **courses:** add embed quizzes / code. wip ([12c4eca](https://github.com/gameguild-gg/website/commit/12c4ecaa9be123f9f2643e4442cdee5a6a485278))
+
 ## [1.13.1](https://github.com/gameguild-gg/website/compare/v1.13.0...v1.13.1) (2025-02-02)
 
 
