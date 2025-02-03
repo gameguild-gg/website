@@ -145,7 +145,7 @@
     "unist-util-position": "^5.0.0",
     "unist-util-stringify-position": "^4.0.0",
     "unist-util-visit": "^5.0.0",
-    "use-pyodide": "^0.1.3",
+    "use-pyodide": "^0.1.4",
     "utf-8-validate": "^5.0.10",
     "vaul": "^0.9.6",
     "worker-loader": "^3.0.8",

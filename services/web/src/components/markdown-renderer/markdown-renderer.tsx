@@ -55,13 +55,16 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
     li: (props) => <li className="mb-1" {...props} />,
     a: (props) => <a className="text-blue-600 hover:underline" {...props} />,
     blockquote: (props) => <blockquote className="border-l-4 border-gray-300 pl-4 italic my-4" {...props} />,
-    code: ({ node, inline, className, children, ...props }) => {
+    code: ({ node, className, children, ...props }) => {
       const match = /language-(\w+)/.exec(className || "")
       const lang = match && match[1] ? match[1] : ""
 
       if (lang === "mermaid") {
         return <Mermaid chart={String(children).replace(/\n$/, "")} />
       }
+
+      const codeContent = String(children).replace(/\n$/, '');
+      const inline = !codeContent.includes('\n');
 
       if (!inline) {
         return (
@@ -162,7 +165,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
           .syntax-highlighter pre {
               white-space: pre-wrap !important;
               word-break: keep-all !important;
-                overflow-wrap: break-word !important;
+              overflow-wrap: break-word !important;
           }
       `}</style>
     </>

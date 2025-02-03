@@ -1,32 +1,34 @@
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Checkbox } from "@/components/ui/checkbox"
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import MarkdownRenderer from '@/components/markdown-renderer/markdown-renderer';
+import { Api } from '@game-guild/apiclient';
 
 interface QuizProps {
-  title: string
-  question: string
-  options: string[]
-  answers: string[]
+  title: string;
+  question: string;
+  options: string[];
+  answers: string[];
 }
 
 export function MarkdownQuizActivity({ title, question, options, answers }: QuizProps) {
-  const [selectedOptions, setSelectedOptions] = useState<string[]>([])
-  const [submitted, setSubmitted] = useState(false)
+  const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
+  const [submitted, setSubmitted] = useState(false);
 
   const handleOptionChange = (option: string) => {
-    setSelectedOptions((prev) => (prev.includes(option) ? prev.filter((item) => item !== option) : [...prev, option]))
-  }
+    setSelectedOptions((prev) => (prev.includes(option) ? prev.filter((item) => item !== option) : [...prev, option]));
+  };
 
   const handleSubmit = () => {
-    setSubmitted(true)
-  }
+    setSubmitted(true);
+  };
 
-  const isCorrect = JSON.stringify(selectedOptions.sort()) === JSON.stringify(answers.sort())
+  const isCorrect = JSON.stringify(selectedOptions.sort()) === JSON.stringify(answers.sort());
 
   return (
     <div className="border rounded-lg p-4 my-4 bg-gray-50">
       <h3 className="text-lg font-semibold mb-2">{title}</h3>
-      <p className="mb-4">{question}</p>
+      <MarkdownRenderer renderer={Api.LectureEntity.Renderer.Enum.Markdown} content={question} />
       <div className="space-y-2">
         {options.map((option, index) => (
           <div key={index} className="flex items-center space-x-2">
@@ -45,17 +47,17 @@ export function MarkdownQuizActivity({ title, question, options, answers }: Quiz
           </div>
         ))}
       </div>
-      {!submitted && (
+      {(!submitted || !isCorrect) && (
         <Button onClick={handleSubmit} className="mt-4">
           Submit
         </Button>
       )}
       {submitted && (
-        <div className={`mt-4 p-2 rounded ${isCorrect ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}>
-          {isCorrect ? "Correct!" : "Incorrect. Try again!"}
+        <div className={`mt-4 p-2 rounded ${isCorrect ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+          {isCorrect ? 'Correct!' : 'Incorrect. Try again!'}
         </div>
       )}
     </div>
-  )
+  );
 }
 
