@@ -10,18 +10,18 @@ For more details on A* check the previous lecture.
 
 A* is a best-first search algorithm that uses a cost function f(n) = g(n) + h(n) where:
 
-- g(n): The cost from the start node to node n.
-- h(n): The heuristic estimate from node n to the goal.
+- **g(n)**: The cost from the start node to node n.
+- **h(n)**: The heuristic estimate from node n to the goal.
 
 A* maintains two key sets:
 
-- Frontier (Open Set): A priority queue (producer-consumer style) of nodes to explore next. The node with the smallest f value is “consumed” next.
-- Visited (Closed Set): A set of nodes that have been evaluated, to avoid reprocessing.
+- **Frontier (Open Set)**: A priority queue (producer-consumer style) of nodes to explore next. The node with the smallest f value is “consumed” next.
+- **Visited (Closed Set)**: A set (hashtable) of nodes that have been evaluated, to avoid reprocessing.
 
 The producer-consumer priority queue pattern works as follows:
 
-- Producer: When expanding a node, you "produce" its neighbors by calculating their tentative `g` costs and pushing them into the priority queue.
-- Consumer: The algorithm "consumes" (i.e., pops) the node with the lowest `f` value from the priority queue, processing it as the next candidate for path extension.
+- **Producer**: When expanding a node, you "produce" its neighbors by calculating their tentative `g` costs and pushing them into the priority queue.
+- **Consumer**: The algorithm "consumes" (i.e., pops) the node with the lowest `f` value from the priority queue, processing it as the next candidate for path extension.
 
 This pattern allows A* to efficiently home in on the optimal path.
 
@@ -37,43 +37,37 @@ Goal-Oriented Action Planning (GOAP) is an AI decision-making strategy where an 
 There are a few key components in GOAP to be aware of, but most of them are similar to A*. We will deep dive into them later.
 :::
 
-- Actions: What the agent can do.
-    - Preconditions: What conditions must be true for an action to be executed.
-    - Effects: How the world (or agent’s state) changes after an action.
-    - Cost: How "expensive" an action is to execute.
-- Goals: What the agent wants to achieve.
-    - Conditions: What must be true for a goal to be considered achieved.
-    - Priority: How important the goal is relative to others, useful when you implement multiple goals or orchestration.
-- State: The current state of the world and the agent.
-    - Key-Value Pairs: Representing various conditions (e.g., health, ammo, enemy presence).
-    - State Transitions: How the state changes as actions are executed
-- Planning:
-    - Search Algorithm: Similar to A*, but with a focus on action sequences.
-    - Frontier and Visited: Managing the search space of possible action sequences.
-    - Heuristic: Estimating the cost from the current state to the goal.
+- **Actions**: What the agent can do.
+    - **Preconditions**: What conditions must be true for an action to be executed.
+    - **Effects**: How the world (or agent’s state) changes after an action.
+    - **Cost**: How "expensive" an action is to execute.
+- **Goals**: What the agent wants to achieve.
+    - **Conditions**: What must be true for a goal to be considered achieved.
+    - **Priority**: How important the goal is relative to others, useful when you implement multiple goals or orchestration.
+- **State**: The current state of the world and the agent.
+    - **Key-Value Pairs**: Representing various conditions (e.g., health, ammo, enemy presence).
+    - **State Transitions**: How the state changes as actions are executed
+- **Planning**:
+    - **Search Algorithm**: Similar to A*, but with a focus on action sequences.
+    - **Frontier** and **Visited**: Managing the search space of possible action sequences.
+    - **Heuristic**: Estimating the cost from the current state to the goal.
 
-The planner searches through the space of actions (and resulting states) to find a sequence that satisfies the goal conditions. Because the planning problem is similar to graph search (with nodes representing states and edges representing actions), many of the ideas from A* (like heuristics and frontier management) can be re-used.
+The planner searches through the space of actions (and resulting states) to find a sequence that satisfies the goal conditions. 
+
+The planning problem (or solver) is similar to graph search (with nodes representing states and edges representing actions), many of the ideas from A* (like heuristics and frontier management) can be re-used.
 
 ### 2.2. Why Transform A* into GOAP?
 
 By transforming A* into GOAP, you create a unified planning system where:
 
-- Pathfinding is a Special Case: If the only action is "move" and the state includes position, then planning a path is equivalent to finding a route on a grid.
-- Generalized Planning: The same system can plan complex behaviors (like "attack enemy" or "collect resource") by considering multiple actions and their interdependencies.
+- **Pathfinding** is a **Special Case**: If the only action is "move" and the state includes position, then planning a path is equivalent to finding a route on a grid.
+- **Generalized Planning**: The same system can plan complex behaviors (like "attack enemy" or "collect resource") by considering multiple actions and their interdependencies.
 
 ---
 
 ## 3. Designing a GOAP Solver in C++
 
 ### 3.1. Data Structures
-
-Let’s define some essential data structures for GOAP:
-
-- State: A collection of key-value pairs representing the world state.
-- Action: An abstract base class for actions. Each action will define:
-    - Preconditions: Conditions that must hold true for the action to be applicable.
-    - Effects: The changes to the state that occur when the action is executed.
-    - Cost: A numerical cost associated with performing the action.
 
 The planning engine will use a search algorithm (similar to A*) where:
 
@@ -106,6 +100,15 @@ bool satisfies(const State& current, const State& conditions) {
 }
 ```
 
+!!! quiz
+{
+"title": "State Representation",
+"question": "In GOAP, how is a state typically represented?",
+"options": ["A list of booleans", "A set of conditions without values", "Key-value pairs representing conditions and their values", "A single integer value"],
+"answers": ["Key-value pairs representing conditions and their values"]
+}
+!!!
+
 ::: note "Variant"
 Optionally, you could also use a `std::variant` from `C++17' to represent different types of values in the state instead of just `int`.
 ``` c++
@@ -136,6 +139,7 @@ if (std::holds_alternative<int>(var)) {
 }
 ```
 :::
+
 
 #### 3.2.2. Action Class
 
@@ -171,6 +175,15 @@ public:
 ::: note "Resiliency"
 It might be interesting to pass some context data to the action so it would be reasoning better about the effects.
 :::
+
+!!! quiz
+{
+"title": "Action Preconditions",
+"question": "Which of the following best describes preconditions for actions in GOAP?",
+"options": ["The visual effects of an action", "Requirements that must be true for an action to be executed", "The cost value of an action", "A random state generated by the system"],
+"answers": ["Requirements that must be true for an action to be executed"]
+}
+!!!
 
 #### 3.2.3. Derived Action Classes: Moving and Attacking
 
@@ -261,6 +274,15 @@ In A*, nodes are grid positions, and edges are moves between positions. In GOAP:
 - Edges: Represent actions (like Move or Attack) that transition one state to another.
 - Cost: Each action’s cost contributes to the total cost, similar to how moving from one node to another adds a cost in A*.
 - Frontier and Visited: The same idea applies. We can maintain a priority queue (frontier) of partial plans (each associated with a state and accumulated cost) and a visited set to avoid cycles or redundant work.
+
+!!! quiz
+{
+"title": "Action Cost",
+"question": "Why is action cost important in GOAP?",
+"options": ["To make actions more complex", "To avoid conflicts between actions", "To prioritize cheaper sequences of actions when planning", "To enforce random action selections"],
+"answers": ["To prioritize cheaper sequences of actions when planning"]
+}
+!!!
 
 ### 4.2. GOAP Solver Outline
 
@@ -354,6 +376,15 @@ In a full implementation you will need to implement:
 - Handling of more complex action preconditions/effects.
 :::
 
+!!! quiz
+{
+"title": "Planner's Role",
+"question": "What is the primary role of the GOAP planner?",
+"options": ["Randomly select actions for agents", "Optimize heuristic functions only", "Find an optimal sequence of actions to achieve a goal", "Control the physics of the game environment"],
+"answers": ["Find an optimal sequence of actions to achieve a goal"]
+}
+!!!
+
 ### 4.3. Specializing as a Path Finder
 
 If you set up your MoveAction so that:
@@ -363,7 +394,7 @@ If you set up your MoveAction so that:
 
 Then planning a series of MoveActions from the start to the goal becomes equivalent to A* pathfinding on a grid. You’ve simply “generalized” the process to support additional actions (like AttackAction) by extending the same planning logic.
 
-```
+``` cpp
 #include <algorithm>
 #include <cmath>
 #include <iostream>
