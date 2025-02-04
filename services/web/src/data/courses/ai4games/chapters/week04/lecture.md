@@ -110,7 +110,7 @@ bool satisfies(const State& current, const State& conditions) {
 !!!
 
 ::: note "Variant"
-Optionally, you could also use a `std::variant` from `C++17' to represent different types of values in the state instead of just `int`.
+Optionally, you could also use a `std::variant` from `C++17` to represent different types of values in the state instead of just `int`.
 ``` c++
 #include <variant>
 #include <iostream>

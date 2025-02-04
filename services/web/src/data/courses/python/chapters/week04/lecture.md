@@ -23,6 +23,16 @@ else:
     print("x is not greater than 5")
 ```
 
+!!! quiz
+{
+"title": "Basic `if-else` Quiz",
+"question": "What will be printed when `x = 3` in the following code?\n\n```python\nif x > 5:\n    print(\"Greater than 5\")\nelse:\n    print(\"5 or less\")\n```",
+"options": ["Greater than 5", "5 or less", "No output", "Error"],
+"answers": ["5 or less"]
+}
+!!!
+
+
 ### 1.3 `if-elif-else` Statement
 ``` python
 x = 7
@@ -56,6 +66,16 @@ if x > 10:
 ::: tip "Avoid Deep Nesting"
 Excessive nesting can make your code harder to read. Consider using logical operators (`and`, `or`) instead.
 :::
+
+!!! quiz
+{
+"title": "Nested Conditional Quiz",
+"question": "What will be printed when `x = 15` in the following code?\n\n```python\nif x > 10:\n    if x < 20:\n        print(\"x is between 10 and 20\")\n```",
+"options": ["x is between 10 and 20", "No output", "x is greater than 10", "Error"],
+"answers": ["x is between 10 and 20"]
+}
+!!!
+
 
 ## 3. Short-Circuiting
 Python evaluates conditions from left to right and stops as soon as the result is determined. This is known as *short-circuiting*.
@@ -98,6 +118,16 @@ while x < 5:
     print(x)
     x += 1
 ```
+
+!!! quiz
+{
+"title": "Basic `while` Loop Quiz",
+"question": "What will be printed by the following code?\n\n```python\nx = 0\nwhile x < 3:\n    print(x)\n    x += 1\n```",
+"options": ["0 1 2", "0 1 2 3", "3", "No output"],
+"answers": ["0 1 2"]
+}
+!!!
+
 
 ### 4.2 `for` Loop
 A `for` loop iterates over a sequence (such as a list, range, or string).
