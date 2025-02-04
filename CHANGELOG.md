@@ -1,3 +1,11 @@
+## [1.13.5](https://github.com/gameguild-gg/website/compare/v1.13.4...v1.13.5) (2025-02-04)
+
+
+### Bug Fixes
+
+* **courses:** add goap lecture ([aa9c841](https://github.com/gameguild-gg/website/commit/aa9c84152a47228de354b2bab41e7086815029be))
+* **style:** rollback style linter ([2f8c425](https://github.com/gameguild-gg/website/commit/2f8c4250c50e69902efa02c5a268d6c6302da46a))
+
 ## [1.13.4](https://github.com/gameguild-gg/website/compare/v1.13.3...v1.13.4) (2025-02-03)
 
 
