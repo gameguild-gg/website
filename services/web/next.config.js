@@ -25,6 +25,13 @@ const nextConfig = {
   },
   webpack: (config, { isServer }) => {
     if (!isServer) {
+      config.module.rules.push({
+        test: /\.worker\.(js|ts)$/,
+        loader: 'worker-loader',
+        options: {
+          inline: 'fallback',
+        },
+      });
       config.externals = config.externals || [];
       config.externals = [...config.externals, 'apiclient'];
       config.resolve.fallback = {
@@ -45,14 +52,14 @@ const nextConfig = {
         test: /\.(pack|br|a)$/,
         type: 'asset/resource',
       },
-      {
-        test: /\.worker\.[cm]?js$/i,
-        use: ['worker-loader'],
-      },
-      {
-        test: /\.worker\.ts$/,
-        loader: 'ts-loader',
-      },
+      // {
+      //   test: /\.worker\.[cm]?js$/i,
+      //   use: ['worker-loader'],
+      // },
+      // {
+      //   test: /\.worker\.ts$/,
+      //   loader: 'ts-loader',
+      // },
     );
     //
     config.resolve = {

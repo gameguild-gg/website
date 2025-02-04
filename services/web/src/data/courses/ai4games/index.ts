@@ -2,7 +2,8 @@ import { Api } from '@game-guild/apiclient';
 import syllabusBody from './syllabus.md';
 import Chapter01 from './chapters/week01/';
 import Chapter02 from './chapters/week02/';
-import Chapter03 from '@/data/courses/ai4games/chapters/week03';
+import Chapter03 from './chapters/week03';
+import Chapter04 from './chapters/week04/';
 import ChapterEntity = Api.ChapterEntity;
 import CourseEntity = Api.CourseEntity;
 import ImageEntity = Api.ImageEntity;
@@ -27,12 +28,14 @@ const chapters: ChapterEntity[] = [];
 chapters.push(Chapter01);
 chapters.push(Chapter02);
 chapters.push(Chapter03);
+chapters.push(Chapter04);
 
 const lectures: LectureEntity[] = [];
 lectures.push(
   ...Chapter01.lectures,
   ...Chapter02.lectures,
   ...Chapter03.lectures,
+  ...Chapter04.lectures,
 );
 
 // set course for all lectures and chapters
