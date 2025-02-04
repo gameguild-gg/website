@@ -1,3 +1,10 @@
+## [1.13.8](https://github.com/gameguild-gg/website/compare/v1.13.7...v1.13.8) (2025-02-04)
+
+
+### Bug Fixes
+
+* **courses:** add python quizzes for loops and conditionals ([8587729](https://github.com/gameguild-gg/website/commit/85877291920c31e3490497d0ebf6f11bba286e67))
+
 ## [1.13.7](https://github.com/gameguild-gg/website/compare/v1.13.6...v1.13.7) (2025-02-04)
 
 
