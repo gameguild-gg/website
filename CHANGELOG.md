@@ -1,3 +1,10 @@
+## [1.13.6](https://github.com/gameguild-gg/website/compare/v1.13.5...v1.13.6) (2025-02-04)
+
+
+### Bug Fixes
+
+* **courses:** add GOAP assignment ([b338737](https://github.com/gameguild-gg/website/commit/b3387370d48711a0156987fd813db4520fbf7224))
+
 ## [1.13.5](https://github.com/gameguild-gg/website/compare/v1.13.4...v1.13.5) (2025-02-04)
 
 
