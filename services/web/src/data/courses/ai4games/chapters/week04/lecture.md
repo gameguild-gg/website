@@ -2,6 +2,10 @@
 
 ## 1. A* Recap and Producer-Consumer Priority Strategy
 
+::: note "Review"
+For more details on A* check the previous lecture.
+:::
+
 ### 1.1. A* Recap
 
 A* is a best-first search algorithm that uses a cost function f(n) = g(n) + h(n) where:
@@ -29,10 +33,24 @@ This pattern allows A* to efficiently home in on the optimal path.
 
 Goal-Oriented Action Planning (GOAP) is an AI decision-making strategy where an agent plans a sequence of actions to achieve one or more goals. Rather than merely moving through a grid (like in A*), GOAP's planning engine considers:
 
+::: warning "GOAP Components"
+There are a few key components in GOAP to be aware of, but most of them are similar to A*. We will deep dive into them later.
+:::
+
 - Actions: What the agent can do.
-- Preconditions: What conditions must be true for an action to be executed.
-- Effects: How the world (or agent’s state) changes after an action.
-- Cost: How "expensive" an action is to execute.
+    - Preconditions: What conditions must be true for an action to be executed.
+    - Effects: How the world (or agent’s state) changes after an action.
+    - Cost: How "expensive" an action is to execute.
+- Goals: What the agent wants to achieve.
+    - Conditions: What must be true for a goal to be considered achieved.
+    - Priority: How important the goal is relative to others, useful when you implement multiple goals or orchestration.
+- State: The current state of the world and the agent.
+    - Key-Value Pairs: Representing various conditions (e.g., health, ammo, enemy presence).
+    - State Transitions: How the state changes as actions are executed
+- Planning:
+    - Search Algorithm: Similar to A*, but with a focus on action sequences.
+    - Frontier and Visited: Managing the search space of possible action sequences.
+    - Heuristic: Estimating the cost from the current state to the goal.
 
 The planner searches through the space of actions (and resulting states) to find a sequence that satisfies the goal conditions. Because the planning problem is similar to graph search (with nodes representing states and edges representing actions), many of the ideas from A* (like heuristics and frontier management) can be re-used.
 
@@ -88,6 +106,37 @@ bool satisfies(const State& current, const State& conditions) {
 }
 ```
 
+::: note "Variant"
+Optionally, you could also use a `std::variant` from `C++17' to represent different types of values in the state instead of just `int`.
+``` c++
+#include <variant>
+#include <iostream>
+#include <string>
+
+int main() {
+std::variant<int, double, std::string> var;
+    // Assign different types to the variant
+    var = 42;                        // Holds int
+    std::cout << std::get<int>(var) << std::endl;
+
+    var = 3.14;                      // Holds double
+    std::cout << std::get<double>(var) << std::endl;
+
+    var = "Hello, world!";           // Holds string
+    std::cout << std::get<std::string>(var) << std::endl;
+
+    return 0;
+}
+```
+
+You can test the type before geting the value like:
+``` cpp
+if (std::holds_alternative<int>(var)) {
+    std::cout << "Variant holds an int: " << std::get<int>(var) << std::endl;
+}
+```
+:::
+
 #### 3.2.2. Action Class
 
 An abstract base class for actions with preconditions, effects, and cost:
@@ -118,6 +167,10 @@ public:
     }
 };
 ```
+
+::: note "Resiliency"
+It might be interesting to pass some context data to the action so it would be reasoning better about the effects.
+:::
 
 #### 3.2.3. Derived Action Classes: Moving and Attacking
 

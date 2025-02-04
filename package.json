@@ -8,8 +8,7 @@
   "workspaces": [
     "packages/*",
     "services/web",
-    "services/api",
-    "tests"
+    "services/api"
   ],
   "scripts": {
     "install:api": "npm install --workspace=services/api",
