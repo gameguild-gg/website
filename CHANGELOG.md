@@ -1,3 +1,11 @@
+## [1.13.7](https://github.com/gameguild-gg/website/compare/v1.13.6...v1.13.7) (2025-02-04)
+
+
+### Bug Fixes
+
+* **courses:** add quizzes to the goap explanation ([ddad9c2](https://github.com/gameguild-gg/website/commit/ddad9c2f27122fd30eb0d6233ca8795dc4feb5c1))
+* **courses:** markdown quiz test ([fce53dc](https://github.com/gameguild-gg/website/commit/fce53dc7e13611872240fc171bd5ee8fbb3f77bd))
+
 ## [1.13.6](https://github.com/gameguild-gg/website/compare/v1.13.5...v1.13.6) (2025-02-04)
 
 
