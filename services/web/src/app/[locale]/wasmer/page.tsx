@@ -1,23 +1,14 @@
-// 'use client';
-//
-//
-// import { usePyodide } from '@/app/[locale]/pyodide/use-pyodite';
-// import CodeInterface from '@/app/[locale]/pyodide/code-interface';
-//
-// export default function Index() {
-//   const { pyodideLoaded, loading, error, runPython, output } = usePyodide();
-//
-//   return (
-//     <>
-//       <div className="flex flex-auto sm:container max-w-lg">
-//         <CodeInterface initialCode={`name = "Twiggy"
-// leaves = 0
-// for day in range(3):
-//     leaves = leaves + 1
-// if leaves == 3:
-//     print(name, "has sprouted!")
-// `} />
-//       </div>
-//     </>
-//   );
-// }
+'use client';
+
+import CodeInterface from '@/app/[locale]/wasmer/code-interface';
+
+export default function Page() {
+  return (
+    <div className="flex flex-auto flex-col items-center justify-center min-h-screen bg-gray-900 text-white p-6">
+      <h1 className="text-2xl font-bold mb-4">Wasmer Code Executor</h1>
+      <p className="mb-6 text-gray-400">Execute código em Wasmer diretamente no navegador.</p>
+
+      <CodeInterface initialCode="print('Hello, Wasmer!')" />
+    </div>
+  );
+}
