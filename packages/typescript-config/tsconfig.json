@@ -20,10 +20,10 @@
 
     /* Language and Environment */
     /* Set the JavaScript language version for emitted JavaScript and include compatible library declarations. */
-    "target": "ES2022",
+    "target": "ESNext",
     /* Specify a set of bundled library declaration files that describe the target runtime environment. */
     "lib": [
-      "ES2022",
+      "ESNext",
       "DOM",
       "DOM.Iterable"
     ],
@@ -49,11 +49,11 @@
     "moduleDetection": "force",
     /* Modules */
     /* Specify what module code is generated. */
-    "module": "NodeNext",
+    "module": "ESNext",
     /* Specify the root folder within your source files. */
     // "rootDir": "./",
     /* Specify how TypeScript looks up a file from a given module specifier. */
-    "moduleResolution": "NodeNext",
+    "moduleResolution": "node",
     /* Specify the base directory to resolve non-relative module names. */
     // "baseUrl": "./",
     /* Specify a set of entries that re-map imports to additional lookup locations. */
