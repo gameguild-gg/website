@@ -1,3 +1,10 @@
+## [1.14.1](https://github.com/gameguild-gg/website/compare/v1.14.0...v1.14.1) (2025-02-05)
+
+
+### Bug Fixes
+
+* **courses:** add courses hero section ([e07a8dc](https://github.com/gameguild-gg/website/commit/e07a8dc4933383d41620b0527c54612efec7233c))
+
 # [1.14.0](https://github.com/gameguild-gg/website/compare/v1.13.8...v1.14.0) (2025-02-05)
 
 
