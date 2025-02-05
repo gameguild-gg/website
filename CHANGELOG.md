@@ -1,3 +1,22 @@
+## [1.14.1](https://github.com/gameguild-gg/website/compare/v1.14.0...v1.14.1) (2025-02-05)
+
+
+### Bug Fixes
+
+* **courses:** add courses hero section ([e07a8dc](https://github.com/gameguild-gg/website/commit/e07a8dc4933383d41620b0527c54612efec7233c))
+
+# [1.14.0](https://github.com/gameguild-gg/website/compare/v1.13.8...v1.14.0) (2025-02-05)
+
+
+### Bug Fixes
+
+* **pyodide:** fixed pyodide web worker ([8936377](https://github.com/gameguild-gg/website/commit/893637718f813f5dcb3566692bfa0da2a54804d8))
+
+
+### Features
+
+* **pyodide:** added small code editor ([bda9244](https://github.com/gameguild-gg/website/commit/bda924477fd97e61e85bb19ad1a3fea688a56340))
+
 ## [1.13.8](https://github.com/gameguild-gg/website/compare/v1.13.7...v1.13.8) (2025-02-04)
 
 
