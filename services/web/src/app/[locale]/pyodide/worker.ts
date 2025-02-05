@@ -1,5 +1,6 @@
 import { expose } from 'comlink';
-import { PyodideWorkerAPI } from '@/app/pyodide/pyodide.api';
+import { PyodideWorkerAPI } from './pyodide.api';
+
 
 let pyodide: any = null;
 
