@@ -1,7 +1,8 @@
 import globals from 'globals';
 import eslint from '@eslint/js';
 import typescript from 'typescript-eslint';
-import prettierConfig from '@matheusmartins/prettier-config';
+import prettierPlugin from 'eslint-plugin-prettier';
+import prettierConfig from '@game-guild/prettier-config';
 
 /** @type {import('eslint').Linter.Config[]} */
 const config = [
@@ -16,6 +17,7 @@ const config = [
   },
   eslint.configs.recommended, // eslint recommended rules
   {
+    plugins: { prettier: prettierPlugin },
     rules: { 'prettier/prettier': ['error', prettierConfig] },
   },
 ];
