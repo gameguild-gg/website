@@ -1,7 +1,7 @@
 import globals from 'globals';
 import eslint from '@eslint/js';
 import typescript from 'typescript-eslint';
-import prettierConfig from '@matheusmartins/prettier-config';
+import prettierConfig from '@game-guild/prettier-config';
 
 /** @type {import('eslint').Linter.Config[]} */
 const config = [

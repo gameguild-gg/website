@@ -6,6 +6,7 @@ For this assignment, you will produce **two** pieces of content:
     - **Objective:** Create a repository that contains your GitHub profile README.
     - **Guidelines:**
         - Follow [GitHub's Official Documentation](https://docs.github.com/en/get-started/start-your-journey/setting-up-your-profile) for setting up your profile.
+        - Get inspired by the [Awesome GitHub Profile READMEs](https://zzetao.github.io/awesome-github-profile/
         - Use this repository to showcase your personal branding, skills, interests, and selected projects.
         - Make it engaging and visually appealing using images, links, or even animated GIFs if desired.
 
@@ -13,7 +14,8 @@ For this assignment, you will produce **two** pieces of content:
     - **Objective:** Create or update a README for one of your GitHub repositories (a project of your choice).
     - **Guidelines:**
         - Ensure the README clearly explains the project, provides installation instructions, usage examples, and contribution guidelines.
-        - Include badges where relevant (e.g., build status, version, license) to enhance the presentation.
+        - Get inspired by (well-crafted READMEs from popular repositories)[https://github.com/matiassingers/awesome-readme]
+        - Include badges where relevant (e.g., build status, version, license) to enhance the presentation, ex.: [use shields badges](https://shields.io/)
 
 ---
 
@@ -31,7 +33,7 @@ For this assignment, you will produce **two** pieces of content:
         - Provide specific suggestions for improvement.
 
 3. **Deadline:**
-    - Make sure to post your submissions and complete your feedback by the assigned deadline.
+    - Make sure to post your submissions before the deadline, so you will be able to receive feedbacks from your colleagues.
 
 ---
 
@@ -49,4 +51,3 @@ For this assignment, you will produce **two** pieces of content:
 
 ---
 
-Happy creating! Remember, this assignment is not only about showcasing your technical skills but also about engaging with the community to help everyone improve.
