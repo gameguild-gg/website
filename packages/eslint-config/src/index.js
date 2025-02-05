@@ -1,25 +1,15 @@
-import globals from 'globals';
-import eslint from '@eslint/js';
-import typescript from 'typescript-eslint';
-import prettierPlugin from 'eslint-plugin-prettier';
-import prettierConfig from '@game-guild/prettier-config';
-
-/** @type {import('eslint').Linter.Config[]} */
-const config = [
-  { files: ['**/*.{js,mjs,cjs,ts,jsx,tsx}'] },
-  {
-    languageOptions: {
-      globals: {
-        ...globals.browser,
-        ...globals.node,
-      },
-    },
+/** @type { import('eslint').Linter.Config } */
+module.exports = {
+  parser: '@typescript-eslint/parser',
+  plugins: ['@typescript-eslint/eslint-plugin'],
+  extends: ['plugin:@typescript-eslint/recommended', 'plugin:prettier/recommended'],
+  root: true,
+  env: {
+    node: true,
+    jest: true,
   },
-  eslint.configs.recommended, // eslint recommended rules
-  {
-    plugins: { prettier: prettierPlugin },
-    rules: { 'prettier/prettier': ['error', prettierConfig] },
+  ignorePatterns: ['.eslintrc'],
+  rules: {
+    'prettier/prettier': ['error', require('@game-guild/prettier-config')],
   },
-];
-
-export default config;
+};

@@ -1,7 +1,6 @@
 {
   "name": "@game-guild/prettier-config",
   "version": "0.1.0",
-  "type": "module",
   "description": "",
   "author": "",
   "license": "ISC",
