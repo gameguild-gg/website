@@ -4,7 +4,7 @@
   "description": "",
   "author": "",
   "private": false,
-  "license": "UNLICENSED",
+    "license": "ISC",
   "scripts": {
     "install:deps:ubuntu": "apt update ; apt install -y build-essential cmake git",
     "build": "nest build",

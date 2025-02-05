@@ -56,8 +56,11 @@
     "@semantic-release/github": "^11.0.0",
     "@semantic-release/npm": "^12.0.1",
     "@semantic-release/release-notes-generator": "^14.0.1",
+    "eslint": "^9",
     "moxygen": "^0.8.0",
-    "rimraf": "^6"
+    "prettier": "^3.4.0",
+    "rimraf": "^6",
+    "typescript": "^5"
   },
   "release": {
     "branches": [
