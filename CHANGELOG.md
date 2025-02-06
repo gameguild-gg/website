@@ -1,3 +1,22 @@
+# [1.15.0](https://github.com/gameguild-gg/website/compare/v1.14.1...v1.15.0) (2025-02-06)
+
+
+### Bug Fixes
+
+* **auth:** fixed auth.ts ([ba4d506](https://github.com/gameguild-gg/website/commit/ba4d5064deb15075606efababd8f7b2c971254ed))
+* **courses:** fix course portfolio ([2d20828](https://github.com/gameguild-gg/website/commit/2d2082831074d15b4c9a922b0d88214d05250d24))
+* **courses:** fix portfolio assignment related to github readmes ([f5ee71f](https://github.com/gameguild-gg/website/commit/f5ee71f1402f5c8c9d6bdceb75caeee6971d63c0))
+* **courses:** github readmes ([7bd672e](https://github.com/gameguild-gg/website/commit/7bd672e517e785b4108c017620acdab849d0cb34))
+* **eslint:** fixed eslint ([e0e9c32](https://github.com/gameguild-gg/website/commit/e0e9c32562c515b85c325d6b15a7bcec3a47558b))
+* **monorepo:** fixed eslint, prettier, typescript base configs ([0639c94](https://github.com/gameguild-gg/website/commit/0639c94ebf80080aa66eb6c56c3d97985448b742))
+* **monorepo:** fixed eslint, prettier, typescript base configs ([a152ba8](https://github.com/gameguild-gg/website/commit/a152ba89f6cf31672618a2686a34b1cbf5ada410))
+* **typescript:** fixed typescript-config ([b89d82f](https://github.com/gameguild-gg/website/commit/b89d82fb36f85f2e3d38457e8fd021f746bac82c))
+
+
+### Features
+
+* **wasmer:** added wasmer web worker ([2e14de9](https://github.com/gameguild-gg/website/commit/2e14de9abd8f36566fa18a5031b74f0125302fc5))
+
 ## [1.14.1](https://github.com/gameguild-gg/website/compare/v1.14.0...v1.14.1) (2025-02-05)
 
 
