@@ -3,7 +3,16 @@
   "version": "1.0.0",
   "description": "",
   "author": "",
-  "license": "ISC",
+  "licenses": [
+    {
+      "type": "AGPL-3.0",
+      "url": "https://www.gnu.org/licenses/agpl-3.0.html"
+    },
+    {
+      "type": "Commercial",
+      "url": "https://github.com/gameguild-gg/website/blob/main/COMMERCIAL_LICENSE.md"
+    }
+  ],
   "private": true,
   "workspaces": [
     "packages/*",
