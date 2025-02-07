@@ -1,3 +1,10 @@
+## [1.15.1](https://github.com/gameguild-gg/website/compare/v1.15.0...v1.15.1) (2025-02-07)
+
+
+### Bug Fixes
+
+* **courses:** fix style on courses page ([00c344d](https://github.com/gameguild-gg/website/commit/00c344d710e03a6041941caa17f68ca30cff72c1))
+
 # [1.15.0](https://github.com/gameguild-gg/website/compare/v1.14.1...v1.15.0) (2025-02-06)
 
 
