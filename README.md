@@ -12,11 +12,14 @@
 
 We are a **game dev** community.
 Our main goal is to revolutionize the way game developers:
+
 - **Collaborate**: with others in workshops and lectures online and in person.
 - **Learn**: learn from mentors and other more experienced developers.
 - **Monetize**: their creations.
 
-Our platform will provide a space for developers to showcase their games, connect with other creators, and access resources for skill development. Users can discover new games, playtest them, and support their favorite developers through in-game purchases or donations.
+Our platform will provide a space for developers to showcase their games, connect with other creators, and access
+resources for skill development. Users can discover new games, playtest them, and support their favorite developers
+through in-game purchases or donations.
 
 ![screenshot](documentation/Page1.png)
 
@@ -59,7 +62,9 @@ npm -v # should print `10.8.2`
 - Run `npm run start:both` to start back-end and in new terminal, run `npm run dev:web` to start front-end;
 
 ## How You Can Contribute
+
 We’re actively seeking contributors to help us improve and expand the platform. Here’s how you can get involved:
+
 - **Report Issues**: Found a bug or have a suggestion? Open an issue!
 - **Contribute Code**: Take on issues labeled good first issue.
 - **Share the Project**: Star the repo and spread the word to fellow developers!
@@ -69,12 +74,15 @@ We’re actively seeking contributors to help us improve and expand the platform
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
 
+![gitflow.png](documentation/gitflow.png)
+
 ## Why Star This Project?
+
 By starring this repository, you:
+
 - Show support for the project.
 - Help increase visibility, attracting more contributors and collaborators.
 - Join a growing community shaping the future of game development.
-
 
 ## Follow our socials
 
