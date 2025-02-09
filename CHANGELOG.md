@@ -1,3 +1,10 @@
+## [1.15.3](https://github.com/gameguild-gg/website/compare/v1.15.2...v1.15.3) (2025-02-09)
+
+
+### Bug Fixes
+
+* **wasmer:** Improve wasmer to be lazy loaded. ([395e97e](https://github.com/gameguild-gg/website/commit/395e97e6101a87978e9774f4755283cec0096983))
+
 ## [1.15.2](https://github.com/gameguild-gg/website/compare/v1.15.1...v1.15.2) (2025-02-09)
 
 
