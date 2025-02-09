@@ -1,3 +1,12 @@
+## [1.15.2](https://github.com/gameguild-gg/website/compare/v1.15.1...v1.15.2) (2025-02-09)
+
+
+### Bug Fixes
+
+* **licences:** fix licenses ([1225a39](https://github.com/gameguild-gg/website/commit/1225a3983eea5556f33abfc286e125aa037641e4))
+* **packages:** fix installations issues on github ([737e084](https://github.com/gameguild-gg/website/commit/737e084cdc44a09b06d54103f76575d2d1b072c3))
+* **readme:** add gitflow to readme and docs ([0006e43](https://github.com/gameguild-gg/website/commit/0006e4312a6b99fb8c8dd3de0a2bd15efa7791b2))
+
 ## [1.15.1](https://github.com/gameguild-gg/website/compare/v1.15.0...v1.15.1) (2025-02-07)
 
 
