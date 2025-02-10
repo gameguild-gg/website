@@ -1,3 +1,10 @@
+## [1.15.4](https://github.com/gameguild-gg/website/compare/v1.15.3...v1.15.4) (2025-02-10)
+
+
+### Bug Fixes
+
+* **courses:** add list lecture on python course ([daa2f79](https://github.com/gameguild-gg/website/commit/daa2f795f6d4d0ffc654c93c4436f972b75a71d6))
+
 ## [1.15.3](https://github.com/gameguild-gg/website/compare/v1.15.2...v1.15.3) (2025-02-09)
 
 
