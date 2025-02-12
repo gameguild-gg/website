@@ -1,3 +1,10 @@
+## [1.15.5](https://github.com/gameguild-gg/website/compare/v1.15.4...v1.15.5) (2025-02-12)
+
+
+### Bug Fixes
+
+* **wasmer:** better interface for calling wasmer ([f3c7765](https://github.com/gameguild-gg/website/commit/f3c7765a3e7dbf36f1051182f0922f814e50232e))
+
 ## [1.15.4](https://github.com/gameguild-gg/website/compare/v1.15.3...v1.15.4) (2025-02-10)
 
 
