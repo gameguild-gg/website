@@ -6,27 +6,9 @@ import LectureEntity = Api.LectureEntity;
 import ChapterEntity = Api.ChapterEntity;
 
 const week04lectures: LectureEntity[] = [];
-week04lectures.push(
-  createLecture(
-    '4-1',
-    'github-readme',
-    'Effective Github Readme',
-    'Write an effective Github Readme',
-    lecture04,
-    1,
-  ) as LectureEntity,
-);
+week04lectures.push(createLecture('4-1', 'github-readme', 'Effective Github Readme', 'Write an effective Github Readme', lecture04, 1) as LectureEntity);
 
-week04lectures.push(
-  createLecture(
-    '4-2',
-    'assignment-06',
-    'Assignment 06',
-    'Github Readme Assignment',
-    assignment06,
-    2,
-  ) as LectureEntity,
-);
+week04lectures.push(createLecture('4-2', 'assignment-06', 'Assignment 06', 'Github Readme Assignment', assignment06, 2) as LectureEntity);
 
 const Chapter04 = createChapter(
   '4',
