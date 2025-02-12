@@ -5,37 +5,34 @@ import { Play } from 'lucide-react';
 import Editor from '@monaco-editor/react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { useWasmer, WasmerPackage, WasmerRunParams, WasmerStatus } from '@/components/wasmer/use-wasmer';
+import { useWasmer, WasmerStatus } from '@/components/wasmer/use-wasmer';
 
 type CodeInterfaceProps = {
   initialCode: string;
 };
 
 export default function CodeInterface({ initialCode }: CodeInterfaceProps) {
-  const { wasmerStatus, run, error } = useWasmer();
+  const { wasmerStatus, runCode, error } = useWasmer();
   const [stdErr, setStdErr] = useState<string>('');
   const [stdOut, setStdOut] = useState<string>('');
 
   const [code, setCode] = useState(initialCode);
-  const [registryInput, setRegistryInput] = useState<WasmerPackage>(WasmerPackage.python);
 
   const handleRunCode = async () => {
     if (wasmerStatus == WasmerStatus.RUNNING || wasmerStatus == WasmerStatus.LOADING_PACKAGE || wasmerStatus == WasmerStatus.FAILED_LOADING_WASMER) return;
-    const args = ['-c', code];
 
-    const params: WasmerRunParams = {
-      package: registryInput,
-      args,
-      onComplete: (result) => {
-        if (result.ok) {
-          setStdOut(result.stdout);
-        } else {
-          setStdErr(result.stderr);
-        }
-      },
-    };
-
-    await run(params);
+    let result = await runCode({
+      data: code,
+      language: 'python',
+      stdin: '',
+    });
+    console.log(JSON.stringify(result));
+    if (result.stderr) {
+      setStdErr(result.stderr);
+    }
+    if (result.stdout) {
+      setStdOut(result.stdout);
+    }
   };
 
   return (
