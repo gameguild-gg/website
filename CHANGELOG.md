@@ -1,3 +1,10 @@
+## [1.15.8](https://github.com/gameguild-gg/website/compare/v1.15.7...v1.15.8) (2025-02-13)
+
+
+### Performance Improvements
+
+* **wasmer:** add better way to call wasmer ([1420cb4](https://github.com/gameguild-gg/website/commit/1420cb48f08135389d8e59d8c9eb04e3fc2444b2))
+
 ## [1.15.7](https://github.com/gameguild-gg/website/compare/v1.15.6...v1.15.7) (2025-02-13)
 
 
