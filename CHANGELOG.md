@@ -1,3 +1,10 @@
+## [1.15.7](https://github.com/gameguild-gg/website/compare/v1.15.6...v1.15.7) (2025-02-13)
+
+
+### Bug Fixes
+
+* **conduct:** add code of contuct ([e784a58](https://github.com/gameguild-gg/website/commit/e784a5866ebcd52c679d9e07694505c0699c847e))
+
 ## [1.15.6](https://github.com/gameguild-gg/website/compare/v1.15.5...v1.15.6) (2025-02-12)
 
 ## [1.15.5](https://github.com/gameguild-gg/website/compare/v1.15.4...v1.15.5) (2025-02-12)
