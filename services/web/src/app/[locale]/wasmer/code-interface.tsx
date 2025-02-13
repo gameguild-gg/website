@@ -1,29 +1,37 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Play } from 'lucide-react';
 import Editor from '@monaco-editor/react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { useWasmer, WasmerStatus } from '@/components/wasmer/use-wasmer';
+import { CodeLanguage, ProjectData, useWasmer, WasmerStatus } from '@/components/wasmer/use-wasmer';
 
 type CodeInterfaceProps = {
-  initialCode: string;
+  height?: number;
+  language: CodeLanguage;
+  data: ProjectData;
 };
 
-export default function CodeInterface({ initialCode }: CodeInterfaceProps) {
+export default function CodeInterface(params: CodeInterfaceProps) {
+  const { data, height, language } = params;
   const { wasmerStatus, runCode, error } = useWasmer();
   const [stdErr, setStdErr] = useState<string>('');
   const [stdOut, setStdOut] = useState<string>('');
 
-  const [code, setCode] = useState(initialCode);
+  const [code, setCode] = useState<string>('');
+
+  useEffect(() => {
+    if (data && typeof data === 'string') setCode(data);
+    else setCode('Multiple files are not supported yet');
+  }, [data]);
 
   const handleRunCode = async () => {
     if (wasmerStatus == WasmerStatus.RUNNING || wasmerStatus == WasmerStatus.LOADING_PACKAGE || wasmerStatus == WasmerStatus.FAILED_LOADING_WASMER) return;
 
-    let result = await runCode({
+    const result = await runCode({
       data: code,
-      language: 'python',
+      language: language,
       stdin: '',
     });
     console.log(JSON.stringify(result));
@@ -36,12 +44,12 @@ export default function CodeInterface({ initialCode }: CodeInterfaceProps) {
   };
 
   return (
-    <div className="lg:container mx-auto p-4 space-y-4">
+    <div className="container mx-auto p-4 space-y-4">
       {/* Editor de código */}
       <Card className="bg-[#1e1e1e] text-white p-4 font-mono text-sm">
         <Editor
-          height="200px"
-          defaultLanguage="python"
+          height={`${height || 200}px`}
+          defaultLanguage={language}
           theme="vs-dark"
           value={code}
           onChange={(value) => setCode(value || '')}
@@ -51,8 +59,9 @@ export default function CodeInterface({ initialCode }: CodeInterfaceProps) {
             lineNumbers: 'on',
             readOnly: false,
             domReadOnly: false,
-            padding: { top: 10 },
+            padding: { top: 0 },
             scrollBeyondLastLine: false,
+            automaticLayout: true,
           }}
         />
       </Card>
