@@ -43,7 +43,6 @@ export function MarkdownCodeActivity(params: MarkdownCodeActivityProps) {
       language: params.language,
       stdin: params.stdin,
     });
-    console.log(JSON.stringify(result));
     if (result.stderr) {
       setStdErr(result.stderr);
     }
@@ -104,6 +103,12 @@ export function MarkdownCodeActivity(params: MarkdownCodeActivityProps) {
                 <p className="text-red-400">Your Output: {stdOut}</p>
               </>
             )}
+            {stdErr &&
+              stdErr.split('\n').map((line, index) => (
+                <p key={index} className="text-red-400">
+                  {line}
+                </p>
+              ))}
           </Card>
         </>
       )}

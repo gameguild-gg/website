@@ -37,9 +37,8 @@ If not found, it should return the index where it would be if it were inserted i
 {
 "description": "Implement a function to find the search insert position.",
 "language": "python",
-"code": "def search_insert(nums, target):\n # your code here\n\n# do not modify the code below\nprint(
+"code": "def search_insert(nums, target):\n    pass # your code here\n\n# do not modify the code below\nprint(
 search_insert([1, 3, 5, 6], 5))\nprint(search_insert([1, 3, 5, 6], 2))\nprint(search_insert([1, 3, 5, 6], 7))",
 "expectedOutput": "2\n1\n4"
 }
-
 !!!

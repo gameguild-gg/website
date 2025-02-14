@@ -33,7 +33,8 @@ two numbers such that they add up to the target.
 {
 "description": "Implement a function to find the two sum.",
 "language": "python",
-"code": "def two_sum(nums, target):\n # your code here\n\n# do not modify the code below\nprint(two_sum([2, 7, 11, 15],
+"code": "def two_sum(nums, target):\n    pass # your code here\n\n# do not modify the code below\nprint(
+two_sum([2, 7, 11, 15],
 9))",
 "expectedOutput": "[0, 1]"
 }
