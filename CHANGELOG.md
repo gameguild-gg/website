@@ -1,3 +1,10 @@
+## [1.15.9](https://github.com/gameguild-gg/website/compare/v1.15.8...v1.15.9) (2025-02-14)
+
+
+### Bug Fixes
+
+* **codeactivity:** add first version of code activity embedded inside markdown ([fa717e8](https://github.com/gameguild-gg/website/commit/fa717e871526f84670c5f1445c487773012f75da))
+
 ## [1.15.8](https://github.com/gameguild-gg/website/compare/v1.15.7...v1.15.8) (2025-02-13)
 
 
