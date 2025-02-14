@@ -1,3 +1,10 @@
+## [1.15.13](https://github.com/gameguild-gg/website/compare/v1.15.12...v1.15.13) (2025-02-14)
+
+
+### Bug Fixes
+
+* **codeactivity:** hide blocks if not needed anymore ([f53b133](https://github.com/gameguild-gg/website/commit/f53b133157c47eb61ef552bbf3d6bb53eaceef64))
+
 ## [1.15.12](https://github.com/gameguild-gg/website/compare/v1.15.11...v1.15.12) (2025-02-14)
 
 
