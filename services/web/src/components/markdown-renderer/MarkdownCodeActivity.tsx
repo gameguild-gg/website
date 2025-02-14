@@ -43,8 +43,8 @@ export function MarkdownCodeActivity(params: MarkdownCodeActivityProps) {
       setStdOut(result.stdout);
     }
 
-    if (params.expectedOutput && params.expectedOutput !== stdOut) {
-      setStdOut(`Your Output:\n ${stdOut}\nExpected Output:\n${params.expectedOutput}`);
+    // compare stdout with expected output without whitespaces(tab, spaces, newlines, carriage returns)
+    if (params.expectedOutput && params.expectedOutput.replace(/\s/g, '') !== result.stdout?.replace(/\s/g, '')) {
       setIsCorrect(false);
     } else setIsCorrect(true);
   };
@@ -73,24 +73,32 @@ export function MarkdownCodeActivity(params: MarkdownCodeActivityProps) {
         />
       </Card>
 
-      {isCorrect !== null && (
+      {isCorrect !== true && (
         <div className={`p-2 rounded ${isCorrect ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
           {isCorrect ? 'Correct output!' : 'Incorrect output. Try again!'}
         </div>
       )}
 
       {/* Área de saída */}
-      <Card className="bg-[#2d2d2d] text-white p-4 min-h-[150px] font-mono">
-        {wasmerStatus == WasmerStatus.UNINITIALIZED && <p>Wasmer Uninitialized</p>}
-        {wasmerStatus == WasmerStatus.LOADING_WASMER && <p>Loading Wasmer...</p>}
-        {wasmerStatus == WasmerStatus.LOADING_PACKAGE && <p>Loading Python...</p>}
-        {wasmerStatus == WasmerStatus.RUNNING && <p>Running...</p>}
-        {wasmerStatus == WasmerStatus.FAILED_EXECUTION && <p>Failed Execution</p>}
-        {wasmerStatus == WasmerStatus.FAILED_LOADING_WASMER && <p>Failed Loading Wasmer</p>}
-        {wasmerStatus == WasmerStatus.FAILED_LOADING_PACKAGE && <p>Failed Loading Package</p>}
-        {error && <p className="text-red-400">Error: {error}</p>}
-        {stdOut}
-      </Card>
+      {wasmerStatus != WasmerStatus.UNINITIALIZED && (
+        <>
+          <Card className="bg-[#2d2d2d] text-white p-4 min-h-[150px] font-mono">
+            {wasmerStatus == WasmerStatus.LOADING_WASMER && <p>Loading Wasmer...</p>}
+            {wasmerStatus == WasmerStatus.LOADING_PACKAGE && <p>Loading Python...</p>}
+            {wasmerStatus == WasmerStatus.RUNNING && <p>Running...</p>}
+            {wasmerStatus == WasmerStatus.FAILED_EXECUTION && <p>Failed Execution</p>}
+            {wasmerStatus == WasmerStatus.FAILED_LOADING_WASMER && <p>Failed Loading Wasmer</p>}
+            {wasmerStatus == WasmerStatus.FAILED_LOADING_PACKAGE && <p>Failed Loading Package</p>}
+            {error && <p className="text-red-400">Error: {error}</p>}
+            {isCorrect === false && (
+              <>
+                <p className="text-red-400">Expected: {params.expectedOutput}</p>
+                <p className="text-red-400">Your Output: {stdOut}</p>
+              </>
+            )}
+          </Card>
+        </>
+      )}
 
       {/* Botões */}
       <div className="flex justify-between">
