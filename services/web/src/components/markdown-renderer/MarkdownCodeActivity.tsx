@@ -73,14 +73,10 @@ export function MarkdownCodeActivity(params: MarkdownCodeActivityProps) {
         />
       </Card>
 
-      {isCorrect !== true && (
-        <div className={`p-2 rounded ${isCorrect ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-          {isCorrect ? 'Correct output!' : 'Incorrect output. Try again!'}
-        </div>
-      )}
+      {isCorrect === true && <div className={`p-2 rounded bg-red-100 text-green-800`}>Correct output!</div>}
 
       {/* Área de saída */}
-      {wasmerStatus != WasmerStatus.UNINITIALIZED && (
+      {wasmerStatus != WasmerStatus.UNINITIALIZED && !(wasmerStatus == WasmerStatus.READY_TO_RUN && isCorrect) && (
         <>
           <Card className="bg-[#2d2d2d] text-white p-4 min-h-[150px] font-mono">
             {wasmerStatus == WasmerStatus.LOADING_WASMER && <p>Loading Wasmer...</p>}
@@ -101,17 +97,21 @@ export function MarkdownCodeActivity(params: MarkdownCodeActivityProps) {
       )}
 
       {/* Botões */}
-      <div className="flex justify-between">
-        <Button
-          variant="secondary"
-          className="bg-[#2d2d2d] text-white hover:bg-[#3d3d3d]"
-          onClick={handleRunCode}
-          disabled={wasmerStatus == WasmerStatus.RUNNING || wasmerStatus == WasmerStatus.LOADING_PACKAGE || wasmerStatus == WasmerStatus.FAILED_LOADING_WASMER}
-        >
-          <Play className="w-4 h-4 mr-2" />
-          {wasmerStatus == WasmerStatus.RUNNING ? 'Running...' : 'Run'}
-        </Button>
-      </div>
+      {(isCorrect === false || isCorrect === null) && (
+        <div className="flex justify-between">
+          <Button
+            variant="secondary"
+            className="bg-[#2d2d2d] text-white hover:bg-[#3d3d3d]"
+            onClick={handleRunCode}
+            disabled={
+              wasmerStatus == WasmerStatus.RUNNING || wasmerStatus == WasmerStatus.LOADING_PACKAGE || wasmerStatus == WasmerStatus.FAILED_LOADING_WASMER
+            }
+          >
+            <Play className="w-4 h-4 mr-2" />
+            {wasmerStatus == WasmerStatus.RUNNING ? 'Running...' : 'Run'}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
