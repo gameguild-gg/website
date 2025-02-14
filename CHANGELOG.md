@@ -1,3 +1,10 @@
+## [1.15.17](https://github.com/gameguild-gg/website/compare/v1.15.16...v1.15.17) (2025-02-14)
+
+
+### Bug Fixes
+
+* **courses:** minor typo on python exercise 1 ([778c052](https://github.com/gameguild-gg/website/commit/778c052c05a4d6b94c18e8d748311c09439d5d72))
+
 ## [1.15.16](https://github.com/gameguild-gg/website/compare/v1.15.15...v1.15.16) (2025-02-14)
 
 
