@@ -1,3 +1,10 @@
+## [1.15.14](https://github.com/gameguild-gg/website/compare/v1.15.13...v1.15.14) (2025-02-14)
+
+
+### Bug Fixes
+
+* **codeactivity:** fix code activity size scaling ([94b10b0](https://github.com/gameguild-gg/website/commit/94b10b0be16173f878a29f828c74d9a5b1f7ca31))
+
 ## [1.15.13](https://github.com/gameguild-gg/website/compare/v1.15.12...v1.15.13) (2025-02-14)
 
 
