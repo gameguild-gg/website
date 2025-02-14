@@ -1,45 +1,39 @@
-# Exercise: Search Insert Position
+# Exercise: Two Sum
 
-Your task is to implement a function that searches for a target value in a sorted list and returns the index if found.
-If not found, it should return the index where it would be if it were inserted in order.
+::: tip
 
-::: example
-
-- Input: `nums = [1, 3, 5, 6]`, `target = 5`
-- Output: `2`
-- Explanation: `5` is found at index `2`.
+This is the most asked question in coding interviews!
 
 :::
 
+Your task is to implement a function that takes a list of integers and a target integer, and returns the indices of the
+two numbers such that they add up to the target.
+
+- There is exactly one solution;
+- Don't the same element twice;
+- You should return the indices in ascending order.
+
 ::: example
 
-- Input: `nums = [1, 3, 5, 6]`, `target = 2`
-- Output: `1`
-- Explanation: `2` is not found, but would be inserted at index `1`.
+- Input: `nums = [2, 7, 11, 15]`, `target = 9`
+- Output: `[0, 1]`
+- Explanation: `nums[0] + nums[1] = 2 + 7 = 9`
 
 :::
 
-::: example
+::: warning "Challenge"
 
-- Input: `nums = [1,3,5,6]`, `target = 7`
-- Output: `4`
-- Explanation: `7` is not found, but would be inserted at index `4`.
-
-:::
-
-::: danger "Challenge"
-
-- Can you make it make it run fast? Like O(log n)?
+- The naive solution is O(n^2) time complexity.
+- Can you make it run in O(n) time?
+- What is the fastest solution without using extra space?
 
 :::
 
 !!! code
 {
-"description": "Implement a function to find the search insert position.",
+"description": "Implement a function to find the two sum.",
 "language": "python",
-"code": "def search_insert(nums, target):\n # your code here\n\n# do not modify the code below\nprint(
-search_insert([1, 3, 5, 6], 5))\nprint(search_insert([1, 3, 5, 6], 2))\nprint(search_insert([1, 3, 5, 6], 7))",
-"expectedOutput": "2\n1\n4"
+"code": "def two_sum(nums, target):\n # your code here\n\n# do not modify the code below\nprint(two_sum([2, 7, 11, 15],
+9))",
+"expectedOutput": "[0, 1]"
 }
-
-!!!
