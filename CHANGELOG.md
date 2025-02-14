@@ -1,3 +1,10 @@
+## [1.15.16](https://github.com/gameguild-gg/website/compare/v1.15.15...v1.15.16) (2025-02-14)
+
+
+### Bug Fixes
+
+* **courses:** add one more exercises to python lists course ([f223a36](https://github.com/gameguild-gg/website/commit/f223a36c991a5813186cb3c5afbbe8f50d4c1152))
+
 ## [1.15.15](https://github.com/gameguild-gg/website/compare/v1.15.14...v1.15.15) (2025-02-14)
 
 
