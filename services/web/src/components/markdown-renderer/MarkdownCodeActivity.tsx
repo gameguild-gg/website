@@ -49,13 +49,15 @@ export function MarkdownCodeActivity(params: MarkdownCodeActivityProps) {
     } else setIsCorrect(true);
   };
 
+  const numberOfLines = code.split('\n').length;
+
   return (
     <div className="container mx-auto p-4 space-y-4">
       <MarkdownRenderer content={params.description} />
       {/* Editor de código */}
       <Card className="bg-[#1e1e1e] text-white p-4 font-mono text-sm">
         <Editor
-          height={`${params.height || 200}px`}
+          height={`${params.height || Math.floor(numberOfLines * 21)}px`}
           defaultLanguage={params.language}
           theme="vs-dark"
           value={code}
@@ -64,11 +66,12 @@ export function MarkdownCodeActivity(params: MarkdownCodeActivityProps) {
             minimap: { enabled: false },
             fontSize: 14,
             lineNumbers: 'on',
-            readOnly: false,
+            readOnly: isCorrect === true,
             domReadOnly: false,
             padding: { top: 0 },
             scrollBeyondLastLine: false,
             automaticLayout: true,
+            lineNumbersMinChars: Math.floor(Math.log10(numberOfLines) + 1),
           }}
         />
       </Card>
