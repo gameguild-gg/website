@@ -1,3 +1,10 @@
+## [1.15.15](https://github.com/gameguild-gg/website/compare/v1.15.14...v1.15.15) (2025-02-14)
+
+
+### Bug Fixes
+
+* **courses:** add the first coding exercise for python ([4845c1c](https://github.com/gameguild-gg/website/commit/4845c1c1450928e00cf81a2d8c185534dfcbff27))
+
 ## [1.15.14](https://github.com/gameguild-gg/website/compare/v1.15.13...v1.15.14) (2025-02-14)
 
 
