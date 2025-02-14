@@ -6,9 +6,11 @@ import LectureEntity = Api.LectureEntity;
 
 const week05lectures: LectureEntity[] = [];
 
-week05lectures.push(createLecture('5-1', 'dynamic-goap', 'Dynamic GOAP', 'Modifying GOAP plans at runtime.', lecture, 1) as LectureEntity);
+week05lectures.push(createLecture('5-1', 'dynamic-goap', 'Dynamic GOAP in C++', 'Modifying GOAP plans at runtime in C++', lecture, 1) as LectureEntity);
 
-const Chapter05 = createChapter('5', 'week05', 'Week 5: Dynamic GOAP', 'Dynamic GOAP.', 5, ['5-1'], week05lectures) as ChapterEntity;
+week05lectures.push(createLecture('5-2', 'dynamic-goap-cs', 'Dynamic GOAP in C#', 'Modifying GOAP plans at runtime in C#', lecture, 1) as LectureEntity);
+
+const Chapter05 = createChapter('5', 'week05', 'Week 5: Dynamic GOAP', 'Dynamic GOAP.', 5, ['5-1', '5-2'], week05lectures) as ChapterEntity;
 
 // set chapter for each lecture
 for (let i = 0; i < week05lectures.length; i++) {
