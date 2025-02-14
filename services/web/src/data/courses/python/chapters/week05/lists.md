@@ -10,6 +10,15 @@ fruits = ["apple", "banana", "cherry"]
 print(fruits)  # Output: ['apple', 'banana', 'cherry']
 ```
 
+!!! code
+{
+"description": "Declare a list of cities containing exactly 3 cities: New York, Los Angeles, Chicago",
+"code": "cities = # your code here\nprint(cities)",
+"language": "python",
+"expectedOutput": "['New York', 'Los Angeles', 'Chicago']\n"
+}
+!!!
+
 ## Access Items
 
 You can access items in a list by referring to the index number. Indexes start at `0`. So the first item has an index of

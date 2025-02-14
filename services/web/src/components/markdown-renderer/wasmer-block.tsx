@@ -7,18 +7,17 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CodeLanguage, ProjectData, useWasmer, WasmerStatus } from '@/components/wasmer/use-wasmer';
 
-type CodeInterfaceProps = {
+export type CodeInterfaceProps = {
   height?: number;
   language: CodeLanguage;
   data: ProjectData;
 };
 
-export default function CodeInterface(params: CodeInterfaceProps) {
+export default function WasmerBlock(params: CodeInterfaceProps) {
   const { data, height, language } = params;
   const { wasmerStatus, runCode, error } = useWasmer();
   const [stdErr, setStdErr] = useState<string>('');
   const [stdOut, setStdOut] = useState<string>('');
-
   const [code, setCode] = useState<string>('');
 
   useEffect(() => {

@@ -1,6 +1,6 @@
 'use client';
 
-import CodeInterface from '@/app/[locale]/wasmer/code-interface';
+import WasmerBlock from '@/components/markdown-renderer/wasmer-block';
 
 export default function Page() {
   return (
@@ -8,7 +8,7 @@ export default function Page() {
       <h1 className="text-2xl font-bold mb-4">Code Embedding PoC</h1>
       <p className="mb-6 text-gray-400">Proof of Concept for executing code on browser for teaching purposes.</p>
 
-      <CodeInterface data='print("Hello, World!")' language="python" />
+      <WasmerBlock data='print("Hello, World!")' language="python" />
     </div>
   );
 }

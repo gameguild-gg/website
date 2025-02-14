@@ -1,65 +1,109 @@
-import type React from "react"
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
-import { Prism as SyntaxHighlighter } from "react-syntax-highlighter"
-import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism"
+import React, { useEffect, useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { CodeLanguage, useWasmer, WasmerStatus } from '@/components/wasmer/use-wasmer';
+import { Card } from '@/components/ui/card';
+import Editor from '@monaco-editor/react';
+import { Play } from 'lucide-react';
+import MarkdownRenderer from '@/components/markdown-renderer/markdown-renderer';
 
-interface MarkdownCodeActivityProps {
-  title: string
-  code: string
-  language: string
-  expectedOutput: string
+export interface MarkdownCodeActivityProps {
+  code: string;
+  description: string;
+  language: CodeLanguage;
+  expectedOutput: string;
+  stdin: string;
+  height?: number;
 }
 
-export function MarkdownCodeActivity({
-                                       title,
-                                       code: initialCode,
-                                       language,
-                                       expectedOutput,
-                                     }: MarkdownCodeActivityProps) {
-  const [code, setCode] = useState(initialCode)
-  const [output, setOutput] = useState("")
-  const [isCorrect, setIsCorrect] = useState<boolean | null>(null)
+export function MarkdownCodeActivity(params: MarkdownCodeActivityProps) {
+  const { wasmerStatus, runCode, error } = useWasmer();
+  const [stdErr, setStdErr] = useState<string>('');
+  const [stdOut, setStdOut] = useState<string>('');
+  const [code, setCode] = useState<string>('');
+  const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
 
-  const handleCodeChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setCode(event.target.value)
-  }
+  // set code only on first render
+  useEffect(() => {
+    setCode(params.code);
+  }, []);
 
-  const handleRun = () => {
-    try {
-      // This is a simple evaluation. In a real-world scenario, you'd want to use a safer method.
-      const result = eval(code)
-      setOutput(String(result))
-      setIsCorrect(String(result).trim() === expectedOutput.trim())
-    } catch (error) {
-      setOutput(`Error: ${error}`)
-      setIsCorrect(false)
+  const handleRunCode = async () => {
+    if (wasmerStatus == WasmerStatus.RUNNING || wasmerStatus == WasmerStatus.LOADING_PACKAGE || wasmerStatus == WasmerStatus.FAILED_LOADING_WASMER) return;
+
+    const result = await runCode({
+      data: code,
+      language: params.language,
+      stdin: params.stdin,
+    });
+    console.log(JSON.stringify(result));
+    if (result.stderr) {
+      setStdErr(result.stderr);
     }
-  }
+    if (result.stdout) {
+      setStdOut(result.stdout);
+    }
+
+    if (params.expectedOutput && params.expectedOutput !== stdOut) {
+      setStdOut(`Your Output:\n ${stdOut}\nExpected Output:\n${params.expectedOutput}`);
+      setIsCorrect(false);
+    } else setIsCorrect(true);
+  };
 
   return (
-    <div className="border rounded-lg p-4 my-4 bg-gray-50">
-      <h3 className="text-lg font-semibold mb-2">{title}</h3>
-      <SyntaxHighlighter language={language} style={vscDarkPlus} className="mb-4">
-        {code}
-      </SyntaxHighlighter>
-      <Textarea value={code} onChange={handleCodeChange} className="font-mono text-sm mb-4" rows={5} />
-      <Button onClick={handleRun} className="mb-4">
-        Run Code
-      </Button>
-      {output && (
-        <div className="mb-4">
-          <h4 className="font-semibold">Output:</h4>
-          <pre className="bg-gray-200 p-2 rounded">{output}</pre>
-        </div>
-      )}
-      {isCorrect !== null && (
-        <div className={`p-2 rounded ${isCorrect ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}>
-          {isCorrect ? "Correct output!" : "Incorrect output. Try again!"}
-        </div>
-      )}
-    </div>
-  )
-}
+    <div className="container mx-auto p-4 space-y-4">
+      <MarkdownRenderer content={params.description} />
+      {/* Editor de código */}
+      <Card className="bg-[#1e1e1e] text-white p-4 font-mono text-sm">
+        <Editor
+          height={`${params.height || 200}px`}
+          defaultLanguage={params.language}
+          theme="vs-dark"
+          value={code}
+          onChange={(value) => setCode(value || '')}
+          options={{
+            minimap: { enabled: false },
+            fontSize: 14,
+            lineNumbers: 'on',
+            readOnly: false,
+            domReadOnly: false,
+            padding: { top: 0 },
+            scrollBeyondLastLine: false,
+            automaticLayout: true,
+          }}
+        />
+      </Card>
 
+      {isCorrect !== null && (
+        <div className={`p-2 rounded ${isCorrect ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+          {isCorrect ? 'Correct output!' : 'Incorrect output. Try again!'}
+        </div>
+      )}
+
+      {/* Área de saída */}
+      <Card className="bg-[#2d2d2d] text-white p-4 min-h-[150px] font-mono">
+        {wasmerStatus == WasmerStatus.UNINITIALIZED && <p>Wasmer Uninitialized</p>}
+        {wasmerStatus == WasmerStatus.LOADING_WASMER && <p>Loading Wasmer...</p>}
+        {wasmerStatus == WasmerStatus.LOADING_PACKAGE && <p>Loading Python...</p>}
+        {wasmerStatus == WasmerStatus.RUNNING && <p>Running...</p>}
+        {wasmerStatus == WasmerStatus.FAILED_EXECUTION && <p>Failed Execution</p>}
+        {wasmerStatus == WasmerStatus.FAILED_LOADING_WASMER && <p>Failed Loading Wasmer</p>}
+        {wasmerStatus == WasmerStatus.FAILED_LOADING_PACKAGE && <p>Failed Loading Package</p>}
+        {error && <p className="text-red-400">Error: {error}</p>}
+        {stdOut}
+      </Card>
+
+      {/* Botões */}
+      <div className="flex justify-between">
+        <Button
+          variant="secondary"
+          className="bg-[#2d2d2d] text-white hover:bg-[#3d3d3d]"
+          onClick={handleRunCode}
+          disabled={wasmerStatus == WasmerStatus.RUNNING || wasmerStatus == WasmerStatus.LOADING_PACKAGE || wasmerStatus == WasmerStatus.FAILED_LOADING_WASMER}
+        >
+          <Play className="w-4 h-4 mr-2" />
+          {wasmerStatus == WasmerStatus.RUNNING ? 'Running...' : 'Run'}
+        </Button>
+      </div>
+    </div>
+  );
+}
