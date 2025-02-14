@@ -1,3 +1,10 @@
+## [1.15.10](https://github.com/gameguild-gg/website/compare/v1.15.9...v1.15.10) (2025-02-14)
+
+
+### Bug Fixes
+
+* **codeactivity:** wip code activity ([706d108](https://github.com/gameguild-gg/website/commit/706d108bc7a58f58481862df8b0c2f6b92fb8afc))
+
 ## [1.15.9](https://github.com/gameguild-gg/website/compare/v1.15.8...v1.15.9) (2025-02-14)
 
 
