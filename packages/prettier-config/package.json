@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "description": "",
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "private": true,
   "main": "src/index.js",
   "peerDependencies": {

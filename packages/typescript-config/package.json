@@ -2,7 +2,7 @@
   "name": "@game-guild/typescript-config",
   "version": "0.1.0",
   "description": "",
-  "license": "ISC",
+  "license": "MIT",
   "author": "",
   "main": "defaults.json",
   "private": true

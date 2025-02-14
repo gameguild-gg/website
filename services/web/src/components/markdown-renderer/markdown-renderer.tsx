@@ -10,19 +10,16 @@ import { Admonition } from './Admonition';
 import Mermaid from './Mermaid';
 import RevealJS from './RevealJS';
 import { Api } from '@game-guild/apiclient';
+import { MarkdownQuizActivity } from './MarkdownQuizActivity';
+import { MarkdownCodeActivity } from './MarkdownCodeActivity';
 import LectureEntity = Api.LectureEntity;
-import { MarkdownQuizActivity } from "./MarkdownQuizActivity"
-import { MarkdownCodeActivity } from "./MarkdownCodeActivity"
 
 export interface MarkdownRendererProps {
   content: string;
   renderer?: LectureEntity.Renderer;
 }
 
-const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
-  content,
-  renderer = LectureEntity.Renderer.Enum.Markdown,
-}) => {
+const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, renderer = LectureEntity.Renderer.Enum.Markdown }) => {
   if (renderer === LectureEntity.Renderer.Enum.Reveal) {
     return (
       <div className="gameguild-revealjs-wrapper">
@@ -34,13 +31,9 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
   const processedContent = content
     .replace(
       /:::\s*(note|abstract|info|tip|success|question|warning|failure|danger|bug|example|quote)(?:\s+"([^"]*)")?\n([\s\S]*?):::/g,
-      (_, type, title, body) =>
-        `<div class="admonition admonition-${type}"${title ? ` data-title="${title}"` : ""}>\n\n${body}\n\n</div>`,
+      (_, type, title, body) => `<div class="admonition admonition-${type}"${title ? ` data-title="${title}"` : ''}>\n\n${body}\n\n</div>`,
     )
-    .replace(
-      /!!!\s*(quiz|code)\n([\s\S]*?)\n!!!/g,
-      (_, type, content) => `<div class="markdown-activity" data-type="${type}">${content}</div>`,
-    )
+    .replace(/!!!\s*(quiz|code)\n([\s\S]*?)\n!!!/g, (_, type, content) => `<div class="markdown-activity" data-type="${type}">${content}</div>`);
 
   const components: Record<string, React.FC<any>> = {
     h1: (props) => <h1 className="text-4xl font-bold mt-6 mb-4" {...props} />,
@@ -56,11 +49,11 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
     a: (props) => <a className="text-blue-600 hover:underline" {...props} />,
     blockquote: (props) => <blockquote className="border-l-4 border-gray-300 pl-4 italic my-4" {...props} />,
     code: ({ node, className, children, ...props }) => {
-      const match = /language-(\w+)/.exec(className || "")
-      const lang = match && match[1] ? match[1] : ""
+      const match = /language-(\w+)/.exec(className || '');
+      const lang = match && match[1] ? match[1] : '';
 
-      if (lang === "mermaid") {
-        return <Mermaid chart={String(children).replace(/\n$/, "")} />
+      if (lang === 'mermaid') {
+        return <Mermaid chart={String(children).replace(/\n$/, '')} />;
       }
 
       const codeContent = String(children).replace(/\n$/, '');
@@ -73,70 +66,70 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
             language={lang}
             PreTag="div"
             customStyle={{
-              padding: "1rem",
-              borderRadius: "0.375rem",
-              marginBottom: "1rem",
+              padding: '1rem',
+              borderRadius: '0.375rem',
+              marginBottom: '1rem',
             }}
             codeTagProps={{
               style: {
-                whiteSpace: "pre-wrap",
-                wordBreak: "keep-all",
-                overflowWrap: "break-word",
+                whiteSpace: 'pre-wrap',
+                wordBreak: 'keep-all',
+                overflowWrap: 'break-word',
               },
             }}
             wrapLines={true}
             className="syntax-highlighter"
           >
-            {String(children).replace(/\n$/, "")}
+            {String(children).replace(/\n$/, '')}
           </SyntaxHighlighter>
-        )
+        );
       }
 
       return (
-        <code
-          className="bg-gray-100 border border-gray-300 rounded-full px-2 py-1 font-mono text-sm inline whitespace-nowrap"
-          {...props}
-        >
+        <code className="bg-gray-100 border border-gray-300 rounded-full px-2 py-1 font-mono text-sm inline whitespace-nowrap" {...props}>
           {children}
         </code>
-      )
+      );
     },
     pre: ({ children }) => <>{children}</>,
     div: ({ className, children, ...props }) => {
-      if (className?.includes("admonition")) {
-        const type = className.split("-")[1] as
-          | "note"
-          | "abstract"
-          | "info"
-          | "tip"
-          | "success"
-          | "question"
-          | "warning"
-          | "failure"
-          | "danger"
-          | "bug"
-          | "example"
-          | "quote"
-        const title = props["data-title"] as string | undefined
+      if (className?.includes('admonition')) {
+        const type = className.split('-')[1] as
+          | 'note'
+          | 'abstract'
+          | 'info'
+          | 'tip'
+          | 'success'
+          | 'question'
+          | 'warning'
+          | 'failure'
+          | 'danger'
+          | 'bug'
+          | 'example'
+          | 'quote';
+        const title = props['data-title'] as string | undefined;
         return (
           <Admonition type={type} title={title}>
             {children}
           </Admonition>
-        )
+        );
       }
-      if (className === "markdown-activity") {
-        const type = props["data-type"]
-        if (type === "quiz" || type === "code") {
+      if (className === 'markdown-activity') {
+        const type = props['data-type'];
+        if (type === 'quiz' || type === 'code') {
           try {
-            const data = JSON.parse(children as string)
-            if (type === "quiz") {
-              return <MarkdownQuizActivity {...data} />
-            } else if (type === "code") {
-              return <MarkdownCodeActivity {...data} />
+            // remove new lines if it is code
+            const jsonString = children as string;
+            const processedString = type === 'code' ? jsonString.replace(/\n/g, '') : jsonString;
+            const data = JSON.parse(processedString);
+            if (type === 'quiz') {
+              return <MarkdownQuizActivity {...data} />;
+            } else if (type === 'code') {
+              return <MarkdownCodeActivity {...data} />;
             }
           } catch (error) {
-            console.error("Error parsing custom block:", error)
-            return <div>Error rendering custom block</div>
+            console.error('Error parsing custom block:', error);
+            return <div>Error rendering custom block</div>;
           }
         }
       }
@@ -144,32 +137,28 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
         <div className={className} {...props}>
           {children}
         </div>
-      )
+      );
     },
-  }
+  };
 
   return (
     <>
-      <ReactMarkdown
-        className="markdown-content"
-        remarkPlugins={[remarkGfm]}
-        rehypePlugins={[rehypeRaw]}
-        components={components}
-      >
+      <ReactMarkdown className="markdown-content" remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} components={components}>
         {processedContent}
       </ReactMarkdown>
       <style jsx global>{`
-          .syntax-highlighter {
-              overflow-x: auto;
-          }
-          .syntax-highlighter pre {
-              white-space: pre-wrap !important;
-              word-break: keep-all !important;
-              overflow-wrap: break-word !important;
-          }
+        .syntax-highlighter {
+          overflow-x: auto;
+        }
+
+        .syntax-highlighter pre {
+          white-space: pre-wrap !important;
+          word-break: keep-all !important;
+          overflow-wrap: break-word !important;
+        }
       `}</style>
     </>
-  )
-}
+  );
+};
 
 export default MarkdownRenderer;

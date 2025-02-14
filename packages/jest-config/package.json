@@ -2,7 +2,7 @@
   "name": "@game-guild/jest-config",
   "version": "1.0.0",
   "description": "",
-  "license": "ISC",
+  "license": "MIT",
   "author": "",
   "main": "src/index.js",
   "private": true,
