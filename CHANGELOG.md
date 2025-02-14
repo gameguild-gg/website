@@ -1,3 +1,10 @@
+## [1.15.18](https://github.com/gameguild-gg/website/compare/v1.15.17...v1.15.18) (2025-02-14)
+
+
+### Bug Fixes
+
+* **code activity:** fix code activity dynamic scaling ([a3c5881](https://github.com/gameguild-gg/website/commit/a3c58817bce0d53e2b599f5fc798017e6257c28c))
+
 ## [1.15.17](https://github.com/gameguild-gg/website/compare/v1.15.16...v1.15.17) (2025-02-14)
 
 
