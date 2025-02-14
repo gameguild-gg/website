@@ -1,3 +1,10 @@
+## [1.15.12](https://github.com/gameguild-gg/website/compare/v1.15.11...v1.15.12) (2025-02-14)
+
+
+### Bug Fixes
+
+* **courses:** typo ([a5b0200](https://github.com/gameguild-gg/website/commit/a5b0200cf4169097b4ff9a1b16139964bebf63f5))
+
 ## [1.15.11](https://github.com/gameguild-gg/website/compare/v1.15.10...v1.15.11) (2025-02-14)
 
 
