@@ -1,3 +1,10 @@
+## [1.15.19](https://github.com/gameguild-gg/website/compare/v1.15.18...v1.15.19) (2025-02-14)
+
+
+### Bug Fixes
+
+* **courses:** better coding error descriptions ([9e7dd48](https://github.com/gameguild-gg/website/commit/9e7dd48364a3cffb57f61257f2769b4fff45ad4a))
+
 ## [1.15.18](https://github.com/gameguild-gg/website/compare/v1.15.17...v1.15.18) (2025-02-14)
 
 
