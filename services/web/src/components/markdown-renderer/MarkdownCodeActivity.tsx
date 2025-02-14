@@ -10,6 +10,7 @@ export interface MarkdownCodeActivityProps {
   code: string;
   description: string;
   language: CodeLanguage;
+  // todo: make it test multiple tests
   expectedOutput: string;
   stdin: string;
   height?: number;
