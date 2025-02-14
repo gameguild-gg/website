@@ -1,3 +1,10 @@
+## [1.15.11](https://github.com/gameguild-gg/website/compare/v1.15.10...v1.15.11) (2025-02-14)
+
+
+### Bug Fixes
+
+* **courses:** add lecture for GOAP in C# ([f2a8f2b](https://github.com/gameguild-gg/website/commit/f2a8f2b32503a9d259c9c2bd885fc2146352d457))
+
 ## [1.15.10](https://github.com/gameguild-gg/website/compare/v1.15.9...v1.15.10) (2025-02-14)
 
 
