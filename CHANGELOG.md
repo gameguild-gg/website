@@ -1,3 +1,10 @@
+## [1.15.20](https://github.com/gameguild-gg/website/compare/v1.15.19...v1.15.20) (2025-02-15)
+
+
+### Bug Fixes
+
+* **codeactivity:** add confetti on success ([e444235](https://github.com/gameguild-gg/website/commit/e444235b4c009b36d2d3e1019977d10ad176d5cc))
+
 ## [1.15.19](https://github.com/gameguild-gg/website/compare/v1.15.18...v1.15.19) (2025-02-14)
 
 
