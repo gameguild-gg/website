@@ -1,3 +1,10 @@
+## [1.15.23](https://github.com/gameguild-gg/website/compare/v1.15.22...v1.15.23) (2025-02-17)
+
+
+### Bug Fixes
+
+* **courses:** fix summary of the python loop lecture ([61146fd](https://github.com/gameguild-gg/website/commit/61146fd3deb1466a81b7b75ca5352de9feca3da6))
+
 ## [1.15.22](https://github.com/gameguild-gg/website/compare/v1.15.21...v1.15.22) (2025-02-17)
 
 
