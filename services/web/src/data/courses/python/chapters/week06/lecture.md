@@ -2,15 +2,19 @@
 
 Loops are fundamental in Python for performing repetitive tasks. Python's for loop iterates over sequences (like lists, strings, or ranges) in a clean and readable way. In this lecture, we’ll explore several common looping techniques and dive into some advanced topics such as controlling ranges, sorting selections, nested loops, breaking out of nested loops, and common loop patterns.
 
-<details> <summary>Loops Overview</summary>
+<details> 
+
+<summary>Loops Overview</summary>
+
 - range: Iterate over a sequence of numbers with full control over start, stop, and step.
 - list: Iterate directly over each element in a list.
 enumerate with index: Get both the index and the element simultaneously.
 sorted: Sort a list and iterate over its elements.
 sorted and subset: Sort a list (e.g., of grades) and select a subset (e.g., the three lowest grades).
-Nested loops: Loop inside another loop.
-Breaking nested loops: Techniques to exit multiple loops elegantly.
-Loop Patterns: Common patterns such as accumulators, filtering, flags, and more.
+- Nested loops: Loop inside another loop.
+- Breaking nested loops: Techniques to exit multiple loops elegantly.
+- Loop Patterns: Common patterns such as accumulators, filtering, flags, and more.
+
 </details>
 
 ## 1. For in range
