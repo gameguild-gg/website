@@ -1,3 +1,10 @@
+## [1.15.24](https://github.com/gameguild-gg/website/compare/v1.15.23...v1.15.24) (2025-02-17)
+
+
+### Bug Fixes
+
+* **courses:** fix an activity on python lists class ([f1dde2d](https://github.com/gameguild-gg/website/commit/f1dde2ddfd8b721c50eaa172c771a77f808e73a5))
+
 ## [1.15.23](https://github.com/gameguild-gg/website/compare/v1.15.22...v1.15.23) (2025-02-17)
 
 
