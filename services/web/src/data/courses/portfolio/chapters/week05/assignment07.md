@@ -7,6 +7,12 @@
 - **Capture High-Quality Footage:** Record and collect initial clips that demonstrate various aspects of your technical
   work.
 
+::: warning "Important"
+
+You must deliver a 30s demo reel about your work and yourself for the Champlain Senior show. This is a requirement, but you can deliver more in-depth videos to be showcased on the Game Studio showcase website as extra material. So focus on making a 30s demo reel for the Senior show first, and if you have time, make a longer one for the website.
+
+:::
+
 ---
 
 ## Part 1: Storyboard/Script for Your Demo Reel
