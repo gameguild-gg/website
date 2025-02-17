@@ -45,7 +45,7 @@ for i in range(1, 10, 2):  # Generates numbers 1, 3, 5, 7, 9
 
 Counting Backwards:
 
-``` 
+``` python
 for i in range(10, 0, -2):  # Generates numbers 10, 8, 6, 4, 2
     print("Counting backwards by 2:", i)
 ```
