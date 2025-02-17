@@ -1,3 +1,10 @@
+## [1.15.21](https://github.com/gameguild-gg/website/compare/v1.15.20...v1.15.21) (2025-02-17)
+
+
+### Bug Fixes
+
+* **courses:** add python loops content ([b578657](https://github.com/gameguild-gg/website/commit/b5786570c24cbe597635abc3940d3f9d55759a93))
+
 ## [1.15.20](https://github.com/gameguild-gg/website/compare/v1.15.19...v1.15.20) (2025-02-15)
 
 
