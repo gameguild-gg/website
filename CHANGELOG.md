@@ -1,3 +1,10 @@
+## [1.15.22](https://github.com/gameguild-gg/website/compare/v1.15.21...v1.15.22) (2025-02-17)
+
+
+### Bug Fixes
+
+* **typo:** fix missing python tag for syntax highlight ([d48edf1](https://github.com/gameguild-gg/website/commit/d48edf1d1925de50525eaffc5e8bc77f83e1e6f3))
+
 ## [1.15.21](https://github.com/gameguild-gg/website/compare/v1.15.20...v1.15.21) (2025-02-17)
 
 
