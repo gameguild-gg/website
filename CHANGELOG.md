@@ -1,3 +1,10 @@
+## [1.15.25](https://github.com/gameguild-gg/website/compare/v1.15.24...v1.15.25) (2025-02-18)
+
+
+### Bug Fixes
+
+* **courses:** add htn to ai classes ([9c5b63a](https://github.com/gameguild-gg/website/commit/9c5b63ab560c1831cf64f1dc16798625d890634b))
+
 ## [1.15.24](https://github.com/gameguild-gg/website/compare/v1.15.23...v1.15.24) (2025-02-17)
 
 
