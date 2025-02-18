@@ -177,13 +177,12 @@ else:
 
 !!! code
 {
-"description": "Implement a function to find the first pair of numbers in a list that it sum is exactly a target.",
+"description": "Implement a function to find and return the first pair of numbers in a list that it sum is exactly a target.",
 "language": "python",
 "code": "def find_pair_with_sum(numbers, target):\n    # your code goes here\n\n# do not modify the code below\nprint(find_pair_with_sum([1, 2, 3, 4, 5], 7))",
 "expectedOutput": "(2, 5)"
 }
 !!!
-
 
 ### 7. Loop Patterns
 
