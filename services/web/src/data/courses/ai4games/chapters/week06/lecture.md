@@ -184,4 +184,4 @@ The planning process in HTN involves several recursive steps that gradually refi
 
 HTN planning extends the capabilities of traditional GOAP by introducing a hierarchical structure that organizes tasks into compound objectives and subtasks. By leveraging domain-specific knowledge through methods, HTN planners can generate plans that are not only valid but also intuitive and efficient. The resulting task networks capture the logical flow of actions, ensuring that agents can navigate complex scenarios with ease.
 
-Next time, we will delve deeper into the implementation of HTN planners and explore how to apply this powerful technique to solve complex planning problems in game AI.
+Next time, we will deepen the implementation of HTN planners and explore how to apply this powerful technique to solve complex planning problems in game AI.
