@@ -1,3 +1,10 @@
+## [1.15.26](https://github.com/gameguild-gg/website/compare/v1.15.25...v1.15.26) (2025-02-19)
+
+
+### Bug Fixes
+
+* **courses:** add cover letter course to portfolio classes ([0a393d3](https://github.com/gameguild-gg/website/commit/0a393d341f976d247acb9d62301b579f91210050))
+
 ## [1.15.25](https://github.com/gameguild-gg/website/compare/v1.15.24...v1.15.25) (2025-02-18)
 
 
