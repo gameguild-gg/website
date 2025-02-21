@@ -4,12 +4,10 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
-  IsUrl,
   Length,
 } from 'class-validator';
 import { IsSlug } from '../../common/decorators/isslug.decorator';
 import { VisibilityEnum } from '../entities/visibility.enum';
-import { ContentBase } from '../entities/content.base';
 import { ProjectEntity } from '../entities/project.entity';
 
 export class CreateProjectDto
