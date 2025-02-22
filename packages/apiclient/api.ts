@@ -1309,6 +1309,1792 @@ export class AuthApi extends BaseAPI implements AuthApiInterface {
 	}
 
 }
+export namespace ChoiceCastsApi {
+	export type ChoiceCastControllerGetChoiceCastCandidatesResponse =
+		| ChoiceCastControllerGetChoiceCastCandidates201Response
+	
+	export interface ChoiceCastControllerGetChoiceCastCandidates201Response {
+		status: 201
+		body?: undefined
+		headers?: undefined
+	}
+	
+	export type ChoiceCastControllerGetChoiceCastFromUserResponse =
+		| ChoiceCastControllerGetChoiceCastFromUser200Response
+	
+	export interface ChoiceCastControllerGetChoiceCastFromUser200Response {
+		status: 200
+		body?: undefined
+		headers?: undefined
+	}
+	
+	export type ChoiceCastControllerGetVotesForChoiceCastResponse =
+		| ChoiceCastControllerGetVotesForChoiceCast200Response
+	
+	export interface ChoiceCastControllerGetVotesForChoiceCast200Response {
+		status: 200
+		body?: undefined
+		headers?: undefined
+	}
+	
+	export type ChoiceCastControllerResetVoteResponse =
+		| ChoiceCastControllerResetVote200Response
+	
+	export interface ChoiceCastControllerResetVote200Response {
+		status: 200
+		body?: undefined
+		headers?: undefined
+	}
+	
+	export type ChoiceCastControllerSubmitChoiceCastResponse =
+		| ChoiceCastControllerSubmitChoiceCast200Response
+	
+	export interface ChoiceCastControllerSubmitChoiceCast200Response {
+		status: 200
+		body?: undefined
+		headers?: undefined
+	}
+	
+	export type ChoiceCastControllerVoteForChoiceCastResponse =
+		| ChoiceCastControllerVoteForChoiceCast200Response
+	
+	export interface ChoiceCastControllerVoteForChoiceCast200Response {
+		status: 200
+		body?: undefined
+		headers?: undefined
+	}
+	
+	export type CreateOneBaseChoiceCastControllerEventEntityResponse =
+		| CreateOneBaseChoiceCastControllerEventEntity201Response
+		| CreateOneBaseChoiceCastControllerEventEntity400Response
+		| CreateOneBaseChoiceCastControllerEventEntity401Response
+		| CreateOneBaseChoiceCastControllerEventEntity403Response
+		| CreateOneBaseChoiceCastControllerEventEntity404Response
+		| CreateOneBaseChoiceCastControllerEventEntity409Response
+		| CreateOneBaseChoiceCastControllerEventEntity422Response
+		| CreateOneBaseChoiceCastControllerEventEntity500Response
+	
+	export interface CreateOneBaseChoiceCastControllerEventEntity201Response {
+		status: 201
+		contentType: 'application/json'
+		body: Api.EventEntity
+		headers?: undefined
+	}
+	
+	export interface CreateOneBaseChoiceCastControllerEventEntity400Response {
+		status: 400
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CreateOneBaseChoiceCastControllerEventEntity401Response {
+		status: 401
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CreateOneBaseChoiceCastControllerEventEntity403Response {
+		status: 403
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CreateOneBaseChoiceCastControllerEventEntity404Response {
+		status: 404
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CreateOneBaseChoiceCastControllerEventEntity409Response {
+		status: 409
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CreateOneBaseChoiceCastControllerEventEntity422Response {
+		status: 422
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface CreateOneBaseChoiceCastControllerEventEntity500Response {
+		status: 500
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export type DeleteOneBaseChoiceCastControllerEventEntityResponse =
+		| DeleteOneBaseChoiceCastControllerEventEntity200Response
+		| DeleteOneBaseChoiceCastControllerEventEntity400Response
+		| DeleteOneBaseChoiceCastControllerEventEntity401Response
+		| DeleteOneBaseChoiceCastControllerEventEntity403Response
+		| DeleteOneBaseChoiceCastControllerEventEntity404Response
+		| DeleteOneBaseChoiceCastControllerEventEntity409Response
+		| DeleteOneBaseChoiceCastControllerEventEntity422Response
+		| DeleteOneBaseChoiceCastControllerEventEntity500Response
+	
+	export interface DeleteOneBaseChoiceCastControllerEventEntity200Response {
+		status: 200
+		body?: undefined
+		headers?: undefined
+	}
+	
+	export interface DeleteOneBaseChoiceCastControllerEventEntity400Response {
+		status: 400
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface DeleteOneBaseChoiceCastControllerEventEntity401Response {
+		status: 401
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface DeleteOneBaseChoiceCastControllerEventEntity403Response {
+		status: 403
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface DeleteOneBaseChoiceCastControllerEventEntity404Response {
+		status: 404
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface DeleteOneBaseChoiceCastControllerEventEntity409Response {
+		status: 409
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface DeleteOneBaseChoiceCastControllerEventEntity422Response {
+		status: 422
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface DeleteOneBaseChoiceCastControllerEventEntity500Response {
+		status: 500
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface GetManyBaseChoiceCastControllerEventEntityParameters {
+		/**
+		 * @description <p>Selects resource fields. <a href="https://github.com/nestjsx/crud/wiki/Requests#select" target="_blank">Docs</a></p>
+		 * @type {string[]}
+		 */
+		fields?: string[]
+		/**
+		 * @description <p>Adds search condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#search" target="_blank">Docs</a></p>
+		 * @type {string}
+		 */
+		s?: string
+		/**
+		 * @description <p>Adds filter condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#filter" target="_blank">Docs</a></p>
+		 * @type {string[]}
+		 */
+		filter?: string[]
+		/**
+		 * @description <p>Adds OR condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#or" target="_blank">Docs</a></p>
+		 * @type {string[]}
+		 */
+		or?: string[]
+		/**
+		 * @description <p>Adds sort by field. <a href="https://github.com/nestjsx/crud/wiki/Requests#sort" target="_blank">Docs</a></p>
+		 * @type {string[]}
+		 */
+		sort?: string[]
+		/**
+		 * @description <p>Adds relational resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#join" target="_blank">Docs</a></p>
+		 * @type {string[]}
+		 */
+		join?: string[]
+		/**
+		 * @description <p>Limit amount of resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#limit" target="_blank">Docs</a></p>
+		 * @type {number}
+		 */
+		limit?: number
+		/**
+		 * @description <p>Offset amount of resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#offset" target="_blank">Docs</a></p>
+		 * @type {number}
+		 */
+		offset?: number
+		/**
+		 * @description <p>Page portion of resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#page" target="_blank">Docs</a></p>
+		 * @type {number}
+		 */
+		page?: number
+		/**
+		 * @description <p>Reset cache (if was enabled). <a href="https://github.com/nestjsx/crud/wiki/Requests#cache" target="_blank">Docs</a></p>
+		 * @type {number}
+		 * minimum: 0
+		 * maximum: 1
+		 */
+		cache?: number
+	}
+	
+	export type GetManyBaseChoiceCastControllerEventEntityResponse =
+		| GetManyBaseChoiceCastControllerEventEntity200Response
+		| GetManyBaseChoiceCastControllerEventEntity400Response
+		| GetManyBaseChoiceCastControllerEventEntity401Response
+		| GetManyBaseChoiceCastControllerEventEntity403Response
+		| GetManyBaseChoiceCastControllerEventEntity404Response
+		| GetManyBaseChoiceCastControllerEventEntity409Response
+		| GetManyBaseChoiceCastControllerEventEntity422Response
+		| GetManyBaseChoiceCastControllerEventEntity500Response
+	
+	export interface GetManyBaseChoiceCastControllerEventEntity200Response {
+		status: 200
+		contentType: 'application/json'
+		body: Api.GetManyEventEntityResponseDto | Api.EventEntity[]
+		headers?: undefined
+	}
+	
+	export interface GetManyBaseChoiceCastControllerEventEntity400Response {
+		status: 400
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface GetManyBaseChoiceCastControllerEventEntity401Response {
+		status: 401
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface GetManyBaseChoiceCastControllerEventEntity403Response {
+		status: 403
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface GetManyBaseChoiceCastControllerEventEntity404Response {
+		status: 404
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface GetManyBaseChoiceCastControllerEventEntity409Response {
+		status: 409
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface GetManyBaseChoiceCastControllerEventEntity422Response {
+		status: 422
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface GetManyBaseChoiceCastControllerEventEntity500Response {
+		status: 500
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface GetOneBaseChoiceCastControllerEventEntityParameters {
+		slug: string
+		/**
+		 * @description <p>Selects resource fields. <a href="https://github.com/nestjsx/crud/wiki/Requests#select" target="_blank">Docs</a></p>
+		 * @type {string[]}
+		 */
+		fields?: string[]
+		/**
+		 * @description <p>Adds relational resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#join" target="_blank">Docs</a></p>
+		 * @type {string[]}
+		 */
+		join?: string[]
+		/**
+		 * @description <p>Reset cache (if was enabled). <a href="https://github.com/nestjsx/crud/wiki/Requests#cache" target="_blank">Docs</a></p>
+		 * @type {number}
+		 * minimum: 0
+		 * maximum: 1
+		 */
+		cache?: number
+	}
+	
+	export type GetOneBaseChoiceCastControllerEventEntityResponse =
+		| GetOneBaseChoiceCastControllerEventEntity200Response
+		| GetOneBaseChoiceCastControllerEventEntity400Response
+		| GetOneBaseChoiceCastControllerEventEntity401Response
+		| GetOneBaseChoiceCastControllerEventEntity403Response
+		| GetOneBaseChoiceCastControllerEventEntity404Response
+		| GetOneBaseChoiceCastControllerEventEntity409Response
+		| GetOneBaseChoiceCastControllerEventEntity422Response
+		| GetOneBaseChoiceCastControllerEventEntity500Response
+	
+	export interface GetOneBaseChoiceCastControllerEventEntity200Response {
+		status: 200
+		contentType: 'application/json'
+		body: Api.EventEntity
+		headers?: undefined
+	}
+	
+	export interface GetOneBaseChoiceCastControllerEventEntity400Response {
+		status: 400
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface GetOneBaseChoiceCastControllerEventEntity401Response {
+		status: 401
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface GetOneBaseChoiceCastControllerEventEntity403Response {
+		status: 403
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface GetOneBaseChoiceCastControllerEventEntity404Response {
+		status: 404
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface GetOneBaseChoiceCastControllerEventEntity409Response {
+		status: 409
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface GetOneBaseChoiceCastControllerEventEntity422Response {
+		status: 422
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface GetOneBaseChoiceCastControllerEventEntity500Response {
+		status: 500
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export type UpdateOneBaseChoiceCastControllerEventEntityResponse =
+		| UpdateOneBaseChoiceCastControllerEventEntity200Response
+		| UpdateOneBaseChoiceCastControllerEventEntity400Response
+		| UpdateOneBaseChoiceCastControllerEventEntity401Response
+		| UpdateOneBaseChoiceCastControllerEventEntity403Response
+		| UpdateOneBaseChoiceCastControllerEventEntity404Response
+		| UpdateOneBaseChoiceCastControllerEventEntity409Response
+		| UpdateOneBaseChoiceCastControllerEventEntity422Response
+		| UpdateOneBaseChoiceCastControllerEventEntity500Response
+	
+	export interface UpdateOneBaseChoiceCastControllerEventEntity200Response {
+		status: 200
+		contentType: 'application/json'
+		body: Api.EventEntity
+		headers?: undefined
+	}
+	
+	export interface UpdateOneBaseChoiceCastControllerEventEntity400Response {
+		status: 400
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface UpdateOneBaseChoiceCastControllerEventEntity401Response {
+		status: 401
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface UpdateOneBaseChoiceCastControllerEventEntity403Response {
+		status: 403
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface UpdateOneBaseChoiceCastControllerEventEntity404Response {
+		status: 404
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface UpdateOneBaseChoiceCastControllerEventEntity409Response {
+		status: 409
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface UpdateOneBaseChoiceCastControllerEventEntity422Response {
+		status: 422
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+	export interface UpdateOneBaseChoiceCastControllerEventEntity500Response {
+		status: 500
+		contentType: 'application/json'
+		body: Api.ApiErrorResponseDto
+		headers?: undefined
+	}
+	
+}
+
+/**
+ * ChoiceCastsApi - fetch parameter creator
+ * @export
+ */
+export const ChoiceCastsApiFetchParamCreator = function (configuration?: Configuration) {
+	return {
+		/**
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		choiceCastControllerGetChoiceCastCandidates(options: RequestInit = {}): FetchArgs {
+
+			let localVarPath = `/choice-cast/vote`;
+			const localVarPathQueryStart = localVarPath.indexOf("?");
+			const localVarRequestOptions: RequestInit = Object.assign({ method: 'POST' }, options);
+			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
+			const localVarQueryParameter = new URLSearchParams(localVarPathQueryStart !== -1 ? localVarPath.substring(localVarPathQueryStart + 1) : "");
+			if (localVarPathQueryStart !== -1) {
+				localVarPath = localVarPath.substring(0, localVarPathQueryStart);
+			}
+
+			localVarRequestOptions.headers = localVarHeaderParameter;
+
+			const localVarQueryParameterString = localVarQueryParameter.toString();
+			if (localVarQueryParameterString) {
+				localVarPath += "?" + localVarQueryParameterString;
+			}
+			return {
+				url: localVarPath,
+				options: localVarRequestOptions,
+			};
+		},
+		/**
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		choiceCastControllerGetChoiceCastFromUser(options: RequestInit = {}): FetchArgs {
+
+			let localVarPath = `/choice-cast/get-casts-from-user/{userId}`;
+			const localVarPathQueryStart = localVarPath.indexOf("?");
+			const localVarRequestOptions: RequestInit = Object.assign({ method: 'GET' }, options);
+			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
+			const localVarQueryParameter = new URLSearchParams(localVarPathQueryStart !== -1 ? localVarPath.substring(localVarPathQueryStart + 1) : "");
+			if (localVarPathQueryStart !== -1) {
+				localVarPath = localVarPath.substring(0, localVarPathQueryStart);
+			}
+
+			localVarRequestOptions.headers = localVarHeaderParameter;
+
+			const localVarQueryParameterString = localVarQueryParameter.toString();
+			if (localVarQueryParameterString) {
+				localVarPath += "?" + localVarQueryParameterString;
+			}
+			return {
+				url: localVarPath,
+				options: localVarRequestOptions,
+			};
+		},
+		/**
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		choiceCastControllerGetVotesForChoiceCast(options: RequestInit = {}): FetchArgs {
+
+			let localVarPath = `/choice-cast/get-votes-from-cast/{castId}`;
+			const localVarPathQueryStart = localVarPath.indexOf("?");
+			const localVarRequestOptions: RequestInit = Object.assign({ method: 'GET' }, options);
+			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
+			const localVarQueryParameter = new URLSearchParams(localVarPathQueryStart !== -1 ? localVarPath.substring(localVarPathQueryStart + 1) : "");
+			if (localVarPathQueryStart !== -1) {
+				localVarPath = localVarPath.substring(0, localVarPathQueryStart);
+			}
+
+			localVarRequestOptions.headers = localVarHeaderParameter;
+
+			const localVarQueryParameterString = localVarQueryParameter.toString();
+			if (localVarQueryParameterString) {
+				localVarPath += "?" + localVarQueryParameterString;
+			}
+			return {
+				url: localVarPath,
+				options: localVarRequestOptions,
+			};
+		},
+		/**
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		choiceCastControllerResetVote(options: RequestInit = {}): FetchArgs {
+
+			let localVarPath = `/choice-cast/reset-vote/{id}`;
+			const localVarPathQueryStart = localVarPath.indexOf("?");
+			const localVarRequestOptions: RequestInit = Object.assign({ method: 'PATCH' }, options);
+			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
+			const localVarQueryParameter = new URLSearchParams(localVarPathQueryStart !== -1 ? localVarPath.substring(localVarPathQueryStart + 1) : "");
+			if (localVarPathQueryStart !== -1) {
+				localVarPath = localVarPath.substring(0, localVarPathQueryStart);
+			}
+
+			localVarRequestOptions.headers = localVarHeaderParameter;
+
+			const localVarQueryParameterString = localVarQueryParameter.toString();
+			if (localVarQueryParameterString) {
+				localVarPath += "?" + localVarQueryParameterString;
+			}
+			return {
+				url: localVarPath,
+				options: localVarRequestOptions,
+			};
+		},
+		/**
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		choiceCastControllerSubmitChoiceCast(options: RequestInit = {}): FetchArgs {
+
+			let localVarPath = `/choice-cast/submit-cast/{id}`;
+			const localVarPathQueryStart = localVarPath.indexOf("?");
+			const localVarRequestOptions: RequestInit = Object.assign({ method: 'PATCH' }, options);
+			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
+			const localVarQueryParameter = new URLSearchParams(localVarPathQueryStart !== -1 ? localVarPath.substring(localVarPathQueryStart + 1) : "");
+			if (localVarPathQueryStart !== -1) {
+				localVarPath = localVarPath.substring(0, localVarPathQueryStart);
+			}
+
+			localVarRequestOptions.headers = localVarHeaderParameter;
+
+			const localVarQueryParameterString = localVarQueryParameter.toString();
+			if (localVarQueryParameterString) {
+				localVarPath += "?" + localVarQueryParameterString;
+			}
+			return {
+				url: localVarPath,
+				options: localVarRequestOptions,
+			};
+		},
+		/**
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		choiceCastControllerVoteForChoiceCast(options: RequestInit = {}): FetchArgs {
+
+			let localVarPath = `/choice-cast/vote-in-cast/{castId}`;
+			const localVarPathQueryStart = localVarPath.indexOf("?");
+			const localVarRequestOptions: RequestInit = Object.assign({ method: 'PATCH' }, options);
+			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
+			const localVarQueryParameter = new URLSearchParams(localVarPathQueryStart !== -1 ? localVarPath.substring(localVarPathQueryStart + 1) : "");
+			if (localVarPathQueryStart !== -1) {
+				localVarPath = localVarPath.substring(0, localVarPathQueryStart);
+			}
+
+			localVarRequestOptions.headers = localVarHeaderParameter;
+
+			const localVarQueryParameterString = localVarQueryParameter.toString();
+			if (localVarQueryParameterString) {
+				localVarPath += "?" + localVarQueryParameterString;
+			}
+			return {
+				url: localVarPath,
+				options: localVarRequestOptions,
+			};
+		},
+		/**
+		 * @summary Create a single EventEntity
+		 * @param {Api.CreateChoiceCastDto} request
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		createOneBaseChoiceCastControllerEventEntity(request: Api.CreateChoiceCastDto, options: RequestInit = {}): FetchArgs {
+			// verify required parameter 'request' is not null or undefined
+			if (request === null || request === undefined) {
+				throw new RequiredError('request', 'Required parameter request was null or undefined when calling createOneBaseChoiceCastControllerEventEntity.');
+			}
+
+			let localVarPath = `/choice-cast`;
+			const localVarPathQueryStart = localVarPath.indexOf("?");
+			const localVarRequestOptions: RequestInit = Object.assign({ method: 'POST' }, options);
+			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
+			const localVarQueryParameter = new URLSearchParams(localVarPathQueryStart !== -1 ? localVarPath.substring(localVarPathQueryStart + 1) : "");
+			if (localVarPathQueryStart !== -1) {
+				localVarPath = localVarPath.substring(0, localVarPathQueryStart);
+			}
+
+			// authentication bearer required
+			// http authorization required
+			if (configuration && configuration.authorization) {
+				const localVarAuthorizationValue = typeof configuration.authorization === 'function'
+					? configuration.authorization('bearer')
+					: configuration.authorization;
+				if (localVarAuthorizationValue !== null) {
+					localVarHeaderParameter.set("Authorization", "Bearer " + localVarAuthorizationValue);
+				}
+			}
+			localVarHeaderParameter.set('Content-Type', 'application/json');
+
+			localVarRequestOptions.headers = localVarHeaderParameter;
+	
+			if (request !== undefined) {
+				localVarRequestOptions.body = JSON.stringify(request || {});
+			}
+
+			const localVarQueryParameterString = localVarQueryParameter.toString();
+			if (localVarQueryParameterString) {
+				localVarPath += "?" + localVarQueryParameterString;
+			}
+			return {
+				url: localVarPath,
+				options: localVarRequestOptions,
+			};
+		},
+		/**
+		 * @summary Delete a single EventEntity
+		 * @param {string} slug
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		deleteOneBaseChoiceCastControllerEventEntity(slug: string, options: RequestInit = {}): FetchArgs {
+			// verify required parameter 'slug' is not null or undefined
+			if (slug === null || slug === undefined) {
+				throw new RequiredError('slug', 'Required parameter slug was null or undefined when calling deleteOneBaseChoiceCastControllerEventEntity.');
+			}
+
+			let localVarPath = `/choice-cast/{slug}`
+				.replace('{slug}', encodeURIComponent(String(slug)));
+			const localVarPathQueryStart = localVarPath.indexOf("?");
+			const localVarRequestOptions: RequestInit = Object.assign({ method: 'DELETE' }, options);
+			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
+			const localVarQueryParameter = new URLSearchParams(localVarPathQueryStart !== -1 ? localVarPath.substring(localVarPathQueryStart + 1) : "");
+			if (localVarPathQueryStart !== -1) {
+				localVarPath = localVarPath.substring(0, localVarPathQueryStart);
+			}
+
+			// authentication bearer required
+			// http authorization required
+			if (configuration && configuration.authorization) {
+				const localVarAuthorizationValue = typeof configuration.authorization === 'function'
+					? configuration.authorization('bearer')
+					: configuration.authorization;
+				if (localVarAuthorizationValue !== null) {
+					localVarHeaderParameter.set("Authorization", "Bearer " + localVarAuthorizationValue);
+				}
+			}
+			localVarRequestOptions.headers = localVarHeaderParameter;
+
+			const localVarQueryParameterString = localVarQueryParameter.toString();
+			if (localVarQueryParameterString) {
+				localVarPath += "?" + localVarQueryParameterString;
+			}
+			return {
+				url: localVarPath,
+				options: localVarRequestOptions,
+			};
+		},
+		/**
+		 * @summary Retrieve multiple EventEntities
+		 * @param {string[]} [fields] <p>Selects resource fields. <a href="https://github.com/nestjsx/crud/wiki/Requests#select" target="_blank">Docs</a></p>
+		 * @param {string} [s] <p>Adds search condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#search" target="_blank">Docs</a></p>
+		 * @param {string[]} [filter] <p>Adds filter condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#filter" target="_blank">Docs</a></p>
+		 * @param {string[]} [or] <p>Adds OR condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#or" target="_blank">Docs</a></p>
+		 * @param {string[]} [sort] <p>Adds sort by field. <a href="https://github.com/nestjsx/crud/wiki/Requests#sort" target="_blank">Docs</a></p>
+		 * @param {string[]} [join] <p>Adds relational resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#join" target="_blank">Docs</a></p>
+		 * @param {number} [limit] <p>Limit amount of resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#limit" target="_blank">Docs</a></p>
+		 * @param {number} [offset] <p>Offset amount of resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#offset" target="_blank">Docs</a></p>
+		 * @param {number} [page] <p>Page portion of resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#page" target="_blank">Docs</a></p>
+		 * @param {number} [cache] <p>Reset cache (if was enabled). <a href="https://github.com/nestjsx/crud/wiki/Requests#cache" target="_blank">Docs</a></p>
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		getManyBaseChoiceCastControllerEventEntity(__params: ChoiceCastsApi.GetManyBaseChoiceCastControllerEventEntityParameters, options: RequestInit = {}): FetchArgs {
+
+			let localVarPath = `/choice-cast`;
+			const localVarPathQueryStart = localVarPath.indexOf("?");
+			const localVarRequestOptions: RequestInit = Object.assign({ method: 'GET' }, options);
+			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
+			const localVarQueryParameter = new URLSearchParams(localVarPathQueryStart !== -1 ? localVarPath.substring(localVarPathQueryStart + 1) : "");
+			if (localVarPathQueryStart !== -1) {
+				localVarPath = localVarPath.substring(0, localVarPathQueryStart);
+			}
+
+			// authentication bearer required
+			// http authorization required
+			if (configuration && configuration.authorization) {
+				const localVarAuthorizationValue = typeof configuration.authorization === 'function'
+					? configuration.authorization('bearer')
+					: configuration.authorization;
+				if (localVarAuthorizationValue !== null) {
+					localVarHeaderParameter.set("Authorization", "Bearer " + localVarAuthorizationValue);
+				}
+			}
+			if (__params.fields !== undefined) {
+				/* array form */
+				localVarQueryParameter.append('fields', __params.fields.map(localVarArrayMapElement => escape(String(localVarArrayMapElement))).join(','));
+			}
+
+			if (__params.s !== undefined) {
+				localVarQueryParameter.append('s', String(__params.s));
+			}
+
+			if (__params.filter !== undefined) {
+				/* array form exploded */
+				for (const localVarArrayElement of __params.filter) {
+					if (localVarArrayElement !== undefined) {
+						localVarQueryParameter.append('filter', localVarArrayElement !== null ? String(localVarArrayElement) : '');
+					}
+				}
+			}
+
+			if (__params.or !== undefined) {
+				/* array form exploded */
+				for (const localVarArrayElement of __params.or) {
+					if (localVarArrayElement !== undefined) {
+						localVarQueryParameter.append('or', localVarArrayElement !== null ? String(localVarArrayElement) : '');
+					}
+				}
+			}
+
+			if (__params.sort !== undefined) {
+				/* array form exploded */
+				for (const localVarArrayElement of __params.sort) {
+					if (localVarArrayElement !== undefined) {
+						localVarQueryParameter.append('sort', localVarArrayElement !== null ? String(localVarArrayElement) : '');
+					}
+				}
+			}
+
+			if (__params.join !== undefined) {
+				/* array form exploded */
+				for (const localVarArrayElement of __params.join) {
+					if (localVarArrayElement !== undefined) {
+						localVarQueryParameter.append('join', localVarArrayElement !== null ? String(localVarArrayElement) : '');
+					}
+				}
+			}
+
+			if (__params.limit !== undefined) {
+				localVarQueryParameter.append('limit', String(__params.limit));
+			}
+
+			if (__params.offset !== undefined) {
+				localVarQueryParameter.append('offset', String(__params.offset));
+			}
+
+			if (__params.page !== undefined) {
+				localVarQueryParameter.append('page', String(__params.page));
+			}
+
+			if (__params.cache !== undefined) {
+				localVarQueryParameter.append('cache', String(__params.cache));
+			}
+
+			localVarRequestOptions.headers = localVarHeaderParameter;
+
+			const localVarQueryParameterString = localVarQueryParameter.toString();
+			if (localVarQueryParameterString) {
+				localVarPath += "?" + localVarQueryParameterString;
+			}
+			return {
+				url: localVarPath,
+				options: localVarRequestOptions,
+			};
+		},
+		/**
+		 * @summary Retrieve a single EventEntity
+		 * @param {string} slug
+		 * @param {string[]} [fields] <p>Selects resource fields. <a href="https://github.com/nestjsx/crud/wiki/Requests#select" target="_blank">Docs</a></p>
+		 * @param {string[]} [join] <p>Adds relational resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#join" target="_blank">Docs</a></p>
+		 * @param {number} [cache] <p>Reset cache (if was enabled). <a href="https://github.com/nestjsx/crud/wiki/Requests#cache" target="_blank">Docs</a></p>
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		getOneBaseChoiceCastControllerEventEntity(__params: ChoiceCastsApi.GetOneBaseChoiceCastControllerEventEntityParameters, options: RequestInit = {}): FetchArgs {
+			// verify required parameter 'slug' is not null or undefined
+			if (__params.slug === null || __params.slug === undefined) {
+				throw new RequiredError('slug', 'Required parameter slug was null or undefined when calling getOneBaseChoiceCastControllerEventEntity.');
+			}
+
+			let localVarPath = `/choice-cast/{slug}`
+				.replace('{slug}', encodeURIComponent(String(__params.slug)));
+			const localVarPathQueryStart = localVarPath.indexOf("?");
+			const localVarRequestOptions: RequestInit = Object.assign({ method: 'GET' }, options);
+			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
+			const localVarQueryParameter = new URLSearchParams(localVarPathQueryStart !== -1 ? localVarPath.substring(localVarPathQueryStart + 1) : "");
+			if (localVarPathQueryStart !== -1) {
+				localVarPath = localVarPath.substring(0, localVarPathQueryStart);
+			}
+
+			// authentication bearer required
+			// http authorization required
+			if (configuration && configuration.authorization) {
+				const localVarAuthorizationValue = typeof configuration.authorization === 'function'
+					? configuration.authorization('bearer')
+					: configuration.authorization;
+				if (localVarAuthorizationValue !== null) {
+					localVarHeaderParameter.set("Authorization", "Bearer " + localVarAuthorizationValue);
+				}
+			}
+			if (__params.fields !== undefined) {
+				/* array form */
+				localVarQueryParameter.append('fields', __params.fields.map(localVarArrayMapElement => escape(String(localVarArrayMapElement))).join(','));
+			}
+
+			if (__params.join !== undefined) {
+				/* array form exploded */
+				for (const localVarArrayElement of __params.join) {
+					if (localVarArrayElement !== undefined) {
+						localVarQueryParameter.append('join', localVarArrayElement !== null ? String(localVarArrayElement) : '');
+					}
+				}
+			}
+
+			if (__params.cache !== undefined) {
+				localVarQueryParameter.append('cache', String(__params.cache));
+			}
+
+			localVarRequestOptions.headers = localVarHeaderParameter;
+
+			const localVarQueryParameterString = localVarQueryParameter.toString();
+			if (localVarQueryParameterString) {
+				localVarPath += "?" + localVarQueryParameterString;
+			}
+			return {
+				url: localVarPath,
+				options: localVarRequestOptions,
+			};
+		},
+		/**
+		 * @summary Update a single EventEntity
+		 * @param {string} slug
+		 * @param {Api.EventEntity} request
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		updateOneBaseChoiceCastControllerEventEntity(slug: string, request: Api.EventEntity, options: RequestInit = {}): FetchArgs {
+			// verify required parameter 'slug' is not null or undefined
+			if (slug === null || slug === undefined) {
+				throw new RequiredError('slug', 'Required parameter slug was null or undefined when calling updateOneBaseChoiceCastControllerEventEntity.');
+			}
+			// verify required parameter 'request' is not null or undefined
+			if (request === null || request === undefined) {
+				throw new RequiredError('request', 'Required parameter request was null or undefined when calling updateOneBaseChoiceCastControllerEventEntity.');
+			}
+
+			let localVarPath = `/choice-cast/{slug}`
+				.replace('{slug}', encodeURIComponent(String(slug)));
+			const localVarPathQueryStart = localVarPath.indexOf("?");
+			const localVarRequestOptions: RequestInit = Object.assign({ method: 'PATCH' }, options);
+			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
+			const localVarQueryParameter = new URLSearchParams(localVarPathQueryStart !== -1 ? localVarPath.substring(localVarPathQueryStart + 1) : "");
+			if (localVarPathQueryStart !== -1) {
+				localVarPath = localVarPath.substring(0, localVarPathQueryStart);
+			}
+
+			// authentication bearer required
+			// http authorization required
+			if (configuration && configuration.authorization) {
+				const localVarAuthorizationValue = typeof configuration.authorization === 'function'
+					? configuration.authorization('bearer')
+					: configuration.authorization;
+				if (localVarAuthorizationValue !== null) {
+					localVarHeaderParameter.set("Authorization", "Bearer " + localVarAuthorizationValue);
+				}
+			}
+			localVarHeaderParameter.set('Content-Type', 'application/json');
+
+			localVarRequestOptions.headers = localVarHeaderParameter;
+	
+			if (request !== undefined) {
+				localVarRequestOptions.body = JSON.stringify(request || {});
+			}
+
+			const localVarQueryParameterString = localVarQueryParameter.toString();
+			if (localVarQueryParameterString) {
+				localVarPath += "?" + localVarQueryParameterString;
+			}
+			return {
+				url: localVarPath,
+				options: localVarRequestOptions,
+			};
+		},
+	}
+};
+
+/**
+ * ChoiceCastsApi - functional programming interface
+ * @export
+ */
+export const ChoiceCastsApiFp = function(configuration?: Configuration) {
+	return {
+		/**
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		choiceCastControllerGetChoiceCastCandidates(options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<ChoiceCastsApi.ChoiceCastControllerGetChoiceCastCandidatesResponse> {
+			const localVarFetchArgs = ChoiceCastsApiFetchParamCreator(configuration).choiceCastControllerGetChoiceCastCandidates(options);
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				if (response.status === 201) {
+					return {
+						status: response.status,
+						/* No content */
+					}
+				}
+				throw response;
+			};
+		},
+		/**
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		choiceCastControllerGetChoiceCastFromUser(options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<ChoiceCastsApi.ChoiceCastControllerGetChoiceCastFromUserResponse> {
+			const localVarFetchArgs = ChoiceCastsApiFetchParamCreator(configuration).choiceCastControllerGetChoiceCastFromUser(options);
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				if (response.status === 200) {
+					return {
+						status: response.status,
+						/* No content */
+					}
+				}
+				throw response;
+			};
+		},
+		/**
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		choiceCastControllerGetVotesForChoiceCast(options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<ChoiceCastsApi.ChoiceCastControllerGetVotesForChoiceCastResponse> {
+			const localVarFetchArgs = ChoiceCastsApiFetchParamCreator(configuration).choiceCastControllerGetVotesForChoiceCast(options);
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				if (response.status === 200) {
+					return {
+						status: response.status,
+						/* No content */
+					}
+				}
+				throw response;
+			};
+		},
+		/**
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		choiceCastControllerResetVote(options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<ChoiceCastsApi.ChoiceCastControllerResetVoteResponse> {
+			const localVarFetchArgs = ChoiceCastsApiFetchParamCreator(configuration).choiceCastControllerResetVote(options);
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				if (response.status === 200) {
+					return {
+						status: response.status,
+						/* No content */
+					}
+				}
+				throw response;
+			};
+		},
+		/**
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		choiceCastControllerSubmitChoiceCast(options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<ChoiceCastsApi.ChoiceCastControllerSubmitChoiceCastResponse> {
+			const localVarFetchArgs = ChoiceCastsApiFetchParamCreator(configuration).choiceCastControllerSubmitChoiceCast(options);
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				if (response.status === 200) {
+					return {
+						status: response.status,
+						/* No content */
+					}
+				}
+				throw response;
+			};
+		},
+		/**
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		choiceCastControllerVoteForChoiceCast(options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<ChoiceCastsApi.ChoiceCastControllerVoteForChoiceCastResponse> {
+			const localVarFetchArgs = ChoiceCastsApiFetchParamCreator(configuration).choiceCastControllerVoteForChoiceCast(options);
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				if (response.status === 200) {
+					return {
+						status: response.status,
+						/* No content */
+					}
+				}
+				throw response;
+			};
+		},
+		/**
+		 * @summary Create a single EventEntity
+		 * @param {Api.CreateChoiceCastDto} request
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		createOneBaseChoiceCastControllerEventEntity(request: Api.CreateChoiceCastDto, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<ChoiceCastsApi.CreateOneBaseChoiceCastControllerEventEntityResponse> {
+			const localVarFetchArgs = ChoiceCastsApiFetchParamCreator(configuration).createOneBaseChoiceCastControllerEventEntity(request, options);
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				if (response.status === 201) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.EventEntity,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 400) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 401) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 403) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 404) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 409) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 422) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 500) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				throw response;
+			};
+		},
+		/**
+		 * @summary Delete a single EventEntity
+		 * @param {string} slug
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		deleteOneBaseChoiceCastControllerEventEntity(slug: string, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<ChoiceCastsApi.DeleteOneBaseChoiceCastControllerEventEntityResponse> {
+			const localVarFetchArgs = ChoiceCastsApiFetchParamCreator(configuration).deleteOneBaseChoiceCastControllerEventEntity(slug, options);
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				if (response.status === 200) {
+					return {
+						status: response.status,
+						/* No content */
+					}
+				}
+				if (response.status === 400) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 401) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 403) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 404) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 409) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 422) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 500) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				throw response;
+			};
+		},
+		/**
+		 * @summary Retrieve multiple EventEntities
+		 * @param {string[]} [fields] <p>Selects resource fields. <a href="https://github.com/nestjsx/crud/wiki/Requests#select" target="_blank">Docs</a></p>
+		 * @param {string} [s] <p>Adds search condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#search" target="_blank">Docs</a></p>
+		 * @param {string[]} [filter] <p>Adds filter condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#filter" target="_blank">Docs</a></p>
+		 * @param {string[]} [or] <p>Adds OR condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#or" target="_blank">Docs</a></p>
+		 * @param {string[]} [sort] <p>Adds sort by field. <a href="https://github.com/nestjsx/crud/wiki/Requests#sort" target="_blank">Docs</a></p>
+		 * @param {string[]} [join] <p>Adds relational resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#join" target="_blank">Docs</a></p>
+		 * @param {number} [limit] <p>Limit amount of resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#limit" target="_blank">Docs</a></p>
+		 * @param {number} [offset] <p>Offset amount of resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#offset" target="_blank">Docs</a></p>
+		 * @param {number} [page] <p>Page portion of resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#page" target="_blank">Docs</a></p>
+		 * @param {number} [cache] <p>Reset cache (if was enabled). <a href="https://github.com/nestjsx/crud/wiki/Requests#cache" target="_blank">Docs</a></p>
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		getManyBaseChoiceCastControllerEventEntity(__params: ChoiceCastsApi.GetManyBaseChoiceCastControllerEventEntityParameters, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<ChoiceCastsApi.GetManyBaseChoiceCastControllerEventEntityResponse> {
+			const localVarFetchArgs = ChoiceCastsApiFetchParamCreator(configuration).getManyBaseChoiceCastControllerEventEntity(__params, options);
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				if (response.status === 200) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.GetManyEventEntityResponseDto | Api.EventEntity[],
+						}
+					}
+					throw response;
+				}
+				if (response.status === 400) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 401) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 403) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 404) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 409) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 422) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 500) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				throw response;
+			};
+		},
+		/**
+		 * @summary Retrieve a single EventEntity
+		 * @param {string} slug
+		 * @param {string[]} [fields] <p>Selects resource fields. <a href="https://github.com/nestjsx/crud/wiki/Requests#select" target="_blank">Docs</a></p>
+		 * @param {string[]} [join] <p>Adds relational resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#join" target="_blank">Docs</a></p>
+		 * @param {number} [cache] <p>Reset cache (if was enabled). <a href="https://github.com/nestjsx/crud/wiki/Requests#cache" target="_blank">Docs</a></p>
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		getOneBaseChoiceCastControllerEventEntity(__params: ChoiceCastsApi.GetOneBaseChoiceCastControllerEventEntityParameters, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<ChoiceCastsApi.GetOneBaseChoiceCastControllerEventEntityResponse> {
+			const localVarFetchArgs = ChoiceCastsApiFetchParamCreator(configuration).getOneBaseChoiceCastControllerEventEntity(__params, options);
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				if (response.status === 200) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.EventEntity,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 400) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 401) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 403) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 404) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 409) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 422) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 500) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				throw response;
+			};
+		},
+		/**
+		 * @summary Update a single EventEntity
+		 * @param {string} slug
+		 * @param {Api.EventEntity} request
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		updateOneBaseChoiceCastControllerEventEntity(slug: string, request: Api.EventEntity, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<ChoiceCastsApi.UpdateOneBaseChoiceCastControllerEventEntityResponse> {
+			const localVarFetchArgs = ChoiceCastsApiFetchParamCreator(configuration).updateOneBaseChoiceCastControllerEventEntity(slug, request, options);
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				if (response.status === 200) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.EventEntity,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 400) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 401) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 403) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 404) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 409) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 422) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 500) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.ApiErrorResponseDto,
+						}
+					}
+					throw response;
+				}
+				throw response;
+			};
+		},
+	}
+};
+
+/**
+ * ChoiceCastsApi - factory interface
+ * @export
+ */
+export const ChoiceCastsApiFactory: FactoryFunction<ChoiceCastsApiInterface> = function (configuration?: Configuration, basePath?: string, fetch?: FetchAPI) {
+	return new ChoiceCastsApi(configuration, basePath, fetch);
+};
+
+/**
+ * ChoiceCastsApi - interface
+ * @export
+ * @interface ChoiceCastsApi
+ */
+export interface ChoiceCastsApiInterface {
+	/**
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	choiceCastControllerGetChoiceCastCandidates(options?: RequestInit): Promise<ChoiceCastsApi.ChoiceCastControllerGetChoiceCastCandidatesResponse>
+
+	/**
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	choiceCastControllerGetChoiceCastFromUser(options?: RequestInit): Promise<ChoiceCastsApi.ChoiceCastControllerGetChoiceCastFromUserResponse>
+
+	/**
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	choiceCastControllerGetVotesForChoiceCast(options?: RequestInit): Promise<ChoiceCastsApi.ChoiceCastControllerGetVotesForChoiceCastResponse>
+
+	/**
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	choiceCastControllerResetVote(options?: RequestInit): Promise<ChoiceCastsApi.ChoiceCastControllerResetVoteResponse>
+
+	/**
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	choiceCastControllerSubmitChoiceCast(options?: RequestInit): Promise<ChoiceCastsApi.ChoiceCastControllerSubmitChoiceCastResponse>
+
+	/**
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	choiceCastControllerVoteForChoiceCast(options?: RequestInit): Promise<ChoiceCastsApi.ChoiceCastControllerVoteForChoiceCastResponse>
+
+	/**
+	 * @summary Create a single EventEntity
+	 * @param {Api.CreateChoiceCastDto} request
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	createOneBaseChoiceCastControllerEventEntity(request: Api.CreateChoiceCastDto, options?: RequestInit): Promise<ChoiceCastsApi.CreateOneBaseChoiceCastControllerEventEntityResponse>
+
+	/**
+	 * @summary Delete a single EventEntity
+	 * @param {string} slug
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	deleteOneBaseChoiceCastControllerEventEntity(slug: string, options?: RequestInit): Promise<ChoiceCastsApi.DeleteOneBaseChoiceCastControllerEventEntityResponse>
+
+	/**
+	 * @summary Retrieve multiple EventEntities
+	 * @param {string[]} [fields] <p>Selects resource fields. <a href="https://github.com/nestjsx/crud/wiki/Requests#select" target="_blank">Docs</a></p>
+	 * @param {string} [s] <p>Adds search condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#search" target="_blank">Docs</a></p>
+	 * @param {string[]} [filter] <p>Adds filter condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#filter" target="_blank">Docs</a></p>
+	 * @param {string[]} [or] <p>Adds OR condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#or" target="_blank">Docs</a></p>
+	 * @param {string[]} [sort] <p>Adds sort by field. <a href="https://github.com/nestjsx/crud/wiki/Requests#sort" target="_blank">Docs</a></p>
+	 * @param {string[]} [join] <p>Adds relational resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#join" target="_blank">Docs</a></p>
+	 * @param {number} [limit] <p>Limit amount of resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#limit" target="_blank">Docs</a></p>
+	 * @param {number} [offset] <p>Offset amount of resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#offset" target="_blank">Docs</a></p>
+	 * @param {number} [page] <p>Page portion of resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#page" target="_blank">Docs</a></p>
+	 * @param {number} [cache] <p>Reset cache (if was enabled). <a href="https://github.com/nestjsx/crud/wiki/Requests#cache" target="_blank">Docs</a></p>
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	getManyBaseChoiceCastControllerEventEntity(__params: ChoiceCastsApi.GetManyBaseChoiceCastControllerEventEntityParameters, options?: RequestInit): Promise<ChoiceCastsApi.GetManyBaseChoiceCastControllerEventEntityResponse>
+
+	/**
+	 * @summary Retrieve a single EventEntity
+	 * @param {string} slug
+	 * @param {string[]} [fields] <p>Selects resource fields. <a href="https://github.com/nestjsx/crud/wiki/Requests#select" target="_blank">Docs</a></p>
+	 * @param {string[]} [join] <p>Adds relational resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#join" target="_blank">Docs</a></p>
+	 * @param {number} [cache] <p>Reset cache (if was enabled). <a href="https://github.com/nestjsx/crud/wiki/Requests#cache" target="_blank">Docs</a></p>
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	getOneBaseChoiceCastControllerEventEntity(__params: ChoiceCastsApi.GetOneBaseChoiceCastControllerEventEntityParameters, options?: RequestInit): Promise<ChoiceCastsApi.GetOneBaseChoiceCastControllerEventEntityResponse>
+
+	/**
+	 * @summary Update a single EventEntity
+	 * @param {string} slug
+	 * @param {Api.EventEntity} request
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	updateOneBaseChoiceCastControllerEventEntity(slug: string, request: Api.EventEntity, options?: RequestInit): Promise<ChoiceCastsApi.UpdateOneBaseChoiceCastControllerEventEntityResponse>
+
+}
+
+/**
+ * ChoiceCastsApi - object-oriented interface
+ * @export
+ * @class ChoiceCastsApi
+ * @extends {BaseAPI}
+ */
+export class ChoiceCastsApi extends BaseAPI implements ChoiceCastsApiInterface {
+	/**
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	public choiceCastControllerGetChoiceCastCandidates(options?: RequestInit) {
+		return ChoiceCastsApiFp(this.configuration).choiceCastControllerGetChoiceCastCandidates(options)(this.fetch, this.basePath);
+	}
+
+	/**
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	public choiceCastControllerGetChoiceCastFromUser(options?: RequestInit) {
+		return ChoiceCastsApiFp(this.configuration).choiceCastControllerGetChoiceCastFromUser(options)(this.fetch, this.basePath);
+	}
+
+	/**
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	public choiceCastControllerGetVotesForChoiceCast(options?: RequestInit) {
+		return ChoiceCastsApiFp(this.configuration).choiceCastControllerGetVotesForChoiceCast(options)(this.fetch, this.basePath);
+	}
+
+	/**
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	public choiceCastControllerResetVote(options?: RequestInit) {
+		return ChoiceCastsApiFp(this.configuration).choiceCastControllerResetVote(options)(this.fetch, this.basePath);
+	}
+
+	/**
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	public choiceCastControllerSubmitChoiceCast(options?: RequestInit) {
+		return ChoiceCastsApiFp(this.configuration).choiceCastControllerSubmitChoiceCast(options)(this.fetch, this.basePath);
+	}
+
+	/**
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	public choiceCastControllerVoteForChoiceCast(options?: RequestInit) {
+		return ChoiceCastsApiFp(this.configuration).choiceCastControllerVoteForChoiceCast(options)(this.fetch, this.basePath);
+	}
+
+	/**
+	 * @summary Create a single EventEntity
+	 * @param {Api.CreateChoiceCastDto} request
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	public createOneBaseChoiceCastControllerEventEntity(request: Api.CreateChoiceCastDto, options?: RequestInit) {
+		return ChoiceCastsApiFp(this.configuration).createOneBaseChoiceCastControllerEventEntity(request, options)(this.fetch, this.basePath);
+	}
+
+	/**
+	 * @summary Delete a single EventEntity
+	 * @param {string} slug
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	public deleteOneBaseChoiceCastControllerEventEntity(slug: string, options?: RequestInit) {
+		return ChoiceCastsApiFp(this.configuration).deleteOneBaseChoiceCastControllerEventEntity(slug, options)(this.fetch, this.basePath);
+	}
+
+	/**
+	 * @summary Retrieve multiple EventEntities
+	 * @param {string[]} [fields] <p>Selects resource fields. <a href="https://github.com/nestjsx/crud/wiki/Requests#select" target="_blank">Docs</a></p>
+	 * @param {string} [s] <p>Adds search condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#search" target="_blank">Docs</a></p>
+	 * @param {string[]} [filter] <p>Adds filter condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#filter" target="_blank">Docs</a></p>
+	 * @param {string[]} [or] <p>Adds OR condition. <a href="https://github.com/nestjsx/crud/wiki/Requests#or" target="_blank">Docs</a></p>
+	 * @param {string[]} [sort] <p>Adds sort by field. <a href="https://github.com/nestjsx/crud/wiki/Requests#sort" target="_blank">Docs</a></p>
+	 * @param {string[]} [join] <p>Adds relational resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#join" target="_blank">Docs</a></p>
+	 * @param {number} [limit] <p>Limit amount of resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#limit" target="_blank">Docs</a></p>
+	 * @param {number} [offset] <p>Offset amount of resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#offset" target="_blank">Docs</a></p>
+	 * @param {number} [page] <p>Page portion of resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#page" target="_blank">Docs</a></p>
+	 * @param {number} [cache] <p>Reset cache (if was enabled). <a href="https://github.com/nestjsx/crud/wiki/Requests#cache" target="_blank">Docs</a></p>
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	public getManyBaseChoiceCastControllerEventEntity(__params: ChoiceCastsApi.GetManyBaseChoiceCastControllerEventEntityParameters, options?: RequestInit) {
+		return ChoiceCastsApiFp(this.configuration).getManyBaseChoiceCastControllerEventEntity(__params, options)(this.fetch, this.basePath);
+	}
+
+	/**
+	 * @summary Retrieve a single EventEntity
+	 * @param {string} slug
+	 * @param {string[]} [fields] <p>Selects resource fields. <a href="https://github.com/nestjsx/crud/wiki/Requests#select" target="_blank">Docs</a></p>
+	 * @param {string[]} [join] <p>Adds relational resources. <a href="https://github.com/nestjsx/crud/wiki/Requests#join" target="_blank">Docs</a></p>
+	 * @param {number} [cache] <p>Reset cache (if was enabled). <a href="https://github.com/nestjsx/crud/wiki/Requests#cache" target="_blank">Docs</a></p>
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	public getOneBaseChoiceCastControllerEventEntity(__params: ChoiceCastsApi.GetOneBaseChoiceCastControllerEventEntityParameters, options?: RequestInit) {
+		return ChoiceCastsApiFp(this.configuration).getOneBaseChoiceCastControllerEventEntity(__params, options)(this.fetch, this.basePath);
+	}
+
+	/**
+	 * @summary Update a single EventEntity
+	 * @param {string} slug
+	 * @param {Api.EventEntity} request
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	public updateOneBaseChoiceCastControllerEventEntity(slug: string, request: Api.EventEntity, options?: RequestInit) {
+		return ChoiceCastsApiFp(this.configuration).updateOneBaseChoiceCastControllerEventEntity(slug, request, options)(this.fetch, this.basePath);
+	}
+
+}
 export namespace CompetitionsApi {
 	export type CompetitionControllerFindChessMatchResultResponse =
 		| CompetitionControllerFindChessMatchResult400Response

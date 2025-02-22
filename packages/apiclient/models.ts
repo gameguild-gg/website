@@ -368,6 +368,40 @@ export namespace Api {
 	
 	}
 
+	export interface CreateChoiceCastDto {
+		slug: string;
+		title: string;
+		summary: string;
+		body: string;
+		visibility: Api.CreateChoiceCastDto.Visibility;
+	}
+	
+	/**
+	 * @export
+	 * @namespace CreateChoiceCastDto
+	 */
+	export namespace CreateChoiceCastDto {
+		export type Visibility =
+			'DRAFT' |
+			'PUBLISHED' |
+			'FUTURE' |
+			'PENDING' |
+			'PRIVATE' |
+			'TRASH'
+		
+		export namespace Visibility {
+			export enum Enum {
+				DRAFT = 'DRAFT',
+				PUBLISHED = 'PUBLISHED',
+				FUTURE = 'FUTURE',
+				PENDING = 'PENDING',
+				PRIVATE = 'PRIVATE',
+				TRASH = 'TRASH'
+			}
+		}
+	
+	}
+
 	export interface CreateManyQuizEntityDto {
 		bulk: Api.QuizEntity[];
 	}
@@ -445,6 +479,46 @@ export namespace Api {
 	export interface EthereumSigninValidateRequestDto {
 		address: string;
 		signature: string;
+	}
+
+	export interface EventEntity {
+		id?: string;
+		createdAt: string;
+		updatedAt: string;
+		owner?: Api.UserEntity;
+		editors?: Api.UserEntity[];
+		slug: string;
+		title: string;
+		summary?: string;
+		body?: string;
+		visibility?: Api.EventEntity.Visibility;
+		thumbnail?: Api.ImageEntity;
+	}
+	
+	/**
+	 * @export
+	 * @namespace EventEntity
+	 */
+	export namespace EventEntity {
+		export type Visibility =
+			'DRAFT' |
+			'PUBLISHED' |
+			'FUTURE' |
+			'PENDING' |
+			'PRIVATE' |
+			'TRASH'
+		
+		export namespace Visibility {
+			export enum Enum {
+				DRAFT = 'DRAFT',
+				PUBLISHED = 'PUBLISHED',
+				FUTURE = 'FUTURE',
+				PENDING = 'PENDING',
+				PRIVATE = 'PRIVATE',
+				TRASH = 'TRASH'
+			}
+		}
+	
 	}
 
 	export interface FormLongAnswerDto {
@@ -610,6 +684,30 @@ export namespace Api {
 		/**
 		 * @type {number}
 		 * @memberof GetManyCourseEntityResponseDto
+		 */
+		pageCount: number;
+	}
+
+	export interface GetManyEventEntityResponseDto {
+		data: Api.EventEntity[];
+		/**
+		 * @type {number}
+		 * @memberof GetManyEventEntityResponseDto
+		 */
+		count: number;
+		/**
+		 * @type {number}
+		 * @memberof GetManyEventEntityResponseDto
+		 */
+		total: number;
+		/**
+		 * @type {number}
+		 * @memberof GetManyEventEntityResponseDto
+		 */
+		page: number;
+		/**
+		 * @type {number}
+		 * @memberof GetManyEventEntityResponseDto
 		 */
 		pageCount: number;
 	}
