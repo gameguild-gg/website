@@ -20,6 +20,7 @@ import { DataSource } from 'typeorm';
 import { AssetModule } from './asset';
 import { MulterModule } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
@@ -46,6 +47,7 @@ import { diskStorage } from 'multer';
         max: 10000, // 10k requests in 5 minutes is a nice limit
       }),
     }),
+    ScheduleModule.forRoot(),
     CommonModule,
     AuthModule,
     UserModule,

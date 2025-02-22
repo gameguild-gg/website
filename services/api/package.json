@@ -58,6 +58,7 @@
     "@nestjs/jwt": "9.0.0",
     "@nestjs/passport": "9.0.3",
     "@nestjs/platform-express": "9.4.3",
+    "@nestjs/schedule": "^4.1.2",
     "@nestjs/swagger": "^7.4.0",
     "@nestjs/typeorm": "9.0.1",
     "@openapi-generator-plus/typescript-fetch-client-generator2": "^0.12.0",

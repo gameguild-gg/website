@@ -40,4 +40,9 @@ export const EventSeedData: IEventTypeSeed[] = [
     slug: 'workshop',
     description: '',
   },
+  {
+    title: 'Choice Cast',
+    slug: 'choice-cast',
+    description: '',
+  },
 ];

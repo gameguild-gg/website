@@ -20,6 +20,25 @@ Table ChapterEntity {
   lectures LectureEntity
 }
 
+Table choicecast_editors_user {
+  choicecast_id uuid
+  user_id uuid
+}
+
+Table ChoiceCastEntity {
+  body text
+  createdAt timestamp
+  id uuid
+  owner UserEntity
+  slug varchar
+  summary string
+  thumbnail ImageEntity
+  title varchar
+  updatedAt timestamp
+  visibility enum
+  editors UserEntity
+}
+
 Table CompetitionMatchEntity {
   createdAt timestamp
   id uuid
@@ -95,6 +114,11 @@ Table CourseEntity {
   chapters ChapterEntity
   editors UserEntity
   lectures LectureEntity
+}
+
+Table event_editors_user {
+  event_id uuid
+  user_id uuid
 }
 
 Table EventEntity {
@@ -375,6 +399,9 @@ Ref: ChapterEntity.editors <> UserEntity.id
 Ref: ChapterEntity.lectures < LectureEntity.chapter
 Ref: ChapterEntity.owner > UserEntity.id
 Ref: ChapterEntity.thumbnail > ImageEntity.id
+Ref: ChoiceCastEntity.editors <> UserEntity.id
+Ref: ChoiceCastEntity.owner > UserEntity.id
+Ref: ChoiceCastEntity.thumbnail > ImageEntity.id
 Ref: CompetitionMatchEntity.p1submission > CompetitionSubmissionEntity.matchesAsP1
 Ref: CompetitionMatchEntity.p2submission > CompetitionSubmissionEntity.matchesAsP2
 Ref: CompetitionMatchEntity.run > CompetitionRunEntity.matches
