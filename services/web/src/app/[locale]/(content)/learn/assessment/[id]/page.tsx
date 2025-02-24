@@ -11,7 +11,11 @@ import { Sun, Moon, ZapOff, ChevronLeft } from 'lucide-react'
 import { HierarchyBasev1_0_0 } from '@/lib/interface-base/structure.base.v1.0.0'
 import PageHeader from '@/components/learn/PageHeader'
 
-export default function AssessmentPage({ params }: { params: { id: string } }) {
+export default function AssessmentPage({ params, hierarchy = {
+  idHierarchy: [],
+  idUser: "",
+  idRole: ""
+} }: { params: { id: string }, hierarchy?: HierarchyBasev1_0_0 }) {
   const [assessment, setAssessment] = useState<AssessmentBasev1_0_0 | null>(null)
   const [allQuestions, setAllQuestions] = useState<QuestionBasev1_0_0[]>([])
   const [currentTabQuestions, setCurrentTabQuestions] = useState<QuestionBasev1_0_0[]>([])
@@ -24,7 +28,7 @@ export default function AssessmentPage({ params }: { params: { id: string } }) {
   const role = searchParams.get('role')
   const courseId = searchParams.get('courseId')
   const moduleId = searchParams.get('moduleId')
-  const [mode, setMode] = useState<'light' | 'dark' | 'high-contrast'>('dark')
+  const [mode, setMode] = useState<'light' | 'dark' | 'high-contrast'>(hierarchy.colorMode)
   const [activeTab, setActiveTab] = useState(0);
 
   const fetchData = useCallback(async () => {
@@ -173,12 +177,13 @@ export default function AssessmentPage({ params }: { params: { id: string } }) {
           backLink={`/learn/course/${courseId}?userId=${userId}&role=${role}`}
           userId={userId}
           mode={mode}
+          setMode={setMode}
           onModeToggle={toggleMode}
         />
 
         <div className="bg-white dark:bg-gray-700 high-contrast:bg-black p-4 rounded-lg shadow-md mb-8">
-          <p className="text-lg dark:text-gray-300 high-contrast:text-yellow-300 mb-4">{assessment.description}</p>
-          <p className="text-gray-700 dark:text-gray-300 high-contrast:text-yellow-300 mb-2">
+          <p className="text-lg text-gray-700 dark:text-gray-700 high-contrast:text-yellow-300 mb-4">{assessment.description}</p>
+          <p className="text-gray-700 dark:text-gray-700 high-contrast:text-yellow-300 mb-2">
             Total Score: {totalScore} ({totalCurrentScore} currently)
           </p>
           <p className="text-gray-700 dark:text-gray-300 high-contrast:text-yellow-300 mb-2">

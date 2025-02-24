@@ -8,10 +8,17 @@ interface PageHeaderProps {
   backLink?: string // Make backLink optional
   userId: string | null
   mode: 'light' | 'dark' | 'high-contrast'
+  setMode: (mode: "light" | "dark" | "high-contrast") => void
   onModeToggle: () => void
 }
 
-export default function PageHeader({ title, backLink, userId, mode, onModeToggle }: PageHeaderProps) {
+export default function PageHeader({ title, backLink, userId, mode, setMode}: PageHeaderProps) {
+  const onModeToggle = () => {
+    const modes: ("light" | "dark" | "high-contrast")[] = ["light", "dark", "high-contrast"]
+    const currentIndex = modes.indexOf(mode)
+    const nextMode = modes[(currentIndex + 1) % modes.length]
+    setMode(nextMode)
+  }
   return (
     <div className="flex items-center mb-4">
       {backLink && ( // Conditionally render the back button

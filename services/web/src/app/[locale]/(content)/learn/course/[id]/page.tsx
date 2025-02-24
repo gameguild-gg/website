@@ -9,8 +9,13 @@ import { CourseBasev1_0_0 } from '@/lib/interface-base/course.base.v1.0.0'
 import { LessonBasev1_0_0 } from '@/lib/interface-base/lesson.base.v1.0.0'
 import { ChevronRight, Sun, Moon, ZapOff, FileText, CheckCircle, ChevronLeft } from 'lucide-react'
 import PageHeader from '@/components/learn/PageHeader' // Import the new component
+import { HierarchyBasev1_0_0 } from '@/lib/interface-base/structure.base.v1.0.0'
 
-export default function CoursePage({ params }: { params: { id: string } }) {
+export default function CoursePage({ params, hierarchy = {
+  idHierarchy: [],
+  idUser: "",
+  idRole: ""
+} }: { params: { id: string }, hierarchy?: HierarchyBasev1_0_0 }) {
   const [course, setCourse] = useState<CourseBasev1_0_0 | null>(null)
   const [modules, setModules] = useState<ModuleBasev1_0_0[]>([])
   const [assessments, setAssessments] = useState<{ [key: number]: AssessmentBasev1_0_0 }>({})
@@ -21,7 +26,7 @@ export default function CoursePage({ params }: { params: { id: string } }) {
   const searchParams = useSearchParams()
   const userId = searchParams.get('userId')
   const role = searchParams.get('role')
-  const [mode, setMode] = useState<'light' | 'dark' | 'high-contrast'>('dark')
+  const [mode, setMode] = useState<'light' | 'dark' | 'high-contrast'>(hierarchy.colorMode)
 
   useEffect(() => {
     const fetchData = async () => {
@@ -148,6 +153,7 @@ export default function CoursePage({ params }: { params: { id: string } }) {
           userId={userId}
           mode={mode}
           onModeToggle={toggleMode}
+          setMode={setMode}
         />
 
         <h2 className="text-xl font-semibold mb-4">Course Modules</h2>
