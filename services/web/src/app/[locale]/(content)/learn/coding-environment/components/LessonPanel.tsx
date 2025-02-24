@@ -4,9 +4,9 @@ import type { QuestionBasev1_0_0 } from "@/lib/interface-base/question.base.v1.0
 import { Button } from "@/components/learn/ui/button";
 import CustomScrollbar from "./CustomScrollbar";
 import type { HierarchyBasev1_0_0 } from "@/lib/interface-base/structure.base.v1.0.0";
-import { ChevronDown, ChevronRight, FileText, Folder, FileCode, FileJson, FileCodeIcon as FileCss, Coffee, FileType, Gem, Moon, FileTerminal, Hash, CogIcon } from 'lucide-react';
-import { DiCss3, DiHtml5, DiJava, DiPerl, DiPython, DiRuby, DiScriptcs } from "react-icons/di";
-import { SiC, SiCashapp, SiCplusplus, SiJavascript, SiJpeg, SiJson, SiLua, SiPython, SiRust, SiSvg, SiTypescript, SiWasmer, SiWebassembly, SiXml } from "react-icons/si";
+import { ChevronDown, FileText, Folder} from 'lucide-react';
+//import { DiCss3, DiHtml5, DiJava, DiPerl, DiRuby, DiScriptcs } from "react-icons/di";
+//import { SiC, SiCashapp, SiCplusplus, SiCss3, SiHtml5, SiJavascript, SiJpeg, SiJson, SiLua, SiOracle, SiPerl, SiPython, SiRuby, SiRust, SiSvg, SiTypescript, SiWebassembly, SiXml } from "react-icons/si";
 import { Resizable } from "re-resizable";
 import type { CodeFile } from "../types/codeEditor";
 import { PanelGroup, Panel, PanelResizeHandle } from "react-resizable-panels";
@@ -40,42 +40,42 @@ const FileIcon = ({ file, mode }: { file: File; mode: string }) => {
     const extension = file.name.split(".").pop()?.toLowerCase()
     switch (extension) {
       case "js":
-        return <SiJavascript className={`w-4 h-4 ${mode === "light" ? "text-yellow-400" : mode === "dark" ? "text-yellow-400" : "text-yellow-400"}`} />
+        return <FileText className={`w-4 h-4 ${mode === "light" ? "text-yellow-400" : mode === "dark" ? "text-yellow-400" : "text-yellow-400"}`} />
       case "ts":
-        return <SiTypescript className={`w-4 h-4 ${mode === "light" ? "text-blue-400" : mode === "dark" ? "text-blue-400" : "text-yellow-400"}`} />
+        return <FileText className={`w-4 h-4 ${mode === "light" ? "text-blue-400" : mode === "dark" ? "text-blue-400" : "text-yellow-400"}`} />
       case "json":
-        return <SiJson className={`w-4 h-4 ${mode === "light" ? "text-green-400" : mode === "dark" ? "text-green-400" : "text-yellow-400"}`} />
+        return <FileText className={`w-4 h-4 ${mode === "light" ? "text-green-400" : mode === "dark" ? "text-green-400" : "text-yellow-400"}`} />
       case "xml":
-        return <SiXml className={`w-4 h-4 ${mode === "light" ? "text-green-400" : mode === "dark" ? "text-green-400" : "text-yellow-400"}`} />
+        return <FileText className={`w-4 h-4 ${mode === "light" ? "text-green-400" : mode === "dark" ? "text-green-400" : "text-yellow-400"}`} />
       case "svg":
-        return <SiSvg className={`w-4 h-4 ${mode === "light" ? "text-green-400" : mode === "dark" ? "text-green-400" : "text-yellow-400"}`} />
+        return <FileText className={`w-4 h-4 ${mode === "light" ? "text-green-400" : mode === "dark" ? "text-green-400" : "text-yellow-400"}`} />
       case "jpeg":
       case "jpg":
-        return <SiJpeg className={`w-4 h-4 ${mode === "light" ? "text-green-400" : mode === "dark" ? "text-green-400" : "text-yellow-400"}`} />
+        return <FileText className={`w-4 h-4 ${mode === "light" ? "text-green-400" : mode === "dark" ? "text-green-400" : "text-yellow-400"}`} />
       case "html":
-        return <DiHtml5 className={`w-4 h-4 ${mode === "light" ? "text-green-400" : mode === "dark" ? "text-green-400" : "text-yellow-400"}`} />
+        return <FileText className={`w-4 h-4 ${mode === "light" ? "text-green-400" : mode === "dark" ? "text-green-400" : "text-yellow-400"}`} />
       case "css":
-        return <DiCss3 className={`w-4 h-4 ${mode === "light" ? "text-green-400" : mode === "dark" ? "text-green-400" : "text-yellow-400"}`} />
+        return <FileText className={`w-4 h-4 ${mode === "light" ? "text-green-400" : mode === "dark" ? "text-green-400" : "text-yellow-400"}`} />
       case "py":
-        return <SiPython className={`w-4 h-4 ${mode === "light" ? "text-blue-400" : mode === "dark" ? "text-blue-400" : "text-yellow-400"}`} />
+        return <FileText className={`w-4 h-4 ${mode === "light" ? "text-blue-400" : mode === "dark" ? "text-blue-400" : "text-yellow-400"}`} />
       case "rb":
-        return <DiRuby className={`w-4 h-4 ${mode === "light" ? "text-red-500" : mode === "dark" ? "text-red-400" : "text-yellow-400"}`} />
+        return <FileText className={`w-4 h-4 ${mode === "light" ? "text-red-500" : mode === "dark" ? "text-red-400" : "text-yellow-400"}`} />
       case "lua":
-        return <SiLua className={`w-4 h-4 ${mode === "light" ? "text-blue-400" : mode === "dark" ? "text-blue-400" : "text-yellow-400"}`} />
+        return <FileText className={`w-4 h-4 ${mode === "light" ? "text-blue-400" : mode === "dark" ? "text-blue-400" : "text-yellow-400"}`} />
       case "c":
-        return <SiC className={`w-4 h-4 ${mode === "light" ? "text-gray-400" : mode === "dark" ? "text-gray-400" : "text-yellow-400"}`} />
+        return <FileText className={`w-4 h-4 ${mode === "light" ? "text-gray-400" : mode === "dark" ? "text-gray-400" : "text-yellow-400"}`} />
       case "cpp":
-        return <SiCplusplus className={`w-4 h-4 ${mode === "light" ? "text-gray-400" : mode === "dark" ? "text-gray-400" : "text-yellow-400"}`} />
+        return <FileText className={`w-4 h-4 ${mode === "light" ? "text-gray-400" : mode === "dark" ? "text-gray-400" : "text-yellow-400"}`} />
       case "rs":
-        return <SiRust className={`w-4 h-4 ${mode === "light" ? "text-amber-600" : mode === "dark" ? "text-amber-600" : "text-yellow-400"}`} />
+        return <FileText className={`w-4 h-4 ${mode === "light" ? "text-amber-600" : mode === "dark" ? "text-amber-600" : "text-yellow-400"}`} />
       case "java":
-        return <DiJava className={`w-4 h-4 ${mode === "light" ? "text-blue-700" : mode === "dark" ? "text-blue-400" : "text-yellow-400"}`} />
+        return <FileText className={`w-4 h-4 ${mode === "light" ? "text-blue-700" : mode === "dark" ? "text-blue-400" : "text-yellow-400"}`} />
       case "cs":
-        return <DiScriptcs className={`w-4 h-4 ${mode === "light" ? "text-purple-600" : mode === "dark" ? "text-purple-400" : "text-yellow-400"}`} />
+        return <FileText className={`w-4 h-4 ${mode === "light" ? "text-purple-600" : mode === "dark" ? "text-purple-400" : "text-yellow-400"}`} />
       case "perl":
-        return <DiPerl className={`w-4 h-4 ${mode === "light" ? "text-amber-400" : mode === "dark" ? "text-amber-400" : "text-yellow-400"}`} />
+        return <FileText className={`w-4 h-4 ${mode === "light" ? "text-amber-400" : mode === "dark" ? "text-amber-400" : "text-yellow-400"}`} />
       case "wasm":
-        return <SiWebassembly className={`w-4 h-4 ${mode === "light" ? "text-blue-400" : mode === "dark" ? "text-blue-400" : "text-yellow-400"}`} />
+        return <FileText className={`w-4 h-4 ${mode === "light" ? "text-blue-400" : mode === "dark" ? "text-blue-400" : "text-yellow-400"}`} />
       default:
         return <FileText className={`w-4 h-4 ${mode === "light" ? "text-gray-400" : mode === "dark" ? "text-gray-400" : "text-yellow-400"}`} />
     }
@@ -283,4 +283,3 @@ export default function LessonPanel({
     </div>
   )
 }
-

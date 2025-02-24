@@ -1,9 +1,0 @@
-{
-  "id": 1,
-  "idLessons": [1],
-  "idAssessments": [1, 2],
-  "title": "Introduction to JavaScript Programming",
-  "description": "This module introduces basic to intermediate JavaScript programming concepts through a series of coding assessments.",
-  "type": "assignments"
-}
-
