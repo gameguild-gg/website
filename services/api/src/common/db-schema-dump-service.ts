@@ -1,9 +1,11 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import * as fs from 'fs';
 
 @Injectable()
 export class SchemaDumpService implements OnModuleInit {
+  private logger = new Logger(SchemaDumpService.name);
+
   constructor(private readonly dataSource: DataSource) {}
 
   async onModuleInit() {
@@ -13,9 +15,9 @@ export class SchemaDumpService implements OnModuleInit {
     try {
       const schemaSQL = await this.getSchemaDump(queryRunner);
       fs.writeFileSync('schema_dump.sql', schemaSQL);
-      console.log('Database schema dumped to schema_dump.sql');
+      this.logger.verbose('Database schema dumped to schema_dump.sql');
     } catch (error) {
-      console.error('Error generating schema dump:', error);
+      this.logger.error('Error generating schema dump:', error);
     } finally {
       await queryRunner.release();
     }
@@ -53,31 +55,31 @@ export class SchemaDumpService implements OnModuleInit {
     for (const { tablename } of tables) {
       const createTableResult = await queryRunner.query(
         `
-          SELECT 'CREATE TABLE "' || table_name || '" (\n' ||
-                 string_agg(
-                         '  "' || column_name || '" ' ||
-                         CASE
-                             WHEN udt_name IN (SELECT typname FROM pg_type WHERE typtype = 'e')
-                                 THEN '"' || udt_name || '"' -- Fix ENUM types
-                             ELSE data_type
-                             END ||
-                         CASE
-                             WHEN character_maximum_length IS NOT NULL
-                                 THEN '(' || character_maximum_length || ')'
-                             ELSE '' END ||
-                         CASE WHEN is_nullable = 'NO' THEN ' NOT NULL' ELSE '' END ||
-                         CASE
-                             WHEN column_default IS NOT NULL
-                                 THEN ' DEFAULT ' || column_default
-                             ELSE '' END,
-                         ',\n'
-                 ) ||
-                 '\n);' AS create_statement
-          FROM information_schema.columns
-          WHERE table_schema = 'public'
-            AND table_name = $1
-          GROUP BY table_name;
-      `,
+            SELECT 'CREATE TABLE "' || table_name || '" (\n' ||
+                   string_agg(
+                           '  "' || column_name || '" ' ||
+                           CASE
+                               WHEN udt_name IN (SELECT typname FROM pg_type WHERE typtype = 'e')
+                                   THEN '"' || udt_name || '"' -- Fix ENUM types
+                               ELSE data_type
+                               END ||
+                           CASE
+                               WHEN character_maximum_length IS NOT NULL
+                                   THEN '(' || character_maximum_length || ')'
+                               ELSE '' END ||
+                           CASE WHEN is_nullable = 'NO' THEN ' NOT NULL' ELSE '' END ||
+                           CASE
+                               WHEN column_default IS NOT NULL
+                                   THEN ' DEFAULT ' || column_default
+                               ELSE '' END,
+                           ',\n'
+                   ) ||
+                   '\n);' AS create_statement
+            FROM information_schema.columns
+            WHERE table_schema = 'public'
+              AND table_name = $1
+            GROUP BY table_name;
+        `,
         [tablename],
       );
 
@@ -88,10 +90,10 @@ export class SchemaDumpService implements OnModuleInit {
       // Step 3: Generate constraints (Primary Keys, Foreign Keys)
       const constraintsResult = await queryRunner.query(
         `
-          SELECT conname AS constraint_name, pg_get_constraintdef(oid) AS constraint_def
-          FROM pg_constraint
-          WHERE conrelid::regclass::text = $1;
-      `,
+            SELECT conname AS constraint_name, pg_get_constraintdef(oid) AS constraint_def
+            FROM pg_constraint
+            WHERE conrelid::regclass::text = $1;
+        `,
         [tablename],
       );
 
@@ -103,10 +105,10 @@ export class SchemaDumpService implements OnModuleInit {
       // Step 4: Generate indexes
       const indexesResult = await queryRunner.query(
         `
-          SELECT indexdef
-          FROM pg_indexes
-          WHERE tablename = $1;
-      `,
+            SELECT indexdef
+            FROM pg_indexes
+            WHERE tablename = $1;
+        `,
         [tablename],
       );
 

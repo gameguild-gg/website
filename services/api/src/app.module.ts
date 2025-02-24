@@ -21,6 +21,7 @@ import { AssetModule } from './asset';
 import { MulterModule } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { SchemaDumpService } from './common/db-schema-dump-service';
+import { CleanupService } from './common/cleanup-unused-db-tables';
 
 @Module({
   imports: [
@@ -76,6 +77,7 @@ import { SchemaDumpService } from './common/db-schema-dump-service';
       inject: [DataSource],
     },
     SchemaDumpService,
+    CleanupService,
   ],
 })
 export class AppModule {}
