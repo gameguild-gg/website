@@ -63,7 +63,7 @@ for i in range(10, 0, -2):  # Generates numbers 10, 8, 6, 4, 2
 }
 !!!
 
-### 2. For in list
+## 2. For in list
 
 Iterate directly over each element in a list:
 
@@ -76,7 +76,7 @@ for fruit in fruits:
 - Each loop iteration gives you the next element in the list.
 - This method is simple and very readable.
 
-### 3. For in enumerate with index
+## 3. For in enumerate with index
 
 When you need both the element and its index, `enumerate()` is very handy:
 
@@ -97,7 +97,7 @@ for index, fruit in enumerate(fruits):
 }
 !!!
 
-### 4. For in sorted with ranges
+## 4. For in sorted with ranges
 
 You can use `sorted()` to sort a list and then select a subset. For example, suppose you have a list of grades and want to print the three lowest grades:
 
@@ -110,85 +110,11 @@ for grade in sorted(grades)[:3]: # slice the first 3 elements
 - `sorted()` returns a new sorted list without modifying the original.
 - Slicing (`sorted_grades[:3]`) lets you select only the first three elements, which are the lowest in this case.
 
-### 5. Nested Loops
-
-Nested loops are loops within loops. They are useful when you work with multi-dimensional data structures like matrices or grids.
-
-``` python
-matrix = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
-for row in matrix:
-    for value in row:
-        print(value, end=" ") # prints without newline
-    print()  # Newline after each row
-```
-
-- The outer loop iterates over each row.
-- The inner loop iterates over each element within the current row.
-- Nested loops increase the time complexity, so use them judiciously.
-
-!!! code
-{
-"description": "Implement a function to print a 2D list (matrix) in a grid format. If the number is odd, print it doubled. If even, print it divided by 2.",
-"language": "python",
-"code": "def print_matrix(matrix):\n    # your code goes here\n\n# do not modify the code below\nprint_matrix([[1, 2, 3], [4, 5, 6], [7, 8, 9]])",
-"expectedOutput": "2 1.0 6 2.0 10 3.0 14 4.0 18"
-}
-!!!
-
-### 6. Breaking Nested Loops
-
-Using the `break` statement in a nested loop only exits the innermost loop. To break out of multiple loops at once, consider these approaches:
-
-#### 6.1 Using a Flag
-
-``` python
-found = False
-for i in range(5):
-    for j in range(5):
-        if i * j > 6:
-            found = True
-            break  # Exits the inner loop
-    if found:
-        break  # Exits the outer loop
-print("Exited nested loops using a flag.")
-```
-
-#### 6.2 Using a Function return
-
-Wrapping your nested loops in a function allows you to exit all loops at once by using return:
-
-``` python
-def find_product_exceeding(limit):
-    for i in range(5):
-        for j in range(5):
-            if i * j > limit:
-                return (i, j)  # Immediately exits the function
-    return None
-
-result = find_product_exceeding(6)
-if result:
-    print(f"Found a pair {result} where the product exceeds 6.")
-else:
-    print("No such pair found.")
-```
-
-- Flag Method: Works but can clutter your code.
-- Function with `return`: More elegant and encapsulates the loop logic, making your code easier to manage and test.
-
-!!! code
-{
-"description": "Implement a function to find and return the first pair of numbers in a list that it sum is exactly a target.",
-"language": "python",
-"code": "def find_pair_with_sum(numbers, target):\n    # your code goes here\n\n# do not modify the code below\nprint(find_pair_with_sum([1, 2, 3, 4, 5], 7))",
-"expectedOutput": "(2, 5)"
-}
-!!!
-
-### 7. Loop Patterns
+## 5. Loop Patterns
 
 Beyond the basic loop constructs, several common patterns help you solve recurring problems more elegantly. These include accumulators, filtering, flags, and more.
 
-#### 7.1 Accumulator Pattern
+### 5.1 Accumulator Pattern
 
 The accumulator pattern is used to combine or sum up values from a loop. This pattern is useful for aggregating data, such as summing numbers or concatenating strings.
 
@@ -218,7 +144,7 @@ print(sentence.strip())
 }
 !!!
 
-#### 7.2 Filtering Pattern
+### 5.2 Filtering Pattern
 
 The filtering pattern involves iterating over a sequence and selecting only those elements that meet a specified condition. Often, you store the filtered elements in a new list.
 
@@ -241,7 +167,7 @@ print("Even numbers:", evens)
 }
 !!!
 
-#### 7.3 Search or Flag Pattern
+### 5.3 Search or Flag Pattern
 
 The flag pattern uses a boolean variable (flag) to signal when a condition has been met during iteration. This is especially useful for terminating loops early when a desired condition occurs.
 
@@ -269,7 +195,7 @@ else:
 }
 !!!
 
-#### 7.4 Counting Pattern
+### 5.4 Counting Pattern
 
 Count how many times a particular condition is met.
 
@@ -291,7 +217,7 @@ print("Number of reds:", count_red)  # Output: Number of reds: 3
 }
 !!!
 
-#### 7.5 Building a Collection with transformation
+### 5.5 Building a Collection with transformation
 
 Transform each element during iteration and add it to a new list.
 
@@ -303,7 +229,7 @@ for number in numbers:
 print("Squared numbers:", squared)  # Output: Squared numbers: [1, 4, 9, 16, 25]
 ```
 
-#### 7.6 Early Exit
+### 5.6 Early Exit
 
 Stop processing as soon as a condition is met by encapsulating your loop in a function.
 
@@ -328,7 +254,7 @@ print("First negative number:", first_negative)
 }
 !!!
 
-#### Find the max or min value
+### 5.7 Find the max or min value
 
 Find the maximum or minimum value in a list.
 

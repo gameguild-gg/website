@@ -6,17 +6,9 @@ import ChapterEntity = Api.ChapterEntity;
 
 const week06lectures: LectureEntity[] = [];
 
-week06lectures.push(createLecture('6-1', 'lists-more', 'Lists(more)', 'In depth lists in Python programming.', lecture, 1) as LectureEntity);
+week06lectures.push(createLecture('6-1', 'loops', 'loops', 'Loops in Python programming.', lecture, 1) as LectureEntity);
 
-const chapter06: ChapterEntity = createChapter(
-  '6',
-  'week06',
-  'Week 06: More Lists',
-  'More Lists in Python programming.',
-  6,
-  ['6-1'],
-  week06lectures,
-) as ChapterEntity;
+const chapter06: ChapterEntity = createChapter('6', 'week06', 'Week 06: Loops', 'Loops in Python programming.', 6, ['6-1'], week06lectures) as ChapterEntity;
 
 for (let i = 0; i < week06lectures.length; i++) {
   week06lectures[i].chapter = chapter06;
