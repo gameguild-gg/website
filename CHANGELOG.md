@@ -1,3 +1,348 @@
+## [1.15.26](https://github.com/gameguild-gg/website/compare/v1.15.25...v1.15.26) (2025-02-19)
+
+
+### Bug Fixes
+
+* **courses:** add cover letter course to portfolio classes ([0a393d3](https://github.com/gameguild-gg/website/commit/0a393d341f976d247acb9d62301b579f91210050))
+
+## [1.15.25](https://github.com/gameguild-gg/website/compare/v1.15.24...v1.15.25) (2025-02-18)
+
+
+### Bug Fixes
+
+* **courses:** add htn to ai classes ([9c5b63a](https://github.com/gameguild-gg/website/commit/9c5b63ab560c1831cf64f1dc16798625d890634b))
+
+## [1.15.24](https://github.com/gameguild-gg/website/compare/v1.15.23...v1.15.24) (2025-02-17)
+
+
+### Bug Fixes
+
+* **courses:** fix an activity on python lists class ([f1dde2d](https://github.com/gameguild-gg/website/commit/f1dde2ddfd8b721c50eaa172c771a77f808e73a5))
+
+## [1.15.23](https://github.com/gameguild-gg/website/compare/v1.15.22...v1.15.23) (2025-02-17)
+
+
+### Bug Fixes
+
+* **courses:** fix summary of the python loop lecture ([61146fd](https://github.com/gameguild-gg/website/commit/61146fd3deb1466a81b7b75ca5352de9feca3da6))
+
+## [1.15.22](https://github.com/gameguild-gg/website/compare/v1.15.21...v1.15.22) (2025-02-17)
+
+
+### Bug Fixes
+
+* **typo:** fix missing python tag for syntax highlight ([d48edf1](https://github.com/gameguild-gg/website/commit/d48edf1d1925de50525eaffc5e8bc77f83e1e6f3))
+
+## [1.15.21](https://github.com/gameguild-gg/website/compare/v1.15.20...v1.15.21) (2025-02-17)
+
+
+### Bug Fixes
+
+* **courses:** add python loops content ([b578657](https://github.com/gameguild-gg/website/commit/b5786570c24cbe597635abc3940d3f9d55759a93))
+
+## [1.15.20](https://github.com/gameguild-gg/website/compare/v1.15.19...v1.15.20) (2025-02-15)
+
+
+### Bug Fixes
+
+* **codeactivity:** add confetti on success ([e444235](https://github.com/gameguild-gg/website/commit/e444235b4c009b36d2d3e1019977d10ad176d5cc))
+
+## [1.15.19](https://github.com/gameguild-gg/website/compare/v1.15.18...v1.15.19) (2025-02-14)
+
+
+### Bug Fixes
+
+* **courses:** better coding error descriptions ([9e7dd48](https://github.com/gameguild-gg/website/commit/9e7dd48364a3cffb57f61257f2769b4fff45ad4a))
+
+## [1.15.18](https://github.com/gameguild-gg/website/compare/v1.15.17...v1.15.18) (2025-02-14)
+
+
+### Bug Fixes
+
+* **code activity:** fix code activity dynamic scaling ([a3c5881](https://github.com/gameguild-gg/website/commit/a3c58817bce0d53e2b599f5fc798017e6257c28c))
+
+## [1.15.17](https://github.com/gameguild-gg/website/compare/v1.15.16...v1.15.17) (2025-02-14)
+
+
+### Bug Fixes
+
+* **courses:** minor typo on python exercise 1 ([778c052](https://github.com/gameguild-gg/website/commit/778c052c05a4d6b94c18e8d748311c09439d5d72))
+
+## [1.15.16](https://github.com/gameguild-gg/website/compare/v1.15.15...v1.15.16) (2025-02-14)
+
+
+### Bug Fixes
+
+* **courses:** add one more exercises to python lists course ([f223a36](https://github.com/gameguild-gg/website/commit/f223a36c991a5813186cb3c5afbbe8f50d4c1152))
+
+## [1.15.15](https://github.com/gameguild-gg/website/compare/v1.15.14...v1.15.15) (2025-02-14)
+
+
+### Bug Fixes
+
+* **courses:** add the first coding exercise for python ([4845c1c](https://github.com/gameguild-gg/website/commit/4845c1c1450928e00cf81a2d8c185534dfcbff27))
+
+## [1.15.14](https://github.com/gameguild-gg/website/compare/v1.15.13...v1.15.14) (2025-02-14)
+
+
+### Bug Fixes
+
+* **codeactivity:** fix code activity size scaling ([94b10b0](https://github.com/gameguild-gg/website/commit/94b10b0be16173f878a29f828c74d9a5b1f7ca31))
+
+## [1.15.13](https://github.com/gameguild-gg/website/compare/v1.15.12...v1.15.13) (2025-02-14)
+
+
+### Bug Fixes
+
+* **codeactivity:** hide blocks if not needed anymore ([f53b133](https://github.com/gameguild-gg/website/commit/f53b133157c47eb61ef552bbf3d6bb53eaceef64))
+
+## [1.15.12](https://github.com/gameguild-gg/website/compare/v1.15.11...v1.15.12) (2025-02-14)
+
+
+### Bug Fixes
+
+* **courses:** typo ([a5b0200](https://github.com/gameguild-gg/website/commit/a5b0200cf4169097b4ff9a1b16139964bebf63f5))
+
+## [1.15.11](https://github.com/gameguild-gg/website/compare/v1.15.10...v1.15.11) (2025-02-14)
+
+
+### Bug Fixes
+
+* **courses:** add lecture for GOAP in C# ([f2a8f2b](https://github.com/gameguild-gg/website/commit/f2a8f2b32503a9d259c9c2bd885fc2146352d457))
+
+## [1.15.10](https://github.com/gameguild-gg/website/compare/v1.15.9...v1.15.10) (2025-02-14)
+
+
+### Bug Fixes
+
+* **codeactivity:** wip code activity ([706d108](https://github.com/gameguild-gg/website/commit/706d108bc7a58f58481862df8b0c2f6b92fb8afc))
+
+## [1.15.9](https://github.com/gameguild-gg/website/compare/v1.15.8...v1.15.9) (2025-02-14)
+
+
+### Bug Fixes
+
+* **codeactivity:** add first version of code activity embedded inside markdown ([fa717e8](https://github.com/gameguild-gg/website/commit/fa717e871526f84670c5f1445c487773012f75da))
+
+## [1.15.8](https://github.com/gameguild-gg/website/compare/v1.15.7...v1.15.8) (2025-02-13)
+
+
+### Performance Improvements
+
+* **wasmer:** add better way to call wasmer ([1420cb4](https://github.com/gameguild-gg/website/commit/1420cb48f08135389d8e59d8c9eb04e3fc2444b2))
+
+## [1.15.7](https://github.com/gameguild-gg/website/compare/v1.15.6...v1.15.7) (2025-02-13)
+
+
+### Bug Fixes
+
+* **conduct:** add code of contuct ([e784a58](https://github.com/gameguild-gg/website/commit/e784a5866ebcd52c679d9e07694505c0699c847e))
+
+## [1.15.6](https://github.com/gameguild-gg/website/compare/v1.15.5...v1.15.6) (2025-02-12)
+
+## [1.15.5](https://github.com/gameguild-gg/website/compare/v1.15.4...v1.15.5) (2025-02-12)
+
+
+### Bug Fixes
+
+* **wasmer:** better interface for calling wasmer ([f3c7765](https://github.com/gameguild-gg/website/commit/f3c7765a3e7dbf36f1051182f0922f814e50232e))
+
+## [1.15.4](https://github.com/gameguild-gg/website/compare/v1.15.3...v1.15.4) (2025-02-10)
+
+
+### Bug Fixes
+
+* **courses:** add list lecture on python course ([daa2f79](https://github.com/gameguild-gg/website/commit/daa2f795f6d4d0ffc654c93c4436f972b75a71d6))
+
+## [1.15.3](https://github.com/gameguild-gg/website/compare/v1.15.2...v1.15.3) (2025-02-09)
+
+
+### Bug Fixes
+
+* **wasmer:** Improve wasmer to be lazy loaded. ([395e97e](https://github.com/gameguild-gg/website/commit/395e97e6101a87978e9774f4755283cec0096983))
+
+## [1.15.2](https://github.com/gameguild-gg/website/compare/v1.15.1...v1.15.2) (2025-02-09)
+
+
+### Bug Fixes
+
+* **licences:** fix licenses ([1225a39](https://github.com/gameguild-gg/website/commit/1225a3983eea5556f33abfc286e125aa037641e4))
+* **packages:** fix installations issues on github ([737e084](https://github.com/gameguild-gg/website/commit/737e084cdc44a09b06d54103f76575d2d1b072c3))
+* **readme:** add gitflow to readme and docs ([0006e43](https://github.com/gameguild-gg/website/commit/0006e4312a6b99fb8c8dd3de0a2bd15efa7791b2))
+
+## [1.15.1](https://github.com/gameguild-gg/website/compare/v1.15.0...v1.15.1) (2025-02-07)
+
+
+### Bug Fixes
+
+* **courses:** fix style on courses page ([00c344d](https://github.com/gameguild-gg/website/commit/00c344d710e03a6041941caa17f68ca30cff72c1))
+
+# [1.15.0](https://github.com/gameguild-gg/website/compare/v1.14.1...v1.15.0) (2025-02-06)
+
+
+### Bug Fixes
+
+* **auth:** fixed auth.ts ([ba4d506](https://github.com/gameguild-gg/website/commit/ba4d5064deb15075606efababd8f7b2c971254ed))
+* **courses:** fix course portfolio ([2d20828](https://github.com/gameguild-gg/website/commit/2d2082831074d15b4c9a922b0d88214d05250d24))
+* **courses:** fix portfolio assignment related to github readmes ([f5ee71f](https://github.com/gameguild-gg/website/commit/f5ee71f1402f5c8c9d6bdceb75caeee6971d63c0))
+* **courses:** github readmes ([7bd672e](https://github.com/gameguild-gg/website/commit/7bd672e517e785b4108c017620acdab849d0cb34))
+* **eslint:** fixed eslint ([e0e9c32](https://github.com/gameguild-gg/website/commit/e0e9c32562c515b85c325d6b15a7bcec3a47558b))
+* **monorepo:** fixed eslint, prettier, typescript base configs ([0639c94](https://github.com/gameguild-gg/website/commit/0639c94ebf80080aa66eb6c56c3d97985448b742))
+* **monorepo:** fixed eslint, prettier, typescript base configs ([a152ba8](https://github.com/gameguild-gg/website/commit/a152ba89f6cf31672618a2686a34b1cbf5ada410))
+* **typescript:** fixed typescript-config ([b89d82f](https://github.com/gameguild-gg/website/commit/b89d82fb36f85f2e3d38457e8fd021f746bac82c))
+
+
+### Features
+
+* **wasmer:** added wasmer web worker ([2e14de9](https://github.com/gameguild-gg/website/commit/2e14de9abd8f36566fa18a5031b74f0125302fc5))
+
+## [1.14.1](https://github.com/gameguild-gg/website/compare/v1.14.0...v1.14.1) (2025-02-05)
+
+
+### Bug Fixes
+
+* **courses:** add courses hero section ([e07a8dc](https://github.com/gameguild-gg/website/commit/e07a8dc4933383d41620b0527c54612efec7233c))
+
+# [1.14.0](https://github.com/gameguild-gg/website/compare/v1.13.8...v1.14.0) (2025-02-05)
+
+
+### Bug Fixes
+
+* **pyodide:** fixed pyodide web worker ([8936377](https://github.com/gameguild-gg/website/commit/893637718f813f5dcb3566692bfa0da2a54804d8))
+
+
+### Features
+
+* **pyodide:** added small code editor ([bda9244](https://github.com/gameguild-gg/website/commit/bda924477fd97e61e85bb19ad1a3fea688a56340))
+
+## [1.13.8](https://github.com/gameguild-gg/website/compare/v1.13.7...v1.13.8) (2025-02-04)
+
+
+### Bug Fixes
+
+* **courses:** add python quizzes for loops and conditionals ([8587729](https://github.com/gameguild-gg/website/commit/85877291920c31e3490497d0ebf6f11bba286e67))
+
+## [1.13.7](https://github.com/gameguild-gg/website/compare/v1.13.6...v1.13.7) (2025-02-04)
+
+
+### Bug Fixes
+
+* **courses:** add quizzes to the goap explanation ([ddad9c2](https://github.com/gameguild-gg/website/commit/ddad9c2f27122fd30eb0d6233ca8795dc4feb5c1))
+* **courses:** markdown quiz test ([fce53dc](https://github.com/gameguild-gg/website/commit/fce53dc7e13611872240fc171bd5ee8fbb3f77bd))
+
+## [1.13.6](https://github.com/gameguild-gg/website/compare/v1.13.5...v1.13.6) (2025-02-04)
+
+
+### Bug Fixes
+
+* **courses:** add GOAP assignment ([b338737](https://github.com/gameguild-gg/website/commit/b3387370d48711a0156987fd813db4520fbf7224))
+
+## [1.13.5](https://github.com/gameguild-gg/website/compare/v1.13.4...v1.13.5) (2025-02-04)
+
+
+### Bug Fixes
+
+* **courses:** add goap lecture ([aa9c841](https://github.com/gameguild-gg/website/commit/aa9c84152a47228de354b2bab41e7086815029be))
+* **style:** rollback style linter ([2f8c425](https://github.com/gameguild-gg/website/commit/2f8c4250c50e69902efa02c5a268d6c6302da46a))
+
+## [1.13.4](https://github.com/gameguild-gg/website/compare/v1.13.3...v1.13.4) (2025-02-03)
+
+
+### Bug Fixes
+
+* **courses:** fix quizes renderer ([d22c90d](https://github.com/gameguild-gg/website/commit/d22c90df12ee10c5051aa369f198da71a5587155))
+
+## [1.13.3](https://github.com/gameguild-gg/website/compare/v1.13.2...v1.13.3) (2025-02-03)
+
+
+### Bug Fixes
+
+* **course:** add python lecture about loops and conditionals ([07e9914](https://github.com/gameguild-gg/website/commit/07e9914eb3b4ccf640b668ff52ea442bd6654b3b))
+
+## [1.13.2](https://github.com/gameguild-gg/website/compare/v1.13.1...v1.13.2) (2025-02-03)
+
+
+### Bug Fixes
+
+* **courses:** add embed quizzes / code. wip ([12c4eca](https://github.com/gameguild-gg/website/commit/12c4ecaa9be123f9f2643e4442cdee5a6a485278))
+
+## [1.13.1](https://github.com/gameguild-gg/website/compare/v1.13.0...v1.13.1) (2025-02-02)
+
+
+### Bug Fixes
+
+* **courses:** add metadata to courses and lectures. fix [#104](https://github.com/gameguild-gg/website/issues/104) ([bae8b46](https://github.com/gameguild-gg/website/commit/bae8b46de204b24c1c869a4a2afefa5234832537))
+
+# [1.13.0](https://github.com/gameguild-gg/website/compare/v1.12.2...v1.13.0) (2025-02-01)
+
+
+### Features
+
+* **analytics:** Added a boilerplate for web-vitals ([b81f1c6](https://github.com/gameguild-gg/website/commit/b81f1c69748ccd2c46b56bf1ece0c2b61b13fef6))
+
+## [1.12.2](https://github.com/gameguild-gg/website/compare/v1.12.1...v1.12.2) (2025-02-01)
+
+
+### Bug Fixes
+
+* **learn:** fix coding environment style ([6f2b5b0](https://github.com/gameguild-gg/website/commit/6f2b5b0849add59de3cde6b26c3cdb97b60a17be))
+* **packages:** fix package location ([280682e](https://github.com/gameguild-gg/website/commit/280682ef3109c6a4f0a9b85d5c6eaa581665b360))
+
+## [1.12.1](https://github.com/gameguild-gg/website/compare/v1.12.0...v1.12.1) (2025-02-01)
+
+
+### Bug Fixes
+
+* **ci:** github actions are failing with the latest ubuntu version ([42221af](https://github.com/gameguild-gg/website/commit/42221afcdbefff080492d0f0667796e355db8aa3))
+* **errors:** fix [#14](https://github.com/gameguild-gg/website/issues/14), fix [#15](https://github.com/gameguild-gg/website/issues/15) error pages ([812e714](https://github.com/gameguild-gg/website/commit/812e714cf80b77e4ffc16e617a3fc4e71f3ff944))
+* **routes:** redirect ([5c91c8b](https://github.com/gameguild-gg/website/commit/5c91c8bedf811a2a9de5dd4db7394b0ad34da87e))
+
+# [1.12.0](https://github.com/gameguild-gg/website/compare/v1.11.33...v1.12.0) (2025-01-31)
+
+
+### Bug Fixes
+
+* **contributors:** add a link to the stargazers ([d7cfa8f](https://github.com/gameguild-gg/website/commit/d7cfa8f01e71be4634db6a74e2d92e67094ea6ad))
+* **course/page:** include carousel system ([121c9c1](https://github.com/gameguild-gg/website/commit/121c9c158d5de4a6ab73f8cf68ad86e04620a244))
+* **courses:** improve ai engine graph ([f56ee32](https://github.com/gameguild-gg/website/commit/f56ee325bbb25d9b85fea504cc98aff297ac165c))
+* **courses:** markdown content ([9d9e130](https://github.com/gameguild-gg/website/commit/9d9e13058b4bc5a97efa9bf23bd887c062009f49))
+* dbml schema and swagger ([230de22](https://github.com/gameguild-gg/website/commit/230de22c88ea2150c69438544458ae5f129b1127))
+* **edutech:** fix types ([b3a788d](https://github.com/gameguild-gg/website/commit/b3a788d8894f669f51d0b3d56b26a36244fcbaa1))
+* **edutech:** merge edutech into main ([f0e8d53](https://github.com/gameguild-gg/website/commit/f0e8d5373103d4e6733d4e47eba65b31602e5daf))
+* fetch courses ([c9d2fe5](https://github.com/gameguild-gg/website/commit/c9d2fe5a75daa83b098e5bc0628d23ab5ff0fab8))
+* **header/index:** include 'Courses' button ([4a13e3c](https://github.com/gameguild-gg/website/commit/4a13e3c40817cdf058b270ca6f256c9313008323))
+* improved code generation ([aad0f94](https://github.com/gameguild-gg/website/commit/aad0f94cfd0977007bd6d7962441864a93aae6f2))
+* **learn:** "add run python language" ([c937a5d](https://github.com/gameguild-gg/website/commit/c937a5da541af809ea27951b71d770c142c56767))
+* **learn:** "layouts visible" ([fdb939d](https://github.com/gameguild-gg/website/commit/fdb939d50908d80153d9555ae4d2a1dae6457848))
+* **learn:** 3s to local save and 'addinput' to add input to code ([55e5062](https://github.com/gameguild-gg/website/commit/55e506263e3d5d6a459a724c8894e74cfb9fbc5c))
+* **learn:** add filter submissions ([c8c7f2f](https://github.com/gameguild-gg/website/commit/c8c7f2ff460b0dfb9667131cb2452d8615317868))
+* **learn:** build run ([6ae9a6c](https://github.com/gameguild-gg/website/commit/6ae9a6c9dd7111b11af20ccc56825d2bd79ac62c))
+* **learn:** code flux adjusts ([8442742](https://github.com/gameguild-gg/website/commit/8442742a7298973bce585e5fb769edb1a84ec03f))
+* **learn:** fix layouts ([bfb29f7](https://github.com/gameguild-gg/website/commit/bfb29f74a28250b28ea96884113f956ac7b94607))
+* **learn:** fix links ([cefd547](https://github.com/gameguild-gg/website/commit/cefd5471afc484a05cc2a1ab4d66db69ea047814))
+* **learn:** menu links for Learn and Code also page construction ([4340d50](https://github.com/gameguild-gg/website/commit/4340d501c6f06842352d26568265dd72f3e18923))
+* **learn:** more fixes ([e9061d2](https://github.com/gameguild-gg/website/commit/e9061d2c2b1006651fef0592753f3ad09072b1dc))
+* **learn:** python run message and initial implementation to run Ruby ([3d3ffd4](https://github.com/gameguild-gg/website/commit/3d3ffd4d0536da99645855439906b67a1d080409))
+* **merge:** fixing some merging issues ([6bd64c3](https://github.com/gameguild-gg/website/commit/6bd64c3200c9aceb6d2d0697116f52399ec5537b))
+* **projects:** fix project creation ([d0fff66](https://github.com/gameguild-gg/website/commit/d0fff66468214d79858bf5cb710f8db4d33ba91e))
+* **routing:** fix recursive routing issue ([6bee09d](https://github.com/gameguild-gg/website/commit/6bee09d44dc6048acecdf539a507ef90f9ac3b9e))
+
+
+### Features
+
+* **code:** new feature added code editor. it is wip, but it is starting to get stable ([9da6d5d](https://github.com/gameguild-gg/website/commit/9da6d5dd747c179c79a4960e394297a47ae3b9fe))
+* **courses:** add grading instructions to quiz ([be67c64](https://github.com/gameguild-gg/website/commit/be67c64d6a4fbab552da833b32af2fdecb195ceb))
+* **courses:** courses api base ([107ed9f](https://github.com/gameguild-gg/website/commit/107ed9fd9154bd95acbf595951c0e0552803e82f))
+* **courses:** courses api base ([4ebc47a](https://github.com/gameguild-gg/website/commit/4ebc47a50e488b7006e842623f098bcc99354cfc))
+* **quiz:** boilerplate for the quiz api ([471779e](https://github.com/gameguild-gg/website/commit/471779e4ea9949057a23864bc7f12e42a25bd1c5))
+
+## [1.11.33](https://github.com/gameguild-gg/website/compare/v1.11.32...v1.11.33) (2025-01-31)
+
+
+### Bug Fixes
+
+* **routing:** trying to fix the issue with multiple domains ([3c81465](https://github.com/gameguild-gg/website/commit/3c81465c0727f7b8dcf74525cb5d9deefccc9159))
+
 ## [1.11.32](https://github.com/gameguild-gg/website/compare/v1.11.31...v1.11.32) (2025-01-31)
 
 

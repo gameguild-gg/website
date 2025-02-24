@@ -4,6 +4,10 @@ import { mockUser } from '@/data/coursesLib';
 import chapter01 from './chapters/week01';
 import chapter02 from './chapters/week02';
 import chapter03 from './chapters/week03';
+import chapter04 from './chapters/week04';
+import chapter05 from './chapters/week05';
+import chapter06 from './chapters/week06';
+import chapter07 from './chapters/week07';
 import ChapterEntity = Api.ChapterEntity;
 import CourseEntity = Api.CourseEntity;
 import ImageEntity = Api.ImageEntity;
@@ -48,12 +52,20 @@ const chapters: ChapterEntity[] = [];
 chapters.push(chapter01);
 chapters.push(chapter02);
 chapters.push(chapter03);
+chapters.push(chapter04);
+chapters.push(chapter05);
+chapters.push(chapter06);
+chapters.push(chapter07);
 
 const lectures: LectureEntity[] = [];
 lectures.push(
   ...chapter01.lectures,
   ...chapter02.lectures,
   ...chapter03.lectures,
+  ...chapter04.lectures,
+  ...chapter05.lectures,
+  ...chapter06.lectures,
+  ...chapter07.lectures,
 );
 
 // set the course for each chapter and lecture

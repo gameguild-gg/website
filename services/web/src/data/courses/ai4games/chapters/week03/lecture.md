@@ -19,7 +19,8 @@ flowchart TD
     D --> K["Neuron Networks"] & W["Reinforcement Learning"]
     W --> W2["Q-Learning"]
     B --> H["State Machines"] & I["Decision Tree"] & J["Behavior Tree"]
-    F --> n1["Goal Oriented Action Planning"] & n2["Hierarquical Task Networks"]
+    F --> n1["Goal Oriented Action Planning"]
+    n1 --> n2["Hierarchical Task Networks"]
     n3 --> n4["Alpha Beta Prunning"]
     n4 --> n5["Monte Carlo Tree Search"]
 ```

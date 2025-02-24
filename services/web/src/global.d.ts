@@ -7,3 +7,12 @@ declare global {
     Comlink: typeof Comlink;
   }
 }
+
+declare module '*.worker.ts' {
+  // This tells TypeScript that importing a worker returns a constructor
+  // that creates a Worker instance.
+  const WorkerFactory: {
+    new (): Worker;
+  };
+  export default WorkerFactory;
+}

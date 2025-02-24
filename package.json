@@ -3,19 +3,27 @@
   "version": "1.0.0",
   "description": "",
   "author": "",
-  "license": "ISC",
+  "licenses": [
+    {
+      "type": "AGPL-3.0",
+      "url": "https://www.gnu.org/licenses/agpl-3.0.html"
+    },
+    {
+      "type": "Commercial",
+      "url": "https://github.com/gameguild-gg/website/blob/main/COMMERCIAL_LICENSE.md"
+    }
+  ],
   "private": true,
   "workspaces": [
     "packages/*",
     "services/web",
-    "services/api",
-    "tests"
+    "services/api"
   ],
   "scripts": {
     "install:api": "npm install --workspace=services/api",
     "install:web": "npm install --workspace=services/web",
     "install:apiclient": "npm install @game-guild/apiclient --no-save --workspace=services/web",
-    "clean": "rimraf --glob ./**/node_modules",
+    "clean": "rimraf --glob ./**/node_modules ./**/dist ./**/coverage ./**/build ./**/.next package-lock.json",
     "prepare_": "husky install",
     "format": "npm run format --workspaces --if-present",
     "format:api": "npm run format --workspace=services/api",
@@ -40,6 +48,11 @@
     "gource": "./contributors/gource.sh",
     "db:diagram": "npm run db:diagram --workspace=services/api"
   },
+  "dependencies": {
+    "bufferutil": "^4.0.8",
+    "concurrently": "^8.2.2",
+    "npm-run-all": "^4.1.5"
+  },
   "devDependencies": {
     "@game-guild/apiclient": "*",
     "@game-guild/eslint-config": "*",
@@ -52,14 +65,12 @@
     "@semantic-release/github": "^11.0.0",
     "@semantic-release/npm": "^12.0.1",
     "@semantic-release/release-notes-generator": "^14.0.1",
+    "conventional-changelog-angular": "^8.0.0",
+    "eslint": "^8.52.0",
     "moxygen": "^0.8.0",
-    "rimraf": "^5.0.10"
-  },
-  "dependencies": {
-    "bufferutil": "^4.0.8",
-    "concurrently": "^8.2.2",
-    "npm-run-all": "^4.1.5",
-    "react-icons": "^5.4.0"
+    "prettier": "^3.4.0",
+    "rimraf": "^6",
+    "typescript": "^5"
   },
   "release": {
     "branches": [
@@ -68,7 +79,44 @@
     ],
     "repositoryUrl": "https://github.com/gameguild-gg/website",
     "plugins": [
-      "@semantic-release/commit-analyzer",
+      [
+        "@semantic-release/commit-analyzer",
+        {
+          "preset": "angular",
+          "releaseRules": [
+            {
+              "type": "docs",
+              "release": "patch"
+            },
+            {
+              "type": "refactor",
+              "release": "patch"
+            },
+            {
+              "type": "style",
+              "release": "patch"
+            },
+            {
+              "type": "test",
+              "release": "patch"
+            },
+            {
+              "type": "build",
+              "release": "patch"
+            },
+            {
+              "type": "ci",
+              "release": "patch"
+            }
+          ],
+          "parserOpts": {
+            "noteKeywords": [
+              "BREAKING CHANGE",
+              "BREAKING CHANGES"
+            ]
+          }
+        }
+      ],
       "@semantic-release/release-notes-generator",
       [
         "@semantic-release/changelog",

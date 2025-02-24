@@ -1,5 +1,5 @@
 import React from 'react';
-import MarkdownRenderer from '@/components/markdown-renderer-new/markdown-renderer-new';
+import { MarkdownContent } from '@/components/markdown-content';
 
 const markdownContent: string = `
 # Privacy Policy
@@ -96,5 +96,10 @@ Dual Licensed under [AGPLv3](https://www.gnu.org/licenses/agpl-3.0.en.html) and 
 `;
 
 export default function Page(): JSX.Element {
-  return <MarkdownRenderer content={markdownContent} />;
+  return (
+    <div
+      className="prose prose-lg max-w-none mx-auto px-4 py-6 prose-headings:text-blue-600 prose-a:text-blue-500 hover:prose-a:underline prose-strong:text-gray-800">
+      <MarkdownContent content={markdownContent} />
+    </div>
+  );
 }

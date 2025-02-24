@@ -3,11 +3,34 @@ const CompressionPlugin = require('compression-webpack-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const fs = require('fs');
 const path = require('path');
+const webpack = require('webpack');
 
 const withNextIntl = createNextIntlPlugin();
 
-/** @type {import("next").NextConfig} */
+/** @type {import('next').NextConfig} */
 const nextConfig = {
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          {
+            key: 'Cross-Origin-Opener-Policy',
+            value: 'same-origin',
+          },
+          {
+            key: 'Cross-Origin-Embedder-Policy',
+            value: 'require-corp',
+          },
+          {
+            key: 'Cross-Origin-Resource-Policy',
+            value: 'cross-origin',
+          },
+        ],
+      },
+    ];
+  },
+
   eslint: {
     ignoreDuringBuilds: true,
   },
@@ -25,6 +48,13 @@ const nextConfig = {
   },
   webpack: (config, { isServer }) => {
     if (!isServer) {
+      config.module.rules.push({
+        test: /\.worker\.(js|ts)$/,
+        loader: 'worker-loader',
+        options: {
+          inline: 'fallback',
+        },
+      });
       config.externals = config.externals || [];
       config.externals = [...config.externals, 'apiclient'];
       config.resolve.fallback = {
@@ -45,14 +75,14 @@ const nextConfig = {
         test: /\.(pack|br|a)$/,
         type: 'asset/resource',
       },
-      {
-        test: /\.worker\.[cm]?js$/i,
-        use: ['worker-loader'],
-      },
-      {
-        test: /\.worker\.ts$/,
-        loader: 'ts-loader',
-      },
+      // {
+      //   test: /\.worker\.[cm]?js$/i,
+      //   use: ['worker-loader'],
+      // },
+      // {
+      //   test: /\.worker\.ts$/,
+      //   loader: 'ts-loader',
+      // },
     );
     //
     config.resolve = {
@@ -68,29 +98,26 @@ const nextConfig = {
         vm: false,
       },
     };
-    //
+
     config.plugins.push(
       new CopyWebpackPlugin({
         patterns: [
           { from: 'public' },
           {
-            from: path.resolve(
-              __dirname,
-              '../../node_modules/emception/brotli/brotli.wasm',
-            ),
+            from: path.resolve(__dirname, '../../node_modules/emception/brotli/brotli.wasm'),
             to: 'brotli/brotli.wasm',
           },
           {
-            from: path.resolve(
-              __dirname,
-              '../../node_modules/emception/wasm-package/wasm-package.wasm',
-            ),
+            from: path.resolve(__dirname, '../../node_modules/emception/wasm-package/wasm-package.wasm'),
             to: 'wasm-package/wasm-package.wasm',
           },
         ],
       }),
       new CompressionPlugin({
         exclude: /\.br$/,
+      }),
+      new webpack.IgnorePlugin({
+        resourceRegExp: /index\.mjs$/,
       }),
     );
 

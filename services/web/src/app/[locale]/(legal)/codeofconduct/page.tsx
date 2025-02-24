@@ -1,6 +1,7 @@
 // app/code-of-conduct/page.tsx
 import React from 'react';
-import MarkdownRenderer from '@/components/markdown-renderer-new/markdown-renderer-new';
+import MarkdownRenderer from '@/components/markdown-renderer/markdown-renderer';
+import { MarkdownContent } from '@/components/markdown-content';
 
 const markdownContent: string = `
 # Code of Conduct
@@ -41,5 +42,9 @@ This Code of Conduct is adapted from the [Contributor Covenant](http://contribut
 `;
 
 export default function Page(): JSX.Element {
-  return <MarkdownRenderer content={markdownContent} />;
+  return (
+    <div className="prose prose-lg max-w-none mx-auto px-4 py-6 prose-headings:text-blue-600 prose-a:text-blue-500 hover:prose-a:underline prose-strong:text-gray-800">
+      <MarkdownContent content={markdownContent} />
+    </div>
+  );
 }

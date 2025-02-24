@@ -4,7 +4,16 @@
   "description": "",
   "author": "",
   "private": false,
-  "license": "UNLICENSED",
+  "licenses": [
+    {
+      "type": "AGPL-3.0",
+      "url": "https://www.gnu.org/licenses/agpl-3.0.html"
+    },
+    {
+      "type": "Commercial",
+      "url": "https://github.com/gameguild-gg/website/blob/main/COMMERCIAL_LICENSE.md"
+    }
+  ],
   "scripts": {
     "install:deps:ubuntu": "apt update ; apt install -y build-essential cmake git",
     "build": "nest build",
@@ -122,8 +131,8 @@
     "@types/passport-jwt": "^3.0.10",
     "@types/passport-local": "^1.0.36",
     "@types/supertest": "^2.0.12",
-    "@typescript-eslint/eslint-plugin": "^6.9.1",
-    "@typescript-eslint/parser": "^6.9.1",
+    "@typescript-eslint/eslint-plugin": "^6.21.0",
+    "@typescript-eslint/parser": "^6.21.0",
     "eslint": "^8.52.0",
     "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-prettier": "^5.0.1",
