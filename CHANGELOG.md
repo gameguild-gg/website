@@ -1,3 +1,17 @@
+# [1.16.0](https://github.com/gameguild-gg/website/compare/v1.15.26...v1.16.0) (2025-02-24)
+
+
+### Bug Fixes
+
+* **coding-environment:** remove especific icons to  standard icon ([0cc69d3](https://github.com/gameguild-gg/website/commit/0cc69d3c0c95f355dbcf479c8d1531a1bd1a1ccc))
+* **courses:** add nested loop course to python ([bc5ca4a](https://github.com/gameguild-gg/website/commit/bc5ca4a5c859e1488e53d94ae1fc946798d86495))
+* **db-cleaning:** now if you rename a table or you generate make an orphan table, the startup process will warn you until you clean it ([a4b34a2](https://github.com/gameguild-gg/website/commit/a4b34a2fbfe12bbd0df7fbadb90f575257b5c950))
+
+
+### Features
+
+* **table_schema:** generate a sql dump of the current table schema ([e60228c](https://github.com/gameguild-gg/website/commit/e60228ccbe01290db0984ba20aec1859bf1b795f))
+
 ## [1.15.26](https://github.com/gameguild-gg/website/compare/v1.15.25...v1.15.26) (2025-02-19)
 
 
