@@ -1,7 +1,6 @@
-import { Column, Entity, ManyToMany } from 'typeorm';
+import { Column, Entity } from 'typeorm';
 import { ContentBase } from './content.base';
 import { PostTypeEnum } from './post-type.enum';
-import { UserEntity } from '../../user/entities';
 
 // todo: move to use permissionEntity instead
 @Entity({ name: 'post' })

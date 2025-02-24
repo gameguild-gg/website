@@ -127,14 +127,14 @@ Table ImageEntity {
   width integer
 }
 
-Table job-post_editors_user {
-  job-post_id uuid
+Table job_post_editors_user {
+  job_post_id uuid
   user_id uuid
 }
 
-Table job-post_job_tags_job-tag {
-  job-post_id uuid
-  job-tag_id uuid
+Table job_post_job_tags_job_tag {
+  job_post_id uuid
+  job_tag_id uuid
 }
 
 Table JobApplicationEntity {

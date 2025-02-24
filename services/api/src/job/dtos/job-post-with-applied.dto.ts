@@ -1,14 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import {
-  MaxLength,
-  IsNotEmpty,
-  IsString,
-  IsOptional,
-  IsArray,
-  ValidateNested,
-} from 'class-validator';
-import { Index, ManyToMany, JoinTable } from 'typeorm';
+import { IsArray, IsNotEmpty, IsOptional, IsString, MaxLength, ValidateNested } from 'class-validator';
+import { Index, JoinTable, ManyToMany } from 'typeorm';
 import { JobTagEntity } from '../entities/job-tag.entity';
 import { JobTypeEnum } from '../entities/job-type.enum';
 
@@ -23,7 +16,6 @@ export class JobPostWithAppliedDto {
 
   @Index({ unique: false })
   @ApiProperty({
-    type: 'enum',
     enum: JobTypeEnum,
     default: JobTypeEnum.TASK,
     nullable: false,

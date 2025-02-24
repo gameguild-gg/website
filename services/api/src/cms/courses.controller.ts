@@ -1,17 +1,11 @@
 import { Crud, CrudController } from '@dataui/crud';
 import { Auth } from '../auth';
-import {
-  AuthenticatedRoute,
-  EditorRoute,
-  OwnerRoute,
-  PublicRoute,
-} from '../auth/auth.enum';
+import { AuthenticatedRoute, EditorRoute, OwnerRoute, PublicRoute } from '../auth/auth.enum';
 import { OwnershipEmptyInterceptor } from './interceptors/ownership-empty-interceptor.service';
 import { Controller } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { WithRolesController } from './with-roles.controller';
 import { CourseEntity } from './entities/course.entity';
-import { ProjectService } from './project.service';
 import { CourseService } from './courses.service';
 
 @Crud({
@@ -29,12 +23,7 @@ import { CourseService } from './courses.service';
     // create: ,
   },
   routes: {
-    exclude: [
-      'replaceOneBase',
-      'createManyBase',
-      'createManyBase',
-      'recoverOneBase',
-    ],
+    exclude: ['replaceOneBase', 'createManyBase', 'createManyBase', 'recoverOneBase'],
     getOneBase: {
       decorators: [Auth(PublicRoute)],
     },
@@ -55,10 +44,7 @@ import { CourseService } from './courses.service';
 })
 @Controller('courses')
 @ApiTags('courses')
-export class CoursesController
-  extends WithRolesController<CourseEntity>
-  implements CrudController<CourseEntity>
-{
+export class CoursesController extends WithRolesController<CourseEntity> implements CrudController<CourseEntity> {
   constructor(public readonly service: CourseService) {
     super(service);
   }

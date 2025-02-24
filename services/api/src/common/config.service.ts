@@ -18,16 +18,11 @@ export class ApiConfigService {
     // for some reason the app module is not able to read .env.local files, so I am rewriting everything here.
     // if you found a better solution to this, please let me know on gh: tolstenko
     const processEnv = process.env;
-    const defaultConfig =
-      dotenv.config({ path: '.env', override: false }).parsed || {};
-    const localConfig =
-      dotenv.config({ path: '.env.local', override: false }).parsed || {};
-    const testConfig =
-      dotenv.config({ path: '.env.test', override: false }).parsed || {};
-    const productionConfig =
-      dotenv.config({ path: '.env.production', override: false }).parsed || {};
-    const developmentConfig =
-      dotenv.config({ path: '.env.development', override: false }).parsed || {};
+    const defaultConfig = dotenv.config({ path: '.env', override: false }).parsed || {};
+    const localConfig = dotenv.config({ path: '.env.local', override: false }).parsed || {};
+    const testConfig = dotenv.config({ path: '.env.test', override: false }).parsed || {};
+    const productionConfig = dotenv.config({ path: '.env.production', override: false }).parsed || {};
+    const developmentConfig = dotenv.config({ path: '.env.development', override: false }).parsed || {};
 
     // merge all envs
     // default is overridden by proccess
@@ -65,6 +60,7 @@ export class ApiConfigService {
   get sendGridApiKey(): string {
     return this.service.getOrThrow<string>('SENDGRID_API_KEY');
   }
+
   get isDevelopment(): boolean {
     return this.nodeEnv === 'development';
   }
@@ -97,7 +93,6 @@ export class ApiConfigService {
       entities: [...ormconfig.ormconfig.entities],
       migrations: ormconfig.ormconfig.migrations,
       subscribers: ormconfig.ormconfig.subscribers,
-      keepConnectionAlive: ormconfig.ormconfig.keepConnectionAlive,
       dropSchema: ormconfig.ormconfig.dropSchema,
       migrationsRun: ormconfig.ormconfig.migrationsRun,
       logging: ormconfig.ormconfig.logging,
@@ -113,28 +108,14 @@ export class ApiConfigService {
     const decoder = new TextDecoder();
     return {
       googleClientId: ormconfig.getEnvString('GOOGLE_CLIENT_ID'),
-      accessTokenPrivateKey: decoder.decode(
-        decodeBase64(ormconfig.getEnvString('ACCESS_TOKEN_PRIVATE_KEY')),
-      ),
-      accessTokenPublicKey: decoder.decode(
-        decodeBase64(ormconfig.getEnvString('ACCESS_TOKEN_PUBLIC_KEY')),
-      ),
+      accessTokenPrivateKey: decoder.decode(decodeBase64(ormconfig.getEnvString('ACCESS_TOKEN_PRIVATE_KEY'))),
+      accessTokenPublicKey: decoder.decode(decodeBase64(ormconfig.getEnvString('ACCESS_TOKEN_PUBLIC_KEY'))),
       accessTokenAlgorithm: ormconfig.getEnvString('ACCESS_TOKEN_ALGORITHM'),
-      accessTokenExpiresIn: ormconfig.getEnvString(
-        'ACCESS_TOKEN_EXPIRATION_TIME',
-        '15m',
-      ),
-      refreshTokenPrivateKey: decoder.decode(
-        decodeBase64(ormconfig.getEnvString('REFRESH_TOKEN_PRIVATE_KEY')),
-      ),
-      refreshTokenPublicKey: decoder.decode(
-        decodeBase64(ormconfig.getEnvString('REFRESH_TOKEN_PUBLIC_KEY')),
-      ),
+      accessTokenExpiresIn: ormconfig.getEnvString('ACCESS_TOKEN_EXPIRATION_TIME', '15m'),
+      refreshTokenPrivateKey: decoder.decode(decodeBase64(ormconfig.getEnvString('REFRESH_TOKEN_PRIVATE_KEY'))),
+      refreshTokenPublicKey: decoder.decode(decodeBase64(ormconfig.getEnvString('REFRESH_TOKEN_PUBLIC_KEY'))),
       refreshTokenAlgorithm: ormconfig.getEnvString('REFRESH_TOKEN_ALGORITHM'),
-      refreshTokenExpiresIn: ormconfig.getEnvString(
-        'REFRESH_TOKEN_EXPIRATION_TIME',
-        '365d',
-      ),
+      refreshTokenExpiresIn: ormconfig.getEnvString('REFRESH_TOKEN_EXPIRATION_TIME', '365d'),
       // emailVerificationTokenPrivateKey: ormconfig.getEnvString(
       //   'EMAIL_VERIFICATION_TOKEN_PRIVATE_KEY',
       // ),
@@ -214,21 +195,13 @@ export class ApiConfigService {
     // iterate over all sources
     sourceNames.forEach((sourceName) => {
       // get the source endpoint
-      const endpoint = ormconfig.getEnvString(
-        `ASSET_SOURCE_${sourceName}_ENDPOINT`,
-      );
+      const endpoint = ormconfig.getEnvString(`ASSET_SOURCE_${sourceName}_ENDPOINT`);
       // get the access key
-      const accessKey = ormconfig.getEnvString(
-        `ASSET_SOURCE_${sourceName}_KEY`,
-      );
+      const accessKey = ormconfig.getEnvString(`ASSET_SOURCE_${sourceName}_KEY`);
       // get the source secret
-      const secretKey = ormconfig.getEnvString(
-        `ASSET_SOURCE_${sourceName}_SECRET`,
-      );
+      const secretKey = ormconfig.getEnvString(`ASSET_SOURCE_${sourceName}_SECRET`);
       // get the source bucket
-      const bucket = ormconfig.getEnvString(
-        `ASSET_SOURCE_${sourceName}_BUCKET`,
-      );
+      const bucket = ormconfig.getEnvString(`ASSET_SOURCE_${sourceName}_BUCKET`);
 
       // add the source to the sources object
       sources[sourceName] = {

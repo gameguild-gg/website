@@ -1,9 +1,9 @@
 import { Column, Entity, Index } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, MaxLength } from 'class-validator';
+import { IsNotEmpty, IsString, MaxLength } from 'class-validator';
 import { EntityBase } from '../../common/entities/entity.base';
 
-@Entity({ name: 'job-tag' })
+@Entity({ name: 'job_tag' })
 export class JobTagEntity extends EntityBase {
   // Name
   @Column({ length: 256, nullable: false, type: 'varchar' })

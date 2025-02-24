@@ -17,10 +17,7 @@ export function getEnv(key: string, defaultValue: string = null): string {
   const value = process.env[key] || defaultValue;
 
   if (isNil(value) || value === '') {
-    throw new Error(
-      key +
-        ' environment variable does not set. Manually set it or talk with us to provide them to you.',
-    ); // probably we should call process.exit() too to avoid locking the service
+    throw new Error(key + ' environment variable does not set. Manually set it or talk with us to provide them to you.'); // probably we should call process.exit() too to avoid locking the service
   }
 
   return value;
@@ -50,10 +47,7 @@ export function getEnvNumber(key: string, defaultValue: number = null): number {
   }
 }
 
-export function getEnvBoolean(
-  key: string,
-  defaultValue: boolean = null,
-): boolean {
+export function getEnvBoolean(key: string, defaultValue: boolean = null): boolean {
   const value = getEnv(key, defaultValue.toString());
 
   try {
@@ -77,7 +71,6 @@ function getconfig() {
     entities,
     migrations,
     subscribers,
-    keepConnectionAlive: !isTest(),
     dropSchema: isTest(),
     type: 'postgres',
     host: getEnvString('DB_HOST'),

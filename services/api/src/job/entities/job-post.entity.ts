@@ -1,25 +1,12 @@
-import {
-  Column,
-  Entity,
-  Index,
-  JoinTable,
-  ManyToMany,
-} from 'typeorm';
+import { Column, Entity, Index, JoinTable, ManyToMany } from 'typeorm';
 import { ContentBase } from '../../cms/entities/content.base';
 import { JobTagEntity } from './job-tag.entity';
 import { ApiProperty } from '@nestjs/swagger';
-import {
-  IsArray,
-  IsNotEmpty,
-  IsOptional,
-  IsString,
-  MaxLength,
-  ValidateNested,
-} from 'class-validator';
+import { IsArray, IsNotEmpty, IsOptional, IsString, MaxLength, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 import { JobTypeEnum } from './job-type.enum';
 
-@Entity({ name: 'job-post' })
+@Entity({ name: 'job_post' })
 export class JobPostEntity extends ContentBase {
   // Location
   @Column({ length: 256, nullable: false, default: 'Remote', type: 'varchar' })

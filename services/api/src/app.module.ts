@@ -20,6 +20,7 @@ import { DataSource } from 'typeorm';
 import { AssetModule } from './asset';
 import { MulterModule } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
+import { SchemaDumpService } from './common/db-schema-dump-service';
 
 @Module({
   imports: [
@@ -34,8 +35,7 @@ import { diskStorage } from 'multer';
     TypeOrmModule.forRootAsync({
       imports: [CommonModule],
       inject: [ApiConfigService],
-      useFactory: (configService: ApiConfigService) =>
-        configService.postgresConfig,
+      useFactory: (configService: ApiConfigService) => configService.postgresConfig,
     }),
     CacheModule.registerAsync({
       // todo: add redis cache when scaling
@@ -75,6 +75,7 @@ import { diskStorage } from 'multer';
       useFactory: (dataSource: DataSource) => dataSource,
       inject: [DataSource],
     },
+    SchemaDumpService,
   ],
 })
 export class AppModule {}
