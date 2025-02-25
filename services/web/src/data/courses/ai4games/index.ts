@@ -1,11 +1,12 @@
 import { Api } from '@game-guild/apiclient';
 import syllabusBody from './syllabus.md';
-import Chapter01 from './chapters/week01/';
-import Chapter02 from './chapters/week02/';
+import Chapter01 from './chapters/week01';
+import Chapter02 from './chapters/week02';
 import Chapter03 from './chapters/week03';
-import Chapter04 from './chapters/week04/';
-import Chapter05 from './chapters/week05/';
+import Chapter04 from './chapters/week04';
+import Chapter05 from './chapters/week05';
 import Chapter06 from './chapters/week06';
+import Chapter07 from './chapters/week07';
 import ChapterEntity = Api.ChapterEntity;
 import CourseEntity = Api.CourseEntity;
 import ImageEntity = Api.ImageEntity;
@@ -33,9 +34,18 @@ chapters.push(Chapter03);
 chapters.push(Chapter04);
 chapters.push(Chapter05);
 chapters.push(Chapter06);
+chapters.push(Chapter07);
 
 const lectures: LectureEntity[] = [];
-lectures.push(...Chapter01.lectures, ...Chapter02.lectures, ...Chapter03.lectures, ...Chapter04.lectures, ...Chapter05.lectures, ...Chapter06.lectures);
+lectures.push(
+  ...Chapter01.lectures,
+  ...Chapter02.lectures,
+  ...Chapter03.lectures,
+  ...Chapter04.lectures,
+  ...Chapter05.lectures,
+  ...Chapter06.lectures,
+  ...Chapter07.lectures,
+);
 
 // set course for all lectures and chapters
 lectures.forEach((lecture) => (lecture.course = course));
