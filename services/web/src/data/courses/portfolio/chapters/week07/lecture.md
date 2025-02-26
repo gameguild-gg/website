@@ -18,18 +18,13 @@ Reaching the halfway point in a project is a great time to step back and **asses
 - Have I incorporated feedback received earlier in the process?
 - What are the next steps to ensure I reach my goal?
 
-!!! quiz  
-{  
-"title": "Midpoint Check-In Quiz",  
-"question": "Why is a midpoint check-in valuable for your project?",  
-"options": [  
-"It allows you to reflect on progress and adjust as needed",  
-"It helps you identify and troubleshoot problems early",  
-"It ensures that you are following your original plan exactly without changes",  
-"Both A and B"  
-],  
-"answers": ["Both A and B"]  
-}  
+!!! quiz
+{
+"title": "Midpoint Quiz",
+"question": "Why is a midpoint check-in valuable for your project?",
+"options": ["It allows you to reflect on progress and adjust as needed", "It helps you identify and troubleshoot problems early", "It ensures that you are following your original plan exactly without changes", "Both first 2 answers"],
+"answers": ["Both first 2 answers"]
+}
 !!!
 
 ---
@@ -49,18 +44,14 @@ Projects rarely go exactly as planned, and that’s okay. What matters is how yo
 ### **Timeboxing and Adjusting Goals**
 Timeboxing—allocating a fixed amount of time to a task—can **prevent over-investing in minor details**. If something takes too long, reassess its importance and either simplify or move on.
 
-!!! quiz  
-{  
-"title": "Troubleshooting Quiz",  
-"question": "What is an effective way to handle an issue that is taking longer than expected to fix?",  
-"options": [  
-"Keep working on it indefinitely until it's solved",  
-"Break it down into smaller problems and troubleshoot methodically",  
-"Ignore it and hope it resolves itself later",  
-"Restart the entire project from scratch"  
-],  
-"answers": ["Break it down into smaller problems and troubleshoot methodically"]  
-}  
+
+!!! quiz
+{
+"title": "Troubleshooting Quiz",
+"question": "What is an effective way to handle an issue that is taking longer than expected to fix?",
+"options": ["Keep working on it indefinitely until it's solved", "Break it down into smaller problems and troubleshoot methodically", "Ignore it and hope it resolves itself later", "Restart the entire project from scratch"],
+"answers": ["Break it down into smaller problems and troubleshoot methodically"]
+}
 !!!
 
 ---
@@ -82,18 +73,9 @@ Feedback is **not a critique of your abilities**—it’s a tool for improvement
 - **Prioritize actionable feedback** – Focus on the changes that will have the most impact.
 - **Keep your creative vision** – Not all feedback needs to be implemented. Balance it with your goals.
 
-!!! quiz  
+!!! quiz
 {  
-"title": "Feedback Quiz",  
-"question": "What is the best way to approach feedback on your project?",  
-"options": [  
-"Ignore it if it contradicts your original idea",  
-"Defend your work aggressively to avoid making changes",  
-"Consider it carefully, ask clarifying questions, and apply changes that align with your goals",  
-"Implement every single piece of feedback without question"  
-],  
-"answers": ["Consider it carefully, ask clarifying questions, and apply changes that align with your goals"]  
-}  
+"title": "Feedback Quiz", "question": "What is the best way to approach feedback on your project?", "options": ["Ignore it if it contradicts your original idea","Defend your work aggressively to avoid making changes", "Consider it carefully, ask clarifying questions, and apply changes that align with your goals","Implement every single piece of feedback without question"], "answers": ["Consider it carefully, ask clarifying questions, and apply changes that align with your goals"]}  
 !!!
 
 ## **The Importance of Peer-to-Peer Feedback**
@@ -113,7 +95,7 @@ While feedback from the professor is valuable, **peer reviews offer a unique per
 - **Balance positives and areas for improvement** – Highlight what works well before suggesting changes.
 - **Respect different creative styles** – Feedback should enhance, not override, the creator’s vision.
 
-!!! quiz  
+!!! quiz
 {  
 "title": "Peer Feedback Quiz",  
 "question": "Why is peer feedback beneficial in addition to professor feedback?",  
