@@ -1,3 +1,10 @@
+## [1.16.1](https://github.com/gameguild-gg/website/compare/v1.16.0...v1.16.1) (2025-02-26)
+
+
+### Bug Fixes
+
+* **courses:** add portfolio piece touchpoint ([048a27d](https://github.com/gameguild-gg/website/commit/048a27d96092f77a7ac69f74f1003f701569bc6d))
+
 # [1.16.0](https://github.com/gameguild-gg/website/compare/v1.15.26...v1.16.0) (2025-02-24)
 
 
