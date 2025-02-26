@@ -1,3 +1,10 @@
+## [1.16.2](https://github.com/gameguild-gg/website/compare/v1.16.1...v1.16.2) (2025-02-26)
+
+
+### Bug Fixes
+
+* **courses:** fix portfolio quiz ([ef62a53](https://github.com/gameguild-gg/website/commit/ef62a5324cd19ea03b4b7f0ee9576e85ff5c8819))
+
 ## [1.16.1](https://github.com/gameguild-gg/website/compare/v1.16.0...v1.16.1) (2025-02-26)
 
 
