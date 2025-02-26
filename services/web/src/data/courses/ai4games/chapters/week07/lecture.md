@@ -71,7 +71,7 @@ A/B testing (or split testing) is a controlled experiment where players are divi
 ### Tools for A/B Testing:
 
 - **Firebase Remote Config** (for live tuning game parameters)
-- **Optimizely* (for testing UX and AI tweaks)
+- **Optimizely** (for testing UX and AI tweaks)
 - **PlayFab Experiments** (Microsoft’s built-in A/B testing system)
 
 ::: example "Example"
@@ -86,7 +86,7 @@ Beyond basic metrics, we can use machine learning to predict player actions.
 
 Techniques include:
 
-- **Churn prediction* – Identifying players likely to quit.
+- **Churn prediction** – Identifying players likely to quit.
 - **Dynamic difficulty adjustment (DDA)** Adapting game AI difficulty in real-time.
 - **Reinforcement Learning for NPCs** – AI improving itself based on player interactions.
 
@@ -98,7 +98,7 @@ Tools for AI-driven analytics:
 
 ## 4. Machinations: AI-Driven Game Balancing
 
-[Machinations](Machinations.io) is a visual modeling tool that simulates and analyzes game systems, economies, and AI-driven mechanics before implementation.
+[Machinations](https://machinations.io) is a visual modeling tool that simulates and analyzes game systems, economies, and AI-driven mechanics before implementation.
 
 ### Use Cases:
 
