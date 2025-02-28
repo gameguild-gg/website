@@ -1,3 +1,10 @@
+## [1.16.3](https://github.com/gameguild-gg/website/compare/v1.16.2...v1.16.3) (2025-02-28)
+
+
+### Bug Fixes
+
+* **courses:** add metrics analytics ([b163a67](https://github.com/gameguild-gg/website/commit/b163a67704107139bd7500807e5bf81b2e9d3c1c))
+
 ## [1.16.2](https://github.com/gameguild-gg/website/compare/v1.16.1...v1.16.2) (2025-02-26)
 
 
