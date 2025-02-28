@@ -119,11 +119,16 @@ We are going to use as an example a campaign for Willy Wonka’s Chocolate Facto
    - What are the rewards?
    - What are the penalties?
 
+## In Class activity 2
+
+Discussion Questions:
+
+- What AI-driven metrics would you track in a strategy game?
+- How can A/B testing be used to improve AI behaviors dynamically?
+- How might reinforcement learning improve AI analytics in a live game environment?
+- What are the benefits of using Machinations to simulate AI-driven game systems?
+
 ## Conclusion
 
 Incorporating metrics, analytics, A/B testing, and machinations allows developers to optimize AI and enhance player experience. Whether using GameAnalytics for behavioral insights, A/B testing difficulty settings with Firebase, or simulating AI economies in Machinations.io, these tools help refine and perfect game AI.
 
-Discussion Questions:
-What AI-driven metrics would you track in a strategy game?
-How can A/B testing be used to improve AI behaviors dynamically?
-How might reinforcement learning improve AI analytics in a live game environment?

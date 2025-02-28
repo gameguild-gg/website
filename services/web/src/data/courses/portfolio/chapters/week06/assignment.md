@@ -18,7 +18,7 @@ Using the job description as a guide, write a **tailored cover letter** that:
 - Matches **your skills and experience** with the job’s requirements.
 - Uses a **tone appropriate for the game industry**—relaxed yet professional, incorporating enthusiasm for the company’s work.
 - Applies the **argument-evidence-impact** approach to highlight your strengths with concrete examples.
-- Includes a **strong introduction** that captures attention.
+- Includes a **strong introduction** that captures attention. Be bold, confident, humble, and catchy, but don't be exaggerated, use too much dramatic, and don't use cliches.
 - Ends with a **clear call to action**, encouraging the employer to take the next step.
 
 Post both the job link and your cover letter in the forum.
