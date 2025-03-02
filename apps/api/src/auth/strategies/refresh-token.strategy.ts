@@ -1,8 +1,8 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
+import { CommandBus } from '@nestjs/cqrs';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
-import { AuthService } from '@/auth/services/auth.service';
 import { REFRESH_TOKEN_STRATEGY_KEY } from '@/auth/auth.constants';
 import { refreshTokenConfig as RefreshTokenConfig } from '@/auth/config/refresh-token.config';
 
@@ -13,7 +13,7 @@ export class RefreshTokenStrategy extends PassportStrategy(Strategy, REFRESH_TOK
   constructor(
     @Inject(RefreshTokenConfig.KEY)
     private readonly refreshTokenConfig: ConfigType<typeof RefreshTokenConfig>,
-    private readonly authService: AuthService,
+    private readonly commandBus: CommandBus,
   ) {
     super({
       // TODO: get this from a configService or the authService.

@@ -1,6 +1,6 @@
-import { ModelBase } from '@/common/models/model.base';
 import { ContentDto } from '@/common/dtos/content.dto';
+import { LocalizableResourceModel } from '@/common/models/localizable-resource.model';
 
-export abstract class ContentModel extends ModelBase implements ContentDto {
+export abstract class ContentModel extends LocalizableResourceModel implements ContentDto {
   public readonly slug: string;
 }

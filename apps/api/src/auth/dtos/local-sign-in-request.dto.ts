@@ -1,7 +1,8 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiSchema } from '@nestjs/swagger';
 import { IsEmail, IsNotEmpty, IsString, IsStrongPassword } from 'class-validator';
 
-export class LocalSignInRequest {
+@ApiSchema({ name: 'LocalSignInRequest' })
+export class LocalSignInRequestDto {
   @ApiProperty()
   @IsString()
   @IsNotEmpty()

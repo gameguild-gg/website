@@ -1,10 +1,10 @@
-import { EntityDto } from '@/common/dtos/entity.dto';
 import { ApiProperty } from '@nestjs/swagger';
-import { IsSlug } from '@/legacy/common/decorators/isslug.decorator';
 import { IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
 import { CrudValidationGroups } from '@dataui/crud';
+import { IsSlug } from '@/legacy/common/decorators/isslug.decorator';
+import { LocalizableResourceDto } from '@/common/dtos/localizable-resource.dto';
 
-export abstract class ContentDto extends EntityDto {
+export abstract class ContentDto extends LocalizableResourceDto {
   @ApiProperty({ required: true })
   @IsSlug()
   @IsString()

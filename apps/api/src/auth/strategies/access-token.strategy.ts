@@ -1,10 +1,10 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
+import { CommandBus } from '@nestjs/cqrs';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ACCESS_TOKEN_STRATEGY_KEY } from '@/auth/auth.constants';
 import { accessTokenConfig as AccessTokenConfig } from '@/auth/config/access-token.config';
-import { AuthService } from '../services/auth.service';
 
 @Injectable()
 export class AccessTokenStrategy extends PassportStrategy(Strategy, ACCESS_TOKEN_STRATEGY_KEY) {
@@ -13,7 +13,7 @@ export class AccessTokenStrategy extends PassportStrategy(Strategy, ACCESS_TOKEN
   constructor(
     @Inject(AccessTokenConfig.KEY)
     private readonly accessTokenConfig: ConfigType<typeof AccessTokenConfig>,
-    private readonly authService: AuthService,
+    private readonly commandBus: CommandBus,
   ) {
     super({
       // TODO: get this from a configService or the authService.

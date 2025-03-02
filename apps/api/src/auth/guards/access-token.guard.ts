@@ -12,9 +12,7 @@ export class AccessTokenGuard extends AuthGuard(ACCESS_TOKEN_STRATEGY_KEY) {
     super();
   }
 
-  canActivate(context: ExecutionContext) {
-    this.logger.log('AccessTokenGuard.canActivate()');
-
+  public canActivate(context: ExecutionContext) {
     return IsPublic(context, this.reflector) ? true : super.canActivate(context);
   }
 }

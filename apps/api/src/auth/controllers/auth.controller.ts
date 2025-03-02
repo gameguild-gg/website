@@ -1,9 +1,11 @@
-import { Body, Controller, Logger, Post } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
+import { Body, Controller, Get, Logger, Param, Post, UseGuards } from '@nestjs/common';
+import { CommandBus } from '@nestjs/cqrs';
+import { ApiBody, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Public } from '@/auth/decorators/public.decorator';
-import { LocalSignInRequest } from '@/auth/dtos/local-sign-in-request.dto';
-import { LocalSignUpRequest } from '@/auth/dtos/local-sign-up-request.dto';
-import { CommandBus, QueryBus } from '@nestjs/cqrs';
+import { LocalSignInRequestDto } from '@/auth/dtos/local-sign-in-request.dto';
+import { LocalSignUpRequestDto } from '@/auth/dtos/local-sign-up-request.dto';
+import { SignInResponseDto } from '@/auth/dtos/sign-in-response.dto';
+import { LocalGuard } from '@/auth/guards/local.guard';
 
 @Controller('auth')
 @ApiTags('auth')
@@ -12,21 +14,32 @@ export class AuthController {
 
   constructor(
     private readonly commandBus: CommandBus,
-    private readonly queryBus: QueryBus,
+    // private readonly queryBus: QueryBus,
   ) {}
 
-  @Public()
+  // @Public()
   @Post('sign-in')
-  // @ApiBody({ type: LocalSignInRequest })
-  public async signInWithEmailAndPassword(@Body() data: Readonly<LocalSignInRequest>) {
-    // return await this.authService.signInWithEmailAndPassword(data);
+  @UseGuards(LocalGuard)
+  @ApiBody({ type: LocalSignInRequestDto })
+  @ApiResponse({ type: SignInResponseDto })
+  public async signInWithEmailAndPassword(@Body() data: Readonly<LocalSignInRequestDto>) {
+    // return this.commandBus.execute(new LocalSignInCommand(data));
+  }
+
+  @Public()
+  @Get('google/callback/:idToken')
+  // @UseGuards(SignInWithGoogleGuard)
+  @ApiResponse({ type: SignInResponseDto })
+  async signInWithGoogle(@Param('idToken') idToken: string) {
+    // return this.commandBus.execute(new SignInWithGoogleCommand(idToken));
   }
 
   @Public()
   @Post('sign-up')
-  // @ApiBody({ type: LocalSignUpRequest })
-  public async signUpWithEmailAndPassword(@Body() data: Readonly<LocalSignUpRequest>) {
-    // return await this.authService.signUpWithEmailAndPassword(data);
+  @ApiBody({ type: LocalSignUpRequestDto })
+  @ApiResponse({ type: SignInResponseDto })
+  public async signUpWithEmailAndPassword(@Body() data: Readonly<LocalSignUpRequestDto>) {
+    // return this.commandBus.execute(new LocalSignUpCommand(data));
   }
 
   // @Public()

@@ -1,6 +1,6 @@
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { CrudValidationGroups } from '@dataui/crud';
 import { IsEmpty, IsOptional, IsUUID } from 'class-validator';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export abstract class EntityDto {
   @ApiProperty({ type: 'string', format: 'uuid' })
@@ -19,4 +19,12 @@ export abstract class EntityDto {
   @IsOptional()
   @IsEmpty({ groups: [CrudValidationGroups.CREATE, CrudValidationGroups.UPDATE] })
   public readonly updatedAt: Date;
+
+  protected constructor(partial: Partial<typeof this>) {
+    Object.assign(this, partial);
+  }
+
+  public static create<T extends EntityDto>(this: new (partial: Partial<T>) => T, partial: Partial<T>): T {
+    return new this(partial);
+  }
 }

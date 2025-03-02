@@ -1,20 +1,22 @@
 import { registerAs } from '@nestjs/config';
 import { JwtModuleOptions } from '@nestjs/jwt';
 import { REFRESH_TOKEN_STRATEGY_KEY } from '@/auth/auth.constants';
+import { environment } from '@/config/environment.config';
+import { parseAlgorithm } from '@/auth/utils';
 
 export const refreshTokenConfig = registerAs(
   REFRESH_TOKEN_STRATEGY_KEY,
   (): JwtModuleOptions => ({
     // global: true,
-    privateKey: process.env.REFRESH_TOKEN_PRIVATE_KEY,
-    publicKey: process.env.REFRESH_TOKEN_PUBLIC_KEY,
+    privateKey: environment.getString('REFRESH_TOKEN_PRIVATE_KEY'),
+    publicKey: environment.getString('REFRESH_TOKEN_PUBLIC_KEY'),
     signOptions: {
-      algorithm: 'HS512',
-      expiresIn: process.env.REFRESH_TOKEN_EXPIRATION_TIME,
+      algorithm: parseAlgorithm(environment.getString('REFRESH_TOKEN_ALGORITHM', 'RS256')),
+      expiresIn: environment.getString('REFRESH_TOKEN_EXPIRATION_TIME'),
     },
     verifyOptions: {
-      algorithms: ['HS512'],
-      ignoreExpiration: false,
+      algorithms: [parseAlgorithm(environment.getString('REFRESH_TOKEN_ALGORITHM', 'RS256'))],
+      ignoreExpiration: environment.getBoolean('REFRESH_TOKEN_IGNORE_EXPIRATION', false),
     },
   }),
 );
