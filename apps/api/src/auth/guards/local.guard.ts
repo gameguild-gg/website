@@ -1,22 +1,19 @@
-import { ExecutionContext, Injectable } from '@nestjs/common';
+import { ExecutionContext, Injectable, Logger } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { AuthGuard } from '@nestjs/passport';
-import { LOCAL_STRATEGY_KEY } from '@/auth/auth.constants';
-import { CommandBus } from '@nestjs/cqrs';
-import { IsPublic } from '@/auth/decorators/public.decorator';
 import { Observable } from 'rxjs';
+import { LOCAL_SIGN_IN_STRATEGY_KEY } from '@/auth/auth.constants';
+import { IsPublic } from '@/auth/decorators/public.decorator';
 
 @Injectable()
-export class LocalGuard extends AuthGuard(LOCAL_STRATEGY_KEY) {
-  constructor(
-    private readonly reflector: Reflector,
-    private readonly commandBus: CommandBus,
-  ) {
+export class LocalGuard extends AuthGuard(LOCAL_SIGN_IN_STRATEGY_KEY) {
+  private readonly logger = new Logger(LocalGuard.name);
+
+  constructor(private readonly reflector: Reflector) {
     super();
   }
 
   public canActivate(context: ExecutionContext): boolean | Promise<boolean> | Observable<boolean> {
-    // const user = await this.commandBus.execute(ValidateLocalSignInCommand);
     return IsPublic(context, this.reflector) ? true : super.canActivate(context);
   }
 }

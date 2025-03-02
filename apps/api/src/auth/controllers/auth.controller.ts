@@ -1,46 +1,45 @@
 import { Body, Controller, Get, Logger, Param, Post, UseGuards } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
 import { ApiBody, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { Public } from '@/auth/decorators/public.decorator';
-import { LocalSignInRequestDto } from '@/auth/dtos/local-sign-in-request.dto';
-import { LocalSignUpRequestDto } from '@/auth/dtos/local-sign-up-request.dto';
-import { SignInResponseDto } from '@/auth/dtos/sign-in-response.dto';
 import { LocalGuard } from '@/auth/guards/local.guard';
+import { LocalSignInRequestDto } from '@/auth/dtos/local-sign-in-request.dto';
+import { SignInResponseDto } from '@/auth/dtos/sign-in-response.dto';
+import { SignInWithGoogleGuard } from '@/auth/guards/sign-in-with-google.guard';
+import { GenerateAuthTokensCommand } from '@/auth/commands/generate-auth-tokens.command';
+import { User } from '@/auth/decorators/user.decorator';
+import { UserDto } from '@/user/dtos/user.dto';
 
 @Controller('auth')
 @ApiTags('auth')
 export class AuthController {
   private readonly logger = new Logger(AuthController.name);
 
-  constructor(
-    private readonly commandBus: CommandBus,
-    // private readonly queryBus: QueryBus,
-  ) {}
+  constructor(private readonly commandBus: CommandBus) {}
 
-  // @Public()
   @Post('sign-in')
   @UseGuards(LocalGuard)
   @ApiBody({ type: LocalSignInRequestDto })
   @ApiResponse({ type: SignInResponseDto })
-  public async signInWithEmailAndPassword(@Body() data: Readonly<LocalSignInRequestDto>) {
+  public async signInWithEmailAndPassword(@Body() data: Readonly<LocalSignInRequestDto>, @User() user: UserDto) {
     // return this.commandBus.execute(new LocalSignInCommand(data));
+    return this.commandBus.execute(GenerateAuthTokensCommand.create(user));
   }
 
-  @Public()
   @Get('google/callback/:idToken')
-  // @UseGuards(SignInWithGoogleGuard)
+  @UseGuards(SignInWithGoogleGuard)
   @ApiResponse({ type: SignInResponseDto })
-  async signInWithGoogle(@Param('idToken') idToken: string) {
+  async signInWithGoogle(@Param('idToken') idToken: string, @User() user: UserDto) {
     // return this.commandBus.execute(new SignInWithGoogleCommand(idToken));
+    return this.commandBus.execute(GenerateAuthTokensCommand.create(user));
   }
 
-  @Public()
-  @Post('sign-up')
-  @ApiBody({ type: LocalSignUpRequestDto })
-  @ApiResponse({ type: SignInResponseDto })
-  public async signUpWithEmailAndPassword(@Body() data: Readonly<LocalSignUpRequestDto>) {
-    // return this.commandBus.execute(new LocalSignUpCommand(data));
-  }
+  // @Public()
+  // @Post('sign-up')
+  // @ApiBody({ type: LocalSignUpRequestDto })
+  // @ApiResponse({ type: SignInResponseDto })
+  // public async signUpWithEmailAndPassword(@Body() data: Readonly<LocalSignUpRequestDto>) {
+  //   // return this.commandBus.execute(new LocalSignUpCommand(data));
+  // }
 
   // @Public()
   // @Post('refresh-token')
