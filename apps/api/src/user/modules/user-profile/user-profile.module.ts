@@ -1,12 +1,11 @@
 import { Module } from '@nestjs/common';
-import { UserProfileController } from './user-profile.controller';
-import { UserProfileService } from './user-profile.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { UserProfileEntity } from './entities/user-profile.entity';
-import { AssetModule, AssetService } from '../../../asset';
+import { UserProfileController } from '@/user/modules/user-profile/controllers/user-profile.controller';
+import { UserProfileEntity } from '@/user/modules/user-profile/entities/user-profile.entity';
+import { UserProfileService } from '@/user/modules/user-profile/services/user-profile.service';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([UserProfileEntity]), AssetModule],
+  imports: [TypeOrmModule.forFeature([UserProfileEntity])],
   controllers: [UserProfileController],
   providers: [UserProfileService],
   exports: [UserProfileService],

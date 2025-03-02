@@ -1,8 +1,14 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { APP_GUARD } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { typeormConfig } from './config/typeorm.config';
 import { appConfig } from './config/app.config';
+import { CqrsModule } from '@nestjs/cqrs';
+import { AuthModule } from '@/auth/auth.module';
+import { AccessTokenGuard } from '@/auth/guards/access-token.guard';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { UserModule } from '@/user/user.module';
 
 @Module({
   imports: [
@@ -10,6 +16,10 @@ import { appConfig } from './config/app.config';
       load: [appConfig, typeormConfig],
       isGlobal: true,
     }),
+    CqrsModule.forRoot(),
+    TypeOrmModule.forRootAsync(typeormConfig.asProvider()),
+    AuthModule,
+    UserModule,
     // fix auth interceptor and guard to store user in context
     // ClsModule.forRoot({
     //   global: true,
@@ -56,21 +66,14 @@ import { appConfig } from './config/app.config';
   ],
   controllers: [AppController],
   providers: [
-    // {
-    //   provide: APP_GUARD,
-    //   useClass: AuthGuard,
-    // }
+    {
+      provide: APP_GUARD,
+      useClass: AccessTokenGuard,
+    },
     // {
     //   provide: APP_INTERCEPTOR,
-    //   useClass: LoggingInterceptor,
+    //   useClass: AuthenticatedUserInterceptor,
     // },
-    // {
-    //   provide: 'DataSource',
-    //   useFactory: (dataSource: DataSource) => dataSource,
-    //   inject: [DataSource],
-    // },
-    // SchemaDumpService,
-    // CleanupService,
   ],
 })
 export class AppModule {}

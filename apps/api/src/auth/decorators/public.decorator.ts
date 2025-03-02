@@ -1,8 +1,11 @@
-import type { CustomDecorator } from '@nestjs/common';
-import { SetMetadata } from '@nestjs/common';
+import { CustomDecorator, ExecutionContext, SetMetadata } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
+import { IS_PUBLIC_KEY } from '../auth.constants';
 
-export const PUBLIC_ROUTE_KEY = 'public_route';
+export const Public = (isPublic = true): CustomDecorator => {
+  return SetMetadata(IS_PUBLIC_KEY, isPublic);
+};
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
-export const PublicRoute = (isPublic = false): CustomDecorator =>
-  SetMetadata(PUBLIC_ROUTE_KEY, isPublic);
+export const IsPublic = (context: ExecutionContext, reflector: Reflector): boolean => {
+  return reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [context.getHandler(), context.getClass()]);
+};

@@ -1,136 +1,91 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { Exclude, Type } from 'class-transformer';
-import {
-  Column,
-  Entity,
-  Index,
-  JoinColumn,
-  JoinTable,
-  ManyToMany,
-  OneToMany,
-  OneToOne,
-} from 'typeorm';
-import { EntityBase } from '../../common/entities/entity.base';
-import { UserProfileEntity } from '../modules/user-profile/entities/user-profile.entity';
-import { CompetitionSubmissionEntity } from '../../competition/entities/competition.submission.entity';
-import { PostEntity } from '../../cms/entities/post.entity';
-import {
-  IsEmail,
-  IsUsername,
-} from '../../common/decorators/validator.decorator';
-import {
-  IsArray,
-  IsBoolean,
-  IsOptional,
-  ValidateNested,
-} from 'class-validator';
-
-// todo: move to user-profile lots of fields from here
+// import { ApiProperty } from '@nestjs/swagger';
+// import { Exclude, Type } from 'class-transformer';
+// import { Column, Entity, Index, JoinColumn, OneToMany, OneToOne } from 'typeorm';
+// import { EntityBase } from '../../common/entities/entity.base';
+// import { UserProfileEntity } from '../modules/user-profile/entities/user-profile.entity';
+// import { CompetitionSubmissionEntity } from '../../competition/entities/competition.submission.entity';
+// import { IsEmail, IsUsername } from '../../common/decorators/validator.decorator';
+// import { IsArray, IsBoolean, IsOptional, ValidateNested } from 'class-validator';
+//
+// // todo: move to user-profile lots of fields from here
+//
+import { Column, Entity, Index, JoinColumn, OneToOne } from 'typeorm';
+import { EntityBase } from '@/common/entities/entity.base';
+import { UserDto } from '@/user/dtos/user.dto';
+import { UserProfileEntity } from '@/user/modules/user-profile/entities/user-profile.entity';
 
 @Entity({ name: 'user' })
-export class UserEntity extends EntityBase {
+export class UserEntity extends EntityBase implements UserDto {
   // Local Sign-in
-  @ApiProperty()
-  @Column({
-    unique: true,
-    nullable: true,
-    default: null,
-    type: 'varchar',
-    length: 32,
-  })
-  @Index({ unique: true })
-  @IsOptional()
-  @IsUsername()
-  username: string;
 
-  @Column({
-    unique: true,
-    nullable: true,
-    default: null,
-    type: 'varchar',
-    length: 254,
-  })
-  @ApiProperty()
+  @Column({ type: 'varchar', length: 32, nullable: true, unique: true, default: null })
   @Index({ unique: true })
-  @IsOptional()
-  @IsEmail()
-  email: string;
+  public readonly username: string;
+
+  @Column({ type: 'varchar', length: 254, nullable: true, unique: true, default: null })
+  @Index({ unique: true })
+  public readonly email: string;
+
+  @Column({ nullable: true, default: null })
+  public readonly passwordHash: string;
+
+  @Column({ nullable: true, default: null })
+  public readonly passwordSalt: string;
 
   @Column({ nullable: false, default: false })
-  @ApiProperty()
-  @IsBoolean()
-  emailVerified: boolean;
-
-  @Column({ nullable: true, default: null })
-  @ApiProperty()
-  @Exclude()
-  passwordHash: string;
-
-  @Column({ nullable: true, default: null })
-  @ApiProperty()
-  @Exclude()
-  passwordSalt: string;
-
-  // Social Sign-in
-  @Column({ nullable: true, unique: true, default: null })
-  @ApiProperty()
-  @Index({ unique: true })
-  facebookId: string;
+  public readonly emailVerified: boolean;
 
   @Column({ nullable: true, unique: true, default: null })
-  @ApiProperty()
   @Index({ unique: true })
-  googleId: string;
+  public readonly appleId: string;
 
   @Column({ nullable: true, unique: true, default: null })
-  @ApiProperty()
   @Index({ unique: true })
-  githubId: string;
+  public readonly facebookId: string;
 
   @Column({ nullable: true, unique: true, default: null })
-  @ApiProperty()
   @Index({ unique: true })
-  appleId: string;
+  public readonly githubId: string;
 
   @Column({ nullable: true, unique: true, default: null })
-  @ApiProperty()
   @Index({ unique: true })
-  linkedinId: string;
+  public readonly googleId: string;
 
   @Column({ nullable: true, unique: true, default: null })
-  @ApiProperty()
   @Index({ unique: true })
-  twitterId: string;
+  public readonly linkedinId: string;
+
+  @Column({ nullable: true, unique: true, default: null })
+  @Index({ unique: true })
+  public readonly twitterId: string;
 
   // Web3 Sign-in
+
   @Column({ nullable: true, unique: true, default: null })
-  @ApiProperty()
   @Index({ unique: true })
-  walletAddress: string;
+  public readonly walletAddress: string;
 
   // Profile
+
   @OneToOne(() => UserProfileEntity, (profile) => profile.user, {
     cascade: true,
     onDelete: 'CASCADE',
     onUpdate: 'CASCADE',
   })
   @JoinColumn()
-  @ApiProperty({ type: UserProfileEntity })
-  @ValidateNested()
-  @Type(() => UserProfileEntity)
-  profile: UserProfileEntity;
+  public readonly profile: UserProfileEntity;
 
-  @OneToMany(() => CompetitionSubmissionEntity, (s) => s.user)
-  @ApiProperty({ type: CompetitionSubmissionEntity, isArray: true })
-  @IsArray({
-    message: 'error.IsArray: competitionSubmissions should be an array',
-  })
-  @ValidateNested({ each: true })
-  @Type(() => CompetitionSubmissionEntity)
-  competitionSubmissions: CompetitionSubmissionEntity[];
-
-  // chess elo rank
-  @Column({ type: 'float', default: 400 })
-  @ApiProperty()
-  elo: number;
+  //   @OneToMany(() => CompetitionSubmissionEntity, (s) => s.user)
+  //   @ApiProperty({ type: CompetitionSubmissionEntity, isArray: true })
+  //   @IsArray({
+  //     message: 'error.IsArray: competitionSubmissions should be an array',
+  //   })
+  //   @ValidateNested({ each: true })
+  //   @Type(() => CompetitionSubmissionEntity)
+  //   competitionSubmissions: CompetitionSubmissionEntity[];
+  //
+  //   // chess elo rank
+  //   @Column({ type: 'float', default: 400 })
+  //   @ApiProperty()
+  //   elo: number;
 }

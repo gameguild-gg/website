@@ -1,46 +1,31 @@
-import { forwardRef, Module } from '@nestjs/common';
+import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
-import { CommonModule } from '../common/common.module';
-import { ApiConfigService } from '../common/config.service';
-import { NotificationModule } from '../notification/notification.module';
-import { UserModule } from '../user/user.module';
-import { AuthController } from './auth.controller';
-import { AuthService } from './auth.service';
-import {
-  JwtStrategy,
-  PublicStrategy,
-  RefreshTokenStrategy,
-} from './strategies';
+import { refreshTokenConfig } from '@/auth/config/refresh-token.config';
+import { accessTokenConfig } from '@/auth/config/access-token.config';
+import { AuthController } from '@/auth/controllers/auth.controller';
+import { AuthService } from '@/auth/services/auth.service';
+import { LocalStrategy } from '@/auth/strategies/local.strategy';
+import { AccessTokenStrategy } from '@/auth/strategies/access-token.strategy';
+import { RefreshTokenStrategy } from '@/auth/strategies/refresh-token.strategy';
 
 @Module({
   imports: [
-    forwardRef(() => UserModule),
-    PassportModule.register({
-      defaultStrategy: ['access-token', 'refresh-token'],
-    }),
-    JwtModule.registerAsync({
-      imports: [CommonModule],
-      inject: [ApiConfigService],
-      useFactory: (configService: ApiConfigService) => {
-        return {
-          global: true,
-          privateKey: configService.authConfig.accessTokenPrivateKey,
-          publicKey: configService.authConfig.accessTokenPublicKey,
-          signOptions: {
-            algorithm: 'RS256',
-            expiresIn: configService.authConfig.accessTokenExpiresIn,
-          },
-          verifyOptions: {
-            algorithms: ['RS256'],
-          },
-        };
-      },
-    }),
-    forwardRef(() => NotificationModule),
+    ConfigModule.forFeature(accessTokenConfig),
+    ConfigModule.forFeature(refreshTokenConfig),
+    JwtModule.registerAsync(accessTokenConfig.asProvider()),
+    PassportModule.register({ defaultStrategy: 'access-token' }),
+    // forwardRef(() => UserModule), // TODO: Implement UserModule
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, RefreshTokenStrategy, PublicStrategy],
-  exports: [AuthService, JwtModule],
+  providers: [
+    AuthService,
+    LocalStrategy,
+    AccessTokenStrategy,
+    RefreshTokenStrategy,
+    //
+  ],
+  exports: [AuthService],
 })
 export class AuthModule {}

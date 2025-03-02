@@ -1,36 +1,13 @@
-import {
-  CreateDateColumn,
-  PrimaryGeneratedColumn,
-  UpdateDateColumn,
-} from 'typeorm';
-import { ApiProperty } from '@nestjs/swagger';
-import { IsEmpty, IsOptional, IsUUID } from 'class-validator';
+import { EntityDto } from '@/common/dtos/entity.dto';
+import { CreateDateColumn, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 
-import { CrudValidationGroups } from '@dataui/crud';
-
-export abstract class EntityBase {
-  @ApiProperty({ type: 'string', format: 'uuid', required: false })
+export abstract class EntityBase implements EntityDto {
   @PrimaryGeneratedColumn('uuid')
-  @IsOptional()
-  @IsEmpty({
-    groups: [CrudValidationGroups.CREATE, CrudValidationGroups.UPDATE],
-  })
-  @IsUUID('4')
-  readonly id: string;
+  public readonly id: string;
 
-  @ApiProperty({ type: 'string', format: 'date-time' })
   @CreateDateColumn({ type: 'timestamp' })
-  @IsOptional()
-  @IsEmpty({
-    groups: [CrudValidationGroups.CREATE, CrudValidationGroups.UPDATE],
-  })
-  readonly createdAt: Date;
+  public readonly createdAt: Date;
 
-  @ApiProperty({ type: 'string', format: 'date-time' })
   @UpdateDateColumn({ type: 'timestamp' })
-  @IsOptional()
-  @IsEmpty({
-    groups: [CrudValidationGroups.CREATE, CrudValidationGroups.UPDATE],
-  })
-  readonly updatedAt: Date;
+  public readonly updatedAt: Date;
 }

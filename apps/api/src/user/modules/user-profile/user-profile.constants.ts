@@ -1,0 +1,3 @@
+export const GIVEN_NAME_MAX_LENGTH = 256;
+export const FAMILY_NAME_MAX_LENGTH = 256;
+export const DISPLAY_NAME_MAX_LENGTH = 256;
