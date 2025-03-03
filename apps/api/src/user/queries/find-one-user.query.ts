@@ -1,5 +1,6 @@
 import { Query } from '@nestjs/cqrs';
 import { FindOneOptions } from 'typeorm';
+
 import { UserDto } from '@/user/dtos/user.dto';
 import { UserEntity } from '@/user/entities/user.entity';
 

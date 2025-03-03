@@ -2,8 +2,9 @@ import { Inject, Logger } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
 import { CommandHandler, EventPublisher, ICommandHandler } from '@nestjs/cqrs';
 import { JwtService } from '@nestjs/jwt';
-import { emailVerificationTokenConfig } from '@/auth/config/email-verification-token.config';
+
 import { GenerateEmailVerificationTokenCommand } from '@/auth/commands/generate-email-verification-token.command';
+import { emailVerificationTokenConfig } from '@/auth/config/email-verification-token.config';
 import { EmailVerificationTokenPayloadDto } from '@/auth/dtos/email-verification-token-payload.dto';
 import { TokenType } from '@/auth/dtos/token-type.enum';
 

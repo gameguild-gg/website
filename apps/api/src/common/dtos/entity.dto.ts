@@ -1,5 +1,5 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { CrudValidationGroups } from '@dataui/crud';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsEmpty, IsOptional, IsUUID } from 'class-validator';
 
 export abstract class EntityDto {

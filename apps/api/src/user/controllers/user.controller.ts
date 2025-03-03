@@ -1,7 +1,8 @@
 import { Body, Controller, Delete, Get, Logger, Param, Post, Put } from '@nestjs/common';
-import { ApiResponse, ApiTags } from '@nestjs/swagger';
-import { UserDto } from '@/user/dtos/user.dto';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
+import { ApiResponse, ApiTags } from '@nestjs/swagger';
+
+import { UserDto } from '@/user/dtos/user.dto';
 
 @ApiTags('users')
 @Controller('users')

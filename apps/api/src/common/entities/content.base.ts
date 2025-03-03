@@ -1,4 +1,5 @@
 import { Column, Index } from 'typeorm';
+
 import { ContentDto } from '@/common/dtos/content.dto';
 import { LocalizableResourceBase } from '@/common/entities/localizable-resource.base';
 

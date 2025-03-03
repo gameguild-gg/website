@@ -10,6 +10,7 @@
 // // todo: move to user-profile lots of fields from here
 //
 import { Column, Entity, Index, JoinColumn, OneToOne } from 'typeorm';
+
 import { EntityBase } from '@/common/entities/entity.base';
 import { UserDto } from '@/user/dtos/user.dto';
 import { UserProfileEntity } from '@/user/modules/user-profile/entities/user-profile.entity';

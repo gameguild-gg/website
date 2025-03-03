@@ -1,22 +1,22 @@
 import { Logger, UnauthorizedException } from '@nestjs/common';
 import { CommandHandler, ICommandHandler, QueryBus } from '@nestjs/cqrs';
 
-import { ValidateLocalSignInCommand } from '@/auth/commands/validate-local-sign-in.command';
+import { ValidateAccessTokenCommand } from '@/auth/commands/validate-access-token.command';
 import { AuthService } from '@/auth/services/auth.service';
 import { validateHash } from '@/auth/utils';
 import { UserDto } from '@/user/dtos/user.dto';
 import { FindOneUserQuery } from '@/user/queries/find-one-user.query';
 
-@CommandHandler(ValidateLocalSignInCommand)
-export class ValidateLocalSignInHandler implements ICommandHandler<ValidateLocalSignInCommand> {
-  private readonly logger = new Logger(ValidateLocalSignInHandler.name);
+@CommandHandler(ValidateAccessTokenCommand)
+export class ValidateAccessTokenHandler implements ICommandHandler<ValidateAccessTokenCommand> {
+  private readonly logger = new Logger(ValidateAccessTokenHandler.name);
 
   constructor(
     private readonly authService: AuthService,
     private readonly queryBus: QueryBus,
   ) {}
 
-  public async execute(command: ValidateLocalSignInCommand): Promise<UserDto> {
+  public async execute(command: ValidateAccessTokenCommand): Promise<UserDto> {
     const { email, password } = command.data;
 
     const user = await this.queryBus.execute(new FindOneUserQuery({ where: { email } }));

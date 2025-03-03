@@ -1,8 +1,9 @@
 import { Logger } from '@nestjs/common';
 import { CommandHandler, EventPublisher, ICommandHandler } from '@nestjs/cqrs';
+
+import { CreateUserCommand } from '@/user/commands/create-user.command';
 import { UserDto } from '@/user/dtos/user.dto';
 import { UserService } from '@/user/services/user.service';
-import { CreateUserCommand } from '@/user/commands/create-user.command';
 
 @CommandHandler(CreateUserCommand)
 export class CreateUserHandler implements ICommandHandler<CreateUserCommand> {

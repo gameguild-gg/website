@@ -1,7 +1,8 @@
 import { Logger } from '@nestjs/common';
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
-import { FindOneUserQuery } from '@/user/queries/find-one-user.query';
+
 import { UserDto } from '@/user/dtos/user.dto';
+import { FindOneUserQuery } from '@/user/queries/find-one-user.query';
 import { UserService } from '@/user/services/user.service';
 
 @QueryHandler(FindOneUserQuery)

@@ -1,4 +1,5 @@
 import { Command } from '@nestjs/cqrs';
+
 import { CreateUserDto } from '@/user/dtos/create-user.dto';
 import { UserDto } from '@/user/dtos/user.dto';
 

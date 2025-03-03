@@ -2,14 +2,15 @@ import { Inject, Logger } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
 import { CommandHandler, EventPublisher, ICommandHandler } from '@nestjs/cqrs';
 import { JwtService } from '@nestjs/jwt';
-import { refreshTokenConfig } from '@/auth/config/refresh-token.config';
+
 import { GenerateRefreshTokenCommand } from '@/auth/commands/generate-refresh-token.command';
+import { refreshTokenConfig } from '@/auth/config/refresh-token.config';
 import { RefreshTokenPayloadDto } from '@/auth/dtos/refresh-token-payload.dto';
 import { TokenType } from '@/auth/dtos/token-type.enum';
 
 @CommandHandler(GenerateRefreshTokenCommand)
-export class GenerateRefreshTokenInHandler implements ICommandHandler<GenerateRefreshTokenCommand> {
-  private readonly logger = new Logger(GenerateRefreshTokenInHandler.name);
+export class GenerateRefreshTokenHandler implements ICommandHandler<GenerateRefreshTokenCommand> {
+  private readonly logger = new Logger(GenerateRefreshTokenHandler.name);
 
   constructor(
     @Inject(refreshTokenConfig.KEY)

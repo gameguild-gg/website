@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { AuthGuard } from '@nestjs/passport';
+
 import { GOOGLE_SIGN_IN_STRATEGY_KEY } from '@/auth/auth.constants';
 
 @Injectable()

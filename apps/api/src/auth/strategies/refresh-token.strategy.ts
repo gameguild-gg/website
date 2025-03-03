@@ -3,6 +3,7 @@ import { ConfigType } from '@nestjs/config';
 import { CommandBus } from '@nestjs/cqrs';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
+
 import { REFRESH_TOKEN_STRATEGY_KEY } from '@/auth/auth.constants';
 import { refreshTokenConfig as RefreshTokenConfig } from '@/auth/config/refresh-token.config';
 

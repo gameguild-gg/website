@@ -1,5 +1,6 @@
 import { Body, Controller, Get, Logger, Param, Put } from '@nestjs/common';
 import { ApiResponse, ApiTags } from '@nestjs/swagger';
+
 import { UserProfileDto } from '@/user/modules/user-profile/dtos/user-profile.dto';
 import { UserProfileService } from '@/user/modules/user-profile/services/user-profile.service';
 

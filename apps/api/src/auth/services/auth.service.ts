@@ -1,5 +1,6 @@
 import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
+
 import { buildUniqueWhereCondition, buildWhereConditions } from '@/common/utils';
 import { CreateUserCommand } from '@/user/commands/create-user.command';
 import { UserDto } from '@/user/dtos/user.dto';

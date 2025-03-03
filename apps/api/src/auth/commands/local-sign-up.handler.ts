@@ -1,8 +1,9 @@
 import { Logger } from '@nestjs/common';
 import { CommandHandler, EventPublisher, ICommandHandler } from '@nestjs/cqrs';
+
 import { LocalSignUpCommand } from '@/auth/commands/local-sign-up.command';
-import { AuthService } from '@/auth/services/auth.service';
 import { SignInResponseDto } from '@/auth/dtos/sign-in-response.dto';
+import { AuthService } from '@/auth/services/auth.service';
 
 @CommandHandler(LocalSignUpCommand)
 export class LocalSignUpHandler implements ICommandHandler<LocalSignUpCommand> {

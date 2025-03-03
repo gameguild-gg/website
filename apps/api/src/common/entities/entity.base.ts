@@ -1,6 +1,7 @@
-import { BeforeInsert, BeforeUpdate, Column, CreateDateColumn, DeleteDateColumn, PrimaryGeneratedColumn, UpdateDateColumn, VersionColumn } from 'typeorm';
-import { EntityDto } from '@/common/dtos/entity.dto';
 import * as crypto from 'crypto';
+import { BeforeInsert, BeforeUpdate, Column, CreateDateColumn, DeleteDateColumn, PrimaryGeneratedColumn, UpdateDateColumn, VersionColumn } from 'typeorm';
+
+import { EntityDto } from '@/common/dtos/entity.dto';
 
 export abstract class EntityBase implements EntityDto {
   @PrimaryGeneratedColumn('uuid')

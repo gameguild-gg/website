@@ -1,7 +1,8 @@
-import { EntityDto } from '@/common/dtos/entity.dto';
 import { ApiProperty, ApiSchema } from '@nestjs/swagger';
 import { Exclude, Type } from 'class-transformer';
 import { IsBoolean, IsEmail, IsOptional, ValidateNested } from 'class-validator';
+
+import { EntityDto } from '@/common/dtos/entity.dto';
 import { IsUsername } from '@/legacy/common/decorators/validator.decorator';
 import { UserProfileDto } from '@/user/modules/user-profile/dtos/user-profile.dto';
 

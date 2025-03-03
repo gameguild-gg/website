@@ -1,15 +1,16 @@
 import { Body, Controller, Get, HttpCode, HttpStatus, Logger, Post, UseGuards } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
 import { ApiBody, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { LocalSignInGuard } from '@/auth/guards/local-sign-in.guard';
-import { LocalSignInRequestDto } from '@/auth/dtos/local-sign-in-request.dto';
-import { LocalSignUpRequestDto } from '@/auth/dtos/local-sign-up-request.dto';
-import { SignInResponseDto } from '@/auth/dtos/sign-in-response.dto';
-import { GoogleSignInGuard } from '@/auth/guards/google-sign-in.guard';
+
 import { GenerateSignInResponseCommand } from '@/auth/commands/generate-sign-in-response.command';
 import { LocalSignUpCommand } from '@/auth/commands/local-sign-up.command';
 import { Public } from '@/auth/decorators/public.decorator';
 import { User } from '@/auth/decorators/user.decorator';
+import { LocalSignInRequestDto } from '@/auth/dtos/local-sign-in-request.dto';
+import { LocalSignUpRequestDto } from '@/auth/dtos/local-sign-up-request.dto';
+import { SignInResponseDto } from '@/auth/dtos/sign-in-response.dto';
+import { GoogleSignInGuard } from '@/auth/guards/google-sign-in.guard';
+import { LocalSignInGuard } from '@/auth/guards/local-sign-in.guard';
 import { UserDto } from '@/user/dtos/user.dto';
 
 @Controller('auth')
@@ -48,6 +49,7 @@ export class AuthController {
   @ApiResponse({ type: SignInResponseDto })
   @HttpCode(HttpStatus.OK)
   public async googleSignInCallback(@User() user: UserDto): Promise<SignInResponseDto> {
+    // TODO: should get and pass the google access token (req.accessToken) to pass to the user in the res.accessToken.
     return this.commandBus.execute(GenerateSignInResponseCommand.create(user));
   }
 

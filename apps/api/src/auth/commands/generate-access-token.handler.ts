@@ -2,14 +2,15 @@ import { Inject, Logger } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
 import { CommandHandler, EventPublisher, ICommandHandler } from '@nestjs/cqrs';
 import { JwtService } from '@nestjs/jwt';
-import { accessTokenConfig } from '@/auth/config/access-token.config';
+
 import { GenerateAccessTokenCommand } from '@/auth/commands/generate-access-token.command';
+import { accessTokenConfig } from '@/auth/config/access-token.config';
 import { AccessTokenPayloadDto } from '@/auth/dtos/access-token-payload.dto';
 import { TokenType } from '@/auth/dtos/token-type.enum';
 
 @CommandHandler(GenerateAccessTokenCommand)
-export class GenerateAccessTokenInHandler implements ICommandHandler<GenerateAccessTokenCommand> {
-  private readonly logger = new Logger(GenerateAccessTokenInHandler.name);
+export class GenerateAccessTokenHandler implements ICommandHandler<GenerateAccessTokenCommand> {
+  private readonly logger = new Logger(GenerateAccessTokenHandler.name);
 
   constructor(
     @Inject(accessTokenConfig.KEY)

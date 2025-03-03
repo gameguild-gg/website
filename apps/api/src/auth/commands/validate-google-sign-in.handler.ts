@@ -1,7 +1,8 @@
 import { Logger } from '@nestjs/common';
 import { CommandHandler, EventPublisher, ICommandHandler } from '@nestjs/cqrs';
-import { AuthService } from '@/auth/services/auth.service';
+
 import { ValidateGoogleSignInCommand } from '@/auth/commands/validate-google-sign-in.command';
+import { AuthService } from '@/auth/services/auth.service';
 import { UserDto } from '@/user/dtos/user.dto';
 
 @CommandHandler(ValidateGoogleSignInCommand)

@@ -1,6 +1,7 @@
 import { ModelBase } from '@/common/models/model.base';
-import { UserDto } from '../dtos/user.dto';
 import { UserProfileDto } from '@/user/modules/user-profile/dtos/user-profile.dto';
+
+import { UserDto } from '../dtos/user.dto';
 
 export class UserModel extends ModelBase implements UserDto {
   // Local Sign-in

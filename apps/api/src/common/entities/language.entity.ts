@@ -1,4 +1,5 @@
 import { Column, Entity } from 'typeorm';
+
 import { EntityBase } from '@/common/entities/entity.base';
 
 @Entity('languages')

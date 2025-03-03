@@ -1,8 +1,9 @@
 import { Column, Entity, OneToOne } from 'typeorm';
+
+import { ContentBase } from '@/common/entities/content.base';
 import { UserEntity } from '@/user/entities/user.entity';
 import { UserProfileDto } from '@/user/modules/user-profile/dtos/user-profile.dto';
 import { DISPLAY_NAME_MAX_LENGTH, FAMILY_NAME_MAX_LENGTH, GIVEN_NAME_MAX_LENGTH } from '@/user/modules/user-profile/user-profile.constants';
-import { ContentBase } from '@/common/entities/content.base';
 
 @Entity({ name: 'user_profile' })
 export class UserProfileEntity extends ContentBase implements UserProfileDto {

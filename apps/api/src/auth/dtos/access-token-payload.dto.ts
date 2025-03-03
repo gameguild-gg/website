@@ -1,5 +1,6 @@
 import { ApiProperty, ApiSchema } from '@nestjs/swagger';
 import { IsEnum, IsNotEmpty, IsString, MaxLength } from 'class-validator';
+
 import { SUB_MAX_LENGTH } from '@/auth/auth.constants';
 import { TokenType } from '@/auth/dtos/token-type.enum';
 

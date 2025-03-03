@@ -1,8 +1,9 @@
-import { DataSource, DataSourceOptions } from 'typeorm';
-import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { registerAs } from '@nestjs/config';
+import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { join } from 'path';
-import { SnakeNamingStrategy } from '../database/strategies/snake-naming.strategy';
+import { DataSource, DataSourceOptions } from 'typeorm';
+
+import { SnakeCaseNamingStrategy } from '../database/strategies/snake-case-naming.strategy';
 import { environment } from './environment.config';
 
 const entities = [
@@ -36,7 +37,7 @@ function getDataSourceOptions(): DataSourceOptions {
     dropSchema: environment.getBoolean('DB_DROP_SCHEMA_ENABLED', false),
     logging: environment.getBoolean('DB_LOGGING_ENABLED', false),
     migrationsRun: environment.getBoolean('DB_MIGRATIONS_RUN_ENABLED', true),
-    namingStrategy: new SnakeNamingStrategy(),
+    namingStrategy: new SnakeCaseNamingStrategy(),
     useUTC: environment.getBoolean('DB_USE_UTC_ENABLED', true),
   };
 }

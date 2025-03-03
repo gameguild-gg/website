@@ -1,6 +1,7 @@
 import { ApiProperty, ApiSchema } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { ValidateNested } from 'class-validator';
+
 import { UserDto } from '@/user/dtos/user.dto';
 
 @ApiSchema({ name: 'SignInResponse' })

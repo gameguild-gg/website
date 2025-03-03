@@ -1,8 +1,9 @@
-import { UserDto } from '@/user/dtos/user.dto';
-import { IsOptional, IsString, MaxLength } from 'class-validator';
 import { ApiProperty, ApiSchema } from '@nestjs/swagger';
-import { DISPLAY_NAME_MAX_LENGTH, FAMILY_NAME_MAX_LENGTH, GIVEN_NAME_MAX_LENGTH } from '@/user/modules/user-profile/user-profile.constants';
+import { IsOptional, IsString, MaxLength } from 'class-validator';
+
 import { EntityDto } from '@/common/dtos/entity.dto';
+import { UserDto } from '@/user/dtos/user.dto';
+import { DISPLAY_NAME_MAX_LENGTH, FAMILY_NAME_MAX_LENGTH, GIVEN_NAME_MAX_LENGTH } from '@/user/modules/user-profile/user-profile.constants';
 
 @ApiSchema({ name: 'UserProfile' })
 export class UserProfileDto extends EntityDto {

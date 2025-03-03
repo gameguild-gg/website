@@ -1,4 +1,5 @@
 import { Command } from '@nestjs/cqrs';
+
 import { UserDto } from '@/user/dtos/user.dto';
 
 export class GenerateEmailVerificationTokenCommand extends Command<string> {

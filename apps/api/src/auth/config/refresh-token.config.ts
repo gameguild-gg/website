@@ -1,8 +1,9 @@
 import { registerAs } from '@nestjs/config';
 import { JwtModuleOptions } from '@nestjs/jwt';
+
 import { REFRESH_TOKEN_STRATEGY_KEY } from '@/auth/auth.constants';
-import { environment } from '@/config/environment.config';
 import { parseAlgorithm } from '@/auth/utils';
+import { environment } from '@/config/environment.config';
 
 export const refreshTokenConfig = registerAs(
   REFRESH_TOKEN_STRATEGY_KEY,

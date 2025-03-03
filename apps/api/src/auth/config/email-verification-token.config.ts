@@ -1,8 +1,9 @@
 import { registerAs } from '@nestjs/config';
 import { JwtModuleOptions } from '@nestjs/jwt';
+
 import { EMAIL_VERIFICATION_TOKEN_STRATEGY_KEY } from '@/auth/auth.constants';
-import { environment } from '@/config/environment.config';
 import { parseAlgorithm } from '@/auth/utils';
+import { environment } from '@/config/environment.config';
 
 export const emailVerificationTokenConfig = registerAs(
   EMAIL_VERIFICATION_TOKEN_STRATEGY_KEY,

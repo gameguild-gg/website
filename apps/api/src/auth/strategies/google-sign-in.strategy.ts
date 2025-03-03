@@ -3,6 +3,7 @@ import { ConfigType } from '@nestjs/config';
 import { CommandBus } from '@nestjs/cqrs';
 import { PassportStrategy } from '@nestjs/passport';
 import { Profile, Strategy, VerifyCallback } from 'passport-google-oauth20';
+
 import { GOOGLE_SIGN_IN_STRATEGY_KEY } from '@/auth/auth.constants';
 import { ValidateGoogleSignInCommand } from '@/auth/commands/validate-google-sign-in.command';
 import { googleOauthConfig } from '@/auth/config/google-oauth.config';
