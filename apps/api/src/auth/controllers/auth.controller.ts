@@ -1,13 +1,14 @@
-import { Body, Controller, Get, Logger, Param, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Logger, Post, UseGuards } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
 import { ApiBody, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { LocalGuard } from '@/auth/guards/local.guard';
+import { LocalSignInGuard } from '@/auth/guards/local-sign-in.guard';
 import { LocalSignInRequestDto } from '@/auth/dtos/local-sign-in-request.dto';
 import { SignInResponseDto } from '@/auth/dtos/sign-in-response.dto';
-import { SignInWithGoogleGuard } from '@/auth/guards/sign-in-with-google.guard';
-import { GenerateAuthTokensCommand } from '@/auth/commands/generate-auth-tokens.command';
+import { GoogleSignInGuard } from '@/auth/guards/google-sign-in.guard';
+import { GenerateSignInResponseCommand } from '@/auth/commands/generate-sign-in-response.command';
 import { User } from '@/auth/decorators/user.decorator';
 import { UserDto } from '@/user/dtos/user.dto';
+import { Public } from '@/auth/decorators/public.decorator';
 
 @Controller('auth')
 @ApiTags('auth')
@@ -17,20 +18,24 @@ export class AuthController {
   constructor(private readonly commandBus: CommandBus) {}
 
   @Post('sign-in')
-  @UseGuards(LocalGuard)
+  @UseGuards(LocalSignInGuard)
   @ApiBody({ type: LocalSignInRequestDto })
   @ApiResponse({ type: SignInResponseDto })
-  public async signInWithEmailAndPassword(@Body() data: Readonly<LocalSignInRequestDto>, @User() user: UserDto) {
-    // return this.commandBus.execute(new LocalSignInCommand(data));
-    return this.commandBus.execute(GenerateAuthTokensCommand.create(user));
+  public async localSignIn(@Body() data: Readonly<LocalSignInRequestDto>, @User() user: UserDto): Promise<SignInResponseDto> {
+    return this.commandBus.execute(GenerateSignInResponseCommand.create(user));
   }
 
-  @Get('google/callback/:idToken')
-  @UseGuards(SignInWithGoogleGuard)
+  @Public()
+  @Get('google/sign-in')
+  @UseGuards(GoogleSignInGuard)
+  public async googleSignIn() {}
+
+  @Public()
+  @Get('google/callback')
+  @UseGuards(GoogleSignInGuard)
   @ApiResponse({ type: SignInResponseDto })
-  async signInWithGoogle(@Param('idToken') idToken: string, @User() user: UserDto) {
-    // return this.commandBus.execute(new SignInWithGoogleCommand(idToken));
-    return this.commandBus.execute(GenerateAuthTokensCommand.create(user));
+  public async googleSignInCallback(@User() user: UserDto): Promise<SignInResponseDto> {
+    return this.commandBus.execute(GenerateSignInResponseCommand.create(user));
   }
 
   // @Public()

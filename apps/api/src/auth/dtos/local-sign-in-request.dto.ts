@@ -7,17 +7,17 @@ export class LocalSignInRequestDto {
   @IsString()
   @IsNotEmpty()
   @IsEmail({}, {})
-  readonly username?: string;
+  public readonly username?: string;
 
   @ApiProperty()
   @IsString()
   @IsNotEmpty()
   @IsEmail({}, {})
-  readonly email!: string;
+  public readonly email!: string;
 
   @ApiProperty()
   @IsString()
   @IsNotEmpty()
   @IsStrongPassword({}, {})
-  readonly password!: string;
+  public readonly password!: string;
 }

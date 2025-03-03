@@ -1,8 +1,10 @@
-import { Logger } from '@nestjs/common';
-import { CommandHandler, EventPublisher, ICommandHandler } from '@nestjs/cqrs';
+import { Logger, UnauthorizedException } from '@nestjs/common';
+import { CommandHandler, ICommandHandler, QueryBus } from '@nestjs/cqrs';
 import { ValidateLocalSignInCommand } from '@/auth/commands/validate-local-sign-in.command';
 import { AuthService } from '@/auth/services/auth.service';
-import { SignInResponseDto } from '@/auth/dtos/sign-in-response.dto';
+import { validateHash } from '@/auth/utils';
+import { UserDto } from '@/user/dtos/user.dto';
+import { FindOneUserQuery } from '@/user/queries/find-one-user.query';
 
 @CommandHandler(ValidateLocalSignInCommand)
 export class ValidateLocalSignInHandler implements ICommandHandler<ValidateLocalSignInCommand> {
@@ -10,13 +12,20 @@ export class ValidateLocalSignInHandler implements ICommandHandler<ValidateLocal
 
   constructor(
     private readonly authService: AuthService,
-    private readonly publisher: EventPublisher,
+    private readonly queryBus: QueryBus,
   ) {}
 
-  public async execute(command: ValidateLocalSignInCommand): Promise<SignInResponseDto> {
-    const { data } = command;
+  public async execute(command: ValidateLocalSignInCommand): Promise<UserDto> {
+    const { email, password } = command.data;
 
-    // return await this.authService.signInWithEmailAndPassword(data);
-    throw new Error('Method not implemented.');
+    const user = await this.queryBus.execute(new FindOneUserQuery({ where: { email } }));
+
+    await this.authService.validateSignIn(user);
+
+    const { passwordHash, passwordSalt } = user;
+
+    if (!validateHash(password, passwordHash, passwordSalt)) throw new UnauthorizedException();
+
+    return user;
   }
 }
