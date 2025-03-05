@@ -9,6 +9,7 @@ import chapter04 from './chapters/week04/index';
 import chapter05 from './chapters/week05/index';
 import chapter06 from './chapters/week06/index';
 import chapter07 from './chapters/week07/index';
+import chapter08 from './chapters/week08/index';
 import ChapterEntity = Api.ChapterEntity;
 import CourseEntity = Api.CourseEntity;
 import ImageEntity = Api.ImageEntity;
@@ -40,6 +41,7 @@ chapters.push(chapter04);
 chapters.push(chapter05);
 chapters.push(chapter06);
 chapters.push(chapter07);
+chapters.push(chapter08);
 
 const lectures: LectureEntity[] = [];
 lectures.push(
@@ -50,6 +52,7 @@ lectures.push(
   ...chapter05.lectures,
   ...chapter06.lectures,
   ...chapter07.lectures,
+  ...chapter08.lectures,
 );
 
 // set course for all lectures and chapters
