@@ -9,8 +9,12 @@ import { GenerateEmailVerificationTokenHandler } from '@/auth/commands/generate-
 import { GenerateRefreshTokenHandler } from '@/auth/commands/generate-refresh-token.handler';
 import { GenerateSignInResponseHandler } from '@/auth/commands/generate-sign-in-response.handler';
 import { GenerateWeb3SignInChallengeHandler } from '@/auth/commands/generate-web3-sign-in-challenge.handler';
+import { ValidateAccessTokenHandler } from '@/auth/commands/validate-access-token.handler';
+import { ValidateEmailVerificationTokenHandler } from '@/auth/commands/validate-email-verification-token.handler';
 import { ValidateGoogleSignInHandler } from '@/auth/commands/validate-google-sign-in.handler';
 import { ValidateLocalSignInHandler } from '@/auth/commands/validate-local-sign-in.handler';
+import { ValidateRefreshTokenHandler } from '@/auth/commands/validate-refresh-token.handler';
+import { ValidateWeb3SignInHandler } from '@/auth/commands/validate-web3-sign-in.handler';
 import { accessTokenConfig } from '@/auth/config/access-token.config';
 import { emailVerificationTokenConfig } from '@/auth/config/email-verification-token.config';
 import { googleOauthConfig } from '@/auth/config/google-oauth.config';
@@ -51,15 +55,15 @@ import { RefreshTokenStrategy } from '@/auth/strategies/refresh-token.strategy';
     //
     GenerateSignInResponseHandler,
     //
-    // ValidateAccessTokenHandler,
-    // ValidateRefreshTokenHandler,
+    ValidateAccessTokenHandler,
+    ValidateRefreshTokenHandler,
     //
-    // ValidateEmailVerificationTokenHandler,
+    ValidateEmailVerificationTokenHandler,
     // ValidatePasswordResetTokenHandler,
     //
     ValidateGoogleSignInHandler,
     ValidateLocalSignInHandler,
-    // ValidadeWe3SignInHandler,
+    ValidateWeb3SignInHandler, // TODO: Make a custom passport.js? strategy for web3 sign in.
     //
   ],
   exports: [AuthService],

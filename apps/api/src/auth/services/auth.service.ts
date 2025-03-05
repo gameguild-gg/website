@@ -64,6 +64,7 @@ export class AuthService {
   //     throw new UnauthorizedException('Invalid or expired token');
   //   }
   // }
+
   //   public async userExists(user: string): Promise<boolean> {
   //     const foundUser = await this.userService.findOne({
   //       where: [{ email: user }, { username: user }],

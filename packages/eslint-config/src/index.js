@@ -11,7 +11,6 @@ module.exports = {
   ignorePatterns: ['.eslintrc'],
   rules: {
     'prettier/prettier': ['error', require('@game-guild/prettier-config')],
-    // Ordenação dos imports e exports
     'simple-import-sort/imports': 'error',
     'simple-import-sort/exports': 'error',
   },

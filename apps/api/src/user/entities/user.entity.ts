@@ -9,10 +9,11 @@
 //
 // // todo: move to user-profile lots of fields from here
 //
-import { Column, Entity, Index, JoinColumn, OneToOne } from 'typeorm';
+import { Column, Entity, Index, JoinColumn, OneToMany, OneToOne } from 'typeorm';
 
 import { EntityBase } from '@/common/entities/entity.base';
 import { UserDto } from '@/user/dtos/user.dto';
+import { ResourcePermissionEntity } from '@/common/entities/resource-permission.entity';
 import { UserProfileEntity } from '@/user/modules/user-profile/entities/user-profile.entity';
 
 @Entity({ name: 'user' })
@@ -75,6 +76,9 @@ export class UserEntity extends EntityBase implements UserDto {
   })
   @JoinColumn()
   public readonly profile: UserProfileEntity;
+
+  @OneToMany(() => ResourcePermissionEntity, (permission) => permission.user, { cascade: true })
+  public readonly permissions: ResourcePermissionEntity[];
 
   //   @OneToMany(() => CompetitionSubmissionEntity, (s) => s.user)
   //   @ApiProperty({ type: CompetitionSubmissionEntity, isArray: true })

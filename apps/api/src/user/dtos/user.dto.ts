@@ -1,10 +1,9 @@
 import { ApiProperty, ApiSchema } from '@nestjs/swagger';
-import { Exclude, Type } from 'class-transformer';
-import { IsBoolean, IsEmail, IsOptional, ValidateNested } from 'class-validator';
+import { Exclude } from 'class-transformer';
+import { IsBoolean, IsEmail, IsOptional } from 'class-validator';
 
 import { EntityDto } from '@/common/dtos/entity.dto';
 import { IsUsername } from '@/legacy/common/decorators/validator.decorator';
-import { UserProfileDto } from '@/user/modules/user-profile/dtos/user-profile.dto';
 
 @ApiSchema({ name: 'User' })
 export class UserDto extends EntityDto {
@@ -22,7 +21,7 @@ export class UserDto extends EntityDto {
 
   @ApiProperty()
   @IsBoolean()
-  public readonly emailVerified: boolean;
+  public emailVerified: boolean;
 
   @Exclude()
   public readonly passwordHash: string;
@@ -64,9 +63,9 @@ export class UserDto extends EntityDto {
 
   // Profile
 
-  @ApiProperty({ type: UserProfileDto })
-  @Type(() => UserProfileDto)
-  @IsOptional()
-  @ValidateNested()
-  public readonly profile: UserProfileDto;
+  // @ApiProperty({ type: UserProfileDto })
+  // @Type(() => UserProfileDto)
+  // @IsOptional()
+  // @ValidateNested()
+  // public readonly profile: UserProfileDto;
 }

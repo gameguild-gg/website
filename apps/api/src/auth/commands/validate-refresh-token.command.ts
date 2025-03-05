@@ -1,14 +1,14 @@
 import { Command } from '@nestjs/cqrs';
 
-import { LocalSignInRequestDto } from '@/auth/dtos/local-sign-in-request.dto';
+import { RefreshTokenPayloadDto } from '@/auth/dtos/refresh-token-payload.dto';
 import { UserDto } from '@/user/dtos/user.dto';
 
 export class ValidateRefreshTokenCommand extends Command<UserDto> {
-  protected constructor(public readonly data: LocalSignInRequestDto) {
+  protected constructor(public readonly data: RefreshTokenPayloadDto) {
     super();
   }
 
-  public static create(data: LocalSignInRequestDto): ValidateRefreshTokenCommand {
+  public static create(data: RefreshTokenPayloadDto): ValidateRefreshTokenCommand {
     return new ValidateRefreshTokenCommand(data);
   }
 }

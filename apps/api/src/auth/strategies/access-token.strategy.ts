@@ -5,7 +5,10 @@ import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 
 import { ACCESS_TOKEN_STRATEGY_KEY } from '@/auth/auth.constants';
+import { ValidateAccessTokenCommand } from '@/auth/commands/validate-access-token.command';
 import { accessTokenConfig as AccessTokenConfig } from '@/auth/config/access-token.config';
+import { AccessTokenPayloadDto } from '@/auth/dtos/access-token-payload.dto';
+import { UserDto } from '@/user/dtos/user.dto';
 
 @Injectable()
 export class AccessTokenStrategy extends PassportStrategy(Strategy, ACCESS_TOKEN_STRATEGY_KEY) {
@@ -13,17 +16,18 @@ export class AccessTokenStrategy extends PassportStrategy(Strategy, ACCESS_TOKEN
 
   constructor(
     @Inject(AccessTokenConfig.KEY)
-    private readonly accessTokenConfig: ConfigType<typeof AccessTokenConfig>,
+    private readonly config: ConfigType<typeof AccessTokenConfig>,
     private readonly commandBus: CommandBus,
   ) {
     super({
-      // TODO: get this from a configService or the authService.
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-      ignoreExpiration: false,
-      algorithms: ['HS512'],
+      ignoreExpiration: config.verifyOptions.ignoreExpiration,
+      algorithms: [...config.verifyOptions.algorithms],
       secretOrKey: 'secret',
     });
   }
 
-  public async validate() {}
+  public async validate(payload: AccessTokenPayloadDto): Promise<UserDto> {
+    return this.commandBus.execute(ValidateAccessTokenCommand.create(payload));
+  }
 }

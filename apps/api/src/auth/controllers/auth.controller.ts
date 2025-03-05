@@ -9,8 +9,10 @@ import { User } from '@/auth/decorators/user.decorator';
 import { LocalSignInRequestDto } from '@/auth/dtos/local-sign-in-request.dto';
 import { LocalSignUpRequestDto } from '@/auth/dtos/local-sign-up-request.dto';
 import { SignInResponseDto } from '@/auth/dtos/sign-in-response.dto';
+import { GitHubSignInGuard } from '@/auth/guards/github-sign-in.guard';
 import { GoogleSignInGuard } from '@/auth/guards/google-sign-in.guard';
 import { LocalSignInGuard } from '@/auth/guards/local-sign-in.guard';
+import { RefreshTokenGuard } from '@/auth/guards/refresh-token.guard';
 import { UserDto } from '@/user/dtos/user.dto';
 
 @Controller('auth')
@@ -33,8 +35,24 @@ export class AuthController {
   @Post('sign-up')
   @ApiBody({ type: LocalSignUpRequestDto })
   @ApiResponse({ type: SignInResponseDto })
-  public async signUpWithEmailAndPassword(@Body() data: Readonly<LocalSignUpRequestDto>) {
+  public async localSignUp(@Body() data: Readonly<LocalSignUpRequestDto>) {
     return this.commandBus.execute(LocalSignUpCommand.create(data));
+  }
+
+  @Public()
+  @Get('github/sign-in')
+  @UseGuards(GitHubSignInGuard)
+  @HttpCode(HttpStatus.OK)
+  public async githubSignIn() {}
+
+  @Public()
+  @Get('github/callback')
+  @UseGuards(GitHubSignInGuard)
+  @ApiResponse({ type: SignInResponseDto })
+  @HttpCode(HttpStatus.OK)
+  public async gitHubSignInCallback(@User() user: UserDto): Promise<SignInResponseDto> {
+    // TODO: should get and pass the github access token (req.accessToken) to pass to the user in the res.accessToken.
+    return this.commandBus.execute(GenerateSignInResponseCommand.create(user));
   }
 
   @Public()
@@ -73,7 +91,9 @@ export class AuthController {
 
   @Public()
   @Post('token')
-  public async refreshToken() {
-    // TODO: Implement this method.
+  @UseGuards(RefreshTokenGuard)
+  @HttpCode(HttpStatus.OK)
+  public async refreshToken(@User() user: UserDto) {
+    return this.commandBus.execute(GenerateSignInResponseCommand.create(user));
   }
 }
