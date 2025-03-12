@@ -925,6 +925,7 @@ export class CompetitionService {
         },
       },
       select: {
+        id: true,
         username: true,
         elo: true,
       },

@@ -98,6 +98,7 @@ export namespace Api {
 	}
 
 	export interface ChessLeaderboardResponseEntryDto {
+		id: string;
 		username: string;
 		/**
 		 * @type {number}
