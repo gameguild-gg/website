@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/chess/ui/card';
 import { Button } from '@/components/chess/ui/button';
@@ -8,6 +8,9 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/chess/ui/alert
 import { AlertTriangle, CheckCircle, FileArchive, FileCode, Info, Loader2, Upload, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import JSZip from 'jszip';
+import { getSession } from 'next-auth/react';
+import { GetSessionReturnType } from '@/config/auth.config';
+import { CompetitionsApi } from '@game-guild/apiclient';
 
 // Define allowed file extensions
 const ALLOWED_EXTENSIONS = ['.c', '.cpp', '.cxx', '.h', '.hpp', '.hxx', '.zip'];
@@ -26,6 +29,31 @@ export default function SubmitBotContent() {
     type: 'success' | 'error' | 'info' | null;
     message: string | null;
   }>({ type: null, message: null });
+  const [accessToken, setAccessToken] = useState('');
+  const api = new CompetitionsApi({
+    basePath: process.env.NEXT_PUBLIC_API_URL,
+  });
+
+  async function getAccessToken() {
+    if (accessToken) return;
+    const localSession = (await getSession()) as unknown as GetSessionReturnType;
+    if (localSession) {
+      const token = localSession.user.accessToken;
+      setAccessToken(token);
+    } else {
+      console.error('No session found');
+    }
+  }
+
+  useEffect(() => {
+    getAccessToken();
+  }, []);
+
+  // Check if current files include a zip file
+  const hasZipFile = files.some((file) => file.name.toLowerCase().endsWith('.zip'));
+
+  // Check if current files include C++ files
+  const hasCppFiles = files.some((file) => !file.name.toLowerCase().endsWith('.zip'));
 
   const validateZipFile = async (file: File): Promise<{ valid: boolean; message?: string }> => {
     setIsValidatingZip(true);
@@ -58,7 +86,7 @@ export default function SubmitBotContent() {
       if (invalidFiles.length > 0) {
         return {
           valid: false,
-          message: `Your zip file contains invalid file types: ${invalidFiles.join(', ')}. Only C++ related files (.c, .cpp, .cxx, .h, .hpp, .hxx) are allowed.`,
+          message: `Your zip file contains invalid file types. Only C++ related files (.c, .cpp, .cxx, .h, .hpp, .hxx) are allowed. Bake sure you are zipping the files properly. Offending files: ${JSON.stringify(invalidFiles)}`,
         };
       }
 
@@ -67,7 +95,7 @@ export default function SubmitBotContent() {
       console.error('Error validating zip:', error);
       return {
         valid: false,
-        message: 'Failed to process zip file. The file may be corrupted or invalid.',
+        message: 'Failed to process zip file. The file may be corrupted, invalid or password protected. Please try again.',
       };
     } finally {
       setIsValidatingZip(false);
@@ -75,65 +103,87 @@ export default function SubmitBotContent() {
     }
   };
 
-  const onDrop = useCallback(async (acceptedFiles: File[]) => {
-    // Reset status when new files are added
-    setSubmitStatus({ type: null, message: null });
+  const onDrop = useCallback(
+    async (acceptedFiles: File[]) => {
+      // Reset status when new files are added
+      setSubmitStatus({ type: null, message: null });
 
-    // Filter for only allowed file extensions
-    const validFiles: File[] = [];
-    const invalidFiles: File[] = [];
+      // Check if we already have a zip file and trying to add more files
+      if (hasZipFile) {
+        setSubmitStatus({
+          type: 'error',
+          message: 'You already have a zip file. Please remove it first if you want to upload different files.',
+        });
+        return;
+      }
 
-    for (const file of acceptedFiles) {
-      if (hasAllowedExtension(file.name)) {
-        // If it's a zip file, validate its contents
-        if (file.name.toLowerCase().endsWith('.zip')) {
-          const zipValidation = await validateZipFile(file);
-          if (zipValidation.valid) {
-            validFiles.push(file);
+      // Check if we're trying to add a zip file when we already have C++ files
+      const newZipFiles = acceptedFiles.filter((file) => file.name.toLowerCase().endsWith('.zip'));
+      if (hasCppFiles && newZipFiles.length > 0) {
+        setSubmitStatus({
+          type: 'error',
+          message: 'You already have C++ files. Please remove them first if you want to upload a zip file instead.',
+        });
+        return;
+      }
+
+      // Filter for only allowed file extensions
+      const validFiles: File[] = [];
+      const invalidFiles: File[] = [];
+
+      for (const file of acceptedFiles) {
+        if (hasAllowedExtension(file.name)) {
+          // If it's a zip file, validate its contents
+          if (file.name.toLowerCase().endsWith('.zip')) {
+            const zipValidation = await validateZipFile(file);
+            if (zipValidation.valid) {
+              validFiles.push(file);
+            } else {
+              setSubmitStatus({
+                type: 'error',
+                message: zipValidation.message || 'Invalid zip file contents.',
+              });
+              return;
+            }
           } else {
-            setSubmitStatus({
-              type: 'error',
-              message: zipValidation.message || 'Invalid zip file contents.',
-            });
-            return;
+            validFiles.push(file);
           }
         } else {
-          validFiles.push(file);
+          invalidFiles.push(file);
         }
-      } else {
-        invalidFiles.push(file);
       }
-    }
 
-    if (invalidFiles.length > 0) {
-      setSubmitStatus({
-        type: 'error',
-        message: `Invalid file type(s): ${invalidFiles.map((f) => f.name).join(', ')}. Only C++ related files (.c, .cpp, .cxx, .h, .hpp, .hxx) and .zip files are allowed.`,
-      });
-      return;
-    }
+      if (invalidFiles.length > 0) {
+        setSubmitStatus({
+          type: 'error',
+          message: `Invalid file type(s): ${invalidFiles.map((f) => f.name).join(', ')}. Only C++ related files (.c, .cpp, .cxx, .h, .hpp, .hxx) and .zip files are allowed.`,
+        });
+        return;
+      }
 
-    // Check if there's more than one zip file
-    const zipFiles = validFiles.filter((file) => file.name.toLowerCase().endsWith('.zip'));
-    if (zipFiles.length > 1) {
-      setSubmitStatus({
-        type: 'error',
-        message: 'Only one zip file is allowed per submission.',
-      });
-      return;
-    }
+      // Check if there's more than one zip file
+      const zipFiles = validFiles.filter((file) => file.name.toLowerCase().endsWith('.zip'));
+      if (zipFiles.length > 1) {
+        setSubmitStatus({
+          type: 'error',
+          message: 'Only one zip file is allowed per submission.',
+        });
+        return;
+      }
 
-    // If there's a zip file, don't allow other files
-    if (zipFiles.length === 1 && validFiles.length > 1) {
-      setSubmitStatus({
-        type: 'error',
-        message: 'When submitting a zip file, no other files should be included.',
-      });
-      return;
-    }
+      // If there's a zip file, don't allow other files
+      if (zipFiles.length === 1 && validFiles.length > 1) {
+        setSubmitStatus({
+          type: 'error',
+          message: 'When submitting a zip file, no other files should be included.',
+        });
+        return;
+      }
 
-    setFiles((prevFiles) => [...prevFiles, ...validFiles]);
-  }, []);
+      setFiles((prevFiles) => [...prevFiles, ...validFiles]);
+    },
+    [hasZipFile, hasCppFiles],
+  );
 
   const { getRootProps, getInputProps, isDragActive, isDragReject } = useDropzone({
     onDrop,
@@ -144,6 +194,7 @@ export default function SubmitBotContent() {
       'application/zip': ['.zip'],
     },
     multiple: true,
+    disabled: isSubmitting || isValidatingZip,
   });
 
   const removeFile = (index: number) => {
@@ -162,38 +213,66 @@ export default function SubmitBotContent() {
     setIsSubmitting(true);
     setSubmitStatus({ type: null, message: null });
 
-    try {
-      const formData = new FormData();
+    let zipdata: ArrayBuffer;
+    // if there is only one file and it is a zip get the arraybuffer
+    if (files.length === 1 && files[0].name.toLowerCase().endsWith('.zip')) {
+      zipdata = await files[0].arrayBuffer();
+    }
+    // else if there is a list of c++ files
+    else if (files.length > 1) {
+      const zip = new JSZip();
       files.forEach((file) => {
-        formData.append('files', file);
+        zip.file(file.name, file);
       });
+      zipdata = await zip.generateAsync({ type: 'arraybuffer' });
+    }
 
-      const response = await fetch('/api/submit-bot', {
-        method: 'POST',
-        body: formData,
+    // check if zipData size is less than 10MB
+    if (zipdata && zipdata.byteLength > 10 * 1024 * 1024) {
+      setSubmitStatus({
+        type: 'error',
+        message: 'Zip file size must be less than 10MB.',
       });
+      return;
+    }
 
-      const data = await response.json();
+    try {
+      // fix error: TS2741: Property value is missing in type Blob but required in type FilePart
+      const response = await api.competitionControllerSubmitChessAgent(
+        {
+          file: {
+            value: new Blob([zipdata as ArrayBuffer], {
+              type: 'application/zip',
+            }),
+          },
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        },
+      );
 
-      if (response.ok) {
+      if (response.status === 200 || response.status === 201) {
+        console.log(JSON.stringify(response));
         setSubmitStatus({
           type: 'success',
-          message: data.message,
+          message: 'Bot submitted successfully!',
         });
-        // Clear files on successful submission
         setFiles([]);
       } else {
+        console.error(JSON.stringify(response));
         setSubmitStatus({
           type: 'error',
-          message: data.message || 'An error occurred during submission.',
+          message: 'An error occurred during submission. Check the console for details.',
         });
       }
     } catch (error) {
+      console.error(error);
       setSubmitStatus({
         type: 'error',
-        message: 'Failed to submit bot. Please try again later.',
+        message: 'Failed to submit bot. Please try again later. Check the console for details.',
       });
-      console.error('Submission error:', error);
     } finally {
       setIsSubmitting(false);
     }
@@ -226,6 +305,8 @@ export default function SubmitBotContent() {
               isDragReject && 'border-destructive bg-destructive/5',
               !isDragActive && !isDragReject && 'border-muted-foreground/25 hover:border-primary/50',
               (isSubmitting || isValidatingZip) && 'opacity-50 pointer-events-none',
+              hasZipFile && !isDragActive && 'border-blue-500 bg-blue-50 dark:bg-blue-950/20',
+              hasCppFiles && !isDragActive && 'border-green-500 bg-green-50 dark:bg-green-950/20',
             )}
           >
             <input {...getInputProps()} disabled={isSubmitting || isValidatingZip} />
@@ -233,9 +314,15 @@ export default function SubmitBotContent() {
               <Upload className="h-10 w-10 text-muted-foreground" />
               <p className="text-lg font-medium">Click or drag file(s) to this area to upload</p>
               <p className="text-sm text-muted-foreground max-w-md">
-                Support for a single "zip" file or a list of C++ related files (.c, .cpp, .cxx, .h, .hpp, .hxx). Strictly prohibit from uploading other files.
-                If you exploit this, you will be banned. I am logging everything you do. I am always watching. I am always listening. I am always waiting. I
-                might even be watching you from behind. Look behind yourself. NOW!
+                {hasZipFile ? (
+                  <span className="text-blue-600 font-medium">You have a zip file. You cannot add more files.</span>
+                ) : hasCppFiles ? (
+                  <span className="text-green-600 font-medium">You have C++ files. You cannot add a zip file.</span>
+                ) : (
+                  'Support for a single "zip" file or a list of C++ related files (.c, .cpp, .cxx, .h, .hpp, .hxx).'
+                )}{' '}
+                Strictly prohibit from uploading other files. If you exploit this, you will be banned. I am logging everything you do. I am always watching. I
+                am always listening. I am always waiting. I might even be watching you from behind. Look behind yourself. NOW!
               </p>
             </div>
           </div>

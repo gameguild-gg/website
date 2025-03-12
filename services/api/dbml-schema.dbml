@@ -183,6 +183,7 @@ Table LectureEntity {
   course CourseEntity
   createdAt timestamp
   id uuid
+  json jsonb
   order float
   owner UserEntity
   renderer enum

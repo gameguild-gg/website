@@ -54,6 +54,11 @@ export namespace Api {
 		slug: string;
 		title: string;
 		summary?: string;
+		/**
+		 * @description <p>The body of the content for simple content types</p>
+		 * @type {string}
+		 * @memberof ChapterEntity
+		 */
 		body?: string;
 		visibility?: Api.ChapterEntity.Visibility;
 		thumbnail?: Api.ImageEntity;
@@ -165,6 +170,36 @@ export namespace Api {
 	export interface ChessMoveRequestDto {
 		username: string;
 		fen: string;
+	}
+
+	export interface CodeAssignmentDto {
+		title: string;
+		markdown: string;
+		language: Api.CodeAssignmentDto.Language;
+		files: Api.FileDto[];
+		tests: Api.EmbeddablecedCodeActivityTest[];
+	}
+	
+	/**
+	 * @export
+	 * @namespace CodeAssignmentDto
+	 */
+	export namespace CodeAssignmentDto {
+		export type Language =
+			'python' |
+			'javascript' |
+			'c++' |
+			'bash'
+		
+		export namespace Language {
+			export enum Enum {
+				Python = 'python',
+				Javascript = 'javascript',
+				C = 'c++',
+				Bash = 'bash'
+			}
+		}
+	
 	}
 
 	export interface CompetitionMatchEntity {
@@ -329,6 +364,11 @@ export namespace Api {
 		slug: string;
 		title: string;
 		summary?: string;
+		/**
+		 * @description <p>The body of the content for simple content types</p>
+		 * @type {string}
+		 * @memberof CourseEntity
+		 */
 		body?: string;
 		visibility?: Api.CourseEntity.Visibility;
 		thumbnail?: Api.ImageEntity;
@@ -418,6 +458,11 @@ export namespace Api {
 		email: string;
 	}
 
+	export interface EmbeddablecedCodeActivityTest {
+		'in': string;
+		out: string;
+	}
+
 	export interface ErrorMessage {
 		target: Api.ErrorMessage.Target;
 		property: string;
@@ -445,6 +490,16 @@ export namespace Api {
 	export interface EthereumSigninValidateRequestDto {
 		address: string;
 		signature: string;
+	}
+
+	export interface FileDto {
+		name: string;
+		/**
+		 * @description <p>File content as string or binary data (base64 encoded)</p>
+		 * @type {string | string | Blob}
+		 * @memberof FileDto
+		 */
+		content: string | string | Blob;
 	}
 
 	export interface FormLongAnswerDto {
@@ -856,6 +911,11 @@ export namespace Api {
 		slug: string;
 		title: string;
 		summary?: string;
+		/**
+		 * @description <p>The body of the content for simple content types</p>
+		 * @type {string}
+		 * @memberof JobPostCreateDto
+		 */
 		body?: string;
 		visibility?: Api.JobPostCreateDto.Visibility;
 		thumbnail?: Api.ImageEntity;
@@ -911,6 +971,11 @@ export namespace Api {
 		slug: string;
 		title: string;
 		summary?: string;
+		/**
+		 * @description <p>The body of the content for simple content types</p>
+		 * @type {string}
+		 * @memberof JobPostEntity
+		 */
 		body?: string;
 		visibility?: Api.JobPostEntity.Visibility;
 		thumbnail?: Api.ImageEntity;
@@ -997,6 +1062,11 @@ export namespace Api {
 		slug: string;
 		title: string;
 		summary?: string;
+		/**
+		 * @description <p>The body of the content for simple content types</p>
+		 * @type {string}
+		 * @memberof LectureEntity
+		 */
 		body?: string;
 		visibility?: Api.LectureEntity.Visibility;
 		thumbnail?: Api.ImageEntity;
@@ -1005,6 +1075,12 @@ export namespace Api {
 		 * @memberof LectureEntity
 		 */
 		order: number;
+		json?: Api.LectureEntity.Json;
+		/**
+		 * @description <p>Depending of the renderer, the data may be stored in the field body or json, or both.</p>
+		 * @type {Api.LectureEntity.Renderer}
+		 * @memberof LectureEntity
+		 */
 		renderer: Api.LectureEntity.Renderer;
 		course: Api.CourseEntity;
 		chapter: Api.ChapterEntity;
@@ -1034,18 +1110,24 @@ export namespace Api {
 			}
 		}
 	
+		export interface Json extends Api.CodeAssignmentDto {
+		}
+	
+		/**
+		 * <p>Depending of the renderer, the data may be stored in the field body or json, or both.</p>
+		 */
 		export type Renderer =
 			'markdown' |
 			'youtube' |
 			'lexical' |
 			'reveal' |
 			'html' |
+			'code' |
+			'link' |
 			'pdf' |
 			'image' |
 			'video' |
-			'audio' |
-			'code' |
-			'link'
+			'audio'
 		
 		export namespace Renderer {
 			export enum Enum {
@@ -1054,12 +1136,12 @@ export namespace Api {
 				Lexical = 'lexical',
 				Reveal = 'reveal',
 				Html = 'html',
+				Code = 'code',
+				Link = 'link',
 				Pdf = 'pdf',
 				Image = 'image',
 				Video = 'video',
-				Audio = 'audio',
-				Code = 'code',
-				Link = 'link'
+				Audio = 'audio'
 			}
 		}
 	
@@ -1114,6 +1196,11 @@ export namespace Api {
 		slug: string;
 		title: string;
 		summary?: string;
+		/**
+		 * @description <p>The body of the content for simple content types</p>
+		 * @type {string}
+		 * @memberof ProjectEntity
+		 */
 		body?: string;
 		visibility?: Api.ProjectEntity.Visibility;
 		thumbnail?: Api.ImageEntity;
@@ -1407,6 +1494,11 @@ export namespace Api {
 		slug: string;
 		title: string;
 		summary?: string;
+		/**
+		 * @description <p>The body of the content for simple content types</p>
+		 * @type {string}
+		 * @memberof QuizEntity
+		 */
 		body?: string;
 		visibility?: Api.QuizEntity.Visibility;
 		thumbnail?: Api.ImageEntity;

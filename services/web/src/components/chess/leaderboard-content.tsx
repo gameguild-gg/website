@@ -6,28 +6,58 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Medal, Trophy } from 'lucide-react';
 import { Skeleton } from '@/components/chess/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/chess/ui/alert';
-
-interface ChessLeaderboardResponseEntryDto {
-  username: string;
-  elo: number;
-}
+import { Api, CompetitionsApi } from '@game-guild/apiclient';
+import { getSession } from 'next-auth/react';
+import { GetSessionReturnType } from '@/config/auth.config';
+import { message } from 'antd';
 
 export default function LeaderboardContent() {
-  const [leaderboardData, setLeaderboardData] = useState<ChessLeaderboardResponseEntryDto[]>([]);
+  const [leaderboardData, setLeaderboardData] = useState<Api.ChessLeaderboardResponseEntryDto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const [accessToken, setAccessToken] = useState('');
+  const api = new CompetitionsApi({
+    basePath: process.env.NEXT_PUBLIC_API_URL,
+  });
+
+  async function getAccessToken() {
+    if (accessToken) return;
+    const localSession = (await getSession()) as unknown as GetSessionReturnType;
+    if (localSession) {
+      const token = localSession.user.accessToken;
+      setAccessToken(token);
+    } else {
+      console.error('No session found');
+    }
+  }
+
+  useEffect(() => {
+    getAccessToken();
+  }, []);
 
   useEffect(() => {
     const fetchLeaderboardData = async () => {
       try {
         setIsLoading(true);
-        const response = await fetch('/api/leaderboard');
+        const response = await api.competitionControllerGetChessLeaderboard({
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        });
 
-        if (!response.ok) {
+        if (response.status === 401) {
+          setError('You are not authorized to view this page.');
           throw new Error('Failed to fetch leaderboard data');
         }
+        if (response.status === 500) {
+          message.error('Internal server error. Please report this issue to the community.');
+          message.error(JSON.stringify(response.body));
+          setError('Internal server error. Try again later, please report this issue to the community if it persists.');
+          return;
+        }
 
-        const data = await response.json();
+        const data = response.body as Api.ChessLeaderboardResponseEntryDto[];
         setLeaderboardData(data);
         setError(null);
       } catch (err) {

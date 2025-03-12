@@ -1377,63 +1377,7 @@ export namespace CompetitionsApi {
 	}
 	
 	export type CompetitionControllerGetChessLeaderboardResponse =
-		| CompetitionControllerGetChessLeaderboard400Response
-		| CompetitionControllerGetChessLeaderboard401Response
-		| CompetitionControllerGetChessLeaderboard403Response
-		| CompetitionControllerGetChessLeaderboard404Response
-		| CompetitionControllerGetChessLeaderboard409Response
-		| CompetitionControllerGetChessLeaderboard422Response
-		| CompetitionControllerGetChessLeaderboard500Response
 		| CompetitionControllerGetChessLeaderboardDefaultResponse
-	
-	export interface CompetitionControllerGetChessLeaderboard400Response {
-		status: 400
-		contentType: 'application/json'
-		body: Api.ApiErrorResponseDto
-		headers?: undefined
-	}
-	
-	export interface CompetitionControllerGetChessLeaderboard401Response {
-		status: 401
-		contentType: 'application/json'
-		body: Api.ApiErrorResponseDto
-		headers?: undefined
-	}
-	
-	export interface CompetitionControllerGetChessLeaderboard403Response {
-		status: 403
-		contentType: 'application/json'
-		body: Api.ApiErrorResponseDto
-		headers?: undefined
-	}
-	
-	export interface CompetitionControllerGetChessLeaderboard404Response {
-		status: 404
-		contentType: 'application/json'
-		body: Api.ApiErrorResponseDto
-		headers?: undefined
-	}
-	
-	export interface CompetitionControllerGetChessLeaderboard409Response {
-		status: 409
-		contentType: 'application/json'
-		body: Api.ApiErrorResponseDto
-		headers?: undefined
-	}
-	
-	export interface CompetitionControllerGetChessLeaderboard422Response {
-		status: 422
-		contentType: 'application/json'
-		body: Api.ApiErrorResponseDto
-		headers?: undefined
-	}
-	
-	export interface CompetitionControllerGetChessLeaderboard500Response {
-		status: 500
-		contentType: 'application/json'
-		body: Api.ApiErrorResponseDto
-		headers?: undefined
-	}
 	
 	export interface CompetitionControllerGetChessLeaderboardDefaultResponse {
 		status: number
@@ -1966,16 +1910,6 @@ export const CompetitionsApiFetchParamCreator = function (configuration?: Config
 				localVarPath = localVarPath.substring(0, localVarPathQueryStart);
 			}
 
-			// authentication bearer required
-			// http authorization required
-			if (configuration && configuration.authorization) {
-				const localVarAuthorizationValue = typeof configuration.authorization === 'function'
-					? configuration.authorization('bearer')
-					: configuration.authorization;
-				if (localVarAuthorizationValue !== null) {
-					localVarHeaderParameter.set("Authorization", "Bearer " + localVarAuthorizationValue);
-				}
-			}
 			localVarRequestOptions.headers = localVarHeaderParameter;
 
 			const localVarQueryParameterString = localVarQueryParameter.toString();
@@ -2391,76 +2325,6 @@ export const CompetitionsApiFp = function(configuration?: Configuration) {
 				const contentType = response.headers.get('Content-Type');
 				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
 				
-				if (response.status === 400) {
-					if (mimeType === 'application/json') {
-						return {
-							status: response.status,
-							contentType: 'application/json',
-							body: await response.json() as Api.ApiErrorResponseDto,
-						}
-					}
-					throw response;
-				}
-				if (response.status === 401) {
-					if (mimeType === 'application/json') {
-						return {
-							status: response.status,
-							contentType: 'application/json',
-							body: await response.json() as Api.ApiErrorResponseDto,
-						}
-					}
-					throw response;
-				}
-				if (response.status === 403) {
-					if (mimeType === 'application/json') {
-						return {
-							status: response.status,
-							contentType: 'application/json',
-							body: await response.json() as Api.ApiErrorResponseDto,
-						}
-					}
-					throw response;
-				}
-				if (response.status === 404) {
-					if (mimeType === 'application/json') {
-						return {
-							status: response.status,
-							contentType: 'application/json',
-							body: await response.json() as Api.ApiErrorResponseDto,
-						}
-					}
-					throw response;
-				}
-				if (response.status === 409) {
-					if (mimeType === 'application/json') {
-						return {
-							status: response.status,
-							contentType: 'application/json',
-							body: await response.json() as Api.ApiErrorResponseDto,
-						}
-					}
-					throw response;
-				}
-				if (response.status === 422) {
-					if (mimeType === 'application/json') {
-						return {
-							status: response.status,
-							contentType: 'application/json',
-							body: await response.json() as Api.ApiErrorResponseDto,
-						}
-					}
-					throw response;
-				}
-				if (response.status === 500) {
-					if (mimeType === 'application/json') {
-						return {
-							status: response.status,
-							contentType: 'application/json',
-							body: await response.json() as Api.ApiErrorResponseDto,
-						}
-					}
-					throw response;
-				}
 				/* Catch-all response */
 				if (mimeType === 'application/json') {
 					return {

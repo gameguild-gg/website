@@ -12,7 +12,8 @@ const nextConfig = {
   async headers() {
     return [
       {
-        source: '/:path*',
+        // Apply CORS headers to the entire site except specific paths
+        source: '/((?!api/auth|api/version|disconnect|connect|wasmeriframe).*)',
         headers: [
           {
             key: 'Cross-Origin-Opener-Policy',
@@ -20,11 +21,69 @@ const nextConfig = {
           },
           {
             key: 'Cross-Origin-Embedder-Policy',
-            value: 'require-corp',
+            value: 'credentialless',
+          },
+        ],
+      },
+      {
+        // Apply no-cache headers to auth-related pages and root
+        source: '/(|disconnect|connect)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          },
+          {
+            key: 'Pragma',
+            value: 'no-cache',
+          },
+          {
+            key: 'Expires',
+            value: '0',
+          },
+          {
+            key: 'Surrogate-Control',
+            value: 'no-store',
+          },
+        ],
+      },
+      {
+        // Apply CORS headers to API routes
+        source: '/api/(auth|version)/:path*',
+        headers: [
+          {
+            key: 'Access-Control-Allow-Origin',
+            value: '*',
+          },
+          {
+            key: 'Access-Control-Allow-Methods',
+            value: 'GET, POST, OPTIONS',
+          },
+          {
+            key: 'Access-Control-Allow-Headers',
+            value: 'Content-Type, Authorization',
           },
           {
             key: 'Cross-Origin-Resource-Policy',
             value: 'cross-origin',
+          },
+        ],
+      },
+      {
+        // Apply Cross-Origin-Resource-Policy to Wasmer-related routes
+        source: '/wasmeriframe',
+        headers: [
+          {
+            key: 'Cross-Origin-Resource-Policy',
+            value: 'cross-origin',
+          },
+          {
+            key: 'Cross-Origin-Opener-Policy',
+            value: 'same-origin',
+          },
+          {
+            key: 'Cross-Origin-Embedder-Policy',
+            value: 'require-corp',
           },
         ],
       },

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/chess/ui/card';
@@ -11,6 +11,11 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/chess/ui/alert
 import { Badge } from '@/components/chess/ui/badge';
 import { formatDistanceToNow } from 'date-fns';
 import { AlertTriangle, Clock, Eye, Trophy } from 'lucide-react';
+import { Api, CompetitionsApi } from '@game-guild/apiclient';
+import { getSession } from 'next-auth/react';
+import { GetSessionReturnType } from '@/config/auth.config';
+import MatchSearchResponseDto = Api.MatchSearchResponseDto;
+import MatchSearchRequestDto = Api.MatchSearchRequestDto;
 
 interface ChessMatchResultDto {
   id: string;
@@ -74,18 +79,64 @@ const mockMatches: ChessMatchResultDto[] = [
 ];
 
 export default function MatchesContent() {
-  const [matches, setMatches] = useState<ChessMatchResultDto[]>([]);
+  const [matches, setMatches] = React.useState<MatchSearchResponseDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const [accessToken, setAccessToken] = useState('');
+  const api = new CompetitionsApi({
+    basePath: process.env.NEXT_PUBLIC_API_URL,
+  });
+
+  async function getAccessToken() {
+    if (accessToken) return;
+    const localSession = (await getSession()) as unknown as GetSessionReturnType;
+    if (localSession) {
+      const token = localSession.user.accessToken;
+      setAccessToken(token);
+    } else {
+      console.error('No session found');
+    }
+  }
+
+  useEffect(() => {
+    getAccessToken();
+  }, []);
 
   useEffect(() => {
     const fetchMatches = async () => {
       try {
         setLoading(true);
-        // Simulate API call
-        await new Promise((resolve) => setTimeout(resolve, 800));
-        setMatches(mockMatches);
+
+        const response = await api.competitionControllerFindChessMatchResult(
+          {
+            pageSize: 100,
+            pageId: 0,
+          } as MatchSearchRequestDto,
+          {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+            },
+          },
+        );
+
+        if (response.status === 401) {
+          setError('You are not authorized to view this page.');
+          setTimeout(() => {
+            window.location.href = '/disconnect';
+          }, 1000);
+          return;
+        }
+
+        if (response.status === 500) {
+          setError('Internal server error. Please report this issue to the community. See console for details.');
+          console.error(JSON.stringify(response.body));
+          return;
+        }
+
+        const data = response.body as MatchSearchResponseDto[];
+        console.log(data);
+        setMatches(data);
       } catch (err) {
         console.error('Error fetching matches:', err);
         setError('Failed to load matches. Please try again later.');
@@ -98,7 +149,7 @@ export default function MatchesContent() {
   }, []);
 
   const handleViewReplay = (matchId: string) => {
-    router.push(`/replay?matchid=${matchId}`);
+    window.href = `/replay?matchid=${matchId}`;
   };
 
   // Format CPU time
@@ -153,18 +204,18 @@ export default function MatchesContent() {
                       >
                         {match.players[0]} vs {match.players[1]}
                       </Link>
-                      <div className="text-sm text-muted-foreground">{match.moves.length} moves</div>
+                      {/*<div className="text-sm text-muted-foreground">{match.moves.length} moves</div>*/}
                     </TableCell>
                     <TableCell>
-                      {match.draw ? (
+                      {match.winner == null ? (
                         <Badge variant="secondary">Draw</Badge>
                       ) : (
                         <div className="flex flex-col gap-1">
                           <Badge className="w-fit bg-green-500 flex items-center gap-1">
                             <Trophy className="h-3 w-3" />
-                            {match.winner}
+                            {match.winner === 'Player1' ? match.players[0] : match.players[1]}
                           </Badge>
-                          <span className="text-xs text-muted-foreground">{match.reason}</span>
+                          {/*<span className="text-xs text-muted-foreground">{match.reason}</span>*/}
                         </div>
                       )}
                     </TableCell>
@@ -172,9 +223,9 @@ export default function MatchesContent() {
                     <TableCell>
                       <div className="flex items-center gap-1">
                         <Clock className="h-3 w-3" />
-                        <span>{formatCpuTime(match.cpuTime[0])}</span>
+                        {/*<span>{formatCpuTime(match.cpuTime[0])}</span>*/}
                         <span>/</span>
-                        <span>{formatCpuTime(match.cpuTime[1])}</span>
+                        {/*<span>{formatCpuTime(match.cpuTime[1])}</span>*/}
                       </div>
                     </TableCell>
                     <TableCell className="text-right">

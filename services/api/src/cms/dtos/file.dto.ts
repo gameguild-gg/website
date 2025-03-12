@@ -7,8 +7,15 @@ export class FileDto {
   name: string;
 
   @ApiProperty({
-    oneOf: [{ type: 'string' }, { type: 'Uint8Array' }],
-    description: 'type one of Uint8Array | string',
+    oneOf: [
+      { type: 'string' },
+      { 
+        type: 'string', 
+        format: 'binary',
+        description: 'Binary content represented as base64 string'
+      }
+    ],
+    description: 'File content as string or binary data (base64 encoded)'
   })
   @IsNotEmpty()
   content: Uint8Array | string;

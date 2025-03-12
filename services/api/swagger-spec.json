@@ -5595,76 +5595,6 @@
         "operationId": "CompetitionController_GetChessLeaderboard",
         "parameters": [],
         "responses": {
-          "400": {
-            "description": "Bad request",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponseDto"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponseDto"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponseDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponseDto"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Already exists",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponseDto"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Unprocessable entity",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponseDto"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponseDto"
-                }
-              }
-            }
-          },
           "default": {
             "description": "",
             "content": {
@@ -5681,11 +5611,6 @@
         },
         "tags": [
           "competitions"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
         ]
       }
     },
@@ -9958,6 +9883,85 @@
           "pageCount"
         ]
       },
+      "FileDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "content": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string",
+                "format": "binary",
+                "description": "Binary content represented as base64 string"
+              }
+            ],
+            "description": "File content as string or binary data (base64 encoded)"
+          }
+        },
+        "required": [
+          "name",
+          "content"
+        ]
+      },
+      "EmbeddablecedCodeActivityTest": {
+        "type": "object",
+        "properties": {
+          "in": {
+            "type": "string"
+          },
+          "out": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "in",
+          "out"
+        ]
+      },
+      "CodeAssignmentDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "markdown": {
+            "type": "string"
+          },
+          "language": {
+            "type": "string",
+            "enum": [
+              "python",
+              "javascript",
+              "c++",
+              "bash"
+            ]
+          },
+          "files": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FileDto"
+            }
+          },
+          "tests": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EmbeddablecedCodeActivityTest"
+            }
+          }
+        },
+        "required": [
+          "title",
+          "markdown",
+          "language",
+          "files",
+          "tests"
+        ]
+      },
       "ChapterEntity": {
         "type": "object",
         "properties": {
@@ -9992,7 +9996,8 @@
             "type": "string"
           },
           "body": {
-            "type": "string"
+            "type": "string",
+            "description": "The body of the content for simple content types"
           },
           "visibility": {
             "type": "string",
@@ -10064,7 +10069,8 @@
             "type": "string"
           },
           "body": {
-            "type": "string"
+            "type": "string",
+            "description": "The body of the content for simple content types"
           },
           "visibility": {
             "type": "string",
@@ -10083,6 +10089,18 @@
           "order": {
             "type": "number"
           },
+          "json": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/CodeAssignmentDto"
+              }
+            ],
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CodeAssignmentDto"
+              }
+            ]
+          },
           "renderer": {
             "type": "string",
             "enum": [
@@ -10091,14 +10109,15 @@
               "lexical",
               "reveal",
               "html",
+              "code",
+              "link",
               "pdf",
               "image",
               "video",
-              "audio",
-              "code",
-              "link"
+              "audio"
             ],
-            "default": "markdown"
+            "default": "markdown",
+            "description": "Depending of the renderer, the data may be stored in the field body or json, or both."
           },
           "course": {
             "$ref": "#/components/schemas/CourseEntity"
@@ -10152,7 +10171,8 @@
             "type": "string"
           },
           "body": {
-            "type": "string"
+            "type": "string",
+            "description": "The body of the content for simple content types"
           },
           "visibility": {
             "type": "string",
@@ -10741,7 +10761,8 @@
             "type": "string"
           },
           "body": {
-            "type": "string"
+            "type": "string",
+            "description": "The body of the content for simple content types"
           },
           "visibility": {
             "type": "string",
@@ -11004,7 +11025,8 @@
             "type": "string"
           },
           "body": {
-            "type": "string"
+            "type": "string",
+            "description": "The body of the content for simple content types"
           },
           "visibility": {
             "type": "string",
@@ -11572,7 +11594,8 @@
             "type": "string"
           },
           "body": {
-            "type": "string"
+            "type": "string",
+            "description": "The body of the content for simple content types"
           },
           "visibility": {
             "type": "string",
@@ -11649,7 +11672,8 @@
             "type": "string"
           },
           "body": {
-            "type": "string"
+            "type": "string",
+            "description": "The body of the content for simple content types"
           },
           "visibility": {
             "type": "string",

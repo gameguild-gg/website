@@ -1,6 +1,8 @@
+// nest exceptions
 import {
   ConflictException,
   Injectable,
+  InternalServerErrorException,
   Logger,
   UnprocessableEntityException,
 } from '@nestjs/common';
@@ -8,18 +10,9 @@ import { AuthService } from '../auth/auth.service';
 import * as util from 'util';
 import { InjectRepository } from '@nestjs/typeorm';
 import { IsNull, Not, Repository } from 'typeorm';
-import {
-  CompetitionGame,
-  CompetitionSubmissionEntity,
-} from './entities/competition.submission.entity';
-import {
-  CompetitionRunEntity,
-  CompetitionRunState,
-} from './entities/competition.run.entity';
-import {
-  CompetitionMatchEntity,
-  CompetitionWinner,
-} from './entities/competition.match.entity';
+import { CompetitionGame, CompetitionSubmissionEntity } from './entities/competition.submission.entity';
+import { CompetitionRunEntity, CompetitionRunState } from './entities/competition.run.entity';
+import { CompetitionMatchEntity, CompetitionWinner } from './entities/competition.match.entity';
 import { promises as fsp } from 'fs';
 import * as fse from 'fs-extra';
 import { UserService } from '../user/user.service';
@@ -29,9 +22,7 @@ import { UserEntity } from '../user/entities';
 import { CleanOptions, ResetMode, simpleGit } from 'simple-git';
 import * as process from 'process';
 import decompress from 'decompress';
-import ExecuteCommand, {
-  ExecuteCommandResult,
-} from '../common/execute-command';
+import ExecuteCommand, { ExecuteCommandResult } from '../common/execute-command';
 import { Chess, Move } from 'chess.js';
 import { UserProfileService } from '../user/modules/user-profile/user-profile.service';
 import { FindManyOptions } from 'typeorm/find-options/FindManyOptions';
@@ -44,9 +35,6 @@ import {
 } from '../dtos/competition/chess-match-result.dto';
 import { ChessLeaderboardResponseDto } from '../dtos/competition/chess-leaderboard-response.dto';
 import { ChessMatchRequestDto } from '../dtos/competition/chess-match-request.dto';
-
-// nest exceptions
-import { InternalServerErrorException } from '@nestjs/common';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const execShPromise = require('exec-sh').promise;
@@ -93,32 +81,8 @@ class LevelMap {
   }
 
   print(): string {
-    if (this.time)
-      return (
-        this.turn +
-        ' ' +
-        this.size +
-        ' ' +
-        this.cat.x +
-        ' ' +
-        this.cat.y +
-        '\n' +
-        this.board +
-        this.time +
-        '\n'
-      );
-    else
-      return (
-        this.turn +
-        ' ' +
-        this.size +
-        ' ' +
-        this.cat.x +
-        ' ' +
-        this.cat.y +
-        '\n' +
-        this.board
-      );
+    if (this.time) return this.turn + ' ' + this.size + ' ' + this.cat.x + ' ' + this.cat.y + '\n' + this.board + this.time + '\n';
+    else return this.turn + ' ' + this.size + ' ' + this.cat.x + ' ' + this.cat.y + '\n' + this.board;
   }
 }
 
@@ -144,29 +108,17 @@ export class CompetitionService {
     @InjectRepository(CompetitionRunSubmissionReportEntity)
     public submissionReportRepository: Repository<CompetitionRunSubmissionReportEntity>,
   ) {
-    this.submissionRepositoryLinq = new LinqRepository(
-      submissionRepository.manager.connection,
-      CompetitionSubmissionEntity,
-      {
-        primaryKey: (entity) => entity.id,
-      },
-    );
+    this.submissionRepositoryLinq = new LinqRepository(submissionRepository.manager.connection, CompetitionSubmissionEntity, {
+      primaryKey: (entity) => entity.id,
+    });
 
-    this.runRepositoryLinq = new LinqRepository(
-      runRepository.manager.connection,
-      CompetitionRunEntity,
-      {
-        primaryKey: (entity) => entity.id,
-      },
-    );
+    this.runRepositoryLinq = new LinqRepository(runRepository.manager.connection, CompetitionRunEntity, {
+      primaryKey: (entity) => entity.id,
+    });
 
-    this.matchRepositoryLinq = new LinqRepository(
-      matchRepository.manager.connection,
-      CompetitionMatchEntity,
-      {
-        primaryKey: (entity) => entity.id,
-      },
-    );
+    this.matchRepositoryLinq = new LinqRepository(matchRepository.manager.connection, CompetitionMatchEntity, {
+      primaryKey: (entity) => entity.id,
+    });
 
     // start and delete stale competition runs
     this.deleteStuckCompetition(CompetitionGame.Chess).then();
@@ -176,11 +128,7 @@ export class CompetitionService {
     return new Date().toISOString();
   }
 
-  async storeSubmission(data: {
-    user: UserEntity;
-    file: Buffer;
-    gameType: CompetitionGame;
-  }) {
+  async storeSubmission(data: { user: UserEntity; file: Buffer; gameType: CompetitionGame }) {
     const submission = this.submissionRepository.save({
       user: data.user,
       sourceCodeZip: data.file,
@@ -189,17 +137,11 @@ export class CompetitionService {
     return submission;
   }
 
-  async runCommandSpawn(
-    command: string,
-  ): Promise<{ stdout: string; stderr: string }> {
+  async runCommandSpawn(command: string): Promise<{ stdout: string; stderr: string }> {
     return execShPromise(command, { maxBuffer: 1024 * 1024 * 50 });
   }
 
-  async runCommand(
-    command: string,
-    log = true,
-    timeout: number = null,
-  ): Promise<TerminalDto> {
+  async runCommand(command: string, log = true, timeout: number = null): Promise<TerminalDto> {
     let stdout: string, stderr: string;
     try {
       if (timeout === null) {
@@ -238,6 +180,7 @@ export class CompetitionService {
       return data;
     }
   }
+
   async appendLog(data: TerminalDto): Promise<void> {
     await fsp.appendFile('log.txt', JSON.stringify(data) + '\n', 'utf8');
   }
@@ -351,12 +294,7 @@ export class CompetitionService {
     }
     for (let i = 0; i < blocks; i++) {
       const point = this.randomPoint(sideSize);
-      if (
-        (Math.abs(point.x - center.x) <= 2 &&
-          Math.abs(point.y - center.y) <= 2) ||
-        level[point.y][point.x] === '#'
-      )
-        i--;
+      if ((Math.abs(point.x - center.x) <= 2 && Math.abs(point.y - center.y) <= 2) || level[point.y][point.x] === '#') i--;
       else level[point.y][point.x] = '#';
     }
     let result = 'CAT ' + sideSize + ' 0 0\n';
@@ -398,20 +336,12 @@ export class CompetitionService {
 
     while (level.turn === Turn.CAT || level.turn === Turn.CATCHER) {
       match.logs += level.turn + ': ';
-      if (level.turn === Turn.CAT)
-        match.logs += match.p1submission.user.username + '\n';
-      else if (level.turn === Turn.CATCHER)
-        match.logs += match.p2submission.user.username + '\n';
+      if (level.turn === Turn.CAT) match.logs += match.p1submission.user.username + '\n';
+      else if (level.turn === Turn.CATCHER) match.logs += match.p2submission.user.username + '\n';
 
       // call the turn
       const result = await this.runCommand(
-        "echo '" +
-          level.print() +
-          "' | " +
-          process.cwd() +
-          '/submissions/' +
-          cat.user.username +
-          '/StudentSimulation',
+        "echo '" + level.print() + "' | " + process.cwd() + '/submissions/' + cat.user.username + '/StudentSimulation',
         false,
         10000,
       );
@@ -428,10 +358,7 @@ export class CompetitionService {
       } else if (level.turn === Turn.CAT) {
         match.p2Turns++;
         match.p2Points -= level.time / 1000000;
-      } else if (
-        level.turn === Turn.CATCHERERROR ||
-        level.turn === Turn.CATERROR
-      ) {
+      } else if (level.turn === Turn.CATCHERERROR || level.turn === Turn.CATERROR) {
         match.logs += result.stdout;
         break;
       }
@@ -611,8 +538,7 @@ export class CompetitionService {
     await fsp.writeFile(zipFilePath, submission.sourceCodeZip);
 
     // download the chess engine
-    const chessEngineGitUrl =
-      'https://github.com/InfiniBrains/chess-competition.git';
+    const chessEngineGitUrl = 'https://github.com/InfiniBrains/chess-competition.git';
     // if chess engine folder is there, just run git pull, otherwise just run git clone
     if (!fse.existsSync(srcFolder)) {
       const gitReponse = await simpleGit().clone(chessEngineGitUrl, srcFolder);
@@ -620,12 +546,7 @@ export class CompetitionService {
     } else {
       await simpleGit(srcFolder)
         .reset(ResetMode.HARD)
-        .clean(
-          CleanOptions.FORCE +
-            CleanOptions.RECURSIVE +
-            CleanOptions.IGNORED_INCLUDED +
-            CleanOptions.DRY_RUN,
-        )
+        .clean(CleanOptions.FORCE + CleanOptions.RECURSIVE + CleanOptions.IGNORED_INCLUDED + CleanOptions.DRY_RUN)
         .pull();
     }
 
@@ -639,20 +560,14 @@ export class CompetitionService {
     const outs: TerminalDto[] = [];
 
     // generate cmake project folder and build
-    let cmd =
-      'cmake -S' +
-      srcFolder +
-      ' -B' +
-      buildFolder +
-      ' -DCMAKE_BUILD_TYPE=MinSizeRel -DCHESS_VALIDATOR_ONLY=ON';
+    let cmd = 'cmake -S' + srcFolder + ' -B' + buildFolder + ' -DCMAKE_BUILD_TYPE=MinSizeRel -DCHESS_VALIDATOR_ONLY=ON';
     outs.push({
       date: this.getDate(),
       command: cmd,
       ...(await this.runCommandSpawn(cmd)),
     });
 
-    cmd =
-      'cmake --build ' + buildFolder + ' --target chesscli --config MinSizeRel';
+    cmd = 'cmake --build ' + buildFolder + ' --target chesscli --config MinSizeRel';
     outs.push({
       date: this.getDate(),
       command: cmd,
@@ -677,10 +592,7 @@ export class CompetitionService {
       order: { createdAt: 'DESC' },
     });
 
-    if (!submission)
-      throw new UnprocessableEntityException(
-        'No submission found for this user',
-      );
+    if (!submission) throw new UnprocessableEntityException('No submission found for this user');
 
     const userFolder = process.cwd() + '/chessSubmissions/' + data.username;
     const buildFolder = userFolder + '/build';
@@ -700,15 +612,9 @@ export class CompetitionService {
         timeout: 10000,
       });
     } catch (e) {
-      throw new InternalServerErrorException(
-        'Error running the executable: ' + JSON.stringify(e),
-        JSON.stringify(output),
-      );
+      throw new InternalServerErrorException('Error running the executable: ' + JSON.stringify(e), JSON.stringify(output));
     }
-    if (output.stderr)
-      throw new UnprocessableEntityException(
-        'Error running the executable: ' + output.stderr,
-      );
+    if (output.stderr) throw new UnprocessableEntityException('Error running the executable: ' + output.stderr);
     return output.stdout;
   }
 
@@ -716,10 +622,7 @@ export class CompetitionService {
     ChessMatchRequestDto: ChessMatchRequestDto,
     competitionRun: CompetitionRunEntity = null,
   ): Promise<{ result: ChessMatchResultDto; match: CompetitionMatchEntity }> {
-    const usernames = [
-      ChessMatchRequestDto.player1username,
-      ChessMatchRequestDto.player2username,
-    ];
+    const usernames = [ChessMatchRequestDto.player1username, ChessMatchRequestDto.player2username];
 
     this.logger.log('Match request: ', usernames);
 
@@ -735,10 +638,7 @@ export class CompetitionService {
 
     // users should be found
     for (let i = 0; i < users.length; i++) {
-      if (!users[i])
-        throw new UnprocessableEntityException(
-          'User ' + usernames[i] + ' not found',
-        );
+      if (!users[i]) throw new UnprocessableEntityException('User ' + usernames[i] + ' not found');
     }
 
     // find the last submission from both players
@@ -770,15 +670,12 @@ export class CompetitionService {
       return process.cwd() + '/chessSubmissions/' + username + '/build';
     });
     const executablePath: string[] = usernames.map((username) => {
-      return (
-        process.cwd() + '/chessSubmissions/' + username + '/build/chesscli'
-      );
+      return process.cwd() + '/chessSubmissions/' + username + '/build/chesscli';
     });
 
     // create folder if doesn't exist
     for (let i = 0; i < executableFolder.length; i++) {
-      if (!fse.existsSync(executableFolder[i]))
-        await fsp.mkdir(executableFolder[i], { recursive: true });
+      if (!fse.existsSync(executableFolder[i])) await fsp.mkdir(executableFolder[i], { recursive: true });
     }
 
     // delete the old files and write the new ones, set the permissions
@@ -938,9 +835,7 @@ export class CompetitionService {
     // update the elo of the users
     // todo: @joel check this please!
     if (result.winner) {
-      const winnerEntity = users.find(
-        (user) => user.username === result.winner,
-      );
+      const winnerEntity = users.find((user) => user.username === result.winner);
       const loserEntity = users.find((user) => user.username !== result.winner);
       const newElo = this.calculateNewElo({
         winner: winnerEntity.elo,
@@ -967,10 +862,8 @@ export class CompetitionService {
     // create a match entity and save it
     let match = this.matchRepository.create();
     let playerWinner: CompetitionWinner | null;
-    if (result.winner === usernames[0])
-      playerWinner = CompetitionWinner.Player1;
-    else if (result.winner === usernames[1])
-      playerWinner = CompetitionWinner.Player2;
+    if (result.winner === usernames[0]) playerWinner = CompetitionWinner.Player1;
+    else if (result.winner === usernames[1]) playerWinner = CompetitionWinner.Player2;
     else playerWinner = null;
 
     match = {
@@ -1014,9 +907,7 @@ export class CompetitionService {
     return { winner: newWinner, loser: newLoser };
   }
 
-  async findMatchesByCriteria(
-    criteria: FindManyOptions<CompetitionMatchEntity>,
-  ): Promise<CompetitionMatchEntity[]> {
+  async findMatchesByCriteria(criteria: FindManyOptions<CompetitionMatchEntity>): Promise<CompetitionMatchEntity[]> {
     return this.matchRepository.find(criteria);
   }
 
@@ -1026,6 +917,13 @@ export class CompetitionService {
 
   async getLeaderboard(): Promise<ChessLeaderboardResponseDto> {
     const users = await this.userService.find({
+      // where a user has a valid bot
+      where: {
+        competitionSubmissions: {
+          gameType: CompetitionGame.Chess,
+          executable: Not(IsNull()),
+        },
+      },
       select: {
         username: true,
         elo: true,
@@ -1045,11 +943,7 @@ export class CompetitionService {
       where: { gameType: CompetitionGame.Chess },
       order: { updatedAt: 'DESC' },
     });
-    if (
-      lastCompetition &&
-      lastCompetition.gameType == CompetitionGame.Chess &&
-      lastCompetition.state == CompetitionRunState.RUNNING
-    ) {
+    if (lastCompetition && lastCompetition.gameType == CompetitionGame.Chess && lastCompetition.state == CompetitionRunState.RUNNING) {
       throw new ConflictException('There is already a competition running');
     }
 
@@ -1145,9 +1039,7 @@ export class CompetitionService {
     await this.runRepository.delete({ id: competition.id });
   }
 
-  async getLatestChessCompetitionReport(): Promise<
-    CompetitionRunSubmissionReportEntity[]
-  > {
+  async getLatestChessCompetitionReport(): Promise<CompetitionRunSubmissionReportEntity[]> {
     // get the latest finished competition
     const competition = await this.runRepository.findOne({
       where: {
@@ -1164,6 +1056,7 @@ export class CompetitionService {
       order: { totalWins: 'DESC' },
     });
   }
+
   async updateReport(match: CompetitionMatchEntity, run: CompetitionRunEntity) {
     const winner = match.winner;
 

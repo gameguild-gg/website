@@ -1,15 +1,8 @@
-import { Column, Index, ManyToOne, OneToMany } from 'typeorm';
+import { Column, Index, ManyToOne } from 'typeorm';
 import { VisibilityEnum } from './visibility.enum';
 import { ApiProperty } from '@nestjs/swagger';
 import { IsSlug } from '../../common/decorators/isslug.decorator';
-import {
-  IsEnum,
-  IsNotEmpty,
-  IsOptional,
-  IsString,
-  IsUrl,
-  MaxLength,
-} from 'class-validator';
+import { IsEnum, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
 import { WithRolesEntity } from '../../auth/entities/with-roles.entity';
 import { CrudValidationGroups } from '@dataui/crud';
 import { ImageEntity } from '../../asset';
@@ -42,8 +35,9 @@ export abstract class ContentBase extends WithRolesEntity {
   @MaxLength(1024)
   summary: string;
 
+  // todo: probably this could be in the inherited entity, not here, because many of the specializations will have this field but with different types
   @Column({ type: 'text', nullable: true })
-  @ApiProperty({ required: false })
+  @ApiProperty({ required: false, description: 'The body of the content for simple content types' })
   @IsOptional()
   @IsString()
   @MaxLength(1024 * 64)

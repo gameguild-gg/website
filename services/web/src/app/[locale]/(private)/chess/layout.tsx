@@ -1,5 +1,5 @@
 import './styles.css';
-import type { ReactNode } from 'react';
+import { ReactNode } from 'react';
 import { SideNavigation } from '@/components/chess/side-navigation';
 import { SidebarInset, SidebarProvider } from '@/components/chess/ui/sidebar';
 
