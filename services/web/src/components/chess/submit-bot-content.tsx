@@ -214,9 +214,11 @@ export default function SubmitBotContent() {
     setSubmitStatus({ type: null, message: null });
 
     let zipdata: ArrayBuffer;
+    let zipFilename = 'submission.zip';
     // if there is only one file and it is a zip get the arraybuffer
     if (files.length === 1 && files[0].name.toLowerCase().endsWith('.zip')) {
       zipdata = await files[0].arrayBuffer();
+      zipFilename = files[0].name;
     }
     // else if there is a list of c++ files
     else if (files.length > 1) {
@@ -233,17 +235,20 @@ export default function SubmitBotContent() {
         type: 'error',
         message: 'Zip file size must be less than 10MB.',
       });
+      setIsSubmitting(false);
       return;
     }
 
     try {
-      // fix error: TS2741: Property value is missing in type Blob but required in type FilePart
+      // Create a File object from the zip data
+      const zipFile = new File([zipdata as ArrayBuffer], zipFilename, {
+        type: 'application/zip',
+      });
+
       const response = await api.competitionControllerSubmitChessAgent(
         {
           file: {
-            value: new Blob([zipdata as ArrayBuffer], {
-              type: 'application/zip',
-            }),
+            value: zipFile,
           },
         },
         {
@@ -295,6 +300,12 @@ export default function SubmitBotContent() {
             You can either select all .h and .cpp files or zip them all together. If you submit via zip, all files should be in the root of the zip file or in
             subfolders. Only C++ related files (.c, .cpp, .cxx, .h, .hpp, .hxx) are allowed.
           </CardDescription>
+          <div className="mt-2 text-amber-600 dark:text-amber-400 text-sm">
+            <strong>Note:</strong> If you're using macOS, be aware that zip files may contain hidden __MACOSX folders. 
+            The server will automatically remove these folders, but it's recommended to create your zip files using the terminal command 
+            <code className="bg-gray-100 dark:bg-gray-800 px-1 rounded">zip -r submission.zip your_files/ -x "*.DS_Store" -x "__MACOSX"</code> 
+            to avoid potential issues.
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <div

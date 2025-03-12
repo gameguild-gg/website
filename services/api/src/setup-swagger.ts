@@ -32,6 +32,29 @@ async function fixOpenApiGeneratorPlus() {
     'window.fetch',
     'fetch',
   );
+  
+  // Fix the multipart/form-data Content-Type header issue
+  // This prevents the "Multipart: Boundary not found" error by allowing the browser to set the boundary
+  try {
+    const apiTsPath = process.cwd() + '/../../packages/apiclient/api.ts';
+    const content = await fsp.readFile(apiTsPath, 'utf8');
+    
+    // Use a more precise regex to target only the Content-Type header for multipart/form-data
+    const fixedContent = content.replace(
+      /localVarHeaderParameter\.set\('Content-Type', 'multipart\/form-data'\);/g,
+      "// localVarHeaderParameter.set('Content-Type', 'multipart/form-data'); // Commented out to let browser set boundary"
+    );
+    
+    if (content !== fixedContent) {
+      await fsp.writeFile(apiTsPath, fixedContent, 'utf8');
+      logger.log('Fixed multipart/form-data Content-Type header in API client');
+    } else {
+      logger.log('No Content-Type headers needed fixing in API client');
+    }
+  } catch (e) {
+    logger.error('Failed to fix multipart/form-data Content-Type header in API client');
+    logger.error(e);
+  }
 }
 
 async function SetupDevelopmentConfigs(document: OpenAPIObject) {

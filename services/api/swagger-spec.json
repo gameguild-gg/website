@@ -11087,7 +11087,8 @@
         "properties": {
           "file": {
             "type": "string",
-            "format": "binary"
+            "format": "binary",
+            "description": "The zip file containing the chess bot code"
           }
         },
         "required": [

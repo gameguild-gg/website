@@ -325,6 +325,11 @@ export namespace Api {
 	}
 
 	export interface CompetitionSubmissionDto {
+		/**
+		 * @description <p>The zip file containing the chess bot code</p>
+		 * @type {string | Blob}
+		 * @memberof CompetitionSubmissionDto
+		 */
 		file: string | Blob;
 	}
 	
@@ -343,6 +348,11 @@ export namespace Api {
 		 */
 		export namespace MultipartFormData {
 			export interface FilePart {
+				/**
+				 * @description <p>The zip file containing the chess bot code</p>
+				 * @type {string | Blob}
+				 * @memberof FilePart
+				 */
 				value: string | Blob;
 			}
 		

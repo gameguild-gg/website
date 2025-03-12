@@ -88,23 +88,22 @@ export default function MatchesContent() {
     basePath: process.env.NEXT_PUBLIC_API_URL,
   });
 
-  async function getAccessToken() {
-    if (accessToken) return;
-    const localSession = (await getSession()) as unknown as GetSessionReturnType;
-    if (localSession) {
-      const token = localSession.user.accessToken;
-      setAccessToken(token);
-    } else {
-      console.error('No session found');
-    }
-  }
-
-  useEffect(() => {
-    getAccessToken();
-  }, []);
-
   useEffect(() => {
     const fetchMatches = async () => {
+      let token = accessToken;
+
+      if (!token) {
+        const localSession = (await getSession()) as unknown as GetSessionReturnType;
+        if (localSession) {
+          token = localSession.user.accessToken;
+          setAccessToken(token);
+          console.log(token);
+          alert(token);
+        } else {
+          console.error('No session found');
+        }
+      }
+
       try {
         setLoading(true);
 
@@ -115,16 +114,16 @@ export default function MatchesContent() {
           } as MatchSearchRequestDto,
           {
             headers: {
-              Authorization: `Bearer ${accessToken}`,
+              Authorization: `Bearer ${token}`,
             },
           },
         );
 
         if (response.status === 401) {
-          setError('You are not authorized to view this page.');
-          setTimeout(() => {
-            window.location.href = '/disconnect';
-          }, 1000);
+          setError('You are not authorized to view this page. Detailed error: ' + JSON.stringify(response.body));
+          // setTimeout(() => {
+          //   window.location.href = '/disconnect';
+          // }, 1000);
           return;
         }
 

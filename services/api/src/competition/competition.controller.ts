@@ -12,6 +12,7 @@ import {
   UnsupportedMediaTypeException,
   UploadedFile,
   UseInterceptors,
+  BadRequestException,
 } from '@nestjs/common';
 import { ApiConsumes, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { CompetitionService } from './competition.service';
@@ -88,30 +89,66 @@ export class CompetitionController {
     type: TerminalDto,
     isArray: true,
   })
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: {
+        fileSize: 10 * 1024 * 1024, // 10MB
+      },
+    })
+  )
   @Auth(AuthenticatedRoute)
   async submitChessAgent(
     @Body() data: CompetitionSubmissionDto,
     @UploadedFile() file: Express.Multer.File,
     @AuthUser() user: UserEntity,
   ): Promise<TerminalDto[]> {
+    if (!file) throw new BadRequestException('No file uploaded');
     if (file.size > 1024 * 1024 * 10) throw new PayloadTooLargeException('File too large. It should be < 10mb');
 
     if (!user) throw new UnauthorizedException('Invalid credentials');
 
-    // // From here to below, it is not working.
-    // if (file.mimetype !== 'application/zip')
-    //   throw new ('Invalid file type');
     if (file.originalname.split('.').pop() !== 'zip') throw new UnsupportedMediaTypeException('Invalid file type. Submit zip file.');
 
-    // store the submission in the database.
-    await this.service.storeSubmission({
-      user: user,
-      file: file.buffer,
-      gameType: CompetitionGame.Chess,
-    });
+    try {
+      // Process the zip file to remove __MACOSX folder
+      const JSZip = require('jszip');
+      
+      // Load the zip file
+      const originalZip = await JSZip.loadAsync(file.buffer);
+      
+      // Create a new zip without __MACOSX
+      const cleanedZip = new JSZip();
+      
+      // Copy all files except those in __MACOSX directory
+      for (const [path, zipFile] of Object.entries<any>(originalZip.files)) {
+        if (!path.startsWith('__MACOSX/') && !path.includes('/.DS_Store') && !path.includes('__MACOSX')) {
+          if (!zipFile.dir) {
+            const content = await zipFile.async('nodebuffer');
+            cleanedZip.file(path, content);
+          } else {
+            cleanedZip.folder(path);
+          }
+        } else {
+          this.logger.log(`Skipping macOS metadata file: ${path}`);
+        }
+      }
+      
+      // Generate the new zip buffer
+      const cleanedZipBuffer = await cleanedZip.generateAsync({ type: 'nodebuffer' });
+      
+      // Store the cleaned submission
+      await this.service.storeSubmission({
+        user: user,
+        file: cleanedZipBuffer,
+        gameType: CompetitionGame.Chess,
+      });
+    } catch (e) {
+      this.logger.error('Error processing zip file:');
+      this.logger.error(e);
+      throw new UnprocessableEntityException('Error processing zip file. Please ensure your zip file is valid and does not contain any unsupported files.');
+    }
 
-    // return error or success
+    // Return error or success
     try {
       return this.service.prepareLastChessSubmission(user);
     } catch (e) {

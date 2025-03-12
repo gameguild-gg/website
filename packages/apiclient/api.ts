@@ -2191,7 +2191,7 @@ export const CompetitionsApiFetchParamCreator = function (configuration?: Config
 					localVarHeaderParameter.set("Authorization", "Bearer " + localVarAuthorizationValue);
 				}
 			}
-			localVarHeaderParameter.set('Content-Type', 'multipart/form-data');
+			// localVarHeaderParameter.set('Content-Type', 'multipart/form-data'); // Commented out to let browser set boundary
 
 			localVarRequestOptions.headers = localVarHeaderParameter;
 	
@@ -19500,7 +19500,7 @@ export const UsersApiFetchParamCreator = function (configuration?: Configuration
 					localVarHeaderParameter.set("Authorization", "Bearer " + localVarAuthorizationValue);
 				}
 			}
-			localVarHeaderParameter.set('Content-Type', 'multipart/form-data');
+			// localVarHeaderParameter.set('Content-Type', 'multipart/form-data'); // Commented out to let browser set boundary
 
 			localVarRequestOptions.headers = localVarHeaderParameter;
 	
