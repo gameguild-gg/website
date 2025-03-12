@@ -1,3 +1,10 @@
+## [1.17.1](https://github.com/gameguild-gg/website/compare/v1.17.0...v1.17.1) (2025-03-12)
+
+
+### Bug Fixes
+
+* **chess:** fix leaderboard api response ([203ed80](https://github.com/gameguild-gg/website/commit/203ed80a0e83af26bfc9fea0677011ebaa542935))
+
 # [1.17.0](https://github.com/gameguild-gg/website/compare/v1.16.3...v1.17.0) (2025-03-12)
 
 
