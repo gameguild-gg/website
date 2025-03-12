@@ -1,3 +1,16 @@
+# [1.17.0](https://github.com/gameguild-gg/website/compare/v1.16.3...v1.17.0) (2025-03-12)
+
+
+### Bug Fixes
+
+* **auth:** fix auth related issues ([d7f76dc](https://github.com/gameguild-gg/website/commit/d7f76dce1060a5fec394a5fe35e400f3361a5404))
+* **courses:** portfolio week 8 - visual cues ([703b330](https://github.com/gameguild-gg/website/commit/703b3303105bfd490ea093f793acdcfe7c5f4f19))
+
+
+### Features
+
+* **chess:** add chess web boilerplate ([1110d75](https://github.com/gameguild-gg/website/commit/1110d75201b2553c7fcd97791807424f49c64aab))
+
 ## [1.16.3](https://github.com/gameguild-gg/website/compare/v1.16.2...v1.16.3) (2025-02-28)
 
 
