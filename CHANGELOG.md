@@ -1,3 +1,10 @@
+## [1.17.2](https://github.com/gameguild-gg/website/compare/v1.17.1...v1.17.2) (2025-03-12)
+
+
+### Bug Fixes
+
+* **chess:** fix chess matches view ([9af330a](https://github.com/gameguild-gg/website/commit/9af330a3817a6c66e9ed493cdae15ccb194ba0c4))
+
 ## [1.17.1](https://github.com/gameguild-gg/website/compare/v1.17.0...v1.17.1) (2025-03-12)
 
 
