@@ -1580,7 +1580,7 @@ export namespace CompetitionsApi {
 	export interface CompetitionControllerListChessAgentsDefaultResponse {
 		status: number
 		contentType: 'application/json'
-		body: string[]
+		body: Api.ChessAgentResponseEntryDto[]
 		headers?: undefined
 	}
 	
@@ -1645,7 +1645,7 @@ export namespace CompetitionsApi {
 	
 	export interface CompetitionControllerRequestChessMoveDefaultResponse {
 		status: number
-		contentType: 'application/json'
+		contentType: 'text/html'
 		body: string
 		headers?: undefined
 	}
@@ -2607,7 +2607,7 @@ export const CompetitionsApiFp = function(configuration?: Configuration) {
 					return {
 						status: response.status,
 						contentType: 'application/json',
-						body: await response.json() as string[],
+						body: await response.json() as Api.ChessAgentResponseEntryDto[],
 					}
 				}
 				throw response;
@@ -2696,11 +2696,11 @@ export const CompetitionsApiFp = function(configuration?: Configuration) {
 					throw response;
 				}
 				/* Catch-all response */
-				if (mimeType === 'application/json') {
+				if (mimeType === 'text/html') {
 					return {
 						status: response.status,
-						contentType: 'application/json',
-						body: await response.json() as string,
+						contentType: 'text/html',
+						body: await response.text(),
 					}
 				}
 				throw response;

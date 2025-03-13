@@ -12,15 +12,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/chess/ui/switch';
 import { Label } from '@/components/chess/ui/label';
 import { AlertTriangle, Info, Loader2, RotateCcw, Trophy } from 'lucide-react';
-
-interface ChessBotDto {
-  id: string;
-  name: string;
-  elo: number;
-  author: string;
-  description: string;
-  createdAt: string;
-}
+import { Api, CompetitionsApi } from '@game-guild/apiclient';
+import { getSession } from 'next-auth/react';
+import { GetSessionReturnType } from '@/config/auth.config';
+import { message } from 'antd';
+import ChessAgentResponseEntryDto = Api.ChessAgentResponseEntryDto;
 
 type PlayerType = 'human' | 'bot';
 
@@ -29,29 +25,184 @@ interface PlayerConfig {
   botId: string | null;
 }
 
+// Add enum for game result types
+enum GameResultType {
+  Checkmate = 'checkmate',
+  Stalemate = 'stalemate',
+  InsufficientMaterial = 'insufficient_material',
+  FiftyMoveRule = 'fifty_move_rule',
+  ThreefoldRepetition = 'threefold_repetition',
+  InvalidMove = 'invalid_move',
+  Unknown = 'unknown'
+}
+
+// Add interface for game result
+interface GameResult {
+  type: GameResultType;
+  winner?: 'white' | 'black';
+  reason?: string;
+  botColor?: 'white' | 'black';
+  attemptedMove?: string;
+}
+
 export default function PlayChessContent() {
   // Board state
   const [game, setGame] = useState<Chess>(new Chess());
-  const [fen, setFen] = useState<string>(new Chess().fen());
+  const [fen, setFen] = useState<string>(game.fen());
   const [isGameOver, setIsGameOver] = useState<boolean>(false);
-  const [gameResult, setGameResult] = useState<any>(null);
+  const [gameResult, setGameResult] = useState<GameResult | null>(null);
   const [lastMove, setLastMove] = useState<{ from: string; to: string } | null>(null);
+  const [moveHistory, setMoveHistory] = useState<string[]>([]);
+  const [halfmoveClock, setHalfmoveClock] = useState<number>(0);
+
+  // Sync game state when fen changes
+  useEffect(() => {
+    // Only update if the fen has changed from the current game state
+    if (fen !== game.fen()) {
+      game.load(fen);
+
+      // Update the halfmove clock from the FEN
+      const fenParts = fen.split(' ');
+      if (fenParts.length >= 5) {
+        const halfmoveValue = parseInt(fenParts[4]);
+        console.log('Extracted halfmove clock:', halfmoveValue, 'from FEN:', fen);
+        setHalfmoveClock(halfmoveValue);
+      }
+
+      // Check for all draw conditions explicitly
+      const isDrawByFiftyMoveRule = fenParts.length >= 5 && parseInt(fenParts[4]) >= 50;
+      const isDrawByThreefoldRepetition = game.isThreefoldRepetition();
+      const isDrawByInsufficientMaterial = game.isInsufficientMaterial();
+      const isDrawByStalemate = game.isStalemate();
+
+      // Check if the game is over, including all types of draws
+      if (
+        game.isGameOver() || 
+        game.isDraw() || 
+        isDrawByFiftyMoveRule || 
+        isDrawByThreefoldRepetition || 
+        isDrawByInsufficientMaterial ||
+        isDrawByStalemate
+      ) {
+        console.log('Game over detected:', 
+          isDrawByFiftyMoveRule ? '50-move rule' : 
+          isDrawByThreefoldRepetition ? 'threefold repetition' : 
+          isDrawByInsufficientMaterial ? 'insufficient material' : 
+          isDrawByStalemate ? 'stalemate' :
+          'other reason'
+        );
+        setIsGameOver(true);
+        setGameResult(getGameResult(game));
+        setGameStarted(false);
+      }
+    }
+  }, [fen, game]);
 
   // Player configuration
   const [whitePlayer, setWhitePlayer] = useState<PlayerConfig>({ type: 'human', botId: null });
-  const [blackPlayer, setBlackPlayer] = useState<PlayerConfig>({ type: 'bot', botId: 'bot_1' });
+  const [blackPlayer, setBlackPlayer] = useState<PlayerConfig>({ type: 'bot', botId: null });
 
   // UI state
-  const [availableBots, setAvailableBots] = useState<ChessBotDto[]>([]);
+  const [availableBots, setAvailableBots] = useState<ChessAgentResponseEntryDto[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isBotThinking, setIsBotThinking] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [autoPlay, setAutoPlay] = useState<boolean>(false);
+  const [autoPlay, setAutoPlay] = useState<boolean>(true);
   const [gameStarted, setGameStarted] = useState<boolean>(false);
 
   // Ref for the board container and board width state
   const boardContainerRef = useRef<HTMLDivElement>(null);
   const [boardWidth, setBoardWidth] = useState(450);
+
+  const api = new CompetitionsApi({
+    basePath: process.env.NEXT_PUBLIC_API_URL,
+  });
+
+  // Helper function to determine game result
+  function getGameResult(chess: Chess): GameResult {
+    // Check for checkmate
+    if (chess.isCheckmate()) {
+      return { 
+        type: GameResultType.Checkmate, 
+        winner: chess.turn() === 'w' ? 'black' : 'white' 
+      };
+    }
+    
+    // Check for stalemate
+    if (chess.isStalemate()) {
+      return { 
+        type: GameResultType.Stalemate, 
+        reason: 'No legal moves available' 
+      };
+    }
+    
+    // Check for insufficient material
+    if (chess.isInsufficientMaterial()) {
+      return {
+        type: GameResultType.InsufficientMaterial,
+        reason: 'Insufficient material to checkmate'
+      };
+    }
+    
+    // Check for threefold repetition
+    if (chess.isThreefoldRepetition()) {
+      return { 
+        type: GameResultType.ThreefoldRepetition, 
+        reason: 'Same position occurred three times' 
+      };
+    }
+
+    // Check for 50-move rule explicitly
+    const fenParts = chess.fen().split(' ');
+    if (fenParts.length >= 5 && parseInt(fenParts[4]) >= 50) {
+      return { 
+        type: GameResultType.FiftyMoveRule, 
+        reason: '50 moves without pawn move or capture' 
+      };
+    }
+    
+    // Generic draw check (catches other draw conditions)
+    if (chess.isDraw()) {
+      // Try to determine the specific draw type
+      if (chess.isInsufficientMaterial()) {
+        return { type: GameResultType.InsufficientMaterial, reason: 'Insufficient material to checkmate' };
+      } else if (chess.isThreefoldRepetition()) {
+        return { type: GameResultType.ThreefoldRepetition, reason: 'Same position occurred three times' };
+      } else if (fenParts.length >= 5 && parseInt(fenParts[4]) >= 50) {
+        return { type: GameResultType.FiftyMoveRule, reason: '50 moves without pawn move or capture' };
+      } else if (chess.isStalemate()) {
+        return { type: GameResultType.Stalemate, reason: 'No legal moves available' };
+      }
+      
+      // Fallback for other draw types - changed from FiftyMoveRule to Unknown with a generic reason
+      return { type: GameResultType.Unknown, reason: 'Draw condition met' };
+    }
+    
+    return { type: GameResultType.Unknown };
+  }
+
+  // Handle invalid bot move
+  const handleInvalidBotMove = useCallback(
+    (botColor: 'white' | 'black', moveString: string) => {
+      // Determine the winner (opposite of the bot that made the invalid move)
+      const winner = botColor === 'white' ? 'black' : 'white';
+
+      // End the game and set the result
+      setIsGameOver(true);
+      setGameResult({
+        type: GameResultType.InvalidMove,
+        winner: winner,
+        botColor: botColor,
+        attemptedMove: moveString,
+      });
+      setGameStarted(false);
+
+      console.error(
+        `Invalid bot move: ${botColor} bot (${botColor === 'white' ? whitePlayer.botId : blackPlayer.botId}) attempted illegal move: ${moveString}`,
+      );
+    },
+    [whitePlayer.botId, blackPlayer.botId],
+  );
 
   // Calculate board width based on container size
   useEffect(() => {
@@ -85,18 +236,32 @@ export default function PlayChessContent() {
     const fetchBots = async () => {
       try {
         setIsLoading(true);
-        const response = await fetch('/api/bots');
+        const session = (await getSession()) as unknown as GetSessionReturnType;
+        console.log('before request');
+        const response = await api.competitionControllerListChessAgents({
+          headers: {
+            Authorization: `Bearer ${session?.user?.accessToken}`,
+          },
+        });
 
-        if (!response.ok) {
-          throw new Error('Failed to fetch bots');
+        if (response.status === 401) {
+          setError('You are not authorized to view this page.');
+          return;
         }
 
-        const data = await response.json();
+        if (response.status === 500) {
+          message.error('Internal server error. Please report this issue to the community.');
+          message.error(JSON.stringify(response.body));
+          return;
+        }
+
+        const data = response.body as ChessAgentResponseEntryDto[];
+
         setAvailableBots(data);
 
         // Set default bots
         if (data.length > 0) {
-          setBlackPlayer({ type: 'bot', botId: data[0].id });
+          setBlackPlayer({ type: 'bot', botId: data[0].username });
         }
 
         setError(null);
@@ -112,55 +277,137 @@ export default function PlayChessContent() {
   }, []);
 
   // Handle bot moves
-  const makeBotMove = useCallback(async (currentFen: string, botId: string) => {
-    if (!botId) return;
+  const makeBotMove = useCallback(
+    async (currentFen: string, username: string) => {
+      if (!username) return;
 
-    setIsBotThinking(true);
+      setIsBotThinking(true);
 
-    try {
-      const response = await fetch('/api/play-move', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          fen: currentFen,
-          botId,
-        }),
-      });
+      try {
+        const session = await getSession();
+        console.log('Requesting move for', username, 'with FEN:', currentFen);
 
-      if (!response.ok) {
-        throw new Error('Failed to get bot move');
-      }
+        try {
+          // Use the API client
+          const response = await api.competitionControllerRequestChessMove(
+            {
+              fen: currentFen,
+              username: username,
+            },
+            {
+              headers: {
+                Authorization: `Bearer ${session?.user?.accessToken}`,
+              },
+            },
+          );
 
-      const data = await response.json();
+          console.log('Bot move response status:', response.status);
 
-      if (data.success) {
-        // Update the game state
-        const newGame = new Chess(data.fen);
-        setGame(newGame);
-        setFen(data.fen);
-        setLastMove(data.lastMove);
+          // Handle different response statuses
+          if (response.status === 401) {
+            setError('You are not authorized to view this page.');
+            return null;
+          }
 
-        // Check if the game is over
-        if (data.isGameOver) {
-          setIsGameOver(true);
-          setGameResult(data.result);
-          setGameStarted(false);
+          if (response.status === 500) {
+            setError('Internal server error. Please try again later.');
+            console.error(JSON.stringify(response.body));
+            return null;
+          }
+
+          // For status 201 (Created) or 200 (OK), process the move
+          if (response.status === 201 || response.status === 200) {
+            // Extract the move string from the response body
+            const moveString = response.body as string;
+            console.log('Received move:', moveString);
+
+            if (moveString) {
+              // Determine the bot's color
+              const botColor = game.turn() === 'w' ? 'white' : 'black';
+
+              try {
+                // Apply the move to the current game
+                const moveResult = game.move(moveString);
+
+                if (!moveResult) {
+                  // Handle invalid move
+                  handleInvalidBotMove(botColor, moveString);
+                  return null;
+                }
+
+                console.log('Move applied successfully:', moveResult);
+
+                // Update the game state
+                const newFen = game.fen();
+                setFen(newFen);
+                setMoveHistory(game.history());
+                setLastMove({
+                  from: moveResult.from,
+                  to: moveResult.to,
+                });
+
+                // Update halfmove clock from the new FEN
+                const fenParts = newFen.split(' ');
+                if (fenParts.length >= 5) {
+                  const halfmoveValue = parseInt(fenParts[4]);
+                  console.log('Updated halfmove clock after bot move:', halfmoveValue);
+                  setHalfmoveClock(halfmoveValue);
+                }
+
+                // Check for all draw conditions explicitly
+                const isDrawByFiftyMoveRule = fenParts.length >= 5 && parseInt(fenParts[4]) >= 50;
+                const isDrawByThreefoldRepetition = game.isThreefoldRepetition();
+                const isDrawByInsufficientMaterial = game.isInsufficientMaterial();
+                const isDrawByStalemate = game.isStalemate();
+
+                // Check if the game is over, including all types of draws
+                if (
+                  game.isGameOver() || 
+                  game.isDraw() || 
+                  isDrawByFiftyMoveRule || 
+                  isDrawByThreefoldRepetition || 
+                  isDrawByInsufficientMaterial ||
+                  isDrawByStalemate
+                ) {
+                  console.log('Game over detected after bot move:', 
+                    isDrawByFiftyMoveRule ? '50-move rule' : 
+                    isDrawByThreefoldRepetition ? 'threefold repetition' : 
+                    isDrawByInsufficientMaterial ? 'insufficient material' : 
+                    isDrawByStalemate ? 'stalemate' :
+                    'other reason'
+                  );
+                  setIsGameOver(true);
+                  setGameResult(getGameResult(game));
+                  setGameStarted(false);
+                }
+
+                return moveResult;
+              } catch (moveError) {
+                // Handle invalid move (syntax error or other chess.js error)
+                handleInvalidBotMove(botColor, moveString);
+                return null;
+              }
+            } else {
+              throw new Error('No move received from server');
+            }
+          } else {
+            throw new Error(`Unexpected response status: ${response.status}`);
+          }
+        } catch (apiError) {
+          console.error('Error handling API response:', apiError);
+          setError('Failed to get bot move. Please try again.');
+          return null;
         }
-
-        return data;
-      } else {
-        throw new Error(data.message || 'Failed to get bot move');
+      } catch (err) {
+        console.error('Error getting bot move:', err);
+        setError('Failed to get bot move. Please try again.');
+        return null;
+      } finally {
+        setIsBotThinking(false);
       }
-    } catch (err) {
-      console.error('Error getting bot move:', err);
-      setError('Failed to get bot move. Please try again.');
-      return null;
-    } finally {
-      setIsBotThinking(false);
-    }
-  }, []);
+    },
+    [game, handleInvalidBotMove],
+  );
 
   // Auto-play logic for bot vs bot games
   useEffect(() => {
@@ -169,18 +416,20 @@ export default function PlayChessContent() {
     const currentTurn = game.turn() === 'w' ? 'white' : 'black';
     const currentPlayer = currentTurn === 'white' ? whitePlayer : blackPlayer;
 
-    if (currentPlayer.type === 'bot' && currentPlayer.botId) {
-      const timeoutId = setTimeout(() => {
-        makeBotMove(game.fen(), currentPlayer.botId!);
-      }, 1000);
-
-      return () => clearTimeout(timeoutId);
+    if (currentPlayer.type === 'bot' && currentPlayer.botId && !isBotThinking) {
+      makeBotMove(game.fen(), currentPlayer.botId!);
     }
-  }, [game, whitePlayer, blackPlayer, autoPlay, gameStarted, isGameOver, makeBotMove]);
+  }, [game, whitePlayer, blackPlayer, autoPlay, gameStarted, isGameOver, makeBotMove, isBotThinking]);
 
   // Handle human moves
   const onDrop = (sourceSquare: string, targetSquare: string) => {
     if (isGameOver || isBotThinking) return false;
+
+    // If game hasn't started yet, automatically start it when a move is made
+    if (!gameStarted) {
+      setGameStarted(true);
+      setError(null);
+    }
 
     const currentTurn = game.turn() === 'w' ? 'white' : 'black';
     const currentPlayer = currentTurn === 'white' ? whitePlayer : blackPlayer;
@@ -200,11 +449,41 @@ export default function PlayChessContent() {
       if (!move) return false;
 
       // Update the game state
-      setFen(game.fen());
+      const newFen = game.fen();
+      setFen(newFen);
+      setMoveHistory(game.history());
       setLastMove({ from: sourceSquare, to: targetSquare });
 
-      // Check if the game is over
-      if (game.isGameOver()) {
+      // Update halfmove clock from the new FEN
+      const fenParts = newFen.split(' ');
+      if (fenParts.length >= 5) {
+        const halfmoveValue = parseInt(fenParts[4]);
+        console.log('Updated halfmove clock after human move:', halfmoveValue);
+        setHalfmoveClock(halfmoveValue);
+      }
+
+      // Check for all draw conditions explicitly
+      const isDrawByFiftyMoveRule = fenParts.length >= 5 && parseInt(fenParts[4]) >= 50;
+      const isDrawByThreefoldRepetition = game.isThreefoldRepetition();
+      const isDrawByInsufficientMaterial = game.isInsufficientMaterial();
+      const isDrawByStalemate = game.isStalemate();
+
+      // Check if the game is over, including all types of draws
+      if (
+        game.isGameOver() || 
+        game.isDraw() || 
+        isDrawByFiftyMoveRule || 
+        isDrawByThreefoldRepetition || 
+        isDrawByInsufficientMaterial ||
+        isDrawByStalemate
+      ) {
+        console.log('Game over detected after human move:', 
+          isDrawByFiftyMoveRule ? '50-move rule' : 
+          isDrawByThreefoldRepetition ? 'threefold repetition' : 
+          isDrawByInsufficientMaterial ? 'insufficient material' : 
+          isDrawByStalemate ? 'stalemate' :
+          'other reason'
+        );
         setIsGameOver(true);
         setGameResult(getGameResult(game));
         setGameStarted(false);
@@ -216,9 +495,7 @@ export default function PlayChessContent() {
       const nextPlayer = nextTurn === 'white' ? whitePlayer : blackPlayer;
 
       if (nextPlayer.type === 'bot' && nextPlayer.botId && autoPlay) {
-        setTimeout(() => {
-          makeBotMove(game.fen(), nextPlayer.botId!);
-        }, 500);
+        makeBotMove(game.fen(), nextPlayer.botId!);
       }
 
       return true;
@@ -230,75 +507,86 @@ export default function PlayChessContent() {
 
   // Start a new game
   const startNewGame = () => {
-    const newGame = new Chess();
-    setGame(newGame);
-    setFen(newGame.fen());
+    // Reset the game to initial position
+    game.reset();
+
+    // Update state
+    setFen(game.fen());
+    setMoveHistory([]);
     setIsGameOver(false);
     setGameResult(null);
     setLastMove(null);
     setGameStarted(true);
+    setError(null);
+    setHalfmoveClock(0);
 
     // If white player is a bot and auto-play is enabled, make the first move
     if (whitePlayer.type === 'bot' && whitePlayer.botId && autoPlay) {
-      setTimeout(() => {
-        makeBotMove(newGame.fen(), whitePlayer.botId!);
-      }, 500);
+      makeBotMove(game.fen(), whitePlayer.botId!);
     }
   };
 
   // Reset the game
   const resetGame = () => {
-    const newGame = new Chess();
-    setGame(newGame);
-    setFen(newGame.fen());
+    // Reset the game to initial position
+    game.reset();
+
+    // Update state
+    setFen(game.fen());
+    setMoveHistory([]);
     setIsGameOver(false);
     setGameResult(null);
     setLastMove(null);
     setGameStarted(false);
+    setError(null);
+    setHalfmoveClock(0);
   };
 
   // Make a single bot move (for manual play)
-  const makeNextBotMove = () => {
+  const makeNextBotMove = async () => {
     if (isGameOver || isBotThinking) return;
 
     const currentTurn = game.turn() === 'w' ? 'white' : 'black';
     const currentPlayer = currentTurn === 'white' ? whitePlayer : blackPlayer;
 
     if (currentPlayer.type === 'bot' && currentPlayer.botId) {
-      makeBotMove(game.fen(), currentPlayer.botId);
+      console.log('Making next bot move for', currentPlayer.botId);
+      try {
+        const result = await makeBotMove(game.fen(), currentPlayer.botId);
+        console.log('Bot move result:', result);
+      } catch (error) {
+        console.error('Error in makeNextBotMove:', error);
+        setError('Failed to make bot move. Please try again.');
+      }
     }
-  };
-
-  // Helper function to determine game result
-  function getGameResult(chess: Chess) {
-    if (chess.isCheckmate()) return { type: 'checkmate', winner: chess.turn() === 'w' ? 'black' : 'white' };
-    if (chess.isDraw()) {
-      if (chess.isStalemate()) return { type: 'draw', reason: 'stalemate' };
-      if (chess.isThreefoldRepetition()) return { type: 'draw', reason: 'threefold repetition' };
-      if (chess.isInsufficientMaterial()) return { type: 'draw', reason: 'insufficient material' };
-      return { type: 'draw', reason: '50-move rule' };
-    }
-    return { type: 'unknown' };
-  }
-
-  // Get the current bot name
-  const getBotName = (botId: string | null) => {
-    if (!botId) return 'None';
-    const bot = availableBots.find((b) => b.id === botId);
-    return bot ? bot.name : 'Unknown Bot';
   };
 
   // Format the game result for display
   const formatGameResult = () => {
     if (!gameResult) return null;
 
-    if (gameResult.type === 'checkmate') {
-      return `Checkmate! ${gameResult.winner === 'white' ? 'White' : 'Black'} wins.`;
-    } else if (gameResult.type === 'draw') {
-      return `Draw by ${gameResult.reason}.`;
+    switch (gameResult.type) {
+      case GameResultType.Checkmate:
+        return `Checkmate! ${gameResult.winner === 'white' ? 'White' : 'Black'} wins.`;
+      
+      case GameResultType.Stalemate:
+        return `Stalemate! The game is a draw. ${game.turn() === 'w' ? 'White' : 'Black'} has no legal moves but is not in check.`;
+      
+      case GameResultType.InsufficientMaterial:
+        return `Draw by insufficient material. Neither player has enough pieces to checkmate.`;
+      
+      case GameResultType.FiftyMoveRule:
+        return `Draw by 50-move rule. There have been 50 consecutive moves without a pawn move or capture.`;
+      
+      case GameResultType.ThreefoldRepetition:
+        return `Draw by threefold repetition. The same position has occurred three times.`;
+      
+      case GameResultType.InvalidMove:
+        return `Invalid move! The ${gameResult.botColor} bot attempted an illegal move (${gameResult.attemptedMove}). ${gameResult.winner === 'white' ? 'White' : 'Black'} wins by forfeit.`;
+      
+      default:
+        return 'Game over.';
     }
-
-    return 'Game over.';
   };
 
   if (isLoading) {
@@ -393,9 +681,41 @@ export default function PlayChessContent() {
                 </div>
 
                 {isGameOver && gameResult && (
-                  <Alert className="mb-4">
-                    <Trophy className="h-4 w-4" />
-                    <AlertTitle>Game Over</AlertTitle>
+                  <Alert
+                    className={`mb-4 ${
+                      gameResult.type === GameResultType.Stalemate || 
+                      gameResult.type === GameResultType.InsufficientMaterial ||
+                      gameResult.type === GameResultType.FiftyMoveRule ||
+                      gameResult.type === GameResultType.ThreefoldRepetition
+                        ? 'bg-amber-50 border-amber-200 dark:bg-amber-950/20 dark:border-amber-800'
+                        : gameResult.type === GameResultType.InvalidMove
+                          ? 'bg-red-50 border-red-200 dark:bg-red-950/20 dark:border-red-800'
+                          : ''
+                    }`}
+                  >
+                    {gameResult.type === GameResultType.Stalemate || 
+                     gameResult.type === GameResultType.InsufficientMaterial ||
+                     gameResult.type === GameResultType.FiftyMoveRule ||
+                     gameResult.type === GameResultType.ThreefoldRepetition ? (
+                      <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                    ) : gameResult.type === GameResultType.InvalidMove ? (
+                      <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400" />
+                    ) : (
+                      <Trophy className="h-4 w-4" />
+                    )}
+                    <AlertTitle>
+                      {gameResult.type === GameResultType.Stalemate
+                        ? 'Stalemate'
+                        : gameResult.type === GameResultType.InsufficientMaterial
+                          ? 'Insufficient Material'
+                          : gameResult.type === GameResultType.FiftyMoveRule
+                            ? '50-Move Rule'
+                            : gameResult.type === GameResultType.ThreefoldRepetition
+                              ? 'Threefold Repetition'
+                              : gameResult.type === GameResultType.InvalidMove
+                                ? 'Invalid Bot Move'
+                                : 'Game Over'}
+                    </AlertTitle>
                     <AlertDescription>{formatGameResult()}</AlertDescription>
                   </Alert>
                 )}
@@ -433,7 +753,7 @@ export default function PlayChessContent() {
                           onCheckedChange={(checked) => {
                             setWhitePlayer({
                               type: checked ? 'human' : 'bot',
-                              botId: checked ? null : availableBots[0]?.id || null,
+                              botId: checked ? null : availableBots[0]?.username || null,
                             });
                           }}
                           disabled={gameStarted && !isGameOver}
@@ -457,8 +777,8 @@ export default function PlayChessContent() {
                         </SelectTrigger>
                         <SelectContent>
                           {availableBots.map((bot) => (
-                            <SelectItem key={bot.id} value={bot.id}>
-                              {bot.name} (ELO: {bot.elo})
+                            <SelectItem key={bot.username} value={bot.username}>
+                              {bot.username} (ELO: {bot.elo})
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -466,7 +786,7 @@ export default function PlayChessContent() {
                     )}
 
                     {whitePlayer.type === 'bot' && whitePlayer.botId && (
-                      <div className="text-sm text-muted-foreground">{availableBots.find((b) => b.id === whitePlayer.botId)?.description}</div>
+                      <div className="text-sm text-muted-foreground">ELO: {availableBots.find((b) => b.username === whitePlayer.botId)?.elo || 'N/A'}</div>
                     )}
                   </div>
 
@@ -486,7 +806,7 @@ export default function PlayChessContent() {
                           onCheckedChange={(checked) => {
                             setBlackPlayer({
                               type: checked ? 'human' : 'bot',
-                              botId: checked ? null : availableBots[0]?.id || null,
+                              botId: checked ? null : availableBots[0]?.username || null,
                             });
                           }}
                           disabled={gameStarted && !isGameOver}
@@ -510,8 +830,8 @@ export default function PlayChessContent() {
                         </SelectTrigger>
                         <SelectContent>
                           {availableBots.map((bot) => (
-                            <SelectItem key={bot.id} value={bot.id}>
-                              {bot.name} (ELO: {bot.elo})
+                            <SelectItem key={bot.username} value={bot.username}>
+                              {bot.username} (ELO: {bot.elo})
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -519,7 +839,7 @@ export default function PlayChessContent() {
                     )}
 
                     {blackPlayer.type === 'bot' && blackPlayer.botId && (
-                      <div className="text-sm text-muted-foreground">{availableBots.find((b) => b.id === blackPlayer.botId)?.description}</div>
+                      <div className="text-sm text-muted-foreground">ELO: {availableBots.find((b) => b.username === blackPlayer.botId)?.elo || 'N/A'}</div>
                     )}
                   </div>
 
@@ -540,11 +860,11 @@ export default function PlayChessContent() {
                   <div className="space-y-2">
                     <div className="flex justify-between">
                       <span className="text-sm font-medium">White:</span>
-                      <span>{whitePlayer.type === 'human' ? 'Human Player' : getBotName(whitePlayer.botId)}</span>
+                      <span>{whitePlayer.type === 'human' ? 'Human Player' : whitePlayer.botId}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm font-medium">Black:</span>
-                      <span>{blackPlayer.type === 'human' ? 'Human Player' : getBotName(blackPlayer.botId)}</span>
+                      <span>{blackPlayer.type === 'human' ? 'Human Player' : blackPlayer.botId}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm font-medium">Current Turn:</span>
@@ -558,6 +878,34 @@ export default function PlayChessContent() {
                       <span className="text-sm font-medium">Move Number:</span>
                       <span>{Math.floor(game.moveNumber())}</span>
                     </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm font-medium">Halfmove Clock:</span>
+                      <span className={halfmoveClock >= 40 ? 'text-amber-600 font-medium' : ''}>{halfmoveClock}/50</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm font-medium">Draw Status:</span>
+                      <span>
+                        {halfmoveClock >= 50 || (gameResult && gameResult.type === GameResultType.FiftyMoveRule) ? (
+                          <Badge variant="outline" className="bg-amber-50 text-amber-800 border-amber-300 dark:bg-amber-950 dark:text-amber-300">
+                            50-move rule applies
+                          </Badge>
+                        ) : game.isInsufficientMaterial() || (gameResult && gameResult.type === GameResultType.InsufficientMaterial) ? (
+                          <Badge variant="outline" className="bg-amber-50 text-amber-800 border-amber-300 dark:bg-amber-950 dark:text-amber-300">
+                            Insufficient material
+                          </Badge>
+                        ) : game.isThreefoldRepetition() || (gameResult && gameResult.type === GameResultType.ThreefoldRepetition) ? (
+                          <Badge variant="outline" className="bg-amber-50 text-amber-800 border-amber-300 dark:bg-amber-950 dark:text-amber-300">
+                            Threefold repetition
+                          </Badge>
+                        ) : game.isStalemate() || (gameResult && gameResult.type === GameResultType.Stalemate) ? (
+                          <Badge variant="outline" className="bg-amber-50 text-amber-800 border-amber-300 dark:bg-amber-950 dark:text-amber-300">
+                            Stalemate
+                          </Badge>
+                        ) : (
+                          <span className="text-muted-foreground">None</span>
+                        )}
+                      </span>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -569,16 +917,34 @@ export default function PlayChessContent() {
                 </CardHeader>
                 <CardContent className="p-4 pt-0">
                   <div className="h-[200px] overflow-y-auto border rounded-md p-2">
-                    {game.history().length === 0 ? (
+                    {moveHistory.length === 0 ? (
                       <div className="text-center text-muted-foreground py-4">No moves yet</div>
                     ) : (
-                      <div className="grid grid-cols-2 gap-2">
-                        {game.history().map((move, index) => (
-                          <div key={index} className={`px-2 py-1 rounded ${index % 2 === 0 ? 'bg-muted' : ''}`}>
-                            {index % 2 === 0 ? `${Math.floor(index / 2) + 1}. ` : ''}
-                            {move}
-                          </div>
-                        ))}
+                      <div className="space-y-2">
+                        {/* Group moves by turn and display in reverse order */}
+                        {(() => {
+                          // Create an array of turns
+                          const turns: { number: number; white: string | null; black: string | null }[] = [];
+
+                          // Group moves into turns
+                          for (let i = 0; i < moveHistory.length; i += 2) {
+                            const turnNumber = Math.floor(i / 2) + 1;
+                            turns.push({
+                              number: turnNumber,
+                              white: moveHistory[i] || null,
+                              black: i + 1 < moveHistory.length ? moveHistory[i + 1] : null,
+                            });
+                          }
+
+                          // Reverse the turns array to display latest first
+                          return turns.reverse().map((turn) => (
+                            <div key={turn.number} className="flex bg-muted/30 rounded p-1">
+                              <div className="w-10 font-medium text-muted-foreground">{turn.number}.</div>
+                              <div className="flex-1 px-2">{turn.white}</div>
+                              <div className="flex-1 px-2">{turn.black}</div>
+                            </div>
+                          ));
+                        })()}
                       </div>
                     )}
                   </div>

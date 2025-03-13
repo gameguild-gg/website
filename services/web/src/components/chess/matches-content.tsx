@@ -97,10 +97,9 @@ export default function MatchesContent() {
         if (localSession) {
           token = localSession.user.accessToken;
           setAccessToken(token);
-          console.log(token);
-          alert(token);
         } else {
-          console.error('No session found');
+          setError('You are not logged in. Please log in to view your matches.');
+          return;
         }
       }
 

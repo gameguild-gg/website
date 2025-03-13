@@ -97,6 +97,27 @@ export namespace Api {
 	
 	}
 
+	export interface ChessAgentResponseEntryDto {
+		/**
+		 * @description <p>The unique identifier of the user</p>
+		 * @type {string}
+		 * @memberof ChessAgentResponseEntryDto
+		 */
+		id: string;
+		/**
+		 * @description <p>The username of the user who owns the chess agent</p>
+		 * @type {string}
+		 * @memberof ChessAgentResponseEntryDto
+		 */
+		username: string;
+		/**
+		 * @description <p>The ELO rating of the chess agent</p>
+		 * @type {number}
+		 * @memberof ChessAgentResponseEntryDto
+		 */
+		elo: number;
+	}
+
 	export interface ChessLeaderboardResponseEntryDto {
 		id: string;
 		username: string;

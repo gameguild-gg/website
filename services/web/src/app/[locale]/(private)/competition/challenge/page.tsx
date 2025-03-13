@@ -9,11 +9,12 @@ import { getSession } from 'next-auth/react';
 import { Api, CompetitionsApi } from '@game-guild/apiclient';
 import ChessMatchResultDto = Api.ChessMatchResultDto;
 import UserEntity = Api.UserEntity;
+import ChessAgentResponseEntryDto = Api.ChessAgentResponseEntryDto;
 
 const ChallengePage: React.FC = () => {
   const router = useRouter();
 
-  const [agentList, setAgentList] = useState<string[]>([]);
+  const [agentList, setAgentList] = useState<ChessAgentResponseEntryDto[]>([]);
   // flag for agent list fetched
   const [agentListFetched, setAgentListFetched] = useState<boolean>(false);
 
@@ -51,7 +52,7 @@ const ChallengePage: React.FC = () => {
       return;
     }
 
-    const data = response.body as string[];
+    const data = response.body as ChessAgentResponseEntryDto[];
 
     setAgentList(data);
     setAgentListFetched(true);
@@ -140,8 +141,8 @@ const ChallengePage: React.FC = () => {
             menu={{
               items: agentList.map((agent) => {
                 return {
-                  key: agent,
-                  label: agent,
+                  key: agent.username,
+                  label: agent.username,
                   icon: <RobotFilled />,
                 };
               }),
@@ -159,8 +160,8 @@ const ChallengePage: React.FC = () => {
             menu={{
               items: agentList.map((agent) => {
                 return {
-                  key: agent,
-                  label: agent,
+                  key: agent.username,
+                  label: agent.username,
                   icon: <RobotFilled />,
                 };
               }),

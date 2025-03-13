@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Get,
@@ -12,7 +13,6 @@ import {
   UnsupportedMediaTypeException,
   UploadedFile,
   UseInterceptors,
-  BadRequestException,
 } from '@nestjs/common';
 import { ApiConsumes, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { CompetitionService } from './competition.service';
@@ -27,6 +27,7 @@ import { MatchSearchResponseDto } from '../dtos/competition/match-search-respons
 import { MatchSearchRequestDto } from '../dtos/competition/match-search-request.dto';
 import { CompetitionMatchEntity } from './entities/competition.match.entity';
 import { ChessLeaderboardResponseEntryDto } from '../dtos/competition/chess-leaderboard-response.dto';
+import { ChessAgentResponseEntryDto, ChessAgentsResponseDto } from '../dtos/competition/chess-agents-response.dto';
 import { Auth } from '../auth/decorators/http.decorator';
 import { AuthUser } from '../auth';
 import { UserEntity } from '../user/entities';
@@ -40,6 +41,7 @@ export class CompetitionController {
   logger: Logger = new Logger(CompetitionController.name);
 
   constructor(public service: CompetitionService) {}
+
   // @Post('/CTC/submit')
   // @ApiConsumes('multipart/form-data')
   // @UseInterceptors(FileInterceptor('file'))
@@ -94,7 +96,7 @@ export class CompetitionController {
       limits: {
         fileSize: 10 * 1024 * 1024, // 10MB
       },
-    })
+    }),
   )
   @Auth(AuthenticatedRoute)
   async submitChessAgent(
@@ -112,13 +114,13 @@ export class CompetitionController {
     try {
       // Process the zip file to remove __MACOSX folder
       const JSZip = require('jszip');
-      
+
       // Load the zip file
       const originalZip = await JSZip.loadAsync(file.buffer);
-      
+
       // Create a new zip without __MACOSX
       const cleanedZip = new JSZip();
-      
+
       // Copy all files except those in __MACOSX directory
       for (const [path, zipFile] of Object.entries<any>(originalZip.files)) {
         if (!path.startsWith('__MACOSX/') && !path.includes('/.DS_Store') && !path.includes('__MACOSX')) {
@@ -132,10 +134,10 @@ export class CompetitionController {
           this.logger.log(`Skipping macOS metadata file: ${path}`);
         }
       }
-      
+
       // Generate the new zip buffer
       const cleanedZipBuffer = await cleanedZip.generateAsync({ type: 'nodebuffer' });
-      
+
       // Store the cleaned submission
       await this.service.storeSubmission({
         user: user,
@@ -159,15 +161,19 @@ export class CompetitionController {
   }
 
   @Get('/Chess/ListAgents')
-  @ApiResponse({ type: String, isArray: true })
+  @ApiResponse({
+    type: ChessAgentResponseEntryDto,
+    isArray: true,
+    description: 'List of chess agents with their details',
+  })
   @Auth(AuthenticatedRoute)
-  async ListChessAgents(@AuthUser() user: UserEntity): Promise<string[]> {
+  async ListChessAgents(@AuthUser() user: UserEntity): Promise<ChessAgentsResponseDto> {
     if (!user) throw new UnauthorizedException('Invalid credentials');
     return this.service.listChessAgents();
   }
 
   @Post('/Chess/Move')
-  @ApiResponse({ type: String })
+  @ApiResponse({ content: { 'text/html': { schema: { type: 'string' } } } })
   @Auth(AuthenticatedRoute)
   async RequestChessMove(@Body() data: ChessMoveRequestDto, @AuthUser() user: UserEntity): Promise<string> {
     if (!user) throw new UnauthorizedException('Invalid credentials');

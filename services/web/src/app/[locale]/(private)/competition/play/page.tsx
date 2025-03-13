@@ -10,7 +10,9 @@ import { Dropdown, MenuProps, message, Space } from 'antd';
 import { useRouter } from 'next/navigation';
 
 import { getSession } from 'next-auth/react';
-import { CompetitionsApi } from '@game-guild/apiclient';
+import { Api, CompetitionsApi } from '@game-guild/apiclient';
+import { GetSessionReturnType } from '@/config/auth.config';
+import ChessAgentResponseEntryDto = Api.ChessAgentResponseEntryDto;
 
 export default function PlayPage() {
   const router = useRouter();
@@ -18,13 +20,14 @@ export default function PlayPage() {
     basePath: process.env.NEXT_PUBLIC_API_URL,
   });
 
-  const [agentList, setAgentList] = useState<string[]>(['human']);
+  const [agentList, setAgentList] = useState<(ChessAgentResponseEntryDto | { username: string; id: string; elo: number })[]>([
+    { username: 'human', id: 'human', elo: 0 },
+  ]);
   // flag for agent list fetched
   const [agentListFetched, setAgentListFetched] = useState<boolean>(false);
 
   // boolean to check if the move request is being made
-  const [requestMoveInProgress, setRequestMoveInProgress] =
-    useState<boolean>(false);
+  const [requestMoveInProgress, setRequestMoveInProgress] = useState<boolean>(false);
 
   // dropdown menu for the agents
   const [selectedAgentWhite, setSelectedAgentWhite] = useState<string>('human');
@@ -65,9 +68,7 @@ export default function PlayPage() {
       }
 
       if (response.status === 500) {
-        message.error(
-          'Internal server error. Please report this issue to the community.',
-        );
+        message.error('Internal server error. Please report this issue to the community.');
         message.error(JSON.stringify(response.body));
         return;
       }
@@ -83,7 +84,7 @@ export default function PlayPage() {
 
   const getAgentList = async (): Promise<void> => {
     try {
-      const session = await getSession();
+      const session = (await getSession()) as unknown as GetSessionReturnType;
       console.log('before request');
       const response = await api.competitionControllerListChessAgents({
         headers: {
@@ -100,9 +101,7 @@ export default function PlayPage() {
       }
 
       if (response.status === 500) {
-        message.error(
-          'Internal server error. Please report this issue to the community.',
-        );
+        message.error('Internal server error. Please report this issue to the community.');
         message.error(JSON.stringify(response.body));
         return;
       }
@@ -110,13 +109,13 @@ export default function PlayPage() {
       console.log('agents list');
       console.log(response);
 
-      const data = response.body as string[];
+      const data = response.body as ChessAgentResponseEntryDto[];
 
-      // add human to the front of the list
-      data.unshift('human');
-      setAgentList(data);
+      // Add human to the front of the list
+      const fullList = [{ username: 'human', id: 'human', elo: 0 }, ...data];
+      setAgentList(fullList);
       setAgentListFetched(true);
-      console.log(data);
+      console.log(fullList);
     } catch (e) {
       message.error(JSON.stringify(e));
       setAgentListFetched(true);
@@ -128,18 +127,12 @@ export default function PlayPage() {
   useEffect(() => {
     if (!agentListFetched) getAgentList();
 
-    if (
-      selectedAgentWhite != 'human' &&
-      selectedAgentBlack != 'human' &&
-      !game.isGameOver()
-    ) {
+    if (selectedAgentWhite != 'human' && selectedAgentBlack != 'human' && !game.isGameOver()) {
       requestMove();
     }
   });
 
-  const makeAMove = (
-    move: { from: string; to: string; promotion?: string } | string,
-  ) => {
+  const makeAMove = (move: { from: string; to: string; promotion?: string } | string) => {
     try {
       const result = game.move(move);
       if (result === null || game.isGameOver()) message.info('Game over');
@@ -155,12 +148,7 @@ export default function PlayPage() {
   };
 
   const onDrop = (sourceSquare: string, targetSquare: string) => {
-    if (
-      !(
-        (game.turn() === 'w' && selectedAgentWhite == 'human') ||
-        (game.turn() === 'b' && selectedAgentBlack == 'human')
-      )
-    ) {
+    if (!((game.turn() === 'w' && selectedAgentWhite == 'human') || (game.turn() === 'b' && selectedAgentBlack == 'human'))) {
       message.error('It is not your turn');
       return false;
     }
@@ -174,10 +162,7 @@ export default function PlayPage() {
       // illegal move
       return move !== null;
     }
-    if (
-      (selectedAgentWhite == 'human' && selectedAgentBlack != 'human') ||
-      (selectedAgentWhite != 'human' && selectedAgentBlack == 'human')
-    ) {
+    if ((selectedAgentWhite == 'human' && selectedAgentBlack != 'human') || (selectedAgentWhite != 'human' && selectedAgentBlack == 'human')) {
       const move = makeAMove({
         from: sourceSquare,
         to: targetSquare,
@@ -217,9 +202,9 @@ export default function PlayPage() {
             menu={{
               items: agentList.map((agent) => {
                 return {
-                  key: agent,
-                  label: agent,
-                  icon: agent === 'human' ? <UserOutlined /> : <RobotFilled />,
+                  key: agent.username,
+                  label: agent.username,
+                  icon: agent.username === 'human' ? <UserOutlined /> : <RobotFilled />,
                 };
               }),
               onClick: handleMenuClickWhite,
@@ -236,9 +221,9 @@ export default function PlayPage() {
             menu={{
               items: agentList.map((agent) => {
                 return {
-                  key: agent,
-                  label: agent,
-                  icon: agent === 'human' ? <UserOutlined /> : <RobotFilled />,
+                  key: agent.username,
+                  label: agent.username,
+                  icon: agent.username === 'human' ? <UserOutlined /> : <RobotFilled />,
                 };
               }),
               onClick: handleMenuClickBlack,
@@ -256,24 +241,8 @@ export default function PlayPage() {
         .<p>Current turn: {game.turn() === 'w' ? 'White' : 'Black'}</p>
         <p>Current FEN: {game.fen()}</p>
         <p>In Check: {game.inCheck() ? 'Yes' : 'No'}</p>
-        <p>
-          Game status:{' '}
-          {game.isGameOver()
-            ? 'Game over'
-            : game.isDraw()
-              ? 'Game draw'
-              : 'Game in progress'}
-        </p>
-        <p>
-          Game result:{' '}
-          {game.isGameOver()
-            ? game.isCheckmate()
-              ? game.turn() === 'w'
-                ? 'Black wins'
-                : 'White wins'
-              : 'Draw'
-            : 'In progress'}
-        </p>
+        <p>Game status: {game.isGameOver() ? 'Game over' : game.isDraw() ? 'Game draw' : 'Game in progress'}</p>
+        <p>Game result: {game.isGameOver() ? (game.isCheckmate() ? (game.turn() === 'w' ? 'Black wins' : 'White wins') : 'Draw') : 'In progress'}</p>
       </Space>
     </>
   );

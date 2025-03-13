@@ -5141,13 +5141,13 @@
             }
           },
           "default": {
-            "description": "",
+            "description": "List of chess agents with their details",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "array",
                   "items": {
-                    "type": "string"
+                    "$ref": "#/components/schemas/ChessAgentResponseEntryDto"
                   }
                 }
               }
@@ -5250,14 +5250,14 @@
             }
           },
           "default": {
-            "description": "",
             "content": {
-              "application/json": {
+              "text/html": {
                 "schema": {
                   "type": "string"
                 }
               }
-            }
+            },
+            "description": ""
           }
         },
         "tags": [
@@ -11098,6 +11098,28 @@
       "TerminalDto": {
         "type": "object",
         "properties": {}
+      },
+      "ChessAgentResponseEntryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The unique identifier of the user"
+          },
+          "username": {
+            "type": "string",
+            "description": "The username of the user who owns the chess agent"
+          },
+          "elo": {
+            "type": "number",
+            "description": "The ELO rating of the chess agent"
+          }
+        },
+        "required": [
+          "id",
+          "username",
+          "elo"
+        ]
       },
       "ChessMoveRequestDto": {
         "type": "object",

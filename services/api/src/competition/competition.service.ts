@@ -9,7 +9,7 @@ import {
 import { AuthService } from '../auth/auth.service';
 import * as util from 'util';
 import { InjectRepository } from '@nestjs/typeorm';
-import { IsNull, Not, Repository } from 'typeorm';
+import { FindManyOptions, IsNull, Not, Repository } from 'typeorm';
 import { CompetitionGame, CompetitionSubmissionEntity } from './entities/competition.submission.entity';
 import { CompetitionRunEntity, CompetitionRunState } from './entities/competition.run.entity';
 import { CompetitionMatchEntity, CompetitionWinner } from './entities/competition.match.entity';
@@ -25,7 +25,6 @@ import decompress from 'decompress';
 import ExecuteCommand, { ExecuteCommandResult } from '../common/execute-command';
 import { Chess, Move } from 'chess.js';
 import { UserProfileService } from '../user/modules/user-profile/user-profile.service';
-import { FindManyOptions } from 'typeorm/find-options/FindManyOptions';
 import { TerminalDto } from '../dtos/competition/terminal.dto';
 import { ChessMoveRequestDto } from '../dtos/competition/chess-move-request.dto';
 import {
@@ -35,6 +34,7 @@ import {
 } from '../dtos/competition/chess-match-result.dto';
 import { ChessLeaderboardResponseDto } from '../dtos/competition/chess-leaderboard-response.dto';
 import { ChessMatchRequestDto } from '../dtos/competition/chess-match-request.dto';
+import { ChessAgentsResponseDto } from '../dtos/competition/chess-agents-response.dto';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const execShPromise = require('exec-sh').promise;
@@ -510,14 +510,26 @@ export class CompetitionService {
   //   } catch (e) {}
   // }
 
-  async listChessAgents(): Promise<string[]> {
-    // find users who have submitted chess agents
-    const users = this.userService.find({
-      where: { competitionSubmissions: { gameType: CompetitionGame.Chess } },
+  async listChessAgents(): Promise<ChessAgentsResponseDto> {
+    // Find users who have submitted chess agents
+    const users = await this.userService.find({
+      where: {
+        competitionSubmissions: {
+          gameType: CompetitionGame.Chess,
+          executable: Not(IsNull()),
+        },
+      },
+      select: {
+        id: true,
+        username: true,
+        elo: true,
+      },
+      order: {
+        elo: 'DESC',
+      },
     });
-    // return their usernames
-    const users_1 = await users;
-    return users_1.map((user) => user.username);
+
+    return users;
   }
 
   async prepareLastChessSubmission(user: UserEntity): Promise<TerminalDto[]> {
