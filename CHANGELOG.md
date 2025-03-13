@@ -1,3 +1,10 @@
+## [1.17.3](https://github.com/gameguild-gg/website/compare/v1.17.2...v1.17.3) (2025-03-13)
+
+
+### Bug Fixes
+
+* **chess:** now you can play against bots. ([ed70f2c](https://github.com/gameguild-gg/website/commit/ed70f2ca9bb2dd904ff427a6a19c0add804a80c4))
+
 ## [1.17.2](https://github.com/gameguild-gg/website/compare/v1.17.1...v1.17.2) (2025-03-12)
 
 
