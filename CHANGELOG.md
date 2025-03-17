@@ -1,3 +1,10 @@
+## [1.17.4](https://github.com/gameguild-gg/website/compare/v1.17.3...v1.17.4) (2025-03-17)
+
+
+### Bug Fixes
+
+* **courses:** add python dictionary to python course ([af05799](https://github.com/gameguild-gg/website/commit/af0579925b73bc4fb135674b0aa23e0db73884c0))
+
 ## [1.17.3](https://github.com/gameguild-gg/website/compare/v1.17.2...v1.17.3) (2025-03-13)
 
 
