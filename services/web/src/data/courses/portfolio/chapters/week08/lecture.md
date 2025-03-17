@@ -47,10 +47,14 @@ Visualizing ideas helps both **team collaboration and portfolio presentation**, 
 
 ### **Creating GIFs from Videos**
 If you need to convert a video into a GIF, consider:
-- **FFmpeg:** A powerful open-source tool to convert and optimize GIFs from video clips.  
-  ffmpeg -i input.mp4 -vf "fps=15,scale=640:-1:flags=lanczos" -c:v gif output.gif
+- **FFmpeg:** A powerful open-source tool to convert and optimize GIFs from video clips.
+``` sh
+ffmpeg -i input.mp4 -vf "fps=15,scale=640:-1:flags=lanczos" -c:v gif output.gif
+```
 - **Adobe Cloud Converter**: A simple online tool for converting and optimizing GIFs.
 - **Ezgif**: A web-based GIF optimization tool that allows cropping, resizing, and reducing file sizes.
+- **GraphicsMagick** A powerful open-source CLI tool to convert images and videos on the terminal.
+
 
 ---
 
