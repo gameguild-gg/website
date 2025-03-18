@@ -1,3 +1,10 @@
+## [1.17.5](https://github.com/gameguild-gg/website/compare/v1.17.4...v1.17.5) (2025-03-18)
+
+
+### Bug Fixes
+
+* **courses:** add more courses into ai chess ([bd72644](https://github.com/gameguild-gg/website/commit/bd72644f9e689d7f3c1820c40a4acd0be59491c4))
+
 ## [1.17.4](https://github.com/gameguild-gg/website/compare/v1.17.3...v1.17.4) (2025-03-17)
 
 
