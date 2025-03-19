@@ -1,3 +1,10 @@
+## [1.17.7](https://github.com/gameguild-gg/website/compare/v1.17.6...v1.17.7) (2025-03-19)
+
+
+### Bug Fixes
+
+* **courses:** add portfolio class about finalizing demo reels ([abb2556](https://github.com/gameguild-gg/website/commit/abb25562b3340eebee00a75880e19fa9b61cf27a))
+
 ## [1.17.6](https://github.com/gameguild-gg/website/compare/v1.17.5...v1.17.6) (2025-03-19)
 
 
