@@ -1,3 +1,10 @@
+## [1.17.8](https://github.com/gameguild-gg/website/compare/v1.17.7...v1.17.8) (2025-03-19)
+
+
+### Bug Fixes
+
+* **courses:** add section to portfolio class ([ce1b8a1](https://github.com/gameguild-gg/website/commit/ce1b8a1d09261d33a0ce24dbff08726a75b63d7a))
+
 ## [1.17.7](https://github.com/gameguild-gg/website/compare/v1.17.6...v1.17.7) (2025-03-19)
 
 
