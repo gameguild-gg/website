@@ -11283,6 +11283,18 @@
             "items": {
               "type": "string"
             }
+          },
+          "points": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
+          "cpuTime": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
           }
         },
         "required": [
@@ -11290,7 +11302,9 @@
           "updatedAt",
           "winner",
           "lastState",
-          "players"
+          "players",
+          "points",
+          "cpuTime"
         ]
       },
       "ChessLeaderboardResponseEntryDto": {
@@ -11349,6 +11363,12 @@
           "p2Points": {
             "type": "number"
           },
+          "p1cpuTime": {
+            "type": "number"
+          },
+          "p2cpuTime": {
+            "type": "number"
+          },
           "p1Turns": {
             "type": "number"
           },
@@ -11371,6 +11391,8 @@
           "winner",
           "p1Points",
           "p2Points",
+          "p1cpuTime",
+          "p2cpuTime",
           "p1Turns",
           "p2Turns",
           "logs",

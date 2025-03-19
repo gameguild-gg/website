@@ -246,6 +246,16 @@ export namespace Api {
 		 * @type {number}
 		 * @memberof CompetitionMatchEntity
 		 */
+		p1cpuTime: number;
+		/**
+		 * @type {number}
+		 * @memberof CompetitionMatchEntity
+		 */
+		p2cpuTime: number;
+		/**
+		 * @type {number}
+		 * @memberof CompetitionMatchEntity
+		 */
 		p1Turns: number;
 		/**
 		 * @type {number}
@@ -1212,6 +1222,8 @@ export namespace Api {
 		winner: string;
 		lastState: string;
 		players: string[];
+		points: number[];
+		cpuTime: number[];
 	}
 
 	export interface OkDto {

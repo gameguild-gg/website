@@ -232,6 +232,10 @@ export class CompetitionController {
         createdAt: true,
         p1submission: { id: true, user: { username: true } },
         p2submission: { id: true, user: { username: true } },
+        p1Points: true,
+        p2Points: true,
+        p1cpuTime: true,
+        p2cpuTime: true,
       },
     });
 
@@ -242,6 +246,9 @@ export class CompetitionController {
         winner: match.winner,
         lastState: match.lastState,
         players: [match.p1submission.user.username, match.p2submission.user.username],
+        createdAt: match.createdAt,
+        points: [match.p1Points, match.p2Points],
+        cpuTime: [match.p1cpuTime, match.p2cpuTime],
       };
       return convertedMatch as MatchSearchResponseDto;
     });

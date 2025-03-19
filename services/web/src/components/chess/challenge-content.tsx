@@ -2,119 +2,102 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/chess/ui/card';
-import { Button } from '@/components/chess/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/chess/ui/select';
-import { Alert, AlertDescription, AlertTitle } from '@/components/chess/ui/alert';
-import { Badge } from '@/components/chess/ui/badge';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
 import { AlertCircle, ArrowRight, CheckCircle2, Clock, Swords, Trophy } from 'lucide-react';
-
-// Types for our bots
-interface Bot {
-  id: string;
-  name: string;
-  elo: number;
-  description: string;
-  lastUpdated: string;
-  status: string;
-}
+import { Api, CompetitionsApi, UsersApi } from '@game-guild/apiclient';
+import { getSession } from 'next-auth/react';
+import { GetSessionReturnType } from '@/config/auth.config';
+import ChessAgentResponseEntryDto = Api.ChessAgentResponseEntryDto;
 
 // Challenge status type
 type ChallengeStatus = 'idle' | 'submitting' | 'success' | 'error';
 
+// Add color type
+type BotColor = 'white' | 'black';
+
 export function ChallengeContent() {
   const router = useRouter();
-  const [myBots, setMyBots] = useState<Bot[]>([]);
-  const [opponentBots, setOpponentBots] = useState<Bot[]>([]);
-  const [selectedMyBot, setSelectedMyBot] = useState<string>('');
+  const [myBot, setMyBot] = useState<ChessAgentResponseEntryDto | null>(null);
+  // UI state
+  const [availableBots, setAvailableBots] = useState<ChessAgentResponseEntryDto[]>([]);
   const [selectedOpponentBot, setSelectedOpponentBot] = useState<string>('');
+  const [selectedColor, setSelectedColor] = useState<BotColor>('white');
   const [challengeStatus, setChallengeStatus] = useState<ChallengeStatus>('idle');
   const [statusMessage, setStatusMessage] = useState<string>('');
   const [matchId, setMatchId] = useState<number | null>(null);
-  const [estimatedTime, setEstimatedTime] = useState<string>('');
+  const [estimatedTime, setEstimatedTime] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Get the selected bot objects
-  const myBot = myBots.find((bot) => bot.id === selectedMyBot);
-  const opponentBot = opponentBots.find((bot) => bot.id === selectedOpponentBot);
+  const api = new CompetitionsApi({
+    basePath: process.env.NEXT_PUBLIC_API_URL,
+  });
 
-  // Fetch my bots
+  const usersApi = new UsersApi({
+    basePath: process.env.NEXT_PUBLIC_API_URL,
+  });
+
+  // Get the selected opponent bot object
+  const opponentBot = availableBots.find((bot) => bot.id === selectedOpponentBot);
+
+  // Fetch my bot and opponent bots
   useEffect(() => {
-    async function fetchMyBots() {
+    const fetchBots = async () => {
       try {
-        const response = await fetch('/api/my-bots');
-        if (!response.ok) throw new Error('Failed to fetch my bots');
-        const data = await response.json();
-        setMyBots(data);
-      } catch (error) {
-        console.error('Error fetching my bots:', error);
-      }
-    }
+        setIsLoading(true);
+        const session = (await getSession()) as unknown as GetSessionReturnType;
+        console.log('before request');
+        const response = await api.competitionControllerListChessAgents({
+          headers: {
+            Authorization: `Bearer ${session?.user?.accessToken}`,
+          },
+        });
 
-    // Fetch opponent bots (in a real app, this would be a different endpoint)
-    async function fetchOpponentBots() {
-      try {
-        // For demo purposes, we'll use a mock list of opponent bots
-        // In a real app, this would be a separate API call
-        const mockOpponents = [
-          {
-            id: 'opp1',
-            name: 'GrandmasterAI',
-            elo: 2100,
-            description: 'Tournament winner with advanced positional play',
-            lastUpdated: '2023-12-20T11:20:00Z',
-            status: 'active',
-          },
-          {
-            id: 'opp2',
-            name: 'TacticalGenius',
-            elo: 1950,
-            description: 'Specializes in tactical combinations',
-            lastUpdated: '2024-01-10T16:30:00Z',
-            status: 'active',
-          },
-          {
-            id: 'opp3',
-            name: 'EndgameWizard',
-            elo: 1880,
-            description: 'Exceptional endgame knowledge',
-            lastUpdated: '2023-11-15T08:45:00Z',
-            status: 'active',
-          },
-          {
-            id: 'opp4',
-            name: 'OpeningMaster',
-            elo: 1820,
-            description: 'Extensive opening book knowledge',
-            lastUpdated: '2023-12-05T14:10:00Z',
-            status: 'active',
-          },
-          {
-            id: 'opp5',
-            name: 'DefensiveWall',
-            elo: 1750,
-            description: 'Extremely solid defensive play',
-            lastUpdated: '2024-01-02T09:55:00Z',
-            status: 'active',
-          },
-        ];
-        setOpponentBots(mockOpponents);
-      } catch (error) {
-        console.error('Error fetching opponent bots:', error);
+        if (response.status === 401) {
+          setError('You are not authorized to view this page.');
+          return;
+        }
+
+        if (response.status === 500) {
+          setError('Internal server error. Please report this issue to the community.');
+          setError(JSON.stringify(response.body));
+          return;
+        }
+
+        const data = response.body as ChessAgentResponseEntryDto[];
+
+        setAvailableBots(data);
+
+        // get the bot in the data with the same username as the user and set as myBot
+        const username = JSON.parse(atob(session?.user?.accessToken.split('.')[1])).username as string;
+        const localMyBot = data.find((bot) => bot.username === username) || null;
+        setMyBot(localMyBot);
+        if (!localMyBot) {
+          setError('You do not have a bot yet. Please submit a bot first.');
+          return;
+        }
+
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching bots:', err);
+        setError('Failed to load available bots. Please try again later.');
       } finally {
         setIsLoading(false);
       }
-    }
+    };
 
-    fetchMyBots();
-    fetchOpponentBots();
+    fetchBots();
   }, []);
 
   // Handle challenge submission
   const handleSubmitChallenge = async () => {
-    if (!selectedMyBot || !selectedOpponentBot) {
+    if (!myBot || !selectedOpponentBot) {
       setChallengeStatus('error');
-      setStatusMessage('Please select both your bot and an opponent bot');
+      setStatusMessage('Please select an opponent bot');
       return;
     }
 
@@ -122,27 +105,25 @@ export function ChallengeContent() {
     setStatusMessage('Submitting challenge...');
 
     try {
-      const response = await fetch('/api/challenge', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+      const session = (await getSession()) as unknown as GetSessionReturnType;
+      const response = await api.competitionControllerRunChessMatch(
+        {
+          player1username: selectedColor == 'white' ? myBot.username : opponentBot.username,
+          player2username: selectedColor == 'black' ? myBot.username : opponentBot.username,
         },
-        body: JSON.stringify({
-          myBotId: selectedMyBot,
-          opponentBotId: selectedOpponentBot,
-        }),
-      });
+        {
+          headers: {
+            Authorization: `Bearer ${session?.user?.accessToken}`,
+          },
+        },
+      );
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to submit challenge');
-      }
+      const data = response.body as Api.ChessMatchResultDto;
 
       setChallengeStatus('success');
-      setStatusMessage(data.message);
-      setMatchId(data.matchId);
-      setEstimatedTime(data.estimatedCompletionTime);
+      // setStatusMessage(data);
+      // setMatchId(data.id);
+      // setEstimatedTime(data.cpuTime[0] + data.cpuTime[1]);
     } catch (error) {
       console.error('Error submitting challenge:', error);
       setChallengeStatus('error');
@@ -152,7 +133,7 @@ export function ChallengeContent() {
 
   // View match results
   const handleViewMatches = () => {
-    router.push('/matches');
+    router.push('/chess/matches');
   };
 
   return (
@@ -164,7 +145,7 @@ export function ChallengeContent() {
             Challenge a Bot
           </CardTitle>
           <CardDescription>
-            Select one of your bots to challenge another bot. The match will be processed and results will be available on the matches page.
+            Challenge your bot against another bot. The match will be processed and results will be available on the matches page.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -176,41 +157,48 @@ export function ChallengeContent() {
             </div>
           ) : (
             <div className="space-y-8">
-              {/* Bot selection section */}
+              {/* Bot display section */}
               <div className="grid gap-6 md:grid-cols-2">
-                {/* My bot selection */}
+                {/* My bot display */}
                 <div className="space-y-4">
                   <div>
-                    <h3 className="text-sm font-medium mb-2">Select Your Bot</h3>
-                    <Select value={selectedMyBot} onValueChange={setSelectedMyBot}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select one of your bots" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {myBots.map((bot) => (
-                          <SelectItem key={bot.id} value={bot.id}>
-                            {bot.name} (ELO: {bot.elo})
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <h3 className="text-sm font-medium mb-2">Your Bot</h3>
                   </div>
 
-                  {myBot && (
+                  {myBot ? (
                     <Card>
                       <CardHeader className="p-4">
-                        <CardTitle className="text-base">{myBot.name}</CardTitle>
+                        <CardTitle className="text-base">{myBot.username}</CardTitle>
                         <div className="flex items-center gap-2">
                           <Badge variant="outline" className="flex items-center gap-1">
                             <Trophy className="h-3 w-3" />
                             ELO: {myBot.elo}
                           </Badge>
                         </div>
+                        <div className="mt-2">
+                          <label className="text-sm font-medium">Play as:</label>
+                          <div className="flex gap-2 mt-1">
+                            <Button variant={selectedColor === 'white' ? 'default' : 'outline'} size="sm" onClick={() => setSelectedColor('white')}>
+                              White
+                            </Button>
+                            <Button variant={selectedColor === 'black' ? 'default' : 'outline'} size="sm" onClick={() => setSelectedColor('black')}>
+                              Black
+                            </Button>
+                          </div>
+                        </div>
                       </CardHeader>
-                      <CardContent className="p-4 pt-0">
-                        <p className="text-sm text-muted-foreground">{myBot.description}</p>
-                      </CardContent>
                     </Card>
+                  ) : (
+                    <Alert>
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertTitle>No Bot Found</AlertTitle>
+                      <AlertDescription>
+                        You don't have a bot yet. Please submit a bot first.
+                        <Button variant="link" className="p-0 h-auto font-normal" onClick={() => router.push('/submit')}>
+                          Submit a bot
+                        </Button>
+                      </AlertDescription>
+                    </Alert>
                   )}
                 </div>
 
@@ -218,14 +206,14 @@ export function ChallengeContent() {
                 <div className="space-y-4">
                   <div>
                     <h3 className="text-sm font-medium mb-2">Select Opponent Bot</h3>
-                    <Select value={selectedOpponentBot} onValueChange={setSelectedOpponentBot}>
+                    <Select value={selectedOpponentBot} onValueChange={setSelectedOpponentBot} disabled={!myBot}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select an opponent bot" />
                       </SelectTrigger>
                       <SelectContent>
-                        {opponentBots.map((bot) => (
+                        {availableBots.map((bot) => (
                           <SelectItem key={bot.id} value={bot.id}>
-                            {bot.name} (ELO: {bot.elo})
+                            {bot.username} (ELO: {bot.elo})
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -235,7 +223,7 @@ export function ChallengeContent() {
                   {opponentBot && (
                     <Card>
                       <CardHeader className="p-4">
-                        <CardTitle className="text-base">{opponentBot.name}</CardTitle>
+                        <CardTitle className="text-base">{opponentBot.username}</CardTitle>
                         <div className="flex items-center gap-2">
                           <Badge variant="outline" className="flex items-center gap-1">
                             <Trophy className="h-3 w-3" />
@@ -243,9 +231,6 @@ export function ChallengeContent() {
                           </Badge>
                         </div>
                       </CardHeader>
-                      <CardContent className="p-4 pt-0">
-                        <p className="text-sm text-muted-foreground">{opponentBot.description}</p>
-                      </CardContent>
                     </Card>
                   )}
                 </div>
@@ -260,16 +245,18 @@ export function ChallengeContent() {
                   <CardContent>
                     <div className="flex flex-col md:flex-row items-center justify-center gap-4 py-2">
                       <div className="text-center">
-                        <div className="font-medium">{myBot.name}</div>
-                        <div className="text-sm text-muted-foreground">ELO: {myBot.elo}</div>
+                        <div className="font-medium">{selectedColor === 'white' ? myBot.username : opponentBot.username}</div>
+                        <div className="text-sm text-muted-foreground">ELO: {selectedColor === 'white' ? myBot.elo : opponentBot.elo}</div>
+                        <div className="text-sm font-medium text-muted-foreground">(White)</div>
                       </div>
                       <div className="flex items-center gap-2">
                         <Swords className="h-5 w-5 text-muted-foreground" />
                         <ArrowRight className="h-4 w-4 text-muted-foreground" />
                       </div>
                       <div className="text-center">
-                        <div className="font-medium">{opponentBot.name}</div>
-                        <div className="text-sm text-muted-foreground">ELO: {opponentBot.elo}</div>
+                        <div className="font-medium">{selectedColor === 'white' ? opponentBot.username : myBot.username}</div>
+                        <div className="text-sm text-muted-foreground">ELO: {selectedColor === 'white' ? opponentBot.elo : myBot.elo}</div>
+                        <div className="text-sm font-medium text-muted-foreground">(Black)</div>
                       </div>
                     </div>
                     <div className="mt-4 text-sm text-center text-muted-foreground">
@@ -318,17 +305,17 @@ export function ChallengeContent() {
           <Button
             variant="outline"
             onClick={() => {
-              setSelectedMyBot('');
               setSelectedOpponentBot('');
+              setSelectedColor('white');
               setChallengeStatus('idle');
             }}
-            disabled={challengeStatus === 'submitting' || challengeStatus === 'success'}
+            disabled={challengeStatus === 'submitting' || challengeStatus === 'success' || !myBot}
           >
             Reset
           </Button>
           <Button
             onClick={handleSubmitChallenge}
-            disabled={!selectedMyBot || !selectedOpponentBot || challengeStatus === 'submitting' || challengeStatus === 'success'}
+            disabled={!myBot || !selectedOpponentBot || challengeStatus === 'submitting' || challengeStatus === 'success'}
           >
             {challengeStatus === 'submitting' ? 'Submitting...' : 'Submit Challenge'}
           </Button>

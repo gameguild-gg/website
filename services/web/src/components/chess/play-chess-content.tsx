@@ -15,7 +15,6 @@ import { AlertTriangle, Info, Loader2, RotateCcw, Trophy } from 'lucide-react';
 import { Api, CompetitionsApi } from '@game-guild/apiclient';
 import { getSession } from 'next-auth/react';
 import { GetSessionReturnType } from '@/config/auth.config';
-import { message } from 'antd';
 import ChessAgentResponseEntryDto = Api.ChessAgentResponseEntryDto;
 
 type PlayerType = 'human' | 'bot';
@@ -33,7 +32,7 @@ enum GameResultType {
   FiftyMoveRule = 'fifty_move_rule',
   ThreefoldRepetition = 'threefold_repetition',
   InvalidMove = 'invalid_move',
-  Unknown = 'unknown'
+  Unknown = 'unknown',
 }
 
 // Add interface for game result
@@ -76,20 +75,18 @@ export default function PlayChessContent() {
       const isDrawByStalemate = game.isStalemate();
 
       // Check if the game is over, including all types of draws
-      if (
-        game.isGameOver() || 
-        game.isDraw() || 
-        isDrawByFiftyMoveRule || 
-        isDrawByThreefoldRepetition || 
-        isDrawByInsufficientMaterial ||
-        isDrawByStalemate
-      ) {
-        console.log('Game over detected:', 
-          isDrawByFiftyMoveRule ? '50-move rule' : 
-          isDrawByThreefoldRepetition ? 'threefold repetition' : 
-          isDrawByInsufficientMaterial ? 'insufficient material' : 
-          isDrawByStalemate ? 'stalemate' :
-          'other reason'
+      if (game.isGameOver() || game.isDraw() || isDrawByFiftyMoveRule || isDrawByThreefoldRepetition || isDrawByInsufficientMaterial || isDrawByStalemate) {
+        console.log(
+          'Game over detected:',
+          isDrawByFiftyMoveRule
+            ? '50-move rule'
+            : isDrawByThreefoldRepetition
+              ? 'threefold repetition'
+              : isDrawByInsufficientMaterial
+                ? 'insufficient material'
+                : isDrawByStalemate
+                  ? 'stalemate'
+                  : 'other reason',
         );
         setIsGameOver(true);
         setGameResult(getGameResult(game));
@@ -122,45 +119,45 @@ export default function PlayChessContent() {
   function getGameResult(chess: Chess): GameResult {
     // Check for checkmate
     if (chess.isCheckmate()) {
-      return { 
-        type: GameResultType.Checkmate, 
-        winner: chess.turn() === 'w' ? 'black' : 'white' 
+      return {
+        type: GameResultType.Checkmate,
+        winner: chess.turn() === 'w' ? 'black' : 'white',
       };
     }
-    
+
     // Check for stalemate
     if (chess.isStalemate()) {
-      return { 
-        type: GameResultType.Stalemate, 
-        reason: 'No legal moves available' 
+      return {
+        type: GameResultType.Stalemate,
+        reason: 'No legal moves available',
       };
     }
-    
+
     // Check for insufficient material
     if (chess.isInsufficientMaterial()) {
       return {
         type: GameResultType.InsufficientMaterial,
-        reason: 'Insufficient material to checkmate'
+        reason: 'Insufficient material to checkmate',
       };
     }
-    
+
     // Check for threefold repetition
     if (chess.isThreefoldRepetition()) {
-      return { 
-        type: GameResultType.ThreefoldRepetition, 
-        reason: 'Same position occurred three times' 
+      return {
+        type: GameResultType.ThreefoldRepetition,
+        reason: 'Same position occurred three times',
       };
     }
 
     // Check for 50-move rule explicitly
     const fenParts = chess.fen().split(' ');
     if (fenParts.length >= 5 && parseInt(fenParts[4]) >= 50) {
-      return { 
-        type: GameResultType.FiftyMoveRule, 
-        reason: '50 moves without pawn move or capture' 
+      return {
+        type: GameResultType.FiftyMoveRule,
+        reason: '50 moves without pawn move or capture',
       };
     }
-    
+
     // Generic draw check (catches other draw conditions)
     if (chess.isDraw()) {
       // Try to determine the specific draw type
@@ -173,11 +170,11 @@ export default function PlayChessContent() {
       } else if (chess.isStalemate()) {
         return { type: GameResultType.Stalemate, reason: 'No legal moves available' };
       }
-      
+
       // Fallback for other draw types - changed from FiftyMoveRule to Unknown with a generic reason
       return { type: GameResultType.Unknown, reason: 'Draw condition met' };
     }
-    
+
     return { type: GameResultType.Unknown };
   }
 
@@ -250,8 +247,8 @@ export default function PlayChessContent() {
         }
 
         if (response.status === 500) {
-          message.error('Internal server error. Please report this issue to the community.');
-          message.error(JSON.stringify(response.body));
+          setError('Internal server error. Please report this issue to the community.');
+          setError(JSON.stringify(response.body));
           return;
         }
 
@@ -362,19 +359,24 @@ export default function PlayChessContent() {
 
                 // Check if the game is over, including all types of draws
                 if (
-                  game.isGameOver() || 
-                  game.isDraw() || 
-                  isDrawByFiftyMoveRule || 
-                  isDrawByThreefoldRepetition || 
+                  game.isGameOver() ||
+                  game.isDraw() ||
+                  isDrawByFiftyMoveRule ||
+                  isDrawByThreefoldRepetition ||
                   isDrawByInsufficientMaterial ||
                   isDrawByStalemate
                 ) {
-                  console.log('Game over detected after bot move:', 
-                    isDrawByFiftyMoveRule ? '50-move rule' : 
-                    isDrawByThreefoldRepetition ? 'threefold repetition' : 
-                    isDrawByInsufficientMaterial ? 'insufficient material' : 
-                    isDrawByStalemate ? 'stalemate' :
-                    'other reason'
+                  console.log(
+                    'Game over detected after bot move:',
+                    isDrawByFiftyMoveRule
+                      ? '50-move rule'
+                      : isDrawByThreefoldRepetition
+                        ? 'threefold repetition'
+                        : isDrawByInsufficientMaterial
+                          ? 'insufficient material'
+                          : isDrawByStalemate
+                            ? 'stalemate'
+                            : 'other reason',
                   );
                   setIsGameOver(true);
                   setGameResult(getGameResult(game));
@@ -469,20 +471,18 @@ export default function PlayChessContent() {
       const isDrawByStalemate = game.isStalemate();
 
       // Check if the game is over, including all types of draws
-      if (
-        game.isGameOver() || 
-        game.isDraw() || 
-        isDrawByFiftyMoveRule || 
-        isDrawByThreefoldRepetition || 
-        isDrawByInsufficientMaterial ||
-        isDrawByStalemate
-      ) {
-        console.log('Game over detected after human move:', 
-          isDrawByFiftyMoveRule ? '50-move rule' : 
-          isDrawByThreefoldRepetition ? 'threefold repetition' : 
-          isDrawByInsufficientMaterial ? 'insufficient material' : 
-          isDrawByStalemate ? 'stalemate' :
-          'other reason'
+      if (game.isGameOver() || game.isDraw() || isDrawByFiftyMoveRule || isDrawByThreefoldRepetition || isDrawByInsufficientMaterial || isDrawByStalemate) {
+        console.log(
+          'Game over detected after human move:',
+          isDrawByFiftyMoveRule
+            ? '50-move rule'
+            : isDrawByThreefoldRepetition
+              ? 'threefold repetition'
+              : isDrawByInsufficientMaterial
+                ? 'insufficient material'
+                : isDrawByStalemate
+                  ? 'stalemate'
+                  : 'other reason',
         );
         setIsGameOver(true);
         setGameResult(getGameResult(game));
@@ -568,22 +568,22 @@ export default function PlayChessContent() {
     switch (gameResult.type) {
       case GameResultType.Checkmate:
         return `Checkmate! ${gameResult.winner === 'white' ? 'White' : 'Black'} wins.`;
-      
+
       case GameResultType.Stalemate:
         return `Stalemate! The game is a draw. ${game.turn() === 'w' ? 'White' : 'Black'} has no legal moves but is not in check.`;
-      
+
       case GameResultType.InsufficientMaterial:
         return `Draw by insufficient material. Neither player has enough pieces to checkmate.`;
-      
+
       case GameResultType.FiftyMoveRule:
         return `Draw by 50-move rule. There have been 50 consecutive moves without a pawn move or capture.`;
-      
+
       case GameResultType.ThreefoldRepetition:
         return `Draw by threefold repetition. The same position has occurred three times.`;
-      
+
       case GameResultType.InvalidMove:
         return `Invalid move! The ${gameResult.botColor} bot attempted an illegal move (${gameResult.attemptedMove}). ${gameResult.winner === 'white' ? 'White' : 'Black'} wins by forfeit.`;
-      
+
       default:
         return 'Game over.';
     }
@@ -683,7 +683,7 @@ export default function PlayChessContent() {
                 {isGameOver && gameResult && (
                   <Alert
                     className={`mb-4 ${
-                      gameResult.type === GameResultType.Stalemate || 
+                      gameResult.type === GameResultType.Stalemate ||
                       gameResult.type === GameResultType.InsufficientMaterial ||
                       gameResult.type === GameResultType.FiftyMoveRule ||
                       gameResult.type === GameResultType.ThreefoldRepetition
@@ -693,10 +693,10 @@ export default function PlayChessContent() {
                           : ''
                     }`}
                   >
-                    {gameResult.type === GameResultType.Stalemate || 
-                     gameResult.type === GameResultType.InsufficientMaterial ||
-                     gameResult.type === GameResultType.FiftyMoveRule ||
-                     gameResult.type === GameResultType.ThreefoldRepetition ? (
+                    {gameResult.type === GameResultType.Stalemate ||
+                    gameResult.type === GameResultType.InsufficientMaterial ||
+                    gameResult.type === GameResultType.FiftyMoveRule ||
+                    gameResult.type === GameResultType.ThreefoldRepetition ? (
                       <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
                     ) : gameResult.type === GameResultType.InvalidMove ? (
                       <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400" />

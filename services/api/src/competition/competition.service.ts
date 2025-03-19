@@ -1,11 +1,5 @@
 // nest exceptions
-import {
-  ConflictException,
-  Injectable,
-  InternalServerErrorException,
-  Logger,
-  UnprocessableEntityException,
-} from '@nestjs/common';
+import { ConflictException, Injectable, InternalServerErrorException, Logger, UnprocessableEntityException } from '@nestjs/common';
 import { AuthService } from '../auth/auth.service';
 import * as util from 'util';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -27,11 +21,7 @@ import { Chess, Move } from 'chess.js';
 import { UserProfileService } from '../user/modules/user-profile/user-profile.service';
 import { TerminalDto } from '../dtos/competition/terminal.dto';
 import { ChessMoveRequestDto } from '../dtos/competition/chess-move-request.dto';
-import {
-  ChessGameResult,
-  ChessGameResultReason,
-  ChessMatchResultDto,
-} from '../dtos/competition/chess-match-result.dto';
+import { ChessGameResult, ChessGameResultReason, ChessMatchResultDto } from '../dtos/competition/chess-match-result.dto';
 import { ChessLeaderboardResponseDto } from '../dtos/competition/chess-leaderboard-response.dto';
 import { ChessMatchRequestDto } from '../dtos/competition/chess-match-request.dto';
 import { ChessAgentsResponseDto } from '../dtos/competition/chess-agents-response.dto';
@@ -882,8 +872,10 @@ export class CompetitionService {
       ...match,
       p1submission: submissions[0],
       p2submission: submissions[1],
-      p1Points: result.eloChange[0], // todo: take time in consideration
+      p1Points: result.eloChange[0],
       p2Points: result.eloChange[1],
+      p1cpuTime: result.cpuTime[0],
+      p2cpuTime: result.cpuTime[1],
       p1Turns: 0,
       p2Turns: 0,
       run: competitionRun,

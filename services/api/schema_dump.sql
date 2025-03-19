@@ -166,28 +166,6 @@ CREATE TABLE "competition_run_entity" (
 ALTER TABLE "competition_run_entity"
             ADD PRIMARY KEY (id);  CREATE UNIQUE INDEX "PK_c2c36337de9af6a41752324bc01" ON public.competition_run_entity USING btree (id);
 
-CREATE TABLE "competition_match_entity" (
-  "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
-  "created_at" timestamp without time zone NOT NULL DEFAULT now(),
-  "updated_at" timestamp without time zone NOT NULL DEFAULT now(),
-  "winner" "competition_match_entity_winner_enum",
-  "p1_points" double precision NOT NULL,
-  "p2_points" double precision NOT NULL,
-  "p1_turns" integer NOT NULL,
-  "p2_turns" integer NOT NULL,
-  "logs" text,
-  "run_id" uuid,
-  "p1submission_id" uuid,
-  "p2submission_id" uuid,
-  "last_state" text
-);
-
-ALTER TABLE "competition_match_entity"
-            ADD PRIMARY KEY (id);  ALTER TABLE "competition_match_entity"
-            ADD FOREIGN KEY (run_id) REFERENCES competition_run_entity(id);  ALTER TABLE "competition_match_entity"
-            ADD FOREIGN KEY (p1submission_id) REFERENCES competition_submission_entity(id);  ALTER TABLE "competition_match_entity"
-            ADD FOREIGN KEY (p2submission_id) REFERENCES competition_submission_entity(id);  CREATE UNIQUE INDEX "PK_c82022b5f020870a48610ec2bce" ON public.competition_match_entity USING btree (id);
-
 CREATE TABLE "competition_submission_entity" (
   "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
   "created_at" timestamp without time zone NOT NULL DEFAULT now(),
@@ -284,6 +262,30 @@ ALTER TABLE "project_version"
             ADD FOREIGN KEY (project_id) REFERENCES project(id);  CREATE UNIQUE INDEX "PK_249c24f66d8f7e8ea6f9ff462fb" ON public.project_version USING btree (id);
 CREATE INDEX "IDX_4b6747e098d96a0e805692810d" ON public.project_version USING btree (feedback_deadline);
 CREATE UNIQUE INDEX "UQ_b9103221778444dc9638d3775da" ON public.project_version USING btree (version, project_id);
+
+CREATE TABLE "competition_match_entity" (
+  "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
+  "created_at" timestamp without time zone NOT NULL DEFAULT now(),
+  "updated_at" timestamp without time zone NOT NULL DEFAULT now(),
+  "winner" "competition_match_entity_winner_enum",
+  "p1_points" double precision NOT NULL,
+  "p2_points" double precision NOT NULL,
+  "p1_turns" integer NOT NULL,
+  "p2_turns" integer NOT NULL,
+  "logs" text,
+  "run_id" uuid,
+  "p1submission_id" uuid,
+  "p2submission_id" uuid,
+  "last_state" text,
+  "p1cpu_time" real NOT NULL DEFAULT '0'::real,
+  "p2cpu_time" real NOT NULL DEFAULT '0'::real
+);
+
+ALTER TABLE "competition_match_entity"
+            ADD PRIMARY KEY (id);  ALTER TABLE "competition_match_entity"
+            ADD FOREIGN KEY (run_id) REFERENCES competition_run_entity(id);  ALTER TABLE "competition_match_entity"
+            ADD FOREIGN KEY (p1submission_id) REFERENCES competition_submission_entity(id);  ALTER TABLE "competition_match_entity"
+            ADD FOREIGN KEY (p2submission_id) REFERENCES competition_submission_entity(id);  CREATE UNIQUE INDEX "PK_c82022b5f020870a48610ec2bce" ON public.competition_match_entity USING btree (id);
 
 CREATE TABLE "ticket" (
   "id" uuid NOT NULL DEFAULT uuid_generate_v4(),

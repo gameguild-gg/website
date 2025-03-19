@@ -10,7 +10,7 @@ import { Skeleton } from '@/components/chess/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/chess/ui/alert';
 import { Badge } from '@/components/chess/ui/badge';
 import { formatDistanceToNow } from 'date-fns';
-import { AlertTriangle, Clock, Eye, Trophy } from 'lucide-react';
+import { AlertTriangle, Eye, Trophy } from 'lucide-react';
 import { Api, CompetitionsApi } from '@game-guild/apiclient';
 import { getSession } from 'next-auth/react';
 import { GetSessionReturnType } from '@/config/auth.config';
@@ -146,9 +146,9 @@ export default function MatchesContent() {
     fetchMatches();
   }, []);
 
-  const handleViewReplay = (matchId: string) => {
-    window.href = `/replay?matchid=${matchId}`;
-  };
+  // const handleViewReplay = (matchId: string) => {
+  //   window.href = `/replay?matchid=${matchId}`;
+  // };
 
   // Format CPU time
   const formatCpuTime = (ms: number) => {
@@ -196,7 +196,7 @@ export default function MatchesContent() {
                   <TableRow key={match.id}>
                     <TableCell>
                       <Link
-                        href={`/replay?matchid=${match.id}`}
+                        href={`/chess/replay?matchid=${match.id}`}
                         className="font-medium hover:underline cursor-pointer"
                         title={`View replay of ${match.players[0]} vs ${match.players[1]}`}
                       >
@@ -220,17 +220,22 @@ export default function MatchesContent() {
                     <TableCell>{formatDistanceToNow(new Date(match.createdAt), { addSuffix: true })}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
-                        {/*<span>{formatCpuTime(match.cpuTime[0])}</span>*/}
+                        <span>{match.cpuTime[0]}</span>
                         <span>/</span>
-                        {/*<span>{formatCpuTime(match.cpuTime[1])}</span>*/}
+                        <span>{match.cpuTime[1]}</span>
                       </div>
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button variant="outline" size="sm" onClick={() => handleViewReplay(match.id)} className="flex items-center gap-1">
-                        <Eye className="h-4 w-4" />
-                        Replay
-                      </Button>
+                      <Link
+                        href={`/chess/replay?matchid=${match.id}`}
+                        className="font-medium hover:underline cursor-pointer"
+                        title={`View replay of ${match.players[0]} vs ${match.players[1]}`}
+                      >
+                        <Button variant="outline" size="sm" className="flex items-center gap-1">
+                          <Eye className="h-4 w-4" />
+                          Replay
+                        </Button>
+                      </Link>
                     </TableCell>
                   </TableRow>
                 ))}
