@@ -124,3 +124,74 @@ Not sure how to showcase your game’s mechanics? Learn from **presentation tech
 - [Color wheel](https://color.adobe.com/create/color-wheel) - for color theory and palette selection.
 - [Contrast checker](https://webaim.org/resources/contrastchecker/) - to ensure text is readable against backgrounds.
 - [Color blindness simulator](https://www.color-blindness.com/coblis-color-blindness-simulator/) - to check how your reel appears to colorblind viewers.
+
+## **Detecting and Preventing Issues Before They Happen**
+
+A polished demo reel isn't just about fixing mistakes after they occur, it is about anticipating problems before they disrupt your presentation. Here are strategies to **detect and prevent issues early** in your editing process.
+
+---
+
+### **1. Use a Storyboard or Timeline Outline**
+Before diving into editing, **plan out the flow** of your demo reel. A rough **storyboard or text-based timeline** helps ensure:
+
+- ✅ A strong **opening hook** and impactful ending.  
+- ✅ **Balanced pacing**—not too rushed or too slow.  
+- ✅ Logical **progression of shots** to maintain clarity.
+
+::: tip
+
+Sketch out key moments or list timestamps with descriptions (e.g., *“00:03 - Character animation showcase”*).
+
+:::
+
+---
+
+### **2. Check for Visual Clarity Early**
+
+- 👀 **Watch your reel without sound** to test if visuals alone communicate your message.  
+- 🎭 **Desaturate (black & white mode)** to check if contrast is strong enough.  
+- 📏 **Pause at random frames**—each shot should be **visually readable** without excessive clutter.
+- 🔍 **Focus in on text** to ensure it’s legible at different sizes, add overlays, and backgrounds behind the texts to improve readability.
+- 🖌️ **Use color theory** to ensure your color palette is visually appealing and accessible, and test for color blindness.
+
+---
+
+### **3. Listen for Audio Issues**
+
+- 🔊 **Play your reel at different volumes** to ensure no sound is overpowering.  
+- 🎙️ **Check voiceovers** for clarity and balance—avoid music drowning out narration.  
+- 🎵 **Test with and without sound** to ensure key moments aren’t entirely dependent on audio.
+
+::: tip
+
+If using music, ensure smooth fades and avoid abrupt cuts.
+
+:::
+
+---
+
+### **4. Simulate Different Viewing Experiences**
+
+Not everyone will watch your reel on the same screen. Test your reel in different scenarios:
+
+- 📱 **Phone screen test** – Are small text and UI elements still readable?  
+- 💻 **Different resolutions** – Does your footage lose quality when resized?  
+- 🌞 **Brightness test** – Watch it in a bright environment to check visibility.
+
+---
+
+### **5. Ask for Targeted Feedback Before Finalizing**
+
+🚀 **Before showing your reel, ask reviewers to focus on specific concerns**:
+
+- *Does the pacing feel too fast or slow?*
+- *Is any section confusing or unclear?*
+- *Are transitions smooth or distracting?*
+- *Does the color contrast make key elements stand out?*
+
+::: tip
+
+Include a short text with your submission asking peers to **focus on one or two areas** you’re unsure about.
+
+:::
+
