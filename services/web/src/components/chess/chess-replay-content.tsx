@@ -11,27 +11,20 @@ import { Badge } from '@/components/chess/ui/badge';
 import { Slider } from '@/components/chess/ui/slider';
 import { AlertTriangle, Calendar, Clock, Pause, Play, SkipBack, SkipForward, StepBack, StepForward, Trophy, Users } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
-
-interface ChessMatchResultDto {
-  id: string;
-  players: string[];
-  moves: string[];
-  winner: string;
-  draw: boolean;
-  result: string;
-  reason: string;
-  cpuTime: number[];
-  finalFen: string;
-  eloChange: number[];
-  elo: number[];
-  createdAt: string;
-}
+import { Api, CompetitionsApi } from '@game-guild/apiclient';
+import { getSession } from 'next-auth/react';
+import { GetSessionReturnType } from '@/config/auth.config';
+import ChessMatchResultDto = Api.ChessMatchResultDto;
+import ApiErrorResponseDto = Api.ApiErrorResponseDto;
 
 interface ChessReplayContentProps {
   matchId: string;
 }
 
 export default function ChessReplayContent({ matchId }: ChessReplayContentProps) {
+  // Add debug log when component mounts
+  console.log('[ChessReplayContent] Component rendering with matchId:', matchId);
+
   const [match, setMatch] = useState<ChessMatchResultDto | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -47,12 +40,19 @@ export default function ChessReplayContent({ matchId }: ChessReplayContentProps)
   const boardContainerRef = useRef<HTMLDivElement>(null);
   const [boardWidth, setBoardWidth] = useState(450);
 
+  const api = new CompetitionsApi({
+    basePath: process.env.NEXT_PUBLIC_API_URL,
+  });
+
   // Calculate board width based on container size
   useEffect(() => {
+    console.log('[ChessReplayContent] Setting up board width calculation');
+
     const updateBoardWidth = () => {
       if (boardContainerRef.current) {
         const containerWidth = boardContainerRef.current.clientWidth;
-        setBoardWidth(Math.min(containerWidth, 450)); // Cap at 600px max
+        setBoardWidth(Math.min(containerWidth, 450)); // Cap at 450px max
+        console.log('[ChessReplayContent] Board width updated to:', Math.min(containerWidth, 450));
       }
     };
 
@@ -76,62 +76,102 @@ export default function ChessReplayContent({ matchId }: ChessReplayContentProps)
 
   // Fetch match data
   useEffect(() => {
+    console.log('[ChessReplayContent] useEffect for fetching match data triggered');
+    console.log('[ChessReplayContent] matchId in useEffect:', matchId);
+
     const fetchMatchData = async () => {
       try {
+        console.log('[ChessReplayContent] Starting to fetch match data for matchId:', matchId);
         setLoading(true);
-        const response = await fetch(`/api/matches/${matchId}`);
+        const session = (await getSession()) as unknown as GetSessionReturnType;
+        const response = await api.competitionControllerGetChessMatchResult(matchId, {
+          headers: {
+            Authorization: `Bearer ${session?.user?.accessToken}`,
+          },
+        });
+        console.log('[ChessReplayContent] Fetch response status:', response.status);
 
-        if (!response.ok) {
-          throw new Error(`Failed to fetch match data: ${response.statusText}`);
+        if (response.status >= 300) {
+          const error = response.body as ApiErrorResponseDto;
+          console.error('[ChessReplayContent] API error response:', error.error);
+          throw new Error(`Failed to fetch match data: ${error.message}`);
         }
 
-        const data = await response.json();
+        const data = response.body as ChessMatchResultDto;
+        console.log('[ChessReplayContent] Successfully fetched match data:', data);
         setMatch(data);
 
         // Generate chess states from UCI moves
+        console.log('[ChessReplayContent] Generating chess states from UCI moves');
         const chess = new Chess();
         const list: string[] = [];
         const algebraic: string[] = [];
 
         // Initial position
         list.push(chess.fen());
+        console.log('[ChessReplayContent] Initial FEN:', chess.fen());
 
         // Apply each UCI move and store the resulting position
         for (const uciMove of data.moves) {
           try {
+            console.log('[ChessReplayContent] Processing UCI move:', uciMove);
+
             // Convert UCI move to chess.js move object
             const from = uciMove.substring(0, 2);
             const to = uciMove.substring(2, 4);
             const promotion = uciMove.length > 4 ? uciMove.substring(4, 5) : undefined;
 
+            console.log('[ChessReplayContent] Converted to from/to:', { from, to, promotion });
+
+            // Check if the move is valid before attempting to make it
+            const possibleMoves = chess.moves({ verbose: true });
+            const isValidMove = possibleMoves.some((move) => move.from === from && move.to === to && (!promotion || move.promotion === promotion));
+
+            if (!isValidMove) {
+              console.warn(`[ChessReplayContent] Skipping invalid move: ${uciMove} in position: ${chess.fen()}`);
+              continue;
+            }
+
             // Make the move
             const move = chess.move({ from, to, promotion });
+            console.log('[ChessReplayContent] Move result:', move);
 
             // Store the algebraic notation for display
             if (move) {
               algebraic.push(move.san);
+              console.log('[ChessReplayContent] Added algebraic notation:', move.san);
             }
 
             // Store the resulting position
             list.push(chess.fen());
+            console.log('[ChessReplayContent] Added FEN:', chess.fen());
           } catch (moveError) {
-            console.warn(`Invalid move: ${uciMove}`, moveError);
+            console.error('[ChessReplayContent] Error processing move:', uciMove, moveError);
             // Continue with the next move instead of breaking the entire replay
           }
         }
 
+        console.log('[ChessReplayContent] Generated', list.length, 'states and', algebraic.length, 'algebraic moves');
         setStates(list);
         setAlgebraicMoves(algebraic);
         setCurrentStateId(0);
       } catch (err) {
-        console.error('Error fetching match data:', err);
+        console.error('[ChessReplayContent] Error fetching match data:', err);
         setError(err instanceof Error ? err.message : 'Failed to fetch match data');
       } finally {
         setLoading(false);
+        console.log('[ChessReplayContent] Finished fetching match data');
       }
     };
 
-    fetchMatchData();
+    if (matchId) {
+      console.log('[ChessReplayContent] matchId is valid, calling fetchMatchData');
+      fetchMatchData();
+    } else {
+      console.error('[ChessReplayContent] matchId is invalid, not fetching data');
+      setError('Invalid match ID');
+      setLoading(false);
+    }
   }, [matchId]);
 
   // Handle auto-play
@@ -139,59 +179,85 @@ export default function ChessReplayContent({ matchId }: ChessReplayContentProps)
     let intervalId: NodeJS.Timeout | null = null;
 
     if (isPlaying && states.length > 0) {
+      console.log('[ChessReplayContent] Starting auto-play interval');
       intervalId = setInterval(() => {
         setCurrentStateId((prevId) => {
           const nextId = prevId + 1;
           if (nextId >= states.length) {
+            console.log('[ChessReplayContent] Auto-play reached end, stopping');
             setIsPlaying(false);
             return prevId;
           }
+          console.log('[ChessReplayContent] Auto-play advancing to state:', nextId);
           return nextId;
         });
       }, 1000 / playbackSpeed);
     }
 
     return () => {
-      if (intervalId) clearInterval(intervalId);
+      if (intervalId) {
+        console.log('[ChessReplayContent] Clearing auto-play interval');
+        clearInterval(intervalId);
+      }
     };
   }, [isPlaying, states.length, playbackSpeed]);
 
   // Navigation functions
   const goToStart = useCallback(() => {
+    console.log('[ChessReplayContent] Going to start');
     setCurrentStateId(0);
     setIsPlaying(false);
   }, []);
 
   const goToEnd = useCallback(() => {
     if (states.length > 0) {
+      console.log('[ChessReplayContent] Going to end:', states.length - 1);
       setCurrentStateId(states.length - 1);
       setIsPlaying(false);
     }
   }, [states.length]);
 
   const goToPrevMove = useCallback(() => {
-    setCurrentStateId((prev) => Math.max(0, prev - 1));
+    console.log('[ChessReplayContent] Going to previous move');
+    setCurrentStateId((prev) => {
+      const newState = Math.max(0, prev - 1);
+      console.log('[ChessReplayContent] New state:', newState);
+      return newState;
+    });
     setIsPlaying(false);
   }, []);
 
   const goToNextMove = useCallback(() => {
-    setCurrentStateId((prev) => Math.min(states.length - 1, prev + 1));
+    console.log('[ChessReplayContent] Going to next move');
+    setCurrentStateId((prev) => {
+      const newState = Math.min(states.length - 1, prev + 1);
+      console.log('[ChessReplayContent] New state:', newState);
+      return newState;
+    });
   }, [states.length]);
 
   const togglePlayPause = useCallback(() => {
     if (states.length === 0) return;
 
+    console.log('[ChessReplayContent] Toggling play/pause');
+
     // If we're at the end, go back to start when play is pressed
     if (currentStateId >= states.length - 1 && !isPlaying) {
+      console.log('[ChessReplayContent] At end, going back to start');
       setCurrentStateId(0);
     }
 
-    setIsPlaying((prev) => !prev);
+    setIsPlaying((prev) => {
+      const newState = !prev;
+      console.log('[ChessReplayContent] New playing state:', newState);
+      return newState;
+    });
   }, [states.length, currentStateId, isPlaying]);
 
   const handleSliderChange = useCallback(
     (value: number[]) => {
       if (states.length === 0) return;
+      console.log('[ChessReplayContent] Slider changed to:', value[0]);
       setCurrentStateId(value[0]);
       setIsPlaying(false);
     },
@@ -219,6 +285,7 @@ export default function ChessReplayContent({ matchId }: ChessReplayContentProps)
   }, []);
 
   if (loading) {
+    console.log('[ChessReplayContent] Rendering loading state');
     return (
       <div className="space-y-6">
         <h1 className="text-3xl font-bold tracking-tight">Match Replay</h1>
@@ -243,6 +310,7 @@ export default function ChessReplayContent({ matchId }: ChessReplayContentProps)
   }
 
   if (error) {
+    console.log('[ChessReplayContent] Rendering error state:', error);
     return (
       <div className="space-y-6">
         <h1 className="text-3xl font-bold tracking-tight">Match Replay</h1>
@@ -256,6 +324,7 @@ export default function ChessReplayContent({ matchId }: ChessReplayContentProps)
   }
 
   if (!match || states.length <= 1) {
+    console.log('[ChessReplayContent] Rendering no match data state');
     return (
       <div className="space-y-6">
         <h1 className="text-3xl font-bold tracking-tight">Match Replay</h1>
@@ -268,9 +337,9 @@ export default function ChessReplayContent({ matchId }: ChessReplayContentProps)
     );
   }
 
+  console.log('[ChessReplayContent] Rendering full match replay UI');
   const formattedMoves = formatMoveNotation(algebraicMoves);
   const currentMoveNumber = currentStateId > 0 ? Math.ceil(currentStateId / 2) : 0;
-  const totalMoveCount = Math.ceil(match.moves.length / 2);
 
   return (
     <div className="space-y-6">
