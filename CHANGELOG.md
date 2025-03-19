@@ -1,3 +1,10 @@
+## [1.17.6](https://github.com/gameguild-gg/website/compare/v1.17.5...v1.17.6) (2025-03-19)
+
+
+### Bug Fixes
+
+* **chess:** challenge another player ([7cbf19a](https://github.com/gameguild-gg/website/commit/7cbf19a0a6eb0c2faff3d0b6de68335979e3f575))
+
 ## [1.17.5](https://github.com/gameguild-gg/website/compare/v1.17.4...v1.17.5) (2025-03-18)
 
 
