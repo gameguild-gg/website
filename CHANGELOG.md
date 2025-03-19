@@ -1,3 +1,10 @@
+## [1.17.9](https://github.com/gameguild-gg/website/compare/v1.17.8...v1.17.9) (2025-03-19)
+
+
+### Bug Fixes
+
+* **chess:** replay functionality is working now ([c67b771](https://github.com/gameguild-gg/website/commit/c67b771b71f969441f3a534f72de45468e4f6ccd))
+
 ## [1.17.8](https://github.com/gameguild-gg/website/compare/v1.17.7...v1.17.8) (2025-03-19)
 
 
