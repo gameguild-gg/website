@@ -10,7 +10,7 @@
 
 ## Memory architecture
 
-![https://linux2me.wordpress.com/wp-content/uploads/2017/09/cpu111.png] [source](https://linux2me.wordpress.com/2017/09/15/linux-introduction-to-memory-management/)
+![arch](https://linux2me.wordpress.com/wp-content/uploads/2017/09/cpu111.png) [source](https://linux2me.wordpress.com/2017/09/15/linux-introduction-to-memory-management/)
 
 This is not a class of computer architecture, but it is important to understand how data is stored and works in a computer. Four our intent, we will focus only on the file system and the memory.
 
