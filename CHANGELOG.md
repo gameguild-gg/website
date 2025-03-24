@@ -1,3 +1,10 @@
+## [1.17.10](https://github.com/gameguild-gg/website/compare/v1.17.9...v1.17.10) (2025-03-24)
+
+
+### Bug Fixes
+
+* **courses:** add files and exceptions content ([bb25072](https://github.com/gameguild-gg/website/commit/bb25072537ea498debb70c3d7c7cb5b582f26bb9))
+
 ## [1.17.9](https://github.com/gameguild-gg/website/compare/v1.17.8...v1.17.9) (2025-03-19)
 
 
