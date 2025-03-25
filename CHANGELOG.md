@@ -1,3 +1,10 @@
+## [1.17.12](https://github.com/gameguild-gg/website/compare/v1.17.11...v1.17.12) (2025-03-25)
+
+
+### Bug Fixes
+
+* **courses:** chess assignment random movement ([6e600ac](https://github.com/gameguild-gg/website/commit/6e600ac1257445a2da9cb7e9c40e8c9ec4f8b86e))
+
 ## [1.17.11](https://github.com/gameguild-gg/website/compare/v1.17.10...v1.17.11) (2025-03-24)
 
 
