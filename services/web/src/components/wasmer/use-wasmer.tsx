@@ -2,6 +2,7 @@
 
 import { useRef, useState } from 'react';
 import { Directory, init, Instance, Output, Wasmer } from '@wasmer/sdk';
+import { DirectoryInit } from '@wasmer/sdk/dist';
 
 // todo: add other languages later
 export type CodeLanguage = 'c' | 'cpp' | 'c++' | 'python';
@@ -54,8 +55,7 @@ export type CodingTestParams = {
   tests: { input: string; output: string }[];
 };
 
-export type FileMap = { [key: string]: string | Uint8Array };
-export type ProjectData = FileMap | string;
+export type ProjectData = DirectoryInit | string;
 export type TestDataEntry = { input: string; output: string };
 export type TestData = TestDataEntry[] | TestDataEntry;
 
@@ -70,24 +70,24 @@ export type InlineCodeTestParams = {
   sources: ProjectData;
 };
 
-export type Mount = Record<string, Directory>;
-
-export function ProjectDataStringToMount(data: string, language: CodeLanguage): Mount {
+export async function ProjectDataStringToDirectory(data: string, language: CodeLanguage): Promise<Directory> {
   const extension = languageToFileExtension(language);
   const filename = 'main.' + extension;
-  const directory: Directory = new Directory({ [filename]: data });
-  return { '/project': directory };
+  const directory: Directory = new Directory();
+  await directory.writeFile(filename, data);
+  return directory;
 }
 
-export function ProjectDataToMount(data: FileMap): Mount {
-  const directory: Directory = new Directory(data);
-  return { '/project': directory };
+export async function ProjectDataToMount(data: DirectoryInit): Promise<Directory> {
+  const directory: Directory = new Directory();
+  for (const [path, content] of Object.entries(data)) await directory.writeFile(path, content);
+  return directory;
 }
 
 export function useWasmer() {
   // map of WasmerPackage to Wasmer
   const packagesRef = useRef<Map<WasmerPackage, Wasmer>>(new Map());
-  const mountRef = useRef<Mount>({});
+  const directoryRef = useRef<Directory>({});
   const [wasmerStatus, setWasmerStatus] = useState<WasmerStatus>(WasmerStatus.UNINITIALIZED);
   const [error, setError] = useState<string | null>(null);
 
@@ -150,8 +150,9 @@ export function useWasmer() {
     }
 
     // set the storage mounts
-    if (typeof params.data === 'string') mountRef.current = ProjectDataStringToMount(params.data, params.language);
-    else mountRef.current = ProjectDataToMount(params.data);
+
+    if (typeof params.data === 'string') directoryRef.current = await ProjectDataStringToDirectory(params.data, params.language);
+    else directoryRef.current = await ProjectDataToMount(params.data);
 
     // set the arguments
     let args: string[] = [];
@@ -160,7 +161,7 @@ export function useWasmer() {
         args = ['main.py'];
         break;
       case 'clang/clang':
-        args = ['-o', 'output.wasm', '-I', '.', '*.cpp', '*.c', '-std=c++20'];
+        args = ['main.cpp', '-o', 'output.wasm'];
         break;
       default:
         throw new Error(`Unsupported package ${packageName}`);
@@ -168,17 +169,26 @@ export function useWasmer() {
 
     changeStatus(WasmerStatus.RUNNING);
     try {
-      const instance = await packageRef.entrypoint.run({
+      const instance: Instance = await packageRef.entrypoint.run({
         args: args,
         stdin: params.stdin,
-        mount: mountRef.current,
+        mount: { '/project': directoryRef.current },
         cwd: '/project',
       });
-      const result: Output = await instance.wait();
-      if (result.stderr) changeStatus(WasmerStatus.FAILED_EXECUTION);
-      else changeStatus(WasmerStatus.READY_TO_RUN);
+      // create a readable stream to pass to stderr and print everything that arrives
+      const resultPromise: Promise<Output> = instance.wait();
+      resultPromise.catch((err: Error) => {
+        alert(JSON.stringify(err));
+      });
+      const result = await resultPromise; // bug: execution never finishes this
+
+      alert(JSON.stringify(result));
+      if (result.stderr) {
+        setError(result.stderr);
+        changeStatus(WasmerStatus.FAILED_EXECUTION);
+      } else changeStatus(WasmerStatus.READY_TO_RUN);
       if (packageName === 'clang/clang') {
-        const outputFileContent: Uint8Array = await mountRef.current['/project'].readFile('output.wasm');
+        const outputFileContent: Uint8Array = await directoryRef.current.readFile('output.wasm');
         const wasm: Wasmer = await Wasmer.fromFile(outputFileContent);
         const instance: Instance = await wasm.entrypoint.run();
         return await instance.wait();
@@ -193,7 +203,7 @@ export function useWasmer() {
   return {
     wasmerStatus,
     runCode,
-    mountRef,
+    directoryRef,
     error,
   };
 }

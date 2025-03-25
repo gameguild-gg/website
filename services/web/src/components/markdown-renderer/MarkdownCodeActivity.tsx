@@ -124,7 +124,6 @@ export function MarkdownCodeActivity(params: MarkdownCodeActivityProps) {
           <div className="p-3 rounded-md bg-green-100 border border-green-300 text-green-800 font-semibold text-center">Correct output!</div>
         )}
 
-        {/* Área de saída */}
         {wasmerStatus != WasmerStatus.UNINITIALIZED && !(wasmerStatus == WasmerStatus.READY_TO_RUN && isCorrect) && (
           <>
             <Card className="bg-[#2d2d2d] text-white p-4 min-h-fit font-mono">
