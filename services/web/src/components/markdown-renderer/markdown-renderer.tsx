@@ -33,7 +33,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, renderer =
       /:::\s*(note|abstract|info|tip|success|question|warning|failure|danger|bug|example|quote)(?:\s+"([^"]*)")?\n([\s\S]*?):::/g,
       (_, type, title, body) => `<div class="admonition admonition-${type}"${title ? ` data-title="${title}"` : ''}>\n\n${body}\n\n</div>`,
     )
-    .replace(/!!!\s*(quiz|code)\n([\s\S]*?)\n!!!/g, (_, type, content) => {
+    .replace(/!!!\s*(quiz|code)\r?\n([\s\S]*?)\r?\n!!!/g, (_, type, content) => {
       // HTML escape angle brackets in the content if it's a code block
       if (type === 'code') {
         content = content.replace(/</g, '&lt;').replace(/>/g, '&gt;');

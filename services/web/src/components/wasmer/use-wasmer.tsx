@@ -1,8 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { Directory, init, Instance, Output, Wasmer } from '@wasmer/sdk';
-import { DirectoryInit } from '@wasmer/sdk/dist';
+import { Directory, DirectoryInit, init, Instance, Output, Wasmer } from '@wasmer/sdk';
 
 // todo: add other languages later
 export type CodeLanguage = 'c' | 'cpp' | 'c++' | 'python';
@@ -88,6 +87,7 @@ export function useWasmer() {
   // map of WasmerPackage to Wasmer
   const packagesRef = useRef<Map<WasmerPackage, Wasmer>>(new Map());
   const directoryRef = useRef<Directory>({});
+  const projectRef = useRef<Directory>({});
   const [wasmerStatus, setWasmerStatus] = useState<WasmerStatus>(WasmerStatus.UNINITIALIZED);
   const [error, setError] = useState<string | null>(null);
 
@@ -128,7 +128,7 @@ export function useWasmer() {
         try {
           if (!packageRef) {
             // todo: change this the be from file and be smaller.
-            // example the way it is now, it will download a 141mb file for python
+            // output the way it is now, it will download a 141mb file for python
             // but if we compress it via brotli, it will be 23mb
             packageRef = await Wasmer.fromRegistry(packageName);
             if (!packageRef || !packageRef.entrypoint) throw new Error(`Failed to load package ${packageName}`);
@@ -169,29 +169,86 @@ export function useWasmer() {
 
     changeStatus(WasmerStatus.RUNNING);
     try {
-      const instance: Instance = await packageRef.entrypoint.run({
-        args: args,
-        stdin: params.stdin,
-        mount: { '/project': directoryRef.current },
-        cwd: '/project',
-      });
-      // create a readable stream to pass to stderr and print everything that arrives
-      const resultPromise: Promise<Output> = instance.wait();
-      resultPromise.catch((err: Error) => {
-        alert(JSON.stringify(err));
-      });
-      const result = await resultPromise; // bug: execution never finishes this
+      const project = new Directory();
+      await project.writeFile(
+        'output.cpp',
+        `#include<stdio.h>
 
-      alert(JSON.stringify(result));
-      if (result.stderr) {
-        setError(result.stderr);
-        changeStatus(WasmerStatus.FAILED_EXECUTION);
-      } else changeStatus(WasmerStatus.READY_TO_RUN);
+        int main() {
+          printf("Hello World");
+          return 0;
+        }
+        `,
+      );
+
+      projectRef.current = project;
+      const instance: Instance = await packageRef.entrypoint.run({
+        args: ['/output.cpp', '-o', '/output.wasm'],
+        mount: { '/': project },
+      });
+
+      instance.stderr
+        .getReader()
+        .read()
+        .then(({ done, value }) => {
+          if (!done && value) {
+            console.log(new TextDecoder().decode(value));
+          }
+        });
+      instance.stdout
+        .getReader()
+        .read()
+        .then(({ done, value }) => {
+          if (!done && value) {
+            console.log(new TextDecoder().decode(value));
+          }
+        });
+
+      const result = await instance.wait();
+
+      if (!result.ok) {
+        throw new Error(`Clang failed with exit code ${result.code}: ${result.stderr}`);
+      }
+      console.log('builded output.wasm');
+
+      const outputFileContent: Uint8Array = await project.readFile('output.wasm').catch((err) => {
+        console.log('Error reading output.wasm');
+        console.log(err);
+      });
+
+      // const result2 = await instance.wait().then((result2) => {
+      //   console.log('Reading output.wasm');
+      //   console.log(result2);
+      //   return result2;
+      // });
+
+      // create a readable stream to pass to stderr and print everything that arrives
+      // const resultPromise: Promise<Output> = instance.wait();
+      // resultPromise.catch((err: Error) => {
+      //   console.log('Error');
+      //   alert(JSON.stringify(err));
+      // });
+      // const result = await resultPromise; // bug: execution never finishes this
+      // console.log('Reading output.wasm');
+      // alert(JSON.stringify(result));
+      // if (result.stderr) {
+      //   setError(result.stderr);
+      //   changeStatus(WasmerStatus.FAILED_EXECUTION);
+      // } else changeStatus(WasmerStatus.READY_TO_RUN);
       if (packageName === 'clang/clang') {
-        const outputFileContent: Uint8Array = await directoryRef.current.readFile('output.wasm');
+        console.log('Running output.wasm');
+        // const project: Directory = projectRef.current;
+        // const outputFileContent: Uint8Array = await project.readFile('/project/output.wasm');
+
         const wasm: Wasmer = await Wasmer.fromFile(outputFileContent);
         const instance: Instance = await wasm.entrypoint.run();
-        return await instance.wait();
+
+        const result = await instance.wait();
+        if (!result.ok) {
+          throw new Error(`Clang failed with exit code ${result.code}: ${result.stderr}`);
+        }
+        console.log(result.stdout);
+        return result;
       }
       return result;
     } catch (error) {
