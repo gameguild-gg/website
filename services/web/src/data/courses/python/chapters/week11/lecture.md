@@ -101,7 +101,7 @@ with open('file.txt', 'rb') as orig:
 !!! code
 {
 "description": "Write a program that 1. write in binary mode exactly these bytes: 0x48, 0x65, 0x6c, 0x6c, 0x6f, 0x20, 0x57, 0x6f, 0x72, 0x6c, 0x64. 2. And then read one line of the file and print the content.",
-"code": "contents = [0x48, 0x65, 0x6c, 0x6c, 0x6f, 0x20, 0x57, 0x6f, 0x72, 0x6c, 0x64]\n# write the contents as binary to a file contents.txt\n\n# code here\n\n# read one line string of the contents.txt and print it\n\n# code here",
+"code": "contents = bytes([0x48, 0x65, 0x6c, 0x6c, 0x6f, 0x20, 0x57, 0x6f, 0x72, 0x6c, 0x64])\n# write the contents as binary to a file contents.txt\n\n# code here\n\n# read one line string of the contents.txt and print it\n\n# code here",
 "language": "python",
 "expectedOutput": "Hello World"
 }
