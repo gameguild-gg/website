@@ -1,3 +1,11 @@
+## [1.17.13](https://github.com/gameguild-gg/website/compare/v1.17.12...v1.17.13) (2025-03-25)
+
+
+### Bug Fixes
+
+* **courses:** fix missing bytes on the python file course ([eb7f550](https://github.com/gameguild-gg/website/commit/eb7f55003614f8ae454086a7a4cb9133f73e4b70))
+* **markdown-renderer:** fix markdown code activity for cpp ([cdf2eb6](https://github.com/gameguild-gg/website/commit/cdf2eb62cb8e62700de87d33b5240fc59ab0f575))
+
 ## [1.17.12](https://github.com/gameguild-gg/website/compare/v1.17.11...v1.17.12) (2025-03-25)
 
 
