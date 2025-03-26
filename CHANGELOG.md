@@ -1,3 +1,10 @@
+## [1.17.14](https://github.com/gameguild-gg/website/compare/v1.17.13...v1.17.14) (2025-03-26)
+
+
+### Bug Fixes
+
+* **courses:** add assignment for portfolio classes ([8ca8d4c](https://github.com/gameguild-gg/website/commit/8ca8d4c16a2a01490b130d767578f1f9a66c681a))
+
 ## [1.17.13](https://github.com/gameguild-gg/website/compare/v1.17.12...v1.17.13) (2025-03-25)
 
 
