@@ -113,7 +113,135 @@ Exceptions are errors that occur during the execution of a program. It is a good
 
 ![meme](https://i.redd.it/hgifaka4hbf41.jpg) [source](https://www.reddit.com/r/ProgrammerHumor/comments/eztdu6/me_handling_exception_in_best_way/#lightbox)
 
-The syntax for handling exceptions is as follows:
+### Reasons for exceptions
+
+There are many reasons why exceptions can occur. Some of the most common ones are:
+
+``` python
+# Division by zero
+x = 10
+y = 0
+print(x / y)  # This will cause a ZeroDivisionError
+```
+
+``` python
+# Accessing an index that doesn't exist
+numbers = [1, 2, 3]
+print(numbers[5])  # IndexError
+```
+
+``` python
+# Accessing a file that doesn't exist
+file = open("data.txt", "r")
+content = file.read()
+print(content)
+```
+
+In order to be protected against exceptions, we can use the `try` and `except` keywords. The code inside the `try` block is executed, and if an exception occurs, the code inside the `except` block is executed. 
+
+### Try and except
+
+``` python
+# Example of exception handling
+try:
+    x = 10
+    y = 0
+    print(x / y)  # This would normally crash the program
+except ZeroDivisionError:
+    print("Error: You cannot divide by zero.")
+```
+
+``` python
+# Example of exception handling with user input
+try:
+    num = int(input("Enter a number: "))
+    print(f"You entered: {num}")
+except ValueError:
+    print("That's not a valid number!")
+```
+
+You can combine multiple exceptions in a single `except` block by using parentheses:
+
+``` python
+try:
+    num = int(input("Enter a number: "))
+    result = 10 / num
+    print("Result:", result)
+except ValueError:
+    print("Invalid input! Please enter a number.")
+except ZeroDivisionError:
+    print("Error: Cannot divide by zero.")
+```
+
+### Multiple exceptions
+
+You can also handle multiple exceptions in a single `except` block:
+
+``` python
+try:
+    num = int(input("Enter a number: "))
+    result = 10 / num
+    print("Result:", result)
+except (ValueError, ZeroDivisionError) as e:
+    print(f"An error occurred: {e}")
+```
+
+### Generic exceptions
+
+Or use a generic `except` block to catch all exceptions:
+
+``` python
+try:
+    num = int(input("Enter a number: "))
+    result = 10 / num
+    print("Result:", result)
+except Exception as e:
+    print(f"An error occurred: {e}")
+```
+
+::: tip "tradeoff of using generic exceptions"
+
+Pros & Cons:
+
+- ✅ Catches all errors.
+- ❌ Harder to debug (because it catches everything).
+
+:::
+
+### Finally
+
+The `finally` block is executed regardless of whether an exception occurred or not. It is often used for cleanup actions, such as closing files or releasing resources.
+
+``` python
+# Example of using finally to close handle. It is better to use the with statement instead.
+try:
+    file = open("data.txt", "r")
+    content = file.read()
+    print(content)
+except FileNotFoundError:
+    print("File not found!")
+finally:
+    if 'file' in locals(): # locals is a way to get the variables in the current scope
+        file.close()
+```
+
+### Raise
+
+You can also raise exceptions manually using the `raise` keyword. This is useful when you want to enforce certain conditions in your code.
+
+``` python
+def divide(a, b):
+    if b == 0:
+        raise ValueError("Cannot divide by zero!")
+    return a / b
+
+try:
+    result = divide(10, 0)
+except ValueError as e:
+    print("Caught an error:", e)
+```
+
+### Syntax
 
 ``` python
 try:
