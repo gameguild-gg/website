@@ -1,3 +1,10 @@
+## [1.17.15](https://github.com/gameguild-gg/website/compare/v1.17.14...v1.17.15) (2025-03-27)
+
+
+### Bug Fixes
+
+* **courses:** add exception to python class ([95eca3f](https://github.com/gameguild-gg/website/commit/95eca3ffdeffebf7920767a45c94c36bf787ed0f))
+
 ## [1.17.14](https://github.com/gameguild-gg/website/compare/v1.17.13...v1.17.14) (2025-03-26)
 
 
