@@ -29,7 +29,7 @@ A naive approach for representing the chessboard is to use a 2D array of 8x8. Ea
 
 ``` c++
 // needs only 4 bits, and wastes 4 bits
-struct Square: uint8_t {
+struct Square {
     PieceColor color:1;
     PieceType  type:3;
 };
