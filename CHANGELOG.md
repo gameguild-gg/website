@@ -1,3 +1,10 @@
+## [1.17.18](https://github.com/gameguild-gg/website/compare/v1.17.17...v1.17.18) (2025-03-28)
+
+
+### Bug Fixes
+
+* **courses:** chess fixes ([249c330](https://github.com/gameguild-gg/website/commit/249c330320cd50b33842d70949882be740874515))
+
 ## [1.17.17](https://github.com/gameguild-gg/website/compare/v1.17.16...v1.17.17) (2025-03-28)
 
 
