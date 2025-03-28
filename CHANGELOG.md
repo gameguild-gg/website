@@ -1,3 +1,10 @@
+## [1.17.16](https://github.com/gameguild-gg/website/compare/v1.17.15...v1.17.16) (2025-03-28)
+
+
+### Bug Fixes
+
+* **courses:** add chess board huffman code ([957b4ec](https://github.com/gameguild-gg/website/commit/957b4eca07f423d39a9088b0bfc7dc0f636c1df0))
+
 ## [1.17.15](https://github.com/gameguild-gg/website/compare/v1.17.14...v1.17.15) (2025-03-27)
 
 
