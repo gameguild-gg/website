@@ -19,8 +19,10 @@ Submit a **complete portfolio package**, including:
 2. **Demo Reel** – A short, professional reel highlighting your best work (if applicable to your field).
 3. **Centerpiece Project** – A significant project demonstrating your skills and expertise.
 4. **CV**:
+ 
     – **PDF format**: A well-structured resume highlighting experience, education, and relevant skills.
     - **LinkedIn Profile**: An up-to-date profile with a professional photo, summary, and relevant experiences.
+
 5. **Cover Letter** – A tailored cover letter for a specific job or internship application.
 
 You will **review and critique** a peer’s portfolio using the provided rubric.

@@ -56,6 +56,13 @@ struct Board {
         // shift the bits to get the square
         return Square((squares[i/2] >> (i%2)*4) & 0b1111);
     }
+    
+    // set the square at index i 0-64
+    void setSquare(int i, Square square) {
+        // shift the bits to set the square
+        squares[i/2] |= (square.color << (i%2)*4);
+        squares[i/2] |= (square.type << ((i%2)*4 + 1));
+    }
 };
 ```
 

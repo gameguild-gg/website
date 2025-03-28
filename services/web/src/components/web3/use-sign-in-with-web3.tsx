@@ -27,8 +27,7 @@ export function useSignInWithWeb3(choice: Web3ProviderChoice) {
   }, [state.provider, connectToWallet]);
 
   useEffect(() => {
-    const tryToSignInTorus = async () => {
-    };
+    const tryToSignInTorus = async () => {};
 
     const tryToSignInMetamask = async () => {
       if (state.provider && state.accountAddress) {
@@ -47,10 +46,7 @@ export function useSignInWithWeb3(choice: Web3ProviderChoice) {
         const message = response.body.message;
 
         // Eip1193Provider.
-        const signature = await state.provider.send('personal_sign', [
-          message,
-          state.accountAddress,
-        ]);
+        const signature = await state.provider.send('personal_sign', [message, state.accountAddress]);
 
         await signInWithWeb3(signature, state.accountAddress);
 
@@ -58,7 +54,7 @@ export function useSignInWithWeb3(choice: Web3ProviderChoice) {
         // the await on the signInAndRedirectIfSucceed on metamask-sign-in-button.tsx is not working
         const session = await getSession();
         if (session) {
-          window.location.href = '/feed';
+          window.location.href = '/chess';
         }
       }
     };
