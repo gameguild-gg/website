@@ -1,3 +1,10 @@
+## [1.17.17](https://github.com/gameguild-gg/website/compare/v1.17.16...v1.17.17) (2025-03-28)
+
+
+### Bug Fixes
+
+* **courses:** fix typo on chess class. square definition was wrong ([e01ee64](https://github.com/gameguild-gg/website/commit/e01ee64898c0f4d3514343fcb233f92810dbf353))
+
 ## [1.17.16](https://github.com/gameguild-gg/website/compare/v1.17.15...v1.17.16) (2025-03-28)
 
 
