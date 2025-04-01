@@ -1,3 +1,10 @@
+## [1.17.19](https://github.com/gameguild-gg/website/compare/v1.17.18...v1.17.19) (2025-04-01)
+
+
+### Bug Fixes
+
+* **courses:** chess min max lecture ([cd25081](https://github.com/gameguild-gg/website/commit/cd250817c0bbc6b304bc7128669295b06fb92319))
+
 ## [1.17.18](https://github.com/gameguild-gg/website/compare/v1.17.17...v1.17.18) (2025-03-28)
 
 
