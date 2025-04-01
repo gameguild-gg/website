@@ -59,7 +59,7 @@ const CORS_HEADERS = {
 // Wasmer headers
 const WASMER_HEADERS = {
   'Cross-Origin-Opener-Policy': 'same-origin',
-  'Cross-Origin-Embedder-Policy': 'require-corp',
+  'Cross-Origin-Embedder-Policy': 'credentialless',
   'Cross-Origin-Resource-Policy': 'cross-origin'
 };
 
@@ -136,6 +136,9 @@ export async function middleware(request: NextRequest) {
     Object.entries(WASMER_HEADERS).forEach(([key, value]) => {
       response.headers.set(key, value);
     });
+    
+    // Add CORS headers to allow external scripts
+    response.headers.set('Access-Control-Allow-Origin', '*');
     
     return response;
   }

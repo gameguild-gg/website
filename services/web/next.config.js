@@ -87,6 +87,16 @@ const nextConfig = {
           },
         ],
       },
+      {
+        // Special CORS rules for external script loading
+        source: '/:path*',
+        headers: [
+          {
+            key: 'Access-Control-Allow-Origin',
+            value: '*',
+          },
+        ],
+      },
     ];
   },
 

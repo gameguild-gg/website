@@ -13,6 +13,8 @@ Video explanation: [Min Max Search](https://www.youtube.com/watch?v=l-hh51ncgDI)
 
 Min Max Search is a search algorithm used in two-player turn based adversarial games to find the optimal move for the player. It works by exploring all possible moves and their outcomes, and selecting the move that maximizes the player's chances of winning while minimizing the opponent's chances. The algorithm assumes that both players play optimally.
 
+[meme](https://media.makeameme.org/created/thats-my-secret-dece4a572a.jpg)
+
 ## Heuristics
 
 Heuristics are rules of thumb or strategies that help us make decisions or solve problems more efficiently. Heuristics are functions which will feed on the state and generate a score.
@@ -21,7 +23,7 @@ In the context of Min Max Search, heuristics are used to evaluate the desirabili
 
 In chess, heuristics can be:
 
-- **Material balance**: The difference in value between the pieces on the board. For example, Queen is worth 9 points, Rook: 5, Bishop and Knight: 3 points, and Pawn: 1 point. 
+- **Material balance**: The difference in value between the pieces on the board. For example, Queen is worth 9 points, Rook: 5, Bishop and Knight: 3 points, and Pawn: 1 point. And king can worth 100 points for our algorithmic purposes.
 - **Pawn Structure**: The arrangement of pawns on the board. Isolated, passed, chained, backward, doubled, tripled, quadrupled. Open files, closed files, half open files.
 - **King Safety**: The safety of the king. Is it exposed to attacks? Is it well protected?
 - **Space**: The amount of space controlled by the pieces. More space means more mobility and more options.
