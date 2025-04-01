@@ -1,3 +1,10 @@
+## [1.17.20](https://github.com/gameguild-gg/website/compare/v1.17.19...v1.17.20) (2025-04-01)
+
+
+### Bug Fixes
+
+* **cors:** trying to fix cors once more ([0774380](https://github.com/gameguild-gg/website/commit/0774380370eda91df7a0661c53e8b1d2a98ca56d))
+
 ## [1.17.19](https://github.com/gameguild-gg/website/compare/v1.17.18...v1.17.19) (2025-04-01)
 
 
