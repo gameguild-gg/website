@@ -23,10 +23,11 @@ And don't forget, when they ask you if you have any questions, always ask about 
 
 ## Technical interview tips
 
-- https://www.riotgames.com/en/work-with-us/interviewing-at-riot/interview-process
-- https://amazon.jobs/content/en/how-we-hire/interview-loop
-- https://www.educative.io/blog/crack-amazon-coding-interview-questions
-- https://www.geeksforgeeks.org/google-interview-experience/
+- [Use glassdoor to see in action what they ask](https://www.glassdoor.com/Interview/Riot-Games-Interview-Questions-E247538.htm)
+- [Riot interview process](https://www.riotgames.com/en/work-with-us/interviewing-at-riot/interview-process)
+- [Amazon interview process](https://amazon.jobs/content/en/how-we-hire/interview-loop)
+- [Some coding questions interviewers love](https://www.educative.io/blog/crack-amazon-coding-interview-questions)
+- [google interview experience](https://www.geeksforgeeks.org/google-interview-experience/)
 
 ## Training
 
