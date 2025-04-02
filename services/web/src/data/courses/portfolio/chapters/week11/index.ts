@@ -1,6 +1,6 @@
 import { createChapter, createLecture } from '@/data/coursesLib';
 import { Api } from '@game-guild/apiclient';
-import assignment from './assignment.md';
+import assignment from './activity.md';
 import lecture from './lecture.md';
 import LectureEntity = Api.LectureEntity;
 import ChapterEntity = Api.ChapterEntity;
