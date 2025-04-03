@@ -1,3 +1,10 @@
+## [1.17.22](https://github.com/gameguild-gg/website/compare/v1.17.21...v1.17.22) (2025-04-03)
+
+
+### Bug Fixes
+
+* **courses:** add api calls content to python ([9b691cf](https://github.com/gameguild-gg/website/commit/9b691cfe18ee1238dc46462c3f20a15f902408d1))
+
 ## [1.17.21](https://github.com/gameguild-gg/website/compare/v1.17.20...v1.17.21) (2025-04-02)
 
 
