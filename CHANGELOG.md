@@ -1,3 +1,10 @@
+## [1.17.23](https://github.com/gameguild-gg/website/compare/v1.17.22...v1.17.23) (2025-04-03)
+
+
+### Bug Fixes
+
+* **courses:** fix typo ([d22b6d4](https://github.com/gameguild-gg/website/commit/d22b6d46f849c2412eeb79f53b5bbea478a62c9a))
+
 ## [1.17.22](https://github.com/gameguild-gg/website/compare/v1.17.21...v1.17.22) (2025-04-03)
 
 
