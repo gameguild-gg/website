@@ -2,11 +2,13 @@
 
 <details>
 <summary>Lecture notes</summary>
+
 - Running LLMs locally
 - Installing OLLAMA locally
 - Installing a model locally
 - Using the model locally via CLI
 - Using the model locally via Python
+
 </details>
 
 ## Installing OLLAMA locally
