@@ -1,3 +1,12 @@
+## [1.17.21](https://github.com/gameguild-gg/website/compare/v1.17.20...v1.17.21) (2025-04-02)
+
+
+### Bug Fixes
+
+* **courses:** acing interviews ([af12810](https://github.com/gameguild-gg/website/commit/af12810baed7244ba3e7967da7238927082f3ff2))
+* **courses:** links ([1487020](https://github.com/gameguild-gg/website/commit/148702083eebde33d99b0c860d6a7fa4fe665516))
+* **courses:** typos ([a6c14fc](https://github.com/gameguild-gg/website/commit/a6c14fc6246057dc83383a77fe9ebc7faa48e3b2))
+
 ## [1.17.20](https://github.com/gameguild-gg/website/compare/v1.17.19...v1.17.20) (2025-04-01)
 
 
