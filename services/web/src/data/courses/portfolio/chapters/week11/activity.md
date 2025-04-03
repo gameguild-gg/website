@@ -69,3 +69,7 @@ After both interviews, discuss:
 - What did you learn about your interview strengths?
 - What specific skills do you need to develop further?
 - How will you prepare differently for real interviews?
+
+## Assignment Submission
+
+Record a video of your mock interview session and submit it on Canvas. 
