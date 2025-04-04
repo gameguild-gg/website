@@ -1,3 +1,10 @@
+## [1.17.25](https://github.com/gameguild-gg/website/compare/v1.17.24...v1.17.25) (2025-04-04)
+
+
+### Bug Fixes
+
+* **chess:** add better error handling ([c9a6ee4](https://github.com/gameguild-gg/website/commit/c9a6ee4e27f2af4f4a775f8b90858aa90b19036c))
+
 ## [1.17.24](https://github.com/gameguild-gg/website/compare/v1.17.23...v1.17.24) (2025-04-03)
 
 
