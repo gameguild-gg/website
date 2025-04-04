@@ -1,10 +1,4 @@
-import {
-  ExceptionFilter,
-  Catch,
-  ArgumentsHost,
-  HttpException,
-  HttpStatus,
-} from '@nestjs/common';
+import { ArgumentsHost, Catch, ExceptionFilter, HttpException, HttpStatus } from '@nestjs/common';
 import { HttpAdapterHost } from '@nestjs/core';
 import { ApiConfigService } from '../config.service';
 import { ApiProperty } from '@nestjs/swagger';
@@ -58,10 +52,7 @@ export class GlobalHttpExceptionFilter implements ExceptionFilter {
   catch(exception: HttpException, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
 
-    const httpStatus =
-      exception instanceof HttpException
-        ? exception.getStatus()
-        : HttpStatus.INTERNAL_SERVER_ERROR;
+    const httpStatus = exception instanceof HttpException ? exception.getStatus() : HttpStatus.INTERNAL_SERVER_ERROR;
 
     const response = ctx.getResponse();
     const request = ctx.getRequest<Request>();
@@ -86,9 +77,7 @@ export class GlobalHttpExceptionFilter implements ExceptionFilter {
     }
     if (this.configService.nodeEnv === 'development') {
       // split the stack into an array of lines
-      responseBody.stack = exception.stack
-        .split('\n')
-        .map((line) => line.trim());
+      if (responseBody.stack) responseBody.stack = exception.stack.split('\n').map((line) => line.trim());
       responseBody.raw = exception;
     }
 

@@ -128,7 +128,37 @@ export class CompetitionService {
   }
 
   async runCommandSpawn(command: string): Promise<{ stdout: string; stderr: string }> {
-    return execShPromise(command, { maxBuffer: 1024 * 1024 * 50 });
+    const { spawn } = require('child_process');
+    return new Promise((resolve, reject) => {
+      const args = command.split(' ');
+      const proc = spawn(args[0], args.slice(1));
+      let stdout = '';
+      let stderr = '';
+
+      proc.stdout.on('data', (data) => {
+        const str = data.toString();
+        stdout += str;
+        this.logger.log(str); // Log to terminal
+      });
+
+      proc.stderr.on('data', (data) => {
+        const str = data.toString();
+        stderr += str;
+        this.logger.error(str); // Log to terminal
+      });
+
+      proc.on('close', (code) => {
+        if (code !== 0) {
+          reject({ stdout, stderr });
+        } else {
+          resolve({ stdout, stderr });
+        }
+      });
+
+      proc.on('error', (err) => {
+        reject({ stdout, stderr: err.message });
+      });
+    });
   }
 
   async runCommand(command: string, log = true, timeout: number = null): Promise<TerminalDto> {

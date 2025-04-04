@@ -266,10 +266,17 @@ export default function SubmitBotContent() {
         });
         setFiles([]);
       } else {
-        console.error(JSON.stringify(response));
+        let errorMessage = '';
+        if (response && response.body && response.body['raw'] && response.body['raw']['stderr']) {
+          errorMessage = response.body['raw']['stderr'];
+          // replace \n with <br />
+          errorMessage = errorMessage.replace(/\n/g, '<br />');
+        } else errorMessage = JSON.stringify(response);
+
+        console.error(errorMessage);
         setSubmitStatus({
           type: 'error',
-          message: 'An error occurred during submission. Check the console for details.',
+          message: errorMessage,
         });
       }
     } catch (error) {
@@ -301,9 +308,9 @@ export default function SubmitBotContent() {
             subfolders. Only C++ related files (.c, .cpp, .cxx, .h, .hpp, .hxx) are allowed.
           </CardDescription>
           <div className="mt-2 text-amber-600 dark:text-amber-400 text-sm">
-            <strong>Note:</strong> If you're using macOS, be aware that zip files may contain hidden __MACOSX folders. 
-            The server will automatically remove these folders, but it's recommended to create your zip files using the terminal command 
-            <code className="bg-gray-100 dark:bg-gray-800 px-1 rounded">zip -r submission.zip your_files/ -x "*.DS_Store" -x "__MACOSX"</code> 
+            <strong>Note:</strong> If you're using macOS, be aware that zip files may contain hidden __MACOSX folders. The server will automatically remove
+            these folders, but it's recommended to create your zip files using the terminal command
+            <code className="bg-gray-100 dark:bg-gray-800 px-1 rounded">zip -r submission.zip your_files/ -x "*.DS_Store" -x "__MACOSX"</code>
             to avoid potential issues.
           </div>
         </CardHeader>
@@ -376,7 +383,16 @@ export default function SubmitBotContent() {
                 )}
                 {submitStatus.type === 'error' ? 'Submission Error' : submitStatus.type === 'info' ? 'Information' : 'Submission Successful'}
               </AlertTitle>
-              <AlertDescription>{submitStatus.message}</AlertDescription>
+              <AlertDescription>
+                <div
+                  // font should be monospace
+                  className={cn(
+                    'text-sm font-mono text-muted-foreground',
+                    submitStatus.type === 'error' ? 'text-destructive' : submitStatus.type === 'info' ? 'text-muted-foreground' : 'text-green-500',
+                  )}
+                  dangerouslySetInnerHTML={{ __html: submitStatus.message || '' }}
+                />
+              </AlertDescription>
             </Alert>
           )}
         </CardContent>
