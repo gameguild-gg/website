@@ -46,7 +46,7 @@ prompt = "Why the sky is blue?" # modify this with your prompt
 
 data = {
   "model": "gemma3",
-  "prompt": "Why is the sky blue?",
+  "prompt": prompt,
   "stream": False
 }
 
