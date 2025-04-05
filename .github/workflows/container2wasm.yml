@@ -21,3 +21,14 @@ jobs:
       - name: build container
         run: |
           cd wasm ; ./build-with-docker.sh
+
+      - name: zip the /wasm/output folder
+        run: |
+          cd wasm ; zip -r output.zip output
+
+      - uses: actions/upload-artifact@v4
+        with:
+          path: 'wasm/output/'
+          retention-days: 1
+          compression-level: 6
+          overwrite: true

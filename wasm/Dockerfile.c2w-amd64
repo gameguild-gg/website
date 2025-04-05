@@ -2,13 +2,7 @@ FROM alpine:latest
 
 # install dependencies
 RUN apk update && apk add --no-cache \
-    clang \
-    llvm \
-    lld \
-    musl-dev \
-    libc-dev \
-    make \
-    cmake \
+    build-base \
     binutils \
     git \
     python3 \
@@ -18,13 +12,6 @@ RUN apk update && apk add --no-cache \
     wget \
     docker-cli-buildx
 
-# Replace default compiler symlinks to point to clang/clang++
-RUN ln -sf /usr/bin/clang /usr/bin/cc && \
-    ln -sf /usr/bin/clang++ /usr/bin/c++
-
-# Optional: verify compiler
-RUN cc --version && c++ --version
-
 # download c2w 0.8.0 and extract it to /usr/local/bin/
 RUN curl -L https://github.com/container2wasm/container2wasm/releases/download/v0.8.0/container2wasm-v0.8.0-linux-amd64.tar.gz | tar xz -C /usr/local/bin/ && \
     chmod +x /usr/local/bin/c2w /usr/local/bin/c2w-net
@@ -33,12 +20,6 @@ RUN curl -L https://github.com/container2wasm/container2wasm/releases/download/v
 RUN mkdir -p /c2w && \ 
     wget https://github.com/container2wasm/container2wasm/releases/download/v0.8.0/c2w-net-proxy.wasm -O /c2w/c2w-net-proxy.wasm && \ 
     chmod +x /c2w/c2w-net-proxy.wasm
-
-# # clone the c2w repo
-# RUN git clone https://github.com/container2wasm/container2wasm.git /c2w && \
-#     cd /c2w && \
-#     make && \
-#     make install
 
 # check if c2w is installed
 RUN c2w --version

@@ -6,16 +6,12 @@ set -e
 # Create output directory
 mkdir -p ./output
 
-# build riscv64/alpine
-# docker buildx build --platform linux/riscv64 -t gameguild/riscv64-alpine -f Dockerfile.alpine .
-docker build -t gameguild/alpine -f Dockerfile.alpine .
+# build the container
+docker buildx build --platform linux/riscv64 --load -t gameguild/alpine-gcc-riscv64 -f Dockerfile.alpine-gcc-riscv64 .
 
 # build the builder image
-docker build -t gameguild/c2w -f Dockerfile.c2w .
+docker buildx build --platform linux/amd64 -t gameguild/c2w-amd64 -f Dockerfile.c2w-amd64 . --load
 
 # pass the socket to the container, mount the current director to /app and then call c2w
-#docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v $(pwd):/project gameguild/c2w c2w --to-js --target-arch=riscv64 gameguild/riscv64-alpine ./output/
+docker run --rm --platform=linux/amd64 -v /var/run/docker.sock:/var/run/docker.sock -v $(pwd):/project gameguild/c2w-amd64 c2w --to-js --target-arch=riscv64 gameguild/alpine-gcc-riscv64 ./output/
 
-docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v $(pwd):/project gameguild/c2w c2w --to-js gameguild/alpine ./output/
-
-# Try using the standard alpine:latest tag which is more likely to be available

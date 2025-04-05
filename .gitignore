@@ -50,3 +50,5 @@ services/web/.env
 /contributors/gource.txt
 
 **/package-lock.json
+
+wasm/emception/upstream/
