@@ -1,3 +1,5 @@
+## [1.17.27](https://github.com/gameguild-gg/website/compare/v1.17.26...v1.17.27) (2025-04-05)
+
 ## [1.17.26](https://github.com/gameguild-gg/website/compare/v1.17.25...v1.17.26) (2025-04-04)
 
 
