@@ -1,0 +1,23 @@
+name: Main
+
+on:
+  push:
+    branches:
+      - c2w
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - run: git config --global --add safe.directory '*'
+
+      - uses: actions/checkout@v3
+        with:
+          # need for git operations
+          fetch-depth: 0
+          lfs: false
+          submodules: true
+
+      - name: build container
+        run: |
+          cd wasm ; ./build-with-docker.sh
