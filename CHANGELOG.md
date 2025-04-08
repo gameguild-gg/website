@@ -1,3 +1,10 @@
+## [1.18.2](https://github.com/gameguild-gg/website/compare/v1.18.1...v1.18.2) (2025-04-08)
+
+
+### Bug Fixes
+
+* **courses:** fix min max example code ([c625987](https://github.com/gameguild-gg/website/commit/c625987e11331f51d94aa8b2b4574033d301c293))
+
 ## [1.18.1](https://github.com/gameguild-gg/website/compare/v1.18.0...v1.18.1) (2025-04-08)
 
 
