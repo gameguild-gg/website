@@ -1,3 +1,10 @@
+## [1.18.3](https://github.com/gameguild-gg/website/compare/v1.18.2...v1.18.3) (2025-04-08)
+
+
+### Bug Fixes
+
+* **courses:** fix typo ([cee2ecc](https://github.com/gameguild-gg/website/commit/cee2ecca2fabe21740e4e7fb9e06c2ac2d87e855))
+
 ## [1.18.2](https://github.com/gameguild-gg/website/compare/v1.18.1...v1.18.2) (2025-04-08)
 
 
