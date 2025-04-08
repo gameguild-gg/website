@@ -66,6 +66,26 @@ const WASMER_HEADERS = {
 export async function middleware(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl;
   
+  // Handle content negotiation for compressed static files
+  if (pathname.match(/\.(js|css|html|svg|json|wasm|jpg|png|ttf|otf|woff|woff2)$/)) {
+    const acceptEncoding = request.headers.get('Accept-Encoding') || '';
+    const response = NextResponse.next();
+    
+    // Set Vary header to inform caches that response depends on Accept-Encoding
+    response.headers.set('Vary', 'Accept-Encoding');
+    
+    // If client accepts brotli and .br version exists, serve it
+    if (acceptEncoding.includes('br')) {
+      response.headers.set('Content-Encoding', 'br');
+    } 
+    // Otherwise, if client accepts gzip and .gz version exists, serve it
+    else if (acceptEncoding.includes('gzip')) {
+      response.headers.set('Content-Encoding', 'gzip');
+    }
+    
+    return response;
+  }
+  
   // Domain redirect handling
   const oldDomains = ['web.gameguild.gg', 'gamedevguild.org'];
   const newDomain = 'gameguild.gg';

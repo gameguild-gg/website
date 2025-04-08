@@ -97,6 +97,20 @@ const nextConfig = {
           },
         ],
       },
+      {
+        // Add cache headers for WebAssembly and TAR files
+        source: '/assets/:path*.(wasm|tar)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+          {
+            key: 'Expires',
+            value: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toUTCString(),
+          },
+        ],
+      },
     ];
   },
 
@@ -137,11 +151,7 @@ const nextConfig = {
         use: 'raw-loader',
       },
       {
-        test: /\.wasm$/,
-        type: 'asset/resource',
-      },
-      {
-        test: /\.(pack|br|a)$/,
+        test: /\.(pack|br|a|tar|wasm)$/,
         type: 'asset/resource',
       },
       // {
@@ -168,6 +178,7 @@ const nextConfig = {
       },
     };
 
+    // Always add the CopyWebpackPlugin
     config.plugins.push(
       new CopyWebpackPlugin({
         patterns: [
@@ -182,13 +193,37 @@ const nextConfig = {
           },
         ],
       }),
-      new CompressionPlugin({
-        exclude: /\.br$/,
-      }),
       new webpack.IgnorePlugin({
         resourceRegExp: /index\.mjs$/,
-      }),
+      })
     );
+    
+    // Only add compression plugins in production mode to avoid slowing down development
+    if (process.env.NODE_ENV === 'production') {
+      console.log('Enabling compression plugins for production build...');
+      config.plugins.push(
+        new CompressionPlugin({
+          test: /\.(js|css|html|svg|json|wasm|jpg|png|ttf|otf|woff|woff2)$/,
+          filename: '[path][base].gz',
+          algorithm: 'gzip',
+          threshold: 10240, // Only compress files larger than 10kb
+          minRatio: 0.8,
+          exclude: /\.br$/,
+        }),
+        // Add Brotli compression plugin
+        new CompressionPlugin({
+          filename: '[path][base].br',
+          algorithm: 'brotliCompress',
+          test: /\.(js|css|html|svg|json|wasm|jpg|png|ttf|otf|woff|woff2)$/,
+          compressionOptions: { level: 11 },
+          threshold: 10240,
+          minRatio: 0.8,
+          exclude: /\.br$/,
+        })
+      );
+    } else {
+      console.log('Compression plugins disabled for development mode.');
+    }
 
     return config;
   },

@@ -23,6 +23,12 @@
     "buildAndRun": "npm run build && npm run start"
   },
   "dependencies": {
+    "xterm": "^4.13.0",
+    "xterm-addon-fit": "^0.5.0",
+    "zustand": "^3.5.9",
+    "clsx": "^1.1.1",
+    "use-media": "^1.4.0",
+    "@headlessui/react": "^1.7.19",
     "@codeium/react-code-editor": "^1.0.12",
     "@game-guild/apiclient": "*",
     "@game-guild/ui": "*",
@@ -86,6 +92,7 @@
     "brotli-wasm": "^3.0.1",
     "canvas-confetti": "^1.9.3",
     "chess.js": "^1.0.0-beta.7",
+    "clang.js": "^0.1.1",
     "class-validator": "^0.14.1",
     "class-variance-authority": "^0.7.0",
     "classnames": "^2.5.1",
