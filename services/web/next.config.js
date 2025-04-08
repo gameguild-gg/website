@@ -97,6 +97,20 @@ const nextConfig = {
           },
         ],
       },
+      {
+        // Add cache headers for WebAssembly and TAR files
+        source: '/assets/:path*.(wasm|tar)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+          {
+            key: 'Expires',
+            value: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toUTCString(),
+          },
+        ],
+      },
     ];
   },
 
@@ -137,11 +151,7 @@ const nextConfig = {
         use: 'raw-loader',
       },
       {
-        test: /\.wasm$/,
-        type: 'asset/resource',
-      },
-      {
-        test: /\.(pack|br|a)$/,
+        test: /\.(pack|br|a|tar|wasm)$/,
         type: 'asset/resource',
       },
       // {
@@ -168,6 +178,7 @@ const nextConfig = {
       },
     };
 
+    // Always add the CopyWebpackPlugin
     config.plugins.push(
       new CopyWebpackPlugin({
         patterns: [
@@ -182,12 +193,9 @@ const nextConfig = {
           },
         ],
       }),
-      new CompressionPlugin({
-        exclude: /\.br$/,
-      }),
       new webpack.IgnorePlugin({
         resourceRegExp: /index\.mjs$/,
-      }),
+      })
     );
 
     return config;
