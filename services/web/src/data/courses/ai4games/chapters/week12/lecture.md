@@ -13,7 +13,7 @@ Video explanation: [Min Max Search](https://www.youtube.com/watch?v=l-hh51ncgDI)
 
 Min Max Search is a search algorithm used in two-player turn based adversarial games to find the optimal move for the player. It works by exploring all possible moves and their outcomes, and selecting the move that maximizes the player's chances of winning while minimizing the opponent's chances. The algorithm assumes that both players play optimally.
 
-[meme](https://media.makeameme.org/created/thats-my-secret-dece4a572a.jpg)
+![meme](https://media.makeameme.org/created/thats-my-secret-dece4a572a.jpg)
 
 ## Heuristics
 
