@@ -86,26 +86,6 @@ int minimax(const State& state, int depth, bool isMaximizingPlayer) {
     
     return bestValue;
 }
-
-// Function to find the best move using minimax
-Move findBestMove(const State& state, int depth) {
-    vector<Move> moves = state.getPossibleMoves();
-    int bestValue = numeric_limits<int>::min();
-    Move bestMove;
-    
-    // Iterate through all possible moves
-    for (const Move& move : moves) {
-        State nextState = state.applyMove(move);
-        int moveValue = minimax(nextState, depth - 1, false);
-        // update bestValue and bestMove 
-        if (moveValue > bestValue) {
-            bestValue = moveValue;
-            bestMove = move;
-        }
-    }
-    
-    return bestMove;
-}
 ```
 
 ## Alpha Beta Pruning
@@ -146,29 +126,6 @@ int minimax(const State& state, int depth, int alpha, int beta, bool isMaximizin
     }
     
     return bestValue;
-}
-
-// Function to find the best move using minimax with alpha-beta pruning
-Move findBestMove(const State& state, int depth) {
-    vector<Move> moves = state.getPossibleMoves();
-    int bestValue = numeric_limits<int>::min();
-    int alpha = numeric_limits<int>::min();
-    int beta = numeric_limits<int>::max();
-    Move bestMove;
-    
-    for (const Move& move : moves) {
-        State nextState = state.applyMove(move);
-        int moveValue = minimax(nextState, depth - 1, alpha, beta, false);
-        
-        if (moveValue > bestValue) {
-            bestValue = moveValue;
-            bestMove = move;
-        }
-        
-        alpha = max(alpha, bestValue);
-    }
-    
-    return bestMove;
 }
 ```
 
