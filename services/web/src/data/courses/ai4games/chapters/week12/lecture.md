@@ -42,6 +42,138 @@ In a min max search tree, the root node represents the current state of the game
 
 The naive implementation of Min Max Search is to clamp the maximum depth of the search tree. This means that we will only search a certain number of moves ahead. The deeper we go, the more accurate the evaluation will be, but the more time it will take to compute.
 
+--- 
+::: note "Work in Progress"
+
+The code above here is WiP. It is taking so much time for me to write it. Sorry. Use the links to continue reading and watch the videos.
+
+- [Min Max Search](https://www.youtube.com/watch?v=l-hh51ncgDI)
+- [other one](https://www.youtube.com/watch?v=trKjYdBASyQ)
+
+:::
+
+## Simple Min-Max
+
+``` c++ 
+// Minimax function
+int minimax(const State& state, int depth, bool isMaximizingPlayer) {
+    using namespace numeric_limits;
+    // Base cases: terminal state or maximum depth reached
+    // evaluate the board only if depth is 0 or state is terminal
+    if (depth == 0 || state.isTerminal()) return state.evaluate();
+    
+    // Get all possible moves from current state
+    vector<Move> moves = state.getPossibleMoves();
+    
+    // Initialize bestValue based on player, use <limits>
+    int bestValue = isMaximizingPlayer ? numeric_limits<int>::min() : numeric_limits<int>::max();
+    
+    // Traverse all children
+    for (const Move& move : moves) {
+        // Create a new state by applying the move
+        State nextState = state.applyMove(move);
+        
+        // Recursively call minimax for the new state
+        int value = minimax(nextState, depth - 1, !isMaximizingPlayer);
+        
+        // Update bestValue based on player
+        if (isMaximizingPlayer) {
+            bestValue = max(bestValue, value);
+        } else {
+            bestValue = min(bestValue, value);
+        }
+    }
+    
+    return bestValue;
+}
+
+// Function to find the best move using minimax
+Move findBestMove(const State& state, int depth) {
+    vector<Move> moves = state.getPossibleMoves();
+    int bestValue = numeric_limits<int>::min();
+    Move bestMove;
+    
+    // Iterate through all possible moves
+    for (const Move& move : moves) {
+        State nextState = state.applyMove(move);
+        int moveValue = minimax(nextState, depth - 1, false);
+        // update bestValue and bestMove 
+        if (moveValue > bestValue) {
+            bestValue = moveValue;
+            bestMove = move;
+        }
+    }
+    
+    return bestMove;
+}
+```
+
+## Alpha Beta Pruning
+
+``` c++ 
+// Minimax function with alpha-beta pruning
+int minimax(const State& state, int depth, int alpha, int beta, bool isMaximizingPlayer) {
+    // Base cases: terminal state or maximum depth reached
+    // evaluate the board only if depth is 0 or state is terminal
+    if (depth == 0 || state.isTerminal()) return state.evaluate();
+    
+    // Get all possible moves from current state
+    vector<Move> moves = state.getPossibleMoves();
+    
+    // Initialize best value based on player
+    int bestValue = isMaximizingPlayer ? numeric_limits<int>::min() : numeric_limits<int>::max();
+    
+    // Traverse all children
+    for (const Move& move : moves) {
+        // Create a new state by applying the move
+        State nextState = state.applyMove(move);
+        
+        // Recursively call minimax for the new state with alpha-beta pruning
+        int value = minimax(nextState, depth - 1, alpha, beta, !isMaximizingPlayer);
+        
+        // Update bestValue based on player
+        if (isMaximizingPlayer) {
+            bestValue = max(bestValue, value);
+            alpha = max(alpha, bestValue);
+        } else {
+            bestValue = min(bestValue, value);
+            beta = min(beta, bestValue);
+        }
+        
+        // Alpha-beta pruning
+        if (beta <= alpha)
+            break; // Pruning
+    }
+    
+    return bestValue;
+}
+
+// Function to find the best move using minimax with alpha-beta pruning
+Move findBestMove(const State& state, int depth) {
+    vector<Move> moves = state.getPossibleMoves();
+    int bestValue = numeric_limits<int>::min();
+    int alpha = numeric_limits<int>::min();
+    int beta = numeric_limits<int>::max();
+    Move bestMove;
+    
+    for (const Move& move : moves) {
+        State nextState = state.applyMove(move);
+        int moveValue = minimax(nextState, depth - 1, alpha, beta, false);
+        
+        if (moveValue > bestValue) {
+            bestValue = moveValue;
+            bestMove = move;
+        }
+        
+        alpha = max(alpha, bestValue);
+    }
+    
+    return bestMove;
+}
+```
+
+---
+
 Let's assume a depth of 3 and all possible moves which can be achievable up to 3 moves ahead. The tree will look like this:
 
 ``` mermaid
