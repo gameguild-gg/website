@@ -1,3 +1,10 @@
+# [1.18.0](https://github.com/gameguild-gg/website/compare/v1.17.27...v1.18.0) (2025-04-08)
+
+
+### Features
+
+* **clang-wasm:** add support for c++ compilation ([5a6eb40](https://github.com/gameguild-gg/website/commit/5a6eb4025e96036fa54cddf575bf963ad3d2b906))
+
 ## [1.17.27](https://github.com/gameguild-gg/website/compare/v1.17.26...v1.17.27) (2025-04-05)
 
 ## [1.17.26](https://github.com/gameguild-gg/website/compare/v1.17.25...v1.17.26) (2025-04-04)
