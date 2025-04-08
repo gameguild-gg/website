@@ -1,3 +1,10 @@
+## [1.18.1](https://github.com/gameguild-gg/website/compare/v1.18.0...v1.18.1) (2025-04-08)
+
+
+### Bug Fixes
+
+* **courses:** add boilerplate for min-max ([b66c449](https://github.com/gameguild-gg/website/commit/b66c449360ecab7a3c16353caa2c331f4a9ec1d0))
+
 # [1.18.0](https://github.com/gameguild-gg/website/compare/v1.17.27...v1.18.0) (2025-04-08)
 
 
