@@ -1,7 +1,6 @@
 import { expose } from 'comlink';
 import { PyodideWorkerAPI } from './pyodide.api';
 
-
 let pyodide: any = null;
 
 const loadPyodideInstance = async () => {

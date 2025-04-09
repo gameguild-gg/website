@@ -195,7 +195,7 @@ const nextConfig = {
       }),
       new webpack.IgnorePlugin({
         resourceRegExp: /index\.mjs$/,
-      })
+      }),
     );
 
     return config;
@@ -203,6 +203,7 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: false,
   },
+  transpilePackages: ['use-pyodide'],
   experimental: {
     externalDir: false,
   },

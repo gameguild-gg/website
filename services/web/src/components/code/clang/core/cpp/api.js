@@ -3,9 +3,9 @@ import { MemFS } from './memfs';
 import { msToSec } from './shared';
 import { Tar } from './tar';
 
-import clangUrl from '../../../../public/assets/clang.wasm';
-import lldUrl from '../../../../public/assets/lld.wasm';
-import sysrootUrl from '../../../../public/assets/sysroot.tar';
+import clangUrl from '../../../../../../public/assets/clang.wasm';
+import lldUrl from '../../../../../../public/assets/lld.wasm';
+import sysrootUrl from '../../../../../../public/assets/sysroot.tar';
 
 export class API {
   constructor(options) {

@@ -2,13 +2,13 @@
 
 import React, { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
-import { useRunner } from '@/clang/module';
+import { useRunner } from '@/components/code/clang/module';
 
 // Dynamically import components to avoid SSR issues with browser-only code
-const Layout = dynamic(() => import('@/clang/components/layout'), { ssr: false });
-const Header = dynamic(() => import('@/clang/components/header'), { ssr: false });
-const Editor = dynamic(() => import('@/clang/components/editor'), { ssr: false });
-const Terminal = dynamic(() => import('@/clang/components/terminal'), { ssr: false });
+const Layout = dynamic(() => import('@/components/code/clang/components/layout'), { ssr: false });
+const Header = dynamic(() => import('@/components/code/clang/components/header'), { ssr: false });
+const Editor = dynamic(() => import('@/components/code/clang/components/editor'), { ssr: false });
+const Terminal = dynamic(() => import('@/components/code/clang/components/terminal'), { ssr: false });
 
 // WASM and asset files need to be loaded as static assets
 const assetFiles = {
