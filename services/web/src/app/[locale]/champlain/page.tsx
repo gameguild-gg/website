@@ -111,13 +111,18 @@ const alignmentData = [
   { plo: 'PLO7', course: 'PLS-380', strength: 0.95, faculty: [0.9, 0.95, 0.9, 0.95] },
 ];
 
-// Prepare radar chart data - progression of PLO emphasis across courses
+// Prepare radar chart data with more informative labels
 const radarData = PLOs.map((plo) => {
-  const result = { name: plo.id };
+  const result = {
+    name: plo.id,
+    fullName: `${plo.id}: ${plo.title}`,
+  };
+
   courseSequence.forEach((course) => {
     const matchingData = alignmentData.find((item) => item.plo === plo.id && item.course === course.id);
     result[course.id] = matchingData ? matchingData.strength * 100 : 0;
   });
+
   return result;
 });
 
@@ -252,19 +257,46 @@ const CurriculumAlignment = () => {
 
       case 'radar':
         return (
-          <div className="h-96">
-            <ResponsiveContainer width="100%" height="100%">
-              <RadarChart cx="50%" cy="50%" outerRadius="80%" data={radarData}>
-                <PolarGrid />
-                <PolarAngleAxis dataKey="name" />
-                <PolarRadiusAxis angle={90} domain={[0, 100]} />
-                {courseSequence.map((course, index) => (
-                  <Radar key={course.id} name={course.name} dataKey={course.id} stroke={PLO_COLORS[index]} fill={PLO_COLORS[index]} fillOpacity={0.6} />
-                ))}
-                <Legend />
-                <Tooltip />
-              </RadarChart>
-            </ResponsiveContainer>
+          <div>
+            <div className="mb-4 p-4 bg-yellow-50 rounded border border-yellow-200">
+              <p className="text-sm">
+                <span className="font-bold">How to read this radar chart:</span> Each axis represents a Program Learning Outcome (PLO). The colored areas show
+                coverage of each PLO across the three courses. The further from center, the stronger the emphasis (100% = maximum emphasis).
+              </p>
+            </div>
+            <div className="h-96">
+              <ResponsiveContainer width="100%" height="100%">
+                <RadarChart cx="50%" cy="50%" outerRadius="80%" data={radarData}>
+                  <PolarGrid />
+                  <PolarAngleAxis
+                    dataKey="fullName"
+                    tick={(props) => {
+                      const { x, y, textAnchor, payload } = props;
+                      const fullText = payload.value;
+                      const ploId = fullText.substring(0, 4);
+                      const ploTitle = fullText.substring(6);
+
+                      return (
+                        <g transform={`translate(${x},${y})`}>
+                          <text x={0} y={0} dy={4} textAnchor={textAnchor} fill="#666" fontSize="12" fontWeight="bold">
+                            {ploId}
+                          </text>
+                          <text x={0} y={0} dy={20} textAnchor={textAnchor} fill="#666" fontSize="10">
+                            {ploTitle}
+                          </text>
+                        </g>
+                      );
+                    }}
+                  />
+                  <PolarRadiusAxis angle={90} domain={[0, 100]} />
+                  {courseSequence.map((course, index) => (
+                    <Radar key={course.id} name={course.name} dataKey={course.id} stroke={PLO_COLORS[index]} fill={PLO_COLORS[index]} fillOpacity={0.6} />
+                  ))}
+                  <Legend />
+                  <Tooltip />
+                </RadarChart>
+              </ResponsiveContainer>
+            </div>
           </div>
         );
 
