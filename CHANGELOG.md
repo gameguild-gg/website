@@ -1,3 +1,12 @@
+## [1.18.4](https://github.com/gameguild-gg/website/compare/v1.18.3...v1.18.4) (2025-04-11)
+
+
+### Bug Fixes
+
+* **champlain:** add better plo graph visualization ([7b355b0](https://github.com/gameguild-gg/website/commit/7b355b005876a6edd8e0fdb5d1e73776e7147c8e))
+* **champlain:** add plos page ([e6b0a6e](https://github.com/gameguild-gg/website/commit/e6b0a6e95a3b2af16be6efc1816888396d5e7e66))
+* **wasm:** add workers for wasm interfaces ([e17b32f](https://github.com/gameguild-gg/website/commit/e17b32f951be6dbfa1575d365b363d9da7e3b8fb))
+
 ## [1.18.3](https://github.com/gameguild-gg/website/compare/v1.18.2...v1.18.3) (2025-04-08)
 
 
