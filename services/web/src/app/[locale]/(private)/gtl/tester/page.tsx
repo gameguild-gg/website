@@ -5,7 +5,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { getSession } from 'next-auth/react';
-import { Textarea } from '@/components/ui/textarea';
+import { TextArea } from '@/components/ui/textArea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ChevronLeft, ChevronRight, Ticket } from 'lucide-react';
 import { AuthApi, TicketApi } from '@game-guild/apiclient/api';
@@ -168,23 +168,14 @@ export default function GameMarketplace() {
   const [showTicketForm, setShowTicketForm] = useState(false);
   const [ticketTitle, setTicketTitle] = useState('');
   const [ticketDescription, setTicketDescription] = useState('');
-  const [ticketStatus, setTicketStatus] = useState<TicketStatus>(
-    TicketStatus.OPEN,
-  );
-  const [ticketPriority, setTicketPriority] = useState<TicketPriority>(
-    TicketPriority.LOW,
-  );
+  const [ticketStatus, setTicketStatus] = useState<TicketStatus>(TicketStatus.OPEN);
+  const [ticketPriority, setTicketPriority] = useState<TicketPriority>(TicketPriority.LOW);
   const [selectedGameId, setSelectedGameId] = useState<string>('');
 
-  const filteredGames =
-    selectedGenre === 'All'
-      ? nonGradableGames
-      : nonGradableGames.filter((game) => game.genre === selectedGenre);
+  const filteredGames = selectedGenre === 'All' ? nonGradableGames : nonGradableGames.filter((game) => game.genre === selectedGenre);
 
   const handlePrev = () => {
-    setStartIndex((prevIndex) =>
-      prevIndex === 0 ? gradableGames.length - 1 : prevIndex - 1,
-    );
+    setStartIndex((prevIndex) => (prevIndex === 0 ? gradableGames.length - 1 : prevIndex - 1));
   };
 
   const handleNext = () => {
@@ -218,22 +209,21 @@ export default function GameMarketplace() {
         Authorization: `Bearer ${session?.user?.accessToken}`,
       },
     });
-    const submitedTicket =
-      await apiTicket.createOneBaseTicketControllerTicketEntity(
-        {
-          title: ticketTitle,
-          owner: currentUser.body,
-          status: ticketStatus,
-          priority: ticketPriority,
-          description: ticketDescription,
-          projectId: selectedGameId,
+    const submitedTicket = await apiTicket.createOneBaseTicketControllerTicketEntity(
+      {
+        title: ticketTitle,
+        owner: currentUser.body,
+        status: ticketStatus,
+        priority: ticketPriority,
+        description: ticketDescription,
+        projectId: selectedGameId,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${session?.user?.accessToken}`,
         },
-        {
-          headers: {
-            Authorization: `Bearer ${session?.user?.accessToken}`,
-          },
-        },
-      );
+      },
+    );
     setTicketTitle('');
     setTicketDescription('');
     setTicketStatus(TicketStatus.OPEN);
@@ -251,17 +241,12 @@ export default function GameMarketplace() {
             <button
               key={genre}
               onClick={() => setSelectedGenre(genre)}
-              className={`block w-full text-left py-2 px-4 rounded ${
-                selectedGenre === genre ? 'bg-gray-800' : 'hover:bg-gray-900'
-              }`}
+              className={`block w-full text-left py-2 px-4 rounded ${selectedGenre === genre ? 'bg-gray-800' : 'hover:bg-gray-900'}`}
             >
               {genre}
             </button>
           ))}
-          <Button
-            className="mt-4 w-full"
-            onClick={() => setShowTicketForm(true)}
-          >
+          <Button className="mt-4 w-full" onClick={() => setShowTicketForm(true)}>
             <Ticket className="mr-2 h-4 w-4" />
             Submit Ticket
           </Button>
@@ -281,10 +266,7 @@ export default function GameMarketplace() {
               className="space-y-4"
             >
               <div>
-                <label
-                  htmlFor="title"
-                  className="block text-sm font-medium text-gray-400"
-                >
+                <label htmlFor="title" className="block text-sm font-medium text-gray-400">
                   Title (75 characters max)
                 </label>
                 <Input
@@ -295,18 +277,13 @@ export default function GameMarketplace() {
                   maxLength={75}
                   className="bg-gray-700 text-white"
                 />
-                <p className="text-sm text-gray-400 mt-1">
-                  {ticketTitle.length}/75 characters
-                </p>
+                <p className="text-sm text-gray-400 mt-1">{ticketTitle.length}/75 characters</p>
               </div>
               <div>
-                <label
-                  htmlFor="description"
-                  className="block text-sm font-medium text-gray-400"
-                >
+                <label htmlFor="description" className="block text-sm font-medium text-gray-400">
                   Description
                 </label>
-                <Textarea
+                <TextArea
                   id="description"
                   value={ticketDescription}
                   onChange={(e) => setTicketDescription(e.target.value)}
@@ -315,19 +292,10 @@ export default function GameMarketplace() {
                 />
               </div>
               <div>
-                <label
-                  htmlFor="status"
-                  className="block text-sm font-medium text-gray-400"
-                >
+                <label htmlFor="status" className="block text-sm font-medium text-gray-400">
                   Status
                 </label>
-                <Select
-                  value={ticketStatus}
-                  onValueChange={(value) =>
-                    setTicketStatus(value as TicketStatus)
-                  }
-                  required
-                >
+                <Select value={ticketStatus} onValueChange={(value) => setTicketStatus(value as TicketStatus)} required>
                   <SelectTrigger className="bg-gray-700 text-white">
                     <SelectValue placeholder="Select status" />
                   </SelectTrigger>
@@ -341,19 +309,10 @@ export default function GameMarketplace() {
                 </Select>
               </div>
               <div>
-                <label
-                  htmlFor="priority"
-                  className="block text-sm font-medium text-gray-400"
-                >
+                <label htmlFor="priority" className="block text-sm font-medium text-gray-400">
                   Priority
                 </label>
-                <Select
-                  value={ticketPriority}
-                  onValueChange={(value) =>
-                    setTicketPriority(value as TicketPriority)
-                  }
-                  required
-                >
+                <Select value={ticketPriority} onValueChange={(value) => setTicketPriority(value as TicketPriority)} required>
                   <SelectTrigger className="bg-gray-700 text-white">
                     <SelectValue placeholder="Select priority" />
                   </SelectTrigger>
@@ -367,17 +326,10 @@ export default function GameMarketplace() {
                 </Select>
               </div>
               <div>
-                <label
-                  htmlFor="gameId"
-                  className="block text-sm font-medium text-gray-400"
-                >
+                <label htmlFor="gameId" className="block text-sm font-medium text-gray-400">
                   Game
                 </label>
-                <Select
-                  value={selectedGameId ? selectedGameId.toString() : undefined}
-                  onValueChange={(value) => setSelectedGameId(String(value))}
-                  required
-                >
+                <Select value={selectedGameId ? selectedGameId.toString() : undefined} onValueChange={(value) => setSelectedGameId(String(value))} required>
                   <SelectTrigger className="bg-gray-700 text-white">
                     <SelectValue placeholder="Select game" />
                   </SelectTrigger>
@@ -394,10 +346,7 @@ export default function GameMarketplace() {
               </div>
               <div className="flex justify-between items-center">
                 <Button type="submit">Submit Ticket</Button>
-                <Button
-                  variant="secondary"
-                  onClick={() => setShowTicketForm(false)}
-                >
+                <Button variant="secondary" onClick={() => setShowTicketForm(false)}>
                   Cancel
                 </Button>
               </div>
@@ -420,11 +369,7 @@ export default function GameMarketplace() {
                   <div className="flex justify-center space-x-4 p-4">
                     {visibleGames.map((game, index) => (
                       <div key={index} className="w-[300px] shrink-0">
-                        <img
-                          src={game.image}
-                          alt={game.title}
-                          className="w-full h-[200px] object-cover rounded-md"
-                        />
+                        <img src={game.image} alt={game.title} className="w-full h-[200px] object-cover rounded-md" />
                         <p className="mt-2 text-center">{game.title}</p>
                       </div>
                     ))}
@@ -445,15 +390,8 @@ export default function GameMarketplace() {
               <h2 className="text-2xl font-semibold mb-4">Other Games</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                 {filteredGames.map((game) => (
-                  <div
-                    key={game.id}
-                    className="bg-gray-800 rounded-lg overflow-hidden"
-                  >
-                    <img
-                      src={game.image}
-                      alt={game.title}
-                      className="w-full h-[150px] object-cover"
-                    />
+                  <div key={game.id} className="bg-gray-800 rounded-lg overflow-hidden">
+                    <img src={game.image} alt={game.title} className="w-full h-[150px] object-cover" />
                     <div className="p-4">
                       <h3 className="font-semibold">{game.title}</h3>
                       <p className="text-sm text-gray-400">{game.genre}</p>

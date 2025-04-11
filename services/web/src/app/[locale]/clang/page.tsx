@@ -1,56 +1,49 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import dynamic from 'next/dynamic';
-import { useRunner } from '@/components/code/clang/module';
+import { useClang } from '@/components/code/use-clang';
+import { useState } from 'react';
+import { TextArea } from '@/components/ui/textArea';
+import { RunnerStatus } from '@/components/code/code-executor.types';
+import { Button } from '@/components/chess/ui/button';
 
-// Dynamically import components to avoid SSR issues with browser-only code
-const Layout = dynamic(() => import('@/components/code/clang/components/layout'), { ssr: false });
-const Header = dynamic(() => import('@/components/code/clang/components/header'), { ssr: false });
-const Editor = dynamic(() => import('@/components/code/clang/components/editor'), { ssr: false });
-const Terminal = dynamic(() => import('@/components/code/clang/components/terminal'), { ssr: false });
+export default function ClangEditor() {
+  const [code, setCode] = useState('#include <iostream>\n\nint main() {\n  std::cout << "Hello, World!" << std::endl;\n  return 0;\n}');
+  const { compileAndRun, abort, stdout, stderr, error, status } = useClang();
 
-// WASM and asset files need to be loaded as static assets
-const assetFiles = {
-  clang: '/assets/clang.wasm',
-  lld: '/assets/lld.wasm',
-  memfs: '/assets/memfs.wasm',
-  sysroot: '/assets/sysroot.tar',
-};
-
-// Use this flag to prevent multiple initializations
-let hasInitialized = false;
-
-export default function ClangPage() {
-  // Use local state to track initialization
-  const [isInitialized, setIsInitialized] = useState(false);
-  // Access the init function directly from the store rather than as a selector
-  const { init } = useRunner();
-
-  // Use a ref to ensure init only happens once
-  useEffect(() => {
-    if (!hasInitialized) {
-      console.log('Initializing clang environment...');
-      // Set the flag to prevent future calls
-      hasInitialized = true;
-      // Call init after a short delay to ensure the component is fully mounted
-
-      try {
-        init();
-        setIsInitialized(true);
-        console.log('Initialization complete');
-      } catch (error) {
-        console.error('Error during initialization:', error);
-      }
+  const handleRun = async () => {
+    if (status === RunnerStatus.READY || status === RunnerStatus.UNINITIALIZED) {
+      console.log('handleRun called');
+      const result = await compileAndRun(code);
+      console.log('Compilation result:', result);
     }
-
-    // Log the asset file paths
-    console.log('Asset files:', assetFiles);
-  }, []);
+  };
 
   return (
-    <div className="h-screen">
-      <Layout header={<Header />} left={<Editor />} right={<Terminal />} />
+    <div className="flex flex-col h-full">
+      <div className="h-1/2">
+        <TextArea value={code} onChange={(e) => setCode(e.target.value)} />
+      </div>
+      <div className="flex">
+        <Button disabled={status === RunnerStatus.RUNNING || status === RunnerStatus.LOADING} onClick={handleRun}>
+          {
+            // if it is uninitialized, failed, or ready, show "Run"
+            status === RunnerStatus.UNINITIALIZED ||
+            status === RunnerStatus.FAILED_LOADING ||
+            status === RunnerStatus.FAILED_EXECUTION ||
+            status === RunnerStatus.READY
+              ? 'Run'
+              : 'Running...'
+          }
+        </Button>
+        <Button onClick={abort} disabled={status !== RunnerStatus.RUNNING}>
+          Stop
+        </Button>
+      </div>
+      <div className="h-1/2 bg-black text-white overflow-auto">
+        {stdout && <div className="p-2">{stdout}</div>}
+        {stderr && <div className="p-2 text-red-500">{stderr}</div>}
+        {error && <div className="p-2 text-red-500">Error: {error}</div>}
+      </div>
     </div>
   );
 }

@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import { TextArea } from '@/components/ui/textArea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/components/ui/use-toast';
 import Link from 'next/link';
@@ -113,19 +113,10 @@ export default function EditProfile() {
               <AvatarImage src={'/placeholder.svg'} alt="Profile picture" />
               <AvatarFallback>Avatar</AvatarFallback>
             </Avatar>
-            <Label
-              htmlFor="avatar-upload"
-              className="cursor-pointer text-sm text-blue-500 hover:text-blue-600"
-            >
+            <Label htmlFor="avatar-upload" className="cursor-pointer text-sm text-blue-500 hover:text-blue-600">
               Change Avatar
             </Label>
-            <Input
-              id="avatar-upload"
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={handleAvatarChange}
-            />
+            <Input id="avatar-upload" type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
           </div>
           <div className="space-y-2">
             <Label htmlFor="username">Username</Label>
@@ -146,23 +137,15 @@ export default function EditProfile() {
               }}
               placeholder="Enter your username"
             />
-            <p className="text-sm text-gray-500 mt-1">
-              Publicly visible. Change it if want to stay anonymous.
-            </p>
-            {usernameError && (
-              <p className="text-sm text-red-500">{usernameError}</p>
-            )}
+            <p className="text-sm text-gray-500 mt-1">Publicly visible. Change it if want to stay anonymous.</p>
+            {usernameError && <p className="text-sm text-red-500">{usernameError}</p>}
           </div>
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input id="email" value={user?.email} disabled />
             <p className="text-sm text-gray-500 mt-1">
-              Your email address is not publicly visible. Currently disabled,
-              but you can code it to be editable{' '}
-              <Link
-                className={'text-blue-500 hover:text-blue-600'}
-                href={'https://github.com/gameguild-gg/website/'}
-              >
+              Your email address is not publicly visible. Currently disabled, but you can code it to be editable{' '}
+              <Link className={'text-blue-500 hover:text-blue-600'} href={'https://github.com/gameguild-gg/website/'}>
                 here
               </Link>
               .
@@ -170,12 +153,11 @@ export default function EditProfile() {
           </div>
           <div className="space-y-2">
             <Label htmlFor="bio">Biography</Label>
-            <Textarea
+            <TextArea
               id="bio"
               value={user?.profile?.bio}
               onChange={(e) => {
-                if (e.target.value.length > 256)
-                  setBioError('Bio should be at most 256 characters');
+                if (e.target.value.length > 256) setBioError('Bio should be at most 256 characters');
                 else setBioError(null);
 
                 setUser({
@@ -186,9 +168,7 @@ export default function EditProfile() {
               placeholder="Tell us about yourself"
               rows={4}
             />
-            <p className="text-sm text-gray-500 mt-1">
-              Introduce yourself to the community.
-            </p>
+            <p className="text-sm text-gray-500 mt-1">Introduce yourself to the community.</p>
             {bioError && <p className="text-sm text-red-500">{bioError}</p>}
           </div>
         </CardContent>

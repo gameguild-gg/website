@@ -16,17 +16,13 @@ function languageToPackage(language: CodeLanguage): WasmPackage {
   }
 }
 
-export enum RunnerInitStatus {
+export enum RunnerStatus {
   UNINITIALIZED = 'Uninitialized',
-  LOADING_TOOLS = 'LoadingTools',
-  FAILED_LOADING_TOOLS = 'FailedLoadingTools',
-  READY_TO_RUN = 'ReadyToRun',
-}
-
-export enum RunnerExecutionStatus {
+  LOADING = 'Loading',
+  FAILED_LOADING = 'FailedLoading',
+  READY = 'Ready',
   RUNNING = 'Running',
   FAILED_EXECUTION = 'FailedExecution',
-  FINISHED = 'Finished',
 }
 
 export type FileMap = { [key: string]: string | Uint8Array };

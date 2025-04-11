@@ -1,4 +1,4 @@
-import { RunnerExecutionStatus, RunnerInitStatus } from '@/components/code/code-executor.types';
+import { RunnerStatus } from '@/components/code/code-executor.types';
 
 export interface CodeExecutorBase {
   // onStdOut
@@ -9,12 +9,12 @@ export interface CodeExecutorBase {
   setOnError: (error: (data: string) => void) => void;
 
   // todo: status should be global for all instances. We may want to have more than one run to happen at the same time
-  init: (onStatusChange: (status: RunnerInitStatus) => void) => Promise<void>;
+  init: (onStatusChange: (status: RunnerStatus) => void) => Promise<void>;
 
   run: (
     command: string,
     options?: {
-      onStatusChange?: (status: RunnerExecutionStatus) => void;
+      onStatusChange?: (status: RunnerStatus) => void;
       abort?: () => void;
       // todo: probably this should be a function that will return data to the wasm app
       stdIn?: string;
