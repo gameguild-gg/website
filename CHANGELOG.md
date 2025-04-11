@@ -1,3 +1,10 @@
+## [1.18.5](https://github.com/gameguild-gg/website/compare/v1.18.4...v1.18.5) (2025-04-11)
+
+
+### Bug Fixes
+
+* **wasm:** add clang worker wrapper ([61a15f0](https://github.com/gameguild-gg/website/commit/61a15f0cb26f92a42ff19efaf7784d7ab5436787))
+
 ## [1.18.4](https://github.com/gameguild-gg/website/compare/v1.18.3...v1.18.4) (2025-04-11)
 
 
