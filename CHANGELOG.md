@@ -1,3 +1,10 @@
+## [1.19.1](https://github.com/gameguild-gg/website/compare/v1.19.0...v1.19.1) (2025-04-15)
+
+
+### Bug Fixes
+
+* **clang:** one shot load and run ([9db5535](https://github.com/gameguild-gg/website/commit/9db5535b3ba3c6fd0b6a34cb343a3c1017a665d0))
+
 # [1.19.0](https://github.com/gameguild-gg/website/compare/v1.18.5...v1.19.0) (2025-04-15)
 
 
