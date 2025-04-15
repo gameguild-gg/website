@@ -3,7 +3,10 @@
 import type React from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
 import rehypeRaw from 'rehype-raw';
+import rehypeKatex from 'rehype-katex';
+import 'katex/dist/katex.min.css';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { Admonition } from './Admonition';
@@ -149,7 +152,12 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, renderer =
 
   return (
     <>
-      <ReactMarkdown className="markdown-content" remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} components={components}>
+      <ReactMarkdown 
+        className="markdown-content" 
+        remarkPlugins={[remarkGfm, remarkMath]} 
+        rehypePlugins={[rehypeRaw, rehypeKatex]}
+        components={components}
+      >
         {processedContent}
       </ReactMarkdown>
       <style jsx global>{`
@@ -161,6 +169,12 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, renderer =
           white-space: pre-wrap !important;
           word-break: keep-all !important;
           overflow-wrap: break-word !important;
+        }
+
+        .katex-display {
+          overflow-x: auto;
+          overflow-y: hidden;
+          padding: 0.5rem 0;
         }
       `}</style>
     </>

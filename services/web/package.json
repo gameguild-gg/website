@@ -94,7 +94,6 @@
     "class-validator": "^0.14.1",
     "class-variance-authority": "^0.7.0",
     "classnames": "^2.5.1",
-    "clsx": "^2.1.1",
     "cmdk": "^1.0.0",
     "compression-webpack-plugin": "^11.1.0",
     "cookies-next": "^4.1.1",
@@ -172,7 +171,9 @@
     "utf-8-validate": "^5.0.10",
     "vaul": "^0.9.6",
     "zod": "^3.22.4",
-    "zustand": "^5.0.2"
+    "katex": "^0.16.22",
+    "rehype-katex": "^7.0.1",
+    "remark-math": "^6.0.0"
   },
   "devDependencies": {
     "@game-guild/eslint-config": "*",

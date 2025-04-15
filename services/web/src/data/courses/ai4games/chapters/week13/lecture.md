@@ -13,13 +13,13 @@ The algorithm consists of four main steps:
 
 ## Upper Confidence Bound (UCB)
 
-`UCB = \frac{w_i}{n_i} + C \sqrt{\frac{\ln N}{n_i}}`
+$$UCB = \frac{w_i}{n_i} + C \sqrt{\frac{\ln N}{n_i}}$$
 
 Where:
-- \(w_i\) is the number of wins for the child node \(i\)
-- \(n_i\) is the number of visits for the child node \(i\)
-- \(N\) is the total number of visits for the parent node
-- \(C\) is a constant that controls the exploration-exploitation trade-off. Usually set to \(\sqrt{2}\)
+- $w_i$ is the number of wins for the child node \(i\)
+- $n_i$ is the number of visits for the child node \(i\)
+- $N$ is the total number of visits for the parent node
+- $C$ is a constant that controls the exploration-exploitation trade-off. Usually set to $\sqrt{2}$
 
 ::: note "Work in Progress"
 
@@ -27,8 +27,10 @@ I wasn't able to finish the material for this week because I had to improve the 
 
 :::
 
+- [Animation](https://vgarciasc.github.io/mcts-viz/)
 - [Text](https://uq.pressbooks.pub/mastering-reinforcement-learning/chapter/monte-carlo-tree-search/)
 - [Presentation](https://duvenaud.github.io/learning-to-search/slides/week3/MCTSintro.pdf)
+
 
 <ul>
   <li><a href="https://arxiv.org/pdf/1705.08439.pdf">Thinking Fast and Slow with Deep Learning and Tree Search</a></li>
