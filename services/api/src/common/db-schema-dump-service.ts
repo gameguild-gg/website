@@ -38,6 +38,10 @@ export class SchemaDumpService implements OnModuleInit {
         GROUP BY n.nspname, t.typname;
     `);
 
+    // sort enum types by name
+    enumTypes.sort((a, b) => a.name.localeCompare(b.name));
+
+    // Create ENUM types
     for (const { name, values } of enumTypes) {
       schemaSQL += `CREATE TYPE "${name}" AS ENUM (${values
         .split(',')
@@ -51,6 +55,9 @@ export class SchemaDumpService implements OnModuleInit {
         FROM pg_catalog.pg_tables
         WHERE schemaname = 'public';
     `);
+
+    // sort tables by name
+    tables.sort((a, b) => a.tablename.localeCompare(b.tablename));
 
     for (const { tablename } of tables) {
       const createTableResult = await queryRunner.query(
@@ -97,6 +104,9 @@ export class SchemaDumpService implements OnModuleInit {
         [tablename],
       );
 
+      // sort constraints by name
+      constraintsResult.sort((a, b) => a.constraint_name.localeCompare(b.constraint_name));
+
       for (const { constraint_def } of constraintsResult) {
         schemaSQL += `ALTER TABLE "${tablename}"
             ADD ${constraint_def};  `;
@@ -111,6 +121,9 @@ export class SchemaDumpService implements OnModuleInit {
         `,
         [tablename],
       );
+
+      // sort indexes by name
+      indexesResult.sort((a, b) => a.indexdef.localeCompare(b.indexdef));
 
       for (const { indexdef } of indexesResult) {
         schemaSQL += `${indexdef};\n`;
