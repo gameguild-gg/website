@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState, useEffect } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { proxy, wrap } from 'comlink';
 import { CodeExecutorBase } from './code-executor.base';
 import { RunnerStatus } from './code-executor.types';
@@ -19,108 +19,117 @@ export function useClang() {
   const abortControllerRef = useRef<AbortController | null>(null);
   // Track the current status in a ref that we can check directly
   const statusRef = useRef<RunnerStatus>(status);
-  
+
   // Keep the ref updated when status changes
   useEffect(() => {
     statusRef.current = status;
   }, [status]);
 
   const init = async (): Promise<void> => {
-    
     if (workerRef.current && executorRef.current) {
       // If already initialized and ready, return immediately
       if (statusRef.current === RunnerStatus.READY) {
         console.log('Worker already initialized and ready');
         return;
       }
-      
-      // If already initialized but not ready, wait for it to be ready
+
+      // If already initializing but not ready, use event-based approach to wait
       console.log('Worker already initializing, waiting for ready status...');
       await new Promise<void>((resolve, reject) => {
-        const maxRetries = 100; // 10 seconds maximum wait time
-        let retries = 0;
-        
-        const checkStatus = () => {
-          // Just check the local ref status which is always updated
-          if (statusRef.current === RunnerStatus.READY) {
-            console.log('Worker is now ready');
+        // One-time event listener for the READY state
+        const readyHandler = (event: MessageEvent) => {
+          if (event.data && event.data.type === 'status' && event.data.status === RunnerStatus.READY) {
+            console.log('Worker is now ready (from event)');
+            workerRef.current?.removeEventListener('message', readyHandler);
             resolve();
-          } else if (statusRef.current === RunnerStatus.FAILED_LOADING) {
-            console.error('Worker failed to initialize');
+          } else if (event.data && event.data.type === 'status' && event.data.status === RunnerStatus.FAILED_LOADING) {
+            console.error('Worker failed to initialize (from event)');
+            workerRef.current?.removeEventListener('message', readyHandler);
             reject(new Error('Worker failed to initialize'));
-          } else if (retries >= maxRetries) {
-            console.error('Timed out waiting for worker to initialize');
-            // Don't throw an error, just resolve and try to recover
-            // We'll recreate the worker if needed
-            resolve();
-          } else {
-            retries++;
-            setTimeout(checkStatus, 100);
           }
         };
         
-        checkStatus();
+        // Add listener for status changes
+        workerRef.current?.addEventListener('message', readyHandler);
+        
+        // Check current status - may already be ready
+        if (statusRef.current === RunnerStatus.READY) {
+          console.log('Worker is already ready (from status check)');
+          workerRef.current?.removeEventListener('message', readyHandler);
+          resolve();
+        } else if (statusRef.current === RunnerStatus.FAILED_LOADING) {
+          console.error('Worker already failed to initialize (from status check)');
+          workerRef.current?.removeEventListener('message', readyHandler);
+          reject(new Error('Worker failed to initialize'));
+        }
       });
       return;
     }
-    
+
     try {
       // Create the worker
       console.log('before worker');
       workerRef.current = new Worker(new URL('./clang-worker.ts', import.meta.url), { type: 'module' });
       console.log('after worker');
-      
+
       // Create a promise to track when status becomes READY
       const readyPromise = new Promise<void>((resolve, reject) => {
-        let cleanupTimeout: NodeJS.Timeout | null = null;
-        
-        // Set timeout for initialization - but make it longer
-        const timeoutId = setTimeout(() => {
-          console.warn('Worker initialization took longer than expected, but we\'ll keep waiting');
-          // Don't reject, just log a warning
-        }, 15000); // 15 second warning
-        
+        // Create a direct handler for status change events
         const statusChangeHandler = (event: MessageEvent) => {
           if (event.data && event.data.type === 'status') {
             console.log('Status message from worker:', event.data.status);
             if (event.data.status === RunnerStatus.READY) {
+              // Update our statuses
               setStatus(RunnerStatus.READY);
               statusRef.current = RunnerStatus.READY;
               
-              // Clean up event listener but only after a delay to ensure we get all messages
-              if (cleanupTimeout) clearTimeout(cleanupTimeout);
-              cleanupTimeout = setTimeout(() => {
-                workerRef.current?.removeEventListener('message', statusChangeHandler);
-              }, 500);
+              // Clean up event listener
+              workerRef.current?.removeEventListener('message', statusChangeHandler);
               
-              clearTimeout(timeoutId);
+              console.log("Worker READY, resolving initialization promise immediately");
+              // Resolve immediately - no timeouts
               resolve();
             } else if (event.data.status === RunnerStatus.FAILED_LOADING) {
+              // Clean up the event listener
               workerRef.current?.removeEventListener('message', statusChangeHandler);
-              clearTimeout(timeoutId);
-              if (cleanupTimeout) clearTimeout(cleanupTimeout);
+              
+              // Reject with an error
               reject(new Error('Worker failed to initialize'));
             }
           }
         };
+
+        // IMPORTANT: First check if we're already in READY state before setting up the listener
+        // This is critical to prevent race conditions
+        if (statusRef.current === RunnerStatus.READY) {
+          console.log("Worker already READY, resolving immediately");
+          resolve();
+          return; // Exit early without adding the listener
+        }
         
+        // Only add the listener if we're not already ready
         workerRef.current?.addEventListener('message', statusChangeHandler);
       });
+
+      console.log('Setting up main message listener');
       
       // Set up direct message event listener for stdout/stderr from the worker
-      workerRef.current.addEventListener('message', (event) => {
+      // Use variable to ensure we can access it in the handler
+      const messageListener = (event: MessageEvent) => {
         if (event.data && event.data.type === 'stdout') {
           setStdout((prev) => prev + event.data.data);
         } else if (event.data && event.data.type === 'stderr') {
           setStderr((prev) => prev + event.data.data);
         } else if (event.data && event.data.type === 'status') {
+          console.log(`Status message in main listener: ${event.data.status}`);
           // Update the React state status
           setStatus(event.data.status);
           // Also update our local ref for immediate access
           statusRef.current = event.data.status;
         }
-      });
-      
+      };
+      workerRef.current.addEventListener('message', messageListener);
+
       // Create the executor from the worker using Comlink
       executorRef.current = wrap<CodeExecutorBase>(workerRef.current);
 
@@ -143,24 +152,38 @@ export function useClang() {
         }),
       );
 
+      // Set up a more direct way to detect when initialization is complete
+      let resolveReady: (() => void) | null = null;
+      const directReadyPromise = new Promise<void>(resolve => {
+        resolveReady = resolve;
+      });
+
       // Initialize the executor - this will trigger the status changes
       await executorRef.current.init(
         proxy((newStatus: RunnerStatus) => {
-          console.log('Worker status changed to:', newStatus);
+          console.log('Worker status changed to:', newStatus + " at " + new Date().toISOString());
           setStatus(newStatus);
           statusRef.current = newStatus;
-          
+
+          // If we reach READY status, immediately resolve our promise
+          if (newStatus === RunnerStatus.READY && resolveReady) {
+            console.log('Detected READY state directly from callback, continuing execution');
+            resolveReady();
+          }
+
           // Also send a direct message for our event listener to catch
           workerRef.current?.postMessage({
             type: 'status',
-            status: newStatus
+            status: newStatus,
           });
         }),
       );
-      
-      // Wait for the ready promise to resolve
-      await readyPromise;
-      
+
+      console.log('Executor initialized, waiting for worker to be ready');
+
+      // Wait for either the direct ready promise or the message-based ready promise to resolve
+      // Whichever happens first will unblock execution
+      await Promise.race([directReadyPromise, readyPromise]);
     } catch (err) {
       console.error('Failed to initialize Clang worker:', err);
       setError(`Failed to initialize Clang worker: ${err}`);
@@ -174,11 +197,23 @@ export function useClang() {
   const compileAndRun = useCallback(
     async (code: string, stdin?: string): Promise<CompileResult> => {
       console.log('compileAndRun called');
-      await init(); // Ensure the worker is initialized
+      
+      // Track if we're initializing or already initialized
+      const initialStatus = statusRef.current;
+      
+      // Initialize the worker if needed
+      await init();
       console.log('after init');
 
-      if (!executorRef.current || status !== RunnerStatus.READY) {
+      // Now the executor should be ready - double check
+      if (!executorRef.current) {
         throw new Error('Clang executor not initialized');
+      }
+      
+      // Make absolutely sure we're ready
+      if (statusRef.current !== RunnerStatus.READY) {
+        // If not ready, throw an error - no waiting
+        throw new Error(`Executor is in ${statusRef.current} state, not READY`);
       }
 
       // Clear previous output
@@ -193,38 +228,71 @@ export function useClang() {
       abortControllerRef.current = new AbortController();
 
       try {
-        // Register a one-time message handler for status changes from direct worker messages
-        const statusHandler = (event: MessageEvent) => {
-          if (event.data && event.data.type === 'runStatus') {
-            setStatus(event.data.status);
-          }
-        };
-        workerRef.current?.addEventListener('message', statusHandler);
-        
-        // Send the run command without passing callbacks directly
-        // The worker will use direct postMessage for status updates
-        await executorRef.current.run(code, {
-          stdIn: stdin,
-        });
-        
-        // Clean up the handler
-        workerRef.current?.removeEventListener('message', statusHandler);
+        // We'll collect output in local variables
+        let outputStdout = '';
+        let outputStderr = '';
 
-        return {
-          stdout,
-          stderr,
-          success: true,
-        };
+        // Create a promise that will resolve when execution is complete
+        const executionPromise = new Promise<{ stdout: string; stderr: string; success: boolean }>((resolve, reject) => {
+          // Register a message handler for stdout, stderr, and status changes
+          const messageHandler = (event: MessageEvent) => {
+            if (event.data && event.data.type === 'stdout') {
+              outputStdout += event.data.data;
+              setStdout(outputStdout);
+            } else if (event.data && event.data.type === 'stderr') {
+              outputStderr += event.data.data;
+              setStderr(outputStderr);
+            } else if (event.data && event.data.type === 'runStatus') {
+              setStatus(event.data.status);
+              if (event.data.status === RunnerStatus.READY) {
+                // Execution is complete
+                workerRef.current?.removeEventListener('message', messageHandler);
+                resolve({
+                  stdout: outputStdout,
+                  stderr: outputStderr,
+                  success: true
+                });
+              } else if (event.data.status === RunnerStatus.FAILED_EXECUTION) {
+                workerRef.current?.removeEventListener('message', messageHandler);
+                resolve({
+                  stdout: outputStdout,
+                  stderr: outputStderr,
+                  success: false
+                });
+              }
+            }
+          };
+          
+          workerRef.current?.addEventListener('message', messageHandler);
+          
+          // Send the run command
+          executorRef.current?.run(code, {
+            stdIn: stdin,
+          }).catch(err => {
+            setError(`Execution error: ${err}`);
+            workerRef.current?.removeEventListener('message', messageHandler);
+            reject(err);
+          });
+        });
+
+        // Execute the code exactly once - no need for multiple attempts
+        // Just wait for the result
+        try {
+          const result = await executionPromise;
+          return result;
+        } catch (err) {
+          throw err;
+        }
       } catch (err) {
         setError(`Execution error: ${err}`);
         return {
-          stdout,
-          stderr: stderr || `Execution error: ${err}`,
+          stdout: '',
+          stderr: `Execution error: ${err}`,
           success: false,
         };
       }
     },
-    [status, stdout, stderr],
+    [status],
   );
 
   // Function to abort the current execution
