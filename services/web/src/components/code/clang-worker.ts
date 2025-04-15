@@ -29,14 +29,22 @@ class ClangWorker implements CodeExecutorBase {
     onStatusChange(RunnerStatus.LOADING);
 
     try {
+      // Create a local function that doesn't try to access this.onStdErr or this.onStdOut directly
+      // This avoids the need to transfer a function that references 'this' context
+      const handleHostWrite = (s: string) => {
+        if (s.includes('Error:')) {
+          // Store the message and use a custom event to signal the main thread
+          const message = s;
+          self.postMessage({ type: 'stderr', data: message });
+        } else {
+          // Store the message and use a custom event to signal the main thread
+          const message = s;
+          self.postMessage({ type: 'stdout', data: message });
+        }
+      };
+
       this.api = new API({
-        hostWrite: (s: string) => {
-          if (s.includes('Error:')) {
-            this.onStdErr?.(s);
-          } else {
-            this.onStdOut?.(s);
-          }
-        },
+        hostWrite: handleHostWrite,
         showTiming: true,
       });
 
@@ -52,8 +60,6 @@ class ClangWorker implements CodeExecutorBase {
   async run(
     code: string,
     options?: {
-      onStatusChange?: (status: RunnerStatus) => void;
-      abort?: () => void;
       stdIn?: string;
       onStdOut?: (data: string) => void;
       onStdErr?: (data: string) => void;
@@ -63,20 +69,30 @@ class ClangWorker implements CodeExecutorBase {
       throw new Error('Clang API not initialized');
     }
 
-    const onStatusChange = options?.onStatusChange;
     const localStdOut = options?.onStdOut || this.onStdOut;
     const localStdErr = options?.onStdErr || this.onStdErr;
 
-    onStatusChange?.(RunnerStatus.RUNNING);
+    // Send status updates directly through postMessage instead of callbacks
+    self.postMessage({ type: 'runStatus', status: RunnerStatus.RUNNING });
 
     try {
       // Compile, link, and run the code
       const result = await this.api.compileLinkRun(code);
-      onStatusChange?.(RunnerStatus.READY);
+      self.postMessage({ type: 'runStatus', status: RunnerStatus.READY });
       // return result;
     } catch (error) {
-      onStatusChange?.(RunnerStatus.FAILED_EXECUTION);
-      localStdErr?.(`Execution error: ${error.toString()}`);
+      self.postMessage({ type: 'runStatus', status: RunnerStatus.FAILED_EXECUTION });
+      if (localStdErr) {
+        try {
+          localStdErr(`Execution error: ${error.toString()}`);
+        } catch (err) {
+          // If the callback fails, fall back to direct message
+          self.postMessage({ type: 'stderr', data: `Execution error: ${error.toString()}` });
+        }
+      } else {
+        // No callback, use direct message
+        self.postMessage({ type: 'stderr', data: `Execution error: ${error.toString()}` });
+      }
       throw error;
     }
   }

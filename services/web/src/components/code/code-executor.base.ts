@@ -7,8 +7,7 @@ export interface CodeExecutorBase {
   setOnStdErr: (error: (data: string) => void) => void;
   // onError
   setOnError: (error: (data: string) => void) => void;
-
-  // todo: status should be global for all instances. We may want to have more than one run to happen at the same time
+  
   init: (onStatusChange: (status: RunnerStatus) => void) => Promise<void>;
 
   run: (
