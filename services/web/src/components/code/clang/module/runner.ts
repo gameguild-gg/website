@@ -1,5 +1,5 @@
-import { create } from 'zustand';
-import { createJSONStorage, persist } from 'zustand/middleware';
+import create from 'zustand';
+import { persist } from 'zustand/middleware';
 import { DefaultCppCode } from '../examples';
 import { Language } from './types';
 import { initWorker } from './utils';
@@ -33,7 +33,7 @@ export const useRunner = create(
           console.log('Workers already initialized, skipping initialization');
           return;
         }
-        
+
         console.log('Initializing workers');
         set((state) => {
           const newWorkerMap = { ...state.workerMap };
@@ -56,7 +56,7 @@ export const useRunner = create(
     {
       name: 'runner-store',
       version: 2,
-      storage: createJSONStorage(() => localStorage),
+      getStorage: () => localStorage,
       partialize: (state) => Object.fromEntries(Object.entries(state).filter(([key]) => key !== 'workerMap')) as any,
     },
   ),
