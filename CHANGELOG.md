@@ -1,3 +1,18 @@
+# [1.19.0](https://github.com/gameguild-gg/website/compare/v1.18.5...v1.19.0) (2025-04-15)
+
+
+### Bug Fixes
+
+* **clang:** fix clang demo dependency ([09f8a22](https://github.com/gameguild-gg/website/commit/09f8a22e9ad5714caa25ae9a56ea24a153beda5a))
+* **courses:** add monte carlo tree search ([24892a9](https://github.com/gameguild-gg/website/commit/24892a982a5733949d7d1abef06169059ab5015a))
+* package json dependency hell ([08c4bf2](https://github.com/gameguild-gg/website/commit/08c4bf26158cb3d52d2c4844f14aeae7400bb627))
+* **schema:** fix schema dump to be consistent between runs ([7b3ca93](https://github.com/gameguild-gg/website/commit/7b3ca93d9e7dd3af51320136d006dd18be645535))
+
+
+### Features
+
+* **latex:** add latex support for markdown renderer ([636af3d](https://github.com/gameguild-gg/website/commit/636af3daff92673b4e8c568bd79c4cefe842fb8f))
+
 ## [1.18.5](https://github.com/gameguild-gg/website/compare/v1.18.4...v1.18.5) (2025-04-11)
 
 
