@@ -152,24 +152,12 @@ export function useClang() {
         }),
       );
 
-      // Set up a more direct way to detect when initialization is complete
-      let resolveReady: (() => void) | null = null;
-      const directReadyPromise = new Promise<void>(resolve => {
-        resolveReady = resolve;
-      });
-
       // Initialize the executor - this will trigger the status changes
       await executorRef.current.init(
         proxy((newStatus: RunnerStatus) => {
           console.log('Worker status changed to:', newStatus + " at " + new Date().toISOString());
           setStatus(newStatus);
           statusRef.current = newStatus;
-
-          // If we reach READY status, immediately resolve our promise
-          if (newStatus === RunnerStatus.READY && resolveReady) {
-            console.log('Detected READY state directly from callback, continuing execution');
-            resolveReady();
-          }
 
           // Also send a direct message for our event listener to catch
           workerRef.current?.postMessage({
@@ -179,11 +167,17 @@ export function useClang() {
         }),
       );
 
-      console.log('Executor initialized, waiting for worker to be ready');
+      console.log('Executor initialized, checking if worker is ready');
+      
+      // Before waiting on the promise, check if we're already in READY state
+      if (statusRef.current === RunnerStatus.READY) {
+        console.log('Worker is already READY, no need to wait for readyPromise');
+        return;
+      }
 
-      // Wait for either the direct ready promise or the message-based ready promise to resolve
-      // Whichever happens first will unblock execution
-      await Promise.race([directReadyPromise, readyPromise]);
+      console.log('Worker not yet ready, waiting for readyPromise to resolve');
+      // Wait for the ready promise to resolve
+      await readyPromise;
     } catch (err) {
       console.error('Failed to initialize Clang worker:', err);
       setError(`Failed to initialize Clang worker: ${err}`);
@@ -216,11 +210,6 @@ export function useClang() {
         throw new Error(`Executor is in ${statusRef.current} state, not READY`);
       }
 
-      // Clear previous output
-      setStdout('');
-      setStderr('');
-      setError(null);
-
       // Create a new abort controller
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
@@ -229,8 +218,8 @@ export function useClang() {
 
       try {
         // We'll collect output in local variables
-        let outputStdout = '';
-        let outputStderr = '';
+        let outputStdout = stdout;
+        let outputStderr = stderr;
 
         // Create a promise that will resolve when execution is complete
         const executionPromise = new Promise<{ stdout: string; stderr: string; success: boolean }>((resolve, reject) => {
