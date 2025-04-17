@@ -1,3 +1,10 @@
+## [1.19.2](https://github.com/gameguild-gg/website/compare/v1.19.1...v1.19.2) (2025-04-17)
+
+
+### Bug Fixes
+
+* **clang:** simplified and streamlined execution flow ([98d853b](https://github.com/gameguild-gg/website/commit/98d853b106bdcb6e21f9babfb9dd1ea0776c037f))
+
 ## [1.19.1](https://github.com/gameguild-gg/website/compare/v1.19.0...v1.19.1) (2025-04-15)
 
 
