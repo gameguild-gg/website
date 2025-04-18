@@ -9,17 +9,18 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
-import { Bold, Code, ExternalLink, HelpCircle, ImageIcon, Italic, Link2, List, ListOrdered, PlusIcon, X } from 'lucide-react';
+import { Bold, CircleHelp, Code, ExternalLink, HelpCircle, ImageIcon, Italic, Link2, List, ListOrdered, PlusIcon, X } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { createProject, Project } from '@/components/projects/actions';
+import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 
 interface NewProjectFormProps {
   onProjectCreated: (project: Project) => void;
 }
 
-export function NewProjectForm({ onProjectCreated }: NewProjectFormProps) {
+export function CreateProjectForm({ onProjectCreated }: NewProjectFormProps) {
   const [isOpen, setIsOpen] = useState(false);
   const router = useRouter();
   const [formData, setFormData] = useState({
@@ -74,10 +75,25 @@ export function NewProjectForm({ onProjectCreated }: NewProjectFormProps) {
             <div className="md:p-16">
               <form onSubmit={handleSubmit} className="flex flex-col flex-1">
                 <Tabs defaultValue="basic" className="flex flex-col flex-1">
-                  <TabsContent value="basic" className="space-y-6">
+                  <TabsContent value="basic" className="py-6 space-y-6">
                     <div className="flex flex-col gap-12">
-                      <Label htmlFor="title" className="text-4xl font-bold leading-tight">
-                        Let’s start with a name for <br /> your project
+                      <Label htmlFor="title" className="flex flex-col items-start justify-center text-4xl align-middle font-bold leading-tight">
+                        <span>Let’s start with a name for</span>
+                        <div className="flex flex-row items-center justify-center gap-2">
+                          <span>your project</span>
+                          <HoverCard>
+                            <HoverCardTrigger asChild>
+                              <CircleHelp className="size-4 text-muted-foreground" />
+                            </HoverCardTrigger>
+                            <HoverCardContent side="right">
+                              <div className="flex flex-col gap-2">
+                                <p className="text-sm text-zinc-500">This is the name of your project.</p>
+                                <p className="text-sm text-zinc-500">It will be visible to anyone who can see your project.</p>
+                                <p className="text-sm text-zinc-500">You can change it later.</p>
+                              </div>
+                            </HoverCardContent>
+                          </HoverCard>
+                        </div>
                       </Label>
                       <Input
                         id="title"
@@ -85,6 +101,7 @@ export function NewProjectForm({ onProjectCreated }: NewProjectFormProps) {
                         onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))}
                         required
                         placeholder="Enter your project name"
+                        className="font-semibold min-h-max bg-transparent dark:bg-transparent border-0 border-b-2 rounded-none text-4xl md:text-4xl placeholder:text-4xl p-0 m-0"
                       />
                     </div>
                     <div>

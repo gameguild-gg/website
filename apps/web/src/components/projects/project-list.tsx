@@ -6,7 +6,7 @@ import { ArrowDownAZ, ArrowUpAZ, ChevronFirst, ChevronLast, ChevronLeft, Chevron
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Project } from './actions';
-import { NewProjectForm } from '@/components/projects/new-project-form';
+import { CreateProjectForm } from '@/components/projects/create-project-form';
 import { ProjectCard } from '@/components/projects/project-card';
 
 type SortField = 'name';
@@ -73,7 +73,7 @@ export function ProjectList({ initialProjects }: ProjectListProps) {
               {sortDirection === 'asc' ? <ArrowUpAZ className="h-4" /> : <ArrowDownAZ className="h-4" />}
             </Button>
           </div>
-          <NewProjectForm onProjectCreated={handleProjectCreated} />
+          <CreateProjectForm onProjectCreated={handleProjectCreated} />
         </div>
       </header>
 
