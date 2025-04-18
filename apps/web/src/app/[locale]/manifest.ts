@@ -1,5 +1,7 @@
 import { MetadataRoute } from 'next';
 
 export default async function manifest(): Promise<MetadataRoute.Manifest> {
-  return {};
+  return {
+    name: 'Game Guild',
+  };
 }

@@ -46,7 +46,7 @@
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
-    "src/global.d.ts",
+    "src/types/global.d.ts",
     "build/types/**/*.ts"
   ],
   "exclude": [
