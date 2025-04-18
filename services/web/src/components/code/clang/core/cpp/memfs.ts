@@ -1,14 +1,40 @@
-import { AbortError } from './errors.js';
+import { AbortError } from './errors';
 import { Memory } from './memory';
 import { assert, ESUCCESS, getImportObject } from './shared';
-import memfsUrl from '../../../../../../public/assets/memfs.wasm?url';
+
+// Import WebAssembly module directly - webpack will handle the path
+import memfsWasmUrl from '../../../../../../public/assets/memfs.wasm';
+const memfsUrl = memfsWasmUrl;
+
+interface MemFSOptions {
+  hostWrite: (message: string) => void;
+  stdinStr?: string;
+}
+
+interface MemFSExports extends WebAssembly.Exports {
+  memory: WebAssembly.Memory;
+  init(): void;
+  GetPathBuf(): number;
+  AddDirectoryNode(pathLength: number): void;
+  AddFileNode(pathLength: number, fileLength: number): number;
+  GetFileNodeAddress(inode: number): number;
+  GetFileNodeSize(inode: number): number;
+  FindNode(pathLength: number): number;
+}
 
 export class MemFS {
-  constructor(options) {
+  private hostWrite: (message: string) => void;
+  private stdinStr: string;
+  private stdinStrPos: number;
+  private hostMem_: Memory | null;
+  private exports!: MemFSExports;
+  private mem!: Memory;
+  public ready: Promise<void>;
+
+  constructor(options: MemFSOptions) {
     this.hostWrite = options.hostWrite;
     this.stdinStr = options.stdinStr || '';
     this.stdinStrPos = 0;
-
     this.hostMem_ = null; // Set later when wired up to application.
 
     // Imports for memfs module.
@@ -20,28 +46,28 @@ export class MemFS {
         // memfs
         const module = await WebAssembly.compile(buffer);
         const instance = await WebAssembly.instantiate(module, { env });
-        this.exports = instance.exports;
+        this.exports = instance.exports as MemFSExports;
         this.mem = new Memory(this.exports.memory);
         this.exports.init();
       });
   }
 
-  set hostMem(mem) {
+  set hostMem(mem: Memory) {
     this.hostMem_ = mem;
   }
 
-  setStdinStr(str) {
+  setStdinStr(str: string): void {
     this.stdinStr = str;
     this.stdinStrPos = 0;
   }
 
-  addDirectory(path) {
+  addDirectory(path: string): void {
     this.mem.check();
     this.mem.write(this.exports.GetPathBuf(), path);
     this.exports.AddDirectoryNode(path.length);
   }
 
-  addFile(path, contents) {
+  addFile(path: string, contents: ArrayBuffer | Uint8Array | string): void {
     const length = contents instanceof ArrayBuffer ? contents.byteLength : contents.length;
     this.mem.check();
     this.mem.write(this.exports.GetPathBuf(), path);
@@ -51,7 +77,7 @@ export class MemFS {
     this.mem.write(addr, contents);
   }
 
-  getFileContents(path) {
+  getFileContents(path: string): Uint8Array {
     this.mem.check();
     this.mem.write(this.exports.GetPathBuf(), path);
     const inode = this.exports.FindNode(path.length);
@@ -60,74 +86,70 @@ export class MemFS {
     return new Uint8Array(this.mem.buffer, addr, size);
   }
 
-  abort() {
+  abort(): never {
     throw new AbortError();
   }
 
-  host_write(fd, iovs, iovs_len, nwritten_out) {
-    this.hostMem_.check();
+  host_write(fd: number, iovs: number, iovs_len: number, nwritten_out: number): number {
+    this.hostMem_!.check();
     assert(fd <= 2);
     let size = 0;
     let str = '';
     for (let i = 0; i < iovs_len; ++i) {
-      const buf = this.hostMem_.read32(iovs);
+      const buf = this.hostMem_!.read32(iovs);
       iovs += 4;
-      const len = this.hostMem_.read32(iovs);
+      const len = this.hostMem_!.read32(iovs);
       iovs += 4;
-      str += this.hostMem_.readStr(buf, len);
+      str += this.hostMem_!.readStr(buf, len);
       size += len;
     }
-    this.hostMem_.write32(nwritten_out, size);
+    this.hostMem_!.write32(nwritten_out, size);
     this.hostWrite(str);
     return ESUCCESS;
   }
 
-  host_read(fd, iovs, iovs_len, nread) {
-    this.hostMem_.check();
+  host_read(fd: number, iovs: number, iovs_len: number, nread: number): number {
+    this.hostMem_!.check();
     assert(fd === 0);
     let size = 0;
     for (let i = 0; i < iovs_len; ++i) {
-      const buf = this.hostMem_.read32(iovs);
+      const buf = this.hostMem_!.read32(iovs);
       iovs += 4;
-      const len = this.hostMem_.read32(iovs);
+      const len = this.hostMem_!.read32(iovs);
       iovs += 4;
       const lenToWrite = Math.min(len, this.stdinStr.length - this.stdinStrPos);
       if (lenToWrite === 0) {
         break;
       }
-      this.hostMem_.write(buf, this.stdinStr.substr(this.stdinStrPos, lenToWrite));
+      this.hostMem_!.write(buf, this.stdinStr.substr(this.stdinStrPos, lenToWrite));
       size += lenToWrite;
       this.stdinStrPos += lenToWrite;
       if (lenToWrite !== len) {
         break;
       }
     }
-    // For logging
-    // this.hostWrite("Read "+ size + "bytes, pos: "+ this.stdinStrPos + "\n");
-    this.hostMem_.write32(nread, size);
+    this.hostMem_!.write32(nread, size);
     return ESUCCESS;
   }
 
-  memfs_log(buf, len) {
+  memfs_log(buf: number, len: number): void {
     this.mem.check();
     console.log(this.mem.readStr(buf, len));
   }
 
-  copy_out(clang_dst, memfs_src, size) {
-    this.hostMem_.check();
-    const dst = new Uint8Array(this.hostMem_.buffer, clang_dst, size);
+  copy_out(clang_dst: number, memfs_src: number, size: number): void {
+    this.hostMem_!.check();
+    const dst = new Uint8Array(this.hostMem_!.buffer, clang_dst, size);
     this.mem.check();
     const src = new Uint8Array(this.mem.buffer, memfs_src, size);
-    // console.log(`copy_out(${clang_dst.toString(16)}, ${memfs_src.toString(16)}, ${size})`);
     dst.set(src);
   }
 
-  copy_in(memfs_dst, clang_src, size) {
+  copy_in(memfs_dst: number, clang_src: number, size: number): void {
     this.mem.check();
     const dst = new Uint8Array(this.mem.buffer, memfs_dst, size);
-    this.hostMem_.check();
-    const src = new Uint8Array(this.hostMem_.buffer, clang_src, size);
-    // console.log(`copy_in(${memfs_dst.toString(16)}, ${clang_src.toString(16)}, ${size})`);
+    this.hostMem_!.check();
+    const src = new Uint8Array(this.hostMem_!.buffer, clang_src, size);
     dst.set(src);
   }
 }

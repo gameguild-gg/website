@@ -3,12 +3,37 @@ import { MemFS } from './memfs';
 import { msToSec } from './shared';
 import { Tar } from './tar';
 
-import clangUrl from '../../../../../../public/assets/clang.wasm';
-import lldUrl from '../../../../../../public/assets/lld.wasm';
-import sysrootUrl from '../../../../../../public/assets/sysroot.tar';
+// Import assets directly so webpack can handle them
+import clangWasmUrl from '../../../../../../public/assets/clang.wasm';
+import lldWasmUrl from '../../../../../../public/assets/lld.wasm';
+import sysrootTarUrl from '../../../../../../public/assets/sysroot.tar';
+
+// These will be properly resolved by webpack during build
+const clangUrl = clangWasmUrl;
+const lldUrl = lldWasmUrl;
+const sysrootUrl = sysrootTarUrl;
+
+interface APIOptions {
+  hostWrite: (message: string) => void;
+  showTiming?: boolean;
+}
+
+interface CompileOptions {
+  input: string;
+  contents: string;
+  obj: string;
+  opt?: string;
+}
 
 export class API {
-  constructor(options) {
+  private moduleCache: { [key: string]: WebAssembly.Module };
+  private hostWrite: (message: string) => void;
+  private showTiming: boolean;
+  private clangCommonArgs: string[];
+  private memfs: MemFS;
+  public ready: Promise<void>;
+
+  constructor(options: APIOptions) {
     this.moduleCache = {};
     this.hostWrite = options.hostWrite;
     this.showTiming = options.showTiming || false;
@@ -38,7 +63,7 @@ export class API {
     });
   }
 
-  async getModule(name) {
+  async getModule(name: string): Promise<WebAssembly.Module> {
     if (this.moduleCache[name]) return this.moduleCache[name];
     const m = await this.hostLogAsync(
       `Fetching and compiling ${name}`,
@@ -51,12 +76,12 @@ export class API {
     return m;
   }
 
-  hostLog(message) {
+  hostLog(message: string): void {
     const yellowArrow = '\x1b[1;93m>\x1b[0m ';
     this.hostWrite(`${yellowArrow}${message}`);
   }
 
-  async hostLogAsync(message, promise) {
+  async hostLogAsync<T>(message: string, promise: Promise<T>): Promise<T> {
     const start = +new Date();
     this.hostLog(`${message}...`);
     const result = await promise;
@@ -70,7 +95,7 @@ export class API {
     return result;
   }
 
-  async untar(memfs, url) {
+  async untar(memfs: MemFS, url: string): Promise<void> {
     await this.memfs.ready;
     const promise = (async () => {
       const tar = new Tar(await fetch(url).then((result) => result.arrayBuffer()));
@@ -79,7 +104,7 @@ export class API {
     await this.hostLogAsync(`Untarring ${url}`, promise);
   }
 
-  async compile(options) {
+  async compile(options: CompileOptions): Promise<App | null> {
     const input = options.input;
     const contents = options.contents;
     const obj = options.obj;
@@ -91,7 +116,7 @@ export class API {
     return await this.run(clang, 'clang', '-cc1', '-emit-obj', ...this.clangCommonArgs, '-O2', '-o', obj, '-x', 'c++', input);
   }
 
-  async link(obj, wasm) {
+  async link(obj: string, wasm: string): Promise<App | null> {
     const stackSize = 1024 * 1024;
 
     const libdir = 'lib/wasm32-wasi';
@@ -117,7 +142,7 @@ export class API {
     );
   }
 
-  async run(module, ...args) {
+  async run(module: WebAssembly.Module, ...args: string[]): Promise<App | null> {
     this.hostLog(`${args.join(' ')}`);
     const start = +new Date();
     const app = new App(module, this.memfs, ...args);
@@ -134,7 +159,7 @@ export class API {
     return stillRunning ? app : null;
   }
 
-  async compileLinkRun(contents) {
+  async compileLinkRun(contents: string): Promise<App | null> {
     const input = `test.cc`;
     const obj = `test.o`;
     const wasm = `test.wasm`;

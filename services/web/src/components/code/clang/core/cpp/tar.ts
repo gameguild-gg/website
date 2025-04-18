@@ -1,31 +1,53 @@
 import { assert, readStr } from './shared';
+import { MemFS } from './memfs';
+
+interface TarEntry {
+  filename: string;
+  mode: number;
+  owner: number;
+  group: number;
+  size: number;
+  mtim: number;
+  checksum: number;
+  type: string;
+  linkname: string;
+  ownerName: string;
+  groupName: string;
+  devMajor: string;
+  devMinor: string;
+  filenamePrefix: string;
+  contents?: Uint8Array;
+}
 
 export class Tar {
-  constructor(buffer) {
+  private u8: Uint8Array;
+  private offset: number;
+
+  constructor(buffer: ArrayBuffer) {
     this.u8 = new Uint8Array(buffer);
     this.offset = 0;
   }
 
-  readStr(len) {
+  private readStr(len: number): string {
     const result = readStr(this.u8, this.offset, len);
     this.offset += len;
     return result;
   }
 
-  readOctal(len) {
+  private readOctal(len: number): number {
     return parseInt(this.readStr(len), 8);
   }
 
-  alignUp() {
+  private alignUp(): void {
     this.offset = (this.offset + 511) & ~511;
   }
 
-  readEntry() {
+  readEntry(): TarEntry | null {
     if (this.offset + 512 > this.u8.length) {
       return null;
     }
 
-    const entry = {
+    const entry: TarEntry = {
       filename: this.readStr(100),
       mode: this.readOctal(8),
       owner: this.readOctal(8),
@@ -35,6 +57,11 @@ export class Tar {
       checksum: this.readOctal(8),
       type: this.readStr(1),
       linkname: this.readStr(100),
+      ownerName: '',
+      groupName: '',
+      devMajor: '',
+      devMinor: '',
+      filenamePrefix: ''
     };
 
     if (this.readStr(8) !== 'ustar  ') {
@@ -61,14 +88,14 @@ export class Tar {
     return entry;
   }
 
-  untar(memfs) {
-    let entry;
+  untar(memfs: MemFS): void {
+    let entry: TarEntry | null;
     while ((entry = this.readEntry())) {
       switch (entry.type) {
         case '0': // Regular file.
-          memfs.addFile(entry.filename, entry.contents);
+          memfs.addFile(entry.filename, entry.contents!);
           break;
-        case '5':
+        case '5': // Directory
           memfs.addDirectory(entry.filename);
           break;
       }

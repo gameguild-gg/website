@@ -1,5 +1,7 @@
 import { API } from './api';
 
+declare const __webpack_public_path__: string;
+
 let api: API;
 let port: MessagePort;
 

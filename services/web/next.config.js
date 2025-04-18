@@ -151,8 +151,18 @@ const nextConfig = {
         use: 'raw-loader',
       },
       {
-        test: /\.(pack|br|a|tar|wasm)$/,
+        test: /\.wasm$/,
         type: 'asset/resource',
+        generator: {
+          filename: 'static/wasm/[name].[hash][ext]',
+        },
+      },
+      {
+        test: /\.(pack|br|a|tar)$/,
+        type: 'asset/resource',
+        generator: {
+          filename: 'static/assets/[name].[hash][ext]',
+        },
       },
       // {
       //   test: /\.worker\.[cm]?js$/i,
