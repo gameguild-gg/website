@@ -17,18 +17,26 @@ export function useClang() {
   const workerRef = useRef<Worker | null>(null);
   const executorRef = useRef<CodeExecutorBase | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
-  // Track the current status in a ref that we can check directly
-  const statusRef = useRef<RunnerStatus>(status);
 
-  // Keep the ref updated when status changes
-  useEffect(() => {
-    statusRef.current = status;
-  }, [status]);
+  // Function to update the status asynchronously
+  const updateStatus = useCallback(async () => {
+    if (executorRef.current) {
+      try {
+        const currentStatus = await executorRef.current.getStatus();
+        setStatus(currentStatus);
+        return currentStatus;
+      } catch (err) {
+        console.error('Failed to get status:', err);
+        return RunnerStatus.UNINITIALIZED;
+      }
+    }
+    return RunnerStatus.UNINITIALIZED;
+  }, []);
 
   const init = async (): Promise<void> => {
     if (workerRef.current && executorRef.current) {
       // If already initialized and ready, check status directly
-      const currentStatus = executorRef.current.getStatus();
+      const currentStatus = await updateStatus();
       if (currentStatus === RunnerStatus.READY) {
         console.log('Worker already initialized and ready');
         return;
@@ -38,8 +46,8 @@ export function useClang() {
       // by calling init() again - it will wait for the API to be ready
       console.log('Worker already initializing, waiting for ready status...');
       const status = await executorRef.current.init();
+      // Update our status state with the worker's status
       setStatus(status);
-      statusRef.current = status;
       
       if (status === RunnerStatus.FAILED_LOADING) {
         throw new Error('Worker failed to initialize');
@@ -76,14 +84,16 @@ export function useClang() {
         }),
       );
 
+      // Update status to loading
+      setStatus(RunnerStatus.LOADING);
+      
       // Initialize the worker and wait for ready status
       console.log('Initializing worker...');
       const status = await executorRef.current.init();
       console.log('Worker initialization complete, status:', status);
       
-      // Update our local status
+      // Update our status state with the worker's status
       setStatus(status);
-      statusRef.current = status;
       
       if (status === RunnerStatus.FAILED_LOADING) {
         throw new Error('Worker failed to initialize');
@@ -92,7 +102,6 @@ export function useClang() {
       console.error('Failed to initialize Clang worker:', err);
       setError(`Failed to initialize Clang worker: ${err}`);
       setStatus(RunnerStatus.FAILED_LOADING);
-      statusRef.current = RunnerStatus.FAILED_LOADING;
       throw err;
     }
   };
@@ -101,9 +110,6 @@ export function useClang() {
   const compileAndRun = useCallback(
     async (code: string, stdin?: string): Promise<CompileResult> => {
       console.log('compileAndRun called');
-      
-      // Track if we're initializing or already initialized
-      const initialStatus = statusRef.current;
       
       // Initialize the worker if needed
       await init();
@@ -114,10 +120,11 @@ export function useClang() {
         throw new Error('Clang executor not initialized');
       }
       
-      // Make absolutely sure we're ready
-      if (statusRef.current !== RunnerStatus.READY) {
+      // Make absolutely sure we're ready by checking the status
+      const currentStatus = await updateStatus();
+      if (currentStatus !== RunnerStatus.READY) {
         // If not ready, throw an error - no waiting
-        throw new Error(`Executor is in ${statusRef.current} state, not READY`);
+        throw new Error(`Executor is in ${currentStatus} state, not READY`);
       }
 
       // Create a new abort controller
@@ -132,9 +139,8 @@ export function useClang() {
         setStderr('');
         setError(null);
         
-        // Set status to running
+        // Update status to RUNNING
         setStatus(RunnerStatus.RUNNING);
-        statusRef.current = RunnerStatus.RUNNING;
         
         // Execute the code and wait for the result directly
         const result = await executorRef.current.run(code, {
@@ -145,7 +151,6 @@ export function useClang() {
         setStdout(result.stdout);
         setStderr(result.stderr);
         setStatus(result.status);
-        statusRef.current = result.status;
         
         return {
           stdout: result.stdout,
@@ -154,6 +159,7 @@ export function useClang() {
         };
       } catch (err) {
         setError(`Execution error: ${err}`);
+        setStatus(RunnerStatus.FAILED_EXECUTION);
         return {
           stdout: '',
           stderr: `Execution error: ${err}`,
@@ -161,7 +167,7 @@ export function useClang() {
         };
       }
     },
-    [status],
+    [init, updateStatus],
   );
 
   // Function to abort the current execution
@@ -176,6 +182,7 @@ export function useClang() {
     init,
     compileAndRun,
     abort,
+    // Use the local status state
     status,
     stdout,
     stderr,

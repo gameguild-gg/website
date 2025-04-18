@@ -27,6 +27,97 @@ I wasn't able to finish the material for this week because I had to improve the 
 
 :::
 
+## Implementation
+
+### Data Structures
+
+``` c++
+class MCTSNode {
+public:
+    // optionally use smart pointers 
+    MCTSNode* parent;
+    std::vector<MCTSNode*> children;
+    int wins;
+    int visits;
+    // change this to be your game state
+    GameState state;
+
+    MCTSNode(GameState state) : parent(nullptr), wins(0), visits(0), state(state) {}
+
+    double ucb() {
+        // initialize the UCB value as the maximum value in order to mark them as high priority to visit
+        if (visits == 0) return std::numeric_limits<double>::max();
+        return ((double)wins / visits) + sqrt(2 * log(parent->visits) / visits);
+    }
+};
+```
+
+### MCTS functions
+
+#### Selection
+
+``` c++
+MCTSNode* select(MCTSNode* node) {
+    // for all nodes
+    while (!node->children.empty()) {
+        // Select the child with the highest UCB value
+        MCTSNode* bestChild = *std::max_element(node->children.begin(), node->children.end(),
+            [](MCTSNode* a, MCTSNode* b) { return a->ucb() < b->ucb(); });
+        node = bestChild;
+    }
+    return node;
+}
+```
+
+#### Expansion
+
+``` c++
+void expand(MCTSNode* node) {
+    // Generate all possible moves from the current state
+    std::vector<GameState> possibleStates = node->state.getPossibleStates();
+    for (const GameState& state : possibleStates) {
+        // note that all new child will have a ucb as max value, so the selection will prefer them, this is intentional
+        MCTSNode* childNode = new MCTSNode(state);
+        childNode->parent = node;
+        node->children.push_back(childNode);
+    }
+}
+```
+
+#### Simulation
+
+``` c++
+// this can be a boolean, score, the state or whatever you prefer
+boolean simulate(MCTSNode* node) {
+    GameState currentState = node->state;
+    // Simulate a random game until a terminal state is reached
+    // or until a certain depth, or iterations, time limit or any heuristic 
+    while (!currentState.isTerminal()) {
+        // this will be called a lot, thats why your generate possible states should be fast
+        std::vector<GameState> possibleStates = currentState.getPossibleStates();
+        // Randomly select one of the possible states
+        // Here you can use a more sophisticated policy instead of random
+        // or if the depth is too deep, you can use a heuristic to decide the "winner" and avoid deepening more
+        currentState = possibleStates[rand() % possibleStates.size()];
+    }
+    return currentState;
+}
+```
+
+#### Backpropagation
+
+``` c++
+void backpropagate(MCTSNode* node, boolean win) {
+    // Backpropagate the result up to the root node
+    while (node != nullptr) {
+        node->visits++;
+        if (win)
+            node->wins++;
+        node = node->parent;
+    }
+}
+```
+
 - [Animation](https://vgarciasc.github.io/mcts-viz/)
 - [Text](https://uq.pressbooks.pub/mastering-reinforcement-learning/chapter/monte-carlo-tree-search/)
 - [Presentation](https://duvenaud.github.io/learning-to-search/slides/week3/MCTSintro.pdf)
@@ -45,3 +136,4 @@ Other resources:
   <li><a href="https://duvenaud.github.io/learn-discrete/slides/Thinking-Fast-and-Slow-with-Deep-Learning-and-Tree-Search.pdf">Alex Adam and Fartash Faghri’s thinking fast and slow slides</a></li>
   <li><a href="https://www.inference.vc/alphago-zero-policy-improvement-and-vector-fields/">Ferenc Huszar’s blog post on Expert Iteration</a></li>
 </ul>
+
