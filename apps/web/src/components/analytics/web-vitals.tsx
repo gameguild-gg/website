@@ -11,10 +11,7 @@ export function WebVitals() {
     // } else {
     // TODO: Fallback to `fetch` if `navigator.sendBeacon` is not available.
     // }
-
     // TODO: https://github.com/GoogleChrome/web-vitals#send-the-results-to-google-analytics
-
-    console.log('Web Vital Metrics: %O', metric);
   });
 
   return null;

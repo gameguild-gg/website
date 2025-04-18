@@ -6,9 +6,10 @@ import { setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { GoogleAnalytics, GoogleTagManager } from '@next/third-parties/google';
 import { environment } from '@/config/environment';
-
 import { ThemeToggle } from '@/components/theme/theme-toggle';
 import { ThemeProvider } from '@/components/theme/theme-provider';
+import { FloatingFeedbackButton } from '@/components/floating-issue-button/floating-issue-button';
+import { WebVitals } from '@/components/analytics/web-vitals';
 
 type Props = {
   children: ReactNode;
@@ -27,19 +28,14 @@ export default async function Layout({ children, params }: Props): Promise<React
   return (
     <html lang={locale} suppressHydrationWarning>
       <body>
+        <WebVitals />
         <NextIntlClientProvider>
           <GoogleAnalytics gaId={environment.GoogleAnalyticsMeasurementId} />
           <GoogleTagManager gtmId={environment.GoogleTagManagerId} />
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
             <ThemeToggle />
-            {/*<Web3Provider>*/}
-            {/*  <TooltipProvider>*/}
-            {/*    */}
-            {/*  </TooltipProvider>*/}
-            {/*  <FloatingFeedbackButton />*/}
-            {/*  <Toaster />*/}
-            {/*</Web3Provider>*/}
             {children}
+            <FloatingFeedbackButton />
           </ThemeProvider>
         </NextIntlClientProvider>
       </body>
