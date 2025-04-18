@@ -5,20 +5,36 @@ import { RunnerStatus } from './code-executor.types';
 
 type CompileResult = {
   stdout: string;
-  stderr: string;
   success: boolean;
 };
 
 export function useClang() {
   const [status, setStatus] = useState<RunnerStatus>(RunnerStatus.UNINITIALIZED);
-  const [stdout, setStdout] = useState<string>('');
-  const [stderr, setStderr] = useState<string>('');
+  // Stage-specific outputs - only stdout
+  const [initOutput, setInitOutput] = useState('');
+  const [compilerOutput, setCompilerOutput] = useState('');
+  const [linkerOutput, setLinkerOutput] = useState('');
+  const [executionOutput, setExecutionOutput] = useState('');
   const [error, setError] = useState<string | null>(null);
   const workerRef = useRef<Worker | null>(null);
-  // Using Comlink's Remote type to properly type the wrapped worker
-  // This transforms all methods to return Promises as Comlink does
   const executorRef = useRef<Remote<CodeExecutorBase> | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const currentStageRef = useRef<'init' | 'compile' | 'link' | 'execute'>('init');
+  const currentOutputRef = useRef<string>('');
+
+  // Helper to get the appropriate output setter based on current stage
+  const getOutputSetter = (stage: typeof currentStageRef.current) => {
+    switch (stage) {
+      case 'init':
+        return setInitOutput;
+      case 'compile':
+        return setCompilerOutput;
+      case 'link':
+        return setLinkerOutput;
+      case 'execute':
+        return setExecutionOutput;
+    }
+  };
 
   // Function to update the status asynchronously
   const updateStatus = useCallback(async () => {
@@ -37,18 +53,12 @@ export function useClang() {
 
   const init = async (): Promise<void> => {
     if (workerRef.current && executorRef.current) {
-      // If already initialized and ready, check status directly
       const currentStatus = await updateStatus();
       if (currentStatus === RunnerStatus.READY) {
-        console.log('Worker already initialized and ready');
         return;
       }
 
-      // If already initializing but not ready, wait for initialization to complete
-      // by calling init() again - it will wait for the API to be ready
-      console.log('Worker already initializing, waiting for ready status...');
       const status = await executorRef.current.init();
-      // Update our status state with the worker's status
       setStatus(status);
       
       if (status === RunnerStatus.FAILED_LOADING) {
@@ -59,115 +69,85 @@ export function useClang() {
     }
 
     try {
-      // Create the worker
-      console.log('before worker');
+      currentStageRef.current = 'init';
       workerRef.current = new Worker(new URL('./clang-worker.ts', import.meta.url), { type: 'module' });
-      console.log('after worker');
-
-      // Create the executor from the worker using Comlink
       executorRef.current = wrap<CodeExecutorBase>(workerRef.current);
 
-      // Set up the callbacks (these are one-way communication and safe)
+      // Set up stdout callback
       executorRef.current.setOnStdOut(
         proxy((data: string) => {
-          setStdout((prev) => prev + data);
+          currentOutputRef.current += data;
+          const setter = getOutputSetter(currentStageRef.current);
+          setter(currentOutputRef.current);
         }),
       );
 
-      executorRef.current.setOnStdErr(
-        proxy((data: string) => {
-          setStderr((prev) => prev + data);
-        }),
-      );
+      // Initialize empty callbacks for stderr and error since we don't use them
+      executorRef.current.setOnStdErr(proxy(() => {}));
+      executorRef.current.setOnError(proxy(() => {}));
 
-      executorRef.current.setOnError(
-        proxy((data: string) => {
-          setError(data);
-        }),
-      );
-
-      // Update status to loading
       setStatus(RunnerStatus.LOADING);
       
-      // Initialize the worker and wait for ready status
-      console.log('Initializing worker...');
       const status = await executorRef.current.init();
-      console.log('Worker initialization complete, status:', status);
-      
-      // Update our status state with the worker's status
       setStatus(status);
       
       if (status === RunnerStatus.FAILED_LOADING) {
         throw new Error('Worker failed to initialize');
       }
     } catch (err) {
-      console.error('Failed to initialize Clang worker:', err);
       setError(`Failed to initialize Clang worker: ${err}`);
       setStatus(RunnerStatus.FAILED_LOADING);
       throw err;
     }
   };
 
-  // Function to compile, link, and run C++ code
   const compileAndRun = useCallback(
     async (code: string, stdin?: string): Promise<CompileResult> => {
-      console.log('compileAndRun called');
-      
-      // Initialize the worker if needed
-      await init();
-      console.log('after init');
-
-      // Now the executor should be ready - double check
-      if (!executorRef.current) {
-        throw new Error('Clang executor not initialized');
-      }
-      
-      // Make absolutely sure we're ready by checking the status
-      const currentStatus = await updateStatus();
-      if (currentStatus !== RunnerStatus.READY) {
-        // If not ready, throw an error - no waiting
-        throw new Error(`Executor is in ${currentStatus} state, not READY`);
-      }
-
-      // Create a new abort controller
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
-      abortControllerRef.current = new AbortController();
-
       try {
-        // Clear previous output
-        // setStdout('');
-        // setStderr('');
-        // setError(null);
+        // Start with initialization
+        currentStageRef.current = 'init';
+        currentOutputRef.current = '';
+        setInitOutput('');
+        setCompilerOutput('');
+        setLinkerOutput('');
+        setExecutionOutput('');
+        setError(null);
 
+        await init();
+
+        if (!executorRef.current) {
+          throw new Error('Clang executor not initialized');
+        }
         
-        // Update status to RUNNING
+        const currentStatus = await updateStatus();
+        if (currentStatus !== RunnerStatus.READY) {
+          throw new Error(`Executor is in ${currentStatus} state, not READY`);
+        }
+
+        if (abortControllerRef.current) {
+          abortControllerRef.current.abort();
+        }
+        abortControllerRef.current = new AbortController();
+        
         setStatus(RunnerStatus.RUNNING);
+        
+        // Move to compilation stage
+        currentStageRef.current = 'compile';
+        currentOutputRef.current = '';
 
-        console.log('Running code with executor');
+        const result = await executorRef.current.run(code, { stdIn: stdin });
         
-        // Execute the code and wait for the result directly
-        const result = await executorRef.current.run(code, {
-          stdIn: stdin
-        });
-        
-        // Update UI with the result data
-        setStdout(result.stdout);
-        setStderr(result.stderr);
         setStatus(result.status);
         
         return {
           stdout: result.stdout,
-          stderr: result.stderr,
           success: result.success
         };
       } catch (err) {
         setError(`Execution error: ${err}`);
         setStatus(RunnerStatus.FAILED_EXECUTION);
         return {
-          stdout: '',
-          stderr: `Execution error: ${err}`,
+          stdout: `Execution error: ${err}`,
           success: false,
         };
       }
@@ -175,7 +155,6 @@ export function useClang() {
     [init, updateStatus],
   );
 
-  // Function to abort the current execution
   const abort = useCallback(() => {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
@@ -187,10 +166,11 @@ export function useClang() {
     init,
     compileAndRun,
     abort,
-    // Use the local status state
     status,
-    stdout,
-    stderr,
+    initOutput,
+    compilerOutput,
+    linkerOutput,
+    executionOutput,
     error,
   };
 }

@@ -71,11 +71,10 @@ export class App {
       }
 
       // Write error message.
-      let msg = `\x1b[91mError: ${(exn as Error).message}`;
+      let msg = `${(exn as Error).message}`;
       if (writeStack) {
         msg = msg + `\n${(exn as Error).stack}`;
       }
-      msg += '\x1b[0m\n';
       this.memfs.hostWrite(msg);
 
       // Propagate error.

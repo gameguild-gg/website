@@ -30,9 +30,28 @@ export class API {
   private clangCommonArgs: string[];
   private memfs: MemFS;
   public ready: Promise<void>;
+  private currentStage: 'init' | 'compile' | 'link' | 'execute' = 'init';
+
+  // Public methods for file system operations
+  public setStdinStr(input: string): void {
+    this.memfs.setStdinStr(input);
+  }
+
+  public getFileContents(path: string): Uint8Array {
+    return this.memfs.getFileContents(path);
+  }
+
+  public addFile(path: string, content: string | Uint8Array): void {
+    this.memfs.addFile(path, content);
+  }
+
+  public addDirectory(path: string): void {
+    this.memfs.addDirectory(path);
+  }
 
   constructor(options: APIOptions) {
     this.moduleCache = {};
+    this.currentStage = 'init';
     this.hostWrite = options.hostWrite;
 
     this.clangCommonArgs = [
@@ -96,6 +115,7 @@ export class API {
   }
 
   async compile(options: CompileOptions): Promise<App | null> {
+    this.currentStage = 'compile';
     const input = options.input;
     const contents = options.contents;
     const obj = options.obj;
@@ -104,10 +124,13 @@ export class API {
     await this.ready;
     this.memfs.addFile(input, contents);
     const clang = await this.getModule(clangUrl);
-    return await this.run(clang, 'clang', '-cc1', '-emit-obj', ...this.clangCommonArgs, '-O2', '-o', obj, '-x', 'c++', input);
+    const result = await this.run(clang, 'clang', '-cc1', '-emit-obj', ...this.clangCommonArgs, '-O2', '-o', obj, '-x', 'c++', '-std=c++2a', input);
+    this.hostWrite('\n'); // Add a separator after compilation
+    return result;
   }
 
   async link(obj: string, wasm: string): Promise<App | null> {
+    this.currentStage = 'link';
     const stackSize = 1024 * 1024;
 
     const libdir = 'lib/wasm32-wasi';
@@ -115,11 +138,11 @@ export class API {
 
     await this.ready;
     const lld = await this.getModule(lldUrl);
-    return await this.run(
+    const result = await this.run(
       lld,
       'wasm-ld',
       '--no-threads',
-      '--export-dynamic', // TODO required?
+      '--export-dynamic',
       '-z',
       `stack-size=${stackSize}`,
       `-L${libdir}`,
@@ -131,28 +154,38 @@ export class API {
       '-o',
       wasm,
     );
+    this.hostWrite('\n'); // Add a separator after linking
+    return result;
   }
 
   async run(module: WebAssembly.Module, ...args: string[]): Promise<App | null> {
-    this.hostLog(`${args.join(' ')}`);
-    const start = +new Date();
+    // Only change to execute stage if not running a toolchain command
+    if (!args[0].includes('clang') && !args[0].includes('wasm-ld')) {
+      this.currentStage = 'execute';
+      this.hostWrite('\n'); // Add a separator before execution
+    }
+
+    this.hostLog(`${args.join(' ')}\n`);
     const app = new App(module, this.memfs, ...args);
-    const instantiate = +new Date();
     const stillRunning = await app.run();
-    const end = +new Date();
     return stillRunning ? app : null;
   }
 
   async compileLinkRun(contents: string): Promise<App | null> {
-    const input = `test.cc`;
+    const input = `test.cpp`;
     const obj = `test.o`;
     const wasm = `test.wasm`;
-    await this.compile({ input, contents, obj });
-    await this.link(obj, wasm);
 
-    const buffer = this.memfs.getFileContents(wasm);
-    const testMod = await WebAssembly.compile(buffer);
+    try {
+      await this.compile({ input, contents, obj });
+      await this.link(obj, wasm);
 
-    return await this.run(testMod, wasm);
+      const buffer = this.memfs.getFileContents(wasm);
+      const testMod = await WebAssembly.compile(buffer);
+      return await this.run(testMod, wasm);
+    } catch (error) {
+      this.hostWrite(`Error: ${error}\n`);
+      return null;
+    }
   }
 }
