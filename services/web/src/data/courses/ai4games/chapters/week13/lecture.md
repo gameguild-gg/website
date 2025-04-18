@@ -40,6 +40,7 @@ public:
     int wins;
     int visits;
     // change this to be your game state
+    // hint: use a compressed state representation
     GameState state;
 
     MCTSNode(GameState state) : parent(nullptr), wins(0), visits(0), state(state) {}
@@ -100,7 +101,7 @@ boolean simulate(MCTSNode* node) {
         // or if the depth is too deep, you can use a heuristic to decide the "winner" and avoid deepening more
         currentState = possibleStates[rand() % possibleStates.size()];
     }
-    return currentState;
+    return evaluate(currentState); // or whatever you want to return
 }
 ```
 
@@ -118,7 +119,29 @@ void backpropagate(MCTSNode* node, boolean win) {
 }
 ```
 
-- [Animation](https://vgarciasc.github.io/mcts-viz/)
+### Deciding the move
+
+Once the MCTS algorithm has been run for a certain number of iterations or time limit, you can decide the best move by selecting the child node with the highest number of visits, wins or win rate.
+
+``` c++
+MCTSNode* bestMove(MCTSNode* root) {
+    MCTSNode* bestChild = nullptr;
+    float winrate = std::numeric_limits<float>::min();
+    for (MCTSNode* child : root->children) {
+        // you can use the winrate or the number of wins
+        float currentWinrate = (float)child->wins / child->visits;
+        if (currentWinrate > winrate) {
+            winrate = currentWinrate;
+            bestChild = child;
+        }
+    }
+    // in your implementation, you can return state or the move which generated the state
+    return bestChild;
+}
+```
+
+
+- [Animation](https://vgarciasc.github.io/mcts-viz/)    
 - [Text](https://uq.pressbooks.pub/mastering-reinforcement-learning/chapter/monte-carlo-tree-search/)
 - [Presentation](https://duvenaud.github.io/learning-to-search/slides/week3/MCTSintro.pdf)
 
@@ -137,3 +160,11 @@ Other resources:
   <li><a href="https://www.inference.vc/alphago-zero-policy-improvement-and-vector-fields/">Ferenc Huszar’s blog post on Expert Iteration</a></li>
 </ul>
 
+
+Content:
+
+- Read https://www.geeksforgeeks.org/ml-monte-carlo-tree-search-mcts/
+- Read https://www.chessprogramming.org/Monte-Carlo_Tree_Search
+- Read https://www.chessprogramming.org/UCT
+- UCT visualized: https://www.geogebra.org/3d/qw9efwtf
+- Visualize MCTS https://vgarciasc.github.io/mcts-viz/ 
