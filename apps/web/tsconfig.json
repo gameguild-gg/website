@@ -1,31 +1,21 @@
 {
   "compilerOptions": {
-    "baseUrl": ".",
-    "rootDir": "./",
-    "module": "esnext",
-    "jsx": "preserve",
-    "target": "esnext",
-    "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
-    "forceConsistentCasingInFileNames": true,
-    "strict": true,
-    "skipLibCheck": true,
-    "experimentalDecorators": true,
-    "emitDecoratorMetadata": true,
-    "moduleResolution": "node",
-    "noImplicitAny": false,
-    "strictNullChecks": false,
-    "strictPropertyInitialization": false,
+    "target": "ES2017",
     "lib": [
       "dom",
       "dom.iterable",
-      "esnext",
-      "WebWorker"
+      "esnext"
     ],
     "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
     "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
+    "jsx": "preserve",
     "incremental": true,
     "plugins": [
       {
@@ -35,19 +25,14 @@
     "paths": {
       "@/*": [
         "./src/*"
-      ],
-      "*": [
-        "node_modules/*"
       ]
-    },
+    }
   },
   "include": [
     "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx",
-    ".next/types/**/*.ts",
-    "src/types/global.d.ts",
-    "build/types/**/*.ts"
+    ".next/types/**/*.ts"
   ],
   "exclude": [
     "node_modules"
