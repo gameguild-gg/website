@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import { TextArea } from '@/components/ui/textArea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/components/ui/use-toast';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -41,10 +41,7 @@ export default function JobPost() {
       router.push('/connect');
       return;
     }
-    const response = await jobTagsApi.getManyBaseJobTagControllerJobTagEntity(
-      {},
-      { headers: { Authorization: `Bearer ${session.user.accessToken}` } },
-    );
+    const response = await jobTagsApi.getManyBaseJobTagControllerJobTagEntity({}, { headers: { Authorization: `Bearer ${session.user.accessToken}` } });
     // console.log('All Jobs Response:\n',response)
     if (response.status == 200) {
       setJobTags(response.body);
@@ -58,9 +55,7 @@ export default function JobPost() {
   };
 
   const handleSkillSelection = (skill: string) => {
-    setSelectedSkills((prev) =>
-      prev.includes(skill) ? prev.filter((s) => s !== skill) : [...prev, skill],
-    );
+    setSelectedSkills((prev) => (prev.includes(skill) ? prev.filter((s) => s !== skill) : [...prev, skill]));
   };
 
   const handleReturn = () => {
@@ -79,20 +74,19 @@ export default function JobPost() {
       return;
     }
 
-    const response =
-      await jobPostsApi.createOneBaseJobPostControllerJobPostEntity(
-        {
-          title: title,
-          slug: slugify(title + '-' + new Date().getTime()),
-          summary: description,
-          body: description,
-          location: location,
-          job_tag_ids: selectedSkills,
-        } as Api.JobPostCreateDto,
-        {
-          headers: { Authorization: `Bearer ${session.user.accessToken}` },
-        },
-      );
+    const response = await jobPostsApi.createOneBaseJobPostControllerJobPostEntity(
+      {
+        title: title,
+        slug: slugify(title + '-' + new Date().getTime()),
+        summary: description,
+        body: description,
+        location: location,
+        job_tag_ids: selectedSkills,
+      } as Api.JobPostCreateDto,
+      {
+        headers: { Authorization: `Bearer ${session.user.accessToken}` },
+      },
+    );
     if (response.status == 201) {
       toast({
         title: 'Sucess!',
@@ -120,38 +114,19 @@ export default function JobPost() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="title">Job Title</Label>
-              <Input
-                id="title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                required
-              />
+              <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} required />
             </div>
             <div className="space-y-2">
               <Label htmlFor="description">Job Description</Label>
-              <Textarea
-                id="description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                required
-                className="min-h-[100px]"
-              />
+              <TextArea id="description" value={description} onChange={(e) => setDescription(e.target.value)} required className="min-h-[100px]" />
             </div>
             <div className="space-y-2">
               <Label htmlFor="location">Location</Label>
-              <Input
-                id="location"
-                value={location}
-                onChange={(e) => setLocation(e.target.value)}
-                required
-              />
+              <Input id="location" value={location} onChange={(e) => setLocation(e.target.value)} required />
             </div>
             <div className="space-y-2 w-full">
               <Label htmlFor="location">Type</Label>
-              <Select
-                value={jobType}
-                onValueChange={(value) => setJobType(value)}
-              >
+              <Select value={jobType} onValueChange={(value) => setJobType(value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select a fruit" />
                 </SelectTrigger>
@@ -173,9 +148,7 @@ export default function JobPost() {
                         id={skill.id}
                         // checked={selectedSkills.includes(skill.id)}
                         checked={selectedSkills.includes(skill.id ?? '')}
-                        onCheckedChange={() =>
-                          handleSkillSelection(skill.id ?? '')
-                        }
+                        onCheckedChange={() => handleSkillSelection(skill.id ?? '')}
                       />
                       <Label htmlFor={skill.id}>{skill.name}</Label>
                     </div>

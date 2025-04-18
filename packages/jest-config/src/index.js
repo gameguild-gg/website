@@ -1,6 +1,6 @@
-/** @type {import("jest").Config} */
+/** @type {import('jest').Config} */
 const config = {
   verbose: true,
 };
 
-module.exports = config;
+export default config;

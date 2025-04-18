@@ -61,14 +61,23 @@ export default function Header() {
   const router = useRouter();
 
   useEffect(() => {
+    // Only fetch the session once when the component mounts
+    // Next.js will handle session updates through its built-in mechanisms
+    // No need for polling which can cause performance issues
     getUserData();
-  }, []);
+  }, []); // Only run once on mount
 
   const getUserData = async () => {
-    const session = await getSession();
-    if (session && session.user) {
-      // console.log('session.user: ',session?.user)
-      setUser(session.user);
+    try {
+      const session = await getSession();
+      if (session && session.user) {
+        setUser(session.user);
+      } else {
+        setUser(null);
+      }
+    } catch (error) {
+      console.error('Error getting session:', error);
+      setUser(null);
     }
   };
 

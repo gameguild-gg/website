@@ -3,14 +3,7 @@ import { CompetitionRunEntity } from './competition.run.entity';
 import { CompetitionSubmissionEntity } from './competition.submission.entity';
 import { EntityBase } from '../../common/entities/entity.base';
 import { ApiProperty } from '@nestjs/swagger';
-import {
-  IsEnum,
-  IsNotEmpty,
-  IsNumber,
-  IsOptional,
-  IsString,
-  ValidateNested,
-} from 'class-validator';
+import { IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 import { IsIntegerNumber } from '../../common/decorators/validator.decorator';
 
@@ -22,10 +15,7 @@ export enum CompetitionWinner {
 @Entity()
 export class CompetitionMatchEntity extends EntityBase {
   // competition run
-  @ManyToOne(
-    () => CompetitionRunEntity,
-    (competitionRun) => competitionRun.matches,
-  )
+  @ManyToOne(() => CompetitionRunEntity, (competitionRun) => competitionRun.matches)
   @ApiProperty({ type: () => CompetitionRunEntity })
   @ValidateNested()
   @Type(() => CompetitionRunEntity)
@@ -71,6 +61,18 @@ export class CompetitionMatchEntity extends EntityBase {
   @IsNotEmpty({ message: 'error.IsNotEmpty: p2Points should not be empty' })
   @IsNumber({}, { message: 'error.IsNumber: p2Points should be a number' })
   p2Points: number;
+
+  @Column({ type: 'float4', nullable: false, default: 0 })
+  @ApiProperty()
+  @IsNotEmpty({ message: 'error.IsNotEmpty: p1cpuTime should not be empty' })
+  @IsNumber({}, { message: 'error.IsNumber: p1cpuTime should be a number' })
+  p1cpuTime: number;
+
+  @Column({ type: 'float4', nullable: false, default: 0 })
+  @ApiProperty()
+  @IsNotEmpty({ message: 'error.IsNotEmpty: p2cpuTime should not be empty' })
+  @IsNumber({}, { message: 'error.IsNumber: p2cpuTime should be a number' })
+  p2cpuTime: number;
 
   @Column({ type: 'integer', nullable: false })
   @ApiProperty()

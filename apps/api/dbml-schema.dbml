@@ -25,9 +25,11 @@ Table CompetitionMatchEntity {
   id uuid
   lastState text
   logs text
+  p1cpuTime float4
   p1Points float
   p1submission CompetitionSubmissionEntity
   p1Turns integer
+  p2cpuTime float4
   p2Points float
   p2submission CompetitionSubmissionEntity
   p2Turns integer
@@ -183,6 +185,7 @@ Table LectureEntity {
   course CourseEntity
   createdAt timestamp
   id uuid
+  json jsonb
   order float
   owner UserEntity
   renderer enum

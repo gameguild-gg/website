@@ -69,7 +69,7 @@ export default function WasmerBlock(params: CodeInterfaceProps) {
       <Card className="bg-[#2d2d2d] text-white p-4 min-h-[150px] font-mono">
         {wasmerStatus == WasmerStatus.UNINITIALIZED && <p>Wasmer Uninitialized</p>}
         {wasmerStatus == WasmerStatus.LOADING_WASMER && <p>Loading Wasmer...</p>}
-        {wasmerStatus == WasmerStatus.LOADING_PACKAGE && <p>Loading Python...</p>}
+        {wasmerStatus == WasmerStatus.LOADING_PACKAGE && <p>Loading {params.language} tools...</p>}
         {wasmerStatus == WasmerStatus.RUNNING && <p>Running...</p>}
         {wasmerStatus == WasmerStatus.FAILED_EXECUTION && <p>Failed Execution</p>}
         {wasmerStatus == WasmerStatus.FAILED_LOADING_WASMER && <p>Failed Loading Wasmer</p>}

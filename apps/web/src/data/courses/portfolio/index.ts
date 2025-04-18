@@ -9,6 +9,10 @@ import chapter04 from './chapters/week04/index';
 import chapter05 from './chapters/week05/index';
 import chapter06 from './chapters/week06/index';
 import chapter07 from './chapters/week07/index';
+import chapter08 from './chapters/week08/index';
+import chapter09 from './chapters/week09/index';
+import chapter10 from './chapters/week10/index';
+import chapter11 from './chapters/week11/index';
 import ChapterEntity = Api.ChapterEntity;
 import CourseEntity = Api.CourseEntity;
 import ImageEntity = Api.ImageEntity;
@@ -32,14 +36,7 @@ course.subscriptionAccess = false;
 
 course.body = syllabusBody;
 
-const chapters: ChapterEntity[] = [];
-chapters.push(chapter01);
-chapters.push(chapter02);
-chapters.push(chapter03);
-chapters.push(chapter04);
-chapters.push(chapter05);
-chapters.push(chapter06);
-chapters.push(chapter07);
+const chapters: ChapterEntity[] = [chapter01, chapter02, chapter03, chapter04, chapter05, chapter06, chapter07, chapter08, chapter09, chapter10, chapter11];
 
 const lectures: LectureEntity[] = [];
 lectures.push(
@@ -50,6 +47,10 @@ lectures.push(
   ...chapter05.lectures,
   ...chapter06.lectures,
   ...chapter07.lectures,
+  ...chapter08.lectures,
+  ...chapter09.lectures,
+  ...chapter10.lectures,
+  ...chapter11.lectures,
 );
 
 // set course for all lectures and chapters

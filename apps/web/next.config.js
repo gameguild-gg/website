@@ -12,8 +12,71 @@ const nextConfig = {
   async headers() {
     return [
       {
-        source: '/:path*',
+        // Apply CORS headers to the entire site except specific paths
+        source: '/((?!api/auth|api/version|disconnect|connect|wasmeriframe).*)',
         headers: [
+          {
+            key: 'Cross-Origin-Opener-Policy',
+            value: 'same-origin',
+          },
+          {
+            key: 'Cross-Origin-Embedder-Policy',
+            value: 'credentialless',
+          },
+        ],
+      },
+      {
+        // Apply no-cache headers to auth-related pages and root
+        source: '/(|disconnect|connect)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          },
+          {
+            key: 'Pragma',
+            value: 'no-cache',
+          },
+          {
+            key: 'Expires',
+            value: '0',
+          },
+          {
+            key: 'Surrogate-Control',
+            value: 'no-store',
+          },
+        ],
+      },
+      {
+        // Apply CORS headers to API routes
+        source: '/api/(auth|version)/:path*',
+        headers: [
+          {
+            key: 'Access-Control-Allow-Origin',
+            value: '*',
+          },
+          {
+            key: 'Access-Control-Allow-Methods',
+            value: 'GET, POST, OPTIONS',
+          },
+          {
+            key: 'Access-Control-Allow-Headers',
+            value: 'Content-Type, Authorization',
+          },
+          {
+            key: 'Cross-Origin-Resource-Policy',
+            value: 'cross-origin',
+          },
+        ],
+      },
+      {
+        // Apply Cross-Origin-Resource-Policy to Wasmer-related routes
+        source: '/wasmeriframe',
+        headers: [
+          {
+            key: 'Cross-Origin-Resource-Policy',
+            value: 'cross-origin',
+          },
           {
             key: 'Cross-Origin-Opener-Policy',
             value: 'same-origin',
@@ -22,9 +85,29 @@ const nextConfig = {
             key: 'Cross-Origin-Embedder-Policy',
             value: 'require-corp',
           },
+        ],
+      },
+      {
+        // Special CORS rules for external script loading
+        source: '/:path*',
+        headers: [
           {
-            key: 'Cross-Origin-Resource-Policy',
-            value: 'cross-origin',
+            key: 'Access-Control-Allow-Origin',
+            value: '*',
+          },
+        ],
+      },
+      {
+        // Add cache headers for WebAssembly and TAR files
+        source: '/assets/:path*.(wasm|tar)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+          {
+            key: 'Expires',
+            value: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toUTCString(),
           },
         ],
       },
@@ -68,11 +151,7 @@ const nextConfig = {
         use: 'raw-loader',
       },
       {
-        test: /\.wasm$/,
-        type: 'asset/resource',
-      },
-      {
-        test: /\.(pack|br|a)$/,
+        test: /\.(pack|br|a|tar|wasm)$/,
         type: 'asset/resource',
       },
       // {
@@ -99,6 +178,7 @@ const nextConfig = {
       },
     };
 
+    // Always add the CopyWebpackPlugin
     config.plugins.push(
       new CopyWebpackPlugin({
         patterns: [
@@ -113,9 +193,6 @@ const nextConfig = {
           },
         ],
       }),
-      new CompressionPlugin({
-        exclude: /\.br$/,
-      }),
       new webpack.IgnorePlugin({
         resourceRegExp: /index\.mjs$/,
       }),
@@ -126,6 +203,7 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: false,
   },
+  transpilePackages: ['use-pyodide'],
   experimental: {
     externalDir: false,
   },

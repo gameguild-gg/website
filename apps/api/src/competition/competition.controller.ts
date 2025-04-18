@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Get,
@@ -13,14 +14,7 @@ import {
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
-import {
-  ApiConsumes,
-  ApiCreatedResponse,
-  ApiNoContentResponse,
-  ApiOkResponse,
-  ApiResponse,
-  ApiTags,
-} from '@nestjs/swagger';
+import { ApiConsumes, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { CompetitionService } from './competition.service';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { CompetitionGame } from './entities/competition.submission.entity';
@@ -33,20 +27,21 @@ import { MatchSearchResponseDto } from '../dtos/competition/match-search-respons
 import { MatchSearchRequestDto } from '../dtos/competition/match-search-request.dto';
 import { CompetitionMatchEntity } from './entities/competition.match.entity';
 import { ChessLeaderboardResponseEntryDto } from '../dtos/competition/chess-leaderboard-response.dto';
+import { ChessAgentResponseEntryDto, ChessAgentsResponseDto } from '../dtos/competition/chess-agents-response.dto';
 import { Auth } from '../auth/decorators/http.decorator';
 import { AuthUser } from '../auth';
 import { UserEntity } from '../user/entities';
 
 import { CompetitionRunSubmissionReportEntity } from './entities/competition.run.submission.report.entity';
-import { OkResponse } from '../common/decorators/return-type.decorator';
-import { AuthType } from '../auth/guards';
 import { AuthenticatedRoute } from '../auth/auth.enum';
 
 @Controller('Competitions')
 @ApiTags('competitions')
 export class CompetitionController {
-  constructor(public service: CompetitionService) {}
   logger: Logger = new Logger(CompetitionController.name);
+
+  constructor(public service: CompetitionService) {}
+
   // @Post('/CTC/submit')
   // @ApiConsumes('multipart/form-data')
   // @UseInterceptors(FileInterceptor('file'))
@@ -96,34 +91,66 @@ export class CompetitionController {
     type: TerminalDto,
     isArray: true,
   })
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: {
+        fileSize: 10 * 1024 * 1024, // 10MB
+      },
+    }),
+  )
   @Auth(AuthenticatedRoute)
   async submitChessAgent(
     @Body() data: CompetitionSubmissionDto,
     @UploadedFile() file: Express.Multer.File,
     @AuthUser() user: UserEntity,
   ): Promise<TerminalDto[]> {
-    if (file.size > 1024 * 1024 * 10)
-      throw new PayloadTooLargeException('File too large. It should be < 10mb');
+    if (!file) throw new BadRequestException('No file uploaded');
+    if (file.size > 1024 * 1024 * 10) throw new PayloadTooLargeException('File too large. It should be < 10mb');
 
     if (!user) throw new UnauthorizedException('Invalid credentials');
 
-    // // From here to below, it is not working.
-    // if (file.mimetype !== 'application/zip')
-    //   throw new ('Invalid file type');
-    if (file.originalname.split('.').pop() !== 'zip')
-      throw new UnsupportedMediaTypeException(
-        'Invalid file type. Submit zip file.',
-      );
+    if (file.originalname.split('.').pop() !== 'zip') throw new UnsupportedMediaTypeException('Invalid file type. Submit zip file.');
 
-    // store the submission in the database.
-    await this.service.storeSubmission({
-      user: user,
-      file: file.buffer,
-      gameType: CompetitionGame.Chess,
-    });
+    try {
+      // Process the zip file to remove __MACOSX folder
+      const JSZip = require('jszip');
 
-    // return error or success
+      // Load the zip file
+      const originalZip = await JSZip.loadAsync(file.buffer);
+
+      // Create a new zip without __MACOSX
+      const cleanedZip = new JSZip();
+
+      // Copy all files except those in __MACOSX directory
+      for (const [path, zipFile] of Object.entries<any>(originalZip.files)) {
+        if (!path.startsWith('__MACOSX/') && !path.includes('/.DS_Store') && !path.includes('__MACOSX')) {
+          if (!zipFile.dir) {
+            const content = await zipFile.async('nodebuffer');
+            cleanedZip.file(path, content);
+          } else {
+            cleanedZip.folder(path);
+          }
+        } else {
+          this.logger.log(`Skipping macOS metadata file: ${path}`);
+        }
+      }
+
+      // Generate the new zip buffer
+      const cleanedZipBuffer = await cleanedZip.generateAsync({ type: 'nodebuffer' });
+
+      // Store the cleaned submission
+      await this.service.storeSubmission({
+        user: user,
+        file: cleanedZipBuffer,
+        gameType: CompetitionGame.Chess,
+      });
+    } catch (e) {
+      this.logger.error('Error processing zip file:');
+      this.logger.error(e);
+      throw new UnprocessableEntityException('Error processing zip file. Please ensure your zip file is valid and does not contain any unsupported files.');
+    }
+
+    // Return error or success
     try {
       return this.service.prepareLastChessSubmission(user);
     } catch (e) {
@@ -134,20 +161,21 @@ export class CompetitionController {
   }
 
   @Get('/Chess/ListAgents')
-  @ApiResponse({ type: String, isArray: true })
+  @ApiResponse({
+    type: ChessAgentResponseEntryDto,
+    isArray: true,
+    description: 'List of chess agents with their details',
+  })
   @Auth(AuthenticatedRoute)
-  async ListChessAgents(@AuthUser() user: UserEntity): Promise<string[]> {
+  async ListChessAgents(@AuthUser() user: UserEntity): Promise<ChessAgentsResponseDto> {
     if (!user) throw new UnauthorizedException('Invalid credentials');
     return this.service.listChessAgents();
   }
 
   @Post('/Chess/Move')
-  @ApiResponse({ type: String })
+  @ApiResponse({ content: { 'text/html': { schema: { type: 'string' } } } })
   @Auth(AuthenticatedRoute)
-  async RequestChessMove(
-    @Body() data: ChessMoveRequestDto,
-    @AuthUser() user: UserEntity,
-  ): Promise<string> {
+  async RequestChessMove(@Body() data: ChessMoveRequestDto, @AuthUser() user: UserEntity): Promise<string> {
     if (!user) throw new UnauthorizedException('Invalid credentials');
     return this.service.RequestChessMove(data);
   }
@@ -155,10 +183,7 @@ export class CompetitionController {
   @Post('/Chess/RunMatch')
   @ApiResponse({ type: ChessMatchResultDto })
   @Auth(AuthenticatedRoute)
-  async RunChessMatch(
-    @Body() data: ChessMatchRequestDto,
-    @AuthUser() user: UserEntity,
-  ): Promise<ChessMatchResultDto> {
+  async RunChessMatch(@Body() data: ChessMatchRequestDto, @AuthUser() user: UserEntity): Promise<ChessMatchResultDto> {
     if (!user) throw new UnauthorizedException('Invalid credentials');
     return (await this.service.RunChessMatch(data)).result;
   }
@@ -169,16 +194,10 @@ export class CompetitionController {
     type: MatchSearchResponseDto,
     isArray: true,
   })
-  async FindChessMatchResult(
-    @Body() data: MatchSearchRequestDto,
-    @AuthUser() user: UserEntity,
-  ): Promise<MatchSearchResponseDto[]> {
+  async FindChessMatchResult(@Body() data: MatchSearchRequestDto, @AuthUser() user: UserEntity): Promise<MatchSearchResponseDto[]> {
     if (!user) throw new UnauthorizedException('Invalid credentials');
     // todo: return the result state and reason for the match ending.
-    if (data.pageSize > 100)
-      throw new UnprocessableEntityException(
-        'You can only take 100 matches at a time',
-      );
+    if (data.pageSize > 100) throw new UnprocessableEntityException('You can only take 100 matches at a time');
 
     const ret = await this.service.findMatchesByCriteria({
       where: [
@@ -213,24 +232,26 @@ export class CompetitionController {
         createdAt: true,
         p1submission: { id: true, user: { username: true } },
         p2submission: { id: true, user: { username: true } },
+        p1Points: true,
+        p2Points: true,
+        p1cpuTime: true,
+        p2cpuTime: true,
       },
     });
 
     // convert array of CompetitionMatchEntity to MatchSearchResponseDto
-    const converted: MatchSearchResponseDto[] = ret.map(
-      (match: CompetitionMatchEntity) => {
-        const convertedMatch = {
-          id: match.id,
-          winner: match.winner,
-          lastState: match.lastState,
-          players: [
-            match.p1submission.user.username,
-            match.p2submission.user.username,
-          ],
-        };
-        return convertedMatch as MatchSearchResponseDto;
-      },
-    );
+    const converted: MatchSearchResponseDto[] = ret.map((match: CompetitionMatchEntity) => {
+      const convertedMatch = {
+        id: match.id,
+        winner: match.winner,
+        lastState: match.lastState,
+        players: [match.p1submission.user.username, match.p2submission.user.username],
+        createdAt: match.createdAt,
+        points: [match.p1Points, match.p2Points],
+        cpuTime: [match.p1cpuTime, match.p2cpuTime],
+      };
+      return convertedMatch as MatchSearchResponseDto;
+    });
 
     return converted;
   }
@@ -238,14 +259,12 @@ export class CompetitionController {
   @Get('/Chess/Match/:id')
   @Auth(AuthenticatedRoute)
   @ApiResponse({ type: ChessMatchResultDto })
-  async GetChessMatchResult(
-    @Param('id', ParseUUIDPipe) id: string,
-  ): Promise<ChessMatchResultDto> {
+  async GetChessMatchResult(@Param('id', ParseUUIDPipe) id: string): Promise<ChessMatchResultDto> {
     return JSON.parse((await this.service.findMatchById(id)).logs);
   }
 
   @Get('/Chess/Leaderboard')
-  @Auth(AuthenticatedRoute)
+  // @Auth(AuthenticatedRoute)
   @ApiResponse({
     type: ChessLeaderboardResponseEntryDto,
     isArray: true,
@@ -266,9 +285,7 @@ export class CompetitionController {
     isArray: true,
   })
   @Auth(AuthenticatedRoute)
-  async GetLatestChessCompetitionReport(
-    @AuthUser() user: UserEntity,
-  ): Promise<CompetitionRunSubmissionReportEntity[]> {
+  async GetLatestChessCompetitionReport(@AuthUser() user: UserEntity): Promise<CompetitionRunSubmissionReportEntity[]> {
     if (!user) throw new UnauthorizedException('Invalid credentials');
     return this.service.getLatestChessCompetitionReport();
   }

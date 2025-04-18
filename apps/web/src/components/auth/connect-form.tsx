@@ -33,7 +33,7 @@ export default function ConnectForm() {
     }
     session = await getSession();
     if (session) {
-      window.location.href = '/feed';
+      window.location.href = '/chess';
     }
   }
 
@@ -67,17 +67,14 @@ export default function ConnectForm() {
       sendingToast.dismiss();
       toast({
         title: 'Error',
-        description:
-          'Something went wrong. Please try again or contact support. Description: ' +
-          JSON.stringify(response.body),
+        description: 'Something went wrong. Please try again or contact support. Description: ' + JSON.stringify(response.body),
       });
       return;
     }
 
     toast({
       title: 'Sent',
-      description:
-        'We\'ve sent you a magic link to your email. Please go check it.',
+      description: "We've sent you a magic link to your email. Please go check it.",
     });
   };
 
@@ -87,11 +84,7 @@ export default function ConnectForm() {
         <h1 className="text-3xl font-bold">Connect</h1>
       </div>
       <Button variant="outline" onClick={() => signInWithGoogle()}>
-        <img
-          src="/assets/images/google-icon.svg"
-          loading="lazy"
-          className="w-[20px] h-[20px] m-2"
-        />
+        <img src="/assets/images/google-icon.svg" loading="lazy" className="w-[20px] h-[20px] m-2" />
         Google
       </Button>
       <div className="flex w-full">
@@ -99,26 +92,13 @@ export default function ConnectForm() {
         <TorusSignInButton />
       </div>
       <div className="text-center text-sm text-muted-foreground">or</div>
-      <p className="text-balance text-muted-foreground">
-        Send a magic link to your email
-      </p>
+      <p className="text-balance text-muted-foreground">Send a magic link to your email</p>
       <div className="grid gap-4">
         <div className="grid gap-2">
           <Label htmlFor="email">Email</Label>
-          <Input
-            id="email"
-            type="email"
-            placeholder="user@example.com"
-            required
-            disabled={sendMagicLinkClicked}
-            onChange={(e) => setEmail(e.target.value)}
-          />
+          <Input id="email" type="email" placeholder="user@example.com" required disabled={sendMagicLinkClicked} onChange={(e) => setEmail(e.target.value)} />
         </div>
-        <Button
-          disabled={sendMagicLinkClicked}
-          className="w-full"
-          onClick={handleSendMagicLink}
-        >
+        <Button disabled={sendMagicLinkClicked} className="w-full" onClick={handleSendMagicLink}>
           Send me the link <Sparkles />
         </Button>
       </div>

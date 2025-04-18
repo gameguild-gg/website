@@ -41,7 +41,45 @@ export class AssetService {
       source: AssetSourceType.EXTERNAL,
       path: url,
       description: description,
+      hash: this.generateHashFromURL(url),
+      filename: this.extractFilenameFromURL(url),
+      originalFilename: this.extractFilenameFromURL(url),
+      mimetype: 'image/jpeg', // Default mimetype, could be improved with content detection
+      sizeBytes: 0, // Default size, could be improved with actual size detection
     });
+  }
+
+  /**
+   * Generates a hash from a URL for external images
+   * @param url The URL to generate a hash from
+   * @returns A hash string
+   */
+  private generateHashFromURL(url: string): string {
+    // Simple hash function for URLs
+    let hash = 0;
+    for (let i = 0; i < url.length; i++) {
+      const char = url.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32bit integer
+    }
+    // Convert to hex string and ensure it's positive
+    return Math.abs(hash).toString(16);
+  }
+
+  /**
+   * Extracts a filename from a URL
+   * @param url The URL to extract a filename from
+   * @returns The extracted filename or a default name
+   */
+  private extractFilenameFromURL(url: string): string {
+    try {
+      const urlObj = new URL(url);
+      const pathname = urlObj.pathname;
+      const filename = pathname.split('/').pop() || 'external-image';
+      return filename.length > 0 ? filename : 'external-image';
+    } catch (e) {
+      return 'external-image';
+    }
   }
 
   public async storeImage(file: Express.Multer.File): Promise<ImageEntity> {

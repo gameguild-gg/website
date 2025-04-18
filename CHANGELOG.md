@@ -1,3 +1,286 @@
+## [1.19.3](https://github.com/gameguild-gg/website/compare/v1.19.2...v1.19.3) (2025-04-18)
+
+
+### Bug Fixes
+
+* **courses:** add monte carlo tree search decision taking ([e1feba0](https://github.com/gameguild-gg/website/commit/e1feba0e99655f292d6542da6c65867eec6e0f7e))
+* **courses:** monte carlo tree search ([b65cc5a](https://github.com/gameguild-gg/website/commit/b65cc5ac39624631621501c00fbc5ded2181dd11))
+* **plos:** update plos from champlain ([4ee3c78](https://github.com/gameguild-gg/website/commit/4ee3c7843901c0c2c1698e8b4e61c7091b0a641b))
+* **wasm:** fix build issue ([d53d2ea](https://github.com/gameguild-gg/website/commit/d53d2ea743038a46e80092ddfbceecb58b2ac375))
+
+## [1.19.2](https://github.com/gameguild-gg/website/compare/v1.19.1...v1.19.2) (2025-04-17)
+
+
+### Bug Fixes
+
+* **clang:** simplified and streamlined execution flow ([98d853b](https://github.com/gameguild-gg/website/commit/98d853b106bdcb6e21f9babfb9dd1ea0776c037f))
+
+## [1.19.1](https://github.com/gameguild-gg/website/compare/v1.19.0...v1.19.1) (2025-04-15)
+
+
+### Bug Fixes
+
+* **clang:** one shot load and run ([9db5535](https://github.com/gameguild-gg/website/commit/9db5535b3ba3c6fd0b6a34cb343a3c1017a665d0))
+
+# [1.19.0](https://github.com/gameguild-gg/website/compare/v1.18.5...v1.19.0) (2025-04-15)
+
+
+### Bug Fixes
+
+* **clang:** fix clang demo dependency ([09f8a22](https://github.com/gameguild-gg/website/commit/09f8a22e9ad5714caa25ae9a56ea24a153beda5a))
+* **courses:** add monte carlo tree search ([24892a9](https://github.com/gameguild-gg/website/commit/24892a982a5733949d7d1abef06169059ab5015a))
+* package json dependency hell ([08c4bf2](https://github.com/gameguild-gg/website/commit/08c4bf26158cb3d52d2c4844f14aeae7400bb627))
+* **schema:** fix schema dump to be consistent between runs ([7b3ca93](https://github.com/gameguild-gg/website/commit/7b3ca93d9e7dd3af51320136d006dd18be645535))
+
+
+### Features
+
+* **latex:** add latex support for markdown renderer ([636af3d](https://github.com/gameguild-gg/website/commit/636af3daff92673b4e8c568bd79c4cefe842fb8f))
+
+## [1.18.5](https://github.com/gameguild-gg/website/compare/v1.18.4...v1.18.5) (2025-04-11)
+
+
+### Bug Fixes
+
+* **wasm:** add clang worker wrapper ([61a15f0](https://github.com/gameguild-gg/website/commit/61a15f0cb26f92a42ff19efaf7784d7ab5436787))
+
+## [1.18.4](https://github.com/gameguild-gg/website/compare/v1.18.3...v1.18.4) (2025-04-11)
+
+
+### Bug Fixes
+
+* **champlain:** add better plo graph visualization ([7b355b0](https://github.com/gameguild-gg/website/commit/7b355b005876a6edd8e0fdb5d1e73776e7147c8e))
+* **champlain:** add plos page ([e6b0a6e](https://github.com/gameguild-gg/website/commit/e6b0a6e95a3b2af16be6efc1816888396d5e7e66))
+* **wasm:** add workers for wasm interfaces ([e17b32f](https://github.com/gameguild-gg/website/commit/e17b32f951be6dbfa1575d365b363d9da7e3b8fb))
+
+## [1.18.3](https://github.com/gameguild-gg/website/compare/v1.18.2...v1.18.3) (2025-04-08)
+
+
+### Bug Fixes
+
+* **courses:** fix typo ([cee2ecc](https://github.com/gameguild-gg/website/commit/cee2ecca2fabe21740e4e7fb9e06c2ac2d87e855))
+
+## [1.18.2](https://github.com/gameguild-gg/website/compare/v1.18.1...v1.18.2) (2025-04-08)
+
+
+### Bug Fixes
+
+* **courses:** fix min max example code ([c625987](https://github.com/gameguild-gg/website/commit/c625987e11331f51d94aa8b2b4574033d301c293))
+
+## [1.18.1](https://github.com/gameguild-gg/website/compare/v1.18.0...v1.18.1) (2025-04-08)
+
+
+### Bug Fixes
+
+* **courses:** add boilerplate for min-max ([b66c449](https://github.com/gameguild-gg/website/commit/b66c449360ecab7a3c16353caa2c331f4a9ec1d0))
+
+# [1.18.0](https://github.com/gameguild-gg/website/compare/v1.17.27...v1.18.0) (2025-04-08)
+
+
+### Features
+
+* **clang-wasm:** add support for c++ compilation ([5a6eb40](https://github.com/gameguild-gg/website/commit/5a6eb4025e96036fa54cddf575bf963ad3d2b906))
+
+## [1.17.27](https://github.com/gameguild-gg/website/compare/v1.17.26...v1.17.27) (2025-04-05)
+
+## [1.17.26](https://github.com/gameguild-gg/website/compare/v1.17.25...v1.17.26) (2025-04-04)
+
+
+### Bug Fixes
+
+* **courses:** fix typo ([28a7354](https://github.com/gameguild-gg/website/commit/28a7354cdf80046dd4c9f2bb23ce26b9d1e94f5a))
+
+## [1.17.25](https://github.com/gameguild-gg/website/compare/v1.17.24...v1.17.25) (2025-04-04)
+
+
+### Bug Fixes
+
+* **chess:** add better error handling ([c9a6ee4](https://github.com/gameguild-gg/website/commit/c9a6ee4e27f2af4f4a775f8b90858aa90b19036c))
+
+## [1.17.24](https://github.com/gameguild-gg/website/compare/v1.17.23...v1.17.24) (2025-04-03)
+
+
+### Bug Fixes
+
+* **courses:** fix another typo ([e77caa2](https://github.com/gameguild-gg/website/commit/e77caa25194d39a17876a95f7cf0579b91c047bd))
+
+## [1.17.23](https://github.com/gameguild-gg/website/compare/v1.17.22...v1.17.23) (2025-04-03)
+
+
+### Bug Fixes
+
+* **courses:** fix typo ([d22b6d4](https://github.com/gameguild-gg/website/commit/d22b6d46f849c2412eeb79f53b5bbea478a62c9a))
+
+## [1.17.22](https://github.com/gameguild-gg/website/compare/v1.17.21...v1.17.22) (2025-04-03)
+
+
+### Bug Fixes
+
+* **courses:** add api calls content to python ([9b691cf](https://github.com/gameguild-gg/website/commit/9b691cfe18ee1238dc46462c3f20a15f902408d1))
+
+## [1.17.21](https://github.com/gameguild-gg/website/compare/v1.17.20...v1.17.21) (2025-04-02)
+
+
+### Bug Fixes
+
+* **courses:** acing interviews ([af12810](https://github.com/gameguild-gg/website/commit/af12810baed7244ba3e7967da7238927082f3ff2))
+* **courses:** links ([1487020](https://github.com/gameguild-gg/website/commit/148702083eebde33d99b0c860d6a7fa4fe665516))
+* **courses:** typos ([a6c14fc](https://github.com/gameguild-gg/website/commit/a6c14fc6246057dc83383a77fe9ebc7faa48e3b2))
+
+## [1.17.20](https://github.com/gameguild-gg/website/compare/v1.17.19...v1.17.20) (2025-04-01)
+
+
+### Bug Fixes
+
+* **cors:** trying to fix cors once more ([0774380](https://github.com/gameguild-gg/website/commit/0774380370eda91df7a0661c53e8b1d2a98ca56d))
+
+## [1.17.19](https://github.com/gameguild-gg/website/compare/v1.17.18...v1.17.19) (2025-04-01)
+
+
+### Bug Fixes
+
+* **courses:** chess min max lecture ([cd25081](https://github.com/gameguild-gg/website/commit/cd250817c0bbc6b304bc7128669295b06fb92319))
+
+## [1.17.18](https://github.com/gameguild-gg/website/compare/v1.17.17...v1.17.18) (2025-03-28)
+
+
+### Bug Fixes
+
+* **courses:** chess fixes ([249c330](https://github.com/gameguild-gg/website/commit/249c330320cd50b33842d70949882be740874515))
+
+## [1.17.17](https://github.com/gameguild-gg/website/compare/v1.17.16...v1.17.17) (2025-03-28)
+
+
+### Bug Fixes
+
+* **courses:** fix typo on chess class. square definition was wrong ([e01ee64](https://github.com/gameguild-gg/website/commit/e01ee64898c0f4d3514343fcb233f92810dbf353))
+
+## [1.17.16](https://github.com/gameguild-gg/website/compare/v1.17.15...v1.17.16) (2025-03-28)
+
+
+### Bug Fixes
+
+* **courses:** add chess board huffman code ([957b4ec](https://github.com/gameguild-gg/website/commit/957b4eca07f423d39a9088b0bfc7dc0f636c1df0))
+
+## [1.17.15](https://github.com/gameguild-gg/website/compare/v1.17.14...v1.17.15) (2025-03-27)
+
+
+### Bug Fixes
+
+* **courses:** add exception to python class ([95eca3f](https://github.com/gameguild-gg/website/commit/95eca3ffdeffebf7920767a45c94c36bf787ed0f))
+
+## [1.17.14](https://github.com/gameguild-gg/website/compare/v1.17.13...v1.17.14) (2025-03-26)
+
+
+### Bug Fixes
+
+* **courses:** add assignment for portfolio classes ([8ca8d4c](https://github.com/gameguild-gg/website/commit/8ca8d4c16a2a01490b130d767578f1f9a66c681a))
+
+## [1.17.13](https://github.com/gameguild-gg/website/compare/v1.17.12...v1.17.13) (2025-03-25)
+
+
+### Bug Fixes
+
+* **courses:** fix missing bytes on the python file course ([eb7f550](https://github.com/gameguild-gg/website/commit/eb7f55003614f8ae454086a7a4cb9133f73e4b70))
+* **markdown-renderer:** fix markdown code activity for cpp ([cdf2eb6](https://github.com/gameguild-gg/website/commit/cdf2eb62cb8e62700de87d33b5240fc59ab0f575))
+
+## [1.17.12](https://github.com/gameguild-gg/website/compare/v1.17.11...v1.17.12) (2025-03-25)
+
+
+### Bug Fixes
+
+* **courses:** chess assignment random movement ([6e600ac](https://github.com/gameguild-gg/website/commit/6e600ac1257445a2da9cb7e9c40e8c9ec4f8b86e))
+
+## [1.17.11](https://github.com/gameguild-gg/website/compare/v1.17.10...v1.17.11) (2025-03-24)
+
+
+### Bug Fixes
+
+* **courses:** typo ([eb0aa11](https://github.com/gameguild-gg/website/commit/eb0aa116687038f3094892f66070a8c47b2925cf))
+
+## [1.17.10](https://github.com/gameguild-gg/website/compare/v1.17.9...v1.17.10) (2025-03-24)
+
+
+### Bug Fixes
+
+* **courses:** add files and exceptions content ([bb25072](https://github.com/gameguild-gg/website/commit/bb25072537ea498debb70c3d7c7cb5b582f26bb9))
+
+## [1.17.9](https://github.com/gameguild-gg/website/compare/v1.17.8...v1.17.9) (2025-03-19)
+
+
+### Bug Fixes
+
+* **chess:** replay functionality is working now ([c67b771](https://github.com/gameguild-gg/website/commit/c67b771b71f969441f3a534f72de45468e4f6ccd))
+
+## [1.17.8](https://github.com/gameguild-gg/website/compare/v1.17.7...v1.17.8) (2025-03-19)
+
+
+### Bug Fixes
+
+* **courses:** add section to portfolio class ([ce1b8a1](https://github.com/gameguild-gg/website/commit/ce1b8a1d09261d33a0ce24dbff08726a75b63d7a))
+
+## [1.17.7](https://github.com/gameguild-gg/website/compare/v1.17.6...v1.17.7) (2025-03-19)
+
+
+### Bug Fixes
+
+* **courses:** add portfolio class about finalizing demo reels ([abb2556](https://github.com/gameguild-gg/website/commit/abb25562b3340eebee00a75880e19fa9b61cf27a))
+
+## [1.17.6](https://github.com/gameguild-gg/website/compare/v1.17.5...v1.17.6) (2025-03-19)
+
+
+### Bug Fixes
+
+* **chess:** challenge another player ([7cbf19a](https://github.com/gameguild-gg/website/commit/7cbf19a0a6eb0c2faff3d0b6de68335979e3f575))
+
+## [1.17.5](https://github.com/gameguild-gg/website/compare/v1.17.4...v1.17.5) (2025-03-18)
+
+
+### Bug Fixes
+
+* **courses:** add more courses into ai chess ([bd72644](https://github.com/gameguild-gg/website/commit/bd72644f9e689d7f3c1820c40a4acd0be59491c4))
+
+## [1.17.4](https://github.com/gameguild-gg/website/compare/v1.17.3...v1.17.4) (2025-03-17)
+
+
+### Bug Fixes
+
+* **courses:** add python dictionary to python course ([af05799](https://github.com/gameguild-gg/website/commit/af0579925b73bc4fb135674b0aa23e0db73884c0))
+
+## [1.17.3](https://github.com/gameguild-gg/website/compare/v1.17.2...v1.17.3) (2025-03-13)
+
+
+### Bug Fixes
+
+* **chess:** now you can play against bots. ([ed70f2c](https://github.com/gameguild-gg/website/commit/ed70f2ca9bb2dd904ff427a6a19c0add804a80c4))
+
+## [1.17.2](https://github.com/gameguild-gg/website/compare/v1.17.1...v1.17.2) (2025-03-12)
+
+
+### Bug Fixes
+
+* **chess:** fix chess matches view ([9af330a](https://github.com/gameguild-gg/website/commit/9af330a3817a6c66e9ed493cdae15ccb194ba0c4))
+
+## [1.17.1](https://github.com/gameguild-gg/website/compare/v1.17.0...v1.17.1) (2025-03-12)
+
+
+### Bug Fixes
+
+* **chess:** fix leaderboard api response ([203ed80](https://github.com/gameguild-gg/website/commit/203ed80a0e83af26bfc9fea0677011ebaa542935))
+
+# [1.17.0](https://github.com/gameguild-gg/website/compare/v1.16.3...v1.17.0) (2025-03-12)
+
+
+### Bug Fixes
+
+* **auth:** fix auth related issues ([d7f76dc](https://github.com/gameguild-gg/website/commit/d7f76dce1060a5fec394a5fe35e400f3361a5404))
+* **courses:** portfolio week 8 - visual cues ([703b330](https://github.com/gameguild-gg/website/commit/703b3303105bfd490ea093f793acdcfe7c5f4f19))
+
+
+### Features
+
+* **chess:** add chess web boilerplate ([1110d75](https://github.com/gameguild-gg/website/commit/1110d75201b2553c7fcd97791807424f49c64aab))
+
 ## [1.16.3](https://github.com/gameguild-gg/website/compare/v1.16.2...v1.16.3) (2025-02-28)
 
 

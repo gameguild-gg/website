@@ -4,10 +4,10 @@ import { ApiConfigService, SourceInfo } from '../../common/config.service';
 import { rimraf } from 'rimraf';
 import * as fs from 'fs';
 import { AssetBase } from '../asset.base';
-import * as Stream from 'node:stream';
-const fsp = fs.promises;
 import { lookup } from 'mime-types';
 import { OkDto } from '../../common/dtos/ok.dto';
+
+const fsp = fs.promises;
 
 export class AssetOnDisk {
   path: string;
@@ -92,6 +92,7 @@ export class FileCacheStorageService implements Storage {
     const mime = await lookup(targetPath);
     return { path: targetPath, hash: hash, size: file.size, mime: mime };
   }
+
   async delete(asset: Partial<AssetBase>): Promise<OkDto> {
     // use asset to get the right path of the file
     const outerFolder = asset.hash.substring(0, 2);
@@ -106,6 +107,7 @@ export class FileCacheStorageService implements Storage {
     }
     return { success: true };
   }
+
   async get(asset: Partial<AssetBase>): Promise<AssetOnDisk | null> {
     // use asset to get the right path of the file
     const outerFolder = asset.hash.substring(0, 2);
@@ -137,6 +139,6 @@ export class FileCacheStorageService implements Storage {
     const targetFolder = filePath.substring(0, filePath.lastIndexOf('/'));
     await fsp.mkdir(targetFolder, { recursive: true });
     // write the file to disk
-    const fileStream = await fsp.writeFile(filePath, assetOnS3);
+    // const fileStream = await fsp.writeFile(filePath, assetOnS3);
   }
 }

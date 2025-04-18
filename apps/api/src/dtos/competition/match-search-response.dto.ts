@@ -8,9 +8,8 @@ export class MatchSearchResponseDto extends EntityBase {
   lastState: string;
   @ApiProperty({ type: [String] })
   players: string[];
-
-  // constructor(partial: Partial<MatchSearchResponseDto>) {
-  //   super(partial);
-  //   Object.assign(this, partial);
-  // }
+  @ApiProperty({ type: [Number] })
+  points: number[];
+  @ApiProperty({ type: [Number] })
+  cpuTime: number[];
 }

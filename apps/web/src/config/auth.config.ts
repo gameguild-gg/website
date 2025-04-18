@@ -5,6 +5,9 @@ import { environment } from '@/config/environment';
 import { Api, AuthApi } from '@game-guild/apiclient';
 import type { Provider } from 'next-auth/providers';
 import { jwtDecode } from 'jwt-decode';
+import { AdapterUser } from '@auth/core/adapters';
+import { Profile } from '@auth/core/types';
+import { JWT } from '@auth/core/jwt';
 import LocalSignInResponseDto = Api.LocalSignInResponseDto;
 
 // todo: add logic to refresh token!!! refresh token should be done in the jwt or session callback
@@ -13,11 +16,7 @@ import LocalSignInResponseDto = Api.LocalSignInResponseDto;
 // list of providers
 const providers: Provider[] = [];
 
-if (
-  !environment.GoogleClientId ||
-  !environment.GoogleClientSecret ||
-  !environment.SignInGoogleCallbackUrl
-) {
+if (!environment.GoogleClientId || !environment.GoogleClientSecret || !environment.SignInGoogleCallbackUrl) {
   throw new Error(
     'GoogleClientId, GoogleClientSecret, and SignInGoogleCallbackUrl must be set in the environment. Please check your .env file. Or talk with us to provide them to you.',
   );
@@ -33,6 +32,14 @@ providers.push(
     },
   }),
 );
+
+// god forgive me for what I have sinned
+export interface GetSessionReturnType extends JWT {
+  access_token?: string;
+  refresh_token?: string;
+  user?: User | AdapterUser;
+  profile?: Profile;
+}
 
 export const authConfig = {
   trustHost: true, // todo: fix [auth][error] UntrustedHost: Host must be trusted. URL was: https://localhost:3000/api/auth/session. Read more at https://errors.authjs.dev#untrustedhost
@@ -53,9 +60,7 @@ export const authConfig = {
 
         if (!account?.id_token) return false;
 
-        const response = await api.authControllerSignInWithGoogle(
-          account?.id_token,
-        );
+        const response = await api.authControllerSignInWithGoogle(account?.id_token);
         if (response.status >= 400) {
           console.error(response.body);
           return false;
@@ -76,7 +81,7 @@ export const authConfig = {
       }
       return false;
     },
-    jwt: async ({ token, user, account, profile, trigger, session }) => {
+    jwt: async ({ token, user, account, profile, trigger, session }): Promise<GetSessionReturnType> => {
       if (account) {
         // First-time login, save the `access_token`, its expiry and the `refresh_token`
         return {

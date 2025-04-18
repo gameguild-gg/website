@@ -3,7 +3,10 @@
 import type React from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
 import rehypeRaw from 'rehype-raw';
+import rehypeKatex from 'rehype-katex';
+import 'katex/dist/katex.min.css';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { Admonition } from './Admonition';
@@ -33,7 +36,13 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, renderer =
       /:::\s*(note|abstract|info|tip|success|question|warning|failure|danger|bug|example|quote)(?:\s+"([^"]*)")?\n([\s\S]*?):::/g,
       (_, type, title, body) => `<div class="admonition admonition-${type}"${title ? ` data-title="${title}"` : ''}>\n\n${body}\n\n</div>`,
     )
-    .replace(/!!!\s*(quiz|code)\n([\s\S]*?)\n!!!/g, (_, type, content) => `<div class="markdown-activity" data-type="${type}">${content}</div>`);
+    .replace(/!!!\s*(quiz|code)\n([\s\S]*?)\n!!!/g, (_, type, content) => {
+      // HTML escape angle brackets in the content if it's a code block
+      if (type === 'code') {
+        content = content.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      }
+      return `<div class="markdown-activity" data-type="${type}">${content}</div>`;
+    });
 
   const components: Record<string, React.FC<any>> = {
     h1: (props) => <h1 className="text-4xl font-bold mt-6 mb-4" {...props} />,
@@ -143,7 +152,12 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, renderer =
 
   return (
     <>
-      <ReactMarkdown className="markdown-content" remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} components={components}>
+      <ReactMarkdown 
+        className="markdown-content" 
+        remarkPlugins={[remarkGfm, remarkMath]} 
+        rehypePlugins={[rehypeRaw, rehypeKatex]}
+        components={components}
+      >
         {processedContent}
       </ReactMarkdown>
       <style jsx global>{`
@@ -155,6 +169,12 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, renderer =
           white-space: pre-wrap !important;
           word-break: keep-all !important;
           overflow-wrap: break-word !important;
+        }
+
+        .katex-display {
+          overflow-x: auto;
+          overflow-y: hidden;
+          padding: 0.5rem 0;
         }
       `}</style>
     </>

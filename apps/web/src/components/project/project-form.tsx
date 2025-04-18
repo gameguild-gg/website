@@ -13,7 +13,7 @@ import { getSession } from 'next-auth/react';
 import Image from 'next/image';
 
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
+import { TextArea } from '@/components/ui/textArea';
 import { Plus, X } from 'lucide-react';
 import { FileUploader } from '@/components/ui/file-uploader';
 import ApiErrorResponseDto = Api.ApiErrorResponseDto;
@@ -40,10 +40,7 @@ const imageOrFileToUrl = (imageOrFile: ImageOrFile) => {
 // reference: https://itch.io/game/new
 
 // receive params to specify if the form is for creating or updating a project
-export default function ProjectForm({
-                                      action,
-                                      slug,
-                                    }: Readonly<ProjectFormProps>) {
+export default function ProjectForm({ action, slug }: Readonly<ProjectFormProps>) {
   const [project, setProject] = React.useState<Api.ProjectEntity | null>();
   const [errorApi, setErrorApi] = React.useState<ApiErrorResponseDto | null>();
   const router = useRouter();
@@ -54,9 +51,7 @@ export default function ProjectForm({
   const [screenshots, setScreenshots] = useState<ImageOrFile[]>([]);
 
   const getYouTubeId = (url: string) => {
-    const match = url.match(
-      /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com|youtu\.be)\/(?:watch\?v=)?(.+)/,
-    );
+    const match = url.match(/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com|youtu\.be)\/(?:watch\?v=)?(.+)/);
     return match ? match[1] : '';
   };
 
@@ -125,12 +120,9 @@ export default function ProjectForm({
       basePath: process.env.NEXT_PUBLIC_API_URL,
     });
 
-    const response = await api.createOneBaseProjectControllerProjectEntity(
-      project as Api.CreateProjectDto,
-      {
-        headers: { Authorization: `Bearer ${session?.user?.accessToken}` },
-      },
-    );
+    const response = await api.createOneBaseProjectControllerProjectEntity(project as Api.CreateProjectDto, {
+      headers: { Authorization: `Bearer ${session?.user?.accessToken}` },
+    });
     if (response.status === 201 || response.status === 200) {
       setProject(response.body as Api.ProjectEntity);
     } else if (response.status === 401) {
@@ -158,10 +150,8 @@ export default function ProjectForm({
       });
     }
   };
-  const updateProject = async () => {
-  };
-  const updateImages = async () => {
-  };
+  const updateProject = async () => {};
+  const updateImages = async () => {};
 
   const submit = async () => {
     if (!project) {
@@ -299,16 +289,12 @@ export default function ProjectForm({
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Card>
           <CardHeader>
-            <CardTitle>
-              {action === 'create' ? 'Create a new Project' : 'Update Project'}
-            </CardTitle>
+            <CardTitle>{action === 'create' ? 'Create a new Project' : 'Update Project'}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-6">
               <div>
-                <h3 className="text-lg font-medium">
-                  Make sure everyone can find your page
-                </h3>
+                <h3 className="text-lg font-medium">Make sure everyone can find your page</h3>
                 <p className="text-sm text-gray-500">
                   Review our{' '}
                   <a href="#" className="text-blue-500 hover:underline">
@@ -343,9 +329,7 @@ export default function ProjectForm({
                   />
                   <span>{project?.title?.length || 0}/60</span>
                 </div>
-                <p className="text-sm text-gray-500 mt-1">
-                  Maximum length: 60 characters
-                </p>
+                <p className="text-sm text-gray-500 mt-1">Maximum length: 60 characters</p>
               </div>
               <div>
                 <Label htmlFor="slug">Project URL slug</Label>
@@ -370,21 +354,13 @@ export default function ProjectForm({
                     required
                   />
                 </div>
-                <p className="text-sm text-gray-500 mt-1">
-                  Slug will be used in the URL of your project page
-                </p>
+                <p className="text-sm text-gray-500 mt-1">Slug will be used in the URL of your project page</p>
               </div>
 
               <div>
                 <Label htmlFor="banner">Banner Image</Label>
-                <FileUploader
-                  id="banner"
-                  accept="image/*"
-                  onFileSelect={(file) => setBannerImage(file)}
-                />
-                <p className="text-sm text-gray-500 mt-1">
-                  Recommended size: 1200x400px
-                </p>
+                <FileUploader id="banner" accept="image/*" onFileSelect={(file) => setBannerImage(file)} />
+                <p className="text-sm text-gray-500 mt-1">Recommended size: 1200x400px</p>
                 {bannerImage && (
                   <div className="relative inline-block">
                     <Image
@@ -414,13 +390,7 @@ export default function ProjectForm({
                 <div className="grid grid-cols-5 gap-5 mt-4">
                   {screenshots.map((screenshot, index) => (
                     <div key={index} className="relative inline-block">
-                      <Image
-                        src={imageOrFileToUrl(screenshot)}
-                        width={300}
-                        height={300}
-                        alt={`Screenshot ${index + 1}`}
-                        className="rounded-lg"
-                      />
+                      <Image src={imageOrFileToUrl(screenshot)} width={300} height={300} alt={`Screenshot ${index + 1}`} className="rounded-lg" />
                       <Button
                         variant="destructive"
                         size="icon"
@@ -435,28 +405,15 @@ export default function ProjectForm({
                     </div>
                   ))}
                   {screenshots.length < 5 && (
-                    <label
-                      htmlFor="screenshot-upload"
-                      className="cursor-pointer"
-                    >
-                      <div
-                        className="w-full h-[150px] border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center">
+                    <label htmlFor="screenshot-upload" className="cursor-pointer">
+                      <div className="w-full h-[150px] border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center">
                         <Plus className="h-12 w-12 text-gray-400" />
                       </div>
-                      <input
-                        id="screenshot-upload"
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={handleScreenshotUpload}
-                      />
+                      <input id="screenshot-upload" type="file" accept="image/*" className="hidden" onChange={handleScreenshotUpload} />
                     </label>
                   )}
                 </div>
-                <p className="text-sm text-gray-500 mt-1">
-                  Upload up to 5 screenshots. They will appear on your game's
-                  page. Optional but highly recommended.
-                </p>
+                <p className="text-sm text-gray-500 mt-1">Upload up to 5 screenshots. They will appear on your game's page. Optional but highly recommended.</p>
               </div>
               {/*<div>*/}
               {/*  <Label htmlFor="gameplay-video">*/}
@@ -484,9 +441,7 @@ export default function ProjectForm({
               {/*  )}*/}
               {/*</div>*/}
               <div>
-                <Label htmlFor="short-description">
-                  Short description or tagline.
-                </Label>
+                <Label htmlFor="short-description">Short description or tagline.</Label>
                 <div className="flex items-center space-x-2">
                   <Input
                     id="short-description"
@@ -502,10 +457,7 @@ export default function ProjectForm({
                   />
                   <span>{project?.summary?.length || 0}/140</span>
                 </div>
-                <p className="text-sm text-gray-500 mt-1">
-                  Shown when share to your project on social medias. Maximum
-                  length: 140 characters.
-                </p>
+                <p className="text-sm text-gray-500 mt-1">Shown when share to your project on social medias. Maximum length: 140 characters.</p>
               </div>
               {/*<div>*/}
               {/*  <Label htmlFor="classification">Classification</Label>*/}
@@ -582,7 +534,7 @@ export default function ProjectForm({
               {/*</div>*/}
               <div>
                 <Label htmlFor="body">Body</Label>
-                <Textarea
+                <TextArea
                   id="body"
                   rows={6}
                   onChange={(e) =>
@@ -592,9 +544,7 @@ export default function ProjectForm({
                     } as Api.ProjectEntity)
                   }
                 />
-                <p className="text-sm text-gray-500 mt-1">
-                  This will make up the content of your game page.
-                </p>
+                <p className="text-sm text-gray-500 mt-1">This will make up the content of your game page.</p>
               </div>
               {/*<div>*/}
               {/*  <Label htmlFor="genre">Genre</Label>*/}

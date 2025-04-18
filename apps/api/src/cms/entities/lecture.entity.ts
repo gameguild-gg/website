@@ -1,17 +1,11 @@
 import { Column, Entity, Index, ManyToOne } from 'typeorm';
 import { ContentBase } from './content.base';
 import { CourseEntity } from './course.entity';
-import { ApiProperty } from '@nestjs/swagger';
-import {
-  IsArray,
-  IsEnum,
-  IsNotEmpty,
-  IsNumber,
-  IsOptional,
-  ValidateNested,
-} from 'class-validator';
+import { ApiProperty, getSchemaPath } from '@nestjs/swagger';
+import { IsEnum, IsNotEmpty, IsNumber, IsOptional, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ChapterEntity } from './chapter.entity';
+import { CodeAssignmentDto } from '../dtos/code-assignment.dto';
 
 export enum LectureType {
   MARKDOWN = 'markdown',
@@ -19,12 +13,13 @@ export enum LectureType {
   LEXICAL = 'lexical',
   REVEAL = 'reveal',
   HTML = 'html',
+  CODE = 'code',
+  LINK = 'link',
+  // assets types
   PDF = 'pdf',
   IMAGE = 'image',
   VIDEO = 'video',
   AUDIO = 'audio',
-  CODE = 'code',
-  LINK = 'link',
 }
 
 @Entity({ name: 'lecture' })
@@ -37,7 +32,16 @@ export class LectureEntity extends ContentBase {
   @IsNumber({}, { message: 'error.IsNumber: order should be a number' })
   order: number;
 
-  @ApiProperty({ enum: LectureType, default: LectureType.MARKDOWN })
+  @Column({ type: 'jsonb', nullable: true })
+  @ApiProperty({ required: false, oneOf: [{ $ref: getSchemaPath(CodeAssignmentDto) }] })
+  @IsOptional()
+  json: CodeAssignmentDto;
+
+  @ApiProperty({
+    enum: LectureType,
+    default: LectureType.MARKDOWN,
+    description: 'Depending of the renderer, the data may be stored in the field body or json, or both.',
+  })
   @Column({
     nullable: false,
     type: 'enum',
