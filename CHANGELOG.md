@@ -1,3 +1,13 @@
+## [1.19.3](https://github.com/gameguild-gg/website/compare/v1.19.2...v1.19.3) (2025-04-18)
+
+
+### Bug Fixes
+
+* **courses:** add monte carlo tree search decision taking ([e1feba0](https://github.com/gameguild-gg/website/commit/e1feba0e99655f292d6542da6c65867eec6e0f7e))
+* **courses:** monte carlo tree search ([b65cc5a](https://github.com/gameguild-gg/website/commit/b65cc5ac39624631621501c00fbc5ded2181dd11))
+* **plos:** update plos from champlain ([4ee3c78](https://github.com/gameguild-gg/website/commit/4ee3c7843901c0c2c1698e8b4e61c7091b0a641b))
+* **wasm:** fix build issue ([d53d2ea](https://github.com/gameguild-gg/website/commit/d53d2ea743038a46e80092ddfbceecb58b2ac375))
+
 ## [1.19.2](https://github.com/gameguild-gg/website/compare/v1.19.1...v1.19.2) (2025-04-17)
 
 
