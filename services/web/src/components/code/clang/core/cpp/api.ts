@@ -15,7 +15,6 @@ const sysrootUrl = sysrootTarUrl;
 
 interface APIOptions {
   hostWrite: (message: string) => void;
-  showTiming?: boolean;
 }
 
 interface CompileOptions {
@@ -28,7 +27,6 @@ interface CompileOptions {
 export class API {
   private moduleCache: { [key: string]: WebAssembly.Module };
   private hostWrite: (message: string) => void;
-  private showTiming: boolean;
   private clangCommonArgs: string[];
   private memfs: MemFS;
   public ready: Promise<void>;
@@ -36,7 +34,6 @@ export class API {
   constructor(options: APIOptions) {
     this.moduleCache = {};
     this.hostWrite = options.hostWrite;
-    this.showTiming = options.showTiming || false;
 
     this.clangCommonArgs = [
       '-disable-free',
@@ -77,8 +74,7 @@ export class API {
   }
 
   hostLog(message: string): void {
-    const yellowArrow = '\x1b[1;93m>\x1b[0m ';
-    this.hostWrite(`${yellowArrow}${message}`);
+    this.hostWrite(message);
   }
 
   async hostLogAsync<T>(message: string, promise: Promise<T>): Promise<T> {
@@ -86,12 +82,7 @@ export class API {
     this.hostLog(`${message}...`);
     const result = await promise;
     const end = +new Date();
-    this.hostWrite(' done.');
-    if (this.showTiming) {
-      const green = '\x1b[92m';
-      const normal = '\x1b[0m';
-      this.hostWrite(` ${green}(${msToSec(start, end)}s)${normal}`);
-    }
+    this.hostWrite('done.\n');
     return result;
   }
 
@@ -149,13 +140,6 @@ export class API {
     const instantiate = +new Date();
     const stillRunning = await app.run();
     const end = +new Date();
-    if (this.showTiming) {
-      const green = '\x1b[92m';
-      const normal = '\x1b[0m';
-      let msg = `${green}(${msToSec(start, instantiate)}s`;
-      msg += `/${msToSec(instantiate, end)}s)${normal}`;
-      this.hostWrite(msg);
-    }
     return stillRunning ? app : null;
   }
 

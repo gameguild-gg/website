@@ -21,10 +21,6 @@ const onAnyMessage = async (event) => {
       api = new API(apiOptions);
       break;
 
-    case 'setShowTiming':
-      api.showTiming = event.data.data;
-      break;
-
     case 'compileLinkRun':
       currentApp = await api.compileLinkRun(event.data.data);
       console.log(`finished compileLinkRun. currentApp = ${currentApp}.`);
