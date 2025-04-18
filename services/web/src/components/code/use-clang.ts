@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { proxy, wrap } from 'comlink';
+import { proxy, wrap, Remote } from 'comlink';
 import { CodeExecutorBase } from './code-executor.base';
 import { RunnerStatus } from './code-executor.types';
 
@@ -15,7 +15,9 @@ export function useClang() {
   const [stderr, setStderr] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
   const workerRef = useRef<Worker | null>(null);
-  const executorRef = useRef<CodeExecutorBase | null>(null);
+  // Using Comlink's Remote type to properly type the wrapped worker
+  // This transforms all methods to return Promises as Comlink does
+  const executorRef = useRef<Remote<CodeExecutorBase> | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
   // Function to update the status asynchronously
