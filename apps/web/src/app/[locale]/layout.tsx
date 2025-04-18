@@ -1,18 +1,47 @@
-import { hasLocale, NextIntlClientProvider } from 'next-intl';
-import { notFound } from 'next/navigation';
+import React, { ReactNode } from 'react';
+import { hasLocale, Locale, NextIntlClientProvider } from 'next-intl';
+import '@/styles/globals.css';
 import { routing } from '@/i18n/routing';
+import { setRequestLocale } from 'next-intl/server';
+import { notFound } from 'next/navigation';
+import { GoogleAnalytics, GoogleTagManager } from '@next/third-parties/google';
+import { environment } from '@/config/environment';
 
-export default async function LocaleLayout({ children, params }: { children: React.ReactNode; params: Promise<{ locale: string }> }) {
-  // Ensure that the incoming `locale` is valid
+import { ThemeToggle } from '@/components/theme/theme-toggle';
+import { ThemeProvider } from '@/components/theme/theme-provider';
+
+type Props = {
+  children: ReactNode;
+  params: Promise<{ locale: Locale }>;
+};
+
+export default async function Layout({ children, params }: Props): Promise<React.JSX.Element> {
   const { locale } = await params;
-  if (!hasLocale(routing.locales, locale)) {
-    notFound();
-  }
+
+  // Ensure that the incoming `locale` is valid
+  if (!hasLocale(routing.locales, locale)) notFound();
+
+  // Enable static rendering
+  setRequestLocale(locale);
 
   return (
-    <html lang={locale}>
+    <html lang={locale} suppressHydrationWarning>
       <body>
-        <NextIntlClientProvider>{children}</NextIntlClientProvider>
+        <NextIntlClientProvider>
+          <GoogleAnalytics gaId={environment.GoogleAnalyticsMeasurementId} />
+          <GoogleTagManager gtmId={environment.GoogleTagManagerId} />
+          <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+            <ThemeToggle />
+            {/*<Web3Provider>*/}
+            {/*  <TooltipProvider>*/}
+            {/*    */}
+            {/*  </TooltipProvider>*/}
+            {/*  <FloatingFeedbackButton />*/}
+            {/*  <Toaster />*/}
+            {/*</Web3Provider>*/}
+            {children}
+          </ThemeProvider>
+        </NextIntlClientProvider>
       </body>
     </html>
   );
