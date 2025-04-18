@@ -17,37 +17,37 @@ import {
   YAxis,
 } from 'recharts';
 
-// Main PLOs data
+// Main PLOs data - Updated with new titles and descriptions
 const PLOs = [
   {
     id: 'PLO1',
-    title: 'Reflective Learning & Design',
-    desc: 'Students will engage in reflective learning and exploration, applying human-centered design principles to tackle real-world challenges in workplace and civic life.',
+    title: 'Design',
+    desc: 'Students will engage in reflective learning and exploration, applying human-centered design processes to tackle real-world challenges they face in the workplace and in civic life.',
   },
   {
     id: 'PLO2',
-    title: 'Creative Problem Solving',
-    desc: 'Students will solve problems creatively, working within defined parameters to develop innovative solutions that are practical and actionable.',
+    title: 'Creative Thinking',
+    desc: 'Students will approach problems creatively and iteratively, at all stages of the process, working within defined parameters to develop innovative solutions that are practical and actionable.',
   },
   {
     id: 'PLO3',
-    title: 'Effective Communication',
+    title: 'Communication',
     desc: 'Students will communicate clearly and effectively with diverse audiences, including peers, clients, and stakeholders, in various professional settings.',
   },
   {
     id: 'PLO4',
-    title: 'Adaptability & Resilience',
+    title: 'Resilience & Flexibility',
     desc: 'Students will adapt to changing professional contexts, demonstrating resilience and flexibility in managing evolving project requirements and challenges.',
   },
   {
     id: 'PLO5',
-    title: 'Interdisciplinary Collaboration',
+    title: 'Collaborative Project Management',
     desc: 'Students will collaborate effectively within interdisciplinary teams, defining roles and responsibilities to achieve common project goals.',
   },
   {
     id: 'PLO6',
-    title: 'Contextual Awareness & Ethics',
-    desc: 'Students will apply their awareness of self and of the world on a local, regional, or global scale to foster sustainable and ethical decision-making.',
+    title: 'Ethics & Context',
+    desc: 'Students will apply their awareness of self and of the world on a local, regional, or global scale to foster sustainable and ethical decision-making in designing a project and anticipating its potential impacts.',
   },
   {
     id: 'PLO7',
@@ -56,27 +56,49 @@ const PLOs = [
   },
 ];
 
-// Course sequence data
+// Course sequence data - Updated with competency info
 const courseSequence = [
   {
     id: 'PLS-180',
     name: 'PLS-180',
-    fullName: 'PLS-180: Understand',
-    desc: 'Foundational course focused on understanding basic concepts',
+    fullName: 'PLS-180: Explore',
+    desc: 'Foundational course covering Collaboration, Creativity',
+    competencies: ['Collaboration', 'Creativity'],
   },
   {
     id: 'PLS-280',
     name: 'PLS-280',
-    fullName: 'PLS-280: Explore',
-    desc: 'Intermediate course focused on exploration and application',
+    fullName: 'PLS-280: Interpret',
+    desc: 'Intermediate course covering Communication, Collaboration, Creativity, DEI',
+    competencies: ['Communication', 'Collaboration', 'Creativity', 'DEI'],
   },
   {
     id: 'PLS-380',
     name: 'PLS-380',
     fullName: 'PLS-380: Materialize',
-    desc: 'Advanced course focused on implementation and materialization',
+    desc: 'Advanced course covering Communication, Creativity, DEI',
+    competencies: ['Communication', 'Creativity', 'DEI'],
   },
 ];
+
+// Colors for PLO groups
+const PLO_COLORS = [
+  '#3b82f6', // blue
+  '#ef4444', // red
+  '#10b981', // green
+  '#f59e0b', // amber
+  '#8b5cf6', // violet
+  '#ec4899', // pink
+  '#6366f1', // indigo
+];
+
+// Competency colors for consistency
+const competencyColors = {
+  Communication: 'bg-blue-500',
+  Collaboration: 'bg-green-500',
+  Creativity: 'bg-purple-500',
+  DEI: 'bg-amber-500',
+};
 
 // Alignment strength data (simplified for visualization)
 const alignmentData = [
@@ -125,17 +147,6 @@ const radarData = PLOs.map((plo) => {
 
   return result;
 });
-
-// Colors for PLO groups
-const PLO_COLORS = [
-  '#3b82f6', // blue
-  '#ef4444', // red
-  '#10b981', // green
-  '#f59e0b', // amber
-  '#8b5cf6', // violet
-  '#ec4899', // pink
-  '#6366f1', // indigo
-];
 
 // Custom tooltip for the bar chart
 const CustomTooltip = (props) => {
@@ -186,7 +197,8 @@ const CurriculumAlignment = () => {
             <div className="mb-4 p-4 bg-yellow-50 rounded border border-yellow-200">
               <p className="text-sm">
                 <span className="font-bold">How to read this curriculum map:</span> Each row represents a PLO, and each column represents a course. The color
-                intensity indicates alignment strength. White dots show which faculty members address this outcome in their course.
+                intensity indicates alignment strength. White dots show which faculty members address this outcome in their course. Course competencies are
+                shown in the column headers (COM: Communication, COL: Collaboration, CRE: Creativity, DEI: Diversity, Equity, Inclusion).
               </p>
             </div>
             <div className="bg-white p-4 rounded shadow">
@@ -197,7 +209,25 @@ const CurriculumAlignment = () => {
                     {courseSequence.map((course) =>
                       activeCourse && activeCourse !== course.id ? null : (
                         <th key={course.id} className="p-2 border border-gray-300 bg-gray-100 text-center">
-                          {course.fullName}
+                          <div>{course.fullName}</div>
+                          <div className="text-xs mt-1 flex justify-center space-x-1">
+                            {course.competencies.map((comp) => {
+                              const shortComp = comp === 'Communication' ? 'COM' : comp === 'Collaboration' ? 'COL' : comp === 'Creativity' ? 'CRE' : 'DEI';
+                              const bgColor =
+                                comp === 'Communication'
+                                  ? 'bg-blue-500'
+                                  : comp === 'Collaboration'
+                                    ? 'bg-green-500'
+                                    : comp === 'Creativity'
+                                      ? 'bg-purple-500'
+                                      : 'bg-amber-500';
+                              return (
+                                <span key={comp} className={`${bgColor} text-white px-1 rounded`}>
+                                  {shortComp}
+                                </span>
+                              );
+                            })}
+                          </div>
                         </th>
                       ),
                     )}
@@ -263,6 +293,14 @@ const CurriculumAlignment = () => {
                 <span className="font-bold">How to read this radar chart:</span> Each axis represents a Program Learning Outcome (PLO). The colored areas show
                 coverage of each PLO across the three courses. The further from center, the stronger the emphasis (100% = maximum emphasis).
               </p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                <span className="text-xs font-bold">Course Competencies:</span>
+                {Object.entries(competencyColors).map(([comp, color]) => (
+                  <span key={comp} className={`text-xs ${color} text-white px-1 rounded`}>
+                    {comp === 'Communication' ? 'COM' : comp === 'Collaboration' ? 'COL' : comp === 'Creativity' ? 'CRE' : 'DEI'}
+                  </span>
+                ))}
+              </div>
             </div>
             <div className="h-96">
               <ResponsiveContainer width="100%" height="100%">
@@ -302,32 +340,53 @@ const CurriculumAlignment = () => {
 
       case 'progression':
         return (
-          <div className="space-y-4">
-            {PLOs.map((plo) => {
-              if (activePLO && activePLO !== plo.id) return null;
+          <div>
+            <div className="mb-4 p-4 bg-yellow-50 rounded border border-yellow-200">
+              <p className="text-sm">
+                <span className="font-bold">How to read this progression view:</span> Each card shows how a PLO develops across the three courses in the
+                sequence. The progress bars indicate the strength of alignment in each course.
+              </p>
+              <p className="text-xs mt-2">
+                <span className="font-bold">Note:</span> Courses have specific competency coverage as shown in the legend (COM: Communication, COL:
+                Collaboration, CRE: Creativity, DEI: Diversity, Equity, Inclusion).
+              </p>
+            </div>
+            <div className="space-y-4">
+              {PLOs.map((plo) => {
+                if (activePLO && activePLO !== plo.id) return null;
 
-              const ploData = getProgressionData(plo.id);
-              return (
-                <div key={plo.id} className="bg-gray-50 p-4 rounded">
-                  <h3 className="font-semibold">{plo.title}</h3>
-                  <p className="text-sm mb-4">{plo.desc}</p>
-                  <div className="flex">
-                    {ploData.map((item) => {
-                      const course = courseSequence.find((c) => c.id === item.course);
-                      return (
-                        <div key={`${plo.id}-${item.course}`} className="flex-1 border-r border-gray-300 last:border-0 px-4">
-                          <div className="text-sm font-bold">{course.fullName}</div>
-                          <div className="bg-blue-100 h-6 w-full rounded overflow-hidden mt-2">
-                            <div className="bg-blue-500 h-full" style={{ width: `${item.strength * 100}%` }} />
+                const ploData = getProgressionData(plo.id);
+                return (
+                  <div key={plo.id} className="bg-gray-50 p-4 rounded">
+                    <h3 className="font-semibold">{plo.title}</h3>
+                    <p className="text-sm mb-4">{plo.desc}</p>
+                    <div className="flex">
+                      {ploData.map((item) => {
+                        const course = courseSequence.find((c) => c.id === item.course);
+                        if (activeCourse && activeCourse !== course.id) return null;
+
+                        return (
+                          <div key={`${plo.id}-${item.course}`} className="flex-1 border-r border-gray-300 last:border-0 px-4">
+                            <div className="text-sm font-bold">{course.fullName}</div>
+                            <div className="text-xs flex gap-1 mb-1">
+                              {course.competencies.map((comp) => (
+                                <span key={comp} className={`${competencyColors[comp]} text-white px-1 rounded text-xs`}>
+                                  {comp === 'Communication' ? 'COM' : comp === 'Collaboration' ? 'COL' : comp === 'Creativity' ? 'CRE' : 'DEI'}
+                                </span>
+                              ))}
+                            </div>
+                            <div className="bg-blue-100 h-6 w-full rounded overflow-hidden mt-2">
+                              <div className="bg-blue-500 h-full" style={{ width: `${item.strength * 100}%` }} />
+                            </div>
+                            <div className="text-center text-xs mt-1">{(item.strength * 100).toFixed(0)}%</div>
                           </div>
-                          <div className="text-center text-xs mt-1">{(item.strength * 100).toFixed(0)}%</div>
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
         );
 
@@ -358,7 +417,7 @@ const CurriculumAlignment = () => {
 
   return (
     <div className="p-4 max-w-full">
-      <h1 className="text-2xl font-bold mb-4">Curriculum Alignment Visualization</h1>
+      <h1 className="text-2xl font-bold mb-4">PLS Curriculum Alignment Visualization</h1>
 
       {/* Controls */}
       <div className="flex flex-wrap gap-4 mb-6 p-4 bg-gray-50 rounded">
@@ -419,20 +478,36 @@ const CurriculumAlignment = () => {
         <h2 className="text-lg font-semibold mb-2">About This Visualization</h2>
         <p className="mb-4">
           This tool helps visualize the alignment between Program Learning Outcomes (PLOs) and Course Learning Outcomes (CLOs) across the PLS sequence. The
-          visualization shows how each PLO is emphasized across courses and by different faculty members.
+          visualization shows how each PLO is emphasized across courses and highlights the competencies (Communication, Collaboration, Creativity, and DEI)
+          covered in each course.
         </p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <h3 className="font-medium">Course Progression</h3>
+            <h3 className="font-medium">Course Progression & Competencies</h3>
             <ul className="list-disc list-inside">
               <li>
-                <span className="font-medium">PLS-180:</span> Understand - Foundational concepts
+                <span className="font-medium">PLS-180:</span> Explore - Foundational course
+                <span className="ml-2 text-xs">
+                  <span className={`${competencyColors['Collaboration']} text-white px-1 rounded`}>COL</span>
+                  <span className={`ml-1 ${competencyColors['Creativity']} text-white px-1 rounded`}>CRE</span>
+                </span>
               </li>
               <li>
-                <span className="font-medium">PLS-280:</span> Explore - Application and exploration
+                <span className="font-medium">PLS-280:</span> Interpret - Application and exploration
+                <span className="ml-2 text-xs">
+                  <span className={`${competencyColors['Communication']} text-white px-1 rounded`}>COM</span>
+                  <span className={`ml-1 ${competencyColors['Collaboration']} text-white px-1 rounded`}>COL</span>
+                  <span className={`ml-1 ${competencyColors['Creativity']} text-white px-1 rounded`}>CRE</span>
+                  <span className={`ml-1 ${competencyColors['DEI']} text-white px-1 rounded`}>DEI</span>
+                </span>
               </li>
               <li>
                 <span className="font-medium">PLS-380:</span> Materialize - Implementation and delivery
+                <span className="ml-2 text-xs">
+                  <span className={`${competencyColors['Communication']} text-white px-1 rounded`}>COM</span>
+                  <span className={`ml-1 ${competencyColors['Creativity']} text-white px-1 rounded`}>CRE</span>
+                  <span className={`ml-1 ${competencyColors['DEI']} text-white px-1 rounded`}>DEI</span>
+                </span>
               </li>
             </ul>
           </div>

@@ -10,7 +10,7 @@ class ClangWorker implements CodeExecutorBase {
   private onStdOut: ((data: string) => void) | null = null;
   private onStdErr: ((data: string) => void) | null = null;
   private onError: ((data: string) => void) | null = null;
-  private currentAbortController: AbortController | null = null;
+  private currentStatus: RunnerStatus = RunnerStatus.UNINITIALIZED;
 
   setOnStdOut(onStdOut: (data: string) => void) {
     this.onStdOut = onStdOut;
@@ -24,36 +24,53 @@ class ClangWorker implements CodeExecutorBase {
     this.onError = onError;
   }
 
-  async init(onStatusChange: (status: RunnerStatus) => void) {
+  getStatus(): RunnerStatus {
+    return this.currentStatus;
+  }
+
+  async init(): Promise<RunnerStatus> {
     console.log('ClangWorker init called');
-    onStatusChange(RunnerStatus.LOADING);
+    
+    // Already initialized
+    if (this.api && this.currentStatus === RunnerStatus.READY) {
+      return RunnerStatus.READY;
+    }
+    
+    // Update status to loading
+    this.currentStatus = RunnerStatus.LOADING;
 
     try {
-      // Create a local function that doesn't try to access this.onStdErr or this.onStdOut directly
-      // This avoids the need to transfer a function that references 'this' context
+      // Create a handler function that forwards to the appropriate callbacks
       const handleHostWrite = (s: string) => {
         if (s.includes('Error:')) {
-          // Store the message and use a custom event to signal the main thread
-          const message = s;
-          self.postMessage({ type: 'stderr', data: message });
+          if (this.onStdErr) {
+            this.onStdErr(s);
+          }
         } else {
-          // Store the message and use a custom event to signal the main thread
-          const message = s;
-          self.postMessage({ type: 'stdout', data: message });
+          if (this.onStdOut) {
+            this.onStdOut(s);
+          }
         }
       };
 
+      // Create the API directly here instead of in a separate worker
       this.api = new API({
         hostWrite: handleHostWrite,
         showTiming: true,
       });
 
-      // Wait for the API to be ready (memfs, etc)
+      // Wait for the API to be ready (memfs, etc.)
       await this.api.ready;
-      onStatusChange(RunnerStatus.READY);
+      
+      // Update status to ready
+      this.currentStatus = RunnerStatus.READY;
+      return RunnerStatus.READY;
     } catch (error) {
-      onStatusChange(RunnerStatus.FAILED_LOADING);
-      this.onError?.(error.toString());
+      this.currentStatus = RunnerStatus.FAILED_LOADING;
+      if (this.onError) {
+        this.onError(error.toString());
+      }
+      return RunnerStatus.FAILED_LOADING;
     }
   }
 
@@ -61,39 +78,73 @@ class ClangWorker implements CodeExecutorBase {
     code: string,
     options?: {
       stdIn?: string;
-      onStdOut?: (data: string) => void;
-      onStdErr?: (data: string) => void;
     },
-  ): Promise<void> {
+  ): Promise<{ stdout: string; stderr: string; success: boolean; status: RunnerStatus }> {
     if (!this.api) {
       throw new Error('Clang API not initialized');
     }
 
-    const localStdOut = options?.onStdOut || this.onStdOut;
-    const localStdErr = options?.onStdErr || this.onStdErr;
-
-    // Send status updates directly through postMessage instead of callbacks
-    self.postMessage({ type: 'runStatus', status: RunnerStatus.RUNNING });
+    // Store output locally
+    let outputStdout = '';
+    let outputStderr = '';
+    
+    // Create a temporary handler that captures output locally
+    const captureStdout = (data: string) => {
+      outputStdout += data;
+    };
+    
+    const captureStderr = (data: string) => {
+      outputStderr += data;
+    };
+    
+    // Store original handlers
+    const originalStdout = this.onStdOut;
+    const originalStderr = this.onStdErr;
+    
+    // Set handlers to our capture functions
+    this.onStdOut = captureStdout;
+    this.onStdErr = captureStderr;
+    
+    // Update status
+    this.currentStatus = RunnerStatus.RUNNING;
 
     try {
+      // Set stdin if provided
+      if (options?.stdIn) {
+        this.api.memfs.setStdinStr(options.stdIn);
+      }
+
       // Compile, link, and run the code
       const result = await this.api.compileLinkRun(code);
-      self.postMessage({ type: 'runStatus', status: RunnerStatus.READY });
-      // return result;
+      
+      // Update status
+      this.currentStatus = RunnerStatus.READY;
+      
+      // Return the collected output
+      return {
+        stdout: outputStdout,
+        stderr: outputStderr,
+        success: true,
+        status: RunnerStatus.READY
+      };
     } catch (error) {
-      self.postMessage({ type: 'runStatus', status: RunnerStatus.FAILED_EXECUTION });
-      if (localStdErr) {
-        try {
-          localStdErr(`Execution error: ${error.toString()}`);
-        } catch (err) {
-          // If the callback fails, fall back to direct message
-          self.postMessage({ type: 'stderr', data: `Execution error: ${error.toString()}` });
-        }
-      } else {
-        // No callback, use direct message
-        self.postMessage({ type: 'stderr', data: `Execution error: ${error.toString()}` });
-      }
-      throw error;
+      // Update status
+      this.currentStatus = RunnerStatus.FAILED_EXECUTION;
+      
+      // Handle error output
+      const errorMessage = `Execution error: ${error.toString()}`;
+      outputStderr += errorMessage;
+      
+      return {
+        stdout: outputStdout,
+        stderr: outputStderr,
+        success: false,
+        status: RunnerStatus.FAILED_EXECUTION
+      };
+    } finally {
+      // Restore original handlers
+      this.onStdOut = originalStdout;
+      this.onStdErr = originalStderr;
     }
   }
 
