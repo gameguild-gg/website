@@ -1,15 +1,13 @@
 import React, { ReactNode } from 'react';
-import { hasLocale, Locale, NextIntlClientProvider } from 'next-intl';
-import '@/styles/globals.css';
-import { routing } from '@/i18n/routing';
-import { setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { GoogleAnalytics, GoogleTagManager } from '@next/third-parties/google';
+import { hasLocale, Locale, NextIntlClientProvider } from 'next-intl';
+import { setRequestLocale } from 'next-intl/server';
 import { environment } from '@/config/environment';
-import { ThemeToggle } from '@/components/theme/theme-toggle';
+import { routing } from '@/i18n/routing';
 import { ThemeProvider } from '@/components/theme/theme-provider';
-import { FloatingFeedbackButton } from '@/components/floating-issue-button/floating-issue-button';
 import { WebVitals } from '@/components/analytics/web-vitals';
+import '@/styles/globals.css';
 
 type Props = {
   children: ReactNode;
@@ -19,10 +17,9 @@ type Props = {
 export default async function Layout({ children, params }: Props): Promise<React.JSX.Element> {
   const { locale } = await params;
 
-  // Ensure that the incoming `locale` is valid
   if (!hasLocale(routing.locales, locale)) notFound();
 
-  // Enable static rendering
+  // Enable static rendering.
   setRequestLocale(locale);
 
   return (
@@ -33,9 +30,11 @@ export default async function Layout({ children, params }: Props): Promise<React
           <GoogleAnalytics gaId={environment.GoogleAnalyticsMeasurementId} />
           <GoogleTagManager gtmId={environment.GoogleTagManagerId} />
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-            <ThemeToggle />
+            {/*TODO: Move this to a better place*/}
+            {/*<ThemeToggle />*/}
             {children}
-            <FloatingFeedbackButton />
+            {/*TODO: Move this to a better place*/}
+            {/*<FeedbackFloatingButton />*/}
           </ThemeProvider>
         </NextIntlClientProvider>
       </body>
