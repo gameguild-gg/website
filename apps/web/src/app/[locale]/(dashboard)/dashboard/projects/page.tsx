@@ -5,9 +5,9 @@ export default async function ProjectsPage() {
   const projects = await getProjects();
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-white p-8">
-      <div className="max-w-7xl mx-auto">
-        <ProjectList initialProjects={projects} />
+    <div className="flex flex-col flex-1 items-center justify-center">
+      <div className="flex flex-col flex-1 container">
+        <ProjectList initialProjects={[]} />
       </div>
     </div>
   );

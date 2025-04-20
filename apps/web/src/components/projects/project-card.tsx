@@ -45,7 +45,7 @@ export function ProjectCard({ id, name, status, createdAt, updatedAt }: ProjectC
     <Link href={`/projects/${id}`} className="block" onClick={handleClick}>
       <HoverCard>
         <HoverCardTrigger asChild>
-          <div className="p-4 bg-zinc-900 rounded-lg hover:bg-zinc-800 transition-colors cursor-pointer">
+          <div className="h-full p-4 bg-zinc-900 rounded-lg hover:bg-zinc-800 transition-colors cursor-pointer">
             <div className="mb-2">
               <div className={`h-1 w-6 rounded ${getStatusColor(status)}`} />
             </div>
