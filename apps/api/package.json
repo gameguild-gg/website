@@ -1,45 +1,35 @@
 {
   "name": "@game-guild/api",
-  "version": "1.0.0",
   "description": "",
+  "version": "1.0.0",
   "author": "",
   "private": false,
-  "licenses": [
-    {
-      "type": "AGPL-3.0",
-      "url": "https://www.gnu.org/licenses/agpl-3.0.html"
-    },
-    {
-      "type": "Commercial",
-      "url": "https://github.com/gameguild-gg/website/blob/main/COMMERCIAL_LICENSE.md"
-    }
-  ],
   "scripts": {
-    "install:deps:ubuntu": "apt update ; apt install -y build-essential cmake git",
     "build": "nest build",
+    "db:diagram": "ts-node generate-dbml.ts",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
-    "start": "nest start",
-    "start:dev": "nest start --watch",
-    "start:debug": "nest start --debug --watch",
-    "start:prod": "node dist/main",
+    "install:deps:ubuntu": "apt update ; apt install -y build-essential cmake git",
+    "kill": "killall node",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
-    "typeorm": "typeorm-ts-node-commonjs -d ormconfig.ts",
     "migration:generate": "cd migrations && npx typeorm-ts-node-commonjs migration:generate -d ormconfig.ts",
     "migration:revert": "npm run typeorm -- migration:revert",
+    "openapigenerator": "openapi-generator-plus -c config.yml",
+    "posttest:e2e": "npm run kill",
     "schema:drop": "npm run typeorm -- schema:drop",
-    "schema:sync": "npm run typeorm -- schema:sync",
     "schema:log": "npm run typeorm -- schema:log",
-    "db:diagram": "ts-node generate-dbml.ts",
+    "schema:sync": "npm run typeorm -- schema:sync",
+    "start": "nest start",
+    "start:debug": "nest start --debug --watch",
+    "start:dev": "nest start --watch",
+    "start:prod": "node dist/main",
+    "startandtest": "npm-run-all --parallel start:dev test:e2e:wait",
     "test_": "jest",
-    "test:watch_": "jest --watch",
     "test:cov_": "jest --coverage",
     "test:debug_": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config test/jest-e2e.json",
-    "posttest:e2e": "npm run kill",
     "test:e2e:wait": "wait-on tcp:8080 && npm run test:e2e --runInBand --detectOpenHandles --forceExit",
-    "startandtest": "npm-run-all --parallel start:dev test:e2e:wait",
-    "kill": "killall node",
-    "openapigenerator": "openapi-generator-plus -c config.yml"
+    "test:watch_": "jest --watch",
+    "typeorm": "typeorm-ts-node-commonjs -d ormconfig.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.758.0",
@@ -129,7 +119,7 @@
     "@types/jest": "^29.5.14",
     "@types/lodash": "^4.17.16",
     "@types/multer": "^1.4.12",
-    "@types/node": "^22.13.8",
+    "@types/node": "^22",
     "@types/passport-jwt": "^4.0.1",
     "@types/passport-local": "^1.0.38",
     "@types/supertest": "^6.0.2",
@@ -167,5 +157,15 @@
     ],
     "coverageDirectory": "../coverage",
     "testEnvironment": "node"
-  }
+  },
+  "licenses": [
+    {
+      "type": "AGPL-3.0",
+      "url": "https://www.gnu.org/licenses/agpl-3.0.html"
+    },
+    {
+      "type": "Commercial",
+      "url": "https://github.com/gameguild-gg/website/blob/main/COMMERCIAL_LICENSE.md"
+    }
+  ]
 }

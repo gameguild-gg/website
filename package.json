@@ -1,51 +1,41 @@
 {
   "name": "game-guild",
-  "version": "1.0.0",
   "description": "",
+  "version": "1.0.0",
   "author": "",
-  "licenses": [
-    {
-      "type": "AGPL-3.0",
-      "url": "https://www.gnu.org/licenses/agpl-3.0.html"
-    },
-    {
-      "type": "Commercial",
-      "url": "https://github.com/gameguild-gg/website/blob/main/COMMERCIAL_LICENSE.md"
-    }
-  ],
   "private": true,
   "workspaces": [
     "apps/*",
     "packages/*"
   ],
   "scripts": {
-    "install:api": "npm install --workspace=apps/api",
-    "install:web": "npm install --workspace=apps/web",
-    "install:apiclient": "npm install @game-guild/apiclient --no-save --workspace=apps/web",
-    "clean": "rimraf --glob ./**/node_modules ./**/dist ./**/coverage ./**/build ./**/.next package-lock.json",
-    "prepare_": "husky install",
-    "format": "npm run format --workspaces --if-present",
-    "format:api": "npm run format --workspace=apps/api",
-    "format:web": "npm run format --workspace=apps/web",
-    "lint": "npm run lint --fix --workspaces --if-present",
-    "lint:api": "npm run lint --workspace=apps/api",
-    "lint:web": "npm run lint --workspace=apps/web",
     "build": "npm run build --workspaces --if-present",
     "build:api": "npm run build --workspace=apps/api",
     "build:web": "npm run build --workspace=apps/web",
+    "clean": "rimraf --glob ./**/node_modules ./**/dist ./**/coverage ./**/build ./**/.next package-lock.json",
+    "db:diagram": "npm run db:diagram --workspace=apps/api",
     "dev": "concurrently \"npm run dev:api\" \"npm run dev:web\"",
     "dev:api": "npm run dev --workspace=apps/api",
     "dev:web": "npm run dev --workspace=apps/web",
-    "test": "npm run test --workspaces --if-present",
-    "test:api": "npm run test --workspace=apps/api",
-    "test:web": "npm run test --workspace=apps/web",
+    "format": "npm run format --workspaces --if-present",
+    "format:api": "npm run format --workspace=apps/api",
+    "format:web": "npm run format --workspace=apps/web",
+    "gource": "./contributors/gource.sh",
+    "install:api": "npm install --workspace=apps/api",
+    "install:apiclient": "npm install @game-guild/apiclient --no-save --workspace=apps/web",
+    "install:web": "npm install --workspace=apps/web",
+    "lint": "npm run lint --fix --workspaces --if-present",
+    "lint:api": "npm run lint --workspace=apps/api",
+    "lint:web": "npm run lint --workspace=apps/web",
+    "open:tests": "npm run cy:open --workspace=tests",
+    "prepare_": "husky install",
     "start": "npm run start --workspaces --if-present",
     "start:api": "npm run start:prod --workspace=apps/api",
-    "start:web": "npm run start --workspace=apps/web",
     "start:both": "concurrently \"npm:dev:api\" \"npm:dev:web\"",
-    "open:tests": "npm run cy:open --workspace=tests",
-    "gource": "./contributors/gource.sh",
-    "db:diagram": "npm run db:diagram --workspace=apps/api"
+    "start:web": "npm run start --workspace=apps/web",
+    "test": "npm run test --workspaces --if-present",
+    "test:api": "npm run test --workspace=apps/api",
+    "test:web": "npm run test --workspace=apps/web"
   },
   "devDependencies": {
     "@game-guild/apiclient": "*",
@@ -61,11 +51,21 @@
     "@semantic-release/release-notes-generator": "^14.0.1",
     "conventional-changelog-angular": "^8.0.0",
     "eslint": "^9",
-    "moxygen": "^0.8.0",
     "prettier": "^3.5.2",
     "rimraf": "^6",
+    "syncpack": "^13.0.0",
     "typescript": "^5"
   },
+  "licenses": [
+    {
+      "type": "AGPL-3.0",
+      "url": "https://www.gnu.org/licenses/agpl-3.0.html"
+    },
+    {
+      "type": "Commercial",
+      "url": "https://github.com/gameguild-gg/website/blob/main/COMMERCIAL_LICENSE.md"
+    }
+  ],
   "release": {
     "branches": [
       "master",

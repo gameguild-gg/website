@@ -1,23 +1,13 @@
 {
   "name": "@gamedev-guild/web",
-  "version": "1.0.0",
   "description": "",
-  "licenses": [
-    {
-      "type": "AGPL-3.0",
-      "url": "https://www.gnu.org/licenses/agpl-3.0.html"
-    },
-    {
-      "type": "Commercial",
-      "url": "https://github.com/gameguild-gg/website/blob/main/COMMERCIAL_LICENSE.md"
-    }
-  ],
+  "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
     "build": "next build",
-    "start": "next start",
-    "lint": "next lint"
+    "dev": "next dev",
+    "lint": "next lint",
+    "start": "next start"
   },
   "dependencies": {
     "@codeium/react-code-editor": "^1.0.12",
@@ -180,7 +170,7 @@
     "@types/lodash": "^4.17.15",
     "@types/mermaid": "^9.1.0",
     "@types/multer": "^1.4.11",
-    "@types/node": "^20",
+    "@types/node": "^22",
     "@types/react": "^19",
     "@types/react-beautiful-dnd": "^13.1.8",
     "@types/react-dom": "^19",
@@ -194,5 +184,15 @@
     "postcss": "^8.4.31",
     "tailwindcss": "^4.0.9",
     "typescript": "^5"
-  }
+  },
+  "licenses": [
+    {
+      "type": "AGPL-3.0",
+      "url": "https://www.gnu.org/licenses/agpl-3.0.html"
+    },
+    {
+      "type": "Commercial",
+      "url": "https://github.com/gameguild-gg/website/blob/main/COMMERCIAL_LICENSE.md"
+    }
+  ]
 }

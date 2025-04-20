@@ -1,11 +1,11 @@
 {
   "name": "@game-guild/prettier-config",
-  "version": "0.1.0",
-  "type": "module",
   "description": "",
+  "version": "0.1.0",
   "author": "",
   "license": "MIT",
   "private": true,
+  "type": "module",
   "main": "src/index.js",
   "peerDependencies": {
     "prettier": "^3.4.0"
