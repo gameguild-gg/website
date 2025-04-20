@@ -27,7 +27,7 @@
     "@lexical/react": "^0.19.0",
     "@lexical/rich-text": "^0.21.0",
     "@monaco-editor/react": "latest",
-    "@next/third-parties": "^15.1.0",
+    "@next/third-parties": "^15.3.1",
     "@octokit/types": "^13.6.3",
     "@radix-ui/react-accordion": "^1.2.5",
     "@radix-ui/react-alert-dialog": "^1.1.8",
