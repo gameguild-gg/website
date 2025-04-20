@@ -1,9 +1,25 @@
-import { NotImplemented, ProcExit } from './errors.js';
+import { NotImplemented, ProcExit } from './errors';
 import { Memory } from './memory';
 import { ESUCCESS, getImportObject, RAF_PROC_EXIT_CODE } from './shared';
+import { MemFS } from './memfs';
+
+interface AppExports extends WebAssembly.Exports {
+  memory: WebAssembly.Memory;
+  _start(): void;
+}
 
 export class App {
-  constructor(module, memfs, name, ...args) {
+  private argv: string[];
+  private environ: { [key: string]: string };
+  private memfs: MemFS;
+  private allowRequestAnimationFrame: boolean;
+  private handles: Map<number, any>;
+  private nextHandle: number;
+  private exports!: AppExports;
+  private mem!: Memory;
+  public ready: Promise<void>;
+
+  constructor(module: WebAssembly.Module, memfs: MemFS, name: string, ...args: string[]) {
     this.argv = [name, ...args];
     this.environ = { USER: 'alice' };
     this.memfs = memfs;
@@ -28,13 +44,13 @@ export class App {
     Object.assign(wasi_unstable, this.memfs.exports);
 
     this.ready = WebAssembly.instantiate(module, { wasi_unstable, env }).then((instance) => {
-      this.exports = instance.exports;
+      this.exports = instance.exports as AppExports;
       this.mem = new Memory(this.exports.memory);
       this.memfs.hostMem = this.mem;
     });
   }
 
-  async run() {
+  async run(): Promise<boolean> {
     await this.ready;
     try {
       this.exports._start();
@@ -55,9 +71,9 @@ export class App {
       }
 
       // Write error message.
-      let msg = `\x1b[91mError: ${exn.message}`;
+      let msg = `\x1b[91mError: ${(exn as Error).message}`;
       if (writeStack) {
-        msg = msg + `\n${exn.stack}`;
+        msg = msg + `\n${(exn as Error).stack}`;
       }
       msg += '\x1b[0m\n';
       this.memfs.hostWrite(msg);
@@ -65,13 +81,14 @@ export class App {
       // Propagate error.
       throw exn;
     }
+    return false;
   }
 
-  proc_exit(code) {
+  proc_exit(code: number): never {
     throw new ProcExit(code);
   }
 
-  environ_sizes_get(environ_count_out, environ_buf_size_out) {
+  environ_sizes_get(environ_count_out: number, environ_buf_size_out: number): number {
     this.mem.check();
     let size = 0;
     const names = Object.getOwnPropertyNames(this.environ);
@@ -85,7 +102,7 @@ export class App {
     return ESUCCESS;
   }
 
-  environ_get(environ_ptrs, environ_buf) {
+  environ_get(environ_ptrs: number, environ_buf: number): number {
     this.mem.check();
     const names = Object.getOwnPropertyNames(this.environ);
     for (const name of names) {
@@ -97,7 +114,7 @@ export class App {
     return ESUCCESS;
   }
 
-  args_sizes_get(argc_out, argv_buf_size_out) {
+  args_sizes_get(argc_out: number, argv_buf_size_out: number): number {
     this.mem.check();
     let size = 0;
     for (let arg of this.argv) {
@@ -108,7 +125,7 @@ export class App {
     return ESUCCESS;
   }
 
-  args_get(argv_ptrs, argv_buf) {
+  args_get(argv_ptrs: number, argv_buf: number): number {
     this.mem.check();
     for (let arg of this.argv) {
       this.mem.write32(argv_ptrs, argv_buf);
@@ -119,18 +136,18 @@ export class App {
     return ESUCCESS;
   }
 
-  random_get(buf, buf_len) {
+  random_get(buf: number, buf_len: number): void {
     const data = new Uint8Array(this.mem.buffer, buf, buf_len);
     for (let i = 0; i < buf_len; ++i) {
       data[i] = (Math.random() * 256) | 0;
     }
   }
 
-  clock_time_get(clock_id, precision, time_out) {
+  clock_time_get(clock_id: number, precision: number, time_out: number): never {
     throw new NotImplemented('wasi_unstable', 'clock_time_get');
   }
 
-  poll_oneoff(in_ptr, out_ptr, nsubscriptions, nevents_out) {
+  poll_oneoff(in_ptr: number, out_ptr: number, nsubscriptions: number, nevents_out: number): never {
     throw new NotImplemented('wasi_unstable', 'poll_oneoff');
   }
 }

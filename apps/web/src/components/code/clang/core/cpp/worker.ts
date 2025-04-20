@@ -1,5 +1,7 @@
 import { API } from './api';
 
+declare const __webpack_public_path__: string;
+
 let api: API;
 let port: MessagePort;
 
@@ -17,10 +19,6 @@ const onAnyMessage = async (event) => {
       port = event.data.data;
       port.onmessage = onAnyMessage;
       api = new API(apiOptions);
-      break;
-
-    case 'setShowTiming':
-      api.showTiming = event.data.data;
       break;
 
     case 'compileLinkRun':

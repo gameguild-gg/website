@@ -137,12 +137,15 @@ export function useClang() {
 
       try {
         // Clear previous output
-        setStdout('');
-        setStderr('');
-        setError(null);
+        // setStdout('');
+        // setStderr('');
+        // setError(null);
+
         
         // Update status to RUNNING
         setStatus(RunnerStatus.RUNNING);
+
+        console.log('Running code with executor');
         
         // Execute the code and wait for the result directly
         const result = await executorRef.current.run(code, {
