@@ -3,13 +3,25 @@ import { CodeExecutorBase } from '@/components/code/code-executor.base';
 import { API } from './clang/core/cpp/api';
 import { RunnerStatus } from './code-executor.types';
 
-console.log('ClangWorker called');
-
 class ClangWorker implements CodeExecutorBase {
   private api: API | null = null;
-  private onStdOut: ((data: string) => void) | null = null;
   private currentStatus: RunnerStatus = RunnerStatus.UNINITIALIZED;
-  private accumulatedOutput = '';
+  private onStdOut: ((data: string) => void) | null = null;
+  private onStdErr: ((data: string) => void) | null = null;
+  private onError: ((data: string) => void) | null = null;
+  private currentStage: 'init' | 'compile' | 'link' | 'execute' = 'init';
+  private accumulatedOutput: string = '';
+
+  constructor() {
+    console.log('ClangWorker called');
+  }
+
+  private formatOutput(stages: Array<{ stage: string; output: string }>): string {
+    return JSON.stringify({
+      type: 'output',
+      stages: stages
+    });
+  }
 
   setOnStdOut(onStdOut: (data: string) => void) {
     this.onStdOut = onStdOut;
@@ -30,9 +42,26 @@ class ClangWorker implements CodeExecutorBase {
   }
 
   private handleOutput(data: string) {
+    // Accumulate output based on current stage
     this.accumulatedOutput += data;
-    if (this.onStdOut) {
-      this.onStdOut(data);
+    
+    // Try to parse as JSON first
+    try {
+      const parsed = JSON.parse(data);
+      if (parsed.type === 'output' && Array.isArray(parsed.stages)) {
+        parsed.stages.forEach(({ stage, output }) => {
+          this.currentStage = stage;
+          if (this.onStdOut && output.trim()) {
+            this.onStdOut(output);
+          }
+        });
+        return;
+      }
+    } catch (err) {
+      // Not JSON, process as regular output
+      if (this.onStdOut && data.trim()) {
+        this.onStdOut(data);
+      }
     }
   }
 
@@ -71,13 +100,9 @@ class ClangWorker implements CodeExecutorBase {
       throw new Error('Clang API not initialized');
     }
 
-    this.accumulatedOutput = '';
-    let compilationOutput = '';
-    let linkingOutput = '';
-    let executionOutput = '';
+    const stages: Array<{ stage: 'init' | 'compile' | 'link' | 'execute'; output: string }> = [];
     
     try {
-      // Stage 1: Compilation
       const input = `test.cpp`;
       const obj = `test.o`;
       const wasm = `test.wasm`;
@@ -85,47 +110,55 @@ class ClangWorker implements CodeExecutorBase {
       if (options?.stdIn) {
         this.api.setStdinStr(options.stdIn);
       }
-      
-      if (options?.stdIn) {
-        this.api.setStdinStr(options.stdIn);
-      }
+
+      // Clear accumulated output
+      this.accumulatedOutput = '';
 
       // Compilation stage
+      this.currentStage = 'compile';
       try {
-        const savedOutput = this.accumulatedOutput;
-        this.accumulatedOutput = '';
         await this.api.compile({ input, contents: code, obj });
-        compilationOutput = this.accumulatedOutput;
-        this.accumulatedOutput = savedOutput;
+        stages.push({ 
+          stage: 'compile', 
+          output: this.accumulatedOutput
+        });
+        this.accumulatedOutput = ''; // Clear for next stage
       } catch (error) {
         throw new Error(`Compilation error: ${error}`);
       }
 
       // Linking stage
+      this.currentStage = 'link';
       try {
-        const savedOutput = this.accumulatedOutput;
-        this.accumulatedOutput = '';
         await this.api.link(obj, wasm);
-        linkingOutput = this.accumulatedOutput;
-        this.accumulatedOutput = savedOutput;
+        stages.push({ 
+          stage: 'link', 
+          output: this.accumulatedOutput
+        });
+        this.accumulatedOutput = ''; // Clear for next stage
       } catch (error) {
         throw new Error(`Linking error: ${error}`);
       }
 
       // Execution stage
-      const savedOutput = this.accumulatedOutput;
-      this.accumulatedOutput = '';
+      this.currentStage = 'execute';
       const buffer = this.api.getFileContents(wasm);
       const testMod = await WebAssembly.compile(buffer);
       const app = await this.api.run(testMod, wasm);
-      executionOutput = this.accumulatedOutput;
-      this.accumulatedOutput = savedOutput;
+      
+      // Wait a small amount of time for any remaining output
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      stages.push({ 
+        stage: 'execute', 
+        output: this.accumulatedOutput
+      });
 
       this.currentStatus = RunnerStatus.READY;
 
       return {
-        stdout: `[COMPILATION]\n${compilationOutput}\n[LINKING]\n${linkingOutput}\n[EXECUTION]\n${executionOutput}`,
-        stderr: '', // Keep empty as we're using stdout for everything
+        stdout: this.formatOutput(stages),
+        stderr: '',
         success: true,
         status: RunnerStatus.READY
       };
@@ -134,7 +167,10 @@ class ClangWorker implements CodeExecutorBase {
       const errorMsg = error.toString();
       
       return {
-        stdout: `[COMPILATION]\n${compilationOutput}\n[LINKING]\n${linkingOutput}\n[ERROR]\n${errorMsg}`,
+        stdout: this.formatOutput([
+          ...stages,
+          { stage: 'execute', output: `Error: ${errorMsg}` }
+        ]),
         stderr: '', // Keep empty as we're using stdout for everything
         success: false,
         status: RunnerStatus.FAILED_EXECUTION

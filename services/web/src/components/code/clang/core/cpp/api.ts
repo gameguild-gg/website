@@ -79,43 +79,35 @@ export class API {
     });
   }
 
+  private sendStageOutput(stage: 'init' | 'compile' | 'link' | 'execute', message: string) {
+    // Send raw message for better readability
+    this.hostWrite(message);
+  }
+
   async getModule(name: string): Promise<WebAssembly.Module> {
     if (this.moduleCache[name]) return this.moduleCache[name];
-    const m = await this.hostLogAsync(
-      `Fetching and compiling ${name}`,
-      (async () => {
-        const response = await fetch(name);
-        return WebAssembly.compile(await response.arrayBuffer());
-      })(),
-    );
+    
+    const moduleName = name.split('/').pop()?.split('.')[0] || name;
+    const m = await (async () => {
+      this.sendStageOutput('init', `Loading ${moduleName} module...\n`);
+      const response = await fetch(name);
+      return WebAssembly.compile(await response.arrayBuffer());
+    })();
+    
     this.moduleCache[name] = m;
     return m;
   }
 
-  hostLog(message: string): void {
-    this.hostWrite(message);
-  }
-
-  async hostLogAsync<T>(message: string, promise: Promise<T>): Promise<T> {
-    const start = +new Date();
-    this.hostLog(`${message}...`);
-    const result = await promise;
-    const end = +new Date();
-    this.hostWrite('done.\n');
-    return result;
-  }
-
   async untar(memfs: MemFS, url: string): Promise<void> {
     await this.memfs.ready;
-    const promise = (async () => {
-      const tar = new Tar(await fetch(url).then((result) => result.arrayBuffer()));
-      tar.untar(this.memfs);
-    })();
-    await this.hostLogAsync(`Untarring ${url}`, promise);
+    this.sendStageOutput('init', 'Downloading system files...\n');
+    const tar = new Tar(await fetch(url).then((result) => result.arrayBuffer()));
+    this.sendStageOutput('init', 'Extracting system files...\n');
+    tar.untar(this.memfs);
+    this.sendStageOutput('init', 'System environment ready.\n');
   }
 
   async compile(options: CompileOptions): Promise<App | null> {
-    this.currentStage = 'compile';
     const input = options.input;
     const contents = options.contents;
     const obj = options.obj;
@@ -124,22 +116,24 @@ export class API {
     await this.ready;
     this.memfs.addFile(input, contents);
     const clang = await this.getModule(clangUrl);
-    const result = await this.run(clang, 'clang', '-cc1', '-emit-obj', ...this.clangCommonArgs, '-O2', '-o', obj, '-x', 'c++', '-std=c++2a', input);
-    this.hostWrite('\n'); // Add a separator after compilation
+    
+    const args = ['clang', '-cc1', '-emit-obj', ...this.clangCommonArgs, '-O2', '-o', obj, '-x', 'c++', '-std=c++2a', input];
+    this.sendStageOutput('compile', 'Running Clang compiler...\n');
+    this.sendStageOutput('compile', `${args.join(' ')}\n`);
+    
+    const result = await this.run(clang, ...args);
     return result;
   }
 
   async link(obj: string, wasm: string): Promise<App | null> {
-    this.currentStage = 'link';
     const stackSize = 1024 * 1024;
-
     const libdir = 'lib/wasm32-wasi';
     const crt1 = `${libdir}/crt1.o`;
 
     await this.ready;
     const lld = await this.getModule(lldUrl);
-    const result = await this.run(
-      lld,
+    
+    const args = [
       'wasm-ld',
       '--no-threads',
       '--export-dynamic',
@@ -153,21 +147,26 @@ export class API {
       '-lc++abi',
       '-o',
       wasm,
-    );
-    this.hostWrite('\n'); // Add a separator after linking
-    return result;
+    ];
+    
+    this.sendStageOutput('link', 'Running linker...\n');
+    this.sendStageOutput('link', `${args.join(' ')}\n`);
+    
+    return await this.run(lld, ...args);
   }
 
   async run(module: WebAssembly.Module, ...args: string[]): Promise<App | null> {
-    // Only change to execute stage if not running a toolchain command
-    if (!args[0].includes('clang') && !args[0].includes('wasm-ld')) {
-      this.currentStage = 'execute';
-      this.hostWrite('\n'); // Add a separator before execution
-    }
-
-    this.hostLog(`${args.join(' ')}\n`);
+    const isToolchain = args[0].includes('clang') || args[0].includes('wasm-ld');
+    const stage = isToolchain ? this.currentStage : 'execute';
+    
     const app = new App(module, this.memfs, ...args);
     const stillRunning = await app.run();
+    
+    if (!isToolchain && stage === 'execute') {
+      // Only show output for non-toolchain commands (actual program execution)
+      this.sendStageOutput(stage, '');
+    }
+    
     return stillRunning ? app : null;
   }
 

@@ -22,18 +22,60 @@ export function useClang() {
   const currentStageRef = useRef<'init' | 'compile' | 'link' | 'execute'>('init');
   const currentOutputRef = useRef<string>('');
 
-  // Helper to get the appropriate output setter based on current stage
-  const getOutputSetter = (stage: typeof currentStageRef.current) => {
+  // Helper to append output to the appropriate stage
+  const appendToOutput = (stage: typeof currentStageRef.current, output: string) => {
+    const cleanOutput = output.trim();
+    if (!cleanOutput) return;
+    
     switch (stage) {
       case 'init':
-        return setInitOutput;
+        setInitOutput(prev => prev + cleanOutput + '\n');
+        break;
       case 'compile':
-        return setCompilerOutput;
+        setCompilerOutput(prev => prev + cleanOutput + '\n');
+        break;
       case 'link':
-        return setLinkerOutput;
+        setLinkerOutput(prev => prev + cleanOutput + '\n');
+        break;
       case 'execute':
-        return setExecutionOutput;
+        setExecutionOutput(prev => prev + cleanOutput);
+        break;
     }
+  };
+
+  // Process output message
+  const processMessage = (data: string) => {
+    // Try to parse as JSON first
+    try {
+      const parsed = JSON.parse(data);
+      if (parsed.type === 'output' && Array.isArray(parsed.stages)) {
+        parsed.stages.forEach(({ stage, output }) => {
+          appendToOutput(stage, output);
+        });
+        return;
+      }
+    } catch (err) {
+      // Not JSON, process as regular output
+    }
+
+    // Check for stage markers
+    const stageMatch = data.match(/^\[(\w+)\]/);
+    if (stageMatch) {
+      const stage = stageMatch[1].toLowerCase() as typeof currentStageRef.current;
+      appendToOutput(stage, data);
+    } else {
+      // If no stage marker, append to current stage
+      appendToOutput(currentStageRef.current, data);
+    }
+  };
+
+  // Set up stdout callback
+  const setupStdoutCallback = (executor: Remote<CodeExecutorBase>) => {
+    executor.setOnStdOut(
+      proxy((data: string) => {
+        processMessage(data);
+      }),
+    );
   };
 
   // Function to update the status asynchronously
@@ -73,14 +115,7 @@ export function useClang() {
       workerRef.current = new Worker(new URL('./clang-worker.ts', import.meta.url), { type: 'module' });
       executorRef.current = wrap<CodeExecutorBase>(workerRef.current);
 
-      // Set up stdout callback
-      executorRef.current.setOnStdOut(
-        proxy((data: string) => {
-          currentOutputRef.current += data;
-          const setter = getOutputSetter(currentStageRef.current);
-          setter(currentOutputRef.current);
-        }),
-      );
+      setupStdoutCallback(executorRef.current);
 
       // Initialize empty callbacks for stderr and error since we don't use them
       executorRef.current.setOnStdErr(proxy(() => {}));
@@ -138,6 +173,36 @@ export function useClang() {
         const result = await executorRef.current.run(code, { stdIn: stdin });
         
         setStatus(result.status);
+
+        // Parse the JSON output
+        try {
+          const parsed = JSON.parse(result.stdout);
+          if (parsed.type === 'output' && Array.isArray(parsed.stages)) {
+            parsed.stages.forEach(({ stage, output }) => {
+              switch (stage) {
+                case 'init':
+                  setInitOutput(output);
+                  break;
+                case 'compile':
+                  setCompilerOutput(output);
+                  break;
+                case 'link':
+                  setLinkerOutput(output);
+                  break;
+                case 'execute':
+                  if (output.startsWith('Error: ')) {
+                    setError(output);
+                  } else {
+                    setExecutionOutput(output);
+                  }
+                  break;
+              }
+            });
+          }
+        } catch (err) {
+          console.error('Failed to parse output:', err);
+          setError('Failed to parse execution output');
+        }
         
         return {
           stdout: result.stdout,

@@ -6,10 +6,17 @@ import { TextArea } from '@/components/ui/textArea';
 import { RunnerStatus } from '@/components/code/code-executor.types';
 import { Button } from '@/components/chess/ui/button';
 
-const OutputSection = ({ title, output }: { title: string; output: string }) => (
-  <div className="mb-4">
-    <h3 className="text-white text-sm font-semibold mb-1">{title}</h3>
-    {output && <div className="p-2 font-mono whitespace-pre-wrap">{output}</div>}
+const OutputSection = ({ title, output, className = '' }: { title: string; output: string; className?: string }) => (
+  <div className={`mb-4 ${className}`}>
+    <h3 className="text-white text-sm font-semibold mb-1 flex items-center">
+      <span className="mr-2">{title}</span>
+      {output && <div className="h-px flex-grow bg-gray-700" />}
+    </h3>
+    {output && (
+      <div className="p-2 font-mono whitespace-pre-wrap bg-gray-800 rounded border border-gray-700">
+        {output}
+      </div>
+    )}
   </div>
 );
 
