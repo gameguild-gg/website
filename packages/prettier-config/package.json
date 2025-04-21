@@ -8,6 +8,6 @@
   "type": "module",
   "main": "src/index.js",
   "peerDependencies": {
-    "prettier": "^3.4.0"
+    "prettier": "^3.5.2"
   }
 }

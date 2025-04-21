@@ -38,11 +38,11 @@
     "test:web": "npm run test --workspace=apps/web"
   },
   "devDependencies": {
-    "@game-guild/apiclient": "*",
-    "@game-guild/eslint-config": "*",
-    "@game-guild/jest-config": "*",
-    "@game-guild/prettier-config": "*",
-    "@game-guild/typescript-config": "*",
+    "@game-guild/apiclient": "1.0.0",
+    "@game-guild/eslint-config": "0.1.0",
+    "@game-guild/jest-config": "0.1.0",
+    "@game-guild/prettier-config": "0.1.0",
+    "@game-guild/typescript-config": "0.1.0",
     "@semantic-release/changelog": "^6.0.3",
     "@semantic-release/commit-analyzer": "^13.0.0",
     "@semantic-release/git": "^10.0.1",
@@ -54,7 +54,7 @@
     "prettier": "^3.5.2",
     "rimraf": "^6",
     "syncpack": "^13.0.0",
-    "typescript": "^5"
+    "typescript": "^9"
   },
   "licenses": [
     {
