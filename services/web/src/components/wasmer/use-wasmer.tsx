@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { Directory, init, Instance, Output, Wasmer } from '@wasmer/sdk';
+import { Directory, DirEntry, init, Instance, Output, SpawnOptions, Wasmer } from '@wasmer/sdk';
 
 // todo: add other languages later
 export type CodeLanguage = 'c' | 'cpp' | 'c++' | 'python';
@@ -70,24 +70,25 @@ export type InlineCodeTestParams = {
   sources: ProjectData;
 };
 
-export type Mount = Record<string, Directory>;
-
-export function ProjectDataStringToMount(data: string, language: CodeLanguage): Mount {
+export async function ProjectDataStringToDirectory(data: string, language: CodeLanguage): Promise<Directory> {
   const extension = languageToFileExtension(language);
   const filename = 'main.' + extension;
-  const directory: Directory = new Directory({ [filename]: data });
-  return { '/project': directory };
+  let dict: Directory = new Directory();
+  await dict.writeFile(filename, data);
+  return dict;
 }
 
-export function ProjectDataToMount(data: FileMap): Mount {
-  const directory: Directory = new Directory(data);
-  return { '/project': directory };
+export async function FileMapToDirectory(data: FileMap): Promise<Directory> {
+  let dict: Directory = new Directory();
+  for (const [key, value] of Object.entries(data)) {
+    await dict.writeFile(key, value);
+  }
+  return dict;
 }
 
 export function useWasmer() {
   // map of WasmerPackage to Wasmer
   const packagesRef = useRef<Map<WasmerPackage, Wasmer>>(new Map());
-  const mountRef = useRef<Mount>({});
   const [wasmerStatus, setWasmerStatus] = useState<WasmerStatus>(WasmerStatus.UNINITIALIZED);
   const [error, setError] = useState<string | null>(null);
 
@@ -150,8 +151,9 @@ export function useWasmer() {
     }
 
     // set the storage mounts
-    if (typeof params.data === 'string') mountRef.current = ProjectDataStringToMount(params.data, params.language);
-    else mountRef.current = ProjectDataToMount(params.data);
+    let dir: Directory;
+    if (typeof params.data === 'string') dir = await ProjectDataStringToDirectory(params.data, params.language);
+    else dir = await FileMapToDirectory(params.data);
 
     // set the arguments
     let args: string[] = [];
@@ -160,25 +162,34 @@ export function useWasmer() {
         args = ['main.py'];
         break;
       case 'clang/clang':
-        args = ['-o', 'output.wasm', '-I', '.', '*.cpp', '*.c', '-std=c++20'];
+        // list c and cpp files from the directory
+        const files: DirEntry[] = await dir.readDir('/');
+        const cFiles: string[] = files.filter((file) => file.name.endsWith('.c') || file.name.endsWith('.cpp')).map((file) => file.name);
+        args = [...cFiles, '-o', 'output.wasm'];
+        debugger;
         break;
       default:
         throw new Error(`Unsupported package ${packageName}`);
     }
 
     changeStatus(WasmerStatus.RUNNING);
+
     try {
-      const instance = await packageRef.entrypoint.run({
+      let opts: SpawnOptions = {
         args: args,
         stdin: params.stdin,
-        mount: mountRef.current,
+        mount: { '/project': dir },
         cwd: '/project',
-      });
+      };
+      const instance: Instance = await packageRef.entrypoint.run(opts);
       const result: Output = await instance.wait();
-      if (result.stderr) changeStatus(WasmerStatus.FAILED_EXECUTION);
-      else changeStatus(WasmerStatus.READY_TO_RUN);
+      if (result.stderr) {
+        changeStatus(WasmerStatus.FAILED_EXECUTION);
+        setError(result.stderr);
+        return result;
+      } else changeStatus(WasmerStatus.READY_TO_RUN);
       if (packageName === 'clang/clang') {
-        const outputFileContent: Uint8Array = await mountRef.current['/project'].readFile('output.wasm');
+        const outputFileContent: Uint8Array = await dir.readFile('output.wasm');
         const wasm: Wasmer = await Wasmer.fromFile(outputFileContent);
         const instance: Instance = await wasm.entrypoint.run();
         return await instance.wait();
@@ -193,7 +204,6 @@ export function useWasmer() {
   return {
     wasmerStatus,
     runCode,
-    mountRef,
     error,
   };
 }
