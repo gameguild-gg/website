@@ -5,13 +5,13 @@ import { Play } from 'lucide-react';
 import Editor from '@monaco-editor/react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { usePyodide } from './use-pyodite';
+import { usePyodide } from './use-pyodide';
 
 interface CodeInterfaceProps {
   initialCode: string;
 }
 
-export default function CodeInterface({ initialCode }: CodeInterfaceProps) {
+export default function PyodideCodeInterface({ initialCode }: CodeInterfaceProps) {
   const { pyodideLoaded, loading, error, runPython, output } = usePyodide();
   const [code, setCode] = useState(initialCode);
 
@@ -49,19 +49,12 @@ export default function CodeInterface({ initialCode }: CodeInterfaceProps) {
       </Card>
 
       <div className="flex justify-between">
-        <Button
-          variant="secondary"
-          className="bg-[#2d2d2d] text-white hover:bg-[#3d3d3d]"
-          onClick={handleRunCode}
-          disabled={!pyodideLoaded || loading}
-        >
+        <Button variant="secondary" className="bg-[#2d2d2d] text-white hover:bg-[#3d3d3d]" onClick={handleRunCode} disabled={!pyodideLoaded || loading}>
           <Play className="w-4 h-4 mr-2" />
           Run
         </Button>
 
-        <Button className="bg-black text-white hover:bg-gray-900 rounded-full px-6">
-          Finish lesson
-        </Button>
+        <Button className="bg-black text-white hover:bg-gray-900 rounded-full px-6">Finish lesson</Button>
       </div>
     </div>
   );

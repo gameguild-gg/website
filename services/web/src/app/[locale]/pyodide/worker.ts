@@ -1,23 +1,37 @@
 import { expose } from 'comlink';
 import { PyodideWorkerAPI } from './pyodide.api';
+// Restore the CDN approach but with type safety
+// We'll declare the types we need
+interface PyodideInterface {
+  setStdout: (options: { batched: (output: string) => void }) => void;
+  setStderr: (options: { batched: (error: string) => void }) => void;
+  runPythonAsync: (code: string) => Promise<any>;
+}
 
-let pyodide: any = null;
+// Declare the global loadPyodide function that will be available after importScripts
+declare global {
+  function loadPyodide(): Promise<PyodideInterface>;
+}
+
+let pyodide: PyodideInterface | null = null;
 
 const loadPyodideInstance = async () => {
   if (!pyodide) {
-    await new Promise<void>((resolve, reject) => {
-      try {
-        importScripts('https://cdn.jsdelivr.net/pyodide/v0.27.0/full/pyodide.js');
-        resolve();
-      } catch (error) {
-        reject(new Error('Failed to load Pyodide'));
-      }
-    });
-
     try {
-      // @ts-ignore - `loadPyodide` será disponibilizado globalmente pelo script
-      pyodide = await (self as any).loadPyodide();
-      return true; // Indica que Pyodide foi carregado
+      // Load Pyodide script from CDN
+      await new Promise<void>((resolve, reject) => {
+        try {
+          // Use the latest version from CDN
+          importScripts('https://cdn.jsdelivr.net/pyodide/v0.27.5/full/pyodide.js');
+          resolve();
+        } catch (error) {
+          reject(new Error('Failed to load Pyodide script'));
+        }
+      });
+      
+      // Now initialize Pyodide
+      pyodide = await loadPyodide();
+      return true; // Indicates that Pyodide was loaded
     } catch (error) {
       throw new Error('Pyodide failed to initialize');
     }
