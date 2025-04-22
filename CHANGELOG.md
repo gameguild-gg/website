@@ -1,3 +1,14 @@
+## [1.19.4](https://github.com/gameguild-gg/website/compare/v1.19.3...v1.19.4) (2025-04-22)
+
+
+### Bug Fixes
+
+* **wasm:** convert to ts ([b7d99fc](https://github.com/gameguild-gg/website/commit/b7d99fc3c6737ca71eeeb5493407c65f61df9a39))
+* **wasm:** fix build ([fdd1df4](https://github.com/gameguild-gg/website/commit/fdd1df47f02eaa26d5bd9a1733c43ba404611c73))
+* **wasm:** fix compilation ([1ef886f](https://github.com/gameguild-gg/website/commit/1ef886f48b08daff0393354b6339f798db3dd4c2))
+* **wasm:** now clang show properly the execution message ([c1a999a](https://github.com/gameguild-gg/website/commit/c1a999a8e9d0730dc0204018efb53e2af9a93f12))
+* **wasm:** remove timings and console colors ([9b72136](https://github.com/gameguild-gg/website/commit/9b7213643c610cdd0ba698d02b36cc8ef469ecb5))
+
 ## [1.19.3](https://github.com/gameguild-gg/website/compare/v1.19.2...v1.19.3) (2025-04-18)
 
 
