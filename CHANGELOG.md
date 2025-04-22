@@ -1,3 +1,11 @@
+## [1.19.5](https://github.com/gameguild-gg/website/compare/v1.19.4...v1.19.5) (2025-04-22)
+
+
+### Bug Fixes
+
+* **wasm:** better interfaces for wasmer ([cda7275](https://github.com/gameguild-gg/website/commit/cda7275fdfc148d9481d8be7fa35351c80096594))
+* **wasm:** better pyodide load process ([3263e26](https://github.com/gameguild-gg/website/commit/3263e26c59053917d8dfc095ed06cacf8abb9c72))
+
 ## [1.19.4](https://github.com/gameguild-gg/website/compare/v1.19.3...v1.19.4) (2025-04-22)
 
 
