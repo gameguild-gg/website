@@ -52,6 +52,11 @@ export class MemFS {
       });
   }
 
+  // Add getter for the exports property
+  get wasmExports(): MemFSExports {
+    return this.exports;
+  }
+
   set hostMem(mem: Memory) {
     this.hostMem_ = mem;
   }
@@ -59,6 +64,11 @@ export class MemFS {
   setStdinStr(str: string): void {
     this.stdinStr = str;
     this.stdinStrPos = 0;
+  }
+  
+  // Public method to write messages - exposes the private hostWrite functionality
+  writeToHost(message: string): void {
+    this.hostWrite(message);
   }
 
   addDirectory(path: string): void {

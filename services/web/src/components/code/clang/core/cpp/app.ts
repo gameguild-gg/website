@@ -41,7 +41,7 @@ export class App {
     ]);
 
     // Fill in some WASI implementations from memfs.
-    Object.assign(wasi_unstable, this.memfs.exports);
+    Object.assign(wasi_unstable, this.memfs.wasmExports);
 
     this.ready = WebAssembly.instantiate(module, { wasi_unstable, env }).then((instance) => {
       this.exports = instance.exports as AppExports;
@@ -75,7 +75,7 @@ export class App {
       if (writeStack) {
         msg = msg + `\n${(exn as Error).stack}`;
       }
-      this.memfs.hostWrite(msg);
+      this.memfs.writeToHost(msg);
 
       // Propagate error.
       throw exn;

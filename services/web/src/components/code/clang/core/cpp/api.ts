@@ -159,7 +159,8 @@ export class API {
     const isToolchain = args[0].includes('clang') || args[0].includes('wasm-ld');
     const stage = isToolchain ? this.currentStage : 'execute';
     
-    const app = new App(module, this.memfs, ...args);
+    // First argument in args is the program name, which matches the App constructor requirement
+    const app = new App(module, this.memfs, args[0], ...args.slice(1));
     const stillRunning = await app.run();
     
     if (!isToolchain && stage === 'execute') {
