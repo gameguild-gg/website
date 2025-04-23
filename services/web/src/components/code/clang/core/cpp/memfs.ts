@@ -30,30 +30,42 @@ export class MemFS {
   private exports!: MemFSExports;
   private mem!: Memory;
   public ready: Promise<void>;
+  private initialized: boolean = false;
 
   constructor(options: MemFSOptions) {
+    if (!options.hostWrite || typeof options.hostWrite !== 'function') {
+      throw new Error('MemFS requires a valid hostWrite function');
+    }
+
     this.hostWrite = options.hostWrite;
     this.stdinStr = options.stdinStr || '';
     this.stdinStrPos = 0;
-    this.hostMem_ = null; // Set later when wired up to application.
+    this.hostMem_ = null;
 
-    // Imports for memfs module.
     const env = getImportObject(this, ['abort', 'host_write', 'host_read', 'memfs_log', 'copy_in', 'copy_out']);
 
-    this.ready = fetch(memfsUrl)
-      .then((result) => result.arrayBuffer())
-      .then(async (buffer) => {
-        // memfs
+    this.ready = (async () => {
+      try {
+        const response = await fetch(memfsUrl);
+        const buffer = await response.arrayBuffer();
         const module = await WebAssembly.compile(buffer);
         const instance = await WebAssembly.instantiate(module, { env });
+        
         this.exports = instance.exports as MemFSExports;
         this.mem = new Memory(this.exports.memory);
         this.exports.init();
-      });
+        this.initialized = true;
+      } catch (error) {
+        this.hostWrite(`MemFS initialization error: ${error}\n`);
+        throw error;
+      }
+    })();
   }
 
-  // Add getter for the exports property
   get wasmExports(): MemFSExports {
+    if (!this.initialized) {
+      throw new Error('MemFS not initialized');
+    }
     return this.exports;
   }
 
@@ -65,19 +77,30 @@ export class MemFS {
     this.stdinStr = str;
     this.stdinStrPos = 0;
   }
-  
-  // Public method to write messages - exposes the private hostWrite functionality
+
   writeToHost(message: string): void {
     this.hostWrite(message);
   }
 
+  async ensureInitialized(): Promise<void> {
+    if (!this.initialized) {
+      await this.ready;
+    }
+  }
+
   addDirectory(path: string): void {
+    if (!this.initialized) {
+      throw new Error('MemFS not initialized');
+    }
     this.mem.check();
     this.mem.write(this.exports.GetPathBuf(), path);
     this.exports.AddDirectoryNode(path.length);
   }
 
   addFile(path: string, contents: ArrayBuffer | Uint8Array | string): void {
+    if (!this.initialized) {
+      throw new Error('MemFS not initialized');
+    }
     const length = contents instanceof ArrayBuffer ? contents.byteLength : contents.length;
     this.mem.check();
     this.mem.write(this.exports.GetPathBuf(), path);
@@ -88,6 +111,9 @@ export class MemFS {
   }
 
   getFileContents(path: string): Uint8Array {
+    if (!this.initialized) {
+      throw new Error('MemFS not initialized');
+    }
     this.mem.check();
     this.mem.write(this.exports.GetPathBuf(), path);
     const inode = this.exports.FindNode(path.length);

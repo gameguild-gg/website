@@ -12,7 +12,6 @@ export const useRunner = create(
     setCode: (code: string) => void;
     setLanguage: (language: Language) => void;
     init: () => void;
-    runCode: () => void;
   }>(
     (set, get) => ({
       workerMap: {},
@@ -42,16 +41,7 @@ export const useRunner = create(
           }
           return { workerMap: newWorkerMap };
         });
-      },
-      runCode() {
-        const { codeMap, language, workerMap } = get();
-        const worker = workerMap[language];
-        if (worker && worker.messagePort) {
-          worker.messagePort.postMessage({ id: 'compileLinkRun', data: codeMap[language] });
-        } else {
-          console.error(`Worker or message port not available for language: ${language}`);
-        }
-      },
+      }
     }),
     {
       name: 'runner-store',

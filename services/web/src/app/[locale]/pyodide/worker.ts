@@ -1,12 +1,6 @@
 import { expose } from 'comlink';
 import { PyodideWorkerAPI } from './pyodide.api';
-// Restore the CDN approach but with type safety
-// We'll declare the types we need
-interface PyodideInterface {
-  setStdout: (options: { batched: (output: string) => void }) => void;
-  setStderr: (options: { batched: (error: string) => void }) => void;
-  runPythonAsync: (code: string) => Promise<any>;
-}
+import { PyodideInterface } from 'pyodide';
 
 // Declare the global loadPyodide function that will be available after importScripts
 declare global {
@@ -28,7 +22,7 @@ const loadPyodideInstance = async () => {
           reject(new Error('Failed to load Pyodide script'));
         }
       });
-      
+
       // Now initialize Pyodide
       pyodide = await loadPyodide();
       return true; // Indicates that Pyodide was loaded

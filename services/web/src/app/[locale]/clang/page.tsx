@@ -13,9 +13,11 @@ const OutputSection = ({ title, output, className = '' }: { title: string; outpu
       {output && <div className="h-px flex-grow bg-gray-700" />}
     </h3>
     {output && (
-      <div className="p-2 font-mono whitespace-pre-wrap bg-gray-800 rounded border border-gray-700">
-        {output}
-      </div>
+      <pre className="p-2 font-mono whitespace-pre-wrap break-words bg-gray-800 rounded border border-gray-700 overflow-y-auto max-h-[400px]">
+        {output.split('\n').map((line, i) => (
+          <span key={i} className="block min-h-[1.2em]">{line || '\u00A0'}</span>
+        ))}
+      </pre>
     )}
   </div>
 );
@@ -35,9 +37,7 @@ export default function ClangEditor() {
 
   const handleRun = async () => {
     if (status === RunnerStatus.READY || status === RunnerStatus.UNINITIALIZED) {
-      console.log('handleRun called');
       const result = await compileAndRun(code);
-      console.log('Compilation result:', result);
     }
   };
 

@@ -10,7 +10,6 @@ type CompileResult = {
 
 export function useClang() {
   const [status, setStatus] = useState<RunnerStatus>(RunnerStatus.UNINITIALIZED);
-  // Stage-specific outputs - only stdout
   const [initOutput, setInitOutput] = useState('');
   const [compilerOutput, setCompilerOutput] = useState('');
   const [linkerOutput, setLinkerOutput] = useState('');
@@ -20,56 +19,44 @@ export function useClang() {
   const executorRef = useRef<Remote<CodeExecutorBase> | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const currentStageRef = useRef<'init' | 'compile' | 'link' | 'execute'>('init');
-  const currentOutputRef = useRef<string>('');
 
-  // Helper to append output to the appropriate stage
   const appendToOutput = (stage: typeof currentStageRef.current, output: string) => {
-    const cleanOutput = output.trim();
-    if (!cleanOutput) return;
-    
+    if (!output) return;
+
     switch (stage) {
       case 'init':
-        setInitOutput(prev => prev + cleanOutput + '\n');
+        setInitOutput(prev => prev + output);
         break;
       case 'compile':
-        setCompilerOutput(prev => prev + cleanOutput + '\n');
+        setCompilerOutput(prev => prev + output);
         break;
       case 'link':
-        setLinkerOutput(prev => prev + cleanOutput + '\n');
+        setLinkerOutput(prev => prev + output);
         break;
       case 'execute':
-        setExecutionOutput(prev => prev + cleanOutput);
+        setExecutionOutput(prev => prev + output);
         break;
     }
   };
 
-  // Process output message
   const processMessage = (data: string) => {
-    // Try to parse as JSON first
     try {
       const parsed = JSON.parse(data);
       if (parsed.type === 'output' && Array.isArray(parsed.stages)) {
         parsed.stages.forEach(({ stage, output }) => {
-          appendToOutput(stage, output);
+          if (output) {
+            appendToOutput(stage, output);
+          }
         });
-        return;
       }
     } catch (err) {
-      // Not JSON, process as regular output
-    }
-
-    // Check for stage markers
-    const stageMatch = data.match(/^\[(\w+)\]/);
-    if (stageMatch) {
-      const stage = stageMatch[1].toLowerCase() as typeof currentStageRef.current;
-      appendToOutput(stage, data);
-    } else {
-      // If no stage marker, append to current stage
-      appendToOutput(currentStageRef.current, data);
+      // If not JSON or invalid format, append to current stage as-is
+      if (data) {
+        appendToOutput(currentStageRef.current, data);
+      }
     }
   };
 
-  // Set up stdout callback
   const setupStdoutCallback = (executor: Remote<CodeExecutorBase>) => {
     executor.setOnStdOut(
       proxy((data: string) => {
@@ -78,7 +65,6 @@ export function useClang() {
     );
   };
 
-  // Function to update the status asynchronously
   const updateStatus = useCallback(async () => {
     if (executorRef.current) {
       try {
@@ -106,7 +92,6 @@ export function useClang() {
       if (status === RunnerStatus.FAILED_LOADING) {
         throw new Error('Worker failed to initialize');
       }
-      
       return;
     }
 
@@ -116,13 +101,10 @@ export function useClang() {
       executorRef.current = wrap<CodeExecutorBase>(workerRef.current);
 
       setupStdoutCallback(executorRef.current);
-
-      // Initialize empty callbacks for stderr and error since we don't use them
       executorRef.current.setOnStdErr(proxy(() => {}));
       executorRef.current.setOnError(proxy(() => {}));
 
       setStatus(RunnerStatus.LOADING);
-      
       const status = await executorRef.current.init();
       setStatus(status);
       
@@ -139,9 +121,7 @@ export function useClang() {
   const compileAndRun = useCallback(
     async (code: string, stdin?: string): Promise<CompileResult> => {
       try {
-        // Start with initialization
         currentStageRef.current = 'init';
-        currentOutputRef.current = '';
         setInitOutput('');
         setCompilerOutput('');
         setLinkerOutput('');
@@ -165,47 +145,13 @@ export function useClang() {
         abortControllerRef.current = new AbortController();
         
         setStatus(RunnerStatus.RUNNING);
-        
-        // Move to compilation stage
         currentStageRef.current = 'compile';
-        currentOutputRef.current = '';
 
         const result = await executorRef.current.run(code, { stdIn: stdin });
-        
         setStatus(result.status);
 
-        // Parse the JSON output
-        try {
-          const parsed = JSON.parse(result.stdout);
-          if (parsed.type === 'output' && Array.isArray(parsed.stages)) {
-            parsed.stages.forEach(({ stage, output }) => {
-              switch (stage) {
-                case 'init':
-                  setInitOutput(output);
-                  break;
-                case 'compile':
-                  setCompilerOutput(output);
-                  break;
-                case 'link':
-                  setLinkerOutput(output);
-                  break;
-                case 'execute':
-                  if (output.startsWith('Error: ')) {
-                    setError(output);
-                  } else {
-                    setExecutionOutput(output);
-                  }
-                  break;
-              }
-            });
-          }
-        } catch (err) {
-          console.error('Failed to parse output:', err);
-          setError('Failed to parse execution output');
-        }
-        
         return {
-          stdout: result.stdout,
+          stdout: '',  // We're not using the returned stdout anymore
           success: result.success
         };
       } catch (err) {
