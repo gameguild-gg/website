@@ -1,11 +1,8 @@
 'use client';
 
-import { usePyodide } from '@/app/[locale]/pyodide/use-pyodide';
 import PyodideCodeInterface from '@/app/[locale]/pyodide/pyodide-code-interface';
 
 export default function Index() {
-  const { pyodideLoaded, loading, error, runPython, output } = usePyodide();
-
   return (
     <>
       <div className="flex flex-auto sm:container max-w-lg">

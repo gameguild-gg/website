@@ -4,11 +4,7 @@ import { proxy, wrap } from 'comlink';
 
 interface PyodideWorkerAPI {
   loadPyodideInstance: () => Promise<boolean>;
-  executePython: (
-    code: string,
-    onOutput: (output: string) => void,
-    onError: (error: string) => void,
-  ) => Promise<void>;
+  executePython: (code: string, onOutput: (output: string) => void, onError: (error: string) => void) => Promise<void>;
 }
 
 export function usePyodide() {
@@ -24,11 +20,10 @@ export function usePyodide() {
 
     const workerApi = wrap<PyodideWorkerAPI>(workerRef.current);
 
-    setExecutePython(() => (code: string, onOutput: any, onError: any) =>
-      workerApi.executePython(code, proxy(onOutput), proxy(onError)),
-    );
-    
-    workerApi.loadPyodideInstance()
+    setExecutePython(() => (code: string, onOutput: any, onError: any) => workerApi.executePython(code, proxy(onOutput), proxy(onError)));
+
+    workerApi
+      .loadPyodideInstance()
       .then(() => {
         setPyodideLoaded(true);
         setLoading(false);

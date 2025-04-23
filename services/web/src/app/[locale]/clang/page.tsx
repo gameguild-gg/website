@@ -42,8 +42,8 @@ export default function ClangEditor() {
   };
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="h-1/2">
+    <div className="flex flex-col h-full w-full">
+      <div className="w-full mb-4">
         <TextArea value={code} onChange={(e) => setCode(e.target.value)} />
       </div>
       <div className="flex gap-2 my-2">
@@ -59,7 +59,7 @@ export default function ClangEditor() {
           Stop
         </Button>
       </div>
-      <div className="h-1/2 bg-gray-900 text-white overflow-auto p-4">
+      <div className="w-full bg-gray-900 text-white overflow-auto p-4 flex flex-col">
         <OutputSection title="Initialization" output={initOutput} />
         <OutputSection title="Compilation" output={compilerOutput} />
         <OutputSection title="Linking" output={linkerOutput} />
