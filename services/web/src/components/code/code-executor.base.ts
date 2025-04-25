@@ -1,4 +1,4 @@
-import { RunnerStatus } from '@/components/code/code-executor.types';
+import { RunnerStatus } from '@/components/code/types';
 
 export interface CodeExecutorBase {
   // onStdOut
@@ -7,11 +7,11 @@ export interface CodeExecutorBase {
   setOnStdErr: (error: (data: string) => void) => void;
   // onError
   setOnError: (error: (data: string) => void) => void;
-  
+
   // Initialize the worker and wait until it's ready
   // Returns the status when initialization is complete
   init: () => Promise<RunnerStatus>;
-  
+
   // Get the current status without waiting
   getStatus: () => RunnerStatus;
 

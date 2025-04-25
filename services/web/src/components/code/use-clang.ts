@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { proxy, wrap, Remote } from 'comlink';
+import { useCallback, useRef, useState } from 'react';
+import { proxy, Remote, wrap } from 'comlink';
 import { CodeExecutorBase } from './code-executor.base';
-import { RunnerStatus } from './code-executor.types';
+import { RunnerStatus } from './types';
 
 type CompileResult = {
   stdout: string;
@@ -25,16 +25,16 @@ export function useClang() {
 
     switch (stage) {
       case 'init':
-        setInitOutput(prev => prev + output);
+        setInitOutput((prev) => prev + output);
         break;
       case 'compile':
-        setCompilerOutput(prev => prev + output);
+        setCompilerOutput((prev) => prev + output);
         break;
       case 'link':
-        setLinkerOutput(prev => prev + output);
+        setLinkerOutput((prev) => prev + output);
         break;
       case 'execute':
-        setExecutionOutput(prev => prev + output);
+        setExecutionOutput((prev) => prev + output);
         break;
     }
   };
@@ -88,7 +88,7 @@ export function useClang() {
 
       const status = await executorRef.current.init();
       setStatus(status);
-      
+
       if (status === RunnerStatus.FAILED_LOADING) {
         throw new Error('Worker failed to initialize');
       }
@@ -107,7 +107,7 @@ export function useClang() {
       setStatus(RunnerStatus.LOADING);
       const status = await executorRef.current.init();
       setStatus(status);
-      
+
       if (status === RunnerStatus.FAILED_LOADING) {
         throw new Error('Worker failed to initialize');
       }
@@ -133,7 +133,7 @@ export function useClang() {
         if (!executorRef.current) {
           throw new Error('Clang executor not initialized');
         }
-        
+
         const currentStatus = await updateStatus();
         if (currentStatus !== RunnerStatus.READY) {
           throw new Error(`Executor is in ${currentStatus} state, not READY`);
@@ -143,7 +143,7 @@ export function useClang() {
           abortControllerRef.current.abort();
         }
         abortControllerRef.current = new AbortController();
-        
+
         setStatus(RunnerStatus.RUNNING);
         currentStageRef.current = 'compile';
 
@@ -151,8 +151,8 @@ export function useClang() {
         setStatus(result.status);
 
         return {
-          stdout: '',  // We're not using the returned stdout anymore
-          success: result.success
+          stdout: '', // We're not using the returned stdout anymore
+          success: result.success,
         };
       } catch (err) {
         setError(`Execution error: ${err}`);

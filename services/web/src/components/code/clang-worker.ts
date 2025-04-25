@@ -1,8 +1,8 @@
 import { expose } from 'comlink';
 import { CodeExecutorBase } from '@/components/code/code-executor.base';
 import { API } from './clang/core/cpp/api';
-import { RunnerStatus } from './code-executor.types';
-import { setSharedApi, getSharedApi } from './clang/core/cpp/worker';
+import { RunnerStatus } from './types';
+import { getSharedApi, setSharedApi } from './clang/core/cpp/worker';
 import { MemFS } from './clang/core/cpp/memfs';
 
 class ClangWorker implements CodeExecutorBase {
@@ -19,24 +19,8 @@ class ClangWorker implements CodeExecutorBase {
         if (this.onStdOut) {
           this.onStdOut(message);
         }
-      }
+      },
     });
-  }
-
-  private handleOutput(data: string) {
-    if (data === null || data === undefined) return;
-
-    // Send real-time output without formatting
-    if (this.onStdOut) {
-      const stageOutput = {
-        type: 'output',
-        stages: [{
-          stage: this.currentStage,
-          output: data
-        }]
-      };
-      this.onStdOut(JSON.stringify(stageOutput));
-    }
   }
 
   setOnStdOut(onStdOut: (data: string) => void) {
@@ -57,22 +41,22 @@ class ClangWorker implements CodeExecutorBase {
 
   async init(): Promise<RunnerStatus> {
     console.log('ClangWorker init called');
-    
+
     try {
       let api = getSharedApi();
-      
+
       if (!api) {
         api = new API({
-          hostWrite: (s: string) => this.handleOutput(s)
+          hostWrite: (s: string) => this.handleOutput(s),
         });
         setSharedApi(api);
       }
-      
+
       this.api = api;
       this.currentStatus = RunnerStatus.LOADING;
-      
+
       await this.api.ready;
-      
+
       this.currentStatus = RunnerStatus.READY;
       return RunnerStatus.READY;
     } catch (error) {
@@ -127,9 +111,9 @@ class ClangWorker implements CodeExecutorBase {
       const buffer = this.api.getFileContents(wasm);
       const testMod = await WebAssembly.compile(buffer);
       await this.api.run(testMod, wasm);
-      
+
       // Wait a small amount of time for any remaining output
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
       // Successful completion - reset to ready state
       this.currentStatus = RunnerStatus.READY;
@@ -138,7 +122,7 @@ class ClangWorker implements CodeExecutorBase {
         stdout: '',
         stderr: '',
         success: true,
-        status: RunnerStatus.READY
+        status: RunnerStatus.READY,
       };
     } catch (error) {
       // Error completion - reset to ready state after error
@@ -150,7 +134,7 @@ class ClangWorker implements CodeExecutorBase {
         stdout: '',
         stderr: '',
         success: false,
-        status: RunnerStatus.READY // Return ready status to allow new runs
+        status: RunnerStatus.READY, // Return ready status to allow new runs
       };
     } finally {
       // Ensure cleanup happens whether we succeed or fail
@@ -210,6 +194,24 @@ class ClangWorker implements CodeExecutorBase {
 
   async setEnv(key: string, value: string): Promise<void> {
     process.env[key] = value;
+  }
+
+  private handleOutput(data: string) {
+    if (data === null || data === undefined) return;
+
+    // Send real-time output without formatting
+    if (this.onStdOut) {
+      const stageOutput = {
+        type: 'output',
+        stages: [
+          {
+            stage: this.currentStage,
+            output: data,
+          },
+        ],
+      };
+      this.onStdOut(JSON.stringify(stageOutput));
+    }
   }
 }
 

@@ -1,4 +1,4 @@
-import { RunnerStatus } from '../../code-executor.types';
+import { RunnerStatus } from '../../types';
 
 export enum Language {
   Cpp = 'cpp',

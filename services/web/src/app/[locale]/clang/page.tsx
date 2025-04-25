@@ -3,7 +3,7 @@
 import { useClang } from '@/components/code/use-clang';
 import { useState } from 'react';
 import { TextArea } from '@/components/ui/textArea';
-import { RunnerStatus } from '@/components/code/code-executor.types';
+import { RunnerStatus } from '@/components/code/types';
 import { Button } from '@/components/chess/ui/button';
 
 const OutputSection = ({ title, output, className = '' }: { title: string; output: string; className?: string }) => (
