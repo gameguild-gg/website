@@ -3,7 +3,8 @@ import { Memory } from './memory';
 import { assert, ESUCCESS, getImportObject } from './shared';
 
 // Import WebAssembly module directly - webpack will handle the path
-import memfsWasmUrl from '../../../../../../public/assets/memfs.wasm';
+import memfsWasmUrl from '../../../../public/assets/memfs.wasm';
+
 const memfsUrl = memfsWasmUrl;
 
 interface MemFSOptions {
@@ -13,23 +14,30 @@ interface MemFSOptions {
 
 interface MemFSExports extends WebAssembly.Exports {
   memory: WebAssembly.Memory;
+
   init(): void;
+
   GetPathBuf(): number;
+
   AddDirectoryNode(pathLength: number): void;
+
   AddFileNode(pathLength: number, fileLength: number): number;
+
   GetFileNodeAddress(inode: number): number;
+
   GetFileNodeSize(inode: number): number;
+
   FindNode(pathLength: number): number;
 }
 
 export class MemFS {
+  public ready: Promise<void>;
   private hostWrite: (message: string) => void;
   private stdinStr: string;
   private stdinStrPos: number;
   private hostMem_: Memory | null;
   private exports!: MemFSExports;
   private mem!: Memory;
-  public ready: Promise<void>;
   private initialized: boolean = false;
 
   constructor(options: MemFSOptions) {
@@ -50,7 +58,7 @@ export class MemFS {
         const buffer = await response.arrayBuffer();
         const module = await WebAssembly.compile(buffer);
         const instance = await WebAssembly.instantiate(module, { env });
-        
+
         this.exports = instance.exports as MemFSExports;
         this.mem = new Memory(this.exports.memory);
         this.exports.init();

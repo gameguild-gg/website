@@ -3,9 +3,9 @@ import { MemFS } from './memfs';
 import { Tar } from './tar';
 
 // Import assets directly so webpack can handle them
-import clangWasmUrl from '../../../../../../public/assets/clang.wasm';
-import lldWasmUrl from '../../../../../../public/assets/lld.wasm';
-import sysrootTarUrl from '../../../../../../public/assets/sysroot.tar';
+import clangWasmUrl from '../../../../public/assets/clang.wasm';
+import lldWasmUrl from '../../../../public/assets/lld.wasm';
+import sysrootTarUrl from '../../../../public/assets/sysroot.tar';
 
 // These will be properly resolved by webpack during build
 const clangUrl = clangWasmUrl;
@@ -24,9 +24,9 @@ interface CompileOptions {
 }
 
 export class API {
+  public ready: Promise<void>;
   private currentStage: 'init' | 'compile' | 'link' | 'execute' = 'init';
   private memfs: MemFS;
-  public ready: Promise<void>;
   private sysroot: Uint8Array;
   private hostWrite: (message: string) => void;
   private clangCommonArgs: string[];
@@ -39,13 +39,25 @@ export class API {
     }
 
     this.hostWrite = options.hostWrite;
-    this.clangCommonArgs = ['-cc1', '-emit-obj', '-disable-free', '-isysroot', '/',
-      '-internal-isystem', '/include/c++/v1', '-internal-isystem', '/include',
-      '-internal-isystem', '/lib/clang/8.0.1/include', '-Wall', '-O2'];
+    this.clangCommonArgs = [
+      '-cc1',
+      '-emit-obj',
+      '-disable-free',
+      '-isysroot',
+      '/',
+      '-internal-isystem',
+      '/include/c++/v1',
+      '-internal-isystem',
+      '/include',
+      '-internal-isystem',
+      '/lib/clang/8.0.1/include',
+      '-Wall',
+      '-O2',
+    ];
 
     this.memfs = new MemFS({
       hostWrite: this.hostWrite,
-      stdinStr: ''
+      stdinStr: '',
     });
 
     this.ready = this.init();
@@ -62,29 +74,6 @@ export class API {
         }
       };
     }
-  }
-
-  private async init() {
-    await this.memfs.ready;
-    this.hostWrite('Downloading system files...\n');
-    
-    const sysrootResponse = await fetch(sysrootUrl);
-    const sysrootBuffer = await sysrootResponse.arrayBuffer();
-    this.sysroot = new Uint8Array(sysrootBuffer);
-    
-    this.hostWrite('Extracting system files...\n');
-    // Convert to ArrayBuffer using array copy if needed
-    const buffer = (sysrootBuffer as ArrayBuffer).slice(0);
-    const tar = new Tar(buffer);
-    tar.untar(this.memfs);
-    
-    this.hostWrite('System environment ready.\n');
-  }
-
-  private async getModule(url: string): Promise<WebAssembly.Module> {
-    const response = await fetch(url);
-    const buffer = await response.arrayBuffer();
-    return WebAssembly.compile(buffer);
   }
 
   setStdinStr(stdin: string) {
@@ -158,5 +147,28 @@ export class API {
     const app = new App(module, this.memfs, args[0], ...args.slice(1));
     const stillRunning = await app.run();
     return stillRunning ? app : null;
+  }
+
+  private async init() {
+    await this.memfs.ready;
+    this.hostWrite('Downloading system files...\n');
+
+    const sysrootResponse = await fetch(sysrootUrl);
+    const sysrootBuffer = await sysrootResponse.arrayBuffer();
+    this.sysroot = new Uint8Array(sysrootBuffer);
+
+    this.hostWrite('Extracting system files...\n');
+    // Convert to ArrayBuffer using array copy if needed
+    const buffer = (sysrootBuffer as ArrayBuffer).slice(0);
+    const tar = new Tar(buffer);
+    tar.untar(this.memfs);
+
+    this.hostWrite('System environment ready.\n');
+  }
+
+  private async getModule(url: string): Promise<WebAssembly.Module> {
+    const response = await fetch(url);
+    const buffer = await response.arrayBuffer();
+    return WebAssembly.compile(buffer);
   }
 }
