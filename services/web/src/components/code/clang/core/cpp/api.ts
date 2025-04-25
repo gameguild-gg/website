@@ -73,7 +73,9 @@ export class API {
     this.sysroot = new Uint8Array(sysrootBuffer);
     
     this.hostWrite('Extracting system files...\n');
-    const tar = new Tar(this.sysroot);
+    // Convert to ArrayBuffer using array copy if needed
+    const buffer = (sysrootBuffer as ArrayBuffer).slice(0);
+    const tar = new Tar(buffer);
     tar.untar(this.memfs);
     
     this.hostWrite('System environment ready.\n');

@@ -15,7 +15,9 @@ const OutputSection = ({ title, output, className = '' }: { title: string; outpu
     {output && (
       <pre className="p-2 font-mono whitespace-pre-wrap break-words bg-gray-800 rounded border border-gray-700 overflow-y-auto max-h-[400px]">
         {output.split('\n').map((line, i) => (
-          <span key={i} className="block min-h-[1.2em]">{line || '\u00A0'}</span>
+          <span key={i} className="block min-h-[1.2em]">
+            {line || '\u00A0'}
+          </span>
         ))}
       </pre>
     )}
@@ -24,16 +26,7 @@ const OutputSection = ({ title, output, className = '' }: { title: string; outpu
 
 export default function ClangEditor() {
   const [code, setCode] = useState('#include <iostream>\n\nint main() {\n  std::cout << "Hello, World!" << std::endl;\n  return 0;\n}');
-  const { 
-    compileAndRun, 
-    abort, 
-    status, 
-    initOutput,
-    compilerOutput,
-    linkerOutput,
-    executionOutput,
-    error 
-  } = useClang();
+  const { compileAndRun, abort, status, initOutput, compilerOutput, linkerOutput, executionOutput, error } = useClang();
 
   const handleRun = async () => {
     if (status === RunnerStatus.READY || status === RunnerStatus.UNINITIALIZED) {
@@ -49,9 +42,9 @@ export default function ClangEditor() {
       <div className="flex gap-2 my-2">
         <Button disabled={status === RunnerStatus.RUNNING || status === RunnerStatus.LOADING} onClick={handleRun}>
           {status === RunnerStatus.UNINITIALIZED ||
-           status === RunnerStatus.FAILED_LOADING ||
-           status === RunnerStatus.FAILED_EXECUTION ||
-           status === RunnerStatus.READY
+          status === RunnerStatus.FAILED_LOADING ||
+          status === RunnerStatus.FAILED_EXECUTION ||
+          status === RunnerStatus.READY
             ? 'Run'
             : 'Running...'}
         </Button>

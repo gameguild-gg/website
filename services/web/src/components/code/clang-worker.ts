@@ -3,23 +3,28 @@ import { CodeExecutorBase } from '@/components/code/code-executor.base';
 import { API } from './clang/core/cpp/api';
 import { RunnerStatus } from './code-executor.types';
 import { setSharedApi, getSharedApi } from './clang/core/cpp/worker';
+import { MemFS } from './clang/core/cpp/memfs';
 
 class ClangWorker implements CodeExecutorBase {
   private currentStatus: RunnerStatus = RunnerStatus.UNINITIALIZED;
   private onStdOut: ((data: string) => void) | null = null;
   private onStdErr: ((data: string) => void) | null = null;
-  private onError: ((data: string) => void) | null = null;
-  private currentStage: 'init' | 'compile' | 'link' | 'execute' = 'init';
-  private accumulatedOutput: string = '';
+  private memfs: MemFS;
   private api: API | null = null;
+  private currentStage: 'init' | 'compile' | 'link' | 'execute' = 'init';
 
   constructor() {
-    console.log('ClangWorker called');
+    this.memfs = new MemFS({
+      hostWrite: (message: string) => {
+        if (this.onStdOut) {
+          this.onStdOut(message);
+        }
+      }
+    });
   }
 
   private handleOutput(data: string) {
     if (data === null || data === undefined) return;
-    this.accumulatedOutput += data;
 
     // Send real-time output without formatting
     if (this.onStdOut) {
@@ -90,7 +95,6 @@ class ClangWorker implements CodeExecutorBase {
 
     // Reset state at the start of each run
     this.currentStatus = RunnerStatus.RUNNING;
-    this.accumulatedOutput = '';
 
     try {
       const input = `test.cpp`;
@@ -101,28 +105,25 @@ class ClangWorker implements CodeExecutorBase {
         this.api.setStdinStr(options.stdIn);
       }
 
-      // Cleanup any previous files
+      // Cleanup any previous files by replacing them with empty content
       try {
-        this.api.memfs.removeFile(input);
-        this.api.memfs.removeFile(obj);
-        this.api.memfs.removeFile(wasm);
+        await this.writeFile(input, new Uint8Array(0));
+        await this.writeFile(obj, new Uint8Array(0));
+        await this.writeFile(wasm, new Uint8Array(0));
       } catch (e) {
         // Ignore cleanup errors
       }
 
       // Compilation stage
       this.currentStage = 'compile';
-      this.accumulatedOutput = '';
       await this.api.compile({ input, contents: code, obj });
 
       // Linking stage
       this.currentStage = 'link';
-      this.accumulatedOutput = '';
       await this.api.link(obj, wasm);
 
       // Execution stage
       this.currentStage = 'execute';
-      this.accumulatedOutput = '';
       const buffer = this.api.getFileContents(wasm);
       const testMod = await WebAssembly.compile(buffer);
       await this.api.run(testMod, wasm);
@@ -154,13 +155,61 @@ class ClangWorker implements CodeExecutorBase {
     } finally {
       // Ensure cleanup happens whether we succeed or fail
       try {
-        this.api.memfs.removeFile('test.cpp');
-        this.api.memfs.removeFile('test.o');
-        this.api.memfs.removeFile('test.wasm');
+        await this.writeFile('test.cpp', new Uint8Array(0));
+        await this.writeFile('test.o', new Uint8Array(0));
+        await this.writeFile('test.wasm', new Uint8Array(0));
       } catch (e) {
         // Ignore cleanup errors
       }
     }
+  }
+
+  async readFile(path: string): Promise<Uint8Array> {
+    await this.memfs.ensureInitialized();
+    return this.memfs.getFileContents(path);
+  }
+
+  async writeFile(path: string, content: Uint8Array): Promise<void> {
+    await this.memfs.ensureInitialized();
+    this.memfs.addFile(path, content);
+  }
+
+  async copyFile(src: string, dest: string): Promise<void> {
+    const content = await this.readFile(src);
+    await this.writeFile(dest, content);
+  }
+
+  async createDirectory(path: string): Promise<void> {
+    await this.memfs.ensureInitialized();
+    this.memfs.addDirectory(path);
+  }
+
+  async deleteFile(path: string): Promise<void> {
+    await this.memfs.ensureInitialized();
+    this.memfs.addFile(path, new Uint8Array(0)); // Replace with empty file since memfs doesn't have delete
+  }
+
+  async deleteDirectory(path: string): Promise<void> {
+    await this.memfs.ensureInitialized();
+    // No-op since memfs doesn't support directory deletion
+  }
+
+  async renameFile(oldPath: string, newPath: string): Promise<void> {
+    const content = await this.readFile(oldPath);
+    await this.writeFile(newPath, content);
+    await this.deleteFile(oldPath);
+  }
+
+  async renameDirectory(oldPath: string, newPath: string): Promise<void> {
+    // No-op since memfs doesn't support directory operations directly
+  }
+
+  async getEnv(key: string): Promise<string | undefined> {
+    return process.env[key];
+  }
+
+  async setEnv(key: string, value: string): Promise<void> {
+    process.env[key] = value;
   }
 }
 
