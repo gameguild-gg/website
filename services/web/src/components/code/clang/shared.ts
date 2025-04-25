@@ -1,9 +1,5 @@
 import { AssertError } from './errors';
 
-export function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
 export function readStr(u8: Uint8Array, o: number, len: number = -1): string {
   let str = '';
   let end = u8.length;
@@ -22,8 +18,8 @@ export function getInstance(module: WebAssembly.Module, imports: WebAssembly.Imp
   return WebAssembly.instantiate(module, imports);
 }
 
-export function getImportObject(obj: any, names: string[] = []): {[key: string]: Function} {
-  const result: {[key: string]: Function} = {};
+export function getImportObject(obj: any, names: string[] = []): { [key: string]: Function } {
+  const result: { [key: string]: Function } = {};
   for (let name of names) {
     result[name] = obj[name].bind(obj);
   }

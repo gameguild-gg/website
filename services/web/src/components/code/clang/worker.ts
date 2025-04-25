@@ -123,9 +123,6 @@ class ClangWorker implements CodeExecutorBase {
       const testMod = await WebAssembly.compile(buffer);
       await this.api.run(testMod, wasm);
 
-      // Wait a small amount of time for any remaining output
-      await new Promise((resolve) => setTimeout(resolve, 100));
-
       // Successful completion - reset to ready state
       this.currentStatus = RunnerStatus.READY;
 
@@ -138,15 +135,15 @@ class ClangWorker implements CodeExecutorBase {
     } catch (error) {
       // Error completion - reset to ready state after error
       const errorMsg = error instanceof Error ? error.message : String(error);
-      
+
       // Send error message to main thread
       if (this.onError) {
         this.onError({
           stage: this.currentStage,
-          output: `Error: ${errorMsg}`
+          output: `Error: ${errorMsg}`,
         });
       }
-      
+
       this.currentStatus = RunnerStatus.READY; // Reset to ready even after error
 
       return {
@@ -222,7 +219,7 @@ class ClangWorker implements CodeExecutorBase {
     if (this.onStdOut) {
       this.onStdOut({
         stage: this.currentStage,
-        output: data
+        output: data,
       });
     }
   }
