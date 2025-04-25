@@ -97,7 +97,7 @@ export function useClang() {
 
     try {
       currentStageRef.current = 'init';
-      workerRef.current = new Worker(new URL('./clang-worker.ts', import.meta.url), { type: 'module' });
+      workerRef.current = new Worker(new URL('./clang/clang-worker.ts', import.meta.url), { type: 'module' });
       executorRef.current = wrap<CodeExecutorBase>(workerRef.current);
 
       setupStdoutCallback(executorRef.current);

@@ -10,6 +10,8 @@ export enum RunnerStatus {
   FAILED_EXECUTION = 'FailedExecution',
 }
 
+// the key can be the directory name or the file name
+// the value can be a string or a Uint8Array
 export type FileMap = { [key: string]: string | Uint8Array | FileMap };
 
 export type SimpleCodingOutputOnly = {

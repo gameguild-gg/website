@@ -1,9 +1,9 @@
 import { expose } from 'comlink';
 import { CodeExecutorBase } from '@/components/code/code-executor.base';
-import { API } from './clang/core/cpp/api';
-import { RunnerStatus } from './types';
-import { getSharedApi, setSharedApi } from './clang/core/cpp/worker';
-import { MemFS } from './clang/core/cpp/memfs';
+import { API } from './core/cpp/api';
+import { RunnerStatus } from '../types';
+import { getSharedApi, setSharedApi } from './core/cpp/worker';
+import { MemFS } from './core/cpp/memfs';
 
 class ClangWorker implements CodeExecutorBase {
   private currentStatus: RunnerStatus = RunnerStatus.UNINITIALIZED;

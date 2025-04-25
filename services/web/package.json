@@ -22,11 +22,7 @@
     "buildAndRun": "npm run build && npm run start"
   },
   "dependencies": {
-    "xterm": "^4.13.0",
-    "xterm-addon-fit": "^0.5.0",
-    "zustand": "^3.5.9",
     "clsx": "^1.1.1",
-    "use-media": "^1.4.0",
     "@codeium/react-code-editor": "^1.0.12",
     "@game-guild/apiclient": "*",
     "@game-guild/ui": "*",
