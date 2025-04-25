@@ -1,3 +1,17 @@
+## [1.19.7](https://github.com/gameguild-gg/website/compare/v1.19.6...v1.19.7) (2025-04-25)
+
+
+### Bug Fixes
+
+* **wasm:** clean up ([580c88f](https://github.com/gameguild-gg/website/commit/580c88f5fb10b2e1ccab282d297ea693421e2f0b))
+* **wasm:** fix type for file directory ([acab593](https://github.com/gameguild-gg/website/commit/acab593cc8e85f45c575e799a818bd4cdcec0dbb))
+* **wasm:** move location of types ([c8852f0](https://github.com/gameguild-gg/website/commit/c8852f0e69ccbf41444ed5122c0c6fc0879f1259))
+* **wasm:** refactor clang api directory ([c5c0d44](https://github.com/gameguild-gg/website/commit/c5c0d4497083f4cc4052a9e1702cc471eecbb23f))
+* **wasm:** remove cpp example ([6e16e2b](https://github.com/gameguild-gg/website/commit/6e16e2b37602cba7ddd0e0b65eb9a36028120003))
+* **wasm:** remove duplicity of worker code on clang runner ([c92a764](https://github.com/gameguild-gg/website/commit/c92a7640b3313881c8168bdecc15bdc346b2a6d4))
+* **wasm:** remove unused components ([213de38](https://github.com/gameguild-gg/website/commit/213de3879ec067ce876cbe16757cf90b83b45e9e))
+* **wasm:** removed clang runner with zustand ([d60f3b6](https://github.com/gameguild-gg/website/commit/d60f3b6e3d625493c950c769f123679579d2f3e4))
+
 ## [1.19.6](https://github.com/gameguild-gg/website/compare/v1.19.5...v1.19.6) (2025-04-25)
 
 
