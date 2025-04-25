@@ -1,3 +1,12 @@
+## [1.19.6](https://github.com/gameguild-gg/website/compare/v1.19.5...v1.19.6) (2025-04-25)
+
+
+### Bug Fixes
+
+* **wasm:** fix clang api ([8095fbe](https://github.com/gameguild-gg/website/commit/8095fbe853c2de247392be72234a7e1f74f9e1a5))
+* **wasm:** fix clang demo ([06f4a21](https://github.com/gameguild-gg/website/commit/06f4a21096becf08a72442ec064167dccae15acb))
+* **wasm:** fix clang interface for debug; ([b7377c5](https://github.com/gameguild-gg/website/commit/b7377c5096a40d97609a531515a2ebe1e515fcc5))
+
 ## [1.19.5](https://github.com/gameguild-gg/website/compare/v1.19.4...v1.19.5) (2025-04-22)
 
 
