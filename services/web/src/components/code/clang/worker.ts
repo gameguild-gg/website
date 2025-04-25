@@ -1,77 +1,46 @@
 import { expose } from 'comlink';
-import { CodeExecutorBase } from '@/components/code/code-executor.base';
+import { CodeExecutorBase, StageOutput } from '@/components/code/code-executor.base';
 import { API } from './api';
 import { RunnerStatus } from '../types';
 import { MemFS } from './memfs';
 
-// Variables moved from worker.ts
-let port: MessagePort | null = null;
+// Variables for API management
 let sharedApi: API | null = null;
 
-// Event handler function moved from worker.ts
-const onAnyMessage = async (event) => {
-  if (event.data.id === 'constructor') {
-    try {
-      port = event.data.data;
-      port.onmessage = onAnyMessage;
-
-      // If we already have a shared API instance, set its message port
-      if (sharedApi) {
-        sharedApi.setMessagePort(port);
-      }
-    } catch (error) {
-      console.error('Error in message port initialization:', error);
-      // Don't throw here as it would crash the worker
-    }
-  }
-};
-
-// Functions moved from worker.ts
 export function getSharedApi(): API | null {
   return sharedApi;
 }
 
 export function setSharedApi(api: API): void {
-  try {
-    sharedApi = api;
-    // Set the port on the API if it exists
-    if (port) {
-      api.setMessagePort(port);
-    }
-  } catch (error) {
-    console.error('Error setting shared API:', error);
-    // Don't rethrow as this is called from the main thread
-  }
+  sharedApi = api;
 }
 
 class ClangWorker implements CodeExecutorBase {
   private currentStatus: RunnerStatus = RunnerStatus.UNINITIALIZED;
-  private onStdOut: ((data: string) => void) | null = null;
-  private onStdErr: ((data: string) => void) | null = null;
+  private onStdOut: ((data: StageOutput) => void) | null = null;
+  private onStdErr: ((data: StageOutput) => void) | null = null;
+  private onError: ((data: StageOutput) => void) | null = null;
   private memfs: MemFS;
   private api: API | null = null;
   private currentStage: 'init' | 'compile' | 'link' | 'execute' = 'init';
 
   constructor() {
+    // Create memfs with a handler that routes output through our worker's callbacks
     this.memfs = new MemFS({
-      hostWrite: (message: string) => {
-        if (this.onStdOut) {
-          this.onStdOut(message);
-        }
-      },
+      hostWrite: (message: string) => this.handleOutput(message),
     });
   }
 
-  setOnStdOut(onStdOut: (data: string) => void) {
+  setOnStdOut(onStdOut: (data: StageOutput) => void) {
     this.onStdOut = onStdOut;
   }
 
-  setOnStdErr(onStdErr: (data: string) => void) {
-    // We'll use stdout for everything
+  setOnStdErr(onStdErr: (data: StageOutput) => void) {
+    this.onStdErr = onStdErr;
   }
 
-  setOnError(onError: (data: string) => void) {
-    // We'll use stdout for everything
+  setOnError(onError: (data: StageOutput) => void) {
+    this.onError = onError;
   }
 
   getStatus(): RunnerStatus {
@@ -85,6 +54,8 @@ class ClangWorker implements CodeExecutorBase {
       let api = getSharedApi();
 
       if (!api) {
+        // Create API with a handler that forwards messages to our handleOutput method
+        // This ensures all console output is properly routed through our stage-based callbacks
         api = new API({
           hostWrite: (s: string) => this.handleOutput(s),
         });
@@ -93,6 +64,7 @@ class ClangWorker implements CodeExecutorBase {
 
       this.api = api;
       this.currentStatus = RunnerStatus.LOADING;
+      this.currentStage = 'init';
 
       await this.api.ready;
 
@@ -166,7 +138,15 @@ class ClangWorker implements CodeExecutorBase {
     } catch (error) {
       // Error completion - reset to ready state after error
       const errorMsg = error instanceof Error ? error.message : String(error);
-      this.handleOutput(`Error: ${errorMsg}`);
+      
+      // Send error message to main thread
+      if (this.onError) {
+        this.onError({
+          stage: this.currentStage,
+          output: `Error: ${errorMsg}`
+        });
+      }
+      
       this.currentStatus = RunnerStatus.READY; // Reset to ready even after error
 
       return {
@@ -238,24 +218,15 @@ class ClangWorker implements CodeExecutorBase {
   private handleOutput(data: string) {
     if (data === null || data === undefined) return;
 
-    // Send real-time output without formatting
+    // Send output directly as a StageOutput object
     if (this.onStdOut) {
-      const stageOutput = {
-        type: 'output',
-        stages: [
-          {
-            stage: this.currentStage,
-            output: data,
-          },
-        ],
-      };
-      this.onStdOut(JSON.stringify(stageOutput));
+      this.onStdOut({
+        stage: this.currentStage,
+        output: data
+      });
     }
   }
 }
-
-// Add event listener from worker.ts
-self.addEventListener('message', onAnyMessage);
 
 const worker = new ClangWorker();
 expose(worker);

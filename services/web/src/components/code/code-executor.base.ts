@@ -1,12 +1,16 @@
 import { RunnerStatus } from '@/components/code/types';
 
+// Define the StageOutput type for structured output
+export type StageOutput = {
+  stage: 'init' | 'compile' | 'link' | 'execute';
+  output: string;
+};
+
 export interface CodeExecutorBase {
-  // onStdOut
-  setOnStdOut: (onStdOut: (data: string) => void) => void;
-  // onStdErr
-  setOnStdErr: (error: (data: string) => void) => void;
-  // onError
-  setOnError: (error: (data: string) => void) => void;
+  // Updated callback signatures to use StageOutput objects
+  setOnStdOut: (onStdOut: (data: StageOutput) => void) => void;
+  setOnStdErr: (onStdErr: (data: StageOutput) => void) => void;
+  setOnError: (onError: (data: StageOutput) => void) => void;
 
   // Initialize the worker and wait until it's ready
   // Returns the status when initialization is complete

@@ -3,6 +3,11 @@ import { proxy, Remote, wrap } from 'comlink';
 import { CodeExecutorBase } from './code-executor.base';
 import { RunnerStatus } from './types';
 
+type StageOutput = {
+  stage: 'init' | 'compile' | 'link' | 'execute';
+  output: string;
+};
+
 type CompileResult = {
   stdout: string;
   success: boolean;
@@ -20,7 +25,7 @@ export function useClang() {
   const abortControllerRef = useRef<AbortController | null>(null);
   const currentStageRef = useRef<'init' | 'compile' | 'link' | 'execute'>('init');
 
-  const appendToOutput = (stage: typeof currentStageRef.current, output: string) => {
+  const appendToOutput = (stage: 'init' | 'compile' | 'link' | 'execute', output: string) => {
     if (!output) return;
 
     switch (stage) {
@@ -39,28 +44,13 @@ export function useClang() {
     }
   };
 
-  const processMessage = (data: string) => {
-    try {
-      const parsed = JSON.parse(data);
-      if (parsed.type === 'output' && Array.isArray(parsed.stages)) {
-        parsed.stages.forEach(({ stage, output }) => {
-          if (output) {
-            appendToOutput(stage, output);
-          }
-        });
-      }
-    } catch (err) {
-      // If not JSON or invalid format, append to current stage as-is
-      if (data) {
-        appendToOutput(currentStageRef.current, data);
-      }
-    }
-  };
-
   const setupStdoutCallback = (executor: Remote<CodeExecutorBase>) => {
+    // Use a proxy callback that directly receives StageOutput objects
     executor.setOnStdOut(
-      proxy((data: string) => {
-        processMessage(data);
+      proxy((stageOutput: StageOutput) => {
+        if (stageOutput && stageOutput.output) {
+          appendToOutput(stageOutput.stage, stageOutput.output);
+        }
       }),
     );
   };
@@ -101,8 +91,19 @@ export function useClang() {
       executorRef.current = wrap<CodeExecutorBase>(workerRef.current);
 
       setupStdoutCallback(executorRef.current);
-      executorRef.current.setOnStdErr(proxy(() => {}));
-      executorRef.current.setOnError(proxy(() => {}));
+      executorRef.current.setOnStdErr(proxy((stageOutput: StageOutput) => {
+        // Handle stderr output - can be the same as stdout if needed
+        if (stageOutput && stageOutput.output) {
+          appendToOutput(stageOutput.stage, stageOutput.output);
+        }
+      }));
+      executorRef.current.setOnError(proxy((errorOutput: StageOutput) => {
+        // Handle error output
+        if (errorOutput && errorOutput.output) {
+          setError(errorOutput.output);
+          appendToOutput(errorOutput.stage, errorOutput.output);
+        }
+      }));
 
       setStatus(RunnerStatus.LOADING);
       const status = await executorRef.current.init();

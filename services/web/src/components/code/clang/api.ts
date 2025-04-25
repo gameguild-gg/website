@@ -31,7 +31,6 @@ export class API {
   private hostWrite: (message: string) => void;
   private clangCommonArgs: string[];
   private stdin: string = '';
-  private messagePort: MessagePort | null = null;
 
   constructor(options: { hostWrite: (message: string) => void }) {
     if (!options || typeof options.hostWrite !== 'function') {
@@ -61,19 +60,6 @@ export class API {
     });
 
     this.ready = this.init();
-  }
-
-  setMessagePort(port: MessagePort) {
-    this.messagePort = port;
-    if (this.hostWrite) {
-      const originalHostWrite = this.hostWrite;
-      this.hostWrite = (message: string) => {
-        originalHostWrite(message);
-        if (this.messagePort) {
-          this.messagePort.postMessage({ id: 'write', data: message });
-        }
-      };
-    }
   }
 
   setStdinStr(stdin: string) {

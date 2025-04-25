@@ -7,8 +7,11 @@ import memfsWasmUrl from '../../../../public/assets/memfs.wasm';
 
 const memfsUrl = memfsWasmUrl;
 
+// Type for stage-aware output handling
+type OutputHandler = (message: string) => void;
+
 interface MemFSOptions {
-  hostWrite: (message: string) => void;
+  hostWrite: OutputHandler;
   stdinStr?: string;
 }
 
@@ -32,7 +35,7 @@ interface MemFSExports extends WebAssembly.Exports {
 
 export class MemFS {
   public ready: Promise<void>;
-  private hostWrite: (message: string) => void;
+  private outputHandler: OutputHandler;
   private stdinStr: string;
   private stdinStrPos: number;
   private hostMem_: Memory | null;
@@ -42,10 +45,10 @@ export class MemFS {
 
   constructor(options: MemFSOptions) {
     if (!options.hostWrite || typeof options.hostWrite !== 'function') {
-      throw new Error('MemFS requires a valid hostWrite function');
+      throw new Error('MemFS requires a valid output handler function');
     }
 
-    this.hostWrite = options.hostWrite;
+    this.outputHandler = options.hostWrite;
     this.stdinStr = options.stdinStr || '';
     this.stdinStrPos = 0;
     this.hostMem_ = null;
@@ -64,7 +67,7 @@ export class MemFS {
         this.exports.init();
         this.initialized = true;
       } catch (error) {
-        this.hostWrite(`MemFS initialization error: ${error}\n`);
+        this.outputHandler(`MemFS initialization error: ${error}\n`);
         throw error;
       }
     })();
@@ -86,8 +89,9 @@ export class MemFS {
     this.stdinStrPos = 0;
   }
 
+  // Route output through the provided callback
   writeToHost(message: string): void {
-    this.hostWrite(message);
+    this.outputHandler(message);
   }
 
   async ensureInitialized(): Promise<void> {
@@ -148,7 +152,7 @@ export class MemFS {
       size += len;
     }
     this.hostMem_!.write32(nwritten_out, size);
-    this.hostWrite(str);
+    this.outputHandler(str);
     return ESUCCESS;
   }
 
