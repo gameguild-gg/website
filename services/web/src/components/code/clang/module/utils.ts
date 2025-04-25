@@ -1,10 +1,10 @@
-import { Language } from './types';
+import { CodeLanguage } from '../../types';
 
-export function initWorker(language: Language) {
+export function initWorker(language: CodeLanguage) {
   let worker: Worker;
   
   // Dynamic import for Next.js compatibility
-  if (language === Language.Cpp) {
+  if (language === 'cpp') {
     // Use a more Next.js-friendly approach for Web Workers
     if (typeof window !== 'undefined') {
       worker = new Worker(new URL('../core/cpp/worker.ts', import.meta.url));

@@ -1,32 +1,32 @@
 import create from 'zustand';
 import { persist } from 'zustand/middleware';
 import { DefaultCppCode } from '../examples';
-import { Language } from './types';
 import { initWorker } from './utils';
+import { CodeLanguage } from '../../types';
 
 export const useRunner = create(
   persist<{
-    language: Language;
-    codeMap: Record<Language, string>;
-    workerMap: { [key in Language]?: { worker: Worker; messagePort: MessagePort } };
+    language: CodeLanguage;
+    codeMap: Record<CodeLanguage, string>;
+    workerMap: { [key in CodeLanguage]?: { worker: Worker; messagePort: MessagePort } };
     setCode: (code: string) => void;
-    setLanguage: (language: Language) => void;
+    setLanguage: (language: CodeLanguage) => void;
     init: () => void;
   }>(
     (set, get) => ({
       workerMap: {},
       codeMap: {
-        [Language.Cpp]: DefaultCppCode,
+        cpp: DefaultCppCode,
+        python: '',
       },
-      language: Language.Cpp,
+      language: 'cpp',
       setCode: (code: string) => {
         const state = get();
         const codeMap = { ...state.codeMap, [state.language]: code };
         set({ codeMap });
       },
-      setLanguage: (language: Language) => set({ language }),
+      setLanguage: (language: CodeLanguage) => set({ language }),
       init() {
-        // Check if workers are already initialized to prevent infinite loops
         const state = get();
         if (Object.keys(state.workerMap).length > 0) {
           console.log('Workers already initialized, skipping initialization');
@@ -36,12 +36,16 @@ export const useRunner = create(
         console.log('Initializing workers');
         set((state) => {
           const newWorkerMap = { ...state.workerMap };
-          for (const language of Object.values(Language)) {
-            newWorkerMap[language] = initWorker(language);
+          const languages: CodeLanguage[] = ['cpp', 'python'];
+          for (const language of languages) {
+            if (language === 'cpp') {
+              newWorkerMap[language] = initWorker('cpp');
+            }
+            // Add other language initializations here when supported
           }
           return { workerMap: newWorkerMap };
         });
-      }
+      },
     }),
     {
       name: 'runner-store',

@@ -1,20 +1,5 @@
 // todo: add other languages later
-export type CodeLanguage = 'c' | 'cpp' | 'c++' | 'python';
-// todo: add other packages later
-export type WasmPackage = 'clang' | 'python';
-
-function languageToPackage(language: CodeLanguage): WasmPackage {
-  switch (language) {
-    case 'c':
-    case 'cpp':
-    case 'c++':
-      return 'clang';
-    case 'python':
-      return 'python';
-    default:
-      throw new Error(`Unsupported language ${language}`);
-  }
-}
+export type CodeLanguage = 'cpp' | 'python';
 
 export enum RunnerStatus {
   UNINITIALIZED = 'Uninitialized',
