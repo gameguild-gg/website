@@ -10,11 +10,7 @@ export enum RunnerStatus {
   FAILED_EXECUTION = 'FailedExecution',
 }
 
-export type FileMap = { [key: string]: string | Uint8Array };
-export type Directory = {
-  [key: string]: FileMap | Directory;
-};
-export type ProjectData = FileMap | Directory | string;
+export type FileMap = { [key: string]: string | Uint8Array | FileMap };
 
 export type SimpleCodingOutputOnly = {
   output: string;
@@ -62,6 +58,12 @@ export enum CodeComplexity {
 
 export type CompileAndRunParams = {
   language: CodeLanguage;
-  data: ProjectData;
+  data: FileMap;
   stdin?: string;
+  packages?: string[];
+};
+
+export type CompileAndRunResult = {
+  stdout: string;
+  duration: number;
 };
