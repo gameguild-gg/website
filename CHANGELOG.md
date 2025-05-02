@@ -1,3 +1,10 @@
+## [1.19.9](https://github.com/gameguild-gg/website/compare/v1.19.8...v1.19.9) (2025-05-02)
+
+
+### Bug Fixes
+
+* **code:** improve architecture of the code executor ([630c6cc](https://github.com/gameguild-gg/website/commit/630c6cc66847d8c74d63db6d80c18349b892f230))
+
 ## [1.19.8](https://github.com/gameguild-gg/website/compare/v1.19.7...v1.19.8) (2025-05-02)
 
 
