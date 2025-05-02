@@ -1,6 +1,6 @@
 'use client';
 
-import PyodideCodeInterface from '@/app/[locale]/pyodide/pyodide-code-interface';
+import PyodideCodeInterface from '@/components/code/pyodide/pyodide-code-interface';
 
 export default function Index() {
   return (

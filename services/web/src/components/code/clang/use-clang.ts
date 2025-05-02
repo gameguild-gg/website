@@ -1,7 +1,7 @@
 import { useCallback, useRef, useState } from 'react';
 import { proxy, Remote, wrap } from 'comlink';
-import { CodeExecutorBase } from './code-executor.base';
-import { RunnerStatus } from './types';
+import { CodeExecutorBase } from '../code-executor.base';
+import { RunnerStatus } from '../types';
 
 type StageOutput = {
   stage: 'init' | 'compile' | 'link' | 'execute';
@@ -87,23 +87,27 @@ export function useClang() {
 
     try {
       currentStageRef.current = 'init';
-      workerRef.current = new Worker(new URL('./clang/worker.ts', import.meta.url), { type: 'module' });
+      workerRef.current = new Worker(new URL('./worker.ts', import.meta.url), { type: 'module' });
       executorRef.current = wrap<CodeExecutorBase>(workerRef.current);
 
       setupStdoutCallback(executorRef.current);
-      executorRef.current.setOnStdErr(proxy((stageOutput: StageOutput) => {
-        // Handle stderr output - can be the same as stdout if needed
-        if (stageOutput && stageOutput.output) {
-          appendToOutput(stageOutput.stage, stageOutput.output);
-        }
-      }));
-      executorRef.current.setOnError(proxy((errorOutput: StageOutput) => {
-        // Handle error output
-        if (errorOutput && errorOutput.output) {
-          setError(errorOutput.output);
-          appendToOutput(errorOutput.stage, errorOutput.output);
-        }
-      }));
+      executorRef.current.setOnStdErr(
+        proxy((stageOutput: StageOutput) => {
+          // Handle stderr output - can be the same as stdout if needed
+          if (stageOutput && stageOutput.output) {
+            appendToOutput(stageOutput.stage, stageOutput.output);
+          }
+        }),
+      );
+      executorRef.current.setOnError(
+        proxy((errorOutput: StageOutput) => {
+          // Handle error output
+          if (errorOutput && errorOutput.output) {
+            setError(errorOutput.output);
+            appendToOutput(errorOutput.stage, errorOutput.output);
+          }
+        }),
+      );
 
       setStatus(RunnerStatus.LOADING);
       const status = await executorRef.current.init();

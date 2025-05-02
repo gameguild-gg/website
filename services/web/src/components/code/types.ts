@@ -14,13 +14,51 @@ export enum RunnerStatus {
 // the value can be a string or a Uint8Array
 export type FileMap = { [key: string]: string | Uint8Array | FileMap };
 
+/* simple stdin stdout test */
 export type SimpleCodingOutputOnly = {
-  output: string;
+  stdout: string;
+};
+export type SimpleCodingTest = {
+  stdin: string;
+} & SimpleCodingOutputOnly;
+
+/* function testing: in / out test */
+export type FunctionCodingTest = {
+  // the arguments to be passed to the function
+  args: any[];
+
+  // the expected output of the function
+  expectedReturn: any;
+};
+export type FunctionCodingTests = {
+  publicTests: FunctionCodingTest[];
+  hiddenTests: FunctionCodingTest[];
+}
+
+/* the instructor can define their own tests */
+export type InstructorDefinedTest = {
+  // the source of the tester, implemented by the instructor
+  // useful for testing time complexity
+  // the instructor can implement their own solution for benchmarking and then compare the time against the user's solution
+  testerSourceCode: string;
+}
+export type InstructorDefinedTestResultEntry = {
+  // number between 0 and 1 for each individual test
+  grade: number;
+  // if the test pass, there is no need to show message 
+  message?: string;
+};
+export type InstructorDefinedTestResult = {
+  // number between 0 and 1
+  grade: number;
+  // verbose message to be shown to the user
+  results?: InstructorDefinedTestResultEntry[];
+}
+export type InstructorDefinedTests = {
+  publicTests: InstructorDefinedTest[];
+  hiddenTests: InstructorDefinedTest[];
 };
 
-export type SimpleCodingTest = {
-  input: string;
-} & SimpleCodingOutputOnly;
 
 // while testing complexity, we need to test the code with different sizes and then do some regression on the samples to infer the complexity
 export type CodeComplexityTestEntry = SimpleCodingTest & {

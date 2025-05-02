@@ -1,6 +1,6 @@
 'use client';
 
-import { useClang } from '@/components/code/use-clang';
+import { useClang } from '@/components/code/clang/use-clang';
 import { useState } from 'react';
 import { TextArea } from '@/components/ui/textArea';
 import { RunnerStatus } from '@/components/code/types';
