@@ -1,3 +1,13 @@
+## [1.19.8](https://github.com/gameguild-gg/website/compare/v1.19.7...v1.19.8) (2025-05-02)
+
+
+### Bug Fixes
+
+* **chess:** change moduleResolution to build frontend ([6785c0b](https://github.com/gameguild-gg/website/commit/6785c0b0cceefb893c9d71439e9e3d8242fffde7))
+* **chess:** fix tournament ranking value ([1154a16](https://github.com/gameguild-gg/website/commit/1154a16c95e7bde68576f27975b40df62b116b97))
+* **wasm:** message passing is now through callbacks ([179517f](https://github.com/gameguild-gg/website/commit/179517fe89c556e08e8770ccfcbd684883ea7373))
+* **wasm:** remove timeouts ([e4942ce](https://github.com/gameguild-gg/website/commit/e4942ceb83f64f5efe033cd6468782fd49acc574))
+
 ## [1.19.7](https://github.com/gameguild-gg/website/compare/v1.19.6...v1.19.7) (2025-04-25)
 
 
