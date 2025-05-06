@@ -1,3 +1,10 @@
+## [1.19.11](https://github.com/gameguild-gg/website/compare/v1.19.10...v1.19.11) (2025-05-06)
+
+
+### Bug Fixes
+
+* **code:** code test type ([dbb7df9](https://github.com/gameguild-gg/website/commit/dbb7df96a90d165ba03492902d219716803cf8d3))
+
 ## [1.19.10](https://github.com/gameguild-gg/website/compare/v1.19.9...v1.19.10) (2025-05-06)
 
 
