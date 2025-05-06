@@ -1,3 +1,10 @@
+## [1.19.10](https://github.com/gameguild-gg/website/compare/v1.19.9...v1.19.10) (2025-05-06)
+
+
+### Bug Fixes
+
+* add mindmaps of future works ([1b7c711](https://github.com/gameguild-gg/website/commit/1b7c711bd8457a29b65c6900460413bb6a0faddb))
+
 ## [1.19.9](https://github.com/gameguild-gg/website/compare/v1.19.8...v1.19.9) (2025-05-02)
 
 
