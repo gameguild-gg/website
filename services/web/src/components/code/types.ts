@@ -1,5 +1,17 @@
 // todo: add other languages later
-export type CodeLanguage = 'cpp' | 'python';
+export type CodeLanguage = 'c' | 'cpp' | 'python' | 'javascript' | 'typescript' | 'rust' | 'c#' | 'lua';
+
+export type SupportedExtensionsType = Record<CodeLanguage, string[]>;
+
+export const SupportedExtensionsByEachLanguage: SupportedExtensionsType = {
+  c: ['.c', '.h'],
+  cpp: ['.cpp', '.cxx', '.cc', '.h', '.hpp'],
+  python: ['.py'],
+  javascript: ['.js', '.css', '.html'],
+  rust: ['.rs'],
+  'c#': ['.cs'],
+  lua: ['.lua'],
+};
 
 export enum RunnerStatus {
   UNINITIALIZED = 'Uninitialized',
@@ -15,12 +27,14 @@ export enum RunnerStatus {
 export type FileMap = { [key: string]: string | Uint8Array | FileMap };
 
 /* simple stdin stdout test */
-export type SimpleCodingOutputOnly = {
-  stdout: string;
-};
 export type SimpleCodingTest = {
-  stdin: string;
-} & SimpleCodingOutputOnly;
+  stdout: string;
+  stdin?: string;
+};
+export type SimpleCodingTests = {
+  publicTests: SimpleCodingTest[];
+  hiddenTests: SimpleCodingTest[];
+};
 
 /* function testing: args / result test */
 export type FunctionCodingTest = {
@@ -42,28 +56,25 @@ export type InstructorDefinedTest = {
   // the instructor can implement their own solution for benchmarking and then compare the time against the user's solution
   testerSourceCode: string;
 };
-export type InstructorDefinedTestResultEntry = {
+export type InstructorDefinedTestResult = {
   // number between 0 and 1 for each individual test
   grade: number;
   // if the test pass, there is no need to show message
   message?: string;
-};
-export type InstructorDefinedTestResult = {
-  // number between 0 and 1
-  grade: number;
-  // verbose message to be shown to the user
-  results?: InstructorDefinedTestResultEntry[];
 };
 export type InstructorDefinedTests = {
   publicTests: InstructorDefinedTest[];
   hiddenTests: InstructorDefinedTest[];
 };
 
+// CodingTestParams is bounded to a language
 export type CodingTestParams = {
   // it could be just a string for a file or a filesystem
-  files: Directory | FileMap | string;
-  tests: SimpleCodingOutputOnly | SimpleCodingTest[] | InstructorDefinedTests[];
+  boilerplate: FileMap | string; // boilerplate code
+  tests?: SimpleCodingTests | InstructorDefinedTests | FunctionCodingTests; // tests to be run
 };
+
+export type CodeChallenge = Record<CodeLanguage, CodingTestParams>;
 
 export enum CodeComplexity {
   O1 = 'O(1)',
