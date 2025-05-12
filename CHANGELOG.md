@@ -1,3 +1,10 @@
+## [1.19.13](https://github.com/gameguild-gg/website/compare/v1.19.12...v1.19.13) (2025-05-12)
+
+
+### Bug Fixes
+
+* **code:** add a unified way to code on the browser ([b356821](https://github.com/gameguild-gg/website/commit/b356821e0bc3bec331060cfa51ba0653ff7dbcd0))
+
 ## [1.19.12](https://github.com/gameguild-gg/website/compare/v1.19.11...v1.19.12) (2025-05-12)
 
 
