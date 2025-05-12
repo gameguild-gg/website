@@ -4,7 +4,6 @@ import { useCallback, useEffect, useState } from 'react';
 import { useClang } from '@/components/code/clang/use-clang';
 import { usePyodide } from '@/components/code/pyodide/use-pyodide';
 import {
-  CodeLanguage,
   CodingTestEnum,
   CodingTestParamsWithLanguage,
   CompileAndRunParams,
@@ -14,12 +13,23 @@ import {
   SimpleCodingTests,
 } from '@/components/code/types';
 
+// Define structure for output stages to better organize output from different engines
+export type StageOutput = {
+  init: string;
+  compile: string;
+  link: string;
+  execute: string;
+};
+
 export function useCode() {
   const {
     init: initClang,
     compileAndRun: compileAndRunClang,
     status: clangStatus,
-    executionOutput: clangOutput,
+    initOutput: clangInitOutput,
+    compilerOutput: clangCompilerOutput, 
+    linkerOutput: clangLinkerOutput,
+    executionOutput: clangExecutionOutput,
     error: clangError,
     abort: abortClang,
   } = useClang();
@@ -29,6 +39,12 @@ export function useCode() {
   const [status, setStatus] = useState<RunnerStatus>(RunnerStatus.UNINITIALIZED);
   const [output, setOutput] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
+  
+  // Add separate output stages
+  const [initOutput, setInitOutput] = useState<string>('');
+  const [compileOutput, setCompileOutput] = useState<string>('');
+  const [linkOutput, setLinkOutput] = useState<string>('');
+  const [executeOutput, setExecuteOutput] = useState<string>('');
 
   // Update status based on underlying engines
   useEffect(() => {
@@ -47,11 +63,27 @@ export function useCode() {
 
   // Update output and error states from underlying engines
   useEffect(() => {
-    if (clangOutput) setOutput(clangOutput);
-  }, [clangOutput]);
+    // For combined output
+    if (clangExecutionOutput) {
+      setOutput(
+        [clangInitOutput, clangCompilerOutput, clangLinkerOutput, clangExecutionOutput]
+          .filter(Boolean)
+          .join('\n---\n')
+      );
+    }
+    // For separate output stages
+    setInitOutput(clangInitOutput);
+    setCompileOutput(clangCompilerOutput);
+    setLinkOutput(clangLinkerOutput);
+    setExecuteOutput(clangExecutionOutput);
+  }, [clangInitOutput, clangCompilerOutput, clangLinkerOutput, clangExecutionOutput]);
 
   useEffect(() => {
-    if (pyodideOutput) setOutput(pyodideOutput);
+    if (pyodideOutput) {
+      setOutput(pyodideOutput);
+      // For Python, all output is considered execution output
+      setExecuteOutput(pyodideOutput);
+    }
   }, [pyodideOutput]);
 
   useEffect(() => {
@@ -83,7 +115,7 @@ export function useCode() {
           return mainFile[1];
         }
       }
-
+      
       // If no main file, just look for any file with the right extension
       for (const ext of preferredExtensions) {
         const anyFile = Object.entries(data).find(([key]) => key.endsWith(ext));
@@ -112,8 +144,14 @@ export function useCode() {
     async (params: CompileAndRunParams): Promise<RunResult> => {
       const { language, data, stdin } = params;
 
+      // Reset all outputs
       setOutput('');
       setError(null);
+      setInitOutput('');
+      setCompileOutput('');
+      setLinkOutput('');
+      setExecuteOutput('');
+      
       setStatus(RunnerStatus.RUNNING);
 
       try {
@@ -153,7 +191,10 @@ export function useCode() {
         } else if (language === 'c' || language === 'cpp') {
           const result = await compileAndRunClang(code, stdin);
           success = result.success;
-          outputValue = clangOutput;
+          // Combined output is already set via effects
+          outputValue = [clangInitOutput, clangCompilerOutput, clangLinkerOutput, clangExecutionOutput]
+            .filter(Boolean)
+            .join('\n---\n');
           errorValue = clangError;
         } else {
           throw new Error(`Language '${language}' not yet supported`);
@@ -178,7 +219,17 @@ export function useCode() {
         };
       }
     },
-    [compileAndRunClang, runPython, pyodideError, pyodideOutput, clangOutput, clangError],
+    [
+      compileAndRunClang, 
+      runPython, 
+      pyodideError, 
+      pyodideOutput, 
+      clangInitOutput,
+      clangCompilerOutput,
+      clangLinkerOutput,
+      clangExecutionOutput,
+      clangError
+    ],
   );
 
   // More complex function to run code challenges with tests
@@ -199,7 +250,7 @@ export function useCode() {
       }
 
       // Handle simple console tests
-      if ('type' in tests && tests.type === CodingTestEnum.CONSOLE) {
+      if (tests.type && tests.type === CodingTestEnum.CONSOLE) {
         const consoleTests = tests as SimpleCodingTests;
         const publicResults = [];
 
@@ -261,6 +312,11 @@ export function useCode() {
     cleanup,
     status,
     output,
-    error
+    error,
+    // Expose detailed outputs for UI that needs them
+    initOutput,
+    compileOutput,
+    linkOutput,
+    executeOutput,
   };
 }
