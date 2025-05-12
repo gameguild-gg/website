@@ -1,3 +1,11 @@
+## [1.19.12](https://github.com/gameguild-gg/website/compare/v1.19.11...v1.19.12) (2025-05-12)
+
+
+### Bug Fixes
+
+* **courses:** improve programming course types ([a6b4ea9](https://github.com/gameguild-gg/website/commit/a6b4ea929c6e0d5d8dddc6ad722246a0dc11b6f0))
+* **usecode:** begining of the refactor to usecode instead of usepyodide or useclang ([8075941](https://github.com/gameguild-gg/website/commit/8075941c87f0d3f3244a0155f4c2441ddcfdd810))
+
 ## [1.19.11](https://github.com/gameguild-gg/website/compare/v1.19.10...v1.19.11) (2025-05-06)
 
 
