@@ -11,6 +11,19 @@ export const SupportedExtensionsByEachLanguage: SupportedExtensionsType = {
   rust: ['.rs'],
   'c#': ['.cs'],
   lua: ['.lua'],
+  typescript: ['.ts'],
+};
+
+export type CompileAndRunParams = {
+  language: CodeLanguage;
+  data: FileMap;
+  stdin?: string;
+};
+
+export type RunResult = {
+  success: boolean;
+  output: string;
+  error: string | null;
 };
 
 export enum RunnerStatus {
@@ -26,6 +39,24 @@ export enum RunnerStatus {
 // the value can be a string or a Uint8Array
 export type FileMap = { [key: string]: string | Uint8Array | FileMap };
 
+export enum CodingTestEnum {
+  CONSOLE = 'console',
+  FUNCTION = 'function',
+  CUSTOM = 'custom',
+}
+
+type CodingTestTypeConsole = {
+  type: CodingTestEnum.CONSOLE;
+};
+
+type CodingTestTypeFunction = {
+  type: CodingTestEnum.FUNCTION;
+};
+
+type CodingTestTypeCustom = {
+  type: CodingTestEnum.CUSTOM;
+};
+
 /* simple stdin stdout test */
 export type SimpleCodingTest = {
   stdout: string;
@@ -34,7 +65,7 @@ export type SimpleCodingTest = {
 export type SimpleCodingTests = {
   publicTests: SimpleCodingTest[];
   hiddenTests: SimpleCodingTest[];
-};
+} & CodingTestTypeConsole;
 
 /* function testing: args / result test */
 export type FunctionCodingTest = {
@@ -47,14 +78,14 @@ export type FunctionCodingTest = {
 export type FunctionCodingTests = {
   publicTests: FunctionCodingTest[];
   hiddenTests: FunctionCodingTest[];
-};
+} & CodingTestTypeFunction;
 
 /* the instructor can define their own tests */
 export type InstructorDefinedTest = {
   // the source of the tester, implemented by the instructor
   // useful for testing time complexity
   // the instructor can implement their own solution for benchmarking and then compare the time against the user's solution
-  testerSourceCode: string;
+  testerSourceCode: string | FileMap;
 };
 export type InstructorDefinedTestResult = {
   // number between 0 and 1 for each individual test
@@ -62,39 +93,20 @@ export type InstructorDefinedTestResult = {
   // if the test pass, there is no need to show message
   message?: string;
 };
+
 export type InstructorDefinedTests = {
   publicTests: InstructorDefinedTest[];
   hiddenTests: InstructorDefinedTest[];
-};
+} & CodingTestTypeCustom;
 
 // CodingTestParams is bounded to a language
 export type CodingTestParams = {
-  // it could be just a string for a file or a filesystem
-  boilerplate: FileMap | string; // boilerplate code
+  files: FileMap | string;
   tests?: SimpleCodingTests | InstructorDefinedTests | FunctionCodingTests; // tests to be run
 };
 
-export type CodeChallenge = Record<CodeLanguage, CodingTestParams>;
-
-export enum CodeComplexity {
-  O1 = 'O(1)',
-  OlogN = 'O(log n)',
-  Olinear = 'O(n)',
-  OlinearLogN = 'O(n log n)',
-  Oquadratic = 'O(n^2)',
-  Ocubic = 'O(n^3)',
-  Oexponential = 'O(2^n)',
-  Ofactorial = 'O(n!)',
-}
-
-export type CompileAndRunParams = {
+export type CodingTestParamsWithLanguage = {
   language: CodeLanguage;
-  data: FileMap;
-  stdin?: string;
-  packages?: string[];
-};
+} & CodingTestParams;
 
-export type CompileAndRunResult = {
-  stdout: string;
-  duration: number;
-};
+export type CodeChallenge = Record<CodeLanguage, CodingTestParams>;

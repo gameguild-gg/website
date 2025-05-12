@@ -5,20 +5,22 @@ import { Play } from 'lucide-react';
 import Editor from '@monaco-editor/react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { usePyodide } from './use-pyodide';
+import { useCode } from '../use-code';
+import { RunnerStatus } from '../types';
 
 interface CodeInterfaceProps {
   initialCode: string;
 }
 
 export default function PyodideCodeInterface({ initialCode }: CodeInterfaceProps) {
-  const { pyodideLoaded, loading, error, runPython, output } = usePyodide();
+  const { compileAndRun, output, error, status } = useCode();
   const [code, setCode] = useState(initialCode);
 
-  const handleRunCode = () => {
-    if (pyodideLoaded) {
-      runPython(code);
-    }
+  const handleRunCode = async () => {
+    await compileAndRun({
+      language: 'python',
+      data: { 'main.py': code },
+    });
   };
 
   return (
@@ -43,13 +45,19 @@ export default function PyodideCodeInterface({ initialCode }: CodeInterfaceProps
       </Card>
 
       <Card className="bg-[#2d2d2d] text-white p-4 min-h-[150px] font-mono">
-        {loading && <p>Loading Pyodide...</p>}
-        {error && <p>Error loading Pyodide: {error}</p>}
+        {status === RunnerStatus.LOADING && <p>Loading Python runtime...</p>}
+        {status === RunnerStatus.RUNNING && <p>Running...</p>}
+        {error && <p>Error: {error}</p>}
         <pre className="whitespace-pre-wrap">{output}</pre>
       </Card>
 
       <div className="flex justify-between">
-        <Button variant="secondary" className="bg-[#2d2d2d] text-white hover:bg-[#3d3d3d]" onClick={handleRunCode} disabled={!pyodideLoaded || loading}>
+        <Button
+          variant="secondary"
+          className="bg-[#2d2d2d] text-white hover:bg-[#3d3d3d]"
+          onClick={handleRunCode}
+          disabled={status === RunnerStatus.LOADING || status === RunnerStatus.RUNNING}
+        >
           <Play className="w-4 h-4 mr-2" />
           Run
         </Button>
