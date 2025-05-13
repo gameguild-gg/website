@@ -1,3 +1,17 @@
+# [1.20.0](https://github.com/gameguild-gg/website/compare/v1.19.13...v1.20.0) (2025-05-13)
+
+
+### Bug Fixes
+
+* institutional page routing. closes [#101](https://github.com/gameguild-gg/website/issues/101) ([b188aba](https://github.com/gameguild-gg/website/commit/b188aba7c3e6daf741f3026e54d027b4b4921872))
+* **manifest:** closes [#33](https://github.com/gameguild-gg/website/issues/33) ([b72e196](https://github.com/gameguild-gg/website/commit/b72e196e5b0cf5d24bae208bbdef363f22366002))
+* **manifest:** fix manifest type ([333b1d7](https://github.com/gameguild-gg/website/commit/333b1d75cd38bfc4ca3b63cc73d10384ac517cfc))
+
+
+### Features
+
+* **robots:** closes [#35](https://github.com/gameguild-gg/website/issues/35) ([2f2a20d](https://github.com/gameguild-gg/website/commit/2f2a20d069e50aa1130bc8ea943a73c19d05761d))
+
 ## [1.19.13](https://github.com/gameguild-gg/website/compare/v1.19.12...v1.19.13) (2025-05-12)
 
 
