@@ -22,7 +22,6 @@
     "buildAndRun": "npm run build && npm run start"
   },
   "dependencies": {
-    "clsx": "^1.1.1",
     "@codeium/react-code-editor": "^1.0.12",
     "@game-guild/apiclient": "*",
     "@game-guild/ui": "*",
@@ -90,6 +89,7 @@
     "class-validator": "^0.14.1",
     "class-variance-authority": "^0.7.0",
     "classnames": "^2.5.1",
+    "clsx": "^1.1.1",
     "cmdk": "^1.0.0",
     "compression-webpack-plugin": "^11.1.0",
     "cookies-next": "^4.1.1",
@@ -105,6 +105,7 @@
     "js-cookie": "^3.0.5",
     "jszip": "^3.10.1",
     "jwt-decode": "^4.0.0",
+    "katex": "^0.16.22",
     "lexical": "^0.21.0",
     "lucide-react": "^0.363.0",
     "mdast-util-definitions": "^6.0.0",
@@ -141,14 +142,15 @@
     "react-syntax-highlighter": "^15.6.1",
     "recharts": "^2.12.7",
     "rehype-highlight": "^7.0.1",
+    "rehype-katex": "^7.0.1",
     "rehype-mermaidjs": "^2.0.0",
     "rehype-prism-plus": "^2.0.0",
     "rehype-raw": "^7.0.0",
     "remark-directive": "^3.0.0",
     "remark-gfm": "^4.0.0",
+    "remark-math": "^6.0.0",
     "remark-mermaid": "^0.2.0",
     "reveal.js": "^5.1.0",
-    "sharp": "^0.33.5",
     "siwe": "^2.3.2",
     "slugify": "^1.6.6",
     "sonner": "^1.7.1",
@@ -166,10 +168,7 @@
     "use-pyodide": "^0.1.4",
     "utf-8-validate": "^5.0.10",
     "vaul": "^0.9.6",
-    "zod": "^3.22.4",
-    "katex": "^0.16.22",
-    "rehype-katex": "^7.0.1",
-    "remark-math": "^6.0.0"
+    "zod": "^3.22.4"
   },
   "devDependencies": {
     "@game-guild/eslint-config": "*",
@@ -199,6 +198,7 @@
     "eslint": "^8",
     "eslint-config-next": "14.2.4",
     "postcss": "^8",
+    "sharp": "^0.34.1",
     "tailwindcss": "^3.4.3",
     "typescript": "^5",
     "worker-loader": "^3.0.8"
