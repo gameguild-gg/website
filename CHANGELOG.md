@@ -1,3 +1,10 @@
+## [1.20.2](https://github.com/gameguild-gg/website/compare/v1.20.1...v1.20.2) (2025-05-14)
+
+
+### Bug Fixes
+
+* conflicting radix-ui package ([ede9775](https://github.com/gameguild-gg/website/commit/ede97758f17d94bf232b4783dc20fd85463a9791))
+
 ## [1.20.1](https://github.com/gameguild-gg/website/compare/v1.20.0...v1.20.1) (2025-05-14)
 
 
