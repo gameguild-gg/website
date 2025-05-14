@@ -1,3 +1,10 @@
+## [1.20.1](https://github.com/gameguild-gg/website/compare/v1.20.0...v1.20.1) (2025-05-14)
+
+
+### Bug Fixes
+
+* **mailer:** fix mail send ([ac509b5](https://github.com/gameguild-gg/website/commit/ac509b5a2e07e3268261998a078923dcf50df584))
+
 # [1.20.0](https://github.com/gameguild-gg/website/compare/v1.19.13...v1.20.0) (2025-05-13)
 
 
