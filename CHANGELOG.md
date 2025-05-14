@@ -1,3 +1,10 @@
+## [1.20.3](https://github.com/gameguild-gg/website/compare/v1.20.2...v1.20.3) (2025-05-14)
+
+
+### Bug Fixes
+
+* **auth:** make auth be dynamic page ([25647c4](https://github.com/gameguild-gg/website/commit/25647c47914cab0800326f522728538c9f3fcf16))
+
 ## [1.20.2](https://github.com/gameguild-gg/website/compare/v1.20.1...v1.20.2) (2025-05-14)
 
 
