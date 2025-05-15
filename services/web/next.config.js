@@ -4,8 +4,111 @@ const CopyWebpackPlugin = require('copy-webpack-plugin');
 const fs = require('fs');
 const path = require('path');
 const webpack = require('webpack');
+const simpleGit = require('simple-git');
 
 const withNextIntl = createNextIntlPlugin();
+
+// Git stats generation function
+async function generateGitStats() {
+  console.log('Generating git stats during Next.js build...');
+  const STATS_FILE_PATH = path.join(process.cwd(), 'git-stats.json');
+  
+  try {
+    // Use simpleGit for cross-platform compatibility
+    const git = simpleGit();
+
+    // Get the log with stats
+    let log = await git.raw(['log', '--numstat', '--format=%an']);
+
+    // Filter out unwanted lines in a cross-platform way
+    log = log
+      .split('\n')
+      .filter(
+        (line) =>
+          !line.includes('package-lock.json') &&
+          !line.includes('yarn.lock') &&
+          !line.includes('node_modules/'),
+      )
+      .join('\n');
+
+    // Parse the log to calculate stats
+    const stats = {};
+    const lines = log.split('\n');
+
+    let currentAuthor = '';
+    for (const line of lines) {
+      if (!line.trim()) continue;
+
+      // If the line is an author
+      if (!line.includes('\t')) {
+        currentAuthor = line.trim();
+        if (!stats[currentAuthor]) {
+          stats[currentAuthor] = { additions: 0, deletions: 0 };
+        }
+      } else {
+        // If the line contains stats
+        const [additions, deletions] = line
+          .split('\t')
+          .map((x) => parseInt(x, 10) || 0);
+        stats[currentAuthor].additions += additions;
+        stats[currentAuthor].deletions += deletions;
+      }
+    }
+
+    // remove semantic-release-bot and dependabot[bot] from stats
+    delete stats['semantic-release-bot'];
+    delete stats['dependabot[bot]'];
+
+    // accumulate stats from one author to another and remove the previous author
+    // map of from -> to
+    const authorMap = {
+      'Alexandre Tolstenko Nogueira': 'Alexandre Tolstenko',
+      LMD9977: 'Nominal9977',
+    };
+
+    for (const [from, to] of Object.entries(authorMap)) {
+      if (stats[from] && stats[to]) {
+        stats[to].additions += stats[from].additions;
+        stats[to].deletions += stats[from].deletions;
+        delete stats[from];
+      }
+    }
+
+    // rename name to username
+    // map of name -> github username
+    const usernameMap = {
+      'Alexandre Tolstenko': 'tolstenko',
+      'Alec Santos': 'alec-o-mago',
+      'Miguel Moroni': 'migmoroni',
+      'Matheus Martins': 'mathrmartins',
+      Nominal9977: 'Nominal9977',
+      hdorer: 'hdorer',
+      'Joel Oliveira': 'vikumm',
+      Germano: 'Germano123',
+    };
+
+    const newStats = [];
+
+    for (const [name, username] of Object.entries(usernameMap)) {
+      if (stats[name]) {
+        newStats.push({ ...stats[name], username: username });
+      }
+    }
+
+    // sort by sum of additions and deletions
+    newStats.sort(
+      (a, b) => b.additions + b.deletions - (a.additions + a.deletions),
+    );
+
+    // Write stats to file
+    fs.writeFileSync(STATS_FILE_PATH, JSON.stringify(newStats, null, 2));
+    console.log(`Git stats written to ${STATS_FILE_PATH}`);
+    return newStats;
+  } catch (error) {
+    console.error('Error generating git stats:', error);
+    return [];
+  }
+}
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -204,6 +307,34 @@ const nextConfig = {
         ],
       }),
     );
+    
+    // Generate git stats during build - in production it's saved to file
+    // In development, the stats are generated on-demand by the API route
+    if (process.env.NODE_ENV === 'production') {
+      // We'll generate stats in a separate step before webpack starts
+      // This is more reliable than trying to do it within the webpack config
+      // The stats will be read from the file by the API route
+      
+      // For now, we just need to ensure simple-git is installed
+      config.plugins.push(
+        new webpack.DefinePlugin({
+          'process.env.GIT_STATS_GENERATED': JSON.stringify(new Date().toISOString()),
+        }),
+      );
+    }
+    
+    // Add compression plugin for production
+    if (process.env.NODE_ENV === 'production') {
+      config.plugins.push(
+        new CompressionPlugin({
+          filename: '[path][base].gz',
+          algorithm: 'gzip',
+          test: /\.(js|css|html|svg)$/,
+          threshold: 10240,
+          minRatio: 0.8,
+        }),
+      );
+    }
 
     return config;
   },
@@ -215,6 +346,21 @@ const nextConfig = {
     externalDir: false,
   },
 };
+
+// Immediately Invoked Async Function Expression to generate git stats before Next.js build
+// This ensures the git stats are available when the build starts
+(async () => {
+  if (process.env.NODE_ENV === 'production') {
+    try {
+      console.log('Generating git stats before Next.js build...');
+      await generateGitStats();
+      console.log('Git stats generation completed successfully.');
+    } catch (error) {
+      console.error('Failed to generate git stats:', error);
+      // Continue with the build even if git stats generation fails
+    }
+  }
+})();
 
 // module.exports = nextConfig;
 module.exports = withNextIntl(nextConfig);
