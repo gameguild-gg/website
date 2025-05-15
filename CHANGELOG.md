@@ -1,3 +1,10 @@
+# [1.21.0](https://github.com/gameguild-gg/website/compare/v1.20.5...v1.21.0) (2025-05-15)
+
+
+### Features
+
+* **code:** remove wasmer and use the new custom wrapper more than 10x smaller, and way faster ([e7eedcb](https://github.com/gameguild-gg/website/commit/e7eedcb8feed411cffc17f451d936028ee3f3d3f))
+
 ## [1.20.5](https://github.com/gameguild-gg/website/compare/v1.20.4...v1.20.5) (2025-05-15)
 
 
