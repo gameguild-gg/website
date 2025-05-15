@@ -1,3 +1,10 @@
+## [1.20.4](https://github.com/gameguild-gg/website/compare/v1.20.3...v1.20.4) (2025-05-15)
+
+
+### Bug Fixes
+
+* **build:** update nome radix-ui packages ([15f36cf](https://github.com/gameguild-gg/website/commit/15f36cffdc6b2f6cf2b7dd8b83190d6b07e65c63))
+
 ## [1.20.3](https://github.com/gameguild-gg/website/compare/v1.20.2...v1.20.3) (2025-05-14)
 
 
