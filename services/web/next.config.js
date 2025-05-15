@@ -204,7 +204,7 @@ const nextConfig = {
         ],
       }),
       new webpack.IgnorePlugin({
-        resourceRegExp: /index\.mjs$/,
+        resourceRegExp: /@wasmer\/sdk/,
       }),
     );
 
