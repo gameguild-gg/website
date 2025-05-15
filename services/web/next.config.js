@@ -213,7 +213,7 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: false,
   },
-  transpilePackages: ['use-pyodide'],
+  transpilePackages: ['use-pyodide', '@radix-ui/react-slot'],
   experimental: {
     externalDir: false,
   },
