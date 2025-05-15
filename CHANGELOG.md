@@ -1,3 +1,10 @@
+## [1.21.5](https://github.com/gameguild-gg/website/compare/v1.21.4...v1.21.5) (2025-05-15)
+
+
+### Bug Fixes
+
+* **contributors:** improve the way we generate git statistics and show versioning ([c472153](https://github.com/gameguild-gg/website/commit/c4721539b13ea8b2199be556e6d0a6298cccbeb5))
+
 ## [1.21.4](https://github.com/gameguild-gg/website/compare/v1.21.3...v1.21.4) (2025-05-15)
 
 
