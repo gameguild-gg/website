@@ -1,20 +1,40 @@
 import { NextResponse } from 'next/server';
-import { exec } from 'child_process';
-import { promisify } from 'util';
-
-const execAsync = promisify(exec);
+import simpleGit from 'simple-git';
+import fs from 'fs';
+import path from 'path';
 
 let cachedVersion: string | null = null;
+const VERSION_FILE_PATH = path.join(process.cwd(), 'version.json');
 
 async function getVersion() {
   if (cachedVersion) {
     return cachedVersion;
   }
 
+  // Check if we're in production and a version file exists (generated at build time)
+  if (process.env.NODE_ENV === 'production' && fs.existsSync(VERSION_FILE_PATH)) {
+    try {
+      console.log('Using pre-generated version from file');
+      const data = fs.readFileSync(VERSION_FILE_PATH, 'utf8');
+      const versionData = JSON.parse(data);
+      cachedVersion = versionData.version;
+      return cachedVersion;
+    } catch (error) {
+      console.error('Error reading version file:', error);
+      // Continue to generate version dynamically
+    }
+  }
+
+  // Generate version dynamically (development or fallback)
   try {
-    const { stdout: tag } = await execAsync('git describe --abbrev=0 --tags');
-    const { stdout: commit } = await execAsync('git rev-parse --short HEAD');
-    cachedVersion = `${tag.trim()}.${commit.trim()}`;
+    const git = simpleGit();
+    
+    // Get the latest tag and commit
+    const tags = await git.tags();
+    const latestTag = tags.latest || 'v0.0.1';
+    const commit = await git.revparse(['--short', 'HEAD']);
+    
+    cachedVersion = `${latestTag}.${commit.trim()}`;
     return cachedVersion;
   } catch (error) {
     console.error('Error fetching version:', error);

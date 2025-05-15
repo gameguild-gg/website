@@ -5653,16 +5653,6 @@ export namespace HealthcheckApi {
 		headers?: undefined
 	}
 	
-	export type HealthcheckControllerGitstatsResponse =
-		| HealthcheckControllerGitstats200Response
-	
-	export interface HealthcheckControllerGitstats200Response {
-		status: 200
-		contentType: 'application/json'
-		body: Api.GitStats[]
-		headers?: undefined
-	}
-	
 	export type HealthcheckControllerRedisResponse =
 		| HealthcheckControllerRedis200Response
 		| HealthcheckControllerRedis500Response
@@ -5710,32 +5700,6 @@ export const HealthcheckApiFetchParamCreator = function (configuration?: Configu
 		healthcheckControllerDb(options: RequestInit = {}): FetchArgs {
 
 			let localVarPath = `/healthcheck/db`;
-			const localVarPathQueryStart = localVarPath.indexOf("?");
-			const localVarRequestOptions: RequestInit = Object.assign({ method: 'GET' }, options);
-			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
-			const localVarQueryParameter = new URLSearchParams(localVarPathQueryStart !== -1 ? localVarPath.substring(localVarPathQueryStart + 1) : "");
-			if (localVarPathQueryStart !== -1) {
-				localVarPath = localVarPath.substring(0, localVarPathQueryStart);
-			}
-
-			localVarRequestOptions.headers = localVarHeaderParameter;
-
-			const localVarQueryParameterString = localVarQueryParameter.toString();
-			if (localVarQueryParameterString) {
-				localVarPath += "?" + localVarQueryParameterString;
-			}
-			return {
-				url: localVarPath,
-				options: localVarRequestOptions,
-			};
-		},
-		/**
-		 * @param {RequestInit} [options] Override http request option.
-		 * @throws {RequiredError}
-		 */
-		healthcheckControllerGitstats(options: RequestInit = {}): FetchArgs {
-
-			let localVarPath = `/healthcheck/gitstats`;
 			const localVarPathQueryStart = localVarPath.indexOf("?");
 			const localVarRequestOptions: RequestInit = Object.assign({ method: 'GET' }, options);
 			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
@@ -5846,30 +5810,6 @@ export const HealthcheckApiFp = function(configuration?: Configuration) {
 		 * @param {RequestInit} [options] Override http request option.
 		 * @throws {RequiredError}
 		 */
-		healthcheckControllerGitstats(options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<HealthcheckApi.HealthcheckControllerGitstatsResponse> {
-			const localVarFetchArgs = HealthcheckApiFetchParamCreator(configuration).healthcheckControllerGitstats(options);
-			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
-				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
-				const contentType = response.headers.get('Content-Type');
-				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
-				
-				if (response.status === 200) {
-					if (mimeType === 'application/json') {
-						return {
-							status: response.status,
-							contentType: 'application/json',
-							body: await response.json() as Api.GitStats[],
-						}
-					}
-					throw response;
-				}
-				throw response;
-			};
-		},
-		/**
-		 * @param {RequestInit} [options] Override http request option.
-		 * @throws {RequiredError}
-		 */
 		healthcheckControllerRedis(options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<HealthcheckApi.HealthcheckControllerRedisResponse> {
 			const localVarFetchArgs = HealthcheckApiFetchParamCreator(configuration).healthcheckControllerRedis(options);
 			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
@@ -5945,12 +5885,6 @@ export interface HealthcheckApiInterface {
 	 * @param {RequestInit} [options] Override http request option.
 	 * @throws {RequiredError}
 	 */
-	healthcheckControllerGitstats(options?: RequestInit): Promise<HealthcheckApi.HealthcheckControllerGitstatsResponse>
-
-	/**
-	 * @param {RequestInit} [options] Override http request option.
-	 * @throws {RequiredError}
-	 */
 	healthcheckControllerRedis(options?: RequestInit): Promise<HealthcheckApi.HealthcheckControllerRedisResponse>
 
 	/**
@@ -5974,14 +5908,6 @@ export class HealthcheckApi extends BaseAPI implements HealthcheckApiInterface {
 	 */
 	public healthcheckControllerDb(options?: RequestInit) {
 		return HealthcheckApiFp(this.configuration).healthcheckControllerDb(options)(this.fetch, this.basePath);
-	}
-
-	/**
-	 * @param {RequestInit} [options] Override http request option.
-	 * @throws {RequiredError}
-	 */
-	public healthcheckControllerGitstats(options?: RequestInit) {
-		return HealthcheckApiFp(this.configuration).healthcheckControllerGitstats(options)(this.fetch, this.basePath);
 	}
 
 	/**

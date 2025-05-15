@@ -879,20 +879,6 @@ export namespace Api {
 		pageCount: number;
 	}
 
-	export interface GitStats {
-		username: string;
-		/**
-		 * @type {number}
-		 * @memberof GitStats
-		 */
-		additions: number;
-		/**
-		 * @type {number}
-		 * @memberof GitStats
-		 */
-		deletions: number;
-	}
-
 	export interface IdDto {
 		id: string;
 	}

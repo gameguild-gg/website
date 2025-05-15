@@ -5799,27 +5799,6 @@
         ]
       }
     },
-    "/healthcheck/gitstats": {
-      "get": {
-        "operationId": "HealthcheckController_gitstats",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/GitStats"
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/healthcheck/db": {
       "get": {
         "operationId": "HealthcheckController_db",
@@ -11503,25 +11482,6 @@
           "gameType",
           "matches",
           "reports"
-        ]
-      },
-      "GitStats": {
-        "type": "object",
-        "properties": {
-          "username": {
-            "type": "string"
-          },
-          "additions": {
-            "type": "number"
-          },
-          "deletions": {
-            "type": "number"
-          }
-        },
-        "required": [
-          "username",
-          "additions",
-          "deletions"
         ]
       },
       "GetManyJobPostEntityResponseDto": {

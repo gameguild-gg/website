@@ -347,17 +347,46 @@ const nextConfig = {
   },
 };
 
-// Immediately Invoked Async Function Expression to generate git stats before Next.js build
-// This ensures the git stats are available when the build starts
+// Function to generate version information
+async function generateVersionInfo() {
+  console.log('Generating version information...');
+  const VERSION_FILE_PATH = path.join(process.cwd(), 'version.json');
+  
+  try {
+    const git = simpleGit();
+    
+    // Get the latest tag and commit
+    const tags = await git.tags();
+    const latestTag = tags.latest || 'v0.0.1';
+    const commit = await git.revparse(['--short', 'HEAD']);
+    
+    const version = `${latestTag}.${commit.trim()}`;
+    
+    // Save to file for production use
+    fs.writeFileSync(VERSION_FILE_PATH, JSON.stringify({ version }, null, 2));
+    console.log(`Version information written to ${VERSION_FILE_PATH}: ${version}`);
+    return version;
+  } catch (error) {
+    console.error('Error generating version information:', error);
+    return 'v0.0.1';
+  }
+}
+
+// Immediately Invoked Async Function Expression to generate git stats and version info before Next.js build
+// This ensures the data is available when the build starts
 (async () => {
   if (process.env.NODE_ENV === 'production') {
     try {
       console.log('Generating git stats before Next.js build...');
       await generateGitStats();
       console.log('Git stats generation completed successfully.');
+      
+      console.log('Generating version information before Next.js build...');
+      await generateVersionInfo();
+      console.log('Version information generation completed successfully.');
     } catch (error) {
-      console.error('Failed to generate git stats:', error);
-      // Continue with the build even if git stats generation fails
+      console.error('Failed to generate build-time data:', error);
+      // Continue with the build even if generation fails
     }
   }
 })();

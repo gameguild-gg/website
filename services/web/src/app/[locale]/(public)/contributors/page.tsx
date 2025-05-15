@@ -3,13 +3,9 @@ import { Github } from 'lucide-react';
 import { Metadata } from 'next';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { exec } from 'child_process';
-import { promisify } from 'util';
 import fs from 'fs';
 import path from 'path';
 import simpleGit from 'simple-git';
-
-const execAsync = promisify(exec);
 
 // Git stats interface
 interface GitStats {
