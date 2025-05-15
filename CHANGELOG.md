@@ -1,3 +1,10 @@
+## [1.21.2](https://github.com/gameguild-gg/website/compare/v1.21.1...v1.21.2) (2025-05-15)
+
+
+### Bug Fixes
+
+* **cleanup:** remove unused components ([1db2242](https://github.com/gameguild-gg/website/commit/1db2242826b09f02ee5ada52463e46bab14777f2))
+
 ## [1.21.1](https://github.com/gameguild-gg/website/compare/v1.21.0...v1.21.1) (2025-05-15)
 
 # [1.21.0](https://github.com/gameguild-gg/website/compare/v1.20.5...v1.21.0) (2025-05-15)
