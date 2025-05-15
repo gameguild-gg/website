@@ -18,6 +18,7 @@ export type CompileAndRunParams = {
   language: CodeLanguage;
   data: FileMap;
   stdin?: string;
+  argv?: string[];
 };
 
 export type RunResult = {

@@ -5,17 +5,18 @@ import { Play } from 'lucide-react';
 import Editor from '@monaco-editor/react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { CodeLanguage, ProjectData, useWasmer, WasmerStatus } from '@/components/wasmer/use-wasmer';
+import { CodeLanguage, FileMap, RunnerStatus } from '@/components/code/types';
+import { useCode } from '@/components/code/use-code';
 
 export type CodeInterfaceProps = {
   height?: number;
   language: CodeLanguage;
-  data: ProjectData;
+  data: FileMap | string;
 };
 
-export default function WasmerBlock(params: CodeInterfaceProps) {
+export default function CodeBlock(params: CodeInterfaceProps) {
   const { data, height, language } = params;
-  const { wasmerStatus, runCode, error } = useWasmer();
+  const { status, compileAndRun, error } = useCode();
   const [stdErr, setStdErr] = useState<string>('');
   const [stdOut, setStdOut] = useState<string>('');
   const [code, setCode] = useState<string>('');
@@ -26,19 +27,19 @@ export default function WasmerBlock(params: CodeInterfaceProps) {
   }, [data]);
 
   const handleRunCode = async () => {
-    if (wasmerStatus == WasmerStatus.RUNNING || wasmerStatus == WasmerStatus.LOADING_PACKAGE || wasmerStatus == WasmerStatus.FAILED_LOADING_WASMER) return;
+    if (status === RunnerStatus.RUNNING || status === RunnerStatus.LOADING) return;
 
-    const result = await runCode({
-      data: code,
+    const result = await compileAndRun({
+      data: { [`main.${language === 'python' ? 'py' : language}`]: code },
       language: language,
       stdin: '',
     });
     console.log(JSON.stringify(result));
-    if (result.stderr) {
-      setStdErr(result.stderr);
+    if (result.error) {
+      setStdErr(result.error);
     }
-    if (result.stdout) {
-      setStdOut(result.stdout);
+    if (result.output) {
+      setStdOut(result.output);
     }
   };
 
@@ -67,13 +68,11 @@ export default function WasmerBlock(params: CodeInterfaceProps) {
 
       {/* Área de saída */}
       <Card className="bg-[#2d2d2d] text-white p-4 min-h-[150px] font-mono">
-        {wasmerStatus == WasmerStatus.UNINITIALIZED && <p>Wasmer Uninitialized</p>}
-        {wasmerStatus == WasmerStatus.LOADING_WASMER && <p>Loading Wasmer...</p>}
-        {wasmerStatus == WasmerStatus.LOADING_PACKAGE && <p>Loading {params.language} tools...</p>}
-        {wasmerStatus == WasmerStatus.RUNNING && <p>Running...</p>}
-        {wasmerStatus == WasmerStatus.FAILED_EXECUTION && <p>Failed Execution</p>}
-        {wasmerStatus == WasmerStatus.FAILED_LOADING_WASMER && <p>Failed Loading Wasmer</p>}
-        {wasmerStatus == WasmerStatus.FAILED_LOADING_PACKAGE && <p>Failed Loading Package</p>}
+        {status === RunnerStatus.UNINITIALIZED && <p>Environment Uninitialized</p>}
+        {status === RunnerStatus.LOADING && <p>Loading {params.language} environment...</p>}
+        {status === RunnerStatus.RUNNING && <p>Running...</p>}
+        {status === RunnerStatus.FAILED_EXECUTION && <p>Failed Execution</p>}
+        {status === RunnerStatus.FAILED_LOADING && <p>Failed Loading Environment</p>}
         {error && <p className="text-red-400">Error: {error}</p>}
         <pre className="whitespace-pre-wrap">{stdOut}</pre>
       </Card>
@@ -84,10 +83,10 @@ export default function WasmerBlock(params: CodeInterfaceProps) {
           variant="secondary"
           className="bg-[#2d2d2d] text-white hover:bg-[#3d3d3d]"
           onClick={handleRunCode}
-          disabled={wasmerStatus == WasmerStatus.RUNNING || wasmerStatus == WasmerStatus.LOADING_PACKAGE || wasmerStatus == WasmerStatus.FAILED_LOADING_WASMER}
+          disabled={status === RunnerStatus.RUNNING || status === RunnerStatus.LOADING || status === RunnerStatus.FAILED_LOADING}
         >
           <Play className="w-4 h-4 mr-2" />
-          {wasmerStatus == WasmerStatus.RUNNING ? 'Running...' : 'Run'}
+          {status === RunnerStatus.RUNNING ? 'Running...' : 'Run'}
         </Button>
 
         <Button className="bg-black text-white hover:bg-gray-900 rounded-full px-6">Finish lesson</Button>

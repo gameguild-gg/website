@@ -203,9 +203,6 @@ const nextConfig = {
           },
         ],
       }),
-      new webpack.IgnorePlugin({
-        resourceRegExp: /@wasmer\/sdk/,
-      }),
     );
 
     return config;
