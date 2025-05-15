@@ -1,3 +1,5 @@
+## [1.21.1](https://github.com/gameguild-gg/website/compare/v1.21.0...v1.21.1) (2025-05-15)
+
 # [1.21.0](https://github.com/gameguild-gg/website/compare/v1.20.5...v1.21.0) (2025-05-15)
 
 
