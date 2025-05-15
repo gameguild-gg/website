@@ -1,3 +1,10 @@
+## [1.20.5](https://github.com/gameguild-gg/website/compare/v1.20.4...v1.20.5) (2025-05-15)
+
+
+### Bug Fixes
+
+* **build:** better mjs exclusion ([7a1ab6a](https://github.com/gameguild-gg/website/commit/7a1ab6a99a2e2e6ce7d85c079b64b711777f0829))
+
 ## [1.20.4](https://github.com/gameguild-gg/website/compare/v1.20.3...v1.20.4) (2025-05-15)
 
 
