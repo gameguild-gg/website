@@ -1,3 +1,10 @@
+## [1.21.4](https://github.com/gameguild-gg/website/compare/v1.21.3...v1.21.4) (2025-05-15)
+
+
+### Bug Fixes
+
+* **contributors:** fix contributors page generation ([f73b5a8](https://github.com/gameguild-gg/website/commit/f73b5a85563c8b6732ca74b07d3ad87584b6bc3f))
+
 ## [1.21.3](https://github.com/gameguild-gg/website/compare/v1.21.2...v1.21.3) (2025-05-15)
 
 
