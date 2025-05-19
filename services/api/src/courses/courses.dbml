@@ -1,0 +1,200 @@
+Enum visibility {
+  draft
+  published
+  archived
+}
+
+Table users {
+  id int [pk, increment]
+  email varchar [unique]
+  username varchar [unique]
+  full_name varchar
+  avatar varchar [null]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+}
+
+Table courses {
+  id int [pk, increment]
+  title varchar
+  slug varchar
+  summary text
+  thumbnail varchar
+  body jsonb
+  visibility visibility
+  subscription_plan_id int [ref: > subscription_plans.id, null] // null for free courses
+  tenancy_domains jsonb [null] // array of allowed email domains, null if not tenancy-fenced
+  late_penalty_percent_per_day float [default: 0] // Percentage penalty for late submissions (0-100)
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+}
+
+Table modules {
+  id int [pk, increment]
+  course_id int [ref: > courses.id]
+  title varchar
+  summary text
+  order float
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+}
+
+Table pages {
+  id int [pk, increment]
+  module_id int [ref: > modules.id]
+  title varchar
+  order float
+  body jsonb
+  previewable bool [default: false] // Flag to indicate if this page can be accessed without purchasing the course
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+}
+
+Table assignments {
+  id int [pk, increment]
+  module_id int [ref: > modules.id]
+  title varchar
+  order float
+  body jsonb
+  due_date timestamp [null]
+  available_from timestamp [null]
+  available_to timestamp [null]
+  text_response bool [default: false]
+  url_response bool [default: false]
+  file_response_extensions jsonb [null] // null: not accepted, []: any file, ["pdf","docx"]: only these extensions
+  grading_method grading_method
+  grading_rubric jsonb [null] // configuration for grading rubric
+  // add more fields as needed for assignments
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+}
+
+Enum grading_method {
+  instructor
+  peer
+  ai
+}
+
+Table quizzes {
+  id int [pk, increment]
+  module_id int [ref: > modules.id]
+  title varchar
+  order float
+  body jsonb
+  due_date timestamp [null]
+  available_from timestamp [null]
+  available_to timestamp [null]
+  grading_method grading_method
+  // add more fields as needed for quizzes
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+}
+
+Table course_users {
+  id int [pk, increment]
+  user_id int [ref: > users.id]
+  course_id int [ref: > courses.id]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+
+  Ref: course_id > courses.id
+  Ref: user_id > users.id
+}
+
+Table course_user_roles {
+  id int [pk, increment]
+  user_id int [ref: > users.id]
+  course_id int [ref: > courses.id]
+  course_user_id int [ref: > course_users.id]
+  role course_role_type
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+
+  Ref: course_user_id > course_users.id
+  Ref: course_id > courses.id
+  Ref: user_id > users.id
+}
+
+Enum course_role_type {
+  student
+  instructor
+  editor
+  administrator
+  teaching_assistant
+}
+
+Table quiz_submissions {
+  id int [pk, increment]
+  quiz_id int [ref: > quizzes.id]
+  course_user_id int [ref: > course_users.id] // Updated to use course_users instead of users
+  submitted_at timestamp [default: `now()`]
+  answers jsonb
+}
+
+Table quiz_grades {
+  id int [pk, increment]
+  quiz_submission_id int [ref: > quiz_submissions.id]
+  grader_course_user_id int [ref: > course_users.id] // Identity of the grader (instructor/TA)
+  grade float [null]
+  graded_at timestamp [default: `now()`]
+  feedback text [null]
+}
+
+Table assignment_submissions {
+  id int [pk, increment]
+  assignment_id int [ref: > assignments.id]
+  course_user_id int [ref: > course_users.id] // Updated to use course_users instead of users
+  submitted_at timestamp [default: `now()`]
+  text_response text [null]
+  url_response varchar [null]
+  file_response jsonb [null] // store file metadata/links as needed
+}
+
+Table assignment_grades {
+  id int [pk, increment]
+  assignment_submission_id int [ref: > assignment_submissions.id]
+  grader_course_user_id int [ref: > course_users.id] // Updated to use course_users instead of users
+  grade float [null]
+  graded_at timestamp [null]
+  feedback text [null]
+}
+
+Table subscription_plans {
+  id int [pk, increment]
+  name varchar
+  description text
+  type subscription_type
+  price float
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+}
+
+Enum subscription_type {
+  monthly // monthly
+  bimonthly // bimonthly
+  quarterly // every 3 months
+  quadrimesterly // every 4 months
+  semesterly // every 6 months
+  annual // every 12 months
+  one_time // one-time purchase
+  free // free access
+  tenancy // free access for a specific domain
+  manager 
+}
+
+Table user_subscriptions {
+  id int [pk, increment]
+  user_id int [ref: > users.id]
+  course_user_id int [ref: > course_users.id, null] // Links subscription to course_user
+  subscription_plan_id int [ref: > subscription_plans.id]
+  started_at timestamp [default: `now()`]
+  expires_at timestamp [null]
+  auto_renew bool [default: true]
+  created_at timestamp [default: `now()`]
+
+  Ref: course_user_id > course_users.id
+}
+
+// EOF
+
+
