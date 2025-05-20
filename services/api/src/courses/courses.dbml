@@ -22,7 +22,7 @@ Table courses {
   thumbnail varchar
   body jsonb
   visibility visibility
-  subscription_plan_id int [ref: > subscription_plans.id, null] // null for free courses
+  subscription_plan_id int [null] // null for free courses
   tenancy_domains jsonb [null] // array of allowed email domains, null if not tenancy-fenced
   late_penalty_percent_per_day float [default: 0] // Percentage penalty for late submissions (0-100)
   created_at timestamp [default: `now()`]
@@ -31,7 +31,7 @@ Table courses {
 
 Table modules {
   id int [pk, increment]
-  course_id int [ref: > courses.id]
+  course_id int
   title varchar
   summary text
   order float
@@ -41,7 +41,7 @@ Table modules {
 
 Table pages {
   id int [pk, increment]
-  module_id int [ref: > modules.id]
+  module_id int
   title varchar
   order float
   body jsonb
@@ -52,7 +52,7 @@ Table pages {
 
 Table assignments {
   id int [pk, increment]
-  module_id int [ref: > modules.id]
+  module_id int
   title varchar
   order float
   body jsonb
@@ -77,13 +77,14 @@ Enum grading_method {
 
 Table quizzes {
   id int [pk, increment]
-  module_id int [ref: > modules.id]
+  module_id int
   title varchar
   order float
   body jsonb
   due_date timestamp [null]
   available_from timestamp [null]
   available_to timestamp [null]
+  duration_minutes int [null, note: 'Time limit in minutes, null means no time limit']
   grading_method grading_method
   // add more fields as needed for quizzes
   created_at timestamp [default: `now()`]
@@ -92,27 +93,20 @@ Table quizzes {
 
 Table course_users {
   id int [pk, increment]
-  user_id int [ref: > users.id]
-  course_id int [ref: > courses.id]
+  user_id int
+  course_id int
   created_at timestamp [default: `now()`]
   updated_at timestamp [default: `now()`]
-
-  Ref: course_id > courses.id
-  Ref: user_id > users.id
 }
 
 Table course_user_roles {
   id int [pk, increment]
-  user_id int [ref: > users.id]
-  course_id int [ref: > courses.id]
-  course_user_id int [ref: > course_users.id]
+  user_id int
+  course_id int
+  course_user_id int
   role course_role_type
   created_at timestamp [default: `now()`]
   updated_at timestamp [default: `now()`]
-
-  Ref: course_user_id > course_users.id
-  Ref: course_id > courses.id
-  Ref: user_id > users.id
 }
 
 Enum course_role_type {
@@ -125,16 +119,16 @@ Enum course_role_type {
 
 Table quiz_submissions {
   id int [pk, increment]
-  quiz_id int [ref: > quizzes.id]
-  course_user_id int [ref: > course_users.id] // Updated to use course_users instead of users
+  quiz_id int
+  course_user_id int // Updated to use course_users instead of users
   submitted_at timestamp [default: `now()`]
   answers jsonb
 }
 
 Table quiz_grades {
   id int [pk, increment]
-  quiz_submission_id int [ref: > quiz_submissions.id]
-  grader_course_user_id int [ref: > course_users.id] // Identity of the grader (instructor/TA)
+  quiz_submission_id int
+  grader_course_user_id int // Identity of the grader (instructor/TA)
   grade float [null]
   graded_at timestamp [default: `now()`]
   feedback text [null]
@@ -142,8 +136,8 @@ Table quiz_grades {
 
 Table assignment_submissions {
   id int [pk, increment]
-  assignment_id int [ref: > assignments.id]
-  course_user_id int [ref: > course_users.id] // Updated to use course_users instead of users
+  assignment_id int
+  course_user_id int // Updated to use course_users instead of users
   submitted_at timestamp [default: `now()`]
   text_response text [null]
   url_response varchar [null]
@@ -152,8 +146,8 @@ Table assignment_submissions {
 
 Table assignment_grades {
   id int [pk, increment]
-  assignment_submission_id int [ref: > assignment_submissions.id]
-  grader_course_user_id int [ref: > course_users.id] // Updated to use course_users instead of users
+  assignment_submission_id int
+  grader_course_user_id int // Updated to use course_users instead of users
   grade float [null]
   graded_at timestamp [null]
   feedback text [null]
@@ -184,17 +178,418 @@ Enum subscription_type {
 
 Table user_subscriptions {
   id int [pk, increment]
-  user_id int [ref: > users.id]
-  course_user_id int [ref: > course_users.id, null] // Links subscription to course_user
-  subscription_plan_id int [ref: > subscription_plans.id]
+  user_id int
+  course_user_id int [null] // Links subscription to course_user
+  subscription_plan_id int
   started_at timestamp [default: `now()`]
   expires_at timestamp [null]
   auto_renew bool [default: true]
   created_at timestamp [default: `now()`]
-
-  Ref: course_user_id > course_users.id
 }
 
-// EOF
+//------------------------------------------------------
+// PAYMENT & TRANSACTION SYSTEM
+//------------------------------------------------------
 
+// User wallets store creator earnings and manage user payments
+Table user_wallets {
+  id int [pk, increment]
+  user_id int
+  balance decimal [default: 0]
+  available_balance decimal [default: 0] // Available for withdrawal
+  currency varchar [default: "USD"]
+  status wallet_status [default: "active"]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+}
 
+Enum wallet_status {
+  active
+  suspended
+  closed
+}
+
+// All financial transactions in the system
+Table transactions {
+  id int [pk, increment]
+  user_id int
+  wallet_id int
+  transaction_type transaction_type
+  amount decimal
+  fee decimal [default: 0]
+  fee_percentage decimal // Captured at transaction time (default 30%)
+  net_amount decimal
+  currency varchar
+  status transaction_status [default: "pending"]
+  payment_processor varchar [null] // "stripe", "crypto", etc.
+  external_id varchar [null] // ID from external payment system
+  metadata jsonb [null]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+}
+
+Enum transaction_type {
+  course_purchase
+  subscription_payment
+  creator_earning
+  platform_fee
+  withdrawal
+  refund
+  adjustment
+}
+
+Enum transaction_status {
+  pending
+  processing
+  completed
+  failed
+  refunded
+  disputed
+  canceled
+}
+
+// Course purchases
+Table course_purchases {
+  id int [pk, increment]
+  user_id int
+  course_id int
+  transaction_id int
+  creator_user_id int
+  price decimal
+  platform_fee decimal
+  creator_earnings decimal
+  purchase_date timestamp [default: `now()`]
+  status purchase_status [default: "completed"]
+}
+
+Enum purchase_status {
+  pending
+  completed
+  refunded
+  failed
+}
+
+// Payment methods (credit cards, crypto wallets)
+Table payment_methods {
+  id int [pk, increment]
+  user_id int
+  method_type payment_method_type
+  is_default bool [default: false]
+  provider varchar
+  details jsonb // Encrypted payment details
+  last_four varchar [null]
+  expires_at timestamp [null]
+  status payment_method_status [default: "active"]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+}
+
+Enum payment_method_type {
+  credit_card
+  bank_account
+  paypal
+  crypto_wallet
+}
+
+Enum payment_method_status {
+  active
+  expired
+  invalid
+  deleted
+}
+
+// Subscription payments
+Table subscription_payments {
+  id int [pk, increment]
+  user_subscription_id int
+  transaction_id int
+  billing_period_start timestamp
+  billing_period_end timestamp
+  amount decimal
+  platform_fee decimal
+  creator_earnings decimal
+  status subscription_payment_status [default: "completed"]
+  created_at timestamp [default: `now()`]
+}
+
+Enum subscription_payment_status {
+  pending
+  completed
+  failed
+  refunded
+}
+
+// Creator payout methods
+Table payout_methods {
+  id int [pk, increment]
+  user_id int
+  method_type payout_method_type
+  is_default bool [default: false]
+  details jsonb // Bank account or crypto wallet details
+  status payout_method_status [default: "active"]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+}
+
+Enum payout_method_type {
+  bank_account
+  paypal
+  crypto_wallet
+}
+
+Enum payout_method_status {
+  active
+  verified
+  pending_verification
+  deleted
+}
+
+// Withdrawal requests
+Table withdrawal_requests {
+  id int [pk, increment]
+  user_id int
+  wallet_id int
+  payout_method_id int
+  amount decimal
+  fee decimal [default: 0]
+  currency varchar
+  status withdrawal_status [default: "pending"]
+  transaction_id int [null]
+  processed_at timestamp [null]
+  created_at timestamp [default: `now()`]
+}
+
+Enum withdrawal_status {
+  pending
+  approved
+  processing
+  completed
+  rejected
+  canceled
+}
+
+// Course revenue settings with platform fees
+Table course_revenue_settings {
+  id int [pk, increment]
+  course_id int
+  fee_percentage decimal [default: 30] // Default 30% platform fee
+  price decimal
+  currency varchar [default: "USD"]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+}
+
+// Audit log for all wallet balance changes
+Table wallet_audit_logs {
+  id int [pk, increment]
+  wallet_id int
+  transaction_id int [null]
+  previous_balance decimal
+  new_balance decimal
+  amount_changed decimal
+  change_type audit_change_type
+  performed_by int [null]
+  ip_address varchar [null]
+  created_at timestamp [default: `now()`]
+}
+
+Enum audit_change_type {
+  purchase_earning
+  subscription_earning
+  withdrawal
+  refund
+  adjustment
+  fee
+}
+
+// Crypto transaction details
+Table crypto_transactions {
+  id int [pk, increment]
+  transaction_id int
+  wallet_address varchar
+  blockchain varchar
+  transaction_hash varchar [null]
+  confirmation_blocks int [default: 0]
+  confirmed bool [default: false]
+  gas_fee decimal [null]
+  exchange_rate decimal
+  created_at timestamp [default: `now()`]
+}
+
+//------------------------------------------------------
+// STUDENT PROGRESS TRACKING
+//------------------------------------------------------
+
+Table user_content_progress {
+  id int [pk, increment]
+  course_user_id int // Links to the course_users table (student enrollment)
+  content_type content_type // Type of content (page, quiz, assignment)
+  content_id int // ID of the related content (page_id, quiz_id, or assignment_id)
+  first_accessed_at timestamp [null] 
+  last_accessed_at timestamp [null]
+  completion_status completion_status [default: 'not_started']
+  total_time_spent_seconds int [default: 0] // Total time spent on the content in seconds
+  completion_date timestamp [null] // When the content was marked as completed
+  user_notes text [null] // Optional notes from the student
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+
+  indexes {
+    (course_user_id, content_type, content_id) [unique] // Ensure one progress record per content per user
+  }
+}
+
+Enum content_type {
+  page
+  quiz
+  assignment
+}
+
+Enum completion_status {
+  not_started
+  in_progress
+  completed
+  revisiting // For content that was completed but is being revisited
+}
+
+// Table to track detailed content interaction sessions
+Table content_interaction_sessions {
+  id int [pk, increment]
+  user_content_progress_id int // Links to user_content_progress
+  session_start timestamp [default: `now()`]
+  session_end timestamp [null]
+  duration_seconds int [null] // Duration in seconds, calculated on session end
+  interaction_data jsonb [null] // Optional data about the interaction (e.g., scroll position, clicks)
+  user_agent varchar [null] // Device/browser information
+  ip_address varchar [null] // User's IP address for analytics
+}
+
+// Table to track module-level progress
+Table user_module_progress {
+  id int [pk, increment]
+  course_user_id int
+  module_id int
+  started_at timestamp [null]
+  completed_at timestamp [null]
+  completion_percentage float [default: 0] // 0-100 percentage of module completion
+  total_time_spent_seconds int [default: 0]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+
+  indexes {
+    (course_user_id, module_id) [unique] // Ensure one progress record per module per user
+  }
+}
+
+// Table to track course-level progress
+Table user_course_progress {
+  id int [pk, increment]
+  course_user_id int
+  started_at timestamp [null]
+  last_accessed_at timestamp [null]
+  completed_at timestamp [null]
+  completion_percentage float [default: 0] // 0-100 percentage of course completion
+  total_time_spent_seconds int [default: 0]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+
+  indexes {
+    (course_user_id) [unique] // Ensure one progress record per course per user
+  }
+}
+
+//------------------------------------------------------
+// RELATIONSHIPS
+//------------------------------------------------------
+
+// Course and module relationships
+Ref: modules.course_id > courses.id
+Ref: pages.module_id > modules.id
+Ref: assignments.module_id > modules.id
+Ref: quizzes.module_id > modules.id
+
+// Import certificate schema
+import "./certificates.dbml"
+
+// Course user relationships
+Ref: course_users.course_id > courses.id
+Ref: course_users.user_id > users.id
+
+// Course user roles relationships
+Ref: course_user_roles.course_user_id > course_users.id
+Ref: course_user_roles.course_id > courses.id
+Ref: course_user_roles.user_id > users.id
+
+// Submissions and grades relationships
+Ref: quiz_submissions.quiz_id > quizzes.id
+Ref: quiz_submissions.course_user_id > course_users.id
+Ref: quiz_grades.quiz_submission_id > quiz_submissions.id
+Ref: quiz_grades.grader_course_user_id > course_users.id
+Ref: assignment_submissions.assignment_id > assignments.id
+Ref: assignment_submissions.course_user_id > course_users.id
+Ref: assignment_grades.assignment_submission_id > assignment_submissions.id
+Ref: assignment_grades.grader_course_user_id > course_users.id
+
+// Subscription relationships
+Ref: courses.subscription_plan_id > subscription_plans.id
+Ref: user_subscriptions.user_id > users.id
+Ref: user_subscriptions.course_user_id > course_users.id
+Ref: user_subscriptions.subscription_plan_id > subscription_plans.id
+
+// User wallet relationships
+Ref: user_wallets.user_id > users.id
+
+// Transaction relationships
+Ref: transactions.user_id > users.id
+Ref: transactions.wallet_id > user_wallets.id
+
+// Course purchases relationships
+Ref: course_purchases.user_id > users.id
+Ref: course_purchases.course_id > courses.id
+Ref: course_purchases.transaction_id > transactions.id
+Ref: course_purchases.creator_user_id > users.id
+
+// Payment method relationships
+Ref: payment_methods.user_id > users.id
+
+// Subscription payments relationships
+Ref: subscription_payments.user_subscription_id > user_subscriptions.id
+Ref: subscription_payments.transaction_id > transactions.id
+
+// Payout method relationships
+Ref: payout_methods.user_id > users.id
+
+// Withdrawal request relationships
+Ref: withdrawal_requests.user_id > users.id
+Ref: withdrawal_requests.wallet_id > user_wallets.id
+Ref: withdrawal_requests.payout_method_id > payout_methods.id
+Ref: withdrawal_requests.transaction_id > transactions.id
+
+// Course revenue settings relationships
+Ref: course_revenue_settings.course_id > courses.id
+
+// Wallet audit log relationships
+Ref: wallet_audit_logs.wallet_id > user_wallets.id
+Ref: wallet_audit_logs.transaction_id > transactions.id
+Ref: wallet_audit_logs.performed_by > users.id
+
+// Crypto transaction relationships
+Ref: crypto_transactions.transaction_id > transactions.id
+
+// Progress tracking relationships
+Ref: user_content_progress.course_user_id > course_users.id
+Ref: content_interaction_sessions.user_content_progress_id > user_content_progress.id
+Ref: user_module_progress.course_user_id > course_users.id
+Ref: user_module_progress.module_id > modules.id
+Ref: user_course_progress.course_user_id > course_users.id
+
+// Certificate relationships
+Ref: certificates.course_id > courses.id
+Ref: certificates.user_id > users.id
+Ref: certificates.course_user_id > course_users.id
+Ref: course_certificate_settings.course_id > courses.id
+Ref: course_certificate_settings.certificate_template_id > certificate_templates.id
+Ref: certificate_verifications.certificate_id > certificates.id
+Ref: certificate_blockchain_anchors.certificate_id > certificates.id
+Ref: certificate_prerequisites.course_certificate_settings_id > course_certificate_settings.id
+Ref: certificate_badges.certificate_template_id > certificate_templates.id
