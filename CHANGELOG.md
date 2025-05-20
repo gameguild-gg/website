@@ -1,3 +1,11 @@
+## [1.21.6](https://github.com/gameguild-gg/website/compare/v1.21.5...v1.21.6) (2025-05-20)
+
+
+### Bug Fixes
+
+* **courses:** add courses db planning ([251cec1](https://github.com/gameguild-gg/website/commit/251cec184ca438cd0a915a3ead0613945ad823ff))
+* **courses:** add more planning to the courses db structure. wip ([89d1c0b](https://github.com/gameguild-gg/website/commit/89d1c0b35617bb5aea7066ea4e66b9707204e1d1))
+
 ## [1.21.5](https://github.com/gameguild-gg/website/compare/v1.21.4...v1.21.5) (2025-05-15)
 
 
