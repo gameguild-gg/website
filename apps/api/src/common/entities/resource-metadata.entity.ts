@@ -4,6 +4,8 @@ import { EntityBase } from '@/common/entities/entity.base';
 import { ResourcePermissionEntity } from '@/common/entities/resource-permission.entity';
 
 @Entity('resource_metadata')
+// TODO: Verificar se o índice composto está correto
+// @Index(['resourceId', 'resourceType'], { unique: true })
 @Unique(['resourceId', 'resourceType'])
 export class ResourceMetadataEntity extends EntityBase {
   @Column({ type: 'uuid' })

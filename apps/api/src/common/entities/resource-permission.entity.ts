@@ -1,9 +1,8 @@
-import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
-
-import { PermissionType } from '@/common/dtos/permission-type.enum';
+import { Entity, JoinColumn, ManyToOne } from 'typeorm';
 import { EntityBase } from '@/common/entities/entity.base';
 import { ResourceMetadataEntity } from '@/common/entities/resource-metadata.entity';
 import { UserEntity } from '@/user/entities/user.entity';
+import { RoleEntity } from '@/common/entities/role.entity';
 
 @Entity('resource_permissions')
 export class ResourcePermissionEntity extends EntityBase {
@@ -15,6 +14,7 @@ export class ResourcePermissionEntity extends EntityBase {
   @JoinColumn({ name: 'resource_id' })
   public readonly resource: ResourceMetadataEntity;
 
-  @Column({ type: 'enum', enum: PermissionType })
-  public readonly permission: PermissionType;
+  @ManyToOne(() => RoleEntity, { nullable: false, eager: true })
+  @JoinColumn({ name: 'role_id' })
+  public readonly role: RoleEntity;
 }

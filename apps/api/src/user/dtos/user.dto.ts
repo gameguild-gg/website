@@ -3,14 +3,15 @@ import { Exclude } from 'class-transformer';
 import { IsBoolean, IsEmail, IsOptional } from 'class-validator';
 
 import { EntityDto } from '@/common/dtos/entity.dto';
-import { IsUsername } from '@/legacy/common/decorators/validator.decorator';
+
+// import { IsUsername } from '@/legacy/common/decorators/validator.decorator';
 
 @ApiSchema({ name: 'User' })
 export class UserDto extends EntityDto {
   // Local Sign-in
 
   @ApiProperty()
-  @IsUsername()
+  // @IsUsername()
   @IsOptional()
   public readonly username: string;
 

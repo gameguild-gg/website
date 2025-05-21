@@ -20,7 +20,8 @@ export abstract class EntityDto {
   @IsEmpty({ groups: [CrudValidationGroups.CREATE, CrudValidationGroups.UPDATE] })
   public readonly updatedAt: Date;
 
-  protected constructor(partial: Partial<typeof this>) {
+  // TODO: test if protected works with CASL.
+  public constructor(partial: Partial<typeof this>) {
     Object.assign(this, partial);
   }
 
