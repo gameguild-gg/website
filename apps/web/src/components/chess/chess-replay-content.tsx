@@ -13,7 +13,7 @@ import { AlertTriangle, Calendar, Clock, Pause, Play, SkipBack, SkipForward, Ste
 import { formatDistanceToNow } from 'date-fns';
 import { Api, CompetitionsApi } from '@game-guild/apiclient';
 import { getSession } from 'next-auth/react';
-import { GetSessionReturnType } from '@/config/auth.config';
+import { GetSessionReturnType } from '@/configs/auth.config';
 import ChessMatchResultDto = Api.ChessMatchResultDto;
 import ApiErrorResponseDto = Api.ApiErrorResponseDto;
 

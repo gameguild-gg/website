@@ -13,7 +13,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { AlertTriangle, Eye, Trophy } from 'lucide-react';
 import { Api, CompetitionsApi } from '@game-guild/apiclient';
 import { getSession } from 'next-auth/react';
-import { GetSessionReturnType } from '@/config/auth.config';
+import { GetSessionReturnType } from '@/configs/auth.config';
 import MatchSearchResponseDto = Api.MatchSearchResponseDto;
 import MatchSearchRequestDto = Api.MatchSearchRequestDto;
 

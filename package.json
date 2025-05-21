@@ -38,7 +38,6 @@
     "test:web": "npm run test --workspace=apps/web"
   },
   "devDependencies": {
-    "@game-guild/apiclient": "1.0.0",
     "@game-guild/eslint-config": "0.1.0",
     "@game-guild/jest-config": "0.1.0",
     "@game-guild/prettier-config": "0.1.0",
@@ -49,84 +48,10 @@
     "@semantic-release/github": "^11.0.0",
     "@semantic-release/npm": "^12.0.1",
     "@semantic-release/release-notes-generator": "^14.0.1",
-    "conventional-changelog-angular": "^8.0.0",
     "eslint": "^9",
     "prettier": "^3.5.2",
     "rimraf": "^6",
     "syncpack": "^13.0.0",
-    "typescript": "^9"
-  },
-  "licenses": [
-    {
-      "type": "AGPL-3.0",
-      "url": "https://www.gnu.org/licenses/agpl-3.0.html"
-    },
-    {
-      "type": "Commercial",
-      "url": "https://github.com/gameguild-gg/website/blob/main/COMMERCIAL_LICENSE.md"
-    }
-  ],
-  "release": {
-    "branches": [
-      "master",
-      "main"
-    ],
-    "repositoryUrl": "https://github.com/gameguild-gg/website",
-    "plugins": [
-      [
-        "@semantic-release/commit-analyzer",
-        {
-          "preset": "angular",
-          "releaseRules": [
-            {
-              "type": "docs",
-              "release": "patch"
-            },
-            {
-              "type": "refactor",
-              "release": "patch"
-            },
-            {
-              "type": "style",
-              "release": "patch"
-            },
-            {
-              "type": "test",
-              "release": "patch"
-            },
-            {
-              "type": "build",
-              "release": "patch"
-            },
-            {
-              "type": "ci",
-              "release": "patch"
-            }
-          ],
-          "parserOpts": {
-            "noteKeywords": [
-              "BREAKING CHANGE",
-              "BREAKING CHANGES"
-            ]
-          }
-        }
-      ],
-      "@semantic-release/release-notes-generator",
-      [
-        "@semantic-release/changelog",
-        {
-          "changelogFile": "CHANGELOG.md"
-        }
-      ],
-      [
-        "@semantic-release/git",
-        {
-          "assets": [
-            "CHANGELOG.md"
-          ]
-        }
-      ],
-      "@semantic-release/github"
-    ]
+    "typescript": "^5"
   }
 }

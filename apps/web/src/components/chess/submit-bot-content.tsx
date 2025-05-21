@@ -9,7 +9,7 @@ import { AlertTriangle, CheckCircle, FileArchive, FileCode, Info, Loader2, Uploa
 import { cn } from '@/lib/utils';
 import JSZip from 'jszip';
 import { getSession } from 'next-auth/react';
-import { GetSessionReturnType } from '@/config/auth.config';
+import { GetSessionReturnType } from '@/configs/auth.config';
 import { CompetitionsApi } from '@game-guild/apiclient';
 
 // Define allowed file extensions

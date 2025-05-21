@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { AlertCircle, ArrowRight, CheckCircle2, Clock, Swords, Trophy } from 'lucide-react';
 import { Api, CompetitionsApi, UsersApi } from '@game-guild/apiclient';
 import { getSession } from 'next-auth/react';
-import { GetSessionReturnType } from '@/config/auth.config';
+import { GetSessionReturnType } from '@/configs/auth.config';
 import ChessAgentResponseEntryDto = Api.ChessAgentResponseEntryDto;
 
 // Challenge status type

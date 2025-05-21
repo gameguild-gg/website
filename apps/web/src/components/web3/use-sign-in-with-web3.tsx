@@ -5,7 +5,6 @@ import { useConnectToWallet } from '@/components/web3/use-connect-to-wallet';
 import { useCallback, useEffect } from 'react';
 import { signInWithWeb3 } from '@/lib/auth/sign-in-with-web3';
 import { getSession } from 'next-auth/react';
-import { AuthApi } from '@game-guild/apiclient';
 
 export enum Web3ProviderChoice {
   METAMASK = 'METAMASK',

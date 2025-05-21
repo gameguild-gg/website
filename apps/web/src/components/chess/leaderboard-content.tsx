@@ -8,7 +8,7 @@ import { Skeleton } from '@/components/chess/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/chess/ui/alert';
 import { Api, CompetitionsApi } from '@game-guild/apiclient';
 import { getSession } from 'next-auth/react';
-import { GetSessionReturnType } from '@/config/auth.config';
+import { GetSessionReturnType } from '@/configs/auth.config';
 import { message } from 'antd';
 
 export default function LeaderboardContent() {

@@ -1,4 +1,6 @@
-export type ParamsWithLocale<P = unknown> = P & { locale: string };
+import { Locale } from 'next-intl';
+
+export type ParamsWithLocale<P = unknown> = P & { locale: Locale };
 
 export type ParamsWithSlug<P = unknown> = P & { slug: string };
 

@@ -19,7 +19,7 @@ export function CoursePagination({ page = 1, pages }: Readonly<Props>) {
             &lt;&lt;
           </Link>
           &nbsp;&nbsp;
-          <Link href={`/courses/page/${page - 1}`} className="">
+          <Link href={`/apps/web/src/app/%5Blocale%5D/page.tsx/${page - 1}`} className="">
             &lt;
           </Link>
         </span>
@@ -28,7 +28,7 @@ export function CoursePagination({ page = 1, pages }: Readonly<Props>) {
       {[...Array(3)].map((e, i) => (
         <span key={i}>
           {page - 3 + i > 0 && (
-            <Link href={`/courses/page/${page - 3 + i}`} className="">
+            <Link href={`/apps/web/src/app/%5Blocale%5D/page.tsx/${page - 3 + i}`} className="">
               {page - 3 + i}
             </Link>
           )}
@@ -42,7 +42,7 @@ export function CoursePagination({ page = 1, pages }: Readonly<Props>) {
         <span key={i}>
           &nbsp;&nbsp;
           {page + 1 + i <= pages && (
-            <Link href={`/courses/page/${page + 1 + i}`} className="">
+            <Link href={`/apps/web/src/app/%5Blocale%5D/page.tsx/${page + 1 + i}`} className="">
               {page + 1 + i}
             </Link>
           )}
@@ -51,11 +51,11 @@ export function CoursePagination({ page = 1, pages }: Readonly<Props>) {
 
       {page != pages && (
         <span>
-          <Link href={`/courses/page/${page + 1}`} className="">
+          <Link href={`/apps/web/src/app/%5Blocale%5D/page.tsx/${page + 1}`} className="">
             &gt;
           </Link>
           &nbsp;&nbsp;
-          <Link href={`/courses/page/${pages}`} className="tracking-[-0.15em]">
+          <Link href={`/apps/web/src/app/%5Blocale%5D/page.tsx/${pages}`} className="tracking-[-0.15em]">
             &gt;&gt;
           </Link>
         </span>

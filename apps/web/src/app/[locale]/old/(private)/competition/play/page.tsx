@@ -11,7 +11,7 @@ import { useRouter } from 'next/navigation';
 
 import { getSession } from 'next-auth/react';
 import { Api, CompetitionsApi } from '@game-guild/apiclient';
-import { GetSessionReturnType } from '@/config/auth.config';
+import { GetSessionReturnType } from '@/configs/auth.config';
 import ChessAgentResponseEntryDto = Api.ChessAgentResponseEntryDto;
 
 export default function PlayPage() {
@@ -20,9 +20,16 @@ export default function PlayPage() {
     basePath: process.env.NEXT_PUBLIC_API_URL,
   });
 
-  const [agentList, setAgentList] = useState<(ChessAgentResponseEntryDto | { username: string; id: string; elo: number })[]>([
-    { username: 'human', id: 'human', elo: 0 },
-  ]);
+  const [agentList, setAgentList] = useState<
+    (
+      | ChessAgentResponseEntryDto
+      | {
+          username: string;
+          id: string;
+          elo: number;
+        }
+    )[]
+  >([{ username: 'human', id: 'human', elo: 0 }]);
   // flag for agent list fetched
   const [agentListFetched, setAgentListFetched] = useState<boolean>(false);
 
