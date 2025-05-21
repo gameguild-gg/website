@@ -1,3 +1,10 @@
+## [1.21.7](https://github.com/gameguild-gg/website/compare/v1.21.6...v1.21.7) (2025-05-21)
+
+
+### Bug Fixes
+
+* **courses:** add more data to dbml ([aa0f41b](https://github.com/gameguild-gg/website/commit/aa0f41ba98a5ae0bb34d2604af52218257729c50))
+
 ## [1.21.6](https://github.com/gameguild-gg/website/compare/v1.21.5...v1.21.6) (2025-05-20)
 
 
