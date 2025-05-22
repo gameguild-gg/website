@@ -56,7 +56,7 @@ Table courses {
   summary text
   body jsonb
   tenancy_domains jsonb [null] // array of allowed email domains, null if not tenancy-fenced
-  late_penalty_percent_per_day float [default: 0] // Percentage penalty for late submissions (0-100)
+  metadata jsonb [null, note: 'Course type specific data, late penalty etc']
   created_at timestamp [default: `now()`]
   updated_at timestamp [default: `now()`]
 
@@ -169,34 +169,7 @@ Table course_pages {
   }
 }
 
-Table assignments {
-  id int [pk, increment]
-  course_id int [ref: > courses.id]
-  parent_id int [ref: > course_pages.id, null]  // Optional parent course page
-  title varchar
-  order float
-  body jsonb
-  due_date timestamp [null]
-  available_from timestamp [null]
-  available_to timestamp [null]
-  text_response bool [default: false]
-  url_response bool [default: false]
-  file_response_extensions jsonb [null] // null: not accepted, []: any file, ["pdf","docx"]: only these extensions
-  grading_method grading_method
-  grading_rubric jsonb [null] // configuration for grading rubric
-  created_at timestamp [default: `now()`]
-  updated_at timestamp [default: `now()`]
 
-  indexes {
-    (course_id) // For getting all assignments in a course
-    (course_id, order) // For ordered assignment retrieval in a course
-    (parent_id) // For getting all assignments under a course page
-    (parent_id, order) // For ordered assignment retrieval under a course page
-    (due_date) // For finding upcoming/overdue assignments
-    (available_from, available_to) // For finding currently available assignments
-    (grading_method) // For finding assignments by grading method
-  }
-}
 
 Enum grading_method {
   instructor
@@ -205,29 +178,57 @@ Enum grading_method {
   automated_tests
 }
 
-Table quizzes {
+Enum activity_type {
+  assignment
+  quiz
+  discussion
+  project
+  challenge
+  simulation
+  practice_exercise
+  reflection
+  peer_review
+  // Easy to extend with new activity types
+}
+
+Table activities {
   id int [pk, increment]
   course_id int [ref: > courses.id]
   parent_id int [ref: > course_pages.id, null]  // Optional parent course page
+  type activity_type
   title varchar
   order float
   body jsonb
   due_date timestamp [null]
   available_from timestamp [null]
   available_to timestamp [null]
+  
+  // Quiz-specific fields
   duration_minutes int [null, note: 'Time limit in minutes, null means no time limit']
-  grading_method grading_method
+  
+  // Assignment-specific fields
+  text_response bool [default: false]
+  url_response bool [default: false]
+  file_response_extensions jsonb [null] // null: not accepted, []: any file, ["pdf","docx"]: only these extensions
+  
+  // Common grading fields
+  grading_rubric jsonb [null] // configuration for grading rubric
+  
+  // Metadata for type-specific configuration
+  metadata jsonb [null, note: 'Additional configuration based on activity type']
+  
   created_at timestamp [default: `now()`]
   updated_at timestamp [default: `now()`]
 
   indexes {
-    (course_id) // For getting all quizzes in a course
-    (course_id, order) // For ordered quiz retrieval in a course
-    (parent_id) // For getting all quizzes under a course page
-    (parent_id, order) // For ordered quiz retrieval under a course page
-    (due_date) // For finding upcoming/overdue quizzes
-    (available_from, available_to) // For finding currently available quizzes
-    (grading_method) // For finding quizzes by grading method
+    (course_id)
+    (course_id, order)
+    (parent_id)
+    (parent_id, order)
+    (type)
+    (due_date)
+    (available_from, available_to)
+    (grading_method)
   }
 }
 
@@ -265,40 +266,51 @@ Enum course_role_type {
   teaching_assistant
 }
 
-Table quiz_submissions {
+Table activity_submissions {
   id int [pk, increment]
-  quiz_id int
-  course_user_id int // Updated to use course_users instead of users
+  activity_id int [ref: > activities.id]
+  course_user_id int [ref: > course_users.id]
   submitted_at timestamp [default: `now()`]
-  answers jsonb
-}
-
-Table quiz_grades {
-  id int [pk, increment]
-  quiz_submission_id int
-  grader_course_user_id int // Identity of the grader (instructor/TA)
-  grade float [null]
-  graded_at timestamp [default: `now()`]
-  feedback text [null]
-}
-
-Table assignment_submissions {
-  id int [pk, increment]
-  assignment_id int
-  course_user_id int // Updated to use course_users instead of users
-  submitted_at timestamp [default: `now()`]
+  
+  // Quiz-specific submission data
+  answers jsonb [null]
+  
+  // Assignment-specific submission data
   text_response text [null]
   url_response varchar [null]
   file_response jsonb [null] // store file metadata/links as needed
+  
+  // Type-specific submission data
+  metadata jsonb [null, note: 'Additional submission data based on activity type']
+  
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  
+  indexes {
+    (activity_id)
+    (course_user_id)
+    (activity_id, course_user_id)
+    (submitted_at)
+  }
 }
 
-Table assignment_grades {
+Table activity_grades {
   id int [pk, increment]
-  assignment_submission_id int
-  grader_course_user_id int // Updated to use course_users instead of users
+  activity_submission_id int [ref: > activity_submissions.id]
+  grader_course_user_id int [ref: > course_users.id]
   grade float [null]
   graded_at timestamp [null]
   feedback text [null]
+  rubric_assessment jsonb [null, note: 'Detailed rubric scoring if applicable']
+  metadata jsonb [null, note: 'Additional grading data based on activity type']
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  
+  indexes {
+    (activity_submission_id) [unique]
+    (grader_course_user_id)
+    (graded_at)
+  }
 }
 
 //------------------------------------------------------
@@ -606,10 +618,8 @@ Table course_prerequisites {
 // Course relationships
 Ref: course_pages.course_id > courses.id
 Ref: course_pages.parent_id > course_pages.id
-Ref: assignments.course_id > courses.id
-Ref: assignments.parent_id > course_pages.id
-Ref: quizzes.course_id > courses.id
-Ref: quizzes.parent_id > course_pages.id
+Ref: activities.course_id > courses.id
+Ref: activities.parent_id > course_pages.id
 Ref: course_users.course_id > courses.id
 Ref: course_users.user_product_id > user_products.id
 Ref: course_user_roles.course_id > courses.id
@@ -617,15 +627,11 @@ Ref: course_user_roles.course_user_id > course_users.id
 Ref: course_prerequisites.course_id > courses.id
 Ref: course_prerequisites.prerequisite_course_id > courses.id
 
-// Assessment relationships
-Ref: quiz_submissions.quiz_id > quizzes.id
-Ref: quiz_submissions.course_user_id > course_users.id
-Ref: quiz_grades.quiz_submission_id > quiz_submissions.id
-Ref: quiz_grades.grader_course_user_id > course_users.id
-Ref: assignment_submissions.assignment_id > assignments.id
-Ref: assignment_submissions.course_user_id > course_users.id
-Ref: assignment_grades.assignment_submission_id > assignment_submissions.id
-Ref: assignment_grades.grader_course_user_id > course_users.id
+// Activity relationships
+Ref: activity_submissions.activity_id > activities.id
+Ref: activity_submissions.course_user_id > course_users.id
+Ref: activity_grades.activity_submission_id > activity_submissions.id
+Ref: activity_grades.grader_course_user_id > course_users.id
 
 // Product and subscription relationships
 Ref: product_courses.product_id > products.id
