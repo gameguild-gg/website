@@ -23,6 +23,9 @@ Table users {
   username varchar [unique, note: 'Username for display and login, must be unique']
   full_name varchar [note: 'User full name for personalization and identification']
   avatar varchar [null, note: 'URL or path to user profile image']
+  balance decimal [default: 0, note: 'Total balance in the wallet']
+  available_balance decimal [default: 0, note: 'Balance available for withdrawal (may be less than total if some funds are pending)']
+  wallet_status wallet_status [default: "active", note: 'Current status of this user wallet']
   created_at timestamp [default: `now()`, note: 'When the user account was created']
   updated_at timestamp [default: `now()`, note: 'When the user account was last updated']
 }
@@ -98,7 +101,7 @@ Table course_certificate_settings {
 Table certificates {
   id int [pk, increment, note: 'Unique identifier for the certificate']
   course_id int [ref: > courses.id, note: 'Reference to the course this certificate is for']
-  user_id int [ref: > user_wallets.id, note: 'User who earned the certificate']
+  user_id int [ref: > users.id, note: 'User who earned the certificate']
   course_user_id int [ref: > course_users.id, note: 'Reference to the course enrollment record']
   course_certificate_settings_id int [ref: > course_certificate_settings.id, note: 'Certificate configuration used']
   certificate_number varchar [unique, note: 'Unique identifier for verification purposes']
@@ -383,7 +386,7 @@ Table promo_codes {
   type promo_code_type [note: 'What kind of discount this code provides']
   product_id int [ref: > products.id, null, note: 'Specific product this code applies to, null for all products']
   discount_percentage decimal [null, note: 'Percentage discount when type is percentage_off']
-  affiliate_wallet_id int [ref: > user_wallets.id, null, note: 'If created by affiliate']
+  affiliate_user_id int [ref: > users.id, null, note: 'If created by affiliate']
   affiliate_percentage decimal [null, note: 'How much of discount is paid by affiliate']
   max_uses int [null, note: 'Null for unlimited uses']
   uses_count int [default: 0, note: 'Current number of times this code has been used']
@@ -391,7 +394,7 @@ Table promo_codes {
   starts_at timestamp [default: `now()`, note: 'When this code becomes valid']
   expires_at timestamp [null, note: 'When this code expires, null for no expiration']
   is_active bool [default: true, note: 'Whether this code can currently be used']
-  created_by int [ref: > user_wallets.id, note: 'User who created this code']
+  created_by int [ref: > users.id, note: 'User who created this code']
   created_at timestamp [default: `now()`, note: 'When this code was created']
   updated_at timestamp [default: `now()`, note: 'When this code was last updated']
 
@@ -399,7 +402,7 @@ Table promo_codes {
     (code) [note: 'For quick lookup during checkout']
     (type) [note: 'For filtering by discount type']
     (product_id) [note: 'For finding codes applicable to a specific product']
-    (affiliate_wallet_id) [note: 'For tracking affiliate-generated codes']
+    (affiliate_user_id) [note: 'For tracking affiliate-generated codes']
     (expires_at) [note: 'For finding/removing expired codes']
     (is_active) [note: 'For filtering active/inactive codes']
   }
@@ -409,14 +412,14 @@ Table promo_codes {
 Table promo_code_uses {
   id int [pk, increment, note: 'Unique identifier for this usage record']
   promo_code_id int [ref: > promo_codes.id, note: 'Reference to the promo code that was used']
-  user_wallet_id int [ref: > user_wallets.id, note: 'User who used the promo code']
+  user_id int [ref: > users.id, note: 'User who used the promo code']
   financial_transaction_id int [ref: > financial_transactions.id, note: 'Transaction where the code was applied']
   discount_applied decimal [note: 'Actual amount discounted from the transaction']
   used_at timestamp [default: `now()`, note: 'When the promo code was used']
 
   indexes {
     (promo_code_id) [note: 'For tracking all usages of a specific code']
-    (user_wallet_id) [note: 'For finding all codes used by a specific user']
+    (user_id) [note: 'For finding all codes used by a specific user']
     (financial_transaction_id) [note: 'For linking usage to specific transaction']
     (used_at) [note: 'For finding recent promo code uses']
   }
@@ -469,7 +472,7 @@ Table product_subscription_plans {
 
 Table user_subscriptions {
   id integer [pk, increment, note: 'Unique identifier for the user subscription']
-  user_wallet_id integer [ref: > user_wallets.id, note: 'Reference to the user wallet this subscription belongs to']
+  user_id integer [ref: > users.id, note: 'Reference to the user this subscription belongs to']
   subscription_plan_id integer [ref: > product_subscription_plans.id, note: 'Reference to the subscription plan']
   status subscription_status [note: 'Current status of the subscription (active, canceled, etc.)']
   current_period_start timestamp [note: 'Start date of the current billing period']
@@ -482,27 +485,16 @@ Table user_subscriptions {
   updated_at timestamp [default: `now()`, note: 'When this subscription was last updated']
 
   indexes {
-    (user_wallet_id) [note: 'For finding all subscriptions for a user']
+    (user_id) [note: 'For finding all subscriptions for a user']
     (subscription_plan_id) [note: 'For finding all users subscribed to a plan']
     (status) [note: 'For filtering subscriptions by status']
   }
 }
 
-// User wallets and financial methods
-Table user_wallets {
-  id int [pk, increment, note: 'Unique identifier for this wallet']
-  user_id int [unique, ref: - users.id, note: 'One-to-one relationship with users']
-  balance decimal [default: 0, note: 'Total balance in the wallet']
-  available_balance decimal [default: 0, note: 'Balance available for withdrawal (may be less than total if some funds are pending)']
-  status wallet_status [default: "active", note: 'Current status of this wallet']
-  created_at timestamp [default: `now()`, note: 'When this wallet was created']
-  updated_at timestamp [default: `now()`, note: 'When this wallet was last updated']
-}
-
 // Unified payment methods table
 Table user_financial_methods {
   id int [pk, increment, note: 'Unique identifier for this payment method']
-  user_wallet_id int [ref: > user_wallets.id, note: 'Wallet this payment method belongs to']
+  user_id int [ref: > users.id, note: 'User this payment method belongs to']
   type payment_method_type [note: 'Type of payment method']
   name varchar [note: 'Display name for the payment method']
   is_default bool [default: false, note: 'Whether this is the user\'s default payment method']
@@ -513,7 +505,7 @@ Table user_financial_methods {
   updated_at timestamp [default: `now()`, note: 'When this payment method was last updated']
 
   indexes {
-    (user_wallet_id) [note: 'For finding all payment methods for a user']
+    (user_id) [note: 'For finding all payment methods for a user']
     (type, status) [note: 'For filtering payment methods by type and status']
     (provider) [note: 'For finding all payment methods from a specific provider']
   }
@@ -522,8 +514,8 @@ Table user_financial_methods {
 // Financial transactions table with standardized fields
 Table financial_transactions {
   id integer [pk, increment, note: 'Unique identifier for this transaction']
-  from_wallet_id int [ref: > user_wallets.id, null, note: 'Source wallet, null if system credit or external payment']
-  to_wallet_id int [ref: > user_wallets.id, null, note: 'Destination wallet, null if system debit or external payment']
+  from_user_id int [ref: > users.id, null, note: 'Source user, null if system credit or external payment']
+  to_user_id int [ref: > users.id, null, note: 'Destination user, null if system debit or external payment']
   product_id int [ref: > products.id, null, note: 'Product being purchased, if applicable']
   pricing_id int [ref: > product_pricing.id, null, note: 'Specific pricing used for this transaction']
   subscription_plan_id int [ref: > product_subscription_plans.id, null, note: 'Subscription plan for subscription transactions']
@@ -531,7 +523,7 @@ Table financial_transactions {
   transaction_type transaction_type [note: 'Type of financial transaction (purchase, refund, etc.)']
   amount decimal [note: 'Actual amount of the transaction after discounts']
   original_amount decimal [note: 'Original amount before any discounts or adjustments']
-  referrer_user_id int [ref: > user_wallets.id, null, note: 'User who referred this transaction for commission']
+  referrer_user_id int [ref: > users.id, null, note: 'User who referred this transaction for commission']
   referral_commission_amount decimal [null, note: 'Amount paid to referrer as commission']
   status transaction_status [note: 'Current status of this transaction (pending, completed, etc.)']
   payment_provider varchar [note: 'Payment processor used (stripe, paypal, crypto, etc.)']
@@ -541,8 +533,8 @@ Table financial_transactions {
   updated_at timestamp [default: `now()`, note: 'When this transaction was last updated']
 
   indexes {
-    (from_wallet_id) [note: 'For finding all outgoing transactions from a wallet']
-    (to_wallet_id) [note: 'For finding all incoming transactions to a wallet']
+    (from_user_id) [note: 'For finding all outgoing transactions from a user']
+    (to_user_id) [note: 'For finding all incoming transactions to a user']
     (product_id) [note: 'For finding all transactions related to a product']
     (transaction_type) [note: 'For filtering by transaction type']
     (status) [note: 'For filtering by transaction status']
@@ -636,7 +628,7 @@ Enum wallet_status {
 // Product ownership and access management
 Table user_products {
   id int [pk, increment, note: 'Unique identifier for this product access record']
-  user_wallet_id int [ref: > user_wallets.id, note: 'User who has access to this product']
+  user_id int [ref: > users.id, note: 'User who has access to this product']
   product_id int [ref: > products.id, note: 'Product the user has access to']
   subscription_id int [ref: > user_subscriptions.id, null, note: 'If product access is through subscription']
   acquisition_type product_acquisition_type [note: 'How the product was acquired (purchased, subscription, gift, etc.)']
@@ -649,7 +641,7 @@ Table user_products {
   updated_at timestamp [default: `now()`, note: 'When this access record was last updated']
 
   indexes {
-    (user_wallet_id, product_id) [note: 'For efficiently checking if a user has access to a product']
+    (user_id, product_id) [note: 'For efficiently checking if a user has access to a product']
     (subscription_id) [note: 'For finding all products accessed via a specific subscription']
     (status) [note: 'For filtering by access status']
     (access_expires_at) [note: 'For finding expiring/expired product access']
@@ -713,21 +705,21 @@ Ref: product_courses.product_id > products.id
 Ref: product_courses.course_id > courses.id
 Ref: product_pricing.product_id > products.id
 Ref: product_subscription_plans.product_id > products.id
-Ref: user_subscriptions.user_wallet_id > user_wallets.id
+Ref: user_subscriptions.user_id > users.id
 Ref: user_subscriptions.subscription_plan_id > product_subscription_plans.id
 Ref: user_products.product_id > products.id
-Ref: user_products.user_wallet_id > user_wallets.id
+Ref: user_products.user_id > users.id
 Ref: user_products.subscription_id > user_subscriptions.id
 
 // Financial relationships
 
-Ref: user_financial_methods.user_wallet_id > user_wallets.id
-Ref: financial_transactions.from_wallet_id > user_wallets.id
-Ref: financial_transactions.to_wallet_id > user_wallets.id
+Ref: user_financial_methods.user_id > users.id
+Ref: financial_transactions.from_user_id > users.id
+Ref: financial_transactions.to_user_id > users.id
 Ref: promo_codes.product_id > products.id
-Ref: promo_codes.created_by > user_wallets.id
+Ref: promo_codes.created_by > users.id
 Ref: promo_code_uses.promo_code_id > promo_codes.id
-Ref: promo_code_uses.user_wallet_id > user_wallets.id
+Ref: promo_code_uses.user_id > users.id
 Ref: promo_code_uses.financial_transaction_id > financial_transactions.id
 Ref: financial_transactions.promo_code_id > promo_codes.id
 
