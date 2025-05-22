@@ -71,10 +71,22 @@ Table courses {
   }
 }
 
-// Certificate configuration for courses
-Table course_certificate_settings {
+Enum certificate_type {
+  course_completion [note: 'Standard certificate for completing a course']
+  skill_mastery [note: 'Certificate recognizing mastery of a specific skill']
+  specialization [note: 'Certificate for completing a series of related courses']
+  professional [note: 'Industry-recognized professional certification']
+  achievement [note: 'Certificate for specific accomplishments or milestones']
+  instructor [note: 'Certification to teach specific subjects']
+  assessment [note: 'Certificate from passing standardized assessments']
+  participation [note: 'Certificate for event or workshop attendance']
+}
+
+// Certificate configuration
+Table certificates {
   id int [pk, increment, note: 'Unique identifier for certificate settings']
   course_id int [ref: > courses.id, note: 'Reference to the course these certificate settings apply to']
+  certificate_type certificate_type [default: 'course_completion', note: 'Type of certificate issued']
   html_template text [note: 'HTML template for certificate generation with variable placeholders like {{name}}, {{date}}, {{course}}']
   css_styles text [note: 'CSS styles for certificate template to control appearance, fonts, colors, etc.']
   auto_issue bool [default: true, note: 'Whether certificates are automatically issued upon completion or require manual approval']
@@ -98,12 +110,12 @@ Table course_certificate_settings {
 }
 
 // Issued certificates
-Table certificates {
+Table user_certificates {
   id int [pk, increment, note: 'Unique identifier for the certificate']
   course_id int [ref: > courses.id, note: 'Reference to the course this certificate is for']
   user_id int [ref: > users.id, note: 'User who earned the certificate']
   course_user_id int [ref: > course_users.id, note: 'Reference to the course enrollment record']
-  course_certificate_settings_id int [ref: > course_certificate_settings.id, note: 'Certificate configuration used']
+  certificate_id int [ref: > certificates.id, note: 'Certificate configuration used']
   certificate_number varchar [unique, note: 'Unique identifier for verification purposes']
   status certificate_status [default: 'active', note: 'Current status of this certificate']
   issued_at timestamp [default: `now()`, note: 'When the certificate was issued to the user']
@@ -124,10 +136,70 @@ Table certificates {
   }
 }
 
+//------------------------------------------------------
+// TAGGING AND CATEGORIZATION SYSTEM
+//------------------------------------------------------
+
+// Tag types
+Enum tag_type {
+  skill [note: 'Tag represents a learnable or teachable skill']
+  topic [note: 'General subject matter or area of knowledge']
+  technology [note: 'Specific technology, framework, or tool']
+  difficulty [note: 'Indicates content difficulty level']
+  category [note: 'High-level grouping of content']
+  industry [note: 'Specific industry or sector']
+  certification [note: 'Professional or industry certification']
+}
+
+// Tag definition and hierarchy
+Table tags {
+  id int [pk, increment, note: 'Unique identifier for this tag']
+  name varchar [unique, note: 'Unique name of the tag, used for display and searches']
+  slug varchar [unique, note: 'URL-friendly version of the tag name']
+  description text [null, note: 'Detailed description of what this tag represents']
+  type tag_type [note: 'Type of tag (skill, topic, technology, etc.)']
+  icon varchar [null, note: 'Optional icon identifier or URL for visual representation']
+  metadata jsonb [null, note: 'Additional tag configuration including skill requirements, difficulty metrics, etc.']
+  created_at timestamp [default: `now()`, note: 'When this tag was created']
+  updated_at timestamp [default: `now()`, note: 'When this tag was last updated']
+
+  indexes {
+    (slug) [note: 'For URL generation and lookups']
+    (name) [note: 'For quick tag searches']
+    (type) [note: 'For filtering tags by type']
+  }
+}
+
+enum tag_relationship_type {
+  related [note: 'Tags that are related or complementary']
+  parent [note: 'Parent tag in a hierarchical structure']
+  child [note: 'Child tag in a hierarchical structure']
+  requires [note: 'Required prerequisite tag']
+  suggested [note: 'Suggested prerequisite or related tag']
+}
+
+// Many-to-many relationship between tags (prerequisites, related tags, hierarchies, etc.)
+Table tag_relationships {
+  id int [pk, increment, note: 'Unique identifier for this tag relationship']
+  source_id int [ref: > tags.id, note: 'The source tag in the relationship']
+  target_id int [ref: > tags.id, note: 'The target tag in the relationship']
+  type tag_relationship_type [note: 'Type of relationship (prerequisite, related, parent, etc.)']
+  metadata jsonb [null, note: 'Additional relationship-specific configuration']
+  created_at timestamp [default: `now()`, note: 'When this relationship was created']
+  updated_at timestamp [default: `now()`, note: 'When this relationship was last updated']
+
+  indexes {
+    (source_id, target_id) [unique, note: 'Prevent duplicate relationships between the same tags']
+    (source_id) [note: 'For finding all relationships where this tag is the source']
+    (target_id) [note: 'For finding all relationships where this tag is the target']
+    (type) [note: 'For filtering relationships by type']
+  }
+}
+
 // Optional blockchain anchoring for certificates
 Table certificate_blockchain_anchors {
   id int [pk, increment, note: 'Unique identifier for this blockchain anchor']
-  certificate_id int [ref: > certificates.id, note: 'Reference to the certificate being anchored']
+  certificate_id int [ref: > user_certificates.id, note: 'Reference to the certificate being anchored']
   blockchain_network varchar [note: 'Name or identifier of the blockchain network used (ethereum, polygon, binance, etc.)']
   network_type blockchain_network_type [default: 'mainnet', note: 'Type of network (mainnet, testnet, etc.)']
   transaction_hash varchar [note: 'Transaction hash where the certificate was anchored']
@@ -335,45 +407,7 @@ Table activity_grades {
   }
 }
 
-//------------------------------------------------------
-// TAGGING AND CATEGORIZATION SYSTEM
-//------------------------------------------------------
 
-// Content tagging system
-Table tags {
-  id int [pk, increment, note: 'Unique identifier for this tag']
-  name varchar [unique, note: 'Unique name of the tag, used for display and searches']
-  slug varchar [unique, note: 'URL-friendly version of the tag name']
-  description text [null, note: 'Optional description of what this tag represents']
-  category varchar [null, note: 'Optional category grouping for tags (e.g., "technology", "difficulty", "topic")']
-  icon varchar [null, note: 'Optional icon identifier or URL for visual representation']
-  created_at timestamp [default: `now()`, note: 'When this tag was created']
-  updated_at timestamp [default: `now()`, note: 'When this tag was last updated']
-
-  indexes {
-    (name) [note: 'For quick lookup by exact tag name']
-    (slug) [note: 'For URL generation and lookups']
-    (category) [note: 'For filtering tags by category']
-  }
-}
-
-// Junction table for taggable content
-Table taggables {
-  id int [pk, increment, note: 'Unique identifier for this tag association']
-  tag_id int [ref: > tags.id, note: 'Reference to the tag being applied']
-  taggable_type varchar [note: 'Type of entity being tagged (product, course, page, etc.)']
-  taggable_id int [note: 'ID of the entity being tagged']
-  created_at timestamp [default: `now()`, note: 'When this tag was applied']
-
-  indexes {
-    (tag_id) [note: 'For finding all content with a specific tag']
-    (taggable_type, taggable_id) [note: 'For finding all tags for a specific entity']
-    (tag_id, taggable_type, taggable_id) [unique, note: 'Prevent duplicate tagging']
-  }
-}
-
-// RELATIONSHIPS
-Ref: taggables.tag_id > tags.id 
 
 //------------------------------------------------------
 // PAYMENT & TRANSACTION SYSTEM
@@ -663,23 +697,6 @@ Enum product_access_status {
   suspended [note: 'Temporary hold on access that may be restored']
 }
 
-// Course prerequisites
-Table course_prerequisites {
-  id int [pk, increment]
-  course_id int [ref: > courses.id, note: 'Course that requires completion of another course']
-  prerequisite_course_id int [ref: > courses.id, note: 'Course that must be completed first']
-  required_completion_percentage int [default: 100, note: 'Required completion percentage of prerequisite course']
-  required_grade_percentage int [default: 70, note: 'Required minimum grade percentage in prerequisite course']
-  created_at timestamp [default: `now()`, note: 'When this prerequisite was defined']
-  updated_at timestamp [default: `now()`, note: 'When this prerequisite was last updated']
-
-  indexes {
-    (course_id) [note: 'For finding all prerequisites for a course']
-    (prerequisite_course_id) [note: 'For finding all courses that require this course']
-    (course_id, prerequisite_course_id) [unique, note: 'Prevent duplicate prerequisites']
-  }
-}
-
 //------------------------------------------------------
 // KYC VERIFICATION SYSTEM
 //------------------------------------------------------
@@ -739,8 +756,6 @@ Ref: course_users.course_id > courses.id
 Ref: course_users.user_product_id > user_products.id
 Ref: course_user_roles.course_id > courses.id
 Ref: course_user_roles.course_user_id > course_users.id
-Ref: course_prerequisites.course_id > courses.id
-Ref: course_prerequisites.prerequisite_course_id > courses.id
 
 // Activity relationships
 Ref: activity_submissions.activity_id > activities.id
