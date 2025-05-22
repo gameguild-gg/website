@@ -73,20 +73,23 @@ Table courses {
 
 Enum certificate_type {
   course_completion [note: 'Standard certificate for completing a course']
-  skill_mastery [note: 'Certificate recognizing mastery of a specific skill']
+  skill_mastery [note: 'Certificate recognizing mastery of specific skills']
+  event_participation [note: 'Certificate for attending workshops, conferences, or events']
+  assessment_passed [note: 'Certificate from passing standardized tests or evaluations']
+  project_completion [note: 'Certificate for successfully completing projects']
   specialization [note: 'Certificate for completing a series of related courses']
   professional [note: 'Industry-recognized professional certification']
   achievement [note: 'Certificate for specific accomplishments or milestones']
   instructor [note: 'Certification to teach specific subjects']
-  assessment [note: 'Certificate from passing standardized assessments']
-  participation [note: 'Certificate for event or workshop attendance']
+  time_investment [note: 'Certificate proving time spent learning a topic']
+  peer_recognition [note: 'Certificate based on peer validation or community contribution']
 }
 
 // Certificate configuration
 Table certificates {
   id int [pk, increment, note: 'Unique identifier for certificate settings']
   course_id int [ref: > courses.id, note: 'Reference to the course these certificate settings apply to']
-  certificate_type certificate_type [default: 'course_completion', note: 'Type of certificate issued']
+  certificate_type certificate_type [default: 'course_completion', note: 'What this certificate type proves when earned']
   html_template text [note: 'HTML template for certificate generation with variable placeholders like {{name}}, {{date}}, {{course}}']
   css_styles text [note: 'CSS styles for certificate template to control appearance, fonts, colors, etc.']
   auto_issue bool [default: true, note: 'Whether certificates are automatically issued upon completion or require manual approval']
@@ -116,6 +119,7 @@ Table user_certificates {
   user_id int [ref: > users.id, note: 'User who earned the certificate']
   course_user_id int [ref: > course_users.id, note: 'Reference to the course enrollment record']
   certificate_id int [ref: > certificates.id, note: 'Certificate configuration used']
+  certificate_type certificate_type [default: 'course_completion', note: 'Type of certificate issued']
   certificate_number varchar [unique, note: 'Unique identifier for verification purposes']
   status certificate_status [default: 'active', note: 'Current status of this certificate']
   issued_at timestamp [default: `now()`, note: 'When the certificate was issued to the user']
@@ -136,6 +140,35 @@ Table user_certificates {
   }
 }
 
+Enum skill_proficiency_level {
+  awareness [note: 'Basic awareness and understanding of concepts']
+  novice [note: 'Can perform basic tasks with guidance']
+  beginner [note: 'Can perform routine tasks independently']
+  intermediate [note: 'Can handle most tasks and some complex scenarios']
+  advanced [note: 'Can handle complex tasks and mentor others']
+  expert [note: 'Deep expertise, can innovate and teach']
+  master [note: 'Recognized authority, can define best practices']
+}
+
+// Junction table linking certificates and courses to tags
+Table certificate_tags {
+  id int [pk, increment, note: 'Unique identifier for this tag relationship']
+  certificate_id int [ref: > certificates.id, null, note: 'Reference to the certificate being tagged, null if tagging a course']
+  tag_id int [ref: > tags.id, note: 'Tag of any type (skill, technology, topic, etc.)']
+  proficiency_level skill_proficiency_level [null, note: 'Skill level if tag is a skill, null for non-skill tags']
+  metadata jsonb [null, note: 'Additional tag-specific data like specific competencies, context, etc.']
+  created_at timestamp [default: `now()`, note: 'When this tag relationship was created']
+  
+  indexes {
+    (certificate_id, tag_id) [note: 'Prevent duplicate tags on a certificate']
+    (course_id, tag_id) [note: 'Prevent duplicate tags on a course']
+    (tag_id, proficiency_level) [note: 'Find items by tag and skill level']
+    (tag_id) [note: 'Find all items for a specific tag']
+    (certificate_id) [note: 'Find all tags for a specific certificate']
+    (course_id) [note: 'Find all tags for a specific course']
+  }
+}
+
 //------------------------------------------------------
 // TAGGING AND CATEGORIZATION SYSTEM
 //------------------------------------------------------
@@ -144,7 +177,7 @@ Table user_certificates {
 Enum tag_type {
   skill [note: 'Tag represents a learnable or teachable skill']
   topic [note: 'General subject matter or area of knowledge']
-  technology [note: 'Specific technology, framework, or tool']
+  technology [note: 'Specific technology, software, framework, or tool']
   difficulty [note: 'Indicates content difficulty level']
   category [note: 'High-level grouping of content']
   industry [note: 'Specific industry or sector']
@@ -154,7 +187,8 @@ Enum tag_type {
 // Tag definition and hierarchy
 Table tags {
   id int [pk, increment, note: 'Unique identifier for this tag']
-  name varchar [unique, note: 'Unique name of the tag, used for display and searches']
+  display_name varchar [note: 'Name of the tag as displayed to users']
+  searchable_name varchar [note: 'Name used for search indexing, may differ from display name'] 
   slug varchar [unique, note: 'URL-friendly version of the tag name']
   description text [null, note: 'Detailed description of what this tag represents']
   type tag_type [note: 'Type of tag (skill, topic, technology, etc.)']
@@ -785,6 +819,21 @@ Ref: promo_code_uses.promo_code_id > promo_codes.id
 Ref: promo_code_uses.user_id > users.id
 Ref: promo_code_uses.financial_transaction_id > financial_transactions.id
 Ref: financial_transactions.promo_code_id > promo_codes.id
+
+// Certificate and tag relationships
+Ref: certificates.course_id > courses.id
+Ref: user_certificates.course_id > courses.id
+Ref: user_certificates.user_id > users.id
+Ref: user_certificates.course_user_id > course_users.id
+Ref: user_certificates.certificate_id > certificates.id
+
+// Certificate and course tagging relationships
+Ref: certificate_tags.certificate_id > certificates.id
+Ref: certificate_tags.tag_id > tags.id
+
+Ref: tag_relationships.source_id > tags.id
+Ref: tag_relationships.target_id > tags.id
+Ref: certificate_blockchain_anchors.certificate_id > user_certificates.id
 
 // Product types
 Enum product_type {
