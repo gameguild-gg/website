@@ -684,9 +684,17 @@ Table course_prerequisites {
 // KYC VERIFICATION SYSTEM
 //------------------------------------------------------
 
+Enum kyc_provider {
+  sumsub [note: 'SumSub KYC verification provider']
+  shufti [note: 'Shufti Pro KYC verification provider']
+  onfido [note: 'Onfido KYC verification provider']
+  jumio [note: 'Jumio KYC verification provider']
+  custom [note: 'Custom or internal KYC verification process']
+}
+
 Enum kyc_verification_status {
   pending [note: 'Verification request has been submitted but not completed']
-  in_progress [note: 'SumSub is processing the verification']
+  in_progress [note: 'Provider is processing the verification']
   approved [note: 'KYC verification passed']
   rejected [note: 'KYC verification failed']
   suspended [note: 'Verification was approved but later suspended']
@@ -696,22 +704,25 @@ Enum kyc_verification_status {
 Table user_kyc_verifications {
   id int [pk, increment, note: 'Unique identifier for this KYC verification record']
   user_id int [ref: > users.id, note: 'User being verified']
-  sumsub_applicant_id varchar [unique, note: 'SumSub applicant identifier for reference']
-  sumsub_verification_id varchar [unique, note: 'SumSub verification identifier for reference']
+  provider kyc_provider [note: 'KYC service provider used for this verification']
+  provider_applicant_id varchar [unique, note: 'Provider-specific applicant identifier']
+  provider_verification_id varchar [unique, note: 'Provider-specific verification identifier']
   verification_level varchar [note: 'Level of verification completed (basic, advanced, etc.)']
   status kyc_verification_status [default: 'pending', note: 'Current status of the verification']
-  last_check_at timestamp [note: 'When the verification status was last checked with SumSub']
+  last_check_at timestamp [note: 'When the verification status was last checked with provider']
   approved_at timestamp [null, note: 'When the verification was approved']
   rejected_at timestamp [null, note: 'When the verification was rejected']
-  rejection_reason text [null, note: 'If rejected, reason provided by SumSub (no personal data)']
+  rejection_reason text [null, note: 'If rejected, reason provided by the provider (no personal data)']
   expires_at timestamp [null, note: 'When this verification expires and needs renewal']
+  metadata jsonb [null, note: 'Provider-specific data and configuration']
   created_at timestamp [default: `now()`, note: 'When this verification record was created']
   updated_at timestamp [default: `now()`, note: 'When this verification record was last updated']
 
   indexes {
     (user_id) [note: 'For finding verification status of a user']
-    (sumsub_applicant_id) [note: 'For quick lookup when receiving SumSub webhooks']
-    (sumsub_verification_id) [note: 'For linking to SumSub verification records']
+    (provider) [note: 'For filtering verifications by provider']
+    (provider_applicant_id) [note: 'For quick lookup when receiving provider webhooks']
+    (provider_verification_id) [note: 'For linking to provider verification records']
     (status) [note: 'For filtering verifications by status']
     (expires_at) [note: 'For finding expiring verifications']
   }
