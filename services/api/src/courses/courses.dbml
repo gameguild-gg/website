@@ -75,7 +75,9 @@ Enum product_type {
 }
 
 Enum certificate_type {
-  course_completion [note: 'Standard certificate for completing a course']
+  course_completion [note: 'Standard certificate for completing a single course']
+  product_bundle_completion [note: 'Certificate for completing all courses in a product bundle/specialization']
+  learning_pathway [note: 'Certificate for achieving specific skill combinations across multiple courses/products']
   skill_mastery [note: 'Certificate recognizing mastery of specific skills']
   event_participation [note: 'Certificate for attending workshops, conferences, or events']
   assessment_passed [note: 'Certificate from passing standardized tests or evaluations']
@@ -346,28 +348,42 @@ Table courses {
 // Certificate configuration
 Table certificates {
   id int [pk, increment, note: 'Unique identifier for certificate settings']
-  course_id int [ref: > courses.id, note: 'Reference to the course these certificate settings apply to']
+  course_id int [ref: > courses.id, null, note: 'Reference to specific course (null for multi-course certificates)']
+  product_id int [ref: > products.id, null, note: 'Reference to specific product/bundle (null for cross-product certificates)']
   certificate_type certificate_type [default: 'course_completion', note: 'What this certificate type proves when earned']
+  name varchar [note: 'Display name for this certificate type']
+  description text [note: 'Description of what this certificate represents']
+  
+  // Template and styling
   html_template text [note: 'HTML template for certificate generation with variable placeholders like {{name}}, {{date}}, {{course}}']
   css_styles text [note: 'CSS styles for certificate template to control appearance, fonts, colors, etc.']
+  
+  // Issuance rules
   auto_issue bool [default: true, note: 'Whether certificates are automatically issued upon completion or require manual approval']
-  minimum_grade float [default: 70, note: 'Minimum grade percentage required to earn a certificate (0-100)'] // Constraint: CHECK (minimum_grade BETWEEN 0 AND 100)
-  completion_percentage int [default: 100, note: 'Percentage of course that must be completed to earn certificate (0-100)'] // Constraint: CHECK (completion_percentage BETWEEN 0 AND 100)
-  expiration_months int [null, note: 'Number of months until certificate expires, null for no expiration'] // Constraint: CHECK (expiration_months > 0 OR expiration_months IS NULL)
-  certificate_verification_method verification_method [default: 'code', note: 'Method used to verify certificate authenticity (code, blockchain, or both)']
-  prerequisites jsonb [null, note: 'Required achievements/courses before certificate can be issued, as array of prerequisite IDs or conditions']
+  minimum_grade float [default: 70, note: 'Minimum grade percentage required to earn a certificate (0-100)']
+  completion_percentage int [default: 100, note: 'Percentage of required content that must be completed (0-100)']
+  
+  // Certificate details
+  expiration_months int [null, note: 'Number of months until certificate expires, null for no expiration']
+  certificate_verification_method verification_method [default: 'code', note: 'Method used to verify certificate authenticity']
+  prerequisites jsonb [null, note: 'Required achievements/courses before certificate can be issued']
   badge_image varchar [null, note: 'URL or path to digital badge image for social sharing and profiles']
-  signature_image varchar [null, note: 'URL or path to authorizing signature image to appear on certificate']
+  signature_image varchar [null, note: 'URL or path to authorizing signature image']
   credential_title varchar [null, note: 'Professional title/credential granted by this certificate']
   issuer_name varchar [null, note: 'Name of institution or entity issuing the certificate']
-  metadata jsonb [null, note: 'Additional configuration settings: custom fields, internationalization options, visibility settings, etc.']
-  deleted_at timestamp [null, note: 'Soft delete timestamp - when the certificate template was deleted, null if active']
-  created_at timestamp [default: `now()`, note: 'When these certificate settings were created']
-  updated_at timestamp [default: `now()`, note: 'When these certificate settings were last updated']
+  
+  // Metadata and administration
+  metadata jsonb [null, note: 'Additional configuration: custom fields, internationalization, visibility, etc.']
+  is_active bool [default: true, note: 'Whether this certificate template is currently active']
+  deleted_at timestamp [null, note: 'Soft delete timestamp']
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
 
   indexes {
-    (course_id) [note: 'For retrieving certificate settings for a specific course']
-    (certificate_verification_method) [note: 'For filtering by verification method']
+    (course_id) [note: 'For single course certificates']
+    (product_id) [note: 'For product bundle certificates']
+    (certificate_type) [note: 'For filtering by certificate type']
+    (is_active) [note: 'For filtering active certificate templates']
   }
 }
 
@@ -400,20 +416,47 @@ Table user_certificates {
   }
 }
 
+Table tag_proficiencies {
+  id int [pk, increment, note: 'Unique identifier for this proficiency definition']
+  tag_id int [ref: > tags.id, note: 'Tag this proficiency level applies to']
+  proficiency_level skill_proficiency_level [note: 'The proficiency level (novice, intermediate, expert, etc.)']
+  proficiency_level_value float [note: 'Numeric value representing the proficiency level, to speedup sorting and filtering']
+  description text [null, note: 'Description of what this proficiency level means for this specific tag/skill']
+  // todo: prerequesites should
+  prerequisites jsonb [null, note: 'Other tag proficiencies required before achieving this level']
+  metadata jsonb [null, note: 'Additional proficiency-specific configuration']
+  deleted_at timestamp [null, note: 'Soft delete timestamp']
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
 
+  indexes {
+    (tag_id, proficiency_level, proficiency_level_value) [unique, note: 'One definition per proficiency level per tag']
+    (tag_id, proficiency_level) [unique, note: 'One proficiency level per tag']
+    (tag_id, proficiency_level_value) [unique, note: 'One proficiency level value per tag']  
+    (tag_id) [note: 'For finding all proficiency levels for a tag']
+    (proficiency_level) [note: 'For finding all tags at a specific proficiency level']
+    (proficiency_level_value) [note: 'For finding all tags at a specific proficiency level value']
+  }
+}
+
+Enum certificate_tag_relationship_type {
+  requirement [note: 'Tag is a requirement for this certificate']
+  recommendation [note: 'Tag is a recommendation for this certificate']
+  provides [note: 'Tag is provided by this certificate']
+}
 
 // Junction table linking certificates to tags
 Table certificate_tags {
   id int [pk, increment, note: 'Unique identifier for this tag relationship']
   certificate_id int [ref: > certificates.id, note: 'Reference to the certificate being tagged']
-  tag_id int [ref: > tags.id, note: 'Tag of any type (skill, technology, topic, etc.)']
-  proficiency_level skill_proficiency_level [null, note: 'Skill level if tag is a skill, null for non-skill tags']
+  tag_id int [ref: > tag_proficiencies.id, note: 'Tag of any type (skill, technology, topic, etc.)']
+  type certificate_tag_relationship_type [note: 'Type of relationship (requirement, recommendation, provides)'] 
   metadata jsonb [null, note: 'Additional tag-specific data like specific competencies, context, etc.']
+  
   created_at timestamp [default: `now()`, note: 'When this tag relationship was created']
   
   indexes {
     (certificate_id, tag_id) [unique, note: 'Prevent duplicate tags on a certificate']
-    (tag_id, proficiency_level) [note: 'Find items by tag and skill level']
     (tag_id) [note: 'Find all items for a specific tag']
     (certificate_id) [note: 'Find all tags for a specific certificate']
   }
@@ -995,7 +1038,7 @@ Ref: user_certificates.certificate_id > certificates.id
 
 // Certificate and course tagging relationships
 Ref: certificate_tags.certificate_id > certificates.id
-Ref: certificate_tags.tag_id > tags.id
+Ref: certificate_tags.tag_id > tag_proficiencies.id
 
 Ref: tag_relationships.source_id > tags.id
 Ref: tag_relationships.target_id > tags.id
