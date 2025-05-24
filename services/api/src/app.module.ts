@@ -24,6 +24,7 @@ import { MulterModule } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { SchemaDumpService } from './common/db-schema-dump-service';
 import { CleanupService } from './common/cleanup-unused-db-tables';
+import { GraphqlModule } from './graphql/graphql.module';
 
 @Module({
   imports: [
@@ -32,6 +33,12 @@ import { CleanupService } from './common/cleanup-unused-db-tables';
     TypeOrmModule.forRootAsync({
       inject: [ApiConfigService],
       useFactory: (configService: ApiConfigService) => configService.postgresConfig,
+    }),
+    GraphQLModule.forRoot<ApolloDriverConfig>({
+      driver: ApolloDriver,
+      autoSchemaFile: true,
+      playground: true,
+      introspection: true,
     }),
     CacheModule.registerAsync({
       isGlobal: true,
@@ -50,12 +57,6 @@ import { CleanupService } from './common/cleanup-unused-db-tables';
         },
       }),
     }),
-    GraphQLModule.forRoot<ApolloDriverConfig>({
-      driver: ApolloDriver,
-      autoSchemaFile: true,
-      playground: true,
-      introspection: true,
-    }),
     ClsModule.forRoot({
       global: true,
       middleware: {
@@ -73,6 +74,7 @@ import { CleanupService } from './common/cleanup-unused-db-tables';
     TagModule,
     JobModule,
     AssetModule,
+    GraphqlModule,
   ],
   controllers: [AppController],
   providers: [
