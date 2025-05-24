@@ -1,13 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import {
-  IsEnum,
-  IsMimeType,
-  IsNotEmpty,
-  IsOptional,
-  IsPositive,
-  IsString,
-  MaxLength,
-} from 'class-validator';
+import { IsEnum, IsMimeType, IsNotEmpty, IsOptional, IsPositive, IsString, MaxLength } from 'class-validator';
 import { Column, Index } from 'typeorm';
 import { EntityBase } from '../common/entities/entity.base';
 import { IsIntegerNumber } from '../common/decorators/validator.decorator';
@@ -49,8 +41,7 @@ export class AssetBase extends EntityBase {
   @IsString({ message: 'error.invalidFilename: Filename must be a string.' })
   @IsNotEmpty({ message: 'error.invalidFilename: Filename must not be empty.' })
   @MaxLength(255, {
-    message:
-      'error.invalidFilename: Filename must be shorter than or equal to 255 characters.',
+    message: 'error.invalidFilename: Filename must be shorter than or equal to 255 characters.',
   })
   @Column({ nullable: false, length: 255, default: '' })
   @Index({ unique: false })

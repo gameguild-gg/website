@@ -7,9 +7,7 @@ export class ExcludeFieldsPipe<T extends object> implements PipeTransform {
   transform(value: T) {
     for (const field of this.fieldsToExclude) {
       if (field in value) {
-        throw new BadRequestException(
-          `Field "${String(field)}" should not be present`,
-        );
+        throw new BadRequestException(`Field "${String(field)}" should not be present`);
       }
     }
     return value;

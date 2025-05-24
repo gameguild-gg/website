@@ -33,15 +33,11 @@ export class RouteContentClass<T extends WithRolesEntity> {
   public readonly role: ContentUserRolesEnum;
 }
 
-export const OwnerRoute = <T extends WithRolesEntity>(
-  type: T,
-): RouteContentClass<T> => {
+export const OwnerRoute = <T extends WithRolesEntity>(type: T): RouteContentClass<T> => {
   return new RouteContentClass(ContentUserRolesEnum.OWNER, type);
 };
 
-export const EditorRoute = <T extends WithRolesEntity>(
-  type: T,
-): RouteContentClass<T> => {
+export const EditorRoute = <T extends WithRolesEntity>(type: T): RouteContentClass<T> => {
   return new RouteContentClass(ContentUserRolesEnum.EDITOR, type);
 };
 

@@ -1,21 +1,9 @@
-import {
-  Body,
-  ConflictException,
-  Controller,
-  Logger,
-  Param,
-} from '@nestjs/common';
+import { Body, ConflictException, Controller, Logger, Param } from '@nestjs/common';
 import { ApiBody, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ProjectService } from './project.service';
 import { Auth } from '../auth/decorators/http.decorator';
 import { ProjectEntity } from './entities/project.entity';
-import {
-  Crud,
-  CrudController,
-  CrudRequest,
-  Override,
-  ParsedRequest,
-} from '@dataui/crud';
+import { Crud, CrudController, CrudRequest, Override, ParsedRequest } from '@dataui/crud';
 import { AuthenticatedRoute, EditorRoute, OwnerRoute } from '../auth/auth.enum';
 import { BodyOwnerInject } from '../common/decorators/parameter.decorator';
 import { OwnershipEmptyInterceptor } from './interceptors/ownership-empty-interceptor.service';
@@ -37,12 +25,7 @@ import { CreateProjectDto } from './dtos/create-project.dto';
     create: CreateProjectDto,
   },
   routes: {
-    exclude: [
-      'replaceOneBase',
-      'createManyBase',
-      'createManyBase',
-      'recoverOneBase',
-    ],
+    exclude: ['replaceOneBase', 'createManyBase', 'createManyBase', 'recoverOneBase'],
     getOneBase: {
       decorators: [Auth(AuthenticatedRoute)],
     },
@@ -63,10 +46,7 @@ import { CreateProjectDto } from './dtos/create-project.dto';
 })
 @Controller('project')
 @ApiTags('Project')
-export class ProjectController
-  extends WithRolesController<ProjectEntity>
-  implements CrudController<ProjectEntity>
-{
+export class ProjectController extends WithRolesController<ProjectEntity> implements CrudController<ProjectEntity> {
   private readonly logger = new Logger(ProjectController.name);
 
   constructor(public readonly service: ProjectService) {
@@ -90,10 +70,7 @@ export class ProjectController
   @Auth(AuthenticatedRoute)
   @ApiBody({ type: CreateProjectDto })
   @ApiResponse({ type: ProjectEntity })
-  async createOne(
-    @ParsedRequest() crudReq: CrudRequest,
-    @BodyOwnerInject(CreateProjectDto) body: CreateProjectDto,
-  ) {
+  async createOne(@ParsedRequest() crudReq: CrudRequest, @BodyOwnerInject(CreateProjectDto) body: CreateProjectDto) {
     const project = await this.service.findOne({
       where: { slug: body.slug },
     });
@@ -101,10 +78,7 @@ export class ProjectController
       throw new ConflictException('Project with this slug already exists');
     }
 
-    const res = await this.service.createOne(
-      crudReq,
-      body as Partial<ProjectEntity>,
-    );
+    const res = await this.service.createOne(crudReq, body as Partial<ProjectEntity>);
     return this.service.findOne({
       where: { id: res.id },
       relations: { owner: true, editors: true },
@@ -115,10 +89,7 @@ export class ProjectController
   @Override()
   @Auth(AuthenticatedRoute)
   @ApiResponse({ type: ProjectEntity })
-  async getOne(
-    @ParsedRequest() req: CrudRequest,
-    @Param('slug') slug: string,
-  ): Promise<ProjectEntity> {
+  async getOne(@ParsedRequest() req: CrudRequest, @Param('slug') slug: string): Promise<ProjectEntity> {
     return this.service.findOne({
       where: { slug: slug },
       relations: ['owner', 'editors', 'versions', 'tickets'],
@@ -129,10 +100,7 @@ export class ProjectController
   @Auth<ProjectEntity>(EditorRoute<ProjectEntity>)
   @ApiBody({ type: CreateProjectDto })
   @ApiResponse({ type: ProjectEntity })
-  async updateOne(
-    @ParsedRequest() req: CrudRequest,
-    @Body() dto: CreateProjectDto,
-  ): Promise<ProjectEntity> {
+  async updateOne(@ParsedRequest() req: CrudRequest, @Body() dto: CreateProjectDto): Promise<ProjectEntity> {
     return this.base.updateOneBase(req, dto);
   }
 }

@@ -1,16 +1,7 @@
-import {
-  Inject,
-  Injectable,
-  Logger,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { Inject, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ApiConfigService } from '../common/config.service';
-import {
-  generateHash,
-  generateRandomSalt,
-  validateHash,
-} from '../common/utils/hash';
+import { generateHash, generateRandomSalt, validateHash } from '../common/utils/hash';
 import { NotificationService } from '../notification/notification.service';
 import { UserEntity } from '../user/entities';
 import { UserService } from '../user/user.service';
@@ -80,9 +71,7 @@ export class AuthService {
     });
   }
 
-  public async refreshAccessToken(
-    user: UserEntity,
-  ): Promise<LocalSignInResponseDto> {
+  public async refreshAccessToken(user: UserEntity): Promise<LocalSignInResponseDto> {
     return this.signIn(user);
   }
 
@@ -97,9 +86,7 @@ export class AuthService {
     });
   }
 
-  public async signUpWithEmailUsernamePassword(
-    data: LocalSignUpDto,
-  ): Promise<LocalSignInResponseDto> {
+  public async signUpWithEmailUsernamePassword(data: LocalSignUpDto): Promise<LocalSignInResponseDto> {
     const passwordSalt = generateRandomSalt();
     const passwordHash = generateHash(data.password, passwordSalt);
 
@@ -186,9 +173,7 @@ export class AuthService {
     return Boolean(foundUser);
   }
 
-  async signInWithEmailOrPassword(
-    data: LocalSignInDto,
-  ): Promise<LocalSignInResponseDto> {
+  async signInWithEmailOrPassword(data: LocalSignInDto): Promise<LocalSignInResponseDto> {
     const user = await this.validateLocalSignIn(data);
     const response = await this.signIn(user);
     // const today = new Date();
@@ -222,9 +207,7 @@ export class AuthService {
     return { success: true, message: 'Email sent.' };
   }
 
-  async generateWeb3SignInChallenge(
-    data: EthereumSigninChallengeRequestDto,
-  ): Promise<EthereumSigninChallengeResponseDto> {
+  async generateWeb3SignInChallenge(data: EthereumSigninChallengeRequestDto): Promise<EthereumSigninChallengeResponseDto> {
     // use siwe to generate the message to be signed
     const termOfServiceUrl: string = `${this.configService.hostFrontendUrl}/tos`;
     const siwe = new SiweMessage({
@@ -247,17 +230,13 @@ export class AuthService {
     return { message };
   }
 
-  async validateWeb3SignInChallenge(
-    data: EthereumSigninValidateRequestDto,
-  ): Promise<LocalSignInResponseDto> {
+  async validateWeb3SignInChallenge(data: EthereumSigninValidateRequestDto): Promise<LocalSignInResponseDto> {
     const key = `web3:challenge:message:${data.address}`;
 
     const expectedMessage = await this.cacheManager.get<string>(key);
 
     if (!expectedMessage) {
-      throw new UnauthorizedException(
-        'Invalid message challenge. Maybe expired? Try again.',
-      );
+      throw new UnauthorizedException('Invalid message challenge. Maybe expired? Try again.');
     }
 
     let walletAddress: string;
@@ -288,19 +267,14 @@ export class AuthService {
   }
 
   async validateGoogleSignIn(idToken: string): Promise<LocalSignInResponseDto> {
-    const client = new OAuth2Client(
-      this.configService.authConfig.googleClientId,
-    );
+    const client = new OAuth2Client(this.configService.authConfig.googleClientId);
     let ticket: LoginTicket;
     try {
       ticket = await client.verifyIdToken({
         idToken: idToken,
       });
     } catch (exception) {
-      throw new UnauthorizedException(
-        'Unauthorized: ' + exception,
-        'Invalid Google ID Token',
-      );
+      throw new UnauthorizedException('Unauthorized: ' + exception, 'Invalid Google ID Token');
     }
     const payload: TokenPayload = ticket.getPayload();
 

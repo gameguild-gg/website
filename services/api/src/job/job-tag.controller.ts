@@ -18,12 +18,7 @@ import { CrudController, Crud } from '@dataui/crud';
     },
   },
   routes: {
-    exclude: [
-      'replaceOneBase',
-      'createManyBase',
-      'createManyBase',
-      'recoverOneBase',
-    ],
+    exclude: ['replaceOneBase', 'createManyBase', 'createManyBase', 'recoverOneBase'],
     getOneBase: {
       decorators: [Auth(AuthenticatedRoute)],
     },

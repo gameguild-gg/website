@@ -101,9 +101,7 @@ export function IsNullable(options?: ValidationOptions): PropertyDecorator {
   return ValidateIf((_obj, value) => value !== null, options);
 }
 
-export function IsIntegerNumber(
-  validationOptions?: ValidationOptions,
-): PropertyDecorator {
+export function IsIntegerNumber(validationOptions?: ValidationOptions): PropertyDecorator {
   return (target: any, propertyKey: string | symbol) => {
     registerDecorator({
       target: target.constructor,

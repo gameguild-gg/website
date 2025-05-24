@@ -6,9 +6,7 @@ import { Injectable } from '@nestjs/common';
 
 @Injectable()
 export class QuizService extends TypeOrmCrudService<QuizEntity> {
-  constructor(
-    @InjectRepository(QuizEntity) protected repo: Repository<QuizEntity>,
-  ) {
+  constructor(@InjectRepository(QuizEntity) protected repo: Repository<QuizEntity>) {
     super(repo);
   }
 }

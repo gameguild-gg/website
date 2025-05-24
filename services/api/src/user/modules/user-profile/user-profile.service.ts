@@ -15,10 +15,7 @@ export class UserProfileService {
     public readonly assetService: AssetService,
   ) {}
 
-  async updateProfilePicture(
-    user: UserEntity,
-    file: Express.Multer.File,
-  ): Promise<UserProfileEntity> {
+  async updateProfilePicture(user: UserEntity, file: Express.Multer.File): Promise<UserProfileEntity> {
     const profile = await this.repository.findOne({
       where: { user: { id: user.id } },
     });

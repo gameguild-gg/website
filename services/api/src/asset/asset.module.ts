@@ -14,12 +14,7 @@ import { CompressImageService } from './compress.image.service';
 @Module({
   imports: [TypeOrmModule.forFeature([ImageEntity]), CommonModule],
   controllers: [AssetController],
-  providers: [
-    AssetService,
-    FileCacheStorageService,
-    S3ImageStorage,
-    CompressImageService,
-  ],
+  providers: [AssetService, FileCacheStorageService, S3ImageStorage, CompressImageService],
   exports: [AssetService],
 })
 export class AssetModule {}

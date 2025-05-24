@@ -28,10 +28,7 @@ export class CompetitionRunEntity extends EntityBase {
   @ApiProperty({ enum: CompetitionGame })
   gameType: CompetitionGame;
 
-  @OneToMany(
-    () => CompetitionMatchEntity,
-    (competitionMatch) => competitionMatch.run,
-  )
+  @OneToMany(() => CompetitionMatchEntity, (competitionMatch) => competitionMatch.run)
   @ApiProperty({ type: () => CompetitionMatchEntity, isArray: true })
   matches: CompetitionMatchEntity[];
 

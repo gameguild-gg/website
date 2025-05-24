@@ -1,8 +1,4 @@
-import {
-  applyDecorators,
-  UnprocessableEntityException,
-  UseInterceptors,
-} from '@nestjs/common';
+import { applyDecorators, UnprocessableEntityException, UseInterceptors } from '@nestjs/common';
 import { ApiBody, ApiConsumes } from '@nestjs/swagger';
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { MulterOptions } from '@nestjs/platform-express/multer/interfaces/multer-options.interface';
@@ -27,9 +23,7 @@ export class ApiFileFieldOptions {
 
 export function ApiFile(options: ApiFileOptions) {
   const isMultipleFields = Array.isArray(options.fieldOptions);
-  const fieldOptions = isMultipleFields
-    ? (options.fieldOptions as ApiFileFieldOptions[])
-    : [options.fieldOptions as ApiFileFieldOptions];
+  const fieldOptions = isMultipleFields ? (options.fieldOptions as ApiFileFieldOptions[]) : [options.fieldOptions as ApiFileFieldOptions];
 
   options.destination = options.destination || '/tmp/uploads';
   options.maxFileSize = options.maxFileSize || 1024 * 1024 * 2;
@@ -44,32 +38,12 @@ export function ApiFile(options: ApiFileOptions) {
     },
     fileFilter: (req, file, cb) => {
       const fileExtension = file.originalname.split('.').pop();
-      if (
-        options.acceptedFileExtensions.length > 0 &&
-        !options.acceptedFileExtensions.includes(fileExtension)
-      ) {
-        return cb(
-          new UnprocessableEntityException(
-            `File extension not allowed. Accepted extensions: ${options.acceptedFileExtensions.join(
-              ', ',
-            )}`,
-          ),
-          false,
-        );
+      if (options.acceptedFileExtensions.length > 0 && !options.acceptedFileExtensions.includes(fileExtension)) {
+        return cb(new UnprocessableEntityException(`File extension not allowed. Accepted extensions: ${options.acceptedFileExtensions.join(', ')}`), false);
       }
 
-      if (
-        options.acceptedMimeTypes.length > 0 &&
-        !options.acceptedMimeTypes.includes(file.mimetype)
-      ) {
-        return cb(
-          new UnprocessableEntityException(
-            `File type not allowed. Accepted types: ${options.acceptedMimeTypes.join(
-              ', ',
-            )}`,
-          ),
-          false,
-        );
+      if (options.acceptedMimeTypes.length > 0 && !options.acceptedMimeTypes.includes(file.mimetype)) {
+        return cb(new UnprocessableEntityException(`File type not allowed. Accepted types: ${options.acceptedMimeTypes.join(', ')}`), false);
       }
 
       cb(null, true);
@@ -81,48 +55,31 @@ export function ApiFile(options: ApiFileOptions) {
     ApiBody({
       schema: {
         type: 'object',
-        properties: fieldOptions.reduce<Record<string, SchemaObject>>(
-          (acc, field) => {
-            const isArray = (field.maxCount || 1) > 1;
-            acc[field.fieldName || 'file'] = isArray
-              ? {
-                  type: 'array',
-                  items: {
-                    type: 'string',
-                    format: 'binary',
-                  },
-                }
-              : {
+        properties: fieldOptions.reduce<Record<string, SchemaObject>>((acc, field) => {
+          const isArray = (field.maxCount || 1) > 1;
+          acc[field.fieldName || 'file'] = isArray
+            ? {
+                type: 'array',
+                items: {
                   type: 'string',
                   format: 'binary',
-                };
-            return acc;
-          },
-          {},
-        ),
+                },
+              }
+            : {
+                type: 'string',
+                format: 'binary',
+              };
+          return acc;
+        }, {}),
       },
     }),
   ];
 
   if (isMultipleFields) {
-    decorators.push(
-      UseInterceptors(
-        ...fieldOptions.map((field) =>
-          FilesInterceptor(
-            field.fieldName || 'file',
-            field.maxCount,
-            multerOptions,
-          ),
-        ),
-      ),
-    );
+    decorators.push(UseInterceptors(...fieldOptions.map((field) => FilesInterceptor(field.fieldName || 'file', field.maxCount, multerOptions))));
   } else {
     const singleField = fieldOptions[0];
-    decorators.push(
-      UseInterceptors(
-        FileInterceptor(singleField.fieldName || 'file', multerOptions),
-      ),
-    );
+    decorators.push(UseInterceptors(FileInterceptor(singleField.fieldName || 'file', multerOptions)));
   }
 
   return applyDecorators(...decorators);

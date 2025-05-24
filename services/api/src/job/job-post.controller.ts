@@ -1,11 +1,4 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Logger,
-  Param,
-  UseInterceptors,
-} from '@nestjs/common';
+import { Body, Controller, Get, Logger, Param, UseInterceptors } from '@nestjs/common';
 import { ApiBody, ApiResponse, ApiTags, getSchemaPath } from '@nestjs/swagger';
 import { Swagger } from '@dataui/crud/lib/crud';
 import { JobPostService } from './job-post.service';
@@ -14,14 +7,7 @@ import { JobPostEntity } from './entities/job-post.entity';
 import { AuthenticatedRoute, OwnerRoute } from '../auth/auth.enum';
 import { OwnershipEmptyInterceptor } from '../cms/interceptors/ownership-empty-interceptor.service';
 import { WithRolesController } from 'src/cms/with-roles.controller';
-import {
-  CrudController,
-  Crud,
-  Override,
-  CrudRequest,
-  ParsedRequest,
-  CrudRequestInterceptor,
-} from '@dataui/crud';
+import { CrudController, Crud, Override, CrudRequest, ParsedRequest, CrudRequestInterceptor } from '@dataui/crud';
 import { JobPostCreateDto } from './dtos/job-post-create.dto';
 import { ExcludeFieldsPipe } from 'src/cms/pipes/exclude-fields.pipe';
 import { BodyOwnerInject } from 'src/common/decorators/parameter.decorator';
@@ -46,12 +32,7 @@ import { PartialWithoutFields } from '../types';
     create: JobPostCreateDto,
   },
   routes: {
-    exclude: [
-      'replaceOneBase',
-      'createManyBase',
-      'createManyBase',
-      'recoverOneBase',
-    ],
+    exclude: ['replaceOneBase', 'createManyBase', 'createManyBase', 'recoverOneBase'],
     getOneBase: {
       decorators: [Auth(AuthenticatedRoute)],
     },
@@ -82,10 +63,7 @@ import { PartialWithoutFields } from '../types';
 })
 @Controller('job-posts')
 @ApiTags('Job Posts')
-export class JobPostController
-  extends WithRolesController<JobPostEntity>
-  implements CrudController<JobPostEntity>
-{
+export class JobPostController extends WithRolesController<JobPostEntity> implements CrudController<JobPostEntity> {
   private readonly logger = new Logger(JobPostController.name);
 
   constructor(public service: JobPostService) {
@@ -96,10 +74,7 @@ export class JobPostController
       model: { type: JobPostWithAppliedDto },
       query: { softDelete: false },
     });
-    Swagger.setParams(
-      [...metadata, ...queryParamsMeta],
-      this.getManyWithApplied,
-    );
+    Swagger.setParams([...metadata, ...queryParamsMeta], this.getManyWithApplied);
   }
 
   get base(): CrudController<JobPostEntity> {
@@ -109,10 +84,7 @@ export class JobPostController
   @Override()
   @Auth(AuthenticatedRoute)
   @ApiBody({ type: JobPostCreateDto })
-  async createOne(
-    @ParsedRequest() crudReq: CrudRequest,
-    @BodyOwnerInject(JobPostCreateDto) body: JobPostCreateDto,
-  ) {
+  async createOne(@ParsedRequest() crudReq: CrudRequest, @BodyOwnerInject(JobPostCreateDto) body: JobPostCreateDto) {
     return await this.service.createOneJob(crudReq, body);
   }
 
@@ -121,18 +93,8 @@ export class JobPostController
   @ApiBody({ type: JobPostEntity })
   async updateOne(
     @ParsedRequest() req: CrudRequest,
-    @Body(
-      new ExcludeFieldsPipe<JobPostEntity>([
-        'owner',
-        'editors',
-        'createdAt',
-        'updatedAt',
-      ]),
-    )
-    dto: PartialWithoutFields<
-      JobPostEntity,
-      'owner' | 'editors' | 'createdAt' | 'updatedAt'
-    >,
+    @Body(new ExcludeFieldsPipe<JobPostEntity>(['owner', 'editors', 'createdAt', 'updatedAt']))
+    dto: PartialWithoutFields<JobPostEntity, 'owner' | 'editors' | 'createdAt' | 'updatedAt'>,
   ): Promise<JobPostEntity> {
     return this.base.updateOneBase(req, dto);
   }
@@ -145,10 +107,7 @@ export class JobPostController
     type: [JobPostWithAppliedDto],
     schema: { $ref: getSchemaPath(Array<JobPostWithAppliedDto>) },
   })
-  async getManyWithApplied(
-    @ParsedRequest() req: CrudRequest,
-    @UserInject() user: UserEntity,
-  ): Promise<JobPostWithAppliedDto[]> {
+  async getManyWithApplied(@ParsedRequest() req: CrudRequest, @UserInject() user: UserEntity): Promise<JobPostWithAppliedDto[]> {
     return this.service.getManyWithApplied(req, user.id);
   }
 
@@ -170,10 +129,7 @@ export class JobPostController
     schema: { $ref: getSchemaPath(JobPostEntity) },
     status: 200,
   })
-  async getBySlugForOwner(
-    @Param('slug') slug: string,
-    @UserInject() user: UserEntity,
-  ): Promise<JobPostWithApplicationsDto> {
+  async getBySlugForOwner(@Param('slug') slug: string, @UserInject() user: UserEntity): Promise<JobPostWithApplicationsDto> {
     return this.service.getBySlugForOwner(slug, user.id);
   }
 }

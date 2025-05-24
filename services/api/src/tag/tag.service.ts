@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { TypeOrmCrudService } from "@dataui/crud-typeorm";
-import { TagEntity } from "./tag.entity";
-import { InjectRepository } from "@nestjs/typeorm";
-import { Repository } from "typeorm";
+import { TypeOrmCrudService } from '@dataui/crud-typeorm';
+import { TagEntity } from './tag.entity';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class TagService extends TypeOrmCrudService<TagEntity> {
@@ -12,5 +12,4 @@ export class TagService extends TypeOrmCrudService<TagEntity> {
   ) {
     super(repository);
   }
-  
 }

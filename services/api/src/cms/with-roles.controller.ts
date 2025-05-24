@@ -14,51 +14,37 @@ export class WithRolesController<T extends WithRolesEntity = never> {
   // switch owner
   @Post('transfer-ownership')
   @Auth<T>(OwnerRoute<T>)
-  async switchOwner(
-    @AuthUser() user: UserEntity,
-    @Body() body: TransferOwnershipRequestDto,
-  ) {
+  async switchOwner(@AuthUser() user: UserEntity, @Body() body: TransferOwnershipRequestDto) {
     return this.withRolesService.SwitchOwner(body.id, user.id, body.newUser.id);
   }
 
   // add editor
   @Post('add-editor')
   @Auth<T>(OwnerRoute<T>)
-  async addEditor(
-    @AuthUser() user: UserEntity,
-    @Body() body: EditorRequestDto,
-  ) {
+  async addEditor(@AuthUser() user: UserEntity, @Body() body: EditorRequestDto) {
     return this.withRolesService.AddEditor(body.id, body.editor.id);
   }
 
   // remove editor
   @Post('remove-editor')
   @Auth<T>(OwnerRoute<T>)
-  async removeEditor(
-    @AuthUser() user: UserEntity,
-    @Body() body: EditorRequestDto,
-  ) {
+  async removeEditor(@AuthUser() user: UserEntity, @Body() body: EditorRequestDto) {
     return this.withRolesService.RemoveEditor(body.id, body.editor.id);
   }
 
   @Get('get-owned-by-me')
-  @ApiOperation({description: "Obtains all items the current users owns."})
-  @ApiOkResponse({status:200})
+  @ApiOperation({ description: 'Obtains all items the current users owns.' })
+  @ApiOkResponse({ status: 200 })
   @Auth<T>(OwnerRoute<T>)
-  async ownedByMe(
-    @AuthUser() user: UserEntity,
-  ) {
+  async ownedByMe(@AuthUser() user: UserEntity) {
     return this.withRolesService.getAllOwnedByMe(user.id);
   }
 
   @Get('get-editable-by-me')
-  @ApiOperation({description: "Obtains all items the current users has permission to edit."})
-  @ApiOkResponse({status:200})
+  @ApiOperation({ description: 'Obtains all items the current users has permission to edit.' })
+  @ApiOkResponse({ status: 200 })
   @Auth<T>(OwnerRoute<T>)
-  async ICanEdit(
-    @AuthUser() user: UserEntity,
-  ) {
+  async ICanEdit(@AuthUser() user: UserEntity) {
     return this.withRolesService.getAllEditableByMe(user.id);
   }
-
 }

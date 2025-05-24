@@ -1,19 +1,5 @@
-import {
-  Body,
-  Controller,
-  Logger,
-  Post,
-  UnprocessableEntityException,
-  UploadedFile,
-  UseInterceptors,
-} from '@nestjs/common';
-import {
-  ApiBody,
-  ApiConsumes,
-  ApiProperty,
-  ApiResponse,
-  ApiTags,
-} from '@nestjs/swagger';
+import { Body, Controller, Logger, Post, UnprocessableEntityException, UploadedFile, UseInterceptors } from '@nestjs/common';
+import { ApiBody, ApiConsumes, ApiProperty, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { AssetService } from './asset.service';
 import { Auth, AuthUser } from '../auth';
 import { AuthenticatedRoute, PublicRoute } from '../auth/auth.enum';

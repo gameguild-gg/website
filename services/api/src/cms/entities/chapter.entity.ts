@@ -4,13 +4,7 @@ import { CourseEntity } from './course.entity';
 import { LectureEntity } from './lecture.entity';
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import {
-  IsArray,
-  IsNotEmpty,
-  IsNumber,
-  IsOptional,
-  ValidateNested,
-} from 'class-validator';
+import { IsArray, IsNotEmpty, IsNumber, IsOptional, ValidateNested } from 'class-validator';
 
 @Entity({ name: 'chapter' })
 export class ChapterEntity extends ContentBase {

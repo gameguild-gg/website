@@ -1,11 +1,4 @@
-import {
-  ClassSerializerInterceptor,
-  HttpStatus,
-  INestApplication,
-  Logger,
-  UnprocessableEntityException,
-  ValidationPipe,
-} from '@nestjs/common';
+import { ClassSerializerInterceptor, HttpStatus, INestApplication, Logger, UnprocessableEntityException, ValidationPipe } from '@nestjs/common';
 import { NestFactory, Reflector } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { CommonModule } from './common/common.module';
@@ -18,11 +11,7 @@ export async function bootstrap(): Promise<INestApplication> {
   const app = await NestFactory.create(AppModule, { cors: true });
   app.use(compression({}));
   app.enableCors({
-    origin: [
-      'http://localhost:3000',
-      'https://web.gameguild.gg',
-      'https://gameguild.gg',
-    ],
+    origin: ['http://localhost:3000', 'https://web.gameguild.gg', 'https://gameguild.gg'],
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     preflightContinue: false,
     optionsSuccessStatus: 204,
@@ -51,9 +40,7 @@ export async function bootstrap(): Promise<INestApplication> {
   //     new QueryFailedFilter(reflector),
   // );
 
-  app.useGlobalFilters(
-    new GlobalHttpExceptionFilter(app.get(Reflector), configService),
-  );
+  app.useGlobalFilters(new GlobalHttpExceptionFilter(app.get(Reflector), configService));
 
   app.useGlobalInterceptors(
     new ClassSerializerInterceptor(app.get(Reflector)),
@@ -105,9 +92,7 @@ export async function bootstrap(): Promise<INestApplication> {
   await app.listen(port);
 
   logger.verbose(`server running on ${await app.getUrl()}`);
-  logger.verbose(
-    `Documentation: http://localhost:${configService.appConfig.port}/documentation`,
-  );
+  logger.verbose(`Documentation: http://localhost:${configService.appConfig.port}/documentation`);
 
   return app;
 }

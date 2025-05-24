@@ -8,8 +8,7 @@ export class RefreshTokenPayloadDto {
   @IsString({ message: 'error.invalidSub: Sub must be a string.' })
   @IsNotEmpty({ message: 'error.invalidSub: Sub must not be empty.' })
   @MaxLength(256, {
-    message:
-      'error.invalidSub: Sub must be shorter than or equal to 256 characters.',
+    message: 'error.invalidSub: Sub must be shorter than or equal to 256 characters.',
   })
   sub: string;
 

@@ -9,13 +9,13 @@ export class FileDto {
   @ApiProperty({
     oneOf: [
       { type: 'string' },
-      { 
-        type: 'string', 
+      {
+        type: 'string',
         format: 'binary',
-        description: 'Binary content represented as base64 string'
-      }
+        description: 'Binary content represented as base64 string',
+      },
     ],
-    description: 'File content as string or binary data (base64 encoded)'
+    description: 'File content as string or binary data (base64 encoded)',
   })
   @IsNotEmpty()
   content: Uint8Array | string;

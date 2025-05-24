@@ -15,11 +15,7 @@ export class NotificationService {
     // TODO: Implement this method.
   }
 
-  public async sendEmailNotification(
-    email: string,
-    subject: string,
-    message: string,
-  ) {
+  public async sendEmailNotification(email: string, subject: string, message: string) {
     await this.mailService.send({
       to: email,
       from: 'no-reply@gameguild.gg',

@@ -1,20 +1,6 @@
-import {
-  applyDecorators,
-  Param,
-  ParseUUIDPipe,
-  type PipeTransform,
-  UseGuards,
-  UseInterceptors,
-} from '@nestjs/common';
+import { applyDecorators, Param, ParseUUIDPipe, type PipeTransform, UseGuards, UseInterceptors } from '@nestjs/common';
 import { type Type } from '@nestjs/common/interfaces';
-import {
-  AuthenticatedRoute,
-  EditorRoute,
-  OwnerRoute,
-  PublicRoute,
-  RefreshTokenRoute,
-  RouteContentClass,
-} from '../auth.enum';
+import { AuthenticatedRoute, EditorRoute, OwnerRoute, PublicRoute, RefreshTokenRoute, RouteContentClass } from '../auth.enum';
 import {
   ApiBadRequestResponse,
   ApiBearerAuth,
@@ -35,16 +21,9 @@ import { ApiErrorResponseDto } from '../../common/filters/global-http-exception.
 
 // todo: how to make T optional and extract it from the parameter?
 export const Auth = <T extends WithRolesEntity>(
-  options:
-    | typeof OwnerRoute<T>
-    | typeof EditorRoute<T>
-    | typeof PublicRoute
-    | typeof AuthenticatedRoute
-    | typeof RefreshTokenRoute,
+  options: typeof OwnerRoute<T> | typeof EditorRoute<T> | typeof PublicRoute | typeof AuthenticatedRoute | typeof RefreshTokenRoute,
 ): MethodDecorator => {
-  const decorators: Array<
-    ClassDecorator | MethodDecorator | PropertyDecorator
-  > = [];
+  const decorators: Array<ClassDecorator | MethodDecorator | PropertyDecorator> = [];
 
   decorators.push(
     ApiInternalServerErrorResponse({
@@ -118,9 +97,6 @@ export const Auth = <T extends WithRolesEntity>(
   return applyDecorators(...decorators);
 };
 
-export function UUIDParam(
-  property: string,
-  ...pipes: Array<Type<PipeTransform> | PipeTransform>
-): ParameterDecorator {
+export function UUIDParam(property: string, ...pipes: Array<Type<PipeTransform> | PipeTransform>): ParameterDecorator {
   return Param(property, new ParseUUIDPipe({ version: '4' }), ...pipes);
 }

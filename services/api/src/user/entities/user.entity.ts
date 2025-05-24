@@ -1,29 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Exclude, Type } from 'class-transformer';
-import {
-  Column,
-  Entity,
-  Index,
-  JoinColumn,
-  JoinTable,
-  ManyToMany,
-  OneToMany,
-  OneToOne,
-} from 'typeorm';
+import { Column, Entity, Index, JoinColumn, JoinTable, ManyToMany, OneToMany, OneToOne } from 'typeorm';
 import { EntityBase } from '../../common/entities/entity.base';
 import { UserProfileEntity } from '../modules/user-profile/entities/user-profile.entity';
 import { CompetitionSubmissionEntity } from '../../competition/entities/competition.submission.entity';
 import { PostEntity } from '../../cms/entities/post.entity';
-import {
-  IsEmail,
-  IsUsername,
-} from '../../common/decorators/validator.decorator';
-import {
-  IsArray,
-  IsBoolean,
-  IsOptional,
-  ValidateNested,
-} from 'class-validator';
+import { IsEmail, IsUsername } from '../../common/decorators/validator.decorator';
+import { IsArray, IsBoolean, IsOptional, ValidateNested } from 'class-validator';
 
 // todo: move to user-profile lots of fields from here
 

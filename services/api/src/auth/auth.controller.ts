@@ -11,11 +11,7 @@ import { EthereumSigninChallengeRequestDto } from '../dtos/auth/ethereum-signin-
 import { EthereumSigninChallengeResponseDto } from '../dtos/auth/ethereum-signin-challenge-response.dto';
 import { EmailDto } from './dtos/email.dto';
 import { OkDto } from '../common/dtos/ok.dto';
-import {
-  AuthenticatedRoute,
-  PublicRoute,
-  RefreshTokenRoute,
-} from './auth.enum';
+import { AuthenticatedRoute, PublicRoute, RefreshTokenRoute } from './auth.enum';
 
 @Controller('auth')
 @ApiTags('auth')
@@ -36,9 +32,7 @@ export class AuthController {
   @Post('local/sign-up')
   @Auth(PublicRoute)
   @ApiResponse({ type: LocalSignInResponseDto }) // pass the type to the swagger
-  public async signUpWithEmailUsernamePassword(
-    @Body() data: LocalSignUpDto,
-  ): Promise<LocalSignInResponseDto> {
+  public async signUpWithEmailUsernamePassword(@Body() data: LocalSignUpDto): Promise<LocalSignInResponseDto> {
     const resp = await this.authService.signUpWithEmailUsernamePassword(data);
     return resp;
   }
@@ -46,45 +40,35 @@ export class AuthController {
   @Get('google/callback/:token')
   @ApiResponse({ type: LocalSignInResponseDto })
   @Auth(PublicRoute)
-  public async signInWithGoogle(
-    @Param('token') token: string,
-  ): Promise<LocalSignInResponseDto> {
+  public async signInWithGoogle(@Param('token') token: string): Promise<LocalSignInResponseDto> {
     return this.authService.validateGoogleSignIn(token);
   }
 
   @Post('web3/sign-in/challenge')
   @Auth(PublicRoute)
   @ApiResponse({ type: EthereumSigninChallengeResponseDto })
-  public async getWeb3SignInChallenge(
-    @Body() data: EthereumSigninChallengeRequestDto,
-  ): Promise<EthereumSigninChallengeResponseDto> {
+  public async getWeb3SignInChallenge(@Body() data: EthereumSigninChallengeRequestDto): Promise<EthereumSigninChallengeResponseDto> {
     return this.authService.generateWeb3SignInChallenge(data);
   }
 
   @Post('web3/sign-in/validate')
   @Auth(PublicRoute)
   @ApiResponse({ type: LocalSignInResponseDto })
-  public async validateWeb3SignInChallenge(
-    @Body() data: EthereumSigninValidateRequestDto,
-  ): Promise<LocalSignInResponseDto> {
+  public async validateWeb3SignInChallenge(@Body() data: EthereumSigninValidateRequestDto): Promise<LocalSignInResponseDto> {
     return this.authService.validateWeb3SignInChallenge(data);
   }
 
   @Get('me')
   @Auth(AuthenticatedRoute)
   @ApiResponse({ type: UserEntity })
-  public async getCurrentUser(
-    @AuthUser() user: UserEntity,
-  ): Promise<UserEntity> {
+  public async getCurrentUser(@AuthUser() user: UserEntity): Promise<UserEntity> {
     return this.authService.getUserWithProfile(user.id);
   }
 
   @Get('refresh-token')
   @Auth(RefreshTokenRoute)
   @ApiResponse({ type: LocalSignInResponseDto })
-  public async refreshToken(
-    @AuthUser() user: UserEntity,
-  ): Promise<LocalSignInResponseDto> {
+  public async refreshToken(@AuthUser() user: UserEntity): Promise<LocalSignInResponseDto> {
     return this.authService.refreshAccessToken(user);
   }
 

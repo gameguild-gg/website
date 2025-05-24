@@ -15,10 +15,7 @@ import { plainToClass, plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 import 'reflect-metadata';
 
-export function UUIDParam(
-  property: string,
-  ...pipes: Array<Type<PipeTransform> | PipeTransform>
-): ParameterDecorator {
+export function UUIDParam(property: string, ...pipes: Array<Type<PipeTransform> | PipeTransform>): ParameterDecorator {
   return Param(property, new ParseUUIDPipe({ version: '4' }), ...pipes);
 }
 
@@ -28,9 +25,7 @@ export const BodyOwnerInject = (type: Type<any>) =>
 
     const body = request.body;
     if (!body) {
-      throw new BadRequestException(
-        'error.body: Request body not found in the context.',
-      );
+      throw new BadRequestException('error.body: Request body not found in the context.');
     }
 
     // Validate the body using the provided type
@@ -42,9 +37,7 @@ export const BodyOwnerInject = (type: Type<any>) =>
 
     const user = request.user as UserEntity;
     if (!user) {
-      throw new BadRequestException(
-        'error.user: User not found in the context, have you missed the AuthUserInterceptor?',
-      );
+      throw new BadRequestException('error.user: User not found in the context, have you missed the AuthUserInterceptor?');
     }
 
     (body as WithRolesEntity).owner = user;

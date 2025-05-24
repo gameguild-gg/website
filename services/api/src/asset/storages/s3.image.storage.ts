@@ -1,18 +1,9 @@
 import { OkDto } from 'src/common/dtos/ok.dto';
 import { AssetBase } from '../asset.base';
 import { Storage } from '../storage';
-import {
-  GetObjectCommand,
-  PutObjectCommand,
-  DeleteObjectCommand,
-  S3Client,
-} from '@aws-sdk/client-s3';
+import { GetObjectCommand, PutObjectCommand, DeleteObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { ApiConfigService } from '../../common/config.service';
-import {
-  AssetOnDisk,
-  AssetOnDiskWithWidthAndHeight,
-  FileCacheStorageService,
-} from './filecache.storage';
+import { AssetOnDisk, AssetOnDiskWithWidthAndHeight, FileCacheStorageService } from './filecache.storage';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import * as fs from 'node:fs';
 
@@ -61,9 +52,7 @@ export class S3ImageStorage extends Storage {
     this.assetFolder = configService.assetCacheDir;
   }
 
-  async store(
-    file: Express.Multer.File,
-  ): Promise<AssetOnDiskWithWidthAndHeight> {
+  async store(file: Express.Multer.File): Promise<AssetOnDiskWithWidthAndHeight> {
     const metadata = await sharp(file.path).metadata();
     const cached = await this.filecache.store(file);
 

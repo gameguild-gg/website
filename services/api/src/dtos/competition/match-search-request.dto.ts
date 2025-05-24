@@ -1,14 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import {
-  IsAlphanumeric,
-  IsNotEmpty,
-  IsNumber,
-  IsOptional,
-  IsString,
-  Max,
-  MaxLength,
-  Min,
-} from 'class-validator';
+import { IsAlphanumeric, IsNotEmpty, IsNumber, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
 
 // todo: move this to a package to be shared between services/api and services/match
 export class MatchSearchRequestDto {
@@ -17,29 +8,22 @@ export class MatchSearchRequestDto {
   @IsOptional()
   @IsString({ message: 'error.invalidUsername: Username must be a string.' })
   @MaxLength(32, {
-    message:
-      'error.invalidUsername: Username must be shorter than or equal to 32 characters.',
+    message: 'error.invalidUsername: Username must be shorter than or equal to 32 characters.',
   })
   @IsAlphanumeric('en-US', {
-    message:
-      'error.invalidUsername: Username must be alphanumeric without any special characters.',
+    message: 'error.invalidUsername: Username must be alphanumeric without any special characters.',
   })
   username?: string;
 
   // pageSize
   @ApiProperty({ required: true, default: 100 })
   @IsNotEmpty({ message: 'error.invalidPageSize: PageSize must not be empty.' })
-  @IsNumber(
-    {},
-    { message: 'error.invalidPageSize: PageSize must be a number.' },
-  )
+  @IsNumber({}, { message: 'error.invalidPageSize: PageSize must be a number.' })
   @Min(1, {
-    message:
-      'error.invalidPageSize: PageSize must be greater than or equal to 1.',
+    message: 'error.invalidPageSize: PageSize must be greater than or equal to 1.',
   })
   @Max(100, {
-    message:
-      'error.invalidPageSize: PageSize must be less than or equal to 100.',
+    message: 'error.invalidPageSize: PageSize must be less than or equal to 100.',
   })
   pageSize: number = 100;
 

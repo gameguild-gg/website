@@ -7,11 +7,7 @@ import { NotificationModule } from '../notification/notification.module';
 import { UserModule } from '../user/user.module';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
-import {
-  JwtStrategy,
-  PublicStrategy,
-  RefreshTokenStrategy,
-} from './strategies';
+import { JwtStrategy, PublicStrategy, RefreshTokenStrategy } from './strategies';
 
 @Module({
   imports: [

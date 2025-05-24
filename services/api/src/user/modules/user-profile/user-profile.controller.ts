@@ -17,10 +17,7 @@ export class UserProfileController {
   @Patch('me')
   @Auth(AuthenticatedRoute)
   @ApiResponse({ type: UserProfileEntity })
-  async update(
-    @AuthUser() user: UserEntity,
-    @Body() body: UpdateUserProfileDto,
-  ): Promise<UserProfileEntity> {
+  async update(@AuthUser() user: UserEntity, @Body() body: UpdateUserProfileDto): Promise<UserProfileEntity> {
     const profile = await this.service.repository.findOne({
       where: { user: { id: user.id } },
       select: { id: true },
@@ -46,10 +43,7 @@ export class UserProfileController {
     maxFileSize: 1024 * 1024 * 2,
   })
   @ApiResponse({ type: UserProfileEntity })
-  async updateProfilePicture(
-    @AuthUser() user: UserEntity,
-    @UploadedFile() file: Express.Multer.File,
-  ) {
+  async updateProfilePicture(@AuthUser() user: UserEntity, @UploadedFile() file: Express.Multer.File) {
     return this.service.updateProfilePicture(user, file);
   }
 }

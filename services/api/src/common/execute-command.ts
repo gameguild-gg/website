@@ -13,9 +13,7 @@ export class ExecuteCommandResult {
   duration?: number; // nanoseconds
 }
 
-async function ExecuteCommand(
-  data: ExecuteCommandOptions,
-): Promise<ExecuteCommandResult> {
+async function ExecuteCommand(data: ExecuteCommandOptions): Promise<ExecuteCommandResult> {
   const { timeout, logoutput, command, stdin } = data;
   const startTime = process.hrtime();
 
@@ -61,12 +59,8 @@ async function ExecuteCommand(
           duration: durationInNano,
         });
       } else {
-        let x = stderrData.split('\n');
-        reject(
-          new Error(
-            `Command failed with code ${code}:\n"${stderrData}"\noutput:\n"${stdoutData}"\nstdin:\n"${stdin}"\n`,
-          ),
-        );
+        const x = stderrData.split('\n');
+        reject(new Error(`Command failed with code ${code}:\n"${stderrData}"\noutput:\n"${stdoutData}"\nstdin:\n"${stdin}"\n`));
       }
     });
 

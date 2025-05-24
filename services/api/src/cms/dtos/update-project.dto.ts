@@ -1,33 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
-import {
-  IsEnum,
-  IsNotEmpty,
-  IsOptional,
-  IsString,
-  IsUrl,
-  Length,
-  MaxLength,
-} from 'class-validator';
+import { IsEnum, IsNotEmpty, IsOptional, IsString, IsUrl, Length, MaxLength } from 'class-validator';
 import { CrudValidationGroups } from '@dataui/crud';
 import { IsSlug } from '../../common/decorators/isslug.decorator';
 import { VisibilityEnum } from '../entities/visibility.enum';
 import { ProjectEntity } from '../entities/project.entity';
 
 export class UpdateProjectDto
-  implements
-    Omit<
-      ProjectEntity,
-      | 'createdAt'
-      | 'editors'
-      | 'owner'
-      | 'id'
-      | 'updatedAt'
-      | 'versions'
-      | 'tickets'
-      | 'thumbnail'
-      | 'banner'
-      | 'screenshots'
-    >
+  implements Omit<ProjectEntity, 'createdAt' | 'editors' | 'owner' | 'id' | 'updatedAt' | 'versions' | 'tickets' | 'thumbnail' | 'banner' | 'screenshots'>
 {
   @ApiProperty()
   @MaxLength(255, { message: 'error.maxLength: title is too long, max 255' })

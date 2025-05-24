@@ -2,20 +2,12 @@
 
 import { UserProfileEntity } from '../entities/user-profile.entity';
 import { ApiProperty } from '@nestjs/swagger';
-import {
-  IsOptional,
-  IsString,
-  IsUrl,
-  Length,
-  MaxLength,
-} from 'class-validator';
+import { IsOptional, IsString, IsUrl, Length, MaxLength } from 'class-validator';
 import { IPickFields } from '../../../../types';
 
 type AllowedFields = 'bio' | 'familyName' | 'givenName';
 
-export class UpdateUserProfileDto
-  implements IPickFields<UserProfileEntity, AllowedFields>
-{
+export class UpdateUserProfileDto implements IPickFields<UserProfileEntity, AllowedFields> {
   @ApiProperty({ required: false })
   @IsOptional()
   @IsString()

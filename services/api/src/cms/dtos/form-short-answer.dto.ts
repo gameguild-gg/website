@@ -1,13 +1,6 @@
 import { QuestionBase, QuizQuestionBase } from './question.base';
 import { Column, Entity, ManyToOne, OneToMany } from 'typeorm';
-import {
-  IsEnum,
-  IsNotEmpty,
-  IsNumber,
-  IsOptional,
-  IsString,
-  MaxLength,
-} from 'class-validator';
+import { IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, MaxLength } from 'class-validator';
 import { IsIntegerNumber } from '../../common/decorators/validator.decorator';
 import { ApiProperty } from '@nestjs/swagger';
 import { FormQuestionEnum } from './form-question.enum';

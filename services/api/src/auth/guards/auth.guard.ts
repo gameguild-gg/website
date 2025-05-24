@@ -1,8 +1,4 @@
-import {
-  AuthGuard as NestAuthGuard,
-  type IAuthGuard,
-  type Type,
-} from '@nestjs/passport';
+import { AuthGuard as NestAuthGuard, type IAuthGuard, type Type } from '@nestjs/passport';
 
 export enum AuthType {
   Public = 'public',

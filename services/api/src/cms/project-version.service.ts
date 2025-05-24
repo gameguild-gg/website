@@ -1,9 +1,4 @@
-import {
-  Injectable,
-  Logger,
-  NotFoundException,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ArrayContains, Repository } from 'typeorm';
 import { TypeOrmCrudService } from '@dataui/crud-typeorm';
@@ -23,10 +18,7 @@ export class ProjectVersionService extends TypeOrmCrudService<ProjectVersionEnti
     super(gameVersionRepository);
   }
 
-  async createGameVersion(
-    body: ProjectVersionEntity,
-    user: UserEntity,
-  ): Promise<ProjectVersionEntity> {
+  async createGameVersion(body: ProjectVersionEntity, user: UserEntity): Promise<ProjectVersionEntity> {
     if (!body.project || !body.project.id) {
       throw new NotFoundException('{ game: { id: string } } field is required');
     }
@@ -41,9 +33,7 @@ export class ProjectVersionService extends TypeOrmCrudService<ProjectVersionEnti
     });
     // check if the user can create a version of the game
     if (!game) {
-      throw new UnauthorizedException(
-        'User is not the owner or editor of the game',
-      );
+      throw new UnauthorizedException('User is not the owner or editor of the game');
     }
     // create the version
     const version = this.gameVersionRepository.create(body);

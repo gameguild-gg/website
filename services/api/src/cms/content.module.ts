@@ -40,29 +40,8 @@ import { QuizService } from './quiz.service';
     ]),
     forwardRef(() => UserModule),
   ],
-  controllers: [
-    ContentController,
-    ProjectController,
-    ProjectVersionController,
-    TicketController,
-    CoursesController,
-    QuizController,
-  ],
-  providers: [
-    ContentService,
-    ProjectService,
-    ProjectVersionService,
-    TicketService,
-    CourseService,
-    QuizService,
-  ],
-  exports: [
-    ContentService,
-    ProjectService,
-    ProjectVersionService,
-    TicketService,
-    CourseService,
-    QuizService,
-  ],
+  controllers: [ContentController, ProjectController, ProjectVersionController, TicketController, CoursesController, QuizController],
+  providers: [ContentService, ProjectService, ProjectVersionService, TicketService, CourseService, QuizService],
+  exports: [ContentService, ProjectService, ProjectVersionService, TicketService, CourseService, QuizService],
 })
 export class ContentModule {}

@@ -5,9 +5,7 @@ import { WithRolesEntity } from '../entities/with-roles.entity';
 export const REQUIRED_ROLE_KEY = 'role';
 export const ENTITY_CLASS_KEY = 'entityClass';
 
-export type EntityClassWithRolesField<T extends WithRolesEntity> = new (
-  ...args: any[]
-) => T;
+export type EntityClassWithRolesField<T extends WithRolesEntity> = new (...args: any[]) => T;
 
 export const RequireRole = <T extends WithRolesEntity>(
   role: ContentUserRolesEnum,

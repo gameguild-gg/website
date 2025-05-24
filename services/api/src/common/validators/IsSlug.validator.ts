@@ -1,7 +1,4 @@
-import {
-  ValidatorConstraint,
-  ValidatorConstraintInterface,
-} from 'class-validator';
+import { ValidatorConstraint, ValidatorConstraintInterface } from 'class-validator';
 
 @ValidatorConstraint({ async: false })
 export class isSlug implements ValidatorConstraintInterface {

@@ -1,32 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
-import {
-  IsEnum,
-  IsNotEmpty,
-  IsOptional,
-  IsString,
-  IsUrl,
-  Length,
-} from 'class-validator';
+import { IsEnum, IsNotEmpty, IsOptional, IsString, IsUrl, Length } from 'class-validator';
 import { IsSlug } from '../../common/decorators/isslug.decorator';
 import { VisibilityEnum } from '../entities/visibility.enum';
 import { ContentBase } from '../entities/content.base';
 import { ProjectEntity } from '../entities/project.entity';
 
 export class CreateProjectDto
-  implements
-    Omit<
-      ProjectEntity,
-      | 'createdAt'
-      | 'editors'
-      | 'owner'
-      | 'id'
-      | 'updatedAt'
-      | 'thumbnail'
-      | 'banner'
-      | 'screenshots'
-      | 'versions'
-      | 'tickets'
-    >
+  implements Omit<ProjectEntity, 'createdAt' | 'editors' | 'owner' | 'id' | 'updatedAt' | 'thumbnail' | 'banner' | 'screenshots' | 'versions' | 'tickets'>
 {
   @ApiProperty()
   @IsNotEmpty()

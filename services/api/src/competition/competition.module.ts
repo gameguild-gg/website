@@ -14,12 +14,7 @@ import { UserProfileModule } from '../user/modules/user-profile/user-profile.mod
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([
-      CompetitionMatchEntity,
-      CompetitionRunEntity,
-      CompetitionSubmissionEntity,
-      CompetitionRunSubmissionReportEntity,
-    ]),
+    TypeOrmModule.forFeature([CompetitionMatchEntity, CompetitionRunEntity, CompetitionSubmissionEntity, CompetitionRunSubmissionReportEntity]),
     forwardRef(() => UserModule),
     forwardRef(() => AuthModule),
     forwardRef(() => UserProfileModule),

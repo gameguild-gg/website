@@ -3,16 +3,7 @@ import { ApiExtraModels, ApiProperty, getSchemaPath } from '@nestjs/swagger';
 import { ProjectEntity } from './project.entity';
 import { EntityBase } from '../../common/entities/entity.base';
 import { ProjectFeedbackResponseEntity } from './project-feedback-response.entity';
-import {
-  IsArray,
-  IsDate,
-  IsNotEmpty,
-  IsSemVer,
-  IsString,
-  IsUrl,
-  MaxLength,
-  ValidateNested,
-} from 'class-validator';
+import { IsArray, IsDate, IsNotEmpty, IsSemVer, IsString, IsUrl, MaxLength, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 import {
   ProjectTestFeedbackQuestion,
@@ -101,10 +92,7 @@ export class ProjectVersionEntity extends EntityBase {
 
   // relation to feedback responses
   @ApiProperty({ type: ProjectFeedbackResponseEntity, isArray: true })
-  @OneToMany(
-    () => ProjectFeedbackResponseEntity,
-    (response) => response.version,
-  )
+  @OneToMany(() => ProjectFeedbackResponseEntity, (response) => response.version)
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => ProjectFeedbackResponseEntity)

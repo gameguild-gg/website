@@ -1,17 +1,5 @@
-import {
-  Controller,
-  Body,
-  ForbiddenException,
-  Param,
-  Logger,
-} from '@nestjs/common';
-import {
-  Crud,
-  CrudController,
-  CrudRequest,
-  Override,
-  ParsedRequest,
-} from '@dataui/crud';
+import { Controller, Body, ForbiddenException, Param, Logger } from '@nestjs/common';
+import { Crud, CrudController, CrudRequest, Override, ParsedRequest } from '@dataui/crud';
 import { TicketService } from './ticket.service';
 import { TicketEntity } from './entities/ticket.entity';
 import { ApiBody, ApiTags } from '@nestjs/swagger';
@@ -34,12 +22,7 @@ import { Auth } from '../auth';
   },
   dto: { create: CreateTicketDto }, // The DTO is still valid here for automatic routes
   routes: {
-    exclude: [
-      'replaceOneBase',
-      'createManyBase',
-      'createManyBase',
-      'recoverOneBase',
-    ],
+    exclude: ['replaceOneBase', 'createManyBase', 'createManyBase', 'recoverOneBase'],
     getOneBase: {
       decorators: [Auth(AuthenticatedRoute)],
     },
@@ -80,10 +63,7 @@ export class TicketController implements CrudController<TicketEntity> {
   }
   @Override()
   @Auth(AuthenticatedRoute)
-  async getOne(
-    @ParsedRequest() req: CrudRequest,
-    @Param('id') id: string,
-  ): Promise<TicketEntity> {
+  async getOne(@ParsedRequest() req: CrudRequest, @Param('id') id: string): Promise<TicketEntity> {
     return this.service.findOne({
       where: { id: id },
       relations: ['owner', 'project'],
@@ -92,10 +72,7 @@ export class TicketController implements CrudController<TicketEntity> {
   @Override()
   @Auth(AuthenticatedRoute)
   @ApiBody({ type: CreateTicketDto }) // For Swagger documentation
-  async createOne(
-    @ParsedRequest() crudReq: CrudRequest,
-    @Body() createTicketDto: CreateTicketDto,
-  ) {
+  async createOne(@ParsedRequest() crudReq: CrudRequest, @Body() createTicketDto: CreateTicketDto) {
     if (createTicketDto.owner != undefined) {
       const project = await this.projectService.findOne({
         where: { id: createTicketDto.projectId },

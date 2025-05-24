@@ -12,40 +12,26 @@ export type CompressImageServiceConfig = {
 @Injectable()
 export class CompressImageService {
   constructor(private filecache: FileCacheStorageService) {}
-  async compressJpeg(
-    filePath: string,
-    config: Partial<CompressImageServiceConfig>,
-  ) {
+  async compressJpeg(filePath: string, config: Partial<CompressImageServiceConfig>) {
     const { width = null, height = null, quality = 70, fit = 'cover' } = config;
     let compressedFilename: string;
     if (!height && !width) {
       compressedFilename = `${filePath}-${quality}-${fit}.jpeg`;
-    } else if (height)
-      compressedFilename = `${filePath}-${quality}-${width}x${height}-${fit}.jpeg`;
+    } else if (height) compressedFilename = `${filePath}-${quality}-${width}x${height}-${fit}.jpeg`;
     else compressedFilename = `${filePath}-${quality}-${width}px-${fit}.jpeg`;
-    await sharp(filePath)
-      .resize({ width, height, fit })
-      .jpeg({ quality })
-      .toFile(compressedFilename);
+    await sharp(filePath).resize({ width, height, fit }).jpeg({ quality }).toFile(compressedFilename);
 
     return compressedFilename;
   }
 
-  async compressPng(
-    filePath: string,
-    config: Partial<CompressImageServiceConfig>,
-  ) {
+  async compressPng(filePath: string, config: Partial<CompressImageServiceConfig>) {
     const { width = null, height = null, quality = 70, fit = 'cover' } = config;
     let compressedFilename: string;
     if (!height && !width) {
       compressedFilename = `${filePath}-${quality}-${fit}.png`;
-    } else if (height)
-      compressedFilename = `${filePath}-${quality}-${width}x${height}-${fit}.png`;
+    } else if (height) compressedFilename = `${filePath}-${quality}-${width}x${height}-${fit}.png`;
     else compressedFilename = `${filePath}-${quality}-${width}px-${fit}.png`;
-    await sharp(filePath)
-      .resize({ width, height, fit })
-      .png({ quality })
-      .toFile(compressedFilename);
+    await sharp(filePath).resize({ width, height, fit }).png({ quality }).toFile(compressedFilename);
 
     return compressedFilename;
   }

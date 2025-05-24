@@ -2,14 +2,7 @@ import { Column, Entity, JoinColumn, OneToOne, VirtualColumn } from 'typeorm';
 import { EntityBase } from '../../../../common/entities/entity.base';
 import { UserEntity } from '../../../entities/user.entity';
 import { ApiProperty } from '@nestjs/swagger';
-import {
-  IsArray,
-  IsOptional,
-  IsString,
-  IsUrl,
-  MaxLength,
-  ValidateNested,
-} from 'class-validator';
+import { IsArray, IsOptional, IsString, IsUrl, MaxLength, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ImageEntity } from '../../../../asset';
 

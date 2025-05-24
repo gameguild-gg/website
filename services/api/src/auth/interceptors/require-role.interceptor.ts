@@ -1,22 +1,11 @@
-import {
-  Injectable,
-  NestInterceptor,
-  ExecutionContext,
-  CallHandler,
-  ForbiddenException,
-  InternalServerErrorException,
-} from '@nestjs/common';
+import { Injectable, NestInterceptor, ExecutionContext, CallHandler, ForbiddenException, InternalServerErrorException } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { Reflector } from '@nestjs/core';
 import { UserEntity } from '../../user/entities';
 import { DataSource, ArrayContains } from 'typeorm';
 import { ContentUserRolesEnum } from '../auth.enum';
 import { WithRolesEntity } from '../entities/with-roles.entity';
-import {
-  ENTITY_CLASS_KEY,
-  REQUIRED_ROLE_KEY,
-  EntityClassWithRolesField,
-} from '../decorators';
+import { ENTITY_CLASS_KEY, REQUIRED_ROLE_KEY, EntityClassWithRolesField } from '../decorators';
 
 @Injectable()
 export class RequireRoleInterceptor implements NestInterceptor {
@@ -25,25 +14,15 @@ export class RequireRoleInterceptor implements NestInterceptor {
     private dataSource: DataSource,
   ) {}
 
-  async intercept(
-    context: ExecutionContext,
-    next: CallHandler,
-  ): Promise<Observable<any>> {
+  async intercept(context: ExecutionContext, next: CallHandler): Promise<Observable<any>> {
     // get required role
-    const requiredRole = this.reflector.getAllAndOverride<ContentUserRolesEnum>(
-      REQUIRED_ROLE_KEY,
-      [context.getHandler(), context.getClass()],
-    );
+    const requiredRole = this.reflector.getAllAndOverride<ContentUserRolesEnum>(REQUIRED_ROLE_KEY, [context.getHandler(), context.getClass()]);
 
     if (!requiredRole) {
-      throw new InternalServerErrorException(
-        "Don't use this interceptor without a required role.",
-      );
+      throw new InternalServerErrorException("Don't use this interceptor without a required role.");
     }
 
-    const entityClass = this.reflector.getAllAndOverride<
-      EntityClassWithRolesField<any>
-    >(ENTITY_CLASS_KEY, [context.getHandler(), context.getClass()]);
+    const entityClass = this.reflector.getAllAndOverride<EntityClassWithRolesField<any>>(ENTITY_CLASS_KEY, [context.getHandler(), context.getClass()]);
 
     // reject
     if (!entityClass) {
@@ -57,13 +36,10 @@ export class RequireRoleInterceptor implements NestInterceptor {
     let entityId = request.path.split('/').pop();
     if (!entityId) entityId = request.body.id;
     if (!entityId) {
-      throw new ForbiddenException(
-        'Entity id not found in the path or in the body',
-      );
+      throw new ForbiddenException('Entity id not found in the path or in the body');
     }
 
-    const repository =
-      this.dataSource.getRepository<WithRolesEntity>(entityClass);
+    const repository = this.dataSource.getRepository<WithRolesEntity>(entityClass);
 
     let entity: WithRolesEntity;
     if (requiredRole === ContentUserRolesEnum.OWNER) {
@@ -83,9 +59,7 @@ export class RequireRoleInterceptor implements NestInterceptor {
     }
 
     if (!entity) {
-      throw new ForbiddenException(
-        'Content not found, or you do not have access to it.',
-      );
+      throw new ForbiddenException('Content not found, or you do not have access to it.');
     }
 
     // store the content into the request

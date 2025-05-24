@@ -33,10 +33,7 @@ export class AssetService {
     });
   }
 
-  public async StoreImageFromURL(
-    url: string,
-    description: string = '',
-  ): Promise<ImageEntity> {
+  public async StoreImageFromURL(url: string, description: string = ''): Promise<ImageEntity> {
     return this.imageRepository.save({
       source: AssetSourceType.EXTERNAL,
       path: url,
@@ -59,7 +56,7 @@ export class AssetService {
     let hash = 0;
     for (let i = 0; i < url.length; i++) {
       const char = url.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = (hash << 5) - hash + char;
       hash = hash & hash; // Convert to 32bit integer
     }
     // Convert to hex string and ensure it's positive
@@ -87,8 +84,7 @@ export class AssetService {
     // todo: implement megaupload hashing system to avoid duplicates
 
     const asset = await this.imageStorage.store(file);
-    const folder =
-      asset.hash.substring(0, 2) + '/' + asset.hash.substring(2, 4);
+    const folder = asset.hash.substring(0, 2) + '/' + asset.hash.substring(2, 4);
 
     return this.imageRepository.save({
       width: asset.width,
@@ -106,9 +102,6 @@ export class AssetService {
   async deleteImage(picture: ImageEntity) {
     // todo: deal with different sources
     // parallel await
-    await Promise.all([
-      this.imageStorage.delete(picture),
-      this.imageRepository.delete(picture.id),
-    ]);
+    await Promise.all([this.imageStorage.delete(picture), this.imageRepository.delete(picture.id)]);
   }
 }

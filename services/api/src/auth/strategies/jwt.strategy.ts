@@ -39,10 +39,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'access-token') {
 }
 
 @Injectable()
-export class RefreshTokenStrategy extends PassportStrategy(
-  Strategy,
-  'refresh-token',
-) {
+export class RefreshTokenStrategy extends PassportStrategy(Strategy, 'refresh-token') {
   constructor(
     configService: ApiConfigService,
     private userService: UserService,

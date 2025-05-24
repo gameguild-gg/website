@@ -4,13 +4,7 @@ import { JobApplicationService } from './job-application.service';
 import { Auth } from '../auth/decorators/http.decorator';
 import { JobApplicationEntity } from './entities/job-application.entity';
 import { AuthenticatedRoute } from '../auth/auth.enum';
-import {
-  CrudController,
-  Crud,
-  CrudRequest,
-  Override,
-  ParsedRequest,
-} from '@dataui/crud';
+import { CrudController, Crud, CrudRequest, Override, ParsedRequest } from '@dataui/crud';
 import { ExcludeFieldsPipe } from 'src/cms/pipes/exclude-fields.pipe';
 import { BodyApplicantInject } from './decorators/body-applicant-injection.decorator';
 import { JobAplicationCreateDto } from './dtos/job-aplication-create.dto';
@@ -30,12 +24,7 @@ import { PartialWithoutFields } from '../types';
     },
   },
   routes: {
-    exclude: [
-      'replaceOneBase',
-      'createManyBase',
-      'createManyBase',
-      'recoverOneBase',
-    ],
+    exclude: ['replaceOneBase', 'createManyBase', 'createManyBase', 'recoverOneBase'],
     getOneBase: {
       decorators: [Auth(AuthenticatedRoute)],
     },
@@ -65,9 +54,7 @@ import { PartialWithoutFields } from '../types';
 })
 @Controller('job-applications')
 @ApiTags('Job Applications')
-export class JobApplicationController
-  implements CrudController<JobApplicationEntity>
-{
+export class JobApplicationController implements CrudController<JobApplicationEntity> {
   private readonly logger = new Logger(JobApplicationController.name);
 
   constructor(public service: JobApplicationService) {}
@@ -96,9 +83,7 @@ export class JobApplicationController
   @ApiBody({ type: JobApplicationEntity })
   async updateOne(
     @ParsedRequest() req: CrudRequest,
-    @Body(
-      new ExcludeFieldsPipe<JobApplicationEntity>(['createdAt', 'updatedAt']),
-    )
+    @Body(new ExcludeFieldsPipe<JobApplicationEntity>(['createdAt', 'updatedAt']))
     dto: PartialWithoutFields<JobApplicationEntity, 'createdAt' | 'updatedAt'>,
   ): Promise<JobApplicationEntity> {
     return this.base.updateOneBase(req, dto);
@@ -111,9 +96,7 @@ export class JobApplicationController
     schema: { $ref: getSchemaPath(Array<JobApplicationEntity>) },
     status: 200,
   })
-  async myApplications(
-    @UserInject() user: UserEntity,
-  ): Promise<JobApplicationEntity[]> {
+  async myApplications(@UserInject() user: UserEntity): Promise<JobApplicationEntity[]> {
     return this.service.myApplications(user.id);
   }
 
@@ -124,10 +107,7 @@ export class JobApplicationController
     schema: { $ref: getSchemaPath(JobApplicationEntity) },
     status: 200,
   })
-  async myApplicationBySlug(
-    @Param('slug') slug: string,
-    @UserInject() user: UserEntity,
-  ): Promise<JobApplicationEntity> {
+  async myApplicationBySlug(@Param('slug') slug: string, @UserInject() user: UserEntity): Promise<JobApplicationEntity> {
     return this.service.myApplicationBySlug(slug, user.id);
   }
 
@@ -139,10 +119,7 @@ export class JobApplicationController
     schema: { $ref: getSchemaPath(JobApplicationEntity) },
     status: 200,
   })
-  async advanceCandidate(
-    @Body() application: JobApplicationEntity,
-    @UserInject() jobManager: UserEntity,
-  ): Promise<JobApplicationEntity> {
+  async advanceCandidate(@Body() application: JobApplicationEntity, @UserInject() jobManager: UserEntity): Promise<JobApplicationEntity> {
     return this.service.advanceCandidate(application, jobManager.id);
   }
 
@@ -154,10 +131,7 @@ export class JobApplicationController
     schema: { $ref: getSchemaPath(JobApplicationEntity) },
     status: 200,
   })
-  async moveBackCandidate(
-    @Body() application: JobApplicationEntity,
-    @UserInject() jobManager: UserEntity,
-  ): Promise<JobApplicationEntity> {
+  async moveBackCandidate(@Body() application: JobApplicationEntity, @UserInject() jobManager: UserEntity): Promise<JobApplicationEntity> {
     return this.service.undoAdvanceCandidate(application, jobManager.id);
   }
 
@@ -169,10 +143,7 @@ export class JobApplicationController
     schema: { $ref: getSchemaPath(JobApplicationEntity) },
     status: 200,
   })
-  async rejectCandidate(
-    @Body() application: JobApplicationEntity,
-    @UserInject() jobManager: UserEntity,
-  ): Promise<JobApplicationEntity> {
+  async rejectCandidate(@Body() application: JobApplicationEntity, @UserInject() jobManager: UserEntity): Promise<JobApplicationEntity> {
     return this.service.rejectCandidate(application, jobManager.id);
   }
 
@@ -184,10 +155,7 @@ export class JobApplicationController
     schema: { $ref: getSchemaPath(JobApplicationEntity) },
     status: 200,
   })
-  async undoRejectCandidate(
-    @Body() application: JobApplicationEntity,
-    @UserInject() jobManager: UserEntity,
-  ): Promise<JobApplicationEntity> {
+  async undoRejectCandidate(@Body() application: JobApplicationEntity, @UserInject() jobManager: UserEntity): Promise<JobApplicationEntity> {
     return this.service.undoRejectCandidate(application, jobManager.id);
   }
 
@@ -199,10 +167,7 @@ export class JobApplicationController
     schema: { $ref: getSchemaPath(JobApplicationEntity) },
     status: 200,
   })
-  async withdraw(
-    @Body() application: JobApplicationEntity,
-    @UserInject() applicant: UserEntity,
-  ): Promise<JobApplicationEntity> {
+  async withdraw(@Body() application: JobApplicationEntity, @UserInject() applicant: UserEntity): Promise<JobApplicationEntity> {
     return this.service.withdraw(application, applicant.id);
   }
 }

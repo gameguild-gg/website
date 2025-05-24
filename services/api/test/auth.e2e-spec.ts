@@ -12,12 +12,11 @@ export async function CreateRandomUser(): Promise<LocalSignInResponseDto> {
   const email = faker.internet.email().toLowerCase();
   const password = generatePassword(); // faker.internet.password();
 
-  const createUserResponse =
-    await api.authControllerSignUpWithEmailUsernamePassword({
-      username,
-      email,
-      password,
-    });
+  const createUserResponse = await api.authControllerSignUpWithEmailUsernamePassword({
+    username,
+    email,
+    password,
+  });
 
   // verify response
   expect(createUserResponse).toBeDefined();
@@ -98,8 +97,7 @@ describe('Auth (e2e)', () => {
 
       expect(refreshTokenResponse).toBeDefined();
 
-      const newLoginData =
-        refreshTokenResponse.body as Api.LocalSignInResponseDto;
+      const newLoginData = refreshTokenResponse.body as Api.LocalSignInResponseDto;
       expect(newLoginData).toBeDefined();
 
       expect(newLoginData.user).toBeDefined();

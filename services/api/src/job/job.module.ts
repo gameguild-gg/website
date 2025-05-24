@@ -12,14 +12,7 @@ import { JobTagService } from './job-tag.service';
 import { JobApplicationService } from './job-application.service';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([
-      JobPostEntity,
-      JobTagEntity,
-      JobApplicationEntity,
-    ]),
-    forwardRef(() => UserModule),
-  ],
+  imports: [TypeOrmModule.forFeature([JobPostEntity, JobTagEntity, JobApplicationEntity]), forwardRef(() => UserModule)],
   controllers: [JobPostController, JobTagController, JobApplicationController],
   providers: [JobPostService, JobTagService, JobApplicationService],
   exports: [JobPostService, JobTagService, JobApplicationService],

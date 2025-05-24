@@ -1,25 +1,14 @@
 import { TypeOrmCrudService } from '@dataui/crud-typeorm';
 import { WithRolesEntity } from '../auth/entities/with-roles.entity';
-import {
-  FindOptionsRelations,
-  FindOptionsSelect,
-  FindOptionsWhere,
-  Repository,
-} from 'typeorm';
+import { FindOptionsRelations, FindOptionsSelect, FindOptionsWhere, Repository } from 'typeorm';
 import { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
 
-export class WithRolesService<
-  T extends WithRolesEntity,
-> extends TypeOrmCrudService<T> {
+export class WithRolesService<T extends WithRolesEntity> extends TypeOrmCrudService<T> {
   constructor(protected repo: Repository<T>) {
     super(repo);
   }
 
-  async SwitchOwner(
-    id: string,
-    oldOwnerId: string,
-    newOwnerId: string,
-  ): Promise<void> {
+  async SwitchOwner(id: string, oldOwnerId: string, newOwnerId: string): Promise<void> {
     // new owner should be a previous editor
     const entity = await this.repo.findOne({
       where: {
@@ -31,9 +20,7 @@ export class WithRolesService<
       select: { id: true, editors: true, owner: true } as FindOptionsSelect<T>,
     });
     if (!entity) {
-      throw new Error(
-        'You should be the owner of the resource and the new owner should be a previous editor of the entity.',
-      );
+      throw new Error('You should be the owner of the resource and the new owner should be a previous editor of the entity.');
     }
 
     // set new owner, add the previous owner to editors if not already there
@@ -59,7 +46,7 @@ export class WithRolesService<
     if (!entity.editors?.find((e) => e.id === newEditorId)) {
       await this.repo
         .createQueryBuilder()
-        .relation(nameof<WithRolesEntity>((o:any) => o.editors))
+        .relation(nameof<WithRolesEntity>((o: any) => o.editors))
         .of(id)
         .add(newEditorId);
     }
@@ -68,7 +55,7 @@ export class WithRolesService<
   async RemoveEditor(id: string, editorId: string): Promise<void> {
     await this.repo
       .createQueryBuilder()
-      .relation(nameof<WithRolesEntity>((o:any) => o.editors))
+      .relation(nameof<WithRolesEntity>((o: any) => o.editors))
       .of(id)
       .remove(editorId);
   }
@@ -88,19 +75,13 @@ export class WithRolesService<
 
   async getAllOwnedByMe(myId: string): Promise<void> {
     await this.repo.find({
-      where: [
-        {owner: { id: myId } },
-      ] as FindOptionsWhere<T>[],
-    })
+      where: [{ owner: { id: myId } }] as FindOptionsWhere<T>[],
+    });
   }
 
   async getAllEditableByMe(myId: string): Promise<void> {
     await this.repo.find({
-      where: [
-        {owner: { id: myId } },
-        {editors: { id: myId } },
-      ] as FindOptionsWhere<T>[],
-    })
+      where: [{ owner: { id: myId } }, { editors: { id: myId } }] as FindOptionsWhere<T>[],
+    });
   }
-
 }

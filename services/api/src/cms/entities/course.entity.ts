@@ -4,12 +4,7 @@ import { LectureEntity } from './lecture.entity';
 import { ChapterEntity } from './chapter.entity';
 import { UserEntity } from '../../user/entities';
 import { ApiProperty } from '@nestjs/swagger';
-import {
-  IsArray,
-  IsBoolean,
-  IsNotEmpty,
-  ValidateNested,
-} from 'class-validator';
+import { IsArray, IsBoolean, IsNotEmpty, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 
 @Entity({ name: 'course' })

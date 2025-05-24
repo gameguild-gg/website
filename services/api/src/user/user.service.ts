@@ -26,10 +26,7 @@ export class UserService extends TypeOrmCrudService<UserEntity> {
   }
 
   // update
-  async updateOneTypeorm(
-    id: string,
-    user: Partial<UserEntity>,
-  ): Promise<UpdateResult> {
+  async updateOneTypeorm(id: string, user: Partial<UserEntity>): Promise<UpdateResult> {
     return this.repository.update(id, user);
   }
 
@@ -41,19 +38,13 @@ export class UserService extends TypeOrmCrudService<UserEntity> {
     return Boolean(await this.findOne({ where: { username: username } }));
   }
 
-  async createOneWithEmailAndPassword(
-    data: CreateLocalUserDto,
-  ): Promise<UserEntity> {
+  async createOneWithEmailAndPassword(data: CreateLocalUserDto): Promise<UserEntity> {
     if (await this.isEmailTaken(data.email)) {
-      throw new UserAlreadyExistsException(
-        `The email '${data.email}' is already associated with an existing user.`,
-      );
+      throw new UserAlreadyExistsException(`The email '${data.email}' is already associated with an existing user.`);
     }
 
     if (data.username && (await this.isUsernameTaken(data.username))) {
-      throw new UserAlreadyExistsException(
-        `The username '${data.username}' is already associated with an existing user.`,
-      );
+      throw new UserAlreadyExistsException(`The username '${data.username}' is already associated with an existing user.`);
     }
 
     if (!data.username) data.username = generateFromEmail(data.email, 8);
@@ -69,9 +60,7 @@ export class UserService extends TypeOrmCrudService<UserEntity> {
     });
   }
 
-  public async createOneWithWalletAddress(
-    walletAddress: string,
-  ): Promise<UserEntity> {
+  public async createOneWithWalletAddress(walletAddress: string): Promise<UserEntity> {
     const user = await this.findOne({
       where: { walletAddress: walletAddress },
       relations: { profile: true },
@@ -125,10 +114,7 @@ export class UserService extends TypeOrmCrudService<UserEntity> {
     let picture = await this.assetService.findExternalImageURL(payload.picture);
 
     if (!picture) {
-      picture = await this.assetService.StoreImageFromURL(
-        payload.picture,
-        payload.name,
-      );
+      picture = await this.assetService.StoreImageFromURL(payload.picture, payload.name);
     }
 
     return this.save({
@@ -152,9 +138,7 @@ export class UserService extends TypeOrmCrudService<UserEntity> {
       relations: { profile: true },
     });
     if (user) {
-      throw new UserAlreadyExistsException(
-        `The email '${email}' is already associated with an existing user.`,
-      );
+      throw new UserAlreadyExistsException(`The email '${email}' is already associated with an existing user.`);
     }
     return this.repository.save({
       email: email,
