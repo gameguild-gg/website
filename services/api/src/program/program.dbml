@@ -120,6 +120,12 @@ Enum tag_relationship_type {
   suggested [note: 'Suggested prerequisite or related tag']
 }
 
+Enum moderation_status {
+  pending [note: 'Moderation request submitted but not yet reviewed']
+  approved [note: 'Content approved and can be displayed publicly']
+  rejected [note: 'Content rejected and should not be displayed']
+  flagged [note: 'Content flagged for review due to reports or policy violations']
+}
 
 Enum grading_method {
   instructor [note: 'Graded manually by an instructor or teaching assistant']
