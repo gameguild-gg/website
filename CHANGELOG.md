@@ -1,3 +1,11 @@
+## [1.21.8](https://github.com/gameguild-gg/website/compare/v1.21.7...v1.21.8) (2025-05-24)
+
+
+### Bug Fixes
+
+* **lint:** run lint fix on the api ([1e9e6e1](https://github.com/gameguild-gg/website/commit/1e9e6e15dfe6899bed61d341fb93aaa06e8bec04))
+* **program:** add entities converted from dbml to entities via ai ([924d1cc](https://github.com/gameguild-gg/website/commit/924d1cce4388e143fdeceba184d84e60eb356c68))
+
 ## [1.21.7](https://github.com/gameguild-gg/website/compare/v1.21.6...v1.21.7) (2025-05-21)
 
 
