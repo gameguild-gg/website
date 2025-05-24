@@ -2,6 +2,8 @@ import { Module } from '@nestjs/common';
 import { CacheModule } from '@nestjs/cache-manager';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { GraphQLModule } from '@nestjs/graphql';
+import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { AppController } from './app.controller';
 import { AuthModule } from './auth/auth.module';
 import { CommonModule } from './common/common.module';
@@ -25,29 +27,41 @@ import { CleanupService } from './common/cleanup-unused-db-tables';
 
 @Module({
   imports: [
-    // fix auth interceptor and guard to store user in context
+    ConfigModule.forRoot({ isGlobal: true }),
+    CommonModule,
+    TypeOrmModule.forRootAsync({
+      inject: [ApiConfigService],
+      useFactory: (configService: ApiConfigService) => configService.postgresConfig,
+    }),
+    CacheModule.registerAsync({
+      isGlobal: true,
+      useFactory: (configService: ApiConfigService) => ({
+        store: 'memory',
+        ttl: 5 * 60 * 1000,
+        max: 10000,
+      }),
+    }),
+    MulterModule.register({
+      storage: diskStorage({
+        destination: '/tmp/uploads',
+        filename: (req, file, cb) => {
+          const filename = `${Date.now()}-${file.originalname}`;
+          cb(null, filename);
+        },
+      }),
+    }),
+    GraphQLModule.forRoot<ApolloDriverConfig>({
+      driver: ApolloDriver,
+      autoSchemaFile: true,
+      playground: true,
+      introspection: true,
+    }),
     ClsModule.forRoot({
       global: true,
       middleware: {
         mount: true,
       },
     }),
-    ConfigModule.forRoot({ isGlobal: true }),
-    TypeOrmModule.forRootAsync({
-      imports: [CommonModule],
-      inject: [ApiConfigService],
-      useFactory: (configService: ApiConfigService) => configService.postgresConfig,
-    }),
-    CacheModule.registerAsync({
-      // todo: add redis cache when scaling
-      isGlobal: true, // globally available
-      useFactory: (configService: ApiConfigService) => ({
-        store: 'memory',
-        ttl: 5 * 60 * 1000, // 5 minutes
-        max: 10000, // 10k requests in 5 minutes is a nice limit
-      }),
-    }),
-    CommonModule,
     AuthModule,
     UserModule,
     NotificationModule,
@@ -59,15 +73,6 @@ import { CleanupService } from './common/cleanup-unused-db-tables';
     TagModule,
     JobModule,
     AssetModule,
-    MulterModule.register({
-      storage: diskStorage({
-        destination: '/tmp/uploads',
-        filename: (req, file, cb) => {
-          const filename = `${Date.now()}-${file.originalname}`;
-          cb(null, filename);
-        },
-      }),
-    }),
   ],
   controllers: [AppController],
   providers: [

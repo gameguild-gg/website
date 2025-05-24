@@ -1,16 +1,16 @@
-import { Entity, Column, OneToMany, ManyToMany, JoinTable, Index, DeleteDateColumn } from 'typeorm';
+import { Entity, Column, OneToMany, DeleteDateColumn, Index } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { IsString, IsNotEmpty, IsOptional, IsEnum, IsNumber, IsBoolean, IsJSON } from 'class-validator';
 import { EntityBase } from '../../common/entities/entity.base';
 import { ProductType, Visibility } from './enums';
-import { Program } from './program.entity';
+import { ProductProgram } from './product-program.entity';
 import { ProductPricing } from './product-pricing.entity';
 import { ProductSubscriptionPlan } from './product-subscription-plan.entity';
 import { UserProduct } from './user-product.entity';
 
 @Entity('products')
 @Index((entity) => [entity.type])
-@Index((entity) => [entity.isBuddle])
+@Index((entity) => [entity.isBundle])
 @Index((entity) => [entity.visibility])
 @Index((entity) => [entity.createdAt])
 export class Product extends EntityBase {
@@ -39,7 +39,7 @@ export class Product extends EntityBase {
   @Column({ type: 'boolean', default: false })
   @ApiProperty({ description: 'Whether this product is a bundle of other products' })
   @IsBoolean()
-  isBuddle: boolean;
+  isBundle: boolean;
 
   @Column({ type: 'jsonb', nullable: true })
   @ApiProperty({ description: 'Array of product IDs included in the bundle', required: false })
@@ -77,14 +77,9 @@ export class Product extends EntityBase {
   deletedAt: Date | null;
 
   // Relations
-  @ManyToMany(() => Program, (program) => program.products)
-  @JoinTable({
-    name: 'product_programs',
-    joinColumn: { name: 'product_id', referencedColumnName: 'id' },
-    inverseJoinColumn: { name: 'program_id', referencedColumnName: 'id' },
-  })
-  @ApiProperty({ type: () => Program, isArray: true, description: 'Programs included in this product' })
-  programs: Program[];
+  @OneToMany(() => ProductProgram, (productProgram) => productProgram.product)
+  @ApiProperty({ type: () => ProductProgram, isArray: true, description: 'Program relationships for this product' })
+  productPrograms: ProductProgram[];
 
   @OneToMany(() => ProductPricing, (productPricing) => productPricing.product)
   pricing: ProductPricing[];

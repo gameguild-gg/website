@@ -1,11 +1,11 @@
-import { Entity, Column, OneToMany, ManyToMany, Index, DeleteDateColumn } from 'typeorm';
+import { Entity, Column, OneToMany, Index, DeleteDateColumn } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { IsString, IsNotEmpty, IsOptional, IsNumber, IsJSON } from 'class-validator';
 import { EntityBase } from '../../common/entities/entity.base';
 import { ProgramContent } from './program-content.entity';
 import { ProgramUser } from './program-user.entity';
 import { ProgramUserRole } from './program-user-role.entity';
-import { Product } from './product.entity';
+import { ProductProgram } from './product-program.entity';
 
 @Entity('programs')
 @Index((entity) => [entity.slug], { unique: true })
@@ -77,7 +77,7 @@ export class Program extends EntityBase {
   @OneToMany(() => ProgramUserRole, (programUserRole) => programUserRole.program)
   programUserRoles: ProgramUserRole[];
 
-  @ManyToMany(() => Product, (product) => product.programs)
-  @ApiProperty({ type: () => Product, isArray: true, description: 'Products that include this program' })
-  products: Product[];
+  @OneToMany(() => ProductProgram, (productProgram) => productProgram.program)
+  @ApiProperty({ type: () => ProductProgram, isArray: true, description: 'Product relationships for this program' })
+  productPrograms: ProductProgram[];
 }

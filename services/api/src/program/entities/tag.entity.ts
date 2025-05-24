@@ -1,9 +1,10 @@
-import { Entity, Column, OneToMany, ManyToMany, JoinTable, Index, DeleteDateColumn } from 'typeorm';
+import { Entity, Column, OneToMany, Index, DeleteDateColumn } from 'typeorm';
 import { IsString, IsNotEmpty, IsOptional, IsEnum, IsJSON } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { EntityBase } from '../../common/entities/entity.base';
 import { TagType } from './enums';
 import { TagProficiency } from './tag-proficiency.entity';
+import { TagRelationship } from './tag-relationship.entity';
 
 @Entity('tags')
 @Index((entity) => [entity.name, entity.type], { unique: true })
@@ -47,36 +48,22 @@ export class Tag extends EntityBase {
   @OneToMany(() => TagProficiency, (tagProficiency) => tagProficiency.tag)
   tagProficiencies: TagProficiency[];
 
-  // Self-referential many-to-many relationships for tag hierarchy and relationships
-  @ManyToMany(() => Tag, (tag) => tag.parentTags, {
-    onDelete: 'CASCADE',
-    onUpdate: 'CASCADE',
-  })
-  @JoinTable({
-    name: 'tag_relationships',
-    joinColumn: {
-      name: 'source_id',
-      referencedColumnName: 'id',
-    },
-    inverseJoinColumn: {
-      name: 'target_id',
-      referencedColumnName: 'id',
-    },
-  })
+  // Tag relationships using junction entity
+  @OneToMany(() => TagRelationship, (tagRelationship) => tagRelationship.sourceTag)
   @ApiProperty({
-    type: () => Tag,
+    type: () => TagRelationship,
     isArray: true,
-    description: 'Child tags in hierarchical or related relationships',
+    description: 'Outgoing tag relationships where this tag is the source',
     required: false,
   })
-  childTags: Tag[];
+  sourceRelationships: TagRelationship[];
 
-  @ManyToMany(() => Tag, (tag) => tag.childTags)
+  @OneToMany(() => TagRelationship, (tagRelationship) => tagRelationship.targetTag)
   @ApiProperty({
-    type: () => Tag,
+    type: () => TagRelationship,
     isArray: true,
-    description: 'Parent tags in hierarchical or related relationships',
+    description: 'Incoming tag relationships where this tag is the target',
     required: false,
   })
-  parentTags: Tag[];
+  targetRelationships: TagRelationship[];
 }

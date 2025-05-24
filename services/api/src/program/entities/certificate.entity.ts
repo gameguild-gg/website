@@ -1,11 +1,11 @@
-import { Entity, Column, OneToMany, ManyToOne, ManyToMany, JoinColumn, JoinTable, Index, DeleteDateColumn } from 'typeorm';
+import { Entity, Column, OneToMany, ManyToOne, JoinColumn, Index, DeleteDateColumn } from 'typeorm';
 import { IsString, IsNotEmpty, IsOptional, IsBoolean, IsUrl, IsEnum, IsNumber, IsJSON } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { EntityBase } from '../../common/entities/entity.base';
 import { Program } from './program.entity';
 import { Product } from './product.entity';
 import { UserCertificate } from './user-certificate.entity';
-import { TagProficiency } from './tag-proficiency.entity';
+import { CertificateTag } from './certificate-tag.entity';
 import { CertificateType, VerificationMethod } from './enums';
 
 @Entity('certificates')
@@ -156,12 +156,7 @@ export class Certificate extends EntityBase {
   @OneToMany(() => UserCertificate, (userCert) => userCert.certificate)
   userCertificates: UserCertificate[];
 
-  @ManyToMany(() => TagProficiency, (tagProficiency) => tagProficiency.certificates)
-  @JoinTable({
-    name: 'certificate_tags',
-    joinColumn: { name: 'certificate_id', referencedColumnName: 'id' },
-    inverseJoinColumn: { name: 'tag_id', referencedColumnName: 'id' },
-  })
-  @ApiProperty({ type: () => TagProficiency, isArray: true, description: 'Tag proficiencies associated with this certificate' })
-  tagProficiencies: TagProficiency[];
+  @OneToMany(() => CertificateTag, (certificateTag) => certificateTag.certificate)
+  @ApiProperty({ type: () => CertificateTag, isArray: true, description: 'Tag relationships associated with this certificate' })
+  certificateTags: CertificateTag[];
 }

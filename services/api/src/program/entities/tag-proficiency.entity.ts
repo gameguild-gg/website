@@ -1,10 +1,9 @@
-import { Entity, Column, ManyToOne, ManyToMany, JoinColumn, Index, DeleteDateColumn } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, Index, DeleteDateColumn } from 'typeorm';
 import { IsString, IsNumber, IsOptional, IsEnum, IsJSON } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { EntityBase } from '../../common/entities/entity.base';
 import { SkillProficiencyLevel } from './enums';
 import { Tag } from './tag.entity';
-import { Certificate } from './certificate.entity';
 
 @Entity('tag_proficiencies')
 @Index((entity) => [entity.tag, entity.proficiencyLevel], { unique: true })
@@ -50,9 +49,4 @@ export class TagProficiency extends EntityBase {
   @DeleteDateColumn()
   @ApiProperty({ description: 'Soft delete timestamp', required: false })
   deletedAt?: Date;
-
-  // Relations
-  @ManyToMany(() => Certificate, (certificate) => certificate.tagProficiencies)
-  @ApiProperty({ type: () => Certificate, isArray: true, description: 'Certificates that reference this tag proficiency' })
-  certificates: Certificate[];
 }
