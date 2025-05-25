@@ -1,4 +1,5 @@
 import { Column, Entity, ManyToOne } from 'typeorm';
+import { ObjectType, Field } from '@nestjs/graphql';
 import { CompetitionRunEntity } from './competition.run.entity';
 import { CompetitionSubmissionEntity } from './competition.submission.entity';
 import { EntityBase } from '../../common/entities/entity.base';
@@ -12,29 +13,31 @@ export enum CompetitionWinner {
   Player2 = 'Player2',
 }
 
+@ObjectType()
 @Entity()
 export class CompetitionMatchEntity extends EntityBase {
-  // competition run
+  @Field(() => CompetitionRunEntity, { nullable: true })
   @ManyToOne(() => CompetitionRunEntity, (competitionRun) => competitionRun.matches)
   @ApiProperty({ type: () => CompetitionRunEntity })
   @ValidateNested()
   @Type(() => CompetitionRunEntity)
   run: CompetitionRunEntity;
 
-  // cat. relation with competition submission
+  @Field(() => CompetitionSubmissionEntity, { nullable: true })
   @ManyToOne(() => CompetitionSubmissionEntity, (s) => s.matchesAsP1)
   @ApiProperty({ type: () => CompetitionSubmissionEntity })
   @ValidateNested()
   @Type(() => CompetitionSubmissionEntity)
   p1submission: CompetitionSubmissionEntity;
 
-  // cather. relation with competition submission
+  @Field(() => CompetitionSubmissionEntity, { nullable: true })
   @ManyToOne(() => CompetitionSubmissionEntity, (s) => s.matchesAsP2)
   @ApiProperty({ type: () => CompetitionSubmissionEntity })
   @ValidateNested()
   @Type(() => CompetitionSubmissionEntity)
   p2submission: CompetitionSubmissionEntity;
 
+  @Field(() => String, { nullable: true })
   @Column({
     type: 'enum',
     enum: CompetitionWinner,
@@ -48,14 +51,14 @@ export class CompetitionMatchEntity extends EntityBase {
   })
   winner: CompetitionWinner;
 
-  // cat points
+  @Field()
   @Column({ type: 'float', nullable: false })
   @ApiProperty()
   @IsNotEmpty({ message: 'error.IsNotEmpty: p1Points should not be empty' })
   @IsNumber({}, { message: 'error.IsNumber: p1Points should be a number' })
   p1Points: number;
 
-  // catcher points
+  @Field()
   @Column({ type: 'float', nullable: false })
   @ApiProperty()
   @IsNotEmpty({ message: 'error.IsNotEmpty: p2Points should not be empty' })

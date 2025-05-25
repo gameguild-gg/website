@@ -1,6 +1,7 @@
 import { Column, Index, ManyToOne } from 'typeorm';
 import { VisibilityEnum } from './visibility.enum';
 import { ApiProperty } from '@nestjs/swagger';
+import { ObjectType, Field } from '@nestjs/graphql';
 import { IsSlug } from '../../common/decorators/isslug.decorator';
 import { IsEnum, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
 import { WithRolesEntity } from '../../auth/entities/with-roles.entity';
@@ -8,7 +9,9 @@ import { CrudValidationGroups } from '@dataui/crud';
 import { ImageEntity } from '../../asset';
 
 // todo: move some of these fields to a more basic entity and add abstract classes to specific intents
+@ObjectType({ isAbstract: true })
 export abstract class ContentBase extends WithRolesEntity {
+  @Field()
   @Column({ length: 255, nullable: false, type: 'varchar' })
   @Index({ unique: true })
   @ApiProperty({ required: true })
@@ -19,6 +22,7 @@ export abstract class ContentBase extends WithRolesEntity {
   @IsSlug()
   slug: string;
 
+  @Field()
   @Column({ length: 255, nullable: false, type: 'varchar' })
   @Index({ unique: false })
   @ApiProperty({ required: true })
@@ -28,6 +32,7 @@ export abstract class ContentBase extends WithRolesEntity {
   @MaxLength(255)
   title: string;
 
+  @Field({ nullable: true })
   @Column({ length: 1024, nullable: true })
   @ApiProperty({ required: false })
   @IsOptional()
@@ -35,7 +40,7 @@ export abstract class ContentBase extends WithRolesEntity {
   @MaxLength(1024)
   summary: string;
 
-  // todo: probably this could be in the inherited entity, not here, because many of the specializations will have this field but with different types
+  @Field({ nullable: true })
   @Column({ type: 'text', nullable: true })
   @ApiProperty({ required: false, description: 'The body of the content for simple content types' })
   @IsOptional()
@@ -43,6 +48,7 @@ export abstract class ContentBase extends WithRolesEntity {
   @MaxLength(1024 * 64)
   body: string;
 
+  @Field(() => String)
   @Index({ unique: false })
   @Column({
     type: 'enum',

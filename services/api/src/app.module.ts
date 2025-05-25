@@ -16,7 +16,6 @@ import { UserModule } from './user/user.module';
 import { CompetitionModule } from './competition/competition.module';
 import { HealthcheckModule } from './healthcheck/healthcheck.module';
 import { JobModule } from './job/job.module';
-import { TagModule } from './tag/tag.module';
 import { ClsModule } from 'nestjs-cls';
 import { DataSource } from 'typeorm';
 import { AssetModule } from './asset';
@@ -71,7 +70,6 @@ import { GraphqlModule } from './graphql/graphql.module';
     EventModule,
     CompetitionModule,
     HealthcheckModule,
-    TagModule,
     JobModule,
     AssetModule,
     GraphqlModule,

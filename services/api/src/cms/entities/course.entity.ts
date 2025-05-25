@@ -1,4 +1,5 @@
 import { Column, Entity, Index, ManyToOne, OneToMany } from 'typeorm';
+import { ObjectType, Field } from '@nestjs/graphql';
 import { ContentBase } from './content.base';
 import { LectureEntity } from './lecture.entity';
 import { ChapterEntity } from './chapter.entity';
@@ -8,6 +9,7 @@ import { IsArray, IsBoolean, IsNotEmpty, ValidateNested } from 'class-validator'
 import { Type } from 'class-transformer';
 
 @Entity({ name: 'course' })
+@ObjectType()
 export class CourseEntity extends ContentBase {
   // todo: ensure 2 digits after decimal only
   @Column({
@@ -19,6 +21,7 @@ export class CourseEntity extends ContentBase {
   })
   @Index({ unique: false })
   @ApiProperty()
+  @Field()
   price: number;
 
   // subscriptions access
@@ -31,6 +34,7 @@ export class CourseEntity extends ContentBase {
     message: 'error.IsBoolean: subscriptionAccess should be boolean',
   })
   @ApiProperty()
+  @Field()
   subscriptionAccess: boolean;
 
   // social tags. todo: create a tag entity
@@ -41,6 +45,7 @@ export class CourseEntity extends ContentBase {
   @IsArray({ message: 'error.IsArray: lectures should be an array' })
   @ValidateNested({ each: true })
   @Type(() => LectureEntity)
+  @Field(() => [LectureEntity])
   lectures: LectureEntity[];
 
   // a course have many chapters
@@ -49,6 +54,7 @@ export class CourseEntity extends ContentBase {
   @IsArray({ message: 'error.IsArray: chapters should be an array' })
   @ValidateNested({ each: true })
   @Type(() => ChapterEntity)
+  @Field(() => [ChapterEntity])
   chapters: ChapterEntity[];
 
   // todo: add quizzes, assignments, projects and all other types of content for course

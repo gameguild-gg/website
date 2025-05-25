@@ -1024,17 +1024,6 @@ ALTER TABLE "quiz_editors_user"
 CREATE INDEX "IDX_f09c6797b5611ed29a94d7df8b" ON public.quiz_editors_user USING btree (user_id);
 CREATE UNIQUE INDEX "PK_fbb93aa1e4225ccb62d11a796c0" ON public.quiz_editors_user USING btree (quiz_id, user_id);
 
-CREATE TABLE "tag" (
-  "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
-  "created_at" timestamp without time zone NOT NULL DEFAULT now(),
-  "updated_at" timestamp without time zone NOT NULL DEFAULT now(),
-  "tag" character varying(50) NOT NULL DEFAULT ''::character varying
-);
-
-ALTER TABLE "tag"
-            ADD PRIMARY KEY (id);  CREATE UNIQUE INDEX "IDX_9dbf61b2d00d2c77d3b5ced37c" ON public.tag USING btree (tag);
-CREATE UNIQUE INDEX "PK_8e4052373c579afc1471f526760" ON public.tag USING btree (id);
-
 CREATE TABLE "tag_proficiencies" (
   "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
   "created_at" timestamp without time zone NOT NULL DEFAULT now(),

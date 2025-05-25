@@ -648,13 +648,6 @@ Table Tag {
   targetRelationships TagRelationship
 }
 
-Table TagEntity {
-  createdAt timestamp
-  id uuid
-  tag string
-  updatedAt timestamp
-}
-
 Table TagProficiency {
   createdAt timestamp
   deletedAt timestamp

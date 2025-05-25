@@ -1,4 +1,5 @@
 import { Column, Entity, Index, ManyToOne } from 'typeorm';
+import { ObjectType, Field, registerEnumType } from '@nestjs/graphql';
 import { ContentBase } from './content.base';
 import { CourseEntity } from './course.entity';
 import { ApiProperty, getSchemaPath } from '@nestjs/swagger';
@@ -22,7 +23,12 @@ export enum LectureType {
   AUDIO = 'audio',
 }
 
+registerEnumType(LectureType, {
+  name: 'LectureType',
+});
+
 @Entity({ name: 'lecture' })
+@ObjectType()
 export class LectureEntity extends ContentBase {
   // todo: mimic linkedin behavior where you can access some lectures for free
   @Column({ nullable: false, type: 'float', default: 0 })
@@ -30,11 +36,13 @@ export class LectureEntity extends ContentBase {
   @ApiProperty()
   @IsNotEmpty({ message: 'error.IsNotEmpty: order should not be empty' })
   @IsNumber({}, { message: 'error.IsNumber: order should be a number' })
+  @Field()
   order: number;
 
   @Column({ type: 'jsonb', nullable: true })
   @ApiProperty({ required: false, oneOf: [{ $ref: getSchemaPath(CodeAssignmentDto) }] })
   @IsOptional()
+  @Field(() => String, { nullable: true })
   json: CodeAssignmentDto;
 
   @ApiProperty({
@@ -51,6 +59,7 @@ export class LectureEntity extends ContentBase {
   @Index({ unique: false })
   @IsOptional()
   @IsEnum(LectureType)
+  @Field(() => LectureType)
   renderer: LectureType;
 
   // a lecture belongs to a course
@@ -58,6 +67,7 @@ export class LectureEntity extends ContentBase {
   @ApiProperty({ type: () => CourseEntity })
   @ValidateNested()
   @Type(() => CourseEntity)
+  @Field(() => CourseEntity)
   course: CourseEntity;
 
   // a lecture belongs to a chapter
@@ -65,5 +75,6 @@ export class LectureEntity extends ContentBase {
   @ApiProperty({ type: () => ChapterEntity })
   @ValidateNested()
   @Type(() => ChapterEntity)
+  @Field(() => ChapterEntity)
   chapter: ChapterEntity;
 }

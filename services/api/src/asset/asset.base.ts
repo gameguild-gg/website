@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { ObjectType, Field } from '@nestjs/graphql';
 import { IsEnum, IsMimeType, IsNotEmpty, IsOptional, IsPositive, IsString, MaxLength } from 'class-validator';
 import { Column, Index } from 'typeorm';
 import { EntityBase } from '../common/entities/entity.base';
@@ -12,8 +13,9 @@ export enum AssetSourceType {
 }
 
 // Base asset entity. This should be extended by other entities that need to store assets.
+@ObjectType({ isAbstract: true })
 export class AssetBase extends EntityBase {
-  // this source name is the same on from the env var
+  @Field(() => String)
   @ApiProperty()
   @IsNotEmpty()
   @IsEnum(AssetSourceType)
@@ -21,8 +23,7 @@ export class AssetBase extends EntityBase {
   @Index({ unique: false })
   readonly source: AssetSourceType;
 
-  // the path to the asset on the source without the filename
-  // if external, path will be the full url
+  @Field()
   @ApiProperty()
   @IsNotEmpty()
   @IsString()

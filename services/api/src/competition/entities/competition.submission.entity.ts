@@ -1,4 +1,5 @@
 import { Entity, ManyToOne, Column, OneToMany } from 'typeorm';
+import { ObjectType, Field, registerEnumType } from '@nestjs/graphql';
 import { CompetitionMatchEntity } from './competition.match.entity';
 
 import { CompetitionRunSubmissionReportEntity } from './competition.run.submission.report.entity';
@@ -10,10 +11,16 @@ export enum CompetitionGame {
   Chess = 'Chess',
 }
 
+registerEnumType(CompetitionGame, {
+  name: 'CompetitionGame',
+});
+
 @Entity()
+@ObjectType()
 export class CompetitionSubmissionEntity extends EntityBase {
   // relation with user
   @ManyToOne(() => UserEntity, (user) => user.competitionSubmissions)
+  @Field(() => UserEntity)
   user: UserEntity;
 
   // zip file with the source code
@@ -25,15 +32,19 @@ export class CompetitionSubmissionEntity extends EntityBase {
   executable: Uint8Array;
 
   @Column({ type: 'enum', enum: CompetitionGame, nullable: false })
+  @Field(() => CompetitionGame)
   gameType: CompetitionGame;
 
   @OneToMany(() => CompetitionMatchEntity, (m) => m.p1submission)
+  @Field(() => [CompetitionMatchEntity])
   matchesAsP1: CompetitionMatchEntity[];
 
   @OneToMany(() => CompetitionMatchEntity, (m) => m.p2submission)
+  @Field(() => [CompetitionMatchEntity])
   matchesAsP2: CompetitionMatchEntity[];
 
   // link to reports in runs
   @OneToMany(() => CompetitionRunSubmissionReportEntity, (r) => r.submission)
+  @Field(() => [CompetitionRunSubmissionReportEntity])
   submissionReports: CompetitionRunSubmissionReportEntity[];
 }
