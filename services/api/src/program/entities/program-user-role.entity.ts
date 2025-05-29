@@ -10,12 +10,12 @@ import { ProgramUser } from './program-user.entity';
 export class ProgramUserRole extends EntityBase {
   @ManyToOne(() => Program, (program) => program.programUserRoles, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'program_id' })
-  @ApiProperty({ description: 'Reference to the program this role applies to' })
+  @ApiProperty({ type: () => Program, description: 'Reference to the program this role applies to' })
   program: Program;
 
   @ManyToOne(() => ProgramUser, (programUser) => programUser.roles, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'program_user_id' })
-  @ApiProperty({ description: 'Reference to the user whose role is being defined' })
+  @ApiProperty({ type: () => ProgramUser, description: 'Reference to the user whose role is being defined' })
   programUser: ProgramUser;
 
   @Column({ type: 'enum', enum: ProgramRoleType })

@@ -58,7 +58,7 @@ export class TicketController implements CrudController<TicketEntity> {
   @Auth(AuthenticatedRoute)
   async getMany(@ParsedRequest() req: CrudRequest): Promise<TicketEntity[]> {
     return this.service.find({
-      relations: ['owner', 'project'],
+      relations: { owner: true, project: true },
     });
   }
   @Override()
@@ -66,7 +66,7 @@ export class TicketController implements CrudController<TicketEntity> {
   async getOne(@ParsedRequest() req: CrudRequest, @Param('id') id: string): Promise<TicketEntity> {
     return this.service.findOne({
       where: { id: id },
-      relations: ['owner', 'project'],
+      relations: { owner: true, project: true },
     });
   }
   @Override()

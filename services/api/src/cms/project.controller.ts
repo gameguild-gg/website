@@ -62,7 +62,7 @@ export class ProjectController extends WithRolesController<ProjectEntity> implem
   async getMany(@ParsedRequest() req: CrudRequest): Promise<ProjectEntity[]> {
     // todo: check if this is working, it seems wrong, without paginations and filters
     return this.service.find({
-      relations: ['owner', 'tickets'],
+      relations: { owner: true, tickets: true, versions: true, editors: true },
     });
   }
 
@@ -92,7 +92,7 @@ export class ProjectController extends WithRolesController<ProjectEntity> implem
   async getOne(@ParsedRequest() req: CrudRequest, @Param('slug') slug: string): Promise<ProjectEntity> {
     return this.service.findOne({
       where: { slug: slug },
-      relations: ['owner', 'editors', 'versions', 'tickets'],
+      relations: { owner: true, editors: true, versions: true, tickets: true },
     });
   }
 

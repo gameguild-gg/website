@@ -19,7 +19,7 @@ export class ProgramUser extends EntityBase {
 
   @ManyToOne(() => Program, (program) => program.programUsers, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'program_id' })
-  @ApiProperty({ description: 'Reference to the program the user is enrolled in' })
+  @ApiProperty({ type: () => Program, description: 'Reference to the program the user is enrolled in' })
   program: Program;
 
   @Column({ type: 'jsonb', default: '{}' })
@@ -43,8 +43,10 @@ export class ProgramUser extends EntityBase {
 
   // Relations
   @OneToMany(() => ContentInteraction, (interaction) => interaction.programUser)
+  @ApiProperty({ type: () => ContentInteraction, isArray: true, description: 'User interactions with program content' })
   contentInteractions: ContentInteraction[];
 
   @OneToMany(() => ProgramUserRole, (programUserRole) => programUserRole.programUser)
+  @ApiProperty({ type: () => ProgramUserRole, isArray: true, description: 'Roles assigned to this user in the program' })
   roles: ProgramUserRole[];
 }

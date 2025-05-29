@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsEnum, IsNotEmpty, IsOptional, Length, ValidateNested } from 'class-validator';
-import { CodeLanguageEnum } from './code.language.enum';
+import { CodeLanguage } from './code-activity.dto';
 import { Type } from 'class-transformer';
 import { FileDto } from './file.dto';
 import { EmbeddablecedCodeActivityTest } from './code-embeddable-lexical.dto';
@@ -16,10 +16,14 @@ export class CodeAssignmentDto {
   @IsNotEmpty()
   markdown: string;
 
-  @ApiProperty({ enum: CodeLanguageEnum })
-  @IsEnum(CodeLanguageEnum)
+  @ApiProperty({ type: 'object' })
   @IsNotEmpty()
-  language: CodeLanguageEnum;
+  lexical: Record<string, any>;
+
+  @ApiProperty({ enum: CodeLanguage })
+  @IsEnum(CodeLanguage)
+  @IsNotEmpty()
+  language: CodeLanguage;
 
   @ApiProperty({ type: FileDto, isArray: true })
   @IsNotEmpty()

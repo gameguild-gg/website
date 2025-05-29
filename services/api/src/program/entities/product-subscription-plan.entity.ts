@@ -66,12 +66,10 @@ export class ProductSubscriptionPlan extends EntityBase {
   deletedAt?: Date;
 
   // Relations
-  @ApiProperty({ type: () => Product, description: 'Product this subscription plan belongs to' })
   @ManyToOne(() => Product, (product) => product.subscriptionPlans, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'product_id' })
   product: Product;
 
-  @ApiProperty({ type: () => UserSubscription, isArray: true, description: 'User subscriptions using this plan' })
   @OneToMany(() => UserSubscription, (subscription) => subscription.subscriptionPlan)
   subscriptions: UserSubscription[];
 }

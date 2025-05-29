@@ -12,7 +12,7 @@ export class UserResolver {
     // Using find with TypeORM find options
     const users = await this.userService.find({
       take: 10, // Limit to 10 users for demo purposes
-      order: { createdAt: 'DESC' }
+      order: { createdAt: 'DESC' },
     });
     return users;
   }

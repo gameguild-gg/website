@@ -154,6 +154,7 @@ export class Certificate extends EntityBase {
 
   // Relations
   @OneToMany(() => UserCertificate, (userCert) => userCert.certificate)
+  @ApiProperty({ type: () => UserCertificate, isArray: true, description: 'User certificates issued from this template' })
   userCertificates: UserCertificate[];
 
   @OneToMany(() => CertificateTag, (certificateTag) => certificateTag.certificate)

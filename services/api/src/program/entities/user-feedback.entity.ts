@@ -41,22 +41,18 @@ export class ProgramFeedbackSubmission extends EntityBase {
   isValid: boolean;
 
   // Relations
-  @ApiProperty({ type: () => UserEntity, description: 'User who submitted the feedback' })
   @ManyToOne(() => UserEntity, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'user_id' })
   user: UserEntity;
 
-  @ApiProperty({ type: () => Program, description: 'Program being reviewed', required: false })
   @ManyToOne(() => Program, { nullable: true })
   @JoinColumn({ name: 'program_id' })
   program?: Program;
 
-  @ApiProperty({ type: () => Product, description: 'Product being reviewed', required: false })
   @ManyToOne(() => Product, { nullable: true })
   @JoinColumn({ name: 'product_id' })
   product?: Product;
 
-  @ApiProperty({ type: () => ProgramUser, description: 'Program user context for the feedback', required: false })
   @ManyToOne(() => ProgramUser, { nullable: true })
   @JoinColumn({ name: 'program_user_id' })
   programUser?: ProgramUser;

@@ -6,7 +6,7 @@ import { ProgramUser } from './program-user.entity';
 import { ApiProperty } from '@nestjs/swagger';
 
 @Entity('activity_grades')
-@Index((grade) => [grade.contentInteraction], { unique: true })
+@Index((grade: ActivityGrade) => [grade.contentInteraction], { unique: true })
 export class ActivityGrade extends EntityBase {
   @Column('decimal', { precision: 5, scale: 2, nullable: true })
   @IsNumber()

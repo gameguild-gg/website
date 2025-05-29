@@ -85,14 +85,15 @@ export class ContentInteraction extends EntityBase {
   // Relations
   @ManyToOne(() => ProgramUser, (programUser) => programUser.contentInteractions, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'program_user_id' })
-  @ApiProperty({ description: 'Reference to the program enrollment' })
+  @ApiProperty({ type: () => ProgramUser, description: 'Reference to the program enrollment' })
   programUser: ProgramUser;
 
   @ManyToOne(() => ProgramContent, (content) => content.interactions, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'content_id' })
-  @ApiProperty({ description: 'Reference to the program content item being interacted with' })
+  @ApiProperty({ type: () => ProgramContent, description: 'Reference to the program content item being interacted with' })
   content: ProgramContent;
 
   @OneToMany(() => ActivityGrade, (grade) => grade.contentInteraction)
+  @ApiProperty({ type: () => ActivityGrade, isArray: true, description: 'Grades associated with this interaction' })
   grades: ActivityGrade[];
 }

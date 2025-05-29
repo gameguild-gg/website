@@ -21,7 +21,7 @@ export class JobApplicationService extends TypeOrmCrudService<JobApplicationEnti
         id: applicationId,
         job: { owner: { id: userId } },
       },
-      relations: ['job', 'job.owner'],
+      relations: { job: { owner: true } },
     });
     if (app) {
       return true;
@@ -35,7 +35,7 @@ export class JobApplicationService extends TypeOrmCrudService<JobApplicationEnti
         id: applicationId,
         applicant: { id: userId },
       },
-      relations: ['applicant'],
+      relations: { applicant: true },
     });
     if (app) {
       return true;
@@ -46,7 +46,7 @@ export class JobApplicationService extends TypeOrmCrudService<JobApplicationEnti
   async myApplications(userId: string): Promise<JobApplicationEntity[]> {
     return this.jobAplicationRepository.find({
       where: { applicant: { id: userId } },
-      relations: ['applicant', 'job', 'job.job_tags'],
+      relations: { applicant: true, job: { job_tags: true } },
     });
   }
 
@@ -56,7 +56,7 @@ export class JobApplicationService extends TypeOrmCrudService<JobApplicationEnti
         applicant: { id: userId },
         job: { slug: slug },
       },
-      relations: ['applicant', 'job', 'job.job_tags'],
+      relations: { applicant: true, job: { job_tags: true } },
     });
   }
 

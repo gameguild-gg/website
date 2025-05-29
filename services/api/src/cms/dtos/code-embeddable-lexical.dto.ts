@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsEnum, IsNotEmpty, IsOptional, Length, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
-import { CodeLanguageEnum } from './code.language.enum';
+import { CodeLanguage } from './code-activity.dto';
 
 export class EmbeddablecedCodeActivityTest {
   @ApiProperty()
@@ -18,10 +18,10 @@ export class EmbeddableCodeActivityDto {
   @Length(3, 255)
   title: string;
 
-  @ApiProperty({ enum: CodeLanguageEnum })
-  @IsEnum(CodeLanguageEnum)
+  @ApiProperty({ enum: CodeLanguage })
+  @IsEnum(CodeLanguage)
   @IsNotEmpty()
-  language: CodeLanguageEnum;
+  language: CodeLanguage;
 
   @ApiProperty()
   @IsNotEmpty()

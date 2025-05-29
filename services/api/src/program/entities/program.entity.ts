@@ -81,12 +81,15 @@ export class Program extends EntityBase {
 
   // Relations
   @OneToMany(() => ProgramContent, (programContent) => programContent.program)
+  @ApiProperty({ type: () => ProgramContent, isArray: true, description: 'Content items belonging to this program' })
   contents: ProgramContent[];
 
   @OneToMany(() => ProgramUser, (programUser) => programUser.program)
+  @ApiProperty({ type: () => ProgramUser, isArray: true, description: 'Users enrolled in this program' })
   programUsers: ProgramUser[];
 
   @OneToMany(() => ProgramUserRole, (programUserRole) => programUserRole.program)
+  @ApiProperty({ type: () => ProgramUserRole, isArray: true, description: 'User roles within this program' })
   programUserRoles: ProgramUserRole[];
 
   @OneToMany(() => ProductProgram, (productProgram) => productProgram.program)

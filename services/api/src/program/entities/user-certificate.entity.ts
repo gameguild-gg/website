@@ -45,7 +45,7 @@ export class UserCertificate extends EntityBase {
 
   @ManyToOne(() => Certificate, (certificate) => certificate.userCertificates, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'certificate_id' })
-  @ApiProperty({ description: 'Reference to the certificate template/configuration' })
+  @ApiProperty({ type: () => Certificate, description: 'Reference to the certificate template/configuration' })
   certificate: Certificate;
 
   @Column('varchar', { length: 100, unique: true })

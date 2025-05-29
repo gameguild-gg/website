@@ -49,7 +49,7 @@ export class JobPostService extends WithRolesService<JobPostEntity> {
     const jobPostIds = jobPosts.map((jobPost) => jobPost.id);
 
     const jobApplications = await this.jobApplicationRepo.find({
-      relations: ['applicant', 'job'],
+      relations: { applicant: true, job: true },
       where: {
         applicant: { id: userId },
         job: { id: In(jobPostIds) },
@@ -65,11 +65,11 @@ export class JobPostService extends WithRolesService<JobPostEntity> {
   }
 
   async getBySlug(slug: string): Promise<JobPostEntity> {
-    return this.repo.findOne({ where: { slug }, relations: ['owner'] });
+    return this.repo.findOne({ where: { slug }, relations: { owner: true } });
   }
 
   async getBySlugForOwner(slug: string, userId: string): Promise<JobPostWithApplicationsDto> {
-    const jobPost = await this.repo.findOne({ where: { slug }, relations: ['owner'] });
+    const jobPost = await this.repo.findOne({ where: { slug }, relations: { owner: true } });
 
     if (!jobPost) {
       throw new NotFoundException('Job post not found');

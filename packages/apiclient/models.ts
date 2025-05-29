@@ -13,6 +13,79 @@
  */
 
 export namespace Api {
+	export interface ActivityGrade {
+		id?: string;
+		createdAt: string;
+		updatedAt: string;
+		/**
+		 * @type {number | null}
+		 * @memberof ActivityGrade
+		 */
+		grade: number | null;
+		gradedAt: string | null;
+		/**
+		 * @description <p>Feedback for the activity grade</p>
+		 * @type {string | null}
+		 * @memberof ActivityGrade
+		 */
+		feedback: string | null;
+		/**
+		 * @description <p>Rubric assessment data in JSON format</p>
+		 * @type {Api.ActivityGrade.RubricAssessment | null}
+		 * @memberof ActivityGrade
+		 */
+		rubricAssessment: Api.ActivityGrade.RubricAssessment | null;
+		/**
+		 * @description <p>Additional metadata in JSON format</p>
+		 * @type {Api.ActivityGrade.Metadata | null}
+		 * @memberof ActivityGrade
+		 */
+		metadata: Api.ActivityGrade.Metadata | null;
+		/**
+		 * @description <p>The content interaction being graded</p>
+		 * @type {Api.ActivityGrade.ContentInteraction}
+		 * @memberof ActivityGrade
+		 */
+		contentInteraction: Api.ActivityGrade.ContentInteraction;
+		/**
+		 * @description <p>The program user who provided the grade</p>
+		 * @type {Api.ActivityGrade.GraderProgramUser | null}
+		 * @memberof ActivityGrade
+		 */
+		graderProgramUser: Api.ActivityGrade.GraderProgramUser | null;
+	}
+	
+	/**
+	 * @export
+	 * @namespace ActivityGrade
+	 */
+	export namespace ActivityGrade {
+		/**
+		 * <p>Rubric assessment data in JSON format</p>
+		 */
+		export interface RubricAssessment {
+		}
+	
+		/**
+		 * <p>Additional metadata in JSON format</p>
+		 */
+		export interface Metadata {
+		}
+	
+		/**
+		 * <p>The content interaction being graded</p>
+		 */
+		export interface ContentInteraction extends Api.ContentInteraction {
+		}
+	
+		/**
+		 * <p>The program user who provided the grade</p>
+		 */
+		export interface GraderProgramUser extends Api.ProgramUser {
+		}
+	
+	}
+
 	export interface ApiErrorResponseDto {
 		/**
 		 * @type {number}
@@ -41,6 +114,361 @@ export namespace Api {
 		}
 	
 		export interface Raw {
+		}
+	
+	}
+
+	export interface AssignRoleDto {
+	}
+
+	export interface Certificate {
+		id?: string;
+		createdAt: string;
+		updatedAt: string;
+		/**
+		 * @description <p>Reference to specific program (null for multi-program certificates)</p>
+		 * @type {Api.Certificate.Program}
+		 * @memberof Certificate
+		 */
+		program?: Api.Certificate.Program;
+		/**
+		 * @description <p>Reference to specific product/bundle (null for cross-product certificates)</p>
+		 * @type {Api.Certificate.Product}
+		 * @memberof Certificate
+		 */
+		product?: Api.Certificate.Product;
+		/**
+		 * @description <p>What this certificate type proves when earned</p>
+		 * @type {Api.Certificate.CertificateType}
+		 * @memberof Certificate
+		 */
+		certificateType: Api.Certificate.CertificateType;
+		/**
+		 * @description <p>Display name for this certificate type</p>
+		 * @type {string}
+		 * @memberof Certificate
+		 */
+		name: string;
+		/**
+		 * @description <p>Description of what this certificate represents</p>
+		 * @type {string}
+		 * @memberof Certificate
+		 */
+		description: string;
+		/**
+		 * @description <p>HTML template for certificate generation with variable placeholders like {{name}}, {{date}}, {{program}}</p>
+		 * @type {string}
+		 * @memberof Certificate
+		 */
+		htmlTemplate: string;
+		/**
+		 * @description <p>CSS styles for certificate template to control appearance, fonts, colors, etc.</p>
+		 * @type {string}
+		 * @memberof Certificate
+		 */
+		cssStyles: string;
+		/**
+		 * @description <p>Whether certificates are automatically issued upon completion or require manual approval</p>
+		 * @type {boolean}
+		 * @memberof Certificate
+		 */
+		autoIssue: boolean;
+		/**
+		 * @description <p>Minimum grade percentage required to earn a certificate (0-100)</p>
+		 * @type {number}
+		 * @memberof Certificate
+		 */
+		minimumGrade: number;
+		/**
+		 * @description <p>Percentage of required content that must be completed (0-100)</p>
+		 * @type {number}
+		 * @memberof Certificate
+		 */
+		completionPercentage: number;
+		/**
+		 * @description <p>Whether certificate requires submission of feedback form</p>
+		 * @type {boolean}
+		 * @memberof Certificate
+		 */
+		requiresFeedback: boolean;
+		/**
+		 * @description <p>Whether certificate requires program rating submission</p>
+		 * @type {boolean}
+		 * @memberof Certificate
+		 */
+		requiresRating: boolean;
+		/**
+		 * @description <p>Minimum rating required if rating is mandatory (1-5 scale), null means any rating accepted</p>
+		 * @type {number}
+		 * @memberof Certificate
+		 */
+		minimumRating?: number;
+		/**
+		 * @description <p>JSON template defining feedback form structure when requires_feedback is true</p>
+		 * @type {Api.Certificate.FeedbackFormTemplate}
+		 * @memberof Certificate
+		 */
+		feedbackFormTemplate?: Api.Certificate.FeedbackFormTemplate;
+		/**
+		 * @description <p>Number of months until certificate expires, null for no expiration</p>
+		 * @type {number}
+		 * @memberof Certificate
+		 */
+		expirationMonths?: number;
+		/**
+		 * @description <p>Method used to verify certificate authenticity</p>
+		 * @type {Api.Certificate.CertificateVerificationMethod}
+		 * @memberof Certificate
+		 */
+		certificateVerificationMethod: Api.Certificate.CertificateVerificationMethod;
+		/**
+		 * @description <p>Required achievements/programs before certificate can be issued</p>
+		 * @type {Api.Certificate.Prerequisites}
+		 * @memberof Certificate
+		 */
+		prerequisites?: Api.Certificate.Prerequisites;
+		/**
+		 * @description <p>URL or path to digital badge image for social sharing and profiles</p>
+		 * @type {string}
+		 * @memberof Certificate
+		 */
+		badgeImage?: string;
+		/**
+		 * @description <p>URL or path to authorizing signature image</p>
+		 * @type {string}
+		 * @memberof Certificate
+		 */
+		signatureImage?: string;
+		/**
+		 * @description <p>Professional title/credential granted by this certificate</p>
+		 * @type {string}
+		 * @memberof Certificate
+		 */
+		credentialTitle?: string;
+		/**
+		 * @description <p>Name of institution or entity issuing the certificate</p>
+		 * @type {string}
+		 * @memberof Certificate
+		 */
+		issuerName?: string;
+		/**
+		 * @description <p>Additional configuration: custom fields, internationalization, visibility, etc.</p>
+		 * @type {Api.Certificate.Metadata}
+		 * @memberof Certificate
+		 */
+		metadata?: Api.Certificate.Metadata;
+		/**
+		 * @description <p>Whether this certificate template is currently active</p>
+		 * @type {boolean}
+		 * @memberof Certificate
+		 */
+		isActive: boolean;
+		/**
+		 * @description <p>Soft delete timestamp</p>
+		 * @type {string}
+		 * @memberof Certificate
+		 */
+		deletedAt?: string;
+		/**
+		 * @description <p>User certificates issued from this template</p>
+		 * @type {Api.UserCertificate[]}
+		 * @memberof Certificate
+		 */
+		userCertificates: Api.UserCertificate[];
+		/**
+		 * @description <p>Tag relationships associated with this certificate</p>
+		 * @type {Api.CertificateTag[]}
+		 * @memberof Certificate
+		 */
+		certificateTags: Api.CertificateTag[];
+	}
+	
+	/**
+	 * @export
+	 * @namespace Certificate
+	 */
+	export namespace Certificate {
+		/**
+		 * <p>Reference to specific program (null for multi-program certificates)</p>
+		 */
+		export interface Program extends Api.Program {
+		}
+	
+		/**
+		 * <p>Reference to specific product/bundle (null for cross-product certificates)</p>
+		 */
+		export interface Product extends Api.Product {
+		}
+	
+		/**
+		 * <p>What this certificate type proves when earned</p>
+		 */
+		export type CertificateType =
+			'program_completion' |
+			'product_bundle_completion' |
+			'learning_pathway' |
+			'skill_mastery' |
+			'event_participation' |
+			'assessment_passed' |
+			'project_completion' |
+			'specialization' |
+			'professional' |
+			'achievement' |
+			'instructor' |
+			'time_investment' |
+			'peer_recognition'
+		
+		export namespace CertificateType {
+			export enum Enum {
+				ProgramCompletion = 'program_completion',
+				ProductBundleCompletion = 'product_bundle_completion',
+				LearningPathway = 'learning_pathway',
+				SkillMastery = 'skill_mastery',
+				EventParticipation = 'event_participation',
+				AssessmentPassed = 'assessment_passed',
+				ProjectCompletion = 'project_completion',
+				Specialization = 'specialization',
+				Professional = 'professional',
+				Achievement = 'achievement',
+				Instructor = 'instructor',
+				TimeInvestment = 'time_investment',
+				PeerRecognition = 'peer_recognition'
+			}
+		}
+	
+		/**
+		 * <p>JSON template defining feedback form structure when requires_feedback is true</p>
+		 */
+		export interface FeedbackFormTemplate {
+		}
+	
+		/**
+		 * <p>Method used to verify certificate authenticity</p>
+		 */
+		export type CertificateVerificationMethod =
+			'code' |
+			'blockchain' |
+			'both'
+		
+		export namespace CertificateVerificationMethod {
+			export enum Enum {
+				Code = 'code',
+				Blockchain = 'blockchain',
+				Both = 'both'
+			}
+		}
+	
+		/**
+		 * <p>Required achievements/programs before certificate can be issued</p>
+		 */
+		export interface Prerequisites {
+		}
+	
+		/**
+		 * <p>Additional configuration: custom fields, internationalization, visibility, etc.</p>
+		 */
+		export interface Metadata {
+		}
+	
+	}
+
+	export interface CertificateTag {
+		id?: string;
+		createdAt: string;
+		updatedAt: string;
+		/**
+		 * @description <p>Type of relationship (requirement, recommendation, provides)</p>
+		 * @type {string}
+		 * @memberof CertificateTag
+		 */
+		'type': string;
+		/**
+		 * @description <p>Additional tag-specific data like specific competencies, context, etc.</p>
+		 * @type {Api.CertificateTag.Metadata}
+		 * @memberof CertificateTag
+		 */
+		metadata?: Api.CertificateTag.Metadata;
+		/**
+		 * @description <p>The certificate associated with this tag relationship</p>
+		 * @type {Api.CertificateTag.Certificate}
+		 * @memberof CertificateTag
+		 */
+		certificate: Api.CertificateTag.Certificate;
+		/**
+		 * @description <p>The tag proficiency level associated with this certificate</p>
+		 * @type {Api.CertificateTag.TagProficiency}
+		 * @memberof CertificateTag
+		 */
+		tagProficiency: Api.CertificateTag.TagProficiency;
+	}
+	
+	/**
+	 * @export
+	 * @namespace CertificateTag
+	 */
+	export namespace CertificateTag {
+		/**
+		 * <p>Additional tag-specific data like specific competencies, context, etc.</p>
+		 */
+		export interface Metadata {
+		}
+	
+		/**
+		 * <p>The certificate associated with this tag relationship</p>
+		 */
+		export interface Certificate extends Api.Certificate {
+		}
+	
+		/**
+		 * <p>The tag proficiency level associated with this certificate</p>
+		 */
+		export interface TagProficiency extends Api.TagProficiency {
+		}
+	
+	}
+
+	export interface CertificateVerificationResult {
+		/**
+		 * @description <p>Whether the certificate is valid</p>
+		 * @type {boolean}
+		 * @memberof CertificateVerificationResult
+		 */
+		isValid: boolean;
+		/**
+		 * @description <p>Certificate details if valid</p>
+		 * @type {Api.CertificateVerificationResult.Certificate}
+		 * @memberof CertificateVerificationResult
+		 */
+		certificate?: Api.CertificateVerificationResult.Certificate;
+		/**
+		 * @description <p>Verification details</p>
+		 * @type {Api.CertificateVerificationResult.VerificationDetails}
+		 * @memberof CertificateVerificationResult
+		 */
+		verificationDetails: Api.CertificateVerificationResult.VerificationDetails;
+		/**
+		 * @description <p>Validation errors if any</p>
+		 * @type {string[]}
+		 * @memberof CertificateVerificationResult
+		 */
+		errors?: string[];
+	}
+	
+	/**
+	 * @export
+	 * @namespace CertificateVerificationResult
+	 */
+	export namespace CertificateVerificationResult {
+		/**
+		 * <p>Certificate details if valid</p>
+		 */
+		export interface Certificate extends Api.UserCertificate {
+		}
+	
+		/**
+		 * <p>Verification details</p>
+		 */
+		export interface VerificationDetails extends Api.VerificationDetails {
 		}
 	
 	}
@@ -197,6 +625,7 @@ export namespace Api {
 	export interface CodeAssignmentDto {
 		title: string;
 		markdown: string;
+		lexical: Api.CodeAssignmentDto.Lexical;
 		language: Api.CodeAssignmentDto.Language;
 		files: Api.FileDto[];
 		tests: Api.EmbeddablecedCodeActivityTest[];
@@ -207,18 +636,27 @@ export namespace Api {
 	 * @namespace CodeAssignmentDto
 	 */
 	export namespace CodeAssignmentDto {
+		export interface Lexical {
+		}
+	
 		export type Language =
+			'c' |
+			'cpp' |
 			'python' |
 			'javascript' |
-			'c++' |
-			'bash'
+			'rust' |
+			'c#' |
+			'lua'
 		
 		export namespace Language {
 			export enum Enum {
+				C = 'c',
+				Cpp = 'cpp',
 				Python = 'python',
 				Javascript = 'javascript',
-				C = 'c++',
-				Bash = 'bash'
+				Rust = 'rust',
+				C1 = 'c#',
+				Lua = 'lua'
 			}
 		}
 	
@@ -397,6 +835,157 @@ export namespace Api {
 		updatedAt: string;
 	}
 
+	export interface ContentInteraction {
+		id?: string;
+		createdAt: string;
+		updatedAt: string;
+		/**
+		 * @description <p>Current completion status</p>
+		 * @type {Api.ContentInteraction.Status}
+		 * @memberof ContentInteraction
+		 */
+		status: Api.ContentInteraction.Status;
+		/**
+		 * @description <p>When the user first accessed this content</p>
+		 * @type {string}
+		 * @memberof ContentInteraction
+		 */
+		startedAt?: string;
+		/**
+		 * @description <p>When the user completed this content</p>
+		 * @type {string}
+		 * @memberof ContentInteraction
+		 */
+		completedAt?: string;
+		/**
+		 * @description <p>Total time spent on this content</p>
+		 * @type {number}
+		 * @memberof ContentInteraction
+		 */
+		timeSpentSeconds: number;
+		/**
+		 * @description <p>When the user last accessed this content</p>
+		 * @type {string}
+		 * @memberof ContentInteraction
+		 */
+		lastAccessedAt?: string;
+		/**
+		 * @description <p>When the submission was received, null if no submission yet</p>
+		 * @type {string}
+		 * @memberof ContentInteraction
+		 */
+		submittedAt?: string;
+		/**
+		 * @description <p>Structured data containing quiz answers with question IDs and selected responses</p>
+		 * @type {Api.ContentInteraction.Answers}
+		 * @memberof ContentInteraction
+		 */
+		answers?: Api.ContentInteraction.Answers;
+		/**
+		 * @description <p>Plain text submission for text-based assignments</p>
+		 * @type {string}
+		 * @memberof ContentInteraction
+		 */
+		textResponse?: string;
+		/**
+		 * @description <p>URL reference for external content submissions</p>
+		 * @type {string}
+		 * @memberof ContentInteraction
+		 */
+		urlResponse?: string;
+		/**
+		 * @description <p>Metadata for uploaded files including paths, types, sizes, etc.</p>
+		 * @type {Api.ContentInteraction.FileResponse}
+		 * @memberof ContentInteraction
+		 */
+		fileResponse?: Api.ContentInteraction.FileResponse;
+		/**
+		 * @description <p>Additional data based on content type</p>
+		 * @type {Api.ContentInteraction.Metadata}
+		 * @memberof ContentInteraction
+		 */
+		metadata?: Api.ContentInteraction.Metadata;
+		/**
+		 * @description <p>Soft delete timestamp - when the record was deleted, null if active</p>
+		 * @type {string}
+		 * @memberof ContentInteraction
+		 */
+		deletedAt?: string;
+		/**
+		 * @description <p>Reference to the program enrollment</p>
+		 * @type {Api.ContentInteraction.ProgramUser}
+		 * @memberof ContentInteraction
+		 */
+		programUser: Api.ContentInteraction.ProgramUser;
+		/**
+		 * @description <p>Reference to the program content item being interacted with</p>
+		 * @type {Api.ContentInteraction.Content}
+		 * @memberof ContentInteraction
+		 */
+		content: Api.ContentInteraction.Content;
+		/**
+		 * @description <p>Grades associated with this interaction</p>
+		 * @type {Api.ActivityGrade[]}
+		 * @memberof ContentInteraction
+		 */
+		grades: Api.ActivityGrade[];
+	}
+	
+	/**
+	 * @export
+	 * @namespace ContentInteraction
+	 */
+	export namespace ContentInteraction {
+		/**
+		 * <p>Current completion status</p>
+		 */
+		export type Status =
+			'not_started' |
+			'in_progress' |
+			'completed' |
+			'skipped'
+		
+		export namespace Status {
+			export enum Enum {
+				NotStarted = 'not_started',
+				InProgress = 'in_progress',
+				Completed = 'completed',
+				Skipped = 'skipped'
+			}
+		}
+	
+		/**
+		 * <p>Structured data containing quiz answers with question IDs and selected responses</p>
+		 */
+		export interface Answers {
+		}
+	
+		/**
+		 * <p>Metadata for uploaded files including paths, types, sizes, etc.</p>
+		 */
+		export interface FileResponse {
+		}
+	
+		/**
+		 * <p>Additional data based on content type</p>
+		 */
+		export interface Metadata {
+		}
+	
+		/**
+		 * <p>Reference to the program enrollment</p>
+		 */
+		export interface ProgramUser extends Api.ProgramUser {
+		}
+	
+		/**
+		 * <p>Reference to the program content item being interacted with</p>
+		 */
+		export interface Content extends Api.ProgramContent {
+		}
+	
+	}
+
 	export interface CourseEntity {
 		id?: string;
 		createdAt: string;
@@ -450,7 +1039,222 @@ export namespace Api {
 	
 	}
 
+	export interface CreateCertificateTemplateDto {
+		/**
+		 * @description <p>Program ID this certificate is associated with</p>
+		 * @type {string}
+		 * @memberof CreateCertificateTemplateDto
+		 */
+		programId?: string;
+		/**
+		 * @description <p>Product ID this certificate is associated with</p>
+		 * @type {string}
+		 * @memberof CreateCertificateTemplateDto
+		 */
+		productId?: string;
+		/**
+		 * @description <p>Type of certificate</p>
+		 * @type {Api.CreateCertificateTemplateDto.CertificateType}
+		 * @memberof CreateCertificateTemplateDto
+		 */
+		certificateType: Api.CreateCertificateTemplateDto.CertificateType;
+		/**
+		 * @description <p>Display name for this certificate</p>
+		 * @type {string}
+		 * @memberof CreateCertificateTemplateDto
+		 */
+		name: string;
+		/**
+		 * @description <p>Description of what this certificate represents</p>
+		 * @type {string}
+		 * @memberof CreateCertificateTemplateDto
+		 */
+		description: string;
+		/**
+		 * @description <p>HTML template for certificate generation</p>
+		 * @type {string}
+		 * @memberof CreateCertificateTemplateDto
+		 */
+		htmlTemplate: string;
+		/**
+		 * @description <p>CSS styles for certificate template</p>
+		 * @type {string}
+		 * @memberof CreateCertificateTemplateDto
+		 */
+		cssStyles: string;
+		/**
+		 * @description <p>Whether certificates are automatically issued</p>
+		 * @type {boolean}
+		 * @memberof CreateCertificateTemplateDto
+		 */
+		autoIssue?: boolean;
+		/**
+		 * @description <p>Minimum grade percentage required (0-100)</p>
+		 * @type {number}
+		 * @memberof CreateCertificateTemplateDto
+		 */
+		minimumGrade?: number;
+		/**
+		 * @description <p>Completion percentage required (0-100)</p>
+		 * @type {number}
+		 * @memberof CreateCertificateTemplateDto
+		 */
+		completionPercentage?: number;
+		/**
+		 * @description <p>Whether feedback is required</p>
+		 * @type {boolean}
+		 * @memberof CreateCertificateTemplateDto
+		 */
+		requiresFeedback?: boolean;
+		/**
+		 * @description <p>Whether rating is required</p>
+		 * @type {boolean}
+		 * @memberof CreateCertificateTemplateDto
+		 */
+		requiresRating?: boolean;
+		/**
+		 * @description <p>Minimum rating required if rating is mandatory</p>
+		 * @type {number}
+		 * @memberof CreateCertificateTemplateDto
+		 */
+		minimumRating?: number;
+		/**
+		 * @description <p>Feedback form template</p>
+		 * @type {Api.CreateCertificateTemplateDto.FeedbackFormTemplate}
+		 * @memberof CreateCertificateTemplateDto
+		 */
+		feedbackFormTemplate?: Api.CreateCertificateTemplateDto.FeedbackFormTemplate;
+		/**
+		 * @description <p>Certificate expiration in months</p>
+		 * @type {number}
+		 * @memberof CreateCertificateTemplateDto
+		 */
+		expirationMonths?: number;
+		/**
+		 * @description <p>Verification method</p>
+		 * @type {Api.CreateCertificateTemplateDto.CertificateVerificationMethod}
+		 * @memberof CreateCertificateTemplateDto
+		 */
+		certificateVerificationMethod?: Api.CreateCertificateTemplateDto.CertificateVerificationMethod;
+		/**
+		 * @description <p>Prerequisites</p>
+		 * @type {Api.CreateCertificateTemplateDto.Prerequisites}
+		 * @memberof CreateCertificateTemplateDto
+		 */
+		prerequisites?: Api.CreateCertificateTemplateDto.Prerequisites;
+		/**
+		 * @description <p>Badge image URL</p>
+		 * @type {string}
+		 * @memberof CreateCertificateTemplateDto
+		 */
+		badgeImage?: string;
+		/**
+		 * @description <p>Signature image URL</p>
+		 * @type {string}
+		 * @memberof CreateCertificateTemplateDto
+		 */
+		signatureImage?: string;
+		/**
+		 * @description <p>Credential title</p>
+		 * @type {string}
+		 * @memberof CreateCertificateTemplateDto
+		 */
+		credentialTitle?: string;
+		/**
+		 * @description <p>Issuer name</p>
+		 * @type {string}
+		 * @memberof CreateCertificateTemplateDto
+		 */
+		issuerName?: string;
+		/**
+		 * @description <p>Additional metadata</p>
+		 * @type {Api.CreateCertificateTemplateDto.Metadata}
+		 * @memberof CreateCertificateTemplateDto
+		 */
+		metadata?: Api.CreateCertificateTemplateDto.Metadata;
+	}
+	
+	/**
+	 * @export
+	 * @namespace CreateCertificateTemplateDto
+	 */
+	export namespace CreateCertificateTemplateDto {
+		/**
+		 * <p>Type of certificate</p>
+		 */
+		export type CertificateType =
+			'program_completion' |
+			'product_bundle_completion' |
+			'learning_pathway' |
+			'skill_mastery' |
+			'event_participation' |
+			'assessment_passed' |
+			'project_completion' |
+			'specialization' |
+			'professional' |
+			'achievement' |
+			'instructor' |
+			'time_investment' |
+			'peer_recognition'
+		
+		export namespace CertificateType {
+			export enum Enum {
+				ProgramCompletion = 'program_completion',
+				ProductBundleCompletion = 'product_bundle_completion',
+				LearningPathway = 'learning_pathway',
+				SkillMastery = 'skill_mastery',
+				EventParticipation = 'event_participation',
+				AssessmentPassed = 'assessment_passed',
+				ProjectCompletion = 'project_completion',
+				Specialization = 'specialization',
+				Professional = 'professional',
+				Achievement = 'achievement',
+				Instructor = 'instructor',
+				TimeInvestment = 'time_investment',
+				PeerRecognition = 'peer_recognition'
+			}
+		}
+	
+		/**
+		 * <p>Feedback form template</p>
+		 */
+		export interface FeedbackFormTemplate {
+		}
+	
+		/**
+		 * <p>Verification method</p>
+		 */
+		export type CertificateVerificationMethod =
+			'code' |
+			'blockchain' |
+			'both'
+		
+		export namespace CertificateVerificationMethod {
+			export enum Enum {
+				Code = 'code',
+				Blockchain = 'blockchain',
+				Both = 'both'
+			}
+		}
+	
+		/**
+		 * <p>Prerequisites</p>
+		 */
+		export interface Prerequisites {
+		}
+	
+		/**
+		 * <p>Additional metadata</p>
+		 */
+		export interface Metadata {
+		}
+	
+	}
+
 	export interface CreateManyQuizEntityDto {
+	}
+
+	export interface CreateProgramRequestDto {
 	}
 
 	export interface CreateProjectDto {
@@ -504,6 +1308,9 @@ export namespace Api {
 		out: string;
 	}
 
+	export interface EnrollmentRequestDto {
+	}
+
 	export interface ErrorMessage {
 		target: Api.ErrorMessage.Target;
 		property: string;
@@ -541,6 +1348,209 @@ export namespace Api {
 		 * @memberof FileDto
 		 */
 		content: string | string | Blob;
+	}
+
+	export interface FinancialTransaction {
+		id?: string;
+		createdAt: string;
+		updatedAt: string;
+		/**
+		 * @description <p>Source user, null if system credit or external payment</p>
+		 * @type {Api.FinancialTransaction.FromUser}
+		 * @memberof FinancialTransaction
+		 */
+		fromUser?: Api.FinancialTransaction.FromUser;
+		/**
+		 * @description <p>Destination user, null if system debit or external payment</p>
+		 * @type {Api.FinancialTransaction.ToUser}
+		 * @memberof FinancialTransaction
+		 */
+		toUser?: Api.FinancialTransaction.ToUser;
+		/**
+		 * @description <p>Product being purchased, if applicable</p>
+		 * @type {Api.FinancialTransaction.Product}
+		 * @memberof FinancialTransaction
+		 */
+		product?: Api.FinancialTransaction.Product;
+		/**
+		 * @description <p>Specific pricing used for this transaction</p>
+		 * @type {Api.FinancialTransaction.Pricing}
+		 * @memberof FinancialTransaction
+		 */
+		pricing?: Api.FinancialTransaction.Pricing;
+		/**
+		 * @description <p>Subscription plan for subscription transactions</p>
+		 * @type {Api.FinancialTransaction.SubscriptionPlan}
+		 * @memberof FinancialTransaction
+		 */
+		subscriptionPlan?: Api.FinancialTransaction.SubscriptionPlan;
+		/**
+		 * @description <p>Promo code applied to this transaction</p>
+		 * @type {Api.FinancialTransaction.PromoCode}
+		 * @memberof FinancialTransaction
+		 */
+		promoCode?: Api.FinancialTransaction.PromoCode;
+		/**
+		 * @description <p>Type of financial transaction (purchase, refund, etc.)</p>
+		 * @type {Api.FinancialTransaction.TransactionType}
+		 * @memberof FinancialTransaction
+		 */
+		transactionType: Api.FinancialTransaction.TransactionType;
+		/**
+		 * @description <p>Actual amount of the transaction after discounts</p>
+		 * @type {number}
+		 * @memberof FinancialTransaction
+		 */
+		amount: number;
+		/**
+		 * @description <p>Original amount before any discounts or adjustments</p>
+		 * @type {number}
+		 * @memberof FinancialTransaction
+		 */
+		originalAmount: number;
+		/**
+		 * @description <p>User who referred this transaction for commission</p>
+		 * @type {Api.FinancialTransaction.ReferrerUser}
+		 * @memberof FinancialTransaction
+		 */
+		referrerUser?: Api.FinancialTransaction.ReferrerUser;
+		/**
+		 * @description <p>Amount paid to referrer as commission</p>
+		 * @type {number}
+		 * @memberof FinancialTransaction
+		 */
+		referralCommissionAmount?: number;
+		/**
+		 * @description <p>Current status of this transaction (pending, completed, etc.)</p>
+		 * @type {Api.FinancialTransaction.Status}
+		 * @memberof FinancialTransaction
+		 */
+		status: Api.FinancialTransaction.Status;
+		/**
+		 * @description <p>Payment processor used (stripe, paypal, crypto, etc.)</p>
+		 * @type {string}
+		 * @memberof FinancialTransaction
+		 */
+		paymentProvider: string;
+		/**
+		 * @description <p>External transaction ID from the payment provider for reconciliation</p>
+		 * @type {string}
+		 * @memberof FinancialTransaction
+		 */
+		paymentProviderTransactionId: string;
+		/**
+		 * @description <p>Additional transaction-specific data such as payment details, items, etc.</p>
+		 * @type {Api.FinancialTransaction.Metadata}
+		 * @memberof FinancialTransaction
+		 */
+		metadata?: Api.FinancialTransaction.Metadata;
+		/**
+		 * @description <p>Soft delete timestamp - when the transaction was deleted, null if active</p>
+		 * @type {string}
+		 * @memberof FinancialTransaction
+		 */
+		deletedAt?: string;
+	}
+	
+	/**
+	 * @export
+	 * @namespace FinancialTransaction
+	 */
+	export namespace FinancialTransaction {
+		/**
+		 * <p>Source user, null if system credit or external payment</p>
+		 */
+		export interface FromUser extends Api.UserEntity {
+		}
+	
+		/**
+		 * <p>Destination user, null if system debit or external payment</p>
+		 */
+		export interface ToUser extends Api.UserEntity {
+		}
+	
+		/**
+		 * <p>Product being purchased, if applicable</p>
+		 */
+		export interface Product extends Api.Product {
+		}
+	
+		/**
+		 * <p>Specific pricing used for this transaction</p>
+		 */
+		export interface Pricing extends Api.ProductPricing {
+		}
+	
+		/**
+		 * <p>Subscription plan for subscription transactions</p>
+		 */
+		export interface SubscriptionPlan extends Api.ProductSubscriptionPlan {
+		}
+	
+		/**
+		 * <p>Promo code applied to this transaction</p>
+		 */
+		export interface PromoCode extends Api.PromoCode {
+		}
+	
+		/**
+		 * <p>Type of financial transaction (purchase, refund, etc.)</p>
+		 */
+		export type TransactionType =
+			'purchase' |
+			'refund' |
+			'withdrawal' |
+			'deposit' |
+			'transfer' |
+			'fee' |
+			'adjustment'
+		
+		export namespace TransactionType {
+			export enum Enum {
+				Purchase = 'purchase',
+				Refund = 'refund',
+				Withdrawal = 'withdrawal',
+				Deposit = 'deposit',
+				Transfer = 'transfer',
+				Fee = 'fee',
+				Adjustment = 'adjustment'
+			}
+		}
+	
+		/**
+		 * <p>User who referred this transaction for commission</p>
+		 */
+		export interface ReferrerUser extends Api.UserEntity {
+		}
+	
+		/**
+		 * <p>Current status of this transaction (pending, completed, etc.)</p>
+		 */
+		export type Status =
+			'pending' |
+			'processing' |
+			'completed' |
+			'failed' |
+			'refunded' |
+			'cancelled'
+		
+		export namespace Status {
+			export enum Enum {
+				Pending = 'pending',
+				Processing = 'processing',
+				Completed = 'completed',
+				Failed = 'failed',
+				Refunded = 'refunded',
+				Cancelled = 'cancelled'
+			}
+		}
+	
+		/**
+		 * <p>Additional transaction-specific data such as payment details, items, etc.</p>
+		 */
+		export interface Metadata {
+		}
+	
 	}
 
 	export interface FormLongAnswerDto {
@@ -716,6 +1726,88 @@ export namespace Api {
 		 */
 		height: number;
 		description: string;
+	}
+
+	export interface IssueCertificateDto {
+		/**
+		 * @description <p>ID of the certificate template to use</p>
+		 * @type {string}
+		 * @memberof IssueCertificateDto
+		 */
+		certificateId: string;
+		/**
+		 * @description <p>Program ID for program-specific certificates</p>
+		 * @type {string}
+		 * @memberof IssueCertificateDto
+		 */
+		programId?: string;
+		/**
+		 * @description <p>Product ID for product-specific certificates</p>
+		 * @type {string}
+		 * @memberof IssueCertificateDto
+		 */
+		productId?: string;
+		/**
+		 * @description <p>ID of the user to issue certificate to</p>
+		 * @type {string}
+		 * @memberof IssueCertificateDto
+		 */
+		userId: string;
+		/**
+		 * @description <p>Program user ID if certificate is program-specific</p>
+		 * @type {string}
+		 * @memberof IssueCertificateDto
+		 */
+		programUserId?: string;
+		/**
+		 * @description <p>Initial status of the certificate</p>
+		 * @type {Api.IssueCertificateDto.Status}
+		 * @memberof IssueCertificateDto
+		 */
+		status?: Api.IssueCertificateDto.Status;
+		/**
+		 * @description <p>Certificate expiration date</p>
+		 * @type {string}
+		 * @memberof IssueCertificateDto
+		 */
+		expiresAt?: string;
+		/**
+		 * @description <p>Custom metadata for the certificate instance</p>
+		 * @type {Api.IssueCertificateDto.Metadata}
+		 * @memberof IssueCertificateDto
+		 */
+		metadata?: Api.IssueCertificateDto.Metadata;
+	}
+	
+	/**
+	 * @export
+	 * @namespace IssueCertificateDto
+	 */
+	export namespace IssueCertificateDto {
+		/**
+		 * <p>Initial status of the certificate</p>
+		 */
+		export type Status =
+			'active' |
+			'expired' |
+			'revoked' |
+			'pending'
+		
+		export namespace Status {
+			export enum Enum {
+				Active = 'active',
+				Expired = 'expired',
+				Revoked = 'revoked',
+				Pending = 'pending'
+			}
+		}
+	
+		/**
+		 * <p>Custom metadata for the certificate instance</p>
+		 */
+		export interface Metadata {
+		}
+	
 	}
 
 	export interface JobAplicationCreateDto {
@@ -1024,6 +2116,870 @@ export namespace Api {
 		message: string;
 	}
 
+	export interface Product {
+		id?: string;
+		createdAt: string;
+		updatedAt: string;
+		/**
+		 * @description <p>Product title/name displayed to users</p>
+		 * @type {string}
+		 * @memberof Product
+		 */
+		title: string;
+		/**
+		 * @description <p>Detailed description of the product</p>
+		 * @type {string}
+		 * @memberof Product
+		 */
+		description: string;
+		/**
+		 * @description <p>URL or path to product thumbnail image</p>
+		 * @type {string}
+		 * @memberof Product
+		 */
+		thumbnail?: string;
+		/**
+		 * @description <p>Type of product (program, bundle, subscription, etc.)</p>
+		 * @type {Api.Product.Type}
+		 * @memberof Product
+		 */
+		'type': Api.Product.Type;
+		/**
+		 * @description <p>Whether this product is a bundle of other products</p>
+		 * @type {boolean}
+		 * @memberof Product
+		 */
+		isBundle: boolean;
+		/**
+		 * @description <p>Array of product IDs included in the bundle</p>
+		 * @type {Api.Product.BundleItems}
+		 * @memberof Product
+		 */
+		bundleItems?: Api.Product.BundleItems;
+		/**
+		 * @description <p>Flexible storage for product type-specific configuration</p>
+		 * @type {Api.Product.Metadata}
+		 * @memberof Product
+		 */
+		metadata: Api.Product.Metadata;
+		/**
+		 * @description <p>Default 30% commission for referrals</p>
+		 * @type {number}
+		 * @memberof Product
+		 */
+		referralCommissionPercentage: number;
+		/**
+		 * @description <p>Maximum % discount affiliate can offer, 0 means no affiliate allowed</p>
+		 * @type {number}
+		 * @memberof Product
+		 */
+		maxAffiliateDiscount: number;
+		/**
+		 * @description <p>Commission % from remaining value after discount</p>
+		 * @type {number}
+		 * @memberof Product
+		 */
+		affiliateCommissionPercentage: number;
+		/**
+		 * @description <p>Product visibility status (draft, published, archived)</p>
+		 * @type {Api.Product.Visibility}
+		 * @memberof Product
+		 */
+		visibility: Api.Product.Visibility;
+		/**
+		 * @description <p>Soft delete timestamp - when the product was deleted, null if active</p>
+		 * @type {string}
+		 * @memberof Product
+		 */
+		deletedAt?: string;
+		/**
+		 * @description <p>Program relationships for this product</p>
+		 * @type {Api.ProductProgram[]}
+		 * @memberof Product
+		 */
+		productPrograms: Api.ProductProgram[];
+		/**
+		 * @description <p>Pricing options for this product</p>
+		 * @type {Api.ProductPricing[]}
+		 * @memberof Product
+		 */
+		pricing: Api.ProductPricing[];
+		/**
+		 * @description <p>Subscription plans for this product</p>
+		 * @type {Api.ProductSubscriptionPlan[]}
+		 * @memberof Product
+		 */
+		subscriptionPlans: Api.ProductSubscriptionPlan[];
+		/**
+		 * @description <p>Users who have access to this product</p>
+		 * @type {Api.UserProduct[]}
+		 * @memberof Product
+		 */
+		userProducts: Api.UserProduct[];
+	}
+	
+	/**
+	 * @export
+	 * @namespace Product
+	 */
+	export namespace Product {
+		/**
+		 * <p>Type of product (program, bundle, subscription, etc.)</p>
+		 */
+		export type Type =
+			'program' |
+			'learning_pathway' |
+			'bundle' |
+			'subscription' |
+			'workshop' |
+			'mentorship' |
+			'ebook' |
+			'resource_pack' |
+			'community' |
+			'certification' |
+			'other'
+		
+		export namespace Type {
+			export enum Enum {
+				Program = 'program',
+				LearningPathway = 'learning_pathway',
+				Bundle = 'bundle',
+				Subscription = 'subscription',
+				Workshop = 'workshop',
+				Mentorship = 'mentorship',
+				Ebook = 'ebook',
+				ResourcePack = 'resource_pack',
+				Community = 'community',
+				Certification = 'certification',
+				Other = 'other'
+			}
+		}
+	
+		/**
+		 * <p>Array of product IDs included in the bundle</p>
+		 */
+		export interface BundleItems {
+		}
+	
+		/**
+		 * <p>Flexible storage for product type-specific configuration</p>
+		 */
+		export interface Metadata {
+		}
+	
+		/**
+		 * <p>Product visibility status (draft, published, archived)</p>
+		 */
+		export type Visibility =
+			'draft' |
+			'published' |
+			'archived'
+		
+		export namespace Visibility {
+			export enum Enum {
+				Draft = 'draft',
+				Published = 'published',
+				Archived = 'archived'
+			}
+		}
+	
+	}
+
+	export interface ProductPricing {
+		id?: string;
+		createdAt: string;
+		updatedAt: string;
+		/**
+		 * @description <p>Standard price of the product before any discounts</p>
+		 * @type {number}
+		 * @memberof ProductPricing
+		 */
+		basePrice: number;
+		/**
+		 * @description <p>Percentage of revenue that goes to the content creator</p>
+		 * @type {number}
+		 * @memberof ProductPricing
+		 */
+		creatorSharePercentage: number;
+		/**
+		 * @description <p>Applicable tax rate for this product</p>
+		 * @type {number}
+		 * @memberof ProductPricing
+		 */
+		taxRate: number;
+		/**
+		 * @description <p>Rules for when this pricing is available (e.g., time-limited offers, regional pricing)</p>
+		 * @type {Api.ProductPricing.AvailabilityRules}
+		 * @memberof ProductPricing
+		 */
+		availabilityRules?: Api.ProductPricing.AvailabilityRules;
+		/**
+		 * @description <p>Soft delete timestamp - when the pricing was deleted, null if active</p>
+		 * @type {string}
+		 * @memberof ProductPricing
+		 */
+		deletedAt?: string;
+		/**
+		 * @description <p>The product this pricing applies to</p>
+		 * @type {Api.ProductPricing.Product}
+		 * @memberof ProductPricing
+		 */
+		product: Api.ProductPricing.Product;
+		/**
+		 * @description <p>Financial transactions associated with this pricing</p>
+		 * @type {Api.FinancialTransaction[]}
+		 * @memberof ProductPricing
+		 */
+		transactions: Api.FinancialTransaction[];
+	}
+	
+	/**
+	 * @export
+	 * @namespace ProductPricing
+	 */
+	export namespace ProductPricing {
+		/**
+		 * <p>Rules for when this pricing is available (e.g., time-limited offers, regional pricing)</p>
+		 */
+		export interface AvailabilityRules {
+		}
+	
+		/**
+		 * <p>The product this pricing applies to</p>
+		 */
+		export interface Product extends Api.Product {
+		}
+	
+	}
+
+	export interface ProductProgram {
+		id?: string;
+		createdAt: string;
+		updatedAt: string;
+		/**
+		 * @description <p>Position/order in the product/program sequence</p>
+		 * @type {number}
+		 * @memberof ProductProgram
+		 */
+		orderIndex: number;
+		/**
+		 * @description <p>Whether this is the primary product for this program</p>
+		 * @type {boolean}
+		 * @memberof ProductProgram
+		 */
+		isPrimary: boolean;
+		/**
+		 * @description <p>Soft delete timestamp - when the relationship was deleted, null if active</p>
+		 * @type {string}
+		 * @memberof ProductProgram
+		 */
+		deletedAt?: string;
+		/**
+		 * @description <p>The product associated with this program</p>
+		 * @type {Api.ProductProgram.Product}
+		 * @memberof ProductProgram
+		 */
+		product: Api.ProductProgram.Product;
+		/**
+		 * @description <p>The program associated with this product</p>
+		 * @type {Api.ProductProgram.Program}
+		 * @memberof ProductProgram
+		 */
+		program: Api.ProductProgram.Program;
+	}
+	
+	/**
+	 * @export
+	 * @namespace ProductProgram
+	 */
+	export namespace ProductProgram {
+		/**
+		 * <p>The product associated with this program</p>
+		 */
+		export interface Product extends Api.Product {
+		}
+	
+		/**
+		 * <p>The program associated with this product</p>
+		 */
+		export interface Program extends Api.Program {
+		}
+	
+	}
+
+	export interface ProductSubscriptionPlan {
+		id?: string;
+		createdAt: string;
+		updatedAt: string;
+		/**
+		 * @description <p>Display name of the subscription plan</p>
+		 * @type {string}
+		 * @memberof ProductSubscriptionPlan
+		 */
+		name: string;
+		/**
+		 * @description <p>Detailed description of the subscription plan benefits</p>
+		 * @type {string}
+		 * @memberof ProductSubscriptionPlan
+		 */
+		description?: string;
+		/**
+		 * @description <p>Type of subscription (monthly, quarterly, annual, etc.)</p>
+		 * @type {string}
+		 * @memberof ProductSubscriptionPlan
+		 */
+		'type': string;
+		/**
+		 * @description <p>Current price of the subscription, stored as decimal for precision</p>
+		 * @type {number}
+		 * @memberof ProductSubscriptionPlan
+		 */
+		price: number;
+		/**
+		 * @description <p>Original price before any discounts, used for comparison</p>
+		 * @type {number}
+		 * @memberof ProductSubscriptionPlan
+		 */
+		basePrice: number;
+		/**
+		 * @description <p>Time unit for billing (day, week, month, year)</p>
+		 * @type {string}
+		 * @memberof ProductSubscriptionPlan
+		 */
+		billingInterval: string;
+		/**
+		 * @description <p>Number of intervals between billings, e.g. 3 for every 3 months</p>
+		 * @type {number}
+		 * @memberof ProductSubscriptionPlan
+		 */
+		billingIntervalCount: number;
+		/**
+		 * @description <p>Number of days in free trial period, null for no trial</p>
+		 * @type {number}
+		 * @memberof ProductSubscriptionPlan
+		 */
+		trialPeriodDays?: number;
+		/**
+		 * @description <p>Array of features included in this subscription plan</p>
+		 * @type {Api.ProductSubscriptionPlan.Features}
+		 * @memberof ProductSubscriptionPlan
+		 */
+		features?: Api.ProductSubscriptionPlan.Features;
+		/**
+		 * @description <p>Rules for when this subscription plan is available (region, user type, etc.)</p>
+		 * @type {Api.ProductSubscriptionPlan.AvailabilityRules}
+		 * @memberof ProductSubscriptionPlan
+		 */
+		availabilityRules?: Api.ProductSubscriptionPlan.AvailabilityRules;
+		/**
+		 * @description <p>Soft delete timestamp - when the plan was deleted, null if active</p>
+		 * @type {string}
+		 * @memberof ProductSubscriptionPlan
+		 */
+		deletedAt?: string;
+	}
+	
+	/**
+	 * @export
+	 * @namespace ProductSubscriptionPlan
+	 */
+	export namespace ProductSubscriptionPlan {
+		/**
+		 * <p>Array of features included in this subscription plan</p>
+		 */
+		export interface Features {
+		}
+	
+		/**
+		 * <p>Rules for when this subscription plan is available (region, user type, etc.)</p>
+		 */
+		export interface AvailabilityRules {
+		}
+	
+	}
+
+	export interface Program {
+		id?: string;
+		createdAt: string;
+		updatedAt: string;
+		/**
+		 * @description <p>URL-friendly identifier for the program, used in program links</p>
+		 * @type {string}
+		 * @memberof Program
+		 */
+		slug: string;
+		/**
+		 * @description <p>Brief description of the program for listings and previews</p>
+		 * @type {string}
+		 * @memberof Program
+		 */
+		summary: string;
+		/**
+		 * @description <p>Main program content in JSON format, includes description, objectives, etc.</p>
+		 * @type {Api.Program.Body}
+		 * @memberof Program
+		 */
+		body: Api.Program.Body;
+		/**
+		 * @description <p>Array of allowed email domains, null if not tenancy-fenced</p>
+		 * @type {string[]}
+		 * @memberof Program
+		 */
+		tenancyDomains?: string[];
+		/**
+		 * @description <p>Denormalized count of current enrolled students for quick access</p>
+		 * @type {number}
+		 * @memberof Program
+		 */
+		cachedEnrollmentCount: number;
+		/**
+		 * @description <p>Denormalized count of students who completed the program</p>
+		 * @type {number}
+		 * @memberof Program
+		 */
+		cachedCompletionCount: number;
+		/**
+		 * @description <p>Precomputed percentage of enrolled students who completed the program</p>
+		 * @type {number}
+		 * @memberof Program
+		 */
+		cachedStudentsCompletionRate: number;
+		/**
+		 * @description <p>Precomputed average rating of the program</p>
+		 * @type {number}
+		 * @memberof Program
+		 */
+		cachedRating: number;
+		/**
+		 * @description <p>Program type specific data, late penalty etc</p>
+		 * @type {Api.Program.Metadata}
+		 * @memberof Program
+		 */
+		metadata?: Api.Program.Metadata;
+		/**
+		 * @description <p>Soft delete timestamp - when the program was deleted, null if active</p>
+		 * @type {string}
+		 * @memberof Program
+		 */
+		deletedAt?: string;
+		/**
+		 * @description <p>Content items belonging to this program</p>
+		 * @type {Api.ProgramContent[]}
+		 * @memberof Program
+		 */
+		contents: Api.ProgramContent[];
+		/**
+		 * @description <p>Users enrolled in this program</p>
+		 * @type {Api.ProgramUser[]}
+		 * @memberof Program
+		 */
+		programUsers: Api.ProgramUser[];
+		/**
+		 * @description <p>User roles within this program</p>
+		 * @type {Api.ProgramUserRole[]}
+		 * @memberof Program
+		 */
+		programUserRoles: Api.ProgramUserRole[];
+		/**
+		 * @description <p>Product relationships for this program</p>
+		 * @type {Api.ProductProgram[]}
+		 * @memberof Program
+		 */
+		productPrograms: Api.ProductProgram[];
+	}
+	
+	/**
+	 * @export
+	 * @namespace Program
+	 */
+	export namespace Program {
+		/**
+		 * <p>Main program content in JSON format, includes description, objectives, etc.</p>
+		 */
+		export interface Body {
+		}
+	
+		/**
+		 * <p>Program type specific data, late penalty etc</p>
+		 */
+		export interface Metadata {
+		}
+	
+	}
+
+	export interface ProgramContent {
+		id?: string;
+		createdAt: string;
+		updatedAt: string;
+		/**
+		 * @description <p>Reference to the program this content belongs to</p>
+		 * @type {Api.ProgramContent.Program}
+		 * @memberof ProgramContent
+		 */
+		program: Api.ProgramContent.Program;
+		/**
+		 * @description <p>Self-referential for hierarchical structure, null if top-level content</p>
+		 * @type {Api.ProgramContent.Parent}
+		 * @memberof ProgramContent
+		 */
+		parent?: Api.ProgramContent.Parent;
+		/**
+		 * @description <p>Type of content (page, quiz, assignment, discussion, etc.)</p>
+		 * @type {Api.ProgramContent.Type}
+		 * @memberof ProgramContent
+		 */
+		'type': Api.ProgramContent.Type;
+		/**
+		 * @description <p>Title/name of the content shown in navigation and headers</p>
+		 * @type {string}
+		 * @memberof ProgramContent
+		 */
+		title: string;
+		/**
+		 * @description <p>Brief description of the content, shown in previews</p>
+		 * @type {string}
+		 * @memberof ProgramContent
+		 */
+		summary?: string;
+		/**
+		 * @description <p>Position value for sorting content, allows for flexible ordering</p>
+		 * @type {number}
+		 * @memberof ProgramContent
+		 */
+		order: number;
+		/**
+		 * @description <p>Main content in structured JSON format including text, questions, instructions, etc.</p>
+		 * @type {Api.ProgramContent.Body}
+		 * @memberof ProgramContent
+		 */
+		body: Api.ProgramContent.Body;
+		/**
+		 * @description <p>Flag to indicate if this content can be accessed without purchasing the program</p>
+		 * @type {boolean}
+		 * @memberof ProgramContent
+		 */
+		previewable: boolean;
+		/**
+		 * @description <p>Deadline for completion, null if no deadline</p>
+		 * @type {string}
+		 * @memberof ProgramContent
+		 */
+		dueDate?: string;
+		/**
+		 * @description <p>When this content becomes available to users, null if always available</p>
+		 * @type {string}
+		 * @memberof ProgramContent
+		 */
+		availableFrom?: string;
+		/**
+		 * @description <p>When this content becomes unavailable, null if never expires</p>
+		 * @type {string}
+		 * @memberof ProgramContent
+		 */
+		availableTo?: string;
+		/**
+		 * @description <p>Method used to grade this content (null for pages)</p>
+		 * @type {Api.ProgramContent.GradingMethod}
+		 * @memberof ProgramContent
+		 */
+		gradingMethod?: Api.ProgramContent.GradingMethod;
+		/**
+		 * @description <p>Time limit in minutes for timed activities, null means no time limit</p>
+		 * @type {number}
+		 * @memberof ProgramContent
+		 */
+		durationMinutes?: number;
+		/**
+		 * @description <p>Whether text response is accepted for submission</p>
+		 * @type {boolean}
+		 * @memberof ProgramContent
+		 */
+		textResponse: boolean;
+		/**
+		 * @description <p>Whether URL submission is accepted</p>
+		 * @type {boolean}
+		 * @memberof ProgramContent
+		 */
+		urlResponse: boolean;
+		/**
+		 * @description <p>Allowed file extensions for uploads: null = not accepted, [] = any file, [&quot;pdf&quot;,&quot;docx&quot;] = only these extensions</p>
+		 * @type {string[]}
+		 * @memberof ProgramContent
+		 */
+		fileResponseExtensions?: string[];
+		/**
+		 * @description <p>Detailed rubric configuration for consistent grading, including criteria and point values</p>
+		 * @type {Api.ProgramContent.GradingRubric}
+		 * @memberof ProgramContent
+		 */
+		gradingRubric?: Api.ProgramContent.GradingRubric;
+		/**
+		 * @description <p>Flexible storage for content-specific settings based on type</p>
+		 * @type {Api.ProgramContent.Metadata}
+		 * @memberof ProgramContent
+		 */
+		metadata?: Api.ProgramContent.Metadata;
+		/**
+		 * @description <p>Soft delete timestamp - when the content was deleted, null if active</p>
+		 * @type {string}
+		 * @memberof ProgramContent
+		 */
+		deletedAt?: string;
+		/**
+		 * @description <p>User interactions with this content</p>
+		 * @type {Api.ContentInteraction[]}
+		 * @memberof ProgramContent
+		 */
+		interactions: Api.ContentInteraction[];
+		/**
+		 * @description <p>Child content items in hierarchical structure</p>
+		 * @type {Api.ProgramContent[]}
+		 * @memberof ProgramContent
+		 */
+		children: Api.ProgramContent[];
+	}
+	
+	/**
+	 * @export
+	 * @namespace ProgramContent
+	 */
+	export namespace ProgramContent {
+		/**
+		 * <p>Reference to the program this content belongs to</p>
+		 */
+		export interface Program extends Api.Program {
+		}
+	
+		/**
+		 * <p>Self-referential for hierarchical structure, null if top-level content</p>
+		 */
+		export interface Parent extends Api.ProgramContent {
+		}
+	
+		/**
+		 * <p>Type of content (page, quiz, assignment, discussion, etc.)</p>
+		 */
+		export type Type =
+			'page' |
+			'assignment' |
+			'questionnaire' |
+			'discussion' |
+			'code' |
+			'challenge' |
+			'reflection' |
+			'survey'
+		
+		export namespace Type {
+			export enum Enum {
+				Page = 'page',
+				Assignment = 'assignment',
+				Questionnaire = 'questionnaire',
+				Discussion = 'discussion',
+				Code = 'code',
+				Challenge = 'challenge',
+				Reflection = 'reflection',
+				Survey = 'survey'
+			}
+		}
+	
+		/**
+		 * <p>Main content in structured JSON format including text, questions, instructions, etc.</p>
+		 */
+		export interface Body {
+		}
+	
+		/**
+		 * <p>Method used to grade this content (null for pages)</p>
+		 */
+		export type GradingMethod =
+			'instructor' |
+			'peer' |
+			'ai' |
+			'automated_tests'
+		
+		export namespace GradingMethod {
+			export enum Enum {
+				Instructor = 'instructor',
+				Peer = 'peer',
+				Ai = 'ai',
+				AutomatedTests = 'automated_tests'
+			}
+		}
+	
+		/**
+		 * <p>Detailed rubric configuration for consistent grading, including criteria and point values</p>
+		 */
+		export interface GradingRubric {
+		}
+	
+		/**
+		 * <p>Flexible storage for content-specific settings based on type</p>
+		 */
+		export interface Metadata {
+		}
+	
+	}
+
+	export interface ProgramUser {
+		id?: string;
+		createdAt: string;
+		updatedAt: string;
+		/**
+		 * @description <p>Reference to the purchased product that grants access to this program</p>
+		 * @type {Api.ProgramUser.UserProduct}
+		 * @memberof ProgramUser
+		 */
+		userProduct: Api.ProgramUser.UserProduct;
+		/**
+		 * @description <p>Reference to the program the user is enrolled in</p>
+		 * @type {Api.ProgramUser.Program}
+		 * @memberof ProgramUser
+		 */
+		program: Api.ProgramUser.Program;
+		/**
+		 * @description <p>Tracks time spent on different parts of the program, last accessed timestamps, etc.</p>
+		 * @type {Api.ProgramUser.Analytics}
+		 * @memberof ProgramUser
+		 */
+		analytics: Api.ProgramUser.Analytics;
+		/**
+		 * @description <p>Cache of user grades for quick access (quizzes, assignments, overall grade)</p>
+		 * @type {Api.ProgramUser.Grades}
+		 * @memberof ProgramUser
+		 */
+		grades: Api.ProgramUser.Grades;
+		/**
+		 * @description <p>Completion status of program content (pages, activities, etc.)</p>
+		 * @type {Api.ProgramUser.Progress}
+		 * @memberof ProgramUser
+		 */
+		progress: Api.ProgramUser.Progress;
+		/**
+		 * @description <p>Soft delete timestamp - when enrollment was deleted, null if active</p>
+		 * @type {string}
+		 * @memberof ProgramUser
+		 */
+		deletedAt?: string;
+		/**
+		 * @description <p>User interactions with program content</p>
+		 * @type {Api.ContentInteraction[]}
+		 * @memberof ProgramUser
+		 */
+		contentInteractions: Api.ContentInteraction[];
+		/**
+		 * @description <p>Roles assigned to this user in the program</p>
+		 * @type {Api.ProgramUserRole[]}
+		 * @memberof ProgramUser
+		 */
+		roles: Api.ProgramUserRole[];
+	}
+	
+	/**
+	 * @export
+	 * @namespace ProgramUser
+	 */
+	export namespace ProgramUser {
+		/**
+		 * <p>Reference to the purchased product that grants access to this program</p>
+		 */
+		export interface UserProduct extends Api.UserProduct {
+		}
+	
+		/**
+		 * <p>Reference to the program the user is enrolled in</p>
+		 */
+		export interface Program extends Api.Program {
+		}
+	
+		/**
+		 * <p>Tracks time spent on different parts of the program, last accessed timestamps, etc.</p>
+		 */
+		export interface Analytics {
+		}
+	
+		/**
+		 * <p>Cache of user grades for quick access (quizzes, assignments, overall grade)</p>
+		 */
+		export interface Grades {
+		}
+	
+		/**
+		 * <p>Completion status of program content (pages, activities, etc.)</p>
+		 */
+		export interface Progress {
+		}
+	
+	}
+
+	export interface ProgramUserRole {
+		id?: string;
+		createdAt: string;
+		updatedAt: string;
+		/**
+		 * @description <p>Reference to the program this role applies to</p>
+		 * @type {Api.ProgramUserRole.Program}
+		 * @memberof ProgramUserRole
+		 */
+		program: Api.ProgramUserRole.Program;
+		/**
+		 * @description <p>Reference to the user whose role is being defined</p>
+		 * @type {Api.ProgramUserRole.ProgramUser}
+		 * @memberof ProgramUserRole
+		 */
+		programUser: Api.ProgramUserRole.ProgramUser;
+		/**
+		 * @description <p>Type of role assigned to the user in this program</p>
+		 * @type {Api.ProgramUserRole.Role}
+		 * @memberof ProgramUserRole
+		 */
+		role: Api.ProgramUserRole.Role;
+		/**
+		 * @description <p>Soft delete timestamp - when the role was deleted, null if active</p>
+		 * @type {string}
+		 * @memberof ProgramUserRole
+		 */
+		deletedAt?: string;
+	}
+	
+	/**
+	 * @export
+	 * @namespace ProgramUserRole
+	 */
+	export namespace ProgramUserRole {
+		/**
+		 * <p>Reference to the program this role applies to</p>
+		 */
+		export interface Program extends Api.Program {
+		}
+	
+		/**
+		 * <p>Reference to the user whose role is being defined</p>
+		 */
+		export interface ProgramUser extends Api.ProgramUser {
+		}
+	
+		/**
+		 * <p>Type of role assigned to the user in this program</p>
+		 */
+		export type Role =
+			'student' |
+			'instructor' |
+			'editor' |
+			'administrator' |
+			'teaching_assistant'
+		
+		export namespace Role {
+			export enum Enum {
+				Student = 'student',
+				Instructor = 'instructor',
+				Editor = 'editor',
+				Administrator = 'administrator',
+				TeachingAssistant = 'teaching_assistant'
+			}
+		}
+	
+	}
+
 	export interface ProjectEntity {
 		id?: string;
 		createdAt: string;
@@ -1322,6 +3278,78 @@ export namespace Api {
 		responses: Api.ProjectFeedbackResponseEntity[];
 	}
 
+	export interface PromoCode {
+		id?: string;
+		createdAt: string;
+		updatedAt: string;
+		/**
+		 * @description <p>The code users enter to apply the discount</p>
+		 * @type {string}
+		 * @memberof PromoCode
+		 */
+		code: string;
+		/**
+		 * @description <p>What kind of discount this code provides</p>
+		 * @type {string}
+		 * @memberof PromoCode
+		 */
+		'type': string;
+		/**
+		 * @description <p>Percentage discount when type is percentage_off</p>
+		 * @type {number}
+		 * @memberof PromoCode
+		 */
+		discountPercentage?: number;
+		/**
+		 * @description <p>How much of discount is paid by affiliate</p>
+		 * @type {number}
+		 * @memberof PromoCode
+		 */
+		affiliatePercentage?: number;
+		/**
+		 * @description <p>Null for unlimited uses</p>
+		 * @type {number}
+		 * @memberof PromoCode
+		 */
+		maxUses?: number;
+		/**
+		 * @description <p>Current number of times this code has been used</p>
+		 * @type {number}
+		 * @memberof PromoCode
+		 */
+		usesCount: number;
+		/**
+		 * @description <p>How many times one user can use this code</p>
+		 * @type {number}
+		 * @memberof PromoCode
+		 */
+		maxUsesPerUser: number;
+		/**
+		 * @description <p>When this code becomes valid</p>
+		 * @type {string}
+		 * @memberof PromoCode
+		 */
+		startsAt: string;
+		/**
+		 * @description <p>When this code expires, null for no expiration</p>
+		 * @type {string}
+		 * @memberof PromoCode
+		 */
+		expiresAt?: string;
+		/**
+		 * @description <p>Whether this code can currently be used</p>
+		 * @type {boolean}
+		 * @memberof PromoCode
+		 */
+		isActive: boolean;
+		/**
+		 * @description <p>Soft delete timestamp - when the code was deleted, null if active</p>
+		 * @type {string}
+		 * @memberof PromoCode
+		 */
+		deletedAt?: string;
+	}
+
 	export interface QuizEntity {
 		id?: string;
 		createdAt: string;
@@ -1365,6 +3393,255 @@ export namespace Api {
 				PRIVATE = 'PRIVATE',
 				TRASH = 'TRASH'
 			}
+		}
+	
+	}
+
+	export interface Tag {
+		id?: string;
+		createdAt: string;
+		updatedAt: string;
+		/**
+		 * @description <p>Display name of the tag</p>
+		 * @type {string}
+		 * @memberof Tag
+		 */
+		name: string;
+		/**
+		 * @description <p>Detailed description of what this tag represents</p>
+		 * @type {string}
+		 * @memberof Tag
+		 */
+		description?: string;
+		/**
+		 * @description <p>Category type of the tag (skill, topic, technology, etc.)</p>
+		 * @type {Api.Tag.Type}
+		 * @memberof Tag
+		 */
+		'type': Api.Tag.Type;
+		/**
+		 * @description <p>Optional sub-category for organizational purposes</p>
+		 * @type {string}
+		 * @memberof Tag
+		 */
+		category?: string;
+		/**
+		 * @description <p>Additional tag-specific metadata and configuration</p>
+		 * @type {Api.Tag.Metadata}
+		 * @memberof Tag
+		 */
+		metadata?: Api.Tag.Metadata;
+		/**
+		 * @description <p>Soft delete timestamp</p>
+		 * @type {string}
+		 * @memberof Tag
+		 */
+		deletedAt?: string;
+		/**
+		 * @description <p>Outgoing tag relationships where this tag is the source</p>
+		 * @type {Api.TagRelationship[]}
+		 * @memberof Tag
+		 */
+		sourceRelationships?: Api.TagRelationship[];
+		/**
+		 * @description <p>Incoming tag relationships where this tag is the target</p>
+		 * @type {Api.TagRelationship[]}
+		 * @memberof Tag
+		 */
+		targetRelationships?: Api.TagRelationship[];
+	}
+	
+	/**
+	 * @export
+	 * @namespace Tag
+	 */
+	export namespace Tag {
+		/**
+		 * <p>Category type of the tag (skill, topic, technology, etc.)</p>
+		 */
+		export type Type =
+			'skill' |
+			'topic' |
+			'technology' |
+			'difficulty' |
+			'category' |
+			'industry' |
+			'certification'
+		
+		export namespace Type {
+			export enum Enum {
+				Skill = 'skill',
+				Topic = 'topic',
+				Technology = 'technology',
+				Difficulty = 'difficulty',
+				Category = 'category',
+				Industry = 'industry',
+				Certification = 'certification'
+			}
+		}
+	
+		/**
+		 * <p>Additional tag-specific metadata and configuration</p>
+		 */
+		export interface Metadata {
+		}
+	
+	}
+
+	export interface TagProficiency {
+		id?: string;
+		createdAt: string;
+		updatedAt: string;
+		/**
+		 * @description <p>Tag this proficiency level applies to</p>
+		 * @type {Api.TagProficiency.Tag}
+		 * @memberof TagProficiency
+		 */
+		tag: Api.TagProficiency.Tag;
+		/**
+		 * @description <p>The proficiency level (novice, intermediate, expert, etc.)</p>
+		 * @type {Api.TagProficiency.ProficiencyLevel}
+		 * @memberof TagProficiency
+		 */
+		proficiencyLevel: Api.TagProficiency.ProficiencyLevel;
+		/**
+		 * @description <p>Numeric value representing the proficiency level, to speedup sorting and filtering</p>
+		 * @type {number}
+		 * @memberof TagProficiency
+		 */
+		proficiencyLevelValue: number;
+		/**
+		 * @description <p>Description of what this proficiency level means for this specific tag/skill</p>
+		 * @type {string}
+		 * @memberof TagProficiency
+		 */
+		description?: string;
+		/**
+		 * @description <p>Other tag proficiencies required before achieving this level</p>
+		 * @type {Api.TagProficiency.Prerequisites}
+		 * @memberof TagProficiency
+		 */
+		prerequisites?: Api.TagProficiency.Prerequisites;
+		/**
+		 * @description <p>Additional proficiency-specific configuration</p>
+		 * @type {Api.TagProficiency.Metadata}
+		 * @memberof TagProficiency
+		 */
+		metadata?: Api.TagProficiency.Metadata;
+		/**
+		 * @description <p>Soft delete timestamp</p>
+		 * @type {string}
+		 * @memberof TagProficiency
+		 */
+		deletedAt?: string;
+	}
+	
+	/**
+	 * @export
+	 * @namespace TagProficiency
+	 */
+	export namespace TagProficiency {
+		/**
+		 * <p>Tag this proficiency level applies to</p>
+		 */
+		export interface Tag extends Api.Tag {
+		}
+	
+		/**
+		 * <p>The proficiency level (novice, intermediate, expert, etc.)</p>
+		 */
+		export type ProficiencyLevel =
+			'awareness' |
+			'novice' |
+			'beginner' |
+			'intermediate' |
+			'advanced' |
+			'expert' |
+			'master'
+		
+		export namespace ProficiencyLevel {
+			export enum Enum {
+				Awareness = 'awareness',
+				Novice = 'novice',
+				Beginner = 'beginner',
+				Intermediate = 'intermediate',
+				Advanced = 'advanced',
+				Expert = 'expert',
+				Master = 'master'
+			}
+		}
+	
+		/**
+		 * <p>Other tag proficiencies required before achieving this level</p>
+		 */
+		export interface Prerequisites {
+		}
+	
+		/**
+		 * <p>Additional proficiency-specific configuration</p>
+		 */
+		export interface Metadata {
+		}
+	
+	}
+
+	export interface TagRelationship {
+		id?: string;
+		createdAt: string;
+		updatedAt: string;
+		/**
+		 * @description <p>Type of relationship (prerequisite, related, parent, etc.)</p>
+		 * @type {string}
+		 * @memberof TagRelationship
+		 */
+		'type': string;
+		/**
+		 * @description <p>Additional relationship-specific configuration</p>
+		 * @type {Api.TagRelationship.Metadata}
+		 * @memberof TagRelationship
+		 */
+		metadata?: Api.TagRelationship.Metadata;
+		/**
+		 * @description <p>Soft delete timestamp - when the relationship was deleted, null if active</p>
+		 * @type {string}
+		 * @memberof TagRelationship
+		 */
+		deletedAt?: string;
+		/**
+		 * @description <p>The source tag in the relationship</p>
+		 * @type {Api.TagRelationship.SourceTag}
+		 * @memberof TagRelationship
+		 */
+		sourceTag: Api.TagRelationship.SourceTag;
+		/**
+		 * @description <p>The target tag in the relationship</p>
+		 * @type {Api.TagRelationship.TargetTag}
+		 * @memberof TagRelationship
+		 */
+		targetTag: Api.TagRelationship.TargetTag;
+	}
+	
+	/**
+	 * @export
+	 * @namespace TagRelationship
+	 */
+	export namespace TagRelationship {
+		/**
+		 * <p>Additional relationship-specific configuration</p>
+		 */
+		export interface Metadata {
+		}
+	
+		/**
+		 * <p>The source tag in the relationship</p>
+		 */
+		export interface SourceTag extends Api.Tag {
+		}
+	
+		/**
+		 * <p>The target tag in the relationship</p>
+		 */
+		export interface TargetTag extends Api.Tag {
 		}
 	
 	}
@@ -1458,10 +3735,164 @@ export namespace Api {
 		newUser: Api.IdDto;
 	}
 
+	export interface UpdateProgramRequestDto {
+	}
+
 	export interface UpdateUserProfileDto {
 		bio?: string;
 		givenName?: string;
 		familyName?: string;
+	}
+
+	export interface UserCertificate {
+		id?: string;
+		createdAt: string;
+		updatedAt: string;
+		/**
+		 * @description <p>Reference to the program for single program certificates (null for multi-program certs)</p>
+		 * @type {Api.UserCertificate.Program}
+		 * @memberof UserCertificate
+		 */
+		program?: Api.UserCertificate.Program;
+		/**
+		 * @description <p>Reference to the product/bundle for product certificates (null for program-only certs)</p>
+		 * @type {Api.UserCertificate.Product}
+		 * @memberof UserCertificate
+		 */
+		product?: Api.UserCertificate.Product;
+		/**
+		 * @description <p>User who earned the certificate</p>
+		 * @type {Api.UserCertificate.User}
+		 * @memberof UserCertificate
+		 */
+		user: Api.UserCertificate.User;
+		/**
+		 * @description <p>Program enrollment record if certificate is program-specific</p>
+		 * @type {Api.UserCertificate.ProgramUser}
+		 * @memberof UserCertificate
+		 */
+		programUser?: Api.UserCertificate.ProgramUser;
+		/**
+		 * @description <p>Reference to the certificate template/configuration</p>
+		 * @type {Api.UserCertificate.Certificate}
+		 * @memberof UserCertificate
+		 */
+		certificate: Api.UserCertificate.Certificate;
+		/**
+		 * @description <p>Unique certificate number for verification</p>
+		 * @type {string}
+		 * @memberof UserCertificate
+		 */
+		certificateNumber: string;
+		/**
+		 * @description <p>Current status of the certificate</p>
+		 * @type {Api.UserCertificate.Status}
+		 * @memberof UserCertificate
+		 */
+		status: Api.UserCertificate.Status;
+		/**
+		 * @description <p>When the certificate was issued</p>
+		 * @type {string}
+		 * @memberof UserCertificate
+		 */
+		issuedAt: string;
+		/**
+		 * @description <p>When the certificate expires, null for no expiration</p>
+		 * @type {string}
+		 * @memberof UserCertificate
+		 */
+		expiresAt?: string;
+		/**
+		 * @description <p>When the certificate was revoked, null if never revoked</p>
+		 * @type {string}
+		 * @memberof UserCertificate
+		 */
+		revokedAt?: string;
+		/**
+		 * @description <p>Reason for revocation if applicable</p>
+		 * @type {string}
+		 * @memberof UserCertificate
+		 */
+		revocationReason?: string;
+		/**
+		 * @description <p>URL where the certificate can be viewed or downloaded</p>
+		 * @type {string}
+		 * @memberof UserCertificate
+		 */
+		certificateUrl?: string;
+		/**
+		 * @description <p>Additional data specific to the certificate instance</p>
+		 * @type {Api.UserCertificate.Metadata}
+		 * @memberof UserCertificate
+		 */
+		metadata?: Api.UserCertificate.Metadata;
+		/**
+		 * @description <p>Soft delete timestamp</p>
+		 * @type {string}
+		 * @memberof UserCertificate
+		 */
+		deletedAt?: string;
+	}
+	
+	/**
+	 * @export
+	 * @namespace UserCertificate
+	 */
+	export namespace UserCertificate {
+		/**
+		 * <p>Reference to the program for single program certificates (null for multi-program certs)</p>
+		 */
+		export interface Program extends Api.Program {
+		}
+	
+		/**
+		 * <p>Reference to the product/bundle for product certificates (null for program-only certs)</p>
+		 */
+		export interface Product extends Api.Product {
+		}
+	
+		/**
+		 * <p>User who earned the certificate</p>
+		 */
+		export interface User extends Api.UserEntity {
+		}
+	
+		/**
+		 * <p>Program enrollment record if certificate is program-specific</p>
+		 */
+		export interface ProgramUser extends Api.ProgramUser {
+		}
+	
+		/**
+		 * <p>Reference to the certificate template/configuration</p>
+		 */
+		export interface Certificate extends Api.Certificate {
+		}
+	
+		/**
+		 * <p>Current status of the certificate</p>
+		 */
+		export type Status =
+			'active' |
+			'expired' |
+			'revoked' |
+			'pending'
+		
+		export namespace Status {
+			export enum Enum {
+				Active = 'active',
+				Expired = 'expired',
+				Revoked = 'revoked',
+				Pending = 'pending'
+			}
+		}
+	
+		/**
+		 * <p>Additional data specific to the certificate instance</p>
+		 */
+		export interface Metadata {
+		}
+	
 	}
 
 	export interface UserEntity {
@@ -1487,6 +3918,115 @@ export namespace Api {
 		 * @memberof UserEntity
 		 */
 		elo: number;
+	}
+
+	export interface UserProduct {
+		id?: string;
+		createdAt: string;
+		updatedAt: string;
+		/**
+		 * @description <p>User who has access to this product</p>
+		 * @type {Api.UserProduct.User}
+		 * @memberof UserProduct
+		 */
+		user: Api.UserProduct.User;
+		/**
+		 * @description <p>Product the user has access to</p>
+		 * @type {Api.UserProduct.Product}
+		 * @memberof UserProduct
+		 */
+		product: Api.UserProduct.Product;
+		/**
+		 * @description <p>If product access is through subscription</p>
+		 * @type {Api.UserProduct.Subscription}
+		 * @memberof UserProduct
+		 */
+		subscription?: Api.UserProduct.Subscription;
+		/**
+		 * @description <p>How the product was acquired (purchased, subscription, gift, etc.)</p>
+		 * @type {string}
+		 * @memberof UserProduct
+		 */
+		acquisitionType: string;
+		/**
+		 * @description <p>Reference to the transaction if purchased</p>
+		 * @type {Api.UserProduct.PurchaseTransaction}
+		 * @memberof UserProduct
+		 */
+		purchaseTransaction?: Api.UserProduct.PurchaseTransaction;
+		/**
+		 * @description <p>Null means permanent access, otherwise when access ends</p>
+		 * @type {string}
+		 * @memberof UserProduct
+		 */
+		accessExpiresAt?: string;
+		/**
+		 * @description <p>When the user first gained access</p>
+		 * @type {string}
+		 * @memberof UserProduct
+		 */
+		accessStartedAt: string;
+		/**
+		 * @description <p>Current status of user access to this product</p>
+		 * @type {string}
+		 * @memberof UserProduct
+		 */
+		status: string;
+		/**
+		 * @description <p>Flexible storage for product-specific access settings, usage limitations, custom permissions, etc.</p>
+		 * @type {Api.UserProduct.Metadata}
+		 * @memberof UserProduct
+		 */
+		metadata: Api.UserProduct.Metadata;
+		/**
+		 * @description <p>Soft delete timestamp - when the access record was deleted, null if active</p>
+		 * @type {string}
+		 * @memberof UserProduct
+		 */
+		deletedAt?: string;
+		/**
+		 * @description <p>Program user entries associated with this product access</p>
+		 * @type {Api.ProgramUser[]}
+		 * @memberof UserProduct
+		 */
+		programUsers: Api.ProgramUser[];
+	}
+	
+	/**
+	 * @export
+	 * @namespace UserProduct
+	 */
+	export namespace UserProduct {
+		/**
+		 * <p>User who has access to this product</p>
+		 */
+		export interface User extends Api.UserEntity {
+		}
+	
+		/**
+		 * <p>Product the user has access to</p>
+		 */
+		export interface Product extends Api.Product {
+		}
+	
+		/**
+		 * <p>If product access is through subscription</p>
+		 */
+		export interface Subscription extends Api.UserSubscription {
+		}
+	
+		/**
+		 * <p>Reference to the transaction if purchased</p>
+		 */
+		export interface PurchaseTransaction extends Api.FinancialTransaction {
+		}
+	
+		/**
+		 * <p>Flexible storage for product-specific access settings, usage limitations, custom permissions, etc.</p>
+		 */
+		export interface Metadata {
+		}
+	
 	}
 
 	export interface UserProfileControllerUpdateProfilePictureRequest {
@@ -1525,6 +4065,148 @@ export namespace Api {
 		givenName: string;
 		familyName: string;
 		picture: Api.ImageEntity;
+	}
+
+	export interface UserSubscription {
+		id?: string;
+		createdAt: string;
+		updatedAt: string;
+		/**
+		 * @description <p>Current status of the subscription (active, canceled, etc.)</p>
+		 * @type {string}
+		 * @memberof UserSubscription
+		 */
+		status: string;
+		/**
+		 * @description <p>Start date of the current billing period</p>
+		 * @type {string}
+		 * @memberof UserSubscription
+		 */
+		currentPeriodStart: string;
+		/**
+		 * @description <p>End date of the current billing period</p>
+		 * @type {string}
+		 * @memberof UserSubscription
+		 */
+		currentPeriodEnd: string;
+		/**
+		 * @description <p>Whether subscription will cancel at the end of current period</p>
+		 * @type {boolean}
+		 * @memberof UserSubscription
+		 */
+		cancelAtPeriodEnd: boolean;
+		/**
+		 * @description <p>When the subscription was canceled, null if not canceled</p>
+		 * @type {string}
+		 * @memberof UserSubscription
+		 */
+		canceledAt?: string;
+		/**
+		 * @description <p>When the subscription ended, null if still active</p>
+		 * @type {string}
+		 * @memberof UserSubscription
+		 */
+		endedAt?: string;
+		/**
+		 * @description <p>When the trial period ends, null if no trial or trial ended</p>
+		 * @type {string}
+		 * @memberof UserSubscription
+		 */
+		trialEnd?: string;
+		/**
+		 * @description <p>Soft delete timestamp - when the subscription was deleted, null if active</p>
+		 * @type {string}
+		 * @memberof UserSubscription
+		 */
+		deletedAt?: string;
+		/**
+		 * @description <p>User who owns this subscription</p>
+		 * @type {Api.UserSubscription.User}
+		 * @memberof UserSubscription
+		 */
+		user: Api.UserSubscription.User;
+		/**
+		 * @description <p>The subscription plan this user is enrolled in</p>
+		 * @type {Api.UserSubscription.SubscriptionPlan}
+		 * @memberof UserSubscription
+		 */
+		subscriptionPlan: Api.UserSubscription.SubscriptionPlan;
+	}
+	
+	/**
+	 * @export
+	 * @namespace UserSubscription
+	 */
+	export namespace UserSubscription {
+		/**
+		 * <p>User who owns this subscription</p>
+		 */
+		export interface User extends Api.UserEntity {
+		}
+	
+		/**
+		 * <p>The subscription plan this user is enrolled in</p>
+		 */
+		export interface SubscriptionPlan extends Api.ProductSubscriptionPlan {
+		}
+	
+	}
+
+	export interface VerificationDetails {
+		/**
+		 * @description <p>Date when certificate was issued</p>
+		 * @type {string}
+		 * @memberof VerificationDetails
+		 */
+		issuedAt: string;
+		/**
+		 * @description <p>Certificate expiration date</p>
+		 * @type {string}
+		 * @memberof VerificationDetails
+		 */
+		expiresAt?: string;
+		/**
+		 * @description <p>Certificate status</p>
+		 * @type {string}
+		 * @memberof VerificationDetails
+		 */
+		status: string;
+		/**
+		 * @description <p>Certificate number for verification</p>
+		 * @type {string}
+		 * @memberof VerificationDetails
+		 */
+		certificateNumber: string;
+		/**
+		 * @description <p>Program title if applicable</p>
+		 * @type {string}
+		 * @memberof VerificationDetails
+		 */
+		programTitle?: string;
+		/**
+		 * @description <p>Product title if applicable</p>
+		 * @type {string}
+		 * @memberof VerificationDetails
+		 */
+		productTitle?: string;
+		/**
+		 * @description <p>Whether blockchain verification was successful</p>
+		 * @type {boolean}
+		 * @memberof VerificationDetails
+		 */
+		blockchainVerified: boolean;
+		/**
+		 * @description <p>Whether hash verification was successful</p>
+		 * @type {boolean}
+		 * @memberof VerificationDetails
+		 */
+		hashVerified: boolean;
+		/**
+		 * @description <p>Issuer name</p>
+		 * @type {string}
+		 * @memberof VerificationDetails
+		 */
+		issuerName?: string;
 	}
 
 }

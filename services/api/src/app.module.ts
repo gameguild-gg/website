@@ -24,6 +24,10 @@ import { diskStorage } from 'multer';
 import { SchemaDumpService } from './common/db-schema-dump-service';
 import { CleanupService } from './common/cleanup-unused-db-tables';
 import { GraphqlModule } from './graphql/graphql.module';
+import { ProgramModule } from './program/program.module';
+import { ProductModule } from './product/product.module';
+import { KycModule } from './kyc/kyc.module';
+import { FinancialModule } from './financial/financial.module';
 
 @Module({
   imports: [
@@ -73,6 +77,10 @@ import { GraphqlModule } from './graphql/graphql.module';
     JobModule,
     AssetModule,
     GraphqlModule,
+    ProgramModule,
+    ProductModule,
+    KycModule,
+    FinancialModule,
   ],
   controllers: [AppController],
   providers: [

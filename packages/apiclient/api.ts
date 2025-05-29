@@ -1309,6 +1309,546 @@ export class AuthApi extends BaseAPI implements AuthApiInterface {
 	}
 
 }
+export namespace CertificatesApi {
+	export type CertificateControllerCreateTemplateResponse =
+		| CertificateControllerCreateTemplate201Response
+	
+	export interface CertificateControllerCreateTemplate201Response {
+		status: 201
+		body?: undefined
+		headers?: undefined
+	}
+	
+	export interface CertificateControllerGetTemplatesParameters {
+		programId: string
+		productId: string
+	}
+	
+	export type CertificateControllerGetTemplatesResponse =
+		| CertificateControllerGetTemplates200Response
+	
+	export interface CertificateControllerGetTemplates200Response {
+		status: 200
+		body?: undefined
+		headers?: undefined
+	}
+	
+	export type CertificateControllerGetUserCertificatesResponse =
+		| CertificateControllerGetUserCertificates200Response
+	
+	export interface CertificateControllerGetUserCertificates200Response {
+		status: 200
+		body?: undefined
+		headers?: undefined
+	}
+	
+	export type CertificateControllerIssueCertificateResponse =
+		| CertificateControllerIssueCertificate201Response
+	
+	export interface CertificateControllerIssueCertificate201Response {
+		status: 201
+		body?: undefined
+		headers?: undefined
+	}
+	
+	export type CertificateControllerVerifyCertificateResponse =
+		| CertificateControllerVerifyCertificate200Response
+	
+	export interface CertificateControllerVerifyCertificate200Response {
+		status: 200
+		contentType: 'application/json'
+		body: Api.CertificateVerificationResult
+		headers?: undefined
+	}
+	
+}
+
+/**
+ * CertificatesApi - fetch parameter creator
+ * @export
+ */
+export const CertificatesApiFetchParamCreator = function (configuration?: Configuration) {
+	return {
+		/**
+		 * @summary Create a new certificate template
+		 * @param {Api.CreateCertificateTemplateDto} request
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		certificateControllerCreateTemplate(request: Api.CreateCertificateTemplateDto, options: RequestInit = {}): FetchArgs {
+			// verify required parameter 'request' is not null or undefined
+			if (request === null || request === undefined) {
+				throw new RequiredError('request', 'Required parameter request was null or undefined when calling certificateControllerCreateTemplate.');
+			}
+
+			let localVarPath = `/certificates/templates`;
+			const localVarPathQueryStart = localVarPath.indexOf("?");
+			const localVarRequestOptions: RequestInit = Object.assign({ method: 'POST' }, options);
+			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
+			const localVarQueryParameter = new URLSearchParams(localVarPathQueryStart !== -1 ? localVarPath.substring(localVarPathQueryStart + 1) : "");
+			if (localVarPathQueryStart !== -1) {
+				localVarPath = localVarPath.substring(0, localVarPathQueryStart);
+			}
+
+			// authentication bearer required
+			// http authorization required
+			if (configuration && configuration.authorization) {
+				const localVarAuthorizationValue = typeof configuration.authorization === 'function'
+					? configuration.authorization('bearer')
+					: configuration.authorization;
+				if (localVarAuthorizationValue !== null) {
+					localVarHeaderParameter.set("Authorization", "Bearer " + localVarAuthorizationValue);
+				}
+			}
+			localVarHeaderParameter.set('Content-Type', 'application/json');
+
+			localVarRequestOptions.headers = localVarHeaderParameter;
+	
+			if (request !== undefined) {
+				localVarRequestOptions.body = JSON.stringify(request || {});
+			}
+
+			const localVarQueryParameterString = localVarQueryParameter.toString();
+			if (localVarQueryParameterString) {
+				localVarPath += "?" + localVarQueryParameterString;
+			}
+			return {
+				url: localVarPath,
+				options: localVarRequestOptions,
+			};
+		},
+		/**
+		 * @summary Get all certificate templates
+		 * @param {string} programId
+		 * @param {string} productId
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		certificateControllerGetTemplates(__params: CertificatesApi.CertificateControllerGetTemplatesParameters, options: RequestInit = {}): FetchArgs {
+			// verify required parameter 'programId' is not null or undefined
+			if (__params.programId === null || __params.programId === undefined) {
+				throw new RequiredError('programId', 'Required parameter programId was null or undefined when calling certificateControllerGetTemplates.');
+			}
+			// verify required parameter 'productId' is not null or undefined
+			if (__params.productId === null || __params.productId === undefined) {
+				throw new RequiredError('productId', 'Required parameter productId was null or undefined when calling certificateControllerGetTemplates.');
+			}
+
+			let localVarPath = `/certificates/templates`;
+			const localVarPathQueryStart = localVarPath.indexOf("?");
+			const localVarRequestOptions: RequestInit = Object.assign({ method: 'GET' }, options);
+			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
+			const localVarQueryParameter = new URLSearchParams(localVarPathQueryStart !== -1 ? localVarPath.substring(localVarPathQueryStart + 1) : "");
+			if (localVarPathQueryStart !== -1) {
+				localVarPath = localVarPath.substring(0, localVarPathQueryStart);
+			}
+
+			// authentication bearer required
+			// http authorization required
+			if (configuration && configuration.authorization) {
+				const localVarAuthorizationValue = typeof configuration.authorization === 'function'
+					? configuration.authorization('bearer')
+					: configuration.authorization;
+				if (localVarAuthorizationValue !== null) {
+					localVarHeaderParameter.set("Authorization", "Bearer " + localVarAuthorizationValue);
+				}
+			}
+			if (__params.programId !== undefined) {
+				localVarQueryParameter.append('programId', String(__params.programId));
+			}
+
+			if (__params.productId !== undefined) {
+				localVarQueryParameter.append('productId', String(__params.productId));
+			}
+
+			localVarRequestOptions.headers = localVarHeaderParameter;
+
+			const localVarQueryParameterString = localVarQueryParameter.toString();
+			if (localVarQueryParameterString) {
+				localVarPath += "?" + localVarQueryParameterString;
+			}
+			return {
+				url: localVarPath,
+				options: localVarRequestOptions,
+			};
+		},
+		/**
+		 * @summary Get certificates for a specific user
+		 * @param {string} userId
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		certificateControllerGetUserCertificates(userId: string, options: RequestInit = {}): FetchArgs {
+			// verify required parameter 'userId' is not null or undefined
+			if (userId === null || userId === undefined) {
+				throw new RequiredError('userId', 'Required parameter userId was null or undefined when calling certificateControllerGetUserCertificates.');
+			}
+
+			let localVarPath = `/certificates/user/{userId}`
+				.replace('{userId}', encodeURIComponent(String(userId)));
+			const localVarPathQueryStart = localVarPath.indexOf("?");
+			const localVarRequestOptions: RequestInit = Object.assign({ method: 'GET' }, options);
+			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
+			const localVarQueryParameter = new URLSearchParams(localVarPathQueryStart !== -1 ? localVarPath.substring(localVarPathQueryStart + 1) : "");
+			if (localVarPathQueryStart !== -1) {
+				localVarPath = localVarPath.substring(0, localVarPathQueryStart);
+			}
+
+			// authentication bearer required
+			// http authorization required
+			if (configuration && configuration.authorization) {
+				const localVarAuthorizationValue = typeof configuration.authorization === 'function'
+					? configuration.authorization('bearer')
+					: configuration.authorization;
+				if (localVarAuthorizationValue !== null) {
+					localVarHeaderParameter.set("Authorization", "Bearer " + localVarAuthorizationValue);
+				}
+			}
+			localVarRequestOptions.headers = localVarHeaderParameter;
+
+			const localVarQueryParameterString = localVarQueryParameter.toString();
+			if (localVarQueryParameterString) {
+				localVarPath += "?" + localVarQueryParameterString;
+			}
+			return {
+				url: localVarPath,
+				options: localVarRequestOptions,
+			};
+		},
+		/**
+		 * @summary Issue a certificate to a user
+		 * @param {Api.IssueCertificateDto} request
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		certificateControllerIssueCertificate(request: Api.IssueCertificateDto, options: RequestInit = {}): FetchArgs {
+			// verify required parameter 'request' is not null or undefined
+			if (request === null || request === undefined) {
+				throw new RequiredError('request', 'Required parameter request was null or undefined when calling certificateControllerIssueCertificate.');
+			}
+
+			let localVarPath = `/certificates/issue`;
+			const localVarPathQueryStart = localVarPath.indexOf("?");
+			const localVarRequestOptions: RequestInit = Object.assign({ method: 'POST' }, options);
+			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
+			const localVarQueryParameter = new URLSearchParams(localVarPathQueryStart !== -1 ? localVarPath.substring(localVarPathQueryStart + 1) : "");
+			if (localVarPathQueryStart !== -1) {
+				localVarPath = localVarPath.substring(0, localVarPathQueryStart);
+			}
+
+			// authentication bearer required
+			// http authorization required
+			if (configuration && configuration.authorization) {
+				const localVarAuthorizationValue = typeof configuration.authorization === 'function'
+					? configuration.authorization('bearer')
+					: configuration.authorization;
+				if (localVarAuthorizationValue !== null) {
+					localVarHeaderParameter.set("Authorization", "Bearer " + localVarAuthorizationValue);
+				}
+			}
+			localVarHeaderParameter.set('Content-Type', 'application/json');
+
+			localVarRequestOptions.headers = localVarHeaderParameter;
+	
+			if (request !== undefined) {
+				localVarRequestOptions.body = JSON.stringify(request || {});
+			}
+
+			const localVarQueryParameterString = localVarQueryParameter.toString();
+			if (localVarQueryParameterString) {
+				localVarPath += "?" + localVarQueryParameterString;
+			}
+			return {
+				url: localVarPath,
+				options: localVarRequestOptions,
+			};
+		},
+		/**
+		 * @summary Verify a certificate by ID
+		 * @param {string} certificateId
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		certificateControllerVerifyCertificate(certificateId: string, options: RequestInit = {}): FetchArgs {
+			// verify required parameter 'certificateId' is not null or undefined
+			if (certificateId === null || certificateId === undefined) {
+				throw new RequiredError('certificateId', 'Required parameter certificateId was null or undefined when calling certificateControllerVerifyCertificate.');
+			}
+
+			let localVarPath = `/certificates/verify/{certificateId}`
+				.replace('{certificateId}', encodeURIComponent(String(certificateId)));
+			const localVarPathQueryStart = localVarPath.indexOf("?");
+			const localVarRequestOptions: RequestInit = Object.assign({ method: 'GET' }, options);
+			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
+			const localVarQueryParameter = new URLSearchParams(localVarPathQueryStart !== -1 ? localVarPath.substring(localVarPathQueryStart + 1) : "");
+			if (localVarPathQueryStart !== -1) {
+				localVarPath = localVarPath.substring(0, localVarPathQueryStart);
+			}
+
+			// authentication bearer required
+			// http authorization required
+			if (configuration && configuration.authorization) {
+				const localVarAuthorizationValue = typeof configuration.authorization === 'function'
+					? configuration.authorization('bearer')
+					: configuration.authorization;
+				if (localVarAuthorizationValue !== null) {
+					localVarHeaderParameter.set("Authorization", "Bearer " + localVarAuthorizationValue);
+				}
+			}
+			localVarRequestOptions.headers = localVarHeaderParameter;
+
+			const localVarQueryParameterString = localVarQueryParameter.toString();
+			if (localVarQueryParameterString) {
+				localVarPath += "?" + localVarQueryParameterString;
+			}
+			return {
+				url: localVarPath,
+				options: localVarRequestOptions,
+			};
+		},
+	}
+};
+
+/**
+ * CertificatesApi - functional programming interface
+ * @export
+ */
+export const CertificatesApiFp = function(configuration?: Configuration) {
+	return {
+		/**
+		 * @summary Create a new certificate template
+		 * @param {Api.CreateCertificateTemplateDto} request
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		certificateControllerCreateTemplate(request: Api.CreateCertificateTemplateDto, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<CertificatesApi.CertificateControllerCreateTemplateResponse> {
+			const localVarFetchArgs = CertificatesApiFetchParamCreator(configuration).certificateControllerCreateTemplate(request, options);
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				if (response.status === 201) {
+					return {
+						status: response.status,
+						/* No content */
+					}
+				}
+				throw response;
+			};
+		},
+		/**
+		 * @summary Get all certificate templates
+		 * @param {string} programId
+		 * @param {string} productId
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		certificateControllerGetTemplates(__params: CertificatesApi.CertificateControllerGetTemplatesParameters, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<CertificatesApi.CertificateControllerGetTemplatesResponse> {
+			const localVarFetchArgs = CertificatesApiFetchParamCreator(configuration).certificateControllerGetTemplates(__params, options);
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				if (response.status === 200) {
+					return {
+						status: response.status,
+						/* No content */
+					}
+				}
+				throw response;
+			};
+		},
+		/**
+		 * @summary Get certificates for a specific user
+		 * @param {string} userId
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		certificateControllerGetUserCertificates(userId: string, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<CertificatesApi.CertificateControllerGetUserCertificatesResponse> {
+			const localVarFetchArgs = CertificatesApiFetchParamCreator(configuration).certificateControllerGetUserCertificates(userId, options);
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				if (response.status === 200) {
+					return {
+						status: response.status,
+						/* No content */
+					}
+				}
+				throw response;
+			};
+		},
+		/**
+		 * @summary Issue a certificate to a user
+		 * @param {Api.IssueCertificateDto} request
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		certificateControllerIssueCertificate(request: Api.IssueCertificateDto, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<CertificatesApi.CertificateControllerIssueCertificateResponse> {
+			const localVarFetchArgs = CertificatesApiFetchParamCreator(configuration).certificateControllerIssueCertificate(request, options);
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				if (response.status === 201) {
+					return {
+						status: response.status,
+						/* No content */
+					}
+				}
+				throw response;
+			};
+		},
+		/**
+		 * @summary Verify a certificate by ID
+		 * @param {string} certificateId
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		certificateControllerVerifyCertificate(certificateId: string, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<CertificatesApi.CertificateControllerVerifyCertificateResponse> {
+			const localVarFetchArgs = CertificatesApiFetchParamCreator(configuration).certificateControllerVerifyCertificate(certificateId, options);
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				if (response.status === 200) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.CertificateVerificationResult,
+						}
+					}
+					throw response;
+				}
+				throw response;
+			};
+		},
+	}
+};
+
+/**
+ * CertificatesApi - factory interface
+ * @export
+ */
+export const CertificatesApiFactory: FactoryFunction<CertificatesApiInterface> = function (configuration?: Configuration, basePath?: string, fetch?: FetchAPI) {
+	return new CertificatesApi(configuration, basePath, fetch);
+};
+
+/**
+ * CertificatesApi - interface
+ * @export
+ * @interface CertificatesApi
+ */
+export interface CertificatesApiInterface {
+	/**
+	 * @summary Create a new certificate template
+	 * @param {Api.CreateCertificateTemplateDto} request
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	certificateControllerCreateTemplate(request: Api.CreateCertificateTemplateDto, options?: RequestInit): Promise<CertificatesApi.CertificateControllerCreateTemplateResponse>
+
+	/**
+	 * @summary Get all certificate templates
+	 * @param {string} programId
+	 * @param {string} productId
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	certificateControllerGetTemplates(__params: CertificatesApi.CertificateControllerGetTemplatesParameters, options?: RequestInit): Promise<CertificatesApi.CertificateControllerGetTemplatesResponse>
+
+	/**
+	 * @summary Get certificates for a specific user
+	 * @param {string} userId
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	certificateControllerGetUserCertificates(userId: string, options?: RequestInit): Promise<CertificatesApi.CertificateControllerGetUserCertificatesResponse>
+
+	/**
+	 * @summary Issue a certificate to a user
+	 * @param {Api.IssueCertificateDto} request
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	certificateControllerIssueCertificate(request: Api.IssueCertificateDto, options?: RequestInit): Promise<CertificatesApi.CertificateControllerIssueCertificateResponse>
+
+	/**
+	 * @summary Verify a certificate by ID
+	 * @param {string} certificateId
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	certificateControllerVerifyCertificate(certificateId: string, options?: RequestInit): Promise<CertificatesApi.CertificateControllerVerifyCertificateResponse>
+
+}
+
+/**
+ * CertificatesApi - object-oriented interface
+ * @export
+ * @class CertificatesApi
+ * @extends {BaseAPI}
+ */
+export class CertificatesApi extends BaseAPI implements CertificatesApiInterface {
+	/**
+	 * @summary Create a new certificate template
+	 * @param {Api.CreateCertificateTemplateDto} request
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	public certificateControllerCreateTemplate(request: Api.CreateCertificateTemplateDto, options?: RequestInit) {
+		return CertificatesApiFp(this.configuration).certificateControllerCreateTemplate(request, options)(this.fetch, this.basePath);
+	}
+
+	/**
+	 * @summary Get all certificate templates
+	 * @param {string} programId
+	 * @param {string} productId
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	public certificateControllerGetTemplates(__params: CertificatesApi.CertificateControllerGetTemplatesParameters, options?: RequestInit) {
+		return CertificatesApiFp(this.configuration).certificateControllerGetTemplates(__params, options)(this.fetch, this.basePath);
+	}
+
+	/**
+	 * @summary Get certificates for a specific user
+	 * @param {string} userId
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	public certificateControllerGetUserCertificates(userId: string, options?: RequestInit) {
+		return CertificatesApiFp(this.configuration).certificateControllerGetUserCertificates(userId, options)(this.fetch, this.basePath);
+	}
+
+	/**
+	 * @summary Issue a certificate to a user
+	 * @param {Api.IssueCertificateDto} request
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	public certificateControllerIssueCertificate(request: Api.IssueCertificateDto, options?: RequestInit) {
+		return CertificatesApiFp(this.configuration).certificateControllerIssueCertificate(request, options)(this.fetch, this.basePath);
+	}
+
+	/**
+	 * @summary Verify a certificate by ID
+	 * @param {string} certificateId
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	public certificateControllerVerifyCertificate(certificateId: string, options?: RequestInit) {
+		return CertificatesApiFp(this.configuration).certificateControllerVerifyCertificate(certificateId, options)(this.fetch, this.basePath);
+	}
+
+}
 export namespace CompetitionsApi {
 	export type CompetitionControllerFindChessMatchResultResponse =
 		| CompetitionControllerFindChessMatchResult400Response
@@ -11671,6 +12211,1829 @@ export class JobTagsApi extends BaseAPI implements JobTagsApiInterface {
 	 */
 	public jobTagControllerUpdateOneBase(request: Api.JobTagEntity, options?: RequestInit) {
 		return JobTagsApiFp(this.configuration).jobTagControllerUpdateOneBase(request, options)(this.fetch, this.basePath);
+	}
+
+}
+export namespace ProgramsApi {
+	export interface ProgramControllerAssignRoleParameters {
+		/**
+		 * @description <p>Program UUID</p>
+		 * @type {string}
+		 */
+		id: string
+		/**
+		 * @description <p>User UUID</p>
+		 * @type {string}
+		 */
+		userId: string
+	}
+	
+	export type ProgramControllerAssignRoleResponse =
+		| ProgramControllerAssignRole201Response
+		| ProgramControllerAssignRole403Response
+	
+	export interface ProgramControllerAssignRole201Response {
+		status: 201
+		body?: undefined
+		headers?: undefined
+	}
+	
+	export interface ProgramControllerAssignRole403Response {
+		status: 403
+		body?: undefined
+		headers?: undefined
+	}
+	
+	export type ProgramControllerCheckAccessResponse =
+		| ProgramControllerCheckAccess200Response
+	
+	export interface ProgramControllerCheckAccess200Response {
+		status: 200
+		body?: undefined
+		headers?: undefined
+	}
+	
+	export type ProgramControllerCreateResponse =
+		| ProgramControllerCreate201Response
+		| ProgramControllerCreate400Response
+		| ProgramControllerCreate401Response
+	
+	export interface ProgramControllerCreate201Response {
+		status: 201
+		contentType: 'application/json'
+		body: Api.Program
+		headers?: undefined
+	}
+	
+	export interface ProgramControllerCreate400Response {
+		status: 400
+		body?: undefined
+		headers?: undefined
+	}
+	
+	export interface ProgramControllerCreate401Response {
+		status: 401
+		body?: undefined
+		headers?: undefined
+	}
+	
+	export type ProgramControllerEnrollResponse =
+		| ProgramControllerEnroll201Response
+		| ProgramControllerEnroll400Response
+		| ProgramControllerEnroll404Response
+	
+	export interface ProgramControllerEnroll201Response {
+		status: 201
+		body?: undefined
+		headers?: undefined
+	}
+	
+	export interface ProgramControllerEnroll400Response {
+		status: 400
+		body?: undefined
+		headers?: undefined
+	}
+	
+	export interface ProgramControllerEnroll404Response {
+		status: 404
+		body?: undefined
+		headers?: undefined
+	}
+	
+	export interface ProgramControllerFindAllParameters {
+		/**
+		 * @description <p>Filter by tags (comma-separated)</p>
+		 * @type {unknown}
+		 */
+		tags?: unknown
+		/**
+		 * @description <p>Search in title and description</p>
+		 * @type {unknown}
+		 */
+		search?: unknown
+		/**
+		 * @description <p>Filter by active/inactive programs</p>
+		 * @type {unknown}
+		 */
+		isActive?: unknown
+		/**
+		 * @description <p>Filter by public/private programs</p>
+		 * @type {unknown}
+		 */
+		isPublic?: unknown
+		/**
+		 * @description <p>Filter by difficulty level</p>
+		 * @type {unknown}
+		 */
+		difficultyLevel?: unknown
+	}
+	
+	export type ProgramControllerFindAllResponse =
+		| ProgramControllerFindAll200Response
+	
+	export interface ProgramControllerFindAll200Response {
+		status: 200
+		contentType: 'application/json'
+		body: Api.Program[]
+		headers?: undefined
+	}
+	
+	export type ProgramControllerFindOneResponse =
+		| ProgramControllerFindOne200Response
+		| ProgramControllerFindOne404Response
+	
+	export interface ProgramControllerFindOne200Response {
+		status: 200
+		contentType: 'application/json'
+		body: Api.Program
+		headers?: undefined
+	}
+	
+	export interface ProgramControllerFindOne404Response {
+		status: 404
+		body?: undefined
+		headers?: undefined
+	}
+	
+	export type ProgramControllerGetRecommendationsResponse =
+		| ProgramControllerGetRecommendations200Response
+	
+	export interface ProgramControllerGetRecommendations200Response {
+		status: 200
+		body?: undefined
+		headers?: undefined
+	}
+	
+	export type ProgramControllerGetStatsResponse =
+		| ProgramControllerGetStats200Response
+	
+	export interface ProgramControllerGetStats200Response {
+		status: 200
+		body?: undefined
+		headers?: undefined
+	}
+	
+	export interface ProgramControllerGetUserRolesParameters {
+		/**
+		 * @description <p>Program UUID</p>
+		 * @type {string}
+		 */
+		id: string
+		/**
+		 * @description <p>User UUID</p>
+		 * @type {string}
+		 */
+		userId: string
+	}
+	
+	export type ProgramControllerGetUserRolesResponse =
+		| ProgramControllerGetUserRoles200Response
+	
+	export interface ProgramControllerGetUserRoles200Response {
+		status: 200
+		body?: undefined
+		headers?: undefined
+	}
+	
+	export interface ProgramControllerLinkToProductParameters {
+		/**
+		 * @description <p>Program UUID</p>
+		 * @type {string}
+		 */
+		id: string
+		/**
+		 * @description <p>Product UUID</p>
+		 * @type {string}
+		 */
+		productId: string
+	}
+	
+	export type ProgramControllerLinkToProductResponse =
+		| ProgramControllerLinkToProduct201Response
+		| ProgramControllerLinkToProduct400Response
+	
+	export interface ProgramControllerLinkToProduct201Response {
+		status: 201
+		body?: undefined
+		headers?: undefined
+	}
+	
+	export interface ProgramControllerLinkToProduct400Response {
+		status: 400
+		body?: undefined
+		headers?: undefined
+	}
+	
+	export type ProgramControllerRemoveResponse =
+		| ProgramControllerRemove200Response
+		| ProgramControllerRemove403Response
+		| ProgramControllerRemove404Response
+	
+	export interface ProgramControllerRemove200Response {
+		status: 200
+		body?: undefined
+		headers?: undefined
+	}
+	
+	export interface ProgramControllerRemove403Response {
+		status: 403
+		body?: undefined
+		headers?: undefined
+	}
+	
+	export interface ProgramControllerRemove404Response {
+		status: 404
+		body?: undefined
+		headers?: undefined
+	}
+	
+	export interface ProgramControllerRemoveRoleParameters {
+		/**
+		 * @description <p>Program UUID</p>
+		 * @type {string}
+		 */
+		id: string
+		/**
+		 * @description <p>User UUID</p>
+		 * @type {string}
+		 */
+		userId: string
+		/**
+		 * @description <p>Role name</p>
+		 * @type {string}
+		 */
+		role: string
+	}
+	
+	export type ProgramControllerRemoveRoleResponse =
+		| ProgramControllerRemoveRole200Response
+		| ProgramControllerRemoveRole403Response
+	
+	export interface ProgramControllerRemoveRole200Response {
+		status: 200
+		body?: undefined
+		headers?: undefined
+	}
+	
+	export interface ProgramControllerRemoveRole403Response {
+		status: 403
+		body?: undefined
+		headers?: undefined
+	}
+	
+	export interface ProgramControllerSearchParameters {
+		/**
+		 * @description <p>Search query</p>
+		 * @type {string}
+		 */
+		query: string
+		tags?: unknown
+		isPublic?: unknown
+		difficultyLevel?: unknown
+	}
+	
+	export type ProgramControllerSearchResponse =
+		| ProgramControllerSearch200Response
+	
+	export interface ProgramControllerSearch200Response {
+		status: 200
+		body?: undefined
+		headers?: undefined
+	}
+	
+	export type ProgramControllerUnenrollResponse =
+		| ProgramControllerUnenroll200Response
+		| ProgramControllerUnenroll404Response
+	
+	export interface ProgramControllerUnenroll200Response {
+		status: 200
+		body?: undefined
+		headers?: undefined
+	}
+	
+	export interface ProgramControllerUnenroll404Response {
+		status: 404
+		body?: undefined
+		headers?: undefined
+	}
+	
+	export interface ProgramControllerUnlinkFromProductParameters {
+		/**
+		 * @description <p>Program UUID</p>
+		 * @type {string}
+		 */
+		id: string
+		/**
+		 * @description <p>Product UUID</p>
+		 * @type {string}
+		 */
+		productId: string
+	}
+	
+	export type ProgramControllerUnlinkFromProductResponse =
+		| ProgramControllerUnlinkFromProduct200Response
+		| ProgramControllerUnlinkFromProduct404Response
+	
+	export interface ProgramControllerUnlinkFromProduct200Response {
+		status: 200
+		body?: undefined
+		headers?: undefined
+	}
+	
+	export interface ProgramControllerUnlinkFromProduct404Response {
+		status: 404
+		body?: undefined
+		headers?: undefined
+	}
+	
+	export type ProgramControllerUpdateResponse =
+		| ProgramControllerUpdate200Response
+		| ProgramControllerUpdate403Response
+		| ProgramControllerUpdate404Response
+	
+	export interface ProgramControllerUpdate200Response {
+		status: 200
+		contentType: 'application/json'
+		body: Api.Program
+		headers?: undefined
+	}
+	
+	export interface ProgramControllerUpdate403Response {
+		status: 403
+		body?: undefined
+		headers?: undefined
+	}
+	
+	export interface ProgramControllerUpdate404Response {
+		status: 404
+		body?: undefined
+		headers?: undefined
+	}
+	
+}
+
+/**
+ * ProgramsApi - fetch parameter creator
+ * @export
+ */
+export const ProgramsApiFetchParamCreator = function (configuration?: Configuration) {
+	return {
+		/**
+		 * @summary Assign role to user in program
+		 * @param {string} id <p>Program UUID</p>
+		 * @param {string} userId <p>User UUID</p>
+		 * @param {Api.AssignRoleDto} request
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		programControllerAssignRole(__params: ProgramsApi.ProgramControllerAssignRoleParameters, request: Api.AssignRoleDto, options: RequestInit = {}): FetchArgs {
+			// verify required parameter 'id' is not null or undefined
+			if (__params.id === null || __params.id === undefined) {
+				throw new RequiredError('id', 'Required parameter id was null or undefined when calling programControllerAssignRole.');
+			}
+			// verify required parameter 'userId' is not null or undefined
+			if (__params.userId === null || __params.userId === undefined) {
+				throw new RequiredError('userId', 'Required parameter userId was null or undefined when calling programControllerAssignRole.');
+			}
+			// verify required parameter 'request' is not null or undefined
+			if (request === null || request === undefined) {
+				throw new RequiredError('request', 'Required parameter request was null or undefined when calling programControllerAssignRole.');
+			}
+
+			let localVarPath = `/programs/{id}/users/{userId}/roles`
+				.replace('{id}', encodeURIComponent(String(__params.id)))
+				.replace('{userId}', encodeURIComponent(String(__params.userId)));
+			const localVarPathQueryStart = localVarPath.indexOf("?");
+			const localVarRequestOptions: RequestInit = Object.assign({ method: 'POST' }, options);
+			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
+			const localVarQueryParameter = new URLSearchParams(localVarPathQueryStart !== -1 ? localVarPath.substring(localVarPathQueryStart + 1) : "");
+			if (localVarPathQueryStart !== -1) {
+				localVarPath = localVarPath.substring(0, localVarPathQueryStart);
+			}
+
+			localVarHeaderParameter.set('Content-Type', 'application/json');
+
+			localVarRequestOptions.headers = localVarHeaderParameter;
+	
+			if (request !== undefined) {
+				localVarRequestOptions.body = JSON.stringify(request || {});
+			}
+
+			const localVarQueryParameterString = localVarQueryParameter.toString();
+			if (localVarQueryParameterString) {
+				localVarPath += "?" + localVarQueryParameterString;
+			}
+			return {
+				url: localVarPath,
+				options: localVarRequestOptions,
+			};
+		},
+		/**
+		 * @summary Check user access to program
+		 * @param {string} id <p>Program UUID</p>
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		programControllerCheckAccess(id: string, options: RequestInit = {}): FetchArgs {
+			// verify required parameter 'id' is not null or undefined
+			if (id === null || id === undefined) {
+				throw new RequiredError('id', 'Required parameter id was null or undefined when calling programControllerCheckAccess.');
+			}
+
+			let localVarPath = `/programs/{id}/access-check`
+				.replace('{id}', encodeURIComponent(String(id)));
+			const localVarPathQueryStart = localVarPath.indexOf("?");
+			const localVarRequestOptions: RequestInit = Object.assign({ method: 'GET' }, options);
+			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
+			const localVarQueryParameter = new URLSearchParams(localVarPathQueryStart !== -1 ? localVarPath.substring(localVarPathQueryStart + 1) : "");
+			if (localVarPathQueryStart !== -1) {
+				localVarPath = localVarPath.substring(0, localVarPathQueryStart);
+			}
+
+			localVarRequestOptions.headers = localVarHeaderParameter;
+
+			const localVarQueryParameterString = localVarQueryParameter.toString();
+			if (localVarQueryParameterString) {
+				localVarPath += "?" + localVarQueryParameterString;
+			}
+			return {
+				url: localVarPath,
+				options: localVarRequestOptions,
+			};
+		},
+		/**
+		 * @summary Create a new program
+		 * @param {Api.CreateProgramRequestDto} request
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		programControllerCreate(request: Api.CreateProgramRequestDto, options: RequestInit = {}): FetchArgs {
+			// verify required parameter 'request' is not null or undefined
+			if (request === null || request === undefined) {
+				throw new RequiredError('request', 'Required parameter request was null or undefined when calling programControllerCreate.');
+			}
+
+			let localVarPath = `/programs`;
+			const localVarPathQueryStart = localVarPath.indexOf("?");
+			const localVarRequestOptions: RequestInit = Object.assign({ method: 'POST' }, options);
+			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
+			const localVarQueryParameter = new URLSearchParams(localVarPathQueryStart !== -1 ? localVarPath.substring(localVarPathQueryStart + 1) : "");
+			if (localVarPathQueryStart !== -1) {
+				localVarPath = localVarPath.substring(0, localVarPathQueryStart);
+			}
+
+			localVarHeaderParameter.set('Content-Type', 'application/json');
+
+			localVarRequestOptions.headers = localVarHeaderParameter;
+	
+			if (request !== undefined) {
+				localVarRequestOptions.body = JSON.stringify(request || {});
+			}
+
+			const localVarQueryParameterString = localVarQueryParameter.toString();
+			if (localVarQueryParameterString) {
+				localVarPath += "?" + localVarQueryParameterString;
+			}
+			return {
+				url: localVarPath,
+				options: localVarRequestOptions,
+			};
+		},
+		/**
+		 * @summary Enroll in a program
+		 * @param {string} id <p>Program UUID</p>
+		 * @param {Api.EnrollmentRequestDto} request
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		programControllerEnroll(id: string, request: Api.EnrollmentRequestDto, options: RequestInit = {}): FetchArgs {
+			// verify required parameter 'id' is not null or undefined
+			if (id === null || id === undefined) {
+				throw new RequiredError('id', 'Required parameter id was null or undefined when calling programControllerEnroll.');
+			}
+			// verify required parameter 'request' is not null or undefined
+			if (request === null || request === undefined) {
+				throw new RequiredError('request', 'Required parameter request was null or undefined when calling programControllerEnroll.');
+			}
+
+			let localVarPath = `/programs/{id}/enroll`
+				.replace('{id}', encodeURIComponent(String(id)));
+			const localVarPathQueryStart = localVarPath.indexOf("?");
+			const localVarRequestOptions: RequestInit = Object.assign({ method: 'POST' }, options);
+			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
+			const localVarQueryParameter = new URLSearchParams(localVarPathQueryStart !== -1 ? localVarPath.substring(localVarPathQueryStart + 1) : "");
+			if (localVarPathQueryStart !== -1) {
+				localVarPath = localVarPath.substring(0, localVarPathQueryStart);
+			}
+
+			localVarHeaderParameter.set('Content-Type', 'application/json');
+
+			localVarRequestOptions.headers = localVarHeaderParameter;
+	
+			if (request !== undefined) {
+				localVarRequestOptions.body = JSON.stringify(request || {});
+			}
+
+			const localVarQueryParameterString = localVarQueryParameter.toString();
+			if (localVarQueryParameterString) {
+				localVarPath += "?" + localVarQueryParameterString;
+			}
+			return {
+				url: localVarPath,
+				options: localVarRequestOptions,
+			};
+		},
+		/**
+		 * @summary Get all programs with optional filtering
+		 * @param {unknown} [tags] <p>Filter by tags (comma-separated)</p>
+		 * @param {unknown} [search] <p>Search in title and description</p>
+		 * @param {unknown} [isActive] <p>Filter by active/inactive programs</p>
+		 * @param {unknown} [isPublic] <p>Filter by public/private programs</p>
+		 * @param {unknown} [difficultyLevel] <p>Filter by difficulty level</p>
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		programControllerFindAll(__params: ProgramsApi.ProgramControllerFindAllParameters, options: RequestInit = {}): FetchArgs {
+
+			let localVarPath = `/programs`;
+			const localVarPathQueryStart = localVarPath.indexOf("?");
+			const localVarRequestOptions: RequestInit = Object.assign({ method: 'GET' }, options);
+			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
+			const localVarQueryParameter = new URLSearchParams(localVarPathQueryStart !== -1 ? localVarPath.substring(localVarPathQueryStart + 1) : "");
+			if (localVarPathQueryStart !== -1) {
+				localVarPath = localVarPath.substring(0, localVarPathQueryStart);
+			}
+
+			if (__params.tags !== undefined) {
+				localVarQueryParameter.append('tags', String(__params.tags));
+			}
+
+			if (__params.search !== undefined) {
+				localVarQueryParameter.append('search', String(__params.search));
+			}
+
+			if (__params.isActive !== undefined) {
+				localVarQueryParameter.append('is_active', String(__params.isActive));
+			}
+
+			if (__params.isPublic !== undefined) {
+				localVarQueryParameter.append('is_public', String(__params.isPublic));
+			}
+
+			if (__params.difficultyLevel !== undefined) {
+				localVarQueryParameter.append('difficulty_level', String(__params.difficultyLevel));
+			}
+
+			localVarRequestOptions.headers = localVarHeaderParameter;
+
+			const localVarQueryParameterString = localVarQueryParameter.toString();
+			if (localVarQueryParameterString) {
+				localVarPath += "?" + localVarQueryParameterString;
+			}
+			return {
+				url: localVarPath,
+				options: localVarRequestOptions,
+			};
+		},
+		/**
+		 * @summary Get a program by ID
+		 * @param {string} id <p>Program UUID</p>
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		programControllerFindOne(id: string, options: RequestInit = {}): FetchArgs {
+			// verify required parameter 'id' is not null or undefined
+			if (id === null || id === undefined) {
+				throw new RequiredError('id', 'Required parameter id was null or undefined when calling programControllerFindOne.');
+			}
+
+			let localVarPath = `/programs/{id}`
+				.replace('{id}', encodeURIComponent(String(id)));
+			const localVarPathQueryStart = localVarPath.indexOf("?");
+			const localVarRequestOptions: RequestInit = Object.assign({ method: 'GET' }, options);
+			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
+			const localVarQueryParameter = new URLSearchParams(localVarPathQueryStart !== -1 ? localVarPath.substring(localVarPathQueryStart + 1) : "");
+			if (localVarPathQueryStart !== -1) {
+				localVarPath = localVarPath.substring(0, localVarPathQueryStart);
+			}
+
+			localVarRequestOptions.headers = localVarHeaderParameter;
+
+			const localVarQueryParameterString = localVarQueryParameter.toString();
+			if (localVarQueryParameterString) {
+				localVarPath += "?" + localVarQueryParameterString;
+			}
+			return {
+				url: localVarPath,
+				options: localVarRequestOptions,
+			};
+		},
+		/**
+		 * @summary Get recommended programs for user
+		 * @param {number} [limit] <p>Number of recommendations</p>
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		programControllerGetRecommendations(limit: number | undefined, options: RequestInit = {}): FetchArgs {
+
+			let localVarPath = `/programs/recommendations/for-user`;
+			const localVarPathQueryStart = localVarPath.indexOf("?");
+			const localVarRequestOptions: RequestInit = Object.assign({ method: 'GET' }, options);
+			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
+			const localVarQueryParameter = new URLSearchParams(localVarPathQueryStart !== -1 ? localVarPath.substring(localVarPathQueryStart + 1) : "");
+			if (localVarPathQueryStart !== -1) {
+				localVarPath = localVarPath.substring(0, localVarPathQueryStart);
+			}
+
+			if (limit !== undefined) {
+				localVarQueryParameter.append('limit', String(limit));
+			}
+
+			localVarRequestOptions.headers = localVarHeaderParameter;
+
+			const localVarQueryParameterString = localVarQueryParameter.toString();
+			if (localVarQueryParameterString) {
+				localVarPath += "?" + localVarQueryParameterString;
+			}
+			return {
+				url: localVarPath,
+				options: localVarRequestOptions,
+			};
+		},
+		/**
+		 * @summary Get program statistics
+		 * @param {string} id <p>Program UUID</p>
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		programControllerGetStats(id: string, options: RequestInit = {}): FetchArgs {
+			// verify required parameter 'id' is not null or undefined
+			if (id === null || id === undefined) {
+				throw new RequiredError('id', 'Required parameter id was null or undefined when calling programControllerGetStats.');
+			}
+
+			let localVarPath = `/programs/{id}/stats`
+				.replace('{id}', encodeURIComponent(String(id)));
+			const localVarPathQueryStart = localVarPath.indexOf("?");
+			const localVarRequestOptions: RequestInit = Object.assign({ method: 'GET' }, options);
+			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
+			const localVarQueryParameter = new URLSearchParams(localVarPathQueryStart !== -1 ? localVarPath.substring(localVarPathQueryStart + 1) : "");
+			if (localVarPathQueryStart !== -1) {
+				localVarPath = localVarPath.substring(0, localVarPathQueryStart);
+			}
+
+			localVarRequestOptions.headers = localVarHeaderParameter;
+
+			const localVarQueryParameterString = localVarQueryParameter.toString();
+			if (localVarQueryParameterString) {
+				localVarPath += "?" + localVarQueryParameterString;
+			}
+			return {
+				url: localVarPath,
+				options: localVarRequestOptions,
+			};
+		},
+		/**
+		 * @summary Get user roles in program
+		 * @param {string} id <p>Program UUID</p>
+		 * @param {string} userId <p>User UUID</p>
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		programControllerGetUserRoles(__params: ProgramsApi.ProgramControllerGetUserRolesParameters, options: RequestInit = {}): FetchArgs {
+			// verify required parameter 'id' is not null or undefined
+			if (__params.id === null || __params.id === undefined) {
+				throw new RequiredError('id', 'Required parameter id was null or undefined when calling programControllerGetUserRoles.');
+			}
+			// verify required parameter 'userId' is not null or undefined
+			if (__params.userId === null || __params.userId === undefined) {
+				throw new RequiredError('userId', 'Required parameter userId was null or undefined when calling programControllerGetUserRoles.');
+			}
+
+			let localVarPath = `/programs/{id}/users/{userId}/roles`
+				.replace('{id}', encodeURIComponent(String(__params.id)))
+				.replace('{userId}', encodeURIComponent(String(__params.userId)));
+			const localVarPathQueryStart = localVarPath.indexOf("?");
+			const localVarRequestOptions: RequestInit = Object.assign({ method: 'GET' }, options);
+			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
+			const localVarQueryParameter = new URLSearchParams(localVarPathQueryStart !== -1 ? localVarPath.substring(localVarPathQueryStart + 1) : "");
+			if (localVarPathQueryStart !== -1) {
+				localVarPath = localVarPath.substring(0, localVarPathQueryStart);
+			}
+
+			localVarRequestOptions.headers = localVarHeaderParameter;
+
+			const localVarQueryParameterString = localVarQueryParameter.toString();
+			if (localVarQueryParameterString) {
+				localVarPath += "?" + localVarQueryParameterString;
+			}
+			return {
+				url: localVarPath,
+				options: localVarRequestOptions,
+			};
+		},
+		/**
+		 * @summary Link program to product
+		 * @param {string} id <p>Program UUID</p>
+		 * @param {string} productId <p>Product UUID</p>
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		programControllerLinkToProduct(__params: ProgramsApi.ProgramControllerLinkToProductParameters, options: RequestInit = {}): FetchArgs {
+			// verify required parameter 'id' is not null or undefined
+			if (__params.id === null || __params.id === undefined) {
+				throw new RequiredError('id', 'Required parameter id was null or undefined when calling programControllerLinkToProduct.');
+			}
+			// verify required parameter 'productId' is not null or undefined
+			if (__params.productId === null || __params.productId === undefined) {
+				throw new RequiredError('productId', 'Required parameter productId was null or undefined when calling programControllerLinkToProduct.');
+			}
+
+			let localVarPath = `/programs/{id}/products/{productId}`
+				.replace('{id}', encodeURIComponent(String(__params.id)))
+				.replace('{productId}', encodeURIComponent(String(__params.productId)));
+			const localVarPathQueryStart = localVarPath.indexOf("?");
+			const localVarRequestOptions: RequestInit = Object.assign({ method: 'POST' }, options);
+			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
+			const localVarQueryParameter = new URLSearchParams(localVarPathQueryStart !== -1 ? localVarPath.substring(localVarPathQueryStart + 1) : "");
+			if (localVarPathQueryStart !== -1) {
+				localVarPath = localVarPath.substring(0, localVarPathQueryStart);
+			}
+
+			localVarRequestOptions.headers = localVarHeaderParameter;
+
+			const localVarQueryParameterString = localVarQueryParameter.toString();
+			if (localVarQueryParameterString) {
+				localVarPath += "?" + localVarQueryParameterString;
+			}
+			return {
+				url: localVarPath,
+				options: localVarRequestOptions,
+			};
+		},
+		/**
+		 * @summary Delete (deactivate) a program
+		 * @param {string} id <p>Program UUID</p>
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		programControllerRemove(id: string, options: RequestInit = {}): FetchArgs {
+			// verify required parameter 'id' is not null or undefined
+			if (id === null || id === undefined) {
+				throw new RequiredError('id', 'Required parameter id was null or undefined when calling programControllerRemove.');
+			}
+
+			let localVarPath = `/programs/{id}`
+				.replace('{id}', encodeURIComponent(String(id)));
+			const localVarPathQueryStart = localVarPath.indexOf("?");
+			const localVarRequestOptions: RequestInit = Object.assign({ method: 'DELETE' }, options);
+			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
+			const localVarQueryParameter = new URLSearchParams(localVarPathQueryStart !== -1 ? localVarPath.substring(localVarPathQueryStart + 1) : "");
+			if (localVarPathQueryStart !== -1) {
+				localVarPath = localVarPath.substring(0, localVarPathQueryStart);
+			}
+
+			localVarRequestOptions.headers = localVarHeaderParameter;
+
+			const localVarQueryParameterString = localVarQueryParameter.toString();
+			if (localVarQueryParameterString) {
+				localVarPath += "?" + localVarQueryParameterString;
+			}
+			return {
+				url: localVarPath,
+				options: localVarRequestOptions,
+			};
+		},
+		/**
+		 * @summary Remove role from user in program
+		 * @param {string} id <p>Program UUID</p>
+		 * @param {string} userId <p>User UUID</p>
+		 * @param {string} role <p>Role name</p>
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		programControllerRemoveRole(__params: ProgramsApi.ProgramControllerRemoveRoleParameters, options: RequestInit = {}): FetchArgs {
+			// verify required parameter 'id' is not null or undefined
+			if (__params.id === null || __params.id === undefined) {
+				throw new RequiredError('id', 'Required parameter id was null or undefined when calling programControllerRemoveRole.');
+			}
+			// verify required parameter 'userId' is not null or undefined
+			if (__params.userId === null || __params.userId === undefined) {
+				throw new RequiredError('userId', 'Required parameter userId was null or undefined when calling programControllerRemoveRole.');
+			}
+			// verify required parameter 'role' is not null or undefined
+			if (__params.role === null || __params.role === undefined) {
+				throw new RequiredError('role', 'Required parameter role was null or undefined when calling programControllerRemoveRole.');
+			}
+
+			let localVarPath = `/programs/{id}/users/{userId}/roles/{role}`
+				.replace('{id}', encodeURIComponent(String(__params.id)))
+				.replace('{userId}', encodeURIComponent(String(__params.userId)))
+				.replace('{role}', encodeURIComponent(String(__params.role)));
+			const localVarPathQueryStart = localVarPath.indexOf("?");
+			const localVarRequestOptions: RequestInit = Object.assign({ method: 'DELETE' }, options);
+			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
+			const localVarQueryParameter = new URLSearchParams(localVarPathQueryStart !== -1 ? localVarPath.substring(localVarPathQueryStart + 1) : "");
+			if (localVarPathQueryStart !== -1) {
+				localVarPath = localVarPath.substring(0, localVarPathQueryStart);
+			}
+
+			localVarRequestOptions.headers = localVarHeaderParameter;
+
+			const localVarQueryParameterString = localVarQueryParameter.toString();
+			if (localVarQueryParameterString) {
+				localVarPath += "?" + localVarQueryParameterString;
+			}
+			return {
+				url: localVarPath,
+				options: localVarRequestOptions,
+			};
+		},
+		/**
+		 * @summary Search programs
+		 * @param {string} query <p>Search query</p>
+		 * @param {unknown} [tags]
+		 * @param {unknown} [isPublic]
+		 * @param {unknown} [difficultyLevel]
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		programControllerSearch(__params: ProgramsApi.ProgramControllerSearchParameters, options: RequestInit = {}): FetchArgs {
+			// verify required parameter 'query' is not null or undefined
+			if (__params.query === null || __params.query === undefined) {
+				throw new RequiredError('query', 'Required parameter query was null or undefined when calling programControllerSearch.');
+			}
+
+			let localVarPath = `/programs/search/{query}`
+				.replace('{query}', encodeURIComponent(String(__params.query)));
+			const localVarPathQueryStart = localVarPath.indexOf("?");
+			const localVarRequestOptions: RequestInit = Object.assign({ method: 'GET' }, options);
+			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
+			const localVarQueryParameter = new URLSearchParams(localVarPathQueryStart !== -1 ? localVarPath.substring(localVarPathQueryStart + 1) : "");
+			if (localVarPathQueryStart !== -1) {
+				localVarPath = localVarPath.substring(0, localVarPathQueryStart);
+			}
+
+			if (__params.tags !== undefined) {
+				localVarQueryParameter.append('tags', String(__params.tags));
+			}
+
+			if (__params.isPublic !== undefined) {
+				localVarQueryParameter.append('is_public', String(__params.isPublic));
+			}
+
+			if (__params.difficultyLevel !== undefined) {
+				localVarQueryParameter.append('difficulty_level', String(__params.difficultyLevel));
+			}
+
+			localVarRequestOptions.headers = localVarHeaderParameter;
+
+			const localVarQueryParameterString = localVarQueryParameter.toString();
+			if (localVarQueryParameterString) {
+				localVarPath += "?" + localVarQueryParameterString;
+			}
+			return {
+				url: localVarPath,
+				options: localVarRequestOptions,
+			};
+		},
+		/**
+		 * @summary Unenroll from a program
+		 * @param {string} id <p>Program UUID</p>
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		programControllerUnenroll(id: string, options: RequestInit = {}): FetchArgs {
+			// verify required parameter 'id' is not null or undefined
+			if (id === null || id === undefined) {
+				throw new RequiredError('id', 'Required parameter id was null or undefined when calling programControllerUnenroll.');
+			}
+
+			let localVarPath = `/programs/{id}/enroll`
+				.replace('{id}', encodeURIComponent(String(id)));
+			const localVarPathQueryStart = localVarPath.indexOf("?");
+			const localVarRequestOptions: RequestInit = Object.assign({ method: 'DELETE' }, options);
+			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
+			const localVarQueryParameter = new URLSearchParams(localVarPathQueryStart !== -1 ? localVarPath.substring(localVarPathQueryStart + 1) : "");
+			if (localVarPathQueryStart !== -1) {
+				localVarPath = localVarPath.substring(0, localVarPathQueryStart);
+			}
+
+			localVarRequestOptions.headers = localVarHeaderParameter;
+
+			const localVarQueryParameterString = localVarQueryParameter.toString();
+			if (localVarQueryParameterString) {
+				localVarPath += "?" + localVarQueryParameterString;
+			}
+			return {
+				url: localVarPath,
+				options: localVarRequestOptions,
+			};
+		},
+		/**
+		 * @summary Unlink program from product
+		 * @param {string} id <p>Program UUID</p>
+		 * @param {string} productId <p>Product UUID</p>
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		programControllerUnlinkFromProduct(__params: ProgramsApi.ProgramControllerUnlinkFromProductParameters, options: RequestInit = {}): FetchArgs {
+			// verify required parameter 'id' is not null or undefined
+			if (__params.id === null || __params.id === undefined) {
+				throw new RequiredError('id', 'Required parameter id was null or undefined when calling programControllerUnlinkFromProduct.');
+			}
+			// verify required parameter 'productId' is not null or undefined
+			if (__params.productId === null || __params.productId === undefined) {
+				throw new RequiredError('productId', 'Required parameter productId was null or undefined when calling programControllerUnlinkFromProduct.');
+			}
+
+			let localVarPath = `/programs/{id}/products/{productId}`
+				.replace('{id}', encodeURIComponent(String(__params.id)))
+				.replace('{productId}', encodeURIComponent(String(__params.productId)));
+			const localVarPathQueryStart = localVarPath.indexOf("?");
+			const localVarRequestOptions: RequestInit = Object.assign({ method: 'DELETE' }, options);
+			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
+			const localVarQueryParameter = new URLSearchParams(localVarPathQueryStart !== -1 ? localVarPath.substring(localVarPathQueryStart + 1) : "");
+			if (localVarPathQueryStart !== -1) {
+				localVarPath = localVarPath.substring(0, localVarPathQueryStart);
+			}
+
+			localVarRequestOptions.headers = localVarHeaderParameter;
+
+			const localVarQueryParameterString = localVarQueryParameter.toString();
+			if (localVarQueryParameterString) {
+				localVarPath += "?" + localVarQueryParameterString;
+			}
+			return {
+				url: localVarPath,
+				options: localVarRequestOptions,
+			};
+		},
+		/**
+		 * @summary Update a program
+		 * @param {string} id <p>Program UUID</p>
+		 * @param {Api.UpdateProgramRequestDto} request
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		programControllerUpdate(id: string, request: Api.UpdateProgramRequestDto, options: RequestInit = {}): FetchArgs {
+			// verify required parameter 'id' is not null or undefined
+			if (id === null || id === undefined) {
+				throw new RequiredError('id', 'Required parameter id was null or undefined when calling programControllerUpdate.');
+			}
+			// verify required parameter 'request' is not null or undefined
+			if (request === null || request === undefined) {
+				throw new RequiredError('request', 'Required parameter request was null or undefined when calling programControllerUpdate.');
+			}
+
+			let localVarPath = `/programs/{id}`
+				.replace('{id}', encodeURIComponent(String(id)));
+			const localVarPathQueryStart = localVarPath.indexOf("?");
+			const localVarRequestOptions: RequestInit = Object.assign({ method: 'PUT' }, options);
+			const localVarHeaderParameter: Headers = options.headers ? new Headers(options.headers) : new Headers();
+			const localVarQueryParameter = new URLSearchParams(localVarPathQueryStart !== -1 ? localVarPath.substring(localVarPathQueryStart + 1) : "");
+			if (localVarPathQueryStart !== -1) {
+				localVarPath = localVarPath.substring(0, localVarPathQueryStart);
+			}
+
+			localVarHeaderParameter.set('Content-Type', 'application/json');
+
+			localVarRequestOptions.headers = localVarHeaderParameter;
+	
+			if (request !== undefined) {
+				localVarRequestOptions.body = JSON.stringify(request || {});
+			}
+
+			const localVarQueryParameterString = localVarQueryParameter.toString();
+			if (localVarQueryParameterString) {
+				localVarPath += "?" + localVarQueryParameterString;
+			}
+			return {
+				url: localVarPath,
+				options: localVarRequestOptions,
+			};
+		},
+	}
+};
+
+/**
+ * ProgramsApi - functional programming interface
+ * @export
+ */
+export const ProgramsApiFp = function(configuration?: Configuration) {
+	return {
+		/**
+		 * @summary Assign role to user in program
+		 * @param {string} id <p>Program UUID</p>
+		 * @param {string} userId <p>User UUID</p>
+		 * @param {Api.AssignRoleDto} request
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		programControllerAssignRole(__params: ProgramsApi.ProgramControllerAssignRoleParameters, request: Api.AssignRoleDto, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<ProgramsApi.ProgramControllerAssignRoleResponse> {
+			const localVarFetchArgs = ProgramsApiFetchParamCreator(configuration).programControllerAssignRole(__params, request, options);
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				if (response.status === 201) {
+					return {
+						status: response.status,
+						/* No content */
+					}
+				}
+				if (response.status === 403) {
+					return {
+						status: response.status,
+						/* No content */
+					}
+				}
+				throw response;
+			};
+		},
+		/**
+		 * @summary Check user access to program
+		 * @param {string} id <p>Program UUID</p>
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		programControllerCheckAccess(id: string, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<ProgramsApi.ProgramControllerCheckAccessResponse> {
+			const localVarFetchArgs = ProgramsApiFetchParamCreator(configuration).programControllerCheckAccess(id, options);
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				if (response.status === 200) {
+					return {
+						status: response.status,
+						/* No content */
+					}
+				}
+				throw response;
+			};
+		},
+		/**
+		 * @summary Create a new program
+		 * @param {Api.CreateProgramRequestDto} request
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		programControllerCreate(request: Api.CreateProgramRequestDto, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<ProgramsApi.ProgramControllerCreateResponse> {
+			const localVarFetchArgs = ProgramsApiFetchParamCreator(configuration).programControllerCreate(request, options);
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				if (response.status === 201) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.Program,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 400) {
+					return {
+						status: response.status,
+						/* No content */
+					}
+				}
+				if (response.status === 401) {
+					return {
+						status: response.status,
+						/* No content */
+					}
+				}
+				throw response;
+			};
+		},
+		/**
+		 * @summary Enroll in a program
+		 * @param {string} id <p>Program UUID</p>
+		 * @param {Api.EnrollmentRequestDto} request
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		programControllerEnroll(id: string, request: Api.EnrollmentRequestDto, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<ProgramsApi.ProgramControllerEnrollResponse> {
+			const localVarFetchArgs = ProgramsApiFetchParamCreator(configuration).programControllerEnroll(id, request, options);
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				if (response.status === 201) {
+					return {
+						status: response.status,
+						/* No content */
+					}
+				}
+				if (response.status === 400) {
+					return {
+						status: response.status,
+						/* No content */
+					}
+				}
+				if (response.status === 404) {
+					return {
+						status: response.status,
+						/* No content */
+					}
+				}
+				throw response;
+			};
+		},
+		/**
+		 * @summary Get all programs with optional filtering
+		 * @param {unknown} [tags] <p>Filter by tags (comma-separated)</p>
+		 * @param {unknown} [search] <p>Search in title and description</p>
+		 * @param {unknown} [isActive] <p>Filter by active/inactive programs</p>
+		 * @param {unknown} [isPublic] <p>Filter by public/private programs</p>
+		 * @param {unknown} [difficultyLevel] <p>Filter by difficulty level</p>
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		programControllerFindAll(__params: ProgramsApi.ProgramControllerFindAllParameters, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<ProgramsApi.ProgramControllerFindAllResponse> {
+			const localVarFetchArgs = ProgramsApiFetchParamCreator(configuration).programControllerFindAll(__params, options);
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				if (response.status === 200) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.Program[],
+						}
+					}
+					throw response;
+				}
+				throw response;
+			};
+		},
+		/**
+		 * @summary Get a program by ID
+		 * @param {string} id <p>Program UUID</p>
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		programControllerFindOne(id: string, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<ProgramsApi.ProgramControllerFindOneResponse> {
+			const localVarFetchArgs = ProgramsApiFetchParamCreator(configuration).programControllerFindOne(id, options);
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				if (response.status === 200) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.Program,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 404) {
+					return {
+						status: response.status,
+						/* No content */
+					}
+				}
+				throw response;
+			};
+		},
+		/**
+		 * @summary Get recommended programs for user
+		 * @param {number} [limit] <p>Number of recommendations</p>
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		programControllerGetRecommendations(limit: number | undefined, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<ProgramsApi.ProgramControllerGetRecommendationsResponse> {
+			const localVarFetchArgs = ProgramsApiFetchParamCreator(configuration).programControllerGetRecommendations(limit, options);
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				if (response.status === 200) {
+					return {
+						status: response.status,
+						/* No content */
+					}
+				}
+				throw response;
+			};
+		},
+		/**
+		 * @summary Get program statistics
+		 * @param {string} id <p>Program UUID</p>
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		programControllerGetStats(id: string, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<ProgramsApi.ProgramControllerGetStatsResponse> {
+			const localVarFetchArgs = ProgramsApiFetchParamCreator(configuration).programControllerGetStats(id, options);
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				if (response.status === 200) {
+					return {
+						status: response.status,
+						/* No content */
+					}
+				}
+				throw response;
+			};
+		},
+		/**
+		 * @summary Get user roles in program
+		 * @param {string} id <p>Program UUID</p>
+		 * @param {string} userId <p>User UUID</p>
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		programControllerGetUserRoles(__params: ProgramsApi.ProgramControllerGetUserRolesParameters, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<ProgramsApi.ProgramControllerGetUserRolesResponse> {
+			const localVarFetchArgs = ProgramsApiFetchParamCreator(configuration).programControllerGetUserRoles(__params, options);
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				if (response.status === 200) {
+					return {
+						status: response.status,
+						/* No content */
+					}
+				}
+				throw response;
+			};
+		},
+		/**
+		 * @summary Link program to product
+		 * @param {string} id <p>Program UUID</p>
+		 * @param {string} productId <p>Product UUID</p>
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		programControllerLinkToProduct(__params: ProgramsApi.ProgramControllerLinkToProductParameters, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<ProgramsApi.ProgramControllerLinkToProductResponse> {
+			const localVarFetchArgs = ProgramsApiFetchParamCreator(configuration).programControllerLinkToProduct(__params, options);
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				if (response.status === 201) {
+					return {
+						status: response.status,
+						/* No content */
+					}
+				}
+				if (response.status === 400) {
+					return {
+						status: response.status,
+						/* No content */
+					}
+				}
+				throw response;
+			};
+		},
+		/**
+		 * @summary Delete (deactivate) a program
+		 * @param {string} id <p>Program UUID</p>
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		programControllerRemove(id: string, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<ProgramsApi.ProgramControllerRemoveResponse> {
+			const localVarFetchArgs = ProgramsApiFetchParamCreator(configuration).programControllerRemove(id, options);
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				if (response.status === 200) {
+					return {
+						status: response.status,
+						/* No content */
+					}
+				}
+				if (response.status === 403) {
+					return {
+						status: response.status,
+						/* No content */
+					}
+				}
+				if (response.status === 404) {
+					return {
+						status: response.status,
+						/* No content */
+					}
+				}
+				throw response;
+			};
+		},
+		/**
+		 * @summary Remove role from user in program
+		 * @param {string} id <p>Program UUID</p>
+		 * @param {string} userId <p>User UUID</p>
+		 * @param {string} role <p>Role name</p>
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		programControllerRemoveRole(__params: ProgramsApi.ProgramControllerRemoveRoleParameters, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<ProgramsApi.ProgramControllerRemoveRoleResponse> {
+			const localVarFetchArgs = ProgramsApiFetchParamCreator(configuration).programControllerRemoveRole(__params, options);
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				if (response.status === 200) {
+					return {
+						status: response.status,
+						/* No content */
+					}
+				}
+				if (response.status === 403) {
+					return {
+						status: response.status,
+						/* No content */
+					}
+				}
+				throw response;
+			};
+		},
+		/**
+		 * @summary Search programs
+		 * @param {string} query <p>Search query</p>
+		 * @param {unknown} [tags]
+		 * @param {unknown} [isPublic]
+		 * @param {unknown} [difficultyLevel]
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		programControllerSearch(__params: ProgramsApi.ProgramControllerSearchParameters, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<ProgramsApi.ProgramControllerSearchResponse> {
+			const localVarFetchArgs = ProgramsApiFetchParamCreator(configuration).programControllerSearch(__params, options);
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				if (response.status === 200) {
+					return {
+						status: response.status,
+						/* No content */
+					}
+				}
+				throw response;
+			};
+		},
+		/**
+		 * @summary Unenroll from a program
+		 * @param {string} id <p>Program UUID</p>
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		programControllerUnenroll(id: string, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<ProgramsApi.ProgramControllerUnenrollResponse> {
+			const localVarFetchArgs = ProgramsApiFetchParamCreator(configuration).programControllerUnenroll(id, options);
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				if (response.status === 200) {
+					return {
+						status: response.status,
+						/* No content */
+					}
+				}
+				if (response.status === 404) {
+					return {
+						status: response.status,
+						/* No content */
+					}
+				}
+				throw response;
+			};
+		},
+		/**
+		 * @summary Unlink program from product
+		 * @param {string} id <p>Program UUID</p>
+		 * @param {string} productId <p>Product UUID</p>
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		programControllerUnlinkFromProduct(__params: ProgramsApi.ProgramControllerUnlinkFromProductParameters, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<ProgramsApi.ProgramControllerUnlinkFromProductResponse> {
+			const localVarFetchArgs = ProgramsApiFetchParamCreator(configuration).programControllerUnlinkFromProduct(__params, options);
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				if (response.status === 200) {
+					return {
+						status: response.status,
+						/* No content */
+					}
+				}
+				if (response.status === 404) {
+					return {
+						status: response.status,
+						/* No content */
+					}
+				}
+				throw response;
+			};
+		},
+		/**
+		 * @summary Update a program
+		 * @param {string} id <p>Program UUID</p>
+		 * @param {Api.UpdateProgramRequestDto} request
+		 * @param {RequestInit} [options] Override http request option.
+		 * @throws {RequiredError}
+		 */
+		programControllerUpdate(id: string, request: Api.UpdateProgramRequestDto, options?: RequestInit): (fetch?: FetchAPI, basePath?: string) => Promise<ProgramsApi.ProgramControllerUpdateResponse> {
+			const localVarFetchArgs = ProgramsApiFetchParamCreator(configuration).programControllerUpdate(id, request, options);
+			return async (fetch: FetchAPI = defaultFetch, basePath: string = BASE_PATH) => {
+				const response = await fetch(basePath + localVarFetchArgs.url, localVarFetchArgs.options)
+				const contentType = response.headers.get('Content-Type');
+				const mimeType = contentType ? contentType.replace(/;.*/, '') : undefined;
+				
+				if (response.status === 200) {
+					if (mimeType === 'application/json') {
+						return {
+							status: response.status,
+							contentType: 'application/json',
+							body: await response.json() as Api.Program,
+						}
+					}
+					throw response;
+				}
+				if (response.status === 403) {
+					return {
+						status: response.status,
+						/* No content */
+					}
+				}
+				if (response.status === 404) {
+					return {
+						status: response.status,
+						/* No content */
+					}
+				}
+				throw response;
+			};
+		},
+	}
+};
+
+/**
+ * ProgramsApi - factory interface
+ * @export
+ */
+export const ProgramsApiFactory: FactoryFunction<ProgramsApiInterface> = function (configuration?: Configuration, basePath?: string, fetch?: FetchAPI) {
+	return new ProgramsApi(configuration, basePath, fetch);
+};
+
+/**
+ * ProgramsApi - interface
+ * @export
+ * @interface ProgramsApi
+ */
+export interface ProgramsApiInterface {
+	/**
+	 * @summary Assign role to user in program
+	 * @param {string} id <p>Program UUID</p>
+	 * @param {string} userId <p>User UUID</p>
+	 * @param {Api.AssignRoleDto} request
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	programControllerAssignRole(__params: ProgramsApi.ProgramControllerAssignRoleParameters, request: Api.AssignRoleDto, options?: RequestInit): Promise<ProgramsApi.ProgramControllerAssignRoleResponse>
+
+	/**
+	 * @summary Check user access to program
+	 * @param {string} id <p>Program UUID</p>
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	programControllerCheckAccess(id: string, options?: RequestInit): Promise<ProgramsApi.ProgramControllerCheckAccessResponse>
+
+	/**
+	 * @summary Create a new program
+	 * @param {Api.CreateProgramRequestDto} request
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	programControllerCreate(request: Api.CreateProgramRequestDto, options?: RequestInit): Promise<ProgramsApi.ProgramControllerCreateResponse>
+
+	/**
+	 * @summary Enroll in a program
+	 * @param {string} id <p>Program UUID</p>
+	 * @param {Api.EnrollmentRequestDto} request
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	programControllerEnroll(id: string, request: Api.EnrollmentRequestDto, options?: RequestInit): Promise<ProgramsApi.ProgramControllerEnrollResponse>
+
+	/**
+	 * @summary Get all programs with optional filtering
+	 * @param {unknown} [tags] <p>Filter by tags (comma-separated)</p>
+	 * @param {unknown} [search] <p>Search in title and description</p>
+	 * @param {unknown} [isActive] <p>Filter by active/inactive programs</p>
+	 * @param {unknown} [isPublic] <p>Filter by public/private programs</p>
+	 * @param {unknown} [difficultyLevel] <p>Filter by difficulty level</p>
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	programControllerFindAll(__params: ProgramsApi.ProgramControllerFindAllParameters, options?: RequestInit): Promise<ProgramsApi.ProgramControllerFindAllResponse>
+
+	/**
+	 * @summary Get a program by ID
+	 * @param {string} id <p>Program UUID</p>
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	programControllerFindOne(id: string, options?: RequestInit): Promise<ProgramsApi.ProgramControllerFindOneResponse>
+
+	/**
+	 * @summary Get recommended programs for user
+	 * @param {number} [limit] <p>Number of recommendations</p>
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	programControllerGetRecommendations(limit: number | undefined, options?: RequestInit): Promise<ProgramsApi.ProgramControllerGetRecommendationsResponse>
+
+	/**
+	 * @summary Get program statistics
+	 * @param {string} id <p>Program UUID</p>
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	programControllerGetStats(id: string, options?: RequestInit): Promise<ProgramsApi.ProgramControllerGetStatsResponse>
+
+	/**
+	 * @summary Get user roles in program
+	 * @param {string} id <p>Program UUID</p>
+	 * @param {string} userId <p>User UUID</p>
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	programControllerGetUserRoles(__params: ProgramsApi.ProgramControllerGetUserRolesParameters, options?: RequestInit): Promise<ProgramsApi.ProgramControllerGetUserRolesResponse>
+
+	/**
+	 * @summary Link program to product
+	 * @param {string} id <p>Program UUID</p>
+	 * @param {string} productId <p>Product UUID</p>
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	programControllerLinkToProduct(__params: ProgramsApi.ProgramControllerLinkToProductParameters, options?: RequestInit): Promise<ProgramsApi.ProgramControllerLinkToProductResponse>
+
+	/**
+	 * @summary Delete (deactivate) a program
+	 * @param {string} id <p>Program UUID</p>
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	programControllerRemove(id: string, options?: RequestInit): Promise<ProgramsApi.ProgramControllerRemoveResponse>
+
+	/**
+	 * @summary Remove role from user in program
+	 * @param {string} id <p>Program UUID</p>
+	 * @param {string} userId <p>User UUID</p>
+	 * @param {string} role <p>Role name</p>
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	programControllerRemoveRole(__params: ProgramsApi.ProgramControllerRemoveRoleParameters, options?: RequestInit): Promise<ProgramsApi.ProgramControllerRemoveRoleResponse>
+
+	/**
+	 * @summary Search programs
+	 * @param {string} query <p>Search query</p>
+	 * @param {unknown} [tags]
+	 * @param {unknown} [isPublic]
+	 * @param {unknown} [difficultyLevel]
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	programControllerSearch(__params: ProgramsApi.ProgramControllerSearchParameters, options?: RequestInit): Promise<ProgramsApi.ProgramControllerSearchResponse>
+
+	/**
+	 * @summary Unenroll from a program
+	 * @param {string} id <p>Program UUID</p>
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	programControllerUnenroll(id: string, options?: RequestInit): Promise<ProgramsApi.ProgramControllerUnenrollResponse>
+
+	/**
+	 * @summary Unlink program from product
+	 * @param {string} id <p>Program UUID</p>
+	 * @param {string} productId <p>Product UUID</p>
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	programControllerUnlinkFromProduct(__params: ProgramsApi.ProgramControllerUnlinkFromProductParameters, options?: RequestInit): Promise<ProgramsApi.ProgramControllerUnlinkFromProductResponse>
+
+	/**
+	 * @summary Update a program
+	 * @param {string} id <p>Program UUID</p>
+	 * @param {Api.UpdateProgramRequestDto} request
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	programControllerUpdate(id: string, request: Api.UpdateProgramRequestDto, options?: RequestInit): Promise<ProgramsApi.ProgramControllerUpdateResponse>
+
+}
+
+/**
+ * ProgramsApi - object-oriented interface
+ * @export
+ * @class ProgramsApi
+ * @extends {BaseAPI}
+ */
+export class ProgramsApi extends BaseAPI implements ProgramsApiInterface {
+	/**
+	 * @summary Assign role to user in program
+	 * @param {string} id <p>Program UUID</p>
+	 * @param {string} userId <p>User UUID</p>
+	 * @param {Api.AssignRoleDto} request
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	public programControllerAssignRole(__params: ProgramsApi.ProgramControllerAssignRoleParameters, request: Api.AssignRoleDto, options?: RequestInit) {
+		return ProgramsApiFp(this.configuration).programControllerAssignRole(__params, request, options)(this.fetch, this.basePath);
+	}
+
+	/**
+	 * @summary Check user access to program
+	 * @param {string} id <p>Program UUID</p>
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	public programControllerCheckAccess(id: string, options?: RequestInit) {
+		return ProgramsApiFp(this.configuration).programControllerCheckAccess(id, options)(this.fetch, this.basePath);
+	}
+
+	/**
+	 * @summary Create a new program
+	 * @param {Api.CreateProgramRequestDto} request
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	public programControllerCreate(request: Api.CreateProgramRequestDto, options?: RequestInit) {
+		return ProgramsApiFp(this.configuration).programControllerCreate(request, options)(this.fetch, this.basePath);
+	}
+
+	/**
+	 * @summary Enroll in a program
+	 * @param {string} id <p>Program UUID</p>
+	 * @param {Api.EnrollmentRequestDto} request
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	public programControllerEnroll(id: string, request: Api.EnrollmentRequestDto, options?: RequestInit) {
+		return ProgramsApiFp(this.configuration).programControllerEnroll(id, request, options)(this.fetch, this.basePath);
+	}
+
+	/**
+	 * @summary Get all programs with optional filtering
+	 * @param {unknown} [tags] <p>Filter by tags (comma-separated)</p>
+	 * @param {unknown} [search] <p>Search in title and description</p>
+	 * @param {unknown} [isActive] <p>Filter by active/inactive programs</p>
+	 * @param {unknown} [isPublic] <p>Filter by public/private programs</p>
+	 * @param {unknown} [difficultyLevel] <p>Filter by difficulty level</p>
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	public programControllerFindAll(__params: ProgramsApi.ProgramControllerFindAllParameters, options?: RequestInit) {
+		return ProgramsApiFp(this.configuration).programControllerFindAll(__params, options)(this.fetch, this.basePath);
+	}
+
+	/**
+	 * @summary Get a program by ID
+	 * @param {string} id <p>Program UUID</p>
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	public programControllerFindOne(id: string, options?: RequestInit) {
+		return ProgramsApiFp(this.configuration).programControllerFindOne(id, options)(this.fetch, this.basePath);
+	}
+
+	/**
+	 * @summary Get recommended programs for user
+	 * @param {number} [limit] <p>Number of recommendations</p>
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	public programControllerGetRecommendations(limit: number | undefined, options?: RequestInit) {
+		return ProgramsApiFp(this.configuration).programControllerGetRecommendations(limit, options)(this.fetch, this.basePath);
+	}
+
+	/**
+	 * @summary Get program statistics
+	 * @param {string} id <p>Program UUID</p>
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	public programControllerGetStats(id: string, options?: RequestInit) {
+		return ProgramsApiFp(this.configuration).programControllerGetStats(id, options)(this.fetch, this.basePath);
+	}
+
+	/**
+	 * @summary Get user roles in program
+	 * @param {string} id <p>Program UUID</p>
+	 * @param {string} userId <p>User UUID</p>
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	public programControllerGetUserRoles(__params: ProgramsApi.ProgramControllerGetUserRolesParameters, options?: RequestInit) {
+		return ProgramsApiFp(this.configuration).programControllerGetUserRoles(__params, options)(this.fetch, this.basePath);
+	}
+
+	/**
+	 * @summary Link program to product
+	 * @param {string} id <p>Program UUID</p>
+	 * @param {string} productId <p>Product UUID</p>
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	public programControllerLinkToProduct(__params: ProgramsApi.ProgramControllerLinkToProductParameters, options?: RequestInit) {
+		return ProgramsApiFp(this.configuration).programControllerLinkToProduct(__params, options)(this.fetch, this.basePath);
+	}
+
+	/**
+	 * @summary Delete (deactivate) a program
+	 * @param {string} id <p>Program UUID</p>
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	public programControllerRemove(id: string, options?: RequestInit) {
+		return ProgramsApiFp(this.configuration).programControllerRemove(id, options)(this.fetch, this.basePath);
+	}
+
+	/**
+	 * @summary Remove role from user in program
+	 * @param {string} id <p>Program UUID</p>
+	 * @param {string} userId <p>User UUID</p>
+	 * @param {string} role <p>Role name</p>
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	public programControllerRemoveRole(__params: ProgramsApi.ProgramControllerRemoveRoleParameters, options?: RequestInit) {
+		return ProgramsApiFp(this.configuration).programControllerRemoveRole(__params, options)(this.fetch, this.basePath);
+	}
+
+	/**
+	 * @summary Search programs
+	 * @param {string} query <p>Search query</p>
+	 * @param {unknown} [tags]
+	 * @param {unknown} [isPublic]
+	 * @param {unknown} [difficultyLevel]
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	public programControllerSearch(__params: ProgramsApi.ProgramControllerSearchParameters, options?: RequestInit) {
+		return ProgramsApiFp(this.configuration).programControllerSearch(__params, options)(this.fetch, this.basePath);
+	}
+
+	/**
+	 * @summary Unenroll from a program
+	 * @param {string} id <p>Program UUID</p>
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	public programControllerUnenroll(id: string, options?: RequestInit) {
+		return ProgramsApiFp(this.configuration).programControllerUnenroll(id, options)(this.fetch, this.basePath);
+	}
+
+	/**
+	 * @summary Unlink program from product
+	 * @param {string} id <p>Program UUID</p>
+	 * @param {string} productId <p>Product UUID</p>
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	public programControllerUnlinkFromProduct(__params: ProgramsApi.ProgramControllerUnlinkFromProductParameters, options?: RequestInit) {
+		return ProgramsApiFp(this.configuration).programControllerUnlinkFromProduct(__params, options)(this.fetch, this.basePath);
+	}
+
+	/**
+	 * @summary Update a program
+	 * @param {string} id <p>Program UUID</p>
+	 * @param {Api.UpdateProgramRequestDto} request
+	 * @param {RequestInit} [options] Override http request option.
+	 * @throws {RequiredError}
+	 */
+	public programControllerUpdate(id: string, request: Api.UpdateProgramRequestDto, options?: RequestInit) {
+		return ProgramsApiFp(this.configuration).programControllerUpdate(id, request, options)(this.fetch, this.basePath);
 	}
 
 }

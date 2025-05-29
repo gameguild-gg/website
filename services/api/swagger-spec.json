@@ -7386,6 +7386,755 @@
           }
         ]
       }
+    },
+    "/programs": {
+      "post": {
+        "operationId": "ProgramController_create",
+        "summary": "Create a new program",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateProgramRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Program created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Program"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - validation errors"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "tags": [
+          "Programs"
+        ]
+      },
+      "get": {
+        "operationId": "ProgramController_findAll",
+        "summary": "Get all programs with optional filtering",
+        "parameters": [
+          {
+            "name": "tags",
+            "required": false,
+            "in": "query",
+            "description": "Filter by tags (comma-separated)",
+            "schema": {}
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "Search in title and description",
+            "schema": {}
+          },
+          {
+            "name": "is_active",
+            "required": false,
+            "in": "query",
+            "description": "Filter by active/inactive programs",
+            "schema": {}
+          },
+          {
+            "name": "is_public",
+            "required": false,
+            "in": "query",
+            "description": "Filter by public/private programs",
+            "schema": {}
+          },
+          {
+            "name": "difficulty_level",
+            "required": false,
+            "in": "query",
+            "description": "Filter by difficulty level",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Programs retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Program"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Programs"
+        ]
+      }
+    },
+    "/programs/{id}": {
+      "get": {
+        "operationId": "ProgramController_findOne",
+        "summary": "Get a program by ID",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Program UUID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Program retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Program"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Program not found"
+          }
+        },
+        "tags": [
+          "Programs"
+        ]
+      },
+      "put": {
+        "operationId": "ProgramController_update",
+        "summary": "Update a program",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Program UUID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProgramRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Program updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Program"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - insufficient permissions"
+          },
+          "404": {
+            "description": "Program not found"
+          }
+        },
+        "tags": [
+          "Programs"
+        ]
+      },
+      "delete": {
+        "operationId": "ProgramController_remove",
+        "summary": "Delete (deactivate) a program",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Program UUID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Program deleted successfully"
+          },
+          "403": {
+            "description": "Forbidden - insufficient permissions"
+          },
+          "404": {
+            "description": "Program not found"
+          }
+        },
+        "tags": [
+          "Programs"
+        ]
+      }
+    },
+    "/programs/{id}/enroll": {
+      "post": {
+        "operationId": "ProgramController_enroll",
+        "summary": "Enroll in a program",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Program UUID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EnrollmentRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Enrolled successfully"
+          },
+          "400": {
+            "description": "Enrollment failed"
+          },
+          "404": {
+            "description": "Program not found"
+          }
+        },
+        "tags": [
+          "Programs"
+        ]
+      },
+      "delete": {
+        "operationId": "ProgramController_unenroll",
+        "summary": "Unenroll from a program",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Program UUID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Unenrolled successfully"
+          },
+          "404": {
+            "description": "Program or enrollment not found"
+          }
+        },
+        "tags": [
+          "Programs"
+        ]
+      }
+    },
+    "/programs/{id}/users/{userId}/roles": {
+      "post": {
+        "operationId": "ProgramController_assignRole",
+        "summary": "Assign role to user in program",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Program UUID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "description": "User UUID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssignRoleDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Role assigned successfully"
+          },
+          "403": {
+            "description": "Insufficient permissions"
+          }
+        },
+        "tags": [
+          "Programs"
+        ]
+      },
+      "get": {
+        "operationId": "ProgramController_getUserRoles",
+        "summary": "Get user roles in program",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Program UUID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "description": "User UUID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User roles retrieved successfully"
+          }
+        },
+        "tags": [
+          "Programs"
+        ]
+      }
+    },
+    "/programs/{id}/users/{userId}/roles/{role}": {
+      "delete": {
+        "operationId": "ProgramController_removeRole",
+        "summary": "Remove role from user in program",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Program UUID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "description": "User UUID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "role",
+            "required": true,
+            "in": "path",
+            "description": "Role name",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Role removed successfully"
+          },
+          "403": {
+            "description": "Insufficient permissions"
+          }
+        },
+        "tags": [
+          "Programs"
+        ]
+      }
+    },
+    "/programs/{id}/stats": {
+      "get": {
+        "operationId": "ProgramController_getStats",
+        "summary": "Get program statistics",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Program UUID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Program statistics retrieved successfully"
+          }
+        },
+        "tags": [
+          "Programs"
+        ]
+      }
+    },
+    "/programs/{id}/products/{productId}": {
+      "post": {
+        "operationId": "ProgramController_linkToProduct",
+        "summary": "Link program to product",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Program UUID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "productId",
+            "required": true,
+            "in": "path",
+            "description": "Product UUID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Program linked to product successfully"
+          },
+          "400": {
+            "description": "Link already exists"
+          }
+        },
+        "tags": [
+          "Programs"
+        ]
+      },
+      "delete": {
+        "operationId": "ProgramController_unlinkFromProduct",
+        "summary": "Unlink program from product",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Program UUID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "productId",
+            "required": true,
+            "in": "path",
+            "description": "Product UUID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Program unlinked from product successfully"
+          },
+          "404": {
+            "description": "Link not found"
+          }
+        },
+        "tags": [
+          "Programs"
+        ]
+      }
+    },
+    "/programs/search/{query}": {
+      "get": {
+        "operationId": "ProgramController_search",
+        "summary": "Search programs",
+        "parameters": [
+          {
+            "name": "query",
+            "required": true,
+            "in": "path",
+            "description": "Search query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tags",
+            "required": false,
+            "in": "query",
+            "schema": {}
+          },
+          {
+            "name": "is_public",
+            "required": false,
+            "in": "query",
+            "schema": {}
+          },
+          {
+            "name": "difficulty_level",
+            "required": false,
+            "in": "query",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Search results retrieved successfully"
+          }
+        },
+        "tags": [
+          "Programs"
+        ]
+      }
+    },
+    "/programs/recommendations/for-user": {
+      "get": {
+        "operationId": "ProgramController_getRecommendations",
+        "summary": "Get recommended programs for user",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of recommendations",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Recommendations retrieved successfully"
+          }
+        },
+        "tags": [
+          "Programs"
+        ]
+      }
+    },
+    "/programs/{id}/access-check": {
+      "get": {
+        "operationId": "ProgramController_checkAccess",
+        "summary": "Check user access to program",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Program UUID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Access check completed"
+          }
+        },
+        "tags": [
+          "Programs"
+        ]
+      }
+    },
+    "/certificates/templates": {
+      "post": {
+        "operationId": "CertificateController_createTemplate",
+        "summary": "Create a new certificate template",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCertificateTemplateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Certificate template created successfully"
+          }
+        },
+        "tags": [
+          "certificates"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "get": {
+        "operationId": "CertificateController_getTemplates",
+        "summary": "Get all certificate templates",
+        "parameters": [
+          {
+            "name": "programId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "productId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of certificate templates"
+          }
+        },
+        "tags": [
+          "certificates"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/certificates/issue": {
+      "post": {
+        "operationId": "CertificateController_issueCertificate",
+        "summary": "Issue a certificate to a user",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IssueCertificateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Certificate issued successfully"
+          }
+        },
+        "tags": [
+          "certificates"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/certificates/verify/{certificateId}": {
+      "get": {
+        "operationId": "CertificateController_verifyCertificate",
+        "summary": "Verify a certificate by ID",
+        "parameters": [
+          {
+            "name": "certificateId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Certificate verification result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CertificateVerificationResult"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "certificates"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/certificates/user/{userId}": {
+      "get": {
+        "operationId": "CertificateController_getUserCertificates",
+        "summary": "Get certificates for a specific user",
+        "parameters": [
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of user certificates"
+          }
+        },
+        "tags": [
+          "certificates"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
     }
   },
   "info": {
@@ -7858,13 +8607,19 @@
           "markdown": {
             "type": "string"
           },
+          "lexical": {
+            "type": "object"
+          },
           "language": {
             "type": "string",
             "enum": [
+              "c",
+              "cpp",
               "python",
               "javascript",
-              "c++",
-              "bash"
+              "rust",
+              "c#",
+              "lua"
             ]
           },
           "files": {
@@ -7883,6 +8638,7 @@
         "required": [
           "title",
           "markdown",
+          "lexical",
           "language",
           "files",
           "tests"
@@ -9580,6 +10336,2079 @@
           "progress",
           "rejected",
           "withdrawn"
+        ]
+      },
+      "CreateProgramRequestDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "ProductProgram": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "orderIndex": {
+            "type": "number",
+            "description": "Position/order in the product/program sequence"
+          },
+          "isPrimary": {
+            "type": "boolean",
+            "description": "Whether this is the primary product for this program",
+            "default": false
+          },
+          "deletedAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Soft delete timestamp - when the relationship was deleted, null if active"
+          },
+          "product": {
+            "description": "The product associated with this program",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Product"
+              }
+            ]
+          },
+          "program": {
+            "description": "The program associated with this product",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Program"
+              }
+            ]
+          }
+        },
+        "required": [
+          "createdAt",
+          "updatedAt",
+          "orderIndex",
+          "isPrimary",
+          "product",
+          "program"
+        ]
+      },
+      "ProductSubscriptionPlan": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "name": {
+            "type": "string",
+            "description": "Display name of the subscription plan"
+          },
+          "description": {
+            "type": "string",
+            "description": "Detailed description of the subscription plan benefits"
+          },
+          "type": {
+            "type": "string",
+            "description": "Type of subscription (monthly, quarterly, annual, etc.)"
+          },
+          "price": {
+            "type": "number",
+            "description": "Current price of the subscription, stored as decimal for precision"
+          },
+          "basePrice": {
+            "type": "number",
+            "description": "Original price before any discounts, used for comparison"
+          },
+          "billingInterval": {
+            "type": "string",
+            "description": "Time unit for billing (day, week, month, year)"
+          },
+          "billingIntervalCount": {
+            "type": "number",
+            "description": "Number of intervals between billings, e.g. 3 for every 3 months",
+            "default": 1
+          },
+          "trialPeriodDays": {
+            "type": "number",
+            "description": "Number of days in free trial period, null for no trial"
+          },
+          "features": {
+            "type": "object",
+            "description": "Array of features included in this subscription plan"
+          },
+          "availabilityRules": {
+            "type": "object",
+            "description": "Rules for when this subscription plan is available (region, user type, etc.)"
+          },
+          "deletedAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Soft delete timestamp - when the plan was deleted, null if active"
+          }
+        },
+        "required": [
+          "createdAt",
+          "updatedAt",
+          "name",
+          "type",
+          "price",
+          "basePrice",
+          "billingInterval",
+          "billingIntervalCount"
+        ]
+      },
+      "PromoCode": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "code": {
+            "type": "string",
+            "description": "The code users enter to apply the discount"
+          },
+          "type": {
+            "type": "string",
+            "description": "What kind of discount this code provides"
+          },
+          "discountPercentage": {
+            "type": "number",
+            "description": "Percentage discount when type is percentage_off"
+          },
+          "affiliatePercentage": {
+            "type": "number",
+            "description": "How much of discount is paid by affiliate"
+          },
+          "maxUses": {
+            "type": "number",
+            "description": "Null for unlimited uses"
+          },
+          "usesCount": {
+            "type": "number",
+            "description": "Current number of times this code has been used",
+            "default": 0
+          },
+          "maxUsesPerUser": {
+            "type": "number",
+            "description": "How many times one user can use this code",
+            "default": 1
+          },
+          "startsAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "When this code becomes valid"
+          },
+          "expiresAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "When this code expires, null for no expiration"
+          },
+          "isActive": {
+            "type": "boolean",
+            "description": "Whether this code can currently be used",
+            "default": true
+          },
+          "deletedAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Soft delete timestamp - when the code was deleted, null if active"
+          }
+        },
+        "required": [
+          "createdAt",
+          "updatedAt",
+          "code",
+          "type",
+          "usesCount",
+          "maxUsesPerUser",
+          "startsAt",
+          "isActive"
+        ]
+      },
+      "FinancialTransaction": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "fromUser": {
+            "description": "Source user, null if system credit or external payment",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UserEntity"
+              }
+            ]
+          },
+          "toUser": {
+            "description": "Destination user, null if system debit or external payment",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UserEntity"
+              }
+            ]
+          },
+          "product": {
+            "description": "Product being purchased, if applicable",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Product"
+              }
+            ]
+          },
+          "pricing": {
+            "description": "Specific pricing used for this transaction",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProductPricing"
+              }
+            ]
+          },
+          "subscriptionPlan": {
+            "description": "Subscription plan for subscription transactions",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProductSubscriptionPlan"
+              }
+            ]
+          },
+          "promoCode": {
+            "description": "Promo code applied to this transaction",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PromoCode"
+              }
+            ]
+          },
+          "transactionType": {
+            "type": "string",
+            "enum": [
+              "purchase",
+              "refund",
+              "withdrawal",
+              "deposit",
+              "transfer",
+              "fee",
+              "adjustment"
+            ],
+            "description": "Type of financial transaction (purchase, refund, etc.)"
+          },
+          "amount": {
+            "type": "number",
+            "description": "Actual amount of the transaction after discounts"
+          },
+          "originalAmount": {
+            "type": "number",
+            "description": "Original amount before any discounts or adjustments"
+          },
+          "referrerUser": {
+            "description": "User who referred this transaction for commission",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UserEntity"
+              }
+            ]
+          },
+          "referralCommissionAmount": {
+            "type": "number",
+            "description": "Amount paid to referrer as commission"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "processing",
+              "completed",
+              "failed",
+              "refunded",
+              "cancelled"
+            ],
+            "description": "Current status of this transaction (pending, completed, etc.)"
+          },
+          "paymentProvider": {
+            "type": "string",
+            "description": "Payment processor used (stripe, paypal, crypto, etc.)"
+          },
+          "paymentProviderTransactionId": {
+            "type": "string",
+            "description": "External transaction ID from the payment provider for reconciliation"
+          },
+          "metadata": {
+            "type": "object",
+            "description": "Additional transaction-specific data such as payment details, items, etc."
+          },
+          "deletedAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Soft delete timestamp - when the transaction was deleted, null if active"
+          }
+        },
+        "required": [
+          "createdAt",
+          "updatedAt",
+          "transactionType",
+          "amount",
+          "originalAmount",
+          "status",
+          "paymentProvider",
+          "paymentProviderTransactionId"
+        ]
+      },
+      "ProductPricing": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "basePrice": {
+            "type": "number",
+            "description": "Standard price of the product before any discounts"
+          },
+          "creatorSharePercentage": {
+            "type": "number",
+            "description": "Percentage of revenue that goes to the content creator",
+            "default": 70
+          },
+          "taxRate": {
+            "type": "number",
+            "description": "Applicable tax rate for this product"
+          },
+          "availabilityRules": {
+            "type": "object",
+            "description": "Rules for when this pricing is available (e.g., time-limited offers, regional pricing)"
+          },
+          "deletedAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Soft delete timestamp - when the pricing was deleted, null if active"
+          },
+          "product": {
+            "description": "The product this pricing applies to",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Product"
+              }
+            ]
+          },
+          "transactions": {
+            "description": "Financial transactions associated with this pricing",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FinancialTransaction"
+            }
+          }
+        },
+        "required": [
+          "createdAt",
+          "updatedAt",
+          "basePrice",
+          "creatorSharePercentage",
+          "taxRate",
+          "product",
+          "transactions"
+        ]
+      },
+      "Product": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "title": {
+            "type": "string",
+            "description": "Product title/name displayed to users"
+          },
+          "description": {
+            "type": "string",
+            "description": "Detailed description of the product"
+          },
+          "thumbnail": {
+            "type": "string",
+            "description": "URL or path to product thumbnail image"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "program",
+              "learning_pathway",
+              "bundle",
+              "subscription",
+              "workshop",
+              "mentorship",
+              "ebook",
+              "resource_pack",
+              "community",
+              "certification",
+              "other"
+            ],
+            "description": "Type of product (program, bundle, subscription, etc.)"
+          },
+          "isBundle": {
+            "type": "boolean",
+            "description": "Whether this product is a bundle of other products"
+          },
+          "bundleItems": {
+            "type": "object",
+            "description": "Array of product IDs included in the bundle"
+          },
+          "metadata": {
+            "type": "object",
+            "description": "Flexible storage for product type-specific configuration"
+          },
+          "referralCommissionPercentage": {
+            "type": "number",
+            "description": "Default 30% commission for referrals"
+          },
+          "maxAffiliateDiscount": {
+            "type": "number",
+            "description": "Maximum % discount affiliate can offer, 0 means no affiliate allowed"
+          },
+          "affiliateCommissionPercentage": {
+            "type": "number",
+            "description": "Commission % from remaining value after discount"
+          },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "published",
+              "archived"
+            ],
+            "description": "Product visibility status (draft, published, archived)"
+          },
+          "deletedAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Soft delete timestamp - when the product was deleted, null if active"
+          },
+          "productPrograms": {
+            "description": "Program relationships for this product",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProductProgram"
+            }
+          },
+          "pricing": {
+            "description": "Pricing options for this product",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProductPricing"
+            }
+          },
+          "subscriptionPlans": {
+            "description": "Subscription plans for this product",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProductSubscriptionPlan"
+            }
+          },
+          "userProducts": {
+            "description": "Users who have access to this product",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UserProduct"
+            }
+          }
+        },
+        "required": [
+          "createdAt",
+          "updatedAt",
+          "title",
+          "description",
+          "type",
+          "isBundle",
+          "metadata",
+          "referralCommissionPercentage",
+          "maxAffiliateDiscount",
+          "affiliateCommissionPercentage",
+          "visibility",
+          "productPrograms",
+          "pricing",
+          "subscriptionPlans",
+          "userProducts"
+        ]
+      },
+      "UserSubscription": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "status": {
+            "type": "string",
+            "description": "Current status of the subscription (active, canceled, etc.)"
+          },
+          "currentPeriodStart": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Start date of the current billing period"
+          },
+          "currentPeriodEnd": {
+            "format": "date-time",
+            "type": "string",
+            "description": "End date of the current billing period"
+          },
+          "cancelAtPeriodEnd": {
+            "type": "boolean",
+            "description": "Whether subscription will cancel at the end of current period",
+            "default": false
+          },
+          "canceledAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "When the subscription was canceled, null if not canceled"
+          },
+          "endedAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "When the subscription ended, null if still active"
+          },
+          "trialEnd": {
+            "format": "date-time",
+            "type": "string",
+            "description": "When the trial period ends, null if no trial or trial ended"
+          },
+          "deletedAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Soft delete timestamp - when the subscription was deleted, null if active"
+          },
+          "user": {
+            "description": "User who owns this subscription",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UserEntity"
+              }
+            ]
+          },
+          "subscriptionPlan": {
+            "description": "The subscription plan this user is enrolled in",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProductSubscriptionPlan"
+              }
+            ]
+          }
+        },
+        "required": [
+          "createdAt",
+          "updatedAt",
+          "status",
+          "currentPeriodStart",
+          "currentPeriodEnd",
+          "cancelAtPeriodEnd",
+          "user",
+          "subscriptionPlan"
+        ]
+      },
+      "UserProduct": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "user": {
+            "description": "User who has access to this product",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UserEntity"
+              }
+            ]
+          },
+          "product": {
+            "description": "Product the user has access to",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Product"
+              }
+            ]
+          },
+          "subscription": {
+            "description": "If product access is through subscription",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UserSubscription"
+              }
+            ]
+          },
+          "acquisitionType": {
+            "type": "string",
+            "description": "How the product was acquired (purchased, subscription, gift, etc.)"
+          },
+          "purchaseTransaction": {
+            "description": "Reference to the transaction if purchased",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/FinancialTransaction"
+              }
+            ]
+          },
+          "accessExpiresAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Null means permanent access, otherwise when access ends"
+          },
+          "accessStartedAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "When the user first gained access"
+          },
+          "status": {
+            "type": "string",
+            "description": "Current status of user access to this product"
+          },
+          "metadata": {
+            "type": "object",
+            "description": "Flexible storage for product-specific access settings, usage limitations, custom permissions, etc."
+          },
+          "deletedAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Soft delete timestamp - when the access record was deleted, null if active"
+          },
+          "programUsers": {
+            "description": "Program user entries associated with this product access",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProgramUser"
+            }
+          }
+        },
+        "required": [
+          "createdAt",
+          "updatedAt",
+          "user",
+          "product",
+          "acquisitionType",
+          "accessStartedAt",
+          "status",
+          "metadata",
+          "programUsers"
+        ]
+      },
+      "ActivityGrade": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "grade": {
+            "type": "number",
+            "nullable": true
+          },
+          "gradedAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "feedback": {
+            "type": "string",
+            "nullable": true,
+            "description": "Feedback for the activity grade"
+          },
+          "rubricAssessment": {
+            "type": "object",
+            "nullable": true,
+            "description": "Rubric assessment data in JSON format"
+          },
+          "metadata": {
+            "type": "object",
+            "nullable": true,
+            "description": "Additional metadata in JSON format"
+          },
+          "contentInteraction": {
+            "description": "The content interaction being graded",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ContentInteraction"
+              }
+            ]
+          },
+          "graderProgramUser": {
+            "nullable": true,
+            "description": "The program user who provided the grade",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProgramUser"
+              }
+            ]
+          }
+        },
+        "required": [
+          "createdAt",
+          "updatedAt",
+          "grade",
+          "gradedAt",
+          "feedback",
+          "rubricAssessment",
+          "metadata",
+          "contentInteraction",
+          "graderProgramUser"
+        ]
+      },
+      "ContentInteraction": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "not_started",
+              "in_progress",
+              "completed",
+              "skipped"
+            ],
+            "description": "Current completion status"
+          },
+          "startedAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "When the user first accessed this content"
+          },
+          "completedAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "When the user completed this content"
+          },
+          "timeSpentSeconds": {
+            "type": "number",
+            "description": "Total time spent on this content"
+          },
+          "lastAccessedAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "When the user last accessed this content"
+          },
+          "submittedAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "When the submission was received, null if no submission yet"
+          },
+          "answers": {
+            "type": "object",
+            "description": "Structured data containing quiz answers with question IDs and selected responses"
+          },
+          "textResponse": {
+            "type": "string",
+            "description": "Plain text submission for text-based assignments"
+          },
+          "urlResponse": {
+            "type": "string",
+            "description": "URL reference for external content submissions"
+          },
+          "fileResponse": {
+            "type": "object",
+            "description": "Metadata for uploaded files including paths, types, sizes, etc."
+          },
+          "metadata": {
+            "type": "object",
+            "description": "Additional data based on content type"
+          },
+          "deletedAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Soft delete timestamp - when the record was deleted, null if active"
+          },
+          "programUser": {
+            "description": "Reference to the program enrollment",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProgramUser"
+              }
+            ]
+          },
+          "content": {
+            "description": "Reference to the program content item being interacted with",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProgramContent"
+              }
+            ]
+          },
+          "grades": {
+            "description": "Grades associated with this interaction",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ActivityGrade"
+            }
+          }
+        },
+        "required": [
+          "createdAt",
+          "updatedAt",
+          "status",
+          "timeSpentSeconds",
+          "programUser",
+          "content",
+          "grades"
+        ]
+      },
+      "ProgramUserRole": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "program": {
+            "description": "Reference to the program this role applies to",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Program"
+              }
+            ]
+          },
+          "programUser": {
+            "description": "Reference to the user whose role is being defined",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProgramUser"
+              }
+            ]
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "student",
+              "instructor",
+              "editor",
+              "administrator",
+              "teaching_assistant"
+            ],
+            "description": "Type of role assigned to the user in this program"
+          },
+          "deletedAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Soft delete timestamp - when the role was deleted, null if active"
+          }
+        },
+        "required": [
+          "createdAt",
+          "updatedAt",
+          "program",
+          "programUser",
+          "role"
+        ]
+      },
+      "ProgramUser": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "userProduct": {
+            "description": "Reference to the purchased product that grants access to this program",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UserProduct"
+              }
+            ]
+          },
+          "program": {
+            "description": "Reference to the program the user is enrolled in",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Program"
+              }
+            ]
+          },
+          "analytics": {
+            "type": "object",
+            "description": "Tracks time spent on different parts of the program, last accessed timestamps, etc."
+          },
+          "grades": {
+            "type": "object",
+            "description": "Cache of user grades for quick access (quizzes, assignments, overall grade)"
+          },
+          "progress": {
+            "type": "object",
+            "description": "Completion status of program content (pages, activities, etc.)"
+          },
+          "deletedAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Soft delete timestamp - when enrollment was deleted, null if active"
+          },
+          "contentInteractions": {
+            "description": "User interactions with program content",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContentInteraction"
+            }
+          },
+          "roles": {
+            "description": "Roles assigned to this user in the program",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProgramUserRole"
+            }
+          }
+        },
+        "required": [
+          "createdAt",
+          "updatedAt",
+          "userProduct",
+          "program",
+          "analytics",
+          "grades",
+          "progress",
+          "contentInteractions",
+          "roles"
+        ]
+      },
+      "Program": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "slug": {
+            "type": "string",
+            "description": "URL-friendly identifier for the program, used in program links"
+          },
+          "summary": {
+            "type": "string",
+            "description": "Brief description of the program for listings and previews"
+          },
+          "body": {
+            "type": "object",
+            "description": "Main program content in JSON format, includes description, objectives, etc."
+          },
+          "tenancyDomains": {
+            "description": "Array of allowed email domains, null if not tenancy-fenced",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "cachedEnrollmentCount": {
+            "type": "number",
+            "description": "Denormalized count of current enrolled students for quick access"
+          },
+          "cachedCompletionCount": {
+            "type": "number",
+            "description": "Denormalized count of students who completed the program"
+          },
+          "cachedStudentsCompletionRate": {
+            "type": "number",
+            "description": "Precomputed percentage of enrolled students who completed the program"
+          },
+          "cachedRating": {
+            "type": "number",
+            "description": "Precomputed average rating of the program"
+          },
+          "metadata": {
+            "type": "object",
+            "description": "Program type specific data, late penalty etc"
+          },
+          "deletedAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Soft delete timestamp - when the program was deleted, null if active"
+          },
+          "contents": {
+            "description": "Content items belonging to this program",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProgramContent"
+            }
+          },
+          "programUsers": {
+            "description": "Users enrolled in this program",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProgramUser"
+            }
+          },
+          "programUserRoles": {
+            "description": "User roles within this program",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProgramUserRole"
+            }
+          },
+          "productPrograms": {
+            "description": "Product relationships for this program",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProductProgram"
+            }
+          }
+        },
+        "required": [
+          "createdAt",
+          "updatedAt",
+          "slug",
+          "summary",
+          "body",
+          "cachedEnrollmentCount",
+          "cachedCompletionCount",
+          "cachedStudentsCompletionRate",
+          "cachedRating",
+          "contents",
+          "programUsers",
+          "programUserRoles",
+          "productPrograms"
+        ]
+      },
+      "ProgramContent": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "program": {
+            "description": "Reference to the program this content belongs to",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Program"
+              }
+            ]
+          },
+          "parent": {
+            "description": "Self-referential for hierarchical structure, null if top-level content",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProgramContent"
+              }
+            ]
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "page",
+              "assignment",
+              "questionnaire",
+              "discussion",
+              "code",
+              "challenge",
+              "reflection",
+              "survey"
+            ],
+            "description": "Type of content (page, quiz, assignment, discussion, etc.)"
+          },
+          "title": {
+            "type": "string",
+            "description": "Title/name of the content shown in navigation and headers"
+          },
+          "summary": {
+            "type": "string",
+            "description": "Brief description of the content, shown in previews"
+          },
+          "order": {
+            "type": "number",
+            "description": "Position value for sorting content, allows for flexible ordering"
+          },
+          "body": {
+            "type": "object",
+            "description": "Main content in structured JSON format including text, questions, instructions, etc."
+          },
+          "previewable": {
+            "type": "boolean",
+            "description": "Flag to indicate if this content can be accessed without purchasing the program"
+          },
+          "dueDate": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Deadline for completion, null if no deadline"
+          },
+          "availableFrom": {
+            "format": "date-time",
+            "type": "string",
+            "description": "When this content becomes available to users, null if always available"
+          },
+          "availableTo": {
+            "format": "date-time",
+            "type": "string",
+            "description": "When this content becomes unavailable, null if never expires"
+          },
+          "gradingMethod": {
+            "type": "string",
+            "enum": [
+              "instructor",
+              "peer",
+              "ai",
+              "automated_tests"
+            ],
+            "description": "Method used to grade this content (null for pages)"
+          },
+          "durationMinutes": {
+            "type": "number",
+            "description": "Time limit in minutes for timed activities, null means no time limit"
+          },
+          "textResponse": {
+            "type": "boolean",
+            "description": "Whether text response is accepted for submission"
+          },
+          "urlResponse": {
+            "type": "boolean",
+            "description": "Whether URL submission is accepted"
+          },
+          "fileResponseExtensions": {
+            "description": "Allowed file extensions for uploads: null = not accepted, [] = any file, [\"pdf\",\"docx\"] = only these extensions",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "gradingRubric": {
+            "type": "object",
+            "description": "Detailed rubric configuration for consistent grading, including criteria and point values"
+          },
+          "metadata": {
+            "type": "object",
+            "description": "Flexible storage for content-specific settings based on type"
+          },
+          "deletedAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Soft delete timestamp - when the content was deleted, null if active"
+          },
+          "interactions": {
+            "description": "User interactions with this content",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContentInteraction"
+            }
+          },
+          "children": {
+            "description": "Child content items in hierarchical structure",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProgramContent"
+            }
+          }
+        },
+        "required": [
+          "createdAt",
+          "updatedAt",
+          "program",
+          "type",
+          "title",
+          "order",
+          "body",
+          "previewable",
+          "textResponse",
+          "urlResponse",
+          "interactions",
+          "children"
+        ]
+      },
+      "UpdateProgramRequestDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "EnrollmentRequestDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "AssignRoleDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "CreateCertificateTemplateDto": {
+        "type": "object",
+        "properties": {
+          "programId": {
+            "type": "string",
+            "description": "Program ID this certificate is associated with"
+          },
+          "productId": {
+            "type": "string",
+            "description": "Product ID this certificate is associated with"
+          },
+          "certificateType": {
+            "type": "string",
+            "enum": [
+              "program_completion",
+              "product_bundle_completion",
+              "learning_pathway",
+              "skill_mastery",
+              "event_participation",
+              "assessment_passed",
+              "project_completion",
+              "specialization",
+              "professional",
+              "achievement",
+              "instructor",
+              "time_investment",
+              "peer_recognition"
+            ],
+            "description": "Type of certificate"
+          },
+          "name": {
+            "type": "string",
+            "description": "Display name for this certificate"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description of what this certificate represents"
+          },
+          "htmlTemplate": {
+            "type": "string",
+            "description": "HTML template for certificate generation"
+          },
+          "cssStyles": {
+            "type": "string",
+            "description": "CSS styles for certificate template"
+          },
+          "autoIssue": {
+            "type": "boolean",
+            "description": "Whether certificates are automatically issued",
+            "default": true
+          },
+          "minimumGrade": {
+            "type": "number",
+            "description": "Minimum grade percentage required (0-100)",
+            "default": 70
+          },
+          "completionPercentage": {
+            "type": "number",
+            "description": "Completion percentage required (0-100)",
+            "default": 100
+          },
+          "requiresFeedback": {
+            "type": "boolean",
+            "description": "Whether feedback is required",
+            "default": false
+          },
+          "requiresRating": {
+            "type": "boolean",
+            "description": "Whether rating is required",
+            "default": false
+          },
+          "minimumRating": {
+            "type": "number",
+            "description": "Minimum rating required if rating is mandatory"
+          },
+          "feedbackFormTemplate": {
+            "type": "object",
+            "description": "Feedback form template"
+          },
+          "expirationMonths": {
+            "type": "number",
+            "description": "Certificate expiration in months"
+          },
+          "certificateVerificationMethod": {
+            "type": "string",
+            "enum": [
+              "code",
+              "blockchain",
+              "both"
+            ],
+            "description": "Verification method"
+          },
+          "prerequisites": {
+            "type": "object",
+            "description": "Prerequisites"
+          },
+          "badgeImage": {
+            "type": "string",
+            "description": "Badge image URL"
+          },
+          "signatureImage": {
+            "type": "string",
+            "description": "Signature image URL"
+          },
+          "credentialTitle": {
+            "type": "string",
+            "description": "Credential title"
+          },
+          "issuerName": {
+            "type": "string",
+            "description": "Issuer name"
+          },
+          "metadata": {
+            "type": "object",
+            "description": "Additional metadata"
+          }
+        },
+        "required": [
+          "certificateType",
+          "name",
+          "description",
+          "htmlTemplate",
+          "cssStyles"
+        ]
+      },
+      "IssueCertificateDto": {
+        "type": "object",
+        "properties": {
+          "certificateId": {
+            "type": "string",
+            "description": "ID of the certificate template to use"
+          },
+          "programId": {
+            "type": "string",
+            "description": "Program ID for program-specific certificates"
+          },
+          "productId": {
+            "type": "string",
+            "description": "Product ID for product-specific certificates"
+          },
+          "userId": {
+            "type": "string",
+            "description": "ID of the user to issue certificate to"
+          },
+          "programUserId": {
+            "type": "string",
+            "description": "Program user ID if certificate is program-specific"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "expired",
+              "revoked",
+              "pending"
+            ],
+            "description": "Initial status of the certificate"
+          },
+          "expiresAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Certificate expiration date"
+          },
+          "metadata": {
+            "type": "object",
+            "description": "Custom metadata for the certificate instance"
+          }
+        },
+        "required": [
+          "certificateId",
+          "userId"
+        ]
+      },
+      "TagRelationship": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "type": {
+            "type": "string",
+            "description": "Type of relationship (prerequisite, related, parent, etc.)"
+          },
+          "metadata": {
+            "type": "object",
+            "description": "Additional relationship-specific configuration"
+          },
+          "deletedAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Soft delete timestamp - when the relationship was deleted, null if active"
+          },
+          "sourceTag": {
+            "description": "The source tag in the relationship",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Tag"
+              }
+            ]
+          },
+          "targetTag": {
+            "description": "The target tag in the relationship",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Tag"
+              }
+            ]
+          }
+        },
+        "required": [
+          "createdAt",
+          "updatedAt",
+          "type",
+          "sourceTag",
+          "targetTag"
+        ]
+      },
+      "Tag": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "name": {
+            "type": "string",
+            "description": "Display name of the tag"
+          },
+          "description": {
+            "type": "string",
+            "description": "Detailed description of what this tag represents"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "skill",
+              "topic",
+              "technology",
+              "difficulty",
+              "category",
+              "industry",
+              "certification"
+            ],
+            "description": "Category type of the tag (skill, topic, technology, etc.)"
+          },
+          "category": {
+            "type": "string",
+            "description": "Optional sub-category for organizational purposes"
+          },
+          "metadata": {
+            "type": "object",
+            "description": "Additional tag-specific metadata and configuration"
+          },
+          "deletedAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Soft delete timestamp"
+          },
+          "sourceRelationships": {
+            "description": "Outgoing tag relationships where this tag is the source",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TagRelationship"
+            }
+          },
+          "targetRelationships": {
+            "description": "Incoming tag relationships where this tag is the target",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TagRelationship"
+            }
+          }
+        },
+        "required": [
+          "createdAt",
+          "updatedAt",
+          "name",
+          "type"
+        ]
+      },
+      "TagProficiency": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "tag": {
+            "description": "Tag this proficiency level applies to",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Tag"
+              }
+            ]
+          },
+          "proficiencyLevel": {
+            "type": "string",
+            "enum": [
+              "awareness",
+              "novice",
+              "beginner",
+              "intermediate",
+              "advanced",
+              "expert",
+              "master"
+            ],
+            "description": "The proficiency level (novice, intermediate, expert, etc.)"
+          },
+          "proficiencyLevelValue": {
+            "type": "number",
+            "description": "Numeric value representing the proficiency level, to speedup sorting and filtering"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description of what this proficiency level means for this specific tag/skill"
+          },
+          "prerequisites": {
+            "type": "object",
+            "description": "Other tag proficiencies required before achieving this level"
+          },
+          "metadata": {
+            "type": "object",
+            "description": "Additional proficiency-specific configuration"
+          },
+          "deletedAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Soft delete timestamp"
+          }
+        },
+        "required": [
+          "createdAt",
+          "updatedAt",
+          "tag",
+          "proficiencyLevel",
+          "proficiencyLevelValue"
+        ]
+      },
+      "CertificateTag": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "type": {
+            "type": "string",
+            "description": "Type of relationship (requirement, recommendation, provides)"
+          },
+          "metadata": {
+            "type": "object",
+            "description": "Additional tag-specific data like specific competencies, context, etc."
+          },
+          "certificate": {
+            "description": "The certificate associated with this tag relationship",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Certificate"
+              }
+            ]
+          },
+          "tagProficiency": {
+            "description": "The tag proficiency level associated with this certificate",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TagProficiency"
+              }
+            ]
+          }
+        },
+        "required": [
+          "createdAt",
+          "updatedAt",
+          "type",
+          "certificate",
+          "tagProficiency"
+        ]
+      },
+      "Certificate": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "program": {
+            "description": "Reference to specific program (null for multi-program certificates)",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Program"
+              }
+            ]
+          },
+          "product": {
+            "description": "Reference to specific product/bundle (null for cross-product certificates)",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Product"
+              }
+            ]
+          },
+          "certificateType": {
+            "type": "string",
+            "enum": [
+              "program_completion",
+              "product_bundle_completion",
+              "learning_pathway",
+              "skill_mastery",
+              "event_participation",
+              "assessment_passed",
+              "project_completion",
+              "specialization",
+              "professional",
+              "achievement",
+              "instructor",
+              "time_investment",
+              "peer_recognition"
+            ],
+            "description": "What this certificate type proves when earned"
+          },
+          "name": {
+            "type": "string",
+            "description": "Display name for this certificate type"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description of what this certificate represents"
+          },
+          "htmlTemplate": {
+            "type": "string",
+            "description": "HTML template for certificate generation with variable placeholders like {{name}}, {{date}}, {{program}}"
+          },
+          "cssStyles": {
+            "type": "string",
+            "description": "CSS styles for certificate template to control appearance, fonts, colors, etc."
+          },
+          "autoIssue": {
+            "type": "boolean",
+            "description": "Whether certificates are automatically issued upon completion or require manual approval"
+          },
+          "minimumGrade": {
+            "type": "number",
+            "description": "Minimum grade percentage required to earn a certificate (0-100)"
+          },
+          "completionPercentage": {
+            "type": "number",
+            "description": "Percentage of required content that must be completed (0-100)"
+          },
+          "requiresFeedback": {
+            "type": "boolean",
+            "description": "Whether certificate requires submission of feedback form"
+          },
+          "requiresRating": {
+            "type": "boolean",
+            "description": "Whether certificate requires program rating submission"
+          },
+          "minimumRating": {
+            "type": "number",
+            "description": "Minimum rating required if rating is mandatory (1-5 scale), null means any rating accepted"
+          },
+          "feedbackFormTemplate": {
+            "type": "object",
+            "description": "JSON template defining feedback form structure when requires_feedback is true"
+          },
+          "expirationMonths": {
+            "type": "number",
+            "description": "Number of months until certificate expires, null for no expiration"
+          },
+          "certificateVerificationMethod": {
+            "type": "string",
+            "enum": [
+              "code",
+              "blockchain",
+              "both"
+            ],
+            "description": "Method used to verify certificate authenticity"
+          },
+          "prerequisites": {
+            "type": "object",
+            "description": "Required achievements/programs before certificate can be issued"
+          },
+          "badgeImage": {
+            "type": "string",
+            "description": "URL or path to digital badge image for social sharing and profiles"
+          },
+          "signatureImage": {
+            "type": "string",
+            "description": "URL or path to authorizing signature image"
+          },
+          "credentialTitle": {
+            "type": "string",
+            "description": "Professional title/credential granted by this certificate"
+          },
+          "issuerName": {
+            "type": "string",
+            "description": "Name of institution or entity issuing the certificate"
+          },
+          "metadata": {
+            "type": "object",
+            "description": "Additional configuration: custom fields, internationalization, visibility, etc."
+          },
+          "isActive": {
+            "type": "boolean",
+            "description": "Whether this certificate template is currently active"
+          },
+          "deletedAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Soft delete timestamp"
+          },
+          "userCertificates": {
+            "description": "User certificates issued from this template",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UserCertificate"
+            }
+          },
+          "certificateTags": {
+            "description": "Tag relationships associated with this certificate",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CertificateTag"
+            }
+          }
+        },
+        "required": [
+          "createdAt",
+          "updatedAt",
+          "certificateType",
+          "name",
+          "description",
+          "htmlTemplate",
+          "cssStyles",
+          "autoIssue",
+          "minimumGrade",
+          "completionPercentage",
+          "requiresFeedback",
+          "requiresRating",
+          "certificateVerificationMethod",
+          "isActive",
+          "userCertificates",
+          "certificateTags"
+        ]
+      },
+      "UserCertificate": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "program": {
+            "description": "Reference to the program for single program certificates (null for multi-program certs)",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Program"
+              }
+            ]
+          },
+          "product": {
+            "description": "Reference to the product/bundle for product certificates (null for program-only certs)",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Product"
+              }
+            ]
+          },
+          "user": {
+            "description": "User who earned the certificate",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UserEntity"
+              }
+            ]
+          },
+          "programUser": {
+            "description": "Program enrollment record if certificate is program-specific",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProgramUser"
+              }
+            ]
+          },
+          "certificate": {
+            "description": "Reference to the certificate template/configuration",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Certificate"
+              }
+            ]
+          },
+          "certificateNumber": {
+            "type": "string",
+            "description": "Unique certificate number for verification"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "expired",
+              "revoked",
+              "pending"
+            ],
+            "description": "Current status of the certificate"
+          },
+          "issuedAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "When the certificate was issued"
+          },
+          "expiresAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "When the certificate expires, null for no expiration"
+          },
+          "revokedAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "When the certificate was revoked, null if never revoked"
+          },
+          "revocationReason": {
+            "type": "string",
+            "description": "Reason for revocation if applicable"
+          },
+          "certificateUrl": {
+            "type": "string",
+            "description": "URL where the certificate can be viewed or downloaded"
+          },
+          "metadata": {
+            "type": "object",
+            "description": "Additional data specific to the certificate instance"
+          },
+          "deletedAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Soft delete timestamp"
+          }
+        },
+        "required": [
+          "createdAt",
+          "updatedAt",
+          "user",
+          "certificate",
+          "certificateNumber",
+          "status",
+          "issuedAt"
+        ]
+      },
+      "VerificationDetails": {
+        "type": "object",
+        "properties": {
+          "issuedAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Date when certificate was issued"
+          },
+          "expiresAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Certificate expiration date"
+          },
+          "status": {
+            "type": "string",
+            "description": "Certificate status"
+          },
+          "certificateNumber": {
+            "type": "string",
+            "description": "Certificate number for verification"
+          },
+          "programTitle": {
+            "type": "string",
+            "description": "Program title if applicable"
+          },
+          "productTitle": {
+            "type": "string",
+            "description": "Product title if applicable"
+          },
+          "blockchainVerified": {
+            "type": "boolean",
+            "description": "Whether blockchain verification was successful"
+          },
+          "hashVerified": {
+            "type": "boolean",
+            "description": "Whether hash verification was successful"
+          },
+          "issuerName": {
+            "type": "string",
+            "description": "Issuer name"
+          }
+        },
+        "required": [
+          "issuedAt",
+          "status",
+          "certificateNumber",
+          "blockchainVerified",
+          "hashVerified"
+        ]
+      },
+      "CertificateVerificationResult": {
+        "type": "object",
+        "properties": {
+          "isValid": {
+            "type": "boolean",
+            "description": "Whether the certificate is valid"
+          },
+          "certificate": {
+            "description": "Certificate details if valid",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UserCertificate"
+              }
+            ]
+          },
+          "verificationDetails": {
+            "description": "Verification details",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/VerificationDetails"
+              }
+            ]
+          },
+          "errors": {
+            "description": "Validation errors if any",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "isValid",
+          "verificationDetails"
         ]
       }
     }

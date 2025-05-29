@@ -19,6 +19,7 @@ registerEnumType(Visibility, {
 
 @Entity('products')
 @ObjectType()
+
 @Index((entity) => [entity.type])
 @Index((entity) => [entity.isBundle])
 @Index((entity) => [entity.visibility])
@@ -102,11 +103,14 @@ export class Product extends EntityBase {
   productPrograms: ProductProgram[];
 
   @OneToMany(() => ProductPricing, (productPricing) => productPricing.product)
+  @ApiProperty({ type: () => ProductPricing, isArray: true, description: 'Pricing options for this product' })
   pricing: ProductPricing[];
 
   @OneToMany(() => ProductSubscriptionPlan, (subscriptionPlan) => subscriptionPlan.product)
+  @ApiProperty({ type: () => ProductSubscriptionPlan, isArray: true, description: 'Subscription plans for this product' })
   subscriptionPlans: ProductSubscriptionPlan[];
 
   @OneToMany(() => UserProduct, (userProduct) => userProduct.product)
+  @ApiProperty({ type: () => UserProduct, isArray: true, description: 'Users who have access to this product' })
   userProducts: UserProduct[];
 }
