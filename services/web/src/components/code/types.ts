@@ -1,70 +1,27 @@
+// todo: add other languages later
+export type CodeLanguage = 'c' | 'cpp' | 'python' | 'javascript' | 'typescript' | 'rust' | 'c#' | 'lua';
 
+export type SupportedExtensionsType = Record<CodeLanguage, string[]>;
 
-export class SupportedExtensionEntry {
+export const SupportedExtensionsByEachLanguage: SupportedExtensionsType = {
+  c: ['.c', '.h'],
+  cpp: ['.cpp', '.cxx', '.cc', '.h', '.hpp'],
+  python: ['.py'],
+  javascript: ['.js', '.css', '.html'],
+  rust: ['.rs'],
+  'c#': ['.cs'],
+  lua: ['.lua'],
+  typescript: ['.ts'],
+};
+
+export type CompileAndRunParams = {
   language: CodeLanguage;
-  extensions: string[];
-}
-
-export const SupportedExtensionsByEachLanguage: SupportedExtensionEntry[] = [
-  {
-    language: CodeLanguage.c,
-    extensions: ['.c', '.h'],
-  },
-  {
-    language: CodeLanguage.cpp,
-    extensions: ['.cpp', '.cxx', '.cc', '.h', '.hpp'],
-  },
-  {
-    language: CodeLanguage.python,
-    extensions: ['.py'],
-  },
-  {
-    language: CodeLanguage.javascript,
-    extensions: ['.js', '.css', '.html'],
-  },
-  {
-    language: CodeLanguage.rust,
-    extensions: ['.rs'],
-  },
-  {
-    language: CodeLanguage.lua,
-    extensions: ['.lua'],
-  },
-  {
-    language: CodeLanguage['c#'],
-    extensions: ['.cs'],
-  },
-];
-
-// the key can be the directory name or the file name
-// the value can be a string or a Uint8Array
-export type FileMap = { [key: string]: string | FileMap };
-
-// for simple interactions
-export class CompileAndRunParams {
-  @ApiProperty({ enum: CodeLanguage })
-  language: CodeLanguage;
-
-  @ApiProperty({
-    type: 'object',
-    additionalProperties: {
-      oneOf: [
-        { type: 'string', description: 'File content as string' },
-        {
-          type: 'object',
-          description: 'Nested directory or file map',
-          additionalProperties: { $ref: '#/components/schemas/FileMap' },
-        },
-      ],
-    },
-    description: 'A recursive map of file/directory names to file contents or nested directories.',
-  } as ApiPropertyOptions)
   data: FileMap;
   stdin?: string;
   argv?: string[];
-}
+};
 
-export class RunResult = {
+export type RunResult = {
   success: boolean;
   output: string;
   error: string | null;
@@ -78,6 +35,10 @@ export enum RunnerStatus {
   RUNNING = 'Running',
   FAILED_EXECUTION = 'FailedExecution',
 }
+
+// the key can be the directory name or the file name
+// the value can be a string or a Uint8Array
+export type FileMap = { [key: string]: string | Uint8Array | FileMap };
 
 export enum CodingTestEnum {
   CONSOLE = 'console',

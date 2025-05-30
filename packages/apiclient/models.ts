@@ -1252,6 +1252,7 @@ export namespace Api {
 	}
 
 	export interface CreateManyQuizEntityDto {
+		bulk: Api.QuizEntity[];
 	}
 
 	export interface CreateProgramRequestDto {
@@ -1694,6 +1695,198 @@ export namespace Api {
 			}
 		}
 	
+	}
+
+	export interface GetManyCourseEntityResponseDto {
+		data: Api.CourseEntity[];
+		/**
+		 * @type {number}
+		 * @memberof GetManyCourseEntityResponseDto
+		 */
+		count: number;
+		/**
+		 * @type {number}
+		 * @memberof GetManyCourseEntityResponseDto
+		 */
+		total: number;
+		/**
+		 * @type {number}
+		 * @memberof GetManyCourseEntityResponseDto
+		 */
+		page: number;
+		/**
+		 * @type {number}
+		 * @memberof GetManyCourseEntityResponseDto
+		 */
+		pageCount: number;
+	}
+
+	export interface GetManyJobApplicationEntityResponseDto {
+		data: Api.JobApplicationEntity[];
+		/**
+		 * @type {number}
+		 * @memberof GetManyJobApplicationEntityResponseDto
+		 */
+		count: number;
+		/**
+		 * @type {number}
+		 * @memberof GetManyJobApplicationEntityResponseDto
+		 */
+		total: number;
+		/**
+		 * @type {number}
+		 * @memberof GetManyJobApplicationEntityResponseDto
+		 */
+		page: number;
+		/**
+		 * @type {number}
+		 * @memberof GetManyJobApplicationEntityResponseDto
+		 */
+		pageCount: number;
+	}
+
+	export interface GetManyJobPostEntityResponseDto {
+		data: Api.JobPostEntity[];
+		/**
+		 * @type {number}
+		 * @memberof GetManyJobPostEntityResponseDto
+		 */
+		count: number;
+		/**
+		 * @type {number}
+		 * @memberof GetManyJobPostEntityResponseDto
+		 */
+		total: number;
+		/**
+		 * @type {number}
+		 * @memberof GetManyJobPostEntityResponseDto
+		 */
+		page: number;
+		/**
+		 * @type {number}
+		 * @memberof GetManyJobPostEntityResponseDto
+		 */
+		pageCount: number;
+	}
+
+	export interface GetManyJobTagEntityResponseDto {
+		data: Api.JobTagEntity[];
+		/**
+		 * @type {number}
+		 * @memberof GetManyJobTagEntityResponseDto
+		 */
+		count: number;
+		/**
+		 * @type {number}
+		 * @memberof GetManyJobTagEntityResponseDto
+		 */
+		total: number;
+		/**
+		 * @type {number}
+		 * @memberof GetManyJobTagEntityResponseDto
+		 */
+		page: number;
+		/**
+		 * @type {number}
+		 * @memberof GetManyJobTagEntityResponseDto
+		 */
+		pageCount: number;
+	}
+
+	export interface GetManyProjectEntityResponseDto {
+		data: Api.ProjectEntity[];
+		/**
+		 * @type {number}
+		 * @memberof GetManyProjectEntityResponseDto
+		 */
+		count: number;
+		/**
+		 * @type {number}
+		 * @memberof GetManyProjectEntityResponseDto
+		 */
+		total: number;
+		/**
+		 * @type {number}
+		 * @memberof GetManyProjectEntityResponseDto
+		 */
+		page: number;
+		/**
+		 * @type {number}
+		 * @memberof GetManyProjectEntityResponseDto
+		 */
+		pageCount: number;
+	}
+
+	export interface GetManyProjectVersionEntityResponseDto {
+		data: Api.ProjectVersionEntity[];
+		/**
+		 * @type {number}
+		 * @memberof GetManyProjectVersionEntityResponseDto
+		 */
+		count: number;
+		/**
+		 * @type {number}
+		 * @memberof GetManyProjectVersionEntityResponseDto
+		 */
+		total: number;
+		/**
+		 * @type {number}
+		 * @memberof GetManyProjectVersionEntityResponseDto
+		 */
+		page: number;
+		/**
+		 * @type {number}
+		 * @memberof GetManyProjectVersionEntityResponseDto
+		 */
+		pageCount: number;
+	}
+
+	export interface GetManyQuizEntityResponseDto {
+		data: Api.QuizEntity[];
+		/**
+		 * @type {number}
+		 * @memberof GetManyQuizEntityResponseDto
+		 */
+		count: number;
+		/**
+		 * @type {number}
+		 * @memberof GetManyQuizEntityResponseDto
+		 */
+		total: number;
+		/**
+		 * @type {number}
+		 * @memberof GetManyQuizEntityResponseDto
+		 */
+		page: number;
+		/**
+		 * @type {number}
+		 * @memberof GetManyQuizEntityResponseDto
+		 */
+		pageCount: number;
+	}
+
+	export interface GetManyTicketEntityResponseDto {
+		data: Api.TicketEntity[];
+		/**
+		 * @type {number}
+		 * @memberof GetManyTicketEntityResponseDto
+		 */
+		count: number;
+		/**
+		 * @type {number}
+		 * @memberof GetManyTicketEntityResponseDto
+		 */
+		total: number;
+		/**
+		 * @type {number}
+		 * @memberof GetManyTicketEntityResponseDto
+		 */
+		page: number;
+		/**
+		 * @type {number}
+		 * @memberof GetManyTicketEntityResponseDto
+		 */
+		pageCount: number;
 	}
 
 	export interface IdDto {

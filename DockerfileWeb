@@ -22,13 +22,9 @@ ARG WEB_URL
 
 WORKDIR /app
 
-# Set NODE_ENV to production for proper optimizations
-ENV NODE_ENV=production
-
 RUN apt-get clean && apt-get update
 
-# Copy all files to the container, including .git folder for git stats generation
-# The .git folder is required for git stats generation in next.config.js during build
+# copy the files
 COPY . /app
 
 # Install dependencies

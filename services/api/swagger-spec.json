@@ -1063,9 +1063,148 @@
     },
     "/project": {
       "get": {
-        "operationId": "ProjectController_getMany",
-        "parameters": [],
+        "operationId": "getManyBaseProjectControllerProjectEntity",
+        "summary": "Retrieve multiple ProjectEntities",
+        "parameters": [
+          {
+            "name": "fields",
+            "description": "Selects resource fields. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#select\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": false
+          },
+          {
+            "name": "s",
+            "description": "Adds search condition. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#search\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filter",
+            "description": "Adds filter condition. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#filter\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "or",
+            "description": "Adds OR condition. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#or\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "sort",
+            "description": "Adds sort by field. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#sort\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "join",
+            "description": "Adds relational resources. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#join\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "limit",
+            "description": "Limit amount of resources. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#limit\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "offset",
+            "description": "Offset amount of resources. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#offset\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "page",
+            "description": "Page portion of resources. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#page\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "cache",
+            "description": "Reset cache (if was enabled). <a href=\"https://github.com/nestjsx/crud/wiki/Requests#cache\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 1
+            }
+          }
+        ],
         "responses": {
+          "200": {
+            "description": "Get many base response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/GetManyProjectEntityResponseDto"
+                    },
+                    {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ProjectEntity"
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
           "400": {
             "description": "Bad request",
             "content": {
@@ -1147,7 +1286,8 @@
         ]
       },
       "post": {
-        "operationId": "ProjectController_createOne",
+        "operationId": "createOneBaseProjectControllerProjectEntity",
+        "summary": "Create a single ProjectEntity",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -1160,6 +1300,16 @@
           }
         },
         "responses": {
+          "201": {
+            "description": "Get create one base response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectEntity"
+                }
+              }
+            }
+          },
           "400": {
             "description": "Bad request",
             "content": {
@@ -1253,7 +1403,8 @@
     },
     "/project/{slug}": {
       "get": {
-        "operationId": "ProjectController_getOne",
+        "operationId": "getOneBaseProjectControllerProjectEntity",
+        "summary": "Retrieve a single ProjectEntity",
         "parameters": [
           {
             "name": "slug",
@@ -1262,9 +1413,58 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "fields",
+            "description": "Selects resource fields. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#select\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": false
+          },
+          {
+            "name": "join",
+            "description": "Adds relational resources. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#join\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "cache",
+            "description": "Reset cache (if was enabled). <a href=\"https://github.com/nestjsx/crud/wiki/Requests#cache\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 1
+            }
           }
         ],
         "responses": {
+          "200": {
+            "description": "Get one base response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectEntity"
+                }
+              }
+            }
+          },
           "400": {
             "description": "Bad request",
             "content": {
@@ -1356,8 +1556,18 @@
         ]
       },
       "patch": {
-        "operationId": "ProjectController_updateOne",
-        "parameters": [],
+        "operationId": "updateOneBaseProjectControllerProjectEntity",
+        "summary": "Update a single ProjectEntity",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -1369,6 +1579,16 @@
           }
         },
         "responses": {
+          "200": {
+            "description": "Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectEntity"
+                }
+              }
+            }
+          },
           "400": {
             "description": "Bad request",
             "content": {
@@ -1460,9 +1680,22 @@
         ]
       },
       "delete": {
-        "operationId": "ProjectController_deleteOneBase",
-        "parameters": [],
+        "operationId": "deleteOneBaseProjectControllerProjectEntity",
+        "summary": "Delete a single ProjectEntity",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
+          "200": {
+            "description": "Delete one base response"
+          },
           "400": {
             "description": "Bad request",
             "content": {
@@ -2016,7 +2249,8 @@
     },
     "/project-version": {
       "post": {
-        "operationId": "ProjectVersionController_createOne",
+        "operationId": "createOneBaseProjectVersionControllerProjectVersionEntity",
+        "summary": "Create a single ProjectVersionEntity",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -2029,6 +2263,16 @@
           }
         },
         "responses": {
+          "201": {
+            "description": "Get create one base response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectVersionEntity"
+                }
+              }
+            }
+          },
           "400": {
             "description": "Bad request",
             "content": {
@@ -2110,9 +2354,148 @@
         ]
       },
       "get": {
-        "operationId": "ProjectVersionController_getManyBase",
-        "parameters": [],
+        "operationId": "getManyBaseProjectVersionControllerProjectVersionEntity",
+        "summary": "Retrieve multiple ProjectVersionEntities",
+        "parameters": [
+          {
+            "name": "fields",
+            "description": "Selects resource fields. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#select\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": false
+          },
+          {
+            "name": "s",
+            "description": "Adds search condition. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#search\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filter",
+            "description": "Adds filter condition. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#filter\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "or",
+            "description": "Adds OR condition. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#or\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "sort",
+            "description": "Adds sort by field. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#sort\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "join",
+            "description": "Adds relational resources. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#join\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "limit",
+            "description": "Limit amount of resources. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#limit\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "offset",
+            "description": "Offset amount of resources. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#offset\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "page",
+            "description": "Page portion of resources. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#page\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "cache",
+            "description": "Reset cache (if was enabled). <a href=\"https://github.com/nestjsx/crud/wiki/Requests#cache\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 1
+            }
+          }
+        ],
         "responses": {
+          "200": {
+            "description": "Get many base response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/GetManyProjectVersionEntityResponseDto"
+                    },
+                    {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ProjectVersionEntity"
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
           "400": {
             "description": "Bad request",
             "content": {
@@ -2196,9 +2579,22 @@
     },
     "/project-version/{id}": {
       "delete": {
-        "operationId": "ProjectVersionController_deleteOne",
-        "parameters": [],
+        "operationId": "deleteOneBaseProjectVersionControllerProjectVersionEntity",
+        "summary": "Delete a single ProjectVersionEntity",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
+          "200": {
+            "description": "Delete one base response"
+          },
           "400": {
             "description": "Bad request",
             "content": {
@@ -2280,9 +2676,68 @@
         ]
       },
       "get": {
-        "operationId": "ProjectVersionController_getOneBase",
-        "parameters": [],
+        "operationId": "getOneBaseProjectVersionControllerProjectVersionEntity",
+        "summary": "Retrieve a single ProjectVersionEntity",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "fields",
+            "description": "Selects resource fields. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#select\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": false
+          },
+          {
+            "name": "join",
+            "description": "Adds relational resources. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#join\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "cache",
+            "description": "Reset cache (if was enabled). <a href=\"https://github.com/nestjsx/crud/wiki/Requests#cache\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 1
+            }
+          }
+        ],
         "responses": {
+          "200": {
+            "description": "Get one base response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectVersionEntity"
+                }
+              }
+            }
+          },
           "400": {
             "description": "Bad request",
             "content": {
@@ -2366,9 +2821,148 @@
     },
     "/tickets": {
       "get": {
-        "operationId": "TicketController_getMany",
-        "parameters": [],
+        "operationId": "getManyBaseTicketControllerTicketEntity",
+        "summary": "Retrieve multiple TicketEntities",
+        "parameters": [
+          {
+            "name": "fields",
+            "description": "Selects resource fields. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#select\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": false
+          },
+          {
+            "name": "s",
+            "description": "Adds search condition. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#search\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filter",
+            "description": "Adds filter condition. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#filter\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "or",
+            "description": "Adds OR condition. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#or\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "sort",
+            "description": "Adds sort by field. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#sort\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "join",
+            "description": "Adds relational resources. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#join\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "limit",
+            "description": "Limit amount of resources. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#limit\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "offset",
+            "description": "Offset amount of resources. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#offset\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "page",
+            "description": "Page portion of resources. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#page\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "cache",
+            "description": "Reset cache (if was enabled). <a href=\"https://github.com/nestjsx/crud/wiki/Requests#cache\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 1
+            }
+          }
+        ],
         "responses": {
+          "200": {
+            "description": "Get many base response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/GetManyTicketEntityResponseDto"
+                    },
+                    {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/TicketEntity"
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
           "400": {
             "description": "Bad request",
             "content": {
@@ -2450,7 +3044,8 @@
         ]
       },
       "post": {
-        "operationId": "TicketController_createOne",
+        "operationId": "createOneBaseTicketControllerTicketEntity",
+        "summary": "Create a single TicketEntity",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -2463,6 +3058,16 @@
           }
         },
         "responses": {
+          "201": {
+            "description": "Get create one base response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketEntity"
+                }
+              }
+            }
+          },
           "400": {
             "description": "Bad request",
             "content": {
@@ -2546,7 +3151,8 @@
     },
     "/tickets/{id}": {
       "get": {
-        "operationId": "TicketController_getOne",
+        "operationId": "getOneBaseTicketControllerTicketEntity",
+        "summary": "Retrieve a single TicketEntity",
         "parameters": [
           {
             "name": "id",
@@ -2555,9 +3161,58 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "fields",
+            "description": "Selects resource fields. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#select\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": false
+          },
+          {
+            "name": "join",
+            "description": "Adds relational resources. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#join\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "cache",
+            "description": "Reset cache (if was enabled). <a href=\"https://github.com/nestjsx/crud/wiki/Requests#cache\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 1
+            }
           }
         ],
         "responses": {
+          "200": {
+            "description": "Get one base response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketEntity"
+                }
+              }
+            }
+          },
           "400": {
             "description": "Bad request",
             "content": {
@@ -2639,8 +3294,18 @@
         ]
       },
       "patch": {
-        "operationId": "TicketController_updateOneBase",
-        "parameters": [],
+        "operationId": "updateOneBaseTicketControllerTicketEntity",
+        "summary": "Update a single TicketEntity",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -2652,6 +3317,16 @@
           }
         },
         "responses": {
+          "200": {
+            "description": "Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketEntity"
+                }
+              }
+            }
+          },
           "400": {
             "description": "Bad request",
             "content": {
@@ -2733,9 +3408,22 @@
         ]
       },
       "delete": {
-        "operationId": "TicketController_deleteOneBase",
-        "parameters": [],
+        "operationId": "deleteOneBaseTicketControllerTicketEntity",
+        "summary": "Delete a single TicketEntity",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
+          "200": {
+            "description": "Delete one base response"
+          },
           "400": {
             "description": "Bad request",
             "content": {
@@ -2819,9 +3507,68 @@
     },
     "/courses/{slug}": {
       "get": {
-        "operationId": "CoursesController_getOneBase",
-        "parameters": [],
+        "operationId": "getOneBaseCoursesControllerCourseEntity",
+        "summary": "Retrieve a single CourseEntity",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "fields",
+            "description": "Selects resource fields. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#select\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": false
+          },
+          {
+            "name": "join",
+            "description": "Adds relational resources. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#join\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "cache",
+            "description": "Reset cache (if was enabled). <a href=\"https://github.com/nestjsx/crud/wiki/Requests#cache\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 1
+            }
+          }
+        ],
         "responses": {
+          "200": {
+            "description": "Get one base response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CourseEntity"
+                }
+              }
+            }
+          },
           "400": {
             "description": "Bad request",
             "content": {
@@ -2858,8 +3605,18 @@
         ]
       },
       "patch": {
-        "operationId": "CoursesController_updateOneBase",
-        "parameters": [],
+        "operationId": "updateOneBaseCoursesControllerCourseEntity",
+        "summary": "Update a single CourseEntity",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -2871,6 +3628,16 @@
           }
         },
         "responses": {
+          "200": {
+            "description": "Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CourseEntity"
+                }
+              }
+            }
+          },
           "400": {
             "description": "Bad request",
             "content": {
@@ -2952,9 +3719,22 @@
         ]
       },
       "delete": {
-        "operationId": "CoursesController_deleteOneBase",
-        "parameters": [],
+        "operationId": "deleteOneBaseCoursesControllerCourseEntity",
+        "summary": "Delete a single CourseEntity",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
+          "200": {
+            "description": "Delete one base response"
+          },
           "400": {
             "description": "Bad request",
             "content": {
@@ -3038,9 +3818,148 @@
     },
     "/courses": {
       "get": {
-        "operationId": "CoursesController_getManyBase",
-        "parameters": [],
+        "operationId": "getManyBaseCoursesControllerCourseEntity",
+        "summary": "Retrieve multiple CourseEntities",
+        "parameters": [
+          {
+            "name": "fields",
+            "description": "Selects resource fields. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#select\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": false
+          },
+          {
+            "name": "s",
+            "description": "Adds search condition. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#search\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filter",
+            "description": "Adds filter condition. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#filter\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "or",
+            "description": "Adds OR condition. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#or\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "sort",
+            "description": "Adds sort by field. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#sort\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "join",
+            "description": "Adds relational resources. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#join\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "limit",
+            "description": "Limit amount of resources. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#limit\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "offset",
+            "description": "Offset amount of resources. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#offset\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "page",
+            "description": "Page portion of resources. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#page\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "cache",
+            "description": "Reset cache (if was enabled). <a href=\"https://github.com/nestjsx/crud/wiki/Requests#cache\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 1
+            }
+          }
+        ],
         "responses": {
+          "200": {
+            "description": "Get many base response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/GetManyCourseEntityResponseDto"
+                    },
+                    {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/CourseEntity"
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
           "400": {
             "description": "Bad request",
             "content": {
@@ -3077,7 +3996,8 @@
         ]
       },
       "post": {
-        "operationId": "CoursesController_createOneBase",
+        "operationId": "createOneBaseCoursesControllerCourseEntity",
+        "summary": "Create a single CourseEntity",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -3090,6 +4010,16 @@
           }
         },
         "responses": {
+          "201": {
+            "description": "Get create one base response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CourseEntity"
+                }
+              }
+            }
+          },
           "400": {
             "description": "Bad request",
             "content": {
@@ -3643,11 +4573,67 @@
     },
     "/courses/{courseid}/quiz/{id}": {
       "get": {
-        "operationId": "QuizController_getOneBase",
-        "parameters": [],
+        "operationId": "getOneBaseQuizControllerQuizEntity",
+        "summary": "Retrieve a single QuizEntity",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "fields",
+            "description": "Selects resource fields. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#select\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": false
+          },
+          {
+            "name": "join",
+            "description": "Adds relational resources. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#join\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "cache",
+            "description": "Reset cache (if was enabled). <a href=\"https://github.com/nestjsx/crud/wiki/Requests#cache\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 1
+            }
+          }
+        ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "Get one base response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuizEntity"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -3655,8 +4641,18 @@
         ]
       },
       "patch": {
-        "operationId": "QuizController_updateOneBase",
-        "parameters": [],
+        "operationId": "updateOneBaseQuizControllerQuizEntity",
+        "summary": "Update a single QuizEntity",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -3669,7 +4665,14 @@
         },
         "responses": {
           "200": {
-            "description": ""
+            "description": "Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuizEntity"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -3677,8 +4680,18 @@
         ]
       },
       "put": {
-        "operationId": "QuizController_replaceOneBase",
-        "parameters": [],
+        "operationId": "replaceOneBaseQuizControllerQuizEntity",
+        "summary": "Replace a single QuizEntity",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -3691,7 +4704,14 @@
         },
         "responses": {
           "200": {
-            "description": ""
+            "description": "Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuizEntity"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -3699,11 +4719,21 @@
         ]
       },
       "delete": {
-        "operationId": "QuizController_deleteOneBase",
-        "parameters": [],
+        "operationId": "deleteOneBaseQuizControllerQuizEntity",
+        "summary": "Delete a single QuizEntity",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "Delete one base response"
           }
         },
         "tags": [
@@ -3713,11 +4743,147 @@
     },
     "/courses/{courseid}/quiz": {
       "get": {
-        "operationId": "QuizController_getManyBase",
-        "parameters": [],
+        "operationId": "getManyBaseQuizControllerQuizEntity",
+        "summary": "Retrieve multiple QuizEntities",
+        "parameters": [
+          {
+            "name": "fields",
+            "description": "Selects resource fields. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#select\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": false
+          },
+          {
+            "name": "s",
+            "description": "Adds search condition. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#search\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filter",
+            "description": "Adds filter condition. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#filter\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "or",
+            "description": "Adds OR condition. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#or\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "sort",
+            "description": "Adds sort by field. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#sort\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "join",
+            "description": "Adds relational resources. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#join\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "limit",
+            "description": "Limit amount of resources. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#limit\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "offset",
+            "description": "Offset amount of resources. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#offset\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "page",
+            "description": "Page portion of resources. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#page\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "cache",
+            "description": "Reset cache (if was enabled). <a href=\"https://github.com/nestjsx/crud/wiki/Requests#cache\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 1
+            }
+          }
+        ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "Get many base response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/GetManyQuizEntityResponseDto"
+                    },
+                    {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/QuizEntity"
+                      }
+                    }
+                  ]
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -3725,7 +4891,8 @@
         ]
       },
       "post": {
-        "operationId": "QuizController_createOneBase",
+        "operationId": "createOneBaseQuizControllerQuizEntity",
+        "summary": "Create a single QuizEntity",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -3739,7 +4906,14 @@
         },
         "responses": {
           "201": {
-            "description": ""
+            "description": "Get create one base response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuizEntity"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -3749,7 +4923,8 @@
     },
     "/courses/{courseid}/quiz/bulk": {
       "post": {
-        "operationId": "QuizController_createManyBase",
+        "operationId": "createManyBaseQuizControllerQuizEntity",
+        "summary": "Create multiple QuizEntities",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -3763,7 +4938,17 @@
         },
         "responses": {
           "201": {
-            "description": ""
+            "description": "Get create many base response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/QuizEntity"
+                  }
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -4658,7 +5843,8 @@
     },
     "/job-posts": {
       "post": {
-        "operationId": "JobPostController_createOne",
+        "operationId": "createOneBaseJobPostControllerJobPostEntity",
+        "summary": "Create a single JobPostEntity",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -4671,6 +5857,16 @@
           }
         },
         "responses": {
+          "201": {
+            "description": "Get create one base response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobPostEntity"
+                }
+              }
+            }
+          },
           "400": {
             "description": "Bad request",
             "content": {
@@ -4752,11 +5948,147 @@
         ]
       },
       "get": {
-        "operationId": "JobPostController_getManyBase",
-        "parameters": [],
+        "operationId": "getManyBaseJobPostControllerJobPostEntity",
+        "summary": "Retrieve multiple JobPostEntities",
+        "parameters": [
+          {
+            "name": "fields",
+            "description": "Selects resource fields. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#select\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": false
+          },
+          {
+            "name": "s",
+            "description": "Adds search condition. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#search\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filter",
+            "description": "Adds filter condition. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#filter\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "or",
+            "description": "Adds OR condition. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#or\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "sort",
+            "description": "Adds sort by field. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#sort\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "join",
+            "description": "Adds relational resources. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#join\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "limit",
+            "description": "Limit amount of resources. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#limit\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "offset",
+            "description": "Offset amount of resources. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#offset\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "page",
+            "description": "Page portion of resources. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#page\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "cache",
+            "description": "Reset cache (if was enabled). <a href=\"https://github.com/nestjsx/crud/wiki/Requests#cache\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 1
+            }
+          }
+        ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "Get many base response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/GetManyJobPostEntityResponseDto"
+                    },
+                    {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/JobPostEntity"
+                      }
+                    }
+                  ]
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -4766,8 +6098,18 @@
     },
     "/job-posts/{id}": {
       "patch": {
-        "operationId": "JobPostController_updateOne",
-        "parameters": [],
+        "operationId": "updateOneBaseJobPostControllerJobPostEntity",
+        "summary": "Update a single JobPostEntity",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -4779,6 +6121,16 @@
           }
         },
         "responses": {
+          "200": {
+            "description": "Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobPostEntity"
+                }
+              }
+            }
+          },
           "400": {
             "description": "Bad request",
             "content": {
@@ -4860,9 +6212,68 @@
         ]
       },
       "get": {
-        "operationId": "JobPostController_getOneBase",
-        "parameters": [],
+        "operationId": "getOneBaseJobPostControllerJobPostEntity",
+        "summary": "Retrieve a single JobPostEntity",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "fields",
+            "description": "Selects resource fields. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#select\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": false
+          },
+          {
+            "name": "join",
+            "description": "Adds relational resources. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#join\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "cache",
+            "description": "Reset cache (if was enabled). <a href=\"https://github.com/nestjsx/crud/wiki/Requests#cache\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 1
+            }
+          }
+        ],
         "responses": {
+          "200": {
+            "description": "Get one base response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobPostEntity"
+                }
+              }
+            }
+          },
           "400": {
             "description": "Bad request",
             "content": {
@@ -4944,9 +6355,22 @@
         ]
       },
       "delete": {
-        "operationId": "JobPostController_deleteOneBase",
-        "parameters": [],
+        "operationId": "deleteOneBaseJobPostControllerJobPostEntity",
+        "summary": "Delete a single JobPostEntity",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
+          "200": {
+            "description": "Delete one base response"
+          },
           "400": {
             "description": "Bad request",
             "content": {
@@ -5031,7 +6455,125 @@
     "/job-posts/get-many-with-applied": {
       "get": {
         "operationId": "JobPostController_getManyWithApplied",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "fields",
+            "description": "Selects resource fields. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#select\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": false
+          },
+          {
+            "name": "s",
+            "description": "Adds search condition. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#search\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filter",
+            "description": "Adds filter condition. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#filter\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "or",
+            "description": "Adds OR condition. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#or\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "sort",
+            "description": "Adds sort by field. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#sort\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "join",
+            "description": "Adds relational resources. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#join\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "limit",
+            "description": "Limit amount of resources. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#limit\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "offset",
+            "description": "Offset amount of resources. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#offset\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "page",
+            "description": "Page portion of resources. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#page\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "cache",
+            "description": "Reset cache (if was enabled). <a href=\"https://github.com/nestjsx/crud/wiki/Requests#cache\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 1
+            }
+          }
+        ],
         "responses": {
           "200": {
             "schema": {
@@ -5818,9 +7360,68 @@
     },
     "/job-tags/{id}": {
       "get": {
-        "operationId": "JobTagController_getOneBase",
-        "parameters": [],
+        "operationId": "getOneBaseJobTagControllerJobTagEntity",
+        "summary": "Retrieve a single JobTagEntity",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "fields",
+            "description": "Selects resource fields. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#select\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": false
+          },
+          {
+            "name": "join",
+            "description": "Adds relational resources. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#join\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "cache",
+            "description": "Reset cache (if was enabled). <a href=\"https://github.com/nestjsx/crud/wiki/Requests#cache\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 1
+            }
+          }
+        ],
         "responses": {
+          "200": {
+            "description": "Get one base response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobTagEntity"
+                }
+              }
+            }
+          },
           "400": {
             "description": "Bad request",
             "content": {
@@ -5902,8 +7503,18 @@
         ]
       },
       "patch": {
-        "operationId": "JobTagController_updateOneBase",
-        "parameters": [],
+        "operationId": "updateOneBaseJobTagControllerJobTagEntity",
+        "summary": "Update a single JobTagEntity",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -5915,6 +7526,16 @@
           }
         },
         "responses": {
+          "200": {
+            "description": "Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobTagEntity"
+                }
+              }
+            }
+          },
           "400": {
             "description": "Bad request",
             "content": {
@@ -5996,9 +7617,22 @@
         ]
       },
       "delete": {
-        "operationId": "JobTagController_deleteOneBase",
-        "parameters": [],
+        "operationId": "deleteOneBaseJobTagControllerJobTagEntity",
+        "summary": "Delete a single JobTagEntity",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
+          "200": {
+            "description": "Delete one base response"
+          },
           "400": {
             "description": "Bad request",
             "content": {
@@ -6082,11 +7716,147 @@
     },
     "/job-tags": {
       "get": {
-        "operationId": "JobTagController_getManyBase",
-        "parameters": [],
+        "operationId": "getManyBaseJobTagControllerJobTagEntity",
+        "summary": "Retrieve multiple JobTagEntities",
+        "parameters": [
+          {
+            "name": "fields",
+            "description": "Selects resource fields. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#select\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": false
+          },
+          {
+            "name": "s",
+            "description": "Adds search condition. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#search\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filter",
+            "description": "Adds filter condition. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#filter\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "or",
+            "description": "Adds OR condition. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#or\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "sort",
+            "description": "Adds sort by field. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#sort\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "join",
+            "description": "Adds relational resources. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#join\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "limit",
+            "description": "Limit amount of resources. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#limit\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "offset",
+            "description": "Offset amount of resources. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#offset\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "page",
+            "description": "Page portion of resources. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#page\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "cache",
+            "description": "Reset cache (if was enabled). <a href=\"https://github.com/nestjsx/crud/wiki/Requests#cache\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 1
+            }
+          }
+        ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "Get many base response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/GetManyJobTagEntityResponseDto"
+                    },
+                    {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/JobTagEntity"
+                      }
+                    }
+                  ]
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -6094,7 +7864,8 @@
         ]
       },
       "post": {
-        "operationId": "JobTagController_createOneBase",
+        "operationId": "createOneBaseJobTagControllerJobTagEntity",
+        "summary": "Create a single JobTagEntity",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -6107,6 +7878,16 @@
           }
         },
         "responses": {
+          "201": {
+            "description": "Get create one base response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobTagEntity"
+                }
+              }
+            }
+          },
           "400": {
             "description": "Bad request",
             "content": {
@@ -6190,7 +7971,8 @@
     },
     "/job-applications": {
       "post": {
-        "operationId": "JobApplicationController_createOne",
+        "operationId": "createOneBaseJobApplicationControllerJobApplicationEntity",
+        "summary": "Create a single JobApplicationEntity",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -6203,6 +7985,16 @@
           }
         },
         "responses": {
+          "201": {
+            "description": "Get create one base response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobApplicationEntity"
+                }
+              }
+            }
+          },
           "400": {
             "description": "Bad request",
             "content": {
@@ -6284,9 +8076,148 @@
         ]
       },
       "get": {
-        "operationId": "JobApplicationController_getManyBase",
-        "parameters": [],
+        "operationId": "getManyBaseJobApplicationControllerJobApplicationEntity",
+        "summary": "Retrieve multiple JobApplicationEntities",
+        "parameters": [
+          {
+            "name": "fields",
+            "description": "Selects resource fields. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#select\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": false
+          },
+          {
+            "name": "s",
+            "description": "Adds search condition. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#search\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filter",
+            "description": "Adds filter condition. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#filter\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "or",
+            "description": "Adds OR condition. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#or\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "sort",
+            "description": "Adds sort by field. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#sort\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "join",
+            "description": "Adds relational resources. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#join\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "limit",
+            "description": "Limit amount of resources. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#limit\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "offset",
+            "description": "Offset amount of resources. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#offset\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "page",
+            "description": "Page portion of resources. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#page\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "cache",
+            "description": "Reset cache (if was enabled). <a href=\"https://github.com/nestjsx/crud/wiki/Requests#cache\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 1
+            }
+          }
+        ],
         "responses": {
+          "200": {
+            "description": "Get many base response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/GetManyJobApplicationEntityResponseDto"
+                    },
+                    {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/JobApplicationEntity"
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
           "400": {
             "description": "Bad request",
             "content": {
@@ -6370,8 +8301,18 @@
     },
     "/job-applications/{id}": {
       "patch": {
-        "operationId": "JobApplicationController_updateOne",
-        "parameters": [],
+        "operationId": "updateOneBaseJobApplicationControllerJobApplicationEntity",
+        "summary": "Update a single JobApplicationEntity",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -6383,6 +8324,16 @@
           }
         },
         "responses": {
+          "200": {
+            "description": "Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobApplicationEntity"
+                }
+              }
+            }
+          },
           "400": {
             "description": "Bad request",
             "content": {
@@ -6464,9 +8415,68 @@
         ]
       },
       "get": {
-        "operationId": "JobApplicationController_getOneBase",
-        "parameters": [],
+        "operationId": "getOneBaseJobApplicationControllerJobApplicationEntity",
+        "summary": "Retrieve a single JobApplicationEntity",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "fields",
+            "description": "Selects resource fields. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#select\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": false
+          },
+          {
+            "name": "join",
+            "description": "Adds relational resources. <a href=\"https://github.com/nestjsx/crud/wiki/Requests#join\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "cache",
+            "description": "Reset cache (if was enabled). <a href=\"https://github.com/nestjsx/crud/wiki/Requests#cache\" target=\"_blank\">Docs</a>",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 1
+            }
+          }
+        ],
         "responses": {
+          "200": {
+            "description": "Get one base response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobApplicationEntity"
+                }
+              }
+            }
+          },
           "400": {
             "description": "Bad request",
             "content": {
@@ -6548,9 +8558,22 @@
         ]
       },
       "delete": {
-        "operationId": "JobApplicationController_deleteOneBase",
-        "parameters": [],
+        "operationId": "deleteOneBaseJobApplicationControllerJobApplicationEntity",
+        "summary": "Delete a single JobApplicationEntity",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
+          "200": {
+            "description": "Delete one base response"
+          },
           "400": {
             "description": "Bad request",
             "content": {
@@ -8558,6 +10581,36 @@
           }
         }
       },
+      "GetManyCourseEntityResponseDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CourseEntity"
+            }
+          },
+          "count": {
+            "type": "number"
+          },
+          "total": {
+            "type": "number"
+          },
+          "page": {
+            "type": "number"
+          },
+          "pageCount": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "data",
+          "count",
+          "total",
+          "page",
+          "pageCount"
+        ]
+      },
       "FileDto": {
         "type": "object",
         "properties": {
@@ -8717,87 +10770,6 @@
           "course"
         ]
       },
-      "CourseEntity": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "updatedAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "owner": {
-            "$ref": "#/components/schemas/UserEntity"
-          },
-          "editors": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/UserEntity"
-            }
-          },
-          "slug": {
-            "type": "string"
-          },
-          "title": {
-            "type": "string"
-          },
-          "summary": {
-            "type": "string"
-          },
-          "body": {
-            "type": "string",
-            "description": "The body of the content for simple content types"
-          },
-          "visibility": {
-            "type": "string",
-            "enum": [
-              "DRAFT",
-              "PUBLISHED",
-              "FUTURE",
-              "PENDING",
-              "PRIVATE",
-              "TRASH"
-            ]
-          },
-          "thumbnail": {
-            "$ref": "#/components/schemas/ImageEntity"
-          },
-          "price": {
-            "type": "number"
-          },
-          "subscriptionAccess": {
-            "type": "boolean"
-          },
-          "lectures": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/LectureEntity"
-            }
-          },
-          "chapters": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ChapterEntity"
-            }
-          }
-        },
-        "required": [
-          "createdAt",
-          "updatedAt",
-          "slug",
-          "title",
-          "price",
-          "subscriptionAccess",
-          "lectures",
-          "chapters"
-        ]
-      },
       "LectureEntity": {
         "type": "object",
         "properties": {
@@ -8900,6 +10872,87 @@
           "chapter"
         ]
       },
+      "CourseEntity": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "owner": {
+            "$ref": "#/components/schemas/UserEntity"
+          },
+          "editors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UserEntity"
+            }
+          },
+          "slug": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "summary": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string",
+            "description": "The body of the content for simple content types"
+          },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "DRAFT",
+              "PUBLISHED",
+              "FUTURE",
+              "PENDING",
+              "PRIVATE",
+              "TRASH"
+            ]
+          },
+          "thumbnail": {
+            "$ref": "#/components/schemas/ImageEntity"
+          },
+          "price": {
+            "type": "number"
+          },
+          "subscriptionAccess": {
+            "type": "boolean"
+          },
+          "lectures": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LectureEntity"
+            }
+          },
+          "chapters": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChapterEntity"
+            }
+          }
+        },
+        "required": [
+          "createdAt",
+          "updatedAt",
+          "slug",
+          "title",
+          "price",
+          "subscriptionAccess",
+          "lectures",
+          "chapters"
+        ]
+      },
       "CreateProjectDto": {
         "type": "object",
         "properties": {
@@ -8933,6 +10986,36 @@
           "summary",
           "body",
           "visibility"
+        ]
+      },
+      "GetManyProjectEntityResponseDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProjectEntity"
+            }
+          },
+          "count": {
+            "type": "number"
+          },
+          "total": {
+            "type": "number"
+          },
+          "page": {
+            "type": "number"
+          },
+          "pageCount": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "data",
+          "count",
+          "total",
+          "page",
+          "pageCount"
         ]
       },
       "ProjectTestFeedbackQuestion": {
@@ -9141,6 +11224,177 @@
           "maximumLines"
         ]
       },
+      "GetManyProjectVersionEntityResponseDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProjectVersionEntity"
+            }
+          },
+          "count": {
+            "type": "number"
+          },
+          "total": {
+            "type": "number"
+          },
+          "page": {
+            "type": "number"
+          },
+          "pageCount": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "data",
+          "count",
+          "total",
+          "page",
+          "pageCount"
+        ]
+      },
+      "ProjectFeedbackResponseEntity": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "version": {
+            "$ref": "#/components/schemas/ProjectVersionEntity"
+          },
+          "user": {
+            "$ref": "#/components/schemas/UserEntity"
+          },
+          "responses": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "createdAt",
+          "updatedAt",
+          "version",
+          "user",
+          "responses"
+        ]
+      },
+      "ProjectVersionEntity": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "version": {
+            "type": "string"
+          },
+          "archive_url": {
+            "type": "string"
+          },
+          "notes_url": {
+            "type": "string"
+          },
+          "feedback_form": {
+            "type": "array",
+            "items": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/ProjectTestFeedbackQuestion"
+                },
+                {
+                  "$ref": "#/components/schemas/ProjectTestFeedbackQuestionCheckbox"
+                },
+                {
+                  "$ref": "#/components/schemas/ProjectTestFeedbackQuestionDropdown"
+                },
+                {
+                  "$ref": "#/components/schemas/ProjectTestFeedbackQuestionLinearScale"
+                },
+                {
+                  "$ref": "#/components/schemas/ProjectTestFeedbackQuestionShortAnswer"
+                },
+                {
+                  "$ref": "#/components/schemas/ProjectTestFeedbackQuestionParagraph"
+                }
+              ]
+            }
+          },
+          "feedback_deadline": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "project": {
+            "$ref": "#/components/schemas/ProjectEntity"
+          },
+          "responses": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProjectFeedbackResponseEntity"
+            }
+          }
+        },
+        "required": [
+          "createdAt",
+          "updatedAt",
+          "version",
+          "archive_url",
+          "notes_url",
+          "feedback_form",
+          "feedback_deadline",
+          "project",
+          "responses"
+        ]
+      },
+      "GetManyTicketEntityResponseDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TicketEntity"
+            }
+          },
+          "count": {
+            "type": "number"
+          },
+          "total": {
+            "type": "number"
+          },
+          "page": {
+            "type": "number"
+          },
+          "pageCount": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "data",
+          "count",
+          "total",
+          "page",
+          "pageCount"
+        ]
+      },
       "TicketEntity": {
         "type": "object",
         "properties": {
@@ -9286,117 +11540,6 @@
           "updatedAt",
           "slug",
           "title"
-        ]
-      },
-      "ProjectFeedbackResponseEntity": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "updatedAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "version": {
-            "$ref": "#/components/schemas/ProjectVersionEntity"
-          },
-          "user": {
-            "$ref": "#/components/schemas/UserEntity"
-          },
-          "responses": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          }
-        },
-        "required": [
-          "createdAt",
-          "updatedAt",
-          "version",
-          "user",
-          "responses"
-        ]
-      },
-      "ProjectVersionEntity": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "updatedAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "version": {
-            "type": "string"
-          },
-          "archive_url": {
-            "type": "string"
-          },
-          "notes_url": {
-            "type": "string"
-          },
-          "feedback_form": {
-            "type": "array",
-            "items": {
-              "oneOf": [
-                {
-                  "$ref": "#/components/schemas/ProjectTestFeedbackQuestion"
-                },
-                {
-                  "$ref": "#/components/schemas/ProjectTestFeedbackQuestionCheckbox"
-                },
-                {
-                  "$ref": "#/components/schemas/ProjectTestFeedbackQuestionDropdown"
-                },
-                {
-                  "$ref": "#/components/schemas/ProjectTestFeedbackQuestionLinearScale"
-                },
-                {
-                  "$ref": "#/components/schemas/ProjectTestFeedbackQuestionShortAnswer"
-                },
-                {
-                  "$ref": "#/components/schemas/ProjectTestFeedbackQuestionParagraph"
-                }
-              ]
-            }
-          },
-          "feedback_deadline": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "project": {
-            "$ref": "#/components/schemas/ProjectEntity"
-          },
-          "responses": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ProjectFeedbackResponseEntity"
-            }
-          }
-        },
-        "required": [
-          "createdAt",
-          "updatedAt",
-          "version",
-          "archive_url",
-          "notes_url",
-          "feedback_form",
-          "feedback_deadline",
-          "project",
-          "responses"
         ]
       },
       "IdDto": {
@@ -9553,6 +11696,36 @@
           "type"
         ]
       },
+      "GetManyQuizEntityResponseDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/QuizEntity"
+            }
+          },
+          "count": {
+            "type": "number"
+          },
+          "total": {
+            "type": "number"
+          },
+          "page": {
+            "type": "number"
+          },
+          "pageCount": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "data",
+          "count",
+          "total",
+          "page",
+          "pageCount"
+        ]
+      },
       "QuizEntity": {
         "type": "object",
         "properties": {
@@ -9632,7 +11805,17 @@
       },
       "CreateManyQuizEntityDto": {
         "type": "object",
-        "properties": {}
+        "properties": {
+          "bulk": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/QuizEntity"
+            }
+          }
+        },
+        "required": [
+          "bulk"
+        ]
       },
       "CompetitionSubmissionDto": {
         "type": "object",
@@ -10057,6 +12240,66 @@
           "reports"
         ]
       },
+      "GetManyJobPostEntityResponseDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/JobPostEntity"
+            }
+          },
+          "count": {
+            "type": "number"
+          },
+          "total": {
+            "type": "number"
+          },
+          "page": {
+            "type": "number"
+          },
+          "pageCount": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "data",
+          "count",
+          "total",
+          "page",
+          "pageCount"
+        ]
+      },
+      "GetManyJobTagEntityResponseDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/JobTagEntity"
+            }
+          },
+          "count": {
+            "type": "number"
+          },
+          "total": {
+            "type": "number"
+          },
+          "page": {
+            "type": "number"
+          },
+          "pageCount": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "data",
+          "count",
+          "total",
+          "page",
+          "pageCount"
+        ]
+      },
       "JobTagEntity": {
         "type": "object",
         "properties": {
@@ -10080,6 +12323,84 @@
           "createdAt",
           "updatedAt",
           "name"
+        ]
+      },
+      "JobPostEntity": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "owner": {
+            "$ref": "#/components/schemas/UserEntity"
+          },
+          "editors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UserEntity"
+            }
+          },
+          "slug": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "summary": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string",
+            "description": "The body of the content for simple content types"
+          },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "DRAFT",
+              "PUBLISHED",
+              "FUTURE",
+              "PENDING",
+              "PRIVATE",
+              "TRASH"
+            ]
+          },
+          "thumbnail": {
+            "$ref": "#/components/schemas/ImageEntity"
+          },
+          "location": {
+            "type": "string"
+          },
+          "job_type": {
+            "type": "string",
+            "enum": [
+              "CONTINUOUS",
+              "TASK"
+            ]
+          },
+          "job_tags": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/JobTagEntity"
+            }
+          }
+        },
+        "required": [
+          "createdAt",
+          "updatedAt",
+          "slug",
+          "title",
+          "location",
+          "job_type",
+          "job_tags"
         ]
       },
       "JobPostCreateDto": {
@@ -10167,84 +12488,6 @@
           "job_tag_ids"
         ]
       },
-      "JobPostEntity": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "updatedAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "owner": {
-            "$ref": "#/components/schemas/UserEntity"
-          },
-          "editors": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/UserEntity"
-            }
-          },
-          "slug": {
-            "type": "string"
-          },
-          "title": {
-            "type": "string"
-          },
-          "summary": {
-            "type": "string"
-          },
-          "body": {
-            "type": "string",
-            "description": "The body of the content for simple content types"
-          },
-          "visibility": {
-            "type": "string",
-            "enum": [
-              "DRAFT",
-              "PUBLISHED",
-              "FUTURE",
-              "PENDING",
-              "PRIVATE",
-              "TRASH"
-            ]
-          },
-          "thumbnail": {
-            "$ref": "#/components/schemas/ImageEntity"
-          },
-          "location": {
-            "type": "string"
-          },
-          "job_type": {
-            "type": "string",
-            "enum": [
-              "CONTINUOUS",
-              "TASK"
-            ]
-          },
-          "job_tags": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/JobTagEntity"
-            }
-          }
-        },
-        "required": [
-          "createdAt",
-          "updatedAt",
-          "slug",
-          "title",
-          "location",
-          "job_type",
-          "job_tags"
-        ]
-      },
       "JobPostWithAppliedDto": {
         "type": "object",
         "properties": {
@@ -10289,6 +12532,36 @@
         },
         "required": [
           "job"
+        ]
+      },
+      "GetManyJobApplicationEntityResponseDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/JobApplicationEntity"
+            }
+          },
+          "count": {
+            "type": "number"
+          },
+          "total": {
+            "type": "number"
+          },
+          "page": {
+            "type": "number"
+          },
+          "pageCount": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "data",
+          "count",
+          "total",
+          "page",
+          "pageCount"
         ]
       },
       "JobApplicationEntity": {
