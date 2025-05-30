@@ -110,7 +110,7 @@
     "mermaid": "^11.4.1",
     "moment-timezone": "^0.5.45",
     "monaco-editor": "latest",
-    "next": "14.2.21",
+    "next": "15.2.4",
     "next-auth": "5.0.0-beta.25",
     "next-intl": "^3.9.5",
     "next-themes": "^0.3.0",
