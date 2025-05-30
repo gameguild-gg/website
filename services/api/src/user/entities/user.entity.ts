@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Exclude, Type } from 'class-transformer';
 import { Column, Entity, Index, JoinColumn, JoinTable, ManyToMany, OneToMany, OneToOne } from 'typeorm';
-import { ObjectType, Field } from '@nestjs/graphql';
+
 import { EntityBase } from '../../common/entities/entity.base';
 import { UserProfileEntity } from '../modules/user-profile/entities/user-profile.entity';
 import { CompetitionSubmissionEntity } from '../../competition/entities/competition.submission.entity';
@@ -11,11 +11,11 @@ import { IsArray, IsBoolean, IsOptional, ValidateNested } from 'class-validator'
 
 // todo: move to user-profile lots of fields from here
 
-@ObjectType()
+
 @Entity({ name: 'user' })
 export class UserEntity extends EntityBase {
   // Local Sign-in
-  @Field({ nullable: true })
+  
   @ApiProperty()
   @Column({
     unique: true,
@@ -29,7 +29,7 @@ export class UserEntity extends EntityBase {
   @IsUsername()
   username: string;
 
-  @Field({ nullable: true })
+  
   @Column({
     unique: true,
     nullable: true,
@@ -43,7 +43,7 @@ export class UserEntity extends EntityBase {
   @IsEmail()
   email: string;
 
-  @Field()
+  
   @Column({ nullable: false, default: false })
   @ApiProperty()
   @IsBoolean()
@@ -60,51 +60,50 @@ export class UserEntity extends EntityBase {
   passwordSalt: string;
 
   // Social Sign-in
-  @Field({ nullable: true })
+  
   @Column({ nullable: true, unique: true, default: null })
   @ApiProperty()
   @Index({ unique: true })
   facebookId: string;
 
-  @Field({ nullable: true })
+  
   @Column({ nullable: true, unique: true, default: null })
   @ApiProperty()
   @Index({ unique: true })
   googleId: string;
 
-  @Field({ nullable: true })
+  
   @Column({ nullable: true, unique: true, default: null })
   @ApiProperty()
   @Index({ unique: true })
   githubId: string;
 
-  @Field({ nullable: true })
+  
   @Column({ nullable: true, unique: true, default: null })
   @ApiProperty()
   @Index({ unique: true })
   appleId: string;
 
-  @Field({ nullable: true })
+  
   @Column({ nullable: true, unique: true, default: null })
   @ApiProperty()
   @Index({ unique: true })
   linkedinId: string;
 
-  @Field({ nullable: true })
+  
   @Column({ nullable: true, unique: true, default: null })
   @ApiProperty()
   @Index({ unique: true })
   twitterId: string;
 
   // Web3 Sign-in
-  @Field({ nullable: true })
+  
   @Column({ nullable: true, unique: true, default: null })
   @ApiProperty()
   @Index({ unique: true })
   walletAddress: string;
 
   // Profile
-  @Field(() => UserProfileEntity, { nullable: true })
   @OneToOne(() => UserProfileEntity, (profile) => profile.user, {
     cascade: true,
     onDelete: 'CASCADE',
@@ -116,7 +115,6 @@ export class UserEntity extends EntityBase {
   @Type(() => UserProfileEntity)
   profile: UserProfileEntity;
 
-  @Field(() => [CompetitionSubmissionEntity])
   @OneToMany(() => CompetitionSubmissionEntity, (s) => s.user)
   @ApiProperty({ type: CompetitionSubmissionEntity, isArray: true })
   @IsArray({
@@ -127,7 +125,7 @@ export class UserEntity extends EntityBase {
   competitionSubmissions: CompetitionSubmissionEntity[];
 
   // chess elo rank
-  @Field()
+  
   @Column({ type: 'float', default: 400 })
   @ApiProperty()
   elo: number;

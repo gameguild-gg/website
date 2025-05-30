@@ -1,7 +1,7 @@
-import { Entity, Column, OneToMany, DeleteDateColumn, Index } from 'typeorm';
+import { Column, DeleteDateColumn, Entity, Index, OneToMany } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
-import { ObjectType, Field, registerEnumType } from '@nestjs/graphql';
-import { IsString, IsNotEmpty, IsOptional, IsEnum, IsNumber, IsBoolean, IsJSON } from 'class-validator';
+
+import { IsBoolean, IsEnum, IsJSON, IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
 import { EntityBase } from '../../common/entities/entity.base';
 import { ProductType, Visibility } from './enums';
 import { ProductProgram } from './product-program.entity';
@@ -9,17 +9,7 @@ import { ProductPricing } from './product-pricing.entity';
 import { ProductSubscriptionPlan } from './product-subscription-plan.entity';
 import { UserProduct } from './user-product.entity';
 
-registerEnumType(ProductType, {
-  name: 'ProductType',
-});
-
-registerEnumType(Visibility, {
-  name: 'ProductVisibility',
-});
-
 @Entity('products')
-@ObjectType()
-
 @Index((entity) => [entity.type])
 @Index((entity) => [entity.isBundle])
 @Index((entity) => [entity.visibility])
@@ -29,39 +19,33 @@ export class Product extends EntityBase {
   @ApiProperty({ description: 'Product title/name displayed to users' })
   @IsNotEmpty()
   @IsString()
-  @Field()
   title: string;
 
   @Column({ type: 'text' })
   @ApiProperty({ description: 'Detailed description of the product' })
   @IsString()
-  @Field()
   description: string;
 
   @Column({ type: 'varchar', nullable: true })
   @ApiProperty({ description: 'URL or path to product thumbnail image', required: false })
   @IsOptional()
   @IsString()
-  @Field({ nullable: true })
   thumbnail: string | null;
 
   @Column({ type: 'enum', enum: ProductType, default: ProductType.PROGRAM })
   @ApiProperty({ enum: ProductType, description: 'Type of product (program, bundle, subscription, etc.)' })
   @IsEnum(ProductType)
-  @Field(() => ProductType, { defaultValue: ProductType.PROGRAM })
   type: ProductType;
 
   @Column({ type: 'boolean', default: false })
   @ApiProperty({ description: 'Whether this product is a bundle of other products' })
   @IsBoolean()
-  @Field({ defaultValue: false })
   isBundle: boolean;
 
   @Column({ type: 'jsonb', nullable: true })
   @ApiProperty({ description: 'Array of product IDs included in the bundle', required: false })
   @IsOptional()
   @IsJSON()
-  @Field(() => String, { nullable: true })
   bundleItems: object | null;
 
   @Column({ type: 'jsonb' })
@@ -72,25 +56,21 @@ export class Product extends EntityBase {
   @Column({ type: 'decimal', precision: 5, scale: 2, default: 30.0 })
   @ApiProperty({ description: 'Default 30% commission for referrals' })
   @IsNumber()
-  @Field(() => Number, { defaultValue: 30.0 })
   referralCommissionPercentage: number;
 
   @Column({ type: 'decimal', precision: 5, scale: 2, default: 0.0 })
   @ApiProperty({ description: 'Maximum % discount affiliate can offer, 0 means no affiliate allowed' })
   @IsNumber()
-  @Field(() => Number, { defaultValue: 0.0 })
   maxAffiliateDiscount: number;
 
   @Column({ type: 'decimal', precision: 5, scale: 2, default: 30.0 })
   @ApiProperty({ description: 'Commission % from remaining value after discount' })
   @IsNumber()
-  @Field(() => Number, { defaultValue: 30.0 })
   affiliateCommissionPercentage: number;
 
   @Column({ type: 'enum', enum: Visibility, default: Visibility.DRAFT })
   @ApiProperty({ enum: Visibility, description: 'Product visibility status (draft, published, archived)' })
   @IsEnum(Visibility)
-  @Field(() => Visibility, { defaultValue: Visibility.DRAFT })
   visibility: Visibility;
 
   @DeleteDateColumn()
@@ -107,7 +87,11 @@ export class Product extends EntityBase {
   pricing: ProductPricing[];
 
   @OneToMany(() => ProductSubscriptionPlan, (subscriptionPlan) => subscriptionPlan.product)
-  @ApiProperty({ type: () => ProductSubscriptionPlan, isArray: true, description: 'Subscription plans for this product' })
+  @ApiProperty({
+    type: () => ProductSubscriptionPlan,
+    isArray: true,
+    description: 'Subscription plans for this product',
+  })
   subscriptionPlans: ProductSubscriptionPlan[];
 
   @OneToMany(() => UserProduct, (userProduct) => userProduct.product)

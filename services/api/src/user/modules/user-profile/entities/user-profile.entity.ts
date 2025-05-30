@@ -1,5 +1,4 @@
 import { Column, Entity, JoinColumn, OneToOne, VirtualColumn } from 'typeorm';
-import { ObjectType, Field } from '@nestjs/graphql';
 import { EntityBase } from '../../../../common/entities/entity.base';
 import { UserEntity } from '../../../entities/user.entity';
 import { ApiProperty } from '@nestjs/swagger';
@@ -7,7 +6,6 @@ import { IsArray, IsOptional, IsString, IsUrl, MaxLength, ValidateNested } from 
 import { Type } from 'class-transformer';
 import { ImageEntity } from '../../../../asset';
 
-@ObjectType()
 @Entity({ name: 'user_profile' })
 export class UserProfileEntity extends EntityBase {
   @IsOptional()
@@ -17,7 +15,6 @@ export class UserProfileEntity extends EntityBase {
   @Type(() => UserEntity)
   user: UserEntity;
 
-  @Field({ nullable: true })
   @Column({ nullable: true, default: null, type: 'varchar', length: 256 })
   @ApiProperty()
   @IsOptional()
@@ -27,7 +24,6 @@ export class UserProfileEntity extends EntityBase {
   })
   bio?: string;
 
-  @Field({ nullable: true })
   @Column({ nullable: true, default: null, type: 'varchar', length: 256 })
   @ApiProperty()
   @IsOptional()
@@ -37,7 +33,6 @@ export class UserProfileEntity extends EntityBase {
   })
   name?: string;
 
-  @Field({ nullable: true })
   @Column({ nullable: true, default: null, type: 'varchar', length: 256 })
   @ApiProperty()
   @IsOptional()
@@ -47,7 +42,6 @@ export class UserProfileEntity extends EntityBase {
   })
   givenName?: string;
 
-  @Field({ nullable: true })
   @Column({ nullable: true, default: null, type: 'varchar', length: 256 })
   @ApiProperty()
   @IsOptional()
@@ -57,7 +51,6 @@ export class UserProfileEntity extends EntityBase {
   })
   familyName?: string;
 
-  @Field(() => ImageEntity, { nullable: true })
   @ApiProperty()
   @IsOptional()
   @OneToOne(() => ImageEntity)

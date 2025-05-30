@@ -1,14 +1,13 @@
 import { ContentBase } from './content.base';
 import { FormShortAnswerDto } from '../dtos/form-short-answer.dto';
 import { Column, Entity } from 'typeorm';
-import { ObjectType, Field } from '@nestjs/graphql';
+
 import { FormLongAnswerDto } from '../dtos/form-long-answer.dto';
 import { ApiExtraModels, ApiProperty, getSchemaPath } from '@nestjs/swagger';
 import { IsOptional, IsString } from 'class-validator';
 
 @ApiExtraModels(FormShortAnswerDto, FormLongAnswerDto)
 @Entity({ name: 'quiz' })
-@ObjectType()
 export class QuizEntity extends ContentBase {
   @Column({ nullable: true, type: 'jsonb' })
   // array of the questions whose could be of different types such as short answer, multiple choice, etc.
@@ -17,7 +16,6 @@ export class QuizEntity extends ContentBase {
     anyOf: [{ $ref: getSchemaPath(FormShortAnswerDto) }, { $ref: getSchemaPath(FormLongAnswerDto) }],
     isArray: true,
   })
-  @Field(() => String)
   questions: (FormShortAnswerDto | FormLongAnswerDto)[];
 
   // Instructions for an AI, tutor to grade the quiz
@@ -25,7 +23,6 @@ export class QuizEntity extends ContentBase {
   @IsOptional()
   @IsString()
   @ApiProperty()
-  @Field({ nullable: true })
   gradingInstructions?: string;
 
   // todo: add more fields to this entity, such as answers, course relationship, etc.

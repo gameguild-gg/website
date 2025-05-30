@@ -2,8 +2,6 @@ import { Module } from '@nestjs/common';
 import { CacheModule } from '@nestjs/cache-manager';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { GraphQLModule } from '@nestjs/graphql';
-import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { AppController } from './app.controller';
 import { AuthModule } from './auth/auth.module';
 import { CommonModule } from './common/common.module';
@@ -23,7 +21,6 @@ import { MulterModule } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { SchemaDumpService } from './common/db-schema-dump-service';
 import { CleanupService } from './common/cleanup-unused-db-tables';
-import { GraphqlModule } from './graphql/graphql.module';
 import { ProgramModule } from './program/program.module';
 import { ProductModule } from './product/product.module';
 import { KycModule } from './kyc/kyc.module';
@@ -36,12 +33,6 @@ import { FinancialModule } from './financial/financial.module';
     TypeOrmModule.forRootAsync({
       inject: [ApiConfigService],
       useFactory: (configService: ApiConfigService) => configService.postgresConfig,
-    }),
-    GraphQLModule.forRoot<ApolloDriverConfig>({
-      driver: ApolloDriver,
-      autoSchemaFile: true,
-      playground: true,
-      introspection: true,
     }),
     CacheModule.registerAsync({
       isGlobal: true,
@@ -76,7 +67,6 @@ import { FinancialModule } from './financial/financial.module';
     HealthcheckModule,
     JobModule,
     AssetModule,
-    GraphqlModule,
     ProgramModule,
     ProductModule,
     KycModule,

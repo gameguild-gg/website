@@ -2,7 +2,7 @@
 
 import { Column, Entity, ManyToOne } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
-import { ObjectType, Field } from '@nestjs/graphql';
+
 import { CompetitionRunEntity } from './competition.run.entity';
 import { CompetitionSubmissionEntity } from './competition.submission.entity';
 import { EntityBase } from '../../common/entities/entity.base';
@@ -11,10 +11,10 @@ import { IsArray, IsNotEmpty, IsNumber, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 import { IsIntegerNumber } from '../../common/decorators/validator.decorator';
 
-@ObjectType()
+
 @Entity()
 export class CompetitionRunSubmissionReportEntity extends EntityBase {
-  @Field()
+  
   @Column({ type: 'integer', default: 0 })
   @ApiProperty()
   @IsNotEmpty({ message: 'error.IsNotEmpty: winsAsP1 should not be empty' })
@@ -23,7 +23,7 @@ export class CompetitionRunSubmissionReportEntity extends EntityBase {
   })
   winsAsP1: number;
 
-  @Field()
+  
   @Column({ type: 'integer', default: 0 })
   @ApiProperty()
   @IsNotEmpty({ message: 'error.IsNotEmpty: winsAsP2 should not be empty' })
@@ -32,7 +32,7 @@ export class CompetitionRunSubmissionReportEntity extends EntityBase {
   })
   winsAsP2: number;
 
-  @Field()
+  
   @Column({ type: 'integer', default: 0 })
   @ApiProperty()
   @IsNotEmpty({ message: 'error.IsNotEmpty: totalWins should not be empty' })

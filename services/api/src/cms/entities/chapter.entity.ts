@@ -1,6 +1,6 @@
 import { ContentBase } from './content.base';
 import { Column, Entity, Index, ManyToOne, OneToMany } from 'typeorm';
-import { ObjectType, Field } from '@nestjs/graphql';
+
 import { CourseEntity } from './course.entity';
 import { LectureEntity } from './lecture.entity';
 import { ApiProperty } from '@nestjs/swagger';
@@ -8,14 +8,13 @@ import { Type } from 'class-transformer';
 import { IsArray, IsNotEmpty, IsNumber, IsOptional, ValidateNested } from 'class-validator';
 
 @Entity({ name: 'chapter' })
-@ObjectType()
+
 export class ChapterEntity extends ContentBase {
   @Column({ nullable: false, type: 'float', default: 0 })
   @Index({ unique: false })
   @ApiProperty({ required: false, default: 0 })
   @IsOptional()
   @IsNumber({}, { message: 'error.IsNumber: order should be a number' })
-  @Field()
   order: number;
 
   // a chapter belongs to a course
@@ -23,7 +22,6 @@ export class ChapterEntity extends ContentBase {
   @ApiProperty({ type: () => CourseEntity, required: true })
   @ValidateNested()
   @Type(() => CourseEntity)
-  @Field(() => CourseEntity)
   course: CourseEntity;
 
   @OneToMany(() => LectureEntity, (lecture) => lecture.chapter)
@@ -32,6 +30,5 @@ export class ChapterEntity extends ContentBase {
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => LectureEntity)
-  @Field(() => [LectureEntity])
   lectures: LectureEntity[];
 }

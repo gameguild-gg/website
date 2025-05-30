@@ -1,11 +1,11 @@
 import { Column, Entity, Index } from 'typeorm';
-import { ObjectType, Field } from '@nestjs/graphql';
+
 import { ApiProperty } from '@nestjs/swagger';
 import { IsNotEmpty, IsString, MaxLength } from 'class-validator';
 import { EntityBase } from '../../common/entities/entity.base';
 
 @Entity({ name: 'job_tag' })
-@ObjectType()
+
 export class JobTagEntity extends EntityBase {
   // Name
   @Column({ length: 256, nullable: false, type: 'varchar' })
@@ -14,6 +14,6 @@ export class JobTagEntity extends EntityBase {
   @MaxLength(64, { message: 'error.maxLength: name is too long, max 64' })
   @IsNotEmpty({ message: 'error.isNotEmpty: name is required' })
   @IsString({ message: 'error.isString: name must be a string' })
-  @Field()
+  
   name: string;
 }
