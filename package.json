@@ -47,7 +47,7 @@
     "open:tests": "npm run cy:open --workspace=tests",
     "gource": "./contributors/gource.sh",
     "db:diagram": "npm run db:diagram --workspace=services/api",
-    "git-stats": "node gitstats.js"
+    "git-stats": "node gitstats.mjs"
   },
   "dependencies": {
     "bufferutil": "^4.0.8",
