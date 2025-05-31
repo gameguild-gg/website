@@ -87,18 +87,5 @@ export class CleanupService {
     } else {
       this.logger.log('No unused columns found - all database columns match entity definitions');
     }
-
-    // Debug logging for development (can be removed in production)
-    if (process.env.NODE_ENV === 'development') {
-      const sampleEntity = this.dataSource.entityMetadatas[0];
-      if (sampleEntity) {
-        this.logger.debug(`Sample entity ${sampleEntity.name} columns:`, {
-          entityColumns: sampleEntity.columns.map(col => `${col.propertyName} -> ${col.databaseName}`),
-          relationColumns: sampleEntity.relations
-            .filter(rel => rel.joinColumns?.length > 0)
-            .map(rel => `${rel.propertyName} -> ${rel.joinColumns.map(jc => jc.databaseName)}`),
-        });
-      }
-    }
   }
 }
