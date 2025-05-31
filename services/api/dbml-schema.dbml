@@ -70,28 +70,6 @@ Table CertificateTag {
   updatedAt timestamp
 }
 
-Table chapter_editors_user {
-  chapter_id uuid
-  user_id uuid
-}
-
-Table ChapterEntity {
-  body text
-  course CourseEntity
-  createdAt timestamp
-  id uuid
-  order float
-  owner UserEntity
-  slug varchar
-  summary string
-  thumbnail ImageEntity
-  title varchar
-  updatedAt timestamp
-  visibility enum
-  editors UserEntity
-  lectures LectureEntity
-}
-
 Table CompetitionMatchEntity {
   createdAt timestamp
   id uuid
@@ -187,7 +165,6 @@ Table CourseEntity {
   title varchar
   updatedAt timestamp
   visibility enum
-  chapters ChapterEntity
   editors UserEntity
   lectures LectureEntity
 }
@@ -296,7 +273,6 @@ Table lecture_editors_user {
 
 Table LectureEntity {
   body text
-  chapter ChapterEntity
   course CourseEntity
   createdAt timestamp
   id uuid
@@ -828,11 +804,6 @@ Ref: Certificate.userCertificates < UserCertificate.certificate
 Ref: CertificateBlockchainAnchor.certificate > UserCertificate.id
 Ref: CertificateTag.certificate > Certificate.id
 Ref: CertificateTag.tagProficiency > TagProficiency.id
-Ref: ChapterEntity.course > CourseEntity.chapters
-Ref: ChapterEntity.editors <> UserEntity.id
-Ref: ChapterEntity.lectures < LectureEntity.chapter
-Ref: ChapterEntity.owner > UserEntity.id
-Ref: ChapterEntity.thumbnail > ImageEntity.id
 Ref: CompetitionMatchEntity.p1submission > CompetitionSubmissionEntity.matchesAsP1
 Ref: CompetitionMatchEntity.p2submission > CompetitionSubmissionEntity.matchesAsP2
 Ref: CompetitionMatchEntity.run > CompetitionRunEntity.matches

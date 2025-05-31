@@ -180,43 +180,6 @@ CREATE INDEX "IDX_9e25120646f90fd0815171dba0" ON public.certificates USING btree
 CREATE INDEX "IDX_d5cdecac88236f3c3a3e1a2205" ON public.certificates USING btree (is_active);
 CREATE UNIQUE INDEX "PK_e4c7e31e2144300bea7d89eb165" ON public.certificates USING btree (id);
 
-CREATE TABLE "chapter" (
-  "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
-  "created_at" timestamp without time zone NOT NULL DEFAULT now(),
-  "updated_at" timestamp without time zone NOT NULL DEFAULT now(),
-  "slug" character varying(255) NOT NULL,
-  "summary" character varying(1024),
-  "visibility" "chapter_visibility_enum" NOT NULL DEFAULT 'DRAFT'::chapter_visibility_enum,
-  "order" double precision NOT NULL DEFAULT '0'::double precision,
-  "course_id" uuid,
-  "body" text,
-  "owner_id" uuid,
-  "title" character varying(255) NOT NULL,
-  "thumbnail_id" uuid
-);
-
-ALTER TABLE "chapter"
-            ADD FOREIGN KEY (owner_id) REFERENCES "user"(id);  ALTER TABLE "chapter"
-            ADD FOREIGN KEY (course_id) REFERENCES course(id);  ALTER TABLE "chapter"
-            ADD FOREIGN KEY (thumbnail_id) REFERENCES images(id);  ALTER TABLE "chapter"
-            ADD PRIMARY KEY (id);  CREATE INDEX "IDX_1540f666b7a73b75b2c13e5db2" ON public.chapter USING btree (title);
-CREATE INDEX "IDX_2c985baf03bef490c97e168cdc" ON public.chapter USING btree ("order");
-CREATE INDEX "IDX_859d333ca13d040bf2f941afcd" ON public.chapter USING btree (visibility);
-CREATE UNIQUE INDEX "IDX_0c24da73936f0eb347e9835b4f" ON public.chapter USING btree (slug);
-CREATE UNIQUE INDEX "PK_275bd1c62bed7dff839680614ca" ON public.chapter USING btree (id);
-
-CREATE TABLE "chapter_editors_user" (
-  "chapter_id" uuid NOT NULL,
-  "user_id" uuid NOT NULL
-);
-
-ALTER TABLE "chapter_editors_user"
-            ADD FOREIGN KEY (user_id) REFERENCES "user"(id) ON UPDATE CASCADE ON DELETE CASCADE;  ALTER TABLE "chapter_editors_user"
-            ADD FOREIGN KEY (chapter_id) REFERENCES chapter(id) ON UPDATE CASCADE ON DELETE CASCADE;  ALTER TABLE "chapter_editors_user"
-            ADD PRIMARY KEY (chapter_id, user_id);  CREATE INDEX "IDX_22ec2de78ee0f0e2e7ee768a4c" ON public.chapter_editors_user USING btree (user_id);
-CREATE INDEX "IDX_6bc76308984eee4bb9c49d9b2a" ON public.chapter_editors_user USING btree (chapter_id);
-CREATE UNIQUE INDEX "PK_6b677152cc31755de3d795224f6" ON public.chapter_editors_user USING btree (chapter_id, user_id);
-
 CREATE TABLE "competition_match_entity" (
   "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
   "created_at" timestamp without time zone NOT NULL DEFAULT now(),
@@ -507,7 +470,6 @@ CREATE TABLE "lecture" (
   "visibility" "lecture_visibility_enum" NOT NULL DEFAULT 'DRAFT'::lecture_visibility_enum,
   "order" double precision NOT NULL DEFAULT '0'::double precision,
   "course_id" uuid,
-  "chapter_id" uuid,
   "body" text,
   "owner_id" uuid,
   "title" character varying(255) NOT NULL,
@@ -520,7 +482,6 @@ ALTER TABLE "lecture"
             ADD FOREIGN KEY (thumbnail_id) REFERENCES images(id);  ALTER TABLE "lecture"
             ADD FOREIGN KEY (course_id) REFERENCES course(id);  ALTER TABLE "lecture"
             ADD FOREIGN KEY (owner_id) REFERENCES "user"(id);  ALTER TABLE "lecture"
-            ADD FOREIGN KEY (chapter_id) REFERENCES chapter(id);  ALTER TABLE "lecture"
             ADD PRIMARY KEY (id);  CREATE INDEX "IDX_4c8c4ea44b8a5a5c6a028b9e20" ON public.lecture USING btree (title);
 CREATE INDEX "IDX_c6c3264ce6966d5c1d078e147b" ON public.lecture USING btree ("order");
 CREATE INDEX "IDX_d316a6a4d94b0b4aaab3af3f31" ON public.lecture USING btree (renderer);

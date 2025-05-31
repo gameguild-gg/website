@@ -473,58 +473,6 @@ export namespace Api {
 	
 	}
 
-	export interface ChapterEntity {
-		id?: string;
-		createdAt: string;
-		updatedAt: string;
-		owner?: Api.UserEntity;
-		editors?: Api.UserEntity[];
-		slug: string;
-		title: string;
-		summary?: string;
-		/**
-		 * @description <p>The body of the content for simple content types</p>
-		 * @type {string}
-		 * @memberof ChapterEntity
-		 */
-		body?: string;
-		visibility?: Api.ChapterEntity.Visibility;
-		thumbnail?: Api.ImageEntity;
-		/**
-		 * @type {number}
-		 * @memberof ChapterEntity
-		 */
-		order?: number;
-		course: Api.CourseEntity;
-		lectures?: Api.LectureEntity[];
-	}
-	
-	/**
-	 * @export
-	 * @namespace ChapterEntity
-	 */
-	export namespace ChapterEntity {
-		export type Visibility =
-			'DRAFT' |
-			'PUBLISHED' |
-			'FUTURE' |
-			'PENDING' |
-			'PRIVATE' |
-			'TRASH'
-		
-		export namespace Visibility {
-			export enum Enum {
-				DRAFT = 'DRAFT',
-				PUBLISHED = 'PUBLISHED',
-				FUTURE = 'FUTURE',
-				PENDING = 'PENDING',
-				PRIVATE = 'PRIVATE',
-				TRASH = 'TRASH'
-			}
-		}
-	
-	}
-
 	export interface ChessAgentResponseEntryDto {
 		/**
 		 * @description <p>The unique identifier of the user</p>
@@ -1010,7 +958,6 @@ export namespace Api {
 		price: number;
 		subscriptionAccess: boolean;
 		lectures: Api.LectureEntity[];
-		chapters: Api.ChapterEntity[];
 	}
 	
 	/**
@@ -2203,7 +2150,6 @@ export namespace Api {
 		 */
 		renderer: Api.LectureEntity.Renderer;
 		course: Api.CourseEntity;
-		chapter: Api.ChapterEntity;
 	}
 	
 	/**

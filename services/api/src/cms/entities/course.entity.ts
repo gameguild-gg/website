@@ -2,7 +2,6 @@ import { Column, Entity, Index, ManyToOne, OneToMany } from 'typeorm';
 
 import { ContentBase } from './content.base';
 import { LectureEntity } from './lecture.entity';
-import { ChapterEntity } from './chapter.entity';
 import { UserEntity } from '../../user/entities';
 import { ApiProperty } from '@nestjs/swagger';
 import { IsArray, IsBoolean, IsNotEmpty, ValidateNested } from 'class-validator';
@@ -46,14 +45,6 @@ export class CourseEntity extends ContentBase {
   @ValidateNested({ each: true })
   @Type(() => LectureEntity)
   lectures: LectureEntity[];
-
-  // a course have many chapters
-  @OneToMany(() => ChapterEntity, (chapter) => chapter.course)
-  @ApiProperty({ type: ChapterEntity, isArray: true })
-  @IsArray({ message: 'error.IsArray: chapters should be an array' })
-  @ValidateNested({ each: true })
-  @Type(() => ChapterEntity)
-  chapters: ChapterEntity[];
 
   // todo: add quizzes, assignments, projects and all other types of content for course
 

@@ -5,7 +5,6 @@ import { CourseEntity } from './course.entity';
 import { ApiProperty, getSchemaPath } from '@nestjs/swagger';
 import { IsEnum, IsNotEmpty, IsNumber, IsOptional, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
-import { ChapterEntity } from './chapter.entity';
 import { CodeAssignmentDto } from '../dtos/code-assignment.dto';
 
 export enum LectureType {
@@ -59,11 +58,4 @@ export class LectureEntity extends ContentBase {
   @ApiProperty({ type: () => CourseEntity })
   @ValidateNested()
   course: CourseEntity;
-
-  // a lecture belongs to a chapter
-  @ManyToOne(() => ChapterEntity, (chapter) => chapter.lectures)
-  @ApiProperty({ type: () => ChapterEntity })
-  @ValidateNested()
-  @Type(() => ChapterEntity)
-  chapter: ChapterEntity;
 }

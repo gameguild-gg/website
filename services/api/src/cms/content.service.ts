@@ -3,7 +3,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CourseEntity } from './entities/course.entity';
 import { LectureEntity } from './entities/lecture.entity';
-import { ChapterEntity } from './entities/chapter.entity';
 import { PostEntity } from './entities/post.entity';
 import { UserEntity } from '../user/entities';
 import { UserService } from '../user/user.service';
@@ -17,8 +16,6 @@ export class ContentService {
     private readonly courseRepository: Repository<CourseEntity>,
     @InjectRepository(LectureEntity)
     private readonly lectureRepository: Repository<LectureEntity>,
-    @InjectRepository(ChapterEntity)
-    private readonly chapterRepository: Repository<ChapterEntity>,
     @InjectRepository(PostEntity)
     private readonly postRepository: Repository<PostEntity>,
     private readonly userService: UserService,

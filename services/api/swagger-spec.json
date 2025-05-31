@@ -10697,79 +10697,6 @@
           "tests"
         ]
       },
-      "ChapterEntity": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "updatedAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "owner": {
-            "$ref": "#/components/schemas/UserEntity"
-          },
-          "editors": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/UserEntity"
-            }
-          },
-          "slug": {
-            "type": "string"
-          },
-          "title": {
-            "type": "string"
-          },
-          "summary": {
-            "type": "string"
-          },
-          "body": {
-            "type": "string",
-            "description": "The body of the content for simple content types"
-          },
-          "visibility": {
-            "type": "string",
-            "enum": [
-              "DRAFT",
-              "PUBLISHED",
-              "FUTURE",
-              "PENDING",
-              "PRIVATE",
-              "TRASH"
-            ]
-          },
-          "thumbnail": {
-            "$ref": "#/components/schemas/ImageEntity"
-          },
-          "order": {
-            "type": "number",
-            "default": 0
-          },
-          "course": {
-            "$ref": "#/components/schemas/CourseEntity"
-          },
-          "lectures": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/LectureEntity"
-            }
-          }
-        },
-        "required": [
-          "createdAt",
-          "updatedAt",
-          "slug",
-          "title",
-          "course"
-        ]
-      },
       "LectureEntity": {
         "type": "object",
         "properties": {
@@ -10856,9 +10783,6 @@
           },
           "course": {
             "$ref": "#/components/schemas/CourseEntity"
-          },
-          "chapter": {
-            "$ref": "#/components/schemas/ChapterEntity"
           }
         },
         "required": [
@@ -10868,8 +10792,7 @@
           "title",
           "order",
           "renderer",
-          "course",
-          "chapter"
+          "course"
         ]
       },
       "CourseEntity": {
@@ -10934,12 +10857,6 @@
             "items": {
               "$ref": "#/components/schemas/LectureEntity"
             }
-          },
-          "chapters": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ChapterEntity"
-            }
           }
         },
         "required": [
@@ -10949,8 +10866,7 @@
           "title",
           "price",
           "subscriptionAccess",
-          "lectures",
-          "chapters"
+          "lectures"
         ]
       },
       "CreateProjectDto": {

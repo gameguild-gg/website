@@ -4,7 +4,6 @@ import { ContentController } from './content.controller';
 import { ContentService } from './content.service';
 import { CourseEntity } from './entities/course.entity';
 import { LectureEntity } from './entities/lecture.entity';
-import { ChapterEntity } from './entities/chapter.entity';
 import { UserModule } from '../user/user.module';
 import { PostEntity } from './entities/post.entity';
 import { ProjectEntity } from './entities/project.entity';
@@ -30,7 +29,6 @@ import { QuizService } from './quiz.service';
     TypeOrmModule.forFeature([
       CourseEntity,
       LectureEntity,
-      ChapterEntity,
       PostEntity,
       ProjectEntity,
       ProjectVersionEntity,
