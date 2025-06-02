@@ -147,28 +147,6 @@ Table ContentInteraction {
   grades ActivityGrade
 }
 
-Table course_editors_user {
-  course_id uuid
-  user_id uuid
-}
-
-Table CourseEntity {
-  body text
-  createdAt timestamp
-  id uuid
-  owner UserEntity
-  price decimal
-  slug varchar
-  subscriptionAccess boolean
-  summary string
-  thumbnail ImageEntity
-  title varchar
-  updatedAt timestamp
-  visibility enum
-  editors UserEntity
-  lectures LectureEntity
-}
-
 Table EventEntity {
   body text
   createdAt timestamp
@@ -264,29 +242,6 @@ Table JobTagEntity {
   id uuid
   name varchar
   updatedAt timestamp
-}
-
-Table lecture_editors_user {
-  lecture_id uuid
-  user_id uuid
-}
-
-Table LectureEntity {
-  body text
-  course CourseEntity
-  createdAt timestamp
-  id uuid
-  json jsonb
-  order float
-  owner UserEntity
-  renderer enum
-  slug varchar
-  summary string
-  thumbnail ImageEntity
-  title varchar
-  updatedAt timestamp
-  visibility enum
-  editors UserEntity
 }
 
 Table post_editors_user {
@@ -487,56 +442,6 @@ Table ProgramUserRole {
   updatedAt timestamp
 }
 
-Table project_editors_user {
-  project_id uuid
-  user_id uuid
-}
-
-Table project_screenshots_images {
-  images_id uuid
-  project_id uuid
-}
-
-Table ProjectEntity {
-  banner ImageEntity
-  body text
-  createdAt timestamp
-  id uuid
-  owner UserEntity
-  slug varchar
-  summary string
-  thumbnail ImageEntity
-  title varchar
-  updatedAt timestamp
-  visibility enum
-  editors UserEntity
-  screenshots ImageEntity
-  tickets TicketEntity
-  versions ProjectVersionEntity
-}
-
-Table ProjectFeedbackResponseEntity {
-  createdAt timestamp
-  id uuid
-  responses jsonb
-  updatedAt timestamp
-  user UserEntity
-  version ProjectVersionEntity
-}
-
-Table ProjectVersionEntity {
-  archive_url string
-  createdAt timestamp
-  feedback_deadline timestamptz
-  feedback_form jsonb
-  id uuid
-  notes_url string
-  project ProjectEntity
-  updatedAt timestamp
-  version string
-  responses ProjectFeedbackResponseEntity
-}
-
 Table PromoCode {
   affiliatePercentage decimal
   affiliateUser UserEntity
@@ -588,27 +493,6 @@ Table ProposalEntity {
   editors UserEntity
 }
 
-Table quiz_editors_user {
-  quiz_id uuid
-  user_id uuid
-}
-
-Table QuizEntity {
-  body text
-  createdAt timestamp
-  gradingInstructions string
-  id uuid
-  owner UserEntity
-  questions jsonb
-  slug varchar
-  summary string
-  thumbnail ImageEntity
-  title varchar
-  updatedAt timestamp
-  visibility enum
-  editors UserEntity
-}
-
 Table Tag {
   category varchar
   createdAt timestamp
@@ -646,25 +530,6 @@ Table TagRelationship {
   targetTag Tag
   type enum
   updatedAt timestamp
-}
-
-Table ticket_editors_user {
-  ticket_id uuid
-  user_id uuid
-}
-
-Table TicketEntity {
-  createdAt timestamp
-  description text
-  id uuid
-  owner UserEntity
-  priority enum
-  projectId uuid
-  status enum
-  title varchar
-  updatedAt timestamp
-  editors UserEntity
-  project ProjectEntity
 }
 
 Table UserCertificate {
@@ -814,10 +679,6 @@ Ref: CompetitionSubmissionEntity.user > UserEntity.competitionSubmissions
 Ref: ContentInteraction.content > ProgramContent.interactions
 Ref: ContentInteraction.grades < ActivityGrade.contentInteraction
 Ref: ContentInteraction.programUser > ProgramUser.contentInteractions
-Ref: CourseEntity.editors <> UserEntity.id
-Ref: CourseEntity.lectures < LectureEntity.course
-Ref: CourseEntity.owner > UserEntity.id
-Ref: CourseEntity.thumbnail > ImageEntity.id
 Ref: EventEntity.editors <> UserEntity.id
 Ref: EventEntity.owner > UserEntity.id
 Ref: EventEntity.thumbnail > ImageEntity.id
@@ -834,9 +695,6 @@ Ref: JobPostEntity.editors <> UserEntity.id
 Ref: JobPostEntity.job_tags <> JobTagEntity.id
 Ref: JobPostEntity.owner > UserEntity.id
 Ref: JobPostEntity.thumbnail > ImageEntity.id
-Ref: LectureEntity.editors <> UserEntity.id
-Ref: LectureEntity.owner > UserEntity.id
-Ref: LectureEntity.thumbnail > ImageEntity.id
 Ref: PostEntity.editors <> UserEntity.id
 Ref: PostEntity.owner > UserEntity.id
 Ref: PostEntity.thumbnail > ImageEntity.id
@@ -864,15 +722,6 @@ Ref: ProgramRatingEntity.programUser > ProgramUser.id
 Ref: ProgramRatingEntity.user > UserEntity.id
 Ref: ProgramUser.roles < ProgramUserRole.programUser
 Ref: ProgramUser.userProduct > UserProduct.programUsers
-Ref: ProjectEntity.banner > ImageEntity.id
-Ref: ProjectEntity.editors <> UserEntity.id
-Ref: ProjectEntity.owner > UserEntity.id
-Ref: ProjectEntity.screenshots <> ImageEntity.id
-Ref: ProjectEntity.thumbnail > ImageEntity.id
-Ref: ProjectEntity.tickets < TicketEntity.project
-Ref: ProjectEntity.versions < ProjectVersionEntity.project
-Ref: ProjectFeedbackResponseEntity.user > UserEntity.id
-Ref: ProjectFeedbackResponseEntity.version > ProjectVersionEntity.responses
 Ref: PromoCode.affiliateUser > UserEntity.id
 Ref: PromoCode.createdBy > UserEntity.id
 Ref: PromoCode.product > Product.id
@@ -883,16 +732,11 @@ Ref: PromoCodeUse.user > UserEntity.id
 Ref: ProposalEntity.editors <> UserEntity.id
 Ref: ProposalEntity.owner > UserEntity.id
 Ref: ProposalEntity.thumbnail > ImageEntity.id
-Ref: QuizEntity.editors <> UserEntity.id
-Ref: QuizEntity.owner > UserEntity.id
-Ref: QuizEntity.thumbnail > ImageEntity.id
 Ref: Tag.sourceRelationships < TagRelationship.sourceTag
 Ref: Tag.tagProficiencies < TagProficiency.tag
 Ref: Tag.targetRelationships < TagRelationship.targetTag
 Ref: TagRelationship.sourceTag > Tag.id
 Ref: TagRelationship.targetTag > Tag.id
-Ref: TicketEntity.editors <> UserEntity.id
-Ref: TicketEntity.owner > UserEntity.id
 Ref: UserCertificate.product > Product.id
 Ref: UserCertificate.program > Program.id
 Ref: UserCertificate.programUser > ProgramUser.id
