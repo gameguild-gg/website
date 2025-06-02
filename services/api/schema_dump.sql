@@ -78,9 +78,9 @@ CREATE TABLE "activity_grades" (
 );
 
 ALTER TABLE "activity_grades"
-            ADD FOREIGN KEY (content_interaction_id) REFERENCES content_interactions(id) ON DELETE CASCADE;  ALTER TABLE "activity_grades"
-            ADD FOREIGN KEY (grader_program_user_id) REFERENCES program_users(id);  ALTER TABLE "activity_grades"
-            ADD PRIMARY KEY (id);  CREATE UNIQUE INDEX "IDX_5f550ee6239b8f4b0931ecc938" ON public.activity_grades USING btree (content_interaction_id);
+          ADD FOREIGN KEY (content_interaction_id) REFERENCES content_interactions(id) ON DELETE CASCADE;  ALTER TABLE "activity_grades"
+          ADD FOREIGN KEY (grader_program_user_id) REFERENCES program_users(id);  ALTER TABLE "activity_grades"
+          ADD PRIMARY KEY (id);  CREATE UNIQUE INDEX "IDX_5f550ee6239b8f4b0931ecc938" ON public.activity_grades USING btree (content_interaction_id);
 CREATE UNIQUE INDEX "PK_fa586cf477e73abb88e12e87f4a" ON public.activity_grades USING btree (id);
 
 CREATE TABLE "certificate_blockchain_anchors" (
@@ -101,8 +101,8 @@ CREATE TABLE "certificate_blockchain_anchors" (
 );
 
 ALTER TABLE "certificate_blockchain_anchors"
-            ADD FOREIGN KEY (certificate_id) REFERENCES user_certificates(id);  ALTER TABLE "certificate_blockchain_anchors"
-            ADD PRIMARY KEY (id);  CREATE INDEX "IDX_0033f7bb83698a13a8914b9c66" ON public.certificate_blockchain_anchors USING btree (blockchain_network);
+          ADD FOREIGN KEY (certificate_id) REFERENCES user_certificates(id);  ALTER TABLE "certificate_blockchain_anchors"
+          ADD PRIMARY KEY (id);  CREATE INDEX "IDX_0033f7bb83698a13a8914b9c66" ON public.certificate_blockchain_anchors USING btree (blockchain_network);
 CREATE INDEX "IDX_283d4b4842f0e3a7953c5b0f1b" ON public.certificate_blockchain_anchors USING btree (token_id);
 CREATE INDEX "IDX_3291395ce689c51d103f8b6e09" ON public.certificate_blockchain_anchors USING btree (certificate_id);
 CREATE INDEX "IDX_37fc52ce06b6bc0a18d605186a" ON public.certificate_blockchain_anchors USING btree (transaction_hash);
@@ -119,9 +119,9 @@ CREATE TABLE "certificate_tags" (
 );
 
 ALTER TABLE "certificate_tags"
-            ADD FOREIGN KEY (tag_id) REFERENCES tag_proficiencies(id) ON DELETE CASCADE;  ALTER TABLE "certificate_tags"
-            ADD FOREIGN KEY (certificate_id) REFERENCES certificates(id) ON DELETE CASCADE;  ALTER TABLE "certificate_tags"
-            ADD PRIMARY KEY (id);  CREATE UNIQUE INDEX "PK_5d34b1014c933c6dc8da5764c08" ON public.certificate_tags USING btree (id);
+          ADD FOREIGN KEY (tag_id) REFERENCES tag_proficiencies(id) ON DELETE CASCADE;  ALTER TABLE "certificate_tags"
+          ADD FOREIGN KEY (certificate_id) REFERENCES certificates(id) ON DELETE CASCADE;  ALTER TABLE "certificate_tags"
+          ADD PRIMARY KEY (id);  CREATE UNIQUE INDEX "PK_5d34b1014c933c6dc8da5764c08" ON public.certificate_tags USING btree (id);
 
 CREATE TABLE "certificates" (
   "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
@@ -154,9 +154,9 @@ CREATE TABLE "certificates" (
 );
 
 ALTER TABLE "certificates"
-            ADD FOREIGN KEY (program_id) REFERENCES programs(id) ON DELETE CASCADE;  ALTER TABLE "certificates"
-            ADD FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE;  ALTER TABLE "certificates"
-            ADD PRIMARY KEY (id);  CREATE INDEX "IDX_1eb0d8d2840d24d211ac1e29b7" ON public.certificates USING btree (program_id);
+          ADD FOREIGN KEY (program_id) REFERENCES programs(id) ON DELETE CASCADE;  ALTER TABLE "certificates"
+          ADD FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE;  ALTER TABLE "certificates"
+          ADD PRIMARY KEY (id);  CREATE INDEX "IDX_1eb0d8d2840d24d211ac1e29b7" ON public.certificates USING btree (program_id);
 CREATE INDEX "IDX_82c9eb5da92f6eb4b1a0f285fe" ON public.certificates USING btree (certificate_type);
 CREATE INDEX "IDX_9e25120646f90fd0815171dba0" ON public.certificates USING btree (product_id);
 CREATE INDEX "IDX_d5cdecac88236f3c3a3e1a2205" ON public.certificates USING btree (is_active);
@@ -181,10 +181,10 @@ CREATE TABLE "competition_match_entity" (
 );
 
 ALTER TABLE "competition_match_entity"
-            ADD FOREIGN KEY (p1submission_id) REFERENCES competition_submission_entity(id);  ALTER TABLE "competition_match_entity"
-            ADD FOREIGN KEY (run_id) REFERENCES competition_run_entity(id);  ALTER TABLE "competition_match_entity"
-            ADD FOREIGN KEY (p2submission_id) REFERENCES competition_submission_entity(id);  ALTER TABLE "competition_match_entity"
-            ADD PRIMARY KEY (id);  CREATE UNIQUE INDEX "PK_c82022b5f020870a48610ec2bce" ON public.competition_match_entity USING btree (id);
+          ADD FOREIGN KEY (p1submission_id) REFERENCES competition_submission_entity(id);  ALTER TABLE "competition_match_entity"
+          ADD FOREIGN KEY (run_id) REFERENCES competition_run_entity(id);  ALTER TABLE "competition_match_entity"
+          ADD FOREIGN KEY (p2submission_id) REFERENCES competition_submission_entity(id);  ALTER TABLE "competition_match_entity"
+          ADD PRIMARY KEY (id);  CREATE UNIQUE INDEX "PK_c82022b5f020870a48610ec2bce" ON public.competition_match_entity USING btree (id);
 
 CREATE TABLE "competition_run_entity" (
   "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
@@ -195,7 +195,7 @@ CREATE TABLE "competition_run_entity" (
 );
 
 ALTER TABLE "competition_run_entity"
-            ADD PRIMARY KEY (id);  CREATE UNIQUE INDEX "PK_c2c36337de9af6a41752324bc01" ON public.competition_run_entity USING btree (id);
+          ADD PRIMARY KEY (id);  CREATE UNIQUE INDEX "PK_c2c36337de9af6a41752324bc01" ON public.competition_run_entity USING btree (id);
 
 CREATE TABLE "competition_run_submission_report_entity" (
   "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
@@ -213,10 +213,10 @@ CREATE TABLE "competition_run_submission_report_entity" (
 );
 
 ALTER TABLE "competition_run_submission_report_entity"
-            ADD FOREIGN KEY (user_id) REFERENCES "user"(id);  ALTER TABLE "competition_run_submission_report_entity"
-            ADD FOREIGN KEY (run_id) REFERENCES competition_run_entity(id);  ALTER TABLE "competition_run_submission_report_entity"
-            ADD FOREIGN KEY (submission_id) REFERENCES competition_submission_entity(id);  ALTER TABLE "competition_run_submission_report_entity"
-            ADD PRIMARY KEY (id);  CREATE UNIQUE INDEX "PK_efb4ef524197954e35f131fb9ee" ON public.competition_run_submission_report_entity USING btree (id);
+          ADD FOREIGN KEY (user_id) REFERENCES "user"(id);  ALTER TABLE "competition_run_submission_report_entity"
+          ADD FOREIGN KEY (run_id) REFERENCES competition_run_entity(id);  ALTER TABLE "competition_run_submission_report_entity"
+          ADD FOREIGN KEY (submission_id) REFERENCES competition_submission_entity(id);  ALTER TABLE "competition_run_submission_report_entity"
+          ADD PRIMARY KEY (id);  CREATE UNIQUE INDEX "PK_efb4ef524197954e35f131fb9ee" ON public.competition_run_submission_report_entity USING btree (id);
 
 CREATE TABLE "competition_submission_entity" (
   "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
@@ -229,8 +229,8 @@ CREATE TABLE "competition_submission_entity" (
 );
 
 ALTER TABLE "competition_submission_entity"
-            ADD FOREIGN KEY (user_id) REFERENCES "user"(id);  ALTER TABLE "competition_submission_entity"
-            ADD PRIMARY KEY (id);  CREATE UNIQUE INDEX "PK_6af6334fc1cff3b8b08d2b40cb0" ON public.competition_submission_entity USING btree (id);
+          ADD FOREIGN KEY (user_id) REFERENCES "user"(id);  ALTER TABLE "competition_submission_entity"
+          ADD PRIMARY KEY (id);  CREATE UNIQUE INDEX "PK_6af6334fc1cff3b8b08d2b40cb0" ON public.competition_submission_entity USING btree (id);
 
 CREATE TABLE "content_interactions" (
   "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
@@ -253,9 +253,9 @@ CREATE TABLE "content_interactions" (
 );
 
 ALTER TABLE "content_interactions"
-            ADD FOREIGN KEY (content_id) REFERENCES program_contents(id) ON DELETE CASCADE;  ALTER TABLE "content_interactions"
-            ADD FOREIGN KEY (program_user_id) REFERENCES program_users(id) ON DELETE CASCADE;  ALTER TABLE "content_interactions"
-            ADD PRIMARY KEY (id);  CREATE INDEX "IDX_39e13bc2b7fb5360fe2ecc30de" ON public.content_interactions USING btree (program_user_id, status);
+          ADD FOREIGN KEY (content_id) REFERENCES program_contents(id) ON DELETE CASCADE;  ALTER TABLE "content_interactions"
+          ADD FOREIGN KEY (program_user_id) REFERENCES program_users(id) ON DELETE CASCADE;  ALTER TABLE "content_interactions"
+          ADD PRIMARY KEY (id);  CREATE INDEX "IDX_39e13bc2b7fb5360fe2ecc30de" ON public.content_interactions USING btree (program_user_id, status);
 CREATE INDEX "IDX_4ee189ef0ebab2ab5645ddb880" ON public.content_interactions USING btree (content_id, status);
 CREATE INDEX "IDX_6b25f0f08b688b0e17ac97793a" ON public.content_interactions USING btree (submitted_at);
 CREATE INDEX "IDX_eccd0e268fd973ba96803d0e6f" ON public.content_interactions USING btree (completed_at);
@@ -285,14 +285,14 @@ CREATE TABLE "financial_transactions" (
 );
 
 ALTER TABLE "financial_transactions"
-            ADD FOREIGN KEY (product_id) REFERENCES products(id);  ALTER TABLE "financial_transactions"
-            ADD FOREIGN KEY (pricing_id) REFERENCES product_pricing(id);  ALTER TABLE "financial_transactions"
-            ADD FOREIGN KEY (subscription_plan_id) REFERENCES product_subscription_plans(id);  ALTER TABLE "financial_transactions"
-            ADD FOREIGN KEY (from_user_id) REFERENCES "user"(id);  ALTER TABLE "financial_transactions"
-            ADD FOREIGN KEY (referrer_user_id) REFERENCES "user"(id);  ALTER TABLE "financial_transactions"
-            ADD FOREIGN KEY (promo_code_id) REFERENCES promo_codes(id);  ALTER TABLE "financial_transactions"
-            ADD FOREIGN KEY (to_user_id) REFERENCES "user"(id);  ALTER TABLE "financial_transactions"
-            ADD PRIMARY KEY (id);  CREATE INDEX "IDX_0714f08a777d81a139cf7bbf5e" ON public.financial_transactions USING btree (transaction_type);
+          ADD FOREIGN KEY (product_id) REFERENCES products(id);  ALTER TABLE "financial_transactions"
+          ADD FOREIGN KEY (pricing_id) REFERENCES product_pricing(id);  ALTER TABLE "financial_transactions"
+          ADD FOREIGN KEY (subscription_plan_id) REFERENCES product_subscription_plans(id);  ALTER TABLE "financial_transactions"
+          ADD FOREIGN KEY (from_user_id) REFERENCES "user"(id);  ALTER TABLE "financial_transactions"
+          ADD FOREIGN KEY (referrer_user_id) REFERENCES "user"(id);  ALTER TABLE "financial_transactions"
+          ADD FOREIGN KEY (promo_code_id) REFERENCES promo_codes(id);  ALTER TABLE "financial_transactions"
+          ADD FOREIGN KEY (to_user_id) REFERENCES "user"(id);  ALTER TABLE "financial_transactions"
+          ADD PRIMARY KEY (id);  CREATE INDEX "IDX_0714f08a777d81a139cf7bbf5e" ON public.financial_transactions USING btree (transaction_type);
 CREATE INDEX "IDX_09bfda2980f0e5a353b8a1a6fc" ON public.financial_transactions USING btree (product_id);
 CREATE INDEX "IDX_31d48836ca680ca1c8e7d5f655" ON public.financial_transactions USING btree (created_at);
 CREATE INDEX "IDX_5e1d060cfea925ab38f6edadbc" ON public.financial_transactions USING btree (status);
@@ -319,7 +319,7 @@ CREATE TABLE "images" (
 );
 
 ALTER TABLE "images"
-            ADD PRIMARY KEY (id);  CREATE INDEX "IDX_11841db41fa6b76f3c6f431ed3" ON public.images USING btree (hash);
+          ADD PRIMARY KEY (id);  CREATE INDEX "IDX_11841db41fa6b76f3c6f431ed3" ON public.images USING btree (hash);
 CREATE INDEX "IDX_382daa5c2a55e77f5a960012ac" ON public.images USING btree (original_filename);
 CREATE INDEX "IDX_3fed0dc195b842723edad36ada" ON public.images USING btree (filename);
 CREATE INDEX "IDX_9cb6c0392eebfa05570c5b3958" ON public.images USING btree (width);
@@ -342,9 +342,9 @@ CREATE TABLE "job_application" (
 );
 
 ALTER TABLE "job_application"
-            ADD FOREIGN KEY (applicant_id) REFERENCES "user"(id);  ALTER TABLE "job_application"
-            ADD FOREIGN KEY (job_id) REFERENCES job_post(id);  ALTER TABLE "job_application"
-            ADD PRIMARY KEY (id);  CREATE UNIQUE INDEX "PK_896c8c02d7da2c0228d586e54b4" ON public.job_application USING btree (id);
+          ADD FOREIGN KEY (applicant_id) REFERENCES "user"(id);  ALTER TABLE "job_application"
+          ADD FOREIGN KEY (job_id) REFERENCES job_post(id);  ALTER TABLE "job_application"
+          ADD PRIMARY KEY (id);  CREATE UNIQUE INDEX "PK_896c8c02d7da2c0228d586e54b4" ON public.job_application USING btree (id);
 
 CREATE TABLE "job_post" (
   "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
@@ -362,9 +362,9 @@ CREATE TABLE "job_post" (
 );
 
 ALTER TABLE "job_post"
-            ADD FOREIGN KEY (owner_id) REFERENCES "user"(id);  ALTER TABLE "job_post"
-            ADD FOREIGN KEY (thumbnail_id) REFERENCES images(id);  ALTER TABLE "job_post"
-            ADD PRIMARY KEY (id);  CREATE INDEX "IDX_03b7a2e0ae0f87dae10d1e9f00" ON public.job_post USING btree (visibility);
+          ADD FOREIGN KEY (owner_id) REFERENCES "user"(id);  ALTER TABLE "job_post"
+          ADD FOREIGN KEY (thumbnail_id) REFERENCES images(id);  ALTER TABLE "job_post"
+          ADD PRIMARY KEY (id);  CREATE INDEX "IDX_03b7a2e0ae0f87dae10d1e9f00" ON public.job_post USING btree (visibility);
 CREATE INDEX "IDX_ec0b3c542afe53891e30476936" ON public.job_post USING btree (location);
 CREATE INDEX "IDX_ee26d130dc420c2e35f42573ce" ON public.job_post USING btree (title);
 CREATE INDEX "IDX_f8c69a1e815225cdd8a30de66b" ON public.job_post USING btree (job_type);
@@ -377,9 +377,9 @@ CREATE TABLE "job_post_editors_user" (
 );
 
 ALTER TABLE "job_post_editors_user"
-            ADD FOREIGN KEY (user_id) REFERENCES "user"(id) ON UPDATE CASCADE ON DELETE CASCADE;  ALTER TABLE "job_post_editors_user"
-            ADD FOREIGN KEY (job_post_id) REFERENCES job_post(id) ON UPDATE CASCADE ON DELETE CASCADE;  ALTER TABLE "job_post_editors_user"
-            ADD PRIMARY KEY (job_post_id, user_id);  CREATE INDEX "IDX_332380fd9f01b6e74b2509f5f6" ON public.job_post_editors_user USING btree (user_id);
+          ADD FOREIGN KEY (user_id) REFERENCES "user"(id) ON UPDATE CASCADE ON DELETE CASCADE;  ALTER TABLE "job_post_editors_user"
+          ADD FOREIGN KEY (job_post_id) REFERENCES job_post(id) ON UPDATE CASCADE ON DELETE CASCADE;  ALTER TABLE "job_post_editors_user"
+          ADD PRIMARY KEY (job_post_id, user_id);  CREATE INDEX "IDX_332380fd9f01b6e74b2509f5f6" ON public.job_post_editors_user USING btree (user_id);
 CREATE INDEX "IDX_d41a469fa70f6e342f137a61d0" ON public.job_post_editors_user USING btree (job_post_id);
 CREATE UNIQUE INDEX "PK_b2de4693be0a04ac6bae0e82544" ON public.job_post_editors_user USING btree (job_post_id, user_id);
 
@@ -389,9 +389,9 @@ CREATE TABLE "job_post_job_tags_job_tag" (
 );
 
 ALTER TABLE "job_post_job_tags_job_tag"
-            ADD FOREIGN KEY (job_tag_id) REFERENCES job_tag(id) ON UPDATE CASCADE ON DELETE CASCADE;  ALTER TABLE "job_post_job_tags_job_tag"
-            ADD FOREIGN KEY (job_post_id) REFERENCES job_post(id) ON UPDATE CASCADE ON DELETE CASCADE;  ALTER TABLE "job_post_job_tags_job_tag"
-            ADD PRIMARY KEY (job_post_id, job_tag_id);  CREATE INDEX "IDX_22911465a689416e80716524bd" ON public.job_post_job_tags_job_tag USING btree (job_tag_id);
+          ADD FOREIGN KEY (job_tag_id) REFERENCES job_tag(id) ON UPDATE CASCADE ON DELETE CASCADE;  ALTER TABLE "job_post_job_tags_job_tag"
+          ADD FOREIGN KEY (job_post_id) REFERENCES job_post(id) ON UPDATE CASCADE ON DELETE CASCADE;  ALTER TABLE "job_post_job_tags_job_tag"
+          ADD PRIMARY KEY (job_post_id, job_tag_id);  CREATE INDEX "IDX_22911465a689416e80716524bd" ON public.job_post_job_tags_job_tag USING btree (job_tag_id);
 CREATE INDEX "IDX_bce26f11d48dfe6a441bb8d8a0" ON public.job_post_job_tags_job_tag USING btree (job_post_id);
 CREATE UNIQUE INDEX "PK_0a636facbab11355e4f4bbbf3f3" ON public.job_post_job_tags_job_tag USING btree (job_post_id, job_tag_id);
 
@@ -403,7 +403,7 @@ CREATE TABLE "job_tag" (
 );
 
 ALTER TABLE "job_tag"
-            ADD PRIMARY KEY (id);  CREATE INDEX "IDX_0c4e9330020ee70d765dff0486" ON public.job_tag USING btree (name);
+          ADD PRIMARY KEY (id);  CREATE INDEX "IDX_0c4e9330020ee70d765dff0486" ON public.job_tag USING btree (name);
 CREATE UNIQUE INDEX "PK_835586a09d10e323fdec92aaaa1" ON public.job_tag USING btree (id);
 
 CREATE TABLE "migrations" (
@@ -413,7 +413,7 @@ CREATE TABLE "migrations" (
 );
 
 ALTER TABLE "migrations"
-            ADD PRIMARY KEY (id);  CREATE UNIQUE INDEX "PK_8c82d7f526340ab734260ea46be" ON public.migrations USING btree (id);
+          ADD PRIMARY KEY (id);  CREATE UNIQUE INDEX "PK_8c82d7f526340ab734260ea46be" ON public.migrations USING btree (id);
 
 CREATE TABLE "product_pricing" (
   "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
@@ -428,8 +428,8 @@ CREATE TABLE "product_pricing" (
 );
 
 ALTER TABLE "product_pricing"
-            ADD FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE;  ALTER TABLE "product_pricing"
-            ADD PRIMARY KEY (id);  CREATE UNIQUE INDEX "PK_96a4a861354899893dcf7c8d313" ON public.product_pricing USING btree (id);
+          ADD FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE;  ALTER TABLE "product_pricing"
+          ADD PRIMARY KEY (id);  CREATE UNIQUE INDEX "PK_96a4a861354899893dcf7c8d313" ON public.product_pricing USING btree (id);
 
 CREATE TABLE "product_programs" (
   "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
@@ -443,9 +443,9 @@ CREATE TABLE "product_programs" (
 );
 
 ALTER TABLE "product_programs"
-            ADD FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE;  ALTER TABLE "product_programs"
-            ADD FOREIGN KEY (program_id) REFERENCES programs(id) ON DELETE CASCADE;  ALTER TABLE "product_programs"
-            ADD PRIMARY KEY (id);  CREATE UNIQUE INDEX "PK_4f4bb57866a8128ded92fb01f90" ON public.product_programs USING btree (id);
+          ADD FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE;  ALTER TABLE "product_programs"
+          ADD FOREIGN KEY (program_id) REFERENCES programs(id) ON DELETE CASCADE;  ALTER TABLE "product_programs"
+          ADD PRIMARY KEY (id);  CREATE UNIQUE INDEX "PK_4f4bb57866a8128ded92fb01f90" ON public.product_programs USING btree (id);
 
 CREATE TABLE "product_subscription_plans" (
   "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
@@ -466,8 +466,8 @@ CREATE TABLE "product_subscription_plans" (
 );
 
 ALTER TABLE "product_subscription_plans"
-            ADD FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE;  ALTER TABLE "product_subscription_plans"
-            ADD PRIMARY KEY (id);  CREATE UNIQUE INDEX "PK_bf93ad4daf677b4fec9a61633ad" ON public.product_subscription_plans USING btree (id);
+          ADD FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE;  ALTER TABLE "product_subscription_plans"
+          ADD PRIMARY KEY (id);  CREATE UNIQUE INDEX "PK_bf93ad4daf677b4fec9a61633ad" ON public.product_subscription_plans USING btree (id);
 
 CREATE TABLE "products" (
   "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
@@ -488,7 +488,7 @@ CREATE TABLE "products" (
 );
 
 ALTER TABLE "products"
-            ADD PRIMARY KEY (id);  CREATE INDEX "IDX_5b0f3fe151f941e51d4491cfa8" ON public.products USING btree (is_bundle);
+          ADD PRIMARY KEY (id);  CREATE INDEX "IDX_5b0f3fe151f941e51d4491cfa8" ON public.products USING btree (is_bundle);
 CREATE INDEX "IDX_995d8194c43edfc98838cabc5a" ON public.products USING btree (created_at);
 CREATE INDEX "IDX_ce2ba38200f73815993d6e96de" ON public.products USING btree (visibility);
 CREATE INDEX "IDX_d5662d5ea5da62fc54b0f12a46" ON public.products USING btree (type);
@@ -520,9 +520,9 @@ CREATE TABLE "program_contents" (
 );
 
 ALTER TABLE "program_contents"
-            ADD FOREIGN KEY (program_id) REFERENCES programs(id) ON DELETE CASCADE;  ALTER TABLE "program_contents"
-            ADD FOREIGN KEY (parent_id) REFERENCES program_contents(id) ON DELETE CASCADE;  ALTER TABLE "program_contents"
-            ADD PRIMARY KEY (id);  CREATE INDEX "IDX_2a00830247b0e93cb6c9d6a168" ON public.program_contents USING btree (program_id);
+          ADD FOREIGN KEY (program_id) REFERENCES programs(id) ON DELETE CASCADE;  ALTER TABLE "program_contents"
+          ADD FOREIGN KEY (parent_id) REFERENCES program_contents(id) ON DELETE CASCADE;  ALTER TABLE "program_contents"
+          ADD PRIMARY KEY (id);  CREATE INDEX "IDX_2a00830247b0e93cb6c9d6a168" ON public.program_contents USING btree (program_id);
 CREATE INDEX "IDX_4ae43a5f02434f93cf29cb749d" ON public.program_contents USING btree (parent_id, previewable);
 CREATE INDEX "IDX_745ed5daf12f8291044fbc4450" ON public.program_contents USING btree (previewable);
 CREATE INDEX "IDX_788346b7a51507192230730db7" ON public.program_contents USING btree (parent_id);
@@ -550,11 +550,11 @@ CREATE TABLE "program_feedback_submissions" (
 );
 
 ALTER TABLE "program_feedback_submissions"
-            ADD FOREIGN KEY (program_id) REFERENCES programs(id);  ALTER TABLE "program_feedback_submissions"
-            ADD FOREIGN KEY (product_id) REFERENCES products(id);  ALTER TABLE "program_feedback_submissions"
-            ADD FOREIGN KEY (program_user_id) REFERENCES program_users(id);  ALTER TABLE "program_feedback_submissions"
-            ADD FOREIGN KEY (user_id) REFERENCES "user"(id) ON DELETE CASCADE;  ALTER TABLE "program_feedback_submissions"
-            ADD PRIMARY KEY (id);  CREATE UNIQUE INDEX "PK_a27f818de2c259092282649f215" ON public.program_feedback_submissions USING btree (id);
+          ADD FOREIGN KEY (program_id) REFERENCES programs(id);  ALTER TABLE "program_feedback_submissions"
+          ADD FOREIGN KEY (product_id) REFERENCES products(id);  ALTER TABLE "program_feedback_submissions"
+          ADD FOREIGN KEY (program_user_id) REFERENCES program_users(id);  ALTER TABLE "program_feedback_submissions"
+          ADD FOREIGN KEY (user_id) REFERENCES "user"(id) ON DELETE CASCADE;  ALTER TABLE "program_feedback_submissions"
+          ADD PRIMARY KEY (id);  CREATE UNIQUE INDEX "PK_a27f818de2c259092282649f215" ON public.program_feedback_submissions USING btree (id);
 
 CREATE TABLE "program_ratings" (
   "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
@@ -583,12 +583,12 @@ CREATE TABLE "program_ratings" (
 );
 
 ALTER TABLE "program_ratings"
-            ADD FOREIGN KEY (product_id) REFERENCES products(id);  ALTER TABLE "program_ratings"
-            ADD FOREIGN KEY (program_id) REFERENCES programs(id);  ALTER TABLE "program_ratings"
-            ADD FOREIGN KEY (program_user_id) REFERENCES program_users(id);  ALTER TABLE "program_ratings"
-            ADD FOREIGN KEY (moderated_by_id) REFERENCES "user"(id);  ALTER TABLE "program_ratings"
-            ADD FOREIGN KEY (user_id) REFERENCES "user"(id);  ALTER TABLE "program_ratings"
-            ADD PRIMARY KEY (id);  CREATE INDEX "IDX_1d9dec735da6a8fa878376fa34" ON public.program_ratings USING btree (moderation_status, submitted_at);
+          ADD FOREIGN KEY (product_id) REFERENCES products(id);  ALTER TABLE "program_ratings"
+          ADD FOREIGN KEY (program_id) REFERENCES programs(id);  ALTER TABLE "program_ratings"
+          ADD FOREIGN KEY (program_user_id) REFERENCES program_users(id);  ALTER TABLE "program_ratings"
+          ADD FOREIGN KEY (moderated_by_id) REFERENCES "user"(id);  ALTER TABLE "program_ratings"
+          ADD FOREIGN KEY (user_id) REFERENCES "user"(id);  ALTER TABLE "program_ratings"
+          ADD PRIMARY KEY (id);  CREATE INDEX "IDX_1d9dec735da6a8fa878376fa34" ON public.program_ratings USING btree (moderation_status, submitted_at);
 CREATE INDEX "IDX_271f6fab838387902f291e38b9" ON public.program_ratings USING btree (is_public, moderation_status);
 CREATE INDEX "IDX_87b9687f34eecf7f845fad5a9b" ON public.program_ratings USING btree (rating, submitted_at);
 CREATE INDEX "IDX_ba6419d58689aec1b8b61fa01e" ON public.program_ratings USING btree (program_id, rating);
@@ -608,9 +608,9 @@ CREATE TABLE "program_user_roles" (
 );
 
 ALTER TABLE "program_user_roles"
-            ADD FOREIGN KEY (program_user_id) REFERENCES program_users(id) ON DELETE CASCADE;  ALTER TABLE "program_user_roles"
-            ADD FOREIGN KEY (program_id) REFERENCES programs(id) ON DELETE CASCADE;  ALTER TABLE "program_user_roles"
-            ADD PRIMARY KEY (id);  CREATE UNIQUE INDEX "PK_7b4c06031cac4c8dc3598306c4d" ON public.program_user_roles USING btree (id);
+          ADD FOREIGN KEY (program_user_id) REFERENCES program_users(id) ON DELETE CASCADE;  ALTER TABLE "program_user_roles"
+          ADD FOREIGN KEY (program_id) REFERENCES programs(id) ON DELETE CASCADE;  ALTER TABLE "program_user_roles"
+          ADD PRIMARY KEY (id);  CREATE UNIQUE INDEX "PK_7b4c06031cac4c8dc3598306c4d" ON public.program_user_roles USING btree (id);
 
 CREATE TABLE "program_users" (
   "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
@@ -625,9 +625,9 @@ CREATE TABLE "program_users" (
 );
 
 ALTER TABLE "program_users"
-            ADD FOREIGN KEY (program_id) REFERENCES programs(id) ON DELETE CASCADE;  ALTER TABLE "program_users"
-            ADD FOREIGN KEY (user_product_id) REFERENCES user_products(id) ON DELETE CASCADE;  ALTER TABLE "program_users"
-            ADD PRIMARY KEY (id);  CREATE INDEX "IDX_1c5d533ae17f9d4db2d0185b80" ON public.program_users USING btree (user_product_id) WHERE (deleted_at IS NULL);
+          ADD FOREIGN KEY (program_id) REFERENCES programs(id) ON DELETE CASCADE;  ALTER TABLE "program_users"
+          ADD FOREIGN KEY (user_product_id) REFERENCES user_products(id) ON DELETE CASCADE;  ALTER TABLE "program_users"
+          ADD PRIMARY KEY (id);  CREATE INDEX "IDX_1c5d533ae17f9d4db2d0185b80" ON public.program_users USING btree (user_product_id) WHERE (deleted_at IS NULL);
 CREATE INDEX "IDX_8386bbf0d442848d7be2993fbb" ON public.program_users USING btree (program_id) WHERE (deleted_at IS NULL);
 CREATE UNIQUE INDEX "IDX_7c4e86ab4c02a65ee72992cb57" ON public.program_users USING btree (user_product_id, program_id) WHERE (deleted_at IS NULL);
 CREATE UNIQUE INDEX "PK_6cd9ef478a28b846fc1bf51bed7" ON public.program_users USING btree (id);
@@ -649,8 +649,8 @@ CREATE TABLE "programs" (
 );
 
 ALTER TABLE "programs"
-            ADD PRIMARY KEY (id);  ALTER TABLE "programs"
-            ADD UNIQUE (slug);  CREATE INDEX "IDX_3381fedfde637cded46e8b0a77" ON public.programs USING btree (cached_rating);
+          ADD PRIMARY KEY (id);  ALTER TABLE "programs"
+          ADD UNIQUE (slug);  CREATE INDEX "IDX_3381fedfde637cded46e8b0a77" ON public.programs USING btree (cached_rating);
 CREATE INDEX "IDX_6782795eacefb9ec300673f6f2" ON public.programs USING btree (cached_enrollment_count);
 CREATE INDEX "IDX_cd28bc7f50ea4bb46771d0ec9b" ON public.programs USING btree (created_at);
 CREATE INDEX "IDX_e39bc1bb7b6fdddc3ccc0c6d4b" ON public.programs USING btree (tenancy_domains);
@@ -671,10 +671,10 @@ CREATE TABLE "promo_code_uses" (
 );
 
 ALTER TABLE "promo_code_uses"
-            ADD FOREIGN KEY (financial_transaction_id) REFERENCES financial_transactions(id);  ALTER TABLE "promo_code_uses"
-            ADD FOREIGN KEY (user_id) REFERENCES "user"(id);  ALTER TABLE "promo_code_uses"
-            ADD FOREIGN KEY (promo_code_id) REFERENCES promo_codes(id);  ALTER TABLE "promo_code_uses"
-            ADD PRIMARY KEY (id);  CREATE INDEX "IDX_3510b9afbd630080495fbcbd80" ON public.promo_code_uses USING btree (used_at);
+          ADD FOREIGN KEY (financial_transaction_id) REFERENCES financial_transactions(id);  ALTER TABLE "promo_code_uses"
+          ADD FOREIGN KEY (user_id) REFERENCES "user"(id);  ALTER TABLE "promo_code_uses"
+          ADD FOREIGN KEY (promo_code_id) REFERENCES promo_codes(id);  ALTER TABLE "promo_code_uses"
+          ADD PRIMARY KEY (id);  CREATE INDEX "IDX_3510b9afbd630080495fbcbd80" ON public.promo_code_uses USING btree (used_at);
 CREATE INDEX "IDX_845967e02e20790222d217b13f" ON public.promo_code_uses USING btree (financial_transaction_id);
 CREATE INDEX "IDX_84e9d82f9d6e3c9e53f5d19988" ON public.promo_code_uses USING btree (user_id);
 CREATE INDEX "IDX_d82ddb9839c0092afc178357ef" ON public.promo_code_uses USING btree (promo_code_id);
@@ -701,11 +701,11 @@ CREATE TABLE "promo_codes" (
 );
 
 ALTER TABLE "promo_codes"
-            ADD FOREIGN KEY (affiliate_user_id) REFERENCES "user"(id);  ALTER TABLE "promo_codes"
-            ADD FOREIGN KEY (product_id) REFERENCES products(id);  ALTER TABLE "promo_codes"
-            ADD FOREIGN KEY (created_by) REFERENCES "user"(id);  ALTER TABLE "promo_codes"
-            ADD PRIMARY KEY (id);  ALTER TABLE "promo_codes"
-            ADD UNIQUE (code);  CREATE UNIQUE INDEX "PK_c7b4f01710fda5afa056a2b4a35" ON public.promo_codes USING btree (id);
+          ADD FOREIGN KEY (affiliate_user_id) REFERENCES "user"(id);  ALTER TABLE "promo_codes"
+          ADD FOREIGN KEY (product_id) REFERENCES products(id);  ALTER TABLE "promo_codes"
+          ADD FOREIGN KEY (created_by) REFERENCES "user"(id);  ALTER TABLE "promo_codes"
+          ADD PRIMARY KEY (id);  ALTER TABLE "promo_codes"
+          ADD UNIQUE (code);  CREATE UNIQUE INDEX "PK_c7b4f01710fda5afa056a2b4a35" ON public.promo_codes USING btree (id);
 CREATE UNIQUE INDEX "UQ_2f096c406a9d9d5b8ce204190c3" ON public.promo_codes USING btree (code);
 
 CREATE TABLE "proposal" (
@@ -722,9 +722,9 @@ CREATE TABLE "proposal" (
 );
 
 ALTER TABLE "proposal"
-            ADD FOREIGN KEY (owner_id) REFERENCES "user"(id);  ALTER TABLE "proposal"
-            ADD FOREIGN KEY (thumbnail_id) REFERENCES images(id);  ALTER TABLE "proposal"
-            ADD PRIMARY KEY (id);  CREATE INDEX "IDX_175c19011e5f5baf732945a311" ON public.proposal USING btree (title);
+          ADD FOREIGN KEY (owner_id) REFERENCES "user"(id);  ALTER TABLE "proposal"
+          ADD FOREIGN KEY (thumbnail_id) REFERENCES images(id);  ALTER TABLE "proposal"
+          ADD PRIMARY KEY (id);  CREATE INDEX "IDX_175c19011e5f5baf732945a311" ON public.proposal USING btree (title);
 CREATE INDEX "IDX_f0f2c5e15690f642f3afcde829" ON public.proposal USING btree (visibility);
 CREATE UNIQUE INDEX "IDX_894de7603d8172deb20277c6f5" ON public.proposal USING btree (slug);
 CREATE UNIQUE INDEX "PK_ca872ecfe4fef5720d2d39e4275" ON public.proposal USING btree (id);
@@ -735,9 +735,9 @@ CREATE TABLE "proposal_editors_user" (
 );
 
 ALTER TABLE "proposal_editors_user"
-            ADD FOREIGN KEY (user_id) REFERENCES "user"(id) ON UPDATE CASCADE ON DELETE CASCADE;  ALTER TABLE "proposal_editors_user"
-            ADD FOREIGN KEY (proposal_id) REFERENCES proposal(id) ON UPDATE CASCADE ON DELETE CASCADE;  ALTER TABLE "proposal_editors_user"
-            ADD PRIMARY KEY (proposal_id, user_id);  CREATE INDEX "IDX_2469607eeb33fa61f32bda5326" ON public.proposal_editors_user USING btree (user_id);
+          ADD FOREIGN KEY (user_id) REFERENCES "user"(id) ON UPDATE CASCADE ON DELETE CASCADE;  ALTER TABLE "proposal_editors_user"
+          ADD FOREIGN KEY (proposal_id) REFERENCES proposal(id) ON UPDATE CASCADE ON DELETE CASCADE;  ALTER TABLE "proposal_editors_user"
+          ADD PRIMARY KEY (proposal_id, user_id);  CREATE INDEX "IDX_2469607eeb33fa61f32bda5326" ON public.proposal_editors_user USING btree (user_id);
 CREATE INDEX "IDX_d5efb3b9d5fb4cd25e2f1eb849" ON public.proposal_editors_user USING btree (proposal_id);
 CREATE UNIQUE INDEX "PK_3fead86d04749b09cebb8fd953d" ON public.proposal_editors_user USING btree (proposal_id, user_id);
 
@@ -755,8 +755,8 @@ CREATE TABLE "tag_proficiencies" (
 );
 
 ALTER TABLE "tag_proficiencies"
-            ADD FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE;  ALTER TABLE "tag_proficiencies"
-            ADD PRIMARY KEY (id);  CREATE INDEX "IDX_13a27f06ef2e3f70d1bd88f1dd" ON public.tag_proficiencies USING btree (proficiency_level);
+          ADD FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE;  ALTER TABLE "tag_proficiencies"
+          ADD PRIMARY KEY (id);  CREATE INDEX "IDX_13a27f06ef2e3f70d1bd88f1dd" ON public.tag_proficiencies USING btree (proficiency_level);
 CREATE INDEX "IDX_345d7b97c4909b5ea559c914ef" ON public.tag_proficiencies USING btree (tag_id);
 CREATE INDEX "IDX_744364c4c8c528f26673dd64a6" ON public.tag_proficiencies USING btree (proficiency_level_value);
 CREATE INDEX "IDX_b8d1fe1a0510ae5012bd7b1898" ON public.tag_proficiencies USING btree (deleted_at);
@@ -776,9 +776,9 @@ CREATE TABLE "tag_relationships" (
 );
 
 ALTER TABLE "tag_relationships"
-            ADD FOREIGN KEY (source_id) REFERENCES tags(id) ON DELETE CASCADE;  ALTER TABLE "tag_relationships"
-            ADD FOREIGN KEY (target_id) REFERENCES tags(id) ON DELETE CASCADE;  ALTER TABLE "tag_relationships"
-            ADD PRIMARY KEY (id);  CREATE UNIQUE INDEX "PK_006f1c1f0cbca49effaf09799e9" ON public.tag_relationships USING btree (id);
+          ADD FOREIGN KEY (source_id) REFERENCES tags(id) ON DELETE CASCADE;  ALTER TABLE "tag_relationships"
+          ADD FOREIGN KEY (target_id) REFERENCES tags(id) ON DELETE CASCADE;  ALTER TABLE "tag_relationships"
+          ADD PRIMARY KEY (id);  CREATE UNIQUE INDEX "PK_006f1c1f0cbca49effaf09799e9" ON public.tag_relationships USING btree (id);
 
 CREATE TABLE "tags" (
   "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
@@ -793,7 +793,7 @@ CREATE TABLE "tags" (
 );
 
 ALTER TABLE "tags"
-            ADD PRIMARY KEY (id);  CREATE INDEX "IDX_bcffa2d68eb6e69d436f69b3f1" ON public.tags USING btree (type);
+          ADD PRIMARY KEY (id);  CREATE INDEX "IDX_bcffa2d68eb6e69d436f69b3f1" ON public.tags USING btree (type);
 CREATE INDEX "IDX_e66a4ffa4213d40bef0da5bc44" ON public.tags USING btree (category);
 CREATE UNIQUE INDEX "IDX_1f0d687740481a26473720e159" ON public.tags USING btree (name, type);
 CREATE UNIQUE INDEX "PK_e7dc17249a1148a1970748eda99" ON public.tags USING btree (id);
@@ -860,13 +860,13 @@ CREATE TABLE "user_certificates" (
 );
 
 ALTER TABLE "user_certificates"
-            ADD FOREIGN KEY (user_id) REFERENCES "user"(id) ON DELETE CASCADE;  ALTER TABLE "user_certificates"
-            ADD FOREIGN KEY (program_id) REFERENCES programs(id) ON DELETE CASCADE;  ALTER TABLE "user_certificates"
-            ADD FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE;  ALTER TABLE "user_certificates"
-            ADD FOREIGN KEY (certificate_id) REFERENCES certificates(id) ON DELETE CASCADE;  ALTER TABLE "user_certificates"
-            ADD FOREIGN KEY (program_user_id) REFERENCES program_users(id) ON DELETE CASCADE;  ALTER TABLE "user_certificates"
-            ADD PRIMARY KEY (id);  ALTER TABLE "user_certificates"
-            ADD UNIQUE (certificate_number);  CREATE INDEX "IDX_0fb66c2b2d4edbb223682730e8" ON public.user_certificates USING btree (user_id);
+          ADD FOREIGN KEY (user_id) REFERENCES "user"(id) ON DELETE CASCADE;  ALTER TABLE "user_certificates"
+          ADD FOREIGN KEY (program_id) REFERENCES programs(id) ON DELETE CASCADE;  ALTER TABLE "user_certificates"
+          ADD FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE;  ALTER TABLE "user_certificates"
+          ADD FOREIGN KEY (certificate_id) REFERENCES certificates(id) ON DELETE CASCADE;  ALTER TABLE "user_certificates"
+          ADD FOREIGN KEY (program_user_id) REFERENCES program_users(id) ON DELETE CASCADE;  ALTER TABLE "user_certificates"
+          ADD PRIMARY KEY (id);  ALTER TABLE "user_certificates"
+          ADD UNIQUE (certificate_number);  CREATE INDEX "IDX_0fb66c2b2d4edbb223682730e8" ON public.user_certificates USING btree (user_id);
 CREATE INDEX "IDX_122c8480175f9e5c6166768a13" ON public.user_certificates USING btree (program_id);
 CREATE INDEX "IDX_1eb0cddc4690c9153e3bf5cf0b" ON public.user_certificates USING btree (product_id);
 CREATE INDEX "IDX_5d5e924c347ffb90821fce8534" ON public.user_certificates USING btree (certificate_id);
@@ -896,8 +896,8 @@ CREATE TABLE "user_financial_methods" (
 );
 
 ALTER TABLE "user_financial_methods"
-            ADD FOREIGN KEY (user_id) REFERENCES "user"(id) ON DELETE CASCADE;  ALTER TABLE "user_financial_methods"
-            ADD PRIMARY KEY (id);  CREATE INDEX "IDX_bcc4dfbc00db2f49919b3399fd" ON public.user_financial_methods USING btree (user_id, status);
+          ADD FOREIGN KEY (user_id) REFERENCES "user"(id) ON DELETE CASCADE;  ALTER TABLE "user_financial_methods"
+          ADD PRIMARY KEY (id);  CREATE INDEX "IDX_bcc4dfbc00db2f49919b3399fd" ON public.user_financial_methods USING btree (user_id, status);
 CREATE UNIQUE INDEX "PK_b0118602348fc1d679602903966" ON public.user_financial_methods USING btree (id);
 
 CREATE TABLE "user_kyc_verifications" (
@@ -919,10 +919,10 @@ CREATE TABLE "user_kyc_verifications" (
 );
 
 ALTER TABLE "user_kyc_verifications"
-            ADD FOREIGN KEY (user_id) REFERENCES "user"(id) ON DELETE CASCADE;  ALTER TABLE "user_kyc_verifications"
-            ADD PRIMARY KEY (id);  ALTER TABLE "user_kyc_verifications"
-            ADD UNIQUE (provider_applicant_id);  ALTER TABLE "user_kyc_verifications"
-            ADD UNIQUE (provider_verification_id);  CREATE UNIQUE INDEX "PK_b2713fe3f62fa4a2731c72dac33" ON public.user_kyc_verifications USING btree (id);
+          ADD FOREIGN KEY (user_id) REFERENCES "user"(id) ON DELETE CASCADE;  ALTER TABLE "user_kyc_verifications"
+          ADD PRIMARY KEY (id);  ALTER TABLE "user_kyc_verifications"
+          ADD UNIQUE (provider_applicant_id);  ALTER TABLE "user_kyc_verifications"
+          ADD UNIQUE (provider_verification_id);  CREATE UNIQUE INDEX "PK_b2713fe3f62fa4a2731c72dac33" ON public.user_kyc_verifications USING btree (id);
 CREATE UNIQUE INDEX "UQ_3cbbc217c93d23bf19132eb0fcc" ON public.user_kyc_verifications USING btree (provider_applicant_id);
 CREATE UNIQUE INDEX "UQ_d8ffff8cfd13fe59f7eb8f17f0e" ON public.user_kyc_verifications USING btree (provider_verification_id);
 
@@ -943,11 +943,11 @@ CREATE TABLE "user_products" (
 );
 
 ALTER TABLE "user_products"
-            ADD FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE;  ALTER TABLE "user_products"
-            ADD FOREIGN KEY (user_id) REFERENCES "user"(id) ON DELETE CASCADE;  ALTER TABLE "user_products"
-            ADD FOREIGN KEY (purchase_transaction_id) REFERENCES financial_transactions(id);  ALTER TABLE "user_products"
-            ADD FOREIGN KEY (subscription_id) REFERENCES user_subscriptions(id);  ALTER TABLE "user_products"
-            ADD PRIMARY KEY (id);  CREATE INDEX "IDX_2d4f33717491f83635416f67b3" ON public.user_products USING btree (access_expires_at);
+          ADD FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE;  ALTER TABLE "user_products"
+          ADD FOREIGN KEY (user_id) REFERENCES "user"(id) ON DELETE CASCADE;  ALTER TABLE "user_products"
+          ADD FOREIGN KEY (purchase_transaction_id) REFERENCES financial_transactions(id);  ALTER TABLE "user_products"
+          ADD FOREIGN KEY (subscription_id) REFERENCES user_subscriptions(id);  ALTER TABLE "user_products"
+          ADD PRIMARY KEY (id);  CREATE INDEX "IDX_2d4f33717491f83635416f67b3" ON public.user_products USING btree (access_expires_at);
 CREATE INDEX "IDX_8524bda5fc20e6b2e064391198" ON public.user_products USING btree (acquisition_type);
 CREATE INDEX "IDX_8b059a1db24054ba759c7de408" ON public.user_products USING btree (status);
 CREATE INDEX "IDX_b9470e455b81e2f0bc0d32f269" ON public.user_products USING btree (user_id, product_id);
@@ -966,9 +966,9 @@ CREATE TABLE "user_profile" (
 );
 
 ALTER TABLE "user_profile"
-            ADD FOREIGN KEY (picture_id) REFERENCES images(id);  ALTER TABLE "user_profile"
-            ADD PRIMARY KEY (id);  ALTER TABLE "user_profile"
-            ADD UNIQUE (picture_id);  CREATE UNIQUE INDEX "PK_f44d0cd18cfd80b0fed7806c3b7" ON public.user_profile USING btree (id);
+          ADD FOREIGN KEY (picture_id) REFERENCES images(id);  ALTER TABLE "user_profile"
+          ADD PRIMARY KEY (id);  ALTER TABLE "user_profile"
+          ADD UNIQUE (picture_id);  CREATE UNIQUE INDEX "PK_f44d0cd18cfd80b0fed7806c3b7" ON public.user_profile USING btree (id);
 CREATE UNIQUE INDEX "UQ_e4238c3828bc51ff8ca27c46385" ON public.user_profile USING btree (picture_id);
 
 CREATE TABLE "user_subscriptions" (
@@ -988,9 +988,9 @@ CREATE TABLE "user_subscriptions" (
 );
 
 ALTER TABLE "user_subscriptions"
-            ADD FOREIGN KEY (user_id) REFERENCES "user"(id) ON DELETE CASCADE;  ALTER TABLE "user_subscriptions"
-            ADD FOREIGN KEY (subscription_plan_id) REFERENCES product_subscription_plans(id);  ALTER TABLE "user_subscriptions"
-            ADD PRIMARY KEY (id);  CREATE UNIQUE INDEX "PK_9e928b0954e51705ab44988812c" ON public.user_subscriptions USING btree (id);
+          ADD FOREIGN KEY (user_id) REFERENCES "user"(id) ON DELETE CASCADE;  ALTER TABLE "user_subscriptions"
+          ADD FOREIGN KEY (subscription_plan_id) REFERENCES product_subscription_plans(id);  ALTER TABLE "user_subscriptions"
+          ADD PRIMARY KEY (id);  CREATE UNIQUE INDEX "PK_9e928b0954e51705ab44988812c" ON public.user_subscriptions USING btree (id);
 
 CREATE TABLE "vote" (
   "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
@@ -999,5 +999,5 @@ CREATE TABLE "vote" (
 );
 
 ALTER TABLE "vote"
-            ADD PRIMARY KEY (id);  CREATE UNIQUE INDEX "PK_2d5932d46afe39c8176f9d4be72" ON public.vote USING btree (id);
+          ADD PRIMARY KEY (id);  CREATE UNIQUE INDEX "PK_2d5932d46afe39c8176f9d4be72" ON public.vote USING btree (id);
 

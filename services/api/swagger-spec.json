@@ -8592,10 +8592,7 @@
               "assignment",
               "questionnaire",
               "discussion",
-              "code",
-              "challenge",
-              "reflection",
-              "survey"
+              "code"
             ],
             "description": "Type of content (page, quiz, assignment, discussion, etc.)"
           },

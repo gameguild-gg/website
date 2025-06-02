@@ -2399,10 +2399,7 @@ export namespace Api {
 			'assignment' |
 			'questionnaire' |
 			'discussion' |
-			'code' |
-			'challenge' |
-			'reflection' |
-			'survey'
+			'code'
 		
 		export namespace Type {
 			export enum Enum {
@@ -2410,10 +2407,7 @@ export namespace Api {
 				Assignment = 'assignment',
 				Questionnaire = 'questionnaire',
 				Discussion = 'discussion',
-				Code = 'code',
-				Challenge = 'challenge',
-				Reflection = 'reflection',
-				Survey = 'survey'
+				Code = 'code'
 			}
 		}
 	
