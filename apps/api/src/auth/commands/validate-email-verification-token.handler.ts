@@ -1,0 +1,29 @@
+import { Logger } from '@nestjs/common';
+import { CommandHandler, ICommandHandler, QueryBus } from '@nestjs/cqrs';
+
+import { ValidateEmailVerificationTokenCommand } from '@/auth/commands/validate-email-verification-token.command';
+import { AuthService } from '@/auth/services/auth.service';
+import { UserDto } from '@/user/dtos/user.dto';
+import { FindOneUserQuery } from '@/user/queries/find-one-user.query';
+
+@CommandHandler(ValidateEmailVerificationTokenCommand)
+export class ValidateEmailVerificationTokenHandler implements ICommandHandler<ValidateEmailVerificationTokenCommand> {
+  private readonly logger = new Logger(ValidateEmailVerificationTokenHandler.name);
+
+  constructor(
+    private readonly authService: AuthService,
+    private readonly queryBus: QueryBus,
+  ) {}
+
+  public async execute(command: ValidateEmailVerificationTokenCommand): Promise<UserDto> {
+    const { sub } = command.data;
+
+    const user = await this.queryBus.execute(new FindOneUserQuery({ where: { id: sub } }));
+
+    user.emailVerified = true;
+
+    await this.authService.validateSignIn(user);
+
+    return user;
+  }
+}

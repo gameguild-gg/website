@@ -1,15 +1,30 @@
-/** @type { import('eslint').Linter.Config } */
-module.exports = {
-  parser: '@typescript-eslint/parser',
-  plugins: ['@typescript-eslint/eslint-plugin'],
-  extends: ['plugin:@typescript-eslint/recommended', 'plugin:prettier/recommended'],
-  root: true,
-  env: {
-    node: true,
-    jest: true,
+import globals from 'globals';
+import eslint from '@eslint/js';
+import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended';
+import prettierPlugin from 'eslint-plugin-prettier';
+import prettierConfig from '@game-guild/prettier-config';
+import typescriptEslint from 'typescript-eslint';
+
+/** @type {import('eslint').Linter.Config[]} */
+const config = [
+  { files: ['**/*.{js,mjs,cjs,ts,jsx,tsx}'] },
+  {
+    languageOptions: {
+      globals: {
+        ...globals.browser,
+        ...globals.node,
+        ...globals.jest,
+      },
+      sourceType: 'module',
+    },
   },
-  ignorePatterns: ['.eslintrc'],
-  rules: {
-    'prettier/prettier': ['error', require('@game-guild/prettier-config')],
+  eslint.configs.recommended, // eslint recommended rules
+  eslintPluginPrettierRecommended, // prettier recommended rules
+  typescriptEslint.configs.recommended, // typescript-eslint recommended rules
+  {
+    plugins: { prettier: prettierPlugin },
+    rules: { 'prettier/prettier': ['error', prettierConfig] },
   },
-};
+];
+
+export default config.flat();

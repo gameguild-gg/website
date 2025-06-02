@@ -1,142 +1,57 @@
 {
   "name": "game-guild",
+  "description": "",
   "version": "1.0.0",
-  "description": "Game Guild is a platform for game developers to create, share, and monetize their games. It provides tools and resources for game development, including a marketplace for assets, a community for collaboration, and a platform for distribution.",
   "author": "",
-  "licenses": [
-    {
-      "type": "AGPL-3.0",
-      "url": "https://www.gnu.org/licenses/agpl-3.0.html"
-    },
-    {
-      "type": "Commercial",
-      "url": "https://github.com/gameguild-gg/website/blob/main/COMMERCIAL_LICENSE.md"
-    }
-  ],
   "private": true,
   "workspaces": [
-    "packages/*",
-    "services/web",
-    "services/api"
+    "apps/*",
+    "packages/*"
   ],
   "scripts": {
-    "install:api": "npm install --workspace=services/api",
-    "install:web": "npm install --workspace=services/web",
-    "install:apiclient": "npm install @game-guild/apiclient --no-save --workspace=services/web",
-    "clean": "rimraf --glob ./**/node_modules ./**/dist ./**/coverage ./**/build ./**/.next package-lock.json",
-    "prepare_": "husky install",
-    "format": "npm run format --workspaces --if-present",
-    "format:api": "npm run format --workspace=services/api",
-    "format:web": "npm run format --workspace=services/web",
-    "lint": "npm run lint --fix --workspaces --if-present",
-    "lint:api": "npm run lint --workspace=services/api",
-    "lint:web": "npm run lint --workspace=services/web",
     "build": "npm run build --workspaces --if-present",
-    "build:api": "npm run build --workspace=services/api",
-    "build:web": "npm run build --workspace=services/web",
+    "build:api": "npm run build --workspace=apps/api",
+    "build:web": "npm run build --workspace=apps/web",
+    "clean": "rimraf --glob ./**/node_modules ./**/dist ./**/coverage ./**/build ./**/.next package-lock.json",
+    "db:diagram": "npm run db:diagram --workspace=apps/api",
     "dev": "concurrently \"npm run dev:api\" \"npm run dev:web\"",
-    "dev:api": "npm run dev --workspace=services/api",
-    "dev:web": "npm run dev --workspace=services/web",
-    "test": "npm run test --workspaces --if-present",
-    "test:api": "npm run test --workspace=services/api",
-    "test:web": "npm run test --workspace=services/web",
-    "start": "npm run start --workspaces --if-present",
-    "start:api": "npm run start:prod --workspace=services/api",
-    "start:web": "npm run start --workspace=services/web",
-    "start:both": "concurrently \"npm:dev:api\" \"npm:dev:web\"",
-    "open:tests": "npm run cy:open --workspace=tests",
+    "dev:api": "npm run dev --workspace=apps/api",
+    "dev:web": "npm run dev --workspace=apps/web",
+    "format": "npm run format --workspaces --if-present",
+    "format:api": "npm run format --workspace=apps/api",
+    "format:web": "npm run format --workspace=apps/web",
     "gource": "./contributors/gource.sh",
-    "db:diagram": "npm run db:diagram --workspace=services/api",
-    "git-stats": "node gitstats.mjs"
-  },
-  "dependencies": {
-    "bufferutil": "^4.0.8",
-    "concurrently": "^8.2.2",
-    "npm-run-all": "^4.1.5",
-    "simple-git": "^3.27.0"
+    "install:api": "npm install --workspace=apps/api",
+    "install:apiclient": "npm install @game-guild/apiclient --no-save --workspace=apps/web",
+    "install:web": "npm install --workspace=apps/web",
+    "lint": "npm run lint --fix --workspaces --if-present",
+    "lint:api": "npm run lint --workspace=apps/api",
+    "lint:web": "npm run lint --workspace=apps/web",
+    "open:tests": "npm run cy:open --workspace=tests",
+    "prepare_": "husky install",
+    "start": "npm run start --workspaces --if-present",
+    "start:api": "npm run start:prod --workspace=apps/api",
+    "start:both": "concurrently \"npm:dev:api\" \"npm:dev:web\"",
+    "start:web": "npm run start --workspace=apps/web",
+    "test": "npm run test --workspaces --if-present",
+    "test:api": "npm run test --workspace=apps/api",
+    "test:web": "npm run test --workspace=apps/web"
   },
   "devDependencies": {
-    "@game-guild/apiclient": "*",
-    "@game-guild/eslint-config": "*",
-    "@game-guild/jest-config": "*",
-    "@game-guild/prettier-config": "*",
-    "@game-guild/typescript-config": "*",
+    "@game-guild/eslint-config": "0.1.0",
+    "@game-guild/jest-config": "0.1.0",
+    "@game-guild/prettier-config": "0.1.0",
+    "@game-guild/typescript-config": "0.1.0",
     "@semantic-release/changelog": "^6.0.3",
     "@semantic-release/commit-analyzer": "^13.0.0",
     "@semantic-release/git": "^10.0.1",
     "@semantic-release/github": "^11.0.0",
     "@semantic-release/npm": "^12.0.1",
     "@semantic-release/release-notes-generator": "^14.0.1",
-    "conventional-changelog-angular": "^8.0.0",
-    "eslint": "^8.52.0",
-    "moxygen": "^0.8.0",
-    "prettier": "^3.4.0",
+    "eslint": "^9",
+    "prettier": "^3.5.2",
     "rimraf": "^6",
+    "syncpack": "^13.0.0",
     "typescript": "^5"
-  },
-  "release": {
-    "branches": [
-      "master",
-      "main"
-    ],
-    "repositoryUrl": "https://github.com/gameguild-gg/website",
-    "plugins": [
-      [
-        "@semantic-release/commit-analyzer",
-        {
-          "preset": "angular",
-          "releaseRules": [
-            {
-              "type": "docs",
-              "release": "patch"
-            },
-            {
-              "type": "refactor",
-              "release": "patch"
-            },
-            {
-              "type": "style",
-              "release": "patch"
-            },
-            {
-              "type": "test",
-              "release": "patch"
-            },
-            {
-              "type": "build",
-              "release": "patch"
-            },
-            {
-              "type": "ci",
-              "release": "patch"
-            }
-          ],
-          "parserOpts": {
-            "noteKeywords": [
-              "BREAKING CHANGE",
-              "BREAKING CHANGES"
-            ]
-          }
-        }
-      ],
-      "@semantic-release/release-notes-generator",
-      [
-        "@semantic-release/changelog",
-        {
-          "changelogFile": "CHANGELOG.md"
-        }
-      ],
-      [
-        "@semantic-release/git",
-        {
-          "assets": [
-            "CHANGELOG.md",
-            "git-stats.json"
-          ],
-          "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
-        }
-      ],
-      "@semantic-release/github"
-    ]
   }
 }

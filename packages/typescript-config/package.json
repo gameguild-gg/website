@@ -1,9 +1,9 @@
 {
   "name": "@game-guild/typescript-config",
-  "version": "0.1.0",
   "description": "",
-  "license": "MIT",
+  "version": "0.1.0",
   "author": "",
-  "main": "defaults.json",
-  "private": true
+  "license": "MIT",
+  "private": true,
+  "type": "module"
 }
