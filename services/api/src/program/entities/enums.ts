@@ -85,14 +85,26 @@ export enum GradingMethod {
 }
 
 export enum ProgramContentType {
-  PAGE = 'page',
-  ASSIGNMENT = 'assignment',
-  QUESTIONNAIRE = 'questionnaire',
-  DISCUSSION = 'discussion',
+  PAGE = 'page', // viewing types
+  ASSIGNMENT = 'assignment', // user have to submit something to it
+  QUESTIONNAIRE = 'questionnaire', // answer questions
+  DISCUSSION = 'discussion', // participate in discussions
+  CODE = 'code', // code-related content
+}
+
+export enum PageContentType {
+  MARKDOWN = 'markdown',
+  YOUTUBE = 'youtube',
+  LEXICAL = 'lexical',
+  REVEAL = 'reveal',
+  HTML = 'html',
   CODE = 'code',
-  CHALLENGE = 'challenge',
-  REFLECTION = 'reflection',
-  SURVEY = 'survey',
+  LINK = 'link',
+  // assets types
+  PDF = 'pdf',
+  IMAGE = 'image',
+  VIDEO = 'video',
+  AUDIO = 'audio',
 }
 
 export enum ProgramRoleType {

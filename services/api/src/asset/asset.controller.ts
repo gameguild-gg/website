@@ -1,19 +1,20 @@
-import { Body, Controller, Logger, Post, UnprocessableEntityException, UploadedFile, UseInterceptors } from '@nestjs/common';
-import { ApiBody, ApiConsumes, ApiProperty, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Controller, Logger } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import { AssetService } from './asset.service';
-import { Auth, AuthUser } from '../auth';
-import { AuthenticatedRoute, PublicRoute } from '../auth/auth.enum';
-import { UserEntity } from '../user/entities';
-import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiFile } from '../common/decorators/api-file.decorator';
-import { CourseEntity } from '../cms/entities/course.entity';
-import { ContentBase } from '../cms/entities/content.base';
-import { ImageEntity } from './image.entity';
+// import { Auth, AuthUser } from '../auth';
+// import { AuthenticatedRoute, PublicRoute } from '../auth/auth.enum';
+// import { UserEntity } from '../user/entities';
+// import { FileInterceptor } from '@nestjs/platform-express';
+// import { ApiFile } from '../common/decorators/api-file.decorator';
+// import { CourseEntity } from '../cms/entities/course.entity';
+// import { ContentBase } from '../cms/entities/content.base';
+// import { ImageEntity } from './image.entity';
 
 @Controller('asset')
 @ApiTags('asset')
 export class AssetController {
   private readonly logger = new Logger(AssetController.name);
+
   constructor(private readonly assetService: AssetService) {}
 
   // @ApiFiles({
