@@ -12,8 +12,6 @@ CREATE TYPE "competition_submission_entity_game_type_enum" AS ENUM ('CatchTheCat
 
 CREATE TYPE "content_interactions_status_enum" AS ENUM ('not_started', 'in_progress', 'completed', 'skipped');
 
-CREATE TYPE "course_visibility_enum" AS ENUM ('DRAFT', 'PUBLISHED', 'FUTURE', 'PENDING', 'PRIVATE', 'TRASH');
-
 CREATE TYPE "financial_transactions_status_enum" AS ENUM ('pending', 'processing', 'completed', 'failed', 'refunded', 'cancelled');
 
 CREATE TYPE "financial_transactions_transaction_type_enum" AS ENUM ('purchase', 'refund', 'withdrawal', 'deposit', 'transfer', 'fee', 'adjustment');
@@ -23,14 +21,6 @@ CREATE TYPE "game_visibility_enum" AS ENUM ('DRAFT', 'PUBLISHED', 'FUTURE', 'PEN
 CREATE TYPE "job_post_job_type_enum" AS ENUM ('CONTINUOUS', 'TASK');
 
 CREATE TYPE "job_post_visibility_enum" AS ENUM ('DRAFT', 'PUBLISHED', 'FUTURE', 'PENDING', 'PRIVATE', 'TRASH');
-
-CREATE TYPE "lecture_renderer_enum" AS ENUM ('markdown', 'youtube', 'lexical', 'reveal', 'html', 'pdf', 'image', 'video', 'audio', 'code', 'link');
-
-CREATE TYPE "lecture_visibility_enum" AS ENUM ('DRAFT', 'PUBLISHED', 'FUTURE', 'PENDING', 'PRIVATE', 'TRASH');
-
-CREATE TYPE "post_post_type_enum" AS ENUM ('BLOG');
-
-CREATE TYPE "post_visibility_enum" AS ENUM ('DRAFT', 'PUBLISHED', 'FUTURE', 'PENDING', 'PRIVATE', 'TRASH');
 
 CREATE TYPE "product_subscription_plans_billing_interval_enum" AS ENUM ('day', 'week', 'month', 'year');
 
@@ -48,23 +38,15 @@ CREATE TYPE "program_ratings_moderation_status_enum" AS ENUM ('pending', 'approv
 
 CREATE TYPE "program_user_roles_role_enum" AS ENUM ('student', 'instructor', 'editor', 'administrator', 'teaching_assistant');
 
-CREATE TYPE "project_visibility_enum" AS ENUM ('DRAFT', 'PUBLISHED', 'FUTURE', 'PENDING', 'PRIVATE', 'TRASH');
-
 CREATE TYPE "promo_codes_type_enum" AS ENUM ('percentage_off', 'fixed_amount_off', 'buy_one_get_one', 'first_month_free');
 
 CREATE TYPE "proposal_visibility_enum" AS ENUM ('DRAFT', 'PUBLISHED', 'FUTURE', 'PENDING', 'PRIVATE', 'TRASH');
-
-CREATE TYPE "quiz_visibility_enum" AS ENUM ('DRAFT', 'PUBLISHED', 'FUTURE', 'PENDING', 'PRIVATE', 'TRASH');
 
 CREATE TYPE "tag_proficiencies_proficiency_level_enum" AS ENUM ('awareness', 'novice', 'beginner', 'intermediate', 'advanced', 'expert', 'master');
 
 CREATE TYPE "tag_relationships_type_enum" AS ENUM ('related', 'parent', 'child', 'requires', 'suggested');
 
 CREATE TYPE "tags_type_enum" AS ENUM ('skill', 'topic', 'technology', 'difficulty', 'category', 'industry', 'certification');
-
-CREATE TYPE "ticket_priority_enum" AS ENUM ('LOW', 'MEDIUM', 'HIGH', 'CRITICAL');
-
-CREATE TYPE "ticket_status_enum" AS ENUM ('OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED');
 
 CREATE TYPE "user_certificates_status_enum" AS ENUM ('active', 'expired', 'revoked', 'pending');
 
@@ -280,43 +262,6 @@ CREATE INDEX "IDX_eccd0e268fd973ba96803d0e6f" ON public.content_interactions USI
 CREATE UNIQUE INDEX "IDX_a86ba3342df6bca2e02ff903ad" ON public.content_interactions USING btree (program_user_id, content_id);
 CREATE UNIQUE INDEX "PK_4eb661a3ed146d6cc809100e7dd" ON public.content_interactions USING btree (id);
 
-CREATE TABLE "course" (
-  "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
-  "created_at" timestamp without time zone NOT NULL DEFAULT now(),
-  "updated_at" timestamp without time zone NOT NULL DEFAULT now(),
-  "slug" character varying(255) NOT NULL,
-  "summary" character varying(1024),
-  "visibility" "course_visibility_enum" NOT NULL DEFAULT 'DRAFT'::course_visibility_enum,
-  "subscription_access" boolean NOT NULL DEFAULT true,
-  "body" text,
-  "price" numeric DEFAULT '0'::numeric,
-  "owner_id" uuid,
-  "title" character varying(255) NOT NULL,
-  "thumbnail_id" uuid
-);
-
-ALTER TABLE "course"
-            ADD FOREIGN KEY (thumbnail_id) REFERENCES images(id);  ALTER TABLE "course"
-            ADD FOREIGN KEY (owner_id) REFERENCES "user"(id);  ALTER TABLE "course"
-            ADD PRIMARY KEY (id);  CREATE INDEX "IDX_399d4e499683d688c07a41da26" ON public.course USING btree (subscription_access);
-CREATE INDEX "IDX_4f1c8311d8e665e0d0c0046326" ON public.course USING btree (price);
-CREATE INDEX "IDX_653293097239013a0e49f481f9" ON public.course USING btree (visibility);
-CREATE INDEX "IDX_ac5edecc1aefa58ed0237a7ee4" ON public.course USING btree (title);
-CREATE UNIQUE INDEX "IDX_a101f48e5045bcf501540a4a5b" ON public.course USING btree (slug);
-CREATE UNIQUE INDEX "PK_bf95180dd756fd204fb01ce4916" ON public.course USING btree (id);
-
-CREATE TABLE "course_editors_user" (
-  "course_id" uuid NOT NULL,
-  "user_id" uuid NOT NULL
-);
-
-ALTER TABLE "course_editors_user"
-            ADD FOREIGN KEY (user_id) REFERENCES "user"(id) ON UPDATE CASCADE ON DELETE CASCADE;  ALTER TABLE "course_editors_user"
-            ADD FOREIGN KEY (course_id) REFERENCES course(id) ON UPDATE CASCADE ON DELETE CASCADE;  ALTER TABLE "course_editors_user"
-            ADD PRIMARY KEY (course_id, user_id);  CREATE INDEX "IDX_25fff6cb34e063caab1eb4c7c1" ON public.course_editors_user USING btree (user_id);
-CREATE INDEX "IDX_f0f27df7244631f69b3aa42a0d" ON public.course_editors_user USING btree (course_id);
-CREATE UNIQUE INDEX "PK_a863e83f726a4e6f0704fcd302d" ON public.course_editors_user USING btree (course_id, user_id);
-
 CREATE TABLE "financial_transactions" (
   "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
   "created_at" timestamp without time zone NOT NULL DEFAULT now(),
@@ -461,46 +406,6 @@ ALTER TABLE "job_tag"
             ADD PRIMARY KEY (id);  CREATE INDEX "IDX_0c4e9330020ee70d765dff0486" ON public.job_tag USING btree (name);
 CREATE UNIQUE INDEX "PK_835586a09d10e323fdec92aaaa1" ON public.job_tag USING btree (id);
 
-CREATE TABLE "lecture" (
-  "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
-  "created_at" timestamp without time zone NOT NULL DEFAULT now(),
-  "updated_at" timestamp without time zone NOT NULL DEFAULT now(),
-  "slug" character varying(255) NOT NULL,
-  "summary" character varying(1024),
-  "visibility" "lecture_visibility_enum" NOT NULL DEFAULT 'DRAFT'::lecture_visibility_enum,
-  "order" double precision NOT NULL DEFAULT '0'::double precision,
-  "course_id" uuid,
-  "body" text,
-  "owner_id" uuid,
-  "title" character varying(255) NOT NULL,
-  "thumbnail_id" uuid,
-  "renderer" "lecture_renderer_enum" NOT NULL DEFAULT 'markdown'::lecture_renderer_enum,
-  "json" jsonb
-);
-
-ALTER TABLE "lecture"
-            ADD FOREIGN KEY (thumbnail_id) REFERENCES images(id);  ALTER TABLE "lecture"
-            ADD FOREIGN KEY (course_id) REFERENCES course(id);  ALTER TABLE "lecture"
-            ADD FOREIGN KEY (owner_id) REFERENCES "user"(id);  ALTER TABLE "lecture"
-            ADD PRIMARY KEY (id);  CREATE INDEX "IDX_4c8c4ea44b8a5a5c6a028b9e20" ON public.lecture USING btree (title);
-CREATE INDEX "IDX_c6c3264ce6966d5c1d078e147b" ON public.lecture USING btree ("order");
-CREATE INDEX "IDX_d316a6a4d94b0b4aaab3af3f31" ON public.lecture USING btree (renderer);
-CREATE INDEX "IDX_f5cadec277927351eb00098dd7" ON public.lecture USING btree (visibility);
-CREATE UNIQUE INDEX "IDX_dff3c45c6a2688bdef948f158a" ON public.lecture USING btree (slug);
-CREATE UNIQUE INDEX "PK_2abef7c1e52b7b58a9f905c9643" ON public.lecture USING btree (id);
-
-CREATE TABLE "lecture_editors_user" (
-  "lecture_id" uuid NOT NULL,
-  "user_id" uuid NOT NULL
-);
-
-ALTER TABLE "lecture_editors_user"
-            ADD FOREIGN KEY (user_id) REFERENCES "user"(id) ON UPDATE CASCADE ON DELETE CASCADE;  ALTER TABLE "lecture_editors_user"
-            ADD FOREIGN KEY (lecture_id) REFERENCES lecture(id) ON UPDATE CASCADE ON DELETE CASCADE;  ALTER TABLE "lecture_editors_user"
-            ADD PRIMARY KEY (lecture_id, user_id);  CREATE INDEX "IDX_88ce9c7b7ef0b39989593ab150" ON public.lecture_editors_user USING btree (user_id);
-CREATE INDEX "IDX_a11c650256fe110cdaa8be2579" ON public.lecture_editors_user USING btree (lecture_id);
-CREATE UNIQUE INDEX "PK_6cd319be02ecdbfb6b78a3c646c" ON public.lecture_editors_user USING btree (lecture_id, user_id);
-
 CREATE TABLE "migrations" (
   "id" integer NOT NULL DEFAULT nextval('migrations_id_seq'::regclass),
   "timestamp" bigint NOT NULL,
@@ -509,40 +414,6 @@ CREATE TABLE "migrations" (
 
 ALTER TABLE "migrations"
             ADD PRIMARY KEY (id);  CREATE UNIQUE INDEX "PK_8c82d7f526340ab734260ea46be" ON public.migrations USING btree (id);
-
-CREATE TABLE "post" (
-  "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
-  "created_at" timestamp without time zone NOT NULL DEFAULT now(),
-  "updated_at" timestamp without time zone NOT NULL DEFAULT now(),
-  "slug" character varying(255) NOT NULL,
-  "summary" character varying(1024),
-  "visibility" "post_visibility_enum" NOT NULL DEFAULT 'DRAFT'::post_visibility_enum,
-  "post_type" "post_post_type_enum" NOT NULL DEFAULT 'BLOG'::post_post_type_enum,
-  "body" text,
-  "owner_id" uuid,
-  "title" character varying(255) NOT NULL,
-  "thumbnail_id" uuid
-);
-
-ALTER TABLE "post"
-            ADD FOREIGN KEY (owner_id) REFERENCES "user"(id);  ALTER TABLE "post"
-            ADD FOREIGN KEY (thumbnail_id) REFERENCES images(id);  ALTER TABLE "post"
-            ADD PRIMARY KEY (id);  CREATE INDEX "IDX_a80ca3bf4ca3711c488cb82cf7" ON public.post USING btree (visibility);
-CREATE INDEX "IDX_e28aa0c4114146bfb1567bfa9a" ON public.post USING btree (title);
-CREATE UNIQUE INDEX "IDX_cd1bddce36edc3e766798eab37" ON public.post USING btree (slug);
-CREATE UNIQUE INDEX "PK_be5fda3aac270b134ff9c21cdee" ON public.post USING btree (id);
-
-CREATE TABLE "post_editors_user" (
-  "post_id" uuid NOT NULL,
-  "user_id" uuid NOT NULL
-);
-
-ALTER TABLE "post_editors_user"
-            ADD FOREIGN KEY (user_id) REFERENCES "user"(id) ON UPDATE CASCADE ON DELETE CASCADE;  ALTER TABLE "post_editors_user"
-            ADD FOREIGN KEY (post_id) REFERENCES post(id) ON UPDATE CASCADE ON DELETE CASCADE;  ALTER TABLE "post_editors_user"
-            ADD PRIMARY KEY (post_id, user_id);  CREATE INDEX "IDX_4abfcfa0b8814c3522eb488636" ON public.post_editors_user USING btree (user_id);
-CREATE INDEX "IDX_9fc34bb51d7a8a50a875dbeff2" ON public.post_editors_user USING btree (post_id);
-CREATE UNIQUE INDEX "PK_4399b494a9644933edf0e0d7fcb" ON public.post_editors_user USING btree (post_id, user_id);
 
 CREATE TABLE "product_pricing" (
   "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
@@ -788,86 +659,6 @@ CREATE UNIQUE INDEX "IDX_4180c2bfa0402878a63b70cb4a" ON public.programs USING bt
 CREATE UNIQUE INDEX "PK_d43c664bcaafc0e8a06dfd34e05" ON public.programs USING btree (id);
 CREATE UNIQUE INDEX "UQ_4180c2bfa0402878a63b70cb4a4" ON public.programs USING btree (slug);
 
-CREATE TABLE "project" (
-  "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
-  "created_at" timestamp without time zone NOT NULL DEFAULT now(),
-  "updated_at" timestamp without time zone NOT NULL DEFAULT now(),
-  "slug" character varying(255) NOT NULL,
-  "summary" character varying(1024),
-  "body" text,
-  "visibility" "project_visibility_enum" NOT NULL DEFAULT 'DRAFT'::project_visibility_enum,
-  "owner_id" uuid,
-  "title" character varying(255) NOT NULL,
-  "thumbnail_id" uuid,
-  "banner_id" uuid
-);
-
-ALTER TABLE "project"
-            ADD FOREIGN KEY (banner_id) REFERENCES images(id) ON DELETE CASCADE;  ALTER TABLE "project"
-            ADD FOREIGN KEY (thumbnail_id) REFERENCES images(id);  ALTER TABLE "project"
-            ADD FOREIGN KEY (owner_id) REFERENCES "user"(id);  ALTER TABLE "project"
-            ADD PRIMARY KEY (id);  CREATE INDEX "IDX_0c2943d87d6b4f22558a7fce71" ON public.project USING btree (visibility);
-CREATE INDEX "IDX_cb001317127de4d5e323b5c0c4" ON public.project USING btree (title);
-CREATE UNIQUE INDEX "IDX_6fce32ddd71197807027be6ad3" ON public.project USING btree (slug);
-CREATE UNIQUE INDEX "PK_4d68b1358bb5b766d3e78f32f57" ON public.project USING btree (id);
-
-CREATE TABLE "project_editors_user" (
-  "project_id" uuid NOT NULL,
-  "user_id" uuid NOT NULL
-);
-
-ALTER TABLE "project_editors_user"
-            ADD FOREIGN KEY (project_id) REFERENCES project(id) ON UPDATE CASCADE ON DELETE CASCADE;  ALTER TABLE "project_editors_user"
-            ADD FOREIGN KEY (user_id) REFERENCES "user"(id) ON UPDATE CASCADE ON DELETE CASCADE;  ALTER TABLE "project_editors_user"
-            ADD PRIMARY KEY (project_id, user_id);  CREATE INDEX "IDX_4efce1aaecf2b3d2523959a501" ON public.project_editors_user USING btree (project_id);
-CREATE INDEX "IDX_8f5fba1aed12561d33ab675a24" ON public.project_editors_user USING btree (user_id);
-CREATE UNIQUE INDEX "PK_efd60535d94affeccba7365e591" ON public.project_editors_user USING btree (project_id, user_id);
-
-CREATE TABLE "project_feedback_response" (
-  "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
-  "created_at" timestamp without time zone NOT NULL DEFAULT now(),
-  "updated_at" timestamp without time zone NOT NULL DEFAULT now(),
-  "responses" jsonb NOT NULL,
-  "version_id" uuid,
-  "user_id" uuid
-);
-
-ALTER TABLE "project_feedback_response"
-            ADD FOREIGN KEY (version_id) REFERENCES project_version(id);  ALTER TABLE "project_feedback_response"
-            ADD FOREIGN KEY (user_id) REFERENCES "user"(id);  ALTER TABLE "project_feedback_response"
-            ADD PRIMARY KEY (id);  CREATE UNIQUE INDEX "PK_8ecbac3eb61113faffe1166e11e" ON public.project_feedback_response USING btree (id);
-
-CREATE TABLE "project_screenshots_images" (
-  "project_id" uuid NOT NULL,
-  "images_id" uuid NOT NULL
-);
-
-ALTER TABLE "project_screenshots_images"
-            ADD FOREIGN KEY (project_id) REFERENCES project(id) ON UPDATE CASCADE ON DELETE CASCADE;  ALTER TABLE "project_screenshots_images"
-            ADD FOREIGN KEY (images_id) REFERENCES images(id) ON UPDATE CASCADE ON DELETE CASCADE;  ALTER TABLE "project_screenshots_images"
-            ADD PRIMARY KEY (project_id, images_id);  CREATE INDEX "IDX_4e1f8d02befe1e5a392910b624" ON public.project_screenshots_images USING btree (project_id);
-CREATE INDEX "IDX_ef0ec5b9da603747097dea89a4" ON public.project_screenshots_images USING btree (images_id);
-CREATE UNIQUE INDEX "PK_2e301330d17fb5c8f1695a51e39" ON public.project_screenshots_images USING btree (project_id, images_id);
-
-CREATE TABLE "project_version" (
-  "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
-  "created_at" timestamp without time zone NOT NULL DEFAULT now(),
-  "updated_at" timestamp without time zone NOT NULL DEFAULT now(),
-  "version" character varying(64) NOT NULL,
-  "archive_url" character varying(1024) NOT NULL,
-  "notes_url" character varying(1024) NOT NULL,
-  "feedback_form" jsonb NOT NULL,
-  "feedback_deadline" timestamp with time zone NOT NULL,
-  "project_id" uuid
-);
-
-ALTER TABLE "project_version"
-            ADD FOREIGN KEY (project_id) REFERENCES project(id);  ALTER TABLE "project_version"
-            ADD PRIMARY KEY (id);  ALTER TABLE "project_version"
-            ADD UNIQUE (version, project_id);  CREATE INDEX "IDX_4b6747e098d96a0e805692810d" ON public.project_version USING btree (feedback_deadline);
-CREATE UNIQUE INDEX "PK_249c24f66d8f7e8ea6f9ff462fb" ON public.project_version USING btree (id);
-CREATE UNIQUE INDEX "UQ_b9103221778444dc9638d3775da" ON public.project_version USING btree (version, project_id);
-
 CREATE TABLE "promo_code_uses" (
   "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
   "created_at" timestamp without time zone NOT NULL DEFAULT now(),
@@ -950,41 +741,6 @@ ALTER TABLE "proposal_editors_user"
 CREATE INDEX "IDX_d5efb3b9d5fb4cd25e2f1eb849" ON public.proposal_editors_user USING btree (proposal_id);
 CREATE UNIQUE INDEX "PK_3fead86d04749b09cebb8fd953d" ON public.proposal_editors_user USING btree (proposal_id, user_id);
 
-CREATE TABLE "quiz" (
-  "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
-  "created_at" timestamp without time zone NOT NULL DEFAULT now(),
-  "updated_at" timestamp without time zone NOT NULL DEFAULT now(),
-  "slug" character varying(255) NOT NULL,
-  "title" character varying(255) NOT NULL,
-  "summary" character varying(1024),
-  "body" text,
-  "visibility" "quiz_visibility_enum" NOT NULL DEFAULT 'DRAFT'::quiz_visibility_enum,
-  "questions" jsonb,
-  "grading_instructions" character varying,
-  "owner_id" uuid,
-  "thumbnail_id" uuid
-);
-
-ALTER TABLE "quiz"
-            ADD FOREIGN KEY (thumbnail_id) REFERENCES images(id);  ALTER TABLE "quiz"
-            ADD FOREIGN KEY (owner_id) REFERENCES "user"(id);  ALTER TABLE "quiz"
-            ADD PRIMARY KEY (id);  CREATE INDEX "IDX_37105dd2b728dfbba2f313c907" ON public.quiz USING btree (visibility);
-CREATE INDEX "IDX_91b3636bd5cc303c7409c55088" ON public.quiz USING btree (title);
-CREATE UNIQUE INDEX "IDX_80e0595aa5572aca26e681ee1e" ON public.quiz USING btree (slug);
-CREATE UNIQUE INDEX "PK_422d974e7217414e029b3e641d0" ON public.quiz USING btree (id);
-
-CREATE TABLE "quiz_editors_user" (
-  "quiz_id" uuid NOT NULL,
-  "user_id" uuid NOT NULL
-);
-
-ALTER TABLE "quiz_editors_user"
-            ADD FOREIGN KEY (quiz_id) REFERENCES quiz(id) ON UPDATE CASCADE ON DELETE CASCADE;  ALTER TABLE "quiz_editors_user"
-            ADD FOREIGN KEY (user_id) REFERENCES "user"(id) ON UPDATE CASCADE ON DELETE CASCADE;  ALTER TABLE "quiz_editors_user"
-            ADD PRIMARY KEY (quiz_id, user_id);  CREATE INDEX "IDX_536f6eac3215f5823c76623df1" ON public.quiz_editors_user USING btree (quiz_id);
-CREATE INDEX "IDX_f09c6797b5611ed29a94d7df8b" ON public.quiz_editors_user USING btree (user_id);
-CREATE UNIQUE INDEX "PK_fbb93aa1e4225ccb62d11a796c0" ON public.quiz_editors_user USING btree (quiz_id, user_id);
-
 CREATE TABLE "tag_proficiencies" (
   "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
   "created_at" timestamp without time zone NOT NULL DEFAULT now(),
@@ -1041,35 +797,6 @@ ALTER TABLE "tags"
 CREATE INDEX "IDX_e66a4ffa4213d40bef0da5bc44" ON public.tags USING btree (category);
 CREATE UNIQUE INDEX "IDX_1f0d687740481a26473720e159" ON public.tags USING btree (name, type);
 CREATE UNIQUE INDEX "PK_e7dc17249a1148a1970748eda99" ON public.tags USING btree (id);
-
-CREATE TABLE "ticket" (
-  "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
-  "created_at" timestamp without time zone NOT NULL DEFAULT now(),
-  "updated_at" timestamp without time zone NOT NULL DEFAULT now(),
-  "title" character varying(255) NOT NULL,
-  "description" text,
-  "status" "ticket_status_enum" NOT NULL DEFAULT 'OPEN'::ticket_status_enum,
-  "priority" "ticket_priority_enum" NOT NULL DEFAULT 'LOW'::ticket_priority_enum,
-  "owner_id" uuid,
-  "project_id" uuid
-);
-
-ALTER TABLE "ticket"
-            ADD FOREIGN KEY (project_id) REFERENCES project(id);  ALTER TABLE "ticket"
-            ADD FOREIGN KEY (owner_id) REFERENCES "user"(id);  ALTER TABLE "ticket"
-            ADD PRIMARY KEY (id);  CREATE UNIQUE INDEX "PK_d9a0835407701eb86f874474b7c" ON public.ticket USING btree (id);
-
-CREATE TABLE "ticket_editors_user" (
-  "ticket_id" uuid NOT NULL,
-  "user_id" uuid NOT NULL
-);
-
-ALTER TABLE "ticket_editors_user"
-            ADD FOREIGN KEY (ticket_id) REFERENCES ticket(id) ON UPDATE CASCADE ON DELETE CASCADE;  ALTER TABLE "ticket_editors_user"
-            ADD FOREIGN KEY (user_id) REFERENCES "user"(id) ON UPDATE CASCADE ON DELETE CASCADE;  ALTER TABLE "ticket_editors_user"
-            ADD PRIMARY KEY (ticket_id, user_id);  CREATE INDEX "IDX_1d5c90934caa7c88aef8de3798" ON public.ticket_editors_user USING btree (ticket_id);
-CREATE INDEX "IDX_68a614c8fd4410c06e03e0fa84" ON public.ticket_editors_user USING btree (user_id);
-CREATE UNIQUE INDEX "PK_cbe7f143227c03a658062234a49" ON public.ticket_editors_user USING btree (ticket_id, user_id);
 
 CREATE TABLE "user" (
   "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
