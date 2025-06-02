@@ -1,0 +1,1209 @@
+// Performance Considerations for High-Volume Tables:
+// 1. financial_transactions: Time-based partitioning recommended when exceeding 1M rows
+// 2. content_interactions: Consider table partitioning by program_id for large programs
+// 3. user_certificates: Add covering indexes for verification queries
+// 4. For all timestamp-based queries: Create partial indexes limited to relevant date ranges
+// 5. Consider hash indexes for exact match lookups on high-cardinality columns
+//
+// Index Recommendations for High Frequency Operations:
+// - Add covering indexes that include commonly selected columns
+// - Use partial indexes to reduce index size and improve maintenance
+// - Consider BRIN indexes instead of B-tree for timestamp columns with natural ordering
+// - Monitor and adjust index strategy based on query performance data
+
+// Database Constraints:
+// 1. CASCADE DELETE: When a user is soft-deleted, related records remain but are inaccessible through API
+// 2. CASCADE DELETE: When a program is soft-deleted, all related content (pages, activities) remain but are inaccessible
+// 3. RESTRICT DELETE: Products with active purchases cannot be deleted until all user_products are expired
+// 4. ON DELETE CASCADE: For junction tables to maintain referential integrity
+// 5. CHECK CONSTRAINTS: All percentage fields are validated to be between 0-100
+// 6. CHECK CONSTRAINTS: All price fields must be non-negative
+
+// Critical Business Rules as Database Constraints:
+// 1. CHECK (minimum_grade BETWEEN 0 AND 100): Certificate minimum_grade must be 0-100%
+// 2. CHECK (completion_percentage BETWEEN 0 AND 100): Program completion percentage must be 0-100%
+// 3. CHECK (base_price >= 0): Product pricing must be non-negative
+// 4. CHECK (referral_commission_percentage BETWEEN 0 AND 100): Commission rates must be valid percentages
+// 5. CHECK (affiliate_percentage <= 100): Affiliate share cannot exceed 100%
+// 6. CHECK (grade BETWEEN 0 AND 100): Activity grades must be 0-100%
+// 7. CHECK (current_period_end > current_period_start): Subscription periods must have valid date ranges
+
+// CASCADE Behavior Details:
+// - user_certificates: When a user is deleted, certificates remain but are not accessible
+// - program_users: When a program is deleted, enrollment records remain but are inactive
+// - content_interactions: When content is deleted, user interactions are preserved for records
+// - financial_transactions: Transactions are never hard-deleted for audit purposes
+// - user_products: When a product is soft-deleted, existing purchases remain valid until expiration
+// - user_subscriptions: When a subscription plan is deleted, active subscriptions continue until their next renewal
+
+// todo: jsonb validation. 
+// Add constraint to enforce expected schema
+//  constraint check_body_schema CHECK (jsonb_typeof(body) = 'object' AND body ? 'content')
+// Add audit logging for sensitive operations
+// add double-entry accounting for financial transactions
+
+Enum visibility {
+  draft [note: 'Content only visible to creators and editors, not published to users']
+  published [note: 'Content is live and available to all users with access']
+  archived [note: 'Content no longer actively shown but preserved for reference']
+}
+
+Enum certificate_status {
+  active [note: 'Certificate is valid and can be verified']
+  expired [note: 'Certificate has reached its expiration date']
+  revoked [note: 'Certificate has been manually invalidated']
+  pending [note: 'Certificate is in the process of being issued']
+}
+
+Enum verification_method {
+  code [note: 'Certificate can be verified using a unique code']
+  blockchain [note: 'Certificate is verified through blockchain anchoring']
+  both [note: 'Certificate uses both code and blockchain verification']
+}
+
+Enum product_type {
+  program [note: 'Educational content organized into lessons']
+  learning_pathway [note: 'Curated sequence of programs and skill requirements for specific learning outcomes']
+  bundle [note: 'Collection of multiple products']
+  subscription [note: 'Recurring access to content']
+  workshop [note: 'Live interactive sessions']
+  mentorship [note: 'One-on-one coaching']
+  ebook [note: 'Digital publications']
+  resource_pack [note: 'Downloadable assets']
+  community [note: 'Access to forums/communities']
+  certification [note: 'Industry credentials']
+  other [note: 'Future product categories']
+}
+
+Enum certificate_type {
+  program_completion [note: 'Standard certificate for completing a single program']
+  product_bundle_completion [note: 'Certificate for completing all programs in a product bundle/specialization']
+  learning_pathway [note: 'Certificate for achieving specific skill combinations across multiple programs/products']
+  skill_mastery [note: 'Certificate recognizing mastery of specific skills']
+  event_participation [note: 'Certificate for attending workshops, conferences, or events']
+  assessment_passed [note: 'Certificate from passing standardized tests or evaluations']
+  project_completion [note: 'Certificate for successfully completing projects']
+  specialization [note: 'Certificate for completing a series of related programs']
+  professional [note: 'Industry-recognized professional certification']
+  achievement [note: 'Certificate for specific accomplishments or milestones']
+  instructor [note: 'Certification to teach specific subjects']
+  time_investment [note: 'Certificate proving time spent learning a topic']
+  peer_recognition [note: 'Certificate based on peer validation or community contribution']
+}
+
+Enum skill_proficiency_level {
+  awareness [note: 'Basic awareness and understanding of concepts']
+  novice [note: 'Can perform basic tasks with guidance']
+  beginner [note: 'Can perform routine tasks independently']
+  intermediate [note: 'Can handle most tasks and some complex scenarios']
+  advanced [note: 'Can handle complex tasks and mentor others']
+  expert [note: 'Deep expertise, can innovate and teach']
+  master [note: 'Recognized authority, can define best practices']
+}
+
+// Tag types
+Enum tag_type {
+  skill [note: 'Tag represents a learnable or teachable skill']
+  topic [note: 'General subject matter or area of knowledge']
+  technology [note: 'Specific technology, software, framework, or tool']
+  difficulty [note: 'Indicates content difficulty level']
+  category [note: 'High-level grouping of content']
+  industry [note: 'Specific industry or sector']
+  certification [note: 'Professional or industry certification']
+}
+
+Enum tag_relationship_type {
+  related [note: 'Tags that are related or complementary']
+  parent [note: 'Parent tag in a hierarchical structure']
+  child [note: 'Child tag in a hierarchical structure']
+  requires [note: 'Required prerequisite tag']
+  suggested [note: 'Suggested prerequisite or related tag']
+}
+
+Enum moderation_status {
+  pending [note: 'Moderation request submitted but not yet reviewed']
+  approved [note: 'Content approved and can be displayed publicly']
+  rejected [note: 'Content rejected and should not be displayed']
+  flagged [note: 'Content flagged for review due to reports or policy violations']
+}
+
+Enum grading_method {
+  instructor [note: 'Graded manually by an instructor or teaching assistant']
+  peer [note: 'Peer review-based grading by other students']
+  ai [note: 'Automated grading using AI algorithms']
+  automated_tests [note: 'Graded automatically using predefined test cases']
+}
+
+Enum program_content_type {
+  page [note: 'Instructional content page']
+  assignment [note: 'General assignment where students submit work for evaluation']
+  questionnaire [note: 'A sequence of questions with expected answers, similar to a quiz or test']
+  discussion [note: 'Discussion forum for collaborative learning and sharing ideas']
+  code [note: 'Programming assignment requiring code submission']
+  challenge [note: 'Competition-style activity with rankings or achievements']
+  reflection [note: 'Student reflections on learning or experiences']
+  survey [note: 'Data collection activity without grading']
+}
+
+Enum program_role_type {
+  student [note: 'Standard learner role with access to content and ability to submit assignments']
+  instructor [note: 'Can create content, grade submissions, and manage the program']
+  editor [note: 'Can edit program content but cannot grade or manage users']
+  administrator [note: 'Full control over the program, including user management and settings']
+  teaching_assistant [note: 'Can grade submissions and assist students but with limited content editing abilities']
+}
+
+Enum promo_code_type {
+  percentage_off [note: 'Applies a percentage discount to the total price']
+  fixed_amount_off [note: 'Deducts a specific amount from the total price']
+  buy_one_get_one [note: 'Purchase one product and receive another free']
+  first_month_free [note: 'No charge for the first month of a subscription']
+}
+
+
+// Update payment system enums
+Enum subscription_type {
+  monthly [note: 'Subscription billed on a monthly basis']
+  quarterly [note: 'Subscription billed every three months']
+  annual [note: 'Subscription billed once per year']
+  lifetime [note: 'One-time payment for permanent access']
+}
+
+Enum subscription_billing_interval {
+  day [note: 'Billing occurs daily']
+  week [note: 'Billing occurs weekly']
+  month [note: 'Billing occurs monthly']
+  year [note: 'Billing occurs yearly']
+}
+
+Enum subscription_status {
+  active [note: 'Subscription is currently valid and paid up']
+  trialing [note: 'In free trial period before regular billing begins']
+  past_due [note: 'Payment failed but subscription still active, pending retry']
+  canceled [note: 'User has canceled the subscription']
+  incomplete [note: 'Initial payment failed, subscription not fully activated']
+  incomplete_expired [note: 'Initial payment failed and the trial period expired']
+  unpaid [note: 'Payment failed after retries, subscription suspended']
+}
+
+Enum payment_method_type {
+  credit_card [note: 'Credit card payment method']
+  debit_card [note: 'Debit card payment method']
+  crypto_wallet [note: 'Cryptocurrency wallet for blockchain payments']
+  wallet_balance [note: 'Platform internal wallet balance']
+  bank_transfer [note: 'Direct bank transfer or wire payment']
+}
+
+Enum payment_method_status {
+  active [note: 'Payment method is valid and can be used']
+  inactive [note: 'Payment method temporarily disabled']
+  expired [note: 'Payment method has expired (e.g., expired card)']
+  removed [note: 'Payment method has been deleted by the user']
+}
+
+Enum transaction_status {
+  pending [note: 'Transaction has been initiated but not completed']
+  processing [note: 'Transaction is being processed by payment provider']
+  completed [note: 'Transaction has been successfully completed']
+  failed [note: 'Transaction failed to process']
+  refunded [note: 'Transaction was completed but has been refunded']
+  cancelled [note: 'Transaction was cancelled before processing']
+}
+
+Enum transaction_type {
+  purchase [note: 'Payment for acquiring a product']
+  refund [note: 'Return of funds to the customer']
+  withdrawal [note: 'Removal of funds from the platform']
+  deposit [note: 'Addition of funds to the platform']
+  transfer [note: 'Movement of funds between wallets']
+  fee [note: 'Platform or processing fees']
+  adjustment [note: 'Manual correction to balance']
+}
+
+Enum balance_transaction_type {
+  credit [note: 'Funds added to wallet balance']
+  debit [note: 'Funds removed from wallet balance']
+  transfer [note: 'Funds moved between wallets']
+  refund [note: 'Return of previously debited funds']
+  fee [note: 'Service or platform fees']
+  adjustment [note: 'Manual balance correction']
+}
+
+Enum balance_transaction_status {
+  pending [note: 'Transaction initiated but not completed']
+  completed [note: 'Transaction successfully processed']
+  failed [note: 'Transaction processing unsuccessful']
+  reversed [note: 'Transaction was completed but later reversed']
+}
+
+Enum wallet_status {
+  active [note: 'Wallet is operational and can process transactions']
+  frozen [note: 'Wallet temporarily suspended, cannot process transactions']
+  closed [note: 'Wallet permanently deactivated']
+}
+
+Enum product_acquisition_type {
+  purchase [note: 'Product acquired through direct payment']
+  subscription [note: 'Product access via recurring subscription']
+  free [note: 'Product provided at no cost']
+  gift [note: 'Product received as a gift from another user']
+}
+
+Enum product_access_status {
+  active [note: 'User has full access to the product']
+  expired [note: 'Access period has ended']
+  revoked [note: 'Access manually removed by admin']
+  suspended [note: 'Temporary hold on access that may be restored']
+}
+
+Enum kyc_provider {
+  sumsub [note: 'SumSub KYC verification provider']
+  shufti [note: 'Shufti Pro KYC verification provider']
+  onfido [note: 'Onfido KYC verification provider']
+  jumio [note: 'Jumio KYC verification provider']
+  custom [note: 'Custom or internal KYC verification process']
+}
+
+Enum kyc_verification_status {
+  pending [note: 'Verification request has been submitted but not completed']
+  in_progress [note: 'Provider is processing the verification']
+  approved [note: 'KYC verification passed']
+  rejected [note: 'KYC verification failed']
+  suspended [note: 'Verification was approved but later suspended']
+  expired [note: 'Verification has expired and needs renewal']
+}
+
+Enum progress_status {
+  not_started [note: 'User has not started this content yet']
+  in_progress [note: 'User has started but not completed this content']  
+  completed [note: 'User has successfully completed this content']
+  skipped [note: 'User has opted to skip this optional content']
+}
+
+Enum feedback_form_question_type {
+  short_answer [note: 'Single line text input']
+  long_answer [note: 'Multi-line text area']
+  multiple_choice [note: 'Select one option from multiple choices']
+  checkbox [note: 'Select multiple options from a list']
+  rating_scale [note: 'Numeric rating scale (e.g., 1-5 stars)']
+  yes_no [note: 'Simple yes/no question']
+  dropdown [note: 'Select one option from dropdown menu']
+}
+
+// Standardize on int for all integer columns
+Table users {
+  id int [pk, increment, note: 'Unique identifier for the user']
+  email varchar [unique, note: 'User email address, must be unique']
+  username varchar [unique, note: 'Username for display and login, must be unique']
+  full_name varchar [note: 'User full name for personalization and identification']
+  avatar varchar [null, note: 'URL or path to user profile image']
+  balance decimal [default: 0, note: 'Total balance in the wallet']
+  available_balance decimal [default: 0, note: 'Balance available for withdrawal (may be less than total if some funds are pending)']
+  wallet_status wallet_status [default: "active", note: 'Current status of this user wallet']
+  deleted_at timestamp [null, note: 'Soft delete timestamp - when the user account was deleted, null if active']
+  created_at timestamp [default: `now()`, note: 'When the user account was created']
+  updated_at timestamp [default: `now()`, note: 'When the user account was last updated']
+
+  indexes {
+    (email) [unique, note: 'For login lookups']
+    (username) [unique, note: 'For profile lookups']
+    (wallet_status) [note: 'For filtering by wallet status']
+    (deleted_at) [note: 'For filtering active users']
+    (created_at) [note: 'For sorting by registration date']
+  }
+}
+
+Table products {
+  id int [pk, increment, note: 'Unique identifier for the product']
+  title varchar [note: 'Product title/name displayed to users']
+  description text [note: 'Detailed description of the product']
+  thumbnail varchar [null, note: 'URL or path to product thumbnail image']
+  type product_type [default: 'program', note: 'Type of product (program, bundle, subscription, etc.)']
+  is_bundle bool [default: false, note: 'Whether this product is a bundle of other products']
+  bundle_items jsonb [null, note: 'Array of product IDs included in the bundle']
+  metadata jsonb [note: 'Flexible storage for product type-specific configuration. For programs: difficulty level, estimated hours, technologies covered. For bundles: display order, theme. For subscriptions: access level, features mapping. Extensible for future product types.']
+  referral_commission_percentage decimal [default: 30, note: 'Default 30% commission for referrals']
+  max_affiliate_discount decimal [default: 0, note: 'Maximum % discount affiliate can offer, 0 means no affiliate allowed']
+  affiliate_commission_percentage decimal [default: 30, note: 'Commission % from remaining value after discount']
+  visibility visibility [default: 'draft', note: 'Product visibility status (draft, published, archived)']
+  deleted_at timestamp [null, note: 'Soft delete timestamp - when the product was deleted, null if active']
+  created_at timestamp [default: `now()`, note: 'When the product was created']
+  updated_at timestamp [default: `now()`, note: 'When the product was last updated']
+
+  indexes {
+    (type) [note: 'For filtering products by type']
+    (is_bundle) [note: 'For finding bundle products']
+    (visibility) [note: 'For filtering by visibility status']
+    (created_at) [note: 'For sorting products by creation date']
+  }
+}
+
+Table programs {
+  id int [pk, increment, note: 'Unique identifier for the program']
+  slug varchar [note: 'URL-friendly identifier for the program, used in program links']
+  summary text [note: 'Brief description of the program for listings and previews']
+  body jsonb [note: 'Main program content in JSON format, includes description, objectives, etc.']
+  tenancy_domains jsonb [null, note: 'Array of allowed email domains, null if not tenancy-fenced']
+  cached_enrollment_count int [default: 0, note: 'Denormalized count of current enrolled students for quick access']
+  cached_completion_count int [default: 0, note: 'Denormalized count of students who completed the program']
+  cached_students_completion_rate decimal [default: 0, note: 'Precomputed percentage of enrolled students who completed the program']
+  cached_rating decimal [default: 0, note: 'Precomputed average rating of the program']
+  metadata jsonb [null, note: 'Program type specific data, late penalty etc']
+  deleted_at timestamp [null, note: 'Soft delete timestamp - when the program was deleted, null if active']
+  created_at timestamp [default: `now()`, note: 'When the program was created']
+  updated_at timestamp [default: `now()`, note: 'When the program was last updated']
+
+  indexes {
+    (slug) [unique, note: 'For program URL lookups']  
+    (created_at) [note: 'For sorting programs by creation date']  
+    (tenancy_domains) [note: 'For filtering programs by allowed domains']
+    (cached_enrollment_count) [note: 'For sorting or filtering programs by enrollment popularity']
+    (cached_students_completion_rate) [note: 'For sorting or filtering programs by completion success']
+    (cached_rating) [note: 'For sorting or filtering programs by average rating']
+  }
+}
+
+
+// Certificate configuration
+Table certificates {
+  id int [pk, increment, note: 'Unique identifier for certificate settings']
+  program_id int [ref: > programs.id, null, note: 'Reference to specific program (null for multi-program certificates)']
+  product_id int [ref: > products.id, null, note: 'Reference to specific product/bundle (null for cross-product certificates)']
+  certificate_type certificate_type [default: 'program_completion', note: 'What this certificate type proves when earned']
+  name varchar [note: 'Display name for this certificate type']
+  description text [note: 'Description of what this certificate represents']
+  
+  // Template and styling
+  html_template text [note: 'HTML template for certificate generation with variable placeholders like {{name}}, {{date}}, {{program}}']
+  css_styles text [note: 'CSS styles for certificate template to control appearance, fonts, colors, etc.']
+  
+  // Issuance rules
+  auto_issue bool [default: true, note: 'Whether certificates are automatically issued upon completion or require manual approval']
+  minimum_grade float [default: 70, note: 'Minimum grade percentage required to earn a certificate (0-100)']
+  completion_percentage int [default: 100, note: 'Percentage of required content that must be completed (0-100)']
+  requires_feedback bool [default: false, note: 'Whether certificate requires submission of feedback form']
+  requires_rating bool [default: false, note: 'Whether certificate requires program rating submission']
+  minimum_rating float [null, note: 'Minimum rating required if rating is mandatory (1-5 scale), null means any rating accepted'] // Constraint: CHECK (minimum_rating IS NULL OR (minimum_rating >= 1 AND minimum_rating <= 5))
+  feedback_form_template jsonb [null, note: 'JSON template defining feedback form structure when requires_feedback is true']
+  
+  // Certificate details
+  expiration_months int [null, note: 'Number of months until certificate expires, null for no expiration']
+  certificate_verification_method verification_method [default: 'code', note: 'Method used to verify certificate authenticity']
+  prerequisites jsonb [null, note: 'Required achievements/programs before certificate can be issued']
+  badge_image varchar [null, note: 'URL or path to digital badge image for social sharing and profiles']
+  signature_image varchar [null, note: 'URL or path to authorizing signature image']
+  credential_title varchar [null, note: 'Professional title/credential granted by this certificate']
+  issuer_name varchar [null, note: 'Name of institution or entity issuing the certificate']
+  
+  // Metadata and administration
+  metadata jsonb [null, note: 'Additional configuration: custom fields, internationalization, visibility, etc.']
+  is_active bool [default: true, note: 'Whether this certificate template is currently active']
+  deleted_at timestamp [null, note: 'Soft delete timestamp']
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+
+  indexes {
+    (program_id) [note: 'For single program certificates']
+    (product_id) [note: 'For product bundle certificates']
+    (certificate_type) [note: 'For filtering by certificate type']
+    (is_active) [note: 'For filtering active certificate templates']
+  }
+}
+
+// Issued certificates - Enhanced to support all certificate types
+Table user_certificates {
+  id int [pk, increment, note: 'Unique identifier for the certificate']
+  
+  // Flexible reference fields - only one should be populated based on certificate type
+  program_id int [ref: > programs.id, null, note: 'Reference to specific program (for program completion certificates)']
+  product_id int [ref: > products.id, null, note: 'Reference to product/bundle/learning_pathway (for product-based certificates)']
+  user_id int [ref: > users.id, note: 'User who earned the certificate']
+  
+  // Legacy field for backward compatibility - will be null for non-program certificates
+  program_user_id int [ref: > program_users.id, null, note: 'Reference to program enrollment record (for program certificates only)']
+  
+  certificate_id int [ref: > certificates.id, note: 'Certificate configuration/template used']
+  certificate_number varchar [unique, note: 'Unique identifier for verification purposes']
+  status certificate_status [default: 'active', note: 'Current status of this certificate']
+  
+  // Timing fields
+  issued_at timestamp [default: `now()`, note: 'When the certificate was issued to the user']
+  expires_at timestamp [null, note: 'When the certificate will expire, null for no expiration']
+  revoked_at timestamp [null, note: 'When the certificate was revoked, if applicable']
+  revocation_reason text [null, note: 'Explanation for why certificate was revoked']
+  completion_date timestamp [note: 'When the user completed all requirements']
+  
+  // Assessment and achievement data
+  final_grade float [null, note: 'Final calculated grade/score (for program or assessment certificates)']
+  
+  // Certificate content and metadata
+  certificate_data jsonb [null, note: 'Generated certificate content, custom fields, and presentation data']
+  metadata jsonb [null, note: 'Additional certificate data such as stackable progress, blockchain info, etc.']
+  
+  // Administration
+  deleted_at timestamp [null, note: 'Soft delete timestamp - when the certificate was deleted, null if active']
+  created_at timestamp [default: `now()`, note: 'When this certificate record was created']
+  updated_at timestamp [default: `now()`, note: 'When this certificate record was last updated']
+
+  indexes {
+    (user_id, program_id) [note: 'For program-specific certificates lookup (allows multiple certs per program)']
+    (user_id, product_id) [note: 'For product-specific certificates lookup']
+    (user_id) [note: 'For user certificate portfolio']
+    (certificate_number) [unique, note: 'For verification']
+    (status, issued_at) [note: 'For active certificates by date']
+    (program_id, status) [note: 'For program certificate analytics']
+    (product_id, status) [note: 'For product certificate analytics']
+  }
+}
+
+// Program feedback submissions for certificate requirements
+Table program_feedback_submissions {
+  id int [pk, increment, note: 'Unique identifier for feedback submission']
+  user_id int [ref: > users.id, note: 'User who submitted the feedback']
+  program_id int [ref: > programs.id, null, note: 'Program the feedback is for (null for product feedback)']
+  product_id int [ref: > products.id, null, note: 'Product the feedback is for (null for program feedback)']
+  program_user_id int [ref: > program_users.id, null, note: 'Reference to program enrollment (for program feedback)']
+  
+  // Feedback form data
+  feedback_responses jsonb [note: 'Structured responses to feedback form questions']
+  feedback_template_version varchar [note: 'Version of feedback template used to ensure consistency']
+  
+  // Metadata
+  submitted_at timestamp [default: `now()`, note: 'When feedback was submitted']
+  ip_address varchar [null, note: 'IP address of submission for fraud prevention']
+  user_agent text [null, note: 'User agent string for analytics and fraud prevention']
+  
+  // Administration
+  is_valid bool [default: true, note: 'Whether this submission is considered valid']
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+
+  indexes {
+    (user_id, program_id) [unique, note: 'One feedback submission per user per program']
+    (user_id, product_id) [unique, note: 'One feedback submission per user per product']
+    (program_id, submitted_at) [note: 'For program feedback analytics']
+    (product_id, submitted_at) [note: 'For product feedback analytics']
+    (submitted_at) [note: 'For temporal analytics']
+  }
+}
+
+// Program ratings for certificate requirements
+Table program_ratings {
+  id int [pk, increment, note: 'Unique identifier for rating submission']
+  user_id int [ref: > users.id, note: 'User who submitted the rating']
+  program_id int [ref: > programs.id, null, note: 'Program being rated (null for product rating)']
+  product_id int [ref: > products.id, null, note: 'Product being rated (null for program rating)']
+  program_user_id int [ref: > program_users.id, null, note: 'Reference to program enrollment (for program ratings)']
+  
+  // Rating data
+  rating int [note: 'Numeric rating on 1-5 scale with decimals allowed (e.g., 4.5)'] // Constraint: CHECK (rating >= 1 AND rating <= 5)
+  review_title varchar [null, note: 'Optional title for the review']
+  review_text text [null, note: 'Optional detailed review text']
+  
+  // Rating categories (optional detailed ratings)
+  content_quality_rating float [null, note: 'Rating for content quality (1-5)'] // Constraint: CHECK (content_quality_rating IS NULL OR (content_quality_rating >= 1 AND content_quality_rating <= 5))
+  instructor_rating float [null, note: 'Rating for instructor performance (1-5)'] // Constraint: CHECK (instructor_rating IS NULL OR (instructor_rating >= 1 AND instructor_rating <= 5))
+  difficulty_rating float [null, note: 'Rating for program difficulty (1-5)'] // Constraint: CHECK (difficulty_rating IS NULL OR (difficulty_rating >= 1 AND difficulty_rating <= 5))
+  value_rating float [null, note: 'Rating for value for money (1-5)'] // Constraint: CHECK (value_rating IS NULL OR (value_rating >= 1 AND value_rating <= 5))
+  
+  // Metadata
+  submitted_at timestamp [default: `now()`, note: 'When rating was submitted']
+  ip_address varchar [null, note: 'IP address of submission for fraud prevention']
+  user_agent text [null, note: 'User agent string for analytics and fraud prevention']
+  
+  // Administration and moderation
+  is_public bool [default: true, note: 'Whether rating should be displayed publicly']
+  is_verified bool [default: false, note: 'Whether rating has been verified as legitimate']
+  moderation_status moderation_status [default: 'pending', note: 'Moderation status: pending, approved, rejected, flagged']
+  moderation_notes text [null, note: 'Notes from moderation process']
+  moderated_by int [ref: > users.id, null, note: 'User who moderated this rating']
+  moderated_at timestamp [null, note: 'When moderation was completed']
+  
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+
+  indexes {
+    (user_id, program_id) [unique, note: 'One rating per user per program']
+    (user_id, product_id) [unique, note: 'One rating per user per product']
+    (program_id, rating) [note: 'For program rating analytics and sorting']
+    (product_id, rating) [note: 'For product rating analytics and sorting']
+    (rating, submitted_at) [note: 'For overall rating analytics']
+    (is_public, moderation_status) [note: 'For filtering public approved ratings']
+    (moderation_status, submitted_at) [note: 'For moderation queue']
+  }
+}
+
+Table tag_proficiencies {
+  id int [pk, increment, note: 'Unique identifier for this proficiency definition']
+  tag_id int [ref: > tags.id, note: 'Tag this proficiency level applies to']
+  proficiency_level skill_proficiency_level [note: 'The proficiency level (novice, intermediate, expert, etc.)']
+  proficiency_level_value float [note: 'Numeric value representing the proficiency level, to speedup sorting and filtering']
+  description text [null, note: 'Description of what this proficiency level means for this specific tag/skill']
+  // todo: prerequesites should
+  prerequisites jsonb [null, note: 'Other tag proficiencies required before achieving this level']
+  metadata jsonb [null, note: 'Additional proficiency-specific configuration']
+  deleted_at timestamp [null, note: 'Soft delete timestamp']
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+
+  indexes {
+    (tag_id, proficiency_level) [unique, note: 'One proficiency level per tag']
+    (tag_id, proficiency_level_value) [unique, note: 'One proficiency level value per tag']  
+    (tag_id) [note: 'For finding all proficiency levels for a tag']
+    (proficiency_level) [note: 'For finding all tags at a specific proficiency level']
+    (proficiency_level_value) [note: 'For sorting by proficiency level value']
+    (deleted_at) [note: 'For filtering active proficiency definitions']
+  }
+}
+
+Enum certificate_tag_relationship_type {
+  requirement [note: 'Tag is a requirement for this certificate']
+  recommendation [note: 'Tag is a recommendation for this certificate']
+  provides [note: 'Tag is provided by this certificate']
+}
+
+// Junction table linking certificates to tags
+Table certificate_tags {
+  id int [pk, increment, note: 'Unique identifier for this tag relationship']
+  certificate_id int [ref: > certificates.id, note: 'Reference to the certificate being tagged']
+  tag_id int [ref: > tag_proficiencies.id, note: 'Tag of any type (skill, technology, topic, etc.)']
+  type certificate_tag_relationship_type [note: 'Type of relationship (requirement, recommendation, provides)'] 
+  metadata jsonb [null, note: 'Additional tag-specific data like specific competencies, context, etc.']
+  
+  created_at timestamp [default: `now()`, note: 'When this tag relationship was created']
+  
+  indexes {
+    (certificate_id, tag_id) [unique, note: 'Prevent duplicate tags on a certificate']
+    (tag_id) [note: 'Find all items for a specific tag']
+    (certificate_id) [note: 'Find all tags for a specific certificate']
+  }
+}
+
+//------------------------------------------------------
+// TAGGING AND CATEGORIZATION SYSTEM
+//------------------------------------------------------
+
+
+
+// Tag definition and hierarchy
+Table tags {
+  id int [pk, increment, note: 'Unique identifier for this tag']
+  display_name varchar [note: 'Name of the tag as displayed to users']
+  searchable_name varchar [note: 'Name used for search indexing, may differ from display name'] 
+  slug varchar [unique, note: 'URL-friendly version of the tag name']
+  description text [null, note: 'Detailed description of what this tag represents']
+  type tag_type [note: 'Type of tag (skill, topic, technology, etc.)']
+  icon varchar [null, note: 'Optional icon identifier or URL for visual representation']
+  metadata jsonb [null, note: 'Additional tag configuration including skill requirements, difficulty metrics, etc.']
+  deleted_at timestamp [null, note: 'Soft delete timestamp - when the tag was deleted, null if active']
+  created_at timestamp [default: `now()`, note: 'When this tag was created']
+  updated_at timestamp [default: `now()`, note: 'When this tag was last updated']
+
+  indexes {
+    (slug) [note: 'For URL generation and lookups']
+    (display_name) [note: 'For searching by display name']
+    (searchable_name) [note: 'For searching by searchable name']
+    (type) [note: 'For filtering tags by type']
+  }
+}
+
+
+// Many-to-many relationship between tags (prerequisites, related tags, hierarchies, etc.)
+Table tag_relationships {
+  id int [pk, increment, note: 'Unique identifier for this tag relationship']
+  source_id int [ref: > tags.id, note: 'The source tag in the relationship']
+  target_id int [ref: > tags.id, note: 'The target tag in the relationship']
+  type tag_relationship_type [note: 'Type of relationship (prerequisite, related, parent, etc.)']
+  metadata jsonb [null, note: 'Additional relationship-specific configuration']
+  deleted_at timestamp [null, note: 'Soft delete timestamp - when the relationship was deleted, null if active']
+  created_at timestamp [default: `now()`, note: 'When this relationship was created']
+  updated_at timestamp [default: `now()`, note: 'When this relationship was last updated']
+
+  indexes {
+    (source_id, target_id, type) [unique, note: 'Prevent duplicate relationships of same type between same tags']
+    (source_id) [note: 'For finding all relationships where this tag is the source']
+    (target_id) [note: 'For finding all relationships where this tag is the target']
+    (type) [note: 'For filtering relationships by type']
+    (deleted_at) [note: 'For filtering active relationships']
+  }
+}
+
+// Optional blockchain anchoring for certificates
+Table certificate_blockchain_anchors {
+  id int [pk, increment, note: 'Unique identifier for this blockchain anchor']
+  certificate_id int [ref: > user_certificates.id, note: 'Reference to the certificate being anchored']
+  blockchain_network varchar [note: 'Name or identifier of the blockchain network used (ethereum, polygon, binance, etc.)']
+  transaction_hash varchar [note: 'Transaction hash where the certificate was anchored']
+  block_number bigint [note: 'Block number containing the transaction']
+  smart_contract_address varchar [null, note: 'Address of contract used for verification, if applicable']
+  token_id varchar [null, note: 'ID of NFT if certificate is represented as an NFT']
+  anchored_at timestamp [note: 'Timestamp when the anchor was confirmed on the blockchain']
+  public_verification_url varchar [null, note: 'URL where anyone can verify this certificate on a block explorer']
+  ipfs_hash varchar [null, note: 'IPFS hash if certificate data is stored on IPFS']
+  metadata jsonb [null, note: 'Additional blockchain-specific data related to this anchor']
+  deleted_at timestamp [null, note: 'Soft delete timestamp - when the blockchain anchor was deleted, null if active']
+  created_at timestamp [default: `now()`, note: 'When this anchor record was created']
+
+  indexes {
+    (certificate_id) [note: 'For finding blockchain proof for a specific certificate']
+    (transaction_hash) [note: 'For verification by transaction hash']
+    (blockchain_network) [note: 'For filtering by blockchain network']
+    (token_id) [note: 'For lookup by NFT token ID']
+  }
+}
+
+// Junction table for products-programs many-to-many relationship
+Table product_programs {
+  id int [pk, increment, note: 'Unique identifier for this product-program relationship']
+  product_id int [ref: > products.id, note: 'Reference to the product containing this program']
+  program_id int [ref: > programs.id, note: 'Reference to the program included in the product']
+  order_index float [note: 'Position/order in the product/program sequence']
+  is_primary bool [default: false, note: 'Whether this is the primary product for this program']
+  deleted_at timestamp [null, note: 'Soft delete timestamp - when the relationship was deleted, null if active']
+  created_at timestamp [default: `now()`, note: 'When this relationship was established']
+  updated_at timestamp [default: `now()`, note: 'When this relationship was last updated']
+
+  indexes {
+    (product_id, program_id) [unique, note: 'Prevent duplicate relationships']
+    (program_id, is_primary) [note: 'For finding the primary product for a program']
+    (product_id, order_index) [note: 'For ordered program listing within a product']
+  }
+}
+
+Table program_contents {
+  id int [pk, increment, note: 'Unique identifier for the program content']
+  program_id int [ref: > programs.id, note: 'Reference to the program this content belongs to']
+  parent_id int [ref: > program_contents.id, null, note: 'Self-referential for hierarchical structure, null if top-level content']
+  type program_content_type [note: 'Type of content (page, quiz, assignment, discussion, etc.)']
+  title varchar [note: 'Title/name of the content shown in navigation and headers']
+  summary text [null, note: 'Brief description of the content, shown in previews']
+  order float [note: 'Position value for sorting content, allows for flexible ordering']
+  body jsonb [note: 'Main content in structured JSON format including text, questions, instructions, etc.']
+  previewable bool [default: false, note: 'Flag to indicate if this content can be accessed without purchasing the program']
+  
+  // Availability settings
+  due_date timestamp [null, note: 'Deadline for completion, null if no deadline']
+  available_from timestamp [null, note: 'When this content becomes available to users, null if always available']
+  available_to timestamp [null, note: 'When this content becomes unavailable, null if never expires']
+  
+  // Activity-specific fields
+  grading_method grading_method [null, note: 'Method used to grade this content (null for pages)']
+  duration_minutes int [null, note: 'Time limit in minutes for timed activities, null means no time limit']
+  text_response bool [default: false, note: 'Whether text response is accepted for submission']
+  url_response bool [default: false, note: 'Whether URL submission is accepted']
+  file_response_extensions jsonb [null, note: 'Allowed file extensions for uploads: null = not accepted, [] = any file, ["pdf","docx"] = only these extensions']
+  grading_rubric jsonb [null, note: 'Detailed rubric configuration for consistent grading, including criteria and point values']
+  
+  // Metadata for type-specific configuration
+  metadata jsonb [null, note: 'Flexible storage for content-specific settings based on type']
+  
+  deleted_at timestamp [null, note: 'Soft delete timestamp - when the content was deleted, null if active']
+  created_at timestamp [default: `now()`, note: 'When this content was created']
+  updated_at timestamp [default: `now()`, note: 'When this content was last updated']
+
+  indexes {
+    (program_id) [note: 'For getting all content in a program']
+    (program_id, order) [note: 'For efficiently retrieving ordered content in a program']
+    (parent_id) [note: 'For getting all child content']
+    (parent_id, order) [note: 'For ordered content within a parent']
+    (type) [note: 'For finding content by type']
+    (previewable) [note: 'For quickly finding preview content']
+    (due_date) [note: 'For finding upcoming or past-due content']
+    (available_from, available_to) [note: 'For finding currently available content']
+    (parent_id, previewable) [note: 'For finding preview content under a parent']
+  }
+}
+
+Table program_users {
+  id int [pk, increment, note: 'Unique identifier for the user in this program']
+  user_product_id int [ref: > user_products.id, note: 'Reference to the purchased product that grants access to this program']
+  program_id int [ref: > programs.id, note: 'Reference to the program the user is enrolled in']
+  analytics jsonb [default: '{}', note: 'Tracks time spent on different parts of the program, last accessed timestamps, etc.']
+  grades jsonb [default: '{}', note: 'Cache of user grades for quick access (quizzes, assignments, overall grade)']
+  progress jsonb [default: '{}', note: 'Completion status of program content (pages, activities, etc.)']
+  deleted_at timestamp [null, note: 'Soft delete timestamp - when enrollment was deleted, null if active']
+  created_at timestamp [default: `now()`, note: 'When the user was enrolled in the program']
+  updated_at timestamp [default: `now()`, note: 'When the user enrollment was last updated']
+
+  indexes {
+    (user_product_id, program_id) [unique, note: 'For access control']
+    (program_id, deleted_at) [note: 'For finding active enrollments']
+    (user_product_id, deleted_at) [note: 'For user program list']
+  }
+}
+
+Table program_user_roles {
+  id int [pk, increment, note: 'Unique identifier for the role assignment']
+  program_id int [ref: > programs.id, note: 'Reference to the program this role applies to']
+  program_user_id int [ref: > program_users.id, note: 'Reference to the user whose role is being defined']
+  role program_role_type [note: 'Type of role assigned to the user in this program']
+  deleted_at timestamp [null, note: 'Soft delete timestamp - when the role was deleted, null if active']
+  created_at timestamp [default: `now()`, note: 'When this role was assigned']
+  updated_at timestamp [default: `now()`, note: 'When this role assignment was last updated']
+}
+
+//------------------------------------------------------
+// COURSE PROGRESS OPTIMIZATION
+//------------------------------------------------------
+
+// Instead of JSONB in program_users, use a structured approach:
+//------------------------------------------------------
+// MERGED CONTENT INTERACTIONS 
+//------------------------------------------------------
+// This table merges the functionality of program_progress and activity_submissions
+// Each program_content item already defines its type and expected interaction
+
+Table content_interactions {
+  id int [pk, increment, note: 'Unique identifier for this content interaction']
+  program_user_id int [ref: > program_users.id, note: 'Reference to the program enrollment']
+  content_id int [ref: > program_contents.id, note: 'Reference to the program content item being interacted with']
+  
+  // Progress tracking fields
+  status progress_status [default: 'not_started', note: 'Current completion status']
+  started_at timestamp [null, note: 'When the user first accessed this content']
+  completed_at timestamp [null, note: 'When the user completed this content']
+  time_spent_seconds int [default: 0, note: 'Total time spent on this content']
+  last_accessed_at timestamp [null, note: 'When the user last accessed this content']
+  
+  // Submission fields (used based on the content_type of the referenced content_id)
+  submitted_at timestamp [null, note: 'When the submission was received, null if no submission yet']
+  
+  // Quiz/Questionnaire-specific submission data
+  answers jsonb [null, note: 'Structured data containing quiz answers with question IDs and selected responses']
+  
+  // Assignment-specific submission data
+  text_response text [null, note: 'Plain text submission for text-based assignments']
+  url_response varchar [null, note: 'URL reference for external content submissions']
+  file_response jsonb [null, note: 'Metadata for uploaded files including paths, types, sizes, etc.'] 
+  
+  // Type-specific submission data
+  metadata jsonb [null, note: 'Additional data based on content type']
+  
+  // Administrative fields
+  deleted_at timestamp [null, note: 'Soft delete timestamp - when the record was deleted, null if active']
+  created_at timestamp [default: `now()`, note: 'When this record was created']
+  updated_at timestamp [default: `now()`, note: 'When this record was last updated']
+  
+  indexes {
+    (program_user_id, content_id) [unique, note: 'One interaction record per content item per user']
+    (program_user_id, status) [note: 'For progress tracking']
+    (content_id, status) [note: 'For content completion rates']
+    (submitted_at) [note: 'For sorting by submission time']
+    (completed_at) [note: 'For sorting by completion time']
+  }
+}
+
+Table activity_grades {
+  id int [pk, increment, note: 'Unique identifier for this grade entry']
+  content_interaction_id int [ref: > content_interactions.id, note: 'Reference to the content interaction being graded']
+  grader_program_user_id int [ref: > program_users.id, note: 'Reference to the user who provided the grade (instructor/TA)']
+  grade float [null, note: 'Numeric grade value, null if not yet graded']
+  graded_at timestamp [null, note: 'When the submission was graded']
+  feedback text [null, note: 'Written feedback for the student']
+  rubric_assessment jsonb [null, note: 'Detailed rubric scoring if applicable, with criteria and points awarded']
+  metadata jsonb [null, note: 'Additional grading data based on activity type']
+  deleted_at timestamp [null, note: 'Soft delete timestamp - when the grade was deleted, null if active']
+  created_at timestamp [default: `now()`, note: 'When this grade record was created']
+  updated_at timestamp [default: `now()`, note: 'When this grade record was last updated']
+  
+  indexes {
+    (content_interaction_id) [unique, note: 'One grade per interaction']
+    (grader_program_user_id) [note: 'For finding all grades by a specific grader']
+    (grade) [note: 'For grade analytics']
+    (graded_at) [note: 'For sorting by grading date']
+  }
+}
+
+
+
+//------------------------------------------------------
+// PAYMENT & TRANSACTION SYSTEM
+//------------------------------------------------------
+
+// Promotional code system
+Table promo_codes {
+  id int [pk, increment, note: 'Unique identifier for this promo code']
+  code varchar [unique, note: 'The code users enter to apply the discount']
+  type promo_code_type [note: 'What kind of discount this code provides']
+  product_id int [ref: > products.id, null, note: 'Specific product this code applies to, null for all products']
+  discount_percentage decimal [null, note: 'Percentage discount when type is percentage_off']
+  affiliate_user_id int [ref: > users.id, null, note: 'If created by affiliate']
+  affiliate_percentage decimal [null, note: 'How much of discount is paid by affiliate']
+  max_uses int [null, note: 'Null for unlimited uses']
+  uses_count int [default: 0, note: 'Current number of times this code has been used']
+  max_uses_per_user int [default: 1, note: 'How many times one user can use this code']
+  starts_at timestamp [default: `now()`, note: 'When this code becomes valid']
+  expires_at timestamp [null, note: 'When this code expires, null for no expiration']
+  is_active bool [default: true, note: 'Whether this code can currently be used']
+  created_by int [ref: > users.id, note: 'User who created this code']
+  deleted_at timestamp [null, note: 'Soft delete timestamp - when the code was deleted, null if active']
+  created_at timestamp [default: `now()`, note: 'When this code was created']
+  updated_at timestamp [default: `now()`, note: 'When this code was last updated']
+
+  indexes {
+    (code) [note: 'For quick lookup during checkout']
+    (type) [note: 'For filtering by discount type']
+    (product_id) [note: 'For finding codes applicable to a specific product']
+    (affiliate_user_id) [note: 'For tracking affiliate-generated codes']
+    (expires_at) [note: 'For finding/removing expired codes']
+    (is_active) [note: 'For filtering active/inactive codes']
+  }
+}
+
+// Track promo code usage
+Table promo_code_uses {
+  id int [pk, increment, note: 'Unique identifier for this usage record']
+  promo_code_id int [ref: > promo_codes.id, note: 'Reference to the promo code that was used']
+  user_id int [ref: > users.id, note: 'User who used the promo code']
+  financial_transaction_id int [ref: > financial_transactions.id, note: 'Transaction where the code was applied']
+  discount_applied decimal [note: 'Actual amount discounted from the transaction']
+  used_at timestamp [default: `now()`, note: 'When the promo code was used']
+
+  indexes {
+    (promo_code_id) [note: 'For tracking all usages of a specific code']
+    (user_id) [note: 'For finding all codes used by a specific user']
+    (financial_transaction_id) [note: 'For linking usage to specific transaction']
+    (used_at) [note: 'For finding recent promo code uses']
+  }
+}
+
+
+
+// Product and pricing management
+Table product_pricing {
+  id int [pk, increment, note: 'Unique identifier for this pricing record']
+  product_id int [ref: > products.id, note: 'Product this pricing applies to']
+  base_price decimal [note: 'Standard price of the product before any discounts']
+  creator_share_percentage decimal [default: 70, note: 'Percentage of revenue that goes to the content creator']
+  tax_rate decimal [note: 'Applicable tax rate for this product']
+  availability_rules jsonb [null, note: 'Rules for when this pricing is available (e.g., time-limited offers, regional pricing)']
+  deleted_at timestamp [null, note: 'Soft delete timestamp - when the pricing was deleted, null if active']
+  created_at timestamp [default: `now()`, note: 'When this pricing was created']
+  updated_at timestamp [default: `now()`, note: 'When this pricing was last updated']
+
+  indexes {
+    (product_id) [note: 'For quickly finding all pricing options for a product']
+  }
+}
+
+// Product subscription plans table
+Table product_subscription_plans {
+  id int [pk, increment, note: 'Unique identifier for the subscription plan']
+  product_id int [ref: > products.id, note: 'Product this subscription plan applies to']
+  name varchar [note: 'Display name of the subscription plan']
+  description text [note: 'Detailed description of the subscription plan benefits']
+  type subscription_type [note: 'Type of subscription (monthly, quarterly, annual, etc.)']
+  price decimal [note: 'Current price of the subscription, stored as decimal for precision']
+  base_price decimal [note: 'Original price before any discounts, used for comparison']
+  billing_interval subscription_billing_interval [note: 'Time unit for billing (day, week, month, year)']
+  billing_interval_count int [default: 1, note: 'Number of intervals between billings, e.g. 3 for every 3 months']
+  trial_period_days int [null, note: 'Number of days in free trial period, null for no trial']
+  features jsonb [null, note: 'Array of features included in this subscription plan']
+  availability_rules jsonb [null, note: 'Rules for when this subscription plan is available (region, user type, etc.)']
+  deleted_at timestamp [null, note: 'Soft delete timestamp - when the plan was deleted, null if active']
+  created_at timestamp [default: `now()`, note: 'When this subscription plan was created']
+  updated_at timestamp [default: `now()`, note: 'When this subscription plan was last updated']
+
+  indexes {
+    (product_id) [note: 'For finding all subscription plans for a product']
+  }
+}
+
+Table user_subscriptions {
+  id int [pk, increment, note: 'Unique identifier for the user subscription']
+  user_id int [ref: > users.id, note: 'Reference to the user this subscription belongs to']
+  subscription_plan_id int [ref: > product_subscription_plans.id, note: 'Reference to the subscription plan']
+  status subscription_status [note: 'Current status of the subscription (active, canceled, etc.)']
+  current_period_start timestamp [note: 'Start date of the current billing period']
+  current_period_end timestamp [note: 'End date of the current billing period']
+  cancel_at_period_end boolean [default: false, note: 'Whether subscription will cancel at the end of current period']
+  canceled_at timestamp [null, note: 'When the subscription was canceled, null if not canceled']
+  ended_at timestamp [null, note: 'When the subscription ended, null if still active']
+  trial_end timestamp [null, note: 'When the trial period ends, null if no trial or trial ended']
+  deleted_at timestamp [null, note: 'Soft delete timestamp - when the subscription was deleted, null if active']
+  created_at timestamp [default: `now()`, note: 'When this subscription was created']
+  updated_at timestamp [default: `now()`, note: 'When this subscription was last updated']
+
+  indexes {
+    (user_id) [note: 'For finding all subscriptions for a user']
+    (subscription_plan_id) [note: 'For finding all users subscribed to a plan']
+    (status) [note: 'For filtering subscriptions by status']
+  }
+}
+
+// Unified payment methods table
+Table user_financial_methods {
+  id int [pk, increment, note: 'Unique identifier for this payment method']
+  user_id int [ref: > users.id, note: 'User this payment method belongs to']
+  type payment_method_type [note: 'Type of payment method']
+  name varchar [note: 'Display name for the payment method']
+  is_default bool [default: false, note: 'Whether this is the user\'s default payment method']
+  status payment_method_status [default: 'active', note: 'Current status of this payment method']
+  provider varchar [note: 'Payment provider (stripe, crypto, balance, etc.)']
+  provider_data jsonb [note: 'Provider-specific data like card details or wallet addresses']
+  deleted_at timestamp [null, note: 'Soft delete timestamp - when the payment method was deleted, null if active']
+  created_at timestamp [default: `now()`, note: 'When this payment method was added']
+  updated_at timestamp [default: `now()`, note: 'When this payment method was last updated']
+
+  indexes {
+    (user_id) [note: 'For finding all payment methods for a user']
+    (type, status) [note: 'For filtering payment methods by type and status']
+    (provider) [note: 'For finding all payment methods from a specific provider']
+  }
+}
+
+// Financial transactions table with standardized fields
+Table financial_transactions {
+  id int [pk, increment, note: 'Unique identifier for this transaction']
+  from_user_id int [ref: > users.id, null, note: 'Source user, null if system credit or external payment']
+  to_user_id int [ref: > users.id, null, note: 'Destination user, null if system debit or external payment']
+  product_id int [ref: > products.id, null, note: 'Product being purchased, if applicable']
+  pricing_id int [ref: > product_pricing.id, null, note: 'Specific pricing used for this transaction']
+  subscription_plan_id int [ref: > product_subscription_plans.id, null, note: 'Subscription plan for subscription transactions']
+  promo_code_id int [ref: > promo_codes.id, null, note: 'Promo code applied to this transaction']
+  transaction_type transaction_type [note: 'Type of financial transaction (purchase, refund, etc.)']
+  amount decimal [note: 'Actual amount of the transaction after discounts'] // Constraint: CHECK (amount >= 0)
+  original_amount decimal [note: 'Original amount before any discounts or adjustments'] // Constraint: CHECK (original_amount >= amount)
+  referrer_user_id int [ref: > users.id, null, note: 'User who referred this transaction for commission']
+  referral_commission_amount decimal [null, note: 'Amount paid to referrer as commission'] // Constraint: CHECK (referral_commission_amount >= 0)
+  status transaction_status [note: 'Current status of this transaction (pending, completed, etc.)']
+  payment_provider varchar [note: 'Payment processor used (stripe, paypal, crypto, etc.)']
+  payment_provider_transaction_id varchar [note: 'External transaction ID from the payment provider for reconciliation']
+  metadata jsonb [null, note: 'Additional transaction-specific data such as payment details, items, etc.']
+  deleted_at timestamp [null, note: 'Soft delete timestamp - when the transaction was deleted, null if active']
+  created_at timestamp [default: `now()`, note: 'When this transaction was created']
+  updated_at timestamp [default: `now()`, note: 'When this transaction was last updated']
+
+  indexes {
+    (from_user_id) [note: 'For finding all outgoing transactions from a user']
+    (to_user_id) [note: 'For finding all incoming transactions to a user']
+    (product_id) [note: 'For finding all transactions related to a product']
+    (transaction_type) [note: 'For filtering by transaction type']
+    (status) [note: 'For filtering by transaction status']
+    (payment_provider_transaction_id) [note: 'For reconciliation with payment provider']
+    (created_at) [note: 'For finding transactions by date']
+    (referrer_user_id) [note: 'For tracking affiliate/referral performance']
+  }
+}
+
+// Table Partitioning Strategy:
+// For high-volume tables like financial_transactions, employ time-based partitioning by month 
+// using PostgreSQL declarative partitioning. Example implementation:
+//
+// CREATE TABLE financial_transactions (
+//   ... column definitions ...
+// ) PARTITION BY RANGE (created_at);
+//
+// CREATE TABLE financial_transactions_y2025m1 PARTITION OF financial_transactions
+//   FOR VALUES FROM ('2025-01-01') TO ('2025-02-01');
+// 
+// CREATE TABLE financial_transactions_y2025m2 PARTITION OF financial_transactions
+//   FOR VALUES FROM ('2025-02-01') TO ('2025-03-01');
+//
+// This approach provides:
+// 1. Improved query performance for date-range queries
+// 2. Easier archiving of older data
+// 3. More efficient maintenance operations like vacuum
+// 4. Better index management
+
+// PostgreSQL Table Inheritance Alternative:
+// Instead of partitioning, consider PostgreSQL's table inheritance for specialized transaction types:
+//
+// CREATE TABLE financial_transactions (
+//   id SERIAL PRIMARY KEY,
+//   amount DECIMAL NOT NULL,
+//   ...shared columns...
+// );
+//
+// CREATE TABLE purchase_transactions (
+//   product_id INT REFERENCES products(id),
+//   ...purchase-specific columns...
+// ) INHERITS (financial_transactions);
+//
+// CREATE TABLE withdrawal_transactions (
+//   withdrawal_method VARCHAR,
+//   ...withdrawal-specific columns...
+// ) INHERITS (financial_transactions);
+//
+// Benefits:
+// 1. Natural organization of transaction-specific fields
+// 2. Queries against parent table include all child records
+// 3. Easier to maintain different indexes for different transaction types
+// 4. Simplified application logic with specialized transaction tables
+
+
+// Wallet/Balance Management System
+// The current design uses fields in the users table (balance, available_balance) for wallet management.
+// For improved scalability when transaction volume increases, consider these enhancements:
+//
+// 1. Separate wallet table: Create a dedicated wallet table with one-to-many relationship with users
+//    to support multiple currency/token types and better auditability
+//
+// 2. Implement double-entry accounting: Each balance change recorded with two offsetting entries 
+//    (debit and credit) in a separate balance_ledger table
+//
+// 3. Performance optimizations:
+//    - Add materialized views for financial reporting
+//    - Create summary tables for high-frequency aggregate queries
+//    - Consider time-based partitioning for transaction-related tables
+//
+// 4. Additional indexing:
+//    - Composite indexes for common reporting queries
+//    - Include covering indexes for high-frequency lookups
+//
+// When transaction volume exceeds 100K daily, implement these changes to maintain system performance.
+
+// Product ownership and access management
+Table user_products {
+  id int [pk, increment, note: 'Unique identifier for this product access record']
+  user_id int [ref: > users.id, note: 'User who has access to this product']
+  product_id int [ref: > products.id, note: 'Product the user has access to']
+  subscription_id int [ref: > user_subscriptions.id, null, note: 'If product access is through subscription']
+  acquisition_type product_acquisition_type [note: 'How the product was acquired (purchased, subscription, gift, etc.)']
+  purchase_transaction_id int [ref: > financial_transactions.id, null, note: 'Reference to the transaction if purchased']
+  access_expires_at timestamp [null, note: 'Null means permanent access, otherwise when access ends']
+  access_started_at timestamp [default: `now()`, note: 'When the user first gained access']
+  status product_access_status [default: 'active', note: 'Current status of user access to this product']
+  metadata jsonb [note: 'Flexible storage for product-specific access settings, usage limitations, custom permissions, etc.']
+  deleted_at timestamp [null, note: 'Soft delete timestamp - when the access record was deleted, null if active']
+  created_at timestamp [default: `now()`, note: 'When this access record was created']
+  updated_at timestamp [default: `now()`, note: 'When this access record was last updated']
+
+  indexes {
+    (user_id, product_id) [note: 'For efficiently checking if a user has access to a product']
+    (subscription_id) [note: 'For finding all products accessed via a specific subscription']
+    (status) [note: 'For filtering by access status']
+    (access_expires_at) [note: 'For finding expiring/expired product access']
+    (acquisition_type) [note: 'For filtering by how the product was acquired']
+  }
+}
+
+
+//------------------------------------------------------
+// KYC VERIFICATION SYSTEM
+//------------------------------------------------------
+
+
+Table user_kyc_verifications {
+  id int [pk, increment, note: 'Unique identifier for this KYC verification record']
+  user_id int [ref: > users.id, note: 'User being verified']
+  provider kyc_provider [note: 'KYC service provider used for this verification']
+  provider_applicant_id varchar [unique, note: 'Provider-specific applicant identifier']
+  provider_verification_id varchar [unique, note: 'Provider-specific verification identifier']
+  verification_level varchar [note: 'Level of verification completed (basic, advanced, etc.)']
+  status kyc_verification_status [default: 'pending', note: 'Current status of the verification']
+  last_check_at timestamp [note: 'When the verification status was last checked with provider']
+  approved_at timestamp [null, note: 'When the verification was approved']
+  rejected_at timestamp [null, note: 'When the verification was rejected']
+  rejection_reason text [null, note: 'If rejected, reason provided by the provider (no personal data)']
+  expires_at timestamp [null, note: 'When this verification expires and needs renewal']
+  metadata jsonb [null, note: 'Provider-specific data and configuration']
+  created_at timestamp [default: `now()`, note: 'When this verification record was created']
+  updated_at timestamp [default: `now()`, note: 'When this verification record was last updated']
+
+  indexes {
+    (user_id) [note: 'For finding verification status of a user']
+    (provider) [note: 'For filtering verifications by provider']
+    (provider_applicant_id) [note: 'For quick lookup when receiving provider webhooks']
+    (provider_verification_id) [note: 'For linking to provider verification records']
+    (status) [note: 'For filtering verifications by status']
+    (expires_at) [note: 'For finding expiring verifications']
+  }
+}
+
+// RELATIONSHIPS
+//------------------------------------------------------
+// Program relationships
+Ref: program_contents.program_id > programs.id
+Ref: program_contents.parent_id > program_contents.id
+Ref: program_users.program_id > programs.id
+Ref: program_users.user_product_id > user_products.id
+Ref: program_user_roles.program_id > programs.id
+Ref: program_user_roles.program_user_id > program_users.id
+
+// Content interactions relationships
+Ref: content_interactions.program_user_id > program_users.id
+Ref: content_interactions.content_id > program_contents.id
+Ref: activity_grades.content_interaction_id > content_interactions.id
+Ref: activity_grades.grader_program_user_id > program_users.id
+
+// Product and subscription relationships
+Ref: product_programs.product_id > products.id
+Ref: product_programs.program_id > programs.id
+Ref: product_pricing.product_id > products.id
+Ref: product_subscription_plans.product_id > products.id
+Ref: user_subscriptions.user_id > users.id
+Ref: user_subscriptions.subscription_plan_id > product_subscription_plans.id
+Ref: user_products.product_id > products.id
+Ref: user_products.user_id > users.id
+Ref: user_products.subscription_id > user_subscriptions.id
+
+// Financial relationships
+
+Ref: user_financial_methods.user_id > users.id
+Ref: financial_transactions.from_user_id > users.id
+Ref: financial_transactions.to_user_id > users.id
+Ref: promo_codes.product_id > products.id
+Ref: promo_codes.created_by > users.id
+Ref: promo_code_uses.promo_code_id > promo_codes.id
+Ref: promo_code_uses.user_id > users.id
+Ref: promo_code_uses.financial_transaction_id > financial_transactions.id
+Ref: financial_transactions.promo_code_id > promo_codes.id
+
+// Certificate and tag relationships
+Ref: certificates.program_id > programs.id
+Ref: certificates.product_id > products.id
+Ref: user_certificates.program_id > programs.id
+Ref: user_certificates.product_id > products.id
+Ref: user_certificates.user_id > users.id
+Ref: user_certificates.program_user_id > program_users.id
+Ref: user_certificates.certificate_id > certificates.id
+
+// Certificate and program tagging relationships
+Ref: certificate_tags.certificate_id > certificates.id
+Ref: certificate_tags.tag_id > tag_proficiencies.id
+
+// Feedback and rating relationships
+Ref: program_feedback_submissions.user_id > users.id
+Ref: program_feedback_submissions.program_id > programs.id
+Ref: program_feedback_submissions.product_id > products.id
+Ref: program_feedback_submissions.program_user_id > program_users.id
+Ref: program_ratings.user_id > users.id
+Ref: program_ratings.program_id > programs.id
+Ref: program_ratings.product_id > products.id
+Ref: program_ratings.program_user_id > program_users.id
+Ref: program_ratings.moderated_by > users.id
+
+Ref: tag_relationships.source_id > tags.id
+Ref: tag_relationships.target_id > tags.id
+Ref: certificate_blockchain_anchors.certificate_id > user_certificates.id
+
+//------------------------------------------------------
+// CERTIFICATE ISSUANCE BUSINESS LOGIC
+//------------------------------------------------------
+
+// Certificate Issuance Requirements:
+// 1. User must complete all required program content (based on completion_percentage)
+// 2. User must achieve minimum_grade if specified
+// 3. If requires_feedback = true: User must submit feedback using program_feedback_submissions
+// 4. If requires_rating = true: User must submit rating using program_ratings
+// 5. If minimum_rating is set: User's rating must meet or exceed this threshold
+// 6. All requirements must be met before certificate can be issued
+
+// Example Certificate Issuance Check Query:
+// SELECT 
+//   c.id as certificate_id,
+//   c.name as certificate_name,
+//   CASE 
+//     WHEN c.requires_feedback AND cfs.id IS NULL THEN 'Missing feedback submission'
+//     WHEN c.requires_rating AND cr.id IS NULL THEN 'Missing rating submission'  
+//     WHEN c.minimum_rating IS NOT NULL AND (cr.rating IS NULL OR cr.rating < c.minimum_rating) THEN 'Rating below minimum threshold'
+//     WHEN pu.completion_percentage < c.completion_percentage THEN 'Program not completed'
+//     WHEN c.minimum_grade IS NOT NULL AND pu.final_grade < c.minimum_grade THEN 'Grade below minimum'
+//     ELSE 'Ready for certificate issuance'
+//   END as issuance_status
+// FROM certificates c
+// JOIN program_users pu ON pu.program_id = c.program_id
+// LEFT JOIN program_feedback_submissions cfs ON cfs.user_id = pu.user_id AND cfs.program_id = c.program_id
+// LEFT JOIN program_ratings cr ON cr.user_id = pu.user_id AND cr.program_id = c.program_id
+// WHERE pu.user_id = ? AND c.program_id = ? AND c.is_active = true;

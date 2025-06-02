@@ -1,9 +1,23 @@
-node_modules
-services/api/node_modules
-services/api/dist
-services/api/ChessSubmissions
-services/web/node_modules
-services/web/.next
-packages/apiclient/node_modules
-web3/node_modules
-.git
+# Deny-all, allow-only-what's-needed .dockerignore for building services/web
+**/*
+
+# Allow only the web service directory and its contents, but exclude node_modules inside it
+!services/web/**
+services/web/node_modules/
+
+# Allow the packages directory and its contents, but exclude node_modules inside it
+!packages/**
+packages/apiclient/node_modules/
+packages/eslint-config/node_modules/
+
+# Allow root package files if needed for dependency install/caching
+!package.json
+!package-lock.json
+!yarn.lock
+
+# Allow git-stats.json if needed by next.config.js
+!git-stats.json
+
+# If you need specific files from packages/ or elsewhere, add exceptions below:
+# !packages/ui/dist/**
+# !packages/some-config/file.json**/build/

@@ -1,23 +1,73 @@
-Table chapter_editors_user {
-  chapter_id uuid
-  user_id uuid
+Table ActivityGrade {
+  contentInteraction ContentInteraction
+  createdAt timestamp
+  feedback text
+  grade decimal
+  gradedAt timestamp
+  graderProgramUser ProgramUser
+  id uuid
+  metadata jsonb
+  rubricAssessment jsonb
+  updatedAt timestamp
 }
 
-Table ChapterEntity {
-  body text
-  course CourseEntity
+Table Certificate {
+  autoIssue boolean
+  badgeImage varchar
+  certificateType enum
+  certificateVerificationMethod enum
+  completionPercentage int
+  createdAt timestamp
+  credentialTitle varchar
+  cssStyles text
+  deletedAt timestamp
+  description text
+  expirationMonths int
+  feedbackFormTemplate jsonb
+  htmlTemplate text
+  id uuid
+  isActive boolean
+  issuerName varchar
+  metadata jsonb
+  minimumGrade float
+  minimumRating float
+  name varchar
+  prerequisites jsonb
+  product Product
+  program Program
+  requiresFeedback boolean
+  requiresRating boolean
+  signatureImage varchar
+  updatedAt timestamp
+  certificateTags CertificateTag
+  userCertificates UserCertificate
+}
+
+Table CertificateBlockchainAnchor {
+  anchoredAt timestamp
+  blockchainNetwork varchar
+  blockNumber bigint
+  certificate UserCertificate
+  createdAt timestamp
+  deletedAt timestamp
+  id uuid
+  ipfsHash varchar
+  metadata jsonb
+  publicVerificationUrl varchar
+  smartContractAddress varchar
+  tokenId varchar
+  transactionHash varchar
+  updatedAt timestamp
+}
+
+Table CertificateTag {
+  certificate Certificate
   createdAt timestamp
   id uuid
-  order float
-  owner UserEntity
-  slug varchar
-  summary string
-  thumbnail ImageEntity
-  title varchar
+  metadata jsonb
+  tagProficiency TagProficiency
+  type enum
   updatedAt timestamp
-  visibility enum
-  editors UserEntity
-  lectures LectureEntity
 }
 
 Table CompetitionMatchEntity {
@@ -76,27 +126,25 @@ Table CompetitionSubmissionEntity {
   submissionReports CompetitionRunSubmissionReportEntity
 }
 
-Table course_editors_user {
-  course_id uuid
-  user_id uuid
-}
-
-Table CourseEntity {
-  body text
+Table ContentInteraction {
+  answers jsonb
+  completedAt timestamp
+  content ProgramContent
   createdAt timestamp
+  deletedAt timestamp
+  fileResponse jsonb
   id uuid
-  owner UserEntity
-  price decimal
-  slug varchar
-  subscriptionAccess boolean
-  summary string
-  thumbnail ImageEntity
-  title varchar
+  lastAccessedAt timestamp
+  metadata jsonb
+  programUser ProgramUser
+  startedAt timestamp
+  status enum
+  submittedAt timestamp
+  textResponse text
+  timeSpentSeconds int
   updatedAt timestamp
-  visibility enum
-  chapters ChapterEntity
-  editors UserEntity
-  lectures LectureEntity
+  urlResponse varchar
+  grades ActivityGrade
 }
 
 Table EventEntity {
@@ -111,6 +159,28 @@ Table EventEntity {
   updatedAt timestamp
   visibility enum
   editors UserEntity
+}
+
+Table FinancialTransaction {
+  amount decimal
+  createdAt timestamp
+  deletedAt timestamp
+  fromUser UserEntity
+  id uuid
+  metadata jsonb
+  originalAmount decimal
+  paymentProvider varchar
+  paymentProviderTransactionId varchar
+  pricing ProductPricing
+  product Product
+  promoCode PromoCode
+  referralCommissionAmount decimal
+  referrerUser UserEntity
+  status enum
+  subscriptionPlan ProductSubscriptionPlan
+  toUser UserEntity
+  transactionType enum
+  updatedAt timestamp
 }
 
 Table ImageEntity {
@@ -174,30 +244,6 @@ Table JobTagEntity {
   updatedAt timestamp
 }
 
-Table lecture_editors_user {
-  lecture_id uuid
-  user_id uuid
-}
-
-Table LectureEntity {
-  body text
-  chapter ChapterEntity
-  course CourseEntity
-  createdAt timestamp
-  id uuid
-  json jsonb
-  order float
-  owner UserEntity
-  renderer enum
-  slug varchar
-  summary string
-  thumbnail ImageEntity
-  title varchar
-  updatedAt timestamp
-  visibility enum
-  editors UserEntity
-}
-
 Table post_editors_user {
   post_id uuid
   user_id uuid
@@ -218,54 +264,214 @@ Table PostEntity {
   editors UserEntity
 }
 
-Table project_editors_user {
-  project_id uuid
-  user_id uuid
-}
-
-Table project_screenshots_images {
-  images_id uuid
-  project_id uuid
-}
-
-Table ProjectEntity {
-  banner ImageEntity
-  body text
+Table Product {
+  affiliateCommissionPercentage decimal
+  bundleItems jsonb
   createdAt timestamp
+  deletedAt timestamp
+  description text
   id uuid
-  owner UserEntity
-  slug varchar
-  summary string
-  thumbnail ImageEntity
+  isBundle boolean
+  maxAffiliateDiscount decimal
+  metadata jsonb
+  referralCommissionPercentage decimal
+  thumbnail varchar
   title varchar
+  type enum
   updatedAt timestamp
   visibility enum
-  editors UserEntity
-  screenshots ImageEntity
-  tickets TicketEntity
-  versions ProjectVersionEntity
+  pricing ProductPricing
+  productPrograms ProductProgram
+  subscriptionPlans ProductSubscriptionPlan
+  userProducts UserProduct
 }
 
-Table ProjectFeedbackResponseEntity {
+Table ProductPricing {
+  availabilityRules jsonb
+  basePrice decimal
   createdAt timestamp
+  creatorSharePercentage decimal
+  deletedAt timestamp
   id uuid
-  responses jsonb
+  product Product
+  taxRate decimal
+  updatedAt timestamp
+  transactions FinancialTransaction
+}
+
+Table ProductProgram {
+  createdAt timestamp
+  deletedAt timestamp
+  id uuid
+  isPrimary boolean
+  orderIndex float
+  product Product
+  program Program
+  updatedAt timestamp
+}
+
+Table ProductSubscriptionPlan {
+  availabilityRules jsonb
+  basePrice decimal
+  billingInterval enum
+  billingIntervalCount integer
+  createdAt timestamp
+  deletedAt timestamp
+  description text
+  features jsonb
+  id uuid
+  name varchar
+  price decimal
+  product Product
+  trialPeriodDays integer
+  type enum
+  updatedAt timestamp
+  subscriptions UserSubscription
+}
+
+Table Program {
+  body jsonb
+  cachedCompletionCount int
+  cachedEnrollmentCount int
+  cachedRating decimal
+  cachedStudentsCompletionRate decimal
+  createdAt timestamp
+  deletedAt timestamp
+  id uuid
+  metadata jsonb
+  slug varchar
+  summary text
+  tenancyDomains jsonb
+  updatedAt timestamp
+  contents ProgramContent
+  productPrograms ProductProgram
+  programUserRoles ProgramUserRole
+  programUsers ProgramUser
+}
+
+Table ProgramContent {
+  availableFrom timestamp
+  availableTo timestamp
+  body jsonb
+  createdAt timestamp
+  deletedAt timestamp
+  dueDate timestamp
+  durationMinutes int
+  fileResponseExtensions jsonb
+  gradingMethod enum
+  gradingRubric jsonb
+  id uuid
+  metadata jsonb
+  order float
+  parent ProgramContent
+  previewable boolean
+  program Program
+  summary text
+  textResponse boolean
+  title varchar
+  type enum
+  updatedAt timestamp
+  urlResponse boolean
+  children ProgramContent
+  interactions ContentInteraction
+}
+
+Table ProgramFeedbackSubmission {
+  createdAt timestamp
+  feedbackResponses jsonb
+  feedbackTemplateVersion varchar
+  id uuid
+  ipAddress varchar
+  isValid boolean
+  product Product
+  program Program
+  programUser ProgramUser
+  submittedAt timestamp
   updatedAt timestamp
   user UserEntity
-  version ProjectVersionEntity
+  userAgent text
 }
 
-Table ProjectVersionEntity {
-  archive_url string
+Table ProgramRatingEntity {
+  contentQualityRating float
   createdAt timestamp
-  feedback_deadline timestamptz
-  feedback_form jsonb
+  difficultyRating float
   id uuid
-  notes_url string
-  project ProjectEntity
+  instructorRating float
+  ipAddress varchar
+  isPublic boolean
+  isVerified boolean
+  moderatedAt timestamp
+  moderatedBy UserEntity
+  moderationNotes text
+  moderationStatus enum
+  product Product
+  program Program
+  programUser ProgramUser
+  rating int
+  reviewText text
+  reviewTitle varchar
+  submittedAt timestamp
   updatedAt timestamp
-  version string
-  responses ProjectFeedbackResponseEntity
+  user UserEntity
+  userAgent text
+  valueRating float
+}
+
+Table ProgramUser {
+  analytics jsonb
+  createdAt timestamp
+  deletedAt timestamp
+  grades jsonb
+  id uuid
+  program Program
+  progress jsonb
+  updatedAt timestamp
+  userProduct UserProduct
+  contentInteractions ContentInteraction
+  roles ProgramUserRole
+}
+
+Table ProgramUserRole {
+  createdAt timestamp
+  deletedAt timestamp
+  id uuid
+  program Program
+  programUser ProgramUser
+  role enum
+  updatedAt timestamp
+}
+
+Table PromoCode {
+  affiliatePercentage decimal
+  affiliateUser UserEntity
+  code varchar
+  createdAt timestamp
+  createdBy UserEntity
+  deletedAt timestamp
+  discountPercentage decimal
+  expiresAt timestamp
+  id uuid
+  isActive boolean
+  maxUses integer
+  maxUsesPerUser integer
+  product Product
+  startsAt timestamp
+  type enum
+  updatedAt timestamp
+  usesCount integer
+  transactions FinancialTransaction
+}
+
+Table PromoCodeUse {
+  createdAt timestamp
+  discountApplied decimal
+  financialTransaction FinancialTransaction
+  id uuid
+  promoCode PromoCode
+  updatedAt timestamp
+  usedAt timestamp
+  user UserEntity
 }
 
 Table proposal_editors_user {
@@ -287,51 +493,63 @@ Table ProposalEntity {
   editors UserEntity
 }
 
-Table quiz_editors_user {
-  quiz_id uuid
-  user_id uuid
-}
-
-Table QuizEntity {
-  body text
+Table Tag {
+  category varchar
   createdAt timestamp
-  gradingInstructions string
-  id uuid
-  owner UserEntity
-  questions jsonb
-  slug varchar
-  summary string
-  thumbnail ImageEntity
-  title varchar
-  updatedAt timestamp
-  visibility enum
-  editors UserEntity
-}
-
-Table TagEntity {
-  createdAt timestamp
-  id uuid
-  tag string
-  updatedAt timestamp
-}
-
-Table ticket_editors_user {
-  ticket_id uuid
-  user_id uuid
-}
-
-Table TicketEntity {
-  createdAt timestamp
+  deletedAt timestamp
   description text
   id uuid
-  owner UserEntity
-  priority enum
-  projectId uuid
-  status enum
-  title varchar
+  metadata jsonb
+  name varchar
+  type enum
   updatedAt timestamp
-  editors UserEntity
-  project ProjectEntity
+  sourceRelationships TagRelationship
+  tagProficiencies TagProficiency
+  targetRelationships TagRelationship
+}
+
+Table TagProficiency {
+  createdAt timestamp
+  deletedAt timestamp
+  description text
+  id uuid
+  metadata jsonb
+  prerequisites jsonb
+  proficiencyLevel enum
+  proficiencyLevelValue float
+  tag Tag
+  updatedAt timestamp
+}
+
+Table TagRelationship {
+  createdAt timestamp
+  deletedAt timestamp
+  id uuid
+  metadata jsonb
+  sourceTag Tag
+  targetTag Tag
+  type enum
+  updatedAt timestamp
+}
+
+Table UserCertificate {
+  certificate Certificate
+  certificateNumber varchar
+  certificateUrl varchar
+  createdAt timestamp
+  deletedAt timestamp
+  expiresAt timestamp
+  id uuid
+  issuedAt timestamp
+  metadata jsonb
+  product Product
+  program Program
+  programUser ProgramUser
+  revocationReason text
+  revokedAt timestamp
+  status enum
+  updatedAt timestamp
+  user UserEntity
 }
 
 Table UserEntity {
@@ -355,6 +573,59 @@ Table UserEntity {
   competitionSubmissions CompetitionSubmissionEntity
 }
 
+Table UserFinancialMethod {
+  brand varchar
+  createdAt timestamp
+  expiryMonth integer
+  expiryYear integer
+  id uuid
+  isActive boolean
+  isDefault boolean
+  lastFourDigits varchar
+  metadata jsonb
+  methodType enum
+  providerMethodId varchar
+  status enum
+  updatedAt timestamp
+  userId uuid
+  user UserEntity
+}
+
+Table UserKycVerification {
+  approvedAt timestamp
+  createdAt timestamp
+  expiresAt timestamp
+  id uuid
+  lastCheckAt timestamp
+  metadata jsonb
+  provider enum
+  providerApplicantId varchar
+  providerVerificationId varchar
+  rejectedAt timestamp
+  rejectionReason text
+  status enum
+  updatedAt timestamp
+  user UserEntity
+  verificationLevel varchar
+}
+
+Table UserProduct {
+  accessExpiresAt timestamp
+  accessStartedAt timestamp
+  acquisitionType enum
+  createdAt timestamp
+  deletedAt timestamp
+  id uuid
+  metadata jsonb
+  product Product
+  purchaseTransaction FinancialTransaction
+  status enum
+  subscription UserSubscription
+  updatedAt timestamp
+  user UserEntity
+  programUsers ProgramUser
+}
+
 Table UserProfileEntity {
   bio varchar
   createdAt timestamp
@@ -367,17 +638,37 @@ Table UserProfileEntity {
   user UserEntity
 }
 
+Table UserSubscription {
+  cancelAtPeriodEnd boolean
+  canceledAt timestamp
+  createdAt timestamp
+  currentPeriodEnd timestamp
+  currentPeriodStart timestamp
+  deletedAt timestamp
+  endedAt timestamp
+  id uuid
+  status enum
+  subscriptionPlan ProductSubscriptionPlan
+  trialEnd timestamp
+  updatedAt timestamp
+  user UserEntity
+}
+
 Table VoteEntity {
   createdAt timestamp
   id uuid
   updatedAt timestamp
 }
 
-Ref: ChapterEntity.course > CourseEntity.chapters
-Ref: ChapterEntity.editors <> UserEntity.id
-Ref: ChapterEntity.lectures < LectureEntity.chapter
-Ref: ChapterEntity.owner > UserEntity.id
-Ref: ChapterEntity.thumbnail > ImageEntity.id
+Ref: ActivityGrade.contentInteraction > ContentInteraction.id
+Ref: ActivityGrade.graderProgramUser > ProgramUser.id
+Ref: Certificate.certificateTags < CertificateTag.certificate
+Ref: Certificate.product > Product.id
+Ref: Certificate.program > Program.id
+Ref: Certificate.userCertificates < UserCertificate.certificate
+Ref: CertificateBlockchainAnchor.certificate > UserCertificate.id
+Ref: CertificateTag.certificate > Certificate.id
+Ref: CertificateTag.tagProficiency > TagProficiency.id
 Ref: CompetitionMatchEntity.p1submission > CompetitionSubmissionEntity.matchesAsP1
 Ref: CompetitionMatchEntity.p2submission > CompetitionSubmissionEntity.matchesAsP2
 Ref: CompetitionMatchEntity.run > CompetitionRunEntity.matches
@@ -385,41 +676,76 @@ Ref: CompetitionRunEntity.reports < CompetitionRunSubmissionReportEntity.run
 Ref: CompetitionRunSubmissionReportEntity.submission > CompetitionSubmissionEntity.submissionReports
 Ref: CompetitionRunSubmissionReportEntity.user > UserEntity.id
 Ref: CompetitionSubmissionEntity.user > UserEntity.competitionSubmissions
-Ref: CourseEntity.editors <> UserEntity.id
-Ref: CourseEntity.lectures < LectureEntity.course
-Ref: CourseEntity.owner > UserEntity.id
-Ref: CourseEntity.thumbnail > ImageEntity.id
+Ref: ContentInteraction.content > ProgramContent.interactions
+Ref: ContentInteraction.grades < ActivityGrade.contentInteraction
+Ref: ContentInteraction.programUser > ProgramUser.contentInteractions
 Ref: EventEntity.editors <> UserEntity.id
 Ref: EventEntity.owner > UserEntity.id
 Ref: EventEntity.thumbnail > ImageEntity.id
+Ref: FinancialTransaction.fromUser > UserEntity.id
+Ref: FinancialTransaction.pricing > ProductPricing.id
+Ref: FinancialTransaction.product > Product.id
+Ref: FinancialTransaction.promoCode > PromoCode.id
+Ref: FinancialTransaction.referrerUser > UserEntity.id
+Ref: FinancialTransaction.subscriptionPlan > ProductSubscriptionPlan.id
+Ref: FinancialTransaction.toUser > UserEntity.id
 Ref: JobApplicationEntity.applicant > UserEntity.id
 Ref: JobApplicationEntity.job > JobPostEntity.id
 Ref: JobPostEntity.editors <> UserEntity.id
 Ref: JobPostEntity.job_tags <> JobTagEntity.id
 Ref: JobPostEntity.owner > UserEntity.id
 Ref: JobPostEntity.thumbnail > ImageEntity.id
-Ref: LectureEntity.editors <> UserEntity.id
-Ref: LectureEntity.owner > UserEntity.id
-Ref: LectureEntity.thumbnail > ImageEntity.id
 Ref: PostEntity.editors <> UserEntity.id
 Ref: PostEntity.owner > UserEntity.id
 Ref: PostEntity.thumbnail > ImageEntity.id
-Ref: ProjectEntity.banner > ImageEntity.id
-Ref: ProjectEntity.editors <> UserEntity.id
-Ref: ProjectEntity.owner > UserEntity.id
-Ref: ProjectEntity.screenshots <> ImageEntity.id
-Ref: ProjectEntity.thumbnail > ImageEntity.id
-Ref: ProjectEntity.tickets < TicketEntity.project
-Ref: ProjectEntity.versions < ProjectVersionEntity.project
-Ref: ProjectFeedbackResponseEntity.user > UserEntity.id
-Ref: ProjectFeedbackResponseEntity.version > ProjectVersionEntity.responses
+Ref: Product.pricing < ProductPricing.product
+Ref: Product.productPrograms < ProductProgram.product
+Ref: Product.subscriptionPlans < ProductSubscriptionPlan.product
+Ref: Product.userProducts < UserProduct.product
+Ref: ProductPricing.transactions < FinancialTransaction.pricing
+Ref: ProductProgram.product > Product.id
+Ref: ProductProgram.program > Program.id
+Ref: ProductSubscriptionPlan.subscriptions < UserSubscription.subscriptionPlan
+Ref: Program.contents < ProgramContent.program
+Ref: Program.productPrograms < ProductProgram.program
+Ref: Program.programUserRoles < ProgramUserRole.program
+Ref: Program.programUsers < ProgramUser.program
+Ref: ProgramContent.children < ProgramContent.parent
+Ref: ProgramFeedbackSubmission.product > Product.id
+Ref: ProgramFeedbackSubmission.program > Program.id
+Ref: ProgramFeedbackSubmission.programUser > ProgramUser.id
+Ref: ProgramFeedbackSubmission.user > UserEntity.id
+Ref: ProgramRatingEntity.moderatedBy > UserEntity.id
+Ref: ProgramRatingEntity.product > Product.id
+Ref: ProgramRatingEntity.program > Program.id
+Ref: ProgramRatingEntity.programUser > ProgramUser.id
+Ref: ProgramRatingEntity.user > UserEntity.id
+Ref: ProgramUser.roles < ProgramUserRole.programUser
+Ref: ProgramUser.userProduct > UserProduct.programUsers
+Ref: PromoCode.affiliateUser > UserEntity.id
+Ref: PromoCode.createdBy > UserEntity.id
+Ref: PromoCode.product > Product.id
+Ref: PromoCode.transactions < FinancialTransaction.promoCode
+Ref: PromoCodeUse.financialTransaction > FinancialTransaction.id
+Ref: PromoCodeUse.promoCode > PromoCode.id
+Ref: PromoCodeUse.user > UserEntity.id
 Ref: ProposalEntity.editors <> UserEntity.id
 Ref: ProposalEntity.owner > UserEntity.id
 Ref: ProposalEntity.thumbnail > ImageEntity.id
-Ref: QuizEntity.editors <> UserEntity.id
-Ref: QuizEntity.owner > UserEntity.id
-Ref: QuizEntity.thumbnail > ImageEntity.id
-Ref: TicketEntity.editors <> UserEntity.id
-Ref: TicketEntity.owner > UserEntity.id
+Ref: Tag.sourceRelationships < TagRelationship.sourceTag
+Ref: Tag.tagProficiencies < TagProficiency.tag
+Ref: Tag.targetRelationships < TagRelationship.targetTag
+Ref: TagRelationship.sourceTag > Tag.id
+Ref: TagRelationship.targetTag > Tag.id
+Ref: UserCertificate.product > Product.id
+Ref: UserCertificate.program > Program.id
+Ref: UserCertificate.programUser > ProgramUser.id
+Ref: UserCertificate.user > UserEntity.id
 Ref: UserEntity.profile - UserProfileEntity.user
+Ref: UserFinancialMethod.user > UserEntity.id
+Ref: UserKycVerification.user > UserEntity.id
+Ref: UserProduct.purchaseTransaction > FinancialTransaction.id
+Ref: UserProduct.subscription > UserSubscription.id
+Ref: UserProduct.user > UserEntity.id
 Ref: UserProfileEntity.picture - ImageEntity.id
+Ref: UserSubscription.user > UserEntity.id

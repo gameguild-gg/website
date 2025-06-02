@@ -1,14 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-export type Constructor<T = any, Arguments extends unknown[] = any[]> = new (
-  ...arguments_: Arguments
-) => T;
+export type Constructor<T = any, Arguments extends unknown[] = any[]> = new (...arguments_: Arguments) => T;
 
 export type KeyOfType<Entity, U> = {
-  [P in keyof Required<Entity>]: Required<Entity>[P] extends U
-    ? P
-    : Required<Entity>[P] extends U[]
-      ? P
-      : never;
+  [P in keyof Required<Entity>]: Required<Entity>[P] extends U ? P : Required<Entity>[P] extends U[] ? P : never;
 }[keyof Entity];
 
 // Does NOT act like an interface when used with `implements`:
@@ -34,9 +28,7 @@ export type IOmitFields<T, K extends keyof T> = {
 };
 
 // todo: revisit this type, I am pretty sure everything using it, doest not work as expected
-export type PartialWithoutFields<T, K extends keyof T> = Partial<
-  OmitFields<T, K>
->;
+export type PartialWithoutFields<T, K extends keyof T> = Partial<OmitFields<T, K>>;
 
 export type StrictInterface<T> = {
   [K in keyof T]: T[K];

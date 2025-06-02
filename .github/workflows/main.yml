@@ -49,12 +49,14 @@ jobs:
           publish_dir: ./contributors
           force_orphan: true
 
+      - name: Generate Git Stats
+        run: npm run git-stats
+
       - name: Semantic Release
         id: semantic
         uses: cycjimmy/semantic-release-action@v2
         with:
           semantic_version: 19.0.2
-          # You can specify specifying version range for the extra plugins if you prefer.
           extra_plugins: |
             @semantic-release/changelog@6.0.2
             @semantic-release/git@10.0.1

@@ -124,7 +124,7 @@ export default function LeaderboardContent() {
                         <div className="flex items-center justify-center w-8 h-8">{renderRankBadge(index + 1)}</div>
                       </TableCell>
                       <TableCell>{entry.username}</TableCell>
-                      <TableCell className="text-right">{entry.elo}</TableCell>
+                      <TableCell className="text-right">{entry.elo.toFixed(2)}</TableCell>
                     </TableRow>
                   ))}
               </TableBody>

@@ -1,6 +1,7 @@
 # Base Image.
 FROM node:20
 
+# the arguments are passed at build time in order to be available in the static pages
 ARG API_HOST
 ARG API_URL
 ARG BACKEND_URL
@@ -23,14 +24,18 @@ WORKDIR /app
 
 RUN apt-get clean && apt-get update
 
-# copy all files to the container. Hack to ensure the .git is present there
-RUN git clone https://github.com/gameguild-gg/website.git /app
-# hack to disable cache
+# copy the files
 COPY . /app
 
-# install dependencies
+# Install dependencies
 RUN npm run install:web
+
+# Build the web app
 RUN npm run build:web
+
+# Remove the .git directory after it's been used for stats generation
+# This reduces the final image size significantly
+RUN rm -rf /app/.git
 
 # start the app
 CMD ["npm", "run", "start:web"]

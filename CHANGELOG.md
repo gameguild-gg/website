@@ -1,3 +1,200 @@
+## [1.21.8](https://github.com/gameguild-gg/website/compare/v1.21.7...v1.21.8) (2025-05-24)
+
+
+### Bug Fixes
+
+* **lint:** run lint fix on the api ([1e9e6e1](https://github.com/gameguild-gg/website/commit/1e9e6e15dfe6899bed61d341fb93aaa06e8bec04))
+* **program:** add entities converted from dbml to entities via ai ([924d1cc](https://github.com/gameguild-gg/website/commit/924d1cce4388e143fdeceba184d84e60eb356c68))
+
+## [1.21.7](https://github.com/gameguild-gg/website/compare/v1.21.6...v1.21.7) (2025-05-21)
+
+
+### Bug Fixes
+
+* **courses:** add more data to dbml ([aa0f41b](https://github.com/gameguild-gg/website/commit/aa0f41ba98a5ae0bb34d2604af52218257729c50))
+
+## [1.21.6](https://github.com/gameguild-gg/website/compare/v1.21.5...v1.21.6) (2025-05-20)
+
+
+### Bug Fixes
+
+* **courses:** add courses db planning ([251cec1](https://github.com/gameguild-gg/website/commit/251cec184ca438cd0a915a3ead0613945ad823ff))
+* **courses:** add more planning to the courses db structure. wip ([89d1c0b](https://github.com/gameguild-gg/website/commit/89d1c0b35617bb5aea7066ea4e66b9707204e1d1))
+
+## [1.21.5](https://github.com/gameguild-gg/website/compare/v1.21.4...v1.21.5) (2025-05-15)
+
+
+### Bug Fixes
+
+* **contributors:** improve the way we generate git statistics and show versioning ([c472153](https://github.com/gameguild-gg/website/commit/c4721539b13ea8b2199be556e6d0a6298cccbeb5))
+
+## [1.21.4](https://github.com/gameguild-gg/website/compare/v1.21.3...v1.21.4) (2025-05-15)
+
+
+### Bug Fixes
+
+* **contributors:** fix contributors page generation ([f73b5a8](https://github.com/gameguild-gg/website/commit/f73b5a85563c8b6732ca74b07d3ad87584b6bc3f))
+
+## [1.21.3](https://github.com/gameguild-gg/website/compare/v1.21.2...v1.21.3) (2025-05-15)
+
+
+### Bug Fixes
+
+* **cleanup:** remove unused components ([718a85f](https://github.com/gameguild-gg/website/commit/718a85f6eb756788724fc001d14020becec9dfc2))
+
+## [1.21.2](https://github.com/gameguild-gg/website/compare/v1.21.1...v1.21.2) (2025-05-15)
+
+
+### Bug Fixes
+
+* **cleanup:** remove unused components ([1db2242](https://github.com/gameguild-gg/website/commit/1db2242826b09f02ee5ada52463e46bab14777f2))
+
+## [1.21.1](https://github.com/gameguild-gg/website/compare/v1.21.0...v1.21.1) (2025-05-15)
+
+# [1.21.0](https://github.com/gameguild-gg/website/compare/v1.20.5...v1.21.0) (2025-05-15)
+
+
+### Features
+
+* **code:** remove wasmer and use the new custom wrapper more than 10x smaller, and way faster ([e7eedcb](https://github.com/gameguild-gg/website/commit/e7eedcb8feed411cffc17f451d936028ee3f3d3f))
+
+## [1.20.5](https://github.com/gameguild-gg/website/compare/v1.20.4...v1.20.5) (2025-05-15)
+
+
+### Bug Fixes
+
+* **build:** better mjs exclusion ([7a1ab6a](https://github.com/gameguild-gg/website/commit/7a1ab6a99a2e2e6ce7d85c079b64b711777f0829))
+
+## [1.20.4](https://github.com/gameguild-gg/website/compare/v1.20.3...v1.20.4) (2025-05-15)
+
+
+### Bug Fixes
+
+* **build:** update nome radix-ui packages ([15f36cf](https://github.com/gameguild-gg/website/commit/15f36cffdc6b2f6cf2b7dd8b83190d6b07e65c63))
+
+## [1.20.3](https://github.com/gameguild-gg/website/compare/v1.20.2...v1.20.3) (2025-05-14)
+
+
+### Bug Fixes
+
+* **auth:** make auth be dynamic page ([25647c4](https://github.com/gameguild-gg/website/commit/25647c47914cab0800326f522728538c9f3fcf16))
+
+## [1.20.2](https://github.com/gameguild-gg/website/compare/v1.20.1...v1.20.2) (2025-05-14)
+
+
+### Bug Fixes
+
+* conflicting radix-ui package ([ede9775](https://github.com/gameguild-gg/website/commit/ede97758f17d94bf232b4783dc20fd85463a9791))
+
+## [1.20.1](https://github.com/gameguild-gg/website/compare/v1.20.0...v1.20.1) (2025-05-14)
+
+
+### Bug Fixes
+
+* **mailer:** fix mail send ([ac509b5](https://github.com/gameguild-gg/website/commit/ac509b5a2e07e3268261998a078923dcf50df584))
+
+# [1.20.0](https://github.com/gameguild-gg/website/compare/v1.19.13...v1.20.0) (2025-05-13)
+
+
+### Bug Fixes
+
+* institutional page routing. closes [#101](https://github.com/gameguild-gg/website/issues/101) ([b188aba](https://github.com/gameguild-gg/website/commit/b188aba7c3e6daf741f3026e54d027b4b4921872))
+* **manifest:** closes [#33](https://github.com/gameguild-gg/website/issues/33) ([b72e196](https://github.com/gameguild-gg/website/commit/b72e196e5b0cf5d24bae208bbdef363f22366002))
+* **manifest:** fix manifest type ([333b1d7](https://github.com/gameguild-gg/website/commit/333b1d75cd38bfc4ca3b63cc73d10384ac517cfc))
+
+
+### Features
+
+* **robots:** closes [#35](https://github.com/gameguild-gg/website/issues/35) ([2f2a20d](https://github.com/gameguild-gg/website/commit/2f2a20d069e50aa1130bc8ea943a73c19d05761d))
+
+## [1.19.13](https://github.com/gameguild-gg/website/compare/v1.19.12...v1.19.13) (2025-05-12)
+
+
+### Bug Fixes
+
+* **code:** add a unified way to code on the browser ([b356821](https://github.com/gameguild-gg/website/commit/b356821e0bc3bec331060cfa51ba0653ff7dbcd0))
+
+## [1.19.12](https://github.com/gameguild-gg/website/compare/v1.19.11...v1.19.12) (2025-05-12)
+
+
+### Bug Fixes
+
+* **courses:** improve programming course types ([a6b4ea9](https://github.com/gameguild-gg/website/commit/a6b4ea929c6e0d5d8dddc6ad722246a0dc11b6f0))
+* **usecode:** begining of the refactor to usecode instead of usepyodide or useclang ([8075941](https://github.com/gameguild-gg/website/commit/8075941c87f0d3f3244a0155f4c2441ddcfdd810))
+
+## [1.19.11](https://github.com/gameguild-gg/website/compare/v1.19.10...v1.19.11) (2025-05-06)
+
+
+### Bug Fixes
+
+* **code:** code test type ([dbb7df9](https://github.com/gameguild-gg/website/commit/dbb7df96a90d165ba03492902d219716803cf8d3))
+
+## [1.19.10](https://github.com/gameguild-gg/website/compare/v1.19.9...v1.19.10) (2025-05-06)
+
+
+### Bug Fixes
+
+* add mindmaps of future works ([1b7c711](https://github.com/gameguild-gg/website/commit/1b7c711bd8457a29b65c6900460413bb6a0faddb))
+
+## [1.19.9](https://github.com/gameguild-gg/website/compare/v1.19.8...v1.19.9) (2025-05-02)
+
+
+### Bug Fixes
+
+* **code:** improve architecture of the code executor ([630c6cc](https://github.com/gameguild-gg/website/commit/630c6cc66847d8c74d63db6d80c18349b892f230))
+
+## [1.19.8](https://github.com/gameguild-gg/website/compare/v1.19.7...v1.19.8) (2025-05-02)
+
+
+### Bug Fixes
+
+* **chess:** change moduleResolution to build frontend ([6785c0b](https://github.com/gameguild-gg/website/commit/6785c0b0cceefb893c9d71439e9e3d8242fffde7))
+* **chess:** fix tournament ranking value ([1154a16](https://github.com/gameguild-gg/website/commit/1154a16c95e7bde68576f27975b40df62b116b97))
+* **wasm:** message passing is now through callbacks ([179517f](https://github.com/gameguild-gg/website/commit/179517fe89c556e08e8770ccfcbd684883ea7373))
+* **wasm:** remove timeouts ([e4942ce](https://github.com/gameguild-gg/website/commit/e4942ceb83f64f5efe033cd6468782fd49acc574))
+
+## [1.19.7](https://github.com/gameguild-gg/website/compare/v1.19.6...v1.19.7) (2025-04-25)
+
+
+### Bug Fixes
+
+* **wasm:** clean up ([580c88f](https://github.com/gameguild-gg/website/commit/580c88f5fb10b2e1ccab282d297ea693421e2f0b))
+* **wasm:** fix type for file directory ([acab593](https://github.com/gameguild-gg/website/commit/acab593cc8e85f45c575e799a818bd4cdcec0dbb))
+* **wasm:** move location of types ([c8852f0](https://github.com/gameguild-gg/website/commit/c8852f0e69ccbf41444ed5122c0c6fc0879f1259))
+* **wasm:** refactor clang api directory ([c5c0d44](https://github.com/gameguild-gg/website/commit/c5c0d4497083f4cc4052a9e1702cc471eecbb23f))
+* **wasm:** remove cpp example ([6e16e2b](https://github.com/gameguild-gg/website/commit/6e16e2b37602cba7ddd0e0b65eb9a36028120003))
+* **wasm:** remove duplicity of worker code on clang runner ([c92a764](https://github.com/gameguild-gg/website/commit/c92a7640b3313881c8168bdecc15bdc346b2a6d4))
+* **wasm:** remove unused components ([213de38](https://github.com/gameguild-gg/website/commit/213de3879ec067ce876cbe16757cf90b83b45e9e))
+* **wasm:** removed clang runner with zustand ([d60f3b6](https://github.com/gameguild-gg/website/commit/d60f3b6e3d625493c950c769f123679579d2f3e4))
+
+## [1.19.6](https://github.com/gameguild-gg/website/compare/v1.19.5...v1.19.6) (2025-04-25)
+
+
+### Bug Fixes
+
+* **wasm:** fix clang api ([8095fbe](https://github.com/gameguild-gg/website/commit/8095fbe853c2de247392be72234a7e1f74f9e1a5))
+* **wasm:** fix clang demo ([06f4a21](https://github.com/gameguild-gg/website/commit/06f4a21096becf08a72442ec064167dccae15acb))
+* **wasm:** fix clang interface for debug; ([b7377c5](https://github.com/gameguild-gg/website/commit/b7377c5096a40d97609a531515a2ebe1e515fcc5))
+
+## [1.19.5](https://github.com/gameguild-gg/website/compare/v1.19.4...v1.19.5) (2025-04-22)
+
+
+### Bug Fixes
+
+* **wasm:** better interfaces for wasmer ([cda7275](https://github.com/gameguild-gg/website/commit/cda7275fdfc148d9481d8be7fa35351c80096594))
+* **wasm:** better pyodide load process ([3263e26](https://github.com/gameguild-gg/website/commit/3263e26c59053917d8dfc095ed06cacf8abb9c72))
+
+## [1.19.4](https://github.com/gameguild-gg/website/compare/v1.19.3...v1.19.4) (2025-04-22)
+
+
+### Bug Fixes
+
+* **wasm:** convert to ts ([b7d99fc](https://github.com/gameguild-gg/website/commit/b7d99fc3c6737ca71eeeb5493407c65f61df9a39))
+* **wasm:** fix build ([fdd1df4](https://github.com/gameguild-gg/website/commit/fdd1df47f02eaa26d5bd9a1733c43ba404611c73))
+* **wasm:** fix compilation ([1ef886f](https://github.com/gameguild-gg/website/commit/1ef886f48b08daff0393354b6339f798db3dd4c2))
+* **wasm:** now clang show properly the execution message ([c1a999a](https://github.com/gameguild-gg/website/commit/c1a999a8e9d0730dc0204018efb53e2af9a93f12))
+* **wasm:** remove timings and console colors ([9b72136](https://github.com/gameguild-gg/website/commit/9b7213643c610cdd0ba698d02b36cc8ef469ecb5))
+
 ## [1.19.3](https://github.com/gameguild-gg/website/compare/v1.19.2...v1.19.3) (2025-04-18)
 
 

@@ -129,4 +129,12 @@ class MemFS {
 
     return { parent: current, target };
   }
+
+  /**
+   * Get the root directory data
+   * @returns The root directory object
+   */
+  getRoot(): Directory {
+    return this.root;
+  }
 }

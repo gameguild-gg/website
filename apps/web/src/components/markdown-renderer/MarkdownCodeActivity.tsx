@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { CodeLanguage, useWasmer, WasmerStatus } from '@/components/wasmer/use-wasmer';
+import { CodeLanguage, RunnerStatus } from '@/components/code/types';
+import { useCode } from '@/components/code/use-code';
 import { Card } from '@/components/ui/card';
 import Editor, { OnMount } from '@monaco-editor/react';
 import { Play } from 'lucide-react';
@@ -48,7 +49,7 @@ export interface MarkdownCodeActivityProps {
 }
 
 export function MarkdownCodeActivity(params: MarkdownCodeActivityProps) {
-  const { wasmerStatus, runCode, error } = useWasmer();
+  const { status, compileAndRun, error } = useCode();
   const [stdErr, setStdErr] = useState<string>('');
   const [stdOut, setStdOut] = useState<string>('');
   const [code, setCode] = useState<string>(params.code);
@@ -68,24 +69,24 @@ export function MarkdownCodeActivity(params: MarkdownCodeActivityProps) {
   };
 
   const handleRunCode = async () => {
-    if (wasmerStatus == WasmerStatus.RUNNING || wasmerStatus == WasmerStatus.LOADING_PACKAGE || wasmerStatus == WasmerStatus.FAILED_LOADING_WASMER) return;
+    if (status === RunnerStatus.RUNNING || status === RunnerStatus.LOADING) return;
 
     setStdErr('');
     setStdOut('');
-    const result = await runCode({
-      data: code,
+    const result = await compileAndRun({
+      data: { [`main.${params.language === 'python' ? 'py' : params.language}`]: code },
       language: params.language,
       stdin: params.stdin,
     });
-    if (result.stderr) {
-      setStdErr(result.stderr);
+    if (result.error) {
+      setStdErr(result.error);
     }
-    if (result.stdout) {
-      setStdOut(result.stdout);
+    if (result.output) {
+      setStdOut(result.output);
     }
 
-    // compare stdout with expected output without whitespaces(tab, spaces, newlines, carriage returns)
-    if (params.expectedOutput && params.expectedOutput.replace(/\s/g, '') !== result.stdout?.replace(/\s/g, '')) {
+    // compare output with expected output without whitespaces(tab, spaces, newlines, carriage returns)
+    if (params.expectedOutput && params.expectedOutput.replace(/\s/g, '') !== result.output?.replace(/\s/g, '')) {
       setIsCorrect(false);
     } else {
       setIsCorrect(true);
@@ -125,15 +126,13 @@ export function MarkdownCodeActivity(params: MarkdownCodeActivityProps) {
         )}
 
         {/* Área de saída */}
-        {wasmerStatus != WasmerStatus.UNINITIALIZED && !(wasmerStatus == WasmerStatus.READY_TO_RUN && isCorrect) && (
+        {status !== RunnerStatus.UNINITIALIZED && !(status === RunnerStatus.READY && isCorrect) && (
           <>
             <Card className="bg-[#2d2d2d] text-white p-4 min-h-fit font-mono">
-              {wasmerStatus == WasmerStatus.LOADING_WASMER && <p>Loading Wasmer...</p>}
-              {wasmerStatus == WasmerStatus.LOADING_PACKAGE && <p>Loading {params.language} tools...</p>}
-              {wasmerStatus == WasmerStatus.RUNNING && <p>Running...</p>}
-              {wasmerStatus == WasmerStatus.FAILED_EXECUTION && <p>Failed Execution</p>}
-              {wasmerStatus == WasmerStatus.FAILED_LOADING_WASMER && <p>Failed Loading Wasmer</p>}
-              {wasmerStatus == WasmerStatus.FAILED_LOADING_PACKAGE && <p>Failed Loading Package</p>}
+              {status === RunnerStatus.LOADING && <p>Loading {params.language} environment...</p>}
+              {status === RunnerStatus.RUNNING && <p>Running...</p>}
+              {status === RunnerStatus.FAILED_EXECUTION && <p>Failed Execution</p>}
+              {status === RunnerStatus.FAILED_LOADING && <p>Failed Loading Environment</p>}
               {error && <p className="text-red-400">Error: {error}</p>}
               {!stdErr && isCorrect === false && (
                 <>
@@ -161,11 +160,11 @@ export function MarkdownCodeActivity(params: MarkdownCodeActivityProps) {
               className="bg-[#2d2d2d] text-white hover:bg-[#3d3d3d]"
               onClick={handleRunCode}
               disabled={
-                wasmerStatus == WasmerStatus.RUNNING || wasmerStatus == WasmerStatus.LOADING_PACKAGE || wasmerStatus == WasmerStatus.FAILED_LOADING_WASMER
+                status === RunnerStatus.RUNNING || status === RunnerStatus.LOADING || status === RunnerStatus.FAILED_LOADING
               }
             >
               <Play className="w-4 h-4 mr-2" />
-              {wasmerStatus == WasmerStatus.RUNNING ? 'Running...' : 'Run'}
+              {status === RunnerStatus.RUNNING ? 'Running...' : 'Run'}
             </Button>
           </div>
         )}
