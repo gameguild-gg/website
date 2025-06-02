@@ -1,0 +1,323 @@
+// Project Platform Database Schema
+// Simplified version of itch.io-like platform
+
+// External references (handled by other systems)
+// - user_id: references external user management system
+// - asset_id: references external asset/file management system
+
+// ===== CORE PROJECT ENTITIES =====
+
+Table users {
+  id uuid [primary key]
+  username varchar(50) [unique, not null]
+  email varchar(255) [unique, not null]
+  password_hash varchar(255) // hashed password
+  display_name varchar(100)
+  profile_picture_url varchar(500)
+  
+  created_at timestamp [not null, default: `now()`]
+  updated_at timestamp [not null, default: `now()`]
+}
+
+Table projects {
+  id uuid [primary key]
+  title varchar(255) [not null]
+  slug varchar(255) [unique, not null]
+  short_description text
+  description text // rich text/markdown for landing page
+  category project_category [not null]
+  status project_status [not null, default: 'draft']
+  visibility project_visibility [not null, default: 'private']
+  license varchar(100)
+  website_url varchar(500)
+  repository_url varchar(500)
+  social_links json // {twitter, discord, etc.}
+  
+  // Statistics (simple counters)
+  view_count integer [default: 0]
+  download_count integer [default: 0]
+  follower_count integer [default: 0]
+  
+  created_at timestamp [not null, default: `now()`]
+  updated_at timestamp [not null, default: `now()`]
+  created_by uuid [not null, ref: > users.id] // user_id
+}
+
+Table project_versions {
+  id uuid [primary key]
+  project_id uuid [not null, ref: > projects.id]
+  version_number varchar(50) [not null] // e.g., "1.0.0", "alpha-0.1"
+  release_notes text
+  status version_status [not null, default: 'draft']
+  download_count integer [default: 0]
+  
+  created_at timestamp [not null, default: `now()`]
+  updated_at timestamp [not null, default: `now()`]
+  created_by uuid [not null, ref: > users.id] // user_id
+}
+
+Table project_version_files {
+  id uuid [primary key]
+  version_id uuid [not null, ref: > project_versions.id]
+  asset_id uuid [not null] // reference to external asset system
+  file_type file_type [not null] // executable, documentation, screenshot, etc.
+  display_name varchar(255)
+  is_primary boolean [default: false] // main executable/download
+  
+  created_at timestamp [not null, default: `now()`]
+}
+
+// ===== TEAM MANAGEMENT =====
+
+Table project_team_members {
+  id uuid [primary key]
+  project_id uuid [not null, ref: > projects.id]
+  user_id uuid [not null, ref: > users.id]
+  role team_role [not null]
+  invited_by uuid [ref: > users.id] // user_id who sent invitation
+  status member_status [not null, default: 'pending']
+  
+  created_at timestamp [not null, default: `now()`]
+  updated_at timestamp [not null, default: `now()`]
+  
+  Indexes {
+    (project_id, user_id) [unique]
+  }
+}
+
+// ===== TAGS SYSTEM =====
+
+Table tags {
+  id uuid [primary key]
+  name varchar(100) [unique, not null]
+  color varchar(7) // hex color code
+  
+  created_at timestamp [not null, default: `now()`]
+}
+
+Table project_tags {
+  project_id uuid [not null, ref: > projects.id]
+  tag_id uuid [not null, ref: > tags.id]
+}
+
+// ===== COMMUNITY FEATURES =====
+
+Table project_comments {
+  id uuid [primary key]
+  project_id uuid [not null, ref: > projects.id]
+  parent_comment_id uuid [ref: > project_comments.id] // for nested replies
+  user_id uuid [not null, ref: > users.id] // external user reference
+  content text [not null]
+  is_edited boolean [default: false]
+  
+  created_at timestamp [not null, default: `now()`]
+  updated_at timestamp [not null, default: `now()`]
+}
+
+Table project_ratings {
+  id uuid [primary key]
+  project_id uuid [not null, ref: > projects.id]
+  user_id uuid [not null, ref: > users.id] // external user reference
+  rating integer [not null] // 1-5 stars
+  review_text text
+  
+  created_at timestamp [not null, default: `now()`]
+  updated_at timestamp [not null, default: `now()`]
+  
+  Indexes {
+    (project_id, user_id) [unique]
+  }
+}
+
+Table project_followers {
+  project_id uuid [not null, ref: > projects.id]
+  user_id uuid [not null, ref: > users.id] // external user reference
+  
+  created_at timestamp [not null, default: `now()`]
+}
+
+// ===== JAMS & COMPETITIONS =====
+
+Table jams {
+  id uuid [primary key]
+  name varchar(255) [not null]
+  slug varchar(255) [unique, not null]
+  theme varchar(500)
+  description text
+  rules text
+  submission_criteria text
+  
+  start_date timestamp [not null]
+  end_date timestamp [not null]
+  voting_end_date timestamp
+  
+  max_participants integer
+  participant_count integer [default: 0]
+  
+  status jam_status [not null, default: 'upcoming']
+  created_by uuid [not null, ref: > users.id] // user_id
+  
+  created_at timestamp [not null, default: `now()`]
+  updated_at timestamp [not null, default: `now()`]
+}
+
+Table jam_submissions {
+  id uuid [primary key]
+  jam_id uuid [not null, ref: > jams.id]
+  project_version_id uuid [not null, ref: > project_versions.id]
+  user_id uuid [not null, ref: > users.id] // submitter user_id
+  submission_notes text
+  
+  created_at timestamp [not null, default: `now()`]
+  
+  Indexes {
+    (jam_id, project_version_id) [unique]
+  }
+}
+
+Table jam_judging_criteria {
+  id uuid [primary key]
+  jam_id uuid [not null, ref: > jams.id]
+  name varchar(100) [not null] // e.g., "Creativity", "Fun", "Theme adherence"
+  description text
+  weight decimal(3,2) [default: 1.0] // scoring weight
+  max_score integer [not null, default: 5]
+  
+  created_at timestamp [not null, default: `now()`]
+}
+
+Table jam_scores {
+  id uuid [primary key]
+  submission_id uuid [not null, ref: > jam_submissions.id]
+  criteria_id uuid [not null, ref: > jam_judging_criteria.id]
+  judge_user_id uuid [not null, ref: > users.id] // user_id of judge
+  score integer [not null]
+  feedback text
+  
+  created_at timestamp [not null, default: `now()`]
+  
+  Indexes {
+    (submission_id, criteria_id, judge_user_id) [unique]
+  }
+}
+
+// ===== TESTING LAB =====
+
+Table testing_campaigns {
+  id uuid [primary key]
+  project_version_id uuid [not null, ref: > project_versions.id]
+  name varchar(255) [not null]
+  description text
+  
+  start_date timestamp [not null]
+  end_date timestamp [not null]
+  max_testers integer
+  tester_count integer [default: 0]
+  
+  requirements text // tester requirements/instructions
+  status testing_status [not null, default: 'upcoming']
+  
+  created_by uuid [not null, ref: > users.id] // user_id
+  created_at timestamp [not null, default: `now()`]
+  updated_at timestamp [not null, default: `now()`]
+}
+
+Table testing_feedback_forms {
+  id uuid [primary key]
+  testing_campaign_id uuid [not null, ref: > testing_campaigns.id]
+  form_schema json [not null] // dynamic form structure
+  
+  created_at timestamp [not null, default: `now()`]
+}
+
+Table testing_feedback {
+  id uuid [primary key]
+  testing_campaign_id uuid [not null, ref: > testing_campaigns.id]
+  feedback_form_id uuid [not null, ref: > testing_feedback_forms.id]
+  user_id uuid [not null, ref: > users.id] // user who submitted the feedback
+  feedback_data json [not null] // responses to form questions
+  additional_notes text
+  
+  created_at timestamp [not null, default: `now()`]
+  
+  Indexes {
+    (testing_campaign_id, user_id, feedback_form_id) [unique]
+  }
+}
+
+// ===== ENUMS =====
+
+Enum project_category {
+  game
+  tool
+  art
+  music
+  writing
+  educational
+  other
+}
+
+Enum project_status {
+  draft
+  under_review
+  published
+  archived
+}
+
+Enum project_visibility {
+  public
+  private
+  unlisted
+  password_protected
+}
+
+Enum version_status {
+  draft
+  published
+  archived
+}
+
+Enum file_type {
+  executable
+  documentation
+  screenshot
+  video
+  audio
+  source_code
+  asset
+  other
+}
+
+Enum team_role {
+  owner
+  editor
+  member
+}
+
+Enum member_status {
+  pending
+  active
+  removed
+}
+
+Enum jam_status {
+  upcoming
+  active
+  voting
+  completed
+  cancelled
+}
+
+Enum testing_status {
+  upcoming
+  active
+  completed
+  cancelled
+}
+
+Enum assignment_status {
+  assigned
+  in_progress
+  completed
+  expired
+}
