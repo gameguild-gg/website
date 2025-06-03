@@ -19,6 +19,14 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
+    public static IServiceCollection AddUserProfileModule(this IServiceCollection services)
+    {
+        // Register UserProfile module services
+        services.AddScoped<Modules.UserProfile.Services.IUserProfileService, Modules.UserProfile.Services.UserProfileService>();
+
+        return services;
+    }
+
     public static IServiceCollection AddCommonServices(this IServiceCollection services)
     {
         // Add logging

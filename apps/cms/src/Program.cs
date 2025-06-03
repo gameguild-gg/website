@@ -8,6 +8,8 @@ using DotNetEnv;
 using Microsoft.OpenApi.Models;
 using Microsoft.AspNetCore.Mvc.ApplicationModels;
 
+// <-- Added using directive for UserProfile module
+
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 // Load environment variables from .env file
@@ -43,6 +45,7 @@ builder.Services.AddSwaggerGen(c =>
 builder.Services.AddCommonServices();
 builder.Services.AddUserModule();
 builder.Services.AddTenantModule();
+builder.Services.AddUserProfileModule(); // Register the UserProfile module
 
 // Get connection string from environment
 string connectionString = Environment.GetEnvironmentVariable("DB_CONNECTION_STRING")
@@ -69,12 +72,15 @@ builder.Services
     .AddMutationType<Mutation>()
     .AddTypeExtension<cms.Modules.Tenant.GraphQL.TenantQueries>()
     .AddTypeExtension<cms.Modules.Tenant.GraphQL.TenantMutations>()
+    .AddTypeExtension<cms.Modules.UserProfile.GraphQL.UserProfileQueries>()
+    .AddTypeExtension<cms.Modules.UserProfile.GraphQL.UserProfileMutations>()
     .AddType<UserType>()
     .AddType<CredentialType>()
     .AddType<cms.Modules.Tenant.GraphQL.TenantType>()
     .AddType<cms.Modules.Tenant.GraphQL.TenantRoleType>()
     .AddType<cms.Modules.Tenant.GraphQL.UserTenantType>()
-    .AddType<cms.Modules.Tenant.GraphQL.UserTenantRoleType>();
+    .AddType<cms.Modules.Tenant.GraphQL.UserTenantRoleType>()
+    .AddType<cms.Modules.UserProfile.GraphQL.UserProfileType>();
 
 WebApplication app = builder.Build();
 
@@ -85,7 +91,19 @@ app.UseMiddleware<ExceptionHandlingMiddleware>();
 using (IServiceScope scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    context.Database.Migrate();
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+
+    try
+    {
+        logger.LogInformation("Applying database migrations...");
+        context.Database.Migrate();
+        logger.LogInformation("Database migrations applied successfully");
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "An error occurred while applying database migrations");
+        throw; // Rethrow to fail startup if migrations fail
+    }
 }
 
 // Configure the HTTP request pipeline.

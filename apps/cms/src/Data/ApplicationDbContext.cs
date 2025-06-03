@@ -47,6 +47,8 @@ public class ApplicationDbContext : DbContext
         set;
     }
 
+    public DbSet<cms.Modules.UserProfile.Models.UserProfile> UserProfiles { get; set; }
+
     // Resource and Localization DbSets
     public DbSet<Language> Languages
     {

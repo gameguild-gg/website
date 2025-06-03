@@ -10,6 +10,27 @@ namespace cms.Common.Entities;
 public abstract class ResourceBase : BaseEntity, ILocalizable, IPermissionable, ITenantable
 {
     /// <summary>
+    /// The title/name of this resource
+    /// </summary>
+    [Required]
+    [MaxLength(255)]
+    public string Title
+    {
+        get;
+        set;
+    } = string.Empty;
+
+    /// <summary>
+    /// Optional description of this resource
+    /// </summary>
+    [MaxLength(2000)]
+    public string? Description
+    {
+        get;
+        set;
+    }
+
+    /// <summary>
     /// Navigation property to the owner of this resource
     /// Entity Framework will automatically create the OwnerId foreign key
     /// </summary>
