@@ -1,0 +1,40 @@
+# .NET
+bin/
+obj/
+*.user
+*.suo
+*.cache
+*.docstates
+[Dd]ebug/
+[Rr]elease/
+build/
+[Bb]in/
+[Oo]bj/
+x64/
+x86/
+*.exe
+*.dll
+*.pdb
+
+# SQLite database files - DO NOT COMMIT TO GIT
+*.db
+*.db-shm
+*.db-wal
+*.db-journal
+
+# IDE
+.vs/
+.vscode/
+*.swp
+*.swo
+*~
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment files
+.env.local
+.env.development
+.env.production

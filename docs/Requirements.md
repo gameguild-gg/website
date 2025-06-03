@@ -106,6 +106,9 @@ Blog Functionality:
 - Only creators invited by the community or platform administrators can post on the blog.
 - Blog posts serve as a hub for educational material and community discussions, fostering engagement and knowledge-sharing.
 
+[//]: # (### 2.6 Job Board)
+[//]: # (TODO: @Miguel write here your ideas!)
+
 ## 3. DAO Governance
 
 DAO Structure:
