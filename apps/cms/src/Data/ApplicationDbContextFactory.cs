@@ -9,13 +9,13 @@ public class ApplicationDbContextFactory : IDesignTimeDbContextFactory<Applicati
     public ApplicationDbContext CreateDbContext(string[] args)
     {
         var optionsBuilder = new DbContextOptionsBuilder<ApplicationDbContext>();
-        
+
         // Load environment variables from .env file
         Env.Load("../.env");
-        
+
         // Get connection string from environment variable
-        var connectionString = Environment.GetEnvironmentVariable("DB_CONNECTION_STRING") 
-            ?? "Data Source=app.db"; // Fallback to SQLite for design-time
+        string connectionString = Environment.GetEnvironmentVariable("DB_CONNECTION_STRING")
+                                  ?? "Data Source=app.db"; // Fallback to SQLite for design-time
 
         // Configure database provider based on connection string
         if (connectionString.Contains("Data Source=") || connectionString.Contains("DataSource="))
@@ -26,7 +26,7 @@ public class ApplicationDbContextFactory : IDesignTimeDbContextFactory<Applicati
         {
             optionsBuilder.UseNpgsql(connectionString);
         }
-        
+
         return new ApplicationDbContext(optionsBuilder.Options);
     }
 }

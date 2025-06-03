@@ -13,17 +13,21 @@ The CMS now includes a GraphQL API powered by HotChocolate with Banana Cake Pop 
 
 ### Types
 
-#### User
+#### User (with EntityBase Support)
 ```graphql
 type User {
+  # BaseEntity Properties
   id: UUID!
-  username: String!
-  email: String!
-  firstName: String
-  lastName: String
-  isActive: Boolean!
+  version: Int!
   createdAt: DateTime!
-  updatedAt: DateTime
+  updatedAt: DateTime!
+  deletedAt: DateTime
+  isDeleted: Boolean!
+  
+  # User-specific Properties
+  name: String!
+  email: String!
+  isActive: Boolean!
 }
 ```
 
@@ -31,37 +35,34 @@ type User {
 
 ```graphql
 input CreateUserInput {
-  username: String!
+  name: String!
   email: String!
-  firstName: String
-  lastName: String
   isActive: Boolean = true
 }
 
 input UpdateUserInput {
   id: UUID!
-  username: String
+  name: String
   email: String
-  firstName: String
-  lastName: String
   isActive: Boolean
 }
 ```
 
 ### Queries
 
-#### Get All Users
+#### Get All Users (Active Only)
 ```graphql
 query GetUsers {
   users {
     id
-    username
+    version
+    name
     email
-    firstName
-    lastName
     isActive
     createdAt
     updatedAt
+    deletedAt
+    isDeleted
   }
 }
 ```
@@ -71,34 +72,49 @@ query GetUsers {
 query GetUserById($id: UUID!) {
   userById(id: $id) {
     id
-    username
+    version
+    name
     email
-    firstName
-    lastName
     isActive
     createdAt
     updatedAt
-  }
-}
-```
-
-#### Get User By Username
-```graphql
-query GetUserByUsername($username: String!) {
-  userByUsername(username: $username) {
-    id
-    username
-    email
-    firstName
-    lastName
-    isActive
-    createdAt
-    updatedAt
+    deletedAt
+    isDeleted
   }
 }
 ```
 
 #### Get Active Users Only
+```graphql
+query GetActiveUsers {
+  activeUsers {
+    id
+    version
+    name
+    email
+    isActive
+    createdAt
+    updatedAt
+  }
+}
+```
+
+#### Get Deleted Users
+```graphql
+query GetDeletedUsers {
+  deletedUsers {
+    id
+    version
+    name
+    email
+    isActive
+    createdAt
+    updatedAt
+    deletedAt
+    isDeleted
+  }
+}
+```
 ```graphql
 query GetActiveUsers {
   activeUsers {
@@ -121,12 +137,14 @@ query GetActiveUsers {
 mutation CreateUser($input: CreateUserInput!) {
   createUser(input: $input) {
     id
-    username
+    version
+    name
     email
-    firstName
-    lastName
     isActive
     createdAt
+    updatedAt
+    deletedAt
+    isDeleted
   }
 }
 ```
@@ -135,10 +153,8 @@ mutation CreateUser($input: CreateUserInput!) {
 ```json
 {
   "input": {
-    "username": "john_doe",
+    "name": "John Doe",
     "email": "john@example.com",
-    "firstName": "John",
-    "lastName": "Doe",
     "isActive": true
   }
 }
@@ -149,12 +165,14 @@ mutation CreateUser($input: CreateUserInput!) {
 mutation UpdateUser($input: UpdateUserInput!) {
   updateUser(input: $input) {
     id
-    username
+    version
+    name
     email
-    firstName
-    lastName
     isActive
+    createdAt
     updatedAt
+    deletedAt
+    isDeleted
   }
 }
 ```
@@ -164,8 +182,8 @@ mutation UpdateUser($input: UpdateUserInput!) {
 {
   "input": {
     "id": "550e8400-e29b-41d4-a716-446655440000",
-    "firstName": "Jane",
-    "lastName": "Smith"
+    "name": "Jane Doe Updated",
+    "email": "jane.updated@example.com"
   }
 }
 ```
@@ -184,15 +202,24 @@ mutation DeleteUser($id: UUID!) {
 }
 ```
 
-#### Toggle User Status
+#### Soft Delete User
 ```graphql
-mutation ToggleUserStatus($id: UUID!) {
-  toggleUserStatus(id: $id) {
-    id
-    username
-    isActive
-    updatedAt
-  }
+mutation SoftDeleteUser($id: UUID!) {
+  softDeleteUser(id: $id)
+}
+```
+
+**Variables:**
+```json
+{
+  "id": "550e8400-e29b-41d4-a716-446655440000"
+}
+```
+
+#### Restore User
+```graphql
+mutation RestoreUser($id: UUID!) {
+  restoreUser(id: $id)
 }
 ```
 
@@ -234,8 +261,9 @@ mutation ToggleUserStatus($id: UUID!) {
    query {
      users {
        id
-       username
+       name
        email
+       isActive
      }
    }
    ```
@@ -244,14 +272,17 @@ mutation ToggleUserStatus($id: UUID!) {
    ```graphql
    mutation {
      createUser(input: {
-       username: "testuser"
+       name: "Test User"
        email: "test@example.com"
-       firstName: "Test"
-       lastName: "User"
+       isActive: true
      }) {
        id
-       username
+       name
        email
+       isActive
+     }
+   }
+   ```
      }
    }
    ```
@@ -264,7 +295,7 @@ GraphQL provides detailed error messages:
 {
   "errors": [
     {
-      "message": "Username 'john_doe' already exists.",
+      "message": "Email 'test@example.com' already exists.",
       "locations": [{"line": 2, "column": 3}],
       "path": ["createUser"]
     }

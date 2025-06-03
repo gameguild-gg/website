@@ -16,12 +16,35 @@ Content-Type: application/json
 
 ###
 
-### Get All Users
+### Get All Users (Active Only)
 POST {{cms_HostAddress}}/graphql
 Content-Type: application/json
 
 {
-  "query": "query GetUsers { users { id username email firstName lastName createdAt isActive } }"
+  "query": "query GetUsers { users { id version name email isActive createdAt updatedAt deletedAt isDeleted } }"
+}
+
+###
+
+### Get Deleted Users
+POST {{cms_HostAddress}}/graphql
+Content-Type: application/json
+
+{
+  "query": "query GetDeletedUsers { deletedUsers { id version name email isActive createdAt updatedAt deletedAt isDeleted } }"
+}
+
+###
+
+### Get User by ID (UUID)
+POST {{cms_HostAddress}}/graphql
+Content-Type: application/json
+
+{
+  "query": "query GetUserById($id: UUID!) { userById(id: $id) { id version name email isActive createdAt updatedAt deletedAt isDeleted } }",
+  "variables": {
+    "id": "00000000-0000-0000-0000-000000000000"
+  }
 }
 
 ###
@@ -31,14 +54,69 @@ POST {{cms_HostAddress}}/graphql
 Content-Type: application/json
 
 {
-  "query": "mutation CreateUser($input: CreateUserInput!) { createUser(input: $input) { id username email firstName lastName createdAt isActive } }",
+  "query": "mutation CreateUser($input: CreateUserInput!) { createUser(input: $input) { id version name email isActive createdAt updatedAt deletedAt isDeleted } }",
   "variables": {
     "input": {
-      "username": "testuser",
-      "email": "test@example.com",
-      "firstName": "Test",
-      "lastName": "User"
+      "name": "John Doe",
+      "email": "john@example.com",
+      "isActive": true
     }
+  }
+}
+
+###
+
+### Update User
+POST {{cms_HostAddress}}/graphql
+Content-Type: application/json
+
+{
+  "query": "mutation UpdateUser($input: UpdateUserInput!) { updateUser(input: $input) { id version name email isActive createdAt updatedAt deletedAt isDeleted } }",
+  "variables": {
+    "input": {
+      "id": "00000000-0000-0000-0000-000000000000",
+      "name": "Jane Doe Updated",
+      "email": "jane.updated@example.com"
+    }
+  }
+}
+
+###
+
+### Hard Delete User
+POST {{cms_HostAddress}}/graphql
+Content-Type: application/json
+
+{
+  "query": "mutation DeleteUser($id: UUID!) { deleteUser(id: $id) }",
+  "variables": {
+    "id": "00000000-0000-0000-0000-000000000000"
+  }
+}
+
+###
+
+### Soft Delete User
+POST {{cms_HostAddress}}/graphql
+Content-Type: application/json
+
+{
+  "query": "mutation SoftDeleteUser($id: UUID!) { softDeleteUser(id: $id) }",
+  "variables": {
+    "id": "00000000-0000-0000-0000-000000000000"
+  }
+}
+
+###
+
+### Restore User
+POST {{cms_HostAddress}}/graphql
+Content-Type: application/json
+
+{
+  "query": "mutation RestoreUser($id: UUID!) { restoreUser(id: $id) }",
+  "variables": {
+    "id": "00000000-0000-0000-0000-000000000000"
   }
 }
 

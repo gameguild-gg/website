@@ -1,46 +1,66 @@
 using cms.Data;
-using cms.GraphQL;
+using cms.Modules.User.GraphQL;
+using cms.Common.Extensions;
+using cms.Common.Middleware;
+using cms.Config;
 using Microsoft.EntityFrameworkCore;
 using DotNetEnv;
+using Microsoft.OpenApi.Models;
 
-var builder = WebApplication.CreateBuilder(args);
+WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+
+// Load environment variables from .env file
+Env.Load("../.env");
+
+// Add configuration services (similar to NestJS ConfigModule)
+builder.Services.AddAppConfiguration(builder.Configuration);
 
 // Load environment variables from .env file
 Env.Load("../.env");
 
 // Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 builder.Services.AddControllers();
 
 // Add Swagger services
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
+    {
+        c.SwaggerDoc(
+            "v1",
+            new OpenApiInfo
+            {
+                Title = "GameGuild CMS API", Version = "v1", Description = "A Content Management System API for GameGuild"
+            }
+        );
+    }
+);
+
+// Add common services and modules (following NestJS module pattern)
+builder.Services.AddCommonServices();
+builder.Services.AddUserModule();
+
+// Get database configuration
+var dbConfig = builder.Services.BuildServiceProvider().GetRequiredService<DatabaseConfig>();
+string connectionString = dbConfig.ConnectionString;
+
+if (string.IsNullOrEmpty(connectionString))
 {
-    c.SwaggerDoc("v1", new() { 
-        Title = "GameGuild CMS API", 
-        Version = "v1",
-        Description = "A Content Management System API for GameGuild"
-    });
+    connectionString = Environment.GetEnvironmentVariable("DB_CONNECTION_STRING")
+                      ?? throw new InvalidOperationException("DB_CONNECTION_STRING environment variable is not set. Please check your .env file or environment configuration.");
+}
+
+// Add Entity Framework with PostgreSQL
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+{
+    options.UseNpgsql(connectionString);
+    
+    if (dbConfig.EnableSensitiveDataLogging)
+        options.EnableSensitiveDataLogging();
+        
+    if (dbConfig.EnableDetailedErrors)
+        options.EnableDetailedErrors();
 });
-
-// Get connection string from environment variable
-var connectionString = Environment.GetEnvironmentVariable("DB_CONNECTION_STRING") 
-    ?? throw new InvalidOperationException("DB_CONNECTION_STRING environment variable is not set. Please check your .env file or environment configuration.");
-
-// Add Entity Framework with dynamic provider selection based on connection string
-if (connectionString.Contains("Data Source=") || connectionString.Contains("DataSource="))
-{
-    // SQLite connection string detected
-    builder.Services.AddDbContext<ApplicationDbContext>(options =>
-        options.UseSqlite(connectionString));
-}
-else
-{
-    // Assume PostgreSQL for other connection strings
-    builder.Services.AddDbContext<ApplicationDbContext>(options =>
-        options.UseNpgsql(connectionString));
-}
 
 // Add GraphQL services
 builder.Services
@@ -49,10 +69,13 @@ builder.Services
     .AddMutationType<Mutation>()
     .AddType<UserType>();
 
-var app = builder.Build();
+WebApplication app = builder.Build();
 
-// Automatically apply pending migrations and create database if it doesn't exist
-using (var scope = app.Services.CreateScope())
+// Add exception handling middleware (similar to NestJS global filters)
+app.UseMiddleware<ExceptionHandlingMiddleware>();
+
+// Automatically apply pending migrations and create a database if it doesn't exist
+using (IServiceScope scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     context.Database.Migrate();
@@ -64,10 +87,11 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
     app.UseSwagger();
     app.UseSwaggerUI(c =>
-    {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "GameGuild CMS API v1");
-        c.RoutePrefix = "swagger"; // Serve Swagger UI at /swagger
-    });
+        {
+            c.SwaggerEndpoint("/swagger/v1/swagger.json", "GameGuild CMS API v1");
+            c.RoutePrefix = "swagger"; // Serve Swagger UI at /swagger
+        }
+    );
 }
 
 app.UseHttpsRedirection();
