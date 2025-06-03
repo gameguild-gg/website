@@ -1,5 +1,4 @@
 using cms.Data;
-using cms.Modules.User.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace cms.Modules.User.Services;

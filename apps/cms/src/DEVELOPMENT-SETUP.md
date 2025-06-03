@@ -31,12 +31,12 @@ dotnet run
 ### 5. Test Endpoints
 
 #### REST API
-- GET `/api/users` - Get all users
-- POST `/api/users` - Create user
-- GET `/api/users/{id}` - Get user by ID
-- PUT `/api/users/{id}` - Update user
-- DELETE `/api/users/{id}` - Delete user
-- GET `/api/health` - Health check
+- GET `/users` - Get all users
+- POST `/users` - Create user
+- GET `/users/{id}` - Get user by ID
+- PUT `/users/{id}` - Update user
+- DELETE `/users/{id}` - Delete user
+- GET `/health` - Health check
 
 #### GraphQL
 - Endpoint: `/graphql`

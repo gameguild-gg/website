@@ -1,6 +1,4 @@
 using cms.Modules.User.Services;
-using cms.Modules.User.Models;
-using HotChocolate;
 
 namespace cms.Modules.User.GraphQL;
 
@@ -27,7 +25,7 @@ public class Mutation
     /// </summary>
     public async Task<Models.User?> UpdateUser(UpdateUserInput input, [Service] IUserService userService)
     {
-        var existingUser = await userService.GetUserByIdAsync(input.Id);
+        Models.User? existingUser = await userService.GetUserByIdAsync(input.Id);
         if (existingUser == null)
             return null;
 

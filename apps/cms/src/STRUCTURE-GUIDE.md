@@ -93,7 +93,7 @@ DB_CONNECTION_STRING=Host=localhost;Database=gameguild_cms;Username=postgres;Pas
 ```
 
 ### 3. Test the API
-- **REST API**: `https://localhost:5001/api/users`
+- **REST API**: `https://localhost:5001/users`
 - **GraphQL**: `https://localhost:5001/graphql`
 - **Swagger**: `https://localhost:5001/swagger`
 

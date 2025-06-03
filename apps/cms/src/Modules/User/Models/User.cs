@@ -29,6 +29,24 @@ public class User : BaseEntity
     } = true;
 
     /// <summary>
+    /// Navigation property to user credentials
+    /// </summary>
+    public virtual ICollection<Credential> Credentials
+    {
+        get;
+        set;
+    } = new List<Credential>();
+
+    /// <summary>
+    /// Navigation property to user-tenant relationships
+    /// </summary>
+    public virtual ICollection<cms.Modules.Tenant.Models.UserTenant> UserTenants
+    {
+        get;
+        set;
+    } = new List<cms.Modules.Tenant.Models.UserTenant>();
+
+    /// <summary>
     /// Default constructor
     /// </summary>
     public User() { }

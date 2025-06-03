@@ -2,10 +2,11 @@ using cms.Data;
 using cms.Modules.User.GraphQL;
 using cms.Common.Extensions;
 using cms.Common.Middleware;
-using cms.Config;
+using cms.Common.Transformers;
 using Microsoft.EntityFrameworkCore;
 using DotNetEnv;
 using Microsoft.OpenApi.Models;
+using Microsoft.AspNetCore.Mvc.ApplicationModels;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
@@ -20,7 +21,9 @@ Env.Load("../.env");
 
 // Add services to the container.
 builder.Services.AddOpenApi();
-builder.Services.AddControllers();
+builder.Services.AddControllers(opts =>
+    opts.Conventions.Add(new RouteTokenTransformerConvention(new ToKebabParameterTransformer()))
+);
 
 // Add Swagger services
 builder.Services.AddEndpointsApiExplorer();
@@ -39,35 +42,39 @@ builder.Services.AddSwaggerGen(c =>
 // Add common services and modules (following NestJS module pattern)
 builder.Services.AddCommonServices();
 builder.Services.AddUserModule();
+builder.Services.AddTenantModule();
 
-// Get database configuration
-var dbConfig = builder.Services.BuildServiceProvider().GetRequiredService<DatabaseConfig>();
-string connectionString = dbConfig.ConnectionString;
+// Get connection string from environment
+string connectionString = Environment.GetEnvironmentVariable("DB_CONNECTION_STRING")
+                          ?? throw new InvalidOperationException("DB_CONNECTION_STRING environment variable is not set. Please check your .env file or environment configuration.");
 
-if (string.IsNullOrEmpty(connectionString))
-{
-    connectionString = Environment.GetEnvironmentVariable("DB_CONNECTION_STRING")
-                      ?? throw new InvalidOperationException("DB_CONNECTION_STRING environment variable is not set. Please check your .env file or environment configuration.");
-}
-
-// Add Entity Framework with PostgreSQL
+// Add Entity Framework with SQLite for development
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-{
-    options.UseNpgsql(connectionString);
-    
-    if (dbConfig.EnableSensitiveDataLogging)
-        options.EnableSensitiveDataLogging();
-        
-    if (dbConfig.EnableDetailedErrors)
-        options.EnableDetailedErrors();
-});
+    {
+        options.UseSqlite(connectionString);
+
+        // Enable sensitive data logging in development
+        if (builder.Environment.IsDevelopment())
+        {
+            options.EnableSensitiveDataLogging();
+            options.EnableDetailedErrors();
+        }
+    }
+);
 
 // Add GraphQL services
 builder.Services
     .AddGraphQLServer()
     .AddQueryType<Query>()
     .AddMutationType<Mutation>()
-    .AddType<UserType>();
+    .AddTypeExtension<cms.Modules.Tenant.GraphQL.TenantQueries>()
+    .AddTypeExtension<cms.Modules.Tenant.GraphQL.TenantMutations>()
+    .AddType<UserType>()
+    .AddType<CredentialType>()
+    .AddType<cms.Modules.Tenant.GraphQL.TenantType>()
+    .AddType<cms.Modules.Tenant.GraphQL.TenantRoleType>()
+    .AddType<cms.Modules.Tenant.GraphQL.UserTenantType>()
+    .AddType<cms.Modules.Tenant.GraphQL.UserTenantRoleType>();
 
 WebApplication app = builder.Build();
 

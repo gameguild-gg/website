@@ -1,6 +1,3 @@
-using cms.Modules.User.Models;
-using HotChocolate.Types;
-
 namespace cms.Modules.User.GraphQL;
 
 public class UserType : ObjectType<Models.User>

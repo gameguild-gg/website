@@ -1,6 +1,4 @@
 using cms.Modules.User.Services;
-using cms.Modules.User.Models;
-using HotChocolate;
 
 namespace cms.Modules.User.GraphQL;
 

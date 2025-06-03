@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 namespace cms.Common.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("[controller]")]
 public class HealthController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
