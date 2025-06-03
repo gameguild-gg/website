@@ -12,18 +12,30 @@ public class CreateTenantInput
     /// </summary>
     [Required]
     [StringLength(100)]
-    public string Name { get; set; } = string.Empty;
+    public string Name
+    {
+        get;
+        set;
+    } = string.Empty;
 
     /// <summary>
     /// Description of the tenant
     /// </summary>
     [StringLength(500)]
-    public string? Description { get; set; }
+    public string? Description
+    {
+        get;
+        set;
+    }
 
     /// <summary>
     /// Whether this tenant is currently active
     /// </summary>
-    public bool IsActive { get; set; } = true;
+    public bool IsActive
+    {
+        get;
+        set;
+    } = true;
 }
 
 /// <summary>
@@ -35,24 +47,40 @@ public class UpdateTenantInput
     /// ID of the tenant to update
     /// </summary>
     [Required]
-    public Guid Id { get; set; }
+    public Guid Id
+    {
+        get;
+        set;
+    }
 
     /// <summary>
     /// Name of the tenant
     /// </summary>
     [StringLength(100)]
-    public string? Name { get; set; }
+    public string? Name
+    {
+        get;
+        set;
+    }
 
     /// <summary>
     /// Description of the tenant
     /// </summary>
     [StringLength(500)]
-    public string? Description { get; set; }
+    public string? Description
+    {
+        get;
+        set;
+    }
 
     /// <summary>
     /// Whether this tenant is currently active
     /// </summary>
-    public bool? IsActive { get; set; }
+    public bool? IsActive
+    {
+        get;
+        set;
+    }
 }
 
 /// <summary>
@@ -64,31 +92,51 @@ public class CreateTenantRoleInput
     /// ID of the tenant this role belongs to
     /// </summary>
     [Required]
-    public Guid TenantId { get; set; }
+    public Guid TenantId
+    {
+        get;
+        set;
+    }
 
     /// <summary>
     /// Name of the role
     /// </summary>
     [Required]
     [StringLength(50)]
-    public string Name { get; set; } = string.Empty;
+    public string Name
+    {
+        get;
+        set;
+    } = string.Empty;
 
     /// <summary>
     /// Description of the role
     /// </summary>
     [StringLength(200)]
-    public string? Description { get; set; }
+    public string? Description
+    {
+        get;
+        set;
+    }
 
     /// <summary>
     /// Permissions associated with this role (JSON array of permission strings)
     /// </summary>
     [StringLength(2000)]
-    public string? Permissions { get; set; }
+    public string? Permissions
+    {
+        get;
+        set;
+    }
 
     /// <summary>
     /// Whether this role is currently active
     /// </summary>
-    public bool IsActive { get; set; } = true;
+    public bool IsActive
+    {
+        get;
+        set;
+    } = true;
 }
 
 /// <summary>
@@ -100,30 +148,50 @@ public class UpdateTenantRoleInput
     /// ID of the tenant role to update
     /// </summary>
     [Required]
-    public Guid Id { get; set; }
+    public Guid Id
+    {
+        get;
+        set;
+    }
 
     /// <summary>
     /// Name of the role
     /// </summary>
     [StringLength(50)]
-    public string? Name { get; set; }
+    public string? Name
+    {
+        get;
+        set;
+    }
 
     /// <summary>
     /// Description of the role
     /// </summary>
     [StringLength(200)]
-    public string? Description { get; set; }
+    public string? Description
+    {
+        get;
+        set;
+    }
 
     /// <summary>
     /// Permissions associated with this role (JSON array of permission strings)
     /// </summary>
     [StringLength(2000)]
-    public string? Permissions { get; set; }
+    public string? Permissions
+    {
+        get;
+        set;
+    }
 
     /// <summary>
     /// Whether this role is currently active
     /// </summary>
-    public bool? IsActive { get; set; }
+    public bool? IsActive
+    {
+        get;
+        set;
+    }
 }
 
 /// <summary>
@@ -135,24 +203,40 @@ public class AssignUserTenantRoleInput
     /// ID of the user
     /// </summary>
     [Required]
-    public Guid UserId { get; set; }
+    public Guid UserId
+    {
+        get;
+        set;
+    }
 
     /// <summary>
     /// ID of the tenant
     /// </summary>
     [Required]
-    public Guid TenantId { get; set; }
+    public Guid TenantId
+    {
+        get;
+        set;
+    }
 
     /// <summary>
     /// ID of the tenant role
     /// </summary>
     [Required]
-    public Guid TenantRoleId { get; set; }
+    public Guid TenantRoleId
+    {
+        get;
+        set;
+    }
 
     /// <summary>
     /// Optional expiration date for the role assignment
     /// </summary>
-    public DateTime? ExpiresAt { get; set; }
+    public DateTime? ExpiresAt
+    {
+        get;
+        set;
+    }
 }
 
 /// <summary>
@@ -164,13 +248,21 @@ public class AddUserToTenantInput
     /// ID of the tenant
     /// </summary>
     [Required]
-    public Guid TenantId { get; set; }
+    public Guid TenantId
+    {
+        get;
+        set;
+    }
 
     /// <summary>
     /// ID of the user
     /// </summary>
     [Required]
-    public Guid UserId { get; set; }
+    public Guid UserId
+    {
+        get;
+        set;
+    }
 }
 
 /// <summary>
@@ -182,11 +274,19 @@ public class RemoveUserFromTenantInput
     /// ID of the tenant
     /// </summary>
     [Required]
-    public Guid TenantId { get; set; }
+    public Guid TenantId
+    {
+        get;
+        set;
+    }
 
     /// <summary>
     /// ID of the user
     /// </summary>
     [Required]
-    public Guid UserId { get; set; }
+    public Guid UserId
+    {
+        get;
+        set;
+    }
 }

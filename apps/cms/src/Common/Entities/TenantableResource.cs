@@ -9,11 +9,18 @@ public interface ITenantable
     /// Navigation property to the tenant
     /// Entity Framework will automatically create the TenantId foreign key
     /// </summary>
-    Modules.Tenant.Models.Tenant? Tenant { get; set; }
+    Modules.Tenant.Models.Tenant? Tenant
+    {
+        get;
+        set;
+    }
 
     /// <summary>
     /// Indicates whether this resource is accessible across all tenants (when Tenant is null)
     /// or only within a specific tenant
     /// </summary>
-    bool IsGlobal { get; }
+    bool IsGlobal
+    {
+        get;
+    }
 }

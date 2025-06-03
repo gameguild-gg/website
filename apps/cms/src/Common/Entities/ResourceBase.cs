@@ -14,25 +14,41 @@ public abstract class ResourceBase : BaseEntity, ILocalizable, IPermissionable, 
     /// Entity Framework will automatically create the OwnerId foreign key
     /// </summary>
     [Required]
-    public virtual Modules.User.Models.User Owner { get; set; } = null!;
+    public virtual Modules.User.Models.User Owner
+    {
+        get;
+        set;
+    } = null!;
 
     /// <summary>
     /// Visibility status of the resource (Public, Private, Restricted, etc.)
     /// </summary>
     [Required]
-    public VisibilityStatus Visibility { get; set; } = VisibilityStatus.Private;
+    public VisibilityStatus Visibility
+    {
+        get;
+        set;
+    } = VisibilityStatus.Private;
 
     /// <summary>
     /// Navigation property to resource metadata
     /// Entity Framework will automatically create the MetadataId foreign key
     /// </summary>
-    public virtual ResourceMetadata? Metadata { get; set; }
+    public virtual ResourceMetadata? Metadata
+    {
+        get;
+        set;
+    }
 
     /// <summary>
     /// Navigation property to the tenant
     /// Entity Framework will automatically create the TenantId foreign key
     /// </summary>
-    public virtual Modules.Tenant.Models.Tenant? Tenant { get; set; }
+    public virtual Modules.Tenant.Models.Tenant? Tenant
+    {
+        get;
+        set;
+    }
 
     /// <summary>
     /// Indicates whether this resource is accessible across all tenants (when Tenant is null)
@@ -43,17 +59,30 @@ public abstract class ResourceBase : BaseEntity, ILocalizable, IPermissionable, 
     /// <summary>
     /// Collection of permissions assigned to this resource
     /// </summary>
-    public virtual ICollection<ResourcePermission> ResourcePermissions { get; set; } = new List<ResourcePermission>();
+    public virtual ICollection<ResourcePermission> ResourcePermissions
+    {
+        get;
+        set;
+    } = new List<ResourcePermission>();
 
     /// <summary>
     /// Collection of roles assigned to this resource
     /// </summary>
-    public virtual ICollection<ResourceRole> ResourceRoles { get; set; } = new List<ResourceRole>();
+    public virtual ICollection<ResourceRole> ResourceRoles
+    {
+        get;
+        set;
+    } = new List<ResourceRole>();
 
     /// <summary>
     /// Collection of localizations for this resource
     /// </summary>
-    public virtual ICollection<ResourceLocalization> Localizations { get; set; } = new List<ResourceLocalization>();
+    public virtual ICollection<ResourceLocalization> Localizations
+    {
+        get;
+        set;
+    } = new List<ResourceLocalization>();
+
 
     /// <summary>
     /// Adds a localization for a specific field in the given language
@@ -70,6 +99,7 @@ public abstract class ResourceBase : BaseEntity, ILocalizable, IPermissionable, 
         };
 
         Localizations.Add(localization);
+
         return localization;
     }
 
@@ -88,6 +118,7 @@ public abstract class ResourceBase : BaseEntity, ILocalizable, IPermissionable, 
         };
 
         ResourcePermissions.Add(resourcePermission);
+
         return resourcePermission;
     }
 

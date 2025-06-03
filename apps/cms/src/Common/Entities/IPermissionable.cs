@@ -8,7 +8,10 @@ public interface IPermissionable
     /// <summary>
     /// Collection of permissions assigned to this entity
     /// </summary>
-    ICollection<ResourcePermission> ResourcePermissions { get; }
+    ICollection<ResourcePermission> ResourcePermissions
+    {
+        get;
+    }
 
     /// <summary>
     /// Grants permission to a user for this entity

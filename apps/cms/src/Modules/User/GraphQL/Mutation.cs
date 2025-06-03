@@ -10,12 +10,12 @@ public class Mutation
     public async Task<Models.User> CreateUser(CreateUserInput input, [Service] IUserService userService)
     {
         // Use BaseEntity constructor pattern for consistent creation
-        var user = new Models.User(new
-        {
-            Name = input.Name,
-            Email = input.Email,
-            IsActive = input.IsActive
-        });
+        var user = new Models.User(
+            new
+            {
+                Name = input.Name, Email = input.Email, IsActive = input.IsActive
+            }
+        );
 
         return await userService.CreateUserAsync(user);
     }
@@ -26,13 +26,14 @@ public class Mutation
     public async Task<Models.User?> UpdateUser(UpdateUserInput input, [Service] IUserService userService)
     {
         Models.User? existingUser = await userService.GetUserByIdAsync(input.Id);
+
         if (existingUser == null)
             return null;
 
         // Update only provided properties
         if (!string.IsNullOrEmpty(input.Name))
             existingUser.Name = input.Name;
-        
+
         if (!string.IsNullOrEmpty(input.Email))
             existingUser.Email = input.Email;
 

@@ -14,42 +14,70 @@ public class TenantRole : BaseEntity
     /// Foreign key to the Tenant entity
     /// </summary>
     [Required]
-    public Guid TenantId { get; set; }
+    public Guid TenantId
+    {
+        get;
+        set;
+    }
 
     /// <summary>
     /// Navigation property to the Tenant entity
     /// </summary>
     [ForeignKey(nameof(TenantId))]
-    public virtual Tenant Tenant { get; set; } = null!;
+    public virtual Tenant Tenant
+    {
+        get;
+        set;
+    } = null!;
 
     /// <summary>
     /// Name of the role (e.g., "Admin", "User", "Viewer")
     /// </summary>
     [Required]
     [MaxLength(50)]
-    public string Name { get; set; } = string.Empty;
+    public string Name
+    {
+        get;
+        set;
+    } = string.Empty;
 
     /// <summary>
     /// Description of the role
     /// </summary>
     [MaxLength(200)]
-    public string? Description { get; set; }
+    public string? Description
+    {
+        get;
+        set;
+    }
 
     /// <summary>
     /// Permissions associated with this role (JSON array of permission strings)
     /// </summary>
     [MaxLength(2000)]
-    public string? Permissions { get; set; }
+    public string? Permissions
+    {
+        get;
+        set;
+    }
 
     /// <summary>
     /// Whether this role is currently active
     /// </summary>
-    public bool IsActive { get; set; } = true;
+    public bool IsActive
+    {
+        get;
+        set;
+    } = true;
 
     /// <summary>
     /// Navigation property to user-tenant-role assignments
     /// </summary>
-    public virtual ICollection<UserTenantRole> UserTenantRoles { get; set; } = new List<UserTenantRole>();
+    public virtual ICollection<UserTenantRole> UserTenantRoles
+    {
+        get;
+        set;
+    } = new List<UserTenantRole>();
 
     /// <summary>
     /// Default constructor

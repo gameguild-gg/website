@@ -29,6 +29,7 @@ public class TenantsController : ControllerBase
     {
         var tenants = await _tenantService.GetAllTenantsAsync();
         var response = tenants.Select(MapToResponseDto);
+
         return Ok(response);
     }
 
@@ -41,7 +42,7 @@ public class TenantsController : ControllerBase
     public async Task<ActionResult<TenantResponseDto>> GetTenant(Guid id)
     {
         Models.Tenant? tenant = await _tenantService.GetTenantByIdAsync(id);
-        
+
         if (tenant == null)
         {
             return NotFound($"Tenant with ID {id} not found");
@@ -59,7 +60,7 @@ public class TenantsController : ControllerBase
     public async Task<ActionResult<TenantResponseDto>> GetTenantByName(string name)
     {
         Models.Tenant? tenant = await _tenantService.GetTenantByNameAsync(name);
-        
+
         if (tenant == null)
         {
             return NotFound($"Tenant with name '{name}' not found");
@@ -81,20 +82,24 @@ public class TenantsController : ControllerBase
             return BadRequest(ModelState);
         }
 
-        var tenant = new Models.Tenant(new
-        {
-            Name = createDto.Name,
-            Description = createDto.Description,
-            IsActive = createDto.IsActive
-        });
+        var tenant = new Models.Tenant(
+            new
+            {
+                Name = createDto.Name, Description = createDto.Description, IsActive = createDto.IsActive
+            }
+        );
 
         Models.Tenant createdTenant = await _tenantService.CreateTenantAsync(tenant);
         TenantResponseDto response = MapToResponseDto(createdTenant);
 
         return CreatedAtAction(
             nameof(GetTenant),
-            new { id = createdTenant.Id },
-            response);
+            new
+            {
+                id = createdTenant.Id
+            },
+            response
+        );
     }
 
     /// <summary>
@@ -126,6 +131,7 @@ public class TenantsController : ControllerBase
         {
             Models.Tenant updatedTenant = await _tenantService.UpdateTenantAsync(existingTenant);
             TenantResponseDto response = MapToResponseDto(updatedTenant);
+
             return Ok(response);
         }
         catch (InvalidOperationException ex)
@@ -143,7 +149,7 @@ public class TenantsController : ControllerBase
     public async Task<IActionResult> SoftDeleteTenant(Guid id)
     {
         bool result = await _tenantService.SoftDeleteTenantAsync(id);
-        
+
         if (!result)
         {
             return NotFound($"Tenant with ID {id} not found");
@@ -161,7 +167,7 @@ public class TenantsController : ControllerBase
     public async Task<IActionResult> RestoreTenant(Guid id)
     {
         bool result = await _tenantService.RestoreTenantAsync(id);
-        
+
         if (!result)
         {
             return NotFound($"Deleted tenant with ID {id} not found");
@@ -179,7 +185,7 @@ public class TenantsController : ControllerBase
     public async Task<IActionResult> HardDeleteTenant(Guid id)
     {
         bool result = await _tenantService.HardDeleteTenantAsync(id);
-        
+
         if (!result)
         {
             return NotFound($"Tenant with ID {id} not found");
@@ -197,7 +203,7 @@ public class TenantsController : ControllerBase
     public async Task<IActionResult> ActivateTenant(Guid id)
     {
         bool result = await _tenantService.ActivateTenantAsync(id);
-        
+
         if (!result)
         {
             return NotFound($"Tenant with ID {id} not found");
@@ -215,7 +221,7 @@ public class TenantsController : ControllerBase
     public async Task<IActionResult> DeactivateTenant(Guid id)
     {
         bool result = await _tenantService.DeactivateTenantAsync(id);
-        
+
         if (!result)
         {
             return NotFound($"Tenant with ID {id} not found");
@@ -233,6 +239,7 @@ public class TenantsController : ControllerBase
     {
         var tenants = await _tenantService.GetDeletedTenantsAsync();
         var response = tenants.Select(MapToResponseDto);
+
         return Ok(response);
     }
 
@@ -249,6 +256,7 @@ public class TenantsController : ControllerBase
         {
             UserTenant userTenant = await _tenantService.AddUserToTenantAsync(userId, id);
             UserTenantResponseDto response = MapUserTenantToResponseDto(userTenant);
+
             return Ok(response);
         }
         catch (Exception ex)
@@ -267,7 +275,7 @@ public class TenantsController : ControllerBase
     public async Task<IActionResult> RemoveUserFromTenant(Guid id, Guid userId)
     {
         bool result = await _tenantService.RemoveUserFromTenantAsync(userId, id);
-        
+
         if (!result)
         {
             return NotFound($"User {userId} not found in tenant {id}");
@@ -286,6 +294,7 @@ public class TenantsController : ControllerBase
     {
         var userTenants = await _tenantService.GetUsersInTenantAsync(id);
         var response = userTenants.Select(MapUserTenantToResponseDto);
+
         return Ok(response);
     }
 
@@ -329,17 +338,19 @@ public class TenantsController : ControllerBase
             CreatedAt = userTenant.CreatedAt,
             UpdatedAt = userTenant.UpdatedAt,
             DeletedAt = userTenant.DeletedAt,
-            User = userTenant.User != null ? new UserResponseDto
-            {
-                Id = userTenant.User.Id,
-                Name = userTenant.User.Name,
-                Email = userTenant.User.Email,
-                IsActive = userTenant.User.IsActive,
-                Version = userTenant.User.Version,
-                CreatedAt = userTenant.User.CreatedAt,
-                UpdatedAt = userTenant.User.UpdatedAt,
-                DeletedAt = userTenant.User.DeletedAt
-            } : null
+            User = userTenant.User != null
+                ? new UserResponseDto
+                {
+                    Id = userTenant.User.Id,
+                    Name = userTenant.User.Name,
+                    Email = userTenant.User.Email,
+                    IsActive = userTenant.User.IsActive,
+                    Version = userTenant.User.Version,
+                    CreatedAt = userTenant.User.CreatedAt,
+                    UpdatedAt = userTenant.User.UpdatedAt,
+                    DeletedAt = userTenant.User.DeletedAt
+                }
+                : null
         };
     }
 

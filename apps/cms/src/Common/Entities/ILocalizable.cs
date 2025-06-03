@@ -8,7 +8,10 @@ public interface ILocalizable
     /// <summary>
     /// Collection of localizations for this entity
     /// </summary>
-    ICollection<ResourceLocalization> Localizations { get; }
+    ICollection<ResourceLocalization> Localizations
+    {
+        get;
+    }
 
     /// <summary>
     /// Adds a localization for a specific field in the given language

@@ -13,6 +13,7 @@ namespace cms.Modules.Tenant.Controllers;
 public class TenantRolesController : ControllerBase
 {
     private readonly ITenantRoleService _tenantRoleService;
+
     private readonly ITenantService _tenantService;
 
     public TenantRolesController(ITenantRoleService tenantRoleService, ITenantService tenantService)
@@ -31,6 +32,7 @@ public class TenantRolesController : ControllerBase
     {
         var roles = await _tenantRoleService.GetRolesByTenantIdAsync(tenantId);
         var response = roles.Select(MapToResponseDto);
+
         return Ok(response);
     }
 
@@ -43,7 +45,7 @@ public class TenantRolesController : ControllerBase
     public async Task<ActionResult<TenantRoleResponseDto>> GetRole(Guid id)
     {
         TenantRole? role = await _tenantRoleService.GetRoleByIdAsync(id);
-        
+
         if (role == null)
         {
             return NotFound($"Tenant role with ID {id} not found");
@@ -62,7 +64,7 @@ public class TenantRolesController : ControllerBase
     public async Task<ActionResult<TenantRoleResponseDto>> GetRoleByTenantIdAndName(Guid tenantId, string name)
     {
         TenantRole? role = await _tenantRoleService.GetRoleByTenantIdAndNameAsync(tenantId, name);
-        
+
         if (role == null)
         {
             return NotFound($"Role '{name}' not found in tenant {tenantId}");
@@ -91,22 +93,28 @@ public class TenantRolesController : ControllerBase
             return BadRequest($"Tenant with ID {createDto.TenantId} not found");
         }
 
-        var role = new TenantRole(new
-        {
-            TenantId = createDto.TenantId,
-            Name = createDto.Name,
-            Description = createDto.Description,
-            Permissions = createDto.Permissions,
-            IsActive = createDto.IsActive
-        });
+        var role = new TenantRole(
+            new
+            {
+                TenantId = createDto.TenantId,
+                Name = createDto.Name,
+                Description = createDto.Description,
+                Permissions = createDto.Permissions,
+                IsActive = createDto.IsActive
+            }
+        );
 
         TenantRole createdRole = await _tenantRoleService.CreateRoleAsync(role);
         TenantRoleResponseDto response = MapToResponseDto(createdRole);
 
         return CreatedAtAction(
             nameof(GetRole),
-            new { id = createdRole.Id },
-            response);
+            new
+            {
+                id = createdRole.Id
+            },
+            response
+        );
     }
 
     /// <summary>
@@ -139,6 +147,7 @@ public class TenantRolesController : ControllerBase
         {
             TenantRole updatedRole = await _tenantRoleService.UpdateRoleAsync(existingRole);
             TenantRoleResponseDto response = MapToResponseDto(updatedRole);
+
             return Ok(response);
         }
         catch (InvalidOperationException ex)
@@ -156,7 +165,7 @@ public class TenantRolesController : ControllerBase
     public async Task<IActionResult> SoftDeleteRole(Guid id)
     {
         bool result = await _tenantRoleService.SoftDeleteRoleAsync(id);
-        
+
         if (!result)
         {
             return NotFound($"Tenant role with ID {id} not found");
@@ -174,7 +183,7 @@ public class TenantRolesController : ControllerBase
     public async Task<IActionResult> RestoreRole(Guid id)
     {
         bool result = await _tenantRoleService.RestoreRoleAsync(id);
-        
+
         if (!result)
         {
             return NotFound($"Deleted tenant role with ID {id} not found");
@@ -192,7 +201,7 @@ public class TenantRolesController : ControllerBase
     public async Task<IActionResult> HardDeleteRole(Guid id)
     {
         bool result = await _tenantRoleService.HardDeleteRoleAsync(id);
-        
+
         if (!result)
         {
             return NotFound($"Tenant role with ID {id} not found");
@@ -215,6 +224,7 @@ public class TenantRolesController : ControllerBase
         {
             UserTenantRole userTenantRole = await _tenantRoleService.AssignRoleToUserAsync(userTenantId, id, expiresAt);
             UserTenantRoleResponseDto response = MapUserTenantRoleToResponseDto(userTenantRole);
+
             return Ok(response);
         }
         catch (Exception ex)
@@ -233,7 +243,7 @@ public class TenantRolesController : ControllerBase
     public async Task<IActionResult> RemoveRoleFromUser(Guid id, Guid userTenantId)
     {
         bool result = await _tenantRoleService.RemoveRoleFromUserAsync(userTenantId, id);
-        
+
         if (!result)
         {
             return NotFound($"Role assignment not found");
@@ -252,6 +262,7 @@ public class TenantRolesController : ControllerBase
     {
         var userRoles = await _tenantRoleService.GetUserRolesInTenantAsync(userTenantId);
         var response = userRoles.Select(MapUserTenantRoleToResponseDto);
+
         return Ok(response);
     }
 
@@ -265,6 +276,7 @@ public class TenantRolesController : ControllerBase
     {
         var userRoles = await _tenantRoleService.GetUsersWithRoleAsync(id);
         var response = userRoles.Select(MapUserTenantRoleToResponseDto);
+
         return Ok(response);
     }
 
@@ -287,17 +299,19 @@ public class TenantRolesController : ControllerBase
             CreatedAt = role.CreatedAt,
             UpdatedAt = role.UpdatedAt,
             DeletedAt = role.DeletedAt,
-            Tenant = role.Tenant != null ? new TenantResponseDto
-            {
-                Id = role.Tenant.Id,
-                Name = role.Tenant.Name,
-                Description = role.Tenant.Description,
-                IsActive = role.Tenant.IsActive,
-                Version = role.Tenant.Version,
-                CreatedAt = role.Tenant.CreatedAt,
-                UpdatedAt = role.Tenant.UpdatedAt,
-                DeletedAt = role.Tenant.DeletedAt
-            } : null
+            Tenant = role.Tenant != null
+                ? new TenantResponseDto
+                {
+                    Id = role.Tenant.Id,
+                    Name = role.Tenant.Name,
+                    Description = role.Tenant.Description,
+                    IsActive = role.Tenant.IsActive,
+                    Version = role.Tenant.Version,
+                    CreatedAt = role.Tenant.CreatedAt,
+                    UpdatedAt = role.Tenant.UpdatedAt,
+                    DeletedAt = role.Tenant.DeletedAt
+                }
+                : null
         };
     }
 
@@ -320,19 +334,21 @@ public class TenantRolesController : ControllerBase
             CreatedAt = userTenantRole.CreatedAt,
             UpdatedAt = userTenantRole.UpdatedAt,
             DeletedAt = userTenantRole.DeletedAt,
-            TenantRole = userTenantRole.TenantRole != null ? new TenantRoleResponseDto
-            {
-                Id = userTenantRole.TenantRole.Id,
-                TenantId = userTenantRole.TenantRole.TenantId,
-                Name = userTenantRole.TenantRole.Name,
-                Description = userTenantRole.TenantRole.Description,
-                Permissions = userTenantRole.TenantRole.Permissions,
-                IsActive = userTenantRole.TenantRole.IsActive,
-                Version = userTenantRole.TenantRole.Version,
-                CreatedAt = userTenantRole.TenantRole.CreatedAt,
-                UpdatedAt = userTenantRole.TenantRole.UpdatedAt,
-                DeletedAt = userTenantRole.TenantRole.DeletedAt
-            } : null
+            TenantRole = userTenantRole.TenantRole != null
+                ? new TenantRoleResponseDto
+                {
+                    Id = userTenantRole.TenantRole.Id,
+                    TenantId = userTenantRole.TenantRole.TenantId,
+                    Name = userTenantRole.TenantRole.Name,
+                    Description = userTenantRole.TenantRole.Description,
+                    Permissions = userTenantRole.TenantRole.Permissions,
+                    IsActive = userTenantRole.TenantRole.IsActive,
+                    Version = userTenantRole.TenantRole.Version,
+                    CreatedAt = userTenantRole.TenantRole.CreatedAt,
+                    UpdatedAt = userTenantRole.TenantRole.UpdatedAt,
+                    DeletedAt = userTenantRole.TenantRole.DeletedAt
+                }
+                : null
         };
     }
 }

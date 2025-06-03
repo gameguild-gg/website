@@ -14,40 +14,68 @@ public class UserTenantRole : BaseEntity
     /// Foreign key to the UserTenant entity
     /// </summary>
     [Required]
-    public Guid UserTenantId { get; set; }
+    public Guid UserTenantId
+    {
+        get;
+        set;
+    }
 
     /// <summary>
     /// Navigation property to the UserTenant entity
     /// </summary>
     [ForeignKey(nameof(UserTenantId))]
-    public virtual UserTenant UserTenant { get; set; } = null!;
+    public virtual UserTenant UserTenant
+    {
+        get;
+        set;
+    } = null!;
 
     /// <summary>
     /// Foreign key to the TenantRole entity
     /// </summary>
     [Required]
-    public Guid TenantRoleId { get; set; }
+    public Guid TenantRoleId
+    {
+        get;
+        set;
+    }
 
     /// <summary>
     /// Navigation property to the TenantRole entity
     /// </summary>
     [ForeignKey(nameof(TenantRoleId))]
-    public virtual TenantRole TenantRole { get; set; } = null!;
+    public virtual TenantRole TenantRole
+    {
+        get;
+        set;
+    } = null!;
 
     /// <summary>
     /// Whether this role assignment is currently active
     /// </summary>
-    public bool IsActive { get; set; } = true;
+    public bool IsActive
+    {
+        get;
+        set;
+    } = true;
 
     /// <summary>
     /// When this role was assigned
     /// </summary>
-    public DateTime AssignedAt { get; set; } = DateTime.UtcNow;
+    public DateTime AssignedAt
+    {
+        get;
+        set;
+    } = DateTime.UtcNow;
 
     /// <summary>
     /// When this role assignment expires (optional)
     /// </summary>
-    public DateTime? ExpiresAt { get; set; }
+    public DateTime? ExpiresAt
+    {
+        get;
+        set;
+    }
 
     /// <summary>
     /// Default constructor

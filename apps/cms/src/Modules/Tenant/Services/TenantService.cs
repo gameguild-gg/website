@@ -37,7 +37,7 @@ public class TenantService : ITenantService
     {
         return await _context.Tenants
             .Include(t => t.UserTenants)
-                .ThenInclude(ut => ut.User)
+            .ThenInclude(ut => ut.User)
             .Include(t => t.TenantRoles)
             .FirstOrDefaultAsync(t => t.Id == id);
     }
@@ -64,6 +64,7 @@ public class TenantService : ITenantService
     {
         _context.Tenants.Add(tenant);
         await _context.SaveChangesAsync();
+
         return tenant;
     }
 
@@ -89,6 +90,7 @@ public class TenantService : ITenantService
         existingTenant.Touch(); // Update timestamp
 
         await _context.SaveChangesAsync();
+
         return existingTenant;
     }
 
@@ -109,6 +111,7 @@ public class TenantService : ITenantService
 
         tenant.SoftDelete();
         await _context.SaveChangesAsync();
+
         return true;
     }
 
@@ -130,6 +133,7 @@ public class TenantService : ITenantService
 
         tenant.Restore();
         await _context.SaveChangesAsync();
+
         return true;
     }
 
@@ -151,6 +155,7 @@ public class TenantService : ITenantService
 
         _context.Tenants.Remove(tenant);
         await _context.SaveChangesAsync();
+
         return true;
     }
 
@@ -171,6 +176,7 @@ public class TenantService : ITenantService
 
         tenant.Activate();
         await _context.SaveChangesAsync();
+
         return true;
     }
 
@@ -191,6 +197,7 @@ public class TenantService : ITenantService
 
         tenant.Deactivate();
         await _context.SaveChangesAsync();
+
         return true;
     }
 
@@ -228,16 +235,17 @@ public class TenantService : ITenantService
                 existingRelationship.Activate();
                 await _context.SaveChangesAsync();
             }
+
             return existingRelationship;
         }
 
         // Create new relationship
-        var userTenant = new UserTenant(new
-        {
-            UserId = userId,
-            TenantId = tenantId,
-            JoinedAt = DateTime.UtcNow
-        });
+        var userTenant = new UserTenant(
+            new
+            {
+                UserId = userId, TenantId = tenantId, JoinedAt = DateTime.UtcNow
+            }
+        );
 
         _context.UserTenants.Add(userTenant);
         await _context.SaveChangesAsync();
@@ -271,6 +279,7 @@ public class TenantService : ITenantService
 
         userTenant.SoftDelete();
         await _context.SaveChangesAsync();
+
         return true;
     }
 
@@ -286,7 +295,7 @@ public class TenantService : ITenantService
             .Include(ut => ut.User)
             .Include(ut => ut.Tenant)
             .Include(ut => ut.UserTenantRoles)
-                .ThenInclude(utr => utr.TenantRole)
+            .ThenInclude(utr => utr.TenantRole)
             .ToListAsync();
     }
 
@@ -302,7 +311,7 @@ public class TenantService : ITenantService
             .Include(ut => ut.User)
             .Include(ut => ut.Tenant)
             .Include(ut => ut.UserTenantRoles)
-                .ThenInclude(utr => utr.TenantRole)
+            .ThenInclude(utr => utr.TenantRole)
             .ToListAsync();
     }
 }

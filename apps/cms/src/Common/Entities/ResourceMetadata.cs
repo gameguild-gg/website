@@ -13,26 +13,46 @@ public class ResourceMetadata : BaseEntity
     /// </summary>
     [Required]
     [MaxLength(100)]
-    public string ResourceType { get; set; } = string.Empty;
+    public string ResourceType
+    {
+        get;
+        set;
+    } = string.Empty;
 
     /// <summary>
     /// Additional metadata stored as JSON
     /// </summary>
-    public string? AdditionalData { get; set; }
+    public string? AdditionalData
+    {
+        get;
+        set;
+    }
 
     /// <summary>
     /// Tags associated with this resource
     /// </summary>
     [MaxLength(500)]
-    public string? Tags { get; set; }
+    public string? Tags
+    {
+        get;
+        set;
+    }
 
     /// <summary>
     /// SEO metadata like meta description, keywords, etc.
     /// </summary>
-    public string? SeoMetadata { get; set; }
+    public string? SeoMetadata
+    {
+        get;
+        set;
+    }
 
     /// <summary>
     /// Collection of permissions for resources using this metadata
     /// </summary>
-    public virtual ICollection<ResourcePermission> ResourcePermissions { get; set; } = new List<ResourcePermission>();
+    public virtual ICollection<ResourcePermission> ResourcePermissions
+    {
+        get;
+        set;
+    } = new List<ResourcePermission>();
 }

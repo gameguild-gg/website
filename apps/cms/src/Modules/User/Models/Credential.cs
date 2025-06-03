@@ -14,60 +14,100 @@ public class Credential : BaseEntity
     /// Foreign key to the User entity
     /// </summary>
     [Required]
-    public Guid UserId { get; set; }
+    public Guid UserId
+    {
+        get;
+        set;
+    }
 
     /// <summary>
     /// Navigation property to the User entity
     /// </summary>
     [ForeignKey(nameof(UserId))]
-    public virtual User User { get; set; } = null!;
+    public virtual User User
+    {
+        get;
+        set;
+    } = null!;
 
     /// <summary>
     /// Foreign key to the Tenant entity (optional - for tenant-specific credentials)
     /// </summary>
-    public Guid? TenantId { get; set; }
+    public Guid? TenantId
+    {
+        get;
+        set;
+    }
 
     /// <summary>
     /// Navigation property to the Tenant entity
     /// </summary>
     [ForeignKey(nameof(TenantId))]
-    public virtual cms.Modules.Tenant.Models.Tenant? Tenant { get; set; }
+    public virtual cms.Modules.Tenant.Models.Tenant? Tenant
+    {
+        get;
+        set;
+    }
 
     /// <summary>
     /// Type of credential (e.g., "password", "api_key", "oauth_token", "2fa_secret")
     /// </summary>
     [Required]
     [MaxLength(50)]
-    public string Type { get; set; } = string.Empty;
+    public string Type
+    {
+        get;
+        set;
+    } = string.Empty;
 
     /// <summary>
     /// The credential value (hashed password, encrypted token, etc.)
     /// </summary>
     [Required]
     [MaxLength(1000)]
-    public string Value { get; set; } = string.Empty;
+    public string Value
+    {
+        get;
+        set;
+    } = string.Empty;
 
     /// <summary>
     /// Additional metadata for the credential (JSON format)
     /// Can store salt, algorithm, expiration, etc.
     /// </summary>
     [MaxLength(2000)]
-    public string? Metadata { get; set; }
+    public string? Metadata
+    {
+        get;
+        set;
+    }
 
     /// <summary>
     /// When this credential expires (optional)
     /// </summary>
-    public DateTime? ExpiresAt { get; set; }
+    public DateTime? ExpiresAt
+    {
+        get;
+        set;
+    }
 
     /// <summary>
     /// Whether this credential is currently active
     /// </summary>
-    public bool IsActive { get; set; } = true;
+    public bool IsActive
+    {
+        get;
+        set;
+    } = true;
 
     /// <summary>
     /// When this credential was last used
     /// </summary>
-    public DateTime? LastUsedAt { get; set; }
+    public DateTime? LastUsedAt
+    {
+        get;
+        set;
+    }
 
     /// <summary>
     /// Default constructor

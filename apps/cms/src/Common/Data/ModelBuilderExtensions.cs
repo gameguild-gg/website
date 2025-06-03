@@ -23,39 +23,42 @@ public static class ModelBuilderExtensions
         foreach (IMutableEntityType entityType in entityTypes)
         {
             // Configure common properties
-            modelBuilder.Entity(entityType.ClrType, builder =>
-            {
-                // Id configuration (UUID)
-                builder.HasKey(nameof(BaseEntity.Id));
-                builder.Property(nameof(BaseEntity.Id))
-                    .HasDefaultValueSql("gen_random_uuid()") // PostgreSQL UUID generation
-                    .ValueGeneratedOnAdd();
+            modelBuilder.Entity(
+                entityType.ClrType,
+                builder =>
+                {
+                    // Id configuration (UUID)
+                    builder.HasKey(nameof(BaseEntity.Id));
+                    builder.Property(nameof(BaseEntity.Id))
+                        .HasDefaultValueSql("gen_random_uuid()") // PostgreSQL UUID generation
+                        .ValueGeneratedOnAdd();
 
-                // Version configuration for optimistic concurrency
-                builder.Property(nameof(BaseEntity.Version))
-                    .IsRowVersion() // Maps to PostgreSQL's xmin column
-                    .IsConcurrencyToken();
+                    // Version configuration for optimistic concurrency
+                    builder.Property(nameof(BaseEntity.Version))
+                        .IsRowVersion() // Maps to PostgreSQL's xmin column
+                        .IsConcurrencyToken();
 
-                // CreatedAt configuration
-                builder.Property(nameof(BaseEntity.CreatedAt))
-                    .IsRequired()
-                    .HasDefaultValueSql("CURRENT_TIMESTAMP")
-                    .ValueGeneratedOnAdd();
+                    // CreatedAt configuration
+                    builder.Property(nameof(BaseEntity.CreatedAt))
+                        .IsRequired()
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                        .ValueGeneratedOnAdd();
 
-                // UpdatedAt configuration
-                builder.Property(nameof(BaseEntity.UpdatedAt))
-                    .IsRequired()
-                    .HasDefaultValueSql("CURRENT_TIMESTAMP")
-                    .ValueGeneratedOnAddOrUpdate();
+                    // UpdatedAt configuration
+                    builder.Property(nameof(BaseEntity.UpdatedAt))
+                        .IsRequired()
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                        .ValueGeneratedOnAddOrUpdate();
 
-                // DeletedAt configuration (for soft delete)
-                builder.Property(nameof(BaseEntity.DeletedAt))
-                    .IsRequired(false);
+                    // DeletedAt configuration (for soft delete)
+                    builder.Property(nameof(BaseEntity.DeletedAt))
+                        .IsRequired(false);
 
-                // Add indexes for performance
-                builder.HasIndex(nameof(BaseEntity.CreatedAt));
-                builder.HasIndex(nameof(BaseEntity.DeletedAt));
-            });
+                    // Add indexes for performance
+                    builder.HasIndex(nameof(BaseEntity.CreatedAt));
+                    builder.HasIndex(nameof(BaseEntity.DeletedAt));
+                }
+            );
         }
     }
 

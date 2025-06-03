@@ -6,6 +6,7 @@ namespace cms.Common.Middleware;
 public class ExceptionHandlingMiddleware
 {
     private readonly RequestDelegate _next;
+
     private readonly ILogger<ExceptionHandlingMiddleware> _logger;
 
     public ExceptionHandlingMiddleware(RequestDelegate next, ILogger<ExceptionHandlingMiddleware> logger)
@@ -34,9 +35,7 @@ public class ExceptionHandlingMiddleware
 
         var errorResponse = new
         {
-            message = exception.Message,
-            statusCode = (int)HttpStatusCode.InternalServerError,
-            timestamp = DateTime.UtcNow
+            message = exception.Message, statusCode = (int)HttpStatusCode.InternalServerError, timestamp = DateTime.UtcNow
         };
 
         response.StatusCode = (int)HttpStatusCode.InternalServerError;

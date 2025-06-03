@@ -18,10 +18,9 @@ public class TenantMutations
     {
         var tenant = new Models.Tenant
         {
-            Name = input.Name,
-            Description = input.Description,
-            IsActive = input.IsActive
+            Name = input.Name, Description = input.Description, IsActive = input.IsActive
         };
+
         return await tenantService.CreateTenantAsync(tenant);
     }
 
@@ -34,11 +33,9 @@ public class TenantMutations
     {
         var tenant = new Models.Tenant
         {
-            Id = input.Id,
-            Name = input.Name ?? string.Empty,
-            Description = input.Description,
-            IsActive = input.IsActive ?? true
+            Id = input.Id, Name = input.Name ?? string.Empty, Description = input.Description, IsActive = input.IsActive ?? true
         };
+
         return await tenantService.UpdateTenantAsync(tenant);
     }
 
@@ -97,6 +94,7 @@ public class TenantMutations
             Permissions = input.Permissions,
             IsActive = input.IsActive
         };
+
         return await tenantRoleService.CreateRoleAsync(role);
     }
 
@@ -115,6 +113,7 @@ public class TenantMutations
             Permissions = input.Permissions,
             IsActive = input.IsActive ?? true
         };
+
         return await tenantRoleService.UpdateRoleAsync(role);
     }
 
@@ -139,8 +138,10 @@ public class TenantMutations
         // Find the UserTenantId for the user/tenant pair
         var userTenants = await tenantService.GetUsersInTenantAsync(input.TenantId);
         UserTenant? userTenant = userTenants.FirstOrDefault(ut => ut.UserId == input.UserId);
+
         if (userTenant == null)
             throw new Exception("User is not a member of the tenant");
+
         return await tenantRoleService.AssignRoleToUserAsync(userTenant.Id, input.TenantRoleId, input.ExpiresAt);
     }
 
@@ -157,8 +158,10 @@ public class TenantMutations
         // Find the UserTenantId for the user/tenant pair
         var userTenants = await tenantService.GetUsersInTenantAsync(tenantId);
         UserTenant? userTenant = userTenants.FirstOrDefault(ut => ut.UserId == userId);
+
         if (userTenant == null)
             throw new Exception("User is not a member of the tenant");
+
         return await tenantRoleService.RemoveRoleFromUserAsync(userTenant.Id, tenantRoleId);
     }
 }

@@ -122,6 +122,7 @@ public class TenantRoleService : ITenantRoleService
 
         role.SoftDelete();
         await _context.SaveChangesAsync();
+
         return true;
     }
 
@@ -143,6 +144,7 @@ public class TenantRoleService : ITenantRoleService
 
         role.Restore();
         await _context.SaveChangesAsync();
+
         return true;
     }
 
@@ -164,6 +166,7 @@ public class TenantRoleService : ITenantRoleService
 
         _context.TenantRoles.Remove(role);
         await _context.SaveChangesAsync();
+
         return true;
     }
 
@@ -189,17 +192,17 @@ public class TenantRoleService : ITenantRoleService
                 existingAssignment.ExpiresAt = expiresAt;
                 await _context.SaveChangesAsync();
             }
+
             return existingAssignment;
         }
 
         // Create new assignment
-        var userTenantRole = new UserTenantRole(new
-        {
-            UserTenantId = userTenantId,
-            TenantRoleId = roleId,
-            AssignedAt = DateTime.UtcNow,
-            ExpiresAt = expiresAt
-        });
+        var userTenantRole = new UserTenantRole(
+            new
+            {
+                UserTenantId = userTenantId, TenantRoleId = roleId, AssignedAt = DateTime.UtcNow, ExpiresAt = expiresAt
+            }
+        );
 
         _context.UserTenantRoles.Add(userTenantRole);
         await _context.SaveChangesAsync();
@@ -233,6 +236,7 @@ public class TenantRoleService : ITenantRoleService
 
         userTenantRole.SoftDelete();
         await _context.SaveChangesAsync();
+
         return true;
     }
 
@@ -246,9 +250,9 @@ public class TenantRoleService : ITenantRoleService
         return await _context.UserTenantRoles
             .Where(utr => utr.UserTenantId == userTenantId)
             .Include(utr => utr.UserTenant)
-                .ThenInclude(ut => ut.User)
+            .ThenInclude(ut => ut.User)
             .Include(utr => utr.TenantRole)
-                .ThenInclude(tr => tr.Tenant)
+            .ThenInclude(tr => tr.Tenant)
             .ToListAsync();
     }
 
@@ -262,9 +266,9 @@ public class TenantRoleService : ITenantRoleService
         return await _context.UserTenantRoles
             .Where(utr => utr.TenantRoleId == roleId)
             .Include(utr => utr.UserTenant)
-                .ThenInclude(ut => ut.User)
+            .ThenInclude(ut => ut.User)
             .Include(utr => utr.TenantRole)
-                .ThenInclude(tr => tr.Tenant)
+            .ThenInclude(tr => tr.Tenant)
             .ToListAsync();
     }
 }

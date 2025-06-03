@@ -14,28 +14,59 @@ public class Tenant : BaseEntity
     /// </summary>
     [Required]
     [MaxLength(100)]
-    public string Name { get; set; } = string.Empty;
+    public string Name
+    {
+        get;
+        set;
+    } = string.Empty;
 
     /// <summary>
     /// Description of the tenant
     /// </summary>
     [MaxLength(500)]
-    public string? Description { get; set; }
+    public string? Description
+    {
+        get;
+        set;
+    }
 
     /// <summary>
     /// Whether this tenant is currently active
     /// </summary>
-    public bool IsActive { get; set; } = true;
+    public bool IsActive
+    {
+        get;
+        set;
+    } = true;
+
+    /// <summary>
+    /// Slug for the tenant (URL-friendly unique identifier)
+    /// </summary>
+    [Required]
+    [MaxLength(255)]
+    public string Slug
+    {
+        get;
+        set;
+    } = string.Empty;
 
     /// <summary>
     /// Navigation property to users in this tenant
     /// </summary>
-    public virtual ICollection<UserTenant> UserTenants { get; set; } = new List<UserTenant>();
+    public virtual ICollection<UserTenant> UserTenants
+    {
+        get;
+        set;
+    } = new List<UserTenant>();
 
     /// <summary>
     /// Navigation property to tenant roles
     /// </summary>
-    public virtual ICollection<TenantRole> TenantRoles { get; set; } = new List<TenantRole>();
+    public virtual ICollection<TenantRole> TenantRoles
+    {
+        get;
+        set;
+    } = new List<TenantRole>();
 
     /// <summary>
     /// Default constructor

@@ -12,47 +12,79 @@ public class ResourcePermission : BaseEntity
     /// Navigation property to the user who has this permission
     /// Entity Framework will automatically create the UserId foreign key
     /// </summary>
-    public virtual Modules.User.Models.User? User { get; set; }
+    public virtual Modules.User.Models.User? User
+    {
+        get;
+        set;
+    }
 
     /// <summary>
     /// Navigation property to the resource role
     /// Entity Framework will automatically create the ResourceRoleId foreign key
     /// </summary>
-    public virtual ResourceRole? ResourceRole { get; set; }
+    public virtual ResourceRole? ResourceRole
+    {
+        get;
+        set;
+    }
 
     /// <summary>
     /// Type of the resource (for polymorphic relationships)
     /// </summary>
     [Required]
     [MaxLength(100)]
-    public string ResourceType { get; set; } = string.Empty;
+    public string ResourceType
+    {
+        get;
+        set;
+    } = string.Empty;
 
     /// <summary>
     /// Navigation property to resource metadata
     /// Entity Framework will automatically create the ResourceMetadataId foreign key
     /// </summary>
-    public virtual ResourceMetadata? ResourceMetadata { get; set; }
+    public virtual ResourceMetadata? ResourceMetadata
+    {
+        get;
+        set;
+    }
 
     /// <summary>
     /// The permission level granted (Read, Write, Delete, Admin, etc.)
     /// </summary>
     [Required]
-    public PermissionLevel Permission { get; set; }
+    public PermissionLevel Permission
+    {
+        get;
+        set;
+    }
 
     /// <summary>
     /// When this permission was granted
     /// </summary>
-    public DateTime GrantedAt { get; set; } = DateTime.UtcNow;
+    public DateTime GrantedAt
+    {
+        get;
+        set;
+    } = DateTime.UtcNow;
 
     /// <summary>
     /// Optional expiration date for this permission
     /// </summary>
-    public DateTime? ExpiresAt { get; set; }
+    public DateTime? ExpiresAt
+    {
+        get;
+        set;
+    }
 
     /// <summary>
     /// Whether this permission is currently active
     /// </summary>
-    public bool IsActive { get; set; } = true;
+    public bool IsActive
+    {
+        get;
+        set;
+    } = true;
 
     /// <summary>
     /// Check if the permission is expired

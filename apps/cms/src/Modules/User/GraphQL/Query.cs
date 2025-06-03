@@ -11,7 +11,7 @@ public class Query
     {
         return await userService.GetAllUsersAsync();
     }
-    
+
     /// <summary>
     /// Gets a user by their unique identifier (UUID).
     /// </summary>
@@ -19,16 +19,17 @@ public class Query
     {
         return await userService.GetUserByIdAsync(id);
     }
-    
+
     /// <summary>
     /// Gets active users only.
     /// </summary>
     public async Task<IEnumerable<Models.User>> GetActiveUsers([Service] IUserService userService)
     {
         var users = await userService.GetAllUsersAsync();
+
         return users.Where(u => u.IsActive);
     }
-    
+
     /// <summary>
     /// Gets soft-deleted users.
     /// </summary>

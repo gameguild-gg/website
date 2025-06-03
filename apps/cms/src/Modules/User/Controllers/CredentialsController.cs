@@ -13,6 +13,7 @@ namespace cms.Modules.User.Controllers;
 public class CredentialsController : ControllerBase
 {
     private readonly ICredentialService _credentialService;
+
     private readonly IUserService _userService;
 
     public CredentialsController(ICredentialService credentialService, IUserService userService)
@@ -30,6 +31,7 @@ public class CredentialsController : ControllerBase
     {
         var credentials = await _credentialService.GetAllCredentialsAsync();
         var response = credentials.Select(MapToResponseDto);
+
         return Ok(response);
     }
 
@@ -43,6 +45,7 @@ public class CredentialsController : ControllerBase
     {
         var credentials = await _credentialService.GetCredentialsByUserIdAsync(userId);
         var response = credentials.Select(MapToResponseDto);
+
         return Ok(response);
     }
 
@@ -55,7 +58,7 @@ public class CredentialsController : ControllerBase
     public async Task<ActionResult<CredentialResponseDto>> GetCredential(Guid id)
     {
         Credential? credential = await _credentialService.GetCredentialByIdAsync(id);
-        
+
         if (credential == null)
         {
             return NotFound($"Credential with ID {id} not found");
@@ -74,7 +77,7 @@ public class CredentialsController : ControllerBase
     public async Task<ActionResult<CredentialResponseDto>> GetCredentialByUserIdAndType(Guid userId, string type)
     {
         Credential? credential = await _credentialService.GetCredentialByUserIdAndTypeAsync(userId, type);
-        
+
         if (credential == null)
         {
             return NotFound($"Credential of type '{type}' for user {userId} not found");
@@ -103,23 +106,29 @@ public class CredentialsController : ControllerBase
             return BadRequest($"User with ID {createDto.UserId} not found");
         }
 
-        var credential = new Credential(new
-        {
-            UserId = createDto.UserId,
-            Type = createDto.Type,
-            Value = createDto.Value,
-            Metadata = createDto.Metadata,
-            ExpiresAt = createDto.ExpiresAt,
-            IsActive = createDto.IsActive
-        });
+        var credential = new Credential(
+            new
+            {
+                UserId = createDto.UserId,
+                Type = createDto.Type,
+                Value = createDto.Value,
+                Metadata = createDto.Metadata,
+                ExpiresAt = createDto.ExpiresAt,
+                IsActive = createDto.IsActive
+            }
+        );
 
         Credential createdCredential = await _credentialService.CreateCredentialAsync(credential);
         CredentialResponseDto response = MapToResponseDto(createdCredential);
 
         return CreatedAtAction(
             nameof(GetCredential),
-            new { id = createdCredential.Id },
-            response);
+            new
+            {
+                id = createdCredential.Id
+            },
+            response
+        );
     }
 
     /// <summary>
@@ -153,6 +162,7 @@ public class CredentialsController : ControllerBase
         {
             Credential updatedCredential = await _credentialService.UpdateCredentialAsync(existingCredential);
             CredentialResponseDto response = MapToResponseDto(updatedCredential);
+
             return Ok(response);
         }
         catch (InvalidOperationException ex)
@@ -170,7 +180,7 @@ public class CredentialsController : ControllerBase
     public async Task<IActionResult> SoftDeleteCredential(Guid id)
     {
         bool result = await _credentialService.SoftDeleteCredentialAsync(id);
-        
+
         if (!result)
         {
             return NotFound($"Credential with ID {id} not found");
@@ -188,7 +198,7 @@ public class CredentialsController : ControllerBase
     public async Task<IActionResult> RestoreCredential(Guid id)
     {
         bool result = await _credentialService.RestoreCredentialAsync(id);
-        
+
         if (!result)
         {
             return NotFound($"Deleted credential with ID {id} not found");
@@ -206,7 +216,7 @@ public class CredentialsController : ControllerBase
     public async Task<IActionResult> HardDeleteCredential(Guid id)
     {
         bool result = await _credentialService.HardDeleteCredentialAsync(id);
-        
+
         if (!result)
         {
             return NotFound($"Credential with ID {id} not found");
@@ -224,7 +234,7 @@ public class CredentialsController : ControllerBase
     public async Task<IActionResult> MarkCredentialAsUsed(Guid id)
     {
         bool result = await _credentialService.MarkCredentialAsUsedAsync(id);
-        
+
         if (!result)
         {
             return NotFound($"Credential with ID {id} not found");
@@ -242,7 +252,7 @@ public class CredentialsController : ControllerBase
     public async Task<IActionResult> DeactivateCredential(Guid id)
     {
         bool result = await _credentialService.DeactivateCredentialAsync(id);
-        
+
         if (!result)
         {
             return NotFound($"Credential with ID {id} not found");
@@ -260,7 +270,7 @@ public class CredentialsController : ControllerBase
     public async Task<IActionResult> ActivateCredential(Guid id)
     {
         bool result = await _credentialService.ActivateCredentialAsync(id);
-        
+
         if (!result)
         {
             return NotFound($"Credential with ID {id} not found");
@@ -278,6 +288,7 @@ public class CredentialsController : ControllerBase
     {
         var credentials = await _credentialService.GetDeletedCredentialsAsync();
         var response = credentials.Select(MapToResponseDto);
+
         return Ok(response);
     }
 
@@ -302,17 +313,19 @@ public class CredentialsController : ControllerBase
             CreatedAt = credential.CreatedAt,
             UpdatedAt = credential.UpdatedAt,
             DeletedAt = credential.DeletedAt,
-            User = credential.User != null ? new UserResponseDto
-            {
-                Id = credential.User.Id,
-                Name = credential.User.Name,
-                Email = credential.User.Email,
-                IsActive = credential.User.IsActive,
-                Version = credential.User.Version,
-                CreatedAt = credential.User.CreatedAt,
-                UpdatedAt = credential.User.UpdatedAt,
-                DeletedAt = credential.User.DeletedAt
-            } : null
+            User = credential.User != null
+                ? new UserResponseDto
+                {
+                    Id = credential.User.Id,
+                    Name = credential.User.Name,
+                    Email = credential.User.Email,
+                    IsActive = credential.User.IsActive,
+                    Version = credential.User.Version,
+                    CreatedAt = credential.User.CreatedAt,
+                    UpdatedAt = credential.User.UpdatedAt,
+                    DeletedAt = credential.User.DeletedAt
+                }
+                : null
         };
     }
 }

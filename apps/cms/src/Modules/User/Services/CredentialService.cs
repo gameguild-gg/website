@@ -62,12 +62,12 @@ public class CredentialService : ICredentialService
     {
         _context.Credentials.Add(credential);
         await _context.SaveChangesAsync();
-        
+
         // Load the related User for the response
         await _context.Entry(credential)
             .Reference(c => c.User)
             .LoadAsync();
-            
+
         return credential;
     }
 
@@ -95,12 +95,12 @@ public class CredentialService : ICredentialService
         existingCredential.Touch(); // Update timestamp
 
         await _context.SaveChangesAsync();
-        
+
         // Load the related User for the response
         await _context.Entry(existingCredential)
             .Reference(c => c.User)
             .LoadAsync();
-            
+
         return existingCredential;
     }
 
@@ -121,6 +121,7 @@ public class CredentialService : ICredentialService
 
         credential.SoftDelete();
         await _context.SaveChangesAsync();
+
         return true;
     }
 
@@ -143,6 +144,7 @@ public class CredentialService : ICredentialService
 
         credential.Restore();
         await _context.SaveChangesAsync();
+
         return true;
     }
 
@@ -165,6 +167,7 @@ public class CredentialService : ICredentialService
 
         _context.Credentials.Remove(credential);
         await _context.SaveChangesAsync();
+
         return true;
     }
 
@@ -185,6 +188,7 @@ public class CredentialService : ICredentialService
 
         credential.MarkAsUsed();
         await _context.SaveChangesAsync();
+
         return true;
     }
 
@@ -205,6 +209,7 @@ public class CredentialService : ICredentialService
 
         credential.Deactivate();
         await _context.SaveChangesAsync();
+
         return true;
     }
 
@@ -225,6 +230,7 @@ public class CredentialService : ICredentialService
 
         credential.Activate();
         await _context.SaveChangesAsync();
+
         return true;
     }
 

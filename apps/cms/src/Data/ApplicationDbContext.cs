@@ -84,7 +84,7 @@ public class ApplicationDbContext : DbContext
 
         // Configure ITenantable entities
         foreach (var entityType in modelBuilder.Model.GetEntityTypes()
-            .Where(t => typeof(ITenantable).IsAssignableFrom(t.ClrType)))
+                     .Where(t => typeof(ITenantable).IsAssignableFrom(t.ClrType)))
         {
             modelBuilder.Entity(entityType.ClrType)
                 .HasOne(typeof(Modules.Tenant.Models.Tenant).Name)
@@ -226,7 +226,7 @@ public class ApplicationDbContext : DbContext
                     ).IsUnique()
                     .HasFilter("\"DeletedAt\" IS NULL");
             }
-        );        // Configure Language entity
+        ); // Configure Language entity
         modelBuilder.Entity<Language>(entity =>
             {
                 entity.ToTable("Languages");
@@ -236,7 +236,7 @@ public class ApplicationDbContext : DbContext
                 // Unique constraint on language code (for non-deleted records)
                 entity.HasIndex(e => e.Code).IsUnique()
                     .HasFilter("\"DeletedAt\" IS NULL");
-                
+
                 // Index on name for searching
                 entity.HasIndex(e => e.Name);
             }
@@ -281,7 +281,12 @@ public class ApplicationDbContext : DbContext
                 entity.Property<Guid>("ResourceId").IsRequired();
 
                 // Indexes for performance
-                entity.HasIndex(new[] { "ResourceId", nameof(ResourcePermission.ResourceType) });
+                entity.HasIndex(
+                    new[]
+                    {
+                        "ResourceId", nameof(ResourcePermission.ResourceType)
+                    }
+                );
                 entity.HasIndex("UserId");
                 entity.HasIndex("ResourceRoleId");
                 entity.HasIndex(e => e.Permission);
@@ -322,11 +327,21 @@ public class ApplicationDbContext : DbContext
                 entity.Property<Guid>("ResourceId").IsRequired();
 
                 // Indexes for performance
-                entity.HasIndex(new[] { "ResourceId", nameof(ResourceLocalization.ResourceType) })
+                entity.HasIndex(
+                        new[]
+                        {
+                            "ResourceId", nameof(ResourceLocalization.ResourceType)
+                        }
+                    )
                     .HasFilter("\"DeletedAt\" IS NULL");
 
                 // Create a unique index on ResourceId, ResourceType, LanguageId, and FieldName
-                entity.HasIndex(new[] { "ResourceId", nameof(ResourceLocalization.ResourceType), "LanguageId", nameof(ResourceLocalization.FieldName) })
+                entity.HasIndex(
+                        new[]
+                        {
+                            "ResourceId", nameof(ResourceLocalization.ResourceType), "LanguageId", nameof(ResourceLocalization.FieldName)
+                        }
+                    )
                     .IsUnique()
                     .HasFilter("\"DeletedAt\" IS NULL");
 
