@@ -15,20 +15,32 @@ public class ContentTypePermission : BaseEntity, ITenantable
     /// Foreign key to the User entity
     /// </summary>
     [Required]
-    public Guid UserId { get; set; }
+    public Guid UserId
+    {
+        get;
+        set;
+    }
 
     /// <summary>
     /// Navigation property to the User entity
     /// </summary>
     [ForeignKey(nameof(UserId))]
-    public virtual Modules.User.Models.User User { get; set; } = null!;
+    public virtual Modules.User.Models.User User
+    {
+        get;
+        set;
+    } = null!;
 
     /// <summary>
     /// Navigation property to the tenant
     /// When null, represents global content type permissions across all tenants
     /// When set, represents content type permissions within a specific tenant
     /// </summary>
-    public virtual Modules.Tenant.Models.Tenant? Tenant { get; set; }
+    public virtual Modules.Tenant.Models.Tenant? Tenant
+    {
+        get;
+        set;
+    }
 
     /// <summary>
     /// Content type name for polymorphic relationship
@@ -37,40 +49,68 @@ public class ContentTypePermission : BaseEntity, ITenantable
     /// </summary>
     [Required]
     [MaxLength(100)]
-    public string ContentTypeName { get; set; } = string.Empty;
+    public string ContentTypeName
+    {
+        get;
+        set;
+    } = string.Empty;
 
     /// <summary>
     /// Bitwise permissions granted for this content type
     /// </summary>
     [Required]
-    public PermissionType Permissions { get; set; }
+    public PermissionType Permissions
+    {
+        get;
+        set;
+    }
 
     /// <summary>
     /// When this permission was assigned
     /// </summary>
-    public DateTime AssignedAt { get; set; } = DateTime.UtcNow;
+    public DateTime AssignedAt
+    {
+        get;
+        set;
+    } = DateTime.UtcNow;
 
     /// <summary>
     /// User who assigned this permission
     /// </summary>
     [Required]
-    public Guid AssignedByUserId { get; set; }
+    public Guid AssignedByUserId
+    {
+        get;
+        set;
+    }
 
     /// <summary>
     /// Navigation property to the user who assigned this permission
     /// </summary>
     [ForeignKey(nameof(AssignedByUserId))]
-    public virtual Modules.User.Models.User AssignedByUser { get; set; } = null!;
+    public virtual Modules.User.Models.User AssignedByUser
+    {
+        get;
+        set;
+    } = null!;
 
     /// <summary>
     /// Optional expiration date for this permission
     /// </summary>
-    public DateTime? ExpiresAt { get; set; }
+    public DateTime? ExpiresAt
+    {
+        get;
+        set;
+    }
 
     /// <summary>
     /// Whether this permission is currently active
     /// </summary>
-    public bool IsActive { get; set; } = true;
+    public bool IsActive
+    {
+        get;
+        set;
+    } = true;
 
     /// <summary>
     /// Check if the permission is expired

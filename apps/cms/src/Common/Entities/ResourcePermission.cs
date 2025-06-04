@@ -55,30 +55,50 @@ public class ResourcePermission : BaseEntity
     /// Entity Framework will automatically create the ResourceId foreign key
     /// </summary>
     [Required]
-    public virtual ResourceBase Resource { get; set; } = null!;
+    public virtual ResourceBase Resource
+    {
+        get;
+        set;
+    } = null!;
 
     /// <summary>
     /// Bitwise permissions granted for this specific resource
     /// Layer 3 of the three-layer permission system: Tenant → ContentType → Resource
     /// </summary>
     [Required]
-    public PermissionType Permissions { get; set; }
+    public PermissionType Permissions
+    {
+        get;
+        set;
+    }
 
     /// <summary>
     /// When this permission was granted
     /// </summary>
-    public DateTime GrantedAt { get; set; } = DateTime.UtcNow;
+    public DateTime GrantedAt
+    {
+        get;
+        set;
+    } = DateTime.UtcNow;
 
     /// <summary>
     /// User who granted this permission
     /// </summary>
     [Required]
-    public Guid GrantedByUserId { get; set; }
+    public Guid GrantedByUserId
+    {
+        get;
+        set;
+    }
 
     /// <summary>
     /// Navigation property to the user who granted this permission
     /// </summary>
-    public virtual Modules.User.Models.User GrantedByUser { get; set; } = null!;
+    public virtual Modules.User.Models.User GrantedByUser
+    {
+        get;
+        set;
+    } = null!;
 
     /// <summary>
     /// Optional expiration date for this permission

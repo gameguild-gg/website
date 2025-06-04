@@ -64,12 +64,7 @@ public class ApplicationDbContext : DbContext
     }    public DbSet<ResourcePermission> ResourcePermissions
     {
         get;
-        set;
-    }    public DbSet<UserTenantPermission> UserTenantPermissions
-    {
-        get;
-        set;
-    }    public DbSet<ContentTypePermission> ContentTypePermissions
+        set;    }    public DbSet<ContentTypePermission> ContentTypePermissions
     {
         get;
         set;
@@ -301,29 +296,7 @@ public class ApplicationDbContext : DbContext
                 entity.HasIndex("UserId"); // Shadow property
                 entity.HasIndex("ResourceRoleId"); // Shadow property
                 entity.HasIndex(e => e.Permissions);
-            }
-        );        // Configure UserTenantPermission entity
-        modelBuilder.Entity<UserTenantPermission>(entity =>
-        {
-            entity.ToTable("UserTenantPermissions");
-            entity.Property(e => e.Permissions).IsRequired()
-                .HasConversion<int>(); // Store enum as int
-
-            // Configure relationships
-            entity.HasOne(utp => utp.UserTenant)
-                .WithMany(ut => ut.UserTenantPermissions)
-                .HasForeignKey(utp => utp.UserTenantId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            entity.HasOne(utp => utp.AssignedByUser)
-                .WithMany()
-                .HasForeignKey(utp => utp.AssignedByUserId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            // Indexes for performance
-            entity.HasIndex(e => e.UserTenantId);
-            entity.HasIndex(e => e.Permissions);
-        });        // Configure ContentTypePermission entity (Both global and tenant-specific content type permissions)
+            }        );        // Configure ContentTypePermission entity (Both global and tenant-specific content type permissions)
         modelBuilder.Entity<ContentTypePermission>(entity =>
         {
             entity.ToTable("ContentTypePermissions");

@@ -24,12 +24,11 @@ public interface IPermissionService
     /// <summary>
     /// Get all tenants a user has permissions in
     /// </summary>
-    Task<IEnumerable<Modules.Tenant.Models.Tenant>> GetUserTenantsAsync(Guid userId);
-
-    /// <summary>
+    Task<IEnumerable<Modules.Tenant.Models.Tenant>> GetUserTenantsAsync(Guid userId);    /// <summary>
     /// Get user's global permissions (across all tenants)
+    /// Returns ContentTypePermission entities with null TenantId for global permissions
     /// </summary>
-    Task<IEnumerable<UserTenantPermission>> GetUserGlobalPermissionsAsync(Guid userId);
+    Task<IEnumerable<ContentTypePermission>> GetUserGlobalPermissionsAsync(Guid userId);
 
     // ===== LAYER 2: CONTENT-TYPE-WIDE PERMISSIONS =====
     

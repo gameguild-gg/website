@@ -74,14 +74,14 @@ public class UserTenant : BaseEntity
         get;
         set;
     } = new List<UserTenantRole>();    /// <summary>
-    /// Navigation property to user tenant permissions (Layer 1 of permission system)
-    /// Represents the specific permissions this user has within this tenant
+    /// Navigation property to content type permissions for this user within this tenant (Layer 2 of permission system)
+    /// Uses the ContentTypePermission entity with TenantId set to this tenant
     /// </summary>
-    public virtual ICollection<cms.Common.Entities.UserTenantPermission> UserTenantPermissions
+    public virtual ICollection<cms.Common.Entities.ContentTypePermission> ContentTypePermissions
     {
         get;
         set;
-    } = new List<cms.Common.Entities.UserTenantPermission>();
+    } = new List<cms.Common.Entities.ContentTypePermission>();
 
     /// <summary>
     /// Default constructor

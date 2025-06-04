@@ -8,10 +8,17 @@ namespace cms.Common.Services;
 /// Implementation of the three-layer permission service
 /// Integrates with existing ResourceBase, UserTenant, and ITenantable architecture
 /// Provides efficient permission evaluation across Tenant → ContentType → Resource layers
+/// 
+/// Permission Architecture:
+/// - Global permissions: ContentTypePermission with TenantId = null
+/// - Tenant-wide permissions: ContentTypePermission with ContentTypeName = "*" (all content types)
+/// - Content type permissions: ContentTypePermission with specific ContentTypeName
+/// - Resource permissions: ResourcePermission
 /// </summary>
 public class PermissionService : IPermissionService
 {
     private readonly ApplicationDbContext _context;
+    private const string TENANT_WIDE_CONTENT_TYPE = "*"; // Special content type name for tenant-wide permissions
 
     public PermissionService(ApplicationDbContext context)
     {
@@ -24,9 +31,9 @@ public class PermissionService : IPermissionService
     {
         if (tenantId == null)
         {
-            // For global permissions, we'll use ContentTypePermission with null TenantId instead
-            // This keeps the architecture clean by using UserTenantPermission only for actual tenant relationships
-            throw new ArgumentException("Use ContentTypePermission for global permissions", nameof(tenantId));
+            // For global tenant-wide permissions, use ContentTypePermission with null TenantId
+            await AssignContentTypePermissionAsync(userId, null, TENANT_WIDE_CONTENT_TYPE, permissions, assignedByUserId);
+            return;
         }
 
         // First ensure the UserTenant relationship exists
@@ -47,51 +54,14 @@ public class PermissionService : IPermissionService
             await _context.SaveChangesAsync();
         }
 
-        // Check if permission already exists
-        var existingPermission = await _context.UserTenantPermissions
-            .FirstOrDefaultAsync(p => p.UserTenantId == userTenant.Id && !p.IsDeleted);
-
-        if (existingPermission != null)
-        {
-            // Update existing permission
-            existingPermission.Permissions = permissions;
-            existingPermission.AssignedAt = DateTime.UtcNow;
-            existingPermission.AssignedByUserId = assignedByUserId;
-            existingPermission.IsActive = true;
-            existingPermission.Touch();
-        }
-        else
-        {
-            // Create new permission
-            var permission = new UserTenantPermission
-            {
-                UserTenantId = userTenant.Id,
-                Permissions = permissions,
-                AssignedByUserId = assignedByUserId,
-                IsActive = true
-            };
-
-            _context.UserTenantPermissions.Add(permission);
-        }
-
-        await _context.SaveChangesAsync();
+        // Use ContentTypePermission with special content type name for tenant-wide permissions
+        await AssignContentTypePermissionAsync(userId, tenantId, TENANT_WIDE_CONTENT_TYPE, permissions, assignedByUserId);
     }
 
     public async Task<PermissionType> GetUserTenantPermissionsAsync(Guid userId, Guid? tenantId)
     {
-        if (tenantId == null)
-        {
-            // For global permissions, return empty - use ContentTypePermission instead
-            return PermissionType.None;
-        }
-
-        var permissions = await _context.UserTenantPermissions
-            .Where(p => p.UserTenant.UserId == userId && p.UserTenant.TenantId == tenantId && p.IsValid)
-            .Select(p => p.Permissions)
-            .ToListAsync();
-
-        // Combine all permissions using bitwise OR
-        return permissions.Aggregate(PermissionType.None, (current, perm) => current | perm);
+        // Get tenant-wide permissions using ContentTypePermission with special content type
+        return await GetUserContentTypePermissionsAsync(userId, tenantId, TENANT_WIDE_CONTENT_TYPE);
     }
 
     public async Task<IEnumerable<Modules.Tenant.Models.Tenant>> GetUserTenantsAsync(Guid userId)
@@ -102,14 +72,14 @@ public class PermissionService : IPermissionService
             .Select(ut => ut.Tenant)
             .Distinct()
             .ToListAsync();
-    }
-
-    public async Task<IEnumerable<UserTenantPermission>> GetUserGlobalPermissionsAsync(Guid userId)
+    }    public async Task<IEnumerable<ContentTypePermission>> GetUserGlobalPermissionsAsync(Guid userId)
     {
-        // Since UserTenantPermission is now tied to UserTenant, global permissions 
-        // should be handled through ContentTypePermission with null TenantId
-        // Return empty collection here and use GetUserContentTypePermissionsAsync for global permissions
-        return await Task.FromResult(new List<UserTenantPermission>());
+        // Get global permissions using ContentTypePermission with null TenantId
+        return await _context.ContentTypePermissions
+            .Where(p => p.UserId == userId && EF.Property<Guid?>(p, "TenantId") == null && p.IsValid)
+            .Include(p => p.User)
+            .Include(p => p.AssignedByUser)
+            .ToListAsync();
     }
 
     // ===== LAYER 2: CONTENT-TYPE-WIDE PERMISSIONS =====
@@ -298,23 +268,13 @@ public class PermissionService : IPermissionService
     {
         var resourceInfo = await GetResourceInfoAsync(resourceId);
         return resourceInfo?.ContentType;
-    }
-
-    public async Task RemovePermissionAsync(Guid permissionId)
+    }    public async Task RemovePermissionAsync(Guid permissionId)
     {
         // Try to find the permission in each permission table
         var resourcePermission = await _context.ResourcePermissions.FindAsync(permissionId);
         if (resourcePermission != null)
         {
             resourcePermission.SoftDelete();
-            await _context.SaveChangesAsync();
-            return;
-        }
-
-        var tenantPermission = await _context.UserTenantPermissions.FindAsync(permissionId);
-        if (tenantPermission != null)
-        {
-            tenantPermission.SoftDelete();
             await _context.SaveChangesAsync();
             return;
         }
@@ -326,13 +286,21 @@ public class PermissionService : IPermissionService
             await _context.SaveChangesAsync();
             return;
         }
-    }
-
-    public async Task RemoveUserFromTenantAsync(Guid userId, Guid? tenantId)
+    }    public async Task RemoveUserFromTenantAsync(Guid userId, Guid? tenantId)
     {
         if (tenantId == null)
         {
-            // For global permissions, we'd handle ContentTypePermission with null TenantId
+            // For global permissions, remove ContentTypePermission with null TenantId
+            var globalContentTypePermissions = await _context.ContentTypePermissions
+                .Where(p => p.UserId == userId && EF.Property<Guid?>(p, "TenantId") == null && !p.IsDeleted)
+                .ToListAsync();
+
+            foreach (var permission in globalContentTypePermissions)
+            {
+                permission.SoftDelete();
+            }
+
+            await _context.SaveChangesAsync();
             return;
         }
 
@@ -342,16 +310,6 @@ public class PermissionService : IPermissionService
 
         if (userTenant == null)
             return;
-
-        // Remove tenant permissions
-        var tenantPermissions = await _context.UserTenantPermissions
-            .Where(p => p.UserTenantId == userTenant.Id && !p.IsDeleted)
-            .ToListAsync();
-
-        foreach (var permission in tenantPermissions)
-        {
-            permission.SoftDelete();
-        }
 
         // Remove content type permissions for this tenant
         var contentTypePermissions = await _context.ContentTypePermissions

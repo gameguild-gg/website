@@ -11,7 +11,9 @@ public interface IPermissionable
     ICollection<ResourcePermission> ResourcePermissions
     {
         get;
-    }    /// <summary>
+    }
+
+    /// <summary>
     /// Grants permission to a user for this entity
     /// </summary>
     ResourcePermission GrantPermission(Modules.User.Models.User user, PermissionType permissions, Modules.User.Models.User grantedByUser);
