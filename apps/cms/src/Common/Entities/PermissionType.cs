@@ -4,13 +4,20 @@ namespace cms.Common.Entities;
 
 /// <summary>
 /// Bitwise permission flags for fine-grained access control
+/// 
+/// DEPRECATED: This enum mixes core CRUD operations with business logic permissions.
+/// For new implementations, prefer using:
+/// - CorePermissionType for basic CRUD operations
+/// - BusinessLogicPermissionType for CMS-specific features
+/// - ReputationSystem for reputation-based business logic permissions
+/// 
+/// This enum is maintained for backward compatibility but will be phased out.
 /// </summary>
 [Flags]
+[Obsolete("Use CorePermissionType for CRUD operations and BusinessLogicPermissionType for business logic. This enum will be removed in a future version.")]
 public enum PermissionType
 {
-    // todo: let it be only crud, the others should follow business logic
-    // idea: use the moderate, share, comment, vote, archive, publish as business logic permissions related to CMS, not the whole permission system.
-    // todo: implement reputation system
+    // CORE CRUD OPERATIONS - use CorePermissionType for new implementations
     /// <summary>
     /// No permissions granted
     /// </summary>
@@ -36,34 +43,47 @@ public enum PermissionType
     /// </summary>
     Delete = 8,
 
-    /// <summary>
-    /// Moderate content (approve, reject, moderate discussions)
-    /// </summary>
-    Moderate = 16,
-
-    /// <summary>
-    /// Share content with other users or make it public
-    /// </summary>
-    Share = 32,
-
-    /// <summary>
-    /// Comment on content
-    /// </summary>
-    Comment = 64,
-
-    /// <summary>
-    /// Vote on content (like, dislike, rate)
-    /// </summary>
-    Vote = 128,
-
-    /// <summary>
-    /// Archive content (hide from normal view but preserve)
-    /// </summary>
-    Archive = 256,
-
-    /// <summary>
-    /// Publish content (make it publicly visible)
-    /// </summary>
-    Publish = 512
-    // Add more permissions as needed
+    // // BUSINESS LOGIC OPERATIONS - use BusinessLogicPermissionType and ReputationSystem for new implementations
+    // /// <summary>
+    // /// Moderate content (approve, reject, moderate discussions)
+    // /// DEPRECATED: Use BusinessLogicPermissionType.Moderate with ReputationSystem
+    // /// </summary>
+    // [Obsolete("Use BusinessLogicPermissionType.Moderate with ReputationSystem")]
+    // Moderate = 16,
+    //
+    // /// <summary>
+    // /// Share content with other users or make it public
+    // /// DEPRECATED: Use BusinessLogicPermissionType.Share with ReputationSystem
+    // /// </summary>
+    // [Obsolete("Use BusinessLogicPermissionType.Share with ReputationSystem")]
+    // Share = 32,
+    //
+    // /// <summary>
+    // /// Comment on content
+    // /// DEPRECATED: Use BusinessLogicPermissionType.Comment with ReputationSystem
+    // /// </summary>
+    // [Obsolete("Use BusinessLogicPermissionType.Comment with ReputationSystem")]
+    // Comment = 64,
+    //
+    // /// <summary>
+    // /// Vote on content (like, dislike, rate)
+    // /// DEPRECATED: Use BusinessLogicPermissionType.Vote with ReputationSystem
+    // /// </summary>
+    // [Obsolete("Use BusinessLogicPermissionType.Vote with ReputationSystem")]
+    // Vote = 128,
+    //
+    // /// <summary>
+    // /// Archive content (hide from normal view but preserve)
+    // /// DEPRECATED: Use BusinessLogicPermissionType.Archive with ReputationSystem
+    // /// </summary>
+    // [Obsolete("Use BusinessLogicPermissionType.Archive with ReputationSystem")]
+    // Archive = 256,
+    //
+    // /// <summary>
+    // /// Publish content (make it publicly visible)
+    // /// DEPRECATED: Use BusinessLogicPermissionType.Publish with ReputationSystem
+    // /// </summary>
+    // [Obsolete("Use BusinessLogicPermissionType.Publish with ReputationSystem")]
+    // Publish = 512
+    // // Add more permissions as needed
 }

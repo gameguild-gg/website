@@ -83,18 +83,9 @@ public abstract class ResourceBase : BaseEntity, ILocalizable, IPermissionable, 
     /// </summary>
     public virtual ICollection<ResourcePermission> ResourcePermissions
     {
-        get;
+    get;
         set;
     } = new List<ResourcePermission>();
-
-    /// <summary>
-    /// Collection of roles assigned to this resource
-    /// </summary>
-    public virtual ICollection<ResourceRole> ResourceRoles
-    {
-        get;
-        set;
-    } = new List<ResourceRole>();
 
 
     // todo: this could be better implemented if it was an enum

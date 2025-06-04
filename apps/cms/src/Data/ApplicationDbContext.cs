@@ -48,7 +48,11 @@ public class ApplicationDbContext : DbContext
     }
 
     // Resource hierarchy DbSet - Required for proper inheritance configuration
-    public DbSet<ResourceBase> Resources { get; set; }
+    public DbSet<ResourceBase> Resources
+    {
+        get;
+        set;
+    }
 
     // Resource and Localization DbSets
     public DbSet<Language> Languages
@@ -61,16 +65,45 @@ public class ApplicationDbContext : DbContext
     {
         get;
         set;
-    }    public DbSet<ResourcePermission> ResourcePermissions
-    {
-        get;
-        set;    }    public DbSet<ContentTypePermission> ContentTypePermissions
+    }
+
+    public DbSet<ResourcePermission> ResourcePermissions
     {
         get;
         set;
     }
 
-    public DbSet<ResourceRole> ResourceRoles
+    public DbSet<ContentTypePermission> ContentTypePermissions
+    {
+        get;
+        set;
+    }
+
+    public DbSet<Modules.Reputation.Models.UserReputation> UserReputations
+    {
+        get;
+        set;
+    }
+
+    public DbSet<Modules.Reputation.Models.UserTenantReputation> UserTenantReputations
+    {
+        get;
+        set;
+    }
+
+    public DbSet<Modules.Reputation.Models.ReputationLevel> ReputationLevels
+    {
+        get;
+        set;
+    }
+
+    public DbSet<Modules.Reputation.Models.ReputationAction> ReputationActions
+    {
+        get;
+        set;
+    }
+
+    public DbSet<Modules.Reputation.Models.UserReputationHistory> UserReputationHistory
     {
         get;
         set;
@@ -258,7 +291,7 @@ public class ApplicationDbContext : DbContext
                 // Index on resource type for filtering
                 entity.HasIndex(e => e.ResourceType);
             }
-        );        // Configure ResourcePermission entity
+        ); // Configure ResourcePermission entity
         modelBuilder.Entity<ResourcePermission>(entity =>
             {
                 entity.ToTable("ResourcePermissions");
@@ -276,10 +309,6 @@ public class ApplicationDbContext : DbContext
                     .HasForeignKey(rp => rp.GrantedByUserId)
                     .OnDelete(DeleteBehavior.Restrict);
 
-                entity.HasOne(rp => rp.ResourceRole)
-                    .WithMany(rr => rr.ResourcePermissions)
-                    .OnDelete(DeleteBehavior.Cascade);
-
                 entity.HasOne(rp => rp.ResourceMetadata)
                     .WithMany(rm => rm.ResourcePermissions)
                     .OnDelete(DeleteBehavior.SetNull);
@@ -294,49 +323,41 @@ public class ApplicationDbContext : DbContext
                 entity.HasIndex("ResourceId");
                 entity.HasIndex(e => e.ResourceType);
                 entity.HasIndex("UserId"); // Shadow property
-                entity.HasIndex("ResourceRoleId"); // Shadow property
                 entity.HasIndex(e => e.Permissions);
-            }        );        // Configure ContentTypePermission entity (Both global and tenant-specific content type permissions)
+            }
+        );
+
+        // Configure ContentTypePermission entity (Both global and tenant-specific content type permissions)
         modelBuilder.Entity<ContentTypePermission>(entity =>
-        {
-            entity.ToTable("ContentTypePermissions");
-            entity.Property(e => e.ContentTypeName).IsRequired().HasMaxLength(100);
-            entity.Property(e => e.Permissions).IsRequired()
-                .HasConversion<int>(); // Store enum as int
-
-            // Configure relationships
-            entity.HasOne(ctp => ctp.User)
-                .WithMany(u => u.ContentTypePermissions)
-                .HasForeignKey(ctp => ctp.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            entity.HasOne(ctp => ctp.AssignedByUser)
-                .WithMany()
-                .HasForeignKey(ctp => ctp.AssignedByUserId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            // Tenant relationship is configured automatically by ITenantable            // Indexes for performance
-            entity.HasIndex(e => new { e.UserId, e.ContentTypeName }).IsUnique()
-                .HasFilter("\"DeletedAt\" IS NULL AND \"TenantId\" IS NULL"); // Unique for global permissions
-            entity.HasIndex(e => e.ContentTypeName);
-            entity.HasIndex(e => e.Permissions);
-            entity.HasIndex("TenantId"); // Shadow property from ITenantable
-        });
-
-        // Configure ResourceRole entity
-        modelBuilder.Entity<ResourceRole>(entity =>
             {
-                entity.ToTable("ResourceRoles");
-                entity.Property(e => e.Name).IsRequired().HasMaxLength(50);
-                entity.Property(e => e.Description).HasMaxLength(200);
-                entity.Property(e => e.DefaultPermission).IsRequired()
+                entity.ToTable("ContentTypePermissions");
+                entity.Property(e => e.ContentTypeName).IsRequired().HasMaxLength(100);
+                entity.Property(e => e.Permissions).IsRequired()
                     .HasConversion<int>(); // Store enum as int
 
-                // Unique constraint on role name (for non-deleted records)
-                entity.HasIndex(e => e.Name).IsUnique()
-                    .HasFilter("\"DeletedAt\" IS NULL");
+                // Configure relationships
+                entity.HasOne(ctp => ctp.User)
+                    .WithMany(u => u.ContentTypePermissions)
+                    .HasForeignKey(ctp => ctp.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(ctp => ctp.AssignedByUser)
+                    .WithMany()
+                    .HasForeignKey(ctp => ctp.AssignedByUserId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                // Tenant relationship is configured automatically by ITenantable            // Indexes for performance
+                entity.HasIndex(e => new
+                        {
+                            e.UserId, e.ContentTypeName
+                        }
+                    ).IsUnique()
+                    .HasFilter("\"DeletedAt\" IS NULL AND \"TenantId\" IS NULL"); // Unique for global permissions
+                entity.HasIndex(e => e.ContentTypeName);
+                entity.HasIndex(e => e.Permissions);
+                entity.HasIndex("TenantId"); // Shadow property from ITenantable
             }
-        );        // Configure ResourceLocalization entity
+        ); // Configure ResourceLocalization entity
         modelBuilder.Entity<ResourceLocalization>(entity =>
             {
                 entity.ToTable("ResourceLocalizations");
@@ -375,34 +396,36 @@ public class ApplicationDbContext : DbContext
 
                 entity.HasIndex(e => e.Status);
             }
-        );        // Configure ResourceBase hierarchy using Table-per-Type (TPT) strategy
+        ); // Configure ResourceBase hierarchy using Table-per-Type (TPT) strategy
         modelBuilder.Entity<ResourceBase>(entity =>
-        {
-            entity.ToTable("Resources");
-            
-            // Configure relationships
-            entity.HasOne(r => r.Owner)
-                .WithMany()
-                .OnDelete(DeleteBehavior.Restrict);
+            {
+                entity.ToTable("Resources");
 
-            entity.HasOne(r => r.Metadata)
-                .WithOne()
-                .HasForeignKey<ResourceMetadata>("ResourceId")
-                .OnDelete(DeleteBehavior.Cascade);
+                // Configure relationships
+                entity.HasOne(r => r.Owner)
+                    .WithMany()
+                    .OnDelete(DeleteBehavior.Restrict);
 
-            // Indexes for performance
-            entity.HasIndex(r => r.Visibility);
-            entity.HasIndex("OwnerId"); // Shadow property
-        });
+                entity.HasOne(r => r.Metadata)
+                    .WithOne()
+                    .HasForeignKey<ResourceMetadata>("ResourceId")
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                // Indexes for performance
+                entity.HasIndex(r => r.Visibility);
+                entity.HasIndex("OwnerId"); // Shadow property
+            }
+        );
 
         // Configure UserProfile entity with TPT inheritance
         modelBuilder.Entity<cms.Modules.UserProfile.Models.UserProfile>(entity =>
-        {
-            entity.ToTable("UserProfiles");
-            // TPT inheritance: UserProfile gets its own table.
-            // Do NOT configure any keys or inherited properties here.
-            // All key configuration must be on ResourceBase only.
-        });
+            {
+                entity.ToTable("UserProfiles");
+                // TPT inheritance: UserProfile gets its own table.
+                // Do NOT configure any keys or inherited properties here.
+                // All key configuration must be on ResourceBase only.
+            }
+        );
 
         // Configure User <-> ResourcePermission (GrantedByUser)
         modelBuilder.Entity<User>()
@@ -416,14 +439,180 @@ public class ApplicationDbContext : DbContext
             .HasOne(rp => rp.User)
             .WithMany(u => u.GrantedResourcePermissions)
             .HasForeignKey("UserId")
-            .OnDelete(DeleteBehavior.Cascade);
-
-        // Explicitly configure ResourcePermission.GrantedByUser <-> User.GrantedPermissions (GrantedByUserId)
+            .OnDelete(DeleteBehavior.Cascade); // Explicitly configure ResourcePermission.GrantedByUser <-> User.GrantedPermissions (GrantedByUserId)
         modelBuilder.Entity<ResourcePermission>()
             .HasOne(rp => rp.GrantedByUser)
             .WithMany(u => u.GrantedPermissions)
             .HasForeignKey(rp => rp.GrantedByUserId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        // Configure Reputation System entities
+        ConfigureReputationSystem(modelBuilder);
+    }
+
+    /// <summary>
+    /// Configure the reputation system entities and their relationships
+    /// </summary>
+    private void ConfigureReputationSystem(ModelBuilder modelBuilder)
+    {
+        // Configure UserReputation entity (global reputation only)
+        modelBuilder.Entity<Modules.Reputation.Models.UserReputation>(entity =>
+            {
+                entity.ToTable("UserReputations");
+
+                // Configure relationship with User
+                entity.HasOne(ur => ur.User)
+                    .WithMany()
+                    .HasForeignKey(ur => ur.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                // Configure relationship with CurrentLevel
+                entity.HasOne(ur => ur.CurrentLevel)
+                    .WithMany()
+                    .HasForeignKey(ur => ur.CurrentLevelId)
+                    .OnDelete(DeleteBehavior.SetNull);
+
+                // Indexes for performance
+                entity.HasIndex(ur => ur.UserId).IsUnique()
+                    .HasFilter("\"DeletedAt\" IS NULL"); // One global reputation per user
+                entity.HasIndex(ur => ur.Score);
+                entity.HasIndex(ur => ur.CurrentLevelId);
+            }
+        );
+
+        // Configure UserTenantReputation entity with TPT inheritance
+        modelBuilder.Entity<Modules.Reputation.Models.UserTenantReputation>(entity =>
+            {
+                entity.ToTable("UserTenantReputations");
+
+                // Configure relationship with UserTenant
+                entity.HasOne(utr => utr.UserTenant)
+                    .WithMany()
+                    .HasForeignKey(utr => utr.UserTenantId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                // Configure relationship with CurrentLevel
+                entity.HasOne(utr => utr.CurrentLevel)
+                    .WithMany()
+                    .HasForeignKey(utr => utr.CurrentLevelId)
+                    .OnDelete(DeleteBehavior.SetNull);
+
+                // Indexes for performance
+                entity.HasIndex(utr => utr.UserTenantId).IsUnique(); // One reputation per UserTenant
+                entity.HasIndex(utr => utr.Score);
+                entity.HasIndex(utr => utr.CurrentLevelId);
+            }
+        );
+
+        // Configure ReputationLevel entity with TPT inheritance
+        modelBuilder.Entity<Modules.Reputation.Models.ReputationLevel>(entity =>
+            {
+                entity.ToTable("ReputationLevels");
+
+                entity.Property(rl => rl.Name).IsRequired().HasMaxLength(100);
+                entity.Property(rl => rl.DisplayName).IsRequired().HasMaxLength(200);
+                entity.Property(rl => rl.Color).HasMaxLength(50);
+                entity.Property(rl => rl.Icon).HasMaxLength(100);
+
+                // Unique constraint on name per tenant using string-based property names
+                entity.HasIndex("Name", "TenantId").IsUnique()
+                    .HasFilter("\"DeletedAt\" IS NULL");
+
+                // Indexes for performance
+                entity.HasIndex(rl => rl.MinimumScore);
+                entity.HasIndex(rl => rl.SortOrder);
+            }
+        );
+
+
+        // Configure ReputationAction entity with TPT inheritance
+        modelBuilder.Entity<Modules.Reputation.Models.ReputationAction>(entity =>
+            {
+                entity.ToTable("ReputationActions");
+
+                entity.Property(ra => ra.ActionType).IsRequired().HasMaxLength(150);
+                entity.Property(ra => ra.DisplayName).IsRequired().HasMaxLength(200);
+
+                // Configure relationship with RequiredLevel
+                entity.HasOne(ra => ra.RequiredLevel)
+                    .WithMany()
+                    .HasForeignKey(ra => ra.RequiredLevelId)
+                    .OnDelete(DeleteBehavior.SetNull);
+
+                // Unique constraint on action type per tenant using string-based property names
+                entity.HasIndex("ActionType", "TenantId").IsUnique()
+                    .HasFilter("\"DeletedAt\" IS NULL");
+
+                // Indexes for performance
+                entity.HasIndex(ra => ra.ActionType);
+                entity.HasIndex(ra => ra.Points);
+                entity.HasIndex(ra => ra.IsActive);
+            }
+        ); // Configure UserReputationHistory entity with polymorphic relationships
+        modelBuilder.Entity<Modules.Reputation.Models.UserReputationHistory>(entity =>
+            {
+                entity.ToTable(
+                    "UserReputationHistory",
+                    t =>
+                        t.HasCheckConstraint(
+                            "CK_UserReputationHistory_UserOrUserTenant",
+                            "(\"UserId\" IS NOT NULL AND \"UserTenantId\" IS NULL) OR (\"UserId\" IS NULL AND \"UserTenantId\" IS NOT NULL)"
+                        )
+                );
+
+                entity.Property(urh => urh.Reason).HasMaxLength(500);
+
+                // Configure optional relationship with User (for direct user reputation)
+                entity.HasOne(urh => urh.User)
+                    .WithMany()
+                    .HasForeignKey(urh => urh.UserId)
+                    .OnDelete(DeleteBehavior.SetNull);
+
+                // Configure optional relationship with UserTenant (for tenant-specific reputation)
+                entity.HasOne(urh => urh.UserTenant)
+                    .WithMany()
+                    .HasForeignKey(urh => urh.UserTenantId)
+                    .OnDelete(DeleteBehavior.SetNull);
+
+                // Configure relationship with ReputationAction
+                entity.HasOne(urh => urh.ReputationAction)
+                    .WithMany(ra => ra.ReputationHistory)
+                    .HasForeignKey(urh => urh.ReputationActionId)
+                    .OnDelete(DeleteBehavior.SetNull);
+
+                // Configure relationship with TriggeredByUser
+                entity.HasOne(urh => urh.TriggeredByUser)
+                    .WithMany()
+                    .HasForeignKey(urh => urh.TriggeredByUserId)
+                    .OnDelete(DeleteBehavior.SetNull);
+
+                // Configure relationship with PreviousLevel
+                entity.HasOne(urh => urh.PreviousLevel)
+                    .WithMany()
+                    .HasForeignKey(urh => urh.PreviousLevelId)
+                    .OnDelete(DeleteBehavior.SetNull);
+
+                // Configure relationship with NewLevel
+                entity.HasOne(urh => urh.NewLevel)
+                    .WithMany()
+                    .HasForeignKey(urh => urh.NewLevelId)
+                    .OnDelete(DeleteBehavior.SetNull);
+
+                // Configure polymorphic relationship with RelatedResource
+                // This allows reputation to be associated with any ResourceBase entity
+                entity.HasOne(urh => urh.RelatedResource)
+                    .WithMany()
+                    .HasForeignKey("RelatedResourceId") // Shadow property created by EF
+                    .OnDelete(DeleteBehavior.SetNull);
+
+                // Indexes for performance and querying
+                entity.HasIndex(urh => urh.UserId);
+                entity.HasIndex(urh => urh.UserTenantId);
+                entity.HasIndex(urh => urh.OccurredAt);
+                entity.HasIndex(urh => urh.PointsChange);
+                entity.HasIndex("RelatedResourceId"); // Shadow property
+            }
+        );
     }
 
     /// <summary>

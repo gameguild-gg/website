@@ -3,7 +3,6 @@ using System.ComponentModel.DataAnnotations.Schema;
 using cms.Common.Entities;
 
 namespace cms.Modules.Tenant.Models;
-// todo: revist UserTenant and UserTenantPermission architecture. I think we should not have a direct link between the user and tenant, only through permission data.
 /// <summary>
 /// Junction entity representing the relationship between a User and a Tenant
 /// Inherits from BaseEntity to provide UUID IDs, version control, timestamps, and soft delete functionality

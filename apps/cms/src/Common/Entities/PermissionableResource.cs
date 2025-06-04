@@ -15,13 +15,4 @@ public abstract class PermissionableResource : BaseEntity
         get;
         set;
     } = new List<ResourcePermission>();
-
-    /// <summary>
-    /// Collection of roles assigned to this resource
-    /// </summary>
-    public virtual ICollection<ResourceRole> ResourceRoles
-    {
-        get;
-        set;
-    } = new List<ResourceRole>();
 }

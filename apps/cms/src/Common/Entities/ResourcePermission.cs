@@ -18,16 +18,6 @@ public class ResourcePermission : BaseEntity
         set;
     }
 
-    /// <summary>
-    /// Navigation property to the resource role
-    /// Entity Framework will automatically create the ResourceRoleId foreign key
-    /// </summary>
-    public virtual ResourceRole? ResourceRole
-    {
-        get;
-        set;
-    }
-
     // todo: add polymorphism support for resource types
     /// <summary>
     /// Type of the resource (for polymorphic relationships)
