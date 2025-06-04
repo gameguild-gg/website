@@ -1,3 +1,5 @@
+using cms.Common.Services;
+
 namespace cms.Common.Extensions;
 
 public static class ServiceCollectionExtensions
@@ -34,6 +36,9 @@ public static class ServiceCollectionExtensions
 
         // Add memory cache
         services.AddMemoryCache();
+
+        // Add permission service for three-layer permission system
+        services.AddScoped<IPermissionService, PermissionService>();
 
         return services;
     }

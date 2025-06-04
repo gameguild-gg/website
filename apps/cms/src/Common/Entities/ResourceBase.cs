@@ -127,14 +127,16 @@ public abstract class ResourceBase : BaseEntity, ILocalizable, IPermissionable, 
     /// <summary>
     /// Grants permission to a user for this resource
     /// </summary>
-    public virtual ResourcePermission GrantPermission(Modules.User.Models.User user, PermissionLevel permission)
+    public virtual ResourcePermission GrantPermission(Modules.User.Models.User user, PermissionType permissions, Modules.User.Models.User grantedByUser)
     {
         var resourcePermission = new ResourcePermission
         {
             User = user,
+            Resource = this,
             ResourceType = GetType().Name,
-            Permission = permission,
+            Permissions = permissions,
             GrantedAt = DateTime.UtcNow,
+            GrantedByUser = grantedByUser,
             IsActive = true
         };
 

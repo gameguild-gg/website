@@ -66,16 +66,22 @@ public class UserTenant : BaseEntity
     {
         get;
         set;
-    } = DateTime.UtcNow;
-
-    /// <summary>
+    } = DateTime.UtcNow;    /// <summary>
     /// Navigation property to user-tenant-role assignments
     /// </summary>
     public virtual ICollection<UserTenantRole> UserTenantRoles
     {
         get;
         set;
-    } = new List<UserTenantRole>();
+    } = new List<UserTenantRole>();    /// <summary>
+    /// Navigation property to user tenant permissions (Layer 1 of permission system)
+    /// Represents the specific permissions this user has within this tenant
+    /// </summary>
+    public virtual ICollection<cms.Common.Entities.UserTenantPermission> UserTenantPermissions
+    {
+        get;
+        set;
+    } = new List<cms.Common.Entities.UserTenantPermission>();
 
     /// <summary>
     /// Default constructor

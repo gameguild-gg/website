@@ -35,16 +35,37 @@ public class User : BaseEntity
     {
         get;
         set;
-    } = new List<Credential>();
-
-    /// <summary>
+    } = new List<Credential>();    /// <summary>
     /// Navigation property to user-tenant relationships
     /// </summary>
     public virtual ICollection<cms.Modules.Tenant.Models.UserTenant> UserTenants
     {
         get;
         set;
-    } = new List<cms.Modules.Tenant.Models.UserTenant>();
+    } = new List<cms.Modules.Tenant.Models.UserTenant>();    /// <summary>
+    /// Navigation property to global content type permissions (Layer 2a of permission system)
+    /// </summary>
+    public virtual ICollection<cms.Common.Entities.ContentTypePermission> ContentTypePermissions
+    {
+        get;
+        set;
+    } = new List<cms.Common.Entities.ContentTypePermission>();/// <summary>
+    /// Navigation property to resource permissions granted to this user (Layer 3 of permission system)
+    /// </summary>
+    public virtual ICollection<cms.Common.Entities.ResourcePermission> GrantedResourcePermissions
+    {
+        get;
+        set;
+    } = new List<cms.Common.Entities.ResourcePermission>();
+
+    /// <summary>
+    /// Navigation property to permissions granted by this user
+    /// </summary>
+    public virtual ICollection<cms.Common.Entities.ResourcePermission> GrantedPermissions
+    {
+        get;
+        set;
+    } = new List<cms.Common.Entities.ResourcePermission>();
 
     /// <summary>
     /// Default constructor

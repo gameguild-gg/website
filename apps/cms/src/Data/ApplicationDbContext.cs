@@ -47,7 +47,8 @@ public class ApplicationDbContext : DbContext
         set;
     }
 
-    public DbSet<cms.Modules.UserProfile.Models.UserProfile> UserProfiles { get; set; }
+    // Resource hierarchy DbSet - Required for proper inheritance configuration
+    public DbSet<ResourceBase> Resources { get; set; }
 
     // Resource and Localization DbSets
     public DbSet<Language> Languages
@@ -60,9 +61,15 @@ public class ApplicationDbContext : DbContext
     {
         get;
         set;
-    }
-
-    public DbSet<ResourcePermission> ResourcePermissions
+    }    public DbSet<ResourcePermission> ResourcePermissions
+    {
+        get;
+        set;
+    }    public DbSet<UserTenantPermission> UserTenantPermissions
+    {
+        get;
+        set;
+    }    public DbSet<ContentTypePermission> ContentTypePermissions
     {
         get;
         set;
@@ -256,20 +263,23 @@ public class ApplicationDbContext : DbContext
                 // Index on resource type for filtering
                 entity.HasIndex(e => e.ResourceType);
             }
-        );
-
-        // Configure ResourcePermission entity
+        );        // Configure ResourcePermission entity
         modelBuilder.Entity<ResourcePermission>(entity =>
             {
                 entity.ToTable("ResourcePermissions");
                 entity.Property(e => e.ResourceType).IsRequired().HasMaxLength(100);
-                entity.Property(e => e.Permission).IsRequired()
+                entity.Property(e => e.Permissions).IsRequired()
                     .HasConversion<int>(); // Store enum as int
 
-                // Configure relationships with shadow properties
+                // Configure relationships - EF will create shadow foreign key properties
                 entity.HasOne(rp => rp.User)
                     .WithMany()
                     .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(rp => rp.GrantedByUser)
+                    .WithMany()
+                    .HasForeignKey(rp => rp.GrantedByUserId)
+                    .OnDelete(DeleteBehavior.Restrict);
 
                 entity.HasOne(rp => rp.ResourceRole)
                     .WithMany(rr => rr.ResourcePermissions)
@@ -279,21 +289,66 @@ public class ApplicationDbContext : DbContext
                     .WithMany(rm => rm.ResourcePermissions)
                     .OnDelete(DeleteBehavior.SetNull);
 
-                // Property to store ResourceId for polymorphic relationships
-                entity.Property<Guid>("ResourceId").IsRequired();
+                // Configure polymorphic relationship with ResourceBase
+                entity.HasOne(rp => rp.Resource)
+                    .WithMany()
+                    .HasForeignKey("ResourceId")
+                    .OnDelete(DeleteBehavior.Cascade);
 
                 // Indexes for performance
-                entity.HasIndex(
-                    new[]
-                    {
-                        "ResourceId", nameof(ResourcePermission.ResourceType)
-                    }
-                );
-                entity.HasIndex("UserId");
-                entity.HasIndex("ResourceRoleId");
-                entity.HasIndex(e => e.Permission);
+                entity.HasIndex("ResourceId");
+                entity.HasIndex(e => e.ResourceType);
+                entity.HasIndex("UserId"); // Shadow property
+                entity.HasIndex("ResourceRoleId"); // Shadow property
+                entity.HasIndex(e => e.Permissions);
             }
-        );
+        );        // Configure UserTenantPermission entity
+        modelBuilder.Entity<UserTenantPermission>(entity =>
+        {
+            entity.ToTable("UserTenantPermissions");
+            entity.Property(e => e.Permissions).IsRequired()
+                .HasConversion<int>(); // Store enum as int
+
+            // Configure relationships
+            entity.HasOne(utp => utp.UserTenant)
+                .WithMany(ut => ut.UserTenantPermissions)
+                .HasForeignKey(utp => utp.UserTenantId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(utp => utp.AssignedByUser)
+                .WithMany()
+                .HasForeignKey(utp => utp.AssignedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Indexes for performance
+            entity.HasIndex(e => e.UserTenantId);
+            entity.HasIndex(e => e.Permissions);
+        });        // Configure ContentTypePermission entity (Both global and tenant-specific content type permissions)
+        modelBuilder.Entity<ContentTypePermission>(entity =>
+        {
+            entity.ToTable("ContentTypePermissions");
+            entity.Property(e => e.ContentTypeName).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.Permissions).IsRequired()
+                .HasConversion<int>(); // Store enum as int
+
+            // Configure relationships
+            entity.HasOne(ctp => ctp.User)
+                .WithMany(u => u.ContentTypePermissions)
+                .HasForeignKey(ctp => ctp.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(ctp => ctp.AssignedByUser)
+                .WithMany()
+                .HasForeignKey(ctp => ctp.AssignedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Tenant relationship is configured automatically by ITenantable            // Indexes for performance
+            entity.HasIndex(e => new { e.UserId, e.ContentTypeName }).IsUnique()
+                .HasFilter("\"DeletedAt\" IS NULL AND \"TenantId\" IS NULL"); // Unique for global permissions
+            entity.HasIndex(e => e.ContentTypeName);
+            entity.HasIndex(e => e.Permissions);
+            entity.HasIndex("TenantId"); // Shadow property from ITenantable
+        });
 
         // Configure ResourceRole entity
         modelBuilder.Entity<ResourceRole>(entity =>
@@ -308,9 +363,7 @@ public class ApplicationDbContext : DbContext
                 entity.HasIndex(e => e.Name).IsUnique()
                     .HasFilter("\"DeletedAt\" IS NULL");
             }
-        );
-
-        // Configure ResourceLocalization entity
+        );        // Configure ResourceLocalization entity
         modelBuilder.Entity<ResourceLocalization>(entity =>
             {
                 entity.ToTable("ResourceLocalizations");
@@ -349,7 +402,55 @@ public class ApplicationDbContext : DbContext
 
                 entity.HasIndex(e => e.Status);
             }
-        );
+        );        // Configure ResourceBase hierarchy using Table-per-Type (TPT) strategy
+        modelBuilder.Entity<ResourceBase>(entity =>
+        {
+            entity.ToTable("Resources");
+            
+            // Configure relationships
+            entity.HasOne(r => r.Owner)
+                .WithMany()
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(r => r.Metadata)
+                .WithOne()
+                .HasForeignKey<ResourceMetadata>("ResourceId")
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Indexes for performance
+            entity.HasIndex(r => r.Visibility);
+            entity.HasIndex("OwnerId"); // Shadow property
+        });
+
+        // Configure UserProfile entity with TPT inheritance
+        modelBuilder.Entity<cms.Modules.UserProfile.Models.UserProfile>(entity =>
+        {
+            entity.ToTable("UserProfiles");
+            // TPT inheritance: UserProfile gets its own table.
+            // Do NOT configure any keys or inherited properties here.
+            // All key configuration must be on ResourceBase only.
+        });
+
+        // Configure User <-> ResourcePermission (GrantedByUser)
+        modelBuilder.Entity<User>()
+            .HasMany(u => u.GrantedPermissions)
+            .WithOne(rp => rp.GrantedByUser)
+            .HasForeignKey(rp => rp.GrantedByUserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Explicitly configure ResourcePermission.User <-> User.GrantedResourcePermissions (UserId)
+        modelBuilder.Entity<ResourcePermission>()
+            .HasOne(rp => rp.User)
+            .WithMany(u => u.GrantedResourcePermissions)
+            .HasForeignKey("UserId")
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // Explicitly configure ResourcePermission.GrantedByUser <-> User.GrantedPermissions (GrantedByUserId)
+        modelBuilder.Entity<ResourcePermission>()
+            .HasOne(rp => rp.GrantedByUser)
+            .WithMany(u => u.GrantedPermissions)
+            .HasForeignKey(rp => rp.GrantedByUserId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 
     /// <summary>
