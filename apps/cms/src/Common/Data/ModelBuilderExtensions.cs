@@ -27,36 +27,42 @@ public static class ModelBuilderExtensions
                 entityType.ClrType,
                 builder =>
                 {
-                    // Id configuration (UUID)
-                    builder.HasKey(nameof(BaseEntity.Id));
-                    builder.Property(nameof(BaseEntity.Id))
-                        .HasDefaultValueSql("gen_random_uuid()") // PostgreSQL UUID generation
-                        .ValueGeneratedOnAdd();
+                    // Check if this is a root type (not derived from another BaseEntity)
+                    bool isRootType = entityType.BaseType == null || !IsBaseEntity(entityType.BaseType.ClrType);
+                    
+                    if (isRootType)
+                    {
+                        // Id configuration (UUID) - only for root types
+                        builder.HasKey(nameof(BaseEntity.Id));
+                        builder.Property(nameof(BaseEntity.Id))
+                            .HasDefaultValueSql("gen_random_uuid()") // PostgreSQL UUID generation
+                            .ValueGeneratedOnAdd();
 
-                    // Version configuration for optimistic concurrency
-                    builder.Property(nameof(BaseEntity.Version))
-                        .IsRowVersion() // Maps to PostgreSQL's xmin column
-                        .IsConcurrencyToken();
+                        // Version configuration for optimistic concurrency
+                        builder.Property(nameof(BaseEntity.Version))
+                            .IsRowVersion() // Maps to PostgreSQL's xmin column
+                            .IsConcurrencyToken();
 
-                    // CreatedAt configuration
-                    builder.Property(nameof(BaseEntity.CreatedAt))
-                        .IsRequired()
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP")
-                        .ValueGeneratedOnAdd();
+                        // Timestamp and soft delete configuration - only for root types
+                        builder.Property(nameof(BaseEntity.CreatedAt))
+                            .IsRequired()
+                            .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                            .ValueGeneratedOnAdd();
 
-                    // UpdatedAt configuration
-                    builder.Property(nameof(BaseEntity.UpdatedAt))
-                        .IsRequired()
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP")
-                        .ValueGeneratedOnAddOrUpdate();
+                        builder.Property(nameof(BaseEntity.UpdatedAt))
+                            .IsRequired()
+                            .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                            .ValueGeneratedOnAddOrUpdate();
 
-                    // DeletedAt configuration (for soft delete)
-                    builder.Property(nameof(BaseEntity.DeletedAt))
-                        .IsRequired(false);
+                        builder.Property(nameof(BaseEntity.DeletedAt))
+                            .IsRequired(false);
 
-                    // Add indexes for performance
-                    builder.HasIndex(nameof(BaseEntity.CreatedAt));
-                    builder.HasIndex(nameof(BaseEntity.DeletedAt));
+                        // Add indexes for performance - only on root types
+                        builder.HasIndex(nameof(BaseEntity.CreatedAt));
+                        builder.HasIndex(nameof(BaseEntity.DeletedAt));
+                    }
+                    // Derived types in TPT inheritance don't need key or timestamp configuration
+                    // as they inherit these from the root type
                 }
             );
         }
@@ -74,13 +80,22 @@ public static class ModelBuilderExtensions
 
         foreach (IMutableEntityType entityType in entityTypes)
         {
-            // Add global query filter to exclude soft-deleted entities
-            ParameterExpression parameter = Expression.Parameter(entityType.ClrType, "e");
-            MemberExpression deletedAtProperty = Expression.Property(parameter, nameof(BaseEntity.DeletedAt));
-            BinaryExpression condition = Expression.Equal(deletedAtProperty, Expression.Constant(null, typeof(DateTime?)));
-            LambdaExpression lambda = Expression.Lambda(condition, parameter);
+            // Only apply soft delete filter to root types in TPT inheritance
+            // Derived types inherit the filter behavior from their root type
+            bool isRootType = entityType.BaseType == null || !IsBaseEntity(entityType.BaseType.ClrType);
+            
+            if (isRootType)
+            {
+                // Add global query filter to exclude soft-deleted entities
+                ParameterExpression parameter = Expression.Parameter(entityType.ClrType, "e");
+                MemberExpression deletedAtProperty = Expression.Property(parameter, nameof(BaseEntity.DeletedAt));
+                BinaryExpression condition = Expression.Equal(deletedAtProperty, Expression.Constant(null, typeof(DateTime?)));
+                LambdaExpression lambda = Expression.Lambda(condition, parameter);
 
-            modelBuilder.Entity(entityType.ClrType).HasQueryFilter(lambda);
+                modelBuilder.Entity(entityType.ClrType).HasQueryFilter(lambda);
+            }
+            // Derived types in TPT inheritance automatically inherit the filter from their root type
+            // so we don't need to configure them separately
         }
     }
 

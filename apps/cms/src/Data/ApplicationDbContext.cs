@@ -454,11 +454,13 @@ public class ApplicationDbContext : DbContext
     /// Configure the reputation system entities and their relationships
     /// </summary>
     private void ConfigureReputationSystem(ModelBuilder modelBuilder)
-    {
-        // Configure UserReputation entity (global reputation only)
+    {        // Configure UserReputation entity (global reputation only)
         modelBuilder.Entity<Modules.Reputation.Models.UserReputation>(entity =>
             {
                 entity.ToTable("UserReputations");
+                // TPT inheritance: UserReputation gets its own table.
+                // Do NOT configure any keys or inherited properties here.
+                // All key configuration must be on ResourceBase only.
 
                 // Configure relationship with User
                 entity.HasOne(ur => ur.User)
@@ -478,12 +480,13 @@ public class ApplicationDbContext : DbContext
                 entity.HasIndex(ur => ur.Score);
                 entity.HasIndex(ur => ur.CurrentLevelId);
             }
-        );
-
-        // Configure UserTenantReputation entity with TPT inheritance
+        );        // Configure UserTenantReputation entity with TPT inheritance
         modelBuilder.Entity<Modules.Reputation.Models.UserTenantReputation>(entity =>
             {
                 entity.ToTable("UserTenantReputations");
+                // TPT inheritance: UserTenantReputation gets its own table.
+                // Do NOT configure any keys or inherited properties here.
+                // All key configuration must be on ResourceBase only.
 
                 // Configure relationship with UserTenant
                 entity.HasOne(utr => utr.UserTenant)
@@ -502,53 +505,61 @@ public class ApplicationDbContext : DbContext
                 entity.HasIndex(utr => utr.Score);
                 entity.HasIndex(utr => utr.CurrentLevelId);
             }
-        );
-
-        // Configure ReputationLevel entity with TPT inheritance
+        );// Configure ReputationLevel entity with TPT inheritance
         modelBuilder.Entity<Modules.Reputation.Models.ReputationLevel>(entity =>
             {
                 entity.ToTable("ReputationLevels");
+                // TPT inheritance: ReputationLevel gets its own table.
+                // Do NOT configure any keys or inherited properties here.
+                // All key configuration must be on ResourceBase only.
 
                 entity.Property(rl => rl.Name).IsRequired().HasMaxLength(100);
                 entity.Property(rl => rl.DisplayName).IsRequired().HasMaxLength(200);
                 entity.Property(rl => rl.Color).HasMaxLength(50);
-                entity.Property(rl => rl.Icon).HasMaxLength(100);
-
-                // Unique constraint on name per tenant using string-based property names
-                entity.HasIndex("Name", "TenantId").IsUnique()
+                entity.Property(rl => rl.Icon).HasMaxLength(100);                // NOTE: In TPT inheritance, we cannot create indexes spanning multiple tables
+                // TenantId is in Resources table, Name is in ReputationLevels table
+                // So we create separate indexes instead of a composite unique constraint
+                entity.HasIndex(rl => rl.Name).IsUnique()
                     .HasFilter("\"DeletedAt\" IS NULL");
+                
+                // Note: For true uniqueness across tenant+name, this would need to be enforced 
+                // at the application level or through a different approach
 
                 // Indexes for performance
                 entity.HasIndex(rl => rl.MinimumScore);
                 entity.HasIndex(rl => rl.SortOrder);
             }
-        );
-
-
-        // Configure ReputationAction entity with TPT inheritance
+        );        // Configure ReputationAction entity
         modelBuilder.Entity<Modules.Reputation.Models.ReputationAction>(entity =>
             {
                 entity.ToTable("ReputationActions");
+                // TPT inheritance: ReputationAction gets its own table.
+                // Do NOT configure any keys or inherited properties here.
+                // All key configuration must be on ResourceBase only.
 
                 entity.Property(ra => ra.ActionType).IsRequired().HasMaxLength(150);
                 entity.Property(ra => ra.DisplayName).IsRequired().HasMaxLength(200);
+                entity.Property(ra => ra.Description).HasMaxLength(2000);
 
                 // Configure relationship with RequiredLevel
                 entity.HasOne(ra => ra.RequiredLevel)
                     .WithMany()
                     .HasForeignKey(ra => ra.RequiredLevelId)
-                    .OnDelete(DeleteBehavior.SetNull);
-
-                // Unique constraint on action type per tenant using string-based property names
-                entity.HasIndex("ActionType", "TenantId").IsUnique()
+                    .OnDelete(DeleteBehavior.SetNull);                // NOTE: In TPT inheritance, we cannot create indexes spanning multiple tables
+                // TenantId is in Resources table, ActionType is in ReputationActions table
+                // So we create separate indexes instead of a composite unique constraint
+                entity.HasIndex(ra => ra.ActionType).IsUnique()
                     .HasFilter("\"DeletedAt\" IS NULL");
+                
+                // Note: For true uniqueness across tenant+actiontype, this would need to be enforced 
+                // at the application level or through a different approach
 
                 // Indexes for performance
                 entity.HasIndex(ra => ra.ActionType);
                 entity.HasIndex(ra => ra.Points);
                 entity.HasIndex(ra => ra.IsActive);
             }
-        ); // Configure UserReputationHistory entity with polymorphic relationships
+        );// Configure UserReputationHistory entity with polymorphic relationships
         modelBuilder.Entity<Modules.Reputation.Models.UserReputationHistory>(entity =>
             {
                 entity.ToTable(
@@ -559,6 +570,9 @@ public class ApplicationDbContext : DbContext
                             "(\"UserId\" IS NOT NULL AND \"UserTenantId\" IS NULL) OR (\"UserId\" IS NULL AND \"UserTenantId\" IS NOT NULL)"
                         )
                 );
+                // TPT inheritance: UserReputationHistory gets its own table.
+                // Do NOT configure any keys or inherited properties here.
+                // All key configuration must be on ResourceBase only.
 
                 entity.Property(urh => urh.Reason).HasMaxLength(500);
 

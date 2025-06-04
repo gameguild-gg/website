@@ -1,4 +1,5 @@
 using cms.Common.Entities;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace cms.Modules.Reputation.Models;
 
@@ -24,8 +25,10 @@ public class UserReputationHistory : ResourceBase
     /// <summary>
     /// Polymorphic reference to the reputation entity that changed
     /// This can point to UserReputation, UserTenantReputation, or any future IReputation implementation
-    /// Entity Framework will create a shadow ReputationId foreign key property automatically
+    /// Note: This is a computed property for convenience - the actual relationship is handled
+    /// through UserId (for UserReputation) or UserTenantId (for UserTenantReputation)
     /// </summary>
+    [NotMapped]
     public IReputation? Reputation { get; set; }
 
     /// <summary>
