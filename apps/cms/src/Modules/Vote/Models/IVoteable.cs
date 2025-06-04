@@ -1,4 +1,6 @@
-namespace cms.Common.Entities;
+using System.Collections.Generic;
+
+namespace cms.Modules.Voting.Models;
 
 /// <summary>
 /// Interface for entities that support voting (upvote/downvote).
