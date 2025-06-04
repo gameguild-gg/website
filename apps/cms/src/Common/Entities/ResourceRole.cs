@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace cms.Common.Entities;
 
+// todo: delete this! use three level pure permission dac 
 /// <summary>
 /// Entity representing roles that can be assigned to resources
 /// Provides role-based access control for resources

@@ -15,38 +15,12 @@ namespace cms.Migrations
         /// </summary>
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            // Add TenantId column to all tables that represent ResourceBase entities
-            // This is a list of known ResourceBase-derived tables
-            var resourceBaseTables = new[]
-            {
-                "ResourceMetadata",
-                "ResourceRoles"
-                // Add any other tables that represent ResourceBase-derived entities
-            };
-
-            foreach (var tableName in resourceBaseTables)
-            {
-                // Add TenantId column - nullable since a resource can be global
-                migrationBuilder.AddColumn<Guid>(
-                    name: "TenantId",
-                    table: tableName,
-                    nullable: true);
-
-                // Add foreign key constraint
-                migrationBuilder.AddForeignKey(
-                    name: $"FK_{tableName}_Tenants_TenantId",
-                    table: tableName,
-                    column: "TenantId",
-                    principalTable: "Tenants",
-                    principalColumn: "Id",
-                    onDelete: ReferentialAction.SetNull);
-
-                // Add index for better query performance
-                migrationBuilder.CreateIndex(
-                    name: $"IX_{tableName}_TenantId",
-                    table: tableName,
-                    column: "TenantId");
-            }
+            // Note: This migration will be handled by subsequent migrations that create ResourceBase tables
+            // SQLite doesn't support adding foreign keys to existing tables, so we need to create tables
+            // with the TenantId column and foreign key constraints from the start
+            
+            // No operations needed here - the ResourceBase tables will be created in later migrations
+            // with the TenantId column already included
         }
 
         /// <summary>
@@ -54,31 +28,8 @@ namespace cms.Migrations
         /// </summary>
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            // Remove TenantId column from all tables that represent ResourceBase entities
-            var resourceBaseTables = new[]
-            {
-                "ResourceMetadata",
-                "ResourceRoles"
-                // Add any other tables that represent ResourceBase-derived entities
-            };
-
-            foreach (var tableName in resourceBaseTables)
-            {
-                // Drop foreign key constraint
-                migrationBuilder.DropForeignKey(
-                    name: $"FK_{tableName}_Tenants_TenantId",
-                    table: tableName);
-
-                // Drop index
-                migrationBuilder.DropIndex(
-                    name: $"IX_{tableName}_TenantId",
-                    table: tableName);
-
-                // Drop TenantId column
-                migrationBuilder.DropColumn(
-                    name: "TenantId",
-                    table: tableName);
-            }
+            // No operations needed here - the ResourceBase tables will be dropped in other migrations
+            // that handle the full table lifecycle
         }
     }
 }

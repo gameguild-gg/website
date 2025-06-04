@@ -8,6 +8,9 @@ namespace cms.Common.Entities;
 [Flags]
 public enum PermissionType
 {
+    // todo: let it be only crud, the others should follow business logic
+    // idea: use the moderate, share, comment, vote, archive, publish as business logic permissions related to CMS, not the whole permission system.
+    // todo: implement reputation system
     /// <summary>
     /// No permissions granted
     /// </summary>

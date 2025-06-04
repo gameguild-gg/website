@@ -30,6 +30,7 @@ public abstract class ResourceBase : BaseEntity, ILocalizable, IPermissionable, 
         set;
     }
 
+    // todo: Some cases should not have owner, or it should have multiple owners. owner is the one who can delete the resource on resource only.
     /// <summary>
     /// Navigation property to the owner of this resource
     /// Entity Framework will automatically create the OwnerId foreign key
@@ -95,6 +96,9 @@ public abstract class ResourceBase : BaseEntity, ILocalizable, IPermissionable, 
         set;
     } = new List<ResourceRole>();
 
+    
+    // todo: this could be better implemented if it was an enum
+    // todo: suggestion: the unicity of the resource is given by the lang and the resourceid. resourceid is not the id of the resource. we will filter the latest version of the resourceid and the lang it is requested
     /// <summary>
     /// Collection of localizations for this resource
     /// </summary>

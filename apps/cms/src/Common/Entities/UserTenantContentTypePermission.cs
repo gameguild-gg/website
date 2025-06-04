@@ -3,6 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace cms.Common.Entities;
 
+// todo: delete this
 /// <summary>
 /// Entity representing tenant-specific content-type-wide permissions for users
 /// Layer 2b of the three-layer permission system: Tenant-specific content type permissions

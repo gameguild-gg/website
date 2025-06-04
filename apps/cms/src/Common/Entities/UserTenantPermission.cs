@@ -3,6 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace cms.Common.Entities;
 
+// todo: should we have this?
 /// <summary>
 /// Entity representing tenant-wide permissions for users
 /// Layer 1 of the three-layer permission system: Tenant → ContentType → Resource

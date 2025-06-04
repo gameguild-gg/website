@@ -28,6 +28,7 @@ public class ResourcePermission : BaseEntity
         set;
     }
 
+    // todo: add polymorphism support for resource types
     /// <summary>
     /// Type of the resource (for polymorphic relationships)
     /// </summary>

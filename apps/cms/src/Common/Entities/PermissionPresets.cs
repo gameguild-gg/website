@@ -6,6 +6,7 @@ namespace cms.Common.Entities;
 /// </summary>
 public static class PermissionPresets
 {
+    // todo: this presets does not map the idea we are aiming for. Probably a default permission set for each table, tenant, resource, etc would be better.
     /// <summary>
     /// Full administrative permissions - can do everything
     /// </summary>

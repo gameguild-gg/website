@@ -6,8 +6,10 @@ namespace cms.Common.Entities;
 /// Entity for storing localized content for resources
 /// Provides multi-language support for resources
 /// </summary>
+/// todo: field should be the one coming from the resource as a generic origin, and not a plain string. revist the others entries too, such as resource type.
 public class ResourceLocalization : BaseEntity
 {
+    // todo: apply polymorphism
     /// <summary>
     /// Type of the resource being localized
     /// </summary>

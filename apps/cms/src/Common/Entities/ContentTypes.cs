@@ -6,6 +6,7 @@ namespace cms.Common.Entities;
 /// </summary>
 public static class ContentTypes
 {
+    // todo: change the names here. nameof should come from the actual class names not the variables from the left side
     public const string UserProfile = nameof(UserProfile);
     public const string Post = nameof(Post);
     public const string Comment = nameof(Comment);
