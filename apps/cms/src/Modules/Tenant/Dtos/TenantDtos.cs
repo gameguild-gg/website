@@ -155,7 +155,10 @@ public class TenantResponseDto
     /// <summary>
     /// Whether the tenant is soft deleted
     /// </summary>
-    public bool IsDeleted => DeletedAt.HasValue;
+    public bool IsDeleted
+    {
+        get => DeletedAt.HasValue;
+    }
 
     /// <summary>
     /// Users in this tenant
@@ -376,7 +379,10 @@ public class TenantRoleResponseDto
     /// <summary>
     /// Whether the role is soft deleted
     /// </summary>
-    public bool IsDeleted => DeletedAt.HasValue;
+    public bool IsDeleted
+    {
+        get => DeletedAt.HasValue;
+    }
 
     /// <summary>
     /// Associated tenant information
@@ -477,7 +483,10 @@ public class UserTenantResponseDto
     /// <summary>
     /// Whether the relationship is soft deleted
     /// </summary>
-    public bool IsDeleted => DeletedAt.HasValue;
+    public bool IsDeleted
+    {
+        get => DeletedAt.HasValue;
+    }
 
     /// <summary>
     /// Associated user information
@@ -569,12 +578,18 @@ public class UserTenantRoleResponseDto
     /// <summary>
     /// Check if the role assignment is expired
     /// </summary>
-    public bool IsExpired => ExpiresAt.HasValue && ExpiresAt.Value <= DateTime.UtcNow;
+    public bool IsExpired
+    {
+        get => ExpiresAt.HasValue && ExpiresAt.Value <= DateTime.UtcNow;
+    }
 
     /// <summary>
     /// Check if the role assignment is valid (active and not expired)
     /// </summary>
-    public bool IsValid => IsActive && !IsExpired && !IsDeleted;
+    public bool IsValid
+    {
+        get => IsActive && !IsExpired && !IsDeleted;
+    }
 
     /// <summary>
     /// Version number for optimistic concurrency control
@@ -615,7 +630,10 @@ public class UserTenantRoleResponseDto
     /// <summary>
     /// Whether the assignment is soft deleted
     /// </summary>
-    public bool IsDeleted => DeletedAt.HasValue;
+    public bool IsDeleted
+    {
+        get => DeletedAt.HasValue;
+    }
 
     /// <summary>
     /// Associated tenant role information

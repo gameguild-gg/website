@@ -91,12 +91,18 @@ public class UserTenantRole : BaseEntity
     /// <summary>
     /// Check if the role assignment is expired
     /// </summary>
-    public bool IsExpired => ExpiresAt.HasValue && ExpiresAt.Value <= DateTime.UtcNow;
+    public bool IsExpired
+    {
+        get => ExpiresAt.HasValue && ExpiresAt.Value <= DateTime.UtcNow;
+    }
 
     /// <summary>
     /// Check if the role assignment is valid (active and not expired)
     /// </summary>
-    public bool IsValid => IsActive && !IsExpired && !IsDeleted;
+    public bool IsValid
+    {
+        get => IsActive && !IsExpired && !IsDeleted;
+    }
 
     /// <summary>
     /// Activate the role assignment

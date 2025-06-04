@@ -250,5 +250,8 @@ public abstract class BaseEntity<TKey> : IEntity<TKey> where TKey : IEquatable<T
         set;
     }
 
-    public virtual bool IsGlobal => Tenant == null;
+    public virtual bool IsGlobal
+    {
+        get => Tenant == null;
+    }
 }

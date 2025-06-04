@@ -27,5 +27,8 @@ public class Follower : BaseEntity, ITenantable
         set;
     }
 
-    public bool IsGlobal => Tenant == null;
+    public bool IsGlobal
+    {
+        get => Tenant == null;
+    }
 }

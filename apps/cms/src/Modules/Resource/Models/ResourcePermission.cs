@@ -111,10 +111,16 @@ public class ResourcePermission : BaseEntity
     /// <summary>
     /// Check if the permission is expired
     /// </summary>
-    public bool IsExpired => ExpiresAt.HasValue && ExpiresAt.Value <= DateTime.UtcNow;
+    public bool IsExpired
+    {
+        get => ExpiresAt.HasValue && ExpiresAt.Value <= DateTime.UtcNow;
+    }
 
     /// <summary>
     /// Check if the permission is valid (active and not expired)
     /// </summary>
-    public bool IsValid => IsActive && !IsExpired && !IsDeleted;
+    public bool IsValid
+    {
+        get => IsActive && !IsExpired && !IsDeleted;
+    }
 }

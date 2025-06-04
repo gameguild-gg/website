@@ -7,9 +7,8 @@ namespace cms.Common.Entities;
 /// Entity representing content-type-wide permissions for users
 /// Layer 2 of the three-layer permission system: Tenant → ContentType → Resource
 /// Grants permissions for all resources of a specific content type within a tenant (or globally when Tenant is null)
-/// Implements ITenantable to support both tenant-specific and global content type permissions
 /// </summary>
-public class ContentTypePermission : BaseEntity, ITenantable
+public sealed class ContentTypePermission : BaseEntity
 {
     /// <summary>
     /// Foreign key to the User entity
@@ -25,22 +24,12 @@ public class ContentTypePermission : BaseEntity, ITenantable
     /// Navigation property to the User entity
     /// </summary>
     [ForeignKey(nameof(UserId))]
-    public virtual Modules.User.Models.User User
+    public Modules.User.Models.User User
     {
         get;
         set;
     } = null!;
 
-    /// <summary>
-    /// Navigation property to the tenant
-    /// When null, represents global content type permissions across all tenants
-    /// When set, represents content type permissions within a specific tenant
-    /// </summary>
-    public virtual Modules.Tenant.Models.Tenant? Tenant
-    {
-        get;
-        set;
-    }
 
     /// <summary>
     /// Content type name for polymorphic relationship
@@ -88,7 +77,7 @@ public class ContentTypePermission : BaseEntity, ITenantable
     /// Navigation property to the user who assigned this permission
     /// </summary>
     [ForeignKey(nameof(AssignedByUserId))]
-    public virtual Modules.User.Models.User AssignedByUser
+    public Modules.User.Models.User AssignedByUser
     {
         get;
         set;
@@ -115,15 +104,16 @@ public class ContentTypePermission : BaseEntity, ITenantable
     /// <summary>
     /// Check if the permission is expired
     /// </summary>
-    public bool IsExpired => ExpiresAt.HasValue && ExpiresAt.Value <= DateTime.UtcNow;
+    public bool IsExpired
+    {
+        get => ExpiresAt.HasValue && ExpiresAt.Value <= DateTime.UtcNow;
+    }
 
     /// <summary>
     /// Check if the permission is valid (active and not expired)
     /// </summary>
-    public bool IsValid => IsActive && !IsExpired && !IsDeleted;
-
-    /// <summary>
-    /// Indicates whether this is a global content type permission (across all tenants)
-    /// </summary>
-    public bool IsGlobal => Tenant == null;
+    public bool IsValid
+    {
+        get => IsActive && !IsExpired && !IsDeleted;
+    }
 }
