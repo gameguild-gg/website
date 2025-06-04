@@ -34,8 +34,9 @@ public abstract class BaseEntity<TKey> : IEntity<TKey> where TKey : IEquatable<T
 
     /// <summary>
     /// Version number for optimistic concurrency control
+    /// Uses ConcurrencyCheck for cross-database compatibility (PostgreSQL, SQLite, SQL Server)
     /// </summary>
-    [Timestamp]
+    [ConcurrencyCheck]
     public virtual int Version
     {
         get;
@@ -81,6 +82,7 @@ public abstract class BaseEntity<TKey> : IEntity<TKey> where TKey : IEquatable<T
         DateTime now = DateTime.UtcNow;
         CreatedAt = now;
         UpdatedAt = now;
+        Version = 0; // New entities start with version 0
     }
 
     /// <summary>
@@ -172,11 +174,11 @@ public abstract class BaseEntity<TKey> : IEntity<TKey> where TKey : IEquatable<T
     }
 
     /// <summary>
-    /// Checks if this entity is newly created (not persisted to database)
+    /// Checks if this entity is newly created (not yet persisted to database)
     /// </summary>
     public virtual bool IsNew
     {
-        get => Id == null || Id.Equals(default(TKey));
+        get => Version == 0;
     }
 
     /// <summary>

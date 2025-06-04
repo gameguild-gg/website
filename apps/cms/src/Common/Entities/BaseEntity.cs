@@ -1,3 +1,5 @@
+using System.Reflection;
+
 namespace cms.Common.Entities;
 
 /// <summary>
@@ -42,7 +44,32 @@ public class BaseEntity : BaseEntity<Guid>
     /// <returns>New instance of the entity</returns>
     public static T Create<T>(object partial) where T : BaseEntity, new()
     {
-        return (T)Activator.CreateInstance(typeof(T), partial)!;
+        // Create instance and set properties
+        var instance = new T();
+        
+        if (partial != null)
+        {
+            // Handle Dictionary<string, object?> case
+            if (partial is Dictionary<string, object?> dict)
+            {
+                instance.SetProperties(dict);
+            }
+            else
+            {
+                // Handle anonymous object case
+                var properties = partial.GetType().GetProperties();
+                var propDict = new Dictionary<string, object?>();
+                
+                foreach (var prop in properties)
+                {
+                    propDict[prop.Name] = prop.GetValue(partial);
+                }
+                
+                instance.SetProperties(propDict);
+            }
+        }
+        
+        return instance;
     }
 
     /// <summary>
@@ -53,13 +80,5 @@ public class BaseEntity : BaseEntity<Guid>
     public static T Create<T>() where T : BaseEntity, new()
     {
         return new T();
-    }
-
-    /// <summary>
-    /// Checks if this entity is newly created (not persisted to database)
-    /// </summary>
-    public override bool IsNew
-    {
-        get => Id == Guid.Empty;
     }
 }

@@ -651,6 +651,7 @@ public class ApplicationDbContext : DbContext
 
     /// <summary>
     /// Updates CreatedAt and UpdatedAt timestamps for entities that inherit from BaseEntity
+    /// Also handles Version incrementing for optimistic concurrency control
     /// </summary>
     private void UpdateTimestamps()
     {
@@ -665,12 +666,15 @@ public class ApplicationDbContext : DbContext
             {
                 entity.CreatedAt = DateTime.UtcNow;
                 entity.UpdatedAt = DateTime.UtcNow;
+                entity.Version = 1;
             }
             else if (entry.State == EntityState.Modified)
             {
                 // Don't update CreatedAt on modifications
                 entry.Property(nameof(IEntity.CreatedAt)).IsModified = false;
                 entity.UpdatedAt = DateTime.UtcNow;
+
+                entity.Version++;
             }
         }
     }

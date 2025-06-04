@@ -39,8 +39,9 @@ public static class ModelBuilderExtensions
                             .ValueGeneratedOnAdd();
 
                         // Version configuration for optimistic concurrency
+                        // Use ConcurrencyCheck instead of IsRowVersion for cross-database compatibility
+                        // No database default - application controls versioning (0 = new, 1+ = saved)
                         builder.Property(nameof(BaseEntity.Version))
-                            .IsRowVersion() // Maps to PostgreSQL's xmin column
                             .IsConcurrencyToken();
 
                         // Timestamp and soft delete configuration - only for root types

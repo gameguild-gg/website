@@ -1,6 +1,8 @@
 using Xunit;
 using cms.Common.Entities;
 using cms.Modules.User.Models;
+using Microsoft.EntityFrameworkCore;
+using cms.Data;
 
 namespace cms.Tests.Common.Entities;
 
@@ -11,16 +13,14 @@ public class BaseEntityTests
     {
         // Arrange & Act
         var user = new User();
-
-        // Assert
-        Assert.NotEqual(Guid.Empty, user.Id); // Should have a generated GUID
-        Assert.True(user.IsNew); // New entities should return true for IsNew
+        Assert.NotEqual(Guid.Empty, user.Id);
+        Assert.Equal(0, user.Version);
+        Assert.True(user.IsNew);
         Assert.True(user.CreatedAt <= DateTime.UtcNow);
         Assert.True(user.UpdatedAt <= DateTime.UtcNow);
         Assert.Equal(user.CreatedAt.Ticks, user.UpdatedAt.Ticks, TimeSpan.FromMilliseconds(10).Ticks);
         Assert.Null(user.DeletedAt);
         Assert.False(user.IsDeleted);
-        Assert.Equal(0, user.Version);
     }
 
     [Fact]
@@ -126,7 +126,6 @@ public class BaseEntityTests
         Assert.Equal(string.Empty, user.Name);
         Assert.Equal(string.Empty, user.Email);
         Assert.True(user.IsActive);
-        Assert.True(user.IsNew);
     }
 
     [Fact]
@@ -198,20 +197,6 @@ public class BaseEntityTests
     }
 
     [Fact]
-    public void BaseEntity_IsNew_WorksCorrectlyWithGeneratedGuids()
-    {
-        // Arrange
-        var user = new User();
-
-        // Act & Assert
-        // Since BaseEntity generates a GUID in constructor, IsNew will be false
-        // This is the intended behavior - entities with generated IDs are not considered "new"
-        // in the sense of needing ID generation
-        Assert.False(user.IsNew);
-        Assert.NotEqual(Guid.Empty, user.Id);
-    }
-
-    [Fact]
     public void BaseEntity_IsNew_ReturnsTrueForEmptyGuid()
     {
         // Arrange
@@ -223,5 +208,108 @@ public class BaseEntityTests
 
         // Act & Assert
         Assert.True(user.IsNew);
+    }
+
+    [Fact]
+    public async Task BaseEntity_SaveToDatabase_IncrementsVersion()
+    {
+        // Arrange - Create in-memory database
+        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
+            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+            .Options;
+
+        await using var context = new ApplicationDbContext(options);
+        
+        // Create new entity
+        var user = new User 
+        { 
+            Name = "Test User", 
+            Email = "test@example.com" 
+        };
+        
+        // Assert - Before saving to database
+        Assert.Equal(0, user.Version); // New entity starts with version 0
+        Assert.True(user.IsNew); // Should be new
+        Assert.NotEqual(Guid.Empty, user.Id); // Should have generated GUID
+        
+        // Act - Save to database
+        context.Users.Add(user);
+        await context.SaveChangesAsync();
+        
+        // Assert - After saving to database
+        Assert.NotEqual(0, user.Version); // Version should be incremented by ApplicationDbContext.UpdateTimestamps()
+        Assert.False(user.IsNew); // Still not new 
+    }
+
+    [Fact]
+    public async Task BaseEntity_UpdateEntity_IncrementsVersionAgain()
+    {
+        // Arrange - Create in-memory database
+        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
+            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+            .Options;
+
+        await using var context = new ApplicationDbContext(options);
+        
+        // Create and save entity
+        var user = new User 
+        { 
+            Name = "Test User", 
+            Email = "test@example.com" 
+        };
+
+        // should be new
+        Assert.True(user.IsNew);
+        
+        context.Users.Add(user);
+        await context.SaveChangesAsync();
+
+        var version = user.Version; // Capture initial version
+        Assert.NotEqual(0, user.Version); // After first save
+        
+        // Act - Update and save again
+        user.Name = "Updated User";
+        await context.SaveChangesAsync();
+        
+        // Assert - Version should increment again
+        Assert.NotEqual(version, user.Version); // After second save
+    }
+
+    [Fact]
+    public async Task BaseEntity_MultipleEntities_EachHasOwnVersion()
+    {
+        // Arrange - Create in-memory database
+        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
+            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+            .Options;
+
+        await using var context = new ApplicationDbContext(options);
+        
+        // Create multiple entities
+        var user1 = new User { Name = "User 1", Email = "user1@example.com" };
+        var user2 = new User { Name = "User 2", Email = "user2@example.com" };
+        
+        // Both start with version 0
+        Assert.Equal(0, user1.Version);
+        Assert.Equal(0, user2.Version);
+        
+        // Act - Save both
+        context.Users.AddRange(user1, user2);
+        await context.SaveChangesAsync();
+        
+        // Assert - Both should have version 1
+        Assert.NotEqual(0, user1.Version);
+        Assert.NotEqual(0, user2.Version);
+
+        var user1Version = user1.Version;
+        var user2Version = user2.Version;
+        
+        // Update only user1
+        user1.Name = "Updated User 1";
+        await context.SaveChangesAsync();
+        
+        // Assert - Only user1's version should increment
+        Assert.NotEqual(user1Version, user1.Version);
+        Assert.Equal(user2Version, user2.Version);
     }
 }
