@@ -49,11 +49,19 @@ public class Vote : BaseEntity
     /// <summary>
     /// Foreign key for the entity being voted on
     /// </summary>
-    public Guid EntityId { get; set; }
+    public Guid EntityId
+    {
+        get;
+        set;
+    }
 
     /// <summary>
     /// The type of entity being voted on (for polymorphic relationships)
     /// </summary>
     [MaxLength(255)]
-    public string EntityType { get; set; } = string.Empty;
+    public string EntityType
+    {
+        get;
+        set;
+    } = string.Empty;
 }
