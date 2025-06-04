@@ -14,9 +14,9 @@ public interface IReputation : IEntity
     int Score { get; set; }
 
     /// <summary>
-    /// Current reputation level (linked to configurable level)
+    /// Current reputation tier (linked to configurable tier)
     /// </summary>
-    ReputationLevel? CurrentLevel { get; set; }
+    ReputationTier? CurrentLevel { get; set; }
     Guid? CurrentLevelId { get; set; }
 
     /// <summary>
@@ -25,7 +25,7 @@ public interface IReputation : IEntity
     DateTime LastUpdated { get; set; }
 
     /// <summary>
-    /// When the reputation level was last recalculated
+    /// When the reputation tier was last recalculated
     /// </summary>
     DateTime? LastLevelCalculation { get; set; }
 

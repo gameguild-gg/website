@@ -26,11 +26,11 @@ public interface IReputationService
     Task<IReputation> UpdateReputationAsync(Guid userId, int scoreChange, Guid? tenantId = null, string? reason = null);
 
     /// <summary>
-    /// Get all users with a specific reputation level or higher
+    /// Get all users with a specific reputation tier or higher
     /// </summary>
-    /// <param name="minimumLevel">The minimum reputation level</param>
+    /// <param name="minimumLevel">The minimum reputation tier</param>
     /// <param name="tenantId">The tenant ID (null for global reputation)</param>
     /// <returns>List of users meeting the reputation criteria</returns>
-    Task<IEnumerable<IReputation>> GetUsersByReputationLevelAsync(ReputationLevel minimumLevel, Guid? tenantId = null);
+    Task<IEnumerable<IReputation>> GetUsersByReputationTierAsync(ReputationTier minimumLevel, Guid? tenantId = null);
 
 }

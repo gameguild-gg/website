@@ -74,10 +74,10 @@ public class ReputationAction : ResourceBase
     } = true;
 
     /// <summary>
-    /// Minimum reputation level required to perform this action
+    /// Minimum reputation tier required to perform this action
     /// (null for no requirement)
     /// </summary>
-    public ReputationLevel? RequiredLevel
+    public ReputationTier? RequiredLevel
     {
         get;
         set;

@@ -91,7 +91,7 @@ public class ApplicationDbContext : DbContext
         set;
     }
 
-    public DbSet<Modules.Reputation.Models.ReputationLevel> ReputationLevels
+    public DbSet<Modules.Reputation.Models.ReputationTier> ReputationTiers
     {
         get;
         set;
@@ -505,11 +505,11 @@ public class ApplicationDbContext : DbContext
                 entity.HasIndex(utr => utr.Score);
                 entity.HasIndex(utr => utr.CurrentLevelId);
             }
-        );// Configure ReputationLevel entity with TPT inheritance
-        modelBuilder.Entity<Modules.Reputation.Models.ReputationLevel>(entity =>
+        );// Configure ReputationTier entity with TPT inheritance
+        modelBuilder.Entity<Modules.Reputation.Models.ReputationTier>(entity =>
             {
                 entity.ToTable("ReputationLevels");
-                // TPT inheritance: ReputationLevel gets its own table.
+                // TPT inheritance: ReputationTier gets its own table.
                 // Do NOT configure any keys or inherited properties here.
                 // All key configuration must be on ResourceBase only.
 
@@ -517,7 +517,7 @@ public class ApplicationDbContext : DbContext
                 entity.Property(rl => rl.DisplayName).IsRequired().HasMaxLength(200);
                 entity.Property(rl => rl.Color).HasMaxLength(50);
                 entity.Property(rl => rl.Icon).HasMaxLength(100);                // NOTE: In TPT inheritance, we cannot create indexes spanning multiple tables
-                // TenantId is in Resources table, Name is in ReputationLevels table
+                // TenantId is in Resources table, Name is in ReputationTiers table
                 // So we create separate indexes instead of a composite unique constraint
                 entity.HasIndex(rl => rl.Name).IsUnique()
                     .HasFilter("\"DeletedAt\" IS NULL");

@@ -98,8 +98,8 @@ public class ReputationService : IReputationService
             reputation.Touch();
         }
 
-        // Recalculate reputation level
-        await RecalculateReputationLevelAsync(reputation, tenantId);
+        // Recalculate reputation tier
+        await RecalculateReputationTierAsync(reputation, tenantId);
 
         // Record history entry
         CreateHistoryEntry(reputation, scoreChange, reason ?? "Manual adjustment", tenantId);
@@ -109,9 +109,9 @@ public class ReputationService : IReputationService
         return reputation;
     }
 
-    private async Task RecalculateReputationLevelAsync(IReputation reputation, Guid? tenantId)
+    private async Task RecalculateReputationTierAsync(IReputation reputation, Guid? tenantId)
     {
-        var newLevel = await _context.ReputationLevels
+        var newLevel = await _context.ReputationTiers
             .Where(rl => rl.IsActive &&
                          !rl.IsDeleted &&
                          rl.MinimumScore <= reputation.Score &&
@@ -153,7 +153,7 @@ public class ReputationService : IReputationService
         _context.UserReputationHistory.Add(historyEntry);
     }
 
-    public async Task<IEnumerable<IReputation>> GetUsersByReputationLevelAsync(ReputationLevel minimumLevel, Guid? tenantId = null)
+    public async Task<IEnumerable<IReputation>> GetUsersByReputationTierAsync(ReputationTier minimumLevel, Guid? tenantId = null)
     {
         var results = new List<IReputation>();
 

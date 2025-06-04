@@ -3,13 +3,13 @@ using cms.Common.Entities;
 namespace cms.Modules.Reputation.Models;
 
 /// <summary>
-/// Configurable reputation level definition stored in the database
+/// Configurable reputation tier definition stored in the database
 /// Allows dynamic configuration of reputation thresholds and permissions
 /// </summary>
-public class ReputationLevel : ResourceBase
+public class ReputationTier : ResourceBase
 {
     /// <summary>
-    /// Unique name/identifier for this reputation level
+    /// Unique name/identifier for this reputation tier
     /// </summary>
     public required string Name
     {
@@ -18,7 +18,7 @@ public class ReputationLevel : ResourceBase
     }
 
     /// <summary>
-    /// Display name for this reputation level
+    /// Display name for this reputation tier
     /// </summary>
     public required string DisplayName
     {
@@ -27,7 +27,7 @@ public class ReputationLevel : ResourceBase
     }
 
     /// <summary>
-    /// Minimum score required to achieve this level
+    /// Minimum score required to achieve this tier
     /// </summary>
     public int MinimumScore
     {
@@ -36,7 +36,7 @@ public class ReputationLevel : ResourceBase
     }
 
     /// <summary>
-    /// Maximum score for this level (null means no upper limit)
+    /// Maximum score for this tier (null means no upper limit)
     /// </summary>
     public int? MaximumScore
     {
@@ -45,7 +45,7 @@ public class ReputationLevel : ResourceBase
     }
 
     /// <summary>
-    /// Color or visual identifier for this level (hex color, CSS class, etc.)
+    /// Color or visual identifier for this tier (hex color, CSS class, etc.)
     /// </summary>
     public string? Color
     {
@@ -54,7 +54,7 @@ public class ReputationLevel : ResourceBase
     }
 
     /// <summary>
-    /// Icon or badge identifier for this level
+    /// Icon or badge identifier for this tier
     /// </summary>
     public string? Icon
     {
@@ -63,7 +63,7 @@ public class ReputationLevel : ResourceBase
     }
 
     /// <summary>
-    /// Order/priority of this level (lower numbers = higher priority)
+    /// Order/priority of this tier (lower numbers = higher priority)
     /// </summary>
     public int SortOrder
     {
@@ -72,7 +72,7 @@ public class ReputationLevel : ResourceBase
     }
 
     /// <summary>
-    /// Whether this level is currently active
+    /// Whether this tier is currently active
     /// </summary>
     public bool IsActive
     {
@@ -81,7 +81,7 @@ public class ReputationLevel : ResourceBase
     } = true;
 
     /// <summary>
-    /// Users who have achieved this reputation level
+    /// Users who have achieved this reputation tier
     /// </summary>
     public ICollection<UserReputation> UserReputations
     {

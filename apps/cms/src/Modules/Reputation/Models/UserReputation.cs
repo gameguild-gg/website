@@ -3,7 +3,7 @@ using cms.Common.Entities;
 namespace cms.Modules.Reputation.Models;
 
 /// <summary>
-/// Tracks a user's reputation score and level
+/// Tracks a user's reputation score and tier
 /// </summary>
 public class UserReputation : ResourceBase, IReputation
 {
@@ -19,9 +19,9 @@ public class UserReputation : ResourceBase, IReputation
     public int Score { get; set; } = 0;
 
     /// <summary>
-    /// Current reputation level (linked to configurable level)
+    /// Current reputation tier (linked to configurable tier)
     /// </summary>
-    public ReputationLevel? CurrentLevel { get; set; }
+    public ReputationTier? CurrentLevel { get; set; }
     public Guid? CurrentLevelId { get; set; }
 
     /// <summary>
@@ -30,7 +30,7 @@ public class UserReputation : ResourceBase, IReputation
     public DateTime LastUpdated { get; set; } = DateTime.UtcNow;
 
     /// <summary>
-    /// When the user's reputation level was last recalculated
+    /// When the user's reputation tier was last recalculated
     /// </summary>
     public DateTime? LastLevelCalculation { get; set; }
 

@@ -53,15 +53,15 @@ public class UserReputationHistory : ResourceBase
     public int NewScore { get; set; }
 
     /// <summary>
-    /// Previous reputation level (if different)
+    /// Previous reputation tier (if different)
     /// </summary>
-    public ReputationLevel? PreviousLevel { get; set; }
+    public ReputationTier? PreviousLevel { get; set; }
     public Guid? PreviousLevelId { get; set; }
 
     /// <summary>
-    /// New reputation level (if changed)
+    /// New reputation tier (if changed)
     /// </summary>
-    public ReputationLevel? NewLevel { get; set; }
+    public ReputationTier? NewLevel { get; set; }
     public Guid? NewLevelId { get; set; }
 
     /// <summary>
