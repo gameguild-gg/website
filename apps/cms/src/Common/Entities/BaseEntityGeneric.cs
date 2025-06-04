@@ -174,7 +174,7 @@ public abstract class BaseEntity<TKey> : IEntity<TKey> where TKey : IEquatable<T
     }
 
     /// <summary>
-    /// Checks if this entity is newly created (not yet persisted to database)
+    /// Checks if this entity is newly created (not yet persisted to a database)
     /// </summary>
     public virtual bool IsNew
     {
