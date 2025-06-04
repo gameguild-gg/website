@@ -63,27 +63,11 @@ public abstract class ResourceBase : BaseEntity, ILocalizable, IPermissionable, 
     }
 
     /// <summary>
-    /// Navigation property to the tenant
-    /// Entity Framework will automatically create the TenantId foreign key
-    /// </summary>
-    public virtual Modules.Tenant.Models.Tenant? Tenant
-    {
-        get;
-        set;
-    }
-
-    /// <summary>
-    /// Indicates whether this resource is accessible across all tenants (when Tenant is null)
-    /// or only within a specific tenant
-    /// </summary>
-    public bool IsGlobal => Tenant == null;
-
-    /// <summary>
     /// Collection of permissions assigned to this resource
     /// </summary>
     public virtual ICollection<ResourcePermission> ResourcePermissions
     {
-    get;
+        get;
         set;
     } = new List<ResourcePermission>();
 

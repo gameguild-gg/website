@@ -21,12 +21,12 @@ public enum VisibilityStatus
     Restricted = 2,
 
     /// <summary>
-    /// Resource is archived and not normally visible
+    /// Resource is unlisted and only accessible via direct link
     /// </summary>
-    Archived = 3,
+    Unlisted = 5,
 
     /// <summary>
-    /// Resource is in draft status
+    /// Resource is protected and requires special access
     /// </summary>
-    Draft = 4
+    Protected = 6
 }

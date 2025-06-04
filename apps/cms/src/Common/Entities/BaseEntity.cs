@@ -46,7 +46,7 @@ public class BaseEntity : BaseEntity<Guid>
     {
         // Create instance and set properties
         var instance = new T();
-        
+
         if (partial != null)
         {
             // Handle Dictionary<string, object?> case
@@ -59,16 +59,16 @@ public class BaseEntity : BaseEntity<Guid>
                 // Handle anonymous object case
                 var properties = partial.GetType().GetProperties();
                 var propDict = new Dictionary<string, object?>();
-                
+
                 foreach (var prop in properties)
                 {
                     propDict[prop.Name] = prop.GetValue(partial);
                 }
-                
+
                 instance.SetProperties(propDict);
             }
         }
-        
+
         return instance;
     }
 

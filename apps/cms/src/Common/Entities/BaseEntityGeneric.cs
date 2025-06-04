@@ -242,4 +242,13 @@ public abstract class BaseEntity<TKey> : IEntity<TKey> where TKey : IEquatable<T
 
         return $"{GetType().Name} {{ Id = {Id}, Version = {Version}, CreatedAt = {CreatedAt:yyyy-MM-dd HH:mm:ss}, UpdatedAt = {UpdatedAt:yyyy-MM-dd HH:mm:ss}{deletedStatus} }}";
     }
+
+    // Tenant logic for ITenantable
+    public virtual Modules.Tenant.Models.Tenant? Tenant
+    {
+        get;
+        set;
+    }
+
+    public virtual bool IsGlobal => Tenant == null;
 }

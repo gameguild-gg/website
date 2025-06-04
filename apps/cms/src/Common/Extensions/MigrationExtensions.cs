@@ -13,7 +13,7 @@ public static class MigrationExtensions
     /// <param name="serviceProvider">The service provider</param>
     /// <param name="logger">Optional logger</param>
     /// <returns>A task that represents the asynchronous migration operation</returns>
-    public static async Task ApplyMigrationsAsync<TContext>(this IServiceProvider serviceProvider, ILogger? logger = null) 
+    public static async Task ApplyMigrationsAsync<TContext>(this IServiceProvider serviceProvider, ILogger? logger = null)
         where TContext : DbContext
     {
         using var scope = serviceProvider.CreateScope();
@@ -28,6 +28,7 @@ public static class MigrationExtensions
         catch (Exception ex)
         {
             logger?.LogError(ex, "An error occurred while applying migrations for {DbContext}", typeof(TContext).Name);
+
             throw;
         }
     }

@@ -29,7 +29,7 @@ public static class ModelBuilderExtensions
                 {
                     // Check if this is a root type (not derived from another BaseEntity)
                     bool isRootType = entityType.BaseType == null || !IsBaseEntity(entityType.BaseType.ClrType);
-                    
+
                     if (isRootType)
                     {
                         // Id configuration (UUID) - only for root types
@@ -84,7 +84,7 @@ public static class ModelBuilderExtensions
             // Only apply soft delete filter to root types in TPT inheritance
             // Derived types inherit the filter behavior from their root type
             bool isRootType = entityType.BaseType == null || !IsBaseEntity(entityType.BaseType.ClrType);
-            
+
             if (isRootType)
             {
                 // Add global query filter to exclude soft-deleted entities

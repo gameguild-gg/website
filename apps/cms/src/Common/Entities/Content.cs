@@ -5,9 +5,18 @@ namespace cms.Common.Entities;
 /// <summary>
 /// Represents a content item that is a specialized resource.
 /// </summary>
-public class Content : ResourceBase
+public abstract class Content : ResourceBase
 {
     // Content-specific properties can be added here if needed
+
+    /// <summary>
+    /// Licenses associated with this content (many-to-many)
+    /// </summary>
+    public virtual ICollection<ContentLicense> Licenses
+    {
+        get;
+        set;
+    } = new List<ContentLicense>();
 
     /// <summary>
     /// Slug for the content (URL-friendly unique identifier)
@@ -19,4 +28,13 @@ public class Content : ResourceBase
         get;
         set;
     } = string.Empty;
+
+    /// <summary>
+    /// Status of the content (draft, published, etc.)
+    /// </summary>
+    public ContentStatus Status
+    {
+        get;
+        set;
+    } = ContentStatus.Draft;
 }

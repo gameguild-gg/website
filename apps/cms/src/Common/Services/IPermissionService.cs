@@ -10,7 +10,7 @@ namespace cms.Common.Services;
 public interface IPermissionService
 {
     // ===== LAYER 1: TENANT-WIDE PERMISSIONS =====
-    
+
     /// <summary>
     /// Assign tenant-wide permissions to a user (or global if tenantId is null)
     /// </summary>
@@ -24,14 +24,16 @@ public interface IPermissionService
     /// <summary>
     /// Get all tenants a user has permissions in
     /// </summary>
-    Task<IEnumerable<Modules.Tenant.Models.Tenant>> GetUserTenantsAsync(Guid userId);    /// <summary>
+    Task<IEnumerable<Modules.Tenant.Models.Tenant>> GetUserTenantsAsync(Guid userId);
+
+    /// <summary>
     /// Get user's global permissions (across all tenants)
     /// Returns ContentTypePermission entities with null TenantId for global permissions
     /// </summary>
     Task<IEnumerable<ContentTypePermission>> GetUserGlobalPermissionsAsync(Guid userId);
 
     // ===== LAYER 2: CONTENT-TYPE-WIDE PERMISSIONS =====
-    
+
     /// <summary>
     /// Assign content-type-wide permissions to a user
     /// When tenantId is null, assigns global permissions; when set, assigns tenant-specific permissions
@@ -54,7 +56,7 @@ public interface IPermissionService
     Task<IEnumerable<ContentTypePermission>> GetUserContentTypePermissionsAsync(Guid userId);
 
     // ===== LAYER 3: RESOURCE-SPECIFIC PERMISSIONS =====
-    
+
     /// <summary>
     /// Grant permissions to a user for a specific resource
     /// </summary>
@@ -71,7 +73,7 @@ public interface IPermissionService
     Task<PermissionType> GetUserPermissionsAsync(Guid userId, Guid resourceId);
 
     // ===== HELPER METHODS =====
-    
+
     /// <summary>
     /// Get the tenant context for a specific resource
     /// </summary>
