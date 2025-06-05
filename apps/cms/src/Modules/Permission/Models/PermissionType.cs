@@ -3,21 +3,27 @@ using System;
 namespace cms.Common.Entities;
 
 /// <summary>
-/// Bitwise permission flags for fine-grained access control
+/// Legacy permission flags maintained for backward compatibility only.
 /// 
-/// DEPRECATED: This enum mixes core CRUD operations with business logic permissions.
-/// For new implementations, prefer using:
+/// For new implementations, use the modular permission system:
 /// - CorePermissionType for basic CRUD operations
-/// - BusinessLogicPermissionType for CMS-specific features
-/// - ReputationSystem for reputation-based business logic permissions
+/// - ContentInteractionPermissionType for user interactions
+/// - ModerationPermissionType for moderation activities
+/// - ContentLifecyclePermissionType for lifecycle management
+/// - PublishingPermissionType for publishing operations
+/// - MonetizationPermissionType for business operations
+/// - EditorialPermissionType for editorial oversight
+/// - PromotionPermissionType for content promotion
+/// - QualityControlPermissionType for quality management
+/// - UnifiedPermissionContext for comprehensive permission handling
 /// 
-/// This enum is maintained for backward compatibility but will be phased out.
+/// Use PermissionMigrationService to migrate existing implementations.
 /// </summary>
 [Flags]
-[Obsolete("Use CorePermissionType for CRUD operations and BusinessLogicPermissionType for business logic. This enum will be removed in a future version.")]
+[Obsolete("Use modular permission system with UnifiedPermissionContext. Use PermissionMigrationService for migration.")]
 public enum PermissionType
 {
-    // CORE CRUD OPERATIONS - use CorePermissionType for new implementations
+    // CORE CRUD OPERATIONS - migrate to CorePermissionType for new implementations
     /// <summary>
     /// No permissions granted
     /// </summary>
@@ -43,47 +49,7 @@ public enum PermissionType
     /// </summary>
     Delete = 8,
 
-    // // BUSINESS LOGIC OPERATIONS - use BusinessLogicPermissionType and ReputationSystem for new implementations
-    // /// <summary>
-    // /// Moderate content (approve, reject, moderate discussions)
-    // /// DEPRECATED: Use BusinessLogicPermissionType.Moderate with ReputationSystem
-    // /// </summary>
-    // [Obsolete("Use BusinessLogicPermissionType.Moderate with ReputationSystem")]
-    // Moderate = 16,
-    //
-    // /// <summary>
-    // /// Share content with other users or make it public
-    // /// DEPRECATED: Use BusinessLogicPermissionType.Share with ReputationSystem
-    // /// </summary>
-    // [Obsolete("Use BusinessLogicPermissionType.Share with ReputationSystem")]
-    // Share = 32,
-    //
-    // /// <summary>
-    // /// Comment on content
-    // /// DEPRECATED: Use BusinessLogicPermissionType.Comment with ReputationSystem
-    // /// </summary>
-    // [Obsolete("Use BusinessLogicPermissionType.Comment with ReputationSystem")]
-    // Comment = 64,
-    //
-    // /// <summary>
-    // /// Vote on content (like, dislike, rate)
-    // /// DEPRECATED: Use BusinessLogicPermissionType.Vote with ReputationSystem
-    // /// </summary>
-    // [Obsolete("Use BusinessLogicPermissionType.Vote with ReputationSystem")]
-    // Vote = 128,
-    //
-    // /// <summary>
-    // /// Archive content (hide from normal view but preserve)
-    // /// DEPRECATED: Use BusinessLogicPermissionType.Archive with ReputationSystem
-    // /// </summary>
-    // [Obsolete("Use BusinessLogicPermissionType.Archive with ReputationSystem")]
-    // Archive = 256,
-    //
-    // /// <summary>
-    // /// Publish content (make it publicly visible)
-    // /// DEPRECATED: Use BusinessLogicPermissionType.Publish with ReputationSystem
-    // /// </summary>
-    // [Obsolete("Use BusinessLogicPermissionType.Publish with ReputationSystem")]
-    // Publish = 512
-    // // Add more permissions as needed
+    // Convenience combinations for backward compatibility
+    ReadWrite = Read | Create | Update,
+    FullAccess = Read | Create | Update | Delete
 }
