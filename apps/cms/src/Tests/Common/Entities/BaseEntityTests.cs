@@ -264,7 +264,7 @@ public class BaseEntityTests
         context.Users.Add(user);
         await context.SaveChangesAsync();
 
-        var version = user.Version; // Capture initial version
+        int version = user.Version; // Capture initial version
         Assert.NotEqual(0, user.Version); // After first save
         
         // Act - Update and save again
@@ -301,8 +301,8 @@ public class BaseEntityTests
         Assert.NotEqual(0, user1.Version);
         Assert.NotEqual(0, user2.Version);
 
-        var user1Version = user1.Version;
-        var user2Version = user2.Version;
+        int user1Version = user1.Version;
+        int user2Version = user2.Version;
         
         // Update only user1
         user1.Name = "Updated User 1";

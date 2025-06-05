@@ -4,6 +4,7 @@ using cms.Modules.Tenant.Models;
 using cms.Common.Entities;
 using cms.Common.Data;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
+using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace cms.Data;
 
@@ -15,9 +16,13 @@ public class ApplicationDbContext : DbContext
     {
         get;
         set;
+    }    public DbSet<Credential> Credentials
+    {
+        get;
+        set;
     }
 
-    public DbSet<Credential> Credentials
+    public DbSet<cms.Modules.Auth.Models.RefreshToken> RefreshTokens
     {
         get;
         set;
@@ -120,7 +125,7 @@ public class ApplicationDbContext : DbContext
         base.OnModelCreating(modelBuilder);
 
         // Configure ITenantable entities
-        foreach (var entityType in modelBuilder.Model.GetEntityTypes()
+        foreach (IMutableEntityType entityType in modelBuilder.Model.GetEntityTypes()
                      .Where(t => typeof(ITenantable).IsAssignableFrom(t.ClrType)))
         {
             modelBuilder.Entity(entityType.ClrType)

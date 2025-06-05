@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using cms.Common.Entities;
 using cms.Data;
+using cms.Modules.Tenant.Models;
+using cms.Modules.User.Models;
 
 namespace cms.Common.Services;
 
@@ -39,7 +41,7 @@ public class PermissionService : IPermissionService
         }
 
         // First ensure the UserTenant relationship exists
-        var userTenant = await _context.UserTenants
+        UserTenant? userTenant = await _context.UserTenants
             .FirstOrDefaultAsync(ut => ut.UserId == userId && ut.TenantId == tenantId && !ut.IsDeleted);
 
         if (userTenant == null)
@@ -88,7 +90,7 @@ public class PermissionService : IPermissionService
     public async Task AssignContentTypePermissionAsync(Guid userId, Guid? tenantId, string contentTypeName, PermissionType permissions, Guid assignedByUserId)
     {
         // Check if permission already exists
-        var existingPermission = await _context.ContentTypePermissions
+        ContentTypePermission? existingPermission = await _context.ContentTypePermissions
             .FirstOrDefaultAsync(p => p.UserId == userId && p.ContentTypeName == contentTypeName &&
                                       EF.Property<Guid?>(p, "TenantId") == tenantId && !p.IsDeleted
             );
@@ -105,8 +107,8 @@ public class PermissionService : IPermissionService
         else
         {
             // Get user and assignedByUser entities
-            var user = await _context.Users.FindAsync(userId);
-            var assignedByUser = await _context.Users.FindAsync(assignedByUserId);
+            User? user = await _context.Users.FindAsync(userId);
+            User? assignedByUser = await _context.Users.FindAsync(assignedByUserId);
 
             if (user == null || assignedByUser == null)
                 throw new ArgumentException("User not found");
@@ -140,7 +142,7 @@ public class PermissionService : IPermissionService
 
     public async Task<bool> HasContentTypePermissionAsync(Guid userId, Guid? tenantId, string contentTypeName, PermissionType permission)
     {
-        var userPermissions = await GetUserContentTypePermissionsAsync(userId, tenantId, contentTypeName);
+        PermissionType userPermissions = await GetUserContentTypePermissionsAsync(userId, tenantId, contentTypeName);
 
         return userPermissions.HasFlag(permission);
     }
@@ -174,13 +176,13 @@ public class PermissionService : IPermissionService
     public async Task GrantResourcePermissionAsync(Guid userId, Guid resourceId, PermissionType permissions, Guid grantedByUserId)
     {
         // Get resource info for proper typing
-        var resourceInfo = await GetResourceInfoAsync(resourceId);
+        ResourceInfo? resourceInfo = await GetResourceInfoAsync(resourceId);
 
         if (resourceInfo == null)
             throw new ArgumentException("Resource not found", nameof(resourceId));
 
         // Check if permission already exists
-        var existingPermission = await _context.ResourcePermissions
+        ResourcePermission? existingPermission = await _context.ResourcePermissions
             .FirstOrDefaultAsync(p => p.User!.Id == userId && p.Resource.Id == resourceId && !p.IsDeleted);
 
         if (existingPermission != null)
@@ -195,8 +197,8 @@ public class PermissionService : IPermissionService
         else
         {
             // Get user and grantedByUser entities
-            var user = await _context.Users.FindAsync(userId);
-            var grantedByUser = await _context.Users.FindAsync(grantedByUserId);
+            User? user = await _context.Users.FindAsync(userId);
+            User? grantedByUser = await _context.Users.FindAsync(grantedByUserId);
 
             if (user == null || grantedByUser == null)
                 throw new ArgumentException("User not found");
@@ -219,14 +221,14 @@ public class PermissionService : IPermissionService
 
     public async Task<bool> HasPermissionAsync(Guid userId, Guid resourceId, PermissionType permission)
     {
-        var userPermissions = await GetUserPermissionsAsync(userId, resourceId);
+        PermissionType userPermissions = await GetUserPermissionsAsync(userId, resourceId);
 
         return userPermissions.HasFlag(permission);
     }
 
     public async Task<PermissionType> GetUserPermissionsAsync(Guid userId, Guid resourceId)
     {
-        var resourceInfo = await GetResourceInfoAsync(resourceId);
+        ResourceInfo? resourceInfo = await GetResourceInfoAsync(resourceId);
 
         if (resourceInfo == null)
             return PermissionType.None; // Default to no permissions
@@ -234,19 +236,19 @@ public class PermissionService : IPermissionService
         var combinedPermissions = PermissionType.None;
 
         // Layer 1: Get tenant-wide permissions
-        var tenantPermissions = await GetUserTenantPermissionsAsync(userId, resourceInfo.TenantId);
+        PermissionType tenantPermissions = await GetUserTenantPermissionsAsync(userId, resourceInfo.TenantId);
         combinedPermissions |= tenantPermissions;
 
         // Also check global permissions (tenant-wide with null tenant)
-        var globalPermissions = await GetUserTenantPermissionsAsync(userId, null);
+        PermissionType globalPermissions = await GetUserTenantPermissionsAsync(userId, null);
         combinedPermissions |= globalPermissions;
 
         // Layer 2: Get content-type-wide permissions
-        var contentTypePermissions = await GetUserContentTypePermissionsAsync(userId, resourceInfo.TenantId, resourceInfo.ContentType);
+        PermissionType contentTypePermissions = await GetUserContentTypePermissionsAsync(userId, resourceInfo.TenantId, resourceInfo.ContentType);
         combinedPermissions |= contentTypePermissions;
 
         // Also check global content type permissions
-        var globalContentTypePermissions = await GetUserContentTypePermissionsAsync(userId, null, resourceInfo.ContentType);
+        PermissionType globalContentTypePermissions = await GetUserContentTypePermissionsAsync(userId, null, resourceInfo.ContentType);
         combinedPermissions |= globalContentTypePermissions;
 
         // Layer 3: Get resource-specific permissions
@@ -255,7 +257,7 @@ public class PermissionService : IPermissionService
             .Select(p => p.Permissions)
             .ToListAsync();
 
-        foreach (var perm in resourcePermissions)
+        foreach (PermissionType perm in resourcePermissions)
         {
             combinedPermissions |= perm;
         }
@@ -267,14 +269,14 @@ public class PermissionService : IPermissionService
 
     public async Task<Guid?> GetResourceTenantIdAsync(Guid resourceId)
     {
-        var resourceInfo = await GetResourceInfoAsync(resourceId);
+        ResourceInfo? resourceInfo = await GetResourceInfoAsync(resourceId);
 
         return resourceInfo?.TenantId;
     }
 
     public async Task<string?> GetResourceContentTypeAsync(Guid resourceId)
     {
-        var resourceInfo = await GetResourceInfoAsync(resourceId);
+        ResourceInfo? resourceInfo = await GetResourceInfoAsync(resourceId);
 
         return resourceInfo?.ContentType;
     }
@@ -282,7 +284,7 @@ public class PermissionService : IPermissionService
     public async Task RemovePermissionAsync(Guid permissionId)
     {
         // Try to find the permission in each permission table
-        var resourcePermission = await _context.ResourcePermissions.FindAsync(permissionId);
+        ResourcePermission? resourcePermission = await _context.ResourcePermissions.FindAsync(permissionId);
         if (resourcePermission != null)
         {
             resourcePermission.SoftDelete();
@@ -291,7 +293,7 @@ public class PermissionService : IPermissionService
             return;
         }
 
-        var contentTypePermission = await _context.ContentTypePermissions.FindAsync(permissionId);
+        ContentTypePermission? contentTypePermission = await _context.ContentTypePermissions.FindAsync(permissionId);
         if (contentTypePermission != null)
         {
             contentTypePermission.SoftDelete();
@@ -310,7 +312,7 @@ public class PermissionService : IPermissionService
                 .Where(p => p.UserId == userId && EF.Property<Guid?>(p, "TenantId") == null && !p.IsDeleted)
                 .ToListAsync();
 
-            foreach (var permission in globalContentTypePermissions)
+            foreach (ContentTypePermission permission in globalContentTypePermissions)
             {
                 permission.SoftDelete();
             }
@@ -321,7 +323,7 @@ public class PermissionService : IPermissionService
         }
 
         // Find the UserTenant relationship
-        var userTenant = await _context.UserTenants
+        UserTenant? userTenant = await _context.UserTenants
             .FirstOrDefaultAsync(ut => ut.UserId == userId && ut.TenantId == tenantId && !ut.IsDeleted);
 
         if (userTenant == null)
@@ -332,7 +334,7 @@ public class PermissionService : IPermissionService
             .Where(p => p.UserId == userId && EF.Property<Guid?>(p, "TenantId") == tenantId && !p.IsDeleted)
             .ToListAsync();
 
-        foreach (var permission in contentTypePermissions)
+        foreach (ContentTypePermission permission in contentTypePermissions)
         {
             permission.SoftDelete();
         }

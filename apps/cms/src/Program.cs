@@ -3,6 +3,7 @@ using cms.Modules.User.GraphQL;
 using cms.Common.Extensions;
 using cms.Common.Middleware;
 using cms.Common.Transformers;
+using cms.Modules.Auth.Configuration;
 using Microsoft.EntityFrameworkCore;
 using DotNetEnv;
 using Microsoft.OpenApi.Models;
@@ -25,7 +26,7 @@ Env.Load("../.env");
 builder.Services.AddOpenApi();
 builder.Services.AddControllers(opts =>
     opts.Conventions.Add(new RouteTokenTransformerConvention(new ToKebabParameterTransformer()))
-);
+).AddAuthFilters(); // Add authentication filters
 
 // Add Swagger services
 builder.Services.AddEndpointsApiExplorer();
@@ -46,6 +47,7 @@ builder.Services.AddCommonServices();
 builder.Services.AddUserModule();
 builder.Services.AddTenantModule();
 builder.Services.AddUserProfileModule(); // Register the UserProfile module
+builder.Services.AddAuthModule(builder.Configuration); // Register the Auth module
 
 // Get connection string from environment
 string connectionString = Environment.GetEnvironmentVariable("DB_CONNECTION_STRING")
@@ -120,6 +122,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// Add authentication middleware
+app.UseAuthModule();
 
 // Map GraphQL endpoint
 app.MapGraphQL("/graphql");

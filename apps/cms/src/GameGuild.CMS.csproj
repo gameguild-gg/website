@@ -21,11 +21,13 @@
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />        <PackageReference Include="HotChocolate.AspNetCore" Version="14.0.0" />
+        <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+        <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.0" />        <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.1.0" />
+        <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
+        <PackageReference Include="HotChocolate.AspNetCore" Version="14.0.0" />
         <PackageReference Include="HotChocolate.Data.EntityFramework" Version="14.0.0" />
         <PackageReference Include="HotChocolate.Types.Analyzers" Version="14.0.0" />
-        
-        <!-- Test dependencies -->
+          <!-- Test dependencies -->
         <PackageReference Include="xunit" Version="2.4.2" />
         <PackageReference Include="xunit.runner.visualstudio" Version="2.4.5">
             <PrivateAssets>all</PrivateAssets>
@@ -33,6 +35,9 @@
         </PackageReference>
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
         <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="9.0.0" />
+        <PackageReference Include="Moq" Version="4.20.69" />
+        <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="9.0.0" />
+        <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
     </ItemGroup>
 
 </Project>

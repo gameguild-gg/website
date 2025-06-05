@@ -16,7 +16,7 @@ public static class MigrationExtensions
     public static async Task ApplyMigrationsAsync<TContext>(this IServiceProvider serviceProvider, ILogger? logger = null)
         where TContext : DbContext
     {
-        using var scope = serviceProvider.CreateScope();
+        using IServiceScope scope = serviceProvider.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<TContext>();
 
         try

@@ -67,7 +67,7 @@ public class UserProfilesController : ControllerBase
     [HttpGet("{id}")]
     public async Task<ActionResult<UserProfileResponseDto>> GetUserProfile(Guid id)
     {
-        var userProfile = await _userProfileService.GetUserProfileByIdAsync(id);
+        Models.UserProfile? userProfile = await _userProfileService.GetUserProfileByIdAsync(id);
 
         if (userProfile == null)
         {
@@ -96,7 +96,7 @@ public class UserProfilesController : ControllerBase
     [HttpGet("user/{userId}")]
     public async Task<ActionResult<UserProfileResponseDto>> GetUserProfileByUserId(Guid userId)
     {
-        var userProfile = await _userProfileService.GetUserProfileByUserIdAsync(userId);
+        Models.UserProfile? userProfile = await _userProfileService.GetUserProfileByUserIdAsync(userId);
 
         if (userProfile == null)
         {
@@ -134,7 +134,7 @@ public class UserProfilesController : ControllerBase
             Description = createUserProfileDto.Description,
         };
 
-        var createdUserProfile = await _userProfileService.CreateUserProfileAsync(userProfile);
+        Models.UserProfile createdUserProfile = await _userProfileService.CreateUserProfileAsync(userProfile);
 
         var userProfileDto = new UserProfileResponseDto
         {
@@ -175,7 +175,7 @@ public class UserProfilesController : ControllerBase
 
         };
 
-        var updatedUserProfile = await _userProfileService.UpdateUserProfileAsync(id, userProfile);
+        Models.UserProfile? updatedUserProfile = await _userProfileService.UpdateUserProfileAsync(id, userProfile);
 
         if (updatedUserProfile == null)
         {
@@ -204,7 +204,7 @@ public class UserProfilesController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteUserProfile(Guid id)
     {
-        var result = await _userProfileService.DeleteUserProfileAsync(id);
+        bool result = await _userProfileService.DeleteUserProfileAsync(id);
 
         if (!result)
         {
@@ -218,7 +218,7 @@ public class UserProfilesController : ControllerBase
     [HttpDelete("{id}/soft")]
     public async Task<IActionResult> SoftDeleteUserProfile(Guid id)
     {
-        var result = await _userProfileService.SoftDeleteUserProfileAsync(id);
+        bool result = await _userProfileService.SoftDeleteUserProfileAsync(id);
 
         if (!result)
         {
@@ -232,7 +232,7 @@ public class UserProfilesController : ControllerBase
     [HttpPost("{id}/restore")]
     public async Task<IActionResult> RestoreUserProfile(Guid id)
     {
-        var result = await _userProfileService.RestoreUserProfileAsync(id);
+        bool result = await _userProfileService.RestoreUserProfileAsync(id);
 
         if (!result)
         {

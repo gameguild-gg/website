@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using cms.Common.Entities;
 using cms.Data;
 using cms.Modules.Reputation.Models;
+using cms.Modules.Tenant.Models;
 
 namespace cms.Modules.Reputation.Services;
 
@@ -24,7 +25,7 @@ public class ReputationService : IReputationService
         if (tenantId.HasValue)
         {
             // Get tenant-specific reputation
-            var userTenant = await _context.UserTenants
+            UserTenant? userTenant = await _context.UserTenants
                 .FirstOrDefaultAsync(ut => ut.UserId == userId && ut.TenantId == tenantId.Value && !ut.IsDeleted);
 
             if (userTenant == null)
@@ -45,12 +46,12 @@ public class ReputationService : IReputationService
 
     public async Task<IReputation> UpdateReputationAsync(Guid userId, int scoreChange, Guid? tenantId = null, string? reason = null)
     {
-        var reputation = await GetUserReputationAsync(userId, tenantId);
+        IReputation? reputation = await GetUserReputationAsync(userId, tenantId);
 
         if (reputation == null)
         {
             // Create new reputation record
-            var user = await _context.Users.FindAsync(userId);
+            User.Models.User? user = await _context.Users.FindAsync(userId);
 
             if (user == null)
                 throw new ArgumentException("User not found", nameof(userId));
@@ -58,7 +59,7 @@ public class ReputationService : IReputationService
             if (tenantId.HasValue)
             {
                 // Create tenant-specific reputation
-                var userTenant = await _context.UserTenants
+                UserTenant? userTenant = await _context.UserTenants
                     .FirstOrDefaultAsync(ut => ut.UserId == userId && ut.TenantId == tenantId.Value && !ut.IsDeleted);
 
                 if (userTenant == null)
@@ -111,7 +112,7 @@ public class ReputationService : IReputationService
 
     private async Task RecalculateReputationTierAsync(IReputation reputation, Guid? tenantId)
     {
-        var newLevel = await _context.ReputationTiers
+        ReputationTier? newLevel = await _context.ReputationTiers
             .Where(rl => rl.IsActive &&
                          !rl.IsDeleted &&
                          rl.MinimumScore <= reputation.Score &&
