@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using cms.Common.Entities;
 
 namespace cms.Modules.User.Models;
@@ -27,6 +28,18 @@ public class User : BaseEntity
         get;
         set;
     } = true;
+
+    /// <summary>
+    /// Total wallet balance including pending/frozen funds
+    /// </summary>
+    [Column(TypeName = "decimal(10,2)")]
+    public decimal Balance { get; set; } = 0;
+
+    /// <summary>
+    /// Available balance that can be spent (excludes frozen/pending funds)
+    /// </summary>
+    [Column(TypeName = "decimal(10,2)")]
+    public decimal AvailableBalance { get; set; } = 0;
 
     /// <summary>
     /// Navigation property to user credentials
