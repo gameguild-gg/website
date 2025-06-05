@@ -9,7 +9,7 @@ public enum VoteType
     /// Represents a positive vote
     /// </summary>
     Upvote,
-    
+
     /// <summary>
     /// Represents a negative vote
     /// </summary>

@@ -3,6 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 using cms.Common.Entities;
 
 namespace cms.Modules.Tenant.Models;
+
 /// <summary>
 /// Junction entity representing the relationship between a User and a Tenant
 /// Inherits from BaseEntity to provide UUID IDs, version control, timestamps, and soft delete functionality
@@ -65,14 +66,18 @@ public class UserTenant : BaseEntity
     {
         get;
         set;
-    } = DateTime.UtcNow;    /// <summary>
+    } = DateTime.UtcNow;
+
+    /// <summary>
     /// Navigation property to user-tenant-role assignments
     /// </summary>
     public virtual ICollection<UserTenantRole> UserTenantRoles
     {
         get;
         set;
-    } = new List<UserTenantRole>();    /// <summary>
+    } = new List<UserTenantRole>();
+
+    /// <summary>
     /// Navigation property to content type permissions for this user within this tenant (Layer 2 of permission system)
     /// Uses the ContentTypePermission entity with TenantId set to this tenant
     /// </summary>

@@ -5,13 +5,47 @@ namespace cms.Modules.UserProfile.GraphQL;
 /// </summary>
 public class CreateUserProfileInput
 {
-    public string? GivenName { get; set; }
-    public string? FamilyName { get; set; }
-    public string? DisplayName { get; set; }
-    public string? Title { get; set; }
-    public string? Description { get; set; }
-    public string? Slug { get; set; }
-    public Guid? TenantId { get; set; }
+    public string? GivenName
+    {
+        get;
+        set;
+    }
+
+    public string? FamilyName
+    {
+        get;
+        set;
+    }
+
+    public string? DisplayName
+    {
+        get;
+        set;
+    }
+
+    public string? Title
+    {
+        get;
+        set;
+    }
+
+    public string? Description
+    {
+        get;
+        set;
+    }
+
+    public string? Slug
+    {
+        get;
+        set;
+    }
+
+    public Guid? TenantId
+    {
+        get;
+        set;
+    }
 }
 
 /// <summary>
@@ -19,12 +53,51 @@ public class CreateUserProfileInput
 /// </summary>
 public class UpdateUserProfileInput
 {
-    public Guid Id { get; set; }
-    public string? GivenName { get; set; }
-    public string? FamilyName { get; set; }
-    public string? DisplayName { get; set; }
-    public string? Title { get; set; }
-    public string? Description { get; set; }
-    public string? Slug { get; set; }
-    public Guid? TenantId { get; set; }
+    public Guid Id
+    {
+        get;
+        set;
+    }
+
+    public string? GivenName
+    {
+        get;
+        set;
+    }
+
+    public string? FamilyName
+    {
+        get;
+        set;
+    }
+
+    public string? DisplayName
+    {
+        get;
+        set;
+    }
+
+    public string? Title
+    {
+        get;
+        set;
+    }
+
+    public string? Description
+    {
+        get;
+        set;
+    }
+
+    public string? Slug
+    {
+        get;
+        set;
+    }
+
+    public Guid? TenantId
+    {
+        get;
+        set;
+    }
 }

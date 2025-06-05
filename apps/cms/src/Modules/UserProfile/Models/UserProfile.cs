@@ -9,11 +9,23 @@ namespace cms.Modules.UserProfile.Models;
 public class UserProfile : ResourceBase
 {
     [MaxLength(100)]
-    public string? GivenName { get; set; }
+    public string? GivenName
+    {
+        get;
+        set;
+    }
 
     [MaxLength(100)]
-    public string? FamilyName { get; set; }
+    public string? FamilyName
+    {
+        get;
+        set;
+    }
 
     [MaxLength(100)]
-    public string? DisplayName { get; set; }
+    public string? DisplayName
+    {
+        get;
+        set;
+    }
 }

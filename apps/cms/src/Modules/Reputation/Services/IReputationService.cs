@@ -32,5 +32,4 @@ public interface IReputationService
     /// <param name="tenantId">The tenant ID (null for global reputation)</param>
     /// <returns>List of users meeting the reputation criteria</returns>
     Task<IEnumerable<IReputation>> GetUsersByReputationTierAsync(ReputationTier minimumLevel, Guid? tenantId = null);
-
 }

@@ -10,10 +10,18 @@ public class ProjectCategory : ResourceBase
 {
     [Required]
     [MaxLength(50)]
-    public string Name { get; set; } = string.Empty;
+    public string Name
+    {
+        get;
+        set;
+    } = string.Empty;
 
     /// <summary>
     /// Projects in this category
     /// </summary>
-    public virtual ICollection<Project> Projects { get; set; } = new List<Project>();
+    public virtual ICollection<Project> Projects
+    {
+        get;
+        set;
+    } = new List<Project>();
 }
