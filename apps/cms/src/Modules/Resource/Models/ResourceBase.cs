@@ -69,7 +69,22 @@ public abstract class ResourceBase : BaseEntity, ILocalizable, IPermissionable, 
     {
         get;
         set;
-    } = new List<ResourcePermission>();
+    } = new List<ResourcePermission>();    /// <summary>
+    /// Navigation property to the tenant this resource belongs to (implements ITenantable)
+    /// Entity Framework will automatically create the TenantId foreign key
+    /// Null means the resource is global and accessible across all tenants
+    /// </summary>
+    public override Modules.Tenant.Models.Tenant? Tenant
+    {
+        get;
+        set;
+    }
+
+    /// <summary>
+    /// Indicates whether this resource is accessible across all tenants (when Tenant is null)
+    /// or only within a specific tenant (implements ITenantable)
+    /// </summary>
+    public override bool IsGlobal => Tenant == null;
 
 
     // todo: this could be better implemented if it was an enum

@@ -20,12 +20,12 @@ public class Certificate : BaseEntity, ITenantable
     /// <summary>
     /// Program that this certificate is associated with (null for non-program certificates)
     /// </summary>
-    public int? ProgramId { get; set; }
+    public Guid? ProgramId { get; set; }
     
     /// <summary>
     /// Product that this certificate is associated with (null for non-product certificates)
     /// </summary>
-    public int? ProductId { get; set; }
+    public Guid? ProductId { get; set; }
     
     /// <summary>
     /// Required completion percentage for program-based certificates (0-100)
@@ -70,7 +70,7 @@ public class Certificate : BaseEntity, ITenantable
     
     public bool IsActive { get; set; } = true;
     
-    public int? TenantId { get; set; }
+    public Guid? TenantId { get; set; }
     
     // Navigation properties
     public virtual Program.Models.Program? Program { get; set; }

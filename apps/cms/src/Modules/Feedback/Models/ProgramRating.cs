@@ -8,11 +8,10 @@ namespace cms.Modules.Feedback.Models;
 [Table("program_ratings")]
 public class ProgramRating : BaseEntity
 {
-    
-    public int UserId { get; set; }
-    public int ProgramId { get; set; }
-    public int? ProductId { get; set; }
-    public int ProgramUserId { get; set; }
+      public Guid UserId { get; set; }
+    public Guid ProgramId { get; set; }
+    public Guid? ProductId { get; set; }
+    public Guid ProgramUserId { get; set; }
     
     /// <summary>
     /// Overall rating for the program (1-5)

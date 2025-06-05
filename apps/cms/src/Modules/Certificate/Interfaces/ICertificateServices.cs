@@ -8,12 +8,12 @@ namespace cms.Modules.Certificate.Interfaces;
 public interface ICertificateService
 {
     Task<Models.Certificate> CreateCertificateAsync(Models.Certificate certificate);
-    Task<Models.Certificate?> GetCertificateByIdAsync(int id);
-    Task<IEnumerable<Models.Certificate>> GetCertificatesByProgramAsync(int programId);
-    Task<IEnumerable<Models.Certificate>> GetCertificatesByProductAsync(int productId);
+    Task<Models.Certificate?> GetCertificateByIdAsync(Guid id);
+    Task<IEnumerable<Models.Certificate>> GetCertificatesByProgramAsync(Guid programId);
+    Task<IEnumerable<Models.Certificate>> GetCertificatesByProductAsync(Guid productId);
     Task<Models.Certificate> UpdateCertificateAsync(Models.Certificate certificate);
-    Task<bool> DeleteCertificateAsync(int id);
-    Task<bool> CheckEligibilityAsync(int certificateId, int programUserId);
+    Task<bool> DeleteCertificateAsync(Guid id);
+    Task<bool> CheckEligibilityAsync(Guid certificateId, Guid programUserId);
     Task<IEnumerable<Models.Certificate>> GetActiveCertificatesAsync();
 }
 
@@ -22,13 +22,13 @@ public interface ICertificateService
 /// </summary>
 public interface IUserCertificateService
 {
-    Task<Models.UserCertificate> IssueCertificateAsync(int certificateId, int userId, int? programUserId = null);
-    Task<Models.UserCertificate?> GetUserCertificateByIdAsync(int id);
+    Task<Models.UserCertificate> IssueCertificateAsync(Guid certificateId, Guid userId, Guid? programUserId = null);
+    Task<Models.UserCertificate?> GetUserCertificateByIdAsync(Guid id);
     Task<Models.UserCertificate?> GetUserCertificateByCodeAsync(string verificationCode);
-    Task<IEnumerable<Models.UserCertificate>> GetUserCertificatesAsync(int userId);
+    Task<IEnumerable<Models.UserCertificate>> GetUserCertificatesAsync(Guid userId);
     Task<bool> VerifyCertificateAsync(string verificationCode);
-    Task<bool> RevokeCertificateAsync(int userCertificateId, string reason);
-    Task<bool> IsValidCertificateAsync(int userCertificateId);
+    Task<bool> RevokeCertificateAsync(Guid userCertificateId, string reason);
+    Task<bool> IsValidCertificateAsync(Guid userCertificateId);
     Task<IEnumerable<Models.UserCertificate>> GetExpiringCertificatesAsync(DateTime thresholdDate);
     Task<string> GenerateVerificationCodeAsync();
 }
@@ -38,9 +38,9 @@ public interface IUserCertificateService
 /// </summary>
 public interface ICertificateBlockchainService
 {
-    Task<Models.CertificateBlockchainAnchor> AnchorCertificateAsync(int userCertificateId, string blockchainNetwork);
-    Task<bool> VerifyBlockchainAnchorAsync(int anchorId);
+    Task<Models.CertificateBlockchainAnchor> AnchorCertificateAsync(Guid userCertificateId, string blockchainNetwork);
+    Task<bool> VerifyBlockchainAnchorAsync(Guid anchorId);
     Task<Models.CertificateBlockchainAnchor?> GetAnchorByTransactionHashAsync(string transactionHash);
-    Task<IEnumerable<Models.CertificateBlockchainAnchor>> GetAnchorsByCertificateAsync(int userCertificateId);
-    Task<bool> UpdateAnchorStatusAsync(int anchorId, string status, string? transactionHash = null);
+    Task<IEnumerable<Models.CertificateBlockchainAnchor>> GetAnchorsByCertificateAsync(Guid userCertificateId);
+    Task<bool> UpdateAnchorStatusAsync(Guid anchorId, string status, string? transactionHash = null);
 }

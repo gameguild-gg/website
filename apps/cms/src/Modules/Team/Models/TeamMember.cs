@@ -4,7 +4,7 @@ namespace Cms.Models
 {
     public class TeamMember : BaseEntity
     {
-        public int TeamId
+        public Guid TeamId
         {
             get;
             set;

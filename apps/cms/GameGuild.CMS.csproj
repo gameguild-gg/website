@@ -1,10 +1,10 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
-
-    <PropertyGroup>
+<Project Sdk="Microsoft.NET.Sdk.Web">    <PropertyGroup>
         <TargetFramework>net9.0</TargetFramework>
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
         <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+        <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+        <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
     </PropertyGroup>
 
     <ItemGroup>
@@ -20,9 +20,9 @@
         <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.0">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
-        </PackageReference>
-        <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
-        <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.0" />        <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.1.0" />
+        </PackageReference>        <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+        <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.0" />
+        <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.1.0" />
         <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
         <PackageReference Include="HotChocolate.AspNetCore" Version="14.0.0" />
         <PackageReference Include="HotChocolate.Data.EntityFramework" Version="14.0.0" />
@@ -37,7 +37,6 @@
         <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="9.0.0" />
         <PackageReference Include="Moq" Version="4.20.69" />
         <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="9.0.0" />
-        <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
     </ItemGroup>
 
 </Project>

@@ -8,14 +8,13 @@ namespace cms.Modules.Program.Models;
 
 [Table("content_interactions")]
 public class ContentInteraction : BaseEntity
-{
-    public int ProgramUserId
+{    public Guid ProgramUserId
     {
         get;
         set;
     }
 
-    public int ContentId
+    public Guid ContentId
     {
         get;
         set;

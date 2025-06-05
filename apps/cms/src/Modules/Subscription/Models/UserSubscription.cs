@@ -9,8 +9,8 @@ namespace cms.Modules.Subscription.Models;
 public class UserSubscription : BaseEntity
 {
     
-    public int UserId { get; set; }
-    public int SubscriptionPlanId { get; set; }
+    public Guid UserId { get; set; }
+    public Guid SubscriptionPlanId { get; set; }
     
     public SubscriptionStatus Status { get; set; } = SubscriptionStatus.Active;
     

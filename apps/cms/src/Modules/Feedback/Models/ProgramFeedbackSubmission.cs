@@ -9,11 +9,10 @@ namespace cms.Modules.Feedback.Models;
 [Table("program_feedback_submissions")]
 public class ProgramFeedbackSubmission : BaseEntity
 {
-    
-    public int UserId { get; set; }
-    public int ProgramId { get; set; }
-    public int? ProductId { get; set; }
-    public int ProgramUserId { get; set; }
+      public Guid UserId { get; set; }
+    public Guid ProgramId { get; set; }
+    public Guid? ProductId { get; set; }
+    public Guid ProgramUserId { get; set; }
     
     /// <summary>
     /// Feedback responses stored as JSON

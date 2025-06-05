@@ -35,7 +35,7 @@ public class Tag : BaseEntity, ITenantable
     /// </summary>
     public bool IsActive { get; set; } = true;
     
-    public int? TenantId { get; set; }
+    public Guid? TenantId { get; set; }
     
     // Navigation properties
     public virtual ICollection<TagRelationship> SourceRelationships { get; set; } = new List<TagRelationship>();

@@ -9,8 +9,8 @@ namespace cms.Modules.Tag.Models;
 public class TagRelationship : BaseEntity
 {
     
-    public int SourceId { get; set; }
-    public int TargetId { get; set; }
+    public Guid SourceId { get; set; }
+    public Guid TargetId { get; set; }
     
     public TagRelationshipType Type { get; set; }
     

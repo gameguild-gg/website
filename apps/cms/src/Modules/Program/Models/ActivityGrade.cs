@@ -10,13 +10,13 @@ public class ActivityGrade : BaseEntity
 {
    
 
-    public int ContentInteractionId
+    public Guid ContentInteractionId
     {
         get;
         set;
     }
 
-    public int GraderProgramUserId
+    public Guid GraderProgramUserId
     {
         get;
         set;

@@ -10,7 +10,7 @@ public class UserFinancialMethod : BaseEntity
 {
    
     
-    public int UserId { get; set; }
+    public Guid UserId { get; set; }
     
     public PaymentMethodType Type { get; set; }
     

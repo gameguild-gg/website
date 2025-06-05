@@ -9,7 +9,7 @@ namespace cms.Modules.Subscription.Models;
 public class ProductSubscriptionPlan : BaseEntity
 {
     
-    public int ProductId { get; set; }
+    public Guid ProductId { get; set; }
     
     [Required]
     [MaxLength(255)]

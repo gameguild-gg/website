@@ -9,7 +9,7 @@ namespace cms.Modules.Kyc.Models;
 public class UserKycVerification : BaseEntity
 {
     
-    public int UserId { get; set; }
+    public Guid UserId { get; set; }
     
     public KycProvider Provider { get; set; }
     

@@ -12,12 +12,12 @@ public class FinancialTransaction : BaseEntity
     /// <summary>
     /// User who initiated the transaction (payer)
     /// </summary>
-    public int? FromUserId { get; set; }
+    public Guid? FromUserId { get; set; }
     
     /// <summary>
     /// User who receives the transaction (payee)
     /// </summary>
-    public int? ToUserId { get; set; }
+    public Guid? ToUserId { get; set; }
     
     public TransactionType Type { get; set; }
     
@@ -38,12 +38,12 @@ public class FinancialTransaction : BaseEntity
     /// <summary>
     /// Payment method used for this transaction
     /// </summary>
-    public int? PaymentMethodId { get; set; }
+    public Guid? PaymentMethodId { get; set; }
     
     /// <summary>
     /// Promo code applied to this transaction
     /// </summary>
-    public int? PromoCodeId { get; set; }
+    public Guid? PromoCodeId { get; set; }
     
     /// <summary>
     /// Platform fee charged for this transaction

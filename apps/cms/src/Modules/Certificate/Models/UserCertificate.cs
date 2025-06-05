@@ -7,25 +7,23 @@ namespace cms.Modules.Certificate.Models;
 
 [Table("user_certificates")]
 public class UserCertificate : BaseEntity
-{
-    
-    public int UserId { get; set; }
-    public int CertificateId { get; set; }
+{    public Guid UserId { get; set; }
+    public Guid CertificateId { get; set; }
     
     /// <summary>
     /// Program associated with this certificate issuance (null for non-program certificates)
     /// </summary>
-    public int? ProgramId { get; set; }
+    public Guid? ProgramId { get; set; }
     
     /// <summary>
     /// Product associated with this certificate issuance (null for non-product certificates)
     /// </summary>
-    public int? ProductId { get; set; }
+    public Guid? ProductId { get; set; }
     
     /// <summary>
     /// Program user record for program-based certificates
     /// </summary>
-    public int? ProgramUserId { get; set; }
+    public Guid? ProgramUserId { get; set; }
     
     /// <summary>
     /// Unique verification code for this certificate

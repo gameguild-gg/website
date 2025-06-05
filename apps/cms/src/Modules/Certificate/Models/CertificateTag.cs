@@ -8,8 +8,8 @@ namespace cms.Modules.Certificate.Models;
 public class CertificateTag : BaseEntity
 {
     
-    public int CertificateId { get; set; }
-    public int TagId { get; set; }
+    public Guid CertificateId { get; set; }
+    public Guid TagId { get; set; }
     
     public CertificateTagRelationshipType RelationshipType { get; set; }
     

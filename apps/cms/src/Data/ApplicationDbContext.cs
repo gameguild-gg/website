@@ -68,6 +68,13 @@ public class ApplicationDbContext : DbContext
         set;
     }
 
+    // Content hierarchy DbSets - Required for TPC inheritance configuration
+    public DbSet<ContentLicense> ContentLicenses
+    {
+        get;
+        set;
+    }
+
     public DbSet<ResourceMetadata> ResourceMetadata
     {
         get;
@@ -566,13 +573,13 @@ public class ApplicationDbContext : DbContext
                     .HasFilter("\"DeletedAt\" IS NULL");
 
                 entity.HasIndex(e => e.Status);
-            }
-        ); // Configure ResourceBase hierarchy using Table-per-Type (TPT) strategy
+            }        ); // Configure ResourceBase hierarchy using Table-per-Concrete (TPC) strategy
         modelBuilder.Entity<ResourceBase>(entity =>
             {
-                entity.ToTable("Resources");
-
-                // Configure relationships
+                // TPC inheritance: Configure the inheritance strategy
+                entity.UseTpcMappingStrategy();
+                
+                // Configure common properties and relationships for all concrete types
                 entity.HasOne(r => r.Owner)
                     .WithMany()
                     .OnDelete(DeleteBehavior.Restrict);
@@ -582,19 +589,30 @@ public class ApplicationDbContext : DbContext
                     .HasForeignKey<ResourceMetadata>("ResourceId")
                     .OnDelete(DeleteBehavior.Cascade);
 
-                // Indexes for performance
+                // Common indexes for performance - will be applied to all concrete tables
                 entity.HasIndex(r => r.Visibility);
                 entity.HasIndex("OwnerId"); // Shadow property
             }
         );
 
-        // Configure UserProfile entity with TPT inheritance
+        // Configure UserProfile entity with TPC inheritance
         modelBuilder.Entity<cms.Modules.UserProfile.Models.UserProfile>(entity =>
             {
                 entity.ToTable("UserProfiles");
-                // TPT inheritance: UserProfile gets its own table.
-                // Do NOT configure any keys or inherited properties here.
-                // All key configuration must be on ResourceBase only.
+                // TPC inheritance: Each concrete type gets its own complete table
+                // including all inherited properties from ResourceBase
+            }
+        );
+
+        // Configure ContentLicense entity with TPC inheritance
+        modelBuilder.Entity<ContentLicense>(entity =>
+            {
+                entity.ToTable("ContentLicenses");
+                // TPC inheritance: Each concrete type gets its own complete table
+                // including all inherited properties from ResourceBase
+                
+                // Configure ContentLicense-specific properties
+                entity.Property(cl => cl.Url).HasMaxLength(500);
             }
         );
 
@@ -620,9 +638,7 @@ public class ApplicationDbContext : DbContext
 
         // Configure Program DBML entities
         ConfigureProgramDbmlEntities(modelBuilder);
-    }
-
-    /// <summary>
+    }    /// <summary>
     /// Configure the reputation system entities and their relationships
     /// </summary>
     private void ConfigureReputationSystem(ModelBuilder modelBuilder)
@@ -631,9 +647,8 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<Modules.Reputation.Models.UserReputation>(entity =>
             {
                 entity.ToTable("UserReputations");
-                // TPT inheritance: UserReputation gets its own table.
-                // Do NOT configure any keys or inherited properties here.
-                // All key configuration must be on ResourceBase only.
+                // TPC inheritance: UserReputation gets its own complete table
+                // including all inherited properties from ResourceBase
 
                 // Configure relationship with User
                 entity.HasOne(ur => ur.User)
@@ -653,13 +668,12 @@ public class ApplicationDbContext : DbContext
                 entity.HasIndex(ur => ur.Score);
                 entity.HasIndex(ur => ur.CurrentLevelId);
             }
-        ); // Configure UserTenantReputation entity with TPT inheritance
+        ); // Configure UserTenantReputation entity with TPC inheritance
         modelBuilder.Entity<Modules.Reputation.Models.UserTenantReputation>(entity =>
             {
                 entity.ToTable("UserTenantReputations");
-                // TPT inheritance: UserTenantReputation gets its own table.
-                // Do NOT configure any keys or inherited properties here.
-                // All key configuration must be on ResourceBase only.
+                // TPC inheritance: UserTenantReputation gets its own complete table
+                // including all inherited properties from ResourceBase
 
                 // Configure relationship with UserTenant
                 entity.HasOne(utr => utr.UserTenant)
@@ -678,25 +692,22 @@ public class ApplicationDbContext : DbContext
                 entity.HasIndex(utr => utr.Score);
                 entity.HasIndex(utr => utr.CurrentLevelId);
             }
-        ); // Configure ReputationTier entity with TPT inheritance
+        ); // Configure ReputationTier entity with TPC inheritance
         modelBuilder.Entity<Modules.Reputation.Models.ReputationTier>(entity =>
             {
                 entity.ToTable("ReputationLevels");
-                // TPT inheritance: ReputationTier gets its own table.
-                // Do NOT configure any keys or inherited properties here.
-                // All key configuration must be on ResourceBase only.
+                // TPC inheritance: ReputationTier gets its own complete table
+                // including all inherited properties from ResourceBase
 
                 entity.Property(rl => rl.Name).IsRequired().HasMaxLength(100);
                 entity.Property(rl => rl.DisplayName).IsRequired().HasMaxLength(200);
                 entity.Property(rl => rl.Color).HasMaxLength(50);
-                entity.Property(rl => rl.Icon).HasMaxLength(100); // NOTE: In TPT inheritance, we cannot create indexes spanning multiple tables
-                // TenantId is in Resources table, Name is in ReputationTiers table
-                // So we create separate indexes instead of a composite unique constraint
-                entity.HasIndex(rl => rl.Name).IsUnique()
+                entity.Property(rl => rl.Icon).HasMaxLength(100);                // In TPC inheritance, we can create composite indexes across all columns
+                // since all properties are in the same table  
+                // Use the TenantId foreign key directly in composite index (EF creates this automatically for ITenantable)
+                entity.HasIndex("Name", "TenantId")
+                    .IsUnique()
                     .HasFilter("\"DeletedAt\" IS NULL");
-
-                // Note: For true uniqueness across tenant+name, this would need to be enforced
-                // at the application level or through a different approach
 
                 // Indexes for performance
                 entity.HasIndex(rl => rl.MinimumScore);
@@ -706,9 +717,8 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<Modules.Reputation.Models.ReputationAction>(entity =>
             {
                 entity.ToTable("ReputationActions");
-                // TPT inheritance: ReputationAction gets its own table.
-                // Do NOT configure any keys or inherited properties here.
-                // All key configuration must be on ResourceBase only.
+                // TPC inheritance: ReputationAction gets its own complete table
+                // including all inherited properties from ResourceBase
 
                 entity.Property(ra => ra.ActionType).IsRequired().HasMaxLength(150);
                 entity.Property(ra => ra.DisplayName).IsRequired().HasMaxLength(200);
@@ -718,14 +728,12 @@ public class ApplicationDbContext : DbContext
                 entity.HasOne(ra => ra.RequiredLevel)
                     .WithMany()
                     .HasForeignKey(ra => ra.RequiredLevelId)
-                    .OnDelete(DeleteBehavior.SetNull); // NOTE: In TPT inheritance, we cannot create indexes spanning multiple tables
-                // TenantId is in Resources table, ActionType is in ReputationActions table
-                // So we create separate indexes instead of a composite unique constraint
-                entity.HasIndex(ra => ra.ActionType).IsUnique()
+                    .OnDelete(DeleteBehavior.SetNull);                // In TPC inheritance, we can create composite indexes across all columns
+                // since all properties are in the same table
+                // Use the TenantId foreign key directly in composite index (EF creates this automatically for ITenantable)
+                entity.HasIndex("ActionType", "TenantId")
+                    .IsUnique()
                     .HasFilter("\"DeletedAt\" IS NULL");
-
-                // Note: For true uniqueness across tenant+actiontype, this would need to be enforced
-                // at the application level or through a different approach
 
                 // Indexes for performance
                 entity.HasIndex(ra => ra.ActionType);
@@ -743,9 +751,8 @@ public class ApplicationDbContext : DbContext
                             "(\"UserId\" IS NOT NULL AND \"UserTenantId\" IS NULL) OR (\"UserId\" IS NULL AND \"UserTenantId\" IS NOT NULL)"
                         )
                 );
-                // TPT inheritance: UserReputationHistory gets its own table.
-                // Do NOT configure any keys or inherited properties here.
-                // All key configuration must be on ResourceBase only.
+                // TPC inheritance: UserReputationHistory gets its own complete table
+                // including all inherited properties from ResourceBase
 
                 entity.Property(urh => urh.Reason).HasMaxLength(500);
 
@@ -897,8 +904,7 @@ public class ApplicationDbContext : DbContext
     /// Configure Product Module entities
     /// </summary>
     private void ConfigureProductModule(ModelBuilder modelBuilder)
-    {
-        // Configure Product entity
+    {        // Configure Product entity
         modelBuilder.Entity<Modules.Product.Models.Product>(entity =>
             {
                 entity.ToTable("Products");
@@ -906,7 +912,7 @@ public class ApplicationDbContext : DbContext
                 entity.Property(e => e.Description).HasMaxLength(2000);
                 entity.Property(e => e.ShortDescription).HasMaxLength(500);
                 entity.Property(e => e.ImageUrl).HasMaxLength(500);
-                entity.Property(e => e.Metadata).HasColumnType("jsonb");
+                // Note: Metadata property configuration removed as it's inherited from ResourceBase
                 entity.Property(e => e.Status).IsRequired().HasConversion<int>();
                 entity.Property(e => e.Visibility).IsRequired().HasConversion<int>();
 

@@ -8,7 +8,7 @@ namespace cms.Modules.Certificate.Models;
 public class CertificateBlockchainAnchor : BaseEntity
 {
     
-    public int CertificateId { get; set; }
+    public Guid CertificateId { get; set; }
     
     [Required]
     [MaxLength(100)]

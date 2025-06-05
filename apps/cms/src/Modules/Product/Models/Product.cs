@@ -7,7 +7,7 @@ using System.Text.Json;
 namespace cms.Modules.Product.Models;
 
 [Table("products")]
-public class Product : Content, ITenantable
+public class Product : Content
 {
     [Required]
     [MaxLength(200)]
@@ -86,12 +86,6 @@ public class Product : Content, ITenantable
         get;
         set;
     } = 30m;
-
-    public int? TenantId
-    {
-        get;
-        set;
-    }
 
     // Navigation properties
     public virtual ICollection<ProductProgram> ProductPrograms

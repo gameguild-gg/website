@@ -10,7 +10,7 @@ namespace cms.Modules.Program.Models;
 public class ProgramContent : BaseEntity
 {
 
-    public int ProgramId
+    public Guid ProgramId
     {
         get;
         set;
@@ -19,7 +19,7 @@ public class ProgramContent : BaseEntity
     /// <summary>
     /// For hierarchical content structure (e.g., modules containing lessons)
     /// </summary>
-    public int? ParentId
+    public Guid? ParentId
     {
         get;
         set;

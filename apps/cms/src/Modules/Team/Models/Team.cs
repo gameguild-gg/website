@@ -2,7 +2,7 @@ namespace Cms.Models
 {
     public class Team
     {
-        public int Id
+        public Guid Id
         {
             get;
             set;
