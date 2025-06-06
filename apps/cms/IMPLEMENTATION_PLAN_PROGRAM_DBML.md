@@ -1,6 +1,25 @@
 # Implementation Plan for program.dbml
 
-This document outlines the plan for implementing the schema defined in `program.dbml` within the `apps/cms` project, incorporating the existing DAC (Discretionary Access Control) strategy and Entity Framework Core best practices.
+This document outlines the plan for implementing the schema defined in `program.dbml` within the `apps/cms` project, incorporating the **11 modular permission types** and **three-level capability-based DAC strategy** defined in `DAC-STRATEGY.md`, along with Entity Framework Core best practices.
+
+## Core Design Principles
+
+This implementation follows the **four core design principles** outlined in `DAC-STRATEGY.md`:
+
+### 1. Modular Permission Architecture
+Replace traditional role-based systems with **composable permission types** that can be combined and configured independently. Each permission type provides specific capabilities rather than broad role definitions.
+
+### 2. Capability-Based Security Model
+Focus on **what users can do** (capabilities) rather than **who they are** (roles). This enables fine-grained control and flexible permission combinations.
+
+### 3. Three-Level Permission Application
+Apply permissions at three distinct levels:
+- **Tenant-wide**: Tenant-wide permissions for a user across all content types within a tenant
+- **Content-type-wide**: Category-specific permission rules for a user across all entries of a specific content type within a tenant  
+- **Content-entry**: Individual resource-specific permissions for a user on a specific content entry within a tenant
+
+### 4. TPC Entity Design Pattern
+Utilize **Table-Per-Concrete** hierarchy for optimal performance, clean separation of concerns, and scalable content type management.
 
 ## 1. Analyze `program.dbml` and Existing Entities:
 
@@ -14,85 +33,199 @@ This document outlines the plan for implementing the schema defined in `program.
 *   Pay close attention to relationships (one-to-one, one-to-many, many-to-many) and ensure they are correctly implemented using Entity Framework Core conventions.
 *   Enums defined in `program.dbml` will be translated into C# enums.
 
-## 3. Implement TPC Inheritance:
+## 4. Implement Modular Permission Type Architecture:
 
-*   Where appropriate, use Table-Per-Concrete-Type (TPC) inheritance. This is particularly relevant for entities that have distinct subtypes with their own specific fields, while also sharing common base fields. The `program.dbml` notes on "PostgreSQL Table Inheritance Alternative" for `financial_transactions` suggests this pattern might be suitable for transaction types (e.g., `PurchaseTransaction`, `WithdrawalTransaction` inheriting from a base `FinancialTransaction`).
-*   Evaluate other hierarchies in `program.dbml` to see if TPC is a good fit, for example, potentially for different types of `ProgramContent` or other extensible entities.
+### 4.1 Eleven Specialized Permission Types
 
-## 4. Integrate the Three-Layer DAC Permission Model:
+Implement the **11 modular permission types** as defined in `DAC-STRATEGY.md`, each providing specific capabilities that can be combined independently:
 
-*   Adhere to the "pure three-layer DAC" model described in `DAC-STRATEGY.md`.
-*   **`PermissionableResource`**: Entities in `program.dbml` that require granular access control (e.g., `programs`, `program_contents`, `products`, `certificates`) will need to inherit from or be associated with a concept similar to `PermissionableResource`.
-    *   **Content vs. Resource**:
-        *   "Content" generally refers to items that are created and managed within the system, often with their own lifecycle and specific attributes (e.g., a `Post`, a `Document`, a `ProgramPage`, a `CourseActivity`). These are prime candidates to be `PermissionableResource`s.
-        *   "Resource" in the DAC context is the protectable entity. So, a specific `Post` *is* a resource. A `ContentType` like "Post" is a *type* of resource, for which permissions can be set that apply to all resources of that type.
-*   **Permission Entities**:
-    *   `UserTenantPermission`: For global or tenant-wide permissions.
-    *   `UserContentTypePermission`: For permissions on all items of a specific type (e.g., all "Courses", all "Quizzes") within a tenant or globally. The `program_content_type` enum in `program.dbml` will be crucial here.
-    *   `ResourcePermission`: For specific permissions on individual entity instances (e.g., permission for User A to edit Course X).
-*   **User and Tenant Entities**: Ensure `User` and `Tenant` entities are structured to support these permission relationships as outlined in `DAC-STRATEGY.md`. The `program.dbml` already defines a `users` table. A `tenants` table might need to be explicitly added if not already present and if the multi-tenancy model requires it beyond just nullable `TenantId` fields.
-*   **`PermissionService`**: Implement or extend a `PermissionService` to handle permission checks and assignments, incorporating the hierarchical logic (Global -> Tenant -> ContentType Global -> ContentType Tenant -> Resource-specific).
+| Permission Type | Implementation Focus | Key Capabilities |
+|--------|---------|------------------|
+| **Content Interaction** | Social and community features | Comment, Vote, Share, Follow, Bookmark, React |
+| **Content Curation** | Content organization & taxonomy | Tag, Categorize, Feature, Organize |
+| **Moderation** | Community safety and standards | Review, Approve, Flag, Hide, Suspend, Ban |
+| **Content Lifecycle** | Content workflow control | Draft, Publish, Archive, Schedule |
+| **Publishing** | Content distribution strategy | Distribute, Syndicate, Promote |
+| **Monetization** | Business model enablement | Paywall, Subscription, Ads, Commerce |
+| **Editorial** | Content excellence and standards | Edit, Review, Approve, Fact-check |
+| **Promotion** | Content marketing and discovery | Boost, Feature, Recommend, Highlight |
+| **Quality Control** | Quality assurance and compliance | Audit, Validate, Certify, Analyze |
+| **Business Logic** | Organization-specific operations | Execute, Process, Calculate, Transform |
 
-## 5. Entity Implementation - Key Tables from `program.dbml` (Illustrative Examples):
+### 4.2 Permission Flag Structure
 
-*   **`users`**: Will map to the `User` class, incorporating fields for authentication and DAC relationships.
-*   **`programs`**: Will be a `PermissionableResource`.
-*   **`program_contents`**: Each item can be a `PermissionableResource`. The `program_content_type` enum will be used for `UserContentTypePermission`.
-*   **`products`**: Will be a `PermissionableResource`.
-*   **`certificates`**: Will be a `PermissionableResource`.
-*   **`financial_transactions`**:
-    *   As per `program.dbml` notes, consider TPC if different transaction types (`purchase`, `withdrawal`, `refund`, etc.) have significantly different fields.
-    *   Base `FinancialTransaction` class.
-    *   Derived classes like `PurchaseTransaction`, `SubscriptionPaymentTransaction`, etc.
-*   **`content_interactions`**: This table merges progress and submissions. It will link to `program_users` and `program_contents`. Access to view or modify interactions might be controlled via permissions on the related `program_content` or `program`.
-*   **`tags`**: Will be a standard entity. Relationships like `tag_relationships` and `certificate_tags` will be mapped.
-*   **Supporting Tables**: Entities for `promo_codes`, `user_subscriptions`, `user_financial_methods`, `user_kyc_verifications`, etc., will be created, and permissions applied as needed (e.g., who can create a `promo_code`, who can view `financial_transactions`).
+Instead of using a UnifiedPermissionContext object, implement permissions as **individual boolean flag columns** for optimal query performance and database efficiency:
 
-## 6. Database Context (`ApplicationDbContext`):
+```csharp
+// Example permission entity structure
+public class UserTenantPermission
+{
+    public Guid Id { get; set; }
+    public Guid UserId { get; set; }
+    public Guid TenantId { get; set; }
+    
+    // Content Interaction Permissions
+    public bool CanComment { get; set; }
+    public bool CanVote { get; set; }
+    public bool CanShare { get; set; }
+    public bool CanFollow { get; set; }
+    public bool CanBookmark { get; set; }
+    public bool CanReact { get; set; }
+    
+    // Content Curation Permissions
+    public bool CanTag { get; set; }
+    public bool CanCategorize { get; set; }
+    public bool CanFeature { get; set; }
+    public bool CanOrganize { get; set; }
+    
+    // Moderation Permissions
+    public bool CanReview { get; set; }
+    public bool CanApprove { get; set; }
+    public bool CanFlag { get; set; }
+    public bool CanHide { get; set; }
+    public bool CanSuspend { get; set; }
+    public bool CanBan { get; set; }
+    
+    // Content Lifecycle Permissions
+    public bool CanDraft { get; set; }
+    public bool CanPublish { get; set; }
+    public bool CanArchive { get; set; }
+    public bool CanSchedule { get; set; }
+    
+    // Publishing Permissions
+    public bool CanDistribute { get; set; }
+    public bool CanSyndicate { get; set; }
+    public bool CanPromote { get; set; }
+    
+    // Monetization Permissions
+    public bool CanPaywall { get; set; }
+    public bool CanSubscription { get; set; }
+    public bool CanAds { get; set; }
+    public bool CanCommerce { get; set; }
+    
+    // Editorial Permissions
+    public bool CanEdit { get; set; }
+    public bool CanEditorialReview { get; set; }
+    public bool CanEditorialApprove { get; set; }
+    public bool CanFactCheck { get; set; }
+    
+    // Promotion Permissions
+    public bool CanBoost { get; set; }
+    public bool CanHighlight { get; set; }
+    public bool CanRecommend { get; set; }
+    
+    // Quality Control Permissions
+    public bool CanAudit { get; set; }
+    public bool CanValidate { get; set; }
+    public bool CanCertify { get; set; }
+    public bool CanAnalyze { get; set; }
+    
+    // Business Logic Permissions
+    public bool CanExecute { get; set; }
+    public bool CanProcess { get; set; }
+    public bool CanCalculate { get; set; }
+    public bool CanTransform { get; set; }
+    
+    // Navigation properties
+    public virtual User User { get; set; }
+    public virtual Tenant Tenant { get; set; }
+}
+```
+
+### 4.3 Content-Type-Specific Permission Tables
+
+**Each content type requires different permission tables** because each content type may need different permission types. For example:
+- Comments need **Moderation** permissions (Review, Approve, Flag)
+- Articles need **Editorial** permissions (Edit, Review, Fact-check) 
+- Products need **Monetization** permissions (Paywall, Commerce)
+- Programs need **Business Logic** permissions (Execute, Process)
+
+The permission table for each content type will include only the relevant permission type columns.
+
+## 5. Implement Three-Level Permission Application:
+
+### 5.1 Permission Level Architecture
+
+The permission system applies controls at **three distinct levels** providing granular inheritance and override capabilities:
+
+```
+Level 1: Tenant-wide Permissions
+│   └── A user has permissions that apply to all content types within a specific tenant domain
+│
+Level 2: Content-type-wide Permissions  
+│   └── A user has permissions that apply to all content entries of a specific content type within a tenant domain
+│
+Level 3: Content-entry Permissions
+│   └── A user can have specific permissions for individual content entries within a content type and tenant domain
+```
+
+### 5.2 Permission Level Characteristics
+
+| Level | Scope | Design Purpose | Inheritance Pattern |
+|-------|-------|----------------|-------------------|
+| **Tenant-wide** | Organization-level | Global policies & defaults | Foundation for all content |
+| **Content-type-wide** | Category-specific | Content behavior patterns | Inherits tenant + adds type rules |
+| **Content-entry** | Individual resources | Specific item exceptions | Inherits type + item overrides |
+
+### 5.3 Permission Entities Structure
+
+*   **`UserTenantPermission`**: For tenant-wide permissions across all content types
+*   **`UserContentTypePermission`**: For permissions on all items of a specific content type within a tenant
+*   **`ResourcePermission`**: For specific permissions on individual entity instances
+
+Each permission entity will contain **separate boolean flag columns** for the relevant permission types, avoiding JSON for better query performance and database optimization. This allows for:
+- Direct SQL queries with WHERE conditions on specific permissions
+- Efficient indexing on individual permission flags
+- Simple joins and aggregations for permission checking
+- Better performance for complex permission inheritance logic
+
+## 6. Implement TPC Entity Design Pattern:
+
+### 6.1 TPC Hierarchy for Content Types
+
+Utilize **Table-Per-Concrete (TPC)** hierarchy for optimal performance and clean separation. Each concrete content type maintains its own optimized table structure while sharing common permission interfaces.
+
+```
+ContentBase (Abstract Permission Interface)
+├── Program (Learning programs with Business Logic permissions)
+├── ProgramContent (Course materials with Editorial permissions)  
+├── Product (E-commerce items with Monetization permissions)
+├── Certificate (Credentials with Quality Control permissions)
+├── Comment (User discussions with Moderation permissions)
+├── Article (Content with Editorial + Publishing permissions)
+├── Video (Media with Lifecycle + Promotion permissions)
+└── Document (Files with Curation permissions)
+```
+
+### 6.2 TPC Design Benefits
+
+| Benefit | Description | Impact |
+|---------|-------------|---------|
+| **Performance** | No joins required for concrete type queries | Fast content retrieval and listing |
+| **Scalability** | Each table optimized for specific content patterns | Efficient storage and indexing |
+| **Flexibility** | Easy addition of new content types | Extensible without schema changes |
+| **Permission Alignment** | Each type defines its relevant permission types | Clean permission-to-content mapping |
+
+### 6.3 Financial Transactions TPC Implementation
+
+As per `program.dbml` notes, implement TPC for different transaction types:
+*   Base `FinancialTransaction` class (abstract)
+*   Derived classes: `PurchaseTransaction`, `WithdrawalTransaction`, `RefundTransaction`, `SubscriptionPaymentTransaction`
+*   Each derived class has transaction-type-specific fields and relevant permission types
+
+## 9. Database Context (`ApplicationDbContext`):
 
 *   Update `ApplicationDbContext.cs` to include `DbSet` properties for all new and modified entities.
-*   Configure TPC inheritance using `modelBuilder` if not using conventions.
-*   Define relationships, keys, and constraints using Fluent API or attributes.
+*   Configure TPC inheritance using `modelBuilder` for content type hierarchies.
+*   Define relationships, keys, and constraints using Fluent API.
+*   Configure individual boolean flag columns for permission types instead of JSON for optimal query performance.
+*   Set up proper indexing for permission queries across the three levels.
 
-## 7. Migrations:
+### 10.2 Hierarchical Permission Resolution
 
-*   Generate Entity Framework Core migrations to apply the schema changes to the database.
+The service will resolve permissions in this order:
+1. **Resource-specific permissions** (highest priority)
+2. **Content-type-wide permissions** within tenant
+3. **Tenant-wide permissions**
+4. **Global content-type permissions**
 
-## 8. Service Layer:
-
-*   Develop or update services to manage the new entities and business logic (e.g., `ProgramService`, `ProductService`, `TransactionService`).
-*   Ensure services utilize the `PermissionService` for authorization.
-
-## 9. Testing:
-
-*   Write unit and integration tests for:
-    *   Entity mappings and relationships.
-    *   TPC inheritance behavior.
-    *   DAC permission logic (all three layers).
-    *   Service layer business logic.
-
-## Detailed Steps for DAC Integration:
-
-1.  **Base Permissionable Entities**:
-    *   Ensure `PermissionableResource` (as per `DAC-STRATEGY.md`) is a base class or an interface implemented by entities like `Program`, `Product`, `ProgramContent`, `Certificate`.
-    *   Add navigation properties for `ResourcePermission` to these entities.
-
-2.  **User and Tenant Setup**:
-    *   Modify the existing `User` entity to include collections for `GrantedResourcePermissions`, and potentially `UserTenantPermissions` and `UserContentTypePermissions` if direct navigation is desired, or manage these through the `PermissionService`.
-    *   Define a `Tenant` entity if it doesn't exist and is required by the multi-tenancy strategy.
-
-3.  **Permission Entities Implementation**:
-    *   Create `BasePermission`, `ResourcePermission`, `UserTenantPermission`, and `UserContentTypePermission` classes as described in `DAC-STRATEGY.md`.
-    *   Ensure foreign keys and navigation properties are correctly set up (e.g., `UserId`, `ResourceId`, `TenantId`, `ContentType`).
-    *   The `ContentType` in `UserContentTypePermission` will likely be a string or enum that maps to types like "Program", "Product", or specific `program_content_type` values.
-
-4.  **`PermissionService` Enhancement**:
-    *   Implement the methods outlined in `DAC-STRATEGY.md` (e.g., `HasPermissionAsync`, `AssignUserToTenantAsync`, `AssignContentTypePermissionAsync`, `GrantResourcePermissionAsync`).
-    *   The core logic will involve querying these permission tables in the specified hierarchical order.
-
-## Considerations from `program.dbml`:
-
-*   **`jsonb` fields**: For fields like `metadata` in `user_kyc_verifications`, EF Core can map these to complex types or handle them as strings.
-*   **Partitioning/Inheritance for `financial_transactions`**: The plan includes TPC as a primary approach for `financial_transactions` based on the DBML notes.
-*   **Enums**: All enums listed (e.g., `visibility`, `certificate_status`, `product_type`) will be created as C# enums.
-*   **Relationships**: All `Ref` entries in `program.dbml` will be translated into EF Core relationships.

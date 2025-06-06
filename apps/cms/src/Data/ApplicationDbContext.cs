@@ -474,8 +474,7 @@ public class ApplicationDbContext : DbContext
             {
                 entity.ToTable("ResourcePermissions");
                 entity.Property(e => e.ResourceType).IsRequired().HasMaxLength(100);
-                entity.Property(e => e.Permissions).IsRequired()
-                    .HasConversion<int>(); // Store enum as int
+                entity.Property(e => e.PermissionContext).IsRequired(); // Store permission context
 
                 // Configure relationships - EF will create shadow foreign key properties
                 entity.HasOne(rp => rp.User)
@@ -501,7 +500,7 @@ public class ApplicationDbContext : DbContext
                 entity.HasIndex("ResourceId");
                 entity.HasIndex(e => e.ResourceType);
                 entity.HasIndex("UserId"); // Shadow property
-                entity.HasIndex(e => e.Permissions);
+                entity.HasIndex(e => e.PermissionContext);
             }
         );
 
@@ -510,8 +509,7 @@ public class ApplicationDbContext : DbContext
             {
                 entity.ToTable("ContentTypePermissions");
                 entity.Property(e => e.ContentTypeName).IsRequired().HasMaxLength(100);
-                entity.Property(e => e.Permissions).IsRequired()
-                    .HasConversion<int>(); // Store enum as int
+                entity.Property(e => e.PermissionContext).IsRequired(); // Store permission context
 
                 // Configure relationships
                 entity.HasOne(ctp => ctp.User)
@@ -532,7 +530,7 @@ public class ApplicationDbContext : DbContext
                     ).IsUnique()
                     .HasFilter("\"DeletedAt\" IS NULL AND \"TenantId\" IS NULL"); // Unique for global permissions
                 entity.HasIndex(e => e.ContentTypeName);
-                entity.HasIndex(e => e.Permissions);
+                entity.HasIndex(e => e.PermissionContext);
                 entity.HasIndex("TenantId"); // Shadow property from ITenantable
             }
         ); // Configure ResourceLocalization entity

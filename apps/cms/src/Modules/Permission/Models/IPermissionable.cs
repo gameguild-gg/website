@@ -3,7 +3,8 @@
 /// <summary>
 /// Interface for entities that can have permissions assigned
 /// </summary>
-public interface IPermissionable
+public interface IPermissionable<T> 
+where T : Enum
 {
     /// <summary>
     /// Collection of permissions assigned to this entity
@@ -16,5 +17,5 @@ public interface IPermissionable
     /// <summary>
     /// Grants permission to a user for this entity
     /// </summary>
-    ResourcePermission GrantPermission(Modules.User.Models.User user, PermissionType permissions, Modules.User.Models.User grantedByUser);
+    ResourcePermission GrantPermission(Modules.User.Models.User user, UnifiedPermissionContext permissionContext, Modules.User.Models.User grantedByUser);
 }

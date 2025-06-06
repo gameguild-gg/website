@@ -8,7 +8,7 @@ namespace cms.Common.Entities;
 /// Layer 2 of the three-layer permission system: Tenant → ContentType → Resource
 /// Grants permissions for all resources of a specific content type within a tenant (or globally when Tenant is null)
 /// </summary>
-public sealed class ContentTypePermission : BaseEntity
+public sealed class ContentTypePermission : BaseEntity, ITenantable
 {
     /// <summary>
     /// Foreign key to the User entity
@@ -30,6 +30,21 @@ public sealed class ContentTypePermission : BaseEntity
         set;
     } = null!;
 
+    /// <summary>
+    /// Foreign key to the Tenant entity (null for global permissions)
+    /// </summary>
+    public Guid? TenantId { get; set; }
+
+    /// <summary>
+    /// Navigation property to the tenant
+    /// </summary>
+    [ForeignKey(nameof(TenantId))]
+    public override Modules.Tenant.Models.Tenant? Tenant { get; set; }
+
+    /// <summary>
+    /// Indicates if this permission applies globally across all tenants
+    /// </summary>
+    public override bool IsGlobal => TenantId == null;
 
     /// <summary>
     /// Content type name for polymorphic relationship
@@ -45,14 +60,14 @@ public sealed class ContentTypePermission : BaseEntity
     } = string.Empty;
 
     /// <summary>
-    /// Bitwise permissions granted for this content type
+    /// Permissions granted for this content type
     /// </summary>
     [Required]
-    public PermissionType Permissions
+    public UnifiedPermissionContext PermissionContext
     {
         get;
         set;
-    }
+    } = new UnifiedPermissionContext();
 
     /// <summary>
     /// When this permission was assigned

@@ -9,121 +9,108 @@ public class PermissionContextBuilder
 {
     private readonly UnifiedPermissionContext _context = new();
     
-    // Core permissions
-    public PermissionContextBuilder WithCorePermissions(CorePermissionType permissions)
-    {
-        _context.CorePermissions = permissions;
-        return this;
-    }
-    
-    public PermissionContextBuilder WithRead() => WithCorePermissions(_context.CorePermissions | CorePermissionType.Read);
-    public PermissionContextBuilder WithWrite() => WithCorePermissions(_context.CorePermissions | CorePermissionType.ReadWrite);
-    public PermissionContextBuilder WithFullCrud() => WithCorePermissions(CorePermissionType.All);
-    
     // Content interaction permissions
-    public PermissionContextBuilder WithInteractionPermissions(ContentInteractionPermissionType permissions)
+    public PermissionContextBuilder WithInteractionPermissions(ContentInteractionPermission permissions)
     {
         _context.InteractionPermissions = permissions;
         return this;
     }
     
-    public PermissionContextBuilder WithBasicInteraction() => WithInteractionPermissions(ContentInteractionPermissionType.BasicInteraction);
-    public PermissionContextBuilder WithSocialInteraction() => WithInteractionPermissions(ContentInteractionPermissionType.SocialInteraction);
-    public PermissionContextBuilder WithAllInteractions() => WithInteractionPermissions(ContentInteractionPermissionType.All);
+    public PermissionContextBuilder WithBasicInteraction() => WithInteractionPermissions(ContentInteractionPermission.BasicInteraction);
+    public PermissionContextBuilder WithSocialInteraction() => WithInteractionPermissions(ContentInteractionPermission.SocialInteraction);
+    public PermissionContextBuilder WithAllInteractions() => WithInteractionPermissions(ContentInteractionPermission.All);
     
     // Content curation permissions
-    public PermissionContextBuilder WithCurationPermissions(ContentCurationPermissionType permissions)
+    public PermissionContextBuilder WithCurationPermissions(ContentCurationPermission permissions)
     {
         _context.CurationPermissions = permissions;
         return this;
     }
     
-    public PermissionContextBuilder WithBasicCuration() => WithCurationPermissions(ContentCurationPermissionType.BasicCuration);
-    public PermissionContextBuilder WithAdvancedCuration() => WithCurationPermissions(ContentCurationPermissionType.AdvancedCuration);
+    public PermissionContextBuilder WithBasicCuration() => WithCurationPermissions(ContentCurationPermission.BasicCuration);
+    public PermissionContextBuilder WithAdvancedCuration() => WithCurationPermissions(ContentCurationPermission.AdvancedCuration);
     
     // Moderation permissions
-    public PermissionContextBuilder WithModerationPermissions(ModerationPermissionType permissions)
+    public PermissionContextBuilder WithModerationPermissions(ModerationPermission permissions)
     {
         _context.ModerationPermissions = permissions;
         return this;
     }
     
-    public PermissionContextBuilder WithBasicModeration() => WithModerationPermissions(ModerationPermissionType.BasicModeration);
-    public PermissionContextBuilder WithContentControl() => WithModerationPermissions(ModerationPermissionType.ContentControl);
-    public PermissionContextBuilder WithUserControl() => WithModerationPermissions(ModerationPermissionType.UserControl);
+    public PermissionContextBuilder WithBasicModeration() => WithModerationPermissions(ModerationPermission.BasicModeration);
+    public PermissionContextBuilder WithContentControl() => WithModerationPermissions(ModerationPermission.ContentControl);
+    public PermissionContextBuilder WithUserControl() => WithModerationPermissions(ModerationPermission.UserControl);
     
     // Lifecycle permissions
-    public PermissionContextBuilder WithLifecyclePermissions(ContentLifecyclePermissionType permissions)
+    public PermissionContextBuilder WithLifecyclePermissions(ContentLifecyclePermission permissions)
     {
         _context.LifecyclePermissions = permissions;
         return this;
     }
     
-    public PermissionContextBuilder WithBasicLifecycle() => WithLifecyclePermissions(ContentLifecyclePermissionType.BasicLifecycle);
-    public PermissionContextBuilder WithAdvancedLifecycle() => WithLifecyclePermissions(ContentLifecyclePermissionType.AdvancedLifecycle);
+    public PermissionContextBuilder WithBasicLifecycle() => WithLifecyclePermissions(ContentLifecyclePermission.BasicLifecycle);
+    public PermissionContextBuilder WithAdvancedLifecycle() => WithLifecyclePermissions(ContentLifecyclePermission.AdvancedLifecycle);
     
     // Publishing permissions
-    public PermissionContextBuilder WithPublishingPermissions(PublishingPermissionType permissions)
+    public PermissionContextBuilder WithPublishingPermissions(PublishingPermission permissions)
     {
         _context.PublishingPermissions = permissions;
         return this;
     }
     
-    public PermissionContextBuilder WithBasicPublishing() => WithPublishingPermissions(PublishingPermissionType.BasicPublishing);
-    public PermissionContextBuilder WithExternalDistribution() => WithPublishingPermissions(PublishingPermissionType.ExternalDistribution);
+    public PermissionContextBuilder WithBasicPublishing() => WithPublishingPermissions(PublishingPermission.BasicPublishing);
+    public PermissionContextBuilder WithExternalDistribution() => WithPublishingPermissions(PublishingPermission.ExternalDistribution);
     
     // Monetization permissions
-    public PermissionContextBuilder WithMonetizationPermissions(MonetizationPermissionType permissions)
+    public PermissionContextBuilder WithMonetizationPermissions(MonetizationPermission permissions)
     {
         _context.MonetizationPermissions = permissions;
         return this;
     }
     
-    public PermissionContextBuilder WithBasicMonetization() => WithMonetizationPermissions(MonetizationPermissionType.BasicMonetization);
-    public PermissionContextBuilder WithAdvancedMonetization() => WithMonetizationPermissions(MonetizationPermissionType.AdvancedMonetization);
+    public PermissionContextBuilder WithBasicMonetization() => WithMonetizationPermissions(MonetizationPermission.BasicMonetization);
+    public PermissionContextBuilder WithAdvancedMonetization() => WithMonetizationPermissions(MonetizationPermission.AdvancedMonetization);
     
     // Editorial permissions
-    public PermissionContextBuilder WithEditorialPermissions(EditorialPermissionType permissions)
+    public PermissionContextBuilder WithEditorialPermissions(EditorialPermission permissions)
     {
         _context.EditorialPermissions = permissions;
         return this;
     }
     
-    public PermissionContextBuilder WithBasicEditorial() => WithEditorialPermissions(EditorialPermissionType.BasicEditorial);
-    public PermissionContextBuilder WithQualityControl() => WithEditorialPermissions(EditorialPermissionType.QualityControl);
+    public PermissionContextBuilder WithBasicEditorial() => WithEditorialPermissions(EditorialPermission.BasicEditorial);
+    public PermissionContextBuilder WithQualityControl() => WithEditorialPermissions(EditorialPermission.QualityControl);
     
     // Promotion permissions
-    public PermissionContextBuilder WithPromotionPermissions(PromotionPermissionType permissions)
+    public PermissionContextBuilder WithPromotionPermissions(PromotionPermission permissions)
     {
         _context.PromotionPermissions = permissions;
         return this;
     }
     
-    public PermissionContextBuilder WithBasicPromotion() => WithPromotionPermissions(PromotionPermissionType.BasicPromotion);
-    public PermissionContextBuilder WithVisualPromotion() => WithPromotionPermissions(PromotionPermissionType.VisualPromotion);
+    public PermissionContextBuilder WithBasicPromotion() => WithPromotionPermissions(PromotionPermission.BasicPromotion);
+    public PermissionContextBuilder WithVisualPromotion() => WithPromotionPermissions(PromotionPermission.VisualPromotion);
     
     // Quality control permissions
-    public PermissionContextBuilder WithQualityPermissions(QualityControlPermissionType permissions)
+    public PermissionContextBuilder WithQualityPermissions(QualityControlPermission permissions)
     {
         _context.QualityPermissions = permissions;
         return this;
     }
     
-    public PermissionContextBuilder WithBasicQuality() => WithQualityPermissions(QualityControlPermissionType.BasicQuality);
-    public PermissionContextBuilder WithQualityAnalytics() => WithQualityPermissions(QualityControlPermissionType.QualityAnalytics);
+    public PermissionContextBuilder WithBasicQuality() => WithQualityPermissions(QualityControlPermission.BasicQuality);
+    public PermissionContextBuilder WithQualityAnalytics() => WithQualityPermissions(QualityControlPermission.QualityAnalytics);
     
     // Predefined role builders
     public static PermissionContextBuilder CreateForReader()
     {
         return new PermissionContextBuilder()
-            .WithRead()
             .WithBasicInteraction();
     }
     
     public static PermissionContextBuilder CreateForContributor()
     {
         return new PermissionContextBuilder()
-            .WithWrite()
             .WithBasicInteraction()
             .WithBasicCuration()
             .WithBasicLifecycle();
@@ -132,7 +119,6 @@ public class PermissionContextBuilder
     public static PermissionContextBuilder CreateForEditor()
     {
         return new PermissionContextBuilder()
-            .WithFullCrud()
             .WithAllInteractions()
             .WithAdvancedCuration()
             .WithBasicModeration()
@@ -144,7 +130,6 @@ public class PermissionContextBuilder
     public static PermissionContextBuilder CreateForModerator()
     {
         return new PermissionContextBuilder()
-            .WithRead()
             .WithBasicModeration()
             .WithContentControl()
             .WithQualityControl();
@@ -153,16 +138,15 @@ public class PermissionContextBuilder
     public static PermissionContextBuilder CreateForAdmin()
     {
         return new PermissionContextBuilder()
-            .WithCorePermissions(CorePermissionType.All)
-            .WithInteractionPermissions(ContentInteractionPermissionType.All)
-            .WithCurationPermissions(ContentCurationPermissionType.All)
-            .WithModerationPermissions(ModerationPermissionType.All)
-            .WithLifecyclePermissions(ContentLifecyclePermissionType.All)
-            .WithPublishingPermissions(PublishingPermissionType.All)
-            .WithMonetizationPermissions(MonetizationPermissionType.All)
-            .WithEditorialPermissions(EditorialPermissionType.All)
-            .WithPromotionPermissions(PromotionPermissionType.All)
-            .WithQualityPermissions(QualityControlPermissionType.All);
+            .WithInteractionPermissions(ContentInteractionPermission.All)
+            .WithCurationPermissions(ContentCurationPermission.All)
+            .WithModerationPermissions(ModerationPermission.All)
+            .WithLifecyclePermissions(ContentLifecyclePermission.All)
+            .WithPublishingPermissions(PublishingPermission.All)
+            .WithMonetizationPermissions(MonetizationPermission.All)
+            .WithEditorialPermissions(EditorialPermission.All)
+            .WithPromotionPermissions(PromotionPermission.All)
+            .WithQualityPermissions(QualityControlPermission.All);
     }
     
     public UnifiedPermissionContext Build() => _context;

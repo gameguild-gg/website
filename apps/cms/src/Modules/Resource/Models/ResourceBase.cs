@@ -7,7 +7,7 @@ namespace cms.Common.Entities;
 /// Provides common functionality for content resources like articles, courses, media, etc.
 /// Mirrors the TypeScript ResourceBase functionality from the API.
 /// </summary>
-public abstract class ResourceBase : BaseEntity, ILocalizable, IPermissionable, ITenantable
+public abstract class ResourceBase : BaseEntity, ILocalizable, IPermissionable<ContentInteractionPermission>, ITenantable
 {
     /// <summary>
     /// The title/name of this resource
@@ -121,14 +121,14 @@ public abstract class ResourceBase : BaseEntity, ILocalizable, IPermissionable, 
     /// <summary>
     /// Grants permission to a user for this resource
     /// </summary>
-    public virtual ResourcePermission GrantPermission(Modules.User.Models.User user, PermissionType permissions, Modules.User.Models.User grantedByUser)
+    public virtual ResourcePermission GrantPermission(Modules.User.Models.User user, UnifiedPermissionContext permissionContext, Modules.User.Models.User grantedByUser)
     {
         var resourcePermission = new ResourcePermission
         {
             User = user,
             Resource = this,
             ResourceType = GetType().Name,
-            Permissions = permissions,
+            PermissionContext = permissionContext,
             GrantedAt = DateTime.UtcNow,
             GrantedByUser = grantedByUser,
             IsActive = true

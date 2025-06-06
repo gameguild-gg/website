@@ -52,15 +52,14 @@ public class ResourcePermission : BaseEntity
     } = null!;
 
     /// <summary>
-    /// Bitwise permissions granted for this specific resource
-    /// Layer 3 of the three-layer permission system: Tenant → ContentType → Resource
+    /// Permission context for this resource
     /// </summary>
     [Required]
-    public PermissionType Permissions
+    public UnifiedPermissionContext PermissionContext
     {
         get;
         set;
-    }
+    } = new UnifiedPermissionContext();
 
     /// <summary>
     /// When this permission was granted

@@ -14,12 +14,12 @@ public interface IPermissionService
     /// <summary>
     /// Assign tenant-wide permissions to a user (or global if tenantId is null)
     /// </summary>
-    Task AssignUserToTenantAsync(Guid userId, Guid? tenantId, PermissionType permissions, Guid assignedByUserId);
+    Task AssignUserToTenantAsync(Guid userId, Guid? tenantId, UnifiedPermissionContext permissionContext, Guid assignedByUserId);
 
     /// <summary>
     /// Get user's tenant-wide permissions for a specific tenant
     /// </summary>
-    Task<PermissionType> GetUserTenantPermissionsAsync(Guid userId, Guid? tenantId);
+    Task<UnifiedPermissionContext> GetUserTenantPermissionsAsync(Guid userId, Guid? tenantId);
 
     /// <summary>
     /// Get all tenants a user has permissions in
@@ -38,17 +38,17 @@ public interface IPermissionService
     /// Assign content-type-wide permissions to a user
     /// When tenantId is null, assigns global permissions; when set, assigns tenant-specific permissions
     /// </summary>
-    Task AssignContentTypePermissionAsync(Guid userId, Guid? tenantId, string contentTypeName, PermissionType permissions, Guid assignedByUserId);
+    Task AssignContentTypePermissionAsync(Guid userId, Guid? tenantId, string contentTypeName, UnifiedPermissionContext permissionContext, Guid assignedByUserId);
 
     /// <summary>
     /// Check if user has specific content-type permission (checks both global and tenant-specific)
     /// </summary>
-    Task<bool> HasContentTypePermissionAsync(Guid userId, Guid? tenantId, string contentTypeName, PermissionType permission);
+    Task<bool> HasContentTypePermissionAsync(Guid userId, Guid? tenantId, string contentTypeName, ContentInteractionPermission permission);
 
     /// <summary>
     /// Get user's permissions for a specific content type (combines global and tenant-specific)
     /// </summary>
-    Task<PermissionType> GetUserContentTypePermissionsAsync(Guid userId, Guid? tenantId, string contentTypeName);
+    Task<UnifiedPermissionContext> GetUserContentTypePermissionsAsync(Guid userId, Guid? tenantId, string contentTypeName);
 
     /// <summary>
     /// Get all content type permissions for a user (both global and tenant-specific)
@@ -60,17 +60,17 @@ public interface IPermissionService
     /// <summary>
     /// Grant permissions to a user for a specific resource
     /// </summary>
-    Task GrantResourcePermissionAsync(Guid userId, Guid resourceId, PermissionType permissions, Guid grantedByUserId);
+    Task GrantResourcePermissionAsync(Guid userId, Guid resourceId, UnifiedPermissionContext permissionContext, Guid grantedByUserId);
 
     /// <summary>
     /// Check if user has specific permission for a resource (evaluates all three layers)
     /// </summary>
-    Task<bool> HasPermissionAsync(Guid userId, Guid resourceId, PermissionType permission);
+    Task<bool> HasPermissionAsync(Guid userId, Guid resourceId, ContentInteractionPermission permission);
 
     /// <summary>
     /// Get user's complete permissions for a resource (combines all three layers)
     /// </summary>
-    Task<PermissionType> GetUserPermissionsAsync(Guid userId, Guid resourceId);
+    Task<UnifiedPermissionContext> GetUserPermissionsAsync(Guid userId, Guid resourceId);
 
     // ===== HELPER METHODS =====
 
