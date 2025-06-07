@@ -38,10 +38,6 @@ public static class UnifiedPermissionContextConfiguration
             .HasConversion<int>()
             .HasColumnName($"{prefix}PublishingPermissions");
             
-        builder.Property(e => e.MonetizationPermissions)
-            .HasConversion<int>()
-            .HasColumnName($"{prefix}MonetizationPermissions");
-            
         builder.Property(e => e.EditorialPermissions)
             .HasConversion<int>()
             .HasColumnName($"{prefix}EditorialPermissions");
@@ -49,6 +45,10 @@ public static class UnifiedPermissionContextConfiguration
         builder.Property(e => e.PromotionPermissions)
             .HasConversion<int>()
             .HasColumnName($"{prefix}PromotionPermissions");
+            
+        builder.Property(e => e.MonetizationPermissions)
+            .HasConversion<int>()
+            .HasColumnName($"{prefix}MonetizationPermissions");
             
         builder.Property(e => e.QualityPermissions)
             .HasConversion<int>()

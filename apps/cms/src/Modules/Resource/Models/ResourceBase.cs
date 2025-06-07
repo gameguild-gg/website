@@ -7,7 +7,7 @@ namespace cms.Common.Entities;
 /// Provides common functionality for content resources like articles, courses, media, etc.
 /// Mirrors the TypeScript ResourceBase functionality from the API.
 /// </summary>
-public abstract class ResourceBase : BaseEntity, ILocalizable, IPermissionable<ContentInteractionPermission>, ITenantable
+public abstract class ResourceBase : BaseEntity, ILocalizable, IPermissionable, ITenantable
 {
     /// <summary>
     /// The title/name of this resource

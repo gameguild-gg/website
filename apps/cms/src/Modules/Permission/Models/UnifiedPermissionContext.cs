@@ -7,38 +7,38 @@ namespace cms.Common.Entities;
 /// </summary>
 public class UnifiedPermissionContext
 {
-    public ContentInteractionPermission InteractionPermissions { get; set; } = ContentInteractionPermission.None;
-    public ContentCurationPermission CurationPermissions { get; set; } = ContentCurationPermission.None;
-    public ModerationPermission ModerationPermissions { get; set; } = ModerationPermission.None;
-    public ContentLifecyclePermission LifecyclePermissions { get; set; } = ContentLifecyclePermission.None;
-    public PublishingPermission PublishingPermissions { get; set; } = PublishingPermission.None;
-    public MonetizationPermission MonetizationPermissions { get; set; } = MonetizationPermission.None;
-    public EditorialPermission EditorialPermissions { get; set; } = EditorialPermission.None;
-    public PromotionPermission PromotionPermissions { get; set; } = PromotionPermission.None;
-    public QualityControlPermission QualityPermissions { get; set; } = QualityControlPermission.None;    
+    public InteractionPerm InteractionPermissions { get; set; } = InteractionPerm.None;
+    public CurationPerm CurationPermissions { get; set; } = CurationPerm.None;
+    public ModerationPerm ModerationPermissions { get; set; } = ModerationPerm.None;
+    public LifecyclePerm LifecyclePermissions { get; set; } = LifecyclePerm.None;
+    public PublishingPerm PublishingPermissions { get; set; } = PublishingPerm.None;
+    public MonetizationPerm MonetizationPermissions { get; set; } = MonetizationPerm.None;
+    public EditorialPerm EditorialPermissions { get; set; } = EditorialPerm.None;
+    public PromotionPerm PromotionPermissions { get; set; } = PromotionPerm.None;
+    public QualityControlPerm QualityPermissions { get; set; } = QualityControlPerm.None;    
     
     // Helper methods for common permission checks
-    public bool CanInteract => InteractionPermissions != ContentInteractionPermission.None;
-    public bool CanModerate => ModerationPermissions != ModerationPermission.None;
-    public bool CanPublish => PublishingPermissions.HasFlag(PublishingPermission.Publish);
-    public bool CanMonetize => MonetizationPermissions != MonetizationPermission.None;
-    public bool CanPromote => PromotionPermissions != PromotionPermission.None;
-    public bool CanEdit => EditorialPermissions != EditorialPermission.None;
+    public bool CanInteract => InteractionPermissions != InteractionPerm.None;
+    public bool CanModerate => ModerationPermissions != ModerationPerm.None;
+    public bool CanPublish => PublishingPermissions.HasFlag(PublishingPerm.Publish);
+    public bool CanMonetize => MonetizationPermissions != MonetizationPerm.None;
+    public bool CanPromote => PromotionPermissions != PromotionPerm.None;
+    public bool CanEdit => EditorialPermissions != EditorialPerm.None;
     
     // Context-aware permission validation
     public bool HasPermission<T>(T permission) where T : Enum
     {
         return permission switch
         {
-            ContentInteractionPermission interaction => InteractionPermissions.HasFlag(interaction),
-            ContentCurationPermission curation => CurationPermissions.HasFlag(curation),
-            ModerationPermission moderation => ModerationPermissions.HasFlag(moderation),
-            ContentLifecyclePermission lifecycle => LifecyclePermissions.HasFlag(lifecycle),
-            PublishingPermission publishing => PublishingPermissions.HasFlag(publishing),
-            MonetizationPermission monetization => MonetizationPermissions.HasFlag(monetization),
-            EditorialPermission editorial => EditorialPermissions.HasFlag(editorial),
-            PromotionPermission promotion => PromotionPermissions.HasFlag(promotion),
-            QualityControlPermission quality => QualityPermissions.HasFlag(quality),
+            InteractionPerm interaction => InteractionPermissions.HasFlag(interaction),
+            CurationPerm curation => CurationPermissions.HasFlag(curation),
+            ModerationPerm moderation => ModerationPermissions.HasFlag(moderation),
+            LifecyclePerm lifecycle => LifecyclePermissions.HasFlag(lifecycle),
+            PublishingPerm publishing => PublishingPermissions.HasFlag(publishing),
+            MonetizationPerm monetization => MonetizationPermissions.HasFlag(monetization),
+            EditorialPerm editorial => EditorialPermissions.HasFlag(editorial),
+            PromotionPerm promotion => PromotionPermissions.HasFlag(promotion),
+            QualityControlPerm quality => QualityPermissions.HasFlag(quality),
             _ => false
         };
     }

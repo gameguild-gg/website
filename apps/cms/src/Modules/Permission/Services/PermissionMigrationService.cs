@@ -16,7 +16,7 @@ public class PermissionService
     {
         return new UnifiedPermissionContext
         {
-            InteractionPermissions = ContentInteractionPermission.BasicInteraction,
+            InteractionPermissions = InteractionPerm.BasicInteraction,
             // Add other default permissions as needed
         };
     }

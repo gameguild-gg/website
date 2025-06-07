@@ -12,7 +12,7 @@ public static class PermissionPresets
     /// </summary>
     public static UnifiedPermissionContext Guest => new()
     {
-        InteractionPermissions = ContentInteractionPermission.Report
+        InteractionPermissions = InteractionPerm.Report
     };
     
     /// <summary>
@@ -20,9 +20,9 @@ public static class PermissionPresets
     /// </summary>
     public static UnifiedPermissionContext Reader => new()
     {
-        InteractionPermissions = ContentInteractionPermission.BasicInteraction | 
-                                ContentInteractionPermission.Follow | 
-                                ContentInteractionPermission.Bookmark
+        InteractionPermissions = InteractionPerm.BasicInteraction | 
+                                InteractionPerm.Follow | 
+                                InteractionPerm.Bookmark
     };
     
     /// <summary>
@@ -30,10 +30,10 @@ public static class PermissionPresets
     /// </summary>
     public static UnifiedPermissionContext ContentCreator => new()
     {
-        InteractionPermissions = ContentInteractionPermission.All,
-        CurationPermissions = ContentCurationPermission.BasicCuration,
-        LifecyclePermissions = ContentLifecyclePermission.BasicLifecycle,
-        PublishingPermissions = PublishingPermission.BasicPublishing
+        InteractionPermissions = InteractionPerm.All,
+        CurationPermissions = CurationPerm.BasicCuration,
+        LifecyclePermissions = LifecyclePerm.BasicLifecycle,
+        PublishingPermissions = PublishingPerm.BasicPublishing
     };
     
     /// <summary>
@@ -41,14 +41,14 @@ public static class PermissionPresets
     /// </summary>
     public static UnifiedPermissionContext Editor => new()
     {
-        InteractionPermissions = ContentInteractionPermission.All,
-        CurationPermissions = ContentCurationPermission.All,
-        ModerationPermissions = ModerationPermission.BasicModeration | ModerationPermission.ContentControl,
-        LifecyclePermissions = ContentLifecyclePermission.All,
-        PublishingPermissions = PublishingPermission.All,
-        EditorialPermissions = EditorialPermission.All,
-        PromotionPermissions = PromotionPermission.BasicPromotion,
-        QualityPermissions = QualityControlPermission.BasicQuality
+        InteractionPermissions = InteractionPerm.All,
+        CurationPermissions = CurationPerm.All,
+        ModerationPermissions = ModerationPerm.BasicModeration | ModerationPerm.ContentControl,
+        LifecyclePermissions = LifecyclePerm.All,
+        PublishingPermissions = PublishingPerm.All,
+        EditorialPermissions = EditorialPerm.All,
+        PromotionPermissions = PromotionPerm.BasicPromotion,
+        QualityPermissions = QualityControlPerm.BasicQuality
     };
     
     /// <summary>
@@ -56,11 +56,11 @@ public static class PermissionPresets
     /// </summary>
     public static UnifiedPermissionContext Moderator => new()
     {
-        InteractionPermissions = ContentInteractionPermission.BasicInteraction,
-        ModerationPermissions = ModerationPermission.All,
-        LifecyclePermissions = ContentLifecyclePermission.Archive | ContentLifecyclePermission.SoftDelete,
-        EditorialPermissions = EditorialPermission.QualityControl,
-        QualityPermissions = QualityControlPermission.All
+        InteractionPermissions = InteractionPerm.BasicInteraction,
+        ModerationPermissions = ModerationPerm.All,
+        LifecyclePermissions = LifecyclePerm.Archive | LifecyclePerm.SoftDelete,
+        EditorialPermissions = EditorialPerm.QualityControl,
+        QualityPermissions = QualityControlPerm.All
     };
     
     /// <summary>
@@ -68,13 +68,13 @@ public static class PermissionPresets
     /// </summary>
     public static UnifiedPermissionContext CommunityManager => new()
     {
-        InteractionPermissions = ContentInteractionPermission.All,
-        CurationPermissions = ContentCurationPermission.All,
-        ModerationPermissions = ModerationPermission.BasicModeration | ModerationPermission.ContentControl,
-        LifecyclePermissions = ContentLifecyclePermission.BasicLifecycle | ContentLifecyclePermission.Archive,
-        PublishingPermissions = PublishingPermission.All,
-        PromotionPermissions = PromotionPermission.All,
-        QualityPermissions = QualityControlPermission.BasicQuality
+        InteractionPermissions = InteractionPerm.All,
+        CurationPermissions = CurationPerm.All,
+        ModerationPermissions = ModerationPerm.BasicModeration | ModerationPerm.ContentControl,
+        LifecyclePermissions = LifecyclePerm.BasicLifecycle | LifecyclePerm.Archive,
+        PublishingPermissions = PublishingPerm.All,
+        PromotionPermissions = PromotionPerm.All,
+        QualityPermissions = QualityControlPerm.BasicQuality
     };
     
     /// <summary>
@@ -82,9 +82,9 @@ public static class PermissionPresets
     /// </summary>
     public static UnifiedPermissionContext BusinessManager => new()
     {
-        InteractionPermissions = ContentInteractionPermission.BasicInteraction,
-        MonetizationPermissions = MonetizationPermission.All,
-        QualityPermissions = QualityControlPermission.QualityAnalytics
+        InteractionPermissions = InteractionPerm.BasicInteraction,
+        MonetizationPermissions = MonetizationPerm.All,
+        QualityPermissions = QualityControlPerm.QualityAnalytics
     };
     
     /// <summary>
@@ -102,8 +102,8 @@ public static class PermissionPresets
         /// </summary>
         public static UnifiedPermissionContext Player => new()
         {
-            InteractionPermissions = ContentInteractionPermission.All,
-            CurationPermissions = ContentCurationPermission.Tag | ContentCurationPermission.Collection
+            InteractionPermissions = InteractionPerm.All,
+            CurationPermissions = CurationPerm.Tag | CurationPerm.Collection
         };
         
         /// <summary>
@@ -111,12 +111,12 @@ public static class PermissionPresets
         /// </summary>
         public static UnifiedPermissionContext GuildLeader => new()
         {
-            InteractionPermissions = ContentInteractionPermission.All,
-            CurationPermissions = ContentCurationPermission.All,
-            ModerationPermissions = ModerationPermission.BasicModeration | ModerationPermission.ContentControl,
-            LifecyclePermissions = ContentLifecyclePermission.BasicLifecycle,
-            PublishingPermissions = PublishingPermission.BasicPublishing,
-            PromotionPermissions = PromotionPermission.BasicPromotion
+            InteractionPermissions = InteractionPerm.All,
+            CurationPermissions = CurationPerm.All,
+            ModerationPermissions = ModerationPerm.BasicModeration | ModerationPerm.ContentControl,
+            LifecyclePermissions = LifecyclePerm.BasicLifecycle,
+            PublishingPermissions = PublishingPerm.BasicPublishing,
+            PromotionPermissions = PromotionPerm.BasicPromotion
         };
         
         /// <summary>
@@ -124,12 +124,12 @@ public static class PermissionPresets
         /// </summary>
         public static UnifiedPermissionContext TournamentOrganizer => new()
         {
-            InteractionPermissions = ContentInteractionPermission.All,
-            CurationPermissions = ContentCurationPermission.All,
-            LifecyclePermissions = ContentLifecyclePermission.All,
-            PublishingPermissions = PublishingPermission.All,
-            PromotionPermissions = PromotionPermission.All,
-            MonetizationPermissions = MonetizationPermission.BasicMonetization
+            InteractionPermissions = InteractionPerm.All,
+            CurationPermissions = CurationPerm.All,
+            LifecyclePermissions = LifecyclePerm.All,
+            PublishingPermissions = PublishingPerm.All,
+            PromotionPermissions = PromotionPerm.All,
+            MonetizationPermissions = MonetizationPerm.BasicMonetization
         };
     }
 }

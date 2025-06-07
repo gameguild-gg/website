@@ -14,21 +14,21 @@ public static class PermissionValidator
     {
         return operation switch
         {
-            PermissionOperation.CommentOnContent => context.InteractionPermissions.HasFlag(ContentInteractionPermission.Comment),
-            PermissionOperation.VoteOnContent => context.InteractionPermissions.HasFlag(ContentInteractionPermission.Vote),
-            PermissionOperation.ShareContent => context.InteractionPermissions.HasFlag(ContentInteractionPermission.Share),
+            PermissionOperation.CommentOnContent => context.InteractionPermissions.HasFlag(InteractionPerm.Comment),
+            PermissionOperation.VoteOnContent => context.InteractionPermissions.HasFlag(InteractionPerm.Vote),
+            PermissionOperation.ShareContent => context.InteractionPermissions.HasFlag(InteractionPerm.Share),
             
-            PermissionOperation.ModerateContent => context.ModerationPermissions.HasFlag(ModerationPermission.Review),
-            PermissionOperation.BanUser => context.ModerationPermissions.HasFlag(ModerationPermission.Ban),
+            PermissionOperation.ModerateContent => context.ModerationPermissions.HasFlag(ModerationPerm.Review),
+            PermissionOperation.BanUser => context.ModerationPermissions.HasFlag(ModerationPerm.Ban),
             
-            PermissionOperation.PublishContent => context.PublishingPermissions.HasFlag(PublishingPermission.Publish),
-            PermissionOperation.ScheduleContent => context.PublishingPermissions.HasFlag(PublishingPermission.Schedule),
+            PermissionOperation.PublishContent => context.PublishingPermissions.HasFlag(PublishingPerm.Publish),
+            PermissionOperation.ScheduleContent => context.PublishingPermissions.HasFlag(PublishingPerm.Schedule),
             
-            PermissionOperation.FeatureContent => context.PromotionPermissions.HasFlag(PromotionPermission.Feature),
-            PermissionOperation.PinContent => context.PromotionPermissions.HasFlag(PromotionPermission.Pin),
+            PermissionOperation.FeatureContent => context.PromotionPermissions.HasFlag(PromotionPerm.Feature),
+            PermissionOperation.PinContent => context.PromotionPermissions.HasFlag(PromotionPerm.Pin),
             
-            PermissionOperation.MonetizeContent => context.MonetizationPermissions.HasFlag(MonetizationPermission.Monetize),
-            PermissionOperation.ViewRevenue => context.MonetizationPermissions.HasFlag(MonetizationPermission.Revenue),
+            PermissionOperation.MonetizeContent => context.MonetizationPermissions.HasFlag(MonetizationPerm.Monetize),
+            PermissionOperation.ViewRevenue => context.MonetizationPermissions.HasFlag(MonetizationPerm.Revenue),
             
             _ => false
         };
@@ -44,13 +44,13 @@ public static class PermissionValidator
         switch (operation)
         {                
             case PermissionOperation.PublishContent:
-                if (!context.PublishingPermissions.HasFlag(PublishingPermission.Publish))
-                    missing.Add("PublishingPermission.Publish");
+                if (!context.PublishingPermissions.HasFlag(PublishingPerm.Publish))
+                    missing.Add("PublishingPerm.Publish");
                 break;
                 
             case PermissionOperation.ModerateContent:
-                if (!context.ModerationPermissions.HasFlag(ModerationPermission.Review))
-                    missing.Add("ModerationPermission.Review");
+                if (!context.ModerationPermissions.HasFlag(ModerationPerm.Review))
+                    missing.Add("ModerationPerm.Review");
                 break;
                 
             // Add more cases as needed

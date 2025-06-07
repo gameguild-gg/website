@@ -151,7 +151,7 @@ public class PermissionService : IPermissionService
         await _context.SaveChangesAsync();
     }
 
-    public async Task<bool> HasContentTypePermissionAsync(Guid userId, Guid? tenantId, string contentTypeName, ContentInteractionPermission permission)
+    public async Task<bool> HasContentTypePermissionAsync(Guid userId, Guid? tenantId, string contentTypeName, InteractionPerm permission)
     {
         var userPermissions = await GetUserContentTypePermissionsAsync(userId, tenantId, contentTypeName);
         return userPermissions.InteractionPermissions.HasFlag(permission);
@@ -237,7 +237,7 @@ public class PermissionService : IPermissionService
         await _context.SaveChangesAsync();
     }
 
-    public async Task<bool> HasPermissionAsync(Guid userId, Guid resourceId, ContentInteractionPermission permission)
+    public async Task<bool> HasPermissionAsync(Guid userId, Guid resourceId, InteractionPerm permission)
     {
         var userPermissions = await GetUserPermissionsAsync(userId, resourceId);
         return userPermissions.HasPermission(permission);

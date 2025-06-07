@@ -43,7 +43,7 @@ public interface IPermissionService
     /// <summary>
     /// Check if user has specific content-type permission (checks both global and tenant-specific)
     /// </summary>
-    Task<bool> HasContentTypePermissionAsync(Guid userId, Guid? tenantId, string contentTypeName, ContentInteractionPermission permission);
+    Task<bool> HasContentTypePermissionAsync(Guid userId, Guid? tenantId, string contentTypeName, InteractionPerm permission);
 
     /// <summary>
     /// Get user's permissions for a specific content type (combines global and tenant-specific)
@@ -65,7 +65,7 @@ public interface IPermissionService
     /// <summary>
     /// Check if user has specific permission for a resource (evaluates all three layers)
     /// </summary>
-    Task<bool> HasPermissionAsync(Guid userId, Guid resourceId, ContentInteractionPermission permission);
+    Task<bool> HasPermissionAsync(Guid userId, Guid resourceId, InteractionPerm permission);
 
     /// <summary>
     /// Get user's complete permissions for a resource (combines all three layers)

@@ -10,96 +10,96 @@ public class PermissionContextBuilder
     private readonly UnifiedPermissionContext _context = new();
     
     // Content interaction permissions
-    public PermissionContextBuilder WithInteractionPermissions(ContentInteractionPermission permissions)
+    public PermissionContextBuilder WithInteractionPermissions(InteractionPerm permissions)
     {
         _context.InteractionPermissions = permissions;
         return this;
     }
     
-    public PermissionContextBuilder WithBasicInteraction() => WithInteractionPermissions(ContentInteractionPermission.BasicInteraction);
-    public PermissionContextBuilder WithSocialInteraction() => WithInteractionPermissions(ContentInteractionPermission.SocialInteraction);
-    public PermissionContextBuilder WithAllInteractions() => WithInteractionPermissions(ContentInteractionPermission.All);
+    public PermissionContextBuilder WithBasicInteraction() => WithInteractionPermissions(InteractionPerm.BasicInteraction);
+    public PermissionContextBuilder WithSocialInteraction() => WithInteractionPermissions(InteractionPerm.SocialInteraction);
+    public PermissionContextBuilder WithAllInteractions() => WithInteractionPermissions(InteractionPerm.All);
     
     // Content curation permissions
-    public PermissionContextBuilder WithCurationPermissions(ContentCurationPermission permissions)
+    public PermissionContextBuilder WithCurationPermissions(CurationPerm permissions)
     {
         _context.CurationPermissions = permissions;
         return this;
     }
     
-    public PermissionContextBuilder WithBasicCuration() => WithCurationPermissions(ContentCurationPermission.BasicCuration);
-    public PermissionContextBuilder WithAdvancedCuration() => WithCurationPermissions(ContentCurationPermission.AdvancedCuration);
+    public PermissionContextBuilder WithBasicCuration() => WithCurationPermissions(CurationPerm.BasicCuration);
+    public PermissionContextBuilder WithAdvancedCuration() => WithCurationPermissions(CurationPerm.AdvancedCuration);
     
     // Moderation permissions
-    public PermissionContextBuilder WithModerationPermissions(ModerationPermission permissions)
+    public PermissionContextBuilder WithModerationPermissions(ModerationPerm permissions)
     {
         _context.ModerationPermissions = permissions;
         return this;
     }
     
-    public PermissionContextBuilder WithBasicModeration() => WithModerationPermissions(ModerationPermission.BasicModeration);
-    public PermissionContextBuilder WithContentControl() => WithModerationPermissions(ModerationPermission.ContentControl);
-    public PermissionContextBuilder WithUserControl() => WithModerationPermissions(ModerationPermission.UserControl);
+    public PermissionContextBuilder WithBasicModeration() => WithModerationPermissions(ModerationPerm.BasicModeration);
+    public PermissionContextBuilder WithContentControl() => WithModerationPermissions(ModerationPerm.ContentControl);
+    public PermissionContextBuilder WithUserControl() => WithModerationPermissions(ModerationPerm.UserControl);
     
     // Lifecycle permissions
-    public PermissionContextBuilder WithLifecyclePermissions(ContentLifecyclePermission permissions)
+    public PermissionContextBuilder WithLifecyclePermissions(LifecyclePerm permissions)
     {
         _context.LifecyclePermissions = permissions;
         return this;
     }
     
-    public PermissionContextBuilder WithBasicLifecycle() => WithLifecyclePermissions(ContentLifecyclePermission.BasicLifecycle);
-    public PermissionContextBuilder WithAdvancedLifecycle() => WithLifecyclePermissions(ContentLifecyclePermission.AdvancedLifecycle);
+    public PermissionContextBuilder WithBasicLifecycle() => WithLifecyclePermissions(LifecyclePerm.BasicLifecycle);
+    public PermissionContextBuilder WithAdvancedLifecycle() => WithLifecyclePermissions(LifecyclePerm.AdvancedLifecycle);
     
     // Publishing permissions
-    public PermissionContextBuilder WithPublishingPermissions(PublishingPermission permissions)
+    public PermissionContextBuilder WithPublishingPermissions(PublishingPerm permissions)
     {
         _context.PublishingPermissions = permissions;
         return this;
     }
     
-    public PermissionContextBuilder WithBasicPublishing() => WithPublishingPermissions(PublishingPermission.BasicPublishing);
-    public PermissionContextBuilder WithExternalDistribution() => WithPublishingPermissions(PublishingPermission.ExternalDistribution);
+    public PermissionContextBuilder WithBasicPublishing() => WithPublishingPermissions(PublishingPerm.BasicPublishing);
+    public PermissionContextBuilder WithExternalDistribution() => WithPublishingPermissions(PublishingPerm.ExternalDistribution);
     
     // Monetization permissions
-    public PermissionContextBuilder WithMonetizationPermissions(MonetizationPermission permissions)
+    public PermissionContextBuilder WithMonetizationPermissions(MonetizationPerm permissions)
     {
         _context.MonetizationPermissions = permissions;
         return this;
     }
     
-    public PermissionContextBuilder WithBasicMonetization() => WithMonetizationPermissions(MonetizationPermission.BasicMonetization);
-    public PermissionContextBuilder WithAdvancedMonetization() => WithMonetizationPermissions(MonetizationPermission.AdvancedMonetization);
+    public PermissionContextBuilder WithBasicMonetization() => WithMonetizationPermissions(MonetizationPerm.BasicMonetization);
+    public PermissionContextBuilder WithAdvancedMonetization() => WithMonetizationPermissions(MonetizationPerm.AdvancedMonetization);
     
     // Editorial permissions
-    public PermissionContextBuilder WithEditorialPermissions(EditorialPermission permissions)
+    public PermissionContextBuilder WithEditorialPermissions(EditorialPerm permissions)
     {
         _context.EditorialPermissions = permissions;
         return this;
     }
     
-    public PermissionContextBuilder WithBasicEditorial() => WithEditorialPermissions(EditorialPermission.BasicEditorial);
-    public PermissionContextBuilder WithQualityControl() => WithEditorialPermissions(EditorialPermission.QualityControl);
+    public PermissionContextBuilder WithBasicEditorial() => WithEditorialPermissions(EditorialPerm.BasicEditorial);
+    public PermissionContextBuilder WithQualityControl() => WithEditorialPermissions(EditorialPerm.QualityControl);
     
     // Promotion permissions
-    public PermissionContextBuilder WithPromotionPermissions(PromotionPermission permissions)
+    public PermissionContextBuilder WithPromotionPermissions(PromotionPerm permissions)
     {
         _context.PromotionPermissions = permissions;
         return this;
     }
     
-    public PermissionContextBuilder WithBasicPromotion() => WithPromotionPermissions(PromotionPermission.BasicPromotion);
-    public PermissionContextBuilder WithVisualPromotion() => WithPromotionPermissions(PromotionPermission.VisualPromotion);
+    public PermissionContextBuilder WithBasicPromotion() => WithPromotionPermissions(PromotionPerm.BasicPromotion);
+    public PermissionContextBuilder WithVisualPromotion() => WithPromotionPermissions(PromotionPerm.VisualPromotion);
     
     // Quality control permissions
-    public PermissionContextBuilder WithQualityPermissions(QualityControlPermission permissions)
+    public PermissionContextBuilder WithQualityPermissions(QualityControlPerm permissions)
     {
         _context.QualityPermissions = permissions;
         return this;
     }
     
-    public PermissionContextBuilder WithBasicQuality() => WithQualityPermissions(QualityControlPermission.BasicQuality);
-    public PermissionContextBuilder WithQualityAnalytics() => WithQualityPermissions(QualityControlPermission.QualityAnalytics);
+    public PermissionContextBuilder WithBasicQuality() => WithQualityPermissions(QualityControlPerm.BasicQuality);
+    public PermissionContextBuilder WithQualityAnalytics() => WithQualityPermissions(QualityControlPerm.QualityAnalytics);
     
     // Predefined role builders
     public static PermissionContextBuilder CreateForReader()
@@ -138,15 +138,15 @@ public class PermissionContextBuilder
     public static PermissionContextBuilder CreateForAdmin()
     {
         return new PermissionContextBuilder()
-            .WithInteractionPermissions(ContentInteractionPermission.All)
-            .WithCurationPermissions(ContentCurationPermission.All)
-            .WithModerationPermissions(ModerationPermission.All)
-            .WithLifecyclePermissions(ContentLifecyclePermission.All)
-            .WithPublishingPermissions(PublishingPermission.All)
-            .WithMonetizationPermissions(MonetizationPermission.All)
-            .WithEditorialPermissions(EditorialPermission.All)
-            .WithPromotionPermissions(PromotionPermission.All)
-            .WithQualityPermissions(QualityControlPermission.All);
+            .WithInteractionPermissions(InteractionPerm.All)
+            .WithCurationPermissions(CurationPerm.All)
+            .WithModerationPermissions(ModerationPerm.All)
+            .WithLifecyclePermissions(LifecyclePerm.All)
+            .WithPublishingPermissions(PublishingPerm.All)
+            .WithMonetizationPermissions(MonetizationPerm.All)
+            .WithEditorialPermissions(EditorialPerm.All)
+            .WithPromotionPermissions(PromotionPerm.All)
+            .WithQualityPermissions(QualityControlPerm.All);
     }
     
     public UnifiedPermissionContext Build() => _context;

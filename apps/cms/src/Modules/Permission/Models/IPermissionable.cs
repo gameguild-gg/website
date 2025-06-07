@@ -3,8 +3,7 @@
 /// <summary>
 /// Interface for entities that can have permissions assigned
 /// </summary>
-public interface IPermissionable<T> 
-where T : Enum
+public interface IPermissionable 
 {
     /// <summary>
     /// Collection of permissions assigned to this entity
