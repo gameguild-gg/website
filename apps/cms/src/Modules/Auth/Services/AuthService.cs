@@ -18,7 +18,7 @@ namespace cms.Modules.Auth.Services
     {
         private readonly ApplicationDbContext _context;
 
-        private readonly JwtTokenService _jwtTokenService;
+        private readonly IJwtTokenService _jwtTokenService;
 
         private readonly IOAuthService _oauthService;
 
@@ -28,7 +28,7 @@ namespace cms.Modules.Auth.Services
 
         private readonly IEmailVerificationService _emailVerificationService;
 
-        public AuthService(ApplicationDbContext context, JwtTokenService jwtTokenService, IOAuthService oauthService, IConfiguration configuration, IWeb3Service web3Service,
+        public AuthService(ApplicationDbContext context, IJwtTokenService jwtTokenService, IOAuthService oauthService, IConfiguration configuration, IWeb3Service web3Service,
             IEmailVerificationService emailVerificationService)
         {
             _context = context;
