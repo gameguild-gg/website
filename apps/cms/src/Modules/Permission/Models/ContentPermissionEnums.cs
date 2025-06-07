@@ -2,7 +2,7 @@
 /// Permissions for curating and organizing content
 /// </summary>
 [Flags]
-public enum ContentCurationPermission
+public enum ContentCurationPermission : short
 {
     None = 0,
     Categorize = 1,          // Change content categories/tags
@@ -24,20 +24,21 @@ public enum ContentCurationPermission
 /// Permissions for user interactions with content
 /// </summary>
 [Flags]
-public enum ContentInteractionPermission
+public enum ContentInteractionPermission : short
 {
     None = 0,
     Comment = 1,
-    Vote = 2,
-    Share = 4,
-    Report = 8,
-    Follow = 16,
-    Bookmark = 32,
-    React = 64,              // Like, love, laugh reactions
-    Subscribe = 128,         // Subscribe to content updates
-    Mention = 256,           // Mention other users
-    Tag = 512,               // Tag other users in content
-    
+    Reply = 2,              // Reply to comments
+    Vote = 4,
+    Share = 8,
+    Report = 16,
+    Follow = 32,
+    Bookmark = 64,
+    React = 128,              // Like, love, laugh reactions
+    Subscribe = 256,         // Subscribe to content updates
+    Mention = 512,           // Mention other users
+    Tag = 1024,               // Tag other users in content
+
     // Convenience combinations
     BasicInteraction = Comment | Vote | Share,
     SocialInteraction = React | Follow | Mention | Tag,
@@ -48,7 +49,7 @@ public enum ContentInteractionPermission
 /// Permissions for managing content lifecycle states
 /// </summary>
 [Flags]
-public enum ContentLifecyclePermission
+public enum ContentLifecyclePermission : short
 {
     None = 0,
     Draft = 1,               // Manage draft content
@@ -73,7 +74,7 @@ public enum ContentLifecyclePermission
 /// Permissions for editorial oversight and content quality
 /// </summary>
 [Flags]
-public enum EditorialPermission
+public enum EditorialPermission : short
 {
     None = 0,
     Edit = 1,                // Edit content for quality
@@ -98,7 +99,7 @@ public enum EditorialPermission
 /// Permissions for content moderation activities
 /// </summary>
 [Flags]
-public enum ModerationPermission
+public enum ModerationPermission : short
 {
     None = 0,
     Review = 1,              // Review submitted content
@@ -123,7 +124,7 @@ public enum ModerationPermission
 /// Permissions for monetization and business operations
 /// </summary>
 [Flags]
-public enum MonetizationPermission
+public enum MonetizationPermission: short
 {
     None = 0,
     Monetize = 1,            // Enable monetization features
@@ -148,7 +149,7 @@ public enum MonetizationPermission
 /// Permissions for promoting and featuring content
 /// </summary>
 [Flags]
-public enum PromotionPermission
+public enum PromotionPermission: short
 {
     None = 0,
     Feature = 1,             // Feature on homepage
@@ -173,7 +174,7 @@ public enum PromotionPermission
 /// Permissions for publishing and distributing content
 /// </summary>
 [Flags]
-public enum PublishingPermission
+public enum PublishingPermission: short
 {
     None = 0,
     Publish = 1,             // Make content publicly visible
@@ -199,7 +200,7 @@ public enum PublishingPermission
 /// Permissions for quality control and content assessment
 /// </summary>
 [Flags]
-public enum QualityControlPermission
+public enum QualityControlPermission : short
 {
     None = 0,
     Score = 1,               // Assign quality scores
