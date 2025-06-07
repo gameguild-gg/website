@@ -1,3 +1,6 @@
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
 using cms.Common.Entities;
 
 namespace cms.Modules.Reputation.Models;
@@ -6,11 +9,16 @@ namespace cms.Modules.Reputation.Models;
 /// Configurable reputation tier definition stored in the database
 /// Allows dynamic configuration of reputation thresholds and permissions
 /// </summary>
-public class ReputationTier : ResourceBase
+[Table("ReputationLevels")]
+[Index(nameof(MinimumScore))]
+[Index(nameof(SortOrder))]
+public class ReputationTier : ResourceBase, ITenantable
 {
     /// <summary>
     /// Unique name/identifier for this reputation tier
     /// </summary>
+    [Required]
+    [MaxLength(100)]
     public required string Name
     {
         get;
@@ -20,6 +28,8 @@ public class ReputationTier : ResourceBase
     /// <summary>
     /// Display name for this reputation tier
     /// </summary>
+    [Required]
+    [MaxLength(200)]
     public required string DisplayName
     {
         get;
@@ -47,6 +57,7 @@ public class ReputationTier : ResourceBase
     /// <summary>
     /// Color or visual identifier for this tier (hex color, CSS class, etc.)
     /// </summary>
+    [MaxLength(50)]
     public string? Color
     {
         get;
@@ -56,6 +67,7 @@ public class ReputationTier : ResourceBase
     /// <summary>
     /// Icon or badge identifier for this tier
     /// </summary>
+    [MaxLength(100)]
     public string? Icon
     {
         get;
@@ -88,4 +100,25 @@ public class ReputationTier : ResourceBase
         get;
         set;
     } = new List<UserReputation>();
+
+    /// <summary>
+    /// Tenant this reputation tier belongs to (null for global tiers)
+    /// </summary>
+    [ForeignKey(nameof(TenantId))]
+    public new Modules.Tenant.Models.Tenant? Tenant
+    {
+        get;
+        set;
+    }
+
+    public Guid? TenantId
+    {
+        get;
+        set;
+    }
+
+    /// <summary>
+    /// Indicates whether this reputation tier is accessible across all tenants
+    /// </summary>
+    public new bool IsGlobal => TenantId == null;
 }

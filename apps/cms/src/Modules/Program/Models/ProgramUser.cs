@@ -1,5 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using cms.Common.Entities;
 
 namespace cms.Modules.Program.Models;
@@ -9,6 +11,12 @@ namespace cms.Modules.Program.Models;
 /// Inherits from BaseEntity to provide UUID IDs, version control, timestamps, and soft delete functionality
 /// </summary>
 [Table("program_users")]
+[Index(nameof(UserId))]
+[Index(nameof(ProgramId))]
+[Index(nameof(UserId), nameof(ProgramId), IsUnique = true)]
+[Index(nameof(JoinedAt))]
+[Index(nameof(IsActive))]
+[Index(nameof(CompletionPercentage))]
 public class ProgramUser : BaseEntity
 {
     /// <summary>
@@ -219,5 +227,26 @@ public class ProgramUser : BaseEntity
         CompletedAt = DateTime.UtcNow;
         CompletionPercentage = 100;
         Touch();
+    }
+}
+
+/// <summary>
+/// Entity Framework configuration for ProgramUser entity
+/// </summary>
+public class ProgramUserConfiguration : IEntityTypeConfiguration<ProgramUser>
+{
+    public void Configure(EntityTypeBuilder<ProgramUser> builder)
+    {
+        // Configure relationship with Program (can't be done with annotations)
+        builder.HasOne(pu => pu.Program)
+            .WithMany(p => p.ProgramUsers)
+            .HasForeignKey(pu => pu.ProgramId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // Configure relationship with User (can't be done with annotations)
+        builder.HasOne(pu => pu.User)
+            .WithMany()
+            .HasForeignKey(pu => pu.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

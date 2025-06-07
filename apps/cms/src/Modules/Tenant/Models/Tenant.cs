@@ -1,4 +1,6 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
 using cms.Common.Entities;
 
 namespace cms.Modules.Tenant.Models;
@@ -7,6 +9,8 @@ namespace cms.Modules.Tenant.Models;
 /// Represents a tenant in a multi-tenant system
 /// Inherits from BaseEntity to provide UUID IDs, version control, timestamps, and soft delete functionality
 /// </summary>
+[Table("Tenants")]
+[Index(nameof(Name), IsUnique = true)]
 public class Tenant : BaseEntity
 {
     /// <summary>

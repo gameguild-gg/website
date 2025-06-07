@@ -1,3 +1,7 @@
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using cms.Common.Entities;
 
 namespace cms.Modules.Reputation.Models;
@@ -6,11 +10,17 @@ namespace cms.Modules.Reputation.Models;
 /// Defines actions that can affect user reputation
 /// Allows configurable reputation changes for different activities
 /// </summary>
+[Table("ReputationActions")]
+[Index(nameof(ActionType), IsUnique = true)]
+[Index(nameof(Points))]
+[Index(nameof(IsActive))]
 public class ReputationAction : ResourceBase
 {
     /// <summary>
     /// Unique identifier for this action type
     /// </summary>
+    [Required]
+    [MaxLength(100)]
     public required string ActionType
     {
         get;
@@ -20,6 +30,8 @@ public class ReputationAction : ResourceBase
     /// <summary>
     /// Display name for this action
     /// </summary>
+    [Required]
+    [MaxLength(200)]
     public required string DisplayName
     {
         get;
@@ -77,6 +89,7 @@ public class ReputationAction : ResourceBase
     /// Minimum reputation tier required to perform this action
     /// (null for no requirement)
     /// </summary>
+    [ForeignKey(nameof(RequiredLevelId))]
     public ReputationTier? RequiredLevel
     {
         get;
@@ -97,4 +110,24 @@ public class ReputationAction : ResourceBase
         get;
         set;
     } = new List<UserReputationHistory>();
+}
+
+public class ReputationActionConfiguration : IEntityTypeConfiguration<ReputationAction>
+{
+    public void Configure(EntityTypeBuilder<ReputationAction> builder)
+    {
+        // Configure relationship with RequiredLevel (can't be done with annotations)
+        builder.HasOne(ra => ra.RequiredLevel)
+            .WithMany()
+            .HasForeignKey(ra => ra.RequiredLevelId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        // Configure shadow property for TenantId (since ReputationAction implements ITenantable)
+        builder.Property<Guid?>("TenantId");
+
+        // Filtered unique constraint (can't be done with annotations)
+        builder.HasIndex("ActionType", "TenantId")
+            .IsUnique()
+            .HasFilter("\"DeletedAt\" IS NULL");
+    }
 }

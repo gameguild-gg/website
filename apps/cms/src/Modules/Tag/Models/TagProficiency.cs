@@ -1,15 +1,19 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
 using cms.Common.Entities;
 using cms.Common.Enums;
 
 namespace cms.Modules.Tag.Models;
 
 [Table("tag_proficiencies")]
+[Index(nameof(Name))]
+[Index(nameof(Type))]
+[Index(nameof(ProficiencyLevel))]
+[Index(nameof(IsActive))]
 public class TagProficiency : BaseEntity
 {
-    
-    [Required]
+[Required]
     [MaxLength(100)]
     public string Name { get; set; } = string.Empty;
     

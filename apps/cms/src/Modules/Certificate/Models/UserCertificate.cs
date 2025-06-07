@@ -1,13 +1,29 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using cms.Common.Entities;
 using cms.Common.Enums;
 
 namespace cms.Modules.Certificate.Models;
 
 [Table("user_certificates")]
+[Index(nameof(UserId))]
+[Index(nameof(CertificateId))]
+[Index(nameof(ProgramId))]
+[Index(nameof(ProductId))]
+[Index(nameof(ProgramUserId))]
+[Index(nameof(VerificationCode), IsUnique = true)]
+[Index(nameof(Status))]
+[Index(nameof(IssuedAt))]
 public class UserCertificate : BaseEntity
-{    public Guid UserId { get; set; }
+{
+    [Required]
+    [ForeignKey(nameof(User))]
+    public Guid UserId { get; set; }
+    
+    [Required]
+    [ForeignKey(nameof(Certificate))]
     public Guid CertificateId { get; set; }
     
     /// <summary>
@@ -74,4 +90,40 @@ public class UserCertificate : BaseEntity
     public virtual Product.Models.Product? Product { get; set; }
     public virtual Program.Models.ProgramUser? ProgramUser { get; set; }
     public virtual ICollection<CertificateBlockchainAnchor> BlockchainAnchors { get; set; } = new List<CertificateBlockchainAnchor>();
+}
+
+public class UserCertificateConfiguration : IEntityTypeConfiguration<UserCertificate>
+{
+    public void Configure(EntityTypeBuilder<UserCertificate> builder)
+    {
+        // Configure relationship with Certificate (can't be done with annotations)
+        builder.HasOne(uc => uc.Certificate)
+            .WithMany()
+            .HasForeignKey(uc => uc.CertificateId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // Configure relationship with User (can't be done with annotations)
+        builder.HasOne(uc => uc.User)
+            .WithMany()
+            .HasForeignKey(uc => uc.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // Configure optional relationship with Program (can't be done with annotations)
+        builder.HasOne(uc => uc.Program)
+            .WithMany()
+            .HasForeignKey(uc => uc.ProgramId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        // Configure optional relationship with Product (can't be done with annotations)
+        builder.HasOne(uc => uc.Product)
+            .WithMany()
+            .HasForeignKey(uc => uc.ProductId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        // Configure optional relationship with ProgramUser (can't be done with annotations)
+        builder.HasOne(uc => uc.ProgramUser)
+            .WithMany(pu => pu.UserCertificates)
+            .HasForeignKey(uc => uc.ProgramUserId)
+            .OnDelete(DeleteBehavior.SetNull);
+    }
 }

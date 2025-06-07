@@ -1,4 +1,6 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
 
 namespace cms.Common.Entities;
 
@@ -6,6 +8,9 @@ namespace cms.Common.Entities;
 /// Entity representing supported languages for localization
 /// Mirrors the TypeScript LanguageEntity from the API
 /// </summary>
+[Table("Languages")]
+[Index(nameof(Code), IsUnique = true)]
+[Index(nameof(Name))]
 public class Language : BaseEntity
 {
     /// <summary>

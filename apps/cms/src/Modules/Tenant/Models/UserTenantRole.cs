@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
 using cms.Common.Entities;
 
 namespace cms.Modules.Tenant.Models;
@@ -8,6 +9,8 @@ namespace cms.Modules.Tenant.Models;
 /// Junction entity representing the assignment of a role to a user within a specific tenant
 /// Inherits from BaseEntity to provide UUID IDs, version control, timestamps, and soft delete functionality
 /// </summary>
+[Table("UserTenantRoles")]
+[Index(nameof(UserTenantId), nameof(TenantRoleId), IsUnique = true)]
 public class UserTenantRole : BaseEntity
 {
     /// <summary>

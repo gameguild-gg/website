@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameGuild.CMS", "GameGuild.CMS.csproj", "{CE2E3AB1-0E9D-46F2-8F0B-25C2F0BBE9DD}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameGuild.CMS", "cms.csproj", "{CE2E3AB1-0E9D-46F2-8F0B-25C2F0BBE9DD}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

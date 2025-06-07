@@ -1,11 +1,18 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using cms.Common.Entities;
 using cms.Common.Enums;
 
 namespace cms.Modules.Certificate.Models;
 
 [Table("certificates")]
+[Index(nameof(Type))]
+[Index(nameof(ProgramId))]
+[Index(nameof(ProductId))]
+[Index(nameof(CompletionPercentage))]
+[Index(nameof(TenantId))]
 public class Certificate : BaseEntity, ITenantable
 {
     
@@ -77,4 +84,22 @@ public class Certificate : BaseEntity, ITenantable
     public virtual Product.Models.Product? Product { get; set; }
     public virtual ICollection<UserCertificate> UserCertificates { get; set; } = new List<UserCertificate>();
     public virtual ICollection<CertificateTag> CertificateTags { get; set; } = new List<CertificateTag>();
+}
+
+public class CertificateConfiguration : IEntityTypeConfiguration<Certificate>
+{
+    public void Configure(EntityTypeBuilder<Certificate> builder)
+    {
+        // Configure relationship with Program (can't be done with annotations)
+        builder.HasOne(c => c.Program)
+            .WithMany()
+            .HasForeignKey(c => c.ProgramId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        // Configure relationship with Product (can't be done with annotations)
+        builder.HasOne(c => c.Product)
+            .WithMany()
+            .HasForeignKey(c => c.ProductId)
+            .OnDelete(DeleteBehavior.SetNull);
+    }
 }

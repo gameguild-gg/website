@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
 using cms.Common.Entities;
 
 namespace cms.Modules.Product.Models;
@@ -9,6 +10,11 @@ namespace cms.Modules.Product.Models;
 /// Inherits from BaseEntity to provide UUID IDs, version control, timestamps, and soft delete functionality
 /// </summary>
 [Table("product_pricing")]
+[Index(nameof(ProductId))]
+[Index(nameof(IsDefault))]
+[Index(nameof(Currency))]
+[Index(nameof(SaleStartDate))]
+[Index(nameof(SaleEndDate))]
 public class ProductPricing : BaseEntity
 {
     /// <summary>

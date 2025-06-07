@@ -1,9 +1,12 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
 using cms.Common.Entities;
 
 namespace cms.Modules.User.Models;
 
+[Table("Users")]
+[Index(nameof(Email), IsUnique = true)]
 public class User : BaseEntity
 {
     [Required]

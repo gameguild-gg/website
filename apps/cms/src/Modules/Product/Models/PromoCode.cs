@@ -1,5 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using cms.Common.Entities;
 using cms.Common.Enums;
 
@@ -10,6 +12,11 @@ namespace cms.Modules.Product.Models;
 /// Inherits from BaseEntity to provide UUID IDs, version control, timestamps, and soft delete functionality
 /// </summary>
 [Table("promo_codes")]
+[Index(nameof(Code), IsUnique = true)]
+[Index(nameof(Type))]
+[Index(nameof(IsActive))]
+[Index(nameof(ValidFrom))]
+[Index(nameof(ValidUntil))]
 public class PromoCode : BaseEntity
 {
     /// <summary>
@@ -233,5 +240,26 @@ public class PromoCode : BaseEntity
             PromoCodeType.FixedAmountOff => Math.Min(DiscountAmount ?? 0, orderAmount),
             _ => 0
         };
+    }
+}
+
+/// <summary>
+/// Entity Framework configuration for PromoCode entity
+/// </summary>
+public class PromoCodeConfiguration : IEntityTypeConfiguration<PromoCode>
+{
+    public void Configure(EntityTypeBuilder<PromoCode> builder)
+    {
+        // Configure relationship with CreatedByUser (can't be done with annotations)
+        builder.HasOne(pc => pc.CreatedByUser)
+            .WithMany()
+            .HasForeignKey(pc => pc.CreatedBy)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Configure relationship with Product (can't be done with annotations)
+        builder.HasOne(pc => pc.Product)
+            .WithMany(p => p.PromoCodes)
+            .HasForeignKey(pc => pc.ProductId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

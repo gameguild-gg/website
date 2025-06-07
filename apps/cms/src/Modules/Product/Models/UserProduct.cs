@@ -1,5 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using cms.Common.Entities;
 using cms.Common.Enums;
 
@@ -10,6 +12,13 @@ namespace cms.Modules.Product.Models;
 /// Inherits from BaseEntity to provide UUID IDs, version control, timestamps, and soft delete functionality
 /// </summary>
 [Table("user_products")]
+[Index(nameof(UserId), nameof(ProductId), IsUnique = true)]
+[Index(nameof(UserId))]
+[Index(nameof(ProductId))]
+[Index(nameof(AccessStatus))]
+[Index(nameof(AcquisitionType))]
+[Index(nameof(AccessEndDate))]
+[Index(nameof(SubscriptionId))]
 public class UserProduct : BaseEntity
 {
     /// <summary>
@@ -189,5 +198,38 @@ public class UserProduct : BaseEntity
         AccessStatus = ProductAccessStatus.Revoked;
         AccessEndDate = DateTime.UtcNow;
         Touch();
+    }
+}
+
+/// <summary>
+/// Entity Framework configuration for UserProduct entity
+/// </summary>
+public class UserProductConfiguration : IEntityTypeConfiguration<UserProduct>
+{
+    public void Configure(EntityTypeBuilder<UserProduct> builder)
+    {
+        // Configure relationship with User (can't be done with annotations)
+        builder.HasOne(up => up.User)
+            .WithMany()
+            .HasForeignKey(up => up.UserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Configure relationship with Product (can't be done with annotations)
+        builder.HasOne(up => up.Product)
+            .WithMany()
+            .HasForeignKey(up => up.ProductId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Configure relationship with Subscription (can't be done with annotations)
+        builder.HasOne(up => up.Subscription)
+            .WithMany()
+            .HasForeignKey(up => up.SubscriptionId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        // Configure relationship with GiftedByUser (can't be done with annotations)
+        builder.HasOne(up => up.GiftedByUser)
+            .WithMany()
+            .HasForeignKey(up => up.GiftedByUserId)
+            .OnDelete(DeleteBehavior.SetNull);
     }
 }

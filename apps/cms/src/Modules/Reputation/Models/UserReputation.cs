@@ -1,3 +1,7 @@
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using cms.Common.Entities;
 
 namespace cms.Modules.Reputation.Models;
@@ -5,17 +9,24 @@ namespace cms.Modules.Reputation.Models;
 /// <summary>
 /// Tracks a user's reputation score and tier
 /// </summary>
+[Table("UserReputations")]
+[Index(nameof(UserId), IsUnique = true)]
+[Index(nameof(Score))]
+[Index(nameof(CurrentLevelId))]
 public class UserReputation : ResourceBase, IReputation
 {
     /// <summary>
     /// The user this reputation belongs to
     /// </summary>
+    [Required]
+    [ForeignKey(nameof(UserId))]
     public required Modules.User.Models.User User
     {
         get;
         set;
     }
 
+    [Required]
     public Guid UserId
     {
         get;
@@ -34,6 +45,7 @@ public class UserReputation : ResourceBase, IReputation
     /// <summary>
     /// Current reputation tier (linked to configurable tier)
     /// </summary>
+    [ForeignKey(nameof(CurrentLevelId))]
     public ReputationTier? CurrentLevel
     {
         get;
@@ -90,4 +102,27 @@ public class UserReputation : ResourceBase, IReputation
         get;
         set;
     } = new List<UserReputationHistory>();
+}
+
+public class UserReputationConfiguration : IEntityTypeConfiguration<UserReputation>
+{
+    public void Configure(EntityTypeBuilder<UserReputation> builder)
+    {
+        // Configure relationship with User (can't be done with annotations)
+        builder.HasOne(ur => ur.User)
+            .WithMany()
+            .HasForeignKey(ur => ur.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // Configure relationship with CurrentLevel (can't be done with annotations)
+        builder.HasOne(ur => ur.CurrentLevel)
+            .WithMany()
+            .HasForeignKey(ur => ur.CurrentLevelId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        // Filtered unique constraint (can't be done with annotations)
+        builder.HasIndex(ur => ur.UserId)
+            .IsUnique()
+            .HasFilter("\"DeletedAt\" IS NULL");
+    }
 }

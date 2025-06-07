@@ -14,13 +14,10 @@ using Microsoft.AspNetCore.Mvc.ApplicationModels;
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 // Load environment variables from .env file
-Env.Load("../.env");
+Env.Load();
 
 // Add configuration services (similar to NestJS ConfigModule)
 builder.Services.AddAppConfiguration(builder.Configuration);
-
-// Load environment variables from .env file
-Env.Load("../.env");
 
 // Add services to the container.
 builder.Services.AddOpenApi();

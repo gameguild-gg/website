@@ -1,18 +1,27 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using cms.Common.Entities;
 using cms.Common.Enums;
 
 namespace cms.Modules.Kyc.Models;
 
 [Table("user_kyc_verifications")]
+[Index(nameof(UserId))]
+[Index(nameof(Provider))]
+[Index(nameof(Status))]
+[Index(nameof(SubmittedAt))]
+[Index(nameof(ExternalVerificationId))]
 public class UserKycVerification : BaseEntity
 {
-    
+    [Required]
     public Guid UserId { get; set; }
     
+    [Required]
     public KycProvider Provider { get; set; }
     
+    [Required]
     public KycVerificationStatus Status { get; set; } = KycVerificationStatus.Pending;
     
     /// <summary>
@@ -67,5 +76,18 @@ public class UserKycVerification : BaseEntity
     public string? ProviderData { get; set; }
     
     // Navigation properties
+    [ForeignKey(nameof(UserId))]
     public virtual User.Models.User User { get; set; } = null!;
+}
+
+public class UserKycVerificationConfiguration : IEntityTypeConfiguration<UserKycVerification>
+{
+    public void Configure(EntityTypeBuilder<UserKycVerification> builder)
+    {
+        // Configure relationship with User (can't be done with annotations)
+        builder.HasOne(ukv => ukv.User)
+            .WithMany()
+            .HasForeignKey(ukv => ukv.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+    }
 }

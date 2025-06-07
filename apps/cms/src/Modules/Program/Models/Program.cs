@@ -1,5 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using cms.Common.Entities;
 using cms.Common.Enums;
 using System.Text.Json;
@@ -7,6 +9,9 @@ using System.Text.Json;
 namespace cms.Modules.Program.Models;
 
 [Table("programs")]
+[Index(nameof(Visibility))]
+[Index(nameof(Status))]
+[Index(nameof(Slug))]
 public class Program : Content, ITenantable
 {
     [MaxLength(500)]
@@ -90,5 +95,20 @@ public class Program : Content, ITenantable
 
         metadataDict[key] = value!;
         Metadata.AdditionalData = JsonSerializer.Serialize(metadataDict);
+    }
+}
+
+/// <summary>
+/// Entity Framework configuration for Program entity
+/// </summary>
+public class ProgramConfiguration : IEntityTypeConfiguration<Program>
+{
+    public void Configure(EntityTypeBuilder<Program> builder)
+    {
+        // Configure relationship with Owner (can't be done with annotations)
+        builder.HasOne(p => p.Owner)
+            .WithMany()
+            .HasForeignKey("OwnerId")
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

@@ -20,14 +20,14 @@ public class Follower : BaseEntity, ITenantable
         set;
     }
 
-    // Optional: Tenant property for ITenantable
-    public virtual cms.Modules.Tenant.Models.Tenant? Tenant
+    // Optional: Tenant property for ITenantable (hide base implementation)
+    public new virtual cms.Modules.Tenant.Models.Tenant? Tenant
     {
         get;
         set;
     }
 
-    public bool IsGlobal
+    public new bool IsGlobal
     {
         get => Tenant == null;
     }

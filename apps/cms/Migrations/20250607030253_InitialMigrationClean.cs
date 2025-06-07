@@ -5,7 +5,7 @@
 namespace cms.Migrations
 {
     /// <inheritdoc />
-    public partial class ResourcePermissionRelationships : Migration
+    public partial class InitialMigrationClean : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

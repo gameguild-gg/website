@@ -44,6 +44,16 @@ public class ResourceLocalization : BaseEntity
     } = string.Empty;
 
     /// <summary>
+    /// Foreign key to the Resource entity
+    /// </summary>
+    [Required]
+    public Guid ResourceId
+    {
+        get;
+        set;
+    }
+
+    /// <summary>
     /// The localized content
     /// </summary>
     [Required]

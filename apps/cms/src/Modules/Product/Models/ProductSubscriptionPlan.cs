@@ -1,5 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using cms.Common.Entities;
 using cms.Common.Enums;
 
@@ -10,6 +12,12 @@ namespace cms.Modules.Product.Models;
 /// Inherits from BaseEntity to provide UUID IDs, version control, timestamps, and soft delete functionality
 /// </summary>
 [Table("product_subscription_plans")]
+[Index(nameof(ProductId))]
+[Index(nameof(Name))]
+[Index(nameof(IsActive))]
+[Index(nameof(IsDefault))]
+[Index(nameof(Price))]
+[Index(nameof(BillingInterval))]
 public class ProductSubscriptionPlan : BaseEntity
 {
     /// <summary>
@@ -129,4 +137,38 @@ public class ProductSubscriptionPlan : BaseEntity
     /// <param name="partial">Partial product subscription plan data</param>
     public ProductSubscriptionPlan(object partial) : base(partial) { }
     public virtual ICollection<Subscription.Models.UserSubscription> UserSubscriptions { get; set; } = new List<Subscription.Models.UserSubscription>();
+}
+
+/// <summary>
+/// Entity Framework configuration for ProductSubscriptionPlan entity
+/// </summary>
+public class ProductSubscriptionPlanConfiguration : IEntityTypeConfiguration<ProductSubscriptionPlan>
+{
+    public void Configure(EntityTypeBuilder<ProductSubscriptionPlan> builder)
+    {
+        // Configure relationship with Product (can't be done with annotations)
+        builder.HasOne(psp => psp.Product)
+            .WithMany(p => p.SubscriptionPlans)
+            .HasForeignKey(psp => psp.ProductId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // Configure additional indexes for performance
+        builder.HasIndex(psp => psp.ProductId)
+            .HasDatabaseName("IX_ProductSubscriptionPlans_ProductId");
+            
+        builder.HasIndex(psp => psp.Name)
+            .HasDatabaseName("IX_ProductSubscriptionPlans_Name");
+            
+        builder.HasIndex(psp => psp.IsActive)
+            .HasDatabaseName("IX_ProductSubscriptionPlans_IsActive");
+            
+        builder.HasIndex(psp => psp.IsDefault)
+            .HasDatabaseName("IX_ProductSubscriptionPlans_IsDefault");
+            
+        builder.HasIndex(psp => psp.Price)
+            .HasDatabaseName("IX_ProductSubscriptionPlans_Price");
+            
+        builder.HasIndex(psp => psp.BillingInterval)
+            .HasDatabaseName("IX_ProductSubscriptionPlans_BillingInterval");
+    }
 }

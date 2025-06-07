@@ -1,14 +1,23 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using cms.Common.Entities;
 using cms.Common.Enums;
 
 namespace cms.Modules.Payment.Models;
 
 [Table("financial_transactions")]
+[Index(nameof(FromUserId))]
+[Index(nameof(ToUserId))]
+[Index(nameof(Type))]
+[Index(nameof(Status))]
+[Index(nameof(ExternalTransactionId))]
+[Index(nameof(PaymentMethodId))]
+[Index(nameof(ProcessedAt))]
+[Index(nameof(Amount))]
 public class FinancialTransaction : BaseEntity
 {
-    
     /// <summary>
     /// User who initiated the transaction (payer)
     /// </summary>
@@ -92,9 +101,47 @@ public class FinancialTransaction : BaseEntity
     public string? ErrorMessage { get; set; }
     
     // Navigation properties
+    [ForeignKey(nameof(FromUserId))]
     public virtual User.Models.User? FromUser { get; set; }
+    
+    [ForeignKey(nameof(ToUserId))]
     public virtual User.Models.User? ToUser { get; set; }
+    
+    [ForeignKey(nameof(PaymentMethodId))]
     public virtual UserFinancialMethod? PaymentMethod { get; set; }
+    
+    [ForeignKey(nameof(PromoCodeId))]
     public virtual Product.Models.PromoCode? PromoCode { get; set; }
+    
     public virtual ICollection<Product.Models.PromoCodeUse> PromoCodeUses { get; set; } = new List<Product.Models.PromoCodeUse>();
+}
+
+public class FinancialTransactionConfiguration : IEntityTypeConfiguration<FinancialTransaction>
+{
+    public void Configure(EntityTypeBuilder<FinancialTransaction> builder)
+    {
+        // Configure relationship with FromUser (can't be done with annotations)
+        builder.HasOne(ft => ft.FromUser)
+            .WithMany()
+            .HasForeignKey(ft => ft.FromUserId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        // Configure relationship with ToUser (can't be done with annotations)
+        builder.HasOne(ft => ft.ToUser)
+            .WithMany()
+            .HasForeignKey(ft => ft.ToUserId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        // Configure relationship with PaymentMethod (can't be done with annotations)
+        builder.HasOne(ft => ft.PaymentMethod)
+            .WithMany()
+            .HasForeignKey(ft => ft.PaymentMethodId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        // Configure relationship with PromoCode (can't be done with annotations)
+        builder.HasOne(ft => ft.PromoCode)
+            .WithMany()
+            .HasForeignKey(ft => ft.PromoCodeId)
+            .OnDelete(DeleteBehavior.SetNull);
+    }
 }

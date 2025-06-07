@@ -1,13 +1,19 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using cms.Common.Entities;
 
 namespace cms.Modules.Certificate.Models;
 
 [Table("certificate_blockchain_anchors")]
+[Index(nameof(CertificateId))]
+[Index(nameof(TransactionHash), IsUnique = true)]
+[Index(nameof(BlockchainNetwork))]
+[Index(nameof(Status))]
+[Index(nameof(AnchoredAt))]
 public class CertificateBlockchainAnchor : BaseEntity
 {
-    
     public Guid CertificateId { get; set; }
     
     [Required]
@@ -46,5 +52,18 @@ public class CertificateBlockchainAnchor : BaseEntity
     public DateTime? ConfirmedAt { get; set; }
     
     // Navigation properties
+    [ForeignKey(nameof(CertificateId))]
     public virtual UserCertificate Certificate { get; set; } = null!;
+}
+
+public class CertificateBlockchainAnchorConfiguration : IEntityTypeConfiguration<CertificateBlockchainAnchor>
+{
+    public void Configure(EntityTypeBuilder<CertificateBlockchainAnchor> builder)
+    {
+        // Configure relationship with Certificate (can't be done with annotations)
+        builder.HasOne(cba => cba.Certificate)
+            .WithMany(uc => uc.BlockchainAnchors)
+            .HasForeignKey(cba => cba.CertificateId)
+            .OnDelete(DeleteBehavior.Cascade);
+    }
 }

@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
 using cms.Common.Entities;
 
 namespace cms.Modules.Tenant.Models;
@@ -8,6 +9,8 @@ namespace cms.Modules.Tenant.Models;
 /// Junction entity representing the relationship between a User and a Tenant
 /// Inherits from BaseEntity to provide UUID IDs, version control, timestamps, and soft delete functionality
 /// </summary>
+[Table("UserTenants")]
+[Index(nameof(UserId), nameof(TenantId), IsUnique = true)]
 public class UserTenant : BaseEntity
 {
     /// <summary>
@@ -44,7 +47,7 @@ public class UserTenant : BaseEntity
     /// Navigation property to the Tenant entity
     /// </summary>
     [ForeignKey(nameof(TenantId))]
-    public virtual Tenant Tenant
+    public new Tenant Tenant
     {
         get;
         set;

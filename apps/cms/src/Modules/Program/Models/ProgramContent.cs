@@ -1,5 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using cms.Common.Entities;
 using cms.Common.Enums;
 using System.Text.Json;
@@ -7,9 +9,18 @@ using System.Text.Json;
 namespace cms.Modules.Program.Models;
 
 [Table("program_contents")]
+[Index(nameof(ProgramId))]
+[Index(nameof(ParentId))]
+[Index(nameof(Type))]
+[Index(nameof(Visibility))]
+[Index(nameof(SortOrder))]
+[Index(nameof(ProgramId), nameof(SortOrder))]
+[Index(nameof(ParentId), nameof(SortOrder))]
+[Index(nameof(IsRequired))]
 public class ProgramContent : BaseEntity
 {
-
+    [Required]
+    [ForeignKey(nameof(Program))]
     public Guid ProgramId
     {
         get;
@@ -19,6 +30,7 @@ public class ProgramContent : BaseEntity
     /// <summary>
     /// For hierarchical content structure (e.g., modules containing lessons)
     /// </summary>
+    [ForeignKey(nameof(Parent))]
     public Guid? ParentId
     {
         get;
@@ -173,5 +185,26 @@ public class ProgramContent : BaseEntity
     public void SetContent(string content)
     {
         SetBodyContent("content", content);
+    }
+}
+
+/// <summary>
+/// Entity Framework configuration for ProgramContent entity
+/// </summary>
+public class ProgramContentConfiguration : IEntityTypeConfiguration<ProgramContent>
+{
+    public void Configure(EntityTypeBuilder<ProgramContent> builder)
+    {
+        // Configure relationship with Program (can't be done with annotations)
+        builder.HasOne(pc => pc.Program)
+            .WithMany(p => p.ProgramContents)
+            .HasForeignKey(pc => pc.ProgramId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // Configure relationship with Parent (self-referencing, can't be done with annotations)
+        builder.HasOne(pc => pc.Parent)
+            .WithMany(pc => pc.Children)
+            .HasForeignKey(pc => pc.ParentId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

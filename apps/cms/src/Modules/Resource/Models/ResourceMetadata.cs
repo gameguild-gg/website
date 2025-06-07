@@ -1,4 +1,6 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
 
 namespace cms.Common.Entities;
 
@@ -6,6 +8,8 @@ namespace cms.Common.Entities;
 /// Entity for storing additional metadata about resources
 /// Provides extensible metadata storage for resources
 /// </summary>
+[Table("ResourceMetadata")]
+[Index(nameof(ResourceType))]
 public class ResourceMetadata : BaseEntity
 {
     /// <summary>
@@ -22,6 +26,7 @@ public class ResourceMetadata : BaseEntity
     /// <summary>
     /// Additional metadata stored as JSON
     /// </summary>
+    [Column(TypeName = "jsonb")]
     public string? AdditionalData
     {
         get;
@@ -41,6 +46,7 @@ public class ResourceMetadata : BaseEntity
     /// <summary>
     /// SEO metadata like meta description, keywords, etc.
     /// </summary>
+    [Column(TypeName = "jsonb")]
     public string? SeoMetadata
     {
         get;

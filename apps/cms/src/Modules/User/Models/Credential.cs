@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
 using cms.Common.Entities;
 
 namespace cms.Modules.User.Models;
@@ -8,7 +9,9 @@ namespace cms.Modules.User.Models;
 /// Represents a user credential (password, API key, OAuth token, etc.)
 /// Inherits from BaseEntity to provide UUID IDs, version control, timestamps, and soft delete functionality
 /// </summary>
-public class Credential : BaseEntity
+[Table("Credentials")]
+[Index(nameof(UserId), nameof(Type))]
+public class Credential : BaseEntity, ITenantable
 {
     /// <summary>
     /// Foreign key to the User entity
@@ -40,14 +43,20 @@ public class Credential : BaseEntity
     }
 
     /// <summary>
-    /// Navigation property to the Tenant entity
+    /// Navigation property to the Tenant entity (hide base implementation)
     /// </summary>
     [ForeignKey(nameof(TenantId))]
-    public virtual cms.Modules.Tenant.Models.Tenant? Tenant
+    public new virtual cms.Modules.Tenant.Models.Tenant? Tenant
     {
         get;
         set;
     }
+
+    /// <summary>
+    /// Indicates whether this credential is accessible across all tenants
+    /// </summary>
+    [NotMapped]
+    public override bool IsGlobal => TenantId == null;
 
     /// <summary>
     /// Type of credential (e.g., "password", "api_key", "oauth_token", "2fa_secret")

@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
 using cms.Common.Entities;
 
 namespace cms.Modules.Tenant.Models;
@@ -8,6 +9,8 @@ namespace cms.Modules.Tenant.Models;
 /// Represents a role within a specific tenant
 /// Inherits from BaseEntity to provide UUID IDs, version control, timestamps, and soft delete functionality
 /// </summary>
+[Table("TenantRoles")]
+[Index(nameof(TenantId), nameof(Name), IsUnique = true)]
 public class TenantRole : BaseEntity
 {
     /// <summary>
@@ -24,7 +27,7 @@ public class TenantRole : BaseEntity
     /// Navigation property to the Tenant entity
     /// </summary>
     [ForeignKey(nameof(TenantId))]
-    public virtual Tenant Tenant
+    public new Tenant Tenant
     {
         get;
         set;

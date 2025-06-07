@@ -1,11 +1,17 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
 using cms.Common.Entities;
 using cms.Common.Enums;
 
 namespace cms.Modules.Tag.Models;
 
 [Table("tags")]
+[Index(nameof(Name))]
+[Index(nameof(Type))]
+[Index(nameof(IsActive))]
+[Index(nameof(TenantId))]
+[Index(nameof(Name), nameof(TenantId), IsUnique = true)]
 public class Tag : BaseEntity, ITenantable
 {
     

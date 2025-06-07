@@ -1,5 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using cms.Common.Entities;
 using System.Text.Json;
 
@@ -101,5 +103,26 @@ public class ActivityGrade : BaseEntity
 
         details[key] = value!;
         GradingDetails = JsonSerializer.Serialize(details);
+    }
+}
+
+/// <summary>
+/// Entity Framework configuration for ActivityGrade entity
+/// </summary>
+public class ActivityGradeConfiguration : IEntityTypeConfiguration<ActivityGrade>
+{
+    public void Configure(EntityTypeBuilder<ActivityGrade> builder)
+    {
+        // Configure relationship with ContentInteraction (can't be done with annotations)
+        builder.HasOne(ag => ag.ContentInteraction)
+            .WithMany(ci => ci.ActivityGrades)
+            .HasForeignKey(ag => ag.ContentInteractionId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // Configure relationship with GraderProgramUser (can't be done with annotations)
+        builder.HasOne(ag => ag.GraderProgramUser)
+            .WithMany()
+            .HasForeignKey(ag => ag.GraderProgramUserId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

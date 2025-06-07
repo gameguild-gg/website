@@ -11,7 +11,7 @@ public class ApplicationDbContextFactory : IDesignTimeDbContextFactory<Applicati
         var optionsBuilder = new DbContextOptionsBuilder<ApplicationDbContext>();
 
         // Load environment variables from .env file
-        Env.Load("../.env");
+        Env.Load();
 
         // Get connection string from environment variable
         string connectionString = Environment.GetEnvironmentVariable("DB_CONNECTION_STRING")

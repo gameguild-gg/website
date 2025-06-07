@@ -2,17 +2,20 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using cms.Data;
 
 #nullable disable
 
-namespace GameGuild.CMS.Migrations
+namespace cms.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250607030253_InitialMigrationClean")]
+    partial class InitialMigrationClean
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.0");
@@ -40,7 +43,9 @@ namespace GameGuild.CMS.Migrations
                         .HasDefaultValueSql("gen_random_uuid()");
 
                     b.Property<DateTime>("AssignedAt")
-                        .HasColumnType("TEXT");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
                     b.Property<Guid>("AssignedByUserId")
                         .HasColumnType("TEXT");
@@ -62,10 +67,9 @@ namespace GameGuild.CMS.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("Permissions")
-                        .HasColumnType("INTEGER");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(true);
 
                     b.Property<Guid?>("TenantId")
                         .HasColumnType("TEXT");
@@ -87,25 +91,22 @@ namespace GameGuild.CMS.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("AssignedByUserId");
-
-                    b.HasIndex("ContentTypeName");
+                    b.HasIndex("AssignedByUserId")
+                        .HasDatabaseName("IX_ContentTypePermissions_AssignedByUser");
 
                     b.HasIndex("CreatedAt");
 
                     b.HasIndex("DeletedAt");
 
-                    b.HasIndex("Permissions");
-
                     b.HasIndex("TenantId");
 
                     b.HasIndex("UserTenantId");
 
-                    b.HasIndex("UserId", "ContentTypeName")
+                    b.HasIndex("UserId", "TenantId", "ContentTypeName")
                         .IsUnique()
-                        .HasFilter("\"DeletedAt\" IS NULL AND \"TenantId\" IS NULL");
+                        .HasDatabaseName("IX_ContentTypePermissions_User_Tenant_ContentType");
 
-                    b.ToTable("ContentTypePermissions", (string)null);
+                    b.ToTable("ContentTypePermissions");
                 });
 
             modelBuilder.Entity("cms.Common.Entities.Language", b =>
@@ -151,8 +152,7 @@ namespace GameGuild.CMS.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("Code")
-                        .IsUnique()
-                        .HasFilter("\"DeletedAt\" IS NULL");
+                        .IsUnique();
 
                     b.HasIndex("CreatedAt");
 
@@ -162,7 +162,7 @@ namespace GameGuild.CMS.Migrations
 
                     b.HasIndex("TenantId");
 
-                    b.ToTable("Languages", (string)null);
+                    b.ToTable("Languages");
                 });
 
             modelBuilder.Entity("cms.Common.Entities.ResourceBase", b =>
@@ -181,6 +181,9 @@ namespace GameGuild.CMS.Migrations
 
                     b.Property<string>("Description")
                         .HasMaxLength(2000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("MetadataId")
                         .HasColumnType("TEXT");
 
                     b.Property<Guid>("OwnerId")
@@ -208,11 +211,11 @@ namespace GameGuild.CMS.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("MetadataId");
+
                     b.HasIndex("OwnerId");
 
                     b.HasIndex("TenantId");
-
-                    b.HasIndex("Visibility");
 
                     b.ToTable((string)null);
 
@@ -285,18 +288,9 @@ namespace GameGuild.CMS.Migrations
 
                     b.HasIndex("ResourceBaseId");
 
-                    b.HasIndex("Status");
-
                     b.HasIndex("TenantId");
 
-                    b.HasIndex("ResourceId", "ResourceType")
-                        .HasFilter("\"DeletedAt\" IS NULL");
-
-                    b.HasIndex("ResourceId", "ResourceType", "LanguageId", "FieldName")
-                        .IsUnique()
-                        .HasFilter("\"DeletedAt\" IS NULL");
-
-                    b.ToTable("ResourceLocalizations", (string)null);
+                    b.ToTable("ResourceLocalizations");
                 });
 
             modelBuilder.Entity("cms.Common.Entities.ResourceMetadata", b =>
@@ -315,9 +309,6 @@ namespace GameGuild.CMS.Migrations
                         .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
                     b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<Guid?>("ResourceId")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("ResourceType")
@@ -350,14 +341,11 @@ namespace GameGuild.CMS.Migrations
 
                     b.HasIndex("DeletedAt");
 
-                    b.HasIndex("ResourceId")
-                        .IsUnique();
-
                     b.HasIndex("ResourceType");
 
                     b.HasIndex("TenantId");
 
-                    b.ToTable("ResourceMetadata", (string)null);
+                    b.ToTable("ResourceMetadata");
                 });
 
             modelBuilder.Entity("cms.Common.Entities.ResourcePermission", b =>
@@ -379,19 +367,17 @@ namespace GameGuild.CMS.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime>("GrantedAt")
-                        .HasColumnType("TEXT");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
                     b.Property<Guid>("GrantedByUserId")
                         .HasColumnType("TEXT");
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("Permissions")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<Guid?>("ResourceBaseId")
-                        .HasColumnType("TEXT");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(true);
 
                     b.Property<Guid>("ResourceId")
                         .HasColumnType("TEXT");
@@ -425,23 +411,21 @@ namespace GameGuild.CMS.Migrations
 
                     b.HasIndex("DeletedAt");
 
-                    b.HasIndex("GrantedByUserId");
+                    b.HasIndex("GrantedByUserId")
+                        .HasDatabaseName("IX_ResourcePermissions_GrantedByUser");
 
-                    b.HasIndex("Permissions");
-
-                    b.HasIndex("ResourceBaseId");
-
-                    b.HasIndex("ResourceId");
+                    b.HasIndex("ResourceId")
+                        .HasDatabaseName("IX_ResourcePermissions_Resource");
 
                     b.HasIndex("ResourceMetadataId");
 
-                    b.HasIndex("ResourceType");
-
                     b.HasIndex("TenantId");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("UserId", "ResourceId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_ResourcePermissions_User_Resource");
 
-                    b.ToTable("ResourcePermissions", (string)null);
+                    b.ToTable("ResourcePermissions");
                 });
 
             modelBuilder.Entity("cms.Modules.Auth.Models.RefreshToken", b =>
@@ -532,7 +516,6 @@ namespace GameGuild.CMS.Migrations
 
                     b.Property<string>("Description")
                         .IsRequired()
-                        .HasMaxLength(2000)
                         .HasColumnType("TEXT");
 
                     b.Property<bool>("IsActive")
@@ -587,13 +570,11 @@ namespace GameGuild.CMS.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CompletionPercentage");
+
                     b.HasIndex("CreatedAt");
 
                     b.HasIndex("DeletedAt");
-
-                    b.HasIndex("IsActive");
-
-                    b.HasIndex("Name");
 
                     b.HasIndex("ProductId");
 
@@ -605,7 +586,7 @@ namespace GameGuild.CMS.Migrations
 
                     b.HasIndex("Type");
 
-                    b.ToTable("certificates", (string)null);
+                    b.ToTable("certificates");
                 });
 
             modelBuilder.Entity("cms.Modules.Certificate.Models.CertificateBlockchainAnchor", b =>
@@ -693,7 +674,7 @@ namespace GameGuild.CMS.Migrations
                     b.HasIndex("TransactionHash")
                         .IsUnique();
 
-                    b.ToTable("certificate_blockchain_anchors", (string)null);
+                    b.ToTable("certificate_blockchain_anchors");
                 });
 
             modelBuilder.Entity("cms.Modules.Certificate.Models.CertificateTag", b =>
@@ -740,6 +721,8 @@ namespace GameGuild.CMS.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CertificateId");
+
                     b.HasIndex("CertificateId1");
 
                     b.HasIndex("CreatedAt");
@@ -755,10 +738,9 @@ namespace GameGuild.CMS.Migrations
                     b.HasIndex("TenantId");
 
                     b.HasIndex("CertificateId", "TagId")
-                        .IsUnique()
-                        .HasFilter("\"DeletedAt\" IS NULL");
+                        .IsUnique();
 
-                    b.ToTable("certificate_tags", (string)null);
+                    b.ToTable("certificate_tags");
                 });
 
             modelBuilder.Entity("cms.Modules.Certificate.Models.UserCertificate", b =>
@@ -844,8 +826,6 @@ namespace GameGuild.CMS.Migrations
 
                     b.HasIndex("DeletedAt");
 
-                    b.HasIndex("ExpiresAt");
-
                     b.HasIndex("IssuedAt");
 
                     b.HasIndex("ProductId");
@@ -863,7 +843,7 @@ namespace GameGuild.CMS.Migrations
                     b.HasIndex("VerificationCode")
                         .IsUnique();
 
-                    b.ToTable("user_certificates", (string)null);
+                    b.ToTable("user_certificates");
                 });
 
             modelBuilder.Entity("cms.Modules.Feedback.Models.ProgramFeedbackSubmission", b =>
@@ -933,6 +913,8 @@ namespace GameGuild.CMS.Migrations
 
                     b.HasIndex("DeletedAt");
 
+                    b.HasIndex("OverallRating");
+
                     b.HasIndex("ProductId");
 
                     b.HasIndex("ProgramId");
@@ -949,7 +931,10 @@ namespace GameGuild.CMS.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("program_feedback_submissions", (string)null);
+                    b.HasIndex("UserId", "ProgramId")
+                        .IsUnique();
+
+                    b.ToTable("program_feedback_submissions");
                 });
 
             modelBuilder.Entity("cms.Modules.Feedback.Models.ProgramRating", b =>
@@ -979,14 +964,11 @@ namespace GameGuild.CMS.Migrations
                     b.Property<DateTime?>("ModeratedAt")
                         .HasColumnType("TEXT");
 
-                    b.Property<int?>("ModeratedBy")
-                        .HasColumnType("INTEGER");
+                    b.Property<Guid?>("ModeratedBy")
+                        .HasColumnType("TEXT");
 
                     b.Property<int>("ModerationStatus")
                         .HasColumnType("INTEGER");
-
-                    b.Property<Guid?>("ModeratorId")
-                        .HasColumnType("TEXT");
 
                     b.Property<Guid?>("ProductId")
                         .HasColumnType("TEXT");
@@ -1001,10 +983,9 @@ namespace GameGuild.CMS.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<decimal>("Rating")
-                        .HasColumnType("decimal(3,2)");
+                        .HasColumnType("decimal(2,1)");
 
                     b.Property<string>("Review")
-                        .HasMaxLength(2000)
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime>("SubmittedAt")
@@ -1037,9 +1018,13 @@ namespace GameGuild.CMS.Migrations
 
                     b.HasIndex("DeletedAt");
 
-                    b.HasIndex("ModeratorId");
+                    b.HasIndex("ModeratedBy");
+
+                    b.HasIndex("ModerationStatus");
 
                     b.HasIndex("ProductId");
+
+                    b.HasIndex("ProgramId");
 
                     b.HasIndex("ProgramId1");
 
@@ -1047,15 +1032,16 @@ namespace GameGuild.CMS.Migrations
 
                     b.HasIndex("Rating");
 
+                    b.HasIndex("SubmittedAt");
+
                     b.HasIndex("TenantId");
 
                     b.HasIndex("UserId");
 
-                    b.HasIndex("ProgramId", "UserId")
-                        .IsUnique()
-                        .HasFilter("\"DeletedAt\" IS NULL");
+                    b.HasIndex("UserId", "ProgramId")
+                        .IsUnique();
 
-                    b.ToTable("ProgramRatings", (string)null);
+                    b.ToTable("program_ratings");
                 });
 
             modelBuilder.Entity("cms.Modules.Kyc.Models.UserKycVerification", b =>
@@ -1144,7 +1130,7 @@ namespace GameGuild.CMS.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("user_kyc_verifications", (string)null);
+                    b.ToTable("user_kyc_verifications");
                 });
 
             modelBuilder.Entity("cms.Modules.Payment.Models.FinancialTransaction", b =>
@@ -1236,6 +1222,8 @@ namespace GameGuild.CMS.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("Amount");
+
                     b.HasIndex("CreatedAt");
 
                     b.HasIndex("DeletedAt");
@@ -1245,6 +1233,8 @@ namespace GameGuild.CMS.Migrations
                     b.HasIndex("FromUserId");
 
                     b.HasIndex("PaymentMethodId");
+
+                    b.HasIndex("ProcessedAt");
 
                     b.HasIndex("PromoCodeId");
 
@@ -1258,7 +1248,7 @@ namespace GameGuild.CMS.Migrations
 
                     b.HasIndex("Type");
 
-                    b.ToTable("financial_transactions", (string)null);
+                    b.ToTable("financial_transactions");
                 });
 
             modelBuilder.Entity("cms.Modules.Payment.Models.UserFinancialMethod", b =>
@@ -1331,6 +1321,8 @@ namespace GameGuild.CMS.Migrations
 
                     b.HasIndex("DeletedAt");
 
+                    b.HasIndex("ExternalId");
+
                     b.HasIndex("IsDefault");
 
                     b.HasIndex("Status");
@@ -1341,7 +1333,7 @@ namespace GameGuild.CMS.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("user_financial_methods", (string)null);
+                    b.ToTable("user_financial_methods");
                 });
 
             modelBuilder.Entity("cms.Modules.Product.Models.ProductPricing", b =>
@@ -1407,6 +1399,8 @@ namespace GameGuild.CMS.Migrations
 
                     b.HasIndex("DeletedAt");
 
+                    b.HasIndex("IsDefault");
+
                     b.HasIndex("ProductId");
 
                     b.HasIndex("SaleEndDate");
@@ -1415,7 +1409,7 @@ namespace GameGuild.CMS.Migrations
 
                     b.HasIndex("TenantId");
 
-                    b.ToTable("ProductPricings", (string)null);
+                    b.ToTable("product_pricing");
                 });
 
             modelBuilder.Entity("cms.Modules.Product.Models.ProductProgram", b =>
@@ -1473,7 +1467,9 @@ namespace GameGuild.CMS.Migrations
                         .IsUnique()
                         .HasFilter("\"DeletedAt\" IS NULL");
 
-                    b.ToTable("ProductPrograms", (string)null);
+                    b.HasIndex("ProductId", "SortOrder");
+
+                    b.ToTable("product_programs");
                 });
 
             modelBuilder.Entity("cms.Modules.Product.Models.ProductSubscriptionPlan", b =>
@@ -1523,9 +1519,6 @@ namespace GameGuild.CMS.Migrations
                     b.Property<Guid>("ProductId")
                         .HasColumnType("TEXT");
 
-                    b.Property<Guid?>("ProductId1")
-                        .HasColumnType("TEXT");
-
                     b.Property<Guid?>("TenantId")
                         .HasColumnType("TEXT");
 
@@ -1543,19 +1536,31 @@ namespace GameGuild.CMS.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("BillingInterval")
+                        .HasDatabaseName("IX_ProductSubscriptionPlans_BillingInterval");
+
                     b.HasIndex("CreatedAt");
 
                     b.HasIndex("DeletedAt");
 
-                    b.HasIndex("Name");
+                    b.HasIndex("IsActive")
+                        .HasDatabaseName("IX_ProductSubscriptionPlans_IsActive");
 
-                    b.HasIndex("ProductId");
+                    b.HasIndex("IsDefault")
+                        .HasDatabaseName("IX_ProductSubscriptionPlans_IsDefault");
 
-                    b.HasIndex("ProductId1");
+                    b.HasIndex("Name")
+                        .HasDatabaseName("IX_ProductSubscriptionPlans_Name");
+
+                    b.HasIndex("Price")
+                        .HasDatabaseName("IX_ProductSubscriptionPlans_Price");
+
+                    b.HasIndex("ProductId")
+                        .HasDatabaseName("IX_ProductSubscriptionPlans_ProductId");
 
                     b.HasIndex("TenantId");
 
-                    b.ToTable("ProductSubscriptionPlans", (string)null);
+                    b.ToTable("product_subscription_plans");
                 });
 
             modelBuilder.Entity("cms.Modules.Product.Models.PromoCode", b =>
@@ -1587,7 +1592,6 @@ namespace GameGuild.CMS.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Description")
-                        .HasMaxLength(500)
                         .HasColumnType("TEXT");
 
                     b.Property<decimal?>("DiscountAmount")
@@ -1616,9 +1620,6 @@ namespace GameGuild.CMS.Migrations
                     b.Property<Guid?>("ProductId")
                         .HasColumnType("TEXT");
 
-                    b.Property<Guid?>("ProductId1")
-                        .HasColumnType("TEXT");
-
                     b.Property<Guid?>("TenantId")
                         .HasColumnType("TEXT");
 
@@ -1643,8 +1644,7 @@ namespace GameGuild.CMS.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("Code")
-                        .IsUnique()
-                        .HasFilter("\"DeletedAt\" IS NULL");
+                        .IsUnique();
 
                     b.HasIndex("CreatedAt");
 
@@ -1656,15 +1656,15 @@ namespace GameGuild.CMS.Migrations
 
                     b.HasIndex("ProductId");
 
-                    b.HasIndex("ProductId1");
-
                     b.HasIndex("TenantId");
+
+                    b.HasIndex("Type");
 
                     b.HasIndex("ValidFrom");
 
                     b.HasIndex("ValidUntil");
 
-                    b.ToTable("PromoCodes", (string)null);
+                    b.ToTable("promo_codes");
                 });
 
             modelBuilder.Entity("cms.Modules.Product.Models.PromoCodeUse", b =>
@@ -1686,9 +1686,6 @@ namespace GameGuild.CMS.Migrations
                         .HasColumnType("decimal(10,2)");
 
                     b.Property<Guid>("FinancialTransactionId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<Guid?>("FinancialTransactionId1")
                         .HasColumnType("TEXT");
 
                     b.Property<Guid>("PromoCodeId")
@@ -1717,15 +1714,13 @@ namespace GameGuild.CMS.Migrations
 
                     b.HasIndex("FinancialTransactionId");
 
-                    b.HasIndex("FinancialTransactionId1");
-
                     b.HasIndex("PromoCodeId");
 
                     b.HasIndex("TenantId");
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("PromoCodeUses", (string)null);
+                    b.ToTable("promo_code_uses");
                 });
 
             modelBuilder.Entity("cms.Modules.Product.Models.UserProduct", b =>
@@ -1797,8 +1792,6 @@ namespace GameGuild.CMS.Migrations
 
                     b.HasIndex("AccessEndDate");
 
-                    b.HasIndex("AccessStartDate");
-
                     b.HasIndex("AccessStatus");
 
                     b.HasIndex("AcquisitionType");
@@ -1817,12 +1810,14 @@ namespace GameGuild.CMS.Migrations
 
                     b.HasIndex("TenantId");
 
+                    b.HasIndex("UserId");
+
                     b.HasIndex("UserSubscriptionId");
 
                     b.HasIndex("UserId", "ProductId")
                         .IsUnique();
 
-                    b.ToTable("UserProducts", (string)null);
+                    b.ToTable("user_products");
                 });
 
             modelBuilder.Entity("cms.Modules.Program.Models.ActivityGrade", b =>
@@ -1844,7 +1839,6 @@ namespace GameGuild.CMS.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Feedback")
-                        .HasMaxLength(2000)
                         .HasColumnType("TEXT");
 
                     b.Property<decimal>("Grade")
@@ -1879,17 +1873,11 @@ namespace GameGuild.CMS.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ContentInteractionId")
-                        .IsUnique()
-                        .HasFilter("\"DeletedAt\" IS NULL");
+                    b.HasIndex("ContentInteractionId");
 
                     b.HasIndex("CreatedAt");
 
                     b.HasIndex("DeletedAt");
-
-                    b.HasIndex("Grade");
-
-                    b.HasIndex("GradedAt");
 
                     b.HasIndex("GraderProgramUserId");
 
@@ -1899,7 +1887,7 @@ namespace GameGuild.CMS.Migrations
 
                     b.HasIndex("TenantId");
 
-                    b.ToTable("activity_grades", (string)null);
+                    b.ToTable("activity_grades");
                 });
 
             modelBuilder.Entity("cms.Modules.Program.Models.ContentInteraction", b =>
@@ -1964,25 +1952,19 @@ namespace GameGuild.CMS.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CompletedAt");
-
                     b.HasIndex("ContentId");
 
                     b.HasIndex("CreatedAt");
 
                     b.HasIndex("DeletedAt");
 
-                    b.HasIndex("LastAccessedAt");
-
                     b.HasIndex("ProgramContentId");
 
                     b.HasIndex("ProgramUserId");
 
-                    b.HasIndex("Status");
-
                     b.HasIndex("TenantId");
 
-                    b.ToTable("content_interactions", (string)null);
+                    b.ToTable("content_interactions");
                 });
 
             modelBuilder.Entity("cms.Modules.Program.Models.ProgramContent", b =>
@@ -2006,7 +1988,6 @@ namespace GameGuild.CMS.Migrations
 
                     b.Property<string>("Description")
                         .IsRequired()
-                        .HasMaxLength(2000)
                         .HasColumnType("TEXT");
 
                     b.Property<int?>("EstimatedMinutes")
@@ -2059,6 +2040,8 @@ namespace GameGuild.CMS.Migrations
 
                     b.HasIndex("DeletedAt");
 
+                    b.HasIndex("IsRequired");
+
                     b.HasIndex("ParentId");
 
                     b.HasIndex("ProgramId");
@@ -2071,7 +2054,11 @@ namespace GameGuild.CMS.Migrations
 
                     b.HasIndex("Visibility");
 
-                    b.ToTable("program_contents", (string)null);
+                    b.HasIndex("ParentId", "SortOrder");
+
+                    b.HasIndex("ProgramId", "SortOrder");
+
+                    b.ToTable("program_contents");
                 });
 
             modelBuilder.Entity("cms.Modules.Program.Models.ProgramUser", b =>
@@ -2085,9 +2072,7 @@ namespace GameGuild.CMS.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<decimal>("CompletionPercentage")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("decimal(5,2)")
-                        .HasDefaultValue(0m);
+                        .HasColumnType("decimal(5,2)");
 
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
@@ -2101,9 +2086,7 @@ namespace GameGuild.CMS.Migrations
                         .HasColumnType("decimal(5,2)");
 
                     b.Property<bool>("IsActive")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER")
-                        .HasDefaultValue(true);
+                        .HasColumnType("INTEGER");
 
                     b.Property<DateTime>("JoinedAt")
                         .HasColumnType("TEXT");
@@ -2134,7 +2117,7 @@ namespace GameGuild.CMS.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CompletedAt");
+                    b.HasIndex("CompletionPercentage");
 
                     b.HasIndex("CreatedAt");
 
@@ -2144,15 +2127,16 @@ namespace GameGuild.CMS.Migrations
 
                     b.HasIndex("JoinedAt");
 
+                    b.HasIndex("ProgramId");
+
                     b.HasIndex("TenantId");
 
                     b.HasIndex("UserId");
 
-                    b.HasIndex("ProgramId", "UserId")
-                        .IsUnique()
-                        .HasFilter("\"DeletedAt\" IS NULL");
+                    b.HasIndex("UserId", "ProgramId")
+                        .IsUnique();
 
-                    b.ToTable("program_users", (string)null);
+                    b.ToTable("program_users");
                 });
 
             modelBuilder.Entity("cms.Modules.Program.Models.ProgramUserRole", b =>
@@ -2199,100 +2183,17 @@ namespace GameGuild.CMS.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ActiveFrom");
-
-                    b.HasIndex("ActiveUntil");
-
                     b.HasIndex("CreatedAt");
 
                     b.HasIndex("DeletedAt");
+
+                    b.HasIndex("ProgramId");
 
                     b.HasIndex("ProgramUserId");
 
-                    b.HasIndex("Role");
-
                     b.HasIndex("TenantId");
 
-                    b.HasIndex("ProgramId", "ProgramUserId", "Role")
-                        .IsUnique()
-                        .HasFilter("\"DeletedAt\" IS NULL");
-
-                    b.ToTable("program_user_roles", (string)null);
-                });
-
-            modelBuilder.Entity("cms.Modules.Subscription.Models.ProductSubscriptionPlan", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT")
-                        .HasDefaultValueSql("gen_random_uuid()");
-
-                    b.Property<int>("BillingInterval")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-                    b.Property<string>("Currency")
-                        .IsRequired()
-                        .HasMaxLength(3)
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(1000)
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("IntervalCount")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<bool>("IsDefault")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("TEXT");
-
-                    b.Property<decimal>("Price")
-                        .HasColumnType("decimal(10,2)");
-
-                    b.Property<Guid>("ProductId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<Guid?>("TenantId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<int?>("TrialPeriodDays")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("TEXT")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-                    b.Property<int>("Version")
-                        .IsConcurrencyToken()
-                        .HasColumnType("INTEGER");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CreatedAt");
-
-                    b.HasIndex("DeletedAt");
-
-                    b.HasIndex("ProductId");
-
-                    b.HasIndex("TenantId");
-
-                    b.ToTable("product_subscription_plans");
+                    b.ToTable("program_user_roles");
                 });
 
             modelBuilder.Entity("cms.Modules.Subscription.Models.UserSubscription", b =>
@@ -2335,9 +2236,6 @@ namespace GameGuild.CMS.Migrations
                     b.Property<Guid?>("ProductSubscriptionPlanId")
                         .HasColumnType("TEXT");
 
-                    b.Property<Guid?>("ProductSubscriptionPlanId1")
-                        .HasColumnType("TEXT");
-
                     b.Property<int>("Status")
                         .HasColumnType("INTEGER");
 
@@ -2372,11 +2270,11 @@ namespace GameGuild.CMS.Migrations
 
                     b.HasIndex("DeletedAt");
 
+                    b.HasIndex("ExternalSubscriptionId");
+
                     b.HasIndex("NextBillingAt");
 
                     b.HasIndex("ProductSubscriptionPlanId");
-
-                    b.HasIndex("ProductSubscriptionPlanId1");
 
                     b.HasIndex("Status");
 
@@ -2386,7 +2284,7 @@ namespace GameGuild.CMS.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("user_subscriptions", (string)null);
+                    b.ToTable("user_subscriptions");
                 });
 
             modelBuilder.Entity("cms.Modules.Tag.Models.Tag", b =>
@@ -2453,7 +2351,10 @@ namespace GameGuild.CMS.Migrations
 
                     b.HasIndex("Type");
 
-                    b.ToTable("tags", (string)null);
+                    b.HasIndex("Name", "TenantId")
+                        .IsUnique();
+
+                    b.ToTable("tags");
                 });
 
             modelBuilder.Entity("cms.Modules.Tag.Models.TagProficiency", b =>
@@ -2525,7 +2426,7 @@ namespace GameGuild.CMS.Migrations
 
                     b.HasIndex("Type");
 
-                    b.ToTable("tag_proficiencies", (string)null);
+                    b.ToTable("tag_proficiencies");
                 });
 
             modelBuilder.Entity("cms.Modules.Tag.Models.TagRelationship", b =>
@@ -2577,17 +2478,18 @@ namespace GameGuild.CMS.Migrations
 
                     b.HasIndex("DeletedAt");
 
+                    b.HasIndex("SourceId");
+
                     b.HasIndex("TargetId");
 
                     b.HasIndex("TenantId");
 
                     b.HasIndex("Type");
 
-                    b.HasIndex("SourceId", "TargetId", "Type")
-                        .IsUnique()
-                        .HasFilter("\"DeletedAt\" IS NULL");
+                    b.HasIndex("SourceId", "TargetId")
+                        .IsUnique();
 
-                    b.ToTable("tag_relationships", null, t =>
+                    b.ToTable("tag_relationships", t =>
                         {
                             t.HasCheckConstraint("CK_TagRelationships_NoSelfReference", "\"SourceId\" != \"TargetId\"");
                         });
@@ -2644,12 +2546,11 @@ namespace GameGuild.CMS.Migrations
                     b.HasIndex("DeletedAt");
 
                     b.HasIndex("Name")
-                        .IsUnique()
-                        .HasFilter("\"DeletedAt\" IS NULL");
+                        .IsUnique();
 
                     b.HasIndex("TenantId");
 
-                    b.ToTable("Tenants", (string)null);
+                    b.ToTable("Tenants");
                 });
 
             modelBuilder.Entity("cms.Modules.Tenant.Models.TenantRole", b =>
@@ -2702,10 +2603,9 @@ namespace GameGuild.CMS.Migrations
                     b.HasIndex("DeletedAt");
 
                     b.HasIndex("TenantId", "Name")
-                        .IsUnique()
-                        .HasFilter("\"DeletedAt\" IS NULL");
+                        .IsUnique();
 
-                    b.ToTable("TenantRoles", (string)null);
+                    b.ToTable("TenantRoles");
                 });
 
             modelBuilder.Entity("cms.Modules.Tenant.Models.UserTenant", b =>
@@ -2753,10 +2653,9 @@ namespace GameGuild.CMS.Migrations
                     b.HasIndex("TenantId");
 
                     b.HasIndex("UserId", "TenantId")
-                        .IsUnique()
-                        .HasFilter("\"DeletedAt\" IS NULL");
+                        .IsUnique();
 
-                    b.ToTable("UserTenants", (string)null);
+                    b.ToTable("UserTenants");
                 });
 
             modelBuilder.Entity("cms.Modules.Tenant.Models.UserTenantRole", b =>
@@ -2812,10 +2711,9 @@ namespace GameGuild.CMS.Migrations
                     b.HasIndex("TenantRoleId");
 
                     b.HasIndex("UserTenantId", "TenantRoleId")
-                        .IsUnique()
-                        .HasFilter("\"DeletedAt\" IS NULL");
+                        .IsUnique();
 
-                    b.ToTable("UserTenantRoles", (string)null);
+                    b.ToTable("UserTenantRoles");
                 });
 
             modelBuilder.Entity("cms.Modules.User.Models.Credential", b =>
@@ -2881,7 +2779,7 @@ namespace GameGuild.CMS.Migrations
 
                     b.HasIndex("UserId", "Type");
 
-                    b.ToTable("Credentials", (string)null);
+                    b.ToTable("Credentials");
                 });
 
             modelBuilder.Entity("cms.Modules.User.Models.User", b =>
@@ -2937,12 +2835,11 @@ namespace GameGuild.CMS.Migrations
                     b.HasIndex("DeletedAt");
 
                     b.HasIndex("Email")
-                        .IsUnique()
-                        .HasFilter("\"DeletedAt\" IS NULL");
+                        .IsUnique();
 
                     b.HasIndex("TenantId");
 
-                    b.ToTable("Users", (string)null);
+                    b.ToTable("Users");
                 });
 
             modelBuilder.Entity("cms.Common.Entities.Content", b =>
@@ -2972,7 +2869,7 @@ namespace GameGuild.CMS.Migrations
 
                     b.HasIndex("DeletedAt");
 
-                    b.ToTable("ContentLicenses", (string)null);
+                    b.ToTable("ContentLicenses");
                 });
 
             modelBuilder.Entity("cms.Modules.Reputation.Models.ReputationAction", b =>
@@ -2981,7 +2878,7 @@ namespace GameGuild.CMS.Migrations
 
                     b.Property<string>("ActionType")
                         .IsRequired()
-                        .HasMaxLength(150)
+                        .HasMaxLength(100)
                         .HasColumnType("TEXT");
 
                     b.Property<int?>("DailyLimit")
@@ -3004,7 +2901,8 @@ namespace GameGuild.CMS.Migrations
                     b.Property<int?>("TotalLimit")
                         .HasColumnType("INTEGER");
 
-                    b.HasIndex("ActionType");
+                    b.HasIndex("ActionType")
+                        .IsUnique();
 
                     b.HasIndex("CreatedAt");
 
@@ -3020,7 +2918,7 @@ namespace GameGuild.CMS.Migrations
                         .IsUnique()
                         .HasFilter("\"DeletedAt\" IS NULL");
 
-                    b.ToTable("ReputationActions", (string)null);
+                    b.ToTable("ReputationActions");
                 });
 
             modelBuilder.Entity("cms.Modules.Reputation.Models.ReputationTier", b =>
@@ -3065,11 +2963,7 @@ namespace GameGuild.CMS.Migrations
 
                     b.HasIndex("SortOrder");
 
-                    b.HasIndex("Name", "TenantId")
-                        .IsUnique()
-                        .HasFilter("\"DeletedAt\" IS NULL");
-
-                    b.ToTable("ReputationLevels", (string)null);
+                    b.ToTable("ReputationLevels");
                 });
 
             modelBuilder.Entity("cms.Modules.Reputation.Models.UserReputation", b =>
@@ -3114,7 +3008,7 @@ namespace GameGuild.CMS.Migrations
                         .IsUnique()
                         .HasFilter("\"DeletedAt\" IS NULL");
 
-                    b.ToTable("UserReputations", (string)null);
+                    b.ToTable("UserReputations");
                 });
 
             modelBuilder.Entity("cms.Modules.Reputation.Models.UserReputationHistory", b =>
@@ -3182,13 +3076,13 @@ namespace GameGuild.CMS.Migrations
 
                     b.HasIndex("TriggeredByUserId");
 
-                    b.HasIndex("UserId");
-
                     b.HasIndex("UserReputationId");
 
-                    b.HasIndex("UserTenantId");
-
                     b.HasIndex("UserTenantReputationId");
+
+                    b.HasIndex("UserId", "OccurredAt");
+
+                    b.HasIndex("UserTenantId", "OccurredAt");
 
                     b.ToTable("UserReputationHistory", null, t =>
                         {
@@ -3232,26 +3126,7 @@ namespace GameGuild.CMS.Migrations
                     b.HasIndex("UserTenantId")
                         .IsUnique();
 
-                    b.ToTable("UserTenantReputations", (string)null);
-                });
-
-            modelBuilder.Entity("cms.Modules.UserProfile.Models.UserProfile", b =>
-                {
-                    b.HasBaseType("cms.Common.Entities.ResourceBase");
-
-                    b.Property<string>("DisplayName")
-                        .HasMaxLength(100)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("FamilyName")
-                        .HasMaxLength(100)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("GivenName")
-                        .HasMaxLength(100)
-                        .HasColumnType("TEXT");
-
-                    b.ToTable("UserProfiles", (string)null);
+                    b.ToTable("UserTenantReputations");
                 });
 
             modelBuilder.Entity("cms.Modules.Product.Models.Product", b =>
@@ -3302,7 +3177,9 @@ namespace GameGuild.CMS.Migrations
 
                     b.HasIndex("Status");
 
-                    b.ToTable("Products", (string)null);
+                    b.HasIndex("Visibility");
+
+                    b.ToTable("Products");
                 });
 
             modelBuilder.Entity("cms.Modules.Program.Models.Program", b =>
@@ -3317,14 +3194,13 @@ namespace GameGuild.CMS.Migrations
 
                     b.HasIndex("DeletedAt");
 
-                    b.HasIndex("Slug")
-                        .IsUnique();
+                    b.HasIndex("Slug");
 
                     b.HasIndex("Status");
 
-                    b.HasIndex("Title");
+                    b.HasIndex("Visibility");
 
-                    b.ToTable("programs", (string)null);
+                    b.ToTable("programs");
                 });
 
             modelBuilder.Entity("ContentContentLicense", b =>
@@ -3352,7 +3228,8 @@ namespace GameGuild.CMS.Migrations
 
                     b.HasOne("cms.Modules.Tenant.Models.Tenant", "Tenant")
                         .WithMany()
-                        .HasForeignKey("TenantId");
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("cms.Modules.User.Models.User", "User")
                         .WithMany("ContentTypePermissions")
@@ -3364,7 +3241,59 @@ namespace GameGuild.CMS.Migrations
                         .WithMany("ContentTypePermissions")
                         .HasForeignKey("UserTenantId");
 
+                    b.OwnsOne("cms.Common.Entities.UnifiedPermissionContext", "PermissionContext", b1 =>
+                        {
+                            b1.Property<Guid>("ContentTypePermissionId")
+                                .HasColumnType("TEXT");
+
+                            b1.Property<int>("CurationPermissions")
+                                .HasColumnType("INTEGER")
+                                .HasColumnName("CurationPermissions");
+
+                            b1.Property<int>("EditorialPermissions")
+                                .HasColumnType("INTEGER")
+                                .HasColumnName("EditorialPermissions");
+
+                            b1.Property<int>("InteractionPermissions")
+                                .HasColumnType("INTEGER")
+                                .HasColumnName("InteractionPermissions");
+
+                            b1.Property<int>("LifecyclePermissions")
+                                .HasColumnType("INTEGER")
+                                .HasColumnName("LifecyclePermissions");
+
+                            b1.Property<int>("ModerationPermissions")
+                                .HasColumnType("INTEGER")
+                                .HasColumnName("ModerationPermissions");
+
+                            b1.Property<int>("MonetizationPermissions")
+                                .HasColumnType("INTEGER")
+                                .HasColumnName("MonetizationPermissions");
+
+                            b1.Property<int>("PromotionPermissions")
+                                .HasColumnType("INTEGER")
+                                .HasColumnName("PromotionPermissions");
+
+                            b1.Property<int>("PublishingPermissions")
+                                .HasColumnType("INTEGER")
+                                .HasColumnName("PublishingPermissions");
+
+                            b1.Property<int>("QualityPermissions")
+                                .HasColumnType("INTEGER")
+                                .HasColumnName("QualityPermissions");
+
+                            b1.HasKey("ContentTypePermissionId");
+
+                            b1.ToTable("ContentTypePermissions");
+
+                            b1.WithOwner()
+                                .HasForeignKey("ContentTypePermissionId");
+                        });
+
                     b.Navigation("AssignedByUser");
+
+                    b.Navigation("PermissionContext")
+                        .IsRequired();
 
                     b.Navigation("Tenant");
 
@@ -3382,6 +3311,10 @@ namespace GameGuild.CMS.Migrations
 
             modelBuilder.Entity("cms.Common.Entities.ResourceBase", b =>
                 {
+                    b.HasOne("cms.Common.Entities.ResourceMetadata", "Metadata")
+                        .WithMany()
+                        .HasForeignKey("MetadataId");
+
                     b.HasOne("cms.Modules.User.Models.User", "Owner")
                         .WithMany()
                         .HasForeignKey("OwnerId")
@@ -3392,6 +3325,8 @@ namespace GameGuild.CMS.Migrations
                         .WithMany()
                         .HasForeignKey("TenantId")
                         .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Metadata");
 
                     b.Navigation("Owner");
 
@@ -3421,11 +3356,6 @@ namespace GameGuild.CMS.Migrations
 
             modelBuilder.Entity("cms.Common.Entities.ResourceMetadata", b =>
                 {
-                    b.HasOne("cms.Common.Entities.ResourceBase", null)
-                        .WithOne("Metadata")
-                        .HasForeignKey("cms.Common.Entities.ResourceMetadata", "ResourceId")
-                        .OnDelete(DeleteBehavior.Cascade);
-
                     b.HasOne("cms.Modules.Tenant.Models.Tenant", "Tenant")
                         .WithMany()
                         .HasForeignKey("TenantId");
@@ -3441,12 +3371,8 @@ namespace GameGuild.CMS.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("cms.Common.Entities.ResourceBase", null)
-                        .WithMany("ResourcePermissions")
-                        .HasForeignKey("ResourceBaseId");
-
                     b.HasOne("cms.Common.Entities.ResourceBase", "Resource")
-                        .WithMany()
+                        .WithMany("ResourcePermissions")
                         .HasForeignKey("ResourceId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -3465,7 +3391,59 @@ namespace GameGuild.CMS.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade);
 
+                    b.OwnsOne("cms.Common.Entities.UnifiedPermissionContext", "PermissionContext", b1 =>
+                        {
+                            b1.Property<Guid>("ResourcePermissionId")
+                                .HasColumnType("TEXT");
+
+                            b1.Property<int>("CurationPermissions")
+                                .HasColumnType("INTEGER")
+                                .HasColumnName("CurationPermissions");
+
+                            b1.Property<int>("EditorialPermissions")
+                                .HasColumnType("INTEGER")
+                                .HasColumnName("EditorialPermissions");
+
+                            b1.Property<int>("InteractionPermissions")
+                                .HasColumnType("INTEGER")
+                                .HasColumnName("InteractionPermissions");
+
+                            b1.Property<int>("LifecyclePermissions")
+                                .HasColumnType("INTEGER")
+                                .HasColumnName("LifecyclePermissions");
+
+                            b1.Property<int>("ModerationPermissions")
+                                .HasColumnType("INTEGER")
+                                .HasColumnName("ModerationPermissions");
+
+                            b1.Property<int>("MonetizationPermissions")
+                                .HasColumnType("INTEGER")
+                                .HasColumnName("MonetizationPermissions");
+
+                            b1.Property<int>("PromotionPermissions")
+                                .HasColumnType("INTEGER")
+                                .HasColumnName("PromotionPermissions");
+
+                            b1.Property<int>("PublishingPermissions")
+                                .HasColumnType("INTEGER")
+                                .HasColumnName("PublishingPermissions");
+
+                            b1.Property<int>("QualityPermissions")
+                                .HasColumnType("INTEGER")
+                                .HasColumnName("QualityPermissions");
+
+                            b1.HasKey("ResourcePermissionId");
+
+                            b1.ToTable("ResourcePermissions");
+
+                            b1.WithOwner()
+                                .HasForeignKey("ResourcePermissionId");
+                        });
+
                     b.Navigation("GrantedByUser");
+
+                    b.Navigation("PermissionContext")
+                        .IsRequired();
 
                     b.Navigation("Resource");
 
@@ -3665,7 +3643,7 @@ namespace GameGuild.CMS.Migrations
                 {
                     b.HasOne("cms.Modules.User.Models.User", "Moderator")
                         .WithMany()
-                        .HasForeignKey("ModeratorId");
+                        .HasForeignKey("ModeratedBy");
 
                     b.HasOne("cms.Modules.Product.Models.Product", "Product")
                         .WithMany()
@@ -3834,14 +3812,10 @@ namespace GameGuild.CMS.Migrations
             modelBuilder.Entity("cms.Modules.Product.Models.ProductSubscriptionPlan", b =>
                 {
                     b.HasOne("cms.Modules.Product.Models.Product", "Product")
-                        .WithMany()
+                        .WithMany("SubscriptionPlans")
                         .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.HasOne("cms.Modules.Product.Models.Product", null)
-                        .WithMany("SubscriptionPlans")
-                        .HasForeignKey("ProductId1");
 
                     b.HasOne("cms.Modules.Tenant.Models.Tenant", "Tenant")
                         .WithMany()
@@ -3861,13 +3835,9 @@ namespace GameGuild.CMS.Migrations
                         .IsRequired();
 
                     b.HasOne("cms.Modules.Product.Models.Product", "Product")
-                        .WithMany()
-                        .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("cms.Modules.Product.Models.Product", null)
                         .WithMany("PromoCodes")
-                        .HasForeignKey("ProductId1");
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade);
 
                     b.HasOne("cms.Modules.Tenant.Models.Tenant", "Tenant")
                         .WithMany()
@@ -3883,14 +3853,10 @@ namespace GameGuild.CMS.Migrations
             modelBuilder.Entity("cms.Modules.Product.Models.PromoCodeUse", b =>
                 {
                     b.HasOne("cms.Modules.Payment.Models.FinancialTransaction", "FinancialTransaction")
-                        .WithMany()
-                        .HasForeignKey("FinancialTransactionId")
-                        .OnDelete(DeleteBehavior.SetNull)
-                        .IsRequired();
-
-                    b.HasOne("cms.Modules.Payment.Models.FinancialTransaction", null)
                         .WithMany("PromoCodeUses")
-                        .HasForeignKey("FinancialTransactionId1");
+                        .HasForeignKey("FinancialTransactionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("cms.Modules.Product.Models.PromoCode", "PromoCode")
                         .WithMany("PromoCodeUses")
@@ -4100,34 +4066,13 @@ namespace GameGuild.CMS.Migrations
                     b.Navigation("Tenant");
                 });
 
-            modelBuilder.Entity("cms.Modules.Subscription.Models.ProductSubscriptionPlan", b =>
-                {
-                    b.HasOne("cms.Modules.Product.Models.Product", "Product")
-                        .WithMany()
-                        .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("cms.Modules.Tenant.Models.Tenant", "Tenant")
-                        .WithMany()
-                        .HasForeignKey("TenantId");
-
-                    b.Navigation("Product");
-
-                    b.Navigation("Tenant");
-                });
-
             modelBuilder.Entity("cms.Modules.Subscription.Models.UserSubscription", b =>
                 {
                     b.HasOne("cms.Modules.Product.Models.ProductSubscriptionPlan", null)
                         .WithMany("UserSubscriptions")
                         .HasForeignKey("ProductSubscriptionPlanId");
 
-                    b.HasOne("cms.Modules.Subscription.Models.ProductSubscriptionPlan", null)
-                        .WithMany("UserSubscriptions")
-                        .HasForeignKey("ProductSubscriptionPlanId1");
-
-                    b.HasOne("cms.Modules.Subscription.Models.ProductSubscriptionPlan", "SubscriptionPlan")
+                    b.HasOne("cms.Modules.Product.Models.ProductSubscriptionPlan", "SubscriptionPlan")
                         .WithMany()
                         .HasForeignKey("SubscriptionPlanId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -4415,8 +4360,6 @@ namespace GameGuild.CMS.Migrations
                 {
                     b.Navigation("Localizations");
 
-                    b.Navigation("Metadata");
-
                     b.Navigation("ResourcePermissions");
                 });
 
@@ -4481,11 +4424,6 @@ namespace GameGuild.CMS.Migrations
                     b.Navigation("ReceivedGrades");
 
                     b.Navigation("UserCertificates");
-                });
-
-            modelBuilder.Entity("cms.Modules.Subscription.Models.ProductSubscriptionPlan", b =>
-                {
-                    b.Navigation("UserSubscriptions");
                 });
 
             modelBuilder.Entity("cms.Modules.Subscription.Models.UserSubscription", b =>

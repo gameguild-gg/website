@@ -11,8 +11,10 @@ namespace cms.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropTable(
-                name: "UserTenantPermissions");
+            // Only drop table if it exists
+            migrationBuilder.Sql(@"
+                DROP TABLE IF EXISTS ""UserTenantPermissions"";
+            ");
 
             migrationBuilder.AddColumn<Guid>(
                 name: "UserTenantId",

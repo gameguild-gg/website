@@ -1,5 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using cms.Common.Entities;
 using cms.Common.Enums;
 
@@ -116,5 +118,26 @@ public class ProgramUserRole : BaseEntity
     {
         ActiveUntil = expireDate;
         Touch();
+    }
+}
+
+/// <summary>
+/// Entity Framework configuration for ProgramUserRole entity
+/// </summary>
+public class ProgramUserRoleConfiguration : IEntityTypeConfiguration<ProgramUserRole>
+{
+    public void Configure(EntityTypeBuilder<ProgramUserRole> builder)
+    {
+        // Configure relationship with Program (can't be done with annotations)
+        builder.HasOne(pur => pur.Program)
+            .WithMany()
+            .HasForeignKey(pur => pur.ProgramId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // Configure relationship with ProgramUser (can't be done with annotations)
+        builder.HasOne(pur => pur.ProgramUser)
+            .WithMany(pu => pu.ProgramUserRoles)
+            .HasForeignKey(pur => pur.ProgramUserId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }
