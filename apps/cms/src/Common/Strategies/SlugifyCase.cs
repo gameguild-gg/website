@@ -57,7 +57,7 @@ public static class SlugCase
             throw new ArgumentException("Max length must be greater than zero.", nameof(maxLength));
         }
 
-        var cacheKey = $"slug:{text}:{maxLength}";
+        var cacheKey = $"slugify:{text}:{maxLength}";
         return _cache.GetOrCreate(cacheKey, entry =>
         {
             entry.Size = 1; // Each entry counts as 1 towards the size limit
