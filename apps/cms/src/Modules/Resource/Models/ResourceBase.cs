@@ -7,7 +7,7 @@ namespace cms.Common.Entities;
 /// Provides common functionality for content resources like articles, courses, media, etc.
 /// Mirrors the TypeScript ResourceBase functionality from the API.
 /// </summary>
-public abstract class ResourceBase : BaseEntity, ILocalizable, IPermissionable, ITenantable
+public abstract class ResourceBase : BaseEntity, ILocalizable, ITenantable
 {
     /// <summary>
     /// The title/name of this resource
@@ -64,7 +64,9 @@ public abstract class ResourceBase : BaseEntity, ILocalizable, IPermissionable, 
 
     /// <summary>
     /// Collection of permissions assigned to this resource
+    /// This will be removed in favor of the new three-layer permission system
     /// </summary>
+    [Obsolete("Use the new three-layer permission system instead")]
     public virtual ICollection<ResourcePermission> ResourcePermissions
     {
         get;
@@ -118,26 +120,7 @@ public abstract class ResourceBase : BaseEntity, ILocalizable, IPermissionable, 
         return localization;
     }
 
-    /// <summary>
-    /// Grants permission to a user for this resource
-    /// </summary>
-    public virtual ResourcePermission GrantPermission(Modules.User.Models.User user, UnifiedPermissionContext permissionContext, Modules.User.Models.User grantedByUser)
-    {
-        var resourcePermission = new ResourcePermission
-        {
-            User = user,
-            Resource = this,
-            ResourceType = GetType().Name,
-            PermissionContext = permissionContext,
-            GrantedAt = DateTime.UtcNow,
-            GrantedByUser = grantedByUser,
-            IsActive = true
-        };
 
-        ResourcePermissions.Add(resourcePermission);
-
-        return resourcePermission;
-    }
 
     /// <summary>
     /// Assigns this resource to a specific tenant

@@ -71,14 +71,7 @@ public class UserTenant : BaseEntity
         set;
     } = DateTime.UtcNow;
 
-    /// <summary>
-    /// Navigation property to user-tenant-role assignments
-    /// </summary>
-    public virtual ICollection<UserTenantRole> UserTenantRoles
-    {
-        get;
-        set;
-    } = new List<UserTenantRole>();
+
 
     /// <summary>
     /// Navigation property to content type permissions for this user within this tenant (Layer 2 of permission system)

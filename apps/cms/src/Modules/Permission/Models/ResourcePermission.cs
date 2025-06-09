@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 namespace cms.Common.Entities;
 
 /// <summary>
-/// Entity representing permissions on resources for specific users or roles
+/// Entity representing permissions on resources for specific users
 /// Provides fine-grained access control for resources
 /// </summary>
 public class ResourcePermission : BaseEntity
@@ -53,15 +53,6 @@ public class ResourcePermission : BaseEntity
         set;
     } = null!;
 
-    /// <summary>
-    /// Permission context for this resource
-    /// </summary>
-    [Required]
-    public UnifiedPermissionContext PermissionContext
-    {
-        get;
-        set;
-    } = new UnifiedPermissionContext();
 
     /// <summary>
     /// When this permission was granted
@@ -187,10 +178,5 @@ public class ResourcePermissionConfiguration : IEntityTypeConfiguration<Resource
             .IsRequired()
             .HasDefaultValue(true);
 
-        // Configure UnifiedPermissionContext as owned type
-        builder.OwnsOne(p => p.PermissionContext, pc =>
-        {
-            UnifiedPermissionContextConfiguration.ConfigureUnifiedPermissionContext(pc);
-        });
     }
 }

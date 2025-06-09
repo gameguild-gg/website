@@ -16,7 +16,6 @@ public static class ServiceCollectionExtensions
     {
         // Register Tenant module services
         services.AddScoped<Modules.Tenant.Services.ITenantService, Modules.Tenant.Services.TenantService>();
-        services.AddScoped<Modules.Tenant.Services.ITenantRoleService, Modules.Tenant.Services.TenantRoleService>();
 
         return services;
     }
@@ -37,8 +36,7 @@ public static class ServiceCollectionExtensions
         // Add memory cache
         services.AddMemoryCache();
 
-        // Add permission service for three-layer permission system
-        services.AddScoped<IPermissionService, PermissionService>();
+        // Permission services will be added when DAC implementation is complete
 
         return services;
     }

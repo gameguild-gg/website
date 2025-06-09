@@ -315,8 +315,7 @@ public class TenantsController : ControllerBase
             CreatedAt = tenant.CreatedAt,
             UpdatedAt = tenant.UpdatedAt,
             DeletedAt = tenant.DeletedAt,
-            UserTenants = tenant.UserTenants?.Select(MapUserTenantToResponseDto).ToList() ?? new List<UserTenantResponseDto>(),
-            TenantRoles = tenant.TenantRoles?.Select(MapTenantRoleToResponseDto).ToList() ?? new List<TenantRoleResponseDto>()
+            UserTenants = tenant.UserTenants?.Select(MapUserTenantToResponseDto).ToList() ?? new List<UserTenantResponseDto>()
         };
     }
 
@@ -351,28 +350,6 @@ public class TenantsController : ControllerBase
                     DeletedAt = userTenant.User.DeletedAt
                 }
                 : null
-        };
-    }
-
-    /// <summary>
-    /// Map TenantRole entity to response DTO
-    /// </summary>
-    /// <param name="tenantRole">TenantRole entity</param>
-    /// <returns>TenantRole response DTO</returns>
-    private static TenantRoleResponseDto MapTenantRoleToResponseDto(TenantRole tenantRole)
-    {
-        return new TenantRoleResponseDto
-        {
-            Id = tenantRole.Id,
-            TenantId = tenantRole.TenantId,
-            Name = tenantRole.Name,
-            Description = tenantRole.Description,
-            Permissions = tenantRole.Permissions,
-            IsActive = tenantRole.IsActive,
-            Version = tenantRole.Version,
-            CreatedAt = tenantRole.CreatedAt,
-            UpdatedAt = tenantRole.UpdatedAt,
-            DeletedAt = tenantRole.DeletedAt
         };
     }
 }

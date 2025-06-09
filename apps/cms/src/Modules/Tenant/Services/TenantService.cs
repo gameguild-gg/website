@@ -24,7 +24,6 @@ public class TenantService : ITenantService
     {
         return await _context.Tenants
             .Include(t => t.UserTenants)
-            .Include(t => t.TenantRoles)
             .ToListAsync();
     }
 
@@ -38,7 +37,6 @@ public class TenantService : ITenantService
         return await _context.Tenants
             .Include(t => t.UserTenants)
             .ThenInclude(ut => ut.User)
-            .Include(t => t.TenantRoles)
             .FirstOrDefaultAsync(t => t.Id == id);
     }
 
@@ -51,7 +49,6 @@ public class TenantService : ITenantService
     {
         return await _context.Tenants
             .Include(t => t.UserTenants)
-            .Include(t => t.TenantRoles)
             .FirstOrDefaultAsync(t => t.Name == name);
     }
 
@@ -211,7 +208,6 @@ public class TenantService : ITenantService
             .IgnoreQueryFilters()
             .Where(t => t.DeletedAt != null)
             .Include(t => t.UserTenants)
-            .Include(t => t.TenantRoles)
             .ToListAsync();
     }
 
@@ -294,8 +290,6 @@ public class TenantService : ITenantService
             .Where(ut => ut.TenantId == tenantId)
             .Include(ut => ut.User)
             .Include(ut => ut.Tenant)
-            .Include(ut => ut.UserTenantRoles)
-            .ThenInclude(utr => utr.TenantRole)
             .ToListAsync();
     }
 
@@ -310,8 +304,6 @@ public class TenantService : ITenantService
             .Where(ut => ut.UserId == userId)
             .Include(ut => ut.User)
             .Include(ut => ut.Tenant)
-            .Include(ut => ut.UserTenantRoles)
-            .ThenInclude(utr => utr.TenantRole)
             .ToListAsync();
     }
 }

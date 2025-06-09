@@ -124,14 +124,7 @@ public class ProgramUser : BaseEntity
         set;
     }
 
-    /// <summary>
-    /// Navigation property to user-program-role assignments
-    /// </summary>
-    public virtual ICollection<ProgramUserRole> ProgramUserRoles
-    {
-        get;
-        set;
-    } = new List<ProgramUserRole>();
+
 
     public virtual ICollection<ContentInteraction> ContentInteractions
     {

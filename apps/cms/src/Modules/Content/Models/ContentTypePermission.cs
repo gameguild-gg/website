@@ -61,15 +61,7 @@ public sealed class ContentTypePermission : BaseEntity, ITenantable
         set;
     } = string.Empty;
 
-    /// <summary>
-    /// Permissions granted for this content type
-    /// </summary>
-    [Required]
-    public UnifiedPermissionContext PermissionContext
-    {
-        get;
-        set;
-    } = new UnifiedPermissionContext();
+
 
     /// <summary>
     /// When this permission was assigned
@@ -178,11 +170,5 @@ public class ContentTypePermissionConfiguration : IEntityTypeConfiguration<Conte
         builder.Property(p => p.IsActive)
             .IsRequired()
             .HasDefaultValue(true);
-
-        // Configure UnifiedPermissionContext as owned type
-        builder.OwnsOne(p => p.PermissionContext, pc =>
-        {
-            UnifiedPermissionContextConfiguration.ConfigureUnifiedPermissionContext(pc);
-        });
     }
 }

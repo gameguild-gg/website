@@ -11,8 +11,8 @@ using cms.Data;
 namespace cms.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250607030253_InitialMigrationClean")]
-    partial class InitialMigrationClean
+    [Migration("20250609182030_InitialCleanMigration")]
+    partial class InitialCleanMigration
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -2139,63 +2139,6 @@ namespace cms.Migrations
                     b.ToTable("program_users");
                 });
 
-            modelBuilder.Entity("cms.Modules.Program.Models.ProgramUserRole", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT")
-                        .HasDefaultValueSql("gen_random_uuid()");
-
-                    b.Property<DateTime?>("ActiveFrom")
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime?>("ActiveUntil")
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-                    b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<Guid>("ProgramId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<Guid>("ProgramUserId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("Role")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<Guid?>("TenantId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("TEXT")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-                    b.Property<int>("Version")
-                        .IsConcurrencyToken()
-                        .HasColumnType("INTEGER");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CreatedAt");
-
-                    b.HasIndex("DeletedAt");
-
-                    b.HasIndex("ProgramId");
-
-                    b.HasIndex("ProgramUserId");
-
-                    b.HasIndex("TenantId");
-
-                    b.ToTable("program_user_roles");
-                });
-
             modelBuilder.Entity("cms.Modules.Subscription.Models.UserSubscription", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2553,61 +2496,6 @@ namespace cms.Migrations
                     b.ToTable("Tenants");
                 });
 
-            modelBuilder.Entity("cms.Modules.Tenant.Models.TenantRole", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT")
-                        .HasDefaultValueSql("gen_random_uuid()");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-                    b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(200)
-                        .HasColumnType("TEXT");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Permissions")
-                        .HasMaxLength(2000)
-                        .HasColumnType("TEXT");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("TEXT")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-                    b.Property<int>("Version")
-                        .IsConcurrencyToken()
-                        .HasColumnType("INTEGER");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CreatedAt");
-
-                    b.HasIndex("DeletedAt");
-
-                    b.HasIndex("TenantId", "Name")
-                        .IsUnique();
-
-                    b.ToTable("TenantRoles");
-                });
-
             modelBuilder.Entity("cms.Modules.Tenant.Models.UserTenant", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2656,64 +2544,6 @@ namespace cms.Migrations
                         .IsUnique();
 
                     b.ToTable("UserTenants");
-                });
-
-            modelBuilder.Entity("cms.Modules.Tenant.Models.UserTenantRole", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT")
-                        .HasDefaultValueSql("gen_random_uuid()");
-
-                    b.Property<DateTime>("AssignedAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-                    b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime?>("ExpiresAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<Guid?>("TenantId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<Guid>("TenantRoleId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("TEXT")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-                    b.Property<Guid>("UserTenantId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("Version")
-                        .IsConcurrencyToken()
-                        .HasColumnType("INTEGER");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CreatedAt");
-
-                    b.HasIndex("DeletedAt");
-
-                    b.HasIndex("TenantId");
-
-                    b.HasIndex("TenantRoleId");
-
-                    b.HasIndex("UserTenantId", "TenantRoleId")
-                        .IsUnique();
-
-                    b.ToTable("UserTenantRoles");
                 });
 
             modelBuilder.Entity("cms.Modules.User.Models.Credential", b =>
@@ -3241,59 +3071,7 @@ namespace cms.Migrations
                         .WithMany("ContentTypePermissions")
                         .HasForeignKey("UserTenantId");
 
-                    b.OwnsOne("cms.Common.Entities.UnifiedPermissionContext", "PermissionContext", b1 =>
-                        {
-                            b1.Property<Guid>("ContentTypePermissionId")
-                                .HasColumnType("TEXT");
-
-                            b1.Property<int>("CurationPermissions")
-                                .HasColumnType("INTEGER")
-                                .HasColumnName("CurationPermissions");
-
-                            b1.Property<int>("EditorialPermissions")
-                                .HasColumnType("INTEGER")
-                                .HasColumnName("EditorialPermissions");
-
-                            b1.Property<int>("InteractionPermissions")
-                                .HasColumnType("INTEGER")
-                                .HasColumnName("InteractionPermissions");
-
-                            b1.Property<int>("LifecyclePermissions")
-                                .HasColumnType("INTEGER")
-                                .HasColumnName("LifecyclePermissions");
-
-                            b1.Property<int>("ModerationPermissions")
-                                .HasColumnType("INTEGER")
-                                .HasColumnName("ModerationPermissions");
-
-                            b1.Property<int>("MonetizationPermissions")
-                                .HasColumnType("INTEGER")
-                                .HasColumnName("MonetizationPermissions");
-
-                            b1.Property<int>("PromotionPermissions")
-                                .HasColumnType("INTEGER")
-                                .HasColumnName("PromotionPermissions");
-
-                            b1.Property<int>("PublishingPermissions")
-                                .HasColumnType("INTEGER")
-                                .HasColumnName("PublishingPermissions");
-
-                            b1.Property<int>("QualityPermissions")
-                                .HasColumnType("INTEGER")
-                                .HasColumnName("QualityPermissions");
-
-                            b1.HasKey("ContentTypePermissionId");
-
-                            b1.ToTable("ContentTypePermissions");
-
-                            b1.WithOwner()
-                                .HasForeignKey("ContentTypePermissionId");
-                        });
-
                     b.Navigation("AssignedByUser");
-
-                    b.Navigation("PermissionContext")
-                        .IsRequired();
 
                     b.Navigation("Tenant");
 
@@ -3391,59 +3169,7 @@ namespace cms.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade);
 
-                    b.OwnsOne("cms.Common.Entities.UnifiedPermissionContext", "PermissionContext", b1 =>
-                        {
-                            b1.Property<Guid>("ResourcePermissionId")
-                                .HasColumnType("TEXT");
-
-                            b1.Property<int>("CurationPermissions")
-                                .HasColumnType("INTEGER")
-                                .HasColumnName("CurationPermissions");
-
-                            b1.Property<int>("EditorialPermissions")
-                                .HasColumnType("INTEGER")
-                                .HasColumnName("EditorialPermissions");
-
-                            b1.Property<int>("InteractionPermissions")
-                                .HasColumnType("INTEGER")
-                                .HasColumnName("InteractionPermissions");
-
-                            b1.Property<int>("LifecyclePermissions")
-                                .HasColumnType("INTEGER")
-                                .HasColumnName("LifecyclePermissions");
-
-                            b1.Property<int>("ModerationPermissions")
-                                .HasColumnType("INTEGER")
-                                .HasColumnName("ModerationPermissions");
-
-                            b1.Property<int>("MonetizationPermissions")
-                                .HasColumnType("INTEGER")
-                                .HasColumnName("MonetizationPermissions");
-
-                            b1.Property<int>("PromotionPermissions")
-                                .HasColumnType("INTEGER")
-                                .HasColumnName("PromotionPermissions");
-
-                            b1.Property<int>("PublishingPermissions")
-                                .HasColumnType("INTEGER")
-                                .HasColumnName("PublishingPermissions");
-
-                            b1.Property<int>("QualityPermissions")
-                                .HasColumnType("INTEGER")
-                                .HasColumnName("QualityPermissions");
-
-                            b1.HasKey("ResourcePermissionId");
-
-                            b1.ToTable("ResourcePermissions");
-
-                            b1.WithOwner()
-                                .HasForeignKey("ResourcePermissionId");
-                        });
-
                     b.Navigation("GrantedByUser");
-
-                    b.Navigation("PermissionContext")
-                        .IsRequired();
 
                     b.Navigation("Resource");
 
@@ -4041,31 +3767,6 @@ namespace cms.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("cms.Modules.Program.Models.ProgramUserRole", b =>
-                {
-                    b.HasOne("cms.Modules.Program.Models.Program", "Program")
-                        .WithMany()
-                        .HasForeignKey("ProgramId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("cms.Modules.Program.Models.ProgramUser", "ProgramUser")
-                        .WithMany("ProgramUserRoles")
-                        .HasForeignKey("ProgramUserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("cms.Modules.Tenant.Models.Tenant", "Tenant")
-                        .WithMany()
-                        .HasForeignKey("TenantId");
-
-                    b.Navigation("Program");
-
-                    b.Navigation("ProgramUser");
-
-                    b.Navigation("Tenant");
-                });
-
             modelBuilder.Entity("cms.Modules.Subscription.Models.UserSubscription", b =>
                 {
                     b.HasOne("cms.Modules.Product.Models.ProductSubscriptionPlan", null)
@@ -4148,17 +3849,6 @@ namespace cms.Migrations
                     b.Navigation("Tenant");
                 });
 
-            modelBuilder.Entity("cms.Modules.Tenant.Models.TenantRole", b =>
-                {
-                    b.HasOne("cms.Modules.Tenant.Models.Tenant", "Tenant")
-                        .WithMany("TenantRoles")
-                        .HasForeignKey("TenantId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Tenant");
-                });
-
             modelBuilder.Entity("cms.Modules.Tenant.Models.UserTenant", b =>
                 {
                     b.HasOne("cms.Modules.Tenant.Models.Tenant", "Tenant")
@@ -4176,31 +3866,6 @@ namespace cms.Migrations
                     b.Navigation("Tenant");
 
                     b.Navigation("User");
-                });
-
-            modelBuilder.Entity("cms.Modules.Tenant.Models.UserTenantRole", b =>
-                {
-                    b.HasOne("cms.Modules.Tenant.Models.Tenant", "Tenant")
-                        .WithMany()
-                        .HasForeignKey("TenantId");
-
-                    b.HasOne("cms.Modules.Tenant.Models.TenantRole", "TenantRole")
-                        .WithMany("UserTenantRoles")
-                        .HasForeignKey("TenantRoleId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("cms.Modules.Tenant.Models.UserTenant", "UserTenant")
-                        .WithMany("UserTenantRoles")
-                        .HasForeignKey("UserTenantId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Tenant");
-
-                    b.Navigation("TenantRole");
-
-                    b.Navigation("UserTenant");
                 });
 
             modelBuilder.Entity("cms.Modules.User.Models.Credential", b =>
@@ -4419,8 +4084,6 @@ namespace cms.Migrations
 
                     b.Navigation("ProgramRatings");
 
-                    b.Navigation("ProgramUserRoles");
-
                     b.Navigation("ReceivedGrades");
 
                     b.Navigation("UserCertificates");
@@ -4445,21 +4108,12 @@ namespace cms.Migrations
 
             modelBuilder.Entity("cms.Modules.Tenant.Models.Tenant", b =>
                 {
-                    b.Navigation("TenantRoles");
-
                     b.Navigation("UserTenants");
-                });
-
-            modelBuilder.Entity("cms.Modules.Tenant.Models.TenantRole", b =>
-                {
-                    b.Navigation("UserTenantRoles");
                 });
 
             modelBuilder.Entity("cms.Modules.Tenant.Models.UserTenant", b =>
                 {
                     b.Navigation("ContentTypePermissions");
-
-                    b.Navigation("UserTenantRoles");
                 });
 
             modelBuilder.Entity("cms.Modules.User.Models.User", b =>

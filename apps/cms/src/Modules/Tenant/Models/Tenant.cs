@@ -63,14 +63,6 @@ public class Tenant : BaseEntity
         set;
     } = new List<UserTenant>();
 
-    /// <summary>
-    /// Navigation property to tenant roles
-    /// </summary>
-    public virtual ICollection<TenantRole> TenantRoles
-    {
-        get;
-        set;
-    } = new List<TenantRole>();
 
     /// <summary>
     /// Default constructor

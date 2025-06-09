@@ -76,9 +76,7 @@ builder.Services
     .AddType<UserType>()
     .AddType<CredentialType>()
     .AddType<cms.Modules.Tenant.GraphQL.TenantType>()
-    .AddType<cms.Modules.Tenant.GraphQL.TenantRoleType>()
     .AddType<cms.Modules.Tenant.GraphQL.UserTenantType>()
-    .AddType<cms.Modules.Tenant.GraphQL.UserTenantRoleType>()
     .AddType<cms.Modules.UserProfile.GraphQL.UserProfileType>();
 
 WebApplication app = builder.Build();

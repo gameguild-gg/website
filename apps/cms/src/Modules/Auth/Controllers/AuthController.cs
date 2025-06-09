@@ -204,7 +204,6 @@ namespace cms.Modules.Auth.Controllers
         }
 
         [HttpPost("change-password")]
-        [RequireRoles("User")]
         public async Task<ActionResult<EmailOperationResponseDto>> ChangePassword([FromBody] ChangePasswordRequestDto request)
         {
             Guid userId = Guid.Parse(User.FindFirst("sub")?.Value ?? throw new UnauthorizedAccessException("User ID not found"));

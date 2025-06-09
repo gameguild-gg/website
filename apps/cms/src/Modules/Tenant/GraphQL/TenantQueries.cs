@@ -34,34 +34,10 @@ public class TenantQueries
     }
 
     /// <summary>
-    /// Get roles for a specific tenant
-    /// </summary>
-    public async Task<IEnumerable<TenantRole>> GetTenantRolesByTenantId([Service] ITenantRoleService tenantRoleService, Guid tenantId)
-    {
-        return await tenantRoleService.GetRolesByTenantIdAsync(tenantId);
-    }
-
-    /// <summary>
-    /// Get tenant role by ID
-    /// </summary>
-    public async Task<TenantRole?> GetTenantRoleById([Service] ITenantRoleService tenantRoleService, Guid id)
-    {
-        return await tenantRoleService.GetRoleByIdAsync(id);
-    }
-
-    /// <summary>
     /// Get users in a tenant
     /// </summary>
     public async Task<IEnumerable<UserTenant>> GetUsersInTenant([Service] ITenantService tenantService, Guid tenantId)
     {
         return await tenantService.GetUsersInTenantAsync(tenantId);
-    }
-
-    /// <summary>
-    /// Get user's roles in a tenant
-    /// </summary>
-    public async Task<IEnumerable<UserTenantRole>> GetUserRolesInTenant([Service] ITenantRoleService tenantRoleService, Guid userTenantId)
-    {
-        return await tenantRoleService.GetUserRolesInTenantAsync(userTenantId);
     }
 }

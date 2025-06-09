@@ -30,7 +30,7 @@ namespace cms.Modules.Auth.Configuration
 
             // Register authentication filters
             services.AddScoped<JwtAuthenticationFilter>();
-            services.AddScoped<RoleAuthorizationFilter>();
+            // RoleAuthorizationFilter removed - using new three-layer DAC system
 
             // Configure JWT authentication
             IConfigurationSection jwtSettings = configuration.GetSection("Jwt");
@@ -115,7 +115,7 @@ namespace cms.Modules.Auth.Configuration
             builder.AddMvcOptions(options =>
                 {
                     options.Filters.Add<JwtAuthenticationFilter>();
-                    options.Filters.Add<RoleAuthorizationFilter>();
+                    // RoleAuthorizationFilter removed - using new three-layer DAC system
                 }
             );
 

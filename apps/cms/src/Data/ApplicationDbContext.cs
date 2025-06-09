@@ -9,6 +9,7 @@ using System.Reflection;
 
 namespace cms.Data;
 
+// NOTE: do not add fluent api configurations here, they should be in the same file of the entity. On the entity, use notations for simple configurations, and fluent API for complex ones.
 public class ApplicationDbContext : DbContext
 {
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
@@ -18,9 +19,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<Credential> Credentials { get; set; }
     public DbSet<cms.Modules.Auth.Models.RefreshToken> RefreshTokens { get; set; }
     public DbSet<Tenant> Tenants { get; set; }
-    public DbSet<TenantRole> TenantRoles { get; set; }
     public DbSet<UserTenant> UserTenants { get; set; }
-    public DbSet<UserTenantRole> UserTenantRoles { get; set; }
 
     // Resource hierarchy DbSet - Required for proper inheritance configuration
     public DbSet<ResourceBase> Resources { get; set; }
@@ -55,7 +54,6 @@ public class ApplicationDbContext : DbContext
     public DbSet<Modules.Program.Models.Program> Programs { get; set; }
     public DbSet<Modules.Program.Models.ProgramContent> ProgramContents { get; set; }
     public DbSet<Modules.Program.Models.ProgramUser> ProgramUsers { get; set; }
-    public DbSet<Modules.Program.Models.ProgramUserRole> ProgramUserRoles { get; set; }
     public DbSet<Modules.Program.Models.ContentInteraction> ContentInteractions { get; set; }
     public DbSet<Modules.Program.Models.ActivityGrade> ActivityGrades { get; set; }
 
