@@ -161,21 +161,21 @@ public class TenantResponseDto
     }
 
     /// <summary>
-    /// Users in this tenant
+    /// Permissions and users in this tenant
     /// </summary>
-    public ICollection<UserTenantResponseDto> UserTenants
+    public ICollection<TenantPermissionResponseDto> TenantPermissions
     {
         get;
         set;
-    } = new List<UserTenantResponseDto>();
+    } = new List<TenantPermissionResponseDto>();
 }
 /// <summary>
-/// DTO for user-tenant relationship response
+/// DTO for tenant permission response
 /// </summary>
-public class UserTenantResponseDto
+public class TenantPermissionResponseDto
 {
     /// <summary>
-    /// Unique identifier for the user-tenant relationship
+    /// Unique identifier for the tenant permission
     /// </summary>
     public Guid Id
     {
@@ -184,25 +184,34 @@ public class UserTenantResponseDto
     }
 
     /// <summary>
-    /// Foreign key to the User entity
+    /// Foreign key to the User entity (null for default permissions)
     /// </summary>
-    public Guid UserId
+    public Guid? UserId
     {
         get;
         set;
     }
 
     /// <summary>
-    /// Foreign key to the Tenant entity
+    /// Foreign key to the Tenant entity (null for global defaults)
     /// </summary>
-    public Guid TenantId
+    public Guid? TenantId
     {
         get;
         set;
     }
 
     /// <summary>
-    /// Whether this user-tenant relationship is currently active
+    /// Membership status
+    /// </summary>
+    public string Status
+    {
+        get;
+        set;
+    } = string.Empty;
+
+    /// <summary>
+    /// Whether this tenant permission is currently active
     /// </summary>
     public bool IsActive
     {
@@ -220,6 +229,33 @@ public class UserTenantResponseDto
     }
 
     /// <summary>
+    /// Permission expiry date
+    /// </summary>
+    public DateTime? ExpiresAt
+    {
+        get;
+        set;
+    }
+
+    /// <summary>
+    /// Permission flags for bits 0-63
+    /// </summary>
+    public ulong PermissionFlags1
+    {
+        get;
+        set;
+    }
+
+    /// <summary>
+    /// Permission flags for bits 64-127
+    /// </summary>
+    public ulong PermissionFlags2
+    {
+        get;
+        set;
+    }
+
+    /// <summary>
     /// Version number for optimistic concurrency control
     /// </summary>
     public int Version
@@ -229,7 +265,7 @@ public class UserTenantResponseDto
     }
 
     /// <summary>
-    /// When the relationship was created
+    /// When the permission was created
     /// </summary>
     public DateTime CreatedAt
     {
@@ -238,7 +274,7 @@ public class UserTenantResponseDto
     }
 
     /// <summary>
-    /// When the relationship was last updated
+    /// When the permission was last updated
     /// </summary>
     public DateTime UpdatedAt
     {
@@ -247,7 +283,7 @@ public class UserTenantResponseDto
     }
 
     /// <summary>
-    /// When the relationship was soft deleted (null if not deleted)
+    /// When the permission was soft deleted (null if not deleted)
     /// </summary>
     public DateTime? DeletedAt
     {
@@ -256,7 +292,7 @@ public class UserTenantResponseDto
     }
 
     /// <summary>
-    /// Whether the relationship is soft deleted
+    /// Whether the permission is soft deleted
     /// </summary>
     public bool IsDeleted
     {

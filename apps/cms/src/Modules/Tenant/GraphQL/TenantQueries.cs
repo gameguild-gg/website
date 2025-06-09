@@ -36,7 +36,7 @@ public class TenantQueries
     /// <summary>
     /// Get users in a tenant
     /// </summary>
-    public async Task<IEnumerable<UserTenant>> GetUsersInTenant([Service] ITenantService tenantService, Guid tenantId)
+    public async Task<IEnumerable<TenantPermission>> GetUsersInTenant([Service] ITenantService tenantService, Guid tenantId)
     {
         return await tenantService.GetUsersInTenantAsync(tenantId);
     }

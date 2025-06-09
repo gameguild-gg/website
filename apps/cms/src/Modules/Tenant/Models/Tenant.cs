@@ -55,13 +55,13 @@ public class Tenant : BaseEntity
     } = string.Empty;
 
     /// <summary>
-    /// Navigation property to users in this tenant
+    /// Navigation property to tenant permissions and user memberships
     /// </summary>
-    public virtual ICollection<UserTenant> UserTenants
+    public virtual ICollection<TenantPermission> TenantPermissions
     {
         get;
         set;
-    } = new List<UserTenant>();
+    } = new List<TenantPermission>();
 
 
     /// <summary>

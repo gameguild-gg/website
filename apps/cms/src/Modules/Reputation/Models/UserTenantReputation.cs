@@ -11,7 +11,7 @@ namespace cms.Modules.Reputation.Models;
 /// Supports tenant-specific reputation that is separate from global user reputation
 /// </summary>
 [Table("UserTenantReputations")]
-[Index(nameof(UserTenantId), IsUnique = true)]
+[Index(nameof(TenantPermissionId), IsUnique = true)]
 [Index(nameof(Score))]
 [Index(nameof(CurrentLevelId))]
 public class UserTenantReputation : ResourceBase, IReputation
@@ -20,15 +20,15 @@ public class UserTenantReputation : ResourceBase, IReputation
     /// The user-tenant relationship this reputation belongs to
     /// </summary>
     [Required]
-    [ForeignKey(nameof(UserTenantId))]
-    public required Modules.Tenant.Models.UserTenant UserTenant
+    [ForeignKey(nameof(TenantPermissionId))]
+    public required Modules.Tenant.Models.TenantPermission TenantPermission
     {
         get;
         set;
     }
 
     [Required]
-    public Guid UserTenantId
+    public Guid TenantPermissionId
     {
         get;
         set;
@@ -110,9 +110,9 @@ public class UserTenantReputationConfiguration : IEntityTypeConfiguration<UserTe
     public void Configure(EntityTypeBuilder<UserTenantReputation> builder)
     {
         // Configure relationship with UserTenant (can't be done with annotations)
-        builder.HasOne(utr => utr.UserTenant)
+        builder.HasOne(utr => utr.TenantPermission)
             .WithMany()
-            .HasForeignKey(utr => utr.UserTenantId)
+            .HasForeignKey(utr => utr.TenantPermissionId)
             .OnDelete(DeleteBehavior.Cascade);
 
         // Configure relationship with CurrentLevel (can't be done with annotations)

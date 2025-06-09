@@ -25,15 +25,15 @@ public class ReputationService : IReputationService
         if (tenantId.HasValue)
         {
             // Get tenant-specific reputation
-            UserTenant? userTenant = await _context.UserTenants
-                .FirstOrDefaultAsync(ut => ut.UserId == userId && ut.TenantId == tenantId.Value && !ut.IsDeleted);
+            TenantPermission? tenantPermission = await _context.TenantPermissions
+                .FirstOrDefaultAsync(tp => tp.UserId == userId && tp.TenantId == tenantId.Value && !tp.IsDeleted);
 
-            if (userTenant == null)
+            if (tenantPermission == null)
                 return null;
 
             return await _context.UserTenantReputations
                 .Include(utr => utr.CurrentLevel)
-                .FirstOrDefaultAsync(utr => utr.UserTenantId == userTenant.Id && !utr.IsDeleted);
+                .FirstOrDefaultAsync(utr => utr.TenantPermissionId == tenantPermission.Id && !utr.IsDeleted);
         }
         else
         {
@@ -59,18 +59,19 @@ public class ReputationService : IReputationService
             if (tenantId.HasValue)
             {
                 // Create tenant-specific reputation
-                UserTenant? userTenant = await _context.UserTenants
-                    .FirstOrDefaultAsync(ut => ut.UserId == userId && ut.TenantId == tenantId.Value && !ut.IsDeleted);
+                TenantPermission? tenantPermission = await _context.TenantPermissions
+                    .Include(tp => tp.Tenant)
+                    .FirstOrDefaultAsync(tp => tp.UserId == userId && tp.TenantId == tenantId.Value && !tp.IsDeleted);
 
-                if (userTenant == null)
+                if (tenantPermission == null)
                     throw new ArgumentException("User is not a member of the specified tenant", nameof(tenantId));
 
                 var tenantReputation = new UserTenantReputation
                 {
-                    UserTenant = userTenant,
+                    TenantPermission = tenantPermission,
                     Score = Math.Max(0, scoreChange), // Don't allow negative starting scores
                     LastUpdated = DateTime.UtcNow,
-                    Title = $"Reputation for {user.Name} in {userTenant.Tenant?.Name ?? "Tenant"}"
+                    Title = $"Reputation for {user.Name} in {tenantPermission.Tenant?.Name ?? "Tenant"}"
                 };
 
                 _context.UserTenantReputations.Add(tenantReputation);
@@ -148,7 +149,7 @@ public class ReputationService : IReputationService
         }
         else if (reputation is UserTenantReputation tenantRep)
         {
-            historyEntry.UserTenantId = tenantRep.UserTenantId;
+            historyEntry.TenantPermissionId = tenantRep.TenantPermissionId;
         }
 
         _context.UserReputationHistory.Add(historyEntry);
@@ -163,10 +164,10 @@ public class ReputationService : IReputationService
             // Get tenant-specific reputations
             var tenantReputations = await _context.UserTenantReputations
                 .Include(utr => utr.CurrentLevel)
-                .Include(utr => utr.UserTenant)
-                .ThenInclude(ut => ut.User)
+                .Include(utr => utr.TenantPermission)
+                .ThenInclude(tp => tp.User)
                 .Where(utr => utr.Score >= minimumLevel.MinimumScore &&
-                              utr.UserTenant.TenantId == tenantId.Value &&
+                              utr.TenantPermission.TenantId == tenantId.Value &&
                               !utr.IsDeleted
                 )
                 .OrderByDescending(utr => utr.Score)
@@ -204,9 +205,9 @@ public class ReputationService : IReputationService
 
         if (tenantId.HasValue)
         {
-            query = query.Where(h => h.UserTenantId != null &&
-                                     h.UserTenant!.UserId == userId &&
-                                     h.UserTenant.TenantId == tenantId.Value
+            query = query.Where(h => h.TenantPermissionId != null &&
+                                     h.TenantPermission!.UserId == userId &&
+                                     h.TenantPermission.TenantId == tenantId.Value
             );
         }
         else
@@ -228,9 +229,9 @@ public class ReputationService : IReputationService
         {
             var tenantReputations = await _context.UserTenantReputations
                 .Include(utr => utr.CurrentLevel)
-                .Include(utr => utr.UserTenant)
-                .ThenInclude(ut => ut.User)
-                .Where(utr => utr.UserTenant.TenantId == tenantId.Value && !utr.IsDeleted)
+                .Include(utr => utr.TenantPermission)
+                .ThenInclude(tp => tp.User)
+                .Where(utr => utr.TenantPermission.TenantId == tenantId.Value && !utr.IsDeleted)
                 .OrderByDescending(utr => utr.Score)
                 .Take(limit)
                 .ToListAsync();

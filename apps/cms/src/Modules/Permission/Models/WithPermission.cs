@@ -1,6 +1,7 @@
 
 using System.Collections.ObjectModel;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Linq; // do not remove this, it's needed for IQueryable extensions
 
 namespace cms.Common.Entities;
 
@@ -116,7 +117,7 @@ public enum PermissionType
 }
 
 // this is a base permission model that can be used to store permissions for any entity
-public class WithPermissions
+public class WithPermissions: BaseEntity
 {
 	[Column(TypeName = "bigint")]
 	public ulong PermissionFlags1 { get; set; } = 0; // bits 0-63

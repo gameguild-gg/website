@@ -248,14 +248,14 @@ public class TenantsController : ControllerBase
     /// </summary>
     /// <param name="id">Tenant ID</param>
     /// <param name="userId">User ID</param>
-    /// <returns>Created UserTenant relationship</returns>
+    /// <returns>Created TenantPermission relationship</returns>
     [HttpPost("{id:guid}/users/{userId:guid}")]
-    public async Task<ActionResult<UserTenantResponseDto>> AddUserToTenant(Guid id, Guid userId)
+    public async Task<ActionResult<TenantPermissionResponseDto>> AddUserToTenant(Guid id, Guid userId)
     {
         try
         {
-            UserTenant userTenant = await _tenantService.AddUserToTenantAsync(userId, id);
-            UserTenantResponseDto response = MapUserTenantToResponseDto(userTenant);
+            TenantPermission tenantPermission = await _tenantService.AddUserToTenantAsync(userId, id);
+            TenantPermissionResponseDto response = MapTenantPermissionToResponseDto(tenantPermission);
 
             return Ok(response);
         }
@@ -288,12 +288,12 @@ public class TenantsController : ControllerBase
     /// Get users in a tenant
     /// </summary>
     /// <param name="id">Tenant ID</param>
-    /// <returns>List of UserTenant relationships</returns>
+    /// <returns>List of TenantPermission relationships</returns>
     [HttpGet("{id}/users")]
-    public async Task<ActionResult<IEnumerable<UserTenantResponseDto>>> GetUsersInTenant(Guid id)
+    public async Task<ActionResult<IEnumerable<TenantPermissionResponseDto>>> GetUsersInTenant(Guid id)
     {
-        var userTenants = await _tenantService.GetUsersInTenantAsync(id);
-        var response = userTenants.Select(MapUserTenantToResponseDto);
+        var tenantPermissions = await _tenantService.GetUsersInTenantAsync(id);
+        var response = tenantPermissions.Select(MapTenantPermissionToResponseDto);
 
         return Ok(response);
     }
@@ -315,39 +315,43 @@ public class TenantsController : ControllerBase
             CreatedAt = tenant.CreatedAt,
             UpdatedAt = tenant.UpdatedAt,
             DeletedAt = tenant.DeletedAt,
-            UserTenants = tenant.UserTenants?.Select(MapUserTenantToResponseDto).ToList() ?? new List<UserTenantResponseDto>()
+            TenantPermissions = tenant.TenantPermissions?.Select(MapTenantPermissionToResponseDto).ToList() ?? new List<TenantPermissionResponseDto>()
         };
     }
 
     /// <summary>
-    /// Map UserTenant entity to response DTO
+    /// Map TenantPermission entity to response DTO
     /// </summary>
-    /// <param name="userTenant">UserTenant entity</param>
-    /// <returns>UserTenant response DTO</returns>
-    private static UserTenantResponseDto MapUserTenantToResponseDto(UserTenant userTenant)
+    /// <param name="tenantPermission">TenantPermission entity</param>
+    /// <returns>TenantPermission response DTO</returns>
+    private static TenantPermissionResponseDto MapTenantPermissionToResponseDto(TenantPermission tenantPermission)
     {
-        return new UserTenantResponseDto
+        return new TenantPermissionResponseDto
         {
-            Id = userTenant.Id,
-            UserId = userTenant.UserId,
-            TenantId = userTenant.TenantId,
-            IsActive = userTenant.IsActive,
-            JoinedAt = userTenant.JoinedAt,
-            Version = userTenant.Version,
-            CreatedAt = userTenant.CreatedAt,
-            UpdatedAt = userTenant.UpdatedAt,
-            DeletedAt = userTenant.DeletedAt,
-            User = userTenant.User != null
+            Id = tenantPermission.Id,
+            UserId = tenantPermission.UserId,
+            TenantId = tenantPermission.TenantId,
+            Status = tenantPermission.Status.ToString(),
+            IsActive = tenantPermission.IsActive,
+            JoinedAt = tenantPermission.JoinedAt,
+            ExpiresAt = tenantPermission.ExpiresAt,
+            PermissionFlags1 = tenantPermission.PermissionFlags1,
+            PermissionFlags2 = tenantPermission.PermissionFlags2,
+            Version = tenantPermission.Version,
+            CreatedAt = tenantPermission.CreatedAt,
+            UpdatedAt = tenantPermission.UpdatedAt,
+            DeletedAt = tenantPermission.DeletedAt,
+            User = tenantPermission.User != null
                 ? new UserResponseDto
                 {
-                    Id = userTenant.User.Id,
-                    Name = userTenant.User.Name,
-                    Email = userTenant.User.Email,
-                    IsActive = userTenant.User.IsActive,
-                    Version = userTenant.User.Version,
-                    CreatedAt = userTenant.User.CreatedAt,
-                    UpdatedAt = userTenant.User.UpdatedAt,
-                    DeletedAt = userTenant.User.DeletedAt
+                    Id = tenantPermission.User.Id,
+                    Name = tenantPermission.User.Name,
+                    Email = tenantPermission.User.Email,
+                    IsActive = tenantPermission.User.IsActive,
+                    Version = tenantPermission.User.Version,
+                    CreatedAt = tenantPermission.User.CreatedAt,
+                    UpdatedAt = tenantPermission.User.UpdatedAt,
+                    DeletedAt = tenantPermission.User.DeletedAt
                 }
                 : null
         };

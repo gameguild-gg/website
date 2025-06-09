@@ -44,44 +44,56 @@ public class TenantType : ObjectType<Models.Tenant>
             .Description("The version number for optimistic concurrency control");
 
         // Navigation properties
-        descriptor.Field(t => t.UserTenants)
-            .Type<ListType<UserTenantType>>()
-            .Description("The users associated with this tenant");
+        descriptor.Field(t => t.TenantPermissions)
+            .Type<ListType<TenantPermissionType>>()
+            .Description("The users and their permissions associated with this tenant");
     }
 }
 
 /// <summary>
-/// GraphQL type for UserTenant junction entity
+/// GraphQL type for TenantPermission entity
 /// </summary>
-public class UserTenantType : ObjectType<UserTenant>
+public class TenantPermissionType : ObjectType<TenantPermission>
 {
-    protected override void Configure(IObjectTypeDescriptor<UserTenant> descriptor)
+    protected override void Configure(IObjectTypeDescriptor<TenantPermission> descriptor)
     {
-        descriptor.Name("UserTenant");
-        descriptor.Description("Represents the relationship between a user and a tenant");
+        descriptor.Name("TenantPermission");
+        descriptor.Description("Represents the permissions and relationship between a user and a tenant");
 
-        descriptor.Field(ut => ut.Id)
+        descriptor.Field(tp => tp.Id)
             .Type<NonNullType<UuidType>>()
-            .Description("The unique identifier of the user-tenant relationship");
+            .Description("The unique identifier of the tenant permission");
 
-        descriptor.Field(ut => ut.UserId)
+        descriptor.Field(tp => tp.UserId)
             .Type<NonNullType<UuidType>>()
             .Description("The user identifier");
 
-        descriptor.Field(ut => ut.TenantId)
+        descriptor.Field(tp => tp.TenantId)
             .Type<NonNullType<UuidType>>()
             .Description("The tenant identifier");
 
-        descriptor.Field(ut => ut.JoinedAt)
+        descriptor.Field(tp => tp.Status)
+            .Type<NonNullType<EnumType<Common.Enums.UserTenantStatus>>>()
+            .Description("The membership status");
+
+        descriptor.Field(tp => tp.JoinedAt)
             .Type<NonNullType<DateTimeType>>()
             .Description("The date and time when the user joined the tenant");
 
+        descriptor.Field(tp => tp.PermissionFlags1)
+            .Type<NonNullType<LongType>>()
+            .Description("Permission flags for bits 0-63");
+
+        descriptor.Field(tp => tp.PermissionFlags2)
+            .Type<NonNullType<LongType>>()
+            .Description("Permission flags for bits 64-127");
+
         // Navigation properties
-        descriptor.Field(ut => ut.User)
+        descriptor.Field(tp => tp.User)
             .Type<UserType>()
             .Description("The user in this relationship");
 
-        descriptor.Field(ut => ut.Tenant)
+        descriptor.Field(tp => tp.Tenant)
             .Type<TenantType>()
             .Description("The tenant in this relationship");
     }

@@ -62,7 +62,7 @@ public class TenantMutations
     /// <summary>
     /// Add a user to a tenant
     /// </summary>
-    public async Task<UserTenant> AddUserToTenant(
+    public async Task<TenantPermission> AddUserToTenant(
         [Service] ITenantService tenantService,
         AddUserToTenantInput input)
     {

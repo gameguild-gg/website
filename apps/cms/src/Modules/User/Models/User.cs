@@ -54,13 +54,13 @@ public class User : BaseEntity
     } = new List<Credential>();
 
     /// <summary>
-    /// Navigation property to user-tenant relationships
+    /// Navigation property to tenant permissions and memberships
     /// </summary>
-    public virtual ICollection<cms.Modules.Tenant.Models.UserTenant> UserTenants
+    public virtual ICollection<cms.Modules.Tenant.Models.TenantPermission> TenantPermissions
     {
         get;
         set;
-    } = new List<cms.Modules.Tenant.Models.UserTenant>();
+    } = new List<cms.Modules.Tenant.Models.TenantPermission>();
 
     /// <summary>
     /// Navigation property to global content type permissions (Layer 2a of permission system)

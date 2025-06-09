@@ -13,7 +13,7 @@ namespace cms.Modules.Reputation.Models;
 /// </summary>
 [Table("UserReputationHistory")]
 [Index(nameof(UserId), nameof(OccurredAt))]
-[Index(nameof(UserTenantId), nameof(OccurredAt))]
+[Index(nameof(TenantPermissionId), nameof(OccurredAt))]
 [Index(nameof(ReputationActionId))]
 [Index(nameof(OccurredAt))]
 [Index(nameof(PointsChange))]
@@ -38,14 +38,14 @@ public class UserReputationHistory : ResourceBase
     /// <summary>
     /// The user-tenant whose reputation changed (for tenant-specific reputation tracking)
     /// </summary>
-    [ForeignKey(nameof(UserTenantId))]
-    public Modules.Tenant.Models.UserTenant? UserTenant
+    [ForeignKey(nameof(TenantPermissionId))]
+    public Modules.Tenant.Models.TenantPermission? TenantPermission
     {
         get;
         set;
     }
 
-    public Guid? UserTenantId
+    public Guid? TenantPermissionId
     {
         get;
         set;
@@ -205,9 +205,9 @@ public class UserReputationHistoryConfiguration : IEntityTypeConfiguration<UserR
             .OnDelete(DeleteBehavior.SetNull);
 
         // Configure optional relationship with UserTenant (can't be done with annotations)
-        builder.HasOne(urh => urh.UserTenant)
+        builder.HasOne(urh => urh.TenantPermission)
             .WithMany()
-            .HasForeignKey(urh => urh.UserTenantId)
+            .HasForeignKey(urh => urh.TenantPermissionId)
             .OnDelete(DeleteBehavior.SetNull);
 
         // Configure relationship with ReputationAction (can't be done with annotations)

@@ -87,8 +87,8 @@ public interface ITenantService
     /// </summary>
     /// <param name="userId">User ID</param>
     /// <param name="tenantId">Tenant ID</param>
-    /// <returns>Created UserTenant relationship</returns>
-    Task<UserTenant> AddUserToTenantAsync(Guid userId, Guid tenantId);
+    /// <returns>Created TenantPermission relationship</returns>
+    Task<TenantPermission> AddUserToTenantAsync(Guid userId, Guid tenantId);
 
     /// <summary>
     /// Remove a user from a tenant
@@ -102,13 +102,13 @@ public interface ITenantService
     /// Get users in a tenant
     /// </summary>
     /// <param name="tenantId">Tenant ID</param>
-    /// <returns>List of UserTenant relationships</returns>
-    Task<IEnumerable<UserTenant>> GetUsersInTenantAsync(Guid tenantId);
+    /// <returns>List of TenantPermission relationships</returns>
+    Task<IEnumerable<TenantPermission>> GetUsersInTenantAsync(Guid tenantId);
 
     /// <summary>
     /// Get tenants for a user
     /// </summary>
     /// <param name="userId">User ID</param>
-    /// <returns>List of UserTenant relationships</returns>
-    Task<IEnumerable<UserTenant>> GetTenantsForUserAsync(Guid userId);
+    /// <returns>List of TenantPermission relationships</returns>
+    Task<IEnumerable<TenantPermission>> GetTenantsForUserAsync(Guid userId);
 }

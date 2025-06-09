@@ -1,61 +1,104 @@
 using cms.Common.Entities;
+using cms.Common.Enums;
+using cms.Modules.Tenant.Models;
 
 namespace cms.Common.Services;
 
 /// <summary>
 /// Interface for the three-layer permission service
-/// Provides permission evaluation across Tenant → ContentType → Resource layers
-/// Integrates with existing ResourceBase, UserTenant, and ITenantable architecture
-/// TODO: Update to work with new DAC permission model after role-based system removal
+/// Layer 1: Tenant-wide permissions with default support
+/// Layer 2: Content-Type permissions (to be implemented)
+/// Layer 3: Resource-specific permissions (to be implemented)
 /// </summary>
 public interface IPermissionService
 {
     // ===== LAYER 1: TENANT-WIDE PERMISSIONS =====
 
-    // TODO: Implement tenant-wide permissions with new DAC model
-    // Task AssignUserToTenantAsync(Guid userId, Guid? tenantId, [NewPermissionType] permissionContext, Guid assignedByUserId);
-
-    // TODO: Implement user tenant permissions with new DAC model
-    // Task<[NewPermissionType]> GetUserTenantPermissionsAsync(Guid userId, Guid? tenantId);
+    /// <summary>
+    /// Grant permissions to a user in a tenant, or set default permissions
+    /// </summary>
+    /// <param name="userId">User ID (null for default permissions)</param>
+    /// <param name="tenantId">Tenant ID (null for global defaults)</param>
+    /// <param name="permissions">Permissions to grant</param>
+    /// <returns>The tenant permission entity</returns>
+    Task<TenantPermission> GrantTenantPermissionAsync(Guid? userId, Guid? tenantId, PermissionType[] permissions);
 
     /// <summary>
-    /// Get all tenants a user has permissions in
+    /// Check if user has a specific tenant permission
+    /// Resolves through hierarchy: user -> tenant default -> global default
     /// </summary>
-    Task<IEnumerable<Modules.Tenant.Models.Tenant>> GetUserTenantsAsync(Guid userId);
+    Task<bool> HasTenantPermissionAsync(Guid? userId, Guid? tenantId, PermissionType permission);
 
     /// <summary>
-    /// Get user's global permissions (across all tenants)
-    /// Returns ContentTypePermission entities with null TenantId for global permissions
+    /// Get all permissions for a user in a tenant
     /// </summary>
-    Task<IEnumerable<ContentTypePermission>> GetUserGlobalPermissionsAsync(Guid userId);
-
-    // ===== LAYER 2: CONTENT-TYPE-WIDE PERMISSIONS =====
-
-    // TODO: Implement content type permissions with new DAC model
-    // Task AssignContentTypePermissionAsync(Guid userId, Guid? tenantId, string contentTypeName, [NewPermissionType] permissionContext, Guid assignedByUserId);
-
-    // TODO: Implement content type permission checks with new DAC model
-    // Task<bool> HasContentTypePermissionAsync(Guid userId, Guid? tenantId, string contentTypeName, [NewPermissionEnum] permission);
-
-    // TODO: Implement user content type permissions with new DAC model
-    // Task<[NewPermissionType]> GetUserContentTypePermissionsAsync(Guid userId, Guid? tenantId, string contentTypeName);
+    Task<IEnumerable<PermissionType>> GetTenantPermissionsAsync(Guid? userId, Guid? tenantId);
 
     /// <summary>
-    /// Get all content type permissions for a user (both global and tenant-specific)
+    /// Revoke specific permissions from a user in a tenant
     /// </summary>
-    Task<IEnumerable<ContentTypePermission>> GetUserContentTypePermissionsAsync(Guid userId);
+    Task RevokeTenantPermissionAsync(Guid? userId, Guid? tenantId, PermissionType[] permissions);
 
-    // ===== LAYER 3: RESOURCE-SPECIFIC PERMISSIONS =====
+    // === DEFAULT PERMISSION MANAGEMENT ===
 
-    // TODO: Implement resource permissions with new DAC model
-    // Task GrantResourcePermissionAsync(Guid userId, Guid resourceId, [NewPermissionType] permissionContext, Guid grantedByUserId);
+    /// <summary>
+    /// Set default permissions for a tenant
+    /// </summary>
+    Task<TenantPermission> SetTenantDefaultPermissionsAsync(Guid? tenantId, PermissionType[] permissions);
 
-    // TODO: Implement resource permission checks with new DAC model
-    // Task<bool> HasPermissionAsync(Guid userId, Guid resourceId, [NewPermissionEnum] permission);
+    /// <summary>
+    /// Set global default permissions
+    /// </summary>
+    Task<TenantPermission> SetGlobalDefaultPermissionsAsync(PermissionType[] permissions);
 
-    // TODO: Implement user resource permissions with new DAC model
-    // Task<[NewPermissionType]> GetUserPermissionsAsync(Guid userId, Guid resourceId);
+    /// <summary>
+    /// Get tenant default permissions
+    /// </summary>
+    Task<IEnumerable<PermissionType>> GetTenantDefaultPermissionsAsync(Guid? tenantId);
 
+    /// <summary>
+    /// Get global default permissions
+    /// </summary>
+    Task<IEnumerable<PermissionType>> GetGlobalDefaultPermissionsAsync();
+
+    /// <summary>
+    /// Get effective permissions through hierarchy resolution
+    /// </summary>
+    Task<IEnumerable<PermissionType>> GetEffectiveTenantPermissionsAsync(Guid userId, Guid? tenantId);
+
+    // === USER-TENANT MEMBERSHIP FUNCTIONALITY ===
+
+    /// <summary>
+    /// Get all tenants a user is a member of
+    /// </summary>
+    Task<IEnumerable<TenantPermission>> GetUserTenantsAsync(Guid userId);
+
+    /// <summary>
+    /// Add user to a tenant
+    /// </summary>
+    Task<TenantPermission> JoinTenantAsync(Guid userId, Guid tenantId);
+
+    /// <summary>
+    /// Remove user from a tenant
+    /// </summary>
+    Task LeaveTenantAsync(Guid userId, Guid tenantId);
+
+    /// <summary>
+    /// Check if user is a member of a tenant
+    /// </summary>
+    Task<bool> IsUserInTenantAsync(Guid userId, Guid tenantId);
+
+    /// <summary>
+    /// Update user's membership status in a tenant
+    /// </summary>
+    Task<TenantPermission> UpdateTenantMembershipStatusAsync(Guid userId, Guid tenantId, UserTenantStatus status);
+
+    // ===== LAYER 2: CONTENT-TYPE-WIDE PERMISSIONS (Future Implementation) =====
+    // TODO: Implement content type permissions in next phase
+    
+    // ===== LAYER 3: RESOURCE-SPECIFIC PERMISSIONS (Future Implementation) =====
+    // TODO: Implement resource permissions in final phase
+    
     // ===== HELPER METHODS =====
 
     /// <summary>
@@ -67,14 +110,4 @@ public interface IPermissionService
     /// Get the content type name for a specific resource
     /// </summary>
     Task<string?> GetResourceContentTypeAsync(Guid resourceId);
-
-    /// <summary>
-    /// Remove a specific permission assignment
-    /// </summary>
-    Task RemovePermissionAsync(Guid permissionId);
-
-    /// <summary>
-    /// Remove all permissions for a user in a specific tenant
-    /// </summary>
-    Task RemoveUserFromTenantAsync(Guid userId, Guid? tenantId);
 }

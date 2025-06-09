@@ -19,7 +19,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<Credential> Credentials { get; set; }
     public DbSet<cms.Modules.Auth.Models.RefreshToken> RefreshTokens { get; set; }
     public DbSet<Tenant> Tenants { get; set; }
-    public DbSet<UserTenant> UserTenants { get; set; }
+    public DbSet<cms.Modules.Tenant.Models.TenantPermission> TenantPermissions { get; set; }
 
     // Resource hierarchy DbSet - Required for proper inheritance configuration
     public DbSet<ResourceBase> Resources { get; set; }

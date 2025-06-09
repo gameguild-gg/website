@@ -36,7 +36,8 @@ public static class ServiceCollectionExtensions
         // Add memory cache
         services.AddMemoryCache();
 
-        // Permission services will be added when DAC implementation is complete
+        // Add permission service for three-layer permission system
+        services.AddScoped<IPermissionService, PermissionService>();
 
         return services;
     }
