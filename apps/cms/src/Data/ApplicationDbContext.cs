@@ -30,7 +30,6 @@ public class ApplicationDbContext : DbContext
     // Content hierarchy DbSets - Required for TPC inheritance configuration
     public DbSet<ContentLicense> ContentLicenses { get; set; }
     public DbSet<ResourceMetadata> ResourceMetadata { get; set; }
-    public DbSet<ResourcePermission> ResourcePermissions { get; set; }
     public DbSet<ContentTypePermission> ContentTypePermissions { get; set; }
     public DbSet<ResourceLocalization> ResourceLocalizations { get; set; }
 

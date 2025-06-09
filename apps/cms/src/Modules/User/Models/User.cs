@@ -72,23 +72,6 @@ public class User : BaseEntity
     } = new List<cms.Common.Entities.ContentTypePermission>();
 
     /// <summary>
-    /// Navigation property to resource permissions granted to this user (Layer 3 of permission system)
-    /// </summary>
-    public virtual ICollection<cms.Common.Entities.ResourcePermission> GrantedResourcePermissions
-    {
-        get;
-        set;
-    } = new List<cms.Common.Entities.ResourcePermission>();
-
-    /// <summary>
-    /// Navigation property to permissions granted by this user
-    /// </summary>
-    public virtual ICollection<cms.Common.Entities.ResourcePermission> GrantedPermissions
-    {
-        get;
-        set;
-    } = new List<cms.Common.Entities.ResourcePermission>();
-
     /// <summary>
     /// Default constructor
     /// </summary>

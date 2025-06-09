@@ -52,13 +52,4 @@ public class ResourceMetadata : BaseEntity
         get;
         set;
     }
-
-    /// <summary>
-    /// Collection of permissions for resources using this metadata
-    /// </summary>
-    public virtual ICollection<ResourcePermission> ResourcePermissions
-    {
-        get;
-        set;
-    } = new List<ResourcePermission>();
 }

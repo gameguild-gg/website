@@ -63,15 +63,6 @@ public abstract class ResourceBase : BaseEntity, ILocalizable, ITenantable
     }
 
     /// <summary>
-    /// Collection of permissions assigned to this resource
-    /// This will be removed in favor of the new three-layer permission system
-    /// </summary>
-    [Obsolete("Use the new three-layer permission system instead")]
-    public virtual ICollection<ResourcePermission> ResourcePermissions
-    {
-        get;
-        set;
-    } = new List<ResourcePermission>();    /// <summary>
     /// Navigation property to the tenant this resource belongs to (implements ITenantable)
     /// Entity Framework will automatically create the TenantId foreign key
     /// Null means the resource is global and accessible across all tenants

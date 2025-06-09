@@ -77,9 +77,5 @@ public class UserProfileType : ObjectType<Models.UserProfile>
         descriptor
             .Field(f => f.Localizations)
             .Description("Localized versions of this user profile");
-
-        descriptor
-            .Field(f => f.ResourcePermissions)
-            .Description("Permissions associated with this user profile");
     }
 }
