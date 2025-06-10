@@ -14,7 +14,7 @@ namespace cms.Common.Entities;
 [Index(nameof(UserId), Name = "IX_ContentTypePermissions_UserId")]
 [Index(nameof(TenantId), Name = "IX_ContentTypePermissions_TenantId")]
 [Index(nameof(ExpiresAt), Name = "IX_ContentTypePermissions_ExpiresAt")]
-public class ContentTypePermission : PermissionBase
+public class ContentTypePermission : WithPermissions
 {
     /// <summary>
     /// The content type this permission applies to (e.g., "Article", "Video", "Discussion")

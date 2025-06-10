@@ -2,7 +2,6 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 using cms.Common.Entities;
-using cms.Common.Enums;
 
 namespace cms.Modules.Tenant.Models;
 
@@ -15,7 +14,7 @@ namespace cms.Modules.Tenant.Models;
 [Index(nameof(TenantId), Name = "IX_TenantPermissions_TenantId")]
 [Index(nameof(UserId), Name = "IX_TenantPermissions_UserId")]
 [Index(nameof(ExpiresAt), Name = "IX_TenantPermissions_ExpiresAt")]
-public class TenantPermission : PermissionBase
+public class TenantPermission : WithPermissions
 {
     /// <summary>
     /// Navigation property to content type permissions for this user within this tenant (Layer 2 of permission system)
