@@ -130,8 +130,84 @@ public interface IPermissionService
     /// <param name="permissions">Permissions to revoke</param>
     Task RevokeContentTypePermissionAsync(Guid? userId, Guid? tenantId, string contentTypeName, PermissionType[] permissions);
     
-    // ===== LAYER 3: RESOURCE-SPECIFIC PERMISSIONS (Future Implementation) =====
-    // TODO: Implement resource permissions in final phase
+    // ===== LAYER 3: RESOURCE-ENTRY PERMISSIONS =====
+    
+    /// <summary>
+    /// Grant resource-specific permissions to a user
+    /// </summary>
+    /// <typeparam name="TPermission">The resource permission type</typeparam>
+    /// <typeparam name="TResource">The resource entity type</typeparam>
+    /// <param name="userId">User ID (null for default permissions)</param>
+    /// <param name="tenantId">Tenant ID (null for global defaults)</param>
+    /// <param name="resourceId">ID of the specific resource</param>
+    /// <param name="permissions">Permissions to grant</param>
+    Task GrantResourcePermissionAsync<TPermission, TResource>(Guid? userId, Guid? tenantId, Guid resourceId, PermissionType[] permissions) 
+        where TPermission : ResourcePermission<TResource>, new() 
+        where TResource : BaseEntity;
+        
+    /// <summary>
+    /// Check if user has a specific resource permission
+    /// </summary>
+    /// <typeparam name="TPermission">The resource permission type</typeparam>
+    /// <typeparam name="TResource">The resource entity type</typeparam>
+    /// <param name="userId">User ID</param>
+    /// <param name="tenantId">Tenant ID</param>
+    /// <param name="resourceId">ID of the specific resource</param>
+    /// <param name="permission">Permission to check</param>
+    Task<bool> HasResourcePermissionAsync<TPermission, TResource>(Guid userId, Guid? tenantId, Guid resourceId, PermissionType permission) 
+        where TPermission : ResourcePermission<TResource> 
+        where TResource : BaseEntity;
+        
+    /// <summary>
+    /// Get all resource permissions for a user on a specific resource
+    /// </summary>
+    /// <typeparam name="TPermission">The resource permission type</typeparam>
+    /// <typeparam name="TResource">The resource entity type</typeparam>
+    /// <param name="userId">User ID (null for default permissions)</param>
+    /// <param name="tenantId">Tenant ID</param>
+    /// <param name="resourceId">ID of the specific resource</param>
+    Task<IEnumerable<PermissionType>> GetResourcePermissionsAsync<TPermission, TResource>(Guid? userId, Guid? tenantId, Guid resourceId) 
+        where TPermission : ResourcePermission<TResource> 
+        where TResource : BaseEntity;
+        
+    /// <summary>
+    /// Revoke specific resource permissions from a user
+    /// </summary>
+    /// <typeparam name="TPermission">The resource permission type</typeparam>
+    /// <typeparam name="TResource">The resource entity type</typeparam>
+    /// <param name="userId">User ID (null for default permissions)</param>
+    /// <param name="tenantId">Tenant ID</param>
+    /// <param name="resourceId">ID of the specific resource</param>
+    /// <param name="permissions">Permissions to revoke</param>
+    Task RevokeResourcePermissionAsync<TPermission, TResource>(Guid? userId, Guid? tenantId, Guid resourceId, PermissionType[] permissions) 
+        where TPermission : ResourcePermission<TResource> 
+        where TResource : BaseEntity;
+    
+    /// <summary>
+    /// Get resource permissions for multiple resources at once (bulk operation)
+    /// </summary>
+    /// <typeparam name="TPermission">The resource permission type</typeparam>
+    /// <typeparam name="TResource">The resource entity type</typeparam>
+    /// <param name="userId">User ID</param>
+    /// <param name="tenantId">Tenant ID</param>
+    /// <param name="resourceIds">IDs of the resources</param>
+    Task<Dictionary<Guid, IEnumerable<PermissionType>>> GetBulkResourcePermissionsAsync<TPermission, TResource>(Guid userId, Guid? tenantId, Guid[] resourceIds) 
+        where TPermission : ResourcePermission<TResource> 
+        where TResource : BaseEntity;
+        
+    /// <summary>
+    /// Share a resource with another user with specific permissions
+    /// </summary>
+    /// <typeparam name="TPermission">The resource permission type</typeparam>
+    /// <typeparam name="TResource">The resource entity type</typeparam>
+    /// <param name="resourceId">ID of the resource to share</param>
+    /// <param name="targetUserId">User to share with</param>
+    /// <param name="tenantId">Tenant context</param>
+    /// <param name="permissions">Permissions to grant</param>
+    /// <param name="expiresAt">Optional expiration date</param>
+    Task ShareResourceAsync<TPermission, TResource>(Guid resourceId, Guid targetUserId, Guid? tenantId, PermissionType[] permissions, DateTime? expiresAt = null) 
+        where TPermission : ResourcePermission<TResource>, new() 
+        where TResource : BaseEntity;
     
     // ===== HELPER METHODS =====
 

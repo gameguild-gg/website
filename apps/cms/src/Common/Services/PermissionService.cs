@@ -487,4 +487,143 @@ public class PermissionService : IPermissionService
         await Task.CompletedTask;
         return null;
     }
+
+    // ===== LAYER 3: RESOURCE-ENTRY PERMISSIONS IMPLEMENTATION =====
+
+    public async Task GrantResourcePermissionAsync<TPermission, TResource>(Guid? userId, Guid? tenantId, Guid resourceId, PermissionType[] permissions) 
+        where TPermission : ResourcePermission<TResource>, new() 
+        where TResource : BaseEntity
+    {
+        var existingPermission = await _context.Set<TPermission>()
+            .FirstOrDefaultAsync(p => p.UserId == userId && p.TenantId == tenantId && p.ResourceId == resourceId);
+
+        if (existingPermission != null)
+        {
+            // Update existing permissions
+            foreach (var permission in permissions)
+            {
+                existingPermission.AddPermission(permission);
+            }
+            existingPermission.Touch();
+        }
+        else
+        {
+            // Create new permission record
+            var newPermission = new TPermission
+            {
+                UserId = userId,
+                TenantId = tenantId,
+                ResourceId = resourceId
+            };
+
+            foreach (var permission in permissions)
+            {
+                newPermission.AddPermission(permission);
+            }
+
+            _context.Set<TPermission>().Add(newPermission);
+        }
+
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task<bool> HasResourcePermissionAsync<TPermission, TResource>(Guid userId, Guid? tenantId, Guid resourceId, PermissionType permission) 
+        where TPermission : ResourcePermission<TResource> 
+        where TResource : BaseEntity
+    {
+        var resourcePermission = await _context.Set<TPermission>()
+            .FirstOrDefaultAsync(p => p.UserId == userId && p.TenantId == tenantId && p.ResourceId == resourceId && p.IsValid);
+
+        return resourcePermission?.HasPermission(permission) ?? false;
+    }
+
+    public async Task<IEnumerable<PermissionType>> GetResourcePermissionsAsync<TPermission, TResource>(Guid? userId, Guid? tenantId, Guid resourceId) 
+        where TPermission : ResourcePermission<TResource> 
+        where TResource : BaseEntity
+    {
+        var resourcePermission = await _context.Set<TPermission>()
+            .FirstOrDefaultAsync(p => p.UserId == userId && p.TenantId == tenantId && p.ResourceId == resourceId && p.IsValid);
+
+        if (resourcePermission == null) return Enumerable.Empty<PermissionType>();
+
+        var permissions = new List<PermissionType>();
+        foreach (PermissionType permissionType in Enum.GetValues<PermissionType>())
+        {
+            if (resourcePermission.HasPermission(permissionType))
+            {
+                permissions.Add(permissionType);
+            }
+        }
+        return permissions;
+    }
+
+    public async Task RevokeResourcePermissionAsync<TPermission, TResource>(Guid? userId, Guid? tenantId, Guid resourceId, PermissionType[] permissions) 
+        where TPermission : ResourcePermission<TResource> 
+        where TResource : BaseEntity
+    {
+        var existingPermission = await _context.Set<TPermission>()
+            .FirstOrDefaultAsync(p => p.UserId == userId && p.TenantId == tenantId && p.ResourceId == resourceId);
+
+        if (existingPermission != null)
+        {
+            foreach (var permission in permissions)
+            {
+                existingPermission.RemovePermission(permission);
+            }
+            existingPermission.Touch();
+            await _context.SaveChangesAsync();
+        }
+    }
+
+    public async Task<Dictionary<Guid, IEnumerable<PermissionType>>> GetBulkResourcePermissionsAsync<TPermission, TResource>(Guid userId, Guid? tenantId, Guid[] resourceIds) 
+        where TPermission : ResourcePermission<TResource> 
+        where TResource : BaseEntity
+    {
+        var permissions = await _context.Set<TPermission>()
+            .Where(p => p.UserId == userId && p.TenantId == tenantId && resourceIds.Contains(p.ResourceId) && p.IsValid)
+            .ToListAsync();
+
+        var result = new Dictionary<Guid, IEnumerable<PermissionType>>();
+        
+        foreach (var permission in permissions)
+        {
+            var permissionTypes = new List<PermissionType>();
+            foreach (PermissionType permType in Enum.GetValues<PermissionType>())
+            {
+                if (permission.HasPermission(permType))
+                {
+                    permissionTypes.Add(permType);
+                }
+            }
+            result[permission.ResourceId] = permissionTypes;
+        }
+
+        return result;
+    }
+
+    public async Task ShareResourceAsync<TPermission, TResource>(Guid resourceId, Guid targetUserId, Guid? tenantId, PermissionType[] permissions, DateTime? expiresAt = null) 
+        where TPermission : ResourcePermission<TResource>, new() 
+        where TResource : BaseEntity
+    {
+        await GrantResourcePermissionAsync<TPermission, TResource>(
+            userId: targetUserId,
+            tenantId: tenantId,
+            resourceId: resourceId,
+            permissions: permissions
+        );
+
+        // Set expiration if provided
+        if (expiresAt.HasValue)
+        {
+            var permission = await _context.Set<TPermission>()
+                .FirstOrDefaultAsync(p => p.UserId == targetUserId && p.TenantId == tenantId && p.ResourceId == resourceId);
+            
+            if (permission != null)
+            {
+                permission.ExpiresAt = expiresAt.Value;
+                permission.Touch();
+                await _context.SaveChangesAsync();
+            }
+        }
+    }
 }

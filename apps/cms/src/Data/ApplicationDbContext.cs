@@ -33,6 +33,9 @@ public class ApplicationDbContext : DbContext
     public DbSet<ContentTypePermission> ContentTypePermissions { get; set; }
     public DbSet<ResourceLocalization> ResourceLocalizations { get; set; }
 
+    // Resource Permission DbSets (Layer 3 of DAC system)
+    public DbSet<Modules.Comment.Models.CommentPermission> CommentPermissions { get; set; }
+
     // Reputation Management DbSets
     public DbSet<Modules.Reputation.Models.UserReputation> UserReputations { get; set; }
     public DbSet<Modules.Reputation.Models.UserTenantReputation> UserTenantReputations { get; set; }

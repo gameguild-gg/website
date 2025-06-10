@@ -1,3 +1,5 @@
+using cms.Modules.Comment.Models;
+
 namespace cms.Common.Entities;
 
 /// <summary>
@@ -10,4 +12,9 @@ public class Comment : ResourceBase
         get;
         set;
     } = string.Empty;
+    
+    /// <summary>
+    /// Navigation to comment permissions
+    /// </summary>
+    public virtual ICollection<CommentPermission> Permissions { get; set; } = new List<CommentPermission>();
 }
