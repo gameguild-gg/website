@@ -37,6 +37,7 @@ public enum PermissionType
 	  Archive = 22,
 	  Restore = 23,
 	  SoftDelete = 24,
+	  Delete = 24,
 	  HardDelete = 25,
 	  Backup = 26,
 	  Migrate = 27,
