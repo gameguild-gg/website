@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using cms.Data;
 
@@ -10,9 +11,11 @@ using cms.Data;
 namespace cms.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250610171114_RemoveAssignedByAndStatus")]
+    partial class RemoveAssignedByAndStatus
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.0");
@@ -29,7 +32,7 @@ namespace cms.Migrations
 
                     b.HasIndex("LicensesId");
 
-                    b.ToTable("ContentContentLicense", (string)null);
+                    b.ToTable("ContentContentLicense");
                 });
 
             modelBuilder.Entity("cms.Common.Entities.ContentTypePermission", b =>
@@ -103,7 +106,7 @@ namespace cms.Migrations
 
                     b.HasIndex(new[] { "UserId" }, "IX_ContentTypePermissions_UserId");
 
-                    b.ToTable("ContentTypePermissions", (string)null);
+                    b.ToTable("ContentTypePermissions");
                 });
 
             modelBuilder.Entity("cms.Common.Entities.Language", b =>
@@ -159,7 +162,7 @@ namespace cms.Migrations
 
                     b.HasIndex("TenantId");
 
-                    b.ToTable("Languages", (string)null);
+                    b.ToTable("Languages");
                 });
 
             modelBuilder.Entity("cms.Common.Entities.ResourceBase", b =>
@@ -287,7 +290,7 @@ namespace cms.Migrations
 
                     b.HasIndex("TenantId");
 
-                    b.ToTable("ResourceLocalizations", (string)null);
+                    b.ToTable("ResourceLocalizations");
                 });
 
             modelBuilder.Entity("cms.Common.Entities.ResourceMetadata", b =>
@@ -342,7 +345,7 @@ namespace cms.Migrations
 
                     b.HasIndex("TenantId");
 
-                    b.ToTable("ResourceMetadata", (string)null);
+                    b.ToTable("ResourceMetadata");
                 });
 
             modelBuilder.Entity("cms.Modules.Auth.Models.RefreshToken", b =>
@@ -406,7 +409,7 @@ namespace cms.Migrations
 
                     b.HasIndex("TenantId");
 
-                    b.ToTable("RefreshTokens", (string)null);
+                    b.ToTable("RefreshTokens");
                 });
 
             modelBuilder.Entity("cms.Modules.Certificate.Models.Certificate", b =>
@@ -503,7 +506,7 @@ namespace cms.Migrations
 
                     b.HasIndex("Type");
 
-                    b.ToTable("certificates", (string)null);
+                    b.ToTable("certificates");
                 });
 
             modelBuilder.Entity("cms.Modules.Certificate.Models.CertificateBlockchainAnchor", b =>
@@ -591,7 +594,7 @@ namespace cms.Migrations
                     b.HasIndex("TransactionHash")
                         .IsUnique();
 
-                    b.ToTable("certificate_blockchain_anchors", (string)null);
+                    b.ToTable("certificate_blockchain_anchors");
                 });
 
             modelBuilder.Entity("cms.Modules.Certificate.Models.CertificateTag", b =>
@@ -657,7 +660,7 @@ namespace cms.Migrations
                     b.HasIndex("CertificateId", "TagId")
                         .IsUnique();
 
-                    b.ToTable("certificate_tags", (string)null);
+                    b.ToTable("certificate_tags");
                 });
 
             modelBuilder.Entity("cms.Modules.Certificate.Models.UserCertificate", b =>
@@ -760,7 +763,7 @@ namespace cms.Migrations
                     b.HasIndex("VerificationCode")
                         .IsUnique();
 
-                    b.ToTable("user_certificates", (string)null);
+                    b.ToTable("user_certificates");
                 });
 
             modelBuilder.Entity("cms.Modules.Feedback.Models.ProgramFeedbackSubmission", b =>
@@ -851,7 +854,7 @@ namespace cms.Migrations
                     b.HasIndex("UserId", "ProgramId")
                         .IsUnique();
 
-                    b.ToTable("program_feedback_submissions", (string)null);
+                    b.ToTable("program_feedback_submissions");
                 });
 
             modelBuilder.Entity("cms.Modules.Feedback.Models.ProgramRating", b =>
@@ -958,7 +961,7 @@ namespace cms.Migrations
                     b.HasIndex("UserId", "ProgramId")
                         .IsUnique();
 
-                    b.ToTable("program_ratings", (string)null);
+                    b.ToTable("program_ratings");
                 });
 
             modelBuilder.Entity("cms.Modules.Kyc.Models.UserKycVerification", b =>
@@ -1047,7 +1050,7 @@ namespace cms.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("user_kyc_verifications", (string)null);
+                    b.ToTable("user_kyc_verifications");
                 });
 
             modelBuilder.Entity("cms.Modules.Payment.Models.FinancialTransaction", b =>
@@ -1165,7 +1168,7 @@ namespace cms.Migrations
 
                     b.HasIndex("Type");
 
-                    b.ToTable("financial_transactions", (string)null);
+                    b.ToTable("financial_transactions");
                 });
 
             modelBuilder.Entity("cms.Modules.Payment.Models.UserFinancialMethod", b =>
@@ -1250,7 +1253,7 @@ namespace cms.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("user_financial_methods", (string)null);
+                    b.ToTable("user_financial_methods");
                 });
 
             modelBuilder.Entity("cms.Modules.Product.Models.ProductPricing", b =>
@@ -1326,7 +1329,7 @@ namespace cms.Migrations
 
                     b.HasIndex("TenantId");
 
-                    b.ToTable("product_pricing", (string)null);
+                    b.ToTable("product_pricing");
                 });
 
             modelBuilder.Entity("cms.Modules.Product.Models.ProductProgram", b =>
@@ -1386,7 +1389,7 @@ namespace cms.Migrations
 
                     b.HasIndex("ProductId", "SortOrder");
 
-                    b.ToTable("product_programs", (string)null);
+                    b.ToTable("product_programs");
                 });
 
             modelBuilder.Entity("cms.Modules.Product.Models.ProductSubscriptionPlan", b =>
@@ -1477,7 +1480,7 @@ namespace cms.Migrations
 
                     b.HasIndex("TenantId");
 
-                    b.ToTable("product_subscription_plans", (string)null);
+                    b.ToTable("product_subscription_plans");
                 });
 
             modelBuilder.Entity("cms.Modules.Product.Models.PromoCode", b =>
@@ -1581,7 +1584,7 @@ namespace cms.Migrations
 
                     b.HasIndex("ValidUntil");
 
-                    b.ToTable("promo_codes", (string)null);
+                    b.ToTable("promo_codes");
                 });
 
             modelBuilder.Entity("cms.Modules.Product.Models.PromoCodeUse", b =>
@@ -1637,7 +1640,7 @@ namespace cms.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("promo_code_uses", (string)null);
+                    b.ToTable("promo_code_uses");
                 });
 
             modelBuilder.Entity("cms.Modules.Product.Models.UserProduct", b =>
@@ -1734,7 +1737,7 @@ namespace cms.Migrations
                     b.HasIndex("UserId", "ProductId")
                         .IsUnique();
 
-                    b.ToTable("user_products", (string)null);
+                    b.ToTable("user_products");
                 });
 
             modelBuilder.Entity("cms.Modules.Program.Models.ActivityGrade", b =>
@@ -1804,7 +1807,7 @@ namespace cms.Migrations
 
                     b.HasIndex("TenantId");
 
-                    b.ToTable("activity_grades", (string)null);
+                    b.ToTable("activity_grades");
                 });
 
             modelBuilder.Entity("cms.Modules.Program.Models.ContentInteraction", b =>
@@ -1881,7 +1884,7 @@ namespace cms.Migrations
 
                     b.HasIndex("TenantId");
 
-                    b.ToTable("content_interactions", (string)null);
+                    b.ToTable("content_interactions");
                 });
 
             modelBuilder.Entity("cms.Modules.Program.Models.ProgramContent", b =>
@@ -1975,7 +1978,7 @@ namespace cms.Migrations
 
                     b.HasIndex("ProgramId", "SortOrder");
 
-                    b.ToTable("program_contents", (string)null);
+                    b.ToTable("program_contents");
                 });
 
             modelBuilder.Entity("cms.Modules.Program.Models.ProgramUser", b =>
@@ -2053,7 +2056,7 @@ namespace cms.Migrations
                     b.HasIndex("UserId", "ProgramId")
                         .IsUnique();
 
-                    b.ToTable("program_users", (string)null);
+                    b.ToTable("program_users");
                 });
 
             modelBuilder.Entity("cms.Modules.Subscription.Models.UserSubscription", b =>
@@ -2144,7 +2147,7 @@ namespace cms.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("user_subscriptions", (string)null);
+                    b.ToTable("user_subscriptions");
                 });
 
             modelBuilder.Entity("cms.Modules.Tag.Models.Tag", b =>
@@ -2214,7 +2217,7 @@ namespace cms.Migrations
                     b.HasIndex("Name", "TenantId")
                         .IsUnique();
 
-                    b.ToTable("tags", (string)null);
+                    b.ToTable("tags");
                 });
 
             modelBuilder.Entity("cms.Modules.Tag.Models.TagProficiency", b =>
@@ -2286,7 +2289,7 @@ namespace cms.Migrations
 
                     b.HasIndex("Type");
 
-                    b.ToTable("tag_proficiencies", (string)null);
+                    b.ToTable("tag_proficiencies");
                 });
 
             modelBuilder.Entity("cms.Modules.Tag.Models.TagRelationship", b =>
@@ -2349,7 +2352,7 @@ namespace cms.Migrations
                     b.HasIndex("SourceId", "TargetId")
                         .IsUnique();
 
-                    b.ToTable("tag_relationships", null, t =>
+                    b.ToTable("tag_relationships", t =>
                         {
                             t.HasCheckConstraint("CK_TagRelationships_NoSelfReference", "\"SourceId\" != \"TargetId\"");
                         });
@@ -2410,7 +2413,7 @@ namespace cms.Migrations
 
                     b.HasIndex("TenantId");
 
-                    b.ToTable("Tenants", (string)null);
+                    b.ToTable("Tenants");
                 });
 
             modelBuilder.Entity("cms.Modules.Tenant.Models.TenantPermission", b =>
@@ -2472,7 +2475,7 @@ namespace cms.Migrations
                     b.HasIndex(new[] { "UserId", "TenantId" }, "IX_TenantPermissions_User_Tenant")
                         .IsUnique();
 
-                    b.ToTable("TenantPermissions", (string)null);
+                    b.ToTable("TenantPermissions");
                 });
 
             modelBuilder.Entity("cms.Modules.User.Models.Credential", b =>
@@ -2538,7 +2541,7 @@ namespace cms.Migrations
 
                     b.HasIndex("UserId", "Type");
 
-                    b.ToTable("Credentials", (string)null);
+                    b.ToTable("Credentials");
                 });
 
             modelBuilder.Entity("cms.Modules.User.Models.User", b =>
@@ -2598,7 +2601,7 @@ namespace cms.Migrations
 
                     b.HasIndex("TenantId");
 
-                    b.ToTable("Users", (string)null);
+                    b.ToTable("Users");
                 });
 
             modelBuilder.Entity("cms.Common.Entities.Content", b =>
@@ -2628,7 +2631,7 @@ namespace cms.Migrations
 
                     b.HasIndex("DeletedAt");
 
-                    b.ToTable("ContentLicenses", (string)null);
+                    b.ToTable("ContentLicenses");
                 });
 
             modelBuilder.Entity("cms.Modules.Reputation.Models.ReputationAction", b =>
@@ -2677,7 +2680,7 @@ namespace cms.Migrations
                         .IsUnique()
                         .HasFilter("\"DeletedAt\" IS NULL");
 
-                    b.ToTable("ReputationActions", (string)null);
+                    b.ToTable("ReputationActions");
                 });
 
             modelBuilder.Entity("cms.Modules.Reputation.Models.ReputationTier", b =>
@@ -2722,7 +2725,7 @@ namespace cms.Migrations
 
                     b.HasIndex("SortOrder");
 
-                    b.ToTable("ReputationLevels", (string)null);
+                    b.ToTable("ReputationLevels");
                 });
 
             modelBuilder.Entity("cms.Modules.Reputation.Models.UserReputation", b =>
@@ -2767,7 +2770,7 @@ namespace cms.Migrations
                         .IsUnique()
                         .HasFilter("\"DeletedAt\" IS NULL");
 
-                    b.ToTable("UserReputations", (string)null);
+                    b.ToTable("UserReputations");
                 });
 
             modelBuilder.Entity("cms.Modules.Reputation.Models.UserReputationHistory", b =>
@@ -2885,7 +2888,7 @@ namespace cms.Migrations
                     b.HasIndex("TenantPermissionId")
                         .IsUnique();
 
-                    b.ToTable("UserTenantReputations", (string)null);
+                    b.ToTable("UserTenantReputations");
                 });
 
             modelBuilder.Entity("cms.Modules.Product.Models.Product", b =>
@@ -2938,7 +2941,7 @@ namespace cms.Migrations
 
                     b.HasIndex("Visibility");
 
-                    b.ToTable("Products", (string)null);
+                    b.ToTable("Products");
                 });
 
             modelBuilder.Entity("cms.Modules.Program.Models.Program", b =>
@@ -2959,7 +2962,7 @@ namespace cms.Migrations
 
                     b.HasIndex("Visibility");
 
-                    b.ToTable("programs", (string)null);
+                    b.ToTable("programs");
                 });
 
             modelBuilder.Entity("ContentContentLicense", b =>

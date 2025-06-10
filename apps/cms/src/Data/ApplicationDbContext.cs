@@ -88,6 +88,22 @@ public class ApplicationDbContext : DbContext
         // Apply all entity configurations from the assembly
         modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
 
+        // NOTE: do not add fluent api configurations here, they should be in the same file of the entity. On the entity, use notations for simple configurations, and fluent API for complex ones.
+
+        // Configure ContentTypePermission relationships explicitly to avoid ambiguity
+        modelBuilder.Entity<ContentTypePermission>()
+            .HasOne(ctp => ctp.User)
+            .WithMany()
+            .HasForeignKey(ctp => ctp.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // Configure TenantPermission relationships explicitly to avoid ambiguity
+        modelBuilder.Entity<TenantPermission>()
+            .HasOne(tp => tp.User)
+            .WithMany()
+            .HasForeignKey(tp => tp.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
         // Configure ITenantable entities (this logic needs to stay in OnModelCreating)
         foreach (IMutableEntityType entityType in modelBuilder.Model.GetEntityTypes()
                      .Where(t => typeof(ITenantable).IsAssignableFrom(t.ClrType)))

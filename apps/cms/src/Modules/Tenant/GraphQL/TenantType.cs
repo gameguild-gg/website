@@ -72,13 +72,13 @@ public class TenantPermissionType : ObjectType<TenantPermission>
             .Type<NonNullType<UuidType>>()
             .Description("The tenant identifier");
 
-        descriptor.Field(tp => tp.Status)
-            .Type<NonNullType<EnumType<Common.Enums.UserTenantStatus>>>()
-            .Description("The membership status");
-
-        descriptor.Field(tp => tp.JoinedAt)
+        descriptor.Field(tp => tp.CreatedAt)
             .Type<NonNullType<DateTimeType>>()
             .Description("The date and time when the user joined the tenant");
+
+        descriptor.Field(tp => tp.ExpiresAt)
+            .Type<DateTimeType>()
+            .Description("The date and time when the permission expires");
 
         descriptor.Field(tp => tp.PermissionFlags1)
             .Type<NonNullType<LongType>>()

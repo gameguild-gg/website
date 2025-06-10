@@ -89,9 +89,9 @@ public interface IPermissionService
     Task<bool> IsUserInTenantAsync(Guid userId, Guid tenantId);
 
     /// <summary>
-    /// Update user's membership status in a tenant
+    /// Update user's membership expiration in a tenant
     /// </summary>
-    Task<TenantPermission> UpdateTenantMembershipStatusAsync(Guid userId, Guid tenantId, UserTenantStatus status);
+    Task<TenantPermission> UpdateTenantMembershipExpirationAsync(Guid userId, Guid tenantId, DateTime? expiresAt);
 
     // ===== LAYER 2: CONTENT-TYPE-WIDE PERMISSIONS =====
 

@@ -202,27 +202,9 @@ public class TenantPermissionResponseDto
     }
 
     /// <summary>
-    /// Membership status
+    /// Whether this tenant permission is currently valid (not expired and not deleted)
     /// </summary>
-    public string Status
-    {
-        get;
-        set;
-    } = string.Empty;
-
-    /// <summary>
-    /// Whether this tenant permission is currently active
-    /// </summary>
-    public bool IsActive
-    {
-        get;
-        set;
-    }
-
-    /// <summary>
-    /// When the user joined this tenant
-    /// </summary>
-    public DateTime JoinedAt
+    public bool IsValid
     {
         get;
         set;
