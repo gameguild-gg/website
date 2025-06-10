@@ -36,8 +36,8 @@ public enum PermissionType
 	  Withdraw = 21,
 	  Archive = 22,
 	  Restore = 23,
-	  SoftDelete = 24,
-	  Delete = 24,
+	  Delete = 24, // Delete is an alias for SoftDelete
+	  SoftDelete = 24, // Only the owners of a resource can soft delete it at resource level, it still can be deleted by admins at tenant or content type level
 	  HardDelete = 25,
 	  Backup = 26,
 	  Migrate = 27,
