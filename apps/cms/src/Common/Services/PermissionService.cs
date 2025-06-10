@@ -285,20 +285,154 @@ public class PermissionService : IPermissionService
         return membership;
     }
 
-    // ===== HELPER METHODS =====
+    // ===== LAYER 2: CONTENT-TYPE-WIDE PERMISSIONS =====
 
-    public Task<Guid?> GetResourceTenantIdAsync(Guid resourceId)
+    public async Task GrantContentTypePermissionAsync(Guid? userId, Guid? tenantId, string contentTypeName, PermissionType[] permissions)
     {
-        // Implementation will depend on resource structure
-        // For now, return null (implement when resource layer is ready)
-        return Task.FromResult<Guid?>(null);
+        if (string.IsNullOrWhiteSpace(contentTypeName))
+            throw new ArgumentException("Content type name cannot be null or empty", nameof(contentTypeName));
+
+        if (permissions?.Length == 0)
+            throw new ArgumentException("At least one permission must be specified", nameof(permissions));
+
+        // Find existing permission record or create new one
+        var existingPermission = await _context.ContentTypePermissions
+            .FirstOrDefaultAsync(ctp => ctp.UserId == userId && 
+                                       ctp.TenantId == tenantId && 
+                                       ctp.ContentTypeName == contentTypeName && 
+                                       !ctp.IsDeleted);
+
+        ContentTypePermission contentTypePermission;
+
+        if (existingPermission != null)
+        {
+            // Update existing permission
+            contentTypePermission = existingPermission;
+            foreach (var permission in permissions!)
+            {
+                contentTypePermission.AddPermission(permission);
+            }
+            contentTypePermission.Touch();
+        }
+        else
+        {
+            // Create new permission record
+            contentTypePermission = new ContentTypePermission
+            {
+                UserId = userId,
+                TenantId = tenantId,
+                ContentTypeName = contentTypeName,
+                AssignedAt = DateTime.UtcNow,
+                AssignedByUserId = userId ?? Guid.Empty, // TODO: Get from current user context
+                IsActive = true
+            };
+
+            // Add permissions
+            foreach (var permission in permissions!)
+            {
+                contentTypePermission.AddPermission(permission);
+            }
+
+            _context.ContentTypePermissions.Add(contentTypePermission);
+        }
+
+        await _context.SaveChangesAsync();
     }
 
-    public Task<string?> GetResourceContentTypeAsync(Guid resourceId)
+    public async Task<bool> HasContentTypePermissionAsync(Guid userId, Guid? tenantId, string contentTypeName, PermissionType permission)
     {
-        // Implementation will depend on resource structure
-        // For now, return null (implement when content type layer is ready)
-        return Task.FromResult<string?>(null);
+        if (string.IsNullOrWhiteSpace(contentTypeName))
+            return false;
+
+        // Check user-specific content type permission
+        var userPermission = await _context.ContentTypePermissions
+            .FirstOrDefaultAsync(ctp => ctp.UserId == userId && 
+                                       ctp.TenantId == tenantId && 
+                                       ctp.ContentTypeName == contentTypeName && 
+                                       ctp.IsValid);
+
+        if (userPermission?.HasPermission(permission) == true)
+            return true;
+
+        // Check tenant default for this content type
+        if (tenantId.HasValue)
+        {
+            var tenantDefault = await _context.ContentTypePermissions
+                .FirstOrDefaultAsync(ctp => ctp.UserId == null && 
+                                           ctp.TenantId == tenantId && 
+                                           ctp.ContentTypeName == contentTypeName && 
+                                           ctp.IsValid);
+
+            if (tenantDefault?.HasPermission(permission) == true)
+                return true;
+        }
+
+        // Check global default for this content type
+        var globalDefault = await _context.ContentTypePermissions
+            .FirstOrDefaultAsync(ctp => ctp.UserId == null && 
+                                       ctp.TenantId == null && 
+                                       ctp.ContentTypeName == contentTypeName && 
+                                       ctp.IsValid);
+
+        return globalDefault?.HasPermission(permission) == true;
+    }
+
+    public async Task<IEnumerable<PermissionType>> GetContentTypePermissionsAsync(Guid? userId, Guid? tenantId, string contentTypeName)
+    {
+        if (string.IsNullOrWhiteSpace(contentTypeName))
+            return Enumerable.Empty<PermissionType>();
+
+        var contentTypePermission = await _context.ContentTypePermissions
+            .FirstOrDefaultAsync(ctp => ctp.UserId == userId && 
+                                       ctp.TenantId == tenantId && 
+                                       ctp.ContentTypeName == contentTypeName && 
+                                       ctp.IsValid);
+
+        if (contentTypePermission == null)
+            return Enumerable.Empty<PermissionType>();
+
+        return GetPermissionsFromContentTypeEntity(contentTypePermission);
+    }
+
+    public async Task RevokeContentTypePermissionAsync(Guid? userId, Guid? tenantId, string contentTypeName, PermissionType[] permissions)
+    {
+        if (string.IsNullOrWhiteSpace(contentTypeName))
+            throw new ArgumentException("Content type name cannot be null or empty", nameof(contentTypeName));
+
+        if (permissions?.Length == 0)
+            return; // Nothing to revoke
+
+        var existingPermission = await _context.ContentTypePermissions
+            .FirstOrDefaultAsync(ctp => ctp.UserId == userId && 
+                                       ctp.TenantId == tenantId && 
+                                       ctp.ContentTypeName == contentTypeName && 
+                                       !ctp.IsDeleted);
+
+        if (existingPermission != null)
+        {
+            foreach (var permission in permissions!)
+            {
+                existingPermission.RemovePermission(permission);
+            }
+            existingPermission.Touch();
+            await _context.SaveChangesAsync();
+        }
+    }
+
+    private static IEnumerable<PermissionType> GetPermissionsFromContentTypeEntity(ContentTypePermission permission)
+    {
+        var permissions = new List<PermissionType>();
+
+        // Check all possible permission types
+        foreach (PermissionType permissionType in Enum.GetValues<PermissionType>())
+        {
+            if (permission.HasPermission(permissionType))
+            {
+                permissions.Add(permissionType);
+            }
+        }
+
+        return permissions;
     }
 
     // === PRIVATE HELPER METHODS ===
@@ -340,5 +474,23 @@ public class PermissionService : IPermissionService
         }
 
         return permissions;
+    }
+
+    // ===== HELPER METHODS =====
+
+    public async Task<Guid?> GetResourceTenantIdAsync(Guid resourceId)
+    {
+        // TODO: Implement when we have concrete resource entities
+        // This will need to query the specific resource tables to find tenant ID
+        await Task.CompletedTask;
+        return null;
+    }
+
+    public async Task<string?> GetResourceContentTypeAsync(Guid resourceId)
+    {
+        // TODO: Implement when we have concrete resource entities  
+        // This will need to determine the content type based on the resource
+        await Task.CompletedTask;
+        return null;
     }
 }

@@ -93,8 +93,42 @@ public interface IPermissionService
     /// </summary>
     Task<TenantPermission> UpdateTenantMembershipStatusAsync(Guid userId, Guid tenantId, UserTenantStatus status);
 
-    // ===== LAYER 2: CONTENT-TYPE-WIDE PERMISSIONS (Future Implementation) =====
-    // TODO: Implement content type permissions in next phase
+    // ===== LAYER 2: CONTENT-TYPE-WIDE PERMISSIONS =====
+
+    /// <summary>
+    /// Grant content-type permissions to a user in a tenant, or set default permissions
+    /// </summary>
+    /// <param name="userId">User ID (null for default permissions)</param>
+    /// <param name="tenantId">Tenant ID (null for global defaults)</param>
+    /// <param name="contentTypeName">Name of the content type (e.g., "Article", "Video")</param>
+    /// <param name="permissions">Permissions to grant</param>
+    Task GrantContentTypePermissionAsync(Guid? userId, Guid? tenantId, string contentTypeName, PermissionType[] permissions);
+
+    /// <summary>
+    /// Check if user has a specific content-type permission
+    /// </summary>
+    /// <param name="userId">User ID</param>
+    /// <param name="tenantId">Tenant ID</param>
+    /// <param name="contentTypeName">Name of the content type</param>
+    /// <param name="permission">Permission to check</param>
+    Task<bool> HasContentTypePermissionAsync(Guid userId, Guid? tenantId, string contentTypeName, PermissionType permission);
+
+    /// <summary>
+    /// Get all content-type permissions for a user in a tenant
+    /// </summary>
+    /// <param name="userId">User ID (null for default permissions)</param>
+    /// <param name="tenantId">Tenant ID</param>
+    /// <param name="contentTypeName">Name of the content type</param>
+    Task<IEnumerable<PermissionType>> GetContentTypePermissionsAsync(Guid? userId, Guid? tenantId, string contentTypeName);
+
+    /// <summary>
+    /// Revoke specific content-type permissions from a user in a tenant
+    /// </summary>
+    /// <param name="userId">User ID (null for default permissions)</param>
+    /// <param name="tenantId">Tenant ID</param>
+    /// <param name="contentTypeName">Name of the content type</param>
+    /// <param name="permissions">Permissions to revoke</param>
+    Task RevokeContentTypePermissionAsync(Guid? userId, Guid? tenantId, string contentTypeName, PermissionType[] permissions);
     
     // ===== LAYER 3: RESOURCE-SPECIFIC PERMISSIONS (Future Implementation) =====
     // TODO: Implement resource permissions in final phase

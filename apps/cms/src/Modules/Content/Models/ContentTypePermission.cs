@@ -10,13 +10,12 @@ namespace cms.Common.Entities;
 /// Layer 2 of the three-layer permission system: Tenant → ContentType → Resource
 /// Grants permissions for all resources of a specific content type within a tenant (or globally when Tenant is null)
 /// </summary>
-public sealed class ContentTypePermission : BaseEntity, ITenantable
+public sealed class ContentTypePermission : WithPermissions, ITenantable
 {
     /// <summary>
-    /// Foreign key to the User entity
+    /// Foreign key to the User entity (null for default permissions)
     /// </summary>
-    [Required]
-    public Guid UserId
+    public Guid? UserId
     {
         get;
         set;
@@ -26,11 +25,11 @@ public sealed class ContentTypePermission : BaseEntity, ITenantable
     /// Navigation property to the User entity
     /// </summary>
     [ForeignKey(nameof(UserId))]
-    public Modules.User.Models.User User
+    public Modules.User.Models.User? User
     {
         get;
         set;
-    } = null!;
+    }
 
     /// <summary>
     /// Foreign key to the Tenant entity (null for global permissions)
@@ -125,6 +124,21 @@ public sealed class ContentTypePermission : BaseEntity, ITenantable
     {
         get => IsActive && !IsExpired && !IsDeleted;
     }
+
+    /// <summary>
+    /// Check if this is a default permission for the content type in a tenant
+    /// </summary>
+    public bool IsDefaultContentTypePermission => UserId == null && TenantId != null;
+    
+    /// <summary>
+    /// Check if this is a global default permission for the content type
+    /// </summary>
+    public bool IsGlobalContentTypeDefault => UserId == null && TenantId == null;
+    
+    /// <summary>
+    /// Check if this is a user-specific permission for the content type
+    /// </summary>
+    public bool IsUserContentTypePermission => UserId != null;
 }
 
 
@@ -137,11 +151,12 @@ public class ContentTypePermissionConfiguration : IEntityTypeConfiguration<Conte
     public void Configure(EntityTypeBuilder<ContentTypePermission> builder)
     {
         // Configure the User relationship (primary user who has the permission)
+        // null UserId means this is a default permission for the content type
         builder.HasOne(p => p.User)
             .WithMany(u => u.ContentTypePermissions)
             .HasForeignKey(p => p.UserId)
             .OnDelete(DeleteBehavior.Cascade)
-            .IsRequired();
+            .IsRequired(false); // Allow null for default permissions
 
         // Configure the AssignedByUser relationship (user who granted the permission)
         builder.HasOne(p => p.AssignedByUser)
