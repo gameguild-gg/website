@@ -117,11 +117,11 @@ public class ProgramContent : BaseEntity
         set;
     }
 
-    public Visibility Visibility
+    public cms.Common.Enums.Visibility Visibility
     {
         get;
         set;
-    } = Visibility.Published;
+    } = cms.Common.Enums.Visibility.Published;
 
     // Navigation properties
     public virtual Program Program

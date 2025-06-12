@@ -55,8 +55,7 @@ public class UserProfileService : IUserProfileService
         return await _context.Resources
             .OfType<Models.UserProfile>()
             .Include(up => up.Metadata)
-            .Include(up => up.Owner)
-            .FirstOrDefaultAsync(up => up.Owner.Id == userId && !up.IsDeleted);
+            .FirstOrDefaultAsync(up => up.Id == userId && !up.IsDeleted);
     }
 
     public async Task<Models.UserProfile> CreateUserProfileAsync(Models.UserProfile userProfile)

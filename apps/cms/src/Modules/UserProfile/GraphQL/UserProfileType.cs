@@ -34,10 +34,6 @@ public class UserProfileType : ObjectType<Models.UserProfile>
             .Field(f => f.IsDeleted)
             .Description("Indicates whether the user profile has been soft deleted");
 
-        descriptor
-            .Field(f => f.Owner)
-            .Description("The user who owns this profile");
-
         // ResourceBase fields
         descriptor
             .Field(f => f.Title)
