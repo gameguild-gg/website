@@ -113,7 +113,7 @@ public class ApplicationDbContext : DbContext
                      .Where(t => typeof(ITenantable).IsAssignableFrom(t.ClrType)))
         {
             modelBuilder.Entity(entityType.ClrType)
-                .HasOne(typeof(Modules.Tenant.Models.Tenant).Name)
+                .HasOne(typeof(Tenant).Name)
                 .WithMany()
                 .HasForeignKey("TenantId")
                 .IsRequired(false)

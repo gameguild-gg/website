@@ -3,7 +3,7 @@ namespace GameGuild.Common.Entities;
 /// <summary>
 /// Enumeration of visibility statuses for resources
 /// </summary>
-public enum VisibilityStatus
+public enum Visibility
 {
     /// <summary>
     /// Resource is private and only visible to owner and explicitly granted users

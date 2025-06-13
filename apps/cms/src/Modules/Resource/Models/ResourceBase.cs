@@ -30,27 +30,15 @@ public abstract class ResourceBase : BaseEntity, ILocalizable, ITenantable
         set;
     }
 
-    // todo: Some cases should not have owner, or it should have multiple owners. owner is the one who can delete the resource on resource only.
-    /// <summary>
-    /// Navigation property to the owner of this resource
-    /// Entity Framework will automatically create the OwnerId foreign key
-    /// </summary>
-    [Required]
-    public virtual Modules.User.Models.User Owner
-    {
-        get;
-        set;
-    } = null!;
-
     /// <summary>
     /// Visibility status of the resource (Public, Private, Restricted, etc.)
     /// </summary>
     [Required]
-    public VisibilityStatus Visibility
+    public Visibility Visibility
     {
         get;
         set;
-    } = VisibilityStatus.Private;
+    } = Visibility.Private;
 
     /// <summary>
     /// Navigation property to resource metadata

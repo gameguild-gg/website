@@ -104,10 +104,6 @@ public class ProgramConfiguration : IEntityTypeConfiguration<Program>
 {
     public void Configure(EntityTypeBuilder<Program> builder)
     {
-        // Configure relationship with Owner (can't be done with annotations)
-        builder.HasOne(p => p.Owner)
-            .WithMany()
-            .HasForeignKey("OwnerId")
-            .OnDelete(DeleteBehavior.Restrict);
+        // Additional configuration can be added here if needed
     }
 }

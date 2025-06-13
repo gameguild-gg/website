@@ -48,7 +48,7 @@ namespace GameGuild.Modules.Auth.Services
             if (passwordCredential == null || !VerifyPassword(request.Password, passwordCredential.Value))
                 throw new UnauthorizedAccessException("Invalid credentials");
 
-            var userDto = new Dtos.UserDto
+            var userDto = new UserDto
             {
                 Id = user.Id, Username = user.Name, Email = user.Email
             };
@@ -84,7 +84,7 @@ namespace GameGuild.Modules.Auth.Services
             _context.Credentials.Add(credential);
             await _context.SaveChangesAsync();
 
-            var userDto = new Dtos.UserDto
+            var userDto = new UserDto
             {
                 Id = user.Id, Username = user.Name, Email = user.Email
             };
@@ -129,7 +129,7 @@ namespace GameGuild.Modules.Auth.Services
                 throw new UnauthorizedAccessException("User not found");
 
             // Generate new tokens
-            var userDto = new Dtos.UserDto
+            var userDto = new UserDto
             {
                 Id = user.Id, Username = user.Name, Email = user.Email
             };
@@ -146,7 +146,7 @@ namespace GameGuild.Modules.Auth.Services
             refreshToken.ReplacedByToken = newRefreshToken;
 
             // Create new refresh token
-            var newRefreshTokenEntity = new Models.RefreshToken
+            var newRefreshTokenEntity = new RefreshToken
             {
                 UserId = user.Id, Token = newRefreshToken, ExpiresAt = DateTime.UtcNow.AddDays(7), CreatedByIp = "0.0.0.0" // TODO: get real IP address
             };
@@ -187,7 +187,7 @@ namespace GameGuild.Modules.Auth.Services
             User.Models.User user = await FindOrCreateOAuthUserAsync(githubUser.Email, githubUser.Name, "github", githubUser.Id.ToString());
 
             // Generate tokens
-            var userDto = new Dtos.UserDto
+            var userDto = new UserDto
             {
                 Id = user.Id, Username = user.Name, Email = user.Email
             };
@@ -219,7 +219,7 @@ namespace GameGuild.Modules.Auth.Services
             User.Models.User user = await FindOrCreateOAuthUserAsync(googleUser.Email, googleUser.Name, "google", googleUser.Id);
 
             // Generate tokens
-            var userDto = new Dtos.UserDto
+            var userDto = new UserDto
             {
                 Id = user.Id, Username = user.Name, Email = user.Email
             };
@@ -314,7 +314,7 @@ namespace GameGuild.Modules.Auth.Services
 
         private async Task SaveRefreshTokenAsync(Guid userId, string refreshToken)
         {
-            var refreshTokenEntity = new Models.RefreshToken
+            var refreshTokenEntity = new RefreshToken
             {
                 UserId = userId, Token = refreshToken, ExpiresAt = DateTime.UtcNow.AddDays(7), CreatedByIp = "0.0.0.0" // TODO: get real IP address
             };
@@ -341,7 +341,7 @@ namespace GameGuild.Modules.Auth.Services
             User.Models.User user = await _web3Service.FindOrCreateWeb3UserAsync(request.WalletAddress, request.ChainId ?? "1");
 
             // Generate tokens
-            var userDto = new Dtos.UserDto
+            var userDto = new UserDto
             {
                 Id = user.Id, Username = user.Name, Email = user.Email
             };

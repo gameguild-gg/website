@@ -117,11 +117,11 @@ public class ProgramContent : BaseEntity
         set;
     }
 
-    public Visibility Visibility
+    public Common.Enums.Visibility Visibility
     {
         get;
         set;
-    } = Visibility.Published;
+    } = GameGuild.Common.Enums.Visibility.Published;
 
     // Navigation properties
     public virtual Program Program

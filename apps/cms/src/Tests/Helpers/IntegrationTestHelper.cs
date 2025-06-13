@@ -36,7 +36,7 @@ namespace GameGuild.Tests.Helpers
             var factory = new WebApplicationFactory<Program>()
                 .WithWebHostBuilder(builder =>
                 {
-                    builder.UseContentRoot(System.IO.Directory.GetCurrentDirectory());
+                    builder.UseContentRoot(Directory.GetCurrentDirectory());
                     
                     // Override configuration settings for testing
                     builder.ConfigureAppConfiguration((context, config) =>
