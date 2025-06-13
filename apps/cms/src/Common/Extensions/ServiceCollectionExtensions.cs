@@ -1,6 +1,6 @@
-using cms.Common.Services;
+using GameGuild.Common.Services;
 
-namespace cms.Common.Extensions;
+namespace GameGuild.Common.Extensions;
 
 public static class ServiceCollectionExtensions
 {

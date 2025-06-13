@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
-using cms.Data;
+using GameGuild.Data;
 using Microsoft.EntityFrameworkCore;
 
-namespace cms.Common.Controllers;
+namespace GameGuild.Common.Controllers;
 
 [ApiController]
 [Route("[controller]")]

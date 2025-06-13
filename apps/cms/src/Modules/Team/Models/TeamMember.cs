@@ -1,4 +1,4 @@
-using cms.Common.Entities;
+using GameGuild.Common.Entities;
 
 namespace Cms.Models
 {

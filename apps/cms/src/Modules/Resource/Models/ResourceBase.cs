@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace cms.Common.Entities;
+namespace GameGuild.Common.Entities;
 
 /// <summary>
 /// Abstract base class for resources that can have permissions and be localized.

@@ -1,7 +1,7 @@
-using cms.Modules.Tenant.Models;
-using cms.Modules.User.GraphQL;
+using GameGuild.Modules.Tenant.Models;
+using GameGuild.Modules.User.GraphQL;
 
-namespace cms.Modules.Tenant.GraphQL;
+namespace GameGuild.Modules.Tenant.GraphQL;
 
 /// <summary>
 /// GraphQL type for Tenant entity

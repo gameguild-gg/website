@@ -1,4 +1,4 @@
-namespace cms.Config;
+namespace GameGuild.Config;
 
 public class AppConfig
 {

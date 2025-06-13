@@ -1,4 +1,4 @@
-namespace cms.Modules.Test.Models
+namespace GameGuild.Modules.Test.Models
 {
     public enum LocationStatus
     {

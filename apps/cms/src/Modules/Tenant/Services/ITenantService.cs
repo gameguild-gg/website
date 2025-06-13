@@ -1,6 +1,6 @@
-using cms.Modules.Tenant.Models;
+using GameGuild.Modules.Tenant.Models;
 
-namespace cms.Modules.Tenant.Services;
+namespace GameGuild.Modules.Tenant.Services;
 
 /// <summary>
 /// Service interface for managing tenants

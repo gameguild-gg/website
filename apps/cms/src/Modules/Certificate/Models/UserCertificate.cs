@@ -2,10 +2,10 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using cms.Common.Entities;
-using cms.Common.Enums;
+using GameGuild.Common.Entities;
+using GameGuild.Common.Enums;
 
-namespace cms.Modules.Certificate.Models;
+namespace GameGuild.Modules.Certificate.Models;
 
 [Table("user_certificates")]
 [Index(nameof(UserId))]

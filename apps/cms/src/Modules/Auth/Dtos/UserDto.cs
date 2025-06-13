@@ -1,4 +1,4 @@
-namespace cms.Modules.Auth.Dtos
+namespace GameGuild.Modules.Auth.Dtos
 {
     public class UserDto
     {

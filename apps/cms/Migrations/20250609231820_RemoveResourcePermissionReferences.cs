@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace cms.Migrations
+namespace GameGuild.Migrations
 {
     /// <inheritdoc />
     public partial class RemoveResourcePermissionReferences : Migration

@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace cms.Modules.UserProfile.Dtos;
+namespace GameGuild.Modules.UserProfile.Dtos;
 
 public class CreateUserProfileDto
 {

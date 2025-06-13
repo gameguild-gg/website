@@ -1,8 +1,7 @@
 using System.ComponentModel.DataAnnotations;
-using cms.Common.Entities;
-using cms.Modules.User.Models;
+using GameGuild.Common.Entities;
 
-namespace cms.Modules.Project.Models;
+namespace GameGuild.Modules.Project.Models;
 
 /// <summary>
 /// Represents a version/release of a project

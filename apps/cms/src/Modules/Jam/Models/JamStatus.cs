@@ -1,4 +1,4 @@
-namespace cms.Modules.Jam.Models
+namespace GameGuild.Modules.Jam.Models
 {
     public enum JamStatus
     {

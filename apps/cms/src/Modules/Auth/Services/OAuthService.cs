@@ -1,7 +1,7 @@
 using System.Text.Json;
-using cms.Modules.Auth.Dtos;
+using GameGuild.Modules.Auth.Dtos;
 
-namespace cms.Modules.Auth.Services
+namespace GameGuild.Modules.Auth.Services
 {
     public interface IOAuthService
     {

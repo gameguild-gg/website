@@ -2,10 +2,10 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using cms.Common.Entities;
-using cms.Common.Enums;
+using GameGuild.Common.Entities;
+using GameGuild.Common.Enums;
 
-namespace cms.Modules.Product.Models;
+namespace GameGuild.Modules.Product.Models;
 
 /// <summary>
 /// Junction entity representing the relationship between a User and a Product
@@ -174,7 +174,7 @@ public class UserProduct : BaseEntity
         if (AccessStatus != ProductAccessStatus.Active)
             return false;
 
-        var now = DateTime.UtcNow;
+        DateTime now = DateTime.UtcNow;
         return (AccessStartDate == null || AccessStartDate <= now) &&
                (AccessEndDate == null || AccessEndDate > now);
     }

@@ -1,9 +1,8 @@
-using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
-using cms.Common.Entities;
+using GameGuild.Common.Entities;
 
-namespace cms.Modules.Tenant.Models;
+namespace GameGuild.Modules.Tenant.Models;
 
 /// <summary>
 /// Unified entity for tenant permissions and user-tenant relationships
@@ -19,7 +18,7 @@ public class TenantPermission : WithPermissions
     /// <summary>
     /// Navigation property to content type permissions for this user within this tenant (Layer 2 of permission system)
     /// </summary>
-    public virtual ICollection<cms.Common.Entities.ContentTypePermission> ContentTypePermissions { get; set; } = new List<cms.Common.Entities.ContentTypePermission>();
+    public virtual ICollection<ContentTypePermission> ContentTypePermissions { get; set; } = new List<ContentTypePermission>();
     
     // Computed properties specific to tenant permissions
     

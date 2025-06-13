@@ -2,9 +2,9 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using cms.Common.Entities;
+using GameGuild.Common.Entities;
 
-namespace cms.Modules.Certificate.Models;
+namespace GameGuild.Modules.Certificate.Models;
 
 [Table("certificate_blockchain_anchors")]
 [Index(nameof(CertificateId))]

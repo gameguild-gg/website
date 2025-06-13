@@ -1,4 +1,4 @@
-namespace cms.Common.Entities;
+namespace GameGuild.Common.Entities;
 
 /// <summary>
 /// Base resource that can be localized

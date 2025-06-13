@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace cms.Common.Entities;
+namespace GameGuild.Common.Entities;
 
 /// <summary>
 /// Base class for resource-specific permissions (Layer 3 of DAC permission system)

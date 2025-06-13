@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Reflection;
 
-namespace cms.Common.Entities;
+namespace GameGuild.Common.Entities;
 
 /// <summary>
 /// Generic base entity class that provides common properties and functionality for all domain entities.

@@ -1,13 +1,29 @@
-using cms.Modules.User.Services;
+using GameGuild.Modules.User.Commands;
+using GameGuild.Modules.User.Services;
+using MediatR;
 
-namespace cms.Modules.User.GraphQL;
+namespace GameGuild.Modules.User.GraphQL;
 
 public class Mutation
-{
-    /// <summary>
-    /// Creates a new user using EntityBase constructor pattern.
+{    /// <summary>
+    /// Creates a new user using CQRS pattern with MediatR.
     /// </summary>
-    public async Task<Models.User> CreateUser(CreateUserInput input, [Service] IUserService userService)
+    public async Task<Models.User> CreateUser(CreateUserInput input, [Service] IMediator mediator)
+    {
+        var command = new CreateUserCommand
+        {
+            Name = input.Name,
+            Email = input.Email,
+            IsActive = input.IsActive
+        };
+
+        return await mediator.Send(command);
+    }
+
+    /// <summary>
+    /// Creates a new user using traditional service pattern (for comparison).
+    /// </summary>
+    public async Task<Models.User> CreateUserLegacy(CreateUserInput input, [Service] IUserService userService)
     {
         // Use BaseEntity constructor pattern for consistent creation
         var user = new Models.User(

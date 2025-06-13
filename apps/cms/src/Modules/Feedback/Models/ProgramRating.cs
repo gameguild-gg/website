@@ -1,11 +1,10 @@
-using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using cms.Common.Entities;
-using cms.Common.Enums;
+using GameGuild.Common.Entities;
+using GameGuild.Common.Enums;
 
-namespace cms.Modules.Feedback.Models;
+namespace GameGuild.Modules.Feedback.Models;
 
 [Table("program_ratings")]
 [Index(nameof(UserId), nameof(ProgramId), IsUnique = true)]

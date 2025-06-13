@@ -1,18 +1,14 @@
-using System;
-using System.Threading.Tasks;
-using cms.Modules.Auth.Dtos;
 using Microsoft.EntityFrameworkCore;
-using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
-using cms.Data;
-using cms.Modules.Auth.Models;
-using UserModel = cms.Modules.User.Models.User;
-using CredentialModel = cms.Modules.User.Models.Credential;
-using cms.Modules.Auth.Services;
-using Microsoft.Extensions.Configuration;
+using GameGuild.Data;
+using GameGuild.Modules.Auth.Dtos;
+using GameGuild.Modules.Auth.Models;
+using GameGuild.Modules.User.Models;
+using UserModel = GameGuild.Modules.User.Models.User;
+using CredentialModel = GameGuild.Modules.User.Models.Credential;
 
-namespace cms.Modules.Auth.Services
+namespace GameGuild.Modules.Auth.Services
 {
     public class AuthService : IAuthService
     {
@@ -41,13 +37,13 @@ namespace cms.Modules.Auth.Services
 
         public async Task<SignInResponseDto> LocalSignInAsync(LocalSignInRequestDto request)
         {
-            UserModel? user = await _context.Users.Include(u => u.Credentials)
+            User.Models.User? user = await _context.Users.Include(u => u.Credentials)
                 .FirstOrDefaultAsync(u => u.Email == request.Email);
 
             if (user == null)
                 throw new UnauthorizedAccessException("Invalid credentials");
 
-            CredentialModel? passwordCredential = user.Credentials.FirstOrDefault(c => c.Type == "password" && c.IsActive);
+            Credential? passwordCredential = user.Credentials.FirstOrDefault(c => c.Type == "password" && c.IsActive);
 
             if (passwordCredential == null || !VerifyPassword(request.Password, passwordCredential.Value))
                 throw new UnauthorizedAccessException("Invalid credentials");
@@ -74,14 +70,14 @@ namespace cms.Modules.Auth.Services
             if (await _context.Users.AnyAsync(u => u.Email == request.Email))
                 throw new InvalidOperationException("User already exists");
 
-            var user = new UserModel
+            var user = new User.Models.User
             {
                 Name = request.Username ?? request.Email, Email = request.Email
             };
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
 
-            var credential = new CredentialModel
+            var credential = new Credential
             {
                 UserId = user.Id, Type = "password", Value = HashPassword(request.Password), IsActive = true
             };
@@ -127,7 +123,7 @@ namespace cms.Modules.Auth.Services
             if (refreshToken == null)
                 throw new UnauthorizedAccessException("Invalid refresh token");
 
-            UserModel? user = await _context.Users.FindAsync(refreshToken.UserId);
+            User.Models.User? user = await _context.Users.FindAsync(refreshToken.UserId);
 
             if (user == null)
                 throw new UnauthorizedAccessException("User not found");
@@ -188,7 +184,7 @@ namespace cms.Modules.Auth.Services
             GitHubUserDto githubUser = await _oauthService.GetGitHubUserAsync(accessToken);
 
             // Find or create user
-            UserModel user = await FindOrCreateOAuthUserAsync(githubUser.Email, githubUser.Name, "github", githubUser.Id.ToString());
+            User.Models.User user = await FindOrCreateOAuthUserAsync(githubUser.Email, githubUser.Name, "github", githubUser.Id.ToString());
 
             // Generate tokens
             var userDto = new Dtos.UserDto
@@ -220,7 +216,7 @@ namespace cms.Modules.Auth.Services
             GoogleUserDto googleUser = await _oauthService.GetGoogleUserAsync(accessToken);
 
             // Find or create user
-            UserModel user = await FindOrCreateOAuthUserAsync(googleUser.Email, googleUser.Name, "google", googleUser.Id);
+            User.Models.User user = await FindOrCreateOAuthUserAsync(googleUser.Email, googleUser.Name, "google", googleUser.Id);
 
             // Generate tokens
             var userDto = new Dtos.UserDto
@@ -265,16 +261,16 @@ namespace cms.Modules.Auth.Services
             return Task.FromResult(url);
         }
 
-        private async Task<UserModel> FindOrCreateOAuthUserAsync(string email, string name, string provider, string providerId)
+        private async Task<User.Models.User> FindOrCreateOAuthUserAsync(string email, string name, string provider, string providerId)
         {
             // First try to find user by email
-            UserModel? user = await _context.Users.Include(u => u.Credentials)
+            User.Models.User? user = await _context.Users.Include(u => u.Credentials)
                 .FirstOrDefaultAsync(u => u.Email == email);
 
             if (user == null)
             {
                 // Create new user
-                user = new UserModel
+                user = new User.Models.User
                 {
                     Id = Guid.NewGuid(),
                     Name = name,
@@ -287,7 +283,7 @@ namespace cms.Modules.Auth.Services
             }
 
             // Check if OAuth credential exists (using Type field to store provider info)
-            CredentialModel? credential = user.Credentials?.FirstOrDefault(c => c.Type == $"oauth_{provider}");
+            Credential? credential = user.Credentials?.FirstOrDefault(c => c.Type == $"oauth_{provider}");
             if (credential == null)
             {
                 // Add OAuth credential - store provider info in Type and provider ID in Metadata
@@ -297,7 +293,7 @@ namespace cms.Modules.Auth.Services
                         ProviderId = providerId, Provider = provider
                     }
                 );
-                credential = new CredentialModel
+                credential = new Credential
                 {
                     Id = Guid.NewGuid(),
                     UserId = user.Id,
@@ -342,7 +338,7 @@ namespace cms.Modules.Auth.Services
             }
 
             // Find or create user
-            UserModel user = await _web3Service.FindOrCreateWeb3UserAsync(request.WalletAddress, request.ChainId ?? "1");
+            User.Models.User user = await _web3Service.FindOrCreateWeb3UserAsync(request.WalletAddress, request.ChainId ?? "1");
 
             // Generate tokens
             var userDto = new Dtos.UserDto
@@ -389,7 +385,7 @@ namespace cms.Modules.Auth.Services
         {
             try
             {
-                UserModel? user = await _context.Users.Include(u => u.Credentials).FirstOrDefaultAsync(u => u.Id == userId);
+                User.Models.User? user = await _context.Users.Include(u => u.Credentials).FirstOrDefaultAsync(u => u.Id == userId);
                 if (user == null)
                 {
                     return new EmailOperationResponseDto
@@ -398,7 +394,7 @@ namespace cms.Modules.Auth.Services
                     };
                 }
 
-                CredentialModel? passwordCredential = user.Credentials?.FirstOrDefault(c => c.Type == "password");
+                Credential? passwordCredential = user.Credentials?.FirstOrDefault(c => c.Type == "password");
                 if (passwordCredential == null)
                 {
                     return new EmailOperationResponseDto

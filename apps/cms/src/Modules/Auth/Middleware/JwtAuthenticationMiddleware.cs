@@ -3,7 +3,7 @@ using System.Security.Claims;
 using System.Text;
 using Microsoft.IdentityModel.Tokens;
 
-namespace cms.Modules.Auth.Middleware
+namespace GameGuild.Modules.Auth.Middleware
 {
     /// <summary>
     /// JWT Authentication middleware
@@ -54,7 +54,7 @@ namespace cms.Modules.Auth.Middleware
         private ClaimsPrincipal ValidateToken(string token)
         {
             var tokenHandler = new JwtSecurityTokenHandler();
-            byte[] key = Encoding.UTF8.GetBytes(_configuration["Jwt:Key"] ?? "dev-key");
+            byte[] key = Encoding.UTF8.GetBytes(_configuration["Jwt:SecretKey"] ?? "dev-key");
 
             var validationParameters = new TokenValidationParameters
             {

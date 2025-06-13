@@ -1,6 +1,6 @@
-using cms.Config;
+using GameGuild.Config;
 
-namespace cms.Common.Extensions;
+namespace GameGuild.Common.Extensions;
 
 public static class ConfigurationExtensions
 {

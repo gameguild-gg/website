@@ -1,6 +1,6 @@
 using System.ComponentModel;
 
-namespace cms.Common.Enums;
+namespace GameGuild.Common.Enums;
 
 public enum SubscriptionType
 {

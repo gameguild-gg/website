@@ -1,6 +1,6 @@
 using System.Reflection;
 
-namespace cms.Common.Entities;
+namespace GameGuild.Common.Entities;
 
 /// <summary>
 /// Base entity class that provides common properties and functionality for all domain entities.

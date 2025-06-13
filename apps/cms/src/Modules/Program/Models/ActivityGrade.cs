@@ -1,11 +1,10 @@
-using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using cms.Common.Entities;
 using System.Text.Json;
+using GameGuild.Common.Entities;
 
-namespace cms.Modules.Program.Models;
+namespace GameGuild.Modules.Program.Models;
 
 [Table("activity_grades")]
 public class ActivityGrade : BaseEntity
@@ -83,8 +82,8 @@ public class ActivityGrade : BaseEntity
 
         try
         {
-            var json = JsonDocument.Parse(GradingDetails);
-            if (json.RootElement.TryGetProperty(key, out var element))
+            JsonDocument json = JsonDocument.Parse(GradingDetails);
+            if (json.RootElement.TryGetProperty(key, out JsonElement element))
             {
                 return JsonSerializer.Deserialize<T>(element.GetRawText());
             }

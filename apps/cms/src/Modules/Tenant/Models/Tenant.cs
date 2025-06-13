@@ -1,9 +1,9 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
-using cms.Common.Entities;
+using GameGuild.Common.Entities;
 
-namespace cms.Modules.Tenant.Models;
+namespace GameGuild.Modules.Tenant.Models;
 
 /// <summary>
 /// Represents a tenant in a multi-tenant system

@@ -1,13 +1,13 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.Mvc;
-using cms.Modules.Auth.Attributes;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using GameGuild.Modules.Auth.Attributes;
 
-namespace cms.Modules.Auth.Filters
+namespace GameGuild.Modules.Auth.Filters
 {
     /// <summary>
     /// JWT Authentication filter that validates tokens and sets user context
@@ -21,7 +21,7 @@ namespace cms.Modules.Auth.Filters
             _configuration = configuration;
         }
 
-        public void OnAuthorization(AuthorizationFilterContext context)
+        public virtual void OnAuthorization(AuthorizationFilterContext context)
         {
             // Check if the action/controller is marked as public
             PublicAttribute? publicAttribute = context.ActionDescriptor.EndpointMetadata
@@ -72,7 +72,7 @@ namespace cms.Modules.Auth.Filters
         private ClaimsPrincipal ValidateToken(string token)
         {
             var tokenHandler = new JwtSecurityTokenHandler();
-            byte[] key = Encoding.UTF8.GetBytes(_configuration["Jwt:Key"] ?? "dev-key");
+            byte[] key = Encoding.UTF8.GetBytes(_configuration["Jwt:SecretKey"] ?? "dev-key");
 
             var validationParameters = new TokenValidationParameters
             {

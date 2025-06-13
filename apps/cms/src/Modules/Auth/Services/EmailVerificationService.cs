@@ -1,12 +1,13 @@
 using System.Security.Cryptography;
 using System.Text;
-using cms.Modules.Auth.Dtos;
-using cms.Data;
+using GameGuild.Data;
+using GameGuild.Modules.Auth.Dtos;
+using GameGuild.Modules.User.Models;
 using Microsoft.EntityFrameworkCore;
-using UserModel = cms.Modules.User.Models.User;
-using CredentialModel = cms.Modules.User.Models.Credential;
+using UserModel = GameGuild.Modules.User.Models.User;
+using CredentialModel = GameGuild.Modules.User.Models.Credential;
 
-namespace cms.Modules.Auth.Services
+namespace GameGuild.Modules.Auth.Services
 {
     public interface IEmailVerificationService
     {
@@ -45,7 +46,7 @@ namespace cms.Modules.Auth.Services
         {
             try
             {
-                UserModel? user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
+                User.Models.User? user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
                 if (user == null)
                 {
                     return new EmailOperationResponseDto
@@ -106,7 +107,7 @@ namespace cms.Modules.Auth.Services
                     };
                 }
 
-                UserModel? user = await _context.Users.FindAsync(tokenInfo.UserId);
+                User.Models.User? user = await _context.Users.FindAsync(tokenInfo.UserId);
                 if (user == null)
                 {
                     return new EmailOperationResponseDto
@@ -142,7 +143,7 @@ namespace cms.Modules.Auth.Services
         {
             try
             {
-                UserModel? user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
+                User.Models.User? user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
                 if (user == null)
                 {
                     // Don't reveal if user exists or not for security
@@ -204,7 +205,7 @@ namespace cms.Modules.Auth.Services
                     };
                 }
 
-                UserModel? user = await _context.Users.Include(u => u.Credentials).FirstOrDefaultAsync(u => u.Id == tokenInfo.UserId);
+                User.Models.User? user = await _context.Users.Include(u => u.Credentials).FirstOrDefaultAsync(u => u.Id == tokenInfo.UserId);
                 if (user == null)
                 {
                     return new EmailOperationResponseDto
@@ -214,7 +215,7 @@ namespace cms.Modules.Auth.Services
                 }
 
                 // Find and update password credential
-                CredentialModel? passwordCredential = user.Credentials?.FirstOrDefault(c => c.Type == "password");
+                Credential? passwordCredential = user.Credentials?.FirstOrDefault(c => c.Type == "password");
                 if (passwordCredential != null)
                 {
                     passwordCredential.Value = HashPassword(newPassword);
@@ -223,7 +224,7 @@ namespace cms.Modules.Auth.Services
                 else
                 {
                     // Create new password credential
-                    passwordCredential = new CredentialModel
+                    passwordCredential = new Credential
                     {
                         Id = Guid.NewGuid(),
                         UserId = user.Id,

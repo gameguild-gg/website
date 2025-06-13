@@ -1,9 +1,9 @@
 using Microsoft.EntityFrameworkCore;
-using cms.Common.Entities;
 using System.Linq.Expressions;
+using GameGuild.Common.Entities;
 using Microsoft.EntityFrameworkCore.Metadata;
 
-namespace cms.Common.Data;
+namespace GameGuild.Common.Data;
 
 /// <summary>
 /// Extension methods for configuring base entity properties in Entity Framework

@@ -2,12 +2,10 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
-using cms.Modules.Auth.Dtos;
-using Microsoft.Extensions.Configuration;
+using GameGuild.Modules.Auth.Dtos;
 using Microsoft.IdentityModel.Tokens;
-using System;
 
-namespace cms.Modules.Auth.Services
+namespace GameGuild.Modules.Auth.Services
 {
     public interface IJwtTokenService
     {
@@ -16,6 +14,8 @@ namespace cms.Modules.Auth.Services
         string GenerateRefreshToken();
 
         ClaimsPrincipal? GetPrincipalFromExpiredToken(string token);
+        
+        ClaimsPrincipal? ValidateToken(string token);
     }
 
     public class JwtTokenService : IJwtTokenService
@@ -36,14 +36,17 @@ namespace cms.Modules.Auth.Services
             foreach (string role in roles)
             {
                 claims.Add(new Claim(ClaimTypes.Role, role));
-            }
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"] ?? "dev-key"));
+            }            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"] ?? "dev-key"));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+            
+            int expiryMinutes = int.Parse(_configuration["Jwt:AccessTokenExpiryMinutes"] ?? "60");
+            DateTime expires = DateTime.UtcNow.AddMinutes(expiryMinutes);
+            
             var token = new JwtSecurityToken(
                 issuer: _configuration["Jwt:Issuer"],
                 audience: _configuration["Jwt:Audience"],
                 claims: claims,
-                expires: DateTime.UtcNow.AddHours(1),
+                expires: expires,
                 signingCredentials: creds
             );
 
@@ -68,6 +71,38 @@ namespace cms.Modules.Auth.Services
                 ValidateIssuerSigningKey = true,
                 IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"] ?? "dev-key")),
                 ValidateLifetime = false // We don't care about the token's expiration date
+            };
+
+            var tokenHandler = new JwtSecurityTokenHandler();
+            try
+            {
+                ClaimsPrincipal? principal = tokenHandler.ValidateToken(token, tokenValidationParameters, out SecurityToken securityToken);
+                if (securityToken is not JwtSecurityToken jwtSecurityToken ||
+                    !jwtSecurityToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha256, StringComparison.InvariantCultureIgnoreCase))
+                {
+                    throw new SecurityTokenException("Invalid token");
+                }
+
+                return principal;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        public ClaimsPrincipal? ValidateToken(string token)
+        {
+            var tokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateAudience = true,
+                ValidateIssuer = true,
+                ValidateIssuerSigningKey = true,
+                ValidIssuer = _configuration["Jwt:Issuer"],
+                ValidAudience = _configuration["Jwt:Audience"],
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"] ?? "dev-key")),
+                ValidateLifetime = true,
+                ClockSkew = TimeSpan.Zero
             };
 
             var tokenHandler = new JwtSecurityTokenHandler();

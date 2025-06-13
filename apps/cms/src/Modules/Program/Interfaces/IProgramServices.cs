@@ -1,6 +1,6 @@
-using cms.Common.Enums;
+using GameGuild.Common.Enums;
 
-namespace cms.Modules.Program.Interfaces;
+namespace GameGuild.Modules.Program.Interfaces;
 
 /// <summary>
 /// Interface for program management services

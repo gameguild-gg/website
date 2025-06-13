@@ -1,10 +1,10 @@
 
 using System.Collections.ObjectModel;
-using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Linq; // do not remove this, it's needed for IQueryable extensions
 
-namespace cms.Common.Entities;
+// do not remove this, it's needed for IQueryable extensions
+
+namespace GameGuild.Common.Entities;
 
 public enum PermissionType
 {
@@ -217,7 +217,7 @@ public class WithPermissions: BaseEntity
 
 	public void RemovePermissions(Collection<PermissionType> permissions)
 	{
-		foreach (var permission in permissions)
+		foreach (PermissionType permission in permissions)
 			SetPermission(permission, false);
 	}
 
@@ -227,12 +227,12 @@ public class WithPermissions: BaseEntity
 		
 		if (bitPos < 64)
 		{
-			var mask = 1UL << bitPos;
+			ulong mask = 1UL << bitPos;
 			PermissionFlags1 = value ? (PermissionFlags1 | mask) : (PermissionFlags1 & ~mask);
 		}
 		else if (bitPos < 128)
 		{
-			var mask = 1UL << (bitPos - 64);
+			ulong mask = 1UL << (bitPos - 64);
 			PermissionFlags2 = value ? (PermissionFlags2 | mask) : (PermissionFlags2 & ~mask);
 		}
 	}
@@ -251,12 +251,12 @@ public static class PermissionQueryHelper
 		
 		if (bitPos < 64)
 		{
-			var mask = 1UL << bitPos;
+			ulong mask = 1UL << bitPos;
 			return query.Where(x => (x.PermissionFlags1 & mask) == mask);
 		}
 		else if (bitPos < 128)
 		{
-			var mask = 1UL << (bitPos - 64);
+			ulong mask = 1UL << (bitPos - 64);
 			return query.Where(x => (x.PermissionFlags2 & mask) == mask);
 		}
 		
@@ -270,7 +270,7 @@ public static class PermissionQueryHelper
 		var mask1 = 0UL;
 		var mask2 = 0UL;
 		
-		foreach (var permission in permissions)
+		foreach (PermissionType permission in permissions)
 		{
 			var bitPos = (int)permission;
 			if (bitPos < 64)
@@ -297,7 +297,7 @@ public static class PermissionQueryHelper
 		var mask1 = 0UL;
 		var mask2 = 0UL;
 		
-		foreach (var permission in permissions)
+		foreach (PermissionType permission in permissions)
 		{
 			var bitPos = (int)permission;
 			if (bitPos < 64)
@@ -325,7 +325,7 @@ public static class PermissionQueryHelper
 		var mask1 = 0UL;
 		var mask2 = 0UL;
 		
-		foreach (var permission in permissions)
+		foreach (PermissionType permission in permissions)
 		{
 			var bitPos = (int)permission;
 			if (bitPos < 64)

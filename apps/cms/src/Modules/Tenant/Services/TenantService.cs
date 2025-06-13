@@ -1,9 +1,9 @@
 using Microsoft.EntityFrameworkCore;
-using cms.Data;
-using cms.Modules.Tenant.Models;
-using cms.Common.Services;
+using GameGuild.Common.Services;
+using GameGuild.Data;
+using GameGuild.Modules.Tenant.Models;
 
-namespace cms.Modules.Tenant.Services;
+namespace GameGuild.Modules.Tenant.Services;
 
 /// <summary>
 /// Service implementation for managing tenants

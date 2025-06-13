@@ -1,9 +1,10 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
-using cms.Common.Entities;
+using GameGuild.Common.Entities;
+using GameGuild.Modules.Tenant.Models;
 
-namespace cms.Modules.User.Models;
+namespace GameGuild.Modules.User.Models;
 
 [Table("Users")]
 [Index(nameof(Email), IsUnique = true)]
@@ -56,20 +57,20 @@ public class User : BaseEntity
     /// <summary>
     /// Navigation property to tenant permissions and memberships
     /// </summary>
-    public virtual ICollection<cms.Modules.Tenant.Models.TenantPermission> TenantPermissions
+    public virtual ICollection<TenantPermission> TenantPermissions
     {
         get;
         set;
-    } = new List<cms.Modules.Tenant.Models.TenantPermission>();
+    } = new List<TenantPermission>();
 
     /// <summary>
     /// Navigation property to global content type permissions (Layer 2a of permission system)
     /// </summary>
-    public virtual ICollection<cms.Common.Entities.ContentTypePermission> ContentTypePermissions
+    public virtual ICollection<ContentTypePermission> ContentTypePermissions
     {
         get;
         set;
-    } = new List<cms.Common.Entities.ContentTypePermission>();
+    } = new List<ContentTypePermission>();
 
     /// <summary>
     /// <summary>

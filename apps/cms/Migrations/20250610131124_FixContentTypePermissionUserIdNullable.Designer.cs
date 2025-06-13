@@ -4,11 +4,11 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using cms.Data;
+using GameGuild.Data;
 
 #nullable disable
 
-namespace cms.Migrations
+namespace GameGuild.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
     [Migration("20250610131124_FixContentTypePermissionUserIdNullable")]

@@ -1,9 +1,9 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
-using cms.Common.Entities;
+using GameGuild.Common.Entities;
 
-namespace cms.Modules.Product.Models;
+namespace GameGuild.Modules.Product.Models;
 
 /// <summary>
 /// Entity representing pricing information for products
@@ -135,7 +135,7 @@ public class ProductPricing : BaseEntity
     {
         if (!SalePrice.HasValue) return false;
 
-        var now = DateTime.UtcNow;
+        DateTime now = DateTime.UtcNow;
         return (SaleStartDate == null || SaleStartDate <= now) &&
                (SaleEndDate == null || SaleEndDate > now);
     }

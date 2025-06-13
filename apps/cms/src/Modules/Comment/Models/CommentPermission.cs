@@ -1,8 +1,8 @@
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
-using cms.Common.Entities;
+using GameGuild.Common.Entities;
 
-namespace cms.Modules.Comment.Models;
+namespace GameGuild.Modules.Comment.Models;
 
 /// <summary>
 /// Resource-specific permissions for Comment entities (Layer 3 of DAC permission system)
@@ -13,7 +13,7 @@ namespace cms.Modules.Comment.Models;
 [Index(nameof(ResourceId), nameof(UserId), Name = "IX_CommentPermissions_Resource_User")]
 [Index(nameof(TenantId), Name = "IX_CommentPermissions_TenantId")]
 [Index(nameof(ExpiresAt), Name = "IX_CommentPermissions_Expiration")]
-public class CommentPermission : ResourcePermission<cms.Common.Entities.Comment>
+public class CommentPermission : ResourcePermission<Common.Entities.Comment>
 {
     // Comment-specific computed properties
     

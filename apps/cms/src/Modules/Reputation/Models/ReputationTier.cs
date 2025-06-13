@@ -1,9 +1,9 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
-using cms.Common.Entities;
+using GameGuild.Common.Entities;
 
-namespace cms.Modules.Reputation.Models;
+namespace GameGuild.Modules.Reputation.Models;
 
 /// <summary>
 /// Configurable reputation tier definition stored in the database

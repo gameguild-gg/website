@@ -1,7 +1,6 @@
 using System.ComponentModel.DataAnnotations;
-using cms.Common.Entities;
 
-namespace cms.Common.Entities;
+namespace GameGuild.Common.Entities;
 
 /// <summary>
 /// Represents a license that can be assigned to content.

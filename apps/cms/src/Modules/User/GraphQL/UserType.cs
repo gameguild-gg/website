@@ -1,4 +1,4 @@
-namespace cms.Modules.User.GraphQL;
+namespace GameGuild.Modules.User.GraphQL;
 
 public class UserType : ObjectType<Models.User>
 {

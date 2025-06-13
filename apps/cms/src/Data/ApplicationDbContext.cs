@@ -1,13 +1,14 @@
 using Microsoft.EntityFrameworkCore;
-using cms.Modules.User.Models;
-using cms.Modules.Tenant.Models;
-using cms.Common.Entities;
-using cms.Common.Data;
+using GameGuild.Common.Data;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Metadata;
 using System.Reflection;
+using GameGuild.Common.Entities;
+using GameGuild.Modules.Auth.Models;
+using GameGuild.Modules.Tenant.Models;
+using GameGuild.Modules.User.Models;
 
-namespace cms.Data;
+namespace GameGuild.Data;
 
 // NOTE: do not add fluent api configurations here, they should be in the same file of the entity. On the entity, use notations for simple configurations, and fluent API for complex ones.
 public class ApplicationDbContext : DbContext
@@ -17,9 +18,9 @@ public class ApplicationDbContext : DbContext
     // DbSets
     public DbSet<User> Users { get; set; }
     public DbSet<Credential> Credentials { get; set; }
-    public DbSet<cms.Modules.Auth.Models.RefreshToken> RefreshTokens { get; set; }
+    public DbSet<RefreshToken> RefreshTokens { get; set; }
     public DbSet<Tenant> Tenants { get; set; }
-    public DbSet<cms.Modules.Tenant.Models.TenantPermission> TenantPermissions { get; set; }
+    public DbSet<TenantPermission> TenantPermissions { get; set; }
 
     // Resource hierarchy DbSet - Required for proper inheritance configuration
     public DbSet<ResourceBase> Resources { get; set; }

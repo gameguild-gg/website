@@ -1,6 +1,6 @@
-using cms.Common.Enums;
+using GameGuild.Common.Enums;
 
-namespace cms.Modules.Feedback.Interfaces;
+namespace GameGuild.Modules.Feedback.Interfaces;
 
 /// <summary>
 /// Interface for program feedback services

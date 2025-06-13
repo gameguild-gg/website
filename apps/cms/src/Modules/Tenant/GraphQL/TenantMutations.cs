@@ -1,12 +1,13 @@
-using cms.Modules.Tenant.Models;
-using cms.Modules.Tenant.Services;
+using GameGuild.Modules.Tenant.Models;
+using GameGuild.Modules.Tenant.Services;
+using GameGuild.Modules.User.GraphQL;
 
-namespace cms.Modules.Tenant.GraphQL;
+namespace GameGuild.Modules.Tenant.GraphQL;
 
 /// <summary>
 /// GraphQL mutations for Tenant module
 /// </summary>
-[ExtendObjectType<cms.Modules.User.GraphQL.Mutation>]
+[ExtendObjectType<Mutation>]
 public class TenantMutations
 {
     /// <summary>

@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
-using cms.Modules.User.Dtos;
+using GameGuild.Modules.User.Dtos;
 
-namespace cms.Modules.Tenant.Dtos;
+namespace GameGuild.Modules.Tenant.Dtos;
 
 /// <summary>
 /// DTO for creating a new tenant

@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
-using cms.Modules.UserProfile.Services;
-using cms.Modules.UserProfile.Dtos;
+using GameGuild.Modules.UserProfile.Dtos;
+using GameGuild.Modules.UserProfile.Services;
 
-namespace cms.Modules.UserProfile.Controllers;
+namespace GameGuild.Modules.UserProfile.Controllers;
 
 [ApiController]
 [Route("[controller]")]

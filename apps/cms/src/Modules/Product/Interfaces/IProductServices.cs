@@ -1,6 +1,6 @@
-using cms.Common.Enums;
+using GameGuild.Common.Enums;
 
-namespace cms.Modules.Product.Interfaces;
+namespace GameGuild.Modules.Product.Interfaces;
 
 /// <summary>
 /// Interface for product-related services

@@ -1,11 +1,12 @@
-using cms.Modules.UserProfile.Services;
+using GameGuild.Modules.User.GraphQL;
+using GameGuild.Modules.UserProfile.Services;
 
-namespace cms.Modules.UserProfile.GraphQL;
+namespace GameGuild.Modules.UserProfile.GraphQL;
 
 /// <summary>
 /// GraphQL queries for UserProfile module
 /// </summary>
-[ExtendObjectType<cms.Modules.User.GraphQL.Query>]
+[ExtendObjectType<Query>]
 public class UserProfileQueries
 {
     /// <summary>

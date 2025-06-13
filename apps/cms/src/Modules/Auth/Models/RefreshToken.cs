@@ -1,7 +1,6 @@
-using System;
-using cms.Common.Entities;
+using GameGuild.Common.Entities;
 
-namespace cms.Modules.Auth.Models
+namespace GameGuild.Modules.Auth.Models
 {
     /// <summary>
     /// Refresh token entity for managing user sessions

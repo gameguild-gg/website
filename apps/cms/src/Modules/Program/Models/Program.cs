@@ -2,11 +2,10 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using cms.Common.Entities;
-using cms.Common.Enums;
 using System.Text.Json;
+using GameGuild.Common.Entities;
 
-namespace cms.Modules.Program.Models;
+namespace GameGuild.Modules.Program.Models;
 
 [Table("programs")]
 [Index(nameof(Visibility))]
@@ -66,7 +65,7 @@ public class Program : Content, ITenantable
         try
         {
             var metadataDict = JsonSerializer.Deserialize<Dictionary<string, object>>(Metadata.AdditionalData);
-            if (metadataDict != null && metadataDict.TryGetValue(key, out var value))
+            if (metadataDict != null && metadataDict.TryGetValue(key, out object? value))
             {
                 return JsonSerializer.Deserialize<T>(JsonSerializer.Serialize(value));
             }

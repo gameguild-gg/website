@@ -2,10 +2,10 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using cms.Common.Entities;
-using cms.Common.Enums;
+using GameGuild.Common.Entities;
+using GameGuild.Common.Enums;
 
-namespace cms.Modules.Payment.Models;
+namespace GameGuild.Modules.Payment.Models;
 
 [Table("financial_transactions")]
 [Index(nameof(FromUserId))]

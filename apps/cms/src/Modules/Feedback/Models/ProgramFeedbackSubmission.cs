@@ -1,12 +1,10 @@
-using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using cms.Common.Entities;
-using cms.Common.Enums;
 using System.Text.Json;
+using GameGuild.Common.Entities;
 
-namespace cms.Modules.Feedback.Models;
+namespace GameGuild.Modules.Feedback.Models;
 
 [Table("program_feedback_submissions")]
 [Index(nameof(UserId), nameof(ProgramId), IsUnique = true)]
@@ -71,8 +69,8 @@ public class ProgramFeedbackSubmission : BaseEntity
         
         try
         {
-            var json = JsonDocument.Parse(FeedbackData);
-            if (json.RootElement.TryGetProperty(questionId, out var element))
+            JsonDocument json = JsonDocument.Parse(FeedbackData);
+            if (json.RootElement.TryGetProperty(questionId, out JsonElement element))
             {
                 return JsonSerializer.Deserialize<T>(element.GetRawText());
             }

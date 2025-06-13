@@ -1,10 +1,10 @@
 using Microsoft.AspNetCore.Mvc;
-using cms.Modules.Tenant.Models;
-using cms.Modules.Tenant.Services;
-using cms.Modules.Tenant.Dtos;
-using cms.Modules.User.Dtos;
+using GameGuild.Modules.Tenant.Dtos;
+using GameGuild.Modules.Tenant.Models;
+using GameGuild.Modules.Tenant.Services;
+using GameGuild.Modules.User.Dtos;
 
-namespace cms.Modules.Tenant.Controllers;
+namespace GameGuild.Modules.Tenant.Controllers;
 
 /// <summary>
 /// REST API controller for managing tenants

@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 
-namespace cms.Common.Extensions;
+namespace GameGuild.Common.Extensions;
 
 /// <summary>
 /// Extension methods for database migrations

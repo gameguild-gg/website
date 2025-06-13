@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace cms.Common.Entities;
+namespace GameGuild.Common.Entities;
 
 /// <summary>
 /// Entity for storing localized content for resources

@@ -1,7 +1,7 @@
-using cms.Data;
+using GameGuild.Data;
 using Microsoft.EntityFrameworkCore;
 
-namespace cms.Modules.UserProfile.Services;
+namespace GameGuild.Modules.UserProfile.Services;
 
 public interface IUserProfileService
 {

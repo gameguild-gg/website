@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace cms.Modules.Tenant.GraphQL;
+namespace GameGuild.Modules.Tenant.GraphQL;
 
 /// <summary>
 /// Input type for creating a new tenant

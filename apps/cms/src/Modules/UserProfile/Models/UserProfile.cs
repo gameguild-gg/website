@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
-using cms.Common.Entities;
+using GameGuild.Common.Entities;
 
-namespace cms.Modules.UserProfile.Models;
+namespace GameGuild.Modules.UserProfile.Models;
 
 /// <summary>
 /// Represents a user profile, which is a resource and can be localized and permissioned.

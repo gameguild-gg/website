@@ -1,12 +1,12 @@
 using System.Security.Cryptography;
-using System.Text;
-using cms.Modules.Auth.Dtos;
-using cms.Data;
+using GameGuild.Data;
+using GameGuild.Modules.Auth.Dtos;
+using GameGuild.Modules.User.Models;
 using Microsoft.EntityFrameworkCore;
-using UserModel = cms.Modules.User.Models.User;
-using CredentialModel = cms.Modules.User.Models.Credential;
+using UserModel = GameGuild.Modules.User.Models.User;
+using CredentialModel = GameGuild.Modules.User.Models.Credential;
 
-namespace cms.Modules.Auth.Services
+namespace GameGuild.Modules.Auth.Services
 {
     public interface IWeb3Service
     {
@@ -14,7 +14,7 @@ namespace cms.Modules.Auth.Services
 
         Task<bool> VerifySignatureAsync(Web3VerifyRequestDto request);
 
-        Task<UserModel> FindOrCreateWeb3UserAsync(string walletAddress, string chainId);
+        Task<User.Models.User> FindOrCreateWeb3UserAsync(string walletAddress, string chainId);
     }
 
     public class Web3Service : IWeb3Service
@@ -33,6 +33,12 @@ namespace cms.Modules.Auth.Services
 
         public async Task<Web3ChallengeResponseDto> GenerateChallengeAsync(Web3ChallengeRequestDto request)
         {
+            // Validate wallet address
+            if (!IsValidEthereumAddress(request.WalletAddress))
+            {
+                throw new ArgumentException("Invalid Ethereum address", nameof(request.WalletAddress));
+            }
+
             string nonce = GenerateNonce();
             string challenge = GenerateChallenge(request.WalletAddress, nonce);
             DateTime expiresAt = DateTime.UtcNow.AddMinutes(5); // 5-minute expiration
@@ -94,10 +100,10 @@ namespace cms.Modules.Auth.Services
             return isValidSignature;
         }
 
-        public async Task<UserModel> FindOrCreateWeb3UserAsync(string walletAddress, string chainId = "1")
+        public async Task<User.Models.User> FindOrCreateWeb3UserAsync(string walletAddress, string chainId = "1")
         {
             // Try to find user by wallet address in credentials
-            CredentialModel? credential = await _context.Credentials
+            Credential? credential = await _context.Credentials
                 .Include(c => c.User)
                 .FirstOrDefaultAsync(c => c.Type == "web3_wallet" && c.Value == walletAddress.ToLower());
 
@@ -107,7 +113,7 @@ namespace cms.Modules.Auth.Services
             }
 
             // Create new user with wallet address
-            var user = new UserModel
+            var user = new User.Models.User
             {
                 Id = Guid.NewGuid(),
                 Name = $"User_{walletAddress[..8]}...", // Use first 8 chars of wallet as username
@@ -119,7 +125,7 @@ namespace cms.Modules.Auth.Services
             _context.Users.Add(user);
 
             // Add Web3 credential
-            var web3Credential = new CredentialModel
+            var web3Credential = new Credential
             {
                 Id = Guid.NewGuid(),
                 UserId = user.Id,
@@ -201,9 +207,7 @@ namespace cms.Modules.Auth.Services
 
                 return false;
             }
-        }
-
-        private bool IsValidEthereumAddress(string address)
+        }        public bool IsValidEthereumAddress(string address)
         {
             if (string.IsNullOrEmpty(address) || !address.StartsWith("0x") || address.Length != 42)
             {

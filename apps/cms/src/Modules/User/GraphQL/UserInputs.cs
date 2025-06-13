@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace cms.Modules.User.GraphQL;
+namespace GameGuild.Modules.User.GraphQL;
 
 public class CreateUserInput
 {

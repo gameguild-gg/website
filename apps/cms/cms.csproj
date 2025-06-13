@@ -25,10 +25,11 @@
         <PackageReference Include="Slugify.Core" Version="5.1.1" />        <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
         <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.0" />
         <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.1.0" />
-        <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
-        <PackageReference Include="HotChocolate.AspNetCore" Version="14.0.0" />
+        <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />        <PackageReference Include="HotChocolate.AspNetCore" Version="14.0.0" />
         <PackageReference Include="HotChocolate.Data.EntityFramework" Version="14.0.0" />
         <PackageReference Include="HotChocolate.Types.Analyzers" Version="14.0.0" />
+        <PackageReference Include="MediatR" Version="11.1.0" />
+        <PackageReference Include="MediatR.Extensions.Microsoft.DependencyInjection" Version="11.1.0" />
           <!-- Test dependencies -->
         <PackageReference Include="xunit" Version="2.4.2" />
         <PackageReference Include="xunit.runner.visualstudio" Version="2.4.5">

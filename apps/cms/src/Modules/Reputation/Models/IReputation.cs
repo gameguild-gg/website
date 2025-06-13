@@ -1,6 +1,6 @@
-using cms.Common.Entities;
+using GameGuild.Common.Entities;
 
-namespace cms.Modules.Reputation.Models;
+namespace GameGuild.Modules.Reputation.Models;
 
 /// <summary>
 /// Interface for reputation entities that can track reputation scores and levels

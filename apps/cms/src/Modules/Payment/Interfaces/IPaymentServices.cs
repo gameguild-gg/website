@@ -1,6 +1,6 @@
-using cms.Common.Enums;
+using GameGuild.Common.Enums;
 
-namespace cms.Modules.Payment.Interfaces;
+namespace GameGuild.Modules.Payment.Interfaces;
 
 /// <summary>
 /// Interface for financial transaction services

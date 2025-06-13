@@ -1,4 +1,4 @@
-namespace cms.Common.Entities;
+namespace GameGuild.Common.Entities;
 
 /// <summary>
 /// Interface for entities that can be followed by users.

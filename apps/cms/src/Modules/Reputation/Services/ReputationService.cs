@@ -1,10 +1,9 @@
 using Microsoft.EntityFrameworkCore;
-using cms.Common.Entities;
-using cms.Data;
-using cms.Modules.Reputation.Models;
-using cms.Modules.Tenant.Models;
+using GameGuild.Data;
+using GameGuild.Modules.Reputation.Models;
+using GameGuild.Modules.Tenant.Models;
 
-namespace cms.Modules.Reputation.Services;
+namespace GameGuild.Modules.Reputation.Services;
 
 /// <summary>
 /// Service implementation for managing user reputation with polymorphic support

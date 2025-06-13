@@ -1,7 +1,4 @@
-using cms.Modules.Rating.Models;
-using cms.Modules.User.Models;
-
-namespace cms.Modules.Rating.Services;
+namespace GameGuild.Modules.Rating.Services;
 
 /// <summary>
 /// Interface for rating-related operations

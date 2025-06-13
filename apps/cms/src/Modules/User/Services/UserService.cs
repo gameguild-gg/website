@@ -1,7 +1,7 @@
-using cms.Data;
+using GameGuild.Data;
 using Microsoft.EntityFrameworkCore;
 
-namespace cms.Modules.User.Services;
+namespace GameGuild.Modules.User.Services;
 
 public interface IUserService
 {

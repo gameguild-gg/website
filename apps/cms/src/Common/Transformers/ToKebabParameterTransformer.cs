@@ -1,6 +1,6 @@
 using System.Text.RegularExpressions;
 
-namespace cms.Common.Transformers;
+namespace GameGuild.Common.Transformers;
 
 /// <summary>
 /// Transforms route parameters from PascalCase to kebab-case

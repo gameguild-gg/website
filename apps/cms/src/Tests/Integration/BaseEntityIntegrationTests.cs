@@ -1,10 +1,10 @@
 using Microsoft.EntityFrameworkCore;
-using cms.Data;
-using cms.Modules.User.Models;
-using cms.Modules.User.Services;
+using GameGuild.Data;
+using GameGuild.Modules.User.Models;
+using GameGuild.Modules.User.Services;
 using Xunit;
 
-namespace cms.Tests.Integration;
+namespace GameGuild.Tests.Integration;
 
 public class BaseEntityIntegrationTests
 {
@@ -41,7 +41,9 @@ public class BaseEntityIntegrationTests
         Assert.True(createdUser.UpdatedAt > DateTime.MinValue);
         Assert.Null(createdUser.DeletedAt);
         Assert.False(createdUser.IsDeleted);
-        Assert.Equal(0, createdUser.Version);
+        
+        // Version is set to 1 when entity is saved to the database by ApplicationDbContext.UpdateTimestamps()
+        Assert.Equal(1, createdUser.Version);
     }
 
     [Fact]

@@ -1,6 +1,4 @@
-using cms.Modules.Auth.Dtos;
-
-namespace cms.Modules.Auth.Dtos
+namespace GameGuild.Modules.Auth.Dtos
 {
     public class SignInResponseDto
     {

@@ -1,10 +1,10 @@
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using cms.Common.Entities;
-using cms.Common.Enums;
+using GameGuild.Common.Entities;
+using GameGuild.Common.Enums;
 
-namespace cms.Modules.Certificate.Models;
+namespace GameGuild.Modules.Certificate.Models;
 
 [Table("certificate_tags")]
 [Index(nameof(CertificateId), nameof(TagId), IsUnique = true)]

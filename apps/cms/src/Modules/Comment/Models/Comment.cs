@@ -1,6 +1,6 @@
-using cms.Modules.Comment.Models;
+using GameGuild.Modules.Comment.Models;
 
-namespace cms.Common.Entities;
+namespace GameGuild.Common.Entities;
 
 /// <summary>
 /// Represents a comment on a commentable entity.

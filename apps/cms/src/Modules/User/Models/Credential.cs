@@ -1,9 +1,9 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
-using cms.Common.Entities;
+using GameGuild.Common.Entities;
 
-namespace cms.Modules.User.Models;
+namespace GameGuild.Modules.User.Models;
 
 /// <summary>
 /// Represents a user credential (password, API key, OAuth token, etc.)
@@ -46,7 +46,7 @@ public class Credential : BaseEntity, ITenantable
     /// Navigation property to the Tenant entity (hide base implementation)
     /// </summary>
     [ForeignKey(nameof(TenantId))]
-    public new virtual cms.Modules.Tenant.Models.Tenant? Tenant
+    public new virtual Tenant.Models.Tenant? Tenant
     {
         get;
         set;

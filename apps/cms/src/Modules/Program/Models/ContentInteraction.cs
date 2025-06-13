@@ -1,12 +1,11 @@
-using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using cms.Common.Entities;
-using cms.Common.Enums;
 using System.Text.Json;
+using GameGuild.Common.Entities;
+using GameGuild.Common.Enums;
 
-namespace cms.Modules.Program.Models;
+namespace GameGuild.Modules.Program.Models;
 
 [Table("content_interactions")]
 public class ContentInteraction : BaseEntity
@@ -123,8 +122,8 @@ public class ContentInteraction : BaseEntity
 
         try
         {
-            var json = JsonDocument.Parse(SubmissionData);
-            if (json.RootElement.TryGetProperty(key, out var element))
+            JsonDocument json = JsonDocument.Parse(SubmissionData);
+            if (json.RootElement.TryGetProperty(key, out JsonElement element))
             {
                 return JsonSerializer.Deserialize<T>(element.GetRawText());
             }

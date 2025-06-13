@@ -1,8 +1,7 @@
-using cms.Common.Entities;
-using cms.Common.Enums;
-using cms.Modules.Tenant.Models;
+using GameGuild.Common.Entities;
+using GameGuild.Modules.Tenant.Models;
 
-namespace cms.Common.Services;
+namespace GameGuild.Common.Services;
 
 /// <summary>
 /// Interface for the three-layer permission service

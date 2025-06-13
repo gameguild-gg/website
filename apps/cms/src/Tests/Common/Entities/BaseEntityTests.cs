@@ -1,10 +1,10 @@
 using Xunit;
-using cms.Common.Entities;
-using cms.Modules.User.Models;
 using Microsoft.EntityFrameworkCore;
-using cms.Data;
+using GameGuild.Common.Entities;
+using GameGuild.Data;
+using GameGuild.Modules.User.Models;
 
-namespace cms.Tests.Common.Entities;
+namespace GameGuild.Tests.Common.Entities;
 
 public class BaseEntityTests
 {

@@ -1,11 +1,12 @@
-using cms.Modules.UserProfile.Services;
+using GameGuild.Modules.User.GraphQL;
+using GameGuild.Modules.UserProfile.Services;
 
-namespace cms.Modules.UserProfile.GraphQL;
+namespace GameGuild.Modules.UserProfile.GraphQL;
 
 /// <summary>
 /// GraphQL mutations for UserProfile module
 /// </summary>
-[ExtendObjectType<cms.Modules.User.GraphQL.Mutation>]
+[ExtendObjectType<Mutation>]
 public class UserProfileMutations
 {
     /// <summary>

@@ -1,8 +1,7 @@
-using System;
 using System.ComponentModel.DataAnnotations;
-using cms.Common.Entities;
+using GameGuild.Common.Entities;
 
-namespace cms.Modules.Test.Models
+namespace GameGuild.Modules.Test.Models
 {
     public class FeedbackQualityRating : BaseEntity
     {

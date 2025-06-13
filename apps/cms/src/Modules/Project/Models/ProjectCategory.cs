@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
-using cms.Common.Entities;
+using GameGuild.Common.Entities;
 
-namespace cms.Modules.Project.Models;
+namespace GameGuild.Modules.Project.Models;
 
 /// <summary>
 /// Represents a project category (game, tool, art, etc.)

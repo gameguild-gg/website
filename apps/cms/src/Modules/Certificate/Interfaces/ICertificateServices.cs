@@ -1,6 +1,4 @@
-using cms.Common.Enums;
-
-namespace cms.Modules.Certificate.Interfaces;
+namespace GameGuild.Modules.Certificate.Interfaces;
 
 /// <summary>
 /// Interface for certificate management services

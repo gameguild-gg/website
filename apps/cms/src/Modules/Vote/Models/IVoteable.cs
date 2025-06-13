@@ -1,6 +1,4 @@
-using System.Collections.Generic;
-
-namespace cms.Modules.Voting.Models;
+namespace GameGuild.Modules.Voting.Models;
 
 /// <summary>
 /// Interface for entities that support voting (upvote/downvote).

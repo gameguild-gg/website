@@ -1,9 +1,6 @@
-using cms.Modules.Voting.Models;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+using GameGuild.Modules.Voting.Models;
 
-namespace cms.Modules.Voting.Services;
+namespace GameGuild.Modules.Voting.Services;
 
 /// <summary>
 /// Interface for the service that manages votes and voting operations

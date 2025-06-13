@@ -1,6 +1,4 @@
-using System.Collections.Generic;
-
-namespace cms.Modules.Rating.Models;
+namespace GameGuild.Modules.Rating.Models;
 
 /// <summary>
 /// Interface for entities that support ratings (e.g., 1-5 stars).

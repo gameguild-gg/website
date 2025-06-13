@@ -1,8 +1,7 @@
-using System;
 using System.ComponentModel.DataAnnotations;
-using cms.Common.Entities;
+using GameGuild.Common.Entities;
 
-namespace cms.Modules.Jam.Models
+namespace GameGuild.Modules.Jam.Models
 {
     public class Jam : BaseEntity
     {

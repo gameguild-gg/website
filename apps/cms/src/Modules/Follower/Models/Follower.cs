@@ -1,4 +1,7 @@
-namespace cms.Common.Entities;
+using GameGuild.Modules.Tenant.Models;
+using GameGuild.Modules.User.Models;
+
+namespace GameGuild.Common.Entities;
 
 /// <summary>
 /// Represents a follower of a followable entity.
@@ -8,7 +11,7 @@ public class Follower : BaseEntity, ITenantable
     /// <summary>
     /// The user who is following
     /// </summary>
-    public virtual cms.Modules.User.Models.User User
+    public virtual User User
     {
         get;
         set;
@@ -21,7 +24,7 @@ public class Follower : BaseEntity, ITenantable
     }
 
     // Optional: Tenant property for ITenantable (hide base implementation)
-    public new virtual cms.Modules.Tenant.Models.Tenant? Tenant
+    public new virtual Tenant? Tenant
     {
         get;
         set;

@@ -64,7 +64,7 @@ public static class SlugCase
             entry.SlidingExpiration = TimeSpan.FromMinutes(30); // Expire after 30 minutes of inactivity
             entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(2); // Absolute expiration after 2 hours
             
-            var slug = _slugHelper.GenerateSlug(text);
+            string slug = _slugHelper.GenerateSlug(text);
             
             // Truncate if necessary
             if (slug.Length > maxLength)
@@ -85,7 +85,7 @@ public static class SlugCase
     /// <returns>A URL-friendly slug string with custom separator.</returns>
     public static string Convert(string text, string separator, int maxLength = 100)
     {
-        var slug = Convert(text, maxLength);
+        string slug = Convert(text, maxLength);
         
         if (!string.IsNullOrEmpty(separator) && separator != "-")
         {
@@ -124,7 +124,7 @@ public static class SlugCase
     /// <returns>A unique slug string.</returns>
     public static string GenerateUnique(string text, IEnumerable<string> existingSlugs, int maxLength = 100)
     {
-        var baseSlug = Convert(text, maxLength);
+        string baseSlug = Convert(text, maxLength);
         
         if (existingSlugs == null || !existingSlugs.Contains(baseSlug))
         {
@@ -138,7 +138,7 @@ public static class SlugCase
         do
         {
             var suffix = $"-{counter}";
-            var availableLength = maxLength - suffix.Length;
+            int availableLength = maxLength - suffix.Length;
             
             if (availableLength <= 0)
             {
@@ -146,7 +146,7 @@ public static class SlugCase
             }
             else
             {
-                var truncatedBase = baseSlug.Length > availableLength 
+                string truncatedBase = baseSlug.Length > availableLength 
                     ? baseSlug.Substring(0, availableLength).TrimEnd('-')
                     : baseSlug;
                 uniqueSlug = truncatedBase + suffix;
@@ -222,7 +222,7 @@ public static class SlugCase
             throw new ArgumentException("Max length must be greater than zero.", nameof(maxLength));
         }
 
-        var slug = _slugHelper.GenerateSlug(text);
+        string slug = _slugHelper.GenerateSlug(text);
         
         // Truncate if necessary
         if (slug.Length > maxLength)

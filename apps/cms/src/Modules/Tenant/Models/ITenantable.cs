@@ -1,4 +1,4 @@
-﻿namespace cms.Common.Entities;
+﻿namespace GameGuild.Common.Entities;
 
 /// <summary>
 /// Interface for resources that can belong to a specific tenant

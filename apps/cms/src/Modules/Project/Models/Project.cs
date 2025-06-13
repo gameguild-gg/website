@@ -1,8 +1,7 @@
 using System.ComponentModel.DataAnnotations;
-using cms.Common.Entities;
-using cms.Modules.User.Models;
+using GameGuild.Common.Entities;
 
-namespace cms.Modules.Project.Models;
+namespace GameGuild.Modules.Project.Models;
 
 /// <summary>
 /// Represents a project (game, tool, art, etc.)
@@ -86,7 +85,7 @@ public class Project : Content
     /// User who created the project
     /// </summary>
     [Required]
-    public virtual cms.Modules.User.Models.User CreatedBy
+    public virtual User.Models.User CreatedBy
     {
         get;
         set;
