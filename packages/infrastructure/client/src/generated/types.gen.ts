@@ -4158,7 +4158,8 @@ export interface LearningAssessmentsStartSubmissionInput {
   enrollmentId?: string;
 }
 
-export type LearningAssessmentsSubmissionModality = 'None' | 'Text' | 'File' | 'Url' | 'Code' | 'Media' | 'Project' | 'StructuredAnswer';
+/** A comma-separated combination of the declared flag names. */
+export type LearningAssessmentsSubmissionModality = string;
 
 export type LearningAssessmentsSubmissionStatus = 'InProgress' | 'Submitted' | 'Graded' | 'Returned' | 'Late';
 
@@ -4830,8 +4831,9 @@ export interface LearningCoursesProgramContent {
   visibility?: LearningCoursesVisibility;
 }
 
+/** Legacy values Page and Challenge are normalized on read and are not valid for new content. */
 export type LearningCoursesProgramContentType =
-  'Lesson' | 'Page' | 'Assignment' | 'Questionnaire' | 'Discussion' | 'Code' | 'Challenge' | 'Reflection' | 'Survey' | 'Project' | 'Module';
+  'Lesson' | 'Assignment' | 'Questionnaire' | 'Discussion' | 'Code' | 'Reflection' | 'Survey' | 'Project' | 'Module';
 
 export type LearningCoursesProgramDifficulty = 'Beginner' | 'Intermediate' | 'Advanced' | 'Expert';
 
@@ -5705,20 +5707,6 @@ export interface LearningWorkspacesLearnerDiscussion {
   viewCount?: number;
 }
 
-export interface LearningWorkspacesLearnerGradeSummary {
-  courseId?: string;
-  courseSlug?: string | null;
-  courseTitle?: string | null;
-  earnedPoints?: number | null;
-  finalGrade?: number | null;
-  gradedAssessments?: number;
-  groups?: Array<LearningWorkspacesLearnerAssessmentGroup> | null;
-  items?: Array<LearningWorkspacesLearnerGradeItem> | null;
-  percentage?: number | null;
-  possiblePoints?: number | null;
-  totalAssessments?: number;
-}
-
 export interface LearningWorkspacesLearnerGradeItem {
   assessmentId?: string;
   availableFrom?: string | null;
@@ -5735,6 +5723,20 @@ export interface LearningWorkspacesLearnerGradeItem {
   submissionStatus?: string | null;
   title?: string | null;
   type?: string | null;
+}
+
+export interface LearningWorkspacesLearnerGradeSummary {
+  courseId?: string;
+  courseSlug?: string | null;
+  courseTitle?: string | null;
+  earnedPoints?: number | null;
+  finalGrade?: number | null;
+  gradedAssessments?: number;
+  groups?: Array<LearningWorkspacesLearnerAssessmentGroup> | null;
+  items?: Array<LearningWorkspacesLearnerGradeItem> | null;
+  percentage?: number | null;
+  possiblePoints?: number | null;
+  totalAssessments?: number;
 }
 
 export interface LearningWorkspacesLearnerScheduleEntry {
@@ -7667,7 +7669,8 @@ export interface TestingLabTestingLabSettings {
   updatedAt?: string;
 }
 
-export type TestingLabTestingLearningCompletionRequirement = 'None' | 'Attendance' | 'FeedbackSubmitted' | 'ProjectPresented';
+/** A comma-separated combination of the declared flag names. */
+export type TestingLabTestingLearningCompletionRequirement = string;
 
 export interface TestingLabTestingLocation {
   activeSessionCount?: number;
@@ -13700,8 +13703,8 @@ LearningAssessmentsStartSubmissionInputSchema = z.object({
   enrollmentId: z.string().uuid().optional(),
 });
 
-/** Zod schema for LearningAssessmentsSubmissionModality */
-LearningAssessmentsSubmissionModalitySchema = z.enum(['None', 'Text', 'File', 'Url', 'Code', 'Media', 'Project', 'StructuredAnswer']);
+/** Zod schema for LearningAssessmentsSubmissionModality. A comma-separated combination of the declared flag names. */
+LearningAssessmentsSubmissionModalitySchema = z.string();
 
 /** Zod schema for LearningAssessmentsSubmissionStatus */
 LearningAssessmentsSubmissionStatusSchema = z.enum(['InProgress', 'Submitted', 'Graded', 'Returned', 'Late']);
@@ -14499,20 +14502,8 @@ LearningCoursesProgramContentSchema = z.object({
   visibility: z.lazy(() => LearningCoursesVisibilitySchema).optional(),
 });
 
-/** Zod schema for LearningCoursesProgramContentType */
-LearningCoursesProgramContentTypeSchema = z.enum([
-  'Lesson',
-  'Page',
-  'Assignment',
-  'Questionnaire',
-  'Discussion',
-  'Code',
-  'Challenge',
-  'Reflection',
-  'Survey',
-  'Project',
-  'Module',
-]);
+/** Zod schema for LearningCoursesProgramContentType. Legacy values Page and Challenge are normalized on read and are not valid for new content. */
+LearningCoursesProgramContentTypeSchema = z.enum(['Lesson', 'Assignment', 'Questionnaire', 'Discussion', 'Code', 'Reflection', 'Survey', 'Project', 'Module']);
 
 /** Zod schema for LearningCoursesProgramDifficulty */
 LearningCoursesProgramDifficultySchema = z.enum(['Beginner', 'Intermediate', 'Advanced', 'Expert']);
@@ -15554,6 +15545,25 @@ LearningWorkspacesLearnerDiscussionSchema = z.object({
   viewCount: z.number().int().optional(),
 });
 
+/** Zod schema for LearningWorkspacesLearnerGradeItem */
+LearningWorkspacesLearnerGradeItemSchema = z.object({
+  assessmentId: z.string().uuid().optional(),
+  availableFrom: z.string().datetime().nullable().optional(),
+  availableUntil: z.string().datetime().nullable().optional(),
+  contentId: z.string().uuid().nullable().optional(),
+  dueAt: z.string().datetime().nullable().optional(),
+  feedback: z.string().nullable().optional(),
+  gradedAt: z.string().datetime().nullable().optional(),
+  groupId: z.string().uuid().nullable().optional(),
+  maxScore: z.number().int().optional(),
+  passed: z.boolean().nullable().optional(),
+  passingScore: z.number().int().optional(),
+  score: z.number().int().nullable().optional(),
+  submissionStatus: z.string().nullable().optional(),
+  title: z.string().nullable().optional(),
+  type: z.string().nullable().optional(),
+});
+
 /** Zod schema for LearningWorkspacesLearnerGradeSummary */
 LearningWorkspacesLearnerGradeSummarySchema = z.object({
   courseId: z.string().uuid().optional(),
@@ -15573,25 +15583,6 @@ LearningWorkspacesLearnerGradeSummarySchema = z.object({
   percentage: z.number().nullable().optional(),
   possiblePoints: z.number().nullable().optional(),
   totalAssessments: z.number().int().optional(),
-});
-
-/** Zod schema for LearningWorkspacesLearnerGradeItem */
-LearningWorkspacesLearnerGradeItemSchema = z.object({
-  assessmentId: z.string().uuid().optional(),
-  availableFrom: z.string().datetime().nullable().optional(),
-  availableUntil: z.string().datetime().nullable().optional(),
-  contentId: z.string().uuid().nullable().optional(),
-  dueAt: z.string().datetime().nullable().optional(),
-  feedback: z.string().nullable().optional(),
-  gradedAt: z.string().datetime().nullable().optional(),
-  groupId: z.string().uuid().nullable().optional(),
-  maxScore: z.number().int().optional(),
-  passed: z.boolean().nullable().optional(),
-  passingScore: z.number().int().optional(),
-  score: z.number().int().nullable().optional(),
-  submissionStatus: z.string().nullable().optional(),
-  title: z.string().nullable().optional(),
-  type: z.string().nullable().optional(),
 });
 
 /** Zod schema for LearningWorkspacesLearnerScheduleEntry */
@@ -17919,8 +17910,8 @@ TestingLabTestingLabSettingsSchema = z.object({
   updatedAt: z.string().datetime().optional(),
 });
 
-/** Zod schema for TestingLabTestingLearningCompletionRequirement */
-TestingLabTestingLearningCompletionRequirementSchema = z.enum(['None', 'Attendance', 'FeedbackSubmitted', 'ProjectPresented']);
+/** Zod schema for TestingLabTestingLearningCompletionRequirement. A comma-separated combination of the declared flag names. */
+TestingLabTestingLearningCompletionRequirementSchema = z.string();
 
 /** Zod schema for TestingLabTestingLocation */
 TestingLabTestingLocationSchema = z.object({

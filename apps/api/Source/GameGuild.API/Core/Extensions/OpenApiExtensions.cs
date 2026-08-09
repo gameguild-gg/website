@@ -3,6 +3,7 @@ using Asp.Versioning.ApiExplorer;
 using GameGuild.Configuration;
 using GameGuild.Configuration.PresentationLayer.ApiVersioning;
 using GameGuild.Configuration.PresentationLayer.OpenAPI;
+using GameGuild.Learning.Courses;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.OpenApi.Any;
@@ -166,6 +167,7 @@ public static class OpenApiExtensions
                 c.OperationFilter<ModuleControllerTagOperationFilter>();
                 c.OperationFilter<AllowAnonymousOperationFilter>();
                 c.SchemaFilter<FlagsEnumSchemaFilter>();
+                c.SchemaFilter<LegacyProgramContentTypeSchemaFilter>();
 
                 // Add security definition for JWT Bearer token
                 c.AddSecurityDefinition(
@@ -290,6 +292,30 @@ internal sealed class FlagsEnumSchemaFilter : ISchemaFilter
     }
 }
 
+/// <summary>
+/// Keeps historical database enum values readable while preventing new API clients from
+/// authoring obsolete content types. The write/mapping layer still accepts and normalizes
+/// Page and Challenge records created before the migration.
+/// </summary>
+internal sealed class LegacyProgramContentTypeSchemaFilter : ISchemaFilter
+{
+    private static readonly HashSet<string> LegacyValues =
+    [
+        nameof(ProgramContentType.Page),
+        nameof(ProgramContentType.Challenge),
+    ];
+
+    public void Apply(OpenApiSchema schema, SchemaFilterContext context)
+    {
+        if (context.Type != typeof(ProgramContentType) || schema.Enum is null)
+            return;
+
+        schema.Enum = schema.Enum
+            .Where(value => value is not OpenApiString text || !LegacyValues.Contains(text.Value))
+            .ToList();
+        schema.Description = $"{schema.Description} Legacy values Page and Challenge are normalized on read and are not valid for new content.".Trim();
+    }
+}
 internal sealed class OpenApiDocumentTransformer : Microsoft.AspNetCore.OpenApi.IOpenApiDocumentTransformer
 {
     public Task TransformAsync(Microsoft.OpenApi.Models.OpenApiDocument document, Microsoft.AspNetCore.OpenApi.OpenApiDocumentTransformerContext context, CancellationToken cancellationToken)

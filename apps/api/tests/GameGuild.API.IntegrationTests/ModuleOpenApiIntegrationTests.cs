@@ -111,6 +111,22 @@ public sealed class ModuleOpenApiIntegrationTests : IClassFixture<WebApplication
     }
 
     [Fact]
+    public async Task Swagger_ShouldHideLegacyProgramContentTypes()
+    {
+        using var client = _factory.CreateClient();
+
+        var response = await client.GetAsync("/swagger/v1/swagger.json");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var document = JsonNode.Parse(await response.Content.ReadAsStringAsync())!.AsObject();
+        var schema = document["components"]!["schemas"]!["Learning_Courses_ProgramContentType"]!.AsObject();
+        var values = schema["enum"]!.AsArray().Select(value => value!.GetValue<string>()).ToArray();
+
+        values.Should().NotContain(["Page", "Challenge"]);
+        values.Should().Contain(["Lesson", "Assignment", "Questionnaire", "Module"]);
+    }
+    [Fact]
     public async Task Runtime_ShouldNotRouteUnverifiedOrderOperations()
     {
         using var client = _factory.CreateClient();
