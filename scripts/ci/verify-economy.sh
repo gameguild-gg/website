@@ -397,8 +397,7 @@ if [[ "$skip_openapi" == false ]]; then
   captured_openapi="$artifact_root/openapi/openapi.json"
   run curl --fail --silent --show-error "http://127.0.0.1:$api_port/swagger/v1/swagger.json" --output "$raw_openapi"
   canonicalize_json "$raw_openapi" "$captured_openapi"
-  run pnpm --filter @game-guild/client generate -- --openapi "$captured_openapi" --force
-  run git diff --exit-code -- packages/infrastructure/client/src/generated
+  run bash "$script_dir/verify-openapi-client.sh" "$captured_openapi"
 fi
 
 if [[ "$skip_frontend" == false ]]; then

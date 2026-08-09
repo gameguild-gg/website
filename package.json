@@ -34,6 +34,7 @@
     "lint": "turbo run lint",
     "format": "pnpm -r run format",
     "generate": "turbo run generate",
+    "api:client:generate": "pnpm --filter @game-guild/client generate",
     "sync:format": "syncpack format",
     "sync:list": "syncpack list",
     "sync:lint": "syncpack lint",

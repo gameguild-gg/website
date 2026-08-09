@@ -7,18 +7,18 @@ This file is a concise reference for automated coding agents to be productive in
 
 Essential commands (paths relative to repo root):
 
-- Start DB:  `docker-compose up -d adminer` (compose.yaml at repo root).
+- Start DB: `docker-compose up -d adminer` (compose.yaml at repo root).
 - Start API (dev): use the VS Code task `start-api` or run:
   `dotnet run --project apps/api/Source/GameGuild.API/GameGuild.API.csproj`
-- Start Web (dev + codegen): in `apps/web/` run `npm run dev` — this runs `api:gen`, `graphql:gen` and `next dev` in parallel.
+- Start Web (dev): `pnpm --filter @game-guild/web dev`.
 - Frontend codegen (must run after API/schema changes):
-  - `cd apps/web && npm run api:gen` (OpenAPI client)
-  - `cd apps/web && npm run graphql:gen` (GraphQL hooks)
+    - `pnpm api:client:generate` (OpenAPI client; it uses a captured Swagger artifact, `OPENAPI_ARTIFACT`, `OPENAPI_URL`, or the local API in that order)
+    - `pnpm --filter @game-guild/web graphql:gen` (GraphQL hooks, when the package exposes that script)
 
 Key project conventions and patterns:
 
 - Backend modules: look under `apps/api/Source/Modules/` — each module commonly contains Commands/, Queries/, Entities/, Configuration/, Controllers/, GraphQL/. Modules implement an `IModule` interface exposing `ConfigureServices()` and `MapEndpoints()`.
-  - Compliance modules (`GameGuild.Compliance.*`) handle regulatory requirements: Audit (SOC2, ISO 27001, GDPR, HIPAA), KYC (identity verification), FERPA (educational privacy).
+    - Compliance modules (`GameGuild.Compliance.*`) handle regulatory requirements: Audit (SOC2, ISO 27001, GDPR, HIPAA), KYC (identity verification), FERPA (educational privacy).
 - CQRS + FluentValidation: Commands/Queries use a custom CQRS implementation (`GameGuild.CQRS` namespace, NOT MediatR). Handlers implement `IRequestHandler<TRequest, TResponse>` or `ICommandHandler`/`IQueryHandler`. Use the project Result<T> pattern; global exception filters convert to ProblemDetails.
 - EF Core: entities inherit from `EntityBase` (audit fields), use global soft-delete filters, and a `Version` property for optimistic concurrency.
 - Tenant & auth: multi-tenant context is passed via `X-Tenant-Id`. Auth uses JWT (backend) and NextAuth (frontend). Frontend has an authenticated client helper (import pattern: `from '@/lib/api'` or `@/lib/api/authenticated-client`).
@@ -27,7 +27,7 @@ Frontend structure & patterns:
 
 - Feature-first libs live under `apps/web/src/lib/` (e.g. `user-management`, `content-management`, `core`). Import by feature: `from '@/lib/<feature>'`.
 - Code generation is required when the API schema changes; failing to run `api:gen` or `graphql:gen` will cause type/runtime mismatches.
-- Scripts of interest: `apps/web/package.json` scripts `dev`, `api:gen`, `graphql:gen`, `build`.
+- Scripts of interest: root `package.json` scripts `api:client:generate`, `dev:web`, and `build:web`; `apps/web/package.json` owns only the web runtime and tests.
 
 Testing & CI:
 
@@ -43,14 +43,16 @@ Files & locations to consult for specifics:
 
 Quick tips for agents (do these before code changes):
 
-- Run the codegen commands in `apps/web` after any API/GraphQL change.
+- Run the root API-client generation command after any OpenAPI change; web development does not regenerate the API client implicitly.
 - When editing backend modules, follow the Commands/Queries/Handlers/Validators pattern and register services in `IModule` implementations.
 - Use VS Code tasks (`start-api`, `start-web`) when available — they encapsulate common flags.
 
 If anything below is unclear or you want more examples (small handler, a module skeleton, or a codegen verification script), tell me which area to expand and I will add an example or tests.
 
 ---
+
 Last updated: automated merge — please review for any team-specific secrets or CI notes to add.
+
 # GameGuild Platform - AI Agent Instructions
 
 ## Architecture Overview
@@ -68,8 +70,8 @@ GameGuild is a **modular monolith** with vertical slices implemented as modules.
 ### Starting the Development Environment
 
 1. **Database**: `docker-compose up -d adminer` (starts PostgreSQL + Adminer)
-2. **API**: Use VS Code task `start-api` or `dotnet run --project apps/api/GameGuild.csproj`
-3. **Web**: Use VS Code task `start-web` or in `apps/web/`: `npm run dev`
+2. **API**: Use VS Code task `start-api` or `dotnet run --project apps/api/Source/GameGuild.API/GameGuild.API.csproj`
+3. **Web**: Use VS Code task `start-web` or `pnpm --filter @game-guild/web dev`
 
 The web app runs on port 3000, API on port 5000 (configurable via `.env`).
 
@@ -78,13 +80,13 @@ The web app runs on port 3000, API on port 5000 (configurable via `.env`).
 The frontend uses **automatic code generation** - critical for development:
 
 ```bash
-# In apps/web/
-npm run api:gen        # Generates typed API client from OpenAPI spec
-npm run graphql:gen    # Generates typed GraphQL hooks from schema
-npm run dev            # Runs both generators + Next.js in watch mode
+# From the repository root
+pnpm api:client:generate                  # Generates the typed API client from Swagger
+pnpm --filter @game-guild/web graphql:gen # Generates GraphQL hooks when configured
+pnpm --filter @game-guild/web dev         # Runs the Next.js application only
 ```
 
-**Always run code generation after API schema changes** before writing frontend code.
+**Always run code generation after API schema changes** before writing frontend code. The web dev command does not regenerate the API client.
 
 ### Database Migrations
 
@@ -151,8 +153,8 @@ core/                # API clients, utils, health
 import { configureAuthenticatedClient } from "@/lib/api/authenticated-client";
 
 export async function myServerAction() {
-  await configureAuthenticatedClient(); // Sets up auth headers
-  return await someApiCall(); // Uses configured client
+    await configureAuthenticatedClient(); // Sets up auth headers
+    return await someApiCall(); // Uses configured client
 }
 ```
 
