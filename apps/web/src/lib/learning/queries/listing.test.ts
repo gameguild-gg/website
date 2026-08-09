@@ -1,17 +1,41 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { CourseDetails } from '@/lib/learning/types';
+import type { CourseViewModel } from '@/lib/learning/view-models';
 import { getCourse } from './course';
-import { getCourseFaq, getCourseLandingProjects } from './listing';
+import {
+  getCourseFaq,
+  getCourseLandingProjects,
+  getCoursePricing,
+  getCourseTestimonials,
+} from './listing';
+
+const mocks = vi.hoisted(() => ({
+  createServerClient: vi.fn(),
+  getToken: vi.fn(),
+  resolveCourseId: vi.fn(),
+  getApiSocialCoursesReviews: vi.fn(),
+  getCoursesPricing: vi.fn(),
+}));
+
+vi.mock('@/auth', () => ({ getToken: mocks.getToken }));
+
+vi.mock('@game-guild/client', () => ({
+  createServerClient: mocks.createServerClient,
+  GeneratedApi: {
+    LearningCoursesProgramModule: class {
+      getCoursesPricing = mocks.getCoursesPricing;
+    },
+    LearningExperienceSocialReviewsModule: class {
+      getApiSocialCoursesReviews = mocks.getApiSocialCoursesReviews;
+    },
+  },
+}));
 
 vi.mock('./course', () => ({
   getCourse: vi.fn(),
+  resolveCourseId: mocks.resolveCourseId,
 }));
 
-vi.mock('./http', () => ({
-  learningApiGet: vi.fn(),
-}));
-
-const baseCourse: CourseDetails = {
+const baseCourse: CourseViewModel = {
   id: 'course-1',
   creatorId: 'creator-1',
   creatorHandle: 'instructor-one',
@@ -53,6 +77,10 @@ const baseCourse: CourseDetails = {
 
 describe('course listing queries', () => {
   beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.createServerClient.mockReturnValue({});
+    mocks.getToken.mockResolvedValue('token');
+    mocks.resolveCourseId.mockResolvedValue('course-1');
     vi.mocked(getCourse).mockReset();
   });
 
@@ -65,7 +93,7 @@ describe('course listing queries', () => {
           { question: 'Will the storefront use it?', answer: 'Yes, edited metadata wins over generated defaults.' },
         ],
       }),
-    } as CourseDetails & { metadata: string });
+    } as CourseViewModel & { metadata: string });
 
     const faq = await getCourseFaq('course-1');
 
@@ -101,7 +129,7 @@ describe('course listing queries', () => {
           },
         ],
       }),
-    } as CourseDetails & { metadata: string });
+    } as CourseViewModel & { metadata: string });
 
     const projects = await getCourseLandingProjects('course-1');
 
@@ -127,4 +155,43 @@ describe('course listing queries', () => {
 
     expect(projects).toEqual({ items: [], total: 0 });
   });
+  it('loads testimonials through the generated reviews module', async () => {
+    mocks.getApiSocialCoursesReviews.mockResolvedValue({
+      ok: true,
+      data: [{
+        id: 'review-1', courseId: 'course-1', userId: 'user-1', rating: 5,
+        title: 'Clear and practical', content: 'Great course.', isApproved: true,
+        isVerifiedPurchase: true, helpfulCount: 3, createdAt: '2026-01-02T00:00:00.000Z',
+      }],
+    });
+
+    const result = await getCourseTestimonials('course-slug');
+
+    expect(mocks.resolveCourseId).toHaveBeenCalledWith('course-slug');
+    expect(mocks.getApiSocialCoursesReviews).toHaveBeenCalledWith('course-1', {
+      skip: 0, take: 100, approvedOnly: false,
+    });
+    expect(result).toMatchObject({
+      total: 1, averageRating: 5,
+      testimonials: [expect.objectContaining({ id: 'review-1', studentId: 'user-1' })],
+    });
+  });
+
+  it('loads monetized pricing through the generated course module', async () => {
+    mocks.getCoursesPricing.mockResolvedValue({
+      ok: true,
+      data: {
+        isMonetizationEnabled: true, isSubscription: true,
+        subscriptionDurationDays: 365, price: 129, currency: 'USD',
+      },
+    });
+
+    const pricing = await getCoursePricing('course-slug');
+
+    expect(mocks.getCoursesPricing).toHaveBeenCalledWith('course-1');
+    expect(pricing.tiers).toEqual([
+      expect.objectContaining({ price: 129, currency: 'USD', interval: 'yearly' }),
+    ]);
+  });
+
 });

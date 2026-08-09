@@ -1,6 +1,7 @@
+import { getToken } from '@/auth';
+import { createServerClient, GeneratedApi } from '@game-guild/client';
 import { cache } from 'react';
 import { getCourseContent, resolveCourseId } from './course';
-import { learningApiGet } from './http';
 
 // =============================================================================
 // COURSE ANALYTICS QUERIES
@@ -129,6 +130,16 @@ export interface CourseRevenueAnalytics {
 // FETCH FUNCTIONS
 // =============================================================================
 
+function createProgramModule() {
+  const apiUrl = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+  const client = createServerClient({
+    baseUrl: apiUrl,
+    auth: { getAccessToken: () => getToken() },
+  });
+
+  return new GeneratedApi.LearningCoursesProgramModule(client);
+}
+
 function parseDurationToSeconds(value?: string | null): number {
   if (!value) return 0;
   const parts = value.split(':').map((part) => Number(part));
@@ -148,17 +159,11 @@ export const getCourseEngagementAnalytics = cache(async (
   period?: { from: string; to: string }
 ): Promise<CourseEngagementAnalytics> => {
   const resolvedCourseId = await resolveCourseId(courseId);
-  const [metrics, content] = await Promise.all([
-    learningApiGet<{
-      dailyActiveUsers?: number;
-      weeklyActiveUsers?: number;
-      monthlyActiveUsers?: number;
-      averageSessionDuration?: string | null;
-      totalSessions?: number;
-      contentEngagement?: Record<string, number> | null;
-    }>(`/v1/courses/${resolvedCourseId}/analytics/engagement`, 300),
+  const [engagementResult, content] = await Promise.all([
+    createProgramModule().getCoursesAnalyticsEngagement(resolvedCourseId),
     getCourseContent(resolvedCourseId),
   ]);
+  const metrics = engagementResult.ok ? engagementResult.data : undefined;
 
   const now = new Date();
   const defaultPeriod = {
@@ -195,14 +200,11 @@ export const getCourseCompletionAnalytics = cache(async (
   period?: { from: string; to: string }
 ): Promise<CourseCompletionAnalytics> => {
   const resolvedCourseId = await resolveCourseId(courseId);
-  const [completion, content] = await Promise.all([
-    learningApiGet<{
-      overallCompletionRate?: number;
-      contentCompletionRates?: Record<string, number> | null;
-      completionTrends?: Array<{ date?: string; completedCount?: number; totalCount?: number; rate?: number }> | null;
-    }>(`/v1/courses/${resolvedCourseId}/analytics/completion-rates`, 300),
+  const [completionResult, content] = await Promise.all([
+    createProgramModule().getCoursesAnalyticsCompletionRates(resolvedCourseId),
     getCourseContent(resolvedCourseId),
   ]);
+  const completion = completionResult.ok ? completionResult.data : undefined;
 
   const now = new Date();
   const defaultPeriod = {
@@ -251,14 +253,8 @@ export const getCourseRevenueAnalytics = cache(async (
   period?: { from: string; to: string }
 ): Promise<CourseRevenueAnalytics> => {
   const resolvedCourseId = await resolveCourseId(courseId);
-  const revenue = await learningApiGet<{
-    totalRevenue?: number;
-    monthlyRevenue?: number;
-    totalPurchases?: number;
-    monthlyPurchases?: number;
-    averageRevenuePerUser?: number;
-    revenueChart?: Array<{ date?: string; revenue?: number; purchases?: number }> | null;
-  }>(`/v1/courses/${resolvedCourseId}/analytics/revenue`, 300);
+  const revenueResult = await createProgramModule().getCoursesAnalyticsRevenue(resolvedCourseId);
+  const revenue = revenueResult.ok ? revenueResult.data : undefined;
 
   const now = new Date();
   const defaultPeriod = {

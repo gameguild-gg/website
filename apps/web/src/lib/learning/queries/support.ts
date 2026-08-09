@@ -1,6 +1,15 @@
+import { getToken } from '@/auth';
+import {
+  createServerClient,
+  GeneratedApi,
+  type CommerceProductsSupportTicket,
+  type CommerceProductsSupportTicketMessage,
+  type LearningExperienceSocialServicesCourseDiscussion,
+  type LearningExperienceSocialServicesDiscussionReply,
+  type PagedResultOfGameGuildCommerceProductsSupportTicketDto,
+} from '@game-guild/client';
 import { cache } from 'react';
 import { resolveCourseId } from './course';
-import { learningApiGet } from './http';
 
 // =============================================================================
 // COURSE SUPPORT QUERIES
@@ -125,49 +134,29 @@ export interface DiscussionThreadDetail extends DiscussionThread {
   replies: DiscussionReply[];
 }
 
-interface SupportTicketApiDto {
-  id: string;
-  customerId: string;
-  reporterUserId: string;
-  reporterName: string;
-  reporterEmail?: string | null;
-  subject: string;
-  category?: string | null;
-  status: 'Open' | 'InProgress' | 'Resolved' | 'Closed' | 'Cancelled' | string;
-  priority: 'Low' | 'Normal' | 'High' | 'Urgent' | string;
-  assignedToUserId?: string | null;
-  assignedToName?: string | null;
-  openedAt: string;
-  lastMessageAt?: string | null;
-  messageCount: number;
-  messages: SupportTicketMessageApiDto[];
+function createSupportModules() {
+  const apiUrl = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+  const client = createServerClient({
+    baseUrl: apiUrl,
+    auth: { getAccessToken: () => getToken() },
+  });
+
+  return {
+    tickets: new GeneratedApi.LearningCoursesSupportticketsModule(client),
+    discussions: new GeneratedApi.LearningExperienceSocialDiscussionsModule(client),
+    replies: new GeneratedApi.LearningExperienceSocialRepliesModule(client),
+  };
 }
 
-interface SupportTicketMessageApiDto {
-  id: string;
-  ticketId: string;
-  authorUserId: string;
-  authorName: string;
-  authorType: 'Customer' | 'Agent' | 'System' | string;
-  body: string;
-  createdAt: string;
-}
-
-interface SupportTicketPageApiDto {
-  items: SupportTicketApiDto[];
-  total?: number;
-  totalCount?: number;
-}
-
-function mapTicketStatus(status: SupportTicketApiDto['status']): TicketStatus {
+function mapTicketStatus(status: string | null | undefined): TicketStatus {
   if (status === 'InProgress') return 'in-progress';
   if (status === 'Resolved') return 'resolved';
   if (status === 'Closed' || status === 'Cancelled') return 'closed';
   return 'open';
 }
 
-function mapTicketPriority(priority: SupportTicketApiDto['priority']): TicketPriority {
-  const normalized = priority.toLowerCase();
+function mapTicketPriority(priority: string | null | undefined): TicketPriority {
+  const normalized = priority?.toLowerCase();
   return normalized === 'low' || normalized === 'high' || normalized === 'urgent' ? normalized : 'normal';
 }
 
@@ -178,24 +167,26 @@ function mapTicketCategory(category: string | null | undefined): TicketCategory 
     : 'other';
 }
 
-function mapSupportTicket(dto: SupportTicketApiDto): SupportTicket {
-  const lastMessageAt = dto.lastMessageAt ?? dto.openedAt;
+function mapSupportTicket(dto: CommerceProductsSupportTicket): SupportTicket {
+  const openedAt = dto.openedAt ?? new Date().toISOString();
+  const lastMessageAt = dto.lastMessageAt ?? openedAt;
+
   return {
-    id: dto.id,
-    courseId: dto.customerId,
-    studentId: dto.reporterUserId,
-    studentName: dto.reporterName,
+    id: dto.id ?? '',
+    courseId: dto.customerId ?? '',
+    studentId: dto.reporterUserId ?? '',
+    studentName: dto.reporterName ?? 'Student',
     studentEmail: dto.reporterEmail ?? '',
-    subject: dto.subject,
+    subject: dto.subject ?? '',
     status: mapTicketStatus(dto.status),
     priority: mapTicketPriority(dto.priority),
     category: mapTicketCategory(dto.category),
-    messageCount: dto.messageCount,
+    messageCount: dto.messageCount ?? 0,
     lastMessageAt,
     assignedTo: dto.assignedToUserId && dto.assignedToName
       ? { id: dto.assignedToUserId, name: dto.assignedToName }
       : undefined,
-    createdAt: dto.openedAt,
+    createdAt: openedAt,
     updatedAt: lastMessageAt,
   };
 }
@@ -210,15 +201,18 @@ function mapSupportTicket(dto: SupportTicketApiDto): SupportTicket {
  */
 export const getCourseSupportTickets = cache(async (courseId: string): Promise<CourseSupportTickets> => {
   const resolvedCourseId = await resolveCourseId(courseId);
-  const response = await learningApiGet<SupportTicketPageApiDto>(
-    `/v1/courses/${resolvedCourseId}/support/tickets?skip=0&take=100`,
-    30,
-  );
+  const result = await createSupportModules().tickets.getCoursesSupportTickets(resolvedCourseId, {
+    skip: 0,
+    take: 100,
+  });
+  const response: PagedResultOfGameGuildCommerceProductsSupportTicketDto | undefined = result.ok
+    ? result.data
+    : undefined;
   const tickets = (response?.items ?? []).map(mapSupportTicket);
 
   return {
     tickets,
-    total: response?.totalCount ?? response?.total ?? tickets.length,
+    total: response?.totalCount ?? tickets.length,
     openCount: tickets.filter((ticket) => ticket.status === 'open').length,
     inProgressCount: tickets.filter((ticket) => ticket.status === 'in-progress').length,
     resolvedCount: tickets.filter((ticket) => ticket.status === 'resolved' || ticket.status === 'closed').length,
@@ -231,64 +225,37 @@ export const getCourseSupportTickets = cache(async (courseId: string): Promise<C
  */
 export const getSupportTicket = cache(async (courseId: string, ticketId: string): Promise<SupportTicketDetail | null> => {
   const resolvedCourseId = await resolveCourseId(courseId);
-  const dto = await learningApiGet<SupportTicketApiDto>(
-    `/v1/courses/${resolvedCourseId}/support/tickets/${ticketId}`,
-    30,
-  );
-  if (!dto) return null;
+  const result = await createSupportModules().tickets.getCoursesSupportTickets1(resolvedCourseId, ticketId);
+  if (!result.ok) return null;
 
+  const dto = result.data;
   return {
     ...mapSupportTicket(dto),
-    messages: dto.messages.map((message) => ({
-      id: message.id,
-      ticketId: message.ticketId,
-      authorId: message.authorUserId,
-      authorName: message.authorName,
+    messages: (dto.messages ?? []).map((message: CommerceProductsSupportTicketMessage) => ({
+      id: message.id ?? '',
+      ticketId: message.ticketId ?? ticketId,
+      authorId: message.authorUserId ?? '',
+      authorName: message.authorName ?? 'Support',
       authorRole: message.authorType === 'Customer' ? 'student' : message.authorType === 'Agent' ? 'instructor' : 'support',
-      content: message.body,
+      content: message.body ?? '',
       attachments: [],
-      createdAt: message.createdAt,
+      createdAt: message.createdAt ?? new Date().toISOString(),
     })),
   };
 });
 
-interface DiscussionApiDto {
-  id: string;
-  courseId: string;
-  contentId?: string | null;
-  authorId: string;
-  title: string;
-  content: string;
-  isPinned?: boolean;
-  isResolved?: boolean;
-  replyCount?: number;
-  viewCount?: number;
-  lastActivityAt?: string | null;
-  createdAt?: string;
-}
-
-interface DiscussionReplyApiDto {
-  id: string;
-  discussionId: string;
-  authorId: string;
-  parentReplyId?: string | null;
-  content: string;
-  isAcceptedAnswer?: boolean;
-  upvoteCount?: number;
-  createdAt?: string;
-}
-
-function mapDiscussion(dto: DiscussionApiDto): DiscussionThread {
+function mapDiscussion(dto: LearningExperienceSocialServicesCourseDiscussion): DiscussionThread {
   const createdAt = dto.createdAt ?? new Date().toISOString();
+  const authorId = dto.authorId ?? '';
 
   return {
-    id: dto.id,
-    courseId: dto.courseId,
+    id: dto.id ?? '',
+    courseId: dto.courseId ?? '',
     contentItemId: dto.contentId ?? undefined,
-    authorId: dto.authorId,
-    authorName: `Student ${dto.authorId.slice(0, 8)}`,
-    title: dto.title,
-    content: dto.content,
+    authorId,
+    authorName: authorId ? `Student ${authorId.slice(0, 8)}` : 'Student',
+    title: dto.title ?? '',
+    content: dto.content ?? '',
     pinned: dto.isPinned ?? false,
     locked: dto.isResolved ?? false,
     replyCount: dto.replyCount ?? 0,
@@ -300,14 +267,19 @@ function mapDiscussion(dto: DiscussionApiDto): DiscussionThread {
   };
 }
 
+
 /**
  * Fetch course discussions (conditional: hasDiscussions).
  * Cache: revalidate 60s
  */
 export const getCourseDiscussions = cache(async (courseId: string): Promise<CourseDiscussions> => {
   const resolvedCourseId = await resolveCourseId(courseId);
-  const discussions = await learningApiGet<DiscussionApiDto[]>(`/api/social/courses/${resolvedCourseId}/discussions?skip=0&take=100&pinnedFirst=true`, 60);
-  const threads = (discussions ?? []).map(mapDiscussion);
+  const result = await createSupportModules().discussions.getApiSocialCoursesDiscussions(resolvedCourseId, {
+    skip: 0,
+    take: 100,
+    pinnedFirst: true,
+  });
+  const threads = (result.ok ? result.data : []).map(mapDiscussion);
 
   return { threads, total: threads.length, pinnedCount: threads.filter((thread) => thread.pinned).length };
 });
@@ -317,27 +289,30 @@ export const getCourseDiscussions = cache(async (courseId: string): Promise<Cour
  * Cache: revalidate 60s
  */
 export const getDiscussionThread = cache(async (threadId: string): Promise<DiscussionThreadDetail | null> => {
-  const [discussion, replies] = await Promise.all([
-    learningApiGet<DiscussionApiDto>(`/api/social/discussions/${threadId}`, 60),
-    learningApiGet<DiscussionReplyApiDto[]>(`/api/social/discussions/${threadId}/replies?skip=0&take=100`, 60),
+  const modules = createSupportModules();
+  const [discussionResult, repliesResult] = await Promise.all([
+    modules.discussions.getApiSocialDiscussions(threadId),
+    modules.replies.getApiSocialDiscussionsReplies(threadId, { skip: 0, take: 100 }),
   ]);
 
-  if (!discussion) return null;
+  if (!discussionResult.ok) return null;
 
-  const thread = mapDiscussion(discussion);
+  const thread = mapDiscussion(discussionResult.data);
+  const replies = repliesResult.ok ? repliesResult.data : [];
   return {
     ...thread,
-    replies: (replies ?? []).map((reply) => {
+    replies: replies.map((reply: LearningExperienceSocialServicesDiscussionReply) => {
       const createdAt = reply.createdAt ?? new Date().toISOString();
+      const authorId = reply.authorId ?? '';
 
       return {
-        id: reply.id,
-        threadId: reply.discussionId,
+        id: reply.id ?? '',
+        threadId: reply.discussionId ?? threadId,
         parentId: reply.parentReplyId ?? undefined,
-        authorId: reply.authorId,
-        authorName: `Member ${reply.authorId.slice(0, 8)}`,
+        authorId,
+        authorName: authorId ? `Member ${authorId.slice(0, 8)}` : 'Member',
         authorRole: 'student',
-        content: reply.content,
+        content: reply.content ?? '',
         upvotes: reply.upvoteCount ?? 0,
         isAnswer: reply.isAcceptedAnswer ?? false,
         createdAt,

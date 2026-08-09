@@ -3,9 +3,15 @@ import {
   createServerClient,
   GeneratedApi,
   type LearningAssessmentsAssessment,
+  type LearningAssessmentsAssessmentDefinition,
+  type LearningAssessmentsAssessmentGroup,
+  type LearningAssessmentsAssessmentScoreBucket,
+  type LearningAssessmentsCourseAssessmentAnalytics,
+  type LearningCertificatesCertificate,
+  type LearningCertificatesCertificateTemplate,
+  type LearningCertificatesCertificateTemplateDetail,
 } from '@game-guild/client';
 import { cache } from 'react';
-import { learningApiGet } from './http';
 import { resolveCourseId } from './course';
 
 // =============================================================================
@@ -167,7 +173,7 @@ function normalizePresentationMode(mode: string | null | undefined): AssessmentP
   return mode === 'Continuous' ? 'Continuous' : 'SingleStep';
 }
 
-function mapAssessmentGroup(dto: Partial<AssessmentGroup>): AssessmentGroup {
+function mapAssessmentGroup(dto: LearningAssessmentsAssessmentGroup): AssessmentGroup {
   return {
     id: dto.id ?? '',
     courseId: dto.courseId ?? '',
@@ -175,6 +181,40 @@ function mapAssessmentGroup(dto: Partial<AssessmentGroup>): AssessmentGroup {
     description: dto.description ?? null,
     weightPercent: dto.weightPercent ?? 0,
     order: dto.order ?? 0,
+  };
+}
+
+function mapScoreBucket(dto: LearningAssessmentsAssessmentScoreBucket): AssessmentScoreBucket {
+  return {
+    label: dto.label ?? 'Unscored',
+    minPercent: dto.minPercent ?? 0,
+    maxPercent: dto.maxPercent ?? 0,
+    count: dto.count ?? 0,
+  };
+}
+
+function mapCourseAssessmentAnalytics(
+  dto: LearningAssessmentsCourseAssessmentAnalytics,
+): CourseAssessmentAnalytics {
+  return {
+    courseId: dto.courseId ?? '',
+    assessmentCount: dto.assessmentCount ?? 0,
+    gradedCount: dto.gradedCount ?? 0,
+    ungradedCount: dto.ungradedCount ?? 0,
+    averagePercent: dto.averagePercent ?? 0,
+    passRate: dto.passRate ?? 0,
+    distribution: (dto.distribution ?? []).map(mapScoreBucket),
+    groups: (dto.groups ?? []).map((group) => ({
+      groupId: group.groupId ?? null,
+      groupName: group.groupName ?? 'Ungrouped',
+      weightPercent: group.weightPercent ?? null,
+      assessmentCount: group.assessmentCount ?? 0,
+      gradedCount: group.gradedCount ?? 0,
+      ungradedCount: group.ungradedCount ?? 0,
+      averagePercent: group.averagePercent ?? 0,
+      passRate: group.passRate ?? 0,
+      distribution: (group.distribution ?? []).map(mapScoreBucket),
+    })),
   };
 }
 
@@ -205,8 +245,8 @@ export const getCourseAssessments = cache(async (courseId: string): Promise<Cour
 export const getCourseAssessmentGroups = cache(async (courseId: string): Promise<AssessmentGroup[]> => {
   try {
     const resolvedCourseId = await resolveCourseId(courseId);
-    const groups = await learningApiGet<AssessmentGroup[]>(`/v1/assessments/course/${resolvedCourseId}/groups`, 60);
-    return (groups ?? []).map(mapAssessmentGroup);
+    const result = await createAssessmentsModule().getAssessmentsCourseGroups(resolvedCourseId);
+    return result.ok ? (result.data ?? []).map(mapAssessmentGroup) : [];
   } catch (err) {
     console.error('Error fetching course assessment groups:', err);
     return [];
@@ -216,7 +256,8 @@ export const getCourseAssessmentGroups = cache(async (courseId: string): Promise
 export const getCourseAssessmentAnalytics = cache(async (courseId: string): Promise<CourseAssessmentAnalytics | null> => {
   try {
     const resolvedCourseId = await resolveCourseId(courseId);
-    return await learningApiGet<CourseAssessmentAnalytics>(`/v1/assessments/course/${resolvedCourseId}/analytics`, 60);
+    const result = await createAssessmentsModule().getAssessmentsCourseAnalytics(resolvedCourseId);
+    return result.ok ? mapCourseAssessmentAnalytics(result.data) : null;
   } catch (err) {
     console.error('Error fetching course assessment analytics:', err);
     return null;
@@ -241,7 +282,10 @@ export const getAssessment = cache(async (assessmentId: string): Promise<Assessm
 
 export const getAssessmentDefinition = cache(async (assessmentId: string): Promise<AssessmentDefinition | null> => {
   try {
-    const dto = await learningApiGet<Partial<AssessmentDefinition>>(`/v1/assessments/${assessmentId}/definition`, 60) ?? {};
+    const result = await createAssessmentsModule().getAssessmentsDefinition(assessmentId);
+    if (!result.ok) return null;
+
+    const dto: LearningAssessmentsAssessmentDefinition = result.data;
     return {
       assessmentId: dto.assessmentId ?? assessmentId,
       definitionSchemaVersion: dto.definitionSchemaVersion ?? 1,
@@ -277,31 +321,20 @@ export interface CertificateTemplateDetail extends CertificateTemplate {
   templateStyles: string | null;
 }
 
-interface CertificateTemplateApiDto {
-  id: string;
-  courseId: string;
-  name: string;
-  description?: string | null;
-  isDefault?: boolean;
-  isActive?: boolean;
-  templateHtml?: string;
-  templateStyles?: string | null;
-  createdAt?: string;
-  updatedAt?: string;
+function createCertificatesModule() {
+  return new GeneratedApi.LearningCertificatesModule(getApiClient());
 }
 
-interface CertificateApiDto {
-  id: string;
-  status?: string;
-}
-
-function mapCertificateTemplate(dto: CertificateTemplateApiDto, issuedCount = 0): CertificateTemplate {
+function mapCertificateTemplate(
+  dto: LearningCertificatesCertificateTemplate | LearningCertificatesCertificateTemplateDetail,
+  issuedCount = 0,
+): CertificateTemplate {
   const createdAt = dto.createdAt ?? new Date().toISOString();
 
   return {
-    id: dto.id,
-    courseId: dto.courseId,
-    name: dto.name,
+    id: dto.id ?? '',
+    courseId: dto.courseId ?? '',
+    name: dto.name ?? '',
     description: dto.description ?? null,
     status: dto.isActive === false ? 'archived' : 'active',
     isDefault: dto.isDefault === true,
@@ -313,24 +346,30 @@ function mapCertificateTemplate(dto: CertificateTemplateApiDto, issuedCount = 0)
 
 export const getCourseCertificates = cache(async (courseId: string): Promise<CourseCertificates> => {
   const resolvedCourseId = await resolveCourseId(courseId);
-  const [templates, issuedCertificates] = await Promise.all([
-    learningApiGet<CertificateTemplateApiDto[]>(`/api/certificates/templates/course/${resolvedCourseId}`, 120),
-    learningApiGet<CertificateApiDto[]>(`/api/certificates/course/${resolvedCourseId}`, 120),
+  const certificates = createCertificatesModule();
+  const [templatesResult, issuedCertificatesResult] = await Promise.all([
+    certificates.getApiCertificatesTemplatesCourse(resolvedCourseId),
+    certificates.getApiCertificatesCourse(resolvedCourseId),
   ]);
 
-  const issuedCount = issuedCertificates?.length ?? 0;
-  const mapped = (templates ?? []).map((template) => mapCertificateTemplate(template, issuedCount));
+  const templates = templatesResult.ok ? templatesResult.data : [];
+  const issuedCertificates: LearningCertificatesCertificate[] = issuedCertificatesResult.ok
+    ? issuedCertificatesResult.data
+    : [];
+  const issuedCount = issuedCertificates.length;
+  const mapped = templates.map((template) => mapCertificateTemplate(template, issuedCount));
 
   return { templates: mapped, total: mapped.length, issuedCount };
 });
 
 export const getCertificateTemplate = cache(async (templateId: string): Promise<CertificateTemplateDetail | null> => {
-  const template = await learningApiGet<CertificateTemplateApiDto>(`/api/certificates/templates/${templateId}`, 120);
-  if (!template) return null;
+  const result = await createCertificatesModule().getApiCertificatesTemplates(templateId);
+  if (!result.ok) return null;
 
+  const template = result.data;
   return {
     ...mapCertificateTemplate(template),
-    previewUrl: `/api/certificates/templates/${template.id}`,
+    previewUrl: `/api/certificates/templates/${template.id ?? templateId}`,
     templateHtml: template.templateHtml ?? '',
     templateStyles: template.templateStyles ?? null,
   };

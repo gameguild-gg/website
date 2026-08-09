@@ -1,6 +1,11 @@
+import { getToken } from '@/auth';
+import {
+  createServerClient,
+  GeneratedApi,
+  type LearningExperienceSocialServicesCourseReview,
+} from '@game-guild/client';
 import { cache } from 'react';
 import { getCourse, resolveCourseId } from './course';
-import { learningApiGet } from './http';
 
 // =============================================================================
 // COURSE LISTING / STORE QUERIES
@@ -343,29 +348,29 @@ export const getCourseListingMedia = cache(async (courseId: string): Promise<Cou
   };
 });
 
-interface CourseReviewApiDto {
-  id: string;
-  courseId: string;
-  userId: string;
-  rating: number;
-  title?: string | null;
-  content?: string | null;
-  isVerifiedPurchase?: boolean;
-  helpfulCount?: number;
-  isApproved?: boolean;
-  isFeatured?: boolean;
-  createdAt?: string;
-}
-
-function mapReviewToTestimonial(dto: CourseReviewApiDto): CourseTestimonial {
-  const createdAt = dto.createdAt ?? new Date().toISOString();
+function createListingModules() {
+  const apiUrl = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+  const client = createServerClient({
+    baseUrl: apiUrl,
+    auth: { getAccessToken: () => getToken() },
+  });
 
   return {
-    id: dto.id,
-    courseId: dto.courseId,
-    studentId: dto.userId,
-    studentName: `Student ${dto.userId.slice(0, 8)}`,
-    rating: dto.rating,
+    program: new GeneratedApi.LearningCoursesProgramModule(client),
+    reviews: new GeneratedApi.LearningExperienceSocialReviewsModule(client),
+  };
+}
+
+function mapReviewToTestimonial(dto: LearningExperienceSocialServicesCourseReview): CourseTestimonial {
+  const createdAt = dto.createdAt ?? new Date().toISOString();
+  const userId = dto.userId ?? '';
+
+  return {
+    id: dto.id ?? '',
+    courseId: dto.courseId ?? '',
+    studentId: userId,
+    studentName: userId ? `Student ${userId.slice(0, 8)}` : 'Student',
+    rating: dto.rating ?? 0,
     title: dto.title ?? 'Course review',
     content: dto.content ?? '',
     featured: dto.isFeatured ?? false,
@@ -383,7 +388,12 @@ function mapReviewToTestimonial(dto: CourseReviewApiDto): CourseTestimonial {
  */
 export const getCourseTestimonials = cache(async (courseId: string): Promise<CourseTestimonials> => {
   const resolvedCourseId = await resolveCourseId(courseId);
-  const reviews = await learningApiGet<CourseReviewApiDto[]>(`/api/social/courses/${resolvedCourseId}/reviews?skip=0&take=100&approvedOnly=false`, 120);
+  const reviewsResult = await createListingModules().reviews.getApiSocialCoursesReviews(resolvedCourseId, {
+    skip: 0,
+    take: 100,
+    approvedOnly: false,
+  });
+  const reviews = reviewsResult.ok ? reviewsResult.data : [];
   const testimonials = (reviews ?? []).map(mapReviewToTestimonial);
   const ratingDistribution: Record<1 | 2 | 3 | 4 | 5, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
 
@@ -404,8 +414,8 @@ export const getCourseTestimonials = cache(async (courseId: string): Promise<Cou
  * Cache: revalidate 120s
  */
 export const getCourseTestimonial = cache(async (testimonialId: string): Promise<CourseTestimonial | null> => {
-  const review = await learningApiGet<CourseReviewApiDto>(`/api/social/reviews/${testimonialId}`, 120);
-  return review ? mapReviewToTestimonial(review) : null;
+  const reviewResult = await createListingModules().reviews.getApiSocialReviews(testimonialId);
+  return reviewResult.ok ? mapReviewToTestimonial(reviewResult.data) : null;
 });
 
 /**
@@ -478,13 +488,8 @@ export const getCourseLandingProjects = cache(async (courseId: string): Promise<
  */
 export const getCoursePricing = cache(async (courseId: string): Promise<CoursePricing> => {
   const resolvedCourseId = await resolveCourseId(courseId);
-  const pricing = await learningApiGet<{
-    price?: number;
-    currency?: string | null;
-    isSubscription?: boolean;
-    subscriptionDurationDays?: number | null;
-    isMonetizationEnabled?: boolean;
-  }>(`/v1/courses/${resolvedCourseId}/pricing`, 120);
+  const pricingResult = await createListingModules().program.getCoursesPricing(resolvedCourseId);
+  const pricing = pricingResult.ok ? pricingResult.data : undefined;
 
   if (!pricing?.isMonetizationEnabled) {
     return {

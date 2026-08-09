@@ -1,10 +1,16 @@
-'use server';
+"use server";
 
-import { getToken } from '@/auth';
-import { getCourseRouteParam } from '@/lib/learning/course-route';
-import type { AssessmentPresentationMode, AssessmentType } from '@/lib/learning/queries/assessments';
-import type { CourseIntegrationSettings, CourseNotificationSettings } from '@/lib/learning/queries/settings';
-import type { LearningCoursesProgramContentType } from '@/lib/learning/types';
+import { getToken } from "@/auth";
+import { getCourseRouteParam } from "@/lib/learning/course-route";
+import type {
+  AssessmentPresentationMode,
+  AssessmentType,
+} from "@/lib/learning/queries/assessments";
+import type {
+  CourseIntegrationSettings,
+  CourseNotificationSettings,
+} from "@/lib/learning/queries/settings";
+
 import {
   createServerClient,
   GeneratedApi,
@@ -15,14 +21,19 @@ import {
   type LearningCoursesCreateProgram,
   type LearningCoursesCreateProgramContent,
   type LearningCoursesUpdateProgram,
-  type LearningCoursesUpdateProgramContent
-} from '@game-guild/client';
-import { revalidatePath } from 'next/cache';
+  type LearningCoursesUpdateProgramContent,
+  type LearningCoursesProgramContentType,
+} from "@game-guild/client";
+import { revalidatePath } from "next/cache";
 
-type ActionResult<T> = { success: true; data: T } | { success: false; error: string };
+type ActionResult<T> =
+  { success: true; data: T } | { success: false; error: string };
 
 function getApiClient() {
-  const apiUrl = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+  const apiUrl =
+    process.env.API_URL ||
+    process.env.NEXT_PUBLIC_API_URL ||
+    "http://localhost:8080";
   return createServerClient({
     baseUrl: apiUrl,
     auth: { getAccessToken: () => getToken() },
@@ -30,12 +41,16 @@ function getApiClient() {
 }
 
 async function resolveCourseMutationId(courseId: string): Promise<string> {
-  const { resolveCourseId } = await import('@/lib/learning/queries/course');
+  const { resolveCourseId } = await import("@/lib/learning/queries/course");
   return resolveCourseId(courseId);
 }
 
-function revalidateCoursePath(courseId: string, resolvedCourseId: string, segment = '') {
-  const suffix = segment ? `/${segment.replace(/^\/+/, '')}` : '';
+function revalidateCoursePath(
+  courseId: string,
+  resolvedCourseId: string,
+  segment = "",
+) {
+  const suffix = segment ? `/${segment.replace(/^\/+/, "")}` : "";
 
   revalidatePath(`/dashboard/learning/courses/${courseId}${suffix}`);
   if (resolvedCourseId !== courseId) {
@@ -43,16 +58,22 @@ function revalidateCoursePath(courseId: string, resolvedCourseId: string, segmen
   }
 }
 
-function revalidateCourseContentPaths(courseId: string, resolvedCourseId: string) {
+function revalidateCourseContentPaths(
+  courseId: string,
+  resolvedCourseId: string,
+) {
   revalidateCoursePath(courseId, resolvedCourseId);
-  revalidateCoursePath(courseId, resolvedCourseId, 'content');
-  revalidateCoursePath(courseId, resolvedCourseId, 'overview');
+  revalidateCoursePath(courseId, resolvedCourseId, "content");
+  revalidateCoursePath(courseId, resolvedCourseId, "overview");
 }
 
-function revalidateCourseAssessmentPaths(courseId: string, resolvedCourseId: string) {
+function revalidateCourseAssessmentPaths(
+  courseId: string,
+  resolvedCourseId: string,
+) {
   revalidateCoursePath(courseId, resolvedCourseId);
-  revalidateCoursePath(courseId, resolvedCourseId, 'assessments');
-  revalidateCoursePath(courseId, resolvedCourseId, 'overview');
+  revalidateCoursePath(courseId, resolvedCourseId, "assessments");
+  revalidateCoursePath(courseId, resolvedCourseId, "overview");
 }
 
 function createCourseModules() {
@@ -65,55 +86,35 @@ function createCourseModules() {
     lifecycle: new GeneratedApi.LearningCoursesProgramlifecycleModule(client),
     assessments: new GeneratedApi.LearningAssessmentsModule(client),
     enrollments: new GeneratedApi.LearningEnrollmentsModule(client),
+    students: new GeneratedApi.LearningCoursesStudentsModule(client),
+    supportTickets: new GeneratedApi.LearningCoursesSupportticketsModule(
+      client,
+    ),
+    certificates: new GeneratedApi.LearningCertificatesModule(client),
+    discussions: new GeneratedApi.LearningExperienceSocialDiscussionsModule(
+      client,
+    ),
+    replies: new GeneratedApi.LearningExperienceSocialRepliesModule(client),
+    reviews: new GeneratedApi.LearningExperienceSocialReviewsModule(client),
+    users: new GeneratedApi.UsersModule(client),
   };
 }
 
 function extractError(err: unknown): string {
-  const e = err as { status?: number; message?: string; detail?: string } | undefined;
-  return e?.detail || e?.message || 'An unexpected error occurred.';
+  const e = err as
+    { status?: number; message?: string; detail?: string } | undefined;
+  return e?.detail || e?.message || "An unexpected error occurred.";
 }
 
 function formatUnexpectedError(err: unknown): string {
   if (err instanceof Error) return err.message;
-  if (typeof err === 'string') return err;
+  if (typeof err === "string") return err;
 
   try {
     return JSON.stringify(err);
   } catch {
     return String(err);
   }
-}
-
-async function learningApiRequest<T>(path: string, init: RequestInit): Promise<ActionResult<T>> {
-  const apiUrl = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
-  const token = await getToken();
-  const response = await fetch(`${apiUrl}${path}`, {
-    ...init,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(init.headers ?? {}),
-    },
-  });
-
-  if (!response.ok) {
-    let error = response.statusText || 'API request failed.';
-    try {
-      const body = await response.json() as { detail?: string; message?: string; description?: string; code?: string };
-      error = body.detail || body.message || body.description || body.code || error;
-    } catch {
-      // Keep the HTTP status text when the API returns an empty or non-JSON error body.
-    }
-
-    return { success: false, error };
-  }
-
-  if (response.status === 204) {
-    return { success: true, data: null as T };
-  }
-
-  const data = await response.json() as T;
-  return { success: true, data };
 }
 
 // ── Content actions ──
@@ -127,11 +128,13 @@ export interface AddContentInput {
   sortOrder?: number;
 }
 
-export async function addContent(input: AddContentInput): Promise<ActionResult<{ id: string }>> {
+export async function addContent(
+  input: AddContentInput,
+): Promise<ActionResult<{ id: string }>> {
   const { courseId, parentId, title, type, description, sortOrder } = input;
 
   if (!title || title.trim().length < 1) {
-    return { success: false, error: 'Title is required.' };
+    return { success: false, error: "Title is required." };
   }
 
   try {
@@ -139,35 +142,50 @@ export async function addContent(input: AddContentInput): Promise<ActionResult<{
     const contentBody: LearningCoursesCreateProgramContent = {
       programId: resolvedCourseId,
       title: title.trim(),
-      description: (description ?? '').trim(),
+      description: (description ?? "").trim(),
       type,
       sortOrder: sortOrder ?? 0,
       isRequired: true,
-      visibility: 'Public',
+      visibility: "Public",
       ...(parentId ? { parentId } : {}),
     };
 
-    const result = await learningApiRequest<{ id?: string }>(`/v1/courses/${resolvedCourseId}/content`, {
-      method: 'POST',
-      body: JSON.stringify(contentBody),
-    });
+    const { content } = createCourseModules();
+    const result = await content.postCoursesContent(
+      resolvedCourseId,
+      contentBody,
+    );
 
-    if (result.success && result.data.id) {
+    if (result.ok && result.data.id) {
       revalidateCourseContentPaths(courseId, resolvedCourseId);
-      return { success: true, data: { id: result.data.id } };
+      return { success: true, data: { id: result.data.id! } };
     }
 
-    return { success: false, error: result.success ? 'Content was created, but the API did not return its ID.' : result.error };
+    return {
+      success: false,
+      error: result.ok
+        ? "Content was created, but the API did not return its ID."
+        : extractError(result.error),
+    };
   } catch (e) {
-    return { success: false, error: `Unexpected error: ${formatUnexpectedError(e)}` };
+    return {
+      success: false,
+      error: `Unexpected error: ${formatUnexpectedError(e)}`,
+    };
   }
 }
 
-export async function deleteContent(courseId: string, contentId: string): Promise<ActionResult<null>> {
+export async function deleteContent(
+  courseId: string,
+  contentId: string,
+): Promise<ActionResult<null>> {
   try {
     const resolvedCourseId = await resolveCourseMutationId(courseId);
     const { content } = createCourseModules();
-    const result = await content.deleteCoursesContent(resolvedCourseId, contentId);
+    const result = await content.deleteCoursesContent(
+      resolvedCourseId,
+      contentId,
+    );
 
     if (result.ok) {
       revalidateCourseContentPaths(courseId, resolvedCourseId);
@@ -176,7 +194,10 @@ export async function deleteContent(courseId: string, contentId: string): Promis
 
     return { success: false, error: extractError(result.error) };
   } catch (e) {
-    return { success: false, error: `Unexpected error: ${e instanceof Error ? e.message : String(e)}` };
+    return {
+      success: false,
+      error: `Unexpected error: ${e instanceof Error ? e.message : String(e)}`,
+    };
   }
 }
 
@@ -193,33 +214,23 @@ export interface UpdateContentInput {
   visibility?: string;
 }
 
-export async function updateContent(input: UpdateContentInput): Promise<ActionResult<null>> {
+export async function updateContent(
+  input: UpdateContentInput,
+): Promise<ActionResult<null>> {
   const { courseId, contentId, ...fields } = input;
 
   try {
     const resolvedCourseId = await resolveCourseMutationId(courseId);
-    const body = { id: contentId, ...fields } as LearningCoursesUpdateProgramContent;
-    const result = await learningApiRequest<unknown>(`/v1/courses/${resolvedCourseId}/content/${contentId}`, {
-      method: 'PUT',
-      body: JSON.stringify(body),
-    });
-
-    if (result.success) {
-      revalidateCourseContentPaths(courseId, resolvedCourseId);
-      return { success: true, data: null };
-    }
-
-    return { success: false, error: result.error };
-  } catch (e) {
-    return { success: false, error: `Unexpected error: ${formatUnexpectedError(e)}` };
-  }
-}
-
-export async function reorderContent(courseId: string, contentIds: string[]): Promise<ActionResult<null>> {
-  try {
-    const resolvedCourseId = await resolveCourseMutationId(courseId);
-    const { programs } = createCourseModules();
-    const result = await programs.postCoursesContentReorder(resolvedCourseId, { contentIds });
+    const body = {
+      id: contentId,
+      ...fields,
+    } as LearningCoursesUpdateProgramContent;
+    const { content } = createCourseModules();
+    const result = await content.putCoursesContent(
+      resolvedCourseId,
+      contentId,
+      body,
+    );
 
     if (result.ok) {
       revalidateCourseContentPaths(courseId, resolvedCourseId);
@@ -228,7 +239,35 @@ export async function reorderContent(courseId: string, contentIds: string[]): Pr
 
     return { success: false, error: extractError(result.error) };
   } catch (e) {
-    return { success: false, error: `Unexpected error: ${e instanceof Error ? e.message : String(e)}` };
+    return {
+      success: false,
+      error: `Unexpected error: ${formatUnexpectedError(e)}`,
+    };
+  }
+}
+
+export async function reorderContent(
+  courseId: string,
+  contentIds: string[],
+): Promise<ActionResult<null>> {
+  try {
+    const resolvedCourseId = await resolveCourseMutationId(courseId);
+    const { programs } = createCourseModules();
+    const result = await programs.postCoursesContentReorder(resolvedCourseId, {
+      contentIds,
+    });
+
+    if (result.ok) {
+      revalidateCourseContentPaths(courseId, resolvedCourseId);
+      return { success: true, data: null };
+    }
+
+    return { success: false, error: extractError(result.error) };
+  } catch (e) {
+    return {
+      success: false,
+      error: `Unexpected error: ${e instanceof Error ? e.message : String(e)}`,
+    };
   }
 }
 
@@ -240,17 +279,22 @@ export interface CreateCourseInput {
   slug: string;
 }
 
-export async function createCourse(input: CreateCourseInput): Promise<ActionResult<{ id: string; slug: string; routeParam: string }>> {
+export async function createCourse(
+  input: CreateCourseInput,
+): Promise<ActionResult<{ id: string; slug: string; routeParam: string }>> {
   const { title, description, slug } = input;
 
   if (!title || title.trim().length < 3) {
-    return { success: false, error: 'Title must be at least 3 characters.' };
+    return { success: false, error: "Title must be at least 3 characters." };
   }
   if (!description || description.trim().length < 10) {
-    return { success: false, error: 'Description must be at least 10 characters.' };
+    return {
+      success: false,
+      error: "Description must be at least 10 characters.",
+    };
   }
   if (!slug || slug.trim().length < 1) {
-    return { success: false, error: 'Slug is required.' };
+    return { success: false, error: "Slug is required." };
   }
 
   try {
@@ -265,7 +309,7 @@ export async function createCourse(input: CreateCourseInput): Promise<ActionResu
       const id = result.data.id!;
       const createdSlug = result.data.slug?.trim() || slug.trim();
 
-      revalidatePath('/dashboard/learning/courses');
+      revalidatePath("/dashboard/learning/courses");
       return {
         success: true,
         data: {
@@ -282,7 +326,10 @@ export async function createCourse(input: CreateCourseInput): Promise<ActionResu
 
     return { success: false, error: extractError(result.error) };
   } catch (e) {
-    return { success: false, error: `Unexpected error: ${e instanceof Error ? e.message : String(e)}` };
+    return {
+      success: false,
+      error: `Unexpected error: ${e instanceof Error ? e.message : String(e)}`,
+    };
   }
 }
 
@@ -305,7 +352,9 @@ export interface UpdateCourseInput {
   enrollmentDeadline?: string | null;
 }
 
-export async function updateCourse(input: UpdateCourseInput): Promise<ActionResult<null>> {
+export async function updateCourse(
+  input: UpdateCourseInput,
+): Promise<ActionResult<null>> {
   const { courseId, ...fields } = input;
   const updateFields: LearningCoursesUpdateProgram & {
     clearMaxEnrollments?: boolean;
@@ -328,22 +377,28 @@ export async function updateCourse(input: UpdateCourseInput): Promise<ActionResu
 
     if (result.ok) {
       revalidatePath(`/dashboard/learning/courses/${courseId}`);
-      revalidatePath('/dashboard/learning/courses');
+      revalidatePath("/dashboard/learning/courses");
       return { success: true, data: null };
     }
 
     return { success: false, error: extractError(result.error) };
   } catch (e) {
-    return { success: false, error: `Unexpected error: ${e instanceof Error ? e.message : String(e)}` };
+    return {
+      success: false,
+      error: `Unexpected error: ${e instanceof Error ? e.message : String(e)}`,
+    };
   }
 }
 
-export async function publishCourse(courseId: string): Promise<ActionResult<null>> {
+export async function publishCourse(
+  courseId: string,
+): Promise<ActionResult<null>> {
   try {
-    const [{ getCourse, getCourseContent }, { deriveCourseLaunchSummary }] = await Promise.all([
-      import('@/lib/learning/queries/course'),
-      import('@/lib/learning/course-launch'),
-    ]);
+    const [{ getCourse, getCourseContent }, { deriveCourseLaunchSummary }] =
+      await Promise.all([
+        import("@/lib/learning/queries/course"),
+        import("@/lib/learning/course-launch"),
+      ]);
     const resolvedCourseId = await resolveCourseMutationId(courseId);
     const [course, content] = await Promise.all([
       getCourse(courseId),
@@ -351,14 +406,17 @@ export async function publishCourse(courseId: string): Promise<ActionResult<null
     ]);
 
     if (!course) {
-      return { success: false, error: 'Course could not be loaded before publishing.' };
+      return {
+        success: false,
+        error: "Course could not be loaded before publishing.",
+      };
     }
 
     const launchSummary = deriveCourseLaunchSummary(course, content);
     if (launchSummary.blockers.length > 0) {
       return {
         success: false,
-        error: `Course cannot be published until readiness is complete: ${launchSummary.blockers.join(', ')}.`,
+        error: `Course cannot be published until readiness is complete: ${launchSummary.blockers.join(", ")}.`,
       };
     }
 
@@ -367,18 +425,23 @@ export async function publishCourse(courseId: string): Promise<ActionResult<null
 
     if (result.ok) {
       revalidateCoursePath(courseId, resolvedCourseId);
-      revalidateCoursePath(courseId, resolvedCourseId, 'overview');
-      revalidatePath('/dashboard/learning/courses');
+      revalidateCoursePath(courseId, resolvedCourseId, "overview");
+      revalidatePath("/dashboard/learning/courses");
       return { success: true, data: null };
     }
 
     return { success: false, error: extractError(result.error) };
   } catch (e) {
-    return { success: false, error: `Unexpected error: ${e instanceof Error ? e.message : String(e)}` };
+    return {
+      success: false,
+      error: `Unexpected error: ${e instanceof Error ? e.message : String(e)}`,
+    };
   }
 }
 
-export async function unpublishCourse(courseId: string): Promise<ActionResult<null>> {
+export async function unpublishCourse(
+  courseId: string,
+): Promise<ActionResult<null>> {
   try {
     const resolvedCourseId = await resolveCourseMutationId(courseId);
     const { lifecycle } = createCourseModules();
@@ -386,18 +449,23 @@ export async function unpublishCourse(courseId: string): Promise<ActionResult<nu
 
     if (result.ok) {
       revalidateCoursePath(courseId, resolvedCourseId);
-      revalidateCoursePath(courseId, resolvedCourseId, 'overview');
-      revalidatePath('/dashboard/learning/courses');
+      revalidateCoursePath(courseId, resolvedCourseId, "overview");
+      revalidatePath("/dashboard/learning/courses");
       return { success: true, data: null };
     }
 
     return { success: false, error: extractError(result.error) };
   } catch (e) {
-    return { success: false, error: `Unexpected error: ${e instanceof Error ? e.message : String(e)}` };
+    return {
+      success: false,
+      error: `Unexpected error: ${e instanceof Error ? e.message : String(e)}`,
+    };
   }
 }
 
-export async function restoreCourse(courseId: string): Promise<ActionResult<null>> {
+export async function restoreCourse(
+  courseId: string,
+): Promise<ActionResult<null>> {
   try {
     const resolvedCourseId = await resolveCourseMutationId(courseId);
     const { lifecycle } = createCourseModules();
@@ -405,21 +473,30 @@ export async function restoreCourse(courseId: string): Promise<ActionResult<null
 
     if (result.ok) {
       revalidateCoursePath(courseId, resolvedCourseId);
-      revalidateCoursePath(courseId, resolvedCourseId, 'overview');
-      revalidatePath('/dashboard/learning/courses');
+      revalidateCoursePath(courseId, resolvedCourseId, "overview");
+      revalidatePath("/dashboard/learning/courses");
       return { success: true, data: null };
     }
 
     return { success: false, error: extractError(result.error) };
   } catch (e) {
-    return { success: false, error: `Unexpected error: ${e instanceof Error ? e.message : String(e)}` };
+    return {
+      success: false,
+      error: `Unexpected error: ${e instanceof Error ? e.message : String(e)}`,
+    };
   }
 }
 
-export async function transferCourseOwnership(courseId: string, ownerReference: string): Promise<ActionResult<null>> {
+export async function transferCourseOwnership(
+  courseId: string,
+  ownerReference: string,
+): Promise<ActionResult<null>> {
   const reference = ownerReference.trim();
   if (!reference) {
-    return { success: false, error: 'New owner email, username, or user ID is required.' };
+    return {
+      success: false,
+      error: "New owner email, name, or user ID is required.",
+    };
   }
 
   try {
@@ -429,23 +506,29 @@ export async function transferCourseOwnership(courseId: string, ownerReference: 
       return resolvedUser;
     }
 
-    const result = await learningApiRequest<unknown>(`/v1/courses/${resolvedCourseId}`, {
-      method: 'PUT',
-      body: JSON.stringify({ creatorId: resolvedUser.data.userId }),
+    const { programs } = createCourseModules();
+    const result = await programs.putCourses(resolvedCourseId, {
+      creatorId: resolvedUser.data.userId,
     });
 
-    if (!result.success) return { success: false, error: result.error };
+    if (!result.ok)
+      return { success: false, error: extractError(result.error) };
 
     revalidateCoursePath(courseId, resolvedCourseId);
-    revalidateCoursePath(courseId, resolvedCourseId, 'settings/danger');
-    revalidatePath('/dashboard/learning/courses');
+    revalidateCoursePath(courseId, resolvedCourseId, "settings/danger");
+    revalidatePath("/dashboard/learning/courses");
     return { success: true, data: null };
   } catch (e) {
-    return { success: false, error: `Unexpected error: ${e instanceof Error ? e.message : String(e)}` };
+    return {
+      success: false,
+      error: `Unexpected error: ${e instanceof Error ? e.message : String(e)}`,
+    };
   }
 }
 
-export async function archiveCourse(courseId: string): Promise<ActionResult<null>> {
+export async function archiveCourse(
+  courseId: string,
+): Promise<ActionResult<null>> {
   try {
     const resolvedCourseId = await resolveCourseMutationId(courseId);
     const { lifecycle } = createCourseModules();
@@ -453,30 +536,38 @@ export async function archiveCourse(courseId: string): Promise<ActionResult<null
 
     if (result.ok) {
       revalidateCoursePath(courseId, resolvedCourseId);
-      revalidatePath('/dashboard/learning/courses');
+      revalidatePath("/dashboard/learning/courses");
       return { success: true, data: null };
     }
 
     return { success: false, error: extractError(result.error) };
   } catch (e) {
-    return { success: false, error: `Unexpected error: ${e instanceof Error ? e.message : String(e)}` };
+    return {
+      success: false,
+      error: `Unexpected error: ${e instanceof Error ? e.message : String(e)}`,
+    };
   }
 }
 
-export async function deleteCourse(courseId: string): Promise<ActionResult<null>> {
+export async function deleteCourse(
+  courseId: string,
+): Promise<ActionResult<null>> {
   try {
     const resolvedCourseId = await resolveCourseMutationId(courseId);
     const { programs } = createCourseModules();
     const result = await programs.deleteCourses(resolvedCourseId);
 
     if (result.ok) {
-      revalidatePath('/dashboard/learning/courses');
+      revalidatePath("/dashboard/learning/courses");
       return { success: true, data: null };
     }
 
     return { success: false, error: extractError(result.error) };
   } catch (e) {
-    return { success: false, error: `Unexpected error: ${e instanceof Error ? e.message : String(e)}` };
+    return {
+      success: false,
+      error: `Unexpected error: ${e instanceof Error ? e.message : String(e)}`,
+    };
   }
 }
 
@@ -486,67 +577,65 @@ export interface ManualEnrollStudentInput {
   cohortId?: string | null;
 }
 
-interface UserSearchResponse {
-  items?: Array<{
-    id?: string | null;
-    email?: string | null;
-    username?: string | null;
-    name?: string | null;
-  }> | null;
-}
-
 function isGuid(value: string): boolean {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value.trim());
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+    value.trim(),
+  );
 }
 
-async function resolveEnrollmentUserId(reference: string): Promise<ActionResult<{ userId: string }>> {
+async function resolveEnrollmentUserId(
+  reference: string,
+): Promise<ActionResult<{ userId: string }>> {
   const value = reference.trim();
   if (isGuid(value)) {
     return { success: true, data: { userId: value } };
   }
 
-  const { client } = createCourseModules();
-  const query = value.includes('@')
+  const { users } = createCourseModules();
+  const query = value.includes("@")
     ? { email: value, limit: 5 }
     : { q: value, limit: 5 };
-
-  const result = await client.request({
-    method: 'GET',
-    path: '/v1/users',
-    params: query,
-    requiresAuth: true,
-  }) as { ok: true; data: UserSearchResponse } | { ok: false; error?: { detail?: string; message?: string } };
+  const result = await users.getUsers(query);
 
   if (!result.ok) {
-    return { success: false, error: result.error?.detail || result.error?.message || 'Could not search users.' };
+    return { success: false, error: extractError(result.error) };
   }
 
   const normalized = value.toLowerCase();
   const matches = result.data.items ?? [];
-  const match = matches.find((user) =>
-    user.email?.toLowerCase() === normalized ||
-    user.username?.toLowerCase() === normalized ||
-    user.name?.toLowerCase() === normalized,
-  ) ?? matches[0];
+  const match =
+    matches.find(
+      (user) =>
+        user.email?.toLowerCase() === normalized ||
+        user.name?.toLowerCase() === normalized,
+    ) ?? matches[0];
 
   if (!match?.id) {
-    return { success: false, error: 'No user matched that email, username, or user ID.' };
+    return {
+      success: false,
+      error: "No user matched that email, name, or user ID.",
+    };
   }
 
   return { success: true, data: { userId: match.id } };
 }
 
-export async function manualEnrollStudent(input: ManualEnrollStudentInput): Promise<ActionResult<{ id: string | null }>> {
+export async function manualEnrollStudent(
+  input: ManualEnrollStudentInput,
+): Promise<ActionResult<{ id: string | null }>> {
   const courseId = input.courseId.trim();
   const userReference = input.userId.trim();
   const cohortId = input.cohortId?.trim() || null;
 
   if (!courseId) {
-    return { success: false, error: 'Course is required.' };
+    return { success: false, error: "Course is required." };
   }
 
   if (!userReference) {
-    return { success: false, error: 'Student email, username, or user ID is required.' };
+    return {
+      success: false,
+      error: "Student email, name, or user ID is required.",
+    };
   }
 
   try {
@@ -557,7 +646,10 @@ export async function manualEnrollStudent(input: ManualEnrollStudentInput): Prom
     }
 
     const { programs, enrollments } = createCourseModules();
-    const rosterResult = await programs.postCoursesUsers(resolvedCourseId, resolvedUser.data.userId);
+    const rosterResult = await programs.postCoursesUsers(
+      resolvedCourseId,
+      resolvedUser.data.userId,
+    );
     if (!rosterResult.ok) {
       return { success: false, error: extractError(rosterResult.error) };
     }
@@ -570,39 +662,59 @@ export async function manualEnrollStudent(input: ManualEnrollStudentInput): Prom
       });
 
       if (!cohortResult.ok) {
-        await programs.deleteCoursesUsers(resolvedCourseId, resolvedUser.data.userId);
+        await programs.deleteCoursesUsers(
+          resolvedCourseId,
+          resolvedUser.data.userId,
+        );
         return { success: false, error: extractError(cohortResult.error) };
       }
     }
 
-    revalidateCoursePath(courseId, resolvedCourseId, 'students');
+    revalidateCoursePath(courseId, resolvedCourseId, "students");
     revalidateCoursePath(courseId, resolvedCourseId);
-    return { success: true, data: { id: rosterResult.data.enrollmentId ?? null } };
+    return {
+      success: true,
+      data: { id: rosterResult.data.enrollmentId ?? null },
+    };
   } catch (e) {
-    return { success: false, error: `Unexpected error: ${e instanceof Error ? e.message : String(e)}` };
+    return {
+      success: false,
+      error: `Unexpected error: ${e instanceof Error ? e.message : String(e)}`,
+    };
   }
 }
 
-export async function removeCourseStudents(courseId: string, userIds: string[]): Promise<ActionResult<{ removed: number }>> {
-  const uniqueUserIds = [...new Set(userIds.map((userId) => userId.trim()).filter(Boolean))];
+export async function removeCourseStudents(
+  courseId: string,
+  userIds: string[],
+): Promise<ActionResult<{ removed: number }>> {
+  const uniqueUserIds = [
+    ...new Set(userIds.map((userId) => userId.trim()).filter(Boolean)),
+  ];
   if (uniqueUserIds.length === 0) {
-    return { success: false, error: 'Select at least one student to remove.' };
+    return { success: false, error: "Select at least one student to remove." };
   }
 
   try {
     const resolvedCourseId = await resolveCourseMutationId(courseId);
     const { programs } = createCourseModules();
     const results = await Promise.all(
-      uniqueUserIds.map((userId) => programs.deleteCoursesUsers(resolvedCourseId, userId)),
+      uniqueUserIds.map((userId) =>
+        programs.deleteCoursesUsers(resolvedCourseId, userId),
+      ),
     );
     const failed = results.find((result) => !result.ok);
-    if (failed && !failed.ok) return { success: false, error: extractError(failed.error) };
+    if (failed && !failed.ok)
+      return { success: false, error: extractError(failed.error) };
 
-    revalidateCoursePath(courseId, resolvedCourseId, 'students');
+    revalidateCoursePath(courseId, resolvedCourseId, "students");
     revalidateCoursePath(courseId, resolvedCourseId);
     return { success: true, data: { removed: uniqueUserIds.length } };
   } catch (e) {
-    return { success: false, error: `Unexpected error: ${e instanceof Error ? e.message : String(e)}` };
+    return {
+      success: false,
+      error: `Unexpected error: ${e instanceof Error ? e.message : String(e)}`,
+    };
   }
 }
 
@@ -613,23 +725,38 @@ export interface SendCourseStudentMessageInput {
   message: string;
 }
 
-export async function sendCourseStudentMessage(input: SendCourseStudentMessageInput): Promise<ActionResult<{ sent: number }>> {
+export async function sendCourseStudentMessage(
+  input: SendCourseStudentMessageInput,
+): Promise<ActionResult<{ sent: number }>> {
   const subject = input.subject.trim();
   const message = input.message.trim();
-  const userIds = [...new Set(input.userIds.map((userId) => userId.trim()).filter(Boolean))];
+  const userIds = [
+    ...new Set(input.userIds.map((userId) => userId.trim()).filter(Boolean)),
+  ];
 
-  if (userIds.length === 0) return { success: false, error: 'Select at least one student.' };
-  if (subject.length < 3) return { success: false, error: 'Subject must be at least 3 characters.' };
-  if (message.length < 2) return { success: false, error: 'Message is required.' };
+  if (userIds.length === 0)
+    return { success: false, error: "Select at least one student." };
+  if (subject.length < 3)
+    return { success: false, error: "Subject must be at least 3 characters." };
+  if (message.length < 2)
+    return { success: false, error: "Message is required." };
 
   try {
     const resolvedCourseId = await resolveCourseMutationId(input.courseId);
-    return await learningApiRequest<{ sent: number }>(`/v1/courses/${resolvedCourseId}/students/message`, {
-      method: 'POST',
-      body: JSON.stringify({ userIds, subject, message }),
+    const { students } = createCourseModules();
+    const result = await students.postCoursesStudentsMessage(resolvedCourseId, {
+      userIds,
+      subject,
+      message,
     });
+    return result.ok
+      ? { success: true, data: { sent: result.data.sent ?? 0 } }
+      : { success: false, error: extractError(result.error) };
   } catch (e) {
-    return { success: false, error: `Unexpected error: ${e instanceof Error ? e.message : String(e)}` };
+    return {
+      success: false,
+      error: `Unexpected error: ${e instanceof Error ? e.message : String(e)}`,
+    };
   }
 }
 
@@ -648,12 +775,16 @@ interface LandingProjectInput {
   moduleLabel?: string;
 }
 
-function parseMetadata(raw: string | null | undefined): Record<string, unknown> {
+function parseMetadata(
+  raw: string | null | undefined,
+): Record<string, unknown> {
   if (!raw) return {};
 
   try {
     const parsed = JSON.parse(raw) as unknown;
-    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed as Record<string, unknown> : {};
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed)
+      ? (parsed as Record<string, unknown>)
+      : {};
   } catch {
     return {};
   }
@@ -664,7 +795,7 @@ function normalizeStringList(value: string | string[] | undefined): string[] {
     return value.map((item) => item.trim()).filter(Boolean);
   }
 
-  if (typeof value === 'string') {
+  if (typeof value === "string") {
     return value
       .split(/[,;\n]/)
       .map((item) => item.trim())
@@ -674,19 +805,26 @@ function normalizeStringList(value: string | string[] | undefined): string[] {
   return [];
 }
 
-type NotificationSettingsInput = Omit<CourseNotificationSettings, 'courseId' | 'updatedAt'>;
-type IntegrationSettingsInput = Omit<CourseIntegrationSettings, 'courseId' | 'updatedAt'>;
+type NotificationSettingsInput = Omit<
+  CourseNotificationSettings,
+  "courseId" | "updatedAt"
+>;
+type IntegrationSettingsInput = Omit<
+  CourseIntegrationSettings,
+  "courseId" | "updatedAt"
+>;
 
 async function updateCourseMetadataSection(
   courseId: string,
-  key: 'notificationSettings' | 'integrationSettings',
+  key: "notificationSettings" | "integrationSettings",
   value: unknown,
 ): Promise<ActionResult<null>> {
   try {
     const resolvedCourseId = await resolveCourseMutationId(courseId);
     const { programs } = createCourseModules();
     const courseResult = await programs.getCourses1(resolvedCourseId);
-    if (!courseResult.ok) return { success: false, error: extractError(courseResult.error) };
+    if (!courseResult.ok)
+      return { success: false, error: extractError(courseResult.error) };
 
     const metadata = parseMetadata(courseResult.data.metadata);
     metadata[key] = value;
@@ -694,12 +832,20 @@ async function updateCourseMetadataSection(
       metadata: JSON.stringify(metadata),
     } satisfies LearningCoursesUpdateProgram);
 
-    if (!result.ok) return { success: false, error: extractError(result.error) };
+    if (!result.ok)
+      return { success: false, error: extractError(result.error) };
 
-    revalidateCoursePath(courseId, resolvedCourseId, `settings/${key === 'notificationSettings' ? 'notifications' : 'integrations'}`);
+    revalidateCoursePath(
+      courseId,
+      resolvedCourseId,
+      `settings/${key === "notificationSettings" ? "notifications" : "integrations"}`,
+    );
     return { success: true, data: null };
   } catch (error) {
-    return { success: false, error: `Unexpected error: ${error instanceof Error ? error.message : String(error)}` };
+    return {
+      success: false,
+      error: `Unexpected error: ${error instanceof Error ? error.message : String(error)}`,
+    };
   }
 }
 
@@ -708,9 +854,14 @@ export async function updateCourseNotificationSettings(
   input: NotificationSettingsInput,
 ): Promise<ActionResult<null>> {
   const classReminders = [...new Set(input.studentNotifications.classReminders)]
-    .filter((minutes) => Number.isFinite(minutes) && minutes >= 0 && minutes <= 10080)
+    .filter(
+      (minutes) => Number.isFinite(minutes) && minutes >= 0 && minutes <= 10080,
+    )
     .sort((a, b) => b - a);
-  const lowRatingThreshold = Math.min(5, Math.max(1, Math.round(input.instructorNotifications.lowRatingThreshold)));
+  const lowRatingThreshold = Math.min(
+    5,
+    Math.max(1, Math.round(input.instructorNotifications.lowRatingThreshold)),
+  );
   const templates = input.templates
     .map((template) => ({
       id: template.id.trim(),
@@ -721,7 +872,7 @@ export async function updateCourseNotificationSettings(
     .filter((template) => template.id && template.type && template.subject)
     .slice(0, 20);
 
-  return updateCourseMetadataSection(courseId, 'notificationSettings', {
+  return updateCourseMetadataSection(courseId, "notificationSettings", {
     studentNotifications: {
       ...input.studentNotifications,
       classReminders,
@@ -741,27 +892,38 @@ export async function updateCourseIntegrationSettings(
   for (const webhook of input.webhooks) {
     try {
       const url = new URL(webhook.url);
-      if (!['http:', 'https:'].includes(url.protocol)) throw new Error('invalid protocol');
+      if (!["http:", "https:"].includes(url.protocol))
+        throw new Error("invalid protocol");
     } catch {
-      return { success: false, error: 'Webhook URLs must use http or https.' };
+      return { success: false, error: "Webhook URLs must use http or https." };
     }
   }
 
-  const integrations = input.integrations.slice(0, 20).map((integration) => ({
-    ...integration,
-    id: integration.id.trim(),
-    name: integration.name.trim(),
-    enabled: Boolean(integration.enabled),
-    status: integration.enabled ? integration.status : 'disconnected' as const,
-  })).filter((integration) => integration.id && integration.name);
+  const integrations = input.integrations
+    .slice(0, 20)
+    .map((integration) => ({
+      ...integration,
+      id: integration.id.trim(),
+      name: integration.name.trim(),
+      enabled: Boolean(integration.enabled),
+      status: integration.enabled
+        ? integration.status
+        : ("disconnected" as const),
+    }))
+    .filter((integration) => integration.id && integration.name);
   const webhooks = input.webhooks.slice(0, 20).map((webhook) => ({
     id: webhook.id.trim(),
     url: webhook.url.trim(),
-    events: [...new Set(webhook.events.map((event) => event.trim()).filter(Boolean))],
+    events: [
+      ...new Set(webhook.events.map((event) => event.trim()).filter(Boolean)),
+    ],
     enabled: Boolean(webhook.enabled),
   }));
 
-  return updateCourseMetadataSection(courseId, 'integrationSettings', { integrations, webhooks });
+  return updateCourseMetadataSection(courseId, "integrationSettings", {
+    integrations,
+    webhooks,
+  });
 }
 
 export async function updateCourseReviewModeration(
@@ -770,31 +932,37 @@ export async function updateCourseReviewModeration(
   isApproved: boolean,
   isFeatured: boolean,
 ): Promise<ActionResult<null>> {
-  const result = await learningApiRequest<unknown>(`/api/social/reviews/${reviewId}/moderation`, {
-    method: 'PATCH',
-    body: JSON.stringify({ isApproved, isFeatured }),
+  const { reviews } = createCourseModules();
+  const result = await reviews.patchApiSocialReviewsModeration(reviewId, {
+    isApproved,
+    isFeatured,
   });
 
-  if (!result.success) return { success: false, error: result.error };
+  if (!result.ok) return { success: false, error: extractError(result.error) };
 
-  revalidatePath(`/dashboard/learning/courses/${courseId}/listing/testimonials`);
+  revalidatePath(
+    `/dashboard/learning/courses/${courseId}/listing/testimonials`,
+  );
   revalidatePath(`/courses/${courseId}`);
   return { success: true, data: null };
 }
 
-export async function updateCourseFaq(courseId: string, items: LandingFaqInput[]): Promise<ActionResult<null>> {
+export async function updateCourseFaq(
+  courseId: string,
+  items: LandingFaqInput[],
+): Promise<ActionResult<null>> {
   const sanitizedItems = items
     .map((item) => ({
       question: item.question.trim(),
       answer: item.answer.trim(),
-      category: item.category?.trim() || 'Course details',
+      category: item.category?.trim() || "Course details",
     }))
     .filter((item) => item.question.length > 0 && item.answer.length > 0)
     .slice(0, 12);
 
   try {
     const course = await fetchCourse(courseId);
-    if (!course) return { success: false, error: 'Course not found.' };
+    if (!course) return { success: false, error: "Course not found." };
 
     const metadata = parseMetadata(course.metadata);
     metadata.landingFaq = sanitizedItems;
@@ -804,11 +972,17 @@ export async function updateCourseFaq(courseId: string, items: LandingFaqInput[]
       metadata: JSON.stringify(metadata),
     });
   } catch (e) {
-    return { success: false, error: `Unexpected error: ${e instanceof Error ? e.message : String(e)}` };
+    return {
+      success: false,
+      error: `Unexpected error: ${e instanceof Error ? e.message : String(e)}`,
+    };
   }
 }
 
-export async function updateCourseLandingProjects(courseId: string, items: LandingProjectInput[]): Promise<ActionResult<null>> {
+export async function updateCourseLandingProjects(
+  courseId: string,
+  items: LandingProjectInput[],
+): Promise<ActionResult<null>> {
   const sanitizedItems = items
     .map((item, index) => ({
       title: item.title.trim(),
@@ -816,14 +990,21 @@ export async function updateCourseLandingProjects(courseId: string, items: Landi
       image: item.image?.trim() || null,
       skills: normalizeStringList(item.skills),
       deliverable: item.deliverable.trim(),
-      moduleLabel: item.moduleLabel?.trim() || `Project ${String(index + 1).padStart(2, '0')}`,
+      moduleLabel:
+        item.moduleLabel?.trim() ||
+        `Project ${String(index + 1).padStart(2, "0")}`,
     }))
-    .filter((item) => item.title.length > 0 && item.summary.length > 0 && item.deliverable.length > 0)
+    .filter(
+      (item) =>
+        item.title.length > 0 &&
+        item.summary.length > 0 &&
+        item.deliverable.length > 0,
+    )
     .slice(0, 6);
 
   try {
     const course = await fetchCourse(courseId);
-    if (!course) return { success: false, error: 'Course not found.' };
+    if (!course) return { success: false, error: "Course not found." };
 
     const metadata = parseMetadata(course.metadata);
     metadata.landingProjects = sanitizedItems;
@@ -833,7 +1014,10 @@ export async function updateCourseLandingProjects(courseId: string, items: Landi
       metadata: JSON.stringify(metadata),
     });
   } catch (e) {
-    return { success: false, error: `Unexpected error: ${e instanceof Error ? e.message : String(e)}` };
+    return {
+      success: false,
+      error: `Unexpected error: ${e instanceof Error ? e.message : String(e)}`,
+    };
   }
 }
 
@@ -846,16 +1030,21 @@ export interface UpdateCoursePricingInput {
   subscriptionDurationDays?: number | null;
 }
 
-export async function updateCoursePricing(input: UpdateCoursePricingInput): Promise<ActionResult<null>> {
+export async function updateCoursePricing(
+  input: UpdateCoursePricingInput,
+): Promise<ActionResult<null>> {
   try {
     const resolvedCourseId = await resolveCourseMutationId(input.courseId);
     const { programs } = createCourseModules();
 
     if (!input.isMonetizationEnabled) {
-      const result = await programs.postCoursesDisableMonetization(resolvedCourseId);
+      const result =
+        await programs.postCoursesDisableMonetization(resolvedCourseId);
 
       if (result.ok) {
-        revalidatePath(`/dashboard/learning/courses/${input.courseId}/listing/pricing`);
+        revalidatePath(
+          `/dashboard/learning/courses/${input.courseId}/listing/pricing`,
+        );
         revalidatePath(`/dashboard/learning/courses/${input.courseId}/listing`);
         return { success: true, data: null };
       }
@@ -864,41 +1053,56 @@ export async function updateCoursePricing(input: UpdateCoursePricingInput): Prom
     }
 
     if (!Number.isFinite(input.price) || input.price < 0) {
-      return { success: false, error: 'Price must be zero or greater.' };
+      return { success: false, error: "Price must be zero or greater." };
     }
 
     const result = await programs.postCoursesMonetize(resolvedCourseId, {
       price: input.price,
-      currency: input.currency.trim().toUpperCase() || 'USD',
+      currency: input.currency.trim().toUpperCase() || "USD",
       isSubscription: input.isSubscription,
-      subscriptionDurationDays: input.isSubscription ? input.subscriptionDurationDays ?? null : null,
+      subscriptionDurationDays: input.isSubscription
+        ? (input.subscriptionDurationDays ?? null)
+        : null,
     } satisfies LearningCoursesMonetization);
 
     if (result.ok) {
-      revalidatePath(`/dashboard/learning/courses/${input.courseId}/listing/pricing`);
+      revalidatePath(
+        `/dashboard/learning/courses/${input.courseId}/listing/pricing`,
+      );
       revalidatePath(`/dashboard/learning/courses/${input.courseId}/listing`);
       return { success: true, data: null };
     }
 
     return { success: false, error: extractError(result.error) };
   } catch (e) {
-    return { success: false, error: `Unexpected error: ${e instanceof Error ? e.message : String(e)}` };
+    return {
+      success: false,
+      error: `Unexpected error: ${e instanceof Error ? e.message : String(e)}`,
+    };
   }
 }
 
-export async function cloneCourse(courseId: string, newTitle: string): Promise<ActionResult<{ id: string }>> {
+export async function cloneCourse(
+  courseId: string,
+  newTitle: string,
+): Promise<ActionResult<{ id: string }>> {
   try {
     const { programs } = createCourseModules();
-    const result = await programs.postCoursesClone(courseId, { newTitle } satisfies LearningCoursesCloneProgram);
+    const result = await programs.postCoursesClone(courseId, {
+      newTitle,
+    } satisfies LearningCoursesCloneProgram);
 
     if (result.ok) {
-      revalidatePath('/dashboard/learning/courses');
+      revalidatePath("/dashboard/learning/courses");
       return { success: true, data: { id: result.data.id! } };
     }
 
     return { success: false, error: extractError(result.error) };
   } catch (e) {
-    return { success: false, error: `Unexpected error: ${e instanceof Error ? e.message : String(e)}` };
+    return {
+      success: false,
+      error: `Unexpected error: ${e instanceof Error ? e.message : String(e)}`,
+    };
   }
 }
 
@@ -920,16 +1124,20 @@ export interface CreateAssessmentInput {
   presentationMode?: AssessmentPresentationMode;
 }
 
-export async function createAssessment(input: CreateAssessmentInput): Promise<ActionResult<{ id: string }>> {
+export async function createAssessment(
+  input: CreateAssessmentInput,
+): Promise<ActionResult<{ id: string }>> {
   const { courseId, title, ...rest } = input;
 
   if (!title || title.trim().length < 1) {
-    return { success: false, error: 'Title is required.' };
+    return { success: false, error: "Title is required." };
   }
 
   try {
     const resolvedCourseId = await resolveCourseMutationId(courseId);
-    const body: LearningAssessmentsCreateAssessmentInput & { assessmentGroupId?: string | null } = {
+    const body: LearningAssessmentsCreateAssessmentInput & {
+      assessmentGroupId?: string | null;
+    } = {
       courseId: resolvedCourseId,
       title: title.trim(),
       description: rest.description?.trim() ?? null,
@@ -942,7 +1150,9 @@ export async function createAssessment(input: CreateAssessmentInput): Promise<Ac
       isRequired: rest.isRequired ?? true,
       availableFrom: rest.availableFrom ?? null,
       availableUntil: rest.availableUntil ?? null,
-      presentationMode: rest.presentationMode ?? (rest.type === 'Quiz' ? 'Continuous' : 'SingleStep'),
+      presentationMode:
+        rest.presentationMode ??
+        (rest.type === "Quiz" ? "Continuous" : "SingleStep"),
     };
 
     const { assessments } = createCourseModules();
@@ -955,7 +1165,10 @@ export async function createAssessment(input: CreateAssessmentInput): Promise<Ac
 
     return { success: false, error: extractError(result.error) };
   } catch (e) {
-    return { success: false, error: `Unexpected error: ${e instanceof Error ? e.message : String(e)}` };
+    return {
+      success: false,
+      error: `Unexpected error: ${e instanceof Error ? e.message : String(e)}`,
+    };
   }
 }
 
@@ -976,24 +1189,28 @@ export interface UpdateAssessmentGroupInput {
   description?: string | null;
 }
 
-interface AssessmentGroupActionDto {
-  id: string;
-  courseId: string;
-}
-
-function validateAssessmentGroup(name: string, weightPercent: number): string | null {
+function validateAssessmentGroup(
+  name: string,
+  weightPercent: number,
+): string | null {
   if (name.trim().length < 1) {
-    return 'Group name is required.';
+    return "Group name is required.";
   }
 
-  if (!Number.isFinite(weightPercent) || weightPercent < 0 || weightPercent > 100) {
-    return 'Weight must be between 0 and 100.';
+  if (
+    !Number.isFinite(weightPercent) ||
+    weightPercent < 0 ||
+    weightPercent > 100
+  ) {
+    return "Weight must be between 0 and 100.";
   }
 
   return null;
 }
 
-export async function createAssessmentGroup(input: CreateAssessmentGroupInput): Promise<ActionResult<{ id: string }>> {
+export async function createAssessmentGroup(
+  input: CreateAssessmentGroupInput,
+): Promise<ActionResult<{ id: string }>> {
   const name = input.name.trim();
 
   const validationError = validateAssessmentGroup(name, input.weightPercent);
@@ -1003,28 +1220,32 @@ export async function createAssessmentGroup(input: CreateAssessmentGroupInput): 
 
   try {
     const resolvedCourseId = await resolveCourseMutationId(input.courseId);
-    const result = await learningApiRequest<AssessmentGroupActionDto>('/v1/assessments/groups', {
-      method: 'POST',
-      body: JSON.stringify({
-        courseId: resolvedCourseId,
-        name,
-        weightPercent: input.weightPercent,
-        order: input.order ?? 0,
-        description: input.description?.trim() || null,
-      }),
+    const { assessments } = createCourseModules();
+    const result = await assessments.postAssessmentsGroups({
+      courseId: resolvedCourseId,
+      name,
+      weightPercent: input.weightPercent,
+      order: input.order ?? 0,
+      description: input.description?.trim() || null,
     });
 
-    if (!result.success) return result;
+    if (!result.ok)
+      return { success: false, error: extractError(result.error) };
 
     revalidatePath(`/dashboard/learning/courses/${input.courseId}`);
     revalidatePath(`/dashboard/learning/courses/${input.courseId}/assessments`);
-    return { success: true, data: { id: result.data.id } };
+    return { success: true, data: { id: result.data.id! } };
   } catch (e) {
-    return { success: false, error: `Unexpected error: ${e instanceof Error ? e.message : String(e)}` };
+    return {
+      success: false,
+      error: `Unexpected error: ${e instanceof Error ? e.message : String(e)}`,
+    };
   }
 }
 
-export async function updateAssessmentGroup(input: UpdateAssessmentGroupInput): Promise<ActionResult<{ id: string }>> {
+export async function updateAssessmentGroup(
+  input: UpdateAssessmentGroupInput,
+): Promise<ActionResult<{ id: string }>> {
   const name = input.name.trim();
 
   const validationError = validateAssessmentGroup(name, input.weightPercent);
@@ -1033,47 +1254,55 @@ export async function updateAssessmentGroup(input: UpdateAssessmentGroupInput): 
   }
 
   if (!input.groupId.trim()) {
-    return { success: false, error: 'Group id is required.' };
+    return { success: false, error: "Group id is required." };
   }
 
   try {
-    const result = await learningApiRequest<AssessmentGroupActionDto>(`/v1/assessments/groups/${input.groupId}`, {
-      method: 'PUT',
-      body: JSON.stringify({
-        name,
-        description: input.description?.trim() || null,
-        weightPercent: input.weightPercent,
-        order: input.order ?? 0,
-      }),
+    const { assessments } = createCourseModules();
+    const result = await assessments.putAssessmentsGroups(input.groupId, {
+      name,
+      description: input.description?.trim() || null,
+      weightPercent: input.weightPercent,
+      order: input.order ?? 0,
     });
 
-    if (!result.success) return result;
+    if (!result.ok)
+      return { success: false, error: extractError(result.error) };
 
     revalidatePath(`/dashboard/learning/courses/${input.courseId}`);
     revalidatePath(`/dashboard/learning/courses/${input.courseId}/assessments`);
-    return { success: true, data: { id: result.data.id } };
+    return { success: true, data: { id: result.data.id! } };
   } catch (e) {
-    return { success: false, error: `Unexpected error: ${e instanceof Error ? e.message : String(e)}` };
+    return {
+      success: false,
+      error: `Unexpected error: ${e instanceof Error ? e.message : String(e)}`,
+    };
   }
 }
 
-export async function deleteAssessmentGroup(courseId: string, groupId: string): Promise<ActionResult<null>> {
+export async function deleteAssessmentGroup(
+  courseId: string,
+  groupId: string,
+): Promise<ActionResult<null>> {
   if (!groupId.trim()) {
-    return { success: false, error: 'Group id is required.' };
+    return { success: false, error: "Group id is required." };
   }
 
   try {
-    const result = await learningApiRequest<null>(`/v1/assessments/groups/${groupId}`, {
-      method: 'DELETE',
-    });
+    const { assessments } = createCourseModules();
+    const result = await assessments.deleteAssessmentsGroups(groupId);
 
-    if (!result.success) return result;
+    if (!result.ok)
+      return { success: false, error: extractError(result.error) };
 
     revalidatePath(`/dashboard/learning/courses/${courseId}`);
     revalidatePath(`/dashboard/learning/courses/${courseId}/assessments`);
     return { success: true, data: null };
   } catch (e) {
-    return { success: false, error: `Unexpected error: ${e instanceof Error ? e.message : String(e)}` };
+    return {
+      success: false,
+      error: `Unexpected error: ${e instanceof Error ? e.message : String(e)}`,
+    };
   }
 }
 
@@ -1096,7 +1325,9 @@ export interface UpdateAssessmentInput {
   presentationMode?: AssessmentPresentationMode;
 }
 
-export async function updateAssessment(input: UpdateAssessmentInput): Promise<ActionResult<null>> {
+export async function updateAssessment(
+  input: UpdateAssessmentInput,
+): Promise<ActionResult<null>> {
   const { courseId, assessmentId, ...fields } = input;
 
   try {
@@ -1131,7 +1362,10 @@ export async function updateAssessment(input: UpdateAssessmentInput): Promise<Ac
 
     return { success: false, error: extractError(result.error) };
   } catch (e) {
-    return { success: false, error: `Unexpected error: ${e instanceof Error ? e.message : String(e)}` };
+    return {
+      success: false,
+      error: `Unexpected error: ${e instanceof Error ? e.message : String(e)}`,
+    };
   }
 }
 
@@ -1143,7 +1377,7 @@ export interface UpdateAssessmentDefinitionInput {
 }
 
 function normalizeAssessmentDefinitionPayload(definition: unknown): unknown {
-  if (typeof definition !== 'string') {
+  if (typeof definition !== "string") {
     return definition ?? { order: [], blocks: {} };
   }
 
@@ -1151,32 +1385,46 @@ function normalizeAssessmentDefinitionPayload(definition: unknown): unknown {
   return trimmed ? JSON.parse(trimmed) : { order: [], blocks: {} };
 }
 
-export async function updateAssessmentDefinition(input: UpdateAssessmentDefinitionInput): Promise<ActionResult<null>> {
+export async function updateAssessmentDefinition(
+  input: UpdateAssessmentDefinitionInput,
+): Promise<ActionResult<null>> {
   try {
     const resolvedCourseId = await resolveCourseMutationId(input.courseId);
     const definition = normalizeAssessmentDefinitionPayload(input.definition);
-    const result = await learningApiRequest<unknown>(`/v1/assessments/${input.assessmentId}/definition`, {
-      method: 'PUT',
-      body: JSON.stringify({
+    const { assessments } = createCourseModules();
+    const result = await assessments.putAssessmentsDefinition(
+      input.assessmentId,
+      {
         definitionSchemaVersion: input.definitionSchemaVersion ?? 1,
-        definition,
-      }),
-    });
+        definition: definition as Record<string, unknown>,
+      },
+    );
 
-    if (!result.success) return result as ActionResult<null>;
+    if (!result.ok)
+      return { success: false, error: extractError(result.error) };
 
     revalidateCourseAssessmentPaths(input.courseId, resolvedCourseId);
-    revalidatePath(`/dashboard/learning/courses/${input.courseId}/assessments/${input.assessmentId}`);
+    revalidatePath(
+      `/dashboard/learning/courses/${input.courseId}/assessments/${input.assessmentId}`,
+    );
     if (resolvedCourseId !== input.courseId) {
-      revalidatePath(`/dashboard/learning/courses/${resolvedCourseId}/assessments/${input.assessmentId}`);
+      revalidatePath(
+        `/dashboard/learning/courses/${resolvedCourseId}/assessments/${input.assessmentId}`,
+      );
     }
     return { success: true, data: null };
   } catch (e) {
-    return { success: false, error: `Unexpected error: ${e instanceof Error ? e.message : String(e)}` };
+    return {
+      success: false,
+      error: `Unexpected error: ${e instanceof Error ? e.message : String(e)}`,
+    };
   }
 }
 
-export async function deleteAssessment(courseId: string, assessmentId: string): Promise<ActionResult<null>> {
+export async function deleteAssessment(
+  courseId: string,
+  assessmentId: string,
+): Promise<ActionResult<null>> {
   try {
     const resolvedCourseId = await resolveCourseMutationId(courseId);
     const { assessments } = createCourseModules();
@@ -1189,7 +1437,10 @@ export async function deleteAssessment(courseId: string, assessmentId: string): 
 
     return { success: false, error: extractError(result.error) };
   } catch (e) {
-    return { success: false, error: `Unexpected error: ${e instanceof Error ? e.message : String(e)}` };
+    return {
+      success: false,
+      error: `Unexpected error: ${e instanceof Error ? e.message : String(e)}`,
+    };
   }
 }
 
@@ -1199,12 +1450,6 @@ export interface CreateCertificateTemplateInput {
   courseId: string;
   name: string;
   templateHtml?: string;
-}
-
-interface CertificateTemplateActionDto {
-  id: string;
-  courseId: string;
-  name: string;
 }
 
 const defaultCertificateTemplateHtml = `
@@ -1217,35 +1462,48 @@ const defaultCertificateTemplateHtml = `
 </section>
 `.trim();
 
-export async function createCertificateTemplate(input: CreateCertificateTemplateInput): Promise<ActionResult<{ id: string }>> {
+export async function createCertificateTemplate(
+  input: CreateCertificateTemplateInput,
+): Promise<ActionResult<{ id: string }>> {
   const name = input.name.trim();
-  const templateHtml = input.templateHtml?.trim() || defaultCertificateTemplateHtml;
+  const templateHtml =
+    input.templateHtml?.trim() || defaultCertificateTemplateHtml;
 
   if (name.length < 3) {
-    return { success: false, error: 'Template name must be at least 3 characters.' };
+    return {
+      success: false,
+      error: "Template name must be at least 3 characters.",
+    };
   }
 
   if (templateHtml.length < 20) {
-    return { success: false, error: 'Template HTML must be at least 20 characters.' };
+    return {
+      success: false,
+      error: "Template HTML must be at least 20 characters.",
+    };
   }
 
   try {
     const resolvedCourseId = await resolveCourseMutationId(input.courseId);
-    const result = await learningApiRequest<CertificateTemplateActionDto>('/api/certificates/templates', {
-      method: 'POST',
-      body: JSON.stringify({
-        courseId: resolvedCourseId,
-        name,
-        templateHtml,
-      }),
+    const { certificates } = createCourseModules();
+    const result = await certificates.postApiCertificatesTemplates({
+      courseId: resolvedCourseId,
+      name,
+      templateHtml,
     });
 
-    if (!result.success) return result;
+    if (!result.ok)
+      return { success: false, error: extractError(result.error) };
 
-    revalidatePath(`/dashboard/learning/courses/${input.courseId}/certificates`);
-    return { success: true, data: { id: result.data.id } };
+    revalidatePath(
+      `/dashboard/learning/courses/${input.courseId}/certificates`,
+    );
+    return { success: true, data: { id: result.data.id! } };
   } catch (e) {
-    return { success: false, error: `Unexpected error: ${e instanceof Error ? e.message : String(e)}` };
+    return {
+      success: false,
+      error: `Unexpected error: ${e instanceof Error ? e.message : String(e)}`,
+    };
   }
 }
 
@@ -1260,54 +1518,78 @@ export interface UpdateCertificateTemplateInput {
   isActive: boolean;
 }
 
-export async function updateCertificateTemplate(input: UpdateCertificateTemplateInput): Promise<ActionResult<null>> {
+export async function updateCertificateTemplate(
+  input: UpdateCertificateTemplateInput,
+): Promise<ActionResult<null>> {
   const name = input.name.trim();
   const templateHtml = input.templateHtml.trim();
 
   if (name.length < 3) {
-    return { success: false, error: 'Template name must be at least 3 characters.' };
+    return {
+      success: false,
+      error: "Template name must be at least 3 characters.",
+    };
   }
 
   if (templateHtml.length < 20) {
-    return { success: false, error: 'Template HTML must be at least 20 characters.' };
+    return {
+      success: false,
+      error: "Template HTML must be at least 20 characters.",
+    };
   }
 
   try {
-    const result = await learningApiRequest<CertificateTemplateActionDto>(`/api/certificates/templates/${input.templateId}`, {
-      method: 'PUT',
-      body: JSON.stringify({
+    const { certificates } = createCourseModules();
+    const result = await certificates.putApiCertificatesTemplates(
+      input.templateId,
+      {
         name,
         description: input.description?.trim() || null,
         templateHtml,
         templateStyles: input.templateStyles?.trim() || null,
         isDefault: input.isDefault,
         isActive: input.isActive,
-      }),
-    });
+      },
+    );
 
-    if (!result.success) return result;
+    if (!result.ok)
+      return { success: false, error: extractError(result.error) };
 
-    revalidatePath(`/dashboard/learning/courses/${input.courseId}/certificates`);
-    revalidatePath(`/dashboard/learning/courses/${input.courseId}/certificates/${input.templateId}`);
+    revalidatePath(
+      `/dashboard/learning/courses/${input.courseId}/certificates`,
+    );
+    revalidatePath(
+      `/dashboard/learning/courses/${input.courseId}/certificates/${input.templateId}`,
+    );
     return { success: true, data: null };
   } catch (e) {
-    return { success: false, error: `Unexpected error: ${e instanceof Error ? e.message : String(e)}` };
+    return {
+      success: false,
+      error: `Unexpected error: ${e instanceof Error ? e.message : String(e)}`,
+    };
   }
 }
 
-export async function deleteCertificateTemplate(courseId: string, templateId: string): Promise<ActionResult<null>> {
+export async function deleteCertificateTemplate(
+  courseId: string,
+  templateId: string,
+): Promise<ActionResult<null>> {
   try {
-    const result = await learningApiRequest<null>(`/api/certificates/templates/${templateId}`, {
-      method: 'DELETE',
-    });
+    const { certificates } = createCourseModules();
+    const result =
+      await certificates.deleteApiCertificatesTemplates(templateId);
 
-    if (result.success) {
+    if (result.ok) {
       revalidatePath(`/dashboard/learning/courses/${courseId}/certificates`);
+      return { success: true, data: null };
     }
 
-    return result;
+    return { success: false, error: extractError(result.error) };
   } catch (e) {
-    return { success: false, error: `Unexpected error: ${e instanceof Error ? e.message : String(e)}` };
+    return {
+      success: false,
+      error: `Unexpected error: ${e instanceof Error ? e.message : String(e)}`,
+    };
   }
 }
 
@@ -1327,28 +1609,18 @@ export interface CreateDiscussionReplyInput {
   parentReplyId?: string | null;
 }
 
-interface DiscussionActionDto {
-  id: string;
-  courseId: string;
-  isPinned?: boolean;
-  isResolved?: boolean;
-}
-
-interface DiscussionReplyActionDto {
-  id: string;
-  discussionId: string;
-  isAcceptedAnswer?: boolean;
-  upvoteCount?: number;
-}
-
 function revalidateCourseSupport(courseId: string, discussionId?: string) {
   revalidatePath(`/dashboard/learning/courses/${courseId}/support`);
   revalidatePath(`/dashboard/learning/courses/${courseId}/support/tickets`);
   revalidatePath(`/dashboard/learning/courses/${courseId}/support/discussions`);
 
   if (discussionId) {
-    revalidatePath(`/dashboard/learning/courses/${courseId}/support/tickets/${discussionId}`);
-    revalidatePath(`/dashboard/learning/courses/${courseId}/support/discussions/${discussionId}`);
+    revalidatePath(
+      `/dashboard/learning/courses/${courseId}/support/tickets/${discussionId}`,
+    );
+    revalidatePath(
+      `/dashboard/learning/courses/${courseId}/support/discussions/${discussionId}`,
+    );
   }
 }
 
@@ -1358,22 +1630,31 @@ export interface AddCourseSupportTicketMessageInput {
   message: string;
 }
 
-export async function addCourseSupportTicketMessage(input: AddCourseSupportTicketMessageInput): Promise<ActionResult<null>> {
+export async function addCourseSupportTicketMessage(
+  input: AddCourseSupportTicketMessageInput,
+): Promise<ActionResult<null>> {
   const message = input.message.trim();
-  if (message.length < 2) return { success: false, error: 'Reply is required.' };
+  if (message.length < 2)
+    return { success: false, error: "Reply is required." };
 
   try {
     const resolvedCourseId = await resolveCourseMutationId(input.courseId);
-    const result = await learningApiRequest<unknown>(
-      `/v1/courses/${resolvedCourseId}/support/tickets/${input.ticketId}/messages`,
-      { method: 'POST', body: JSON.stringify({ message }) },
+    const { supportTickets } = createCourseModules();
+    const result = await supportTickets.postCoursesSupportTicketsMessages(
+      resolvedCourseId,
+      input.ticketId,
+      { message },
     );
-    if (!result.success) return { success: false, error: result.error };
+    if (!result.ok)
+      return { success: false, error: extractError(result.error) };
 
     revalidateCourseSupport(input.courseId, input.ticketId);
     return { success: true, data: null };
   } catch (e) {
-    return { success: false, error: `Unexpected error: ${e instanceof Error ? e.message : String(e)}` };
+    return {
+      success: false,
+      error: `Unexpected error: ${e instanceof Error ? e.message : String(e)}`,
+    };
   }
 }
 
@@ -1383,161 +1664,221 @@ export interface ResolveCourseSupportTicketInput {
   summary: string;
 }
 
-export async function resolveCourseSupportTicket(input: ResolveCourseSupportTicketInput): Promise<ActionResult<null>> {
+export async function resolveCourseSupportTicket(
+  input: ResolveCourseSupportTicketInput,
+): Promise<ActionResult<null>> {
   const summary = input.summary.trim();
-  if (summary.length < 3) return { success: false, error: 'Resolution summary must be at least 3 characters.' };
+  if (summary.length < 3)
+    return {
+      success: false,
+      error: "Resolution summary must be at least 3 characters.",
+    };
 
   try {
     const resolvedCourseId = await resolveCourseMutationId(input.courseId);
-    const result = await learningApiRequest<unknown>(
-      `/v1/courses/${resolvedCourseId}/support/tickets/${input.ticketId}:resolve`,
-      { method: 'POST', body: JSON.stringify({ summary }) },
+    const { supportTickets } = createCourseModules();
+    const result = await supportTickets.postCoursesSupportTicketsResolve(
+      resolvedCourseId,
+      input.ticketId,
+      { summary },
     );
-    if (!result.success) return { success: false, error: result.error };
+    if (!result.ok)
+      return { success: false, error: extractError(result.error) };
 
     revalidateCourseSupport(input.courseId, input.ticketId);
     return { success: true, data: null };
   } catch (e) {
-    return { success: false, error: `Unexpected error: ${e instanceof Error ? e.message : String(e)}` };
+    return {
+      success: false,
+      error: `Unexpected error: ${e instanceof Error ? e.message : String(e)}`,
+    };
   }
 }
 
-export async function createCourseDiscussion(input: CreateCourseDiscussionInput): Promise<ActionResult<{ id: string }>> {
+export async function createCourseDiscussion(
+  input: CreateCourseDiscussionInput,
+): Promise<ActionResult<{ id: string }>> {
   const title = input.title.trim();
   const content = input.content.trim();
 
   if (title.length < 5) {
-    return { success: false, error: 'Discussion title must be at least 5 characters.' };
+    return {
+      success: false,
+      error: "Discussion title must be at least 5 characters.",
+    };
   }
 
   if (content.length < 10) {
-    return { success: false, error: 'Discussion content must be at least 10 characters.' };
+    return {
+      success: false,
+      error: "Discussion content must be at least 10 characters.",
+    };
   }
 
   try {
     const resolvedCourseId = await resolveCourseMutationId(input.courseId);
-    const result = await learningApiRequest<DiscussionActionDto>('/api/social/discussions', {
-      method: 'POST',
-      body: JSON.stringify({
-        courseId: resolvedCourseId,
-        title,
-        content,
-        contentId: input.contentId?.trim() || null,
-      }),
+    const { discussions } = createCourseModules();
+    const result = await discussions.postApiSocialDiscussions({
+      courseId: resolvedCourseId,
+      title,
+      content,
+      contentId: input.contentId?.trim() || null,
     });
 
-    if (!result.success) return result;
+    if (!result.ok)
+      return { success: false, error: extractError(result.error) };
 
     revalidateCourseSupport(input.courseId, result.data.id);
-    return { success: true, data: { id: result.data.id } };
+    return { success: true, data: { id: result.data.id! } };
   } catch (e) {
-    return { success: false, error: `Unexpected error: ${e instanceof Error ? e.message : String(e)}` };
+    return {
+      success: false,
+      error: `Unexpected error: ${e instanceof Error ? e.message : String(e)}`,
+    };
   }
 }
 
-export async function createDiscussionReply(input: CreateDiscussionReplyInput): Promise<ActionResult<{ id: string }>> {
+export async function createDiscussionReply(
+  input: CreateDiscussionReplyInput,
+): Promise<ActionResult<{ id: string }>> {
   const content = input.content.trim();
 
   if (content.length < 2) {
-    return { success: false, error: 'Reply content is required.' };
+    return { success: false, error: "Reply content is required." };
   }
 
   try {
-    const result = await learningApiRequest<DiscussionReplyActionDto>(`/api/social/discussions/${input.discussionId}/replies`, {
-      method: 'POST',
-      body: JSON.stringify({
+    const { replies } = createCourseModules();
+    const result = await replies.postApiSocialDiscussionsReplies(
+      input.discussionId,
+      {
         discussionId: input.discussionId,
         content,
         parentReplyId: input.parentReplyId?.trim() || null,
-      }),
-    });
+      },
+    );
 
-    if (!result.success) return result;
+    if (!result.ok)
+      return { success: false, error: extractError(result.error) };
 
     revalidateCourseSupport(input.courseId, input.discussionId);
-    return { success: true, data: { id: result.data.id } };
+    return { success: true, data: { id: result.data.id! } };
   } catch (e) {
-    return { success: false, error: `Unexpected error: ${e instanceof Error ? e.message : String(e)}` };
+    return {
+      success: false,
+      error: `Unexpected error: ${e instanceof Error ? e.message : String(e)}`,
+    };
   }
 }
 
-export async function updateDiscussionPin(courseId: string, discussionId: string, pinned: boolean): Promise<ActionResult<null>> {
+export async function updateDiscussionPin(
+  courseId: string,
+  discussionId: string,
+  pinned: boolean,
+): Promise<ActionResult<null>> {
   try {
-    const result = await learningApiRequest<DiscussionActionDto>(`/api/social/discussions/${discussionId}/${pinned ? 'pin' : 'unpin'}`, {
-      method: 'POST',
-      body: JSON.stringify({}),
-    });
+    const { discussions } = createCourseModules();
+    const result = pinned
+      ? await discussions.postApiSocialDiscussionsPin(discussionId)
+      : await discussions.postApiSocialDiscussionsUnpin(discussionId);
 
-    if (!result.success) return { success: false, error: result.error };
+    if (!result.ok)
+      return { success: false, error: extractError(result.error) };
 
     revalidateCourseSupport(courseId, discussionId);
     return { success: true, data: null };
   } catch (e) {
-    return { success: false, error: `Unexpected error: ${e instanceof Error ? e.message : String(e)}` };
+    return {
+      success: false,
+      error: `Unexpected error: ${e instanceof Error ? e.message : String(e)}`,
+    };
   }
 }
 
-export async function resolveDiscussion(courseId: string, discussionId: string): Promise<ActionResult<null>> {
+export async function resolveDiscussion(
+  courseId: string,
+  discussionId: string,
+): Promise<ActionResult<null>> {
   try {
-    const result = await learningApiRequest<DiscussionActionDto>(`/api/social/discussions/${discussionId}/resolve`, {
-      method: 'POST',
-      body: JSON.stringify({}),
-    });
+    const { discussions } = createCourseModules();
+    const result =
+      await discussions.postApiSocialDiscussionsResolve(discussionId);
 
-    if (!result.success) return { success: false, error: result.error };
+    if (!result.ok)
+      return { success: false, error: extractError(result.error) };
 
     revalidateCourseSupport(courseId, discussionId);
     return { success: true, data: null };
   } catch (e) {
-    return { success: false, error: `Unexpected error: ${e instanceof Error ? e.message : String(e)}` };
+    return {
+      success: false,
+      error: `Unexpected error: ${e instanceof Error ? e.message : String(e)}`,
+    };
   }
 }
 
-export async function deleteDiscussion(courseId: string, discussionId: string): Promise<ActionResult<null>> {
+export async function deleteDiscussion(
+  courseId: string,
+  discussionId: string,
+): Promise<ActionResult<null>> {
   try {
-    const result = await learningApiRequest<null>(`/api/social/discussions/${discussionId}`, {
-      method: 'DELETE',
-    });
+    const { discussions } = createCourseModules();
+    const result = await discussions.deleteApiSocialDiscussions(discussionId);
 
-    if (result.success) {
-      revalidateCourseSupport(courseId, discussionId);
-    }
-
-    return result;
-  } catch (e) {
-    return { success: false, error: `Unexpected error: ${e instanceof Error ? e.message : String(e)}` };
-  }
-}
-
-export async function acceptDiscussionReply(courseId: string, discussionId: string, replyId: string): Promise<ActionResult<null>> {
-  try {
-    const result = await learningApiRequest<DiscussionReplyActionDto>(`/api/social/replies/${replyId}/accept`, {
-      method: 'POST',
-      body: JSON.stringify({}),
-    });
-
-    if (!result.success) return { success: false, error: result.error };
+    if (!result.ok)
+      return { success: false, error: extractError(result.error) };
 
     revalidateCourseSupport(courseId, discussionId);
     return { success: true, data: null };
   } catch (e) {
-    return { success: false, error: `Unexpected error: ${e instanceof Error ? e.message : String(e)}` };
+    return {
+      success: false,
+      error: `Unexpected error: ${e instanceof Error ? e.message : String(e)}`,
+    };
   }
 }
 
-export async function upvoteDiscussionReply(courseId: string, discussionId: string, replyId: string): Promise<ActionResult<null>> {
+export async function acceptDiscussionReply(
+  courseId: string,
+  discussionId: string,
+  replyId: string,
+): Promise<ActionResult<null>> {
   try {
-    const result = await learningApiRequest<DiscussionReplyActionDto>(`/api/social/replies/${replyId}/upvote`, {
-      method: 'POST',
-      body: JSON.stringify({}),
-    });
+    const { replies } = createCourseModules();
+    const result = await replies.postApiSocialRepliesAccept(replyId);
 
-    if (!result.success) return { success: false, error: result.error };
+    if (!result.ok)
+      return { success: false, error: extractError(result.error) };
 
     revalidateCourseSupport(courseId, discussionId);
     return { success: true, data: null };
   } catch (e) {
-    return { success: false, error: `Unexpected error: ${e instanceof Error ? e.message : String(e)}` };
+    return {
+      success: false,
+      error: `Unexpected error: ${e instanceof Error ? e.message : String(e)}`,
+    };
+  }
+}
+
+export async function upvoteDiscussionReply(
+  courseId: string,
+  discussionId: string,
+  replyId: string,
+): Promise<ActionResult<null>> {
+  try {
+    const { replies } = createCourseModules();
+    const result = await replies.postApiSocialRepliesUpvote(replyId);
+
+    if (!result.ok)
+      return { success: false, error: extractError(result.error) };
+
+    revalidateCourseSupport(courseId, discussionId);
+    return { success: true, data: null };
+  } catch (e) {
+    return {
+      success: false,
+      error: `Unexpected error: ${e instanceof Error ? e.message : String(e)}`,
+    };
   }
 }
 
@@ -1548,12 +1889,14 @@ export async function upvoteDiscussionReply(courseId: string, discussionId: stri
 // instead of dynamic-importing server-only modules (which breaks Turbopack).
 // =============================================================================
 
-import type { CourseDetails } from '@/lib/learning/types';
+import type { CourseViewModel } from "@/lib/learning/view-models";
 
 /**
  * Fetch course details. Safe to call from client components via server action RPC.
  */
-export async function fetchCourse(courseId: string): Promise<CourseDetails | null> {
-  const { getCourse } = await import('@/lib/learning/queries/course');
+export async function fetchCourse(
+  courseId: string,
+): Promise<CourseViewModel | null> {
+  const { getCourse } = await import("@/lib/learning/queries/course");
   return getCourse(courseId);
 }
