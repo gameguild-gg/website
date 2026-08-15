@@ -158,6 +158,34 @@ public class HealthControllerTests
     }
 
     [Fact]
+    public async Task GetReadiness_WhenAServiceIsUnhealthy_ShouldReturnServiceUnavailable()
+    {
+        var healthReport = new HealthReport(
+            new Dictionary<string, HealthReportEntry>
+            {
+                ["Database"] = new HealthReportEntry(
+                    HealthStatus.Unhealthy,
+                    "Database unavailable",
+                    TimeSpan.FromMilliseconds(10),
+                    new InvalidOperationException("offline"),
+                    null)
+            },
+            TimeSpan.FromMilliseconds(10));
+
+        _healthCheckServiceMock
+            .Setup(x => x.CheckHealthAsync(It.IsAny<Func<HealthCheckRegistration, bool>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(healthReport);
+
+        var result = await _controller.GetReadiness();
+
+        var objectResult = result.Result.Should().BeOfType<ObjectResult>().Subject;
+        objectResult.StatusCode.Should().Be(StatusCodes.Status503ServiceUnavailable);
+        var response = objectResult.Value.Should().BeOfType<ReadinessResponse>().Subject;
+        response.Ready.Should().BeFalse();
+        response.Services.Should().Contain("Database", false);
+    }
+
+    [Fact]
     public async Task HealthEndpoints_WhenDependencyIsDegraded_ShouldRemainAvailable()
     {
         var healthReport = new HealthReport(
@@ -208,8 +236,65 @@ public class HealthControllerTests
 
         var result = await _controller.GetDependencyHealth();
 
-        result.Result.Should().BeOfType<ObjectResult>().Which.StatusCode
-            .Should().Be(StatusCodes.Status503ServiceUnavailable);
+        var objectResult = result.Result.Should().BeOfType<ObjectResult>().Subject;
+        objectResult.StatusCode.Should().Be(StatusCodes.Status503ServiceUnavailable);
+        var dependency = objectResult.Value.Should().BeOfType<DependencyHealthResponse>().Subject
+            .Dependencies.Should().ContainSingle().Subject;
+        dependency.Tags.Should().BeEmpty();
+        dependency.Data.Should().BeEmpty();
+        dependency.Exception.Should().Be("offline");
+    }
+
+    [Fact]
+    public async Task GetDependencyHealth_ShouldFilterAndMapDependencyDetails()
+    {
+        Func<HealthCheckRegistration, bool>? capturedPredicate = null;
+        var healthReport = new HealthReport(
+            new Dictionary<string, HealthReportEntry>
+            {
+                ["Database"] = new HealthReportEntry(
+                    HealthStatus.Healthy,
+                    "Database ready",
+                    TimeSpan.FromMilliseconds(5),
+                    null,
+                    new Dictionary<string, object>
+                    {
+                        ["provider"] = "postgres",
+                        ["optional"] = null!
+                    },
+                    ["dependency", "ready"])
+            },
+            TimeSpan.FromMilliseconds(5));
+
+        _healthCheckServiceMock
+            .Setup(x => x.CheckHealthAsync(It.IsAny<Func<HealthCheckRegistration, bool>>(), It.IsAny<CancellationToken>()))
+            .Callback<Func<HealthCheckRegistration, bool>, CancellationToken>((predicate, _) =>
+                capturedPredicate = predicate)
+            .ReturnsAsync(healthReport);
+
+        var result = await _controller.GetDependencyHealth();
+
+        capturedPredicate.Should().NotBeNull();
+        capturedPredicate!(CreateRegistration("dependency", "dependency")).Should().BeTrue();
+        capturedPredicate(CreateRegistration("ready", "ready")).Should().BeTrue();
+        capturedPredicate(CreateRegistration("other", "other")).Should().BeFalse();
+
+        var objectResult = result.Result.Should().BeOfType<ObjectResult>().Subject;
+        objectResult.StatusCode.Should().Be(StatusCodes.Status200OK);
+        var response = objectResult.Value.Should().BeOfType<DependencyHealthResponse>().Subject;
+        response.HealthyCount.Should().Be(1);
+        response.UnhealthyCount.Should().Be(0);
+        var dependency = response.Dependencies.Should().ContainSingle().Subject;
+        dependency.Tags.Should().Equal("dependency", "ready");
+        dependency.Data.Should().Contain("provider", "postgres");
+        dependency.Data.Should().Contain("optional", string.Empty);
+    }
+
+    [Fact]
+    public void OptionalHealthErrors_ShouldRoundTrip()
+    {
+        new ReadinessResponse { Error = "readiness failed" }.Error.Should().Be("readiness failed");
+        new DependencyHealthResponse { Error = "dependency failed" }.Error.Should().Be("dependency failed");
     }
 
     [Fact]
@@ -254,4 +339,7 @@ public class HealthControllerTests
         response.Timestamp.Should().BeOnOrAfter(beforeCall);
         response.Timestamp.Should().BeOnOrBefore(afterCall);
     }
+
+    private static HealthCheckRegistration CreateRegistration(string name, params string[] tags) =>
+        new(name, Mock.Of<IHealthCheck>(), failureStatus: null, tags);
 }

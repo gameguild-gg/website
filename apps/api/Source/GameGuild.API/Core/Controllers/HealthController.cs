@@ -200,10 +200,10 @@ public class HealthController(
                 Duration = entry.Value.Duration,
                 Description = entry.Value.Description,
                 IsHealthy = entry.Value.Status == HealthStatus.Healthy,
-                Tags = entry.Value.Tags?.ToList() ?? new List<string>(),
-                Data = entry.Value.Data?.ToDictionary(
+                Tags = entry.Value.Tags.ToList(),
+                Data = entry.Value.Data.ToDictionary(
                     kvp => kvp.Key,
-                    kvp => kvp.Value?.ToString() ?? string.Empty) ?? new Dictionary<string, string>(),
+                    kvp => kvp.Value?.ToString() ?? string.Empty),
                 Exception = entry.Value.Exception?.Message
             });
         }
