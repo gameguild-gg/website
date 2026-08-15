@@ -13,6 +13,25 @@ namespace GameGuild.API.UnitTests.Core;
 public sealed class OpenApiSetupTests
 {
     [Fact]
+    public void SetupMethods_HandleConfiguredAndSuppliedOptions()
+    {
+        var configuration = new ConfigurationBuilder().Build();
+        var configuredServices = new ServiceCollection();
+        var suppliedServices = new ServiceCollection();
+        var versioningOptions = GameGuild.Configuration.PresentationLayer.ApiVersioning.ApiVersioningOptions.CreateDefault();
+
+        configuredServices.SetupOpenApi(configuration, options: null);
+        configuredServices.SetupApiVersioning(configuration, options: null);
+        configuredServices.SetupApiExplorer(configuration, options: null);
+        suppliedServices.SetupOpenApi(configuration, OpenApiOptions.CreateDefault());
+        suppliedServices.SetupApiVersioning(configuration, versioningOptions);
+        suppliedServices.SetupApiExplorer(configuration, versioningOptions);
+
+        configuredServices.Should().NotBeEmpty();
+        suppliedServices.Should().NotBeEmpty();
+    }
+
+    [Fact]
     public void SetupOpenApi_WithoutVersionExplorer_ShouldCreateConfiguredFallbackDocument()
     {
         var services = new ServiceCollection();
