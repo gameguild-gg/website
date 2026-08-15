@@ -37,6 +37,18 @@ public sealed class SecurityServiceCollectionExtensionsTests
     }
 
     [Fact]
+    public void SetupAuthentication_WhenDisabledDoesNotRegisterAuthenticationServices()
+    {
+        var services = new ServiceCollection();
+        var options = new AuthenticationOptions { EnableAuthentication = false };
+
+        var result = services.SetupAuthentication(new ConfigurationBuilder().Build(), options);
+
+        result.Should().BeSameAs(services);
+        services.Should().NotContain(descriptor => descriptor.ServiceType == typeof(IAuthenticationService));
+    }
+
+    [Fact]
     public void SetupAuthentication_AllowsHttpMetadataOnlyInDevelopment()
     {
         var services = new ServiceCollection();
