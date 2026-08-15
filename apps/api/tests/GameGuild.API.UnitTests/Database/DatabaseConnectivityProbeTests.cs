@@ -1,8 +1,8 @@
-using FluentAssertions;
-using GameGuild.API.Database;
-using Microsoft.Extensions.Configuration;
 using System.Net;
 using System.Net.Sockets;
+using FluentAssertions;
+using Microsoft.Extensions.Configuration;
+using GameGuild.API.Database;
 
 namespace GameGuild.API.UnitTests.Database;
 
@@ -57,12 +57,9 @@ public class DatabaseConnectivityProbeTests
     public async Task IsReachableAsync_ShouldReturnFalse_WhenTcpPortIsOpenButPostgresHandshakeFails()
     {
         using var listener = new TcpListener(IPAddress.Loopback, port: 0);
+        using var serverCts = new CancellationTokenSource();
         listener.Start();
-
-        var acceptTask = Task.Run(async () =>
-        {
-            using var client = await listener.AcceptTcpClientAsync().ConfigureAwait(false);
-        });
+        var serverTask = RejectPostgresHandshakeAsync(listener, serverCts.Token);
 
         var endpoint = (IPEndPoint)listener.LocalEndpoint;
         var configuration = new ConfigurationBuilder()
@@ -74,9 +71,32 @@ public class DatabaseConnectivityProbeTests
             .Build();
         var probe = new DatabaseConnectivityProbe(configuration);
 
-        var result = await probe.IsReachableAsync();
+        try
+        {
+            var result = await probe.IsReachableAsync();
 
-        result.Should().BeFalse();
-        await acceptTask.WaitAsync(TimeSpan.FromSeconds(2));
+            result.Should().BeFalse();
+        }
+        finally
+        {
+            serverCts.Cancel();
+            listener.Stop();
+            await serverTask;
+        }
+    }
+
+    private static async Task RejectPostgresHandshakeAsync(TcpListener listener, CancellationToken cancellationToken)
+    {
+        try
+        {
+            using var client = await listener.AcceptTcpClientAsync(cancellationToken).ConfigureAwait(false);
+            await client.GetStream().WriteAsync(new byte[] { 0 }, cancellationToken).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+        }
+        catch (SocketException) when (cancellationToken.IsCancellationRequested)
+        {
+        }
     }
 }
