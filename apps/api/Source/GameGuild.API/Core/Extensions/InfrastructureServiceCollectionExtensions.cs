@@ -117,7 +117,9 @@ public static class InfrastructureServiceCollectionExtensions
 
         services.Configure<RequestLocalizationOptions>(requestLocalizationOptions =>
             {
-                var supportedCultures = options.SupportedCultures;
+                var supportedCultures = options.SupportedCultures
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToArray();
                 requestLocalizationOptions.DefaultRequestCulture = new RequestCulture(options.DefaultCulture);
                 requestLocalizationOptions.SupportedCultures =
                     supportedCultures.Select(c => new CultureInfo(c)).ToList();
@@ -138,7 +140,9 @@ public static class InfrastructureServiceCollectionExtensions
 
         services.AddResponseCompression(compressionOptions =>
             {
-                compressionOptions.MimeTypes = options.MimeTypes;
+                compressionOptions.MimeTypes = options.MimeTypes
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToArray();
                 compressionOptions.EnableForHttps = true;
             }
         );

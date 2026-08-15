@@ -59,6 +59,23 @@ public sealed class SchemaNotReadyProblemDetailsTests
     }
 
     [Fact]
+    public void IsDatabaseSchemaNotReadyException_WhenMessageMentionsOnlyRelation_ShouldReturnFalse()
+    {
+        InfrastructureServiceCollectionExtensions
+            .IsDatabaseSchemaNotReadyException(new InvalidOperationException("relation is unavailable"))
+            .Should()
+            .BeFalse();
+    }
+
+    [Fact]
+    public void IsDatabaseSchemaNotReadyException_WhenExceptionIsNull_ShouldThrow()
+    {
+        var act = () => InfrastructureServiceCollectionExtensions.IsDatabaseSchemaNotReadyException(null!);
+
+        act.Should().Throw<ArgumentNullException>();
+    }
+
+    [Fact]
     public void SetupProblemDetails_ShouldTranslateMissingSchemaFailuresToServiceUnavailable()
     {
         var services = new ServiceCollection();
