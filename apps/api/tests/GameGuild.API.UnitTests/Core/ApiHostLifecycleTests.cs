@@ -28,6 +28,28 @@ public sealed class ApiHostLifecycleTests
     }
 
     [Fact]
+    public void Configure_ShouldResolveConfiguredPathAndRegisterDataProtection()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"keys-{Guid.NewGuid():N}");
+        var builder = WebApplication.CreateBuilder();
+        builder.Configuration["DataProtection:KeysPath"] = path;
+
+        try
+        {
+            DataProtectionStartupConfiguration.Configure(builder, new TestProductComposition(true));
+            using var provider = builder.Services.BuildServiceProvider();
+
+            Directory.Exists(path).Should().BeTrue();
+            provider.GetRequiredService<IDataProtectionProvider>().Should().NotBeNull();
+        }
+        finally
+        {
+            if (Directory.Exists(path))
+                Directory.Delete(path, recursive: true);
+        }
+    }
+
+    [Fact]
     public void ConfigureServices_ShouldPersistKeysWhenDirectoryIsWritable()
     {
         var path = Path.Combine(Path.GetTempPath(), $"keys-{Guid.NewGuid():N}");
