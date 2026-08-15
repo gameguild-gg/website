@@ -115,6 +115,19 @@ public class ModuleConfigurationTests
     }
 
     [Fact]
+    public void ModuleAssemblyCatalog_WhenEntryAssemblyIsConfigured_ShouldNotDuplicateIt()
+    {
+        var configuration = new ModuleConfiguration
+        {
+            EnabledModules = ["API"]
+        };
+
+        var assemblies = ModuleAssemblyCatalog.Resolve(typeof(Program).Assembly, configuration);
+
+        assemblies.Should().ContainSingle().Which.Should().BeSameAs(typeof(Program).Assembly);
+    }
+
+    [Fact]
     public void ModuleAssemblyCatalog_ShouldDescribeEveryRequiredAssemblyInDeterministicOrder()
     {
         var configuration = new ModuleConfiguration();
