@@ -11,6 +11,8 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using AuthenticationOptions = GameGuild.Configuration.PresentationLayer.Authentication.AuthenticationOptions;
 using AuthorizationOptions = GameGuild.Configuration.PresentationLayer.Authorization.AuthorizationOptions;
+using CorsOptions = GameGuild.Configuration.PresentationLayer.CORS.CorsOptions;
+using FrameworkAuthenticationOptions = Microsoft.AspNetCore.Authentication.AuthenticationOptions;
 using Xunit;
 
 namespace GameGuild.API.UnitTests.Core;
@@ -34,6 +36,10 @@ public sealed class SecurityServiceCollectionExtensionsTests
         bearer.TokenValidationParameters.ValidAudience.Should().Be("ProductAudience");
         bearer.TokenValidationParameters.ClockSkew.Should().Be(TimeSpan.FromSeconds(15));
         bearer.TokenValidationParameters.RoleClaimType.Should().Be("role");
+        var authentication = provider.GetRequiredService<IOptions<FrameworkAuthenticationOptions>>().Value;
+        authentication.DefaultAuthenticateScheme.Should().Be(JwtBearerDefaults.AuthenticationScheme);
+        authentication.DefaultChallengeScheme.Should().Be(JwtBearerDefaults.AuthenticationScheme);
+        authentication.DefaultScheme.Should().Be(JwtBearerDefaults.AuthenticationScheme);
     }
 
     [Fact]
@@ -46,6 +52,34 @@ public sealed class SecurityServiceCollectionExtensionsTests
 
         result.Should().BeSameAs(services);
         services.Should().NotContain(descriptor => descriptor.ServiceType == typeof(IAuthenticationService));
+    }
+
+    [Fact]
+    public void SetupAuthentication_WhenDisabledThroughConfiguration_ShouldBindOptionsAndReturn()
+    {
+        var services = new ServiceCollection();
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["Authentication:EnableAuthentication"] = "false"
+            })
+            .Build();
+
+        services.SetupAuthentication(configuration, null);
+
+        services.Should().NotContain(descriptor => descriptor.ServiceType == typeof(IAuthenticationService));
+    }
+
+    [Fact]
+    public void SetupAuthentication_WhenAuthorizationIsDisabled_ShouldNotRegisterAuthorizationServices()
+    {
+        var services = new ServiceCollection();
+        var options = CreateAuthenticationOptions();
+        options.EnableAuthorization = false;
+
+        services.SetupAuthentication(CreateConfiguration("Production"), options);
+
+        services.Should().NotContain(descriptor => descriptor.ServiceType == typeof(IAuthorizationService));
     }
 
     [Fact]
@@ -99,6 +133,8 @@ public sealed class SecurityServiceCollectionExtensionsTests
 
     [Theory]
     [InlineData(true, true)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
     [InlineData(false, false)]
     public async Task SetupAuthentication_EventCallbacks_ShouldHandleOptionalLoggingAndPrincipal(
         bool registerLogging,
@@ -172,6 +208,45 @@ public sealed class SecurityServiceCollectionExtensionsTests
         await action.Should().NotThrowAsync();
     }
 
+    [Fact]
+    public void SetupCors_WhenListsAreEmpty_ShouldAllowAnyRequestComponent()
+    {
+        var services = new ServiceCollection();
+
+        services.SetupCors(new ConfigurationBuilder().Build(), null);
+
+        using var provider = services.BuildServiceProvider();
+        var options = provider.GetRequiredService<IOptions<Microsoft.AspNetCore.Cors.Infrastructure.CorsOptions>>().Value;
+        var policy = options.GetPolicy(options.DefaultPolicyName);
+        policy.Should().NotBeNull();
+        policy!.AllowAnyOrigin.Should().BeTrue();
+        policy.Methods.Should().ContainSingle().Which.Should().Be("*");
+        policy.Headers.Should().ContainSingle().Which.Should().Be("*");
+    }
+
+    [Fact]
+    public void SetupCors_WhenListsAreConfigured_ShouldRestrictRequestComponents()
+    {
+        var services = new ServiceCollection();
+        var configured = new CorsOptions
+        {
+            AllowedOrigins = ["https://example.test"],
+            AllowedMethods = ["GET", "POST"],
+            AllowedHeaders = ["Authorization", "Content-Type"]
+        };
+
+        services.SetupCors(new ConfigurationBuilder().Build(), configured);
+
+        using var provider = services.BuildServiceProvider();
+        var options = provider.GetRequiredService<IOptions<Microsoft.AspNetCore.Cors.Infrastructure.CorsOptions>>().Value;
+        var policy = options.GetPolicy(options.DefaultPolicyName);
+        policy.Should().NotBeNull();
+        policy!.AllowAnyOrigin.Should().BeFalse();
+        policy.Origins.Should().Equal("https://example.test");
+        policy.Methods.Should().Equal("GET", "POST");
+        policy.Headers.Should().Equal("Authorization", "Content-Type");
+    }
+
     private sealed class EmptyServiceProvider : IServiceProvider
     {
         public static EmptyServiceProvider Instance { get; } = new();
@@ -229,6 +304,24 @@ public sealed class SecurityServiceCollectionExtensionsTests
         var result = await EvaluatePolicyAsync(provider, principal, "TenantAdmin");
 
         result.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task SetupAuthorization_TenantAdminAcceptsTenantAdministratorWithTenantClaim()
+    {
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.SetupAuthorization(new ConfigurationBuilder().Build(), null);
+        using var provider = services.BuildServiceProvider();
+        var principal = new ClaimsPrincipal(new ClaimsIdentity(
+            [new Claim("tenant_id", Guid.NewGuid().ToString()), new Claim("role", "TenantAdmin")],
+            "test",
+            "sub",
+            "role"));
+
+        var result = await EvaluatePolicyAsync(provider, principal, "TenantAdmin");
+
+        result.Should().BeTrue();
     }
 
     [Theory]
