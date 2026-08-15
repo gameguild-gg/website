@@ -129,7 +129,7 @@ public sealed class SecurityServiceCollectionExtensionsTests
         var options = provider.GetRequiredService<IOptionsMonitor<JwtBearerOptions>>()
             .Get(JwtBearerDefaults.AuthenticationScheme);
         var context = new TokenValidatedContext(
-            new DefaultHttpContext { RequestServices = provider },
+            new DefaultHttpContext { RequestServices = EmptyServiceProvider.Instance },
             new AuthenticationScheme(JwtBearerDefaults.AuthenticationScheme, null, typeof(JwtBearerHandler)),
             options)
         {
@@ -158,6 +158,13 @@ public sealed class SecurityServiceCollectionExtensionsTests
         var action = () => options.Events.OnTokenValidated(context);
 
         await action.Should().NotThrowAsync();
+    }
+
+    private sealed class EmptyServiceProvider : IServiceProvider
+    {
+        public static EmptyServiceProvider Instance { get; } = new();
+
+        public object? GetService(Type serviceType) => null;
     }
 
     [Theory]
