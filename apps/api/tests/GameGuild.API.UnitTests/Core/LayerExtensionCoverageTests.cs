@@ -1,6 +1,7 @@
 using System.Reflection;
 using System.Reflection.Emit;
 using FluentAssertions;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using GameGuild.API.Setup;
@@ -13,6 +14,24 @@ namespace GameGuild.API.UnitTests.Core;
 public sealed class LayerExtensionCoverageTests
 {
     [Fact]
+    public void AddApplicationLayer_WithBuilderOptions_RegistersAndReturnsBuilder()
+    {
+        var builder = WebApplication.CreateBuilder(new WebApplicationOptions
+        {
+            EnvironmentName = "Testing"
+        });
+
+        var result = builder.AddApplicationLayer(options =>
+        {
+            options.ModuleConfiguration.EnabledModules = [];
+            options.LogHandlerStatistics = false;
+        });
+
+        result.Should().BeSameAs(builder);
+        builder.Services.Should().NotBeEmpty();
+    }
+
+    [Fact]
     public void CountHandlersAndValidators_WhenAssemblyPartiallyLoads_CountsAvailableTypes()
     {
         var assembly = CreatePartiallyLoadedAssembly(typeof(LoadableHandlerValidator));
@@ -24,6 +43,34 @@ public sealed class LayerExtensionCoverageTests
 
         result.handlers.Should().Be(1);
         result.validators.Should().Be(1);
+    }
+
+    [Fact]
+    public void LogHandlerStatistics_WhenAssemblyNameIsMissing_UsesUnknownModuleName()
+    {
+        var assembly = new Mock<Assembly>();
+        assembly.Setup(value => value.GetName()).Returns(new AssemblyName());
+        assembly.Setup(value => value.GetTypes()).Returns([]);
+        var namedAssembly = new Mock<Assembly>();
+        namedAssembly.Setup(value => value.GetName()).Returns(new AssemblyName("GameGuild.Coverage"));
+        namedAssembly.Setup(value => value.GetTypes()).Returns([]);
+        var logger = new Mock<ILogger>();
+
+        InvokePrivate<object?>(
+            typeof(ApplicationLayerExtensions),
+            "LogHandlerStatistics",
+            new[] { assembly.Object, namedAssembly.Object },
+            new ModuleConfiguration(),
+            logger.Object);
+
+        logger.Verify(
+            value => value.Log(
+                LogLevel.Information,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((state, _) => state.ToString()!.Contains("Unknown", StringComparison.Ordinal)),
+                It.IsAny<Exception?>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
     }
 
     [Fact]
