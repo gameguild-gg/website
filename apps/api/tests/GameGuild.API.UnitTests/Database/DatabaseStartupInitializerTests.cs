@@ -10,6 +10,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System.Data.Common;
 using System.Reflection;
+using Npgsql;
 using Xunit;
 
 namespace GameGuild.API.UnitTests.Database;
@@ -110,6 +111,24 @@ public sealed class DatabaseStartupInitializerTests
     }
 
     [Fact]
+    public async Task InitializeAsync_WhenSeedFailSettingIsOmitted_ShouldUseEnvironmentFallback()
+    {
+        await using var app = CreateApp(
+            new Dictionary<string, string?>
+            {
+                ["Database:RunStartupInitialization"] = "true"
+            },
+            services => services.AddDbContext<ApplicationDbContext>(options =>
+                options.UseInMemoryDatabase(Guid.NewGuid().ToString())));
+
+        var result = await DatabaseStartupInitializer.InitializeAsync(
+            app,
+            (_, _) => throw new InvalidOperationException("seed failed"));
+
+        result.Should().BeTrue();
+    }
+
+    [Fact]
     public async Task InitializeAsync_WithPendingSqliteMigration_ShouldApplyAndRemainIdempotent()
     {
         await using var connection = new SqliteConnection("Data Source=:memory:");
@@ -136,6 +155,40 @@ public sealed class DatabaseStartupInitializerTests
         (await DatabaseStartupInitializer.InitializeAsync(app, Seed)).Should().BeTrue();
 
         seedCalls.Should().Be(2);
+        await using var command = connection.CreateCommand();
+        command.CommandText = "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = 'StartupCoverage';";
+        Convert.ToInt32(await command.ExecuteScalarAsync()).Should().Be(1);
+    }
+
+    [Fact]
+    public async Task ApplyMigrationsAsync_WithSeparateMigrationConnection_ShouldUseProvidedContextFactory()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        await using var app = CreateApp(new Dictionary<string, string?>
+        {
+            ["ConnectionStrings:MigrationConnection"] = MigrationConnection,
+            ["Database:GrantRuntimeRoleAfterMigrations"] = "false",
+            ["Database:FailStartupOnMigrationFailure"] = "true",
+            ["Database:MigrationMaxAttempts"] = "1"
+        });
+        var factoryCalls = 0;
+
+        ApplicationDbContext CreateContext(string connectionString)
+        {
+            new NpgsqlConnectionStringBuilder(connectionString).Username.Should().Be("migration_user");
+            factoryCalls++;
+            var options = new DbContextOptionsBuilder<ApplicationDbContext>()
+                .UseSqlite(connection)
+                .ReplaceService<IMigrationsAssembly, CoverageMigrationsAssembly>()
+                .Options;
+            return new ApplicationDbContext(options);
+        }
+
+        var result = await DatabaseStartupInitializer.ApplyMigrationsAsync(app, CreateContext);
+
+        result.Should().BeTrue();
+        factoryCalls.Should().Be(1);
         await using var command = connection.CreateCommand();
         command.CommandText = "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = 'StartupCoverage';";
         Convert.ToInt32(await command.ExecuteScalarAsync()).Should().Be(1);
@@ -250,6 +303,19 @@ public sealed class DatabaseStartupInitializerTests
             await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("grant failed");
         else
             await act.Should().NotThrowAsync();
+    }
+
+    [Fact]
+    public async Task GrantRuntimeRolePrivilegesAsync_WhenFailSettingIsOmitted_ShouldUseEnvironmentFallback()
+    {
+        var configuration = CreateGrantConfiguration(failClosed: false);
+        configuration.Remove("Database:FailStartupOnGrantFailure");
+        await using var app = CreateApp(configuration);
+        await using var db = CreateGrantContext(new ThrowingGrantInterceptor());
+
+        var action = () => InvokeGrantRuntimeRolePrivilegesAsync(app, db);
+
+        await action.Should().NotThrowAsync();
     }
 
     private static WebApplication CreateApp(

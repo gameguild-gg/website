@@ -66,13 +66,20 @@ internal static class DatabaseStartupInitializer
     internal static string QuotePostgresIdentifier(string identifier) =>
         $"\"{identifier.Replace("\"", "\"\"", StringComparison.Ordinal)}\"";
 
-    private static async Task<bool> ApplyMigrationsAsync(WebApplication app)
+    private static Task<bool> ApplyMigrationsAsync(WebApplication app) =>
+        ApplyMigrationsAsync(app, CreateMigrationDbContext);
+
+    internal static async Task<bool> ApplyMigrationsAsync(
+        WebApplication app,
+        Func<string, ApplicationDbContext> migrationContextFactory)
     {
+        ArgumentNullException.ThrowIfNull(migrationContextFactory);
         var options = ResolveMigrationOptions(app.Configuration);
         var failStartupOnMigrationFailure = app.Configuration.GetValue<bool?>("Database:FailStartupOnMigrationFailure")
             ?? !DatabaseStartupConfiguration.AllowsRuntimeFallback(app.Environment.EnvironmentName);
+        var attempt = 1;
 
-        for (var attempt = 1; attempt <= options.MaxAttempts; attempt++)
+        while (true)
         {
             try
             {
@@ -80,7 +87,7 @@ internal static class DatabaseStartupInitializer
                 var migrationConnectionString = DatabaseStartupConfiguration.ResolveMigrationConnectionString(app.Configuration);
                 var ownsMigrationContext = !string.IsNullOrWhiteSpace(migrationConnectionString);
                 await using var db = ownsMigrationContext
-                    ? CreateMigrationDbContext(migrationConnectionString!)
+                    ? migrationContextFactory(migrationConnectionString!)
                     : scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
                 if (!db.Database.IsRelational())
@@ -129,6 +136,7 @@ internal static class DatabaseStartupInitializer
                     retryDelay.TotalSeconds);
 
                 await Task.Delay(retryDelay, app.Lifetime.ApplicationStopping).ConfigureAwait(false);
+                attempt++;
             }
             catch (Exception ex)
             {
@@ -148,8 +156,6 @@ internal static class DatabaseStartupInitializer
                 return false;
             }
         }
-
-        return false;
     }
 
     private static ApplicationDbContext CreateMigrationDbContext(string connectionString)
