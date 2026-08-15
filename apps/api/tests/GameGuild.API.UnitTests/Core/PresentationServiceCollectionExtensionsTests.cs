@@ -3,6 +3,7 @@ using System.Reflection;
 using FluentAssertions;
 using GameGuild.API.Setup;
 using GameGuild.Configuration.PresentationLayer.Controllers;
+using GameGuild.Identity.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ApplicationParts;
 using Microsoft.Extensions.Configuration;
@@ -62,6 +63,36 @@ public class PresentationServiceCollectionExtensionsTests
         var names = manager.ApplicationParts.Select(part => part.Name).ToArray();
         names.Should().BeEquivalentTo("GameGuild.API", "GameGuild.AI");
         names.Should().OnlyHaveUniqueItems();
+        var mvc = provider.GetRequiredService<IOptions<MvcOptions>>().Value;
+        mvc.Conventions.Should().Contain(convention => convention is MinimumOrderRouteApplicationModelConvention);
+        mvc.Conventions.Should().HaveCount(2);
+        mvc.Filters.OfType<TypeFilterAttribute>().Should().NotContain(typeFilter =>
+            typeFilter.ImplementationType == typeof(ResourcePermissionAuthorizationFilter));
+    }
+
+    [Fact]
+    public void SetupControllers_WhenOptionsComeFromConfiguration_ShouldApplyMvcOptions()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["Controllers:UseKebabCaseRoutes"] = "false",
+                ["Controllers:EnablePermissionAuthorizationFilter"] = "true",
+                ["Controllers:WriteIndentedJson"] = "false"
+            })
+            .Build();
+        var services = new ServiceCollection();
+
+        services.SetupControllers(configuration, null);
+
+        using var provider = services.BuildServiceProvider();
+        var mvc = provider.GetRequiredService<IOptions<MvcOptions>>().Value;
+        mvc.Conventions.Should().ContainSingle(convention =>
+            convention is MinimumOrderRouteApplicationModelConvention);
+        mvc.Filters.OfType<TypeFilterAttribute>().Should().Contain(typeFilter =>
+            typeFilter.ImplementationType == typeof(ResourcePermissionAuthorizationFilter));
+        provider.GetRequiredService<IOptions<JsonOptions>>().Value.JsonSerializerOptions.WriteIndented
+            .Should().BeFalse();
     }
 
     [Theory]
