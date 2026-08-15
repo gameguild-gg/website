@@ -89,6 +89,19 @@ public sealed class LayerExtensionCoverageTests
     }
 
     [Fact]
+    public void InfrastructureLayerSetupOptions_ShouldRoundTripConfiguredValues()
+    {
+        var options = new InfrastructureLayerSetupOptions
+        {
+            UseInMemoryDatabase = true,
+            ConnectionStringOverride = "Host=database;Database=application"
+        };
+
+        options.UseInMemoryDatabase.Should().BeTrue();
+        options.ConnectionStringOverride.Should().Be("Host=database;Database=application");
+    }
+
+    [Fact]
     public void AddDatabase_WhenConnectionIsMissing_ThrowsClearError()
     {
         var method = typeof(InfrastructureLayerExtensions).GetMethod(
