@@ -2,6 +2,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using FluentAssertions;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using GameGuild.API.Setup;
@@ -29,6 +30,41 @@ public sealed class LayerExtensionCoverageTests
 
         result.Should().BeSameAs(builder);
         builder.Services.Should().NotBeEmpty();
+    }
+
+    [Fact]
+    public void AddInfrastructureLayer_WithBuilderOptions_RegistersAndReturnsBuilder()
+    {
+        var builder = WebApplication.CreateBuilder(new WebApplicationOptions
+        {
+            EnvironmentName = "Testing"
+        });
+        builder.Configuration["InfrastructureLayer:EnableDatabase"] = "false";
+
+        var result = builder.AddInfrastructureLayer(options =>
+        {
+            options.UseInMemoryDatabase = true;
+        });
+
+        result.Should().BeSameAs(builder);
+        builder.Services.Should().NotBeEmpty();
+    }
+
+    [Fact]
+    public void AddDatabase_WhenConnectionIsMissing_ThrowsClearError()
+    {
+        var method = typeof(InfrastructureLayerExtensions).GetMethod(
+            "AddDatabase",
+            BindingFlags.Static | BindingFlags.NonPublic);
+        method.Should().NotBeNull();
+
+        var action = () => method!.Invoke(
+            null,
+            [new ServiceCollection(), new ConfigurationBuilder().Build(), null]);
+
+        action.Should().Throw<TargetInvocationException>()
+            .WithInnerException<InvalidOperationException>()
+            .WithMessage("*Connection string 'DefaultConnection' not found*");
     }
 
     [Fact]
@@ -186,6 +222,37 @@ public sealed class LayerExtensionCoverageTests
         services.Should().NotContain(descriptor => descriptor.ImplementationType == implementation);
     }
 
+    [Fact]
+    public void AddRepositories_HandlesNonPrefixedInterfacesAndRepositoryWithoutPublicConstructor()
+    {
+        var nonPrefixedImplementation = CreateServiceWithNonPrefixedInterfaces();
+        var (repositoryInterface, repositoryImplementation) = CreateRepositoryWithoutPublicConstructor();
+        var services = new ServiceCollection();
+        var logger = new Mock<ILogger>();
+
+        InvokePrivate<object?>(
+            typeof(InfrastructureLayerExtensions),
+            "AddRepositories",
+            services,
+            logger.Object);
+
+        services.Should().NotContain(descriptor => descriptor.ImplementationType == nonPrefixedImplementation);
+        services.Should().Contain(descriptor =>
+            descriptor.ServiceType == repositoryInterface &&
+            descriptor.ImplementationType == repositoryImplementation);
+    }
+
+    [Fact]
+    public void FormatInterfaceName_CoversPrefixDecisionStates()
+    {
+        InvokePrivate<string>(typeof(InfrastructureLayerExtensions), "FormatInterfaceName", "I")
+            .Should().Be("I");
+        InvokePrivate<string>(typeof(InfrastructureLayerExtensions), "FormatInterfaceName", "IuserService")
+            .Should().Be("Iuser Service");
+        InvokePrivate<string>(typeof(InfrastructureLayerExtensions), "FormatInterfaceName", "IUserRepository")
+            .Should().Be("User Repository");
+    }
+
     private static Mock<Assembly> CreatePartiallyLoadedAssembly(params Type?[] availableTypes)
     {
         var exception = new ReflectionTypeLoadException(
@@ -267,6 +334,54 @@ public sealed class LayerExtensionCoverageTests
         implementationBuilder.AddInterfaceImplementation(regularInterface);
         implementationBuilder.DefineDefaultConstructor(MethodAttributes.Public);
         return implementationBuilder.CreateType()!;
+    }
+
+    private static Type CreateServiceWithNonPrefixedInterfaces()
+    {
+        var assemblyName = new AssemblyName($"GameGuild.Coverage{Guid.NewGuid():N}AI");
+        var assembly = AssemblyBuilder.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.Run);
+        var module = assembly.DefineDynamicModule(assemblyName.Name!);
+        var repositoryInterface = module.DefineType(
+            "CoverageRepository",
+            TypeAttributes.Interface | TypeAttributes.Abstract | TypeAttributes.Public).CreateType()!;
+        var serviceInterface = module.DefineType(
+            "CoverageService",
+            TypeAttributes.Interface | TypeAttributes.Abstract | TypeAttributes.Public).CreateType()!;
+        var readerInterface = module.DefineType(
+            "CoverageReader",
+            TypeAttributes.Interface | TypeAttributes.Abstract | TypeAttributes.Public).CreateType()!;
+        var implementationBuilder = module.DefineType(
+            "NonPrefixedConventionType",
+            TypeAttributes.Class | TypeAttributes.Public);
+        implementationBuilder.AddInterfaceImplementation(repositoryInterface);
+        implementationBuilder.AddInterfaceImplementation(serviceInterface);
+        implementationBuilder.AddInterfaceImplementation(readerInterface);
+        implementationBuilder.DefineDefaultConstructor(MethodAttributes.Public);
+        return implementationBuilder.CreateType()!;
+    }
+
+    private static (Type Interface, Type Implementation) CreateRepositoryWithoutPublicConstructor()
+    {
+        var assemblyName = new AssemblyName($"GameGuild.Coverage{Guid.NewGuid():N}AI");
+        var assembly = AssemblyBuilder.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.Run);
+        var module = assembly.DefineDynamicModule(assemblyName.Name!);
+        var interfaceBuilder = module.DefineType(
+            "ICoverageNoConstructorRepository",
+            TypeAttributes.Interface | TypeAttributes.Abstract | TypeAttributes.Public);
+        var repositoryInterface = interfaceBuilder.CreateType()!;
+        var implementationBuilder = module.DefineType(
+            "CoverageNoConstructorRepository",
+            TypeAttributes.Class | TypeAttributes.Public);
+        implementationBuilder.AddInterfaceImplementation(repositoryInterface);
+        var constructor = implementationBuilder.DefineConstructor(
+            MethodAttributes.Private,
+            CallingConventions.Standard,
+            Type.EmptyTypes);
+        var generator = constructor.GetILGenerator();
+        generator.Emit(OpCodes.Ldarg_0);
+        generator.Emit(OpCodes.Call, typeof(object).GetConstructor(Type.EmptyTypes)!);
+        generator.Emit(OpCodes.Ret);
+        return (repositoryInterface, implementationBuilder.CreateType()!);
     }
 
     private static T InvokePrivate<T>(Type declaringType, string name, params object?[] arguments)
