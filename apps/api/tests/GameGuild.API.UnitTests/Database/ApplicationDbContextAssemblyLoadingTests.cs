@@ -66,6 +66,27 @@ public sealed class ApplicationDbContextAssemblyLoadingTests
         InvokePrivate<bool>("IsGameGuildAssemblyName", name).Should().Be(expected);
     }
 
+    [Fact]
+    public void ForceLoadGameGuildAssembliesFromOutput_IgnoresInvalidOptionalModule()
+    {
+        var probePath = Path.Combine(
+            AppDomain.CurrentDomain.BaseDirectory,
+            $"GameGuild.InvalidModule.{Guid.NewGuid():N}.dll");
+
+        try
+        {
+            File.WriteAllText(probePath, "not a managed assembly");
+
+            var act = () => InvokePrivate<object?>("ForceLoadGameGuildAssembliesFromOutput");
+
+            act.Should().NotThrow();
+        }
+        finally
+        {
+            File.Delete(probePath);
+        }
+    }
+
     private static T InvokePrivate<T>(string name, params object?[] arguments)
     {
         var method = typeof(ApplicationDbContext).GetMethod(name, BindingFlags.Static | BindingFlags.NonPublic);
