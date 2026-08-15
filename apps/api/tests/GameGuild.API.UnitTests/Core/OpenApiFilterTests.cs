@@ -191,6 +191,8 @@ public sealed class OpenApiFilterTests
         InvokePrivate<bool>("IsAliasOfPrefix", "tenants", "tenants").Should().BeTrue();
         InvokePrivate<bool>("IsAliasOfPrefix", "widget", "tenants").Should().BeFalse();
         InvokePrivate<string>("NormalizeLeaf", "", "Widget").Should().Be("widget");
+        InvokePrivate<string>("NormalizeLeaf", "tenants", "Widget").Should().Be("widget");
+        InvokePrivate<string>("NormalizeLeaf", "tenants", "Tenants").Should().BeEmpty();
         InvokePrivate<string>("NormalizeExplicitTag", "tenants", "tenant-tenants").Should().Be("tenants");
         InvokePrivate<bool>("IsFullyQualified", new List<string>()).Should().BeFalse();
         InvokePrivate<string>("ToKebabCase", " ").Should().BeEmpty();

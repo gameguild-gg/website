@@ -83,10 +83,8 @@ public static class OpenApiExtensions
                             if (cad.ControllerTypeInfo.GetCustomAttributes(typeof(ApiVersionAttribute), false)
                                     .FirstOrDefault() is not ApiVersionAttribute apiVersionAttr)
                                 return string.Equals(apiDesc.GroupName, docName, StringComparison.OrdinalIgnoreCase);
-                            var version = apiVersionAttr.Versions.FirstOrDefault();
-
-                            return version != null && docName.Equals($"v{version.MajorVersion}",
-                                StringComparison.OrdinalIgnoreCase);
+                            return apiVersionAttr.Versions.Any(version =>
+                                docName.Equals($"v{version.MajorVersion}", StringComparison.OrdinalIgnoreCase));
                         }
                     );
                 }
@@ -116,13 +114,14 @@ public static class OpenApiExtensions
                 // e.g., "GameGuild.Identity.Authentication.UserDto" -> "Identity_Authentication_UserDto"
                 c.CustomSchemaIds(type =>
                 {
-                    var fullName = type.FullName ?? type.Name;
+                    var schemaType = type.IsGenericType ? type.GetGenericTypeDefinition() : type;
+                    var fullName = schemaType.FullName ?? schemaType.Name;
                     var parts = fullName.Split('.');
 
                     if (type.IsGenericType)
                     {
                         // For generic types, include module path + generic type + args
-                        var genericTypeName = type.Name.Split('`')[0];
+                        var genericTypeName = schemaType.Name.Split('`')[0];
                         var genericArgs = string.Join("", type.GetGenericArguments().Select(t => t.Name));
 
                         // Find module path (everything between the product prefix and the type name)
@@ -226,8 +225,8 @@ public static class OpenApiExtensions
                     setup.AssumeDefaultVersionWhenUnspecified = options.AssumeDefaultVersionWhenUnspecified;
                     // Parse DefaultVersion (e.g., "1.0") into ApiVersion
                     var versionParts = options.DefaultVersion.Split('.');
-                    var major = int.TryParse(versionParts.ElementAtOrDefault(0) ?? "1", out var mj) ? mj : 1;
-                    var minor = int.TryParse(versionParts.ElementAtOrDefault(1) ?? "0", out var mn) ? mn : 0;
+                    var major = ParseVersionPart(versionParts, 0, 1);
+                    var minor = ParseVersionPart(versionParts, 1, 0);
                     setup.DefaultApiVersion = new ApiVersion(major, minor);
                     setup.ApiVersionReader = ApiVersioningOptionsBuilder.CreateReader(options.ReadingStrategy, options);
                 }
@@ -240,6 +239,14 @@ public static class OpenApiExtensions
             );
 
         return services;
+    }
+
+    private static int ParseVersionPart(IReadOnlyList<string> versionParts, int index, int fallback)
+    {
+        if (index >= versionParts.Count)
+            return fallback;
+
+        return int.TryParse(versionParts[index], out var value) ? value : fallback;
     }
 
     /// <summary>
