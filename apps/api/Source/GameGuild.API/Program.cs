@@ -5,7 +5,6 @@ using GameGuild.API.Integration;
 using GameGuild.API.Setup;
 using GameGuild.Commerce.Subscriptions;
 using GameGuild.Email;
-using Microsoft.AspNetCore.DataProtection;
 
 var builder = WebApplication.CreateBuilder(args);
 var productComposition = ApiProductComposition.Instance;
@@ -19,23 +18,7 @@ builder.Services.Configure<Microsoft.AspNetCore.Http.Json.JsonOptions>(options =
     options.SerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
 });
 
-var dataProtectionKeysPath = builder.Configuration["DataProtection:KeysPath"]
-    ?? Environment.GetEnvironmentVariable("DATAPROTECTION_KEYS_PATH")
-    ?? productComposition.DefaultDataProtectionKeysPath;
-
-try
-{
-    Directory.CreateDirectory(dataProtectionKeysPath);
-    builder.Services.AddDataProtection()
-        .PersistKeysToFileSystem(new DirectoryInfo(dataProtectionKeysPath))
-        .SetApplicationName(productComposition.ApplicationName);
-}
-catch (Exception exception)
-{
-    Console.Error.WriteLine(
-        $"[DataProtection] Failed to configure persistent keys at '{dataProtectionKeysPath}': {exception.Message}. Falling back to defaults.");
-    builder.Services.AddDataProtection().SetApplicationName(productComposition.ApplicationName);
-}
+DataProtectionStartupConfiguration.Configure(builder, productComposition);
 
 builder.AddAppSettings();
 builder.AddEnvironmentVariables();
@@ -65,17 +48,7 @@ var databaseInitialized = await DatabaseStartupInitializer.InitializeAsync(
     app,
     productComposition.SeedAsync).ConfigureAwait(false);
 
-if (!await productComposition.InitializeAsync(
-        app,
-        databaseInitialized,
-        args,
-        app.Lifetime.ApplicationStopping).ConfigureAwait(false))
-{
-    return;
-}
-
-app.ConfigurePipeline();
-await app.RunAsync().ConfigureAwait(false);
+await ApiHostLifecycle.RunAsync(app, productComposition, databaseInitialized, args).ConfigureAwait(false);
 
 namespace GameGuild.API
 {

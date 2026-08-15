@@ -1,5 +1,4 @@
 using GameGuild.API.Database;
-using GameGuild.API.Dashboard;
 using GameGuild.API.HealthChecks;
 using GameGuild.Commerce.Billing;
 using GameGuild.Commerce.Payments;
@@ -112,8 +111,6 @@ internal sealed class ApiProductComposition : IApiProductComposition
         builder.Services.AddProjectWorkModule();
         builder.Services.AddTestingLabModule(builder.Configuration);
         builder.Services.AddLaunchPadModule();
-        builder.Services.AddScoped<IDashboardWorkspaceContextService, DashboardWorkspaceContextService>();
-
         builder.Services.AddHealthChecks()
             .AddCheck<PaymentProviderReadinessHealthCheck>(
                 "payment-provider",
