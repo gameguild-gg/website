@@ -84,6 +84,16 @@ public sealed class OperationalStartupConfigurationTests
     }
 
     [Fact]
+    public void Validate_RejectsMissingSmtpPort()
+    {
+        var values = CompleteValues();
+        values.Remove("EmailDelivery:SmtpPort");
+
+        OperationalStartupConfiguration.Validate(CreateConfiguration(values), Environments.Production)
+            .Should().ContainSingle(message => message.Contains("positive SMTP port", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public void Validate_RejectsPlaceholderAndShortSecrets()
     {
         var values = CompleteValues();
