@@ -42,14 +42,17 @@ public sealed class OpenApiFilterTests
         var filter = new FlagsEnumSchemaFilter();
         var generator = Mock.Of<ISchemaGenerator>();
         var repository = new SchemaRepository();
+        var nonEnumSchema = new OpenApiSchema { Type = "string" };
         var plainSchema = new OpenApiSchema { Type = "integer", Format = "int32", Enum = [new OpenApiInteger(1)] };
         var flagsSchema = new OpenApiSchema { Type = "integer", Format = "int32", Enum = [new OpenApiInteger(1)] };
         var flagsSchemaWithoutEnum = new OpenApiSchema { Type = "integer", Format = "int32", Enum = null! };
 
+        filter.Apply(nonEnumSchema, new SchemaFilterContext(typeof(string), generator, repository));
         filter.Apply(plainSchema, new SchemaFilterContext(typeof(PlainValues), generator, repository));
         filter.Apply(flagsSchema, new SchemaFilterContext(typeof(FlagValues), generator, repository));
         filter.Apply(flagsSchemaWithoutEnum, new SchemaFilterContext(typeof(FlagValues), generator, repository));
 
+        nonEnumSchema.Type.Should().Be("string");
         plainSchema.Type.Should().Be("integer");
         plainSchema.Enum.Should().ContainSingle();
         flagsSchema.Type.Should().Be("string");
@@ -183,6 +186,7 @@ public sealed class OpenApiFilterTests
         InvokePrivate<string>("NormalizeExplicitTag", "tenants", " ").Should().Be("tenants");
         InvokePrivate<List<string>>("NormalizePath", " ").Should().BeEmpty();
         InvokePrivate<string>("CollapseDuplicatePrefixToken", " ", "tenants").Should().BeEmpty();
+        InvokePrivate<string>("CollapseDuplicatePrefixToken", "widget", " ").Should().Be("widget");
         InvokePrivate<string>("CollapseDuplicatePrefixToken", "tenants", "tenants").Should().Be("tenants");
         InvokePrivate<bool>("IsAliasOfPrefix", "tenants", "tenants").Should().BeTrue();
         InvokePrivate<bool>("IsAliasOfPrefix", "widget", "tenants").Should().BeFalse();
@@ -190,6 +194,7 @@ public sealed class OpenApiFilterTests
         InvokePrivate<string>("NormalizeExplicitTag", "tenants", "tenant-tenants").Should().Be("tenants");
         InvokePrivate<bool>("IsFullyQualified", new List<string>()).Should().BeFalse();
         InvokePrivate<string>("ToKebabCase", " ").Should().BeEmpty();
+        InvokePrivate<string>("ToKebabCase", "__API").Should().Be("api");
         InvokePrivate<string>("ToKebabCase", "API_Key Value").Should().Be("api-key-value");
         InvokePrivate<string>("ToKebabCase", "alpha1").Should().Be("alpha1");
     }

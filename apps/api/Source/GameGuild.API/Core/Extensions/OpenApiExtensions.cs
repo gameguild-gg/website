@@ -563,7 +563,7 @@ internal sealed class ModuleControllerTagOperationFilter : IOperationFilter
 
             if (char.IsUpper(character))
             {
-                if (index > 0 && builder[^1] != '-')
+                if (index > 0 && builder.Length > 0 && builder[^1] != '-')
                 {
                     var previous = value[index - 1];
                     var nextIsLower = index + 1 < value.Length && char.IsLower(value[index + 1]);
