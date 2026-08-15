@@ -1,7 +1,8 @@
 using System.Net;
 using FluentAssertions;
-using GameGuild.API.Setup;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using GameGuild.API.Setup;
 using Xunit;
 
 namespace GameGuild.API.UnitTests.Core;
@@ -34,6 +35,31 @@ public sealed class PipelineExtensionsTests
         var context = CreateContext("/api/users", IPAddress.Parse("203.0.113.10"));
 
         PipelineExtensions.ShouldRedirectToHttps(context).Should().BeTrue();
+    }
+
+    [Fact]
+    public void ShouldRedirectToHttps_RedirectsTrafficWithoutRemoteAddress()
+    {
+        var context = new DefaultHttpContext();
+        context.Request.Path = "/api/users";
+
+        PipelineExtensions.ShouldRedirectToHttps(context).Should().BeTrue();
+    }
+
+    [Theory]
+    [InlineData("Production")]
+    [InlineData("Staging")]
+    public async Task ConfigureHsts_HandlesProductionAndNonProductionEnvironments(string environmentName)
+    {
+        var builder = WebApplication.CreateBuilder(new WebApplicationOptions
+        {
+            EnvironmentName = environmentName
+        });
+        await using var app = builder.Build();
+
+        var action = () => PipelineExtensions.ConfigureHsts(app);
+
+        action.Should().NotThrow();
     }
 
     private static DefaultHttpContext CreateContext(string path, IPAddress remoteAddress)

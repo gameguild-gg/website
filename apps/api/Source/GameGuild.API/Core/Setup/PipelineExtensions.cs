@@ -29,7 +29,7 @@ public static class PipelineExtensions
         app.UseForwardedHeaders();
 
         // 03. HSTS (HTTP Strict Transport Security, production only)
-        if (app.Environment.IsProduction()) app.UseHsts();
+        ConfigureHsts(app);
 
         // 04. HTTPS Redirection (force secure connections for external traffic only)
         if (!app.Environment.IsDevelopment())
@@ -143,6 +143,11 @@ public static class PipelineExtensions
 
     internal static bool ShouldRedirectToHttps(HttpContext context) =>
         !IsLoopbackRequest(context) && !IsHealthRequest(context);
+
+    internal static void ConfigureHsts(WebApplication app)
+    {
+        if (app.Environment.IsProduction()) app.UseHsts();
+    }
 
     private static bool IsHealthRequest(HttpContext context)
     {
