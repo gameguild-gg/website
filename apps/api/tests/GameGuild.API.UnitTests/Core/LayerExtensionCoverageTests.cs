@@ -15,6 +15,44 @@ namespace GameGuild.API.UnitTests.Core;
 public sealed class LayerExtensionCoverageTests
 {
     [Fact]
+    public void AddApplicationLayer_WithDefaultOptions_RegistersAndReturnsBuilder()
+    {
+        var builder = WebApplication.CreateBuilder(new WebApplicationOptions
+        {
+            EnvironmentName = "Testing"
+        });
+
+        var result = builder.AddApplicationLayer();
+
+        result.Should().BeSameAs(builder);
+        builder.Services.Should().NotBeEmpty();
+    }
+
+    [Fact]
+    public void AddApplicationLayer_WhenRequiredArgumentsAreNull_Throws()
+    {
+        WebApplicationBuilder builder = null!;
+        IServiceCollection services = null!;
+        var validBuilder = WebApplication.CreateBuilder();
+        var validServices = new ServiceCollection();
+        var logger = new Mock<ILogger>().Object;
+
+        var nullBuilderDefault = () => builder.AddApplicationLayer();
+        var nullBuilderConfigured = () => builder.AddApplicationLayer(_ => { });
+        var nullBuilderConfiguration = () => validBuilder.AddApplicationLayer(null!);
+        var nullServices = () => services.AddApplicationLayer(logger, _ => { });
+        var nullLogger = () => validServices.AddApplicationLayer(null!, _ => { });
+        var nullServiceConfiguration = () => validServices.AddApplicationLayer(logger, null!);
+
+        nullBuilderDefault.Should().Throw<ArgumentNullException>();
+        nullBuilderConfigured.Should().Throw<ArgumentNullException>();
+        nullBuilderConfiguration.Should().Throw<ArgumentNullException>();
+        nullServices.Should().Throw<ArgumentNullException>();
+        nullLogger.Should().Throw<ArgumentNullException>();
+        nullServiceConfiguration.Should().Throw<ArgumentNullException>();
+    }
+
+    [Fact]
     public void AddApplicationLayer_WithBuilderOptions_RegistersAndReturnsBuilder()
     {
         var builder = WebApplication.CreateBuilder(new WebApplicationOptions
@@ -70,7 +108,11 @@ public sealed class LayerExtensionCoverageTests
     [Fact]
     public void CountHandlersAndValidators_WhenAssemblyPartiallyLoads_CountsAvailableTypes()
     {
-        var assembly = CreatePartiallyLoadedAssembly(typeof(LoadableHandlerValidator));
+        var assembly = CreatePartiallyLoadedAssembly(
+            typeof(IRequestHandler<>),
+            typeof(InfrastructureAbstractType),
+            typeof(NonGenericMarker),
+            typeof(LoadableHandlerValidator));
 
         var result = InvokePrivate<(int handlers, int validators)>(
             typeof(ApplicationLayerExtensions),
@@ -79,6 +121,60 @@ public sealed class LayerExtensionCoverageTests
 
         result.handlers.Should().Be(1);
         result.validators.Should().Be(1);
+    }
+
+    [Fact]
+    public void CountHandlersAndValidators_WhenAssemblyLoads_CountsOnlyConcreteGenericContracts()
+    {
+        var assembly = new Mock<Assembly>();
+        assembly.Setup(value => value.GetTypes()).Returns(
+        [
+            typeof(IRequestHandler<>),
+            typeof(InfrastructureAbstractType),
+            typeof(NonGenericMarker),
+            typeof(GenericMarker),
+            typeof(LoadableHandlerValidator)
+        ]);
+
+        var result = InvokePrivate<(int handlers, int validators)>(
+            typeof(ApplicationLayerExtensions),
+            "CountHandlersAndValidators",
+            assembly.Object);
+
+        result.handlers.Should().Be(1);
+        result.validators.Should().Be(1);
+    }
+
+    [Fact]
+    public void DiscoverModuleAssemblies_ReturnsEnabledAssembliesInOrdinalOrder()
+    {
+        var config = new ModuleConfiguration();
+        var logger = new Mock<ILogger>();
+
+        var assemblies = InvokePrivate<Assembly[]>(
+            typeof(ApplicationLayerExtensions),
+            "DiscoverModuleAssemblies",
+            config,
+            logger.Object);
+
+        assemblies.Should().NotBeEmpty();
+        assemblies.Select(value => value.GetName().Name)
+            .Should().BeInAscendingOrder(StringComparer.Ordinal);
+    }
+
+    [Fact]
+    public void AddApplicationLayer_WithStatisticsEnabled_RegistersAndReturnsServices()
+    {
+        var services = new ServiceCollection();
+        var logger = new Mock<ILogger>();
+
+        var result = services.AddApplicationLayer(logger.Object, options =>
+        {
+            options.ModuleConfiguration.EnabledModules = [];
+            options.LogHandlerStatistics = true;
+        });
+
+        result.Should().BeSameAs(services);
     }
 
     [Fact]
@@ -396,6 +492,12 @@ public sealed class LayerExtensionCoverageTests
 
     private interface IRequestHandler<T>;
     private interface IValidator<T>;
+    private interface INonGenericMarker;
+    private sealed class NonGenericMarker : INonGenericMarker;
+    private sealed class GenericMarker : IComparable<GenericMarker>
+    {
+        public int CompareTo(GenericMarker? other) => 0;
+    }
     private sealed class LoadableHandlerValidator : IRequestHandler<string>, IValidator<string>;
 }
 
