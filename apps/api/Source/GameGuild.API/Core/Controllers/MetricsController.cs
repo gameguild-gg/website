@@ -89,7 +89,7 @@ public class MetricsController(ILogger<MetricsController> logger) : ControllerBa
         metrics.AppendLine($"dotnet_gc_memory_total_bytes {GC.GetTotalMemory(false)}");
 
         // Application info metric
-        var version = assembly.GetName().Version?.ToString() ?? "unknown";
+        var version = assembly.GetName().Version!.ToString();
         metrics.AppendLine("# HELP app_info Application version and build information.");
         metrics.AppendLine("# TYPE app_info gauge");
         metrics.AppendLine($"app_info{{version=\"{version}\",runtime=\"{RuntimeInformation.FrameworkDescription}\"}} 1");
