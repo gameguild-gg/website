@@ -261,7 +261,7 @@ internal sealed class DatabaseReadinessHealthCheck(ApplicationDbContext dbContex
             {
                 ["database"] = isRelational
                     ? dbContext.Database.GetDbConnection().Database
-                    : dbContext.Database.ProviderName ?? "Unknown",
+                    : dbContext.Database.ProviderName!,
                 ["appliedMigrations"] = appliedMigrationCount,
                 ["pendingMigrations"] = pendingMigrationCount,
             };
