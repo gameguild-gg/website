@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace GameGuild.Assets.Security;
 
@@ -19,6 +20,8 @@ public class SecureAssetDeliveryController : BaseApiController
     private readonly IAssetContentRepository _contentRepository;
     private readonly IAssetReferenceRepository _referenceRepository;
     private readonly IActorContextAccessor _actorContextAccessor;
+    private readonly IAssetStorageService _storageService;
+    private readonly AssetAccessOptions _accessOptions;
     private readonly ILogger<SecureAssetDeliveryController> _logger;
 
     public SecureAssetDeliveryController(
@@ -30,6 +33,8 @@ public class SecureAssetDeliveryController : BaseApiController
         IAssetContentRepository contentRepository,
         IAssetReferenceRepository referenceRepository,
         IActorContextAccessor actorContextAccessor,
+        IAssetStorageService storageService,
+        IOptions<AssetAccessOptions> accessOptions,
         ILogger<SecureAssetDeliveryController> logger)
     {
         _accessService = accessService;
@@ -40,6 +45,8 @@ public class SecureAssetDeliveryController : BaseApiController
         _contentRepository = contentRepository;
         _referenceRepository = referenceRepository;
         _actorContextAccessor = actorContextAccessor;
+        _storageService = storageService;
+        _accessOptions = accessOptions.Value;
         _logger = logger;
     }
 
@@ -91,21 +98,23 @@ public class SecureAssetDeliveryController : BaseApiController
             return NotFound();
         }
 
-        // Threat #2 & #4: Validate token (includes tenant in signature)
-        if (!string.IsNullOrEmpty(token))
+        var hasSignedToken = !string.IsNullOrEmpty(token);
+        var assetTenantId = reference.TenantId ?? Guid.Empty;
+
+        // Threat #2 & #4: validate bearer tokens against the persisted asset tenant.
+        if (hasSignedToken && !_accessService.ValidateToken(token!, assetId, reference.TenantId))
         {
-            if (!_accessService.ValidateToken(token, assetId, actor.TenantId))
-            {
-                await Record403IfApplicable(clientIp, ct).ConfigureAwait(false);
-                return Forbid("Invalid or expired token");
-            }
+            await Record403IfApplicable(clientIp, ct).ConfigureAwait(false);
+            return ForbiddenProblem("Invalid or expired token");
         }
 
         // Threat #6: Fail-closed tenant validation
-        var tenantValidation = _tenantValidation.ValidateTenantAccess(
-            actor.TenantId,
-            reference.ParentResourceId ?? Guid.Empty, // Asset's tenant context
-            actor);
+        var tenantValidation = hasSignedToken
+            ? _tenantValidation.ValidateTokenTenant(assetTenantId, actor.TenantId)
+            : _tenantValidation.ValidateTenantAccess(
+                actor.TenantId,
+                assetTenantId,
+                actor);
 
         if (!tenantValidation.IsValid)
         {
@@ -113,7 +122,7 @@ public class SecureAssetDeliveryController : BaseApiController
                 "Tenant validation failed for asset {AssetId}: {Error}",
                 assetId, tenantValidation.Error);
             await Record403IfApplicable(clientIp, ct).ConfigureAwait(false);
-            return Forbid(tenantValidation.Error ?? "Tenant access denied");
+            return ForbiddenProblem(tenantValidation.Error ?? "Tenant access denied");
         }
 
         // Threat #7: Block serving content pending or failed virus scan
@@ -214,21 +223,49 @@ public class SecureAssetDeliveryController : BaseApiController
             }
         }
 
-        // Generate access URL or serve content directly
-        var accessUrl = await _accessService.GenerateAccessUrlAsync(
+        if (hasSignedToken)
+        {
+            var bucketName = reference.Content.BucketName;
+            var objectKey = reference.Content.ObjectKey;
+
+            if (transformSpec is { IsIdentity: false })
+            {
+                var transformed = await _accessService.GetOrCreateTransformationAsync(
+                    reference.Content.Id,
+                    transformSpec,
+                    ct).ConfigureAwait(false);
+                if (transformed == null)
+                {
+                    return ForbiddenProblem("Transformation is unavailable");
+                }
+
+                bucketName = transformed.BucketName;
+                objectKey = transformed.ObjectKey;
+            }
+
+            var expiry = TimeSpan.FromMinutes(Math.Max(1, _accessOptions.DefaultExpiryMinutes));
+            var storageUrl = await _storageService.GeneratePresignedUrlAsync(
+                bucketName,
+                objectKey,
+                expiry,
+                isDownload: true,
+                ct).ConfigureAwait(false);
+            await _referenceRepository.RecordAccessAsync(assetId, ct).ConfigureAwait(false);
+            return Redirect(storageUrl);
+        }
+
+        var accessUrl = await _accessService.GenerateDirectStorageUrlAsync(
             assetId,
             actor.SubjectIdAsGuid,
             actor.TenantId,
-            transformSpec,
             ct).ConfigureAwait(false);
 
         if (accessUrl == null)
         {
             await Record403IfApplicable(clientIp, ct).ConfigureAwait(false);
-            return Forbid("Access denied");
+            return ForbiddenProblem("Access denied");
         }
 
-        // Redirect to storage URL or return URL
         return Redirect(accessUrl.Url);
     }
 
@@ -312,6 +349,16 @@ public class SecureAssetDeliveryController : BaseApiController
         }
 
         return HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+    }
+
+    private ObjectResult ForbiddenProblem(string detail)
+    {
+        return StatusCode(StatusCodes.Status403Forbidden, new ProblemDetails
+        {
+            Title = "Access Denied",
+            Detail = detail,
+            Status = StatusCodes.Status403Forbidden
+        });
     }
 
     private async Task Record403IfApplicable(string clientIp, CancellationToken ct)

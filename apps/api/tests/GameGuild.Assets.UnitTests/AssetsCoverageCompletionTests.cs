@@ -615,6 +615,8 @@ public class AssetsCoverageCompletionTests
             Mock.Of<IAssetContentRepository>(),
             Mock.Of<IAssetReferenceRepository>(),
             Mock.Of<IActorContextAccessor>(),
+            Mock.Of<IAssetStorageService>(),
+            Options.Create(new AssetAccessOptions()),
             NullLogger<SecureAssetDeliveryController>.Instance);
 
     private static StorageServiceFactory CreateStorageFactory()
