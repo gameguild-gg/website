@@ -48,6 +48,20 @@ public class AssetContentRepository : IAssetContentRepository
             .ToListAsync(ct).ConfigureAwait(false);
     }
 
+    public async Task<bool> TryBeginVirusScanAsync(Guid id, CancellationToken ct = default)
+    {
+        var updated = await _context.Set<AssetContent>()
+            .Where(content => content.Id == id && content.VirusScanStatus == VirusScanStatus.Pending)
+            .ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(content => content.VirusScanStatus, VirusScanStatus.Scanning)
+                    .SetProperty(content => content.VirusScanCompletedAt, (DateTime?)null),
+                ct)
+            .ConfigureAwait(false);
+
+        return updated == 1;
+    }
+
     public async Task<IReadOnlyList<AssetContent>> GetPendingModerationAsync(int limit = 100, CancellationToken ct = default)
     {
         return await _context.Set<AssetContent>()
