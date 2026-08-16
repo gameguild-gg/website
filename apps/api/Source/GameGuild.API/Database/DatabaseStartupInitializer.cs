@@ -93,6 +93,13 @@ internal static class DatabaseStartupInitializer
                 if (!db.Database.IsRelational())
                     return true;
 
+                foreach (var prerequisite in scope.ServiceProvider.GetServices<IDatabaseMigrationPrerequisite>())
+                {
+                    await prerequisite
+                        .PrepareAsync(db, app.Lifetime.ApplicationStopping)
+                        .ConfigureAwait(false);
+                }
+
                 var pendingMigrations = (await db.Database
                         .GetPendingMigrationsAsync(app.Lifetime.ApplicationStopping)
                         .ConfigureAwait(false))
