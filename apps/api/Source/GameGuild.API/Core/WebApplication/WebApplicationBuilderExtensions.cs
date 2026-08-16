@@ -1,4 +1,4 @@
-﻿namespace GameGuild.API;
+namespace GameGuild.API;
 
 using Microsoft.Extensions.Configuration.EnvironmentVariables;
 using Microsoft.Extensions.Configuration.Json;
