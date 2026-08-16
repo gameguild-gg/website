@@ -100,9 +100,14 @@ public class SecureAssetDeliveryController : BaseApiController
 
         var hasSignedToken = !string.IsNullOrEmpty(token);
         var assetTenantId = reference.TenantId ?? Guid.Empty;
+        var transformSpec = ValidateTransformation(transform, reference.Content.Kind, out var transformationError);
+        if (transformationError != null)
+        {
+            return transformationError;
+        }
 
         // Threat #2 & #4: validate bearer tokens against the persisted asset tenant.
-        if (hasSignedToken && !_accessService.ValidateToken(token!, assetId, reference.TenantId))
+        if (hasSignedToken && !_accessService.ValidateToken(token!, assetId, reference.TenantId, transformSpec))
         {
             await Record403IfApplicable(clientIp, ct).ConfigureAwait(false);
             return ForbiddenProblem("Invalid or expired token");
@@ -197,29 +202,6 @@ public class SecureAssetDeliveryController : BaseApiController
                     Title = "Payment Required",
                     Detail = windowValidation.Error ?? "Valid purchase required for access"
                 });
-            }
-        }
-
-        // Threat #5: Validate transformation limits
-        TransformationSpec? transformSpec = null;
-        if (!string.IsNullOrEmpty(transform))
-        {
-            transformSpec = TransformationSpec.Parse(transform);
-            if (transformSpec != null)
-            {
-                var transformValidation = _transformationValidator.Validate(
-                    transformSpec, reference.Content.Kind);
-
-                if (!transformValidation.IsValid)
-                {
-                    return BadRequest(new ProblemDetails
-                    {
-                        Title = "Invalid Transformation",
-                        Detail = transformValidation.Error
-                    });
-                }
-
-                transformSpec = transformValidation.SanitizedSpec;
             }
         }
 
@@ -359,6 +341,37 @@ public class SecureAssetDeliveryController : BaseApiController
             Detail = detail,
             Status = StatusCodes.Status403Forbidden
         });
+    }
+
+    private TransformationSpec? ValidateTransformation(
+        string? transform,
+        AssetKind assetKind,
+        out ObjectResult? error)
+    {
+        error = null;
+        if (string.IsNullOrEmpty(transform))
+        {
+            return null;
+        }
+
+        var transformSpec = TransformationSpec.Parse(transform);
+        if (transformSpec == null)
+        {
+            return null;
+        }
+
+        var validation = _transformationValidator.Validate(transformSpec, assetKind);
+        if (validation.IsValid)
+        {
+            return validation.SanitizedSpec;
+        }
+
+        error = BadRequest(new ProblemDetails
+        {
+            Title = "Invalid Transformation",
+            Detail = validation.Error
+        });
+        return null;
     }
 
     private async Task Record403IfApplicable(string clientIp, CancellationToken ct)

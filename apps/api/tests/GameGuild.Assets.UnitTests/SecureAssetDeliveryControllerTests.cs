@@ -24,7 +24,7 @@ public sealed class SecureAssetDeliveryControllerTests
         var storageService = new Mock<IAssetStorageService>();
 
         accessService
-            .Setup(service => service.ValidateToken("valid-token", assetId, tenantId))
+            .Setup(service => service.ValidateToken("valid-token", assetId, tenantId, null))
             .Returns(true);
         tenantValidation
             .Setup(service => service.ValidateTokenTenant(tenantId, null))
@@ -63,7 +63,7 @@ public sealed class SecureAssetDeliveryControllerTests
         var accessService = new Mock<IAssetAccessService>();
 
         accessService
-            .Setup(service => service.ValidateToken("invalid-token", assetId, tenantId))
+            .Setup(service => service.ValidateToken("invalid-token", assetId, tenantId, null))
             .Returns(false);
 
         var controller = CreateController(

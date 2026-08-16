@@ -102,10 +102,20 @@ public class AssetTokenService : IAssetTokenService
     /// </summary>
     public AssetTokenPayload? ValidateToken(string token, Guid assetReferenceId, Guid? tenantId)
     {
+        return ValidateToken(token, assetReferenceId, tenantId, null);
+    }
+
+    public AssetTokenPayload? ValidateToken(
+        string token,
+        Guid assetReferenceId,
+        Guid? tenantId,
+        TransformationSpec? transformation)
+    {
         try
         {
+            var transformSpec = transformation?.ToCanonicalString() ?? string.Empty;
             // Create a cache key combining token + context for lookup
-            var cacheKey = $"{token}:{assetReferenceId}:{tenantId}";
+            var cacheKey = $"{token}:{assetReferenceId}:{tenantId}:{transformSpec}";
             
             // Check cache first (O(1) lookup)
             if (_tokenCache.TryGetValue(cacheKey, out var cached))
@@ -159,7 +169,7 @@ public class AssetTokenService : IAssetTokenService
             // Verify signature for all possible access policies (O(n) on cache miss only)
             foreach (var accessPolicy in Enum.GetValues<AssetAccessPolicy>())
             {
-                var payload = BuildPayload(assetReferenceId, timeWindow, expiryTimestamp, accessPolicy, string.Empty, tenantId ?? Guid.Empty);
+                var payload = BuildPayload(assetReferenceId, timeWindow, expiryTimestamp, accessPolicy, transformSpec, tenantId ?? Guid.Empty);
                 var expectedSignature = ComputeSignature(payload);
 
                 if (providedSignature.SequenceEqual(expectedSignature.AsSpan(0, 16)))
@@ -169,7 +179,7 @@ public class AssetTokenService : IAssetTokenService
                         timeWindow,
                         expiryTimestamp,
                         accessPolicy,
-                        string.Empty,
+                        transformSpec,
                         tenantId ?? Guid.Empty);
                     
                     // Cache the validated token (with size limit to prevent memory exhaustion)
