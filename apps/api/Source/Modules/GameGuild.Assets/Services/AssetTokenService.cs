@@ -49,6 +49,8 @@ public class AssetTokenService : IAssetTokenService
     /// </summary>
     private const int MaxCacheEntries = 10000;
 
+    private static readonly byte[] DevelopmentFallbackSecretKey = RandomNumberGenerator.GetBytes(32);
+
     public AssetTokenService(IOptions<AssetTokenOptions> options)
     {
         var opts = options.Value;
@@ -56,7 +58,7 @@ public class AssetTokenService : IAssetTokenService
         // Generate a key if not provided (development only)
         if (string.IsNullOrEmpty(opts.SecretKey))
         {
-            _secretKey = RandomNumberGenerator.GetBytes(32);
+            _secretKey = DevelopmentFallbackSecretKey;
         }
         else
         {
@@ -85,11 +87,11 @@ public class AssetTokenService : IAssetTokenService
         var payload = BuildPayload(assetReferenceId, timeWindow, expiryTimestamp, accessPolicy, transformSpec, tenantId);
         var signature = ComputeSignature(payload);
 
-        // Encode: timeWindow (2 bytes) + expiry (4 bytes) + signature (16 bytes) = 22 bytes base64
-        var tokenBytes = new byte[22];
-        BitConverter.GetBytes((short)timeWindow).CopyTo(tokenBytes, 0);
-        BitConverter.GetBytes((int)(expiryTimestamp - GetBaseTimestamp())).CopyTo(tokenBytes, 2);
-        signature.AsSpan(0, 16).CopyTo(tokenBytes.AsSpan(6));
+        // Encode: timeWindow (4 bytes) + expiry (4 bytes) + signature (16 bytes) = 24 bytes base64
+        var tokenBytes = new byte[24];
+        BitConverter.GetBytes(timeWindow).CopyTo(tokenBytes, 0);
+        BitConverter.GetBytes((int)(expiryTimestamp - GetBaseTimestamp())).CopyTo(tokenBytes, 4);
+        signature.AsSpan(0, 16).CopyTo(tokenBytes.AsSpan(8));
 
         return Base64UrlEncode(tokenBytes);
     }
@@ -121,13 +123,32 @@ public class AssetTokenService : IAssetTokenService
             if (tokenBytes.Length < 22)
                 return null;
 
-            var timeWindow = BitConverter.ToInt16(tokenBytes, 0);
-            var expiryOffset = BitConverter.ToInt32(tokenBytes, 2);
+            var currentWindow = GetCurrentTimeWindow();
+            int timeWindow;
+            int expiryOffset;
+            ReadOnlySpan<byte> providedSignature;
+
+            if (tokenBytes.Length >= 24)
+            {
+                timeWindow = BitConverter.ToInt32(tokenBytes, 0);
+                expiryOffset = BitConverter.ToInt32(tokenBytes, 4);
+                providedSignature = tokenBytes.AsSpan(8, 16);
+            }
+            else
+            {
+                var encodedWindow = BitConverter.ToUInt16(tokenBytes, 0);
+                timeWindow = (ushort)currentWindow == encodedWindow
+                    ? currentWindow
+                    : (ushort)(currentWindow - 1) == encodedWindow
+                        ? currentWindow - 1
+                        : int.MinValue;
+                expiryOffset = BitConverter.ToInt32(tokenBytes, 2);
+                providedSignature = tokenBytes.AsSpan(6, 16);
+            }
+
             var expiryTimestamp = GetBaseTimestamp() + expiryOffset;
-            var providedSignature = tokenBytes.AsSpan(6, 16);
 
             // Check time window (current or previous)
-            var currentWindow = GetCurrentTimeWindow();
             if (timeWindow != currentWindow && timeWindow != currentWindow - 1)
                 return null;
 
