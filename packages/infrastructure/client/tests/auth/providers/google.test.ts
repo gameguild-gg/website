@@ -70,7 +70,7 @@ describe('GoogleProvider', () => {
       const result = await provider.exchangeToken('google-id-token', 'http://localhost:5295');
 
       expect(mockFetch).toHaveBeenCalledWith(
-        'http://localhost:5295/v1/auth/google',
+        'http://localhost:5295/v1/auth/google:sign-in',
         expect.objectContaining({
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

@@ -20,6 +20,12 @@ export interface ApiClient {
   request<T>(config: RequestConfig): Promise<Result<T, ApiError>>;
 
   /**
+   * Make an API request returning the full response, with status and headers
+   * (needed for metadata-only contracts such as HEAD endpoints)
+   */
+  requestRaw<T>(config: RequestConfig): Promise<Result<ApiResponse<T>, ApiError>>;
+
+  /**
    * Get the base URL
    */
   getBaseUrl(): string;

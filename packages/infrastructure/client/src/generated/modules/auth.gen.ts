@@ -92,12 +92,12 @@ export class AuthModule {
   /**
    * Sign in with Google ID Token
    *
-   * Authenticates a user using a Google ID Token (for NextAuth.js integration), returning access and refresh tokens.
+   * Authenticates a user using a Google ID Token (for NextAuth.js integration), returning access and refresh tokens. Account-linking counterpart: POST /v1/auth/external-logins/google.
    */
-  async postAuthGoogle(
+  async postAuthGoogleSignIn(
     body: Types.IdentityAuthenticationGoogleIdTokenInput,
   ): Promise<Result<Types.IdentityAuthenticationSignInOutput, ApiError>> {
-    const url = "/v1/auth/google";
+    const url = "/v1/auth/google:sign-in";
 
     // Validate request body
     const validatedBody = safeParse(
@@ -237,14 +237,14 @@ export class AuthModule {
   /**
    * Initiate Discord OAuth sign-in
    *
-   * Initiates the Discord OAuth authorization-code flow and returns the authorization URL with the CSRF state parameter.
+   * Initiates the Discord OAuth authorization-code sign-in flow and returns the authorization URL with the CSRF state parameter. Account-linking counterpart: POST /v1/auth/external-logins/discord:link-authorize.
    */
-  async postAuthDiscordAuthorize(
+  async postAuthDiscordSignInAuthorize(
     body: Types.IdentityAuthenticationDiscordAuthorizeInput,
   ): Promise<
     Result<Types.IdentityAuthenticationDiscordSignInOutput, ApiError>
   > {
-    const url = "/v1/auth/discord:authorize";
+    const url = "/v1/auth/discord:sign-in-authorize";
 
     // Validate request body
     const validatedBody = safeParse(
@@ -274,14 +274,14 @@ export class AuthModule {
   }
 
   /**
-   * Discord OAuth callback
+   * Discord OAuth sign-in callback
    *
-   * Exchanges the Discord OAuth authorization code for access and refresh tokens, applying the same account matching and auto-link policy as Google sign-in.
+   * Exchanges the Discord OAuth authorization code for access and refresh tokens, applying the same account matching and auto-link policy as Google sign-in. Account-linking counterpart: POST /v1/auth/external-logins/discord:link-callback.
    */
-  async postAuthDiscordCallback(
+  async postAuthDiscordSignInCallback(
     body: Types.IdentityAuthenticationDiscordCallbackInput,
   ): Promise<Result<Types.IdentityAuthenticationSignInOutput, ApiError>> {
-    const url = "/v1/auth/discord:callback";
+    const url = "/v1/auth/discord:sign-in-callback";
 
     // Validate request body
     const validatedBody = safeParse(
@@ -679,23 +679,18 @@ export class AuthModule {
   /**
    * List linked external logins
    *
-   * Returns the external identity providers linked to the authenticated user, newest first.
+   * HEAD request per Google REST guidance: safe, metadata-only response with no body. Linked providers and their linked-at timestamps are conveyed in the X-Linked-Providers response header as comma-separated 'provider=iso8601-timestamp' pairs, newest first. The header is omitted when no providers are linked.
    */
-  async getAuthExternalLogins(): Promise<
-    Result<Array<Types.IdentityAuthenticationExternalLogin>, ApiError>
-  > {
+  async headAuthExternalLogins(): Promise<Result<void, ApiError>> {
     const url = "/v1/auth/external-logins";
 
     const result = await this.client.request({
-      method: "GET",
+      method: "HEAD",
       path: url,
       requiresAuth: true,
     });
 
-    return result as Result<
-      Array<Types.IdentityAuthenticationExternalLogin>,
-      ApiError
-    >;
+    return result as Result<void, ApiError>;
   }
 
   /**

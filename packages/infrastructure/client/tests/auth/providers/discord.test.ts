@@ -68,7 +68,7 @@ describe('DiscordProvider', () => {
       );
 
       expect(mockFetch).toHaveBeenCalledWith(
-        'http://localhost:8080/v1/auth/discord:authorize',
+        'http://localhost:8080/v1/auth/discord:sign-in-authorize',
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -167,7 +167,7 @@ describe('DiscordProvider', () => {
       );
 
       expect(mockFetch).toHaveBeenCalledWith(
-        'http://localhost:8080/v1/auth/discord:callback',
+        'http://localhost:8080/v1/auth/discord:sign-in-callback',
         expect.objectContaining({
           method: 'POST',
           body: JSON.stringify({

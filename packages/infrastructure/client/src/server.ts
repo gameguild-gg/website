@@ -10,7 +10,7 @@ import type { Result } from './runtime/result/types.js';
 import type { ApiError } from './runtime/errors/types.js';
 import type { TokenProvider } from './runtime/auth/types.js';
 import type { TenantProvider } from './runtime/tenant/types.js';
-import type { Interceptor, RequestConfig, Transport } from './runtime/transport/types.js';
+import type { ApiResponse, Interceptor, RequestConfig, Transport } from './runtime/transport/types.js';
 import type { ApiClient } from './runtime/client.js';
 
 /**
@@ -100,33 +100,43 @@ export function createServerClient(config: ServerClientConfig): ApiClient {
     interceptors,
   });
 
+  async function requestWithResponse<T>(
+    requestConfig: RequestConfig
+  ): Promise<Result<ApiResponse<T>, ApiError>> {
+    // Reset token cache for each request
+    cachedTokenPromise = null;
+
+    // Check auth requirement
+    if (requestConfig.requiresAuth && config.auth) {
+      const token = await getCachedAccessToken();
+      if (!token) {
+        await config.auth.onAuthenticationRequired?.();
+        return err({
+          name: 'ApiError' as const,
+          message: 'Authentication required',
+          status: 401,
+          code: 'TOKEN_MISSING' as const,
+        });
+      }
+    }
+
+    return transport.request<T>(requestConfig);
+  }
+
   // Create client
   const client: ApiClient = {
     async request<T>(requestConfig: RequestConfig): Promise<Result<T, ApiError>> {
-      // Reset token cache for each request
-      cachedTokenPromise = null;
-
-      // Check auth requirement
-      if (requestConfig.requiresAuth && config.auth) {
-        const token = await getCachedAccessToken();
-        if (!token) {
-          await config.auth.onAuthenticationRequired?.();
-          return err({
-            name: 'ApiError' as const,
-            message: 'Authentication required',
-            status: 401,
-            code: 'TOKEN_MISSING' as const,
-          });
-        }
-      }
-
-      const result = await transport.request<T>(requestConfig);
+      const result = await requestWithResponse<T>(requestConfig);
 
       if (result.ok) {
         return ok(result.data.data);
       }
 
       return result;
+    },
+
+    async requestRaw<T>(requestConfig: RequestConfig): Promise<Result<ApiResponse<T>, ApiError>> {
+      return requestWithResponse<T>(requestConfig);
     },
 
     getBaseUrl() {

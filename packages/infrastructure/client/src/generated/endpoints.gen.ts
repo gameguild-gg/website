@@ -2570,16 +2570,17 @@ export const postAuthSignInEndpoint = {
 /**
  * Sign in with Google ID Token
  *
- * Authenticates a user using a Google ID Token (for NextAuth.js integration), returning access and refresh tokens.
+ * Authenticates a user using a Google ID Token (for NextAuth.js integration), returning access and refresh tokens. Account-linking counterpart: POST /v1/auth/external-logins/google.
  */
-export interface PostAuthGoogleInput {
+export interface PostAuthGoogleSignInInput {
   body?: Types.IdentityAuthenticationGoogleIdTokenInput;
 }
-export type PostAuthGoogleOutput = Types.IdentityAuthenticationSignInOutput;
-export const postAuthGoogleEndpoint = {
-  operationId: "postAuthGoogle" as const,
+export type PostAuthGoogleSignInOutput =
+  Types.IdentityAuthenticationSignInOutput;
+export const postAuthGoogleSignInEndpoint = {
+  operationId: "postAuthGoogleSignIn" as const,
   method: "POST" as const,
-  path: "/v1/auth/google" as const,
+  path: "/v1/auth/google:sign-in" as const,
   tags: ["Auth"] as const,
   requiresAuth: true,
 } as const;
@@ -2643,35 +2644,35 @@ export const getAuthGithubAuthorizeEndpoint = {
 /**
  * Initiate Discord OAuth sign-in
  *
- * Initiates the Discord OAuth authorization-code flow and returns the authorization URL with the CSRF state parameter.
+ * Initiates the Discord OAuth authorization-code sign-in flow and returns the authorization URL with the CSRF state parameter. Account-linking counterpart: POST /v1/auth/external-logins/discord:link-authorize.
  */
-export interface PostAuthDiscordAuthorizeInput {
+export interface PostAuthDiscordSignInAuthorizeInput {
   body?: Types.IdentityAuthenticationDiscordAuthorizeInput;
 }
-export type PostAuthDiscordAuthorizeOutput =
+export type PostAuthDiscordSignInAuthorizeOutput =
   Types.IdentityAuthenticationDiscordSignInOutput;
-export const postAuthDiscordAuthorizeEndpoint = {
-  operationId: "postAuthDiscordAuthorize" as const,
+export const postAuthDiscordSignInAuthorizeEndpoint = {
+  operationId: "postAuthDiscordSignInAuthorize" as const,
   method: "POST" as const,
-  path: "/v1/auth/discord:authorize" as const,
+  path: "/v1/auth/discord:sign-in-authorize" as const,
   tags: ["Auth"] as const,
   requiresAuth: true,
 } as const;
 
 /**
- * Discord OAuth callback
+ * Discord OAuth sign-in callback
  *
- * Exchanges the Discord OAuth authorization code for access and refresh tokens, applying the same account matching and auto-link policy as Google sign-in.
+ * Exchanges the Discord OAuth authorization code for access and refresh tokens, applying the same account matching and auto-link policy as Google sign-in. Account-linking counterpart: POST /v1/auth/external-logins/discord:link-callback.
  */
-export interface PostAuthDiscordCallbackInput {
+export interface PostAuthDiscordSignInCallbackInput {
   body?: Types.IdentityAuthenticationDiscordCallbackInput;
 }
-export type PostAuthDiscordCallbackOutput =
+export type PostAuthDiscordSignInCallbackOutput =
   Types.IdentityAuthenticationSignInOutput;
-export const postAuthDiscordCallbackEndpoint = {
-  operationId: "postAuthDiscordCallback" as const,
+export const postAuthDiscordSignInCallbackEndpoint = {
+  operationId: "postAuthDiscordSignInCallback" as const,
   method: "POST" as const,
-  path: "/v1/auth/discord:callback" as const,
+  path: "/v1/auth/discord:sign-in-callback" as const,
   tags: ["Auth"] as const,
   requiresAuth: true,
 } as const;
@@ -2860,14 +2861,13 @@ export const postAuthWeb3VerifyEndpoint = {
 /**
  * List linked external logins
  *
- * Returns the external identity providers linked to the authenticated user, newest first.
+ * HEAD request per Google REST guidance: safe, metadata-only response with no body. Linked providers and their linked-at timestamps are conveyed in the X-Linked-Providers response header as comma-separated 'provider=iso8601-timestamp' pairs, newest first. The header is omitted when no providers are linked.
  */
-export type GetAuthExternalLoginsInput = void;
-export type GetAuthExternalLoginsOutput =
-  Array<Types.IdentityAuthenticationExternalLogin>;
-export const getAuthExternalLoginsEndpoint = {
-  operationId: "getAuthExternalLogins" as const,
-  method: "GET" as const,
+export type HeadAuthExternalLoginsInput = void;
+export type HeadAuthExternalLoginsOutput = void;
+export const headAuthExternalLoginsEndpoint = {
+  operationId: "headAuthExternalLogins" as const,
+  method: "HEAD" as const,
   path: "/v1/auth/external-logins" as const,
   tags: ["Auth"] as const,
   requiresAuth: true,
@@ -19281,12 +19281,12 @@ export const endpoints = {
   postApiAssetsAccessUrl: postApiAssetsAccessUrlEndpoint,
   postAuthSignUp: postAuthSignUpEndpoint,
   postAuthSignIn: postAuthSignInEndpoint,
-  postAuthGoogle: postAuthGoogleEndpoint,
+  postAuthGoogleSignIn: postAuthGoogleSignInEndpoint,
   postAuthMagicLinkRequest: postAuthMagicLinkRequestEndpoint,
   postAuthMagicLinkConsume: postAuthMagicLinkConsumeEndpoint,
   getAuthGithubAuthorize: getAuthGithubAuthorizeEndpoint,
-  postAuthDiscordAuthorize: postAuthDiscordAuthorizeEndpoint,
-  postAuthDiscordCallback: postAuthDiscordCallbackEndpoint,
+  postAuthDiscordSignInAuthorize: postAuthDiscordSignInAuthorizeEndpoint,
+  postAuthDiscordSignInCallback: postAuthDiscordSignInCallbackEndpoint,
   postAuthTokensRefresh: postAuthTokensRefreshEndpoint,
   postAuthTokensRevoke: postAuthTokensRevokeEndpoint,
   postAuthWeb3Challenge: postAuthWeb3ChallengeEndpoint,
@@ -19297,7 +19297,7 @@ export const endpoints = {
   postAuthPasswordChange: postAuthPasswordChangeEndpoint,
   getAuthGithubCallback: getAuthGithubCallbackEndpoint,
   postAuthWeb3Verify: postAuthWeb3VerifyEndpoint,
-  getAuthExternalLogins: getAuthExternalLoginsEndpoint,
+  headAuthExternalLogins: headAuthExternalLoginsEndpoint,
   postAuthExternalLoginsGoogle: postAuthExternalLoginsGoogleEndpoint,
   postAuthExternalLoginsDiscordLinkAuthorize:
     postAuthExternalLoginsDiscordLinkAuthorizeEndpoint,
