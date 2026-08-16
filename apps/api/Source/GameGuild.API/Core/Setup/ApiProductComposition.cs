@@ -84,6 +84,7 @@ internal sealed class ApiProductComposition : IApiProductComposition
     public void ConfigureServices(WebApplicationBuilder builder)
     {
         builder.Services.AddFerpaModule();
+        builder.Services.AddSingleton<IDatabaseMigrationPrerequisite, EconomyMigrationPrerequisite>();
         builder.Services.AddEconomyCapabilityComposition(builder.Configuration);
         builder.Services.AddEconomyCoreComposition(builder.Configuration);
         builder.Services.AddPayoutsComposition(builder.Configuration);
