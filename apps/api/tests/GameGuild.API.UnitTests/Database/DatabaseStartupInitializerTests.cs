@@ -195,6 +195,45 @@ public sealed class DatabaseStartupInitializerTests
     }
 
     [Fact]
+    public async Task ApplyMigrationsAsync_WithRegisteredPrerequisite_ShouldPrepareBeforeMigrating()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        var prerequisiteCalls = 0;
+        await using var app = CreateApp(
+            new Dictionary<string, string?>
+            {
+                ["ConnectionStrings:MigrationConnection"] = MigrationConnection,
+                ["Database:GrantRuntimeRoleAfterMigrations"] = "false",
+                ["Database:FailStartupOnMigrationFailure"] = "true",
+                ["Database:MigrationMaxAttempts"] = "1"
+            },
+            services => services.AddSingleton<IDatabaseMigrationPrerequisite>(
+                new DelegateMigrationPrerequisite(async (db, cancellationToken) =>
+                {
+                    prerequisiteCalls++;
+                    await using var command = db.Database.GetDbConnection().CreateCommand();
+                    command.CommandText =
+                        "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = 'StartupCoverage';";
+                    Convert.ToInt32(await command.ExecuteScalarAsync(cancellationToken)).Should().Be(0);
+                })));
+
+        ApplicationDbContext CreateContext(string _)
+        {
+            var options = new DbContextOptionsBuilder<ApplicationDbContext>()
+                .UseSqlite(connection)
+                .ReplaceService<IMigrationsAssembly, CoverageMigrationsAssembly>()
+                .Options;
+            return new ApplicationDbContext(options);
+        }
+
+        var result = await DatabaseStartupInitializer.ApplyMigrationsAsync(app, CreateContext);
+
+        result.Should().BeTrue();
+        prerequisiteCalls.Should().Be(1);
+    }
+
+    [Fact]
     public async Task InitializeAsync_WhenMigrationKeepsFailing_ShouldRetryAndReturnFalseInTesting()
     {
         var directory = Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), $"startup-{Guid.NewGuid():N}"));
@@ -424,6 +463,13 @@ public sealed class DatabaseStartupInitializerTests
             InterceptionResult<int> result,
             CancellationToken cancellationToken = default) =>
             throw new InvalidOperationException("grant failed");
+    }
+
+    private sealed class DelegateMigrationPrerequisite(
+        Func<DbContext, CancellationToken, Task> prepareAsync) : IDatabaseMigrationPrerequisite
+    {
+        public Task PrepareAsync(DbContext db, CancellationToken cancellationToken) =>
+            prepareAsync(db, cancellationToken);
     }
 }
 
