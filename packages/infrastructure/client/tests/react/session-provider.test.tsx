@@ -383,10 +383,8 @@ describe('SessionProvider', () => {
       await vi.advanceTimersByTimeAsync(100);
     });
 
-    // Go offline
-    window.dispatchEvent(new Event('offline'));
-
     await act(async () => {
+      window.dispatchEvent(new Event('offline'));
       await vi.advanceTimersByTimeAsync(50);
     });
 
@@ -417,9 +415,10 @@ describe('SessionProvider', () => {
       expect(fetchSpy).toHaveBeenCalledTimes(1);
     });
 
-    // Go offline then online
-    window.dispatchEvent(new Event('offline'));
-    window.dispatchEvent(new Event('online'));
+    await act(async () => {
+      window.dispatchEvent(new Event('offline'));
+      window.dispatchEvent(new Event('online'));
+    });
 
     // No crash, events handled gracefully
     expect(true).toBe(true);
