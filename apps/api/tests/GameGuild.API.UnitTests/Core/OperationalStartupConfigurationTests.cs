@@ -106,6 +106,20 @@ public sealed class OperationalStartupConfigurationTests
         failures.Should().Contain(message => message.Contains("encryption key", StringComparison.OrdinalIgnoreCase));
     }
 
+    [Theory]
+    [InlineData("")]
+    [InlineData("not-base64")]
+    [InlineData("c2hvcnQ=")]
+    public void Validate_RejectsInvalidAssetTokenSigningKeys(string secret)
+    {
+        var values = CompleteValues();
+        values["Assets:Token:SecretKey"] = secret;
+
+        var failures = OperationalStartupConfiguration.Validate(CreateConfiguration(values), Environments.Production);
+
+        failures.Should().ContainSingle(message => message.Contains("asset token signing key", StringComparison.OrdinalIgnoreCase));
+    }
+
     [Fact]
     public void ThrowIfInvalid_ThrowsOneActionableException()
     {
@@ -154,6 +168,7 @@ public sealed class OperationalStartupConfigurationTests
         ["Assets:Storage:ServiceUrl"] = "http://garage:3900",
         ["Assets:Storage:AccessKey"] = "access-key",
         ["Assets:Storage:SecretKey"] = "secret-key",
+        ["Assets:Token:SecretKey"] = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
         ["Assets:Storage:BucketName"] = "assets"
     };
 }

@@ -63,6 +63,7 @@ services:
       - Assets__Storage__ServiceUrl=${S3_CONTAINER_SERVICE_URL:-http://garage:3900}
       - Assets__Storage__AccessKey=${S3_ACCESS_KEY:-GK111111111111111111111111}
       - Assets__Storage__SecretKey=${S3_SECRET_KEY:-2222222222222222222222222222222222222222222222222222222222222222}
+      - Assets__Token__SecretKey=${ASSET_TOKEN_SECRET_KEY:-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=}
       - Assets__Storage__Region=${S3_REGION:-garage}
       - Assets__Storage__ForcePathStyle=true
       - Assets__Storage__PresignedUrlExpiryMinutes=${S3_PRESIGNED_EXPIRY:-60}

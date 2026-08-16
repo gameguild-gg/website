@@ -83,6 +83,37 @@ public static class OperationalStartupConfiguration
         Require(configuration, failures, "Assets:Storage:AccessKey", "An object storage access key is required.");
         Require(configuration, failures, "Assets:Storage:SecretKey", "An object storage secret key is required.");
         Require(configuration, failures, "Assets:Storage:BucketName", "An object storage bucket is required.");
+        RequireBase64Secret(
+            configuration,
+            failures,
+            "Assets:Token:SecretKey",
+            "An asset token signing key is required.",
+            "The asset token signing key must be valid Base64 containing at least 32 bytes.");
+    }
+
+    private static void RequireBase64Secret(
+        IConfiguration configuration,
+        ICollection<string> failures,
+        string key,
+        string missingFailure,
+        string unsafeFailure)
+    {
+        var secret = configuration[key];
+        if (string.IsNullOrWhiteSpace(secret))
+        {
+            failures.Add(missingFailure);
+            return;
+        }
+
+        try
+        {
+            if (Convert.FromBase64String(secret).Length < 32)
+                failures.Add(unsafeFailure);
+        }
+        catch (FormatException)
+        {
+            failures.Add(unsafeFailure);
+        }
     }
 
     private static void RequireAny(

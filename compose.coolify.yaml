@@ -10,7 +10,7 @@
 # Required env vars (set in Coolify -> Resource -> Environment Variables):
 #   POSTGRES_HOST, POSTGRES_DB, POSTGRES_USER, POSTGRES_PASSWORD,
 #   POSTGRES_MIGRATION_CONNECTION,
-#   JWT_SECRET_KEY, ENCRYPTION_KEY,
+#   JWT_SECRET_KEY, ENCRYPTION_KEY, ASSET_TOKEN_SECRET_KEY,
 #   AUTH_SECRET, API_PUBLIC_URL, WEB_PUBLIC_URL, LEARNING_PUBLIC_URL,
 #   PaymentGateways__Stripe__ApiKey,
 #   PaymentGateways__Stripe__PublishableKey,
@@ -75,6 +75,7 @@ services:
       - Assets__Storage__ServiceUrl=${S3_SERVICE_URL:?set S3_SERVICE_URL}
       - Assets__Storage__AccessKey=${S3_ACCESS_KEY:?set S3_ACCESS_KEY}
       - Assets__Storage__SecretKey=${S3_SECRET_KEY:?set S3_SECRET_KEY}
+      - Assets__Token__SecretKey=${ASSET_TOKEN_SECRET_KEY:?set ASSET_TOKEN_SECRET_KEY}
       - Assets__Storage__Region=${S3_REGION:-garage}
       - Assets__Storage__BucketName=${S3_BUCKET:?set S3_BUCKET}
       - Assets__Storage__TransformedBucketName=${S3_BUCKET_TRANSFORMED:-}
