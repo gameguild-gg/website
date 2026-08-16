@@ -26,11 +26,11 @@ public sealed class ExternalLoginsController(ISender sender) : BaseApiController
     ///     List the external logins linked to the current user, newest first.
     /// </summary>
     /// <param name="ct">Cancellation token</param>
-    /// <returns>Linked providers with their linked-at timestamps</returns>
-    [HttpGet("v{version:apiVersion}/auth/external-logins")]
+    /// <returns>Metadata-only response: providers reported via the X-Linked-Providers header, no body</returns>
+    [HttpHead("v{version:apiVersion}/auth/external-logins")]
     [EndpointSummary("List linked external logins")]
-    [EndpointDescription("Returns the external identity providers linked to the authenticated user, newest first.")]
-    [ProducesResponseType<List<ExternalLoginDto>>(StatusCodes.Status200OK)]
+    [EndpointDescription("HEAD request per Google REST guidance: safe, metadata-only response with no body. Linked providers and their linked-at timestamps are conveyed in the X-Linked-Providers response header as comma-separated 'provider=iso8601-timestamp' pairs, newest first. The header is omitted when no providers are linked.")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> GetExternalLogins(CancellationToken ct)
     {
@@ -39,7 +39,14 @@ public sealed class ExternalLoginsController(ISender sender) : BaseApiController
             var query = new GetExternalLoginsQuery { UserId = GetUserId() };
             var result = await sender.Send(query, ct).ConfigureAwait(false);
 
-            return Ok(result);
+            if (result.Count > 0)
+            {
+                Response.Headers["X-Linked-Providers"] = string.Join(
+                    ",",
+                    result.Select(l => $"{l.Provider}={DateTime.SpecifyKind(l.CreatedAt, DateTimeKind.Utc):O}"));
+            }
+
+            return Ok();
         }
         catch (Exception ex)
         {

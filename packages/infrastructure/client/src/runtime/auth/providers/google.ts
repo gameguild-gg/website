@@ -4,7 +4,7 @@
  * Bridges Google sign-in to the .NET backend.
  * The flow is:
  *   1. Client gets a Google ID token (via Google Sign-In button or NextAuth Google provider)
- *   2. This provider sends the ID token to .NET `/v1/auth/google`
+ *   2. This provider sends the ID token to .NET `/v1/auth/google:sign-in`
  *   3. .NET validates the Google token and returns GameGuild tokens
  *
  * @example
@@ -36,8 +36,8 @@ export interface GoogleProviderOptions {
    */
   apiUrl?: string;
   /**
-   * Backend endpoint path for Google token exchange
-   * @default '/v1/auth/google'
+   * Backend endpoint path for Google sign-in token exchange
+   * @default '/v1/auth/google:sign-in'
    */
   tokenExchangePath?: string;
 }
@@ -51,7 +51,7 @@ export interface GoogleProviderOptions {
 export function GoogleProvider(
   options: GoogleProviderOptions,
 ): OAuthProviderConfig & { exchangeToken: (idToken: string, apiUrl: string, tenantId?: string) => Promise<ProviderResult> } {
-  const { tokenExchangePath = '/v1/auth/google' } = options;
+  const { tokenExchangePath = '/v1/auth/google:sign-in' } = options;
 
   return {
     id: 'google',

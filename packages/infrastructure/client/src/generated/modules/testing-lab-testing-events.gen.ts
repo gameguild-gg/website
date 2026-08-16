@@ -779,6 +779,43 @@ export class TestingLabTestingEventsModule {
 
   /**
    */
+  async putTestingEventsApplications(
+    applicationId: string,
+    body: Types.TestingLabUpdateTestingProjectApplicationInput,
+  ): Promise<
+    Result<Types.TestingLabTestingProjectApplicationProjection, ApiError>
+  > {
+    const url = `/v1/testing/events/applications/${applicationId}`;
+
+    // Validate request body
+    const validatedBody = safeParse(
+      Types.TestingLabUpdateTestingProjectApplicationInputSchema,
+      body,
+      "request",
+    );
+
+    const result = await this.client.request({
+      method: "PUT",
+      path: url,
+      body: validatedBody,
+      requiresAuth: true,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(
+        Types.TestingLabTestingProjectApplicationProjectionSchema,
+        result.data,
+        "response",
+      );
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
+   */
   async getTestingEventsApplicationsReviewPackage(
     applicationId: string,
   ): Promise<

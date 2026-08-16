@@ -3704,11 +3704,6 @@ export interface IdentityAuthenticationEmailVerificationResult {
   verifiedAt?: string | null;
 }
 
-export interface IdentityAuthenticationExternalLogin {
-  provider: string | null;
-  createdAt: string;
-}
-
 export interface IdentityAuthenticationGitHubSignInOutput {
   authUrl: string | null;
 }
@@ -11614,7 +11609,6 @@ export let IdentityAuthenticationDiscordLinkCallbackInputSchema: z.ZodType<Ident
 export let IdentityAuthenticationDiscordSignInOutputSchema: z.ZodType<IdentityAuthenticationDiscordSignInOutput>;
 export let IdentityAuthenticationEmailVerificationOutputSchema: z.ZodType<IdentityAuthenticationEmailVerificationOutput>;
 export let IdentityAuthenticationEmailVerificationResultSchema: z.ZodType<IdentityAuthenticationEmailVerificationResult>;
-export let IdentityAuthenticationExternalLoginSchema: z.ZodType<IdentityAuthenticationExternalLogin>;
 export let IdentityAuthenticationGitHubSignInOutputSchema: z.ZodType<IdentityAuthenticationGitHubSignInOutput>;
 export let IdentityAuthenticationGoogleIdTokenInputSchema: z.ZodType<IdentityAuthenticationGoogleIdTokenInput>;
 export let IdentityAuthenticationJwtKeyInfoSchema: z.ZodType<IdentityAuthenticationJwtKeyInfo>;
@@ -16964,12 +16958,6 @@ IdentityAuthenticationEmailVerificationResultSchema = z.object({
   email: z.string().nullable().optional(),
   userId: z.string().uuid().nullable().optional(),
   verifiedAt: z.string().datetime().nullable().optional(),
-});
-
-/** Zod schema for IdentityAuthenticationExternalLogin */
-IdentityAuthenticationExternalLoginSchema = z.object({
-  provider: z.string().nullable(),
-  createdAt: z.string().datetime(),
 });
 
 /** Zod schema for IdentityAuthenticationGitHubSignInOutput */

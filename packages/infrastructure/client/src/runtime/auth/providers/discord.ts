@@ -3,11 +3,11 @@
  *
  * Bridges Discord sign-in to the .NET backend via the
  * authorization-code redirect flow:
- *   1. GET /api/auth/signin/discord → backend `/v1/auth/discord:authorize`
+ *   1. GET /api/auth/signin/discord → backend `/v1/auth/discord:sign-in-authorize`
  *      returns the Discord auth URL (with state)
  *   2. User authenticates with Discord
  *   3. Discord redirects back to the client callback route
- *   4. Client sends the code to backend `/v1/auth/discord:callback`
+ *   4. Client sends the code to backend `/v1/auth/discord:sign-in-callback`
  *      and receives GameGuild tokens
  *
  * @example
@@ -39,13 +39,13 @@ export interface DiscordProviderOptions {
    */
   apiUrl?: string;
   /**
-   * Backend endpoint for initiating Discord auth
-   * @default '/v1/auth/discord:authorize'
+   * Backend endpoint for initiating Discord sign-in
+   * @default '/v1/auth/discord:sign-in-authorize'
    */
   authorizePath?: string;
   /**
-   * Backend endpoint for completing Discord auth callback
-   * @default '/v1/auth/discord:callback'
+   * Backend endpoint for completing Discord sign-in callback
+   * @default '/v1/auth/discord:sign-in-callback'
    */
   callbackPath?: string;
 }
@@ -66,8 +66,8 @@ export function DiscordProvider(
   ) => Promise<ProviderResult>;
 } {
   const {
-    authorizePath = '/v1/auth/discord:authorize',
-    callbackPath = '/v1/auth/discord:callback',
+    authorizePath = '/v1/auth/discord:sign-in-authorize',
+    callbackPath = '/v1/auth/discord:sign-in-callback',
   } = options;
 
   return {

@@ -28,6 +28,10 @@ function createWrapper(client: ApiClient) {
 
 const apiClient: ApiClient = {
   request: async () => ({ ok: true, data: { ok: true } }),
+  requestRaw: async () => ({
+    ok: true,
+    data: { data: { ok: true }, status: 200, headers: new Headers() },
+  }),
   getBaseUrl: () => 'https://api.example.test',
 };
 

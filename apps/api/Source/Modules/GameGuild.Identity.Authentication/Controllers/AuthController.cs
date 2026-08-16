@@ -89,9 +89,9 @@ public sealed class AuthController(ISender sender) : BaseApiController
     /// <param name="ct">Cancellation token</param>
     /// <returns>Authentication response with access and refresh tokens</returns>
     [AllowAnonymous]
-    [HttpPost("v{version:apiVersion}/auth/google")]
+    [HttpPost("v{version:apiVersion}/auth/google:sign-in")]
     [EndpointSummary("Sign in with Google ID Token")]
-    [EndpointDescription("Authenticates a user using a Google ID Token (for NextAuth.js integration), returning access and refresh tokens.")]
+    [EndpointDescription("Authenticates a user using a Google ID Token (for NextAuth.js integration), returning access and refresh tokens. Account-linking counterpart: POST /v1/auth/external-logins/google.")]
     [ProducesResponseType<SignInResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -185,7 +185,7 @@ public sealed class AuthController(ISender sender) : BaseApiController
 
     #endregion
 
-    #region Discord OAuth - /v1/auth/discord
+    #region Discord OAuth sign-in - /v1/auth/discord
 
     /// <summary>
     ///     Initiate Discord OAuth sign-in
@@ -194,9 +194,9 @@ public sealed class AuthController(ISender sender) : BaseApiController
     /// <param name="ct">Cancellation token</param>
     /// <returns>Discord OAuth authorization URL and state parameter</returns>
     [AllowAnonymous]
-    [HttpPost("v{version:apiVersion}/auth/discord:authorize")]
+    [HttpPost("v{version:apiVersion}/auth/discord:sign-in-authorize")]
     [EndpointSummary("Initiate Discord OAuth sign-in")]
-    [EndpointDescription("Initiates the Discord OAuth authorization-code flow and returns the authorization URL with the CSRF state parameter.")]
+    [EndpointDescription("Initiates the Discord OAuth authorization-code sign-in flow and returns the authorization URL with the CSRF state parameter. Account-linking counterpart: POST /v1/auth/external-logins/discord:link-authorize.")]
     [ProducesResponseType<DiscordSignInResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
@@ -224,9 +224,9 @@ public sealed class AuthController(ISender sender) : BaseApiController
     /// <param name="ct">Cancellation token</param>
     /// <returns>Authentication tokens on success</returns>
     [AllowAnonymous]
-    [HttpPost("v{version:apiVersion}/auth/discord:callback")]
-    [EndpointSummary("Discord OAuth callback")]
-    [EndpointDescription("Exchanges the Discord OAuth authorization code for access and refresh tokens, applying the same account matching and auto-link policy as Google sign-in.")]
+    [HttpPost("v{version:apiVersion}/auth/discord:sign-in-callback")]
+    [EndpointSummary("Discord OAuth sign-in callback")]
+    [EndpointDescription("Exchanges the Discord OAuth authorization code for access and refresh tokens, applying the same account matching and auto-link policy as Google sign-in. Account-linking counterpart: POST /v1/auth/external-logins/discord:link-callback.")]
     [ProducesResponseType<SignInResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
