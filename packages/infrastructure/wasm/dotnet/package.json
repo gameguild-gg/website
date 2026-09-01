@@ -44,8 +44,12 @@
   },
   "devDependencies": {
     "@types/node": "^20",
+<<<<<<< HEAD
     "@types/pako": "^2.0.4",
     "tsx": "^4.23.12",
+=======
+    "@types/pako": "^3.0.0",
+>>>>>>> origin/dependabot/npm_and_yarn/types/pako-3.0.0
     "typescript": "^5.8.3",
     "vite": "^8.2.1"
   }
