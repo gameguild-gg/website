@@ -123,20 +123,42 @@ async function getHeaderUser(): Promise<PublicWebsiteUser | null> {
   }
 }
 
-export async function PublicWebsiteHeader() {
+export async function PublicWebsiteHeader({
+  embedded = false,
+  leading,
+}: {
+  embedded?: boolean;
+  leading?: ReactNode;
+} = {}) {
   const user = await getHeaderUser();
 
   return (
     <header className="sticky top-0 z-40 border-b border-white/10 bg-slate-950/90 text-white backdrop-blur-xl">
-      <div className="mx-auto flex min-h-16 w-full max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
-        <Link href="/" aria-label="GameGuild home" className="flex min-w-0 items-center gap-3">
-          <BrandMark />
-          <span className="truncate text-base font-semibold tracking-tight text-white">GameGuild</span>
-        </Link>
+      <div
+        className={
+          embedded
+            ? 'grid min-h-16 w-full grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 px-3 py-2 sm:px-4 lg:px-6'
+            : 'mx-auto flex min-h-16 w-full max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8'
+        }
+      >
+        {embedded ? (
+          <div className="flex min-w-0 items-center gap-2">
+            {leading}
+            <Link href="/" aria-label="GameGuild home" className="flex min-w-0 items-center gap-2 md:hidden">
+              <BrandMark />
+              <span className="truncate text-sm font-semibold tracking-tight text-white">GameGuild</span>
+            </Link>
+          </div>
+        ) : (
+          <Link href="/" aria-label="GameGuild home" className="flex min-w-0 items-center gap-3">
+            <BrandMark />
+            <span className="truncate text-base font-semibold tracking-tight text-white">GameGuild</span>
+          </Link>
+        )}
 
         <PublicDesktopNav items={primaryNav} />
 
-        <div className="flex items-center gap-2">
+        <div className={embedded ? 'flex items-center justify-self-end gap-2' : 'flex items-center gap-2'}>
           <a
             href="https://github.com/gameguild-gg/gameguild"
             className="hidden rounded-full border border-white/10 px-3 py-2 text-sm font-medium text-slate-300 transition hover:border-white/20 hover:bg-white/10 hover:text-white xl:inline-flex xl:items-center xl:gap-2"

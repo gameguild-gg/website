@@ -11,7 +11,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
-  SidebarTrigger,
+  useSidebar,
 } from '@game-guild/ui/components/sidebar';
 import { cn } from '@game-guild/ui/lib/utils';
 import {
@@ -21,6 +21,8 @@ import {
   GraduationCap,
   Home,
   MessageCircle,
+  PanelLeftClose,
+  PanelLeftOpen,
   Plus,
   UsersRound,
 } from 'lucide-react';
@@ -33,6 +35,26 @@ const socialNavigation = [
   { label: 'Messages', href: '/workspace/invitations', icon: MessageCircle, badge: '5' },
   { label: 'Saved', href: '/workspace/projects', icon: Bookmark },
 ] as const;
+
+export function SocialSidebarToggle(): React.JSX.Element {
+  const { isMobile, openMobile, state, toggleSidebar } = useSidebar();
+  const expanded = isMobile ? openMobile : state === 'expanded';
+  const label = expanded ? 'Collapse sidebar' : 'Expand sidebar';
+  const Icon = expanded ? PanelLeftClose : PanelLeftOpen;
+
+  return (
+    <button
+      type="button"
+      onClick={toggleSidebar}
+      aria-label={label}
+      title={label}
+      className="inline-flex h-9 items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-2.5 text-sm font-semibold text-slate-300 transition hover:border-sky-300/30 hover:bg-sky-300/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300"
+    >
+      <Icon className="size-4" aria-hidden="true" />
+      <span className="hidden xl:inline">{expanded ? 'Collapse' : 'Expand'}</span>
+    </button>
+  );
+}
 
 export function SocialSidebar(): React.JSX.Element {
   const pathname = usePathname() ?? '/social';
@@ -52,7 +74,7 @@ export function SocialSidebar(): React.JSX.Element {
       className="h-svh border-white/10 bg-[#070c18] text-slate-200 [&_[data-slot=sidebar-inner]]:bg-[#070c18]"
     >
       <SidebarHeader className="border-b border-white/10 p-3">
-        <div className="flex min-h-10 items-center gap-2 group-data-[collapsible=icon]:flex-col group-data-[collapsible=icon]:gap-1">
+        <div className="flex min-h-10 items-center gap-2">
           <Link
             href="/social"
             aria-label="GameGuild Social home"
@@ -61,12 +83,13 @@ export function SocialSidebar(): React.JSX.Element {
             <span className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-white/15 bg-white text-slate-950 shadow-sm">
               <GraduationCap className="size-5" aria-hidden="true" />
             </span>
-            <span className="grid min-w-0 leading-tight group-data-[collapsible=icon]:hidden">
-              <span className="truncate text-sm font-semibold text-white">GameGuild</span>
-              <span className="truncate text-xs text-slate-400">Social</span>
+            <span className="min-w-0 group-data-[collapsible=icon]:hidden">
+              <span className="block truncate text-sm font-semibold text-white">GameGuild</span>
             </span>
           </Link>
-          <SidebarTrigger className="ml-auto size-8 shrink-0 rounded-lg text-slate-400 hover:bg-white/[0.06] hover:text-white group-data-[collapsible=icon]:ml-0" />
+          <div className="md:hidden">
+            <SocialSidebarToggle />
+          </div>
         </div>
       </SidebarHeader>
 
