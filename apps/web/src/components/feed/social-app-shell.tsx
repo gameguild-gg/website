@@ -14,9 +14,8 @@ export async function SocialAppShell({ children }: { children: React.ReactNode }
       >
         Skip to social feed
       </a>
-      {header}
       <SidebarProvider
-        className="min-h-[calc(100svh-4rem)] bg-[#050914]"
+        className="min-h-svh bg-[#050914]"
         style={
           {
             '--sidebar-width': '15rem',
@@ -25,9 +24,12 @@ export async function SocialAppShell({ children }: { children: React.ReactNode }
         }
       >
         <SocialSidebar />
-        <main id="social-main" tabIndex={-1} className="min-w-0 flex-1 overflow-x-hidden">
-          {children}
-        </main>
+        <div className="flex min-h-svh min-w-0 flex-1 flex-col">
+          {header}
+          <main id="social-main" tabIndex={-1} className="min-w-0 flex-1 overflow-x-hidden">
+            {children}
+          </main>
+        </div>
       </SidebarProvider>
       <Toaster closeButton richColors position="top-right" />
     </div>

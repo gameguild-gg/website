@@ -49,7 +49,7 @@ export function SocialSidebar(): React.JSX.Element {
   return (
     <Sidebar
       collapsible="icon"
-      className="top-16 h-[calc(100svh-4rem)] border-white/10 bg-[#070c18] text-slate-200 [&_[data-slot=sidebar-inner]]:bg-[#070c18]"
+      className="h-svh border-white/10 bg-[#070c18] text-slate-200 [&_[data-slot=sidebar-inner]]:bg-[#070c18]"
     >
       <SidebarHeader className="border-b border-white/10 p-3">
         <div className="flex min-h-10 items-center gap-2 group-data-[collapsible=icon]:flex-col group-data-[collapsible=icon]:gap-1">
