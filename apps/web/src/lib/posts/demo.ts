@@ -51,6 +51,12 @@ export const demoSocialStories: SocialStoryPreview[] = [
     handle: "@indiearcade",
     accent: "from-orange-300 via-rose-500 to-cyan-400",
   },
+  {
+    id: "story-kayla",
+    name: "Kayla Jones",
+    handle: "@kaylj",
+    accent: "from-cyan-300 via-violet-500 to-fuchsia-600",
+  },
 ];
 
 export const demoSocialPlaytests: SocialPlaytestPreview[] = [
@@ -75,6 +81,7 @@ export const demoSocialPlaytests: SocialPlaytestPreview[] = [
 ];
 
 export const demoSocialCreators: SocialCreatorPreview[] = [
+  { name: "Marina Costa", handle: "@marinacodes", focus: "Indie developer · technical artist" },
   { name: "Pixel Pioneer", handle: "@pixelpioneer", focus: "Gameplay systems" },
   { name: "ManaVoid", handle: "@manavoid_studios", focus: "Technical art" },
   { name: "Indie Arcade", handle: "@indiearcade", focus: "Indie publishing" },

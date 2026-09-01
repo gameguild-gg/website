@@ -37,6 +37,12 @@ export function SocialComposer({
   const formRef = React.useRef<HTMLFormElement>(null);
 
   React.useEffect(() => {
+    const openComposer = () => setExpanded(true);
+    window.addEventListener("social:compose", openComposer);
+    return () => window.removeEventListener("social:compose", openComposer);
+  }, []);
+
+  React.useEffect(() => {
     if (!state.message) return;
     if (state.success) {
       toast.success(state.message);
@@ -48,7 +54,7 @@ export function SocialComposer({
 
   if (!expanded) {
     return (
-      <section className="border-b border-white/10 px-4 py-3 sm:px-6">
+      <section id="social-composer" className="border-b border-white/10 px-4 py-3 sm:px-6">
         <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-[#0e1422] p-2.5">
           <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#48c7ff]/25 to-[#8b5cf6]/25 text-xs font-bold text-white">
             {initials(userName)}
@@ -95,7 +101,7 @@ export function SocialComposer({
   }
 
   return (
-    <section className="border-b border-white/10 px-4 py-4 sm:px-6">
+    <section id="social-composer" className="border-b border-white/10 px-4 py-4 sm:px-6">
       <form
         ref={formRef}
         action={action}

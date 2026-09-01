@@ -196,7 +196,7 @@ export function PostCard({ post }: { post: PostCardData }): React.JSX.Element {
       </header>
 
       {post.mediaUrl ? (
-        <div className="relative aspect-video w-full overflow-hidden border-y border-white/10 bg-black">
+        <div className="relative aspect-[4/3] w-full overflow-hidden border-y border-white/10 bg-black sm:aspect-[16/7]">
           <Image
             src={post.mediaUrl}
             alt={`${post.project?.title ?? "Community"} preview shared by ${authorLabel}`}

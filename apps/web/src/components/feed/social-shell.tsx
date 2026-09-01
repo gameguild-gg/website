@@ -67,16 +67,16 @@ export async function SocialShell({
       : "GameGuild member";
 
   const stories: SocialStoryPreview[] =
-    memberSpotlights.length > 0
+    demoEnabled
+      ? demoSocialStories
+      : memberSpotlights.length > 0
       ? memberSpotlights.map((member, index) => ({
           id: member.handle,
           name: member.name,
           handle: member.handle,
           accent: storyAccent(index),
         }))
-      : demoEnabled
-        ? demoSocialStories
-        : [];
+      : [];
   const playtests: SocialPlaytestPreview[] =
     publicPlaytests.length > 0
       ? publicPlaytests.map((playtest) => ({
@@ -89,25 +89,25 @@ export async function SocialShell({
         ? demoSocialPlaytests
         : [];
   const creators: SocialCreatorPreview[] =
-    memberSpotlights.length > 0
+    demoEnabled
+      ? demoSocialCreators
+      : memberSpotlights.length > 0
       ? memberSpotlights.slice(0, 3).map((member) => ({
           name: member.name,
           handle: member.handle,
           focus: member.focus,
         }))
-      : demoEnabled
-        ? demoSocialCreators
-        : [];
+      : [];
   const nextSkip =
     loadedPosts.length === POSTS_PAGE_SIZE ? POSTS_PAGE_SIZE : null;
 
   return (
     <div
       data-testid="social-shell"
-      className="-m-4 min-h-[calc(100svh-4rem)] bg-[#070a12] text-slate-100 sm:-m-6"
+      className="min-h-[calc(100svh-4rem)] bg-[#050914] text-slate-100"
     >
-      <div className="mx-auto grid min-h-[calc(100svh-4rem)] w-full max-w-[1160px] grid-cols-1 gap-0 xl:grid-cols-[minmax(0,760px)_320px] xl:gap-8">
-        <main className="min-w-0 border-x border-white/10 bg-[#070a12]">
+      <div className="mx-auto grid min-h-[calc(100svh-4rem)] w-full max-w-[1260px] grid-cols-1 gap-0 xl:grid-cols-[minmax(0,820px)_360px] xl:gap-6 xl:px-5">
+        <div className="min-w-0 border-x border-white/10 bg-[#070a12]">
           <SocialFeedTabs active={tab} />
           <BuildStories userName={userName} stories={stories} />
           <SocialComposer userName={userName} />
@@ -116,7 +116,7 @@ export async function SocialShell({
             initialItems={posts}
             initialNextSkip={nextSkip}
           />
-        </main>
+        </div>
         <SocialRail playtests={playtests} creators={creators} />
       </div>
     </div>
