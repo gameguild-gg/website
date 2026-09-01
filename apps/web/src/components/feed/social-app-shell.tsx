@@ -1,6 +1,7 @@
 import { PublicWebsiteHeader } from '@/components/app/app-shell';
 import { SocialSidebar } from '@/components/feed/social-sidebar';
 import { Toaster } from '@/components/ui/sonner';
+import { SidebarProvider } from '@game-guild/ui/components/sidebar';
 
 export async function SocialAppShell({ children }: { children: React.ReactNode }): Promise<React.JSX.Element> {
   const header = await PublicWebsiteHeader();
@@ -14,12 +15,20 @@ export async function SocialAppShell({ children }: { children: React.ReactNode }
         Skip to social feed
       </a>
       {header}
-      <div className="mx-auto flex w-full max-w-[1540px] items-start">
+      <SidebarProvider
+        className="min-h-[calc(100svh-4rem)] bg-[#050914]"
+        style={
+          {
+            '--sidebar-width': '15rem',
+            '--sidebar-width-icon': '4rem',
+          } as React.CSSProperties
+        }
+      >
         <SocialSidebar />
-        <main id="social-main" tabIndex={-1} className="min-w-0 flex-1">
+        <main id="social-main" tabIndex={-1} className="min-w-0 flex-1 overflow-x-hidden">
           {children}
         </main>
-      </div>
+      </SidebarProvider>
       <Toaster closeButton richColors position="top-right" />
     </div>
   );
