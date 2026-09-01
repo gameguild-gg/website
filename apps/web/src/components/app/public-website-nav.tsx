@@ -30,16 +30,27 @@ export type PublicWebsiteUser = {
 
 function isActivePath(pathname: string, href: string) {
   if (href === '/') return pathname === '/';
+  if (href === '/community' && pathname === '/social') return true;
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-export function PublicDesktopNav({ items }: { readonly items: readonly PublicNavItem[] }) {
+export function PublicDesktopNav({
+  items,
+  variant = 'public',
+}: {
+  readonly items: readonly PublicNavItem[];
+  readonly variant?: 'public' | 'app';
+}) {
   const pathname = usePathname() ?? '/';
 
   return (
     <nav
       aria-label="Main navigation"
-      className="hidden items-center rounded-full border border-white/10 bg-white/[0.03] p-1 lg:flex"
+      className={
+        variant === 'app'
+          ? 'hidden items-center gap-1 lg:flex'
+          : 'hidden items-center rounded-full border border-white/10 bg-white/[0.03] p-1 lg:flex'
+      }
     >
       {items.map((item) => {
         const active = isActivePath(pathname, item.href);
@@ -50,8 +61,14 @@ export function PublicDesktopNav({ items }: { readonly items: readonly PublicNav
             href={item.href}
             aria-current={active ? 'page' : undefined}
             className={cn(
-              'rounded-full px-3 py-1.5 text-sm font-medium transition',
-              active ? 'bg-sky-300 text-slate-950' : 'text-slate-300 hover:bg-white/10 hover:text-white',
+              variant === 'app'
+                ? 'rounded-lg px-3 py-2 text-sm font-medium transition'
+                : 'rounded-full px-3 py-1.5 text-sm font-medium transition',
+              active
+                ? variant === 'app'
+                  ? 'bg-white/[0.08] text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)]'
+                  : 'bg-sky-300 text-slate-950'
+                : 'text-slate-400 hover:bg-white/[0.05] hover:text-white',
             )}
           >
             {item.label}

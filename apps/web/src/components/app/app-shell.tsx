@@ -131,59 +131,64 @@ export async function PublicWebsiteHeader({
   leading?: ReactNode;
 } = {}) {
   const user = await getHeaderUser();
+  const accountActions = (
+    <div className="flex items-center gap-2">
+      <a
+        href="https://github.com/gameguild-gg/gameguild"
+        className="hidden rounded-full border border-white/10 px-3 py-2 text-sm font-medium text-slate-300 transition hover:border-white/20 hover:bg-white/10 hover:text-white xl:inline-flex xl:items-center xl:gap-2"
+      >
+        <Github className="size-4" aria-hidden="true" />
+        GitHub
+      </a>
+      {user ? <PublicAccountMenu user={user} /> : (
+        <>
+          <Link
+            href="/sign-in"
+            className="hidden rounded-full border border-white/10 px-4 py-2 text-sm font-semibold text-slate-200 transition hover:bg-white/10 hover:text-white sm:inline-flex"
+          >
+            Sign in
+          </Link>
+          <Link
+            href="/sign-up"
+            className="hidden items-center rounded-full bg-sky-300 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-sky-200 sm:inline-flex"
+          >
+            Join community
+          </Link>
+        </>
+      )}
+      <PublicMobileNav items={primaryNav} user={user} />
+    </div>
+  );
 
   return (
     <header className="sticky top-0 z-40 border-b border-white/10 bg-slate-950/90 text-white backdrop-blur-xl">
       <div
         className={
           embedded
-            ? 'grid min-h-16 w-full grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 px-3 py-2 sm:px-4 lg:px-6'
+            ? 'flex min-h-16 w-full items-center justify-between gap-4 px-3 py-2 sm:px-4 lg:px-6'
             : 'mx-auto flex min-h-16 w-full max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8'
         }
       >
         {embedded ? (
-          <div className="flex min-w-0 items-center gap-2">
+          <div className="flex min-w-0 items-center gap-3">
             {leading}
             <Link href="/" aria-label="GameGuild home" className="flex min-w-0 items-center gap-2 md:hidden">
               <BrandMark />
               <span className="truncate text-sm font-semibold tracking-tight text-white">GameGuild</span>
             </Link>
+            <PublicDesktopNav items={primaryNav} variant="app" />
           </div>
         ) : (
-          <Link href="/" aria-label="GameGuild home" className="flex min-w-0 items-center gap-3">
-            <BrandMark />
-            <span className="truncate text-base font-semibold tracking-tight text-white">GameGuild</span>
-          </Link>
+          <>
+            <Link href="/" aria-label="GameGuild home" className="flex min-w-0 items-center gap-3">
+              <BrandMark />
+              <span className="truncate text-base font-semibold tracking-tight text-white">GameGuild</span>
+            </Link>
+            <PublicDesktopNav items={primaryNav} />
+          </>
         )}
 
-        <PublicDesktopNav items={primaryNav} />
-
-        <div className={embedded ? 'flex items-center justify-self-end gap-2' : 'flex items-center gap-2'}>
-          <a
-            href="https://github.com/gameguild-gg/gameguild"
-            className="hidden rounded-full border border-white/10 px-3 py-2 text-sm font-medium text-slate-300 transition hover:border-white/20 hover:bg-white/10 hover:text-white xl:inline-flex xl:items-center xl:gap-2"
-          >
-            <Github className="size-4" aria-hidden="true" />
-            GitHub
-          </a>
-          {user ? <PublicAccountMenu user={user} /> : (
-            <>
-              <Link
-                href="/sign-in"
-                className="hidden rounded-full border border-white/10 px-4 py-2 text-sm font-semibold text-slate-200 transition hover:bg-white/10 hover:text-white sm:inline-flex"
-              >
-                Sign in
-              </Link>
-              <Link
-                href="/sign-up"
-                className="hidden items-center rounded-full bg-sky-300 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-sky-200 sm:inline-flex"
-              >
-                Join community
-              </Link>
-            </>
-          )}
-          <PublicMobileNav items={primaryNav} user={user} />
-        </div>
+        {accountActions}
       </div>
     </header>
   );

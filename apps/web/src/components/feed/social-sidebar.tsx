@@ -5,6 +5,9 @@ import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuBadge,
@@ -13,7 +16,6 @@ import {
   SidebarRail,
   useSidebar,
 } from '@game-guild/ui/components/sidebar';
-import { cn } from '@game-guild/ui/lib/utils';
 import {
   Bookmark,
   Compass,
@@ -28,18 +30,34 @@ import {
 } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 
-const socialNavigation = [
-  { label: 'Home', href: '/social', icon: Home },
-  { label: 'Explore', href: '/projects', icon: Compass },
-  { label: 'Playtests', href: '/social?tab=playtests', icon: FlaskConical },
-  { label: 'Messages', href: '/workspace/invitations', icon: MessageCircle, badge: '5' },
-  { label: 'Saved', href: '/workspace/projects', icon: Bookmark },
+const socialNavigationGroups = [
+  {
+    label: 'Discover',
+    items: [
+      { label: 'Home', href: '/social', icon: Home },
+      { label: 'Explore', href: '/projects', icon: Compass },
+      { label: 'Playtests', href: '/social?tab=playtests', icon: FlaskConical },
+    ],
+  },
+  {
+    label: 'Library',
+    items: [
+      { label: 'Messages', href: '/workspace/invitations', icon: MessageCircle, badge: '5' },
+      { label: 'Saved', href: '/workspace/projects', icon: Bookmark },
+    ],
+  },
 ] as const;
 
-export function SocialSidebarToggle(): React.JSX.Element {
+export function SocialSidebarToggle({ placement = 'header' }: { placement?: 'header' | 'footer' }): React.JSX.Element {
   const { isMobile, openMobile, state, toggleSidebar } = useSidebar();
   const expanded = isMobile ? openMobile : state === 'expanded';
-  const label = expanded ? 'Collapse sidebar' : 'Expand sidebar';
+  const label = isMobile
+    ? expanded
+      ? 'Close sidebar'
+      : 'Open sidebar'
+    : expanded
+      ? 'Collapse sidebar'
+      : 'Expand sidebar';
   const Icon = expanded ? PanelLeftClose : PanelLeftOpen;
 
   return (
@@ -48,10 +66,16 @@ export function SocialSidebarToggle(): React.JSX.Element {
       onClick={toggleSidebar}
       aria-label={label}
       title={label}
-      className="inline-flex h-9 items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-2.5 text-sm font-semibold text-slate-300 transition hover:border-sky-300/30 hover:bg-sky-300/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300"
+      className={
+        placement === 'header'
+          ? 'inline-flex size-9 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-slate-300 transition hover:border-sky-300/30 hover:bg-sky-300/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300 md:hidden'
+          : 'flex h-10 w-full items-center justify-start gap-3 rounded-xl px-3 text-sm font-medium text-slate-400 transition hover:bg-white/[0.05] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0'
+      }
     >
-      <Icon className="size-4" aria-hidden="true" />
-      <span className="hidden xl:inline">{expanded ? 'Collapse' : 'Expand'}</span>
+      <Icon className="size-4 shrink-0" aria-hidden="true" />
+      {placement === 'footer' ? (
+        <span className="group-data-[collapsible=icon]:hidden">{label}</span>
+      ) : null}
     </button>
   );
 }
@@ -87,63 +111,53 @@ export function SocialSidebar(): React.JSX.Element {
               <span className="block truncate text-sm font-semibold text-white">GameGuild</span>
             </span>
           </Link>
-          <div className="md:hidden">
-            <SocialSidebarToggle />
-          </div>
         </div>
       </SidebarHeader>
 
-      <SidebarContent className="px-2 py-3">
-        <SidebarMenu aria-label="Social navigation" className="gap-1.5">
-          {socialNavigation.map(({ label, href, icon: Icon, ...item }) => {
-            const active =
-              (label === 'Home' && pathname === '/social' && !activeTab) ||
-              (label === 'Playtests' && pathname === '/social' && activeTab === 'playtests') ||
-              (label === 'Explore' && pathname.startsWith('/projects')) ||
-              (label === 'Messages' && pathname.startsWith('/workspace/invitations')) ||
-              (label === 'Saved' && pathname.startsWith('/workspace/projects'));
-            return (
-              <SidebarMenuItem key={label}>
-                <SidebarMenuButton
-                  asChild
-                  size="lg"
-                  isActive={active}
-                  tooltip={label}
-                  className={cn(
-                    'h-11 rounded-xl px-3 text-sm font-semibold text-slate-300 transition-colors hover:bg-white/[0.05] hover:text-white data-active:bg-sky-400/10 data-active:text-sky-300 [&_svg]:size-5',
-                  )}
-                >
-                  <Link href={href} aria-current={active ? 'page' : undefined}>
-                    <Icon strokeWidth={1.8} aria-hidden="true" />
-                    <span className="group-data-[collapsible=icon]:hidden">{label}</span>
-                  </Link>
-                </SidebarMenuButton>
-                {'badge' in item ? (
-                  <SidebarMenuBadge className="bg-violet-500/25 text-[10px] font-bold text-violet-200">
-                    {item.badge}
-                  </SidebarMenuBadge>
-                ) : null}
-              </SidebarMenuItem>
-            );
-          })}
-
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              size="lg"
-              tooltip="Workspace"
-              className="h-11 rounded-xl px-3 text-sm font-semibold text-slate-300 hover:bg-white/[0.05] hover:text-white [&_svg]:size-5"
-            >
-              <Link href="/workspace">
-                <UsersRound strokeWidth={1.8} aria-hidden="true" />
-                <span className="group-data-[collapsible=icon]:hidden">Workspace</span>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+      <SidebarContent className="px-2 py-4">
+        {socialNavigationGroups.map((group, groupIndex) => (
+          <SidebarGroup key={group.label} className={groupIndex === 0 ? 'p-0' : 'mt-5 p-0'}>
+            <SidebarGroupLabel className="mb-1 px-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+              {group.label}
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu aria-label={`${group.label} navigation`} className="gap-1">
+                {group.items.map(({ label, href, icon: Icon, ...item }) => {
+                  const active =
+                    (label === 'Home' && pathname === '/social' && !activeTab) ||
+                    (label === 'Playtests' && pathname === '/social' && activeTab === 'playtests') ||
+                    (label === 'Explore' && pathname.startsWith('/projects')) ||
+                    (label === 'Messages' && pathname.startsWith('/workspace/invitations')) ||
+                    (label === 'Saved' && pathname.startsWith('/workspace/projects'));
+                  return (
+                    <SidebarMenuItem key={label}>
+                      <SidebarMenuButton
+                        asChild
+                        size="lg"
+                        isActive={active}
+                        tooltip={label}
+                        className="h-11 rounded-xl px-3 text-sm font-semibold text-slate-300 transition-colors hover:bg-white/[0.05] hover:text-white data-active:bg-sky-400/10 data-active:text-sky-300 [&_svg]:size-5"
+                      >
+                        <Link href={href} aria-current={active ? 'page' : undefined}>
+                          <Icon strokeWidth={1.8} aria-hidden="true" />
+                          <span className="group-data-[collapsible=icon]:hidden">{label}</span>
+                        </Link>
+                      </SidebarMenuButton>
+                      {'badge' in item ? (
+                        <SidebarMenuBadge className="bg-violet-500/25 text-[10px] font-bold text-violet-200">
+                          {item.badge}
+                        </SidebarMenuBadge>
+                      ) : null}
+                    </SidebarMenuItem>
+                  );
+                })}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        ))}
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-white/10 p-3">
+      <SidebarFooter className="gap-2 border-t border-white/10 p-3">
         <button
           type="button"
           onClick={openComposer}
@@ -152,6 +166,24 @@ export function SocialSidebar(): React.JSX.Element {
           <Plus className="size-5 shrink-0" aria-hidden="true" />
           <span className="group-data-[collapsible=icon]:hidden">Create</span>
         </button>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              asChild
+              size="lg"
+              tooltip="Workspace"
+              className="h-10 rounded-xl px-3 text-sm font-medium text-slate-400 hover:bg-white/[0.05] hover:text-white [&_svg]:size-5"
+            >
+              <Link href="/workspace">
+                <UsersRound strokeWidth={1.8} aria-hidden="true" />
+                <span className="group-data-[collapsible=icon]:hidden">Workspace</span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+        <div className="border-t border-white/10 pt-2">
+          <SocialSidebarToggle placement="footer" />
+        </div>
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>
