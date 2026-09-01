@@ -179,7 +179,7 @@ export function PostCard({ post }: { post: PostCardData }): React.JSX.Element {
               />
             ) : null}
           </p>
-          <p className="truncate text-xs text-slate-400">
+          <p suppressHydrationWarning className="truncate text-xs text-slate-400">
             {post.communityLabel ? `${post.communityLabel} · ` : ""}
             {post.project?.title ? `${post.project.title} · ` : ""}
             {timeAgo(post.createdAt)}

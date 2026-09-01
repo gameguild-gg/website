@@ -104,7 +104,7 @@ export const demoSocialPosts: PostCardData[] = [
     sharesCount: 17,
     isEdited: false,
     isPinned: false,
-    createdAt: new Date(Date.now() - 12 * 60_000).toISOString(),
+    createdAt: "2026-09-01T21:45:00.000Z",
     project: {
       title: "Neon Rift",
       version: "v0.8.2",
