@@ -22,7 +22,7 @@ export default async function Page({
   const session = await auth();
   // authenticated suppresses the One Tap prompt; signed-in users landing
   // on /sign-in don't get pestered, and GIS forbids prompt() in that case.
-  const redirectTo = resolveAllowedAuthRedirect(query?.redirectTo);
+  const redirectTo = resolveAllowedAuthRedirect(query?.redirectTo ?? query?.callbackUrl);
   // Plain server-rendered anchor into the client-lib redirect flow
   // (GET /api/auth/signin/discord): no client JS, env-independent render.
   const discordHref =

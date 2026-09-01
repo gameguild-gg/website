@@ -1,8 +1,7 @@
 import { auth } from '@/auth';
 import { publicWebsiteHighlights } from '@/components/app/app-shell';
-import { FeedShell } from '@/components/feed/feed-shell';
-import { isFeedTab } from '@/components/feed/feed-tabs';
-import { Link } from '@/i18n/navigation';
+import { isSocialFeedTab } from '@/components/feed/social-feed-tabs';
+import { Link, redirect } from '@/i18n/navigation';
 import {
   getPublicActivities,
   getPublicMemberSpotlights,
@@ -14,10 +13,11 @@ import React from 'react';
 
 /** `/` is contextual: the community feed when signed in, the marketing landing otherwise. */
 export default async function Page({ params, searchParams }: PageProps<'/[locale]'>): Promise<React.JSX.Element> {
-  const [, query, session] = await Promise.all([params, searchParams, auth()]);
+  const [{ locale }, query, session] = await Promise.all([params, searchParams, auth()]);
   if (session && typeof session !== 'function') {
-    const rawTab = typeof query?.tab === 'string' ? query.tab : undefined;
-    return <FeedShell tab={isFeedTab(rawTab) ? rawTab : 'foryou'} />;
+    const rawTab = typeof query?.tab === 'string' && isSocialFeedTab(query.tab) ? query.tab : undefined;
+    redirect({ href: rawTab ? `/social?tab=${rawTab}` : '/social', locale });
+    throw new Error('Authenticated home redirect');
   }
 
   const [latestProjects, memberSpotlights, playtests, activities] = await Promise.all([

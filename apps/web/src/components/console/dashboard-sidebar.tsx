@@ -35,6 +35,7 @@ import {
   Globe2,
   MailCheck,
   Palette,
+  Radio,
   MessageSquareText,
   Rocket,
   Settings,
@@ -88,6 +89,11 @@ export const dashboardNavigationData: DashboardNavGroup[] = [
   {
     label: 'My Workspace',
     items: [
+      {
+        title: 'Social feed',
+        url: '/social',
+        icon: Radio,
+      },
       {
         title: 'Home',
         url: '/workspace',

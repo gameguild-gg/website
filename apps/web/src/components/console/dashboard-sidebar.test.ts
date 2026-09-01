@@ -59,6 +59,7 @@ describe("dashboard management navigation", () => {
 
     expect(navigation.map((group) => group.label)).toEqual(["My Workspace"]);
     expect(navigation[0]?.items.map((item) => item.title)).toEqual([
+      "Social feed",
       "Home",
       "Projects",
       "Teams",
