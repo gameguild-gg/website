@@ -1,7 +1,7 @@
 import { getSession, getToken } from '@/auth';
 import { createServerClient } from '@game-guild/client';
 import { Link } from '@/i18n/navigation';
-import { FlaskConical, Gamepad2, GraduationCap, Heart, MessageCircle, Rocket, Users } from 'lucide-react';
+import { Bell, FlaskConical, Gamepad2, GraduationCap, Heart, MessageCircle, Rocket, Search, Users } from 'lucide-react';
 import { Github, Twitter, Youtube } from '@/components/ui/brand-icons';
 import type { ReactNode } from 'react';
 import {
@@ -11,6 +11,7 @@ import {
   type PublicWebsiteUser,
 } from './public-website-nav';
 import { PublicAccountMenu } from './public-account-menu';
+import { SocialHeaderCreateButton } from '@/components/feed/social-header-create-button';
 
 const primaryNav = [
   { label: 'Community', href: '/community' },
@@ -38,6 +39,56 @@ const desktopPrimaryNav = [
   {
     label: 'More',
     items: [
+      { label: 'Jobs', href: '/jobs' },
+      { label: 'About', href: '/about' },
+    ],
+  },
+] as const satisfies readonly PublicNavEntry[];
+
+const socialDesktopNav = [
+  { label: 'Community', href: '/community' },
+  {
+    label: 'Learn',
+    items: [
+      { label: 'Courses', href: '/courses' },
+      { label: 'Programs', href: '/programs' },
+    ],
+  },
+  {
+    label: 'Build',
+    items: [
+      { label: 'Workspace', href: '/workspace' },
+      { label: 'Projects', href: '/projects' },
+    ],
+  },
+  {
+    label: 'Test & Launch',
+    items: [
+      { label: 'Testing Lab', href: '/testing-lab' },
+      { label: 'Launch Pad', href: '/launch-pad' },
+    ],
+  },
+] as const satisfies readonly PublicNavEntry[];
+
+const socialMobileNav = [
+  {
+    label: 'Community',
+    items: [
+      { label: 'Home', href: '/' },
+      { label: 'Explore', href: '/projects' },
+      { label: 'Testing Lab', href: '/testing-lab' },
+      { label: 'Messages', href: '/workspace/invitations' },
+      { label: 'Saved', href: '/workspace/projects' },
+    ],
+  },
+  {
+    label: 'GameGuild',
+    items: [
+      { label: 'Courses', href: '/courses' },
+      { label: 'Programs', href: '/programs' },
+      { label: 'Workspace', href: '/workspace' },
+      { label: 'Projects', href: '/projects' },
+      { label: 'Launch Pad', href: '/launch-pad' },
       { label: 'Jobs', href: '/jobs' },
       { label: 'About', href: '/about' },
     ],
@@ -157,7 +208,7 @@ export async function PublicWebsiteHeader({
   leading?: ReactNode;
 } = {}) {
   const user = await getHeaderUser();
-  const accountActions = (
+  const publicAccountActions = (
     <div className="flex items-center gap-2">
       <a
         href="https://github.com/gameguild-gg/gameguild"
@@ -186,6 +237,35 @@ export async function PublicWebsiteHeader({
       <PublicMobileNav items={primaryNav} user={user} />
     </div>
   );
+  const socialAccountActions = (
+    <div className="flex items-center gap-1">
+      <Link
+        href="/projects"
+        aria-label="Explore community"
+        title="Explore community"
+        className="inline-flex size-9 items-center justify-center rounded-full text-foreground transition-colors hover:bg-accent"
+      >
+        <Search className="size-4" aria-hidden="true" />
+      </Link>
+      <SocialHeaderCreateButton />
+      <Link
+        href="/workspace/settings/notifications"
+        aria-label="Notification settings"
+        title="Notification settings"
+        className="hidden size-9 items-center justify-center rounded-full text-foreground transition-colors hover:bg-accent sm:inline-flex"
+      >
+        <Bell className="size-4" aria-hidden="true" />
+      </Link>
+      {user ? <PublicAccountMenu user={user} /> : null}
+      <PublicMobileNav
+        items={socialMobileNav}
+        user={user}
+        triggerLabel="Open community navigation"
+        title="Navigation"
+        description="Community and GameGuild destinations."
+      />
+    </div>
+  );
 
   return (
     <header
@@ -209,7 +289,7 @@ export async function PublicWebsiteHeader({
               <BrandMark />
               <span className="truncate text-sm font-semibold tracking-tight text-sidebar-foreground">GameGuild</span>
             </Link>
-            <PublicDesktopNav items={desktopPrimaryNav} variant="app" />
+            <PublicDesktopNav items={socialDesktopNav} variant="app" />
           </div>
         ) : (
           <>
@@ -221,7 +301,7 @@ export async function PublicWebsiteHeader({
           </>
         )}
 
-        {accountActions}
+        {embedded ? socialAccountActions : publicAccountActions}
       </div>
     </header>
   );

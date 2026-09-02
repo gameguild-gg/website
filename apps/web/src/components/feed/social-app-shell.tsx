@@ -1,13 +1,10 @@
 import { PublicWebsiteHeader } from '@/components/app/app-shell';
-import { SocialSidebar, SocialSidebarToggle } from '@/components/feed/social-sidebar';
+import { SocialSidebar } from '@/components/feed/social-sidebar';
 import { Toaster } from '@/components/ui/sonner';
 import { SidebarProvider } from '@game-guild/ui/components/sidebar';
 
 export async function SocialAppShell({ children }: { children: React.ReactNode }): Promise<React.JSX.Element> {
-  const header = await PublicWebsiteHeader({
-    embedded: true,
-    leading: <SocialSidebarToggle placement="header" />,
-  });
+  const header = await PublicWebsiteHeader({ embedded: true });
 
   return (
     <div className="min-h-svh bg-background text-foreground">

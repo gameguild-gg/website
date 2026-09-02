@@ -10,7 +10,6 @@ import {
 } from '@game-guild/ui/components/dropdown-menu';
 import {
   Sheet,
-  SheetClose,
   SheetContent,
   SheetDescription,
   SheetHeader,
@@ -20,6 +19,7 @@ import {
 import { cn } from '@game-guild/ui/lib/utils';
 import { ChevronDown, Menu } from 'lucide-react';
 import { Github } from '@/components/ui/brand-icons';
+import { useState } from 'react';
 
 export type PublicNavItem = {
   readonly label: string;
@@ -140,99 +140,139 @@ export function PublicDesktopNav({
 export function PublicMobileNav({
   items,
   user = null,
+  triggerLabel = 'Open public navigation',
+  title = 'GameGuild',
+  description = 'Move from learning to testing, projects, and community.',
 }: {
-  readonly items: readonly PublicNavItem[];
+  readonly items: readonly PublicNavEntry[];
   readonly user?: PublicWebsiteUser | null;
+  readonly triggerLabel?: string;
+  readonly title?: string;
+  readonly description?: string;
 }) {
   const pathname = usePathname() ?? '/';
+  const [open, setOpen] = useState(false);
 
   return (
-    <Sheet>
+    <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
         <Button
           type="button"
           variant="outline"
           size="icon"
           className="border-border bg-accent/30 text-foreground hover:bg-accent hover:text-foreground lg:hidden"
-          aria-label="Open public navigation"
+          aria-label={triggerLabel}
         >
           <Menu className="size-4" aria-hidden="true" />
         </Button>
       </SheetTrigger>
       <SheetContent side="right" className="border-border bg-popover text-popover-foreground">
         <SheetHeader>
-          <SheetTitle className="text-foreground">GameGuild</SheetTitle>
-          <SheetDescription className="text-muted-foreground">Move from learning to testing, projects, and community.</SheetDescription>
+          <SheetTitle className="text-foreground">{title}</SheetTitle>
+          <SheetDescription className="text-muted-foreground">{description}</SheetDescription>
         </SheetHeader>
 
-        <nav aria-label="Mobile navigation" className="mt-8 grid gap-2">
+        <nav aria-label="Mobile navigation" className="mt-8 grid gap-6">
           {items.map((item) => {
+            if (isNavGroup(item)) {
+              return (
+                <section key={item.label} aria-labelledby={`mobile-nav-${item.label.toLowerCase().replaceAll(/[^a-z0-9]+/g, '-')}`}>
+                  <h2
+                    id={`mobile-nav-${item.label.toLowerCase().replaceAll(/[^a-z0-9]+/g, '-')}`}
+                    className="mb-2 px-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+                  >
+                    {item.label}
+                  </h2>
+                  <div className="grid gap-1">
+                    {item.items.map((child) => {
+                      const active = isActivePath(pathname, child.href, 'app');
+
+                      return (
+                        <a
+                          key={child.href}
+                          href={child.href}
+                          aria-current={active ? 'page' : undefined}
+                          onClick={() => setOpen(false)}
+                          className={cn(
+                            'rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
+                            active
+                              ? 'bg-accent text-accent-foreground'
+                              : 'text-foreground hover:bg-accent hover:text-accent-foreground',
+                          )}
+                        >
+                          {child.label}
+                        </a>
+                      );
+                    })}
+                  </div>
+                </section>
+              );
+            }
+
             const active = isActivePath(pathname, item.href);
 
             return (
-              <SheetClose asChild key={item.href}>
-                <a
-                  href={item.href}
-                  aria-current={active ? 'page' : undefined}
-                  className={cn(
-                    'rounded-2xl border px-4 py-3 text-sm font-semibold transition',
-                    active
-                      ? 'border-primary bg-primary text-primary-foreground'
-                      : 'border-border bg-accent/30 text-foreground hover:bg-accent hover:text-accent-foreground',
-                  )}
-                >
-                  {item.label}
-                </a>
-              </SheetClose>
+              <a
+                key={item.href}
+                href={item.href}
+                aria-current={active ? 'page' : undefined}
+                onClick={() => setOpen(false)}
+                className={cn(
+                  'rounded-2xl border px-4 py-3 text-sm font-semibold transition',
+                  active
+                    ? 'border-primary bg-primary text-primary-foreground'
+                    : 'border-border bg-accent/30 text-foreground hover:bg-accent hover:text-accent-foreground',
+                )}
+              >
+                {item.label}
+              </a>
             );
           })}
         </nav>
 
         <div className="mt-8 grid gap-3">
           {user ? (
-            <SheetClose asChild>
-              <Link
-                href="/workspace"
-                aria-label={`${user.name} profile`}
-                className="inline-flex min-w-0 items-center gap-3 rounded-2xl border border-border bg-accent/40 px-4 py-3 text-left text-sm font-semibold text-foreground transition hover:bg-accent"
-              >
-                <span className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary text-sm font-bold text-primary-foreground">
-                  {user.image ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={user.image} alt="" className="size-full object-cover" />
-                  ) : (
-                    user.initials
-                  )}
-                </span>
-                <span className="min-w-0">
-                  <span className="block truncate">{user.name}</span>
-                  {user.email && <span className="block truncate text-xs font-medium text-muted-foreground">{user.email}</span>}
-                </span>
-              </Link>
-            </SheetClose>
+            <Link
+              href="/workspace"
+              aria-label={`${user.name} profile`}
+              onClick={() => setOpen(false)}
+              className="inline-flex min-w-0 items-center gap-3 rounded-2xl border border-border bg-accent/40 px-4 py-3 text-left text-sm font-semibold text-foreground transition hover:bg-accent"
+            >
+              <span className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary text-sm font-bold text-primary-foreground">
+                {user.image ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={user.image} alt="" className="size-full object-cover" />
+                ) : (
+                  user.initials
+                )}
+              </span>
+              <span className="min-w-0">
+                <span className="block truncate">{user.name}</span>
+                {user.email && <span className="block truncate text-xs font-medium text-muted-foreground">{user.email}</span>}
+              </span>
+            </Link>
           ) : (
             <>
-              <SheetClose asChild>
-                <Link
-                  href="/sign-up"
-                  className="inline-flex items-center justify-center rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:bg-primary/85"
-                >
-                  Join community
-                </Link>
-              </SheetClose>
-              <SheetClose asChild>
-                <Link
-                  href="/sign-in"
-                  className="inline-flex items-center justify-center rounded-full border border-border px-4 py-2 text-sm font-semibold text-foreground transition hover:bg-accent"
-                >
-                  Sign in
-                </Link>
-              </SheetClose>
+              <Link
+                href="/sign-up"
+                onClick={() => setOpen(false)}
+                className="inline-flex items-center justify-center rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:bg-primary/85"
+              >
+                Join community
+              </Link>
+              <Link
+                href="/sign-in"
+                onClick={() => setOpen(false)}
+                className="inline-flex items-center justify-center rounded-full border border-border px-4 py-2 text-sm font-semibold text-foreground transition hover:bg-accent"
+              >
+                Sign in
+              </Link>
             </>
           )}
-          {user?.canManage ? <SheetClose asChild><Link href="/dashboard" className="inline-flex items-center justify-center rounded-full border border-border px-4 py-2 text-sm font-semibold text-foreground transition hover:bg-accent">Dashboard</Link></SheetClose> : null}
+          {user?.canManage ? <Link href="/dashboard" onClick={() => setOpen(false)} className="inline-flex items-center justify-center rounded-full border border-border px-4 py-2 text-sm font-semibold text-foreground transition hover:bg-accent">Dashboard</Link> : null}
           <a
             href="https://github.com/gameguild-gg/gameguild"
+            onClick={() => setOpen(false)}
             className="inline-flex items-center justify-center gap-2 rounded-full border border-border px-4 py-2 text-sm font-semibold text-foreground transition hover:bg-accent"
           >
             <Github className="size-4" aria-hidden="true" />

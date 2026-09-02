@@ -146,6 +146,75 @@ describe('public community website UX', () => {
     expect((await screen.findAllByRole('menuitem')).map((item) => item.textContent)).toEqual(['Courses', 'Programs']);
   });
 
+  it('groups the authenticated social header around learning, building, and release', async () => {
+    authMock.mockResolvedValueOnce({
+      user: {
+        id: 'member-1',
+        name: 'Maya Torres',
+        email: 'maya@gameguild.gg',
+        image: null,
+      },
+      expires: '2026-12-31T00:00:00.000Z',
+    });
+
+    render(await PublicWebsiteHeader({ embedded: true }));
+
+    const nav = screen.getByRole('navigation', { name: /main navigation/i });
+    expect(within(nav).getAllByRole('link').map((link) => link.textContent)).toEqual(['Community']);
+    expect(within(nav).getAllByRole('button').map((button) => button.textContent)).toEqual([
+      'Learn',
+      'Build',
+      'Test & Launch',
+    ]);
+
+    fireEvent.click(within(nav).getByRole('button', { name: 'Build' }));
+    expect((await screen.findAllByRole('menuitem')).map((item) => item.textContent)).toEqual([
+      'Workspace',
+      'Projects',
+    ]);
+
+    fireEvent.click(within(nav).getByRole('button', { name: 'Build' }));
+    fireEvent.click(within(nav).getByRole('button', { name: 'Test & Launch' }));
+    expect((await screen.findAllByRole('menuitem')).map((item) => item.textContent)).toEqual([
+      'Testing Lab',
+      'Launch Pad',
+    ]);
+  });
+
+  it('offers social actions and one unified community menu', async () => {
+    authMock.mockResolvedValueOnce({
+      user: {
+        id: 'member-1',
+        name: 'Maya Torres',
+        email: 'maya@gameguild.gg',
+        image: null,
+      },
+      expires: '2026-12-31T00:00:00.000Z',
+    });
+    const onCompose = vi.fn();
+    window.addEventListener('social:compose', onCompose);
+
+    render(await PublicWebsiteHeader({ embedded: true }));
+
+    expect(screen.getByRole('link', { name: 'Explore community' })).toHaveAttribute('href', '/projects');
+    fireEvent.click(screen.getByRole('button', { name: 'Create post' }));
+    expect(onCompose).toHaveBeenCalledOnce();
+    expect(screen.getByRole('link', { name: 'Notification settings' })).toHaveAttribute(
+      'href',
+      '/workspace/settings/notifications',
+    );
+    expect(screen.getByRole('button', { name: 'Open community navigation' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Open public navigation' })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open community navigation' }));
+    expect(await screen.findByRole('heading', { name: 'Community' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'GameGuild' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Messages' })).toHaveAttribute('href', '/workspace/invitations');
+    expect(screen.getByRole('link', { name: 'Workspace' })).toHaveAttribute('href', '/workspace');
+
+    window.removeEventListener('social:compose', onCompose);
+  });
+
   it('shows the authenticated member profile instead of sign-in calls to action', async () => {
     authMock.mockResolvedValueOnce({
       user: {
