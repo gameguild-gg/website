@@ -23,7 +23,7 @@ import {
 } from '@game-guild/ui/components/dropdown-menu';
 import { Separator } from '@game-guild/ui/components/separator';
 import { SidebarTrigger } from '@game-guild/ui/components/sidebar';
-import { ArrowLeft, Bell, CheckCheck, Command, Mail, Search } from 'lucide-react';
+import { Bell, CheckCheck, Command, House, Mail, Search } from 'lucide-react';
 import * as React from 'react';
 import { toast } from 'sonner';
 import type { DashboardNotificationItem, DashboardNotificationSummary } from '@/lib/dashboard-notifications';
@@ -200,21 +200,15 @@ export function DashboardHeader({ notifications, user }: DashboardHeaderProps) {
     <header className="sticky top-0 z-40 grid h-16 min-w-0 shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 border-b px-3 sm:px-4 xl:grid-cols-[minmax(0,1fr)_minmax(16rem,32rem)_minmax(0,1fr)]">
       <div className="flex min-w-0 items-center gap-2">
         {isWorkspace ? (
-          <>
-            <SidebarTrigger className="md:hidden" />
-            <Button asChild variant="secondary" size="sm" className="gap-1.5 px-2.5 shadow-none">
-              <Link href="/" aria-label="Back to Community" title="Back to Community">
-                <ArrowLeft className="size-3.5" aria-hidden="true" />
-                <span className="hidden sm:inline">Community</span>
-              </Link>
-            </Button>
-          </>
+          <SidebarTrigger className="md:hidden" />
         ) : (
           <SidebarTrigger />
         )}
         {breadcrumbs.length > 0 && (
           <>
-            <Separator orientation="vertical" className="mr-2 hidden data-[orientation=vertical]:h-4 sm:block" />
+            {!isWorkspace && (
+              <Separator orientation="vertical" className="mr-2 hidden data-[orientation=vertical]:h-4 sm:block" />
+            )}
             <Breadcrumb aria-label="Dashboard breadcrumb" className="hidden min-w-0 flex-1 overflow-hidden sm:block">
               <BreadcrumbList className="flex-nowrap overflow-hidden">
                 <BreadcrumbItem>
@@ -261,7 +255,25 @@ export function DashboardHeader({ notifications, user }: DashboardHeaderProps) {
           </kbd>
         </button>
       </div>
-      <div className="flex shrink-0 items-center justify-end gap-1 sm:gap-2">
+      <div
+        role="group"
+        aria-label="Dashboard actions"
+        className="flex shrink-0 items-center justify-end gap-1 sm:gap-2"
+      >
+        {isWorkspace && (
+          <Button
+            asChild
+            variant="ghost"
+            size="sm"
+            className="gap-1.5 px-2 text-muted-foreground hover:text-foreground"
+          >
+            <Link href="/" aria-label="Open Community feed" title="Open Community feed">
+              <House className="size-4" aria-hidden="true" />
+              <span className="hidden md:inline">Feed</span>
+            </Link>
+          </Button>
+        )}
+
         <Button
           type="button"
           variant="ghost"

@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ButtonHTMLAttributes, ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -127,7 +127,7 @@ describe('DashboardHeader', () => {
     expect(searchButtons[1]).toHaveClass('xl:hidden');
   });
 
-  it('renders Community as a compact context switcher without a desktop sidebar toggle', () => {
+  it('places the Community feed link with the global header actions', () => {
     mocks.pathname = '/workspace/projects';
 
     render(
@@ -137,10 +137,11 @@ describe('DashboardHeader', () => {
       />,
     );
 
-    const communityLink = screen.getByRole('link', { name: 'Back to Community' });
-    expect(communityLink).toHaveAttribute('href', '/');
-    expect(communityLink).toHaveAttribute('data-slot', 'button');
-    expect(communityLink).toHaveClass('bg-secondary', 'text-secondary-foreground');
+    const actions = screen.getByRole('group', { name: 'Dashboard actions' });
+    const feedLink = within(actions).getByRole('link', { name: 'Open Community feed' });
+    expect(feedLink).toHaveAttribute('href', '/');
+    expect(feedLink).toHaveTextContent('Feed');
+    expect(feedLink).toHaveAttribute('data-slot', 'button');
     expect(screen.getByRole('button', { name: 'Toggle sidebar' })).toHaveClass('md:hidden');
   });
 
@@ -154,7 +155,7 @@ describe('DashboardHeader', () => {
       />,
     );
 
-    expect(screen.queryByRole('link', { name: 'Back to Community' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Open Community feed' })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Toggle sidebar' })).not.toHaveClass('md:hidden');
   });
 });
