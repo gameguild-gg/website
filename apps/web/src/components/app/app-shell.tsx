@@ -4,19 +4,45 @@ import { Link } from '@/i18n/navigation';
 import { FlaskConical, Gamepad2, GraduationCap, Heart, MessageCircle, Rocket, Users } from 'lucide-react';
 import { Github, Twitter, Youtube } from '@/components/ui/brand-icons';
 import type { ReactNode } from 'react';
-import { PublicDesktopNav, PublicMobileNav, type PublicWebsiteUser } from './public-website-nav';
+import {
+  PublicDesktopNav,
+  PublicMobileNav,
+  type PublicNavEntry,
+  type PublicWebsiteUser,
+} from './public-website-nav';
 import { PublicAccountMenu } from './public-account-menu';
 
 const primaryNav = [
+  { label: 'Community', href: '/community' },
   { label: 'Courses', href: '/courses' },
   { label: 'Programs', href: '/programs' },
+  { label: 'Projects', href: '/projects' },
   { label: 'Testing Lab', href: '/testing-lab' },
   { label: 'Launch Pad', href: '/launch-pad' },
-  { label: 'Projects', href: '/projects' },
-  { label: 'Community', href: '/community' },
   { label: 'Jobs', href: '/jobs' },
   { label: 'About', href: '/about' },
 ] as const;
+
+const desktopPrimaryNav = [
+  { label: 'Community', href: '/community' },
+  {
+    label: 'Learn',
+    items: [
+      { label: 'Courses', href: '/courses' },
+      { label: 'Programs', href: '/programs' },
+    ],
+  },
+  { label: 'Projects', href: '/projects' },
+  { label: 'Testing Lab', href: '/testing-lab' },
+  { label: 'Launch Pad', href: '/launch-pad' },
+  {
+    label: 'More',
+    items: [
+      { label: 'Jobs', href: '/jobs' },
+      { label: 'About', href: '/about' },
+    ],
+  },
+] as const satisfies readonly PublicNavEntry[];
 
 const footerSections = [
   {
@@ -135,10 +161,11 @@ export async function PublicWebsiteHeader({
     <div className="flex items-center gap-2">
       <a
         href="https://github.com/gameguild-gg/gameguild"
-        className="hidden rounded-full border border-border px-3 py-2 text-sm font-medium text-muted-foreground transition hover:bg-accent hover:text-foreground xl:inline-flex xl:items-center xl:gap-2"
+        aria-label="GameGuild on GitHub"
+        title="GitHub"
+        className="hidden size-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-foreground xl:inline-flex"
       >
         <Github className="size-4" aria-hidden="true" />
-        GitHub
       </a>
       {user ? <PublicAccountMenu user={user} /> : (
         <>
@@ -171,7 +198,7 @@ export async function PublicWebsiteHeader({
       <div
         className={
           embedded
-            ? 'flex min-h-16 w-full items-center justify-between gap-4 px-3 py-2 sm:px-4 lg:px-6'
+            ? 'flex min-h-14 w-full items-center justify-between gap-3 px-3 py-1.5 sm:px-4 lg:px-6'
             : 'mx-auto flex min-h-16 w-full max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8'
         }
       >
@@ -182,7 +209,7 @@ export async function PublicWebsiteHeader({
               <BrandMark />
               <span className="truncate text-sm font-semibold tracking-tight text-sidebar-foreground">GameGuild</span>
             </Link>
-            <PublicDesktopNav items={primaryNav} variant="app" />
+            <PublicDesktopNav items={desktopPrimaryNav} variant="app" />
           </div>
         ) : (
           <>
@@ -190,7 +217,7 @@ export async function PublicWebsiteHeader({
               <BrandMark />
               <span className="truncate text-base font-semibold tracking-tight text-sidebar-foreground">GameGuild</span>
             </Link>
-            <PublicDesktopNav items={primaryNav} />
+            <PublicDesktopNav items={desktopPrimaryNav} />
           </>
         )}
 

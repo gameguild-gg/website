@@ -3,6 +3,12 @@
 import { Link, usePathname } from '@/i18n/navigation';
 import { Button } from '@game-guild/ui/components/button';
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@game-guild/ui/components/dropdown-menu';
+import {
   Sheet,
   SheetClose,
   SheetContent,
@@ -12,13 +18,20 @@ import {
   SheetTrigger,
 } from '@game-guild/ui/components/sheet';
 import { cn } from '@game-guild/ui/lib/utils';
-import { Menu } from 'lucide-react';
+import { ChevronDown, Menu } from 'lucide-react';
 import { Github } from '@/components/ui/brand-icons';
 
 export type PublicNavItem = {
   readonly label: string;
   readonly href: string;
 };
+
+export type PublicNavGroup = {
+  readonly label: string;
+  readonly items: readonly PublicNavItem[];
+};
+
+export type PublicNavEntry = PublicNavItem | PublicNavGroup;
 
 export type PublicWebsiteUser = {
   readonly name: string;
@@ -34,11 +47,15 @@ function isActivePath(pathname: string, href: string, variant: 'public' | 'app' 
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
+function isNavGroup(entry: PublicNavEntry): entry is PublicNavGroup {
+  return 'items' in entry;
+}
+
 export function PublicDesktopNav({
   items,
   variant = 'public',
 }: {
-  readonly items: readonly PublicNavItem[];
+  readonly items: readonly PublicNavEntry[];
   readonly variant?: 'public' | 'app';
 }) {
   const pathname = usePathname() ?? '/';
@@ -53,6 +70,47 @@ export function PublicDesktopNav({
       }
     >
       {items.map((item) => {
+        if (isNavGroup(item)) {
+          const active = item.items.some((child) => isActivePath(pathname, child.href, variant));
+
+          return (
+            <DropdownMenu key={item.label}>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  aria-current={active ? 'page' : undefined}
+                  className={cn(
+                    variant === 'app'
+                      ? 'inline-flex h-9 items-center gap-1 rounded-lg px-2.5 text-[13px] font-medium transition-colors'
+                      : 'inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-sm font-medium transition-colors',
+                    active
+                      ? variant === 'app'
+                        ? 'bg-accent text-accent-foreground'
+                        : 'bg-primary text-primary-foreground'
+                      : 'text-muted-foreground hover:bg-accent hover:text-foreground',
+                  )}
+                >
+                  {item.label}
+                  <ChevronDown className="size-3.5 opacity-60" aria-hidden="true" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="min-w-40">
+                {item.items.map((child) => {
+                  const childActive = isActivePath(pathname, child.href, variant);
+
+                  return (
+                    <DropdownMenuItem key={child.href} asChild>
+                      <a href={child.href} aria-current={childActive ? 'page' : undefined}>
+                        {child.label}
+                      </a>
+                    </DropdownMenuItem>
+                  );
+                })}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          );
+        }
+
         const active = isActivePath(pathname, item.href, variant);
 
         return (
@@ -62,7 +120,7 @@ export function PublicDesktopNav({
             aria-current={active ? 'page' : undefined}
             className={cn(
               variant === 'app'
-                ? 'rounded-lg px-3 py-2 text-sm font-medium transition'
+                ? 'inline-flex h-9 items-center rounded-lg px-2.5 text-[13px] font-medium transition-colors'
                 : 'rounded-full px-3 py-1.5 text-sm font-medium transition',
               active
                 ? variant === 'app'

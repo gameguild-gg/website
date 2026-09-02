@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import type { AnchorHTMLAttributes, ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -128,22 +128,22 @@ describe('public community website UX', () => {
     );
   });
 
-  it('exposes the learning-to-community information architecture in the header', async () => {
+  it('exposes a compact community-first information architecture in the header', async () => {
     authMock.mockResolvedValueOnce(null);
 
     render(await PublicWebsiteHeader());
 
     const nav = screen.getByRole('navigation', { name: /main navigation/i });
     expect(within(nav).getAllByRole('link').map((link) => link.textContent)).toEqual([
-      'Courses',
-      'Programs',
+      'Community',
+      'Projects',
       'Testing Lab',
       'Launch Pad',
-      'Projects',
-      'Community',
-      'Jobs',
-      'About',
     ]);
+    expect(within(nav).getAllByRole('button').map((button) => button.textContent)).toEqual(['Learn', 'More']);
+
+    fireEvent.click(within(nav).getByRole('button', { name: /learn/i }));
+    expect((await screen.findAllByRole('menuitem')).map((item) => item.textContent)).toEqual(['Courses', 'Programs']);
   });
 
   it('shows the authenticated member profile instead of sign-in calls to action', async () => {
