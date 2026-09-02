@@ -134,7 +134,7 @@ export const dashboardNavigationData: DashboardNavGroup[] = [
     ],
   },
   {
-    label: 'Community administration',
+    label: 'Community Management',
     items: [
       {
         title: 'Overview',
