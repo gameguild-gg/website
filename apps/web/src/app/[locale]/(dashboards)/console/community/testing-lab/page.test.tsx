@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   getTestingLabAnalytics: vi.fn(),
   getTestingLabDashboard: vi.fn(),
   getTestingEventsDirectory: vi.fn(),
+  getTestingApplicationsDirectory: vi.fn(),
   normalizeTestingRequestStatus: vi.fn(),
   normalizeTestingSessionStatus: vi.fn(),
 }));
@@ -19,6 +20,11 @@ vi.mock('@/lib/testing-lab', () => ({
 
 vi.mock('@/lib/testing-lab/events-queries', () => ({
   getTestingEventsDirectory: mocks.getTestingEventsDirectory,
+  getTestingApplicationsDirectory: mocks.getTestingApplicationsDirectory,
+}));
+
+vi.mock('@/components/testing-lab/testing-event-management', () => ({
+  CreateTestingEventDialog: () => <button type="button">New event</button>,
 }));
 
 vi.mock('@/components/testing-lab/testing-lab-calendar', () => ({
@@ -110,6 +116,15 @@ describe('testing lab dashboard page', () => {
         },
       ],
     });
+    mocks.getTestingApplicationsDirectory.mockResolvedValue({
+      accessIssues: [],
+      entries: [
+        {
+          event: { id: 'event-1', name: 'Campus playtest' },
+          application: { id: 'application-1', status: 'Pending' },
+        },
+      ],
+    });
 
     render(await TestingLabPage());
 
@@ -119,14 +134,21 @@ describe('testing lab dashboard page', () => {
       name: 'Testing Lab operations',
     });
     expect(workspaceNavigation.closest('header')).not.toBeNull();
-    expect(screen.getByRole('link', { name: /events workspace/i })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'Events' })).toHaveAttribute(
       'href',
       '/console/community/testing-lab/events',
     );
-    expect(screen.getByRole('link', { name: /projects workspace/i })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'Applications' })).toHaveAttribute(
       'href',
-      '/console/community/testing-lab/projects',
+      '/console/community/testing-lab/applications',
     );
+    expect(screen.getByRole('link', { name: 'Overview' })).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByRole('button', { name: 'New event' })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /manage events/i })).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Needs attention' })).toBeInTheDocument();
+    expect(screen.getByText('1 pending application')).toBeInTheDocument();
+    expect(screen.getByText('Recent testing projects')).toBeInTheDocument();
+    expect(screen.queryByText('Recent requests')).not.toBeInTheDocument();
     expect(screen.getByRole('region', { name: 'Testing Lab calendar' })).toBeInTheDocument();
     expect(screen.getByText('Campus playtest')).toBeInTheDocument();
     expect(screen.getByText('Calendar capacity 10')).toBeInTheDocument();
@@ -168,11 +190,22 @@ describe('testing lab dashboard page', () => {
       accessIssues: [],
       events: [],
     });
+    mocks.getTestingApplicationsDirectory.mockResolvedValue({
+      accessIssues: [],
+      entries: [],
+    });
 
     render(await TestingLabPage());
 
     expect(screen.getByText('Unlimited')).toBeInTheDocument();
     expect(screen.getByText('2 registered')).toBeInTheDocument();
     expect(screen.queryByText('2/0 seats')).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Launch your first testing cycle' })).toBeInTheDocument();
+    expect(screen.getByText('Create an event')).toBeInTheDocument();
+    expect(screen.getByText('Add rules and instructions')).toBeInTheDocument();
+    expect(screen.getByText('Configure slots and capacity')).toBeInTheDocument();
+    expect(screen.getByText('Open applications')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'New event' })).toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'Testing Lab calendar' })).not.toBeInTheDocument();
   });
 });
