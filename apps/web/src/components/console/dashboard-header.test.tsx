@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import type { ReactNode } from 'react';
+import type { ButtonHTMLAttributes, ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DashboardHeader } from './dashboard-header';
 
@@ -32,7 +32,9 @@ vi.mock('@game-guild/client/react', () => ({
 }));
 
 vi.mock('@game-guild/ui/components/sidebar', () => ({
-  SidebarTrigger: () => <button type="button">Toggle sidebar</button>,
+  SidebarTrigger: (props: ButtonHTMLAttributes<HTMLButtonElement>) => (
+    <button type="button" {...props}>Toggle sidebar</button>
+  ),
 }));
 
 describe('DashboardHeader', () => {
@@ -123,5 +125,33 @@ describe('DashboardHeader', () => {
     expect(searchButtons[0]).toHaveClass('lg:max-w-md');
     expect(searchButtons[0].parentElement).toHaveClass('hidden', 'xl:flex', 'justify-center');
     expect(searchButtons[1]).toHaveClass('xl:hidden');
+  });
+
+  it('returns workspace members to Community without a desktop sidebar toggle in the header', () => {
+    mocks.pathname = '/workspace/projects';
+
+    render(
+      <DashboardHeader
+        user={{ id: 'user-123', name: 'Ada Lovelace', email: 'ada@gameguild.gg', image: null }}
+        notifications={{ items: [], unreadCount: 0 }}
+      />,
+    );
+
+    expect(screen.getByRole('link', { name: 'Back to Community' })).toHaveAttribute('href', '/');
+    expect(screen.getByRole('button', { name: 'Toggle sidebar' })).toHaveClass('md:hidden');
+  });
+
+  it('keeps the existing sidebar toggle and omits the Community return in the console', () => {
+    mocks.pathname = '/console/community';
+
+    render(
+      <DashboardHeader
+        user={{ id: 'user-123', name: 'Ada Lovelace', email: 'ada@gameguild.gg', image: null }}
+        notifications={{ items: [], unreadCount: 0 }}
+      />,
+    );
+
+    expect(screen.queryByRole('link', { name: 'Back to Community' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Toggle sidebar' })).not.toHaveClass('md:hidden');
   });
 });

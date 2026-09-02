@@ -23,7 +23,7 @@ import {
 } from '@game-guild/ui/components/dropdown-menu';
 import { Separator } from '@game-guild/ui/components/separator';
 import { SidebarTrigger } from '@game-guild/ui/components/sidebar';
-import { Bell, CheckCheck, Command, Mail, Search } from 'lucide-react';
+import { ArrowLeft, Bell, CheckCheck, Command, Mail, Search } from 'lucide-react';
 import * as React from 'react';
 import { toast } from 'sonner';
 import type { DashboardNotificationItem, DashboardNotificationSummary } from '@/lib/dashboard-notifications';
@@ -101,6 +101,7 @@ interface DashboardHeaderProps {
 
 export function DashboardHeader({ notifications, user }: DashboardHeaderProps) {
   const pathname = usePathname();
+  const isWorkspace = pathname?.startsWith('/workspace') ?? false;
   const notificationSummary = notifications ?? { items: [], unreadCount: 0 };
   const [readOverrides, setReadOverrides] = React.useState<Record<string, boolean>>({});
   const [hiddenUnreadCount, setHiddenUnreadCount] = React.useState<number | null>(null);
@@ -198,7 +199,21 @@ export function DashboardHeader({ notifications, user }: DashboardHeaderProps) {
   return (
     <header className="sticky top-0 z-40 grid h-16 min-w-0 shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 border-b px-3 sm:px-4 xl:grid-cols-[minmax(0,1fr)_minmax(16rem,32rem)_minmax(0,1fr)]">
       <div className="flex min-w-0 items-center gap-2">
-        <SidebarTrigger />
+        {isWorkspace ? (
+          <>
+            <SidebarTrigger className="md:hidden" />
+            <Link
+              href="/"
+              aria-label="Back to Community"
+              className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-md px-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <ArrowLeft className="size-4" aria-hidden="true" />
+              <span className="hidden sm:inline">Community</span>
+            </Link>
+          </>
+        ) : (
+          <SidebarTrigger />
+        )}
         {breadcrumbs.length > 0 && (
           <>
             <Separator orientation="vertical" className="mr-2 hidden data-[orientation=vertical]:h-4 sm:block" />

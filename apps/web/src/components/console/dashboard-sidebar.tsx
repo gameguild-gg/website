@@ -17,6 +17,7 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
   SidebarRail,
+  useSidebar,
 } from '@game-guild/ui/components/sidebar';
 import {
   Accessibility,
@@ -35,6 +36,8 @@ import {
   Globe2,
   MailCheck,
   Palette,
+  PanelLeftClose,
+  PanelLeftOpen,
   MessageSquareText,
   Rocket,
   Settings,
@@ -606,6 +609,40 @@ const consoleTenants: Tenant[] = [
   { id: 'gameguild', name: 'GameGuild', logo: GraduationCap, plan: 'Platform' },
 ];
 
+export function DashboardSidebarFooter() {
+  const pathname = usePathname();
+  const { isMobile, openMobile, state, toggleSidebar } = useSidebar();
+  const isWorkspace = pathname?.startsWith('/workspace') ?? false;
+
+  if (!isWorkspace) {
+    return <SidebarFooter />;
+  }
+
+  const expanded = isMobile ? openMobile : state === 'expanded';
+  const label = isMobile
+    ? expanded
+      ? 'Close sidebar'
+      : 'Open sidebar'
+    : expanded
+      ? 'Collapse sidebar'
+      : 'Expand sidebar';
+  const Icon = expanded ? PanelLeftClose : PanelLeftOpen;
+
+  return (
+    <SidebarFooter className="items-center p-2">
+      <button
+        type="button"
+        onClick={toggleSidebar}
+        aria-label={label}
+        title={label}
+        className="flex size-8 items-center justify-center rounded-md text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+      >
+        <Icon className="size-4" aria-hidden="true" />
+      </button>
+    </SidebarFooter>
+  );
+}
+
 export function DashboardSidebar({
   navigation = filterDashboardNavigation(dashboardNavigationData, []),
   contexts = [],
@@ -620,7 +657,7 @@ export function DashboardSidebar({
       <SidebarContent className="gap-0">
         <NavGroups groups={navigation} />
       </SidebarContent>
-      <SidebarFooter />
+      <DashboardSidebarFooter />
       <SidebarRail />
     </Sidebar>
   );

@@ -1,11 +1,16 @@
 import '@testing-library/jest-dom/vitest';
 import { render, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+const mocks = vi.hoisted(() => ({
+  pathname: '/workspace',
+  toggleSidebar: vi.fn(),
+}));
 
 vi.mock('@/i18n/navigation', () => ({
   Link: ({ href, children }: { href: string; children: ReactNode }) => <a href={href}>{children}</a>,
-  usePathname: () => '/workspace',
+  usePathname: () => mocks.pathname,
 }));
 
 vi.mock('@game-guild/ui/components/sidebar', () => ({
@@ -13,9 +18,16 @@ vi.mock('@game-guild/ui/components/sidebar', () => ({
   SidebarMenuItem: ({ children }: { children: ReactNode }) => <div>{children}</div>,
   SidebarMenuButton: ({ asChild, children }: { asChild?: boolean; children: ReactNode }) =>
     asChild ? <>{children}</> : <button type="button">{children}</button>,
-  useSidebar: () => ({ isMobile: false }),
+  SidebarFooter: ({ children }: { children?: ReactNode }) => <footer>{children}</footer>,
+  useSidebar: () => ({
+    isMobile: false,
+    openMobile: false,
+    state: 'expanded',
+    toggleSidebar: mocks.toggleSidebar,
+  }),
 }));
 
+import { DashboardSidebarFooter } from './dashboard-sidebar';
 import { ContextSwitcher } from './team-switcher';
 import { TenantSwitcher } from './tenant-switcher';
 
@@ -24,6 +36,11 @@ function TenantLogo() {
 }
 
 describe('workspace shell switchers', () => {
+  beforeEach(() => {
+    mocks.pathname = '/workspace';
+    mocks.toggleSidebar.mockReset();
+  });
+
   it('does not render a tenant switcher when only one tenant is available', () => {
     const { container } = render(
       <TenantSwitcher
@@ -56,5 +73,22 @@ describe('workspace shell switchers', () => {
     );
 
     expect(screen.getByRole('button', { name: 'Workspace' })).toBeInTheDocument();
+  });
+
+  it('places the desktop collapse control in the workspace sidebar footer', () => {
+    render(<DashboardSidebarFooter />);
+
+    const toggle = screen.getByRole('button', { name: 'Collapse sidebar' });
+    toggle.click();
+
+    expect(mocks.toggleSidebar).toHaveBeenCalledOnce();
+  });
+
+  it('does not add a footer toggle to the console sidebar', () => {
+    mocks.pathname = '/console/community';
+
+    render(<DashboardSidebarFooter />);
+
+    expect(screen.queryByRole('button', { name: /sidebar/i })).not.toBeInTheDocument();
   });
 });
