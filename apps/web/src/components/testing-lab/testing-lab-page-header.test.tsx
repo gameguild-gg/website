@@ -14,4 +14,21 @@ describe('TestingLabOperationsNavigation', () => {
       ),
     ).not.toThrow();
   });
+
+  it('names every workspace and marks the current destination', () => {
+    const html = renderToString(
+      <NextIntlClientProvider locale="en-US" messages={{}}>
+        <TestingLabOperationsNavigation activeHref="/console/community/testing-lab" />
+      </NextIntlClientProvider>,
+    );
+
+    expect(html).toContain('Overview');
+    expect(html).toContain('Events');
+    expect(html).toContain('Applications');
+    expect(html).toContain('Projects');
+    expect(html).toContain('Participants');
+    expect(html).toContain('Analytics');
+    expect(html).toContain('Settings');
+    expect(html).toContain('aria-current="page"');
+  });
 });
