@@ -55,7 +55,9 @@ describe('TestingLabCalendar', () => {
     render(<TestingLabCalendar events={events} eventAnalytics={eventAnalytics} initialDate={new Date(2030, 7, 10)} />);
 
     expect(screen.queryByRole('navigation', { name: 'Testing Lab operations' })).not.toBeInTheDocument();
-    expect(screen.getByRole('combobox', { name: 'Calendar view' })).toHaveValue('month');
+    expect(screen.getByRole('combobox', { name: 'Calendar view' })).toHaveValue('schedule');
+    expect(screen.queryByRole('button', { name: 'New event' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Hide weekends' })).not.toBeInTheDocument();
     expect(screen.getByText('Campus playtest')).toBeInTheDocument();
     expect(screen.getByLabelText('In-person event')).toBeInTheDocument();
     expect(screen.getByLabelText('Online event')).toBeInTheDocument();
@@ -76,6 +78,10 @@ describe('TestingLabCalendar', () => {
       '3days',
     ]);
 
+    fireEvent.change(view, { target: { value: 'month' } });
+
+    expect(screen.getByRole('button', { name: 'Hide weekends' })).toBeInTheDocument();
+
     fireEvent.change(view, { target: { value: 'schedule' } });
 
     expect(screen.getByRole('heading', { name: 'Schedule' })).toBeInTheDocument();
@@ -85,6 +91,9 @@ describe('TestingLabCalendar', () => {
   it('opens event creation for the selected calendar day', () => {
     render(<TestingLabCalendar events={events} eventAnalytics={eventAnalytics} initialDate={new Date(2030, 7, 10)} />);
 
+    fireEvent.change(screen.getByRole('combobox', { name: 'Calendar view' }), {
+      target: { value: 'month' },
+    });
     fireEvent.click(screen.getByRole('button', { name: 'Create event on August 19, 2030' }));
 
     expect(screen.getByRole('dialog')).toHaveTextContent('Creating event for 2030-08-19');

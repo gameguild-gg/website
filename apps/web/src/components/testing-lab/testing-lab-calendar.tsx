@@ -15,7 +15,7 @@ import { Badge } from '@game-guild/ui/components/badge';
 import { Button } from '@game-guild/ui/components/button';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@game-guild/ui/components/hover-card';
 import { format, isSameMonth, startOfMonth } from 'date-fns';
-import { Blend, ChevronLeft, ChevronRight, Clock3, MapPin, MonitorPlay, Plus, UsersRound } from 'lucide-react';
+import { Blend, ChevronLeft, ChevronRight, Clock3, MapPin, MonitorPlay, UsersRound } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 import { CreateTestingEventDialog } from './testing-event-management';
@@ -190,15 +190,15 @@ function ScheduleView({
     .sort((left, right) => (eventStart(left)?.valueOf() ?? 0) - (eventStart(right)?.valueOf() ?? 0));
 
   return (
-    <section aria-label="Testing Lab schedule" className="rounded-md border">
-      <div className="border-b px-4 py-3">
+    <section aria-label="Testing Lab schedule" className="overflow-hidden rounded-lg bg-muted/25">
+      <div className="px-4 py-3">
         <h2 className="text-lg font-semibold">Schedule</h2>
         <p className="text-sm text-muted-foreground">The next 90 days of Testing Lab events.</p>
       </div>
       {scheduled.length === 0 ? (
         <p className="p-4 text-sm text-muted-foreground">No Testing Lab events are scheduled in this period.</p>
       ) : (
-        <ol className="divide-y">
+        <ol className="divide-y divide-border/50">
           {scheduled.map((event) => {
             const startsAt = eventStart(event);
             return (
@@ -238,7 +238,7 @@ function YearView({
           return startsAt && isSameMonth(startsAt, month);
         });
         return (
-          <div key={month.toISOString()} className="rounded-md border p-3">
+          <div key={month.toISOString()} className="rounded-lg bg-muted/25 p-3">
             <h2 className="text-sm font-semibold">{format(month, 'MMMM')}</h2>
             {monthEvents.length === 0 ? (
               <p className="mt-3 text-sm text-muted-foreground">No events</p>
@@ -294,10 +294,10 @@ function GridView({
   const monthStart = startOfMonth(anchor);
 
   return (
-    <div className="overflow-x-auto rounded-md border">
+    <div className="overflow-x-auto rounded-lg border border-border/60">
       <section aria-label={`${viewLabels[view]} Testing Lab calendar`} className="min-w-[760px] overflow-hidden">
         <div
-          className="grid border-b text-center text-xs font-medium text-muted-foreground"
+          className="grid border-b border-border/50 text-center text-xs font-medium text-muted-foreground"
           style={{
             gridTemplateColumns: `repeat(${weekdays.length}, minmax(0, 1fr))`,
           }}
@@ -321,7 +321,7 @@ function GridView({
             return (
               <div
                 key={key}
-                className={`group relative min-h-32 border-b border-r p-2 last:border-r-0 ${outsideMonth ? 'bg-muted/25 text-muted-foreground' : ''}`}
+                className={`group relative min-h-32 border-b border-r border-border/40 p-2 last:border-r-0 ${outsideMonth ? 'bg-muted/25 text-muted-foreground' : ''}`}
               >
                 <button
                   type="button"
@@ -366,7 +366,7 @@ export function TestingLabCalendar({
   eventAnalytics?: TestingLabCalendarEventAnalytics[];
   initialDate?: Date;
 }) {
-  const [view, setView] = useState<CalendarView>('month');
+  const [view, setView] = useState<CalendarView>('schedule');
   const [anchor, setAnchor] = useState(() => initialDate);
   const [showWeekends, setShowWeekends] = useState(true);
   const [createDate, setCreateDate] = useState<Date | null>(null);
@@ -385,29 +385,33 @@ export function TestingLabCalendar({
   return (
     <section aria-label="Testing Lab calendar" className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
-        <Button
-          type="button"
-          variant="outline"
-          size="icon"
-          aria-label="Previous period"
-          onClick={() => setAnchor((date) => shiftCalendarAnchor(date, view, -1))}
-        >
-          <ChevronLeft className="size-4" />
-        </Button>
-        <Button type="button" variant="outline" onClick={() => setAnchor(new Date())}>
-          Today
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          size="icon"
-          aria-label="Next period"
-          onClick={() => setAnchor((date) => shiftCalendarAnchor(date, view, 1))}
-        >
-          <ChevronRight className="size-4" />
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            className="size-11 sm:size-9"
+            aria-label="Previous period"
+            onClick={() => setAnchor((date) => shiftCalendarAnchor(date, view, -1))}
+          >
+            <ChevronLeft className="size-4" />
+          </Button>
+          <Button className="h-11 sm:h-9" type="button" variant="outline" onClick={() => setAnchor(new Date())}>
+            Today
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            className="size-11 sm:size-9"
+            aria-label="Next period"
+            onClick={() => setAnchor((date) => shiftCalendarAnchor(date, view, 1))}
+          >
+            <ChevronRight className="size-4" />
+          </Button>
+        </div>
         <h2 className="min-w-44 text-lg font-semibold">{calendarRangeLabel(anchor, view, range)}</h2>
-        <label className="ml-auto inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm font-medium">
+        <label className="ml-auto inline-flex min-h-11 items-center gap-2 rounded-md border px-3 text-sm font-medium sm:min-h-9">
           <span className="sr-only">Calendar view</span>
           <select
             aria-label="Calendar view"
@@ -422,18 +426,17 @@ export function TestingLabCalendar({
             ))}
           </select>
         </label>
-        <Button
-          type="button"
-          variant="outline"
-          aria-pressed={showWeekends}
-          onClick={() => setShowWeekends((visible) => !visible)}
-        >
-          {showWeekends ? 'Hide weekends' : 'Show weekends'}
-        </Button>
-        <Button type="button" onClick={() => openCreateEvent(null)}>
-          <Plus className="size-4" />
-          New event
-        </Button>
+        {view !== 'schedule' && view !== 'year' ? (
+          <Button
+            className="h-11 sm:h-9"
+            type="button"
+            variant="outline"
+            aria-pressed={showWeekends}
+            onClick={() => setShowWeekends((visible) => !visible)}
+          >
+            {showWeekends ? 'Hide weekends' : 'Show weekends'}
+          </Button>
+        ) : null}
       </div>
 
       {view === 'schedule' ? (
@@ -441,14 +444,17 @@ export function TestingLabCalendar({
       ) : null}
       {view === 'year' ? <YearView events={events} analyticsByEvent={analyticsByEvent} anchor={anchor} /> : null}
       {view !== 'schedule' && view !== 'year' ? (
-        <GridView
-          events={events}
-          analyticsByEvent={analyticsByEvent}
-          anchor={anchor}
-          view={view}
-          showWeekends={showWeekends}
-          onCreateEvent={(date) => openCreateEvent(date)}
-        />
+        <>
+          <p className="text-xs text-muted-foreground md:hidden">Swipe horizontally to view every day.</p>
+          <GridView
+            events={events}
+            analyticsByEvent={analyticsByEvent}
+            anchor={anchor}
+            view={view}
+            showWeekends={showWeekends}
+            onCreateEvent={(date) => openCreateEvent(date)}
+          />
+        </>
       ) : null}
 
       <CreateTestingEventDialog
