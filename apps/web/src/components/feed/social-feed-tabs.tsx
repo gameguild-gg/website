@@ -23,7 +23,7 @@ export function SocialFeedTabs({
   return (
     <nav
       aria-label="Social feed"
-      className="sticky top-0 z-20 flex h-14 items-end gap-8 border-b border-white/10 bg-[#070a12]/95 px-4 backdrop-blur-xl sm:px-6"
+      className="sticky top-0 z-20 flex h-14 items-end gap-8 border-b border-white/10 bg-[#080d18]/95 px-4 backdrop-blur-xl sm:px-6"
     >
       {SOCIAL_FEED_TABS.map((tab) => {
         const isActive = tab.id === active;

@@ -55,7 +55,7 @@ export function SocialComposer({
   if (!expanded) {
     return (
       <section id="social-composer" className="border-b border-white/10 px-4 py-3 sm:px-6">
-        <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-[#0e1422] p-2.5">
+        <div className="flex items-center gap-3 rounded-xl bg-white/[0.035] p-2.5">
           <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#48c7ff]/25 to-[#8b5cf6]/25 text-xs font-bold text-white">
             {initials(userName)}
           </span>
@@ -105,7 +105,7 @@ export function SocialComposer({
       <form
         ref={formRef}
         action={action}
-        className="rounded-xl border border-white/10 bg-[#0e1422] p-4 shadow-xl shadow-black/10"
+        className="rounded-xl bg-white/[0.035] p-4"
       >
         <div className="flex items-start gap-3">
           <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#48c7ff]/25 to-[#8b5cf6]/25 text-xs font-bold text-white">
@@ -125,7 +125,7 @@ export function SocialComposer({
               name="mediaUrl"
               type="url"
               placeholder="Optional image URL"
-              className="h-9 w-full rounded-lg border border-white/10 bg-[#070a12] px-3 text-xs text-slate-200 outline-none placeholder:text-slate-500 focus:border-[#48c7ff] focus:ring-1 focus:ring-[#48c7ff]"
+              className="h-9 w-full rounded-lg border border-white/10 bg-black/10 px-3 text-xs text-slate-200 outline-none placeholder:text-slate-500 focus:border-[#48c7ff] focus:ring-1 focus:ring-[#48c7ff]"
             />
           </div>
           <Button

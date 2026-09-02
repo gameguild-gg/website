@@ -88,7 +88,7 @@ function BuildContext({
   project: NonNullable<PostCardData["project"]>;
 }): React.JSX.Element {
   return (
-    <div className="flex flex-col gap-3 border-x border-b border-white/10 bg-[#0a101c] px-4 py-3 sm:flex-row sm:items-center">
+    <div className="flex flex-col gap-3 border-x border-b border-white/10 bg-white/[0.025] px-4 py-3 sm:flex-row sm:items-center">
       <div className="flex min-w-0 flex-1 items-center gap-3">
         <span className="flex size-10 shrink-0 items-center justify-center rounded-lg border border-[#48c7ff]/20 bg-[#48c7ff]/10 text-[#7dd3fc]">
           <Gamepad2 className="size-5" aria-hidden="true" />
@@ -144,7 +144,7 @@ export function PostCard({ post }: { post: PostCardData }): React.JSX.Element {
   return (
     <article
       data-testid="post-card"
-      className="border-b border-white/10 bg-[#0e1422]/55"
+      className="border-b border-white/10"
     >
       <header className="flex items-center gap-3 px-4 py-4 sm:px-6">
         <span className="rounded-full bg-gradient-to-br from-[#48c7ff] via-[#8b5cf6] to-[#49e6a2] p-[2px]">

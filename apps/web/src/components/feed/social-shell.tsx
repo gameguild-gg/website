@@ -96,8 +96,8 @@ export async function SocialShell({
   const creators: SocialCreatorPreview[] =
     demoEnabled
       ? demoSocialCreators
-      : visibleMemberSpotlights.length > 0
-      ? visibleMemberSpotlights.slice(0, 3).map((member) => ({
+      : memberSpotlights.length > 0
+      ? memberSpotlights.slice(0, 4).map((member) => ({
           name: member.name,
           handle: member.handle,
           focus: member.focus,
@@ -109,10 +109,10 @@ export async function SocialShell({
   return (
     <div
       data-testid="social-shell"
-      className="min-h-[calc(100svh-4rem)] bg-[#050914] text-slate-100"
+      className="min-h-[calc(100svh-4rem)] bg-[#080d18] text-slate-100"
     >
-      <div className="mx-auto grid min-h-[calc(100svh-4rem)] w-full max-w-[1260px] grid-cols-1 xl:grid-cols-[minmax(0,1fr)_360px]">
-        <div className="min-w-0 border-x border-white/10 bg-[#070a12]">
+      <div className="mx-auto grid min-h-[calc(100svh-4rem)] w-full max-w-[1260px] grid-cols-1 gap-0 xl:grid-cols-[minmax(0,820px)_360px] xl:gap-6 xl:px-5">
+        <div className="min-w-0 border-x border-white/10">
           <SocialFeedTabs active={tab} />
           <BuildStories userName={userName} stories={stories} />
           <SocialComposer userName={userName} />

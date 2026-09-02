@@ -10,7 +10,7 @@ export async function SocialAppShell({ children }: { children: React.ReactNode }
   });
 
   return (
-    <div className="min-h-svh bg-[#050914] text-slate-100">
+    <div className="min-h-svh bg-[#080d18] text-slate-100">
       <a
         href="#social-main"
         className="sr-only fixed left-4 top-4 z-50 rounded-lg bg-sky-300 px-4 py-2 text-sm font-semibold text-slate-950 focus:not-sr-only"
@@ -18,7 +18,7 @@ export async function SocialAppShell({ children }: { children: React.ReactNode }
         Skip to social feed
       </a>
       <SidebarProvider
-        className="min-h-svh bg-[#050914]"
+        className="min-h-svh bg-[#080d18]"
         style={
           {
             '--sidebar-width': '15rem',

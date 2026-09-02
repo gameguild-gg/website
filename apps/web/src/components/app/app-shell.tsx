@@ -161,7 +161,13 @@ export async function PublicWebsiteHeader({
   );
 
   return (
-    <header className="sticky top-0 z-40 border-b border-white/10 bg-slate-950/90 text-white backdrop-blur-xl">
+    <header
+      className={
+        embedded
+          ? 'sticky top-0 z-40 border-b border-white/10 bg-[#080d18]/95 text-white backdrop-blur-xl'
+          : 'sticky top-0 z-40 border-b border-white/10 bg-slate-950/90 text-white backdrop-blur-xl'
+      }
+    >
       <div
         className={
           embedded

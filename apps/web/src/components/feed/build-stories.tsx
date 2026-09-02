@@ -30,7 +30,7 @@ export function BuildStories({
         >
           <span className="relative flex size-14 items-center justify-center rounded-full border border-white/15 bg-[#111827] text-sm font-bold text-white transition-transform group-hover:scale-[1.03]">
             {initials(userName)}
-            <span className="absolute -bottom-0.5 -right-0.5 flex size-5 items-center justify-center rounded-full border-2 border-[#070a12] bg-[#48c7ff] text-[#06111a]">
+            <span className="absolute -bottom-0.5 -right-0.5 flex size-5 items-center justify-center rounded-full border-2 border-[#080d18] bg-[#48c7ff] text-[#06111a]">
               <Plus className="size-3" aria-hidden="true" />
             </span>
           </span>
@@ -48,7 +48,7 @@ export function BuildStories({
             <span
               className={`rounded-full bg-gradient-to-br p-[2px] ${story.accent}`}
             >
-              <span className="flex size-[3.25rem] items-center justify-center rounded-full border-2 border-[#070a12] bg-[#111827] text-xs font-bold text-white transition-transform group-hover:scale-[1.03]">
+              <span className="flex size-[3.25rem] items-center justify-center rounded-full border-2 border-[#080d18] bg-[#111827] text-xs font-bold text-white transition-transform group-hover:scale-[1.03]">
                 {initials(story.name)}
               </span>
             </span>
