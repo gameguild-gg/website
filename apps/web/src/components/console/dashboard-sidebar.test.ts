@@ -57,9 +57,8 @@ describe("dashboard management navigation", () => {
   it("hides administrative modules from a regular member", () => {
     const navigation = filterDashboardNavigation(dashboardNavigationData, []);
 
-    expect(navigation.map((group) => group.label)).toEqual(["My Workspace"]);
+    expect(navigation.map((group) => group.label)).toEqual(["Workspace"]);
     expect(navigation[0]?.items.map((item) => item.title)).toEqual([
-      "Social feed",
       "Home",
       "Projects",
       "Teams",
@@ -71,7 +70,7 @@ describe("dashboard management navigation", () => {
 
   it("links the workspace settings group to every hub section", () => {
     const workspace = dashboardNavigationData.find(
-      (group) => group.label === "My Workspace",
+      (group) => group.label === "Workspace",
     );
     const settings = workspace?.items.find((item) => item.title === "Settings");
 
@@ -87,7 +86,7 @@ describe("dashboard management navigation", () => {
 
   it("keeps Projects and Teams as direct workspace links without child routes", () => {
     const workspace = dashboardNavigationData.find(
-      (group) => group.label === "My Workspace",
+      (group) => group.label === "Workspace",
     );
     const projects = workspace?.items.find((item) => item.title === "Projects");
     const teams = workspace?.items.find((item) => item.title === "Teams");

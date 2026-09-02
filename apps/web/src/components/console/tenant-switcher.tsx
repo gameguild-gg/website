@@ -52,7 +52,7 @@ export function TenantSwitcher({
     }
   };
 
-  if (!activeTenant) {
+  if (!activeTenant || tenants.length < 2) {
     return null;
   }
 
