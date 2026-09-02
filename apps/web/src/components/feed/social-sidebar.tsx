@@ -22,14 +22,13 @@ import {
   MessageCircle,
   PanelLeftClose,
   PanelLeftOpen,
-  UsersRound,
 } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 
 const socialNavigation = [
   { label: 'Home', href: '/', icon: Home },
   { label: 'Explore', href: '/projects', icon: Compass },
-  { label: 'Playtests', href: '/?tab=playtests', icon: FlaskConical },
+  { label: 'Community Events', href: '/?tab=playtests', icon: FlaskConical },
   { label: 'Messages', href: '/workspace/invitations', icon: MessageCircle, badge: '5' },
   { label: 'Saved', href: '/workspace/projects', icon: Bookmark },
 ] as const;
@@ -55,13 +54,10 @@ export function SocialSidebarToggle({ placement = 'header' }: { placement?: 'hea
       className={
         placement === 'header'
           ? 'inline-flex size-9 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-slate-300 transition hover:border-sky-300/30 hover:bg-sky-300/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300 md:hidden'
-          : 'flex h-10 w-full items-center justify-start gap-3 rounded-xl px-3 text-sm font-medium text-slate-400 transition hover:bg-white/[0.05] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0'
+          : 'flex size-10 items-center justify-center rounded-xl text-slate-400 transition hover:bg-white/[0.05] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300'
       }
     >
       <Icon className="size-4 shrink-0" aria-hidden="true" />
-      {placement === 'footer' ? (
-        <span className="group-data-[collapsible=icon]:hidden">{label}</span>
-      ) : null}
     </button>
   );
 }
@@ -98,7 +94,7 @@ export function SocialSidebar(): React.JSX.Element {
           {socialNavigation.map(({ label, href, icon: Icon, ...item }) => {
             const active =
               (label === 'Home' && pathname === '/' && !activeTab) ||
-              (label === 'Playtests' && pathname === '/' && activeTab === 'playtests') ||
+              (label === 'Community Events' && pathname === '/' && activeTab === 'playtests') ||
               (label === 'Explore' && pathname.startsWith('/projects')) ||
               (label === 'Messages' && pathname.startsWith('/workspace/invitations')) ||
               (label === 'Saved' && pathname.startsWith('/workspace/projects'));
@@ -125,23 +121,10 @@ export function SocialSidebar(): React.JSX.Element {
             );
           })}
 
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              size="lg"
-              tooltip="Workspace"
-              className="h-11 rounded-xl px-3 text-sm font-semibold text-slate-300 hover:bg-white/[0.05] hover:text-white [&_svg]:size-5"
-            >
-              <Link href="/workspace">
-                <UsersRound strokeWidth={1.8} aria-hidden="true" />
-                <span className="group-data-[collapsible=icon]:hidden">Workspace</span>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
         </SidebarMenu>
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-white/10 p-3">
+      <SidebarFooter className="items-center border-t border-white/10 p-3">
         <SocialSidebarToggle placement="footer" />
       </SidebarFooter>
       <SidebarRail />

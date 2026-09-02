@@ -78,6 +78,7 @@ export async function getPublicMemberSpotlights(take = 3): Promise<PublicMemberS
 
     seen.add(creator.toLowerCase());
     spotlights.push({
+      id: project.creatorId,
       name: creator,
       handle: creatorHandle(creator),
       role: project.creatorRole,

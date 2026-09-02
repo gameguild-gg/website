@@ -22,44 +22,10 @@ export function SocialRail({
   playtests: SocialPlaytestPreview[];
   creators: SocialCreatorPreview[];
 }): React.JSX.Element {
-  const featuredCreator = creators[0] ?? null;
-  const suggestedCreators = creators.slice(1, 4);
+  const suggestedCreators = creators.slice(0, 3);
 
   return (
-    <aside className="sticky top-20 hidden h-fit space-y-3 py-4 xl:block">
-      {featuredCreator ? (
-        <section className="rounded-xl border border-white/10 bg-[#0b1220] p-4">
-          <div className="flex items-start gap-3">
-            <span className="flex size-14 shrink-0 items-center justify-center rounded-full border border-violet-400/50 bg-violet-500/15 text-sm font-bold text-white">
-              {initials(featuredCreator.name)}
-            </span>
-            <div className="min-w-0 flex-1 pt-0.5">
-              <p className="truncate text-sm font-semibold text-white">{featuredCreator.name}</p>
-              <p className="truncate text-xs text-slate-400">{featuredCreator.handle}</p>
-              <p className="mt-1 line-clamp-2 text-xs leading-4 text-slate-400">{featuredCreator.focus}</p>
-            </div>
-          </div>
-          <div className="mt-4 grid grid-cols-3 divide-x divide-white/10 text-center">
-            {[
-              ["128", "Posts"],
-              ["2.4K", "Followers"],
-              ["312", "Following"],
-            ].map(([value, label]) => (
-              <div key={label}>
-                <p className="text-sm font-semibold text-slate-100">{value}</p>
-                <p className="mt-0.5 text-[10px] text-slate-500">{label}</p>
-              </div>
-            ))}
-          </div>
-          <Link
-            href="/workspace/settings/profile"
-            className="mt-4 flex h-9 items-center justify-center rounded-lg border border-white/10 text-xs font-semibold text-slate-200 transition hover:border-sky-300/30 hover:bg-white/[0.04] hover:text-white"
-          >
-            View profile
-          </Link>
-        </section>
-      ) : null}
-
+    <aside className="sticky top-0 hidden h-fit space-y-3 xl:block">
       <section className="rounded-xl border border-white/10 bg-[#0b1220] p-4">
         <div className="flex items-center justify-between gap-3">
           <h2 className="flex items-center gap-2 text-sm font-semibold text-white">
@@ -67,7 +33,7 @@ export function SocialRail({
               className="size-4 text-[#48c7ff]"
               aria-hidden="true"
             />
-            Upcoming playtests
+            Upcoming community events
           </h2>
           <Link
             href="/testing-lab"
@@ -79,7 +45,7 @@ export function SocialRail({
         <div className="mt-3 divide-y divide-white/10">
           {playtests.length === 0 ? (
             <p className="py-4 text-sm leading-6 text-slate-400">
-              New sessions will appear here when registrations open.
+              New community events will appear here when registrations open.
             </p>
           ) : (
             playtests.map((playtest) => (

@@ -28,7 +28,7 @@ export type PublicWebsiteUser = {
   readonly canManage?: boolean;
 };
 
-function isActivePath(pathname: string, href: string, variant: 'public' | 'app') {
+function isActivePath(pathname: string, href: string, variant: 'public' | 'app' = 'public') {
   if (href === '/') return pathname === '/';
   if (variant === 'app' && href === '/community' && (pathname === '/' || pathname === '/social')) return true;
   return pathname === href || pathname.startsWith(`${href}/`);

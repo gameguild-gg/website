@@ -89,7 +89,7 @@ export function InfinitePostFeed({
           </p>
           <p className="mt-1 max-w-sm text-sm leading-6 text-slate-400">
             Follow creators or share what you are making. Project updates and
-            playtests will appear here.
+            community events will appear here.
           </p>
         </div>
       ) : null}
