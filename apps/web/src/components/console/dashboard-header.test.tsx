@@ -127,7 +127,7 @@ describe('DashboardHeader', () => {
     expect(searchButtons[1]).toHaveClass('xl:hidden');
   });
 
-  it('returns workspace members to Community without a desktop sidebar toggle in the header', () => {
+  it('renders Community as a compact context switcher without a desktop sidebar toggle', () => {
     mocks.pathname = '/workspace/projects';
 
     render(
@@ -137,7 +137,10 @@ describe('DashboardHeader', () => {
       />,
     );
 
-    expect(screen.getByRole('link', { name: 'Back to Community' })).toHaveAttribute('href', '/');
+    const communityLink = screen.getByRole('link', { name: 'Back to Community' });
+    expect(communityLink).toHaveAttribute('href', '/');
+    expect(communityLink).toHaveAttribute('data-slot', 'button');
+    expect(communityLink).toHaveClass('bg-secondary', 'text-secondary-foreground');
     expect(screen.getByRole('button', { name: 'Toggle sidebar' })).toHaveClass('md:hidden');
   });
 

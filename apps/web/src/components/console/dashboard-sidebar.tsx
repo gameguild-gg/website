@@ -629,16 +629,20 @@ export function DashboardSidebarFooter() {
   const Icon = expanded ? PanelLeftClose : PanelLeftOpen;
 
   return (
-    <SidebarFooter className="items-center p-2">
-      <button
-        type="button"
-        onClick={toggleSidebar}
-        aria-label={label}
-        title={label}
-        className="flex size-8 items-center justify-center rounded-md text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
-      >
-        <Icon className="size-4" aria-hidden="true" />
-      </button>
+    <SidebarFooter>
+      <SidebarMenu>
+        <SidebarMenuItem>
+          <SidebarMenuButton
+            type="button"
+            onClick={toggleSidebar}
+            aria-label={label}
+            title={label}
+            tooltip={label}
+          >
+            <Icon aria-hidden="true" />
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+      </SidebarMenu>
     </SidebarFooter>
   );
 }

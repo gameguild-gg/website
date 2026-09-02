@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom/vitest';
 import { render, screen } from '@testing-library/react';
-import type { ReactNode } from 'react';
+import type { ButtonHTMLAttributes, ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
@@ -14,10 +14,14 @@ vi.mock('@/i18n/navigation', () => ({
 }));
 
 vi.mock('@game-guild/ui/components/sidebar', () => ({
-  SidebarMenu: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+  SidebarMenu: ({ children }: { children: ReactNode }) => <div data-sidebar="menu">{children}</div>,
   SidebarMenuItem: ({ children }: { children: ReactNode }) => <div>{children}</div>,
-  SidebarMenuButton: ({ asChild, children }: { asChild?: boolean; children: ReactNode }) =>
-    asChild ? <>{children}</> : <button type="button">{children}</button>,
+  SidebarMenuButton: ({
+    asChild,
+    children,
+    ...props
+  }: { asChild?: boolean; children: ReactNode } & ButtonHTMLAttributes<HTMLButtonElement>) =>
+    asChild ? <>{children}</> : <button type="button" data-sidebar="menu-button" {...props}>{children}</button>,
   SidebarFooter: ({ children }: { children?: ReactNode }) => <footer>{children}</footer>,
   useSidebar: () => ({
     isMobile: false,
@@ -79,6 +83,8 @@ describe('workspace shell switchers', () => {
     render(<DashboardSidebarFooter />);
 
     const toggle = screen.getByRole('button', { name: 'Collapse sidebar' });
+    expect(toggle).toHaveAttribute('data-sidebar', 'menu-button');
+    expect(toggle.closest('[data-sidebar="menu"]')).toBeInTheDocument();
     toggle.click();
 
     expect(mocks.toggleSidebar).toHaveBeenCalledOnce();
