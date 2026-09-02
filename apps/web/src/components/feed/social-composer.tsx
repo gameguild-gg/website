@@ -54,7 +54,7 @@ export function SocialComposer({
 
   if (!expanded) {
     return (
-      <section id="social-composer" className="border-b border-white/10 px-4 py-3 sm:px-6">
+      <section id="social-composer" className="px-4 py-3 sm:px-6">
         <div className="flex items-center gap-3 rounded-xl bg-white/[0.035] p-2.5">
           <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#48c7ff]/25 to-[#8b5cf6]/25 text-xs font-bold text-white">
             {initials(userName)}
@@ -101,7 +101,7 @@ export function SocialComposer({
   }
 
   return (
-    <section id="social-composer" className="border-b border-white/10 px-4 py-4 sm:px-6">
+    <section id="social-composer" className="px-4 py-4 sm:px-6">
       <form
         ref={formRef}
         action={action}

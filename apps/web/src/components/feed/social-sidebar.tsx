@@ -70,9 +70,10 @@ export function SocialSidebar(): React.JSX.Element {
   return (
     <Sidebar
       collapsible="icon"
-      className="h-svh border-white/10 bg-[#080d18] text-slate-200 [&_[data-slot=sidebar-inner]]:bg-[#080d18]"
+      style={{ borderRightWidth: 0 }}
+      className="h-svh bg-[#080d18] text-slate-200 [&_[data-slot=sidebar-inner]]:bg-[#080d18]"
     >
-      <SidebarHeader className="border-b border-white/10 p-3">
+      <SidebarHeader className="p-3">
         <div className="flex min-h-10 items-center gap-2">
           <Link
             href="/"
@@ -124,7 +125,7 @@ export function SocialSidebar(): React.JSX.Element {
         </SidebarMenu>
       </SidebarContent>
 
-      <SidebarFooter className="items-center border-t border-white/10 p-3">
+      <SidebarFooter className="items-center p-3">
         <SocialSidebarToggle placement="footer" />
       </SidebarFooter>
       <SidebarRail />

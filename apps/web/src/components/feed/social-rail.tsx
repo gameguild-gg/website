@@ -53,7 +53,7 @@ export function SocialRail({
           </div>
           <Link
             href="/workspace/settings/profile"
-            className="mt-4 flex h-9 items-center justify-center rounded-lg border border-white/10 text-xs font-semibold text-slate-200 transition hover:border-sky-300/30 hover:bg-white/[0.04] hover:text-white"
+            className="mt-4 flex h-9 items-center justify-center rounded-lg bg-white/[0.035] text-xs font-semibold text-slate-200 transition hover:bg-white/[0.07] hover:text-white"
           >
             View profile
           </Link>
@@ -160,7 +160,7 @@ export function SocialRail({
             <Link
               key={tag}
               href="/projects"
-              className="rounded-lg border border-white/10 px-3 py-2 text-xs font-medium text-slate-300 transition hover:border-violet-400/30 hover:bg-violet-500/10 hover:text-white"
+              className="rounded-lg bg-white/[0.035] px-3 py-2 text-xs font-medium text-slate-300 transition hover:bg-white/[0.07] hover:text-white"
             >
               {tag}
             </Link>

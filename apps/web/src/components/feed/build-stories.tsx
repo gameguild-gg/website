@@ -21,7 +21,7 @@ export function BuildStories({
   return (
     <section
       aria-label="Builds from your circles"
-      className="overflow-hidden border-b border-white/10 px-4 py-4 sm:px-6"
+      className="overflow-hidden px-4 py-4 sm:px-6"
     >
       <div className="flex gap-4 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         <button
