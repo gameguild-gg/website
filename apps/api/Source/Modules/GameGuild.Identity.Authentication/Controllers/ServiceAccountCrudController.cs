@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using GameGuild.Configuration.PresentationLayer.RateLimiting;
+using GameGuild.CQRS;
 
 namespace GameGuild.Identity.Authentication;
 
@@ -16,7 +17,8 @@ namespace GameGuild.Identity.Authentication;
 [Route("v{version:apiVersion}/auth/service-accounts")]
 [Produces("application/json")]
 public class ServiceAccountCrudController(
-    IServiceAccountService serviceAccountService) : AuthControllerBase
+    IServiceAccountService serviceAccountService,
+    ISender sender) : AuthControllerBase
 {
     /// <summary>
     ///     Creates a new service account.
@@ -45,14 +47,14 @@ public class ServiceAccountCrudController(
 
         var createdBy = GetCurrentUserId().ToString();
 
-        var (account, clientSecret) = await serviceAccountService.CreateServiceAccountAsync(
+        var (account, clientSecret) = await sender.Send(new CreateServiceAccountCommand(
             request.Name,
             request.Description,
             request.TenantId,
             request.Scopes ?? string.Empty,
             createdBy,
             request.AllowedIpAddresses,
-            request.ExpiresAt,
+            request.ExpiresAt),
             cancellationToken).ConfigureAwait(false);
 
         return CreatedAtAction(
@@ -128,31 +130,13 @@ public class ServiceAccountCrudController(
         [FromBody] PatchServiceAccountRequest request,
         CancellationToken cancellationToken)
     {
-        var account = await serviceAccountService.GetByIdAsync(serviceAccountId, cancellationToken).ConfigureAwait(false);
-        if (account == null)
-        {
-            return NotFound();
-        }
-
-        // Update only provided fields
-        if (!string.IsNullOrEmpty(request.Name))
-        {
-            account.Name = request.Name;
-        }
-        if (request.Description != null)
-        {
-            account.Description = request.Description;
-        }
-        if (!string.IsNullOrEmpty(request.Scopes))
-        {
-            await serviceAccountService.UpdateScopesAsync(serviceAccountId, request.Scopes, cancellationToken).ConfigureAwait(false);
-        }
-        if (request.ExpiresAt.HasValue)
-        {
-            account.ExpiresAt = request.ExpiresAt.Value;
-        }
-
-        return NoContent();
+        var updated = await sender.Send(new PatchServiceAccountCommand(
+            serviceAccountId,
+            request.Name,
+            request.Description,
+            request.Scopes,
+            request.ExpiresAt), cancellationToken).ConfigureAwait(false);
+        return updated ? NoContent() : NotFound();
     }
 
     /// <summary>
@@ -192,7 +176,7 @@ public class ServiceAccountCrudController(
             return NotFound();
         }
 
-        await serviceAccountService.DeactivateAsync(serviceAccountId, cancellationToken).ConfigureAwait(false);
+        await sender.Send(new DeactivateServiceAccountCommand(serviceAccountId), cancellationToken).ConfigureAwait(false);
         return NoContent();
     }
 

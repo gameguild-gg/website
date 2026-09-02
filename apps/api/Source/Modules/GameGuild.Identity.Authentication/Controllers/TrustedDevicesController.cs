@@ -5,6 +5,7 @@ using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using GameGuild.CQRS;
 
 namespace GameGuild.Identity.Authentication;
 
@@ -16,7 +17,7 @@ namespace GameGuild.Identity.Authentication;
 [Route("v{version:apiVersion}/auth/trusted-devices")]
 [Microsoft.AspNetCore.Http.Tags("auth/trusted-devices")]
 [Authorize]
-public sealed class TrustedDevicesController(ISessionManagementService sessionService) : AuthControllerBase
+public sealed class TrustedDevicesController(ISessionManagementService sessionService, ISender sender) : AuthControllerBase
 {
     /// <summary>
     ///     Get trusted devices for the current user
@@ -67,7 +68,8 @@ public sealed class TrustedDevicesController(ISessionManagementService sessionSe
         var userAgent = HttpContext.Request.Headers.UserAgent.ToString();
 
         var deviceFingerprint = GenerateDeviceFingerprint(ipAddress, userAgent);
-        var success = await sessionService.TrustDeviceAsync(userId, deviceFingerprint, body.DeviceName).ConfigureAwait(false);
+        var success = await sender.Send(
+            new TrustDeviceCommand(userId, deviceFingerprint, body.DeviceName), ct).ConfigureAwait(false);
 
         if (!success)
         {
@@ -92,7 +94,7 @@ public sealed class TrustedDevicesController(ISessionManagementService sessionSe
     public async Task<IActionResult> RevokeTrustedDevice(Guid deviceId, CancellationToken ct)
     {
         var userId = GetCurrentUserId();
-        var success = await sessionService.RevokeTrustedDeviceAsync(userId, deviceId).ConfigureAwait(false);
+        var success = await sender.Send(new RevokeTrustedDeviceCommand(userId, deviceId), ct).ConfigureAwait(false);
 
         if (!success)
         {

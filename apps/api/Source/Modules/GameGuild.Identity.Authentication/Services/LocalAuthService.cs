@@ -25,7 +25,6 @@ public class LocalAuthService(
     IUserEnumerationProtectionService enumerationProtection,
     IHttpContextAccessor httpContextAccessor,
     ILogger<LocalAuthService> logger,
-    IPublisher publisher,
     ISender sender,
     ISessionManagementService sessionManagementService
 ) : ILocalAuthService
@@ -221,6 +220,15 @@ public class LocalAuthService(
                 request.Email.ToLowerInvariant(),
                 request.Username ?? request.Email.Split('@')[0],
                 passwordHash);
+            newUser.AddIntegrationEvent(new UserCreatedEvent(newUser.Id)
+            {
+                TenantId = request.TenantId ?? DurableIntegrationEventTenants.Platform,
+                ActorId = newUser.Id,
+                AggregateType = nameof(User),
+                AggregateId = newUser.Id.ToString(),
+                CorrelationId = Guid.NewGuid(),
+                OccurredAt = DateTime.UtcNow
+            });
 
             // Save to database
             await userRepository.AddAsync(newUser, cancellationToken).ConfigureAwait(false);
@@ -260,17 +268,6 @@ public class LocalAuthService(
 
             // Record successful registration
             await authAttemptService.RecordSuccessfulAttemptAsync(request.Email, userId, ipAddress ?? "unknown", userAgent, stopwatch.Elapsed).ConfigureAwait(false);
-
-            await publisher.Publish(
-                new UserSignedUpNotification
-                {
-                    UserId = newUser.Id,
-                    Email = newUser.Email,
-                    Username = newUser.Username ?? newUser.Email,
-                    TenantId = request.TenantId
-                },
-                cancellationToken).ConfigureAwait(false);
-
             logger.LogInformation("User {Email} successfully signed up", request.Email);
 
             var accessTokenExpirationMinutes = int.Parse(configuration["Jwt:AccessTokenExpirationMinutes"] ?? "60", CultureInfo.InvariantCulture);

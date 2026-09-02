@@ -1,4 +1,5 @@
 using Asp.Versioning;
+using GameGuild.CQRS;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -17,7 +18,7 @@ public sealed record VerifyStepUpChallengeRequest(MfaMethod Method, string Evide
 [Route("v{version:apiVersion}/auth/step-up")]
 [Microsoft.AspNetCore.Http.Tags("auth/step-up")]
 [Authorize]
-public sealed class StepUpController(IStepUpReceiptService stepUpService) : AuthControllerBase
+public sealed class StepUpController(ISender sender) : AuthControllerBase
 {
     [HttpPost("challenges")]
     [ProducesResponseType<StepUpChallengeResponse>(StatusCodes.Status201Created)]
@@ -30,11 +31,11 @@ public sealed class StepUpController(IStepUpReceiptService stepUpService) : Auth
         ArgumentNullException.ThrowIfNull(request);
         try
         {
-            var response = await stepUpService.CreateChallengeAsync(
-                new StepUpOperationBinding(
+            var response = await sender.Send(
+                new CreateStepUpChallengeCommand(new StepUpOperationBinding(
                     request.OperationType,
                     request.TargetReference,
-                    request.PayloadHash),
+                    request.PayloadHash)),
                 cancellationToken).ConfigureAwait(false);
             return StatusCode(StatusCodes.Status201Created, response);
         }
@@ -57,7 +58,9 @@ public sealed class StepUpController(IStepUpReceiptService stepUpService) : Auth
     {
         try
         {
-            return Ok(await stepUpService.BeginWebAuthnAsync(challengeId, cancellationToken).ConfigureAwait(false));
+            return Ok(await sender.Send(
+                new BeginStepUpWebAuthnCommand(challengeId),
+                cancellationToken).ConfigureAwait(false));
         }
         catch (StepUpChallengeUnavailableException exception)
         {
@@ -81,9 +84,10 @@ public sealed class StepUpController(IStepUpReceiptService stepUpService) : Auth
         ArgumentNullException.ThrowIfNull(request);
         try
         {
-            return Ok(await stepUpService.VerifyAsync(
-                challengeId,
-                new StepUpVerification(request.Method, request.Evidence),
+            return Ok(await sender.Send(
+                new VerifyStepUpChallengeCommand(
+                    challengeId,
+                    new StepUpVerification(request.Method, request.Evidence)),
                 cancellationToken).ConfigureAwait(false));
         }
         catch (ArgumentException exception)
