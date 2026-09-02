@@ -1,8 +1,6 @@
 import type { LucideIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
 
-export { TestingLabOperationsNavigation } from './testing-lab-operations-navigation';
-
 export function TestingLabPageHeader({
   icon: Icon,
   title,
