@@ -21,8 +21,8 @@ const primaryNav = [
 const footerSections = [
   {
     title: 'Learn',
-    accentClass: 'text-blue-400',
-    hoverClass: 'hover:text-blue-300',
+    accentClass: 'text-primary',
+    hoverClass: 'hover:text-primary',
     links: [
       { label: 'Courses', href: '/courses' },
       { label: 'Programs', href: '/programs' },
@@ -30,8 +30,8 @@ const footerSections = [
   },
   {
     title: 'Build & test',
-    accentClass: 'text-purple-400',
-    hoverClass: 'hover:text-purple-300',
+    accentClass: 'text-highlight',
+    hoverClass: 'hover:text-highlight',
     links: [
       { label: 'Testing Lab', href: '/testing-lab' },
       { label: 'Launch Pad', href: '/launch-pad' },
@@ -40,8 +40,8 @@ const footerSections = [
   },
   {
     title: 'Community',
-    accentClass: 'text-emerald-400',
-    hoverClass: 'hover:text-emerald-300',
+    accentClass: 'text-success',
+    hoverClass: 'hover:text-success',
     links: [
       { label: 'Join community', href: '/sign-up' },
       { label: 'Community hub', href: '/community' },
@@ -51,8 +51,8 @@ const footerSections = [
   },
   {
     title: 'Company',
-    accentClass: 'text-sky-400',
-    hoverClass: 'hover:text-sky-300',
+    accentClass: 'text-primary',
+    hoverClass: 'hover:text-primary',
     links: [
       { label: 'About GameGuild', href: '/about' },
       { label: 'Roadmap', href: '/about/roadmap' },
@@ -71,7 +71,7 @@ const footerSocialLinks = [
 
 function BrandMark() {
   return (
-    <span className="flex size-9 items-center justify-center rounded-xl border border-white/15 bg-white text-slate-950 shadow-sm">
+    <span className="flex size-9 items-center justify-center rounded-xl border border-sidebar-border bg-sidebar-foreground text-sidebar shadow-sm">
       <GraduationCap className="size-5" aria-hidden="true" />
     </span>
   );
@@ -79,7 +79,7 @@ function BrandMark() {
 
 function FooterBrandMark() {
   return (
-    <span className="flex size-10 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 text-white shadow-lg shadow-purple-950/30">
+    <span className="flex size-10 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-highlight text-primary-foreground shadow-lg">
       <Gamepad2 className="size-5" aria-hidden="true" />
     </span>
   );
@@ -135,7 +135,7 @@ export async function PublicWebsiteHeader({
     <div className="flex items-center gap-2">
       <a
         href="https://github.com/gameguild-gg/gameguild"
-        className="hidden rounded-full border border-white/10 px-3 py-2 text-sm font-medium text-slate-300 transition hover:border-white/20 hover:bg-white/10 hover:text-white xl:inline-flex xl:items-center xl:gap-2"
+        className="hidden rounded-full border border-border px-3 py-2 text-sm font-medium text-muted-foreground transition hover:bg-accent hover:text-foreground xl:inline-flex xl:items-center xl:gap-2"
       >
         <Github className="size-4" aria-hidden="true" />
         GitHub
@@ -144,13 +144,13 @@ export async function PublicWebsiteHeader({
         <>
           <Link
             href="/sign-in"
-            className="hidden rounded-full border border-white/10 px-4 py-2 text-sm font-semibold text-slate-200 transition hover:bg-white/10 hover:text-white sm:inline-flex"
+            className="hidden rounded-full border border-border px-4 py-2 text-sm font-semibold text-foreground transition hover:bg-accent sm:inline-flex"
           >
             Sign in
           </Link>
           <Link
             href="/sign-up"
-            className="hidden items-center rounded-full bg-sky-300 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-sky-200 sm:inline-flex"
+            className="hidden items-center rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:bg-primary/85 sm:inline-flex"
           >
             Join community
           </Link>
@@ -164,8 +164,8 @@ export async function PublicWebsiteHeader({
     <header
       className={
         embedded
-          ? 'sticky top-0 z-40 bg-[#0b1220]/95 text-white backdrop-blur-xl'
-          : 'sticky top-0 z-40 border-b border-white/10 bg-slate-950/90 text-white backdrop-blur-xl'
+          ? 'sticky top-0 z-40 bg-sidebar/95 text-sidebar-foreground backdrop-blur-xl'
+          : 'sticky top-0 z-40 border-b border-border bg-sidebar/90 text-sidebar-foreground backdrop-blur-xl'
       }
     >
       <div
@@ -180,7 +180,7 @@ export async function PublicWebsiteHeader({
             {leading}
             <Link href="/" aria-label="GameGuild home" className="flex min-w-0 items-center gap-2 md:hidden">
               <BrandMark />
-              <span className="truncate text-sm font-semibold tracking-tight text-white">GameGuild</span>
+              <span className="truncate text-sm font-semibold tracking-tight text-sidebar-foreground">GameGuild</span>
             </Link>
             <PublicDesktopNav items={primaryNav} variant="app" />
           </div>
@@ -188,7 +188,7 @@ export async function PublicWebsiteHeader({
           <>
             <Link href="/" aria-label="GameGuild home" className="flex min-w-0 items-center gap-3">
               <BrandMark />
-              <span className="truncate text-base font-semibold tracking-tight text-white">GameGuild</span>
+              <span className="truncate text-base font-semibold tracking-tight text-sidebar-foreground">GameGuild</span>
             </Link>
             <PublicDesktopNav items={primaryNav} />
           </>
@@ -202,23 +202,23 @@ export async function PublicWebsiteHeader({
 
 export function PublicWebsiteFooter() {
   return (
-    <footer className="border-t-2 border-slate-700/40 bg-gradient-to-b from-[#101a30] via-[#142039] to-[#0d172b] text-white">
+    <footer className="border-t-2 border-border bg-gradient-to-b from-card via-secondary to-sidebar text-sidebar-foreground">
       <div className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 lg:px-8 lg:py-12">
         <div data-testid="footer-primary-grid" className="grid gap-10 lg:grid-cols-6 lg:gap-12">
           <div className="max-w-sm lg:col-span-2">
             <div className="flex items-center gap-3">
               <FooterBrandMark />
-              <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-xl font-bold text-transparent">Game Guild</span>
+              <span className="bg-gradient-to-r from-primary to-highlight bg-clip-text text-xl font-bold text-transparent">Game Guild</span>
             </div>
-            <p className="mt-5 text-sm leading-6 text-slate-400">
+            <p className="mt-5 text-sm leading-6 text-muted-foreground">
               A thriving gaming community dedicated to education, collaboration, and innovation. Join us as we grow together and shape the future of gaming.
             </p>
-            <div className="mt-5 space-y-3 text-sm text-slate-400">
-              <div className="flex items-center gap-3 transition-colors hover:text-blue-300">
+            <div className="mt-5 space-y-3 text-sm text-muted-foreground">
+              <div className="flex items-center gap-3 transition-colors hover:text-primary">
                 <Users className="size-4 shrink-0" aria-hidden="true" />
                 <span>Community-driven learning and development</span>
               </div>
-              <div className="flex items-center gap-3 transition-colors hover:text-purple-300">
+              <div className="flex items-center gap-3 transition-colors hover:text-highlight">
                 <Heart className="size-4 shrink-0" aria-hidden="true" />
                 <span>Open source and collaborative</span>
               </div>
@@ -229,10 +229,10 @@ export function PublicWebsiteFooter() {
             {footerSections.map((section) => (
               <div key={section.title} className="min-w-0">
                 <h2 className={`mb-4 text-sm font-semibold ${section.accentClass}`}>{section.title}</h2>
-                <ul className="space-y-2 text-sm text-slate-400">
+                <ul className="space-y-2 text-sm text-muted-foreground">
                   {section.links.map((link) => (
                     <li key={link.href} className="flex items-start gap-2">
-                      <span className="mt-0.5 shrink-0 text-slate-600" aria-hidden="true">
+                      <span className="mt-0.5 shrink-0 text-muted-foreground/50" aria-hidden="true">
                         •
                       </span>
                       <Link href={link.href} className={`leading-5 transition-colors ${section.hoverClass}`}>
@@ -246,7 +246,7 @@ export function PublicWebsiteFooter() {
           </nav>
         </div>
 
-        <div className="mt-10 border-t border-slate-700/50 pt-6 lg:mt-12 lg:pt-8">
+        <div className="mt-10 border-t border-border pt-6 lg:mt-12 lg:pt-8">
           <div className="flex justify-center sm:justify-start">
             <div className="flex gap-3">
               {footerSocialLinks.map(({ label, href, icon: Icon }) => (
@@ -257,7 +257,7 @@ export function PublicWebsiteFooter() {
                   rel="noopener noreferrer"
                   aria-label={label}
                   title={label}
-                  className="group flex size-10 items-center justify-center rounded-lg border border-slate-600/50 bg-slate-800/60 text-slate-400 transition hover:border-blue-400/50 hover:bg-slate-800 hover:text-blue-300 hover:shadow-lg hover:shadow-blue-950/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+                  className="group flex size-10 items-center justify-center rounded-lg border border-border bg-accent/50 text-muted-foreground transition hover:border-primary/50 hover:bg-accent hover:text-primary hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   <Icon className="size-4" aria-hidden="true" />
                 </a>
@@ -265,23 +265,23 @@ export function PublicWebsiteFooter() {
             </div>
           </div>
 
-          <div className="mt-6 flex flex-col items-center justify-between gap-4 border-t border-slate-700/50 pt-5 text-sm text-slate-500 sm:flex-row lg:mt-8 lg:pt-6">
+          <div className="mt-6 flex flex-col items-center justify-between gap-4 border-t border-border pt-5 text-sm text-muted-foreground/70 sm:flex-row lg:mt-8 lg:pt-6">
             <p className="text-center sm:text-left">© 2026 Game Guild. All rights reserved.</p>
             <nav aria-label="Legal" className="flex flex-wrap justify-center gap-x-6 gap-y-3 sm:justify-end">
-              <Link href="/legal/licenses" className="transition-colors hover:text-blue-300">
+              <Link href="/legal/licenses" className="transition-colors hover:text-primary">
                 Licenses
               </Link>
-              <Link href="/terms-of-service" className="transition-colors hover:text-blue-300">
+              <Link href="/terms-of-service" className="transition-colors hover:text-primary">
                 Terms of Service
               </Link>
-              <Link href="/polices/privacy" className="transition-colors hover:text-blue-300">
+              <Link href="/polices/privacy" className="transition-colors hover:text-primary">
                 Privacy
               </Link>
             </nav>
           </div>
         </div>
       </div>
-      <div className="h-1 bg-gradient-to-r from-emerald-500 via-blue-500 to-purple-500" aria-hidden="true" />
+      <div className="h-1 bg-gradient-to-r from-success via-primary to-highlight" aria-hidden="true" />
     </footer>
   );
 }
@@ -290,7 +290,7 @@ export async function AppShell({ children }: { readonly children: ReactNode }) {
   const header = await PublicWebsiteHeader();
 
   return (
-    <div className="min-h-svh bg-slate-950">
+    <div className="min-h-svh bg-background text-foreground">
       {header}
       {children}
       <PublicWebsiteFooter />

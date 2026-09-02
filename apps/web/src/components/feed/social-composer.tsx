@@ -55,14 +55,14 @@ export function SocialComposer({
   if (!expanded) {
     return (
       <section id="social-composer" className="px-4 py-3 sm:px-6">
-        <div className="flex items-center gap-3 rounded-xl bg-[#0d1524] p-2.5">
-          <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#48c7ff]/25 to-[#8b5cf6]/25 text-xs font-bold text-white">
+        <div className="flex items-center gap-3 rounded-xl bg-card p-2.5 text-card-foreground">
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary/25 to-highlight/25 text-xs font-bold text-foreground">
             {initials(userName)}
           </span>
           <button
             type="button"
             onClick={() => setExpanded(true)}
-            className="min-w-0 flex-1 rounded-lg px-2 py-2 text-left text-sm text-slate-400 transition-colors hover:bg-white/[0.04] hover:text-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#48c7ff]"
+            className="min-w-0 flex-1 rounded-lg px-2 py-2 text-left text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             Share your progress…
           </button>
@@ -72,7 +72,7 @@ export function SocialComposer({
               variant="ghost"
               size="sm"
               onClick={() => setExpanded(true)}
-              className="text-slate-400 hover:bg-white/[0.06] hover:text-[#48c7ff]"
+              className="text-muted-foreground hover:bg-accent hover:text-primary"
             >
               <ImageIcon className="size-4" /> Photo
             </Button>
@@ -81,7 +81,7 @@ export function SocialComposer({
               variant="ghost"
               size="sm"
               onClick={() => setExpanded(true)}
-              className="text-slate-400 hover:bg-white/[0.06] hover:text-[#49e6a2]"
+              className="text-muted-foreground hover:bg-accent hover:text-success"
             >
               <Gamepad2 className="size-4" /> Build
             </Button>
@@ -90,7 +90,7 @@ export function SocialComposer({
               variant="ghost"
               size="sm"
               onClick={() => setExpanded(true)}
-              className="text-slate-400 hover:bg-white/[0.06] hover:text-[#a78bfa]"
+              className="text-muted-foreground hover:bg-accent hover:text-highlight"
             >
               <FlaskConical className="size-4" /> Playtest
             </Button>
@@ -105,10 +105,10 @@ export function SocialComposer({
       <form
         ref={formRef}
         action={action}
-        className="rounded-xl bg-[#0d1524] p-4"
+        className="rounded-xl bg-card p-4 text-card-foreground"
       >
         <div className="flex items-start gap-3">
-          <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#48c7ff]/25 to-[#8b5cf6]/25 text-xs font-bold text-white">
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary/25 to-highlight/25 text-xs font-bold text-foreground">
             {initials(userName)}
           </span>
           <div className="min-w-0 flex-1 space-y-3">
@@ -119,13 +119,13 @@ export function SocialComposer({
               maxLength={4000}
               required
               placeholder="What are you building?"
-              className="w-full resize-none bg-transparent text-sm leading-6 text-white outline-none placeholder:text-slate-500"
+              className="w-full resize-none bg-transparent text-sm leading-6 text-foreground outline-none placeholder:text-muted-foreground/70"
             />
             <input
               name="mediaUrl"
               type="url"
               placeholder="Optional image URL"
-              className="h-9 w-full rounded-lg border border-white/10 bg-black/10 px-3 text-xs text-slate-200 outline-none placeholder:text-slate-500 focus:border-[#48c7ff] focus:ring-1 focus:ring-[#48c7ff]"
+              className="h-9 w-full rounded-lg border border-input bg-background/50 px-3 text-xs text-foreground outline-none placeholder:text-muted-foreground/70 focus:border-ring focus:ring-1 focus:ring-ring"
             />
           </div>
           <Button
@@ -133,21 +133,21 @@ export function SocialComposer({
             variant="ghost"
             size="icon-sm"
             onClick={() => setExpanded(false)}
-            className="text-slate-400 hover:bg-white/[0.06] hover:text-white"
+            className="text-muted-foreground hover:bg-accent hover:text-accent-foreground"
           >
             <X className="size-4" />
             <span className="sr-only">Close composer</span>
           </Button>
         </div>
-        <div className="mt-4 flex items-center justify-between border-t border-white/10 pt-3">
-          <p className="text-xs text-slate-500">
+        <div className="mt-4 flex items-center justify-between border-t border-border pt-3">
+          <p className="text-xs text-muted-foreground/70">
             Visible to the GameGuild community
           </p>
           <Button
             type="submit"
             size="sm"
             disabled={pending}
-            className="bg-[#48c7ff] text-[#06111a] hover:bg-[#7ad7ff]"
+            className="bg-primary text-primary-foreground hover:bg-primary/85"
           >
             <Send className="size-4" />
             {pending ? "Publishing…" : "Publish"}

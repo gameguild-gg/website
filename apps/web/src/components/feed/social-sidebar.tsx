@@ -52,8 +52,8 @@ export function SocialSidebarToggle({ placement = 'header' }: { placement?: 'hea
       title={label}
       className={
         placement === 'header'
-          ? 'inline-flex size-9 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-slate-300 transition hover:border-sky-300/30 hover:bg-sky-300/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300 md:hidden'
-          : 'flex size-10 items-center justify-center rounded-xl text-slate-400 transition hover:bg-white/[0.05] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300'
+          ? 'inline-flex size-9 items-center justify-center rounded-xl border border-sidebar-border bg-sidebar-accent/40 text-sidebar-foreground transition hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring md:hidden'
+          : 'flex size-10 items-center justify-center rounded-xl text-muted-foreground transition hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring'
       }
     >
       <Icon className="size-4 shrink-0" aria-hidden="true" />
@@ -70,20 +70,20 @@ export function SocialSidebar(): React.JSX.Element {
     <Sidebar
       collapsible="icon"
       style={{ borderRightWidth: 0 }}
-      className="h-svh bg-[#0b1220] text-slate-200 [&_[data-slot=sidebar-inner]]:bg-[#0b1220]"
+      className="h-svh bg-sidebar text-sidebar-foreground [&_[data-slot=sidebar-inner]]:bg-sidebar"
     >
       <SidebarHeader className="p-3">
         <div className="flex min-h-10 items-center gap-2">
           <Link
             href="/"
             aria-label="GameGuild Social home"
-            className="flex min-w-0 flex-1 items-center gap-3 overflow-hidden rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300 group-data-[collapsible=icon]:flex-none"
+            className="flex min-w-0 flex-1 items-center gap-3 overflow-hidden rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring group-data-[collapsible=icon]:flex-none"
           >
-            <span className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-white/15 bg-white text-slate-950 shadow-sm">
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-sidebar-border bg-sidebar-foreground text-sidebar shadow-sm">
               <GraduationCap className="size-5" aria-hidden="true" />
             </span>
             <span className="min-w-0 group-data-[collapsible=icon]:hidden">
-              <span className="block truncate text-sm font-semibold text-white">GameGuild</span>
+              <span className="block truncate text-sm font-semibold text-sidebar-foreground">GameGuild</span>
             </span>
           </Link>
         </div>
@@ -105,7 +105,7 @@ export function SocialSidebar(): React.JSX.Element {
                   size="lg"
                   isActive={active}
                   tooltip={label}
-                  className="h-11 rounded-xl px-3 text-sm font-semibold text-slate-300 transition-colors hover:bg-white/[0.05] hover:text-white data-active:bg-sky-400/10 data-active:text-sky-300 [&_svg]:size-5"
+                  className="h-11 rounded-xl px-3 text-sm font-semibold text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground data-active:bg-sidebar-primary/10 data-active:text-sidebar-primary [&_svg]:size-5"
                 >
                   <Link href={href} aria-current={active ? 'page' : undefined}>
                     <Icon strokeWidth={1.8} aria-hidden="true" />
@@ -113,7 +113,7 @@ export function SocialSidebar(): React.JSX.Element {
                   </Link>
                 </SidebarMenuButton>
                 {'badge' in item ? (
-                  <SidebarMenuBadge className="bg-violet-500/25 text-[10px] font-bold text-violet-200">
+                  <SidebarMenuBadge className="bg-highlight/25 text-[10px] font-bold text-highlight">
                     {item.badge}
                   </SidebarMenuBadge>
                 ) : null}

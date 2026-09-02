@@ -80,14 +80,14 @@ export function InfinitePostFeed({
       ))}
 
       {items.length === 0 && !loading ? (
-        <div className="mx-4 my-8 flex flex-col items-center rounded-2xl bg-[#0d1524] px-6 py-12 text-center sm:mx-6">
-          <span className="flex size-11 items-center justify-center rounded-xl bg-[#48c7ff]/10 text-[#7dd3fc]">
+        <div className="mx-4 my-8 flex flex-col items-center rounded-2xl bg-card px-6 py-12 text-center text-card-foreground sm:mx-6">
+          <span className="flex size-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
             <Gamepad2 className="size-5" aria-hidden="true" />
           </span>
-          <p className="mt-4 text-sm font-semibold text-white">
+          <p className="mt-4 text-sm font-semibold text-foreground">
             Your feed is ready for its first build
           </p>
-          <p className="mt-1 max-w-sm text-sm leading-6 text-slate-400">
+          <p className="mt-1 max-w-sm text-sm leading-6 text-muted-foreground">
             Follow creators or share what you are making. Project updates and
             community events will appear here.
           </p>
@@ -97,12 +97,12 @@ export function InfinitePostFeed({
       <div ref={sentinelRef} aria-hidden="true" className="h-px" />
 
       {loading ? (
-        <p className="flex items-center justify-center gap-2 py-5 text-sm text-slate-400">
+        <p className="flex items-center justify-center gap-2 py-5 text-sm text-muted-foreground">
           <Loader2 className="size-4 animate-spin" aria-hidden="true" />
           Loading more…
         </p>
       ) : nextSkip === null && items.length > 0 ? (
-        <p className="py-5 text-center text-xs text-slate-500">
+        <p className="py-5 text-center text-xs text-muted-foreground/70">
           You&apos;re all caught up.
         </p>
       ) : null}

@@ -28,57 +28,57 @@ export function SocialRail({
   return (
     <aside className="sticky top-5 hidden h-fit space-y-3 xl:block">
       {featuredCreator ? (
-        <section className="rounded-xl bg-[#0d1524] p-4">
+        <section className="rounded-xl bg-card p-4 text-card-foreground">
           <div className="flex items-start gap-3">
-            <span className="flex size-14 shrink-0 items-center justify-center rounded-full border border-violet-400/50 bg-violet-500/15 text-sm font-bold text-white">
+            <span className="flex size-14 shrink-0 items-center justify-center rounded-full border border-highlight/50 bg-highlight/15 text-sm font-bold text-foreground">
               {initials(featuredCreator.name)}
             </span>
             <div className="min-w-0 flex-1 pt-0.5">
-              <p className="truncate text-sm font-semibold text-white">{featuredCreator.name}</p>
-              <p className="truncate text-xs text-slate-400">{featuredCreator.handle}</p>
-              <p className="mt-1 line-clamp-2 text-xs leading-4 text-slate-400">{featuredCreator.focus}</p>
+              <p className="truncate text-sm font-semibold text-foreground">{featuredCreator.name}</p>
+              <p className="truncate text-xs text-muted-foreground">{featuredCreator.handle}</p>
+              <p className="mt-1 line-clamp-2 text-xs leading-4 text-muted-foreground">{featuredCreator.focus}</p>
             </div>
           </div>
-          <div className="mt-4 grid grid-cols-3 divide-x divide-white/10 text-center">
+          <div className="mt-4 grid grid-cols-3 divide-x divide-border text-center">
             {[
               ["128", "Posts"],
               ["2.4K", "Followers"],
               ["312", "Following"],
             ].map(([value, label]) => (
               <div key={label}>
-                <p className="text-sm font-semibold text-slate-100">{value}</p>
-                <p className="mt-0.5 text-[10px] text-slate-500">{label}</p>
+                <p className="text-sm font-semibold text-foreground">{value}</p>
+                <p className="mt-0.5 text-[10px] text-muted-foreground/70">{label}</p>
               </div>
             ))}
           </div>
           <Link
             href="/workspace/settings/profile"
-            className="mt-4 flex h-9 items-center justify-center rounded-lg bg-white/[0.035] text-xs font-semibold text-slate-200 transition hover:bg-white/[0.07] hover:text-white"
+            className="mt-4 flex h-9 items-center justify-center rounded-lg bg-accent/50 text-xs font-semibold text-accent-foreground transition hover:bg-accent hover:text-foreground"
           >
             View profile
           </Link>
         </section>
       ) : null}
 
-      <section className="rounded-xl bg-[#0d1524] p-4">
+      <section className="rounded-xl bg-card p-4 text-card-foreground">
         <div className="flex items-center justify-between gap-3">
-          <h2 className="flex items-center gap-2 text-sm font-semibold text-white">
+          <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground">
             <CalendarDays
-              className="size-4 text-[#48c7ff]"
+              className="size-4 text-primary"
               aria-hidden="true"
             />
             Upcoming community events
           </h2>
           <Link
             href="/testing-lab"
-            className="text-xs font-medium text-[#7dd3fc] hover:text-white"
+            className="text-xs font-medium text-primary hover:text-foreground"
           >
             View all
           </Link>
         </div>
-        <div className="mt-3 divide-y divide-white/10">
+        <div className="mt-3 divide-y divide-border">
           {playtests.length === 0 ? (
-            <p className="py-4 text-sm leading-6 text-slate-400">
+            <p className="py-4 text-sm leading-6 text-muted-foreground">
               New community events will appear here when registrations open.
             </p>
           ) : (
@@ -88,15 +88,15 @@ export function SocialRail({
                 href={playtest.href}
                 className="group flex items-center gap-3 py-3 first:pt-0 last:pb-0"
               >
-                <span className="flex size-11 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/[0.04] text-[10px] font-bold text-sky-200">
+                <span className="flex size-11 shrink-0 items-center justify-center rounded-lg border border-border bg-accent/50 text-[10px] font-bold text-primary">
                   {initials(playtest.title)}
                 </span>
                 <span className="min-w-0">
-                  <span className="block truncate text-sm font-semibold text-slate-100 transition-colors group-hover:text-[#7dd3fc]">
+                  <span className="block truncate text-sm font-semibold text-foreground transition-colors group-hover:text-primary">
                     {playtest.title}
                   </span>
-                  <span className="mt-0.5 block truncate text-xs text-slate-400">{playtest.detail}</span>
-                  <span className="mt-1 block text-xs text-slate-500">{playtest.date}</span>
+                  <span className="mt-0.5 block truncate text-xs text-muted-foreground">{playtest.detail}</span>
+                  <span className="mt-1 block text-xs text-muted-foreground/70">{playtest.date}</span>
                 </span>
               </Link>
             ))
@@ -104,41 +104,41 @@ export function SocialRail({
         </div>
       </section>
 
-      <section className="rounded-xl bg-[#0d1524] p-4">
+      <section className="rounded-xl bg-card p-4 text-card-foreground">
         <div className="flex items-center justify-between gap-3">
-          <h2 className="flex items-center gap-2 text-sm font-semibold text-white">
-            <Users className="size-4 text-[#a78bfa]" aria-hidden="true" />
+          <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground">
+            <Users className="size-4 text-highlight" aria-hidden="true" />
             Suggested creators
           </h2>
           <Link
             href="/console/community/members/users"
-            className="text-xs font-medium text-[#c4b5fd] hover:text-white"
+            className="text-xs font-medium text-highlight hover:text-foreground"
           >
             View all
           </Link>
         </div>
         <div className="mt-4 space-y-4">
           {suggestedCreators.length === 0 ? (
-            <p className="text-sm leading-6 text-slate-400">
+            <p className="text-sm leading-6 text-muted-foreground">
               Creators with published projects will appear here.
             </p>
           ) : (
             suggestedCreators.map((creator) => (
               <div key={creator.handle} className="flex items-center gap-3">
-                <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#48c7ff]/25 to-[#8b5cf6]/25 text-[11px] font-bold text-white">
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary/25 to-highlight/25 text-[11px] font-bold text-foreground">
                   {initials(creator.name)}
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold text-slate-100">
+                  <p className="truncate text-sm font-semibold text-foreground">
                     {creator.name}
                   </p>
-                  <p className="truncate text-xs text-slate-500">
+                  <p className="truncate text-xs text-muted-foreground/70">
                     {creator.handle} · {creator.focus}
                   </p>
                 </div>
                 <button
                   type="button"
-                  className="rounded-lg border border-white/10 px-2.5 py-1.5 text-xs font-semibold text-[#7dd3fc] transition-colors hover:border-[#48c7ff]/40 hover:bg-[#48c7ff]/10"
+                  className="rounded-lg border border-border px-2.5 py-1.5 text-xs font-semibold text-primary transition-colors hover:border-primary/40 hover:bg-primary/10"
                 >
                   Follow
                 </button>
@@ -148,10 +148,10 @@ export function SocialRail({
         </div>
       </section>
 
-      <section className="rounded-xl bg-[#0d1524] p-4">
+      <section className="rounded-xl bg-card p-4 text-card-foreground">
         <div className="flex items-center justify-between gap-3">
-          <h2 className="text-sm font-semibold text-white">Trending tags</h2>
-          <Link href="/projects" className="text-xs font-medium text-violet-300 hover:text-white">
+          <h2 className="text-sm font-semibold text-foreground">Trending tags</h2>
+          <Link href="/projects" className="text-xs font-medium text-highlight hover:text-foreground">
             View all
           </Link>
         </div>
@@ -160,7 +160,7 @@ export function SocialRail({
             <Link
               key={tag}
               href="/projects"
-              className="rounded-lg bg-white/[0.035] px-3 py-2 text-xs font-medium text-slate-300 transition hover:bg-white/[0.07] hover:text-white"
+              className="rounded-lg bg-accent/50 px-3 py-2 text-xs font-medium text-muted-foreground transition hover:bg-accent hover:text-foreground"
             >
               {tag}
             </Link>

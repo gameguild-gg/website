@@ -28,13 +28,13 @@ export function BuildStories({
           type="button"
           className="group flex w-[4.5rem] shrink-0 flex-col items-center gap-2 text-center"
         >
-          <span className="relative flex size-14 items-center justify-center rounded-full border border-white/15 bg-[#111827] text-sm font-bold text-white transition-transform group-hover:scale-[1.03]">
+          <span className="relative flex size-14 items-center justify-center rounded-full border border-border bg-muted text-sm font-bold text-foreground transition-transform group-hover:scale-[1.03]">
             {initials(userName)}
-            <span className="absolute -bottom-0.5 -right-0.5 flex size-5 items-center justify-center rounded-full border-2 border-[#080d18] bg-[#48c7ff] text-[#06111a]">
+            <span className="absolute -bottom-0.5 -right-0.5 flex size-5 items-center justify-center rounded-full border-2 border-background bg-primary text-primary-foreground">
               <Plus className="size-3" aria-hidden="true" />
             </span>
           </span>
-          <span className="w-full truncate text-[11px] font-medium text-slate-300">
+          <span className="w-full truncate text-[11px] font-medium text-muted-foreground">
             Your story
           </span>
         </button>
@@ -48,11 +48,11 @@ export function BuildStories({
             <span
               className={`rounded-full bg-gradient-to-br p-[2px] ${story.accent}`}
             >
-              <span className="flex size-[3.25rem] items-center justify-center rounded-full border-2 border-[#080d18] bg-[#111827] text-xs font-bold text-white transition-transform group-hover:scale-[1.03]">
+              <span className="flex size-[3.25rem] items-center justify-center rounded-full border-2 border-background bg-muted text-xs font-bold text-foreground transition-transform group-hover:scale-[1.03]">
                 {initials(story.name)}
               </span>
             </span>
-            <span className="w-full truncate text-[11px] font-medium text-slate-300">
+            <span className="w-full truncate text-[11px] font-medium text-muted-foreground">
               {story.name}
             </span>
           </button>

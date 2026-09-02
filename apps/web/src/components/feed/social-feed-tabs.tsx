@@ -23,7 +23,7 @@ export function SocialFeedTabs({
   return (
     <nav
       aria-label="Social feed"
-      className="sticky top-0 z-20 flex h-14 items-end gap-8 bg-[#080d18]/95 px-4 backdrop-blur-xl sm:px-6"
+      className="sticky top-0 z-20 flex h-14 items-end gap-8 bg-background/95 px-4 backdrop-blur-xl sm:px-6"
     >
       {SOCIAL_FEED_TABS.map((tab) => {
         const isActive = tab.id === active;
@@ -33,13 +33,13 @@ export function SocialFeedTabs({
             href={tab.id === "foryou" ? "/" : `/?tab=${tab.id}`}
             aria-current={isActive ? "page" : undefined}
             className={cn(
-              "relative flex h-full items-center text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#48c7ff]",
-              isActive ? "text-white" : "text-slate-400 hover:text-slate-100",
+              "relative flex h-full items-center text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground",
             )}
           >
             {tab.label}
             {isActive ? (
-              <span className="absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-[#48c7ff]" />
+              <span className="absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-primary" />
             ) : null}
           </Link>
         );

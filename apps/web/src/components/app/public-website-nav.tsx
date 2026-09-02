@@ -49,7 +49,7 @@ export function PublicDesktopNav({
       className={
         variant === 'app'
           ? 'hidden items-center gap-1 lg:flex'
-          : 'hidden items-center rounded-full border border-white/10 bg-white/[0.03] p-1 lg:flex'
+          : 'hidden items-center rounded-full border border-border bg-accent/30 p-1 lg:flex'
       }
     >
       {items.map((item) => {
@@ -66,9 +66,9 @@ export function PublicDesktopNav({
                 : 'rounded-full px-3 py-1.5 text-sm font-medium transition',
               active
                 ? variant === 'app'
-                  ? 'bg-white/[0.08] text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)]'
-                  : 'bg-sky-300 text-slate-950'
-                : 'text-slate-400 hover:bg-white/[0.05] hover:text-white',
+                  ? 'bg-accent text-accent-foreground'
+                  : 'bg-primary text-primary-foreground'
+                : 'text-muted-foreground hover:bg-accent hover:text-foreground',
             )}
           >
             {item.label}
@@ -95,16 +95,16 @@ export function PublicMobileNav({
           type="button"
           variant="outline"
           size="icon"
-          className="border-white/10 bg-white/[0.03] text-white hover:bg-white/10 hover:text-white lg:hidden"
+          className="border-border bg-accent/30 text-foreground hover:bg-accent hover:text-foreground lg:hidden"
           aria-label="Open public navigation"
         >
           <Menu className="size-4" aria-hidden="true" />
         </Button>
       </SheetTrigger>
-      <SheetContent side="right" className="border-white/10 bg-slate-950 text-white">
+      <SheetContent side="right" className="border-border bg-popover text-popover-foreground">
         <SheetHeader>
-          <SheetTitle className="text-white">GameGuild</SheetTitle>
-          <SheetDescription className="text-slate-400">Move from learning to testing, projects, and community.</SheetDescription>
+          <SheetTitle className="text-foreground">GameGuild</SheetTitle>
+          <SheetDescription className="text-muted-foreground">Move from learning to testing, projects, and community.</SheetDescription>
         </SheetHeader>
 
         <nav aria-label="Mobile navigation" className="mt-8 grid gap-2">
@@ -119,8 +119,8 @@ export function PublicMobileNav({
                   className={cn(
                     'rounded-2xl border px-4 py-3 text-sm font-semibold transition',
                     active
-                      ? 'border-sky-300 bg-sky-300 text-slate-950'
-                      : 'border-white/10 bg-white/[0.03] text-slate-200 hover:bg-white/10 hover:text-white',
+                      ? 'border-primary bg-primary text-primary-foreground'
+                      : 'border-border bg-accent/30 text-foreground hover:bg-accent hover:text-accent-foreground',
                   )}
                 >
                   {item.label}
@@ -136,9 +136,9 @@ export function PublicMobileNav({
               <Link
                 href="/workspace"
                 aria-label={`${user.name} profile`}
-                className="inline-flex min-w-0 items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-left text-sm font-semibold text-white transition hover:bg-white/10"
+                className="inline-flex min-w-0 items-center gap-3 rounded-2xl border border-border bg-accent/40 px-4 py-3 text-left text-sm font-semibold text-foreground transition hover:bg-accent"
               >
-                <span className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-sky-300 text-sm font-bold text-slate-950">
+                <span className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary text-sm font-bold text-primary-foreground">
                   {user.image ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={user.image} alt="" className="size-full object-cover" />
@@ -148,7 +148,7 @@ export function PublicMobileNav({
                 </span>
                 <span className="min-w-0">
                   <span className="block truncate">{user.name}</span>
-                  {user.email && <span className="block truncate text-xs font-medium text-slate-400">{user.email}</span>}
+                  {user.email && <span className="block truncate text-xs font-medium text-muted-foreground">{user.email}</span>}
                 </span>
               </Link>
             </SheetClose>
@@ -157,7 +157,7 @@ export function PublicMobileNav({
               <SheetClose asChild>
                 <Link
                   href="/sign-up"
-                  className="inline-flex items-center justify-center rounded-full bg-sky-300 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-sky-200"
+                  className="inline-flex items-center justify-center rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:bg-primary/85"
                 >
                   Join community
                 </Link>
@@ -165,17 +165,17 @@ export function PublicMobileNav({
               <SheetClose asChild>
                 <Link
                   href="/sign-in"
-                  className="inline-flex items-center justify-center rounded-full border border-white/10 px-4 py-2 text-sm font-semibold text-slate-200 transition hover:bg-white/10 hover:text-white"
+                  className="inline-flex items-center justify-center rounded-full border border-border px-4 py-2 text-sm font-semibold text-foreground transition hover:bg-accent"
                 >
                   Sign in
                 </Link>
               </SheetClose>
             </>
           )}
-          {user?.canManage ? <SheetClose asChild><Link href="/dashboard" className="inline-flex items-center justify-center rounded-full border border-white/10 px-4 py-2 text-sm font-semibold text-slate-200 transition hover:bg-white/10 hover:text-white">Dashboard</Link></SheetClose> : null}
+          {user?.canManage ? <SheetClose asChild><Link href="/dashboard" className="inline-flex items-center justify-center rounded-full border border-border px-4 py-2 text-sm font-semibold text-foreground transition hover:bg-accent">Dashboard</Link></SheetClose> : null}
           <a
             href="https://github.com/gameguild-gg/gameguild"
-            className="inline-flex items-center justify-center gap-2 rounded-full border border-white/10 px-4 py-2 text-sm font-semibold text-slate-200 transition hover:bg-white/10 hover:text-white"
+            className="inline-flex items-center justify-center gap-2 rounded-full border border-border px-4 py-2 text-sm font-semibold text-foreground transition hover:bg-accent"
           >
             <Github className="size-4" aria-hidden="true" />
             GitHub

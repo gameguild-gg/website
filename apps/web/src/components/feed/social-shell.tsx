@@ -35,11 +35,11 @@ const TAB_STREAM: Record<SocialFeedTab, PostsStream> = {
 function storyAccent(index: number): string {
   return (
     [
-      "from-amber-300 via-rose-500 to-violet-600",
-      "from-cyan-300 via-blue-500 to-violet-600",
-      "from-emerald-300 via-sky-500 to-blue-700",
-      "from-fuchsia-400 via-violet-500 to-indigo-700",
-    ][index % 4] ?? "from-cyan-300 via-blue-500 to-violet-600"
+      "from-chart-4 via-chart-5 to-chart-2",
+      "from-chart-1 via-chart-2 to-chart-3",
+      "from-chart-3 via-chart-1 to-chart-2",
+      "from-chart-2 via-chart-1 to-chart-4",
+    ][index % 4] ?? "from-chart-1 via-chart-2 to-chart-3"
   );
 }
 
@@ -109,7 +109,7 @@ export async function SocialShell({
   return (
     <div
       data-testid="social-shell"
-      className="min-h-[calc(100svh-4rem)] bg-[#080d18] text-slate-100"
+      className="min-h-[calc(100svh-4rem)] bg-background text-foreground"
     >
       <div className="mx-auto grid min-h-[calc(100svh-4rem)] w-full max-w-[1260px] grid-cols-1 gap-0 xl:grid-cols-[minmax(0,820px)_360px] xl:gap-6 xl:px-5">
         <div className="min-w-0">
