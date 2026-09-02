@@ -32,7 +32,6 @@ vi.mock('@game-guild/ui/components/sidebar', () => ({
 }));
 
 import { DashboardSidebarFooter } from './dashboard-sidebar';
-import { ContextSwitcher } from './team-switcher';
 import { TenantSwitcher } from './tenant-switcher';
 
 function TenantLogo() {
@@ -45,38 +44,17 @@ describe('workspace shell switchers', () => {
     mocks.toggleSidebar.mockReset();
   });
 
-  it('does not render a tenant switcher when only one tenant is available', () => {
-    const { container } = render(
+  it('renders the only tenant as static identity instead of a switch control', () => {
+    render(
       <TenantSwitcher
         tenants={[{ id: 'gameguild', name: 'GameGuild', logo: TenantLogo, plan: 'Platform' }]}
       />,
     );
 
-    expect(container).toBeEmptyDOMElement();
-  });
-
-  it('renders a single workspace context as a link instead of a dropdown', () => {
-    render(
-      <ContextSwitcher
-        contexts={[{ type: 'Workspace', id: null, name: 'Workspace', route: '/workspace' }]}
-      />,
-    );
-
-    expect(screen.getByRole('link', { name: 'Workspace' })).toHaveAttribute('href', '/workspace');
+    expect(screen.getByText('GameGuild')).toBeInTheDocument();
+    expect(screen.getByText('Platform')).toBeInTheDocument();
     expect(screen.queryByRole('button')).not.toBeInTheDocument();
-  });
-
-  it('renders one context dropdown when Workspace and Operations are available', () => {
-    render(
-      <ContextSwitcher
-        contexts={[
-          { type: 'Workspace', id: null, name: 'Workspace', route: '/workspace' },
-          { type: 'Operations', id: null, name: 'Operations', route: '/dashboard' },
-        ]}
-      />,
-    );
-
-    expect(screen.getByRole('button', { name: 'Workspace' })).toBeInTheDocument();
+    expect(screen.queryByText('Tenants')).not.toBeInTheDocument();
   });
 
   it('places the desktop collapse control in the workspace sidebar footer', () => {

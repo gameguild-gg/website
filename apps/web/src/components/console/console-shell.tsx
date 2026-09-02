@@ -27,7 +27,6 @@ export function ConsoleShell({
   notifications,
   user,
   capabilities = [],
-  contexts = [],
 }: DashboardShellProps) {
   const navigation = filterDashboardNavigation(
     dashboardNavigationData,
@@ -43,7 +42,7 @@ export function ConsoleShell({
         Skip to main content
       </a>
       <SidebarProvider>
-        <DashboardSidebar navigation={navigation} contexts={contexts} />
+        <DashboardSidebar navigation={navigation} />
         <SidebarInset className="min-w-0 overflow-hidden">
           <DashboardCommandPalette
             navigation={navigation}

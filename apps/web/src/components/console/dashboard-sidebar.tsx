@@ -48,9 +48,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import * as React from 'react';
-import type { DashboardContextSummary } from '@/lib/dashboard-contexts';
 import { GraduationCap } from 'lucide-react';
-import { ContextSwitcher } from './team-switcher';
 import { TenantSwitcher, type Tenant } from './tenant-switcher';
 
 // Types for navigation structure
@@ -601,7 +599,6 @@ function NavGroups({ groups }: { groups: DashboardNavGroup[] }) {
 
 interface DashboardSidebarProps extends React.ComponentProps<typeof Sidebar> {
   navigation?: DashboardNavGroup[];
-  contexts?: readonly DashboardContextSummary[];
 }
 
 /** Default console tenant — GameGuild platform until multi-tenant switching ships. */
@@ -649,14 +646,12 @@ export function DashboardSidebarFooter() {
 
 export function DashboardSidebar({
   navigation = filterDashboardNavigation(dashboardNavigationData, []),
-  contexts = [],
   ...props
 }: DashboardSidebarProps) {
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
         <TenantSwitcher tenants={consoleTenants} />
-        <ContextSwitcher contexts={contexts} />
       </SidebarHeader>
       <SidebarContent className="gap-0">
         <NavGroups groups={navigation} />

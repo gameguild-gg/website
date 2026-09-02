@@ -52,8 +52,29 @@ export function TenantSwitcher({
     }
   };
 
-  if (!activeTenant || tenants.length < 2) {
+  if (!activeTenant) {
     return null;
+  }
+
+  if (tenants.length === 1) {
+    return (
+      <SidebarMenu>
+        <SidebarMenuItem>
+          <div
+            data-slot="tenant-identity"
+            className="flex h-12 w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left text-sm group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-0!"
+          >
+            <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 shrink-0 items-center justify-center rounded-lg">
+              <activeTenant.logo className="size-4" />
+            </div>
+            <div className="grid min-w-0 flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
+              <span className="truncate font-medium">{activeTenant.name}</span>
+              <span className="truncate text-xs">{activeTenant.plan}</span>
+            </div>
+          </div>
+        </SidebarMenuItem>
+      </SidebarMenu>
+    );
   }
 
   return (
