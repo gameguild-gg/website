@@ -4,7 +4,7 @@ import { cn } from "@game-guild/ui/lib/utils";
 export const SOCIAL_FEED_TABS = [
   { id: "foryou", label: "For you" },
   { id: "following", label: "Following" },
-  { id: "playtests", label: "Community Events" },
+  { id: "playtests", label: "Community" },
 ] as const;
 
 export type SocialFeedTab = (typeof SOCIAL_FEED_TABS)[number]["id"];

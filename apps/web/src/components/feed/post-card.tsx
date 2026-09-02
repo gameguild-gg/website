@@ -144,7 +144,7 @@ export function PostCard({ post }: { post: PostCardData }): React.JSX.Element {
   return (
     <article
       data-testid="post-card"
-      className="py-2"
+      className="bg-[#0d1524] py-2"
     >
       <header className="flex items-center gap-3 px-4 py-4 sm:px-6">
         <span className="rounded-full bg-gradient-to-br from-[#48c7ff] via-[#8b5cf6] to-[#49e6a2] p-[2px]">

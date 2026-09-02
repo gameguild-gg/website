@@ -28,7 +28,7 @@ export function SocialRail({
   return (
     <aside className="sticky top-5 hidden h-fit space-y-3 xl:block">
       {featuredCreator ? (
-        <section className="rounded-xl p-4">
+        <section className="rounded-xl bg-[#0d1524] p-4">
           <div className="flex items-start gap-3">
             <span className="flex size-14 shrink-0 items-center justify-center rounded-full border border-violet-400/50 bg-violet-500/15 text-sm font-bold text-white">
               {initials(featuredCreator.name)}
@@ -60,7 +60,7 @@ export function SocialRail({
         </section>
       ) : null}
 
-      <section className="rounded-xl p-4">
+      <section className="rounded-xl bg-[#0d1524] p-4">
         <div className="flex items-center justify-between gap-3">
           <h2 className="flex items-center gap-2 text-sm font-semibold text-white">
             <CalendarDays
@@ -104,7 +104,7 @@ export function SocialRail({
         </div>
       </section>
 
-      <section className="rounded-xl p-4">
+      <section className="rounded-xl bg-[#0d1524] p-4">
         <div className="flex items-center justify-between gap-3">
           <h2 className="flex items-center gap-2 text-sm font-semibold text-white">
             <Users className="size-4 text-[#a78bfa]" aria-hidden="true" />
@@ -148,7 +148,7 @@ export function SocialRail({
         </div>
       </section>
 
-      <section className="rounded-xl p-4">
+      <section className="rounded-xl bg-[#0d1524] p-4">
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-sm font-semibold text-white">Trending tags</h2>
           <Link href="/projects" className="text-xs font-medium text-violet-300 hover:text-white">

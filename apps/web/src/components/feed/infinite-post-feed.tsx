@@ -80,7 +80,7 @@ export function InfinitePostFeed({
       ))}
 
       {items.length === 0 && !loading ? (
-        <div className="mx-4 my-8 flex flex-col items-center px-6 py-12 text-center sm:mx-6">
+        <div className="mx-4 my-8 flex flex-col items-center rounded-2xl bg-[#0d1524] px-6 py-12 text-center sm:mx-6">
           <span className="flex size-11 items-center justify-center rounded-xl bg-[#48c7ff]/10 text-[#7dd3fc]">
             <Gamepad2 className="size-5" aria-hidden="true" />
           </span>

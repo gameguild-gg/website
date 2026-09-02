@@ -10,7 +10,6 @@ import {
   SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarRail,
   useSidebar,
 } from '@game-guild/ui/components/sidebar';
 import {
@@ -28,7 +27,7 @@ import { useSearchParams } from 'next/navigation';
 const socialNavigation = [
   { label: 'Home', href: '/', icon: Home },
   { label: 'Explore', href: '/projects', icon: Compass },
-  { label: 'Community Events', href: '/?tab=playtests', icon: FlaskConical },
+  { label: 'Testing Lab', href: '/testing-lab', icon: FlaskConical },
   { label: 'Messages', href: '/workspace/invitations', icon: MessageCircle, badge: '5' },
   { label: 'Saved', href: '/workspace/projects', icon: Bookmark },
 ] as const;
@@ -71,7 +70,7 @@ export function SocialSidebar(): React.JSX.Element {
     <Sidebar
       collapsible="icon"
       style={{ borderRightWidth: 0 }}
-      className="h-svh bg-[#080d18] text-slate-200 [&_[data-slot=sidebar-inner]]:bg-[#080d18]"
+      className="h-svh bg-[#0b1220] text-slate-200 [&_[data-slot=sidebar-inner]]:bg-[#0b1220]"
     >
       <SidebarHeader className="p-3">
         <div className="flex min-h-10 items-center gap-2">
@@ -95,12 +94,12 @@ export function SocialSidebar(): React.JSX.Element {
           {socialNavigation.map(({ label, href, icon: Icon, ...item }) => {
             const active =
               (label === 'Home' && pathname === '/' && !activeTab) ||
-              (label === 'Community Events' && pathname === '/' && activeTab === 'playtests') ||
+              (label === 'Testing Lab' && pathname.startsWith('/testing-lab')) ||
               (label === 'Explore' && pathname.startsWith('/projects')) ||
               (label === 'Messages' && pathname.startsWith('/workspace/invitations')) ||
               (label === 'Saved' && pathname.startsWith('/workspace/projects'));
             return (
-              <SidebarMenuItem key={label}>
+              <SidebarMenuItem key={label} className="group-data-[collapsible=icon]:mx-auto group-data-[collapsible=icon]:w-8">
                 <SidebarMenuButton
                   asChild
                   size="lg"
@@ -128,7 +127,6 @@ export function SocialSidebar(): React.JSX.Element {
       <SidebarFooter className="items-center p-3">
         <SocialSidebarToggle placement="footer" />
       </SidebarFooter>
-      <SidebarRail />
     </Sidebar>
   );
 }
