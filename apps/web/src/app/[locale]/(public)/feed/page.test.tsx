@@ -11,9 +11,9 @@ vi.mock('@/i18n/navigation', () => ({ redirect: mocks.redirect }));
 import LegacyFeedRedirectPage from './page';
 
 describe('legacy /feed redirect', () => {
-  it('forwards to the authenticated social shell', async () => {
+  it('forwards to the authenticated home', async () => {
     await expect(
       LegacyFeedRedirectPage({ params: Promise.resolve({ locale: 'pt-BR' }) } as never),
-    ).rejects.toThrow('redirect:{"href":"/social","locale":"pt-BR"}');
+    ).rejects.toThrow('redirect:{"href":"/","locale":"pt-BR"}');
   });
 });

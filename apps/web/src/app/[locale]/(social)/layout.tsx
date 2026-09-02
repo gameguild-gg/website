@@ -11,7 +11,7 @@ export default async function Layout({ children, params }: LayoutProps<'/[locale
   const session = await auth();
 
   if (!session || typeof session === 'function') {
-    redirect({ href: { pathname: '/sign-in', query: { callbackUrl: '/social' } }, locale });
+    redirect({ href: { pathname: '/sign-in', query: { callbackUrl: '/' } }, locale });
     throw new Error('Unauthenticated social access');
   }
 

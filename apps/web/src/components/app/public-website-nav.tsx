@@ -28,9 +28,9 @@ export type PublicWebsiteUser = {
   readonly canManage?: boolean;
 };
 
-function isActivePath(pathname: string, href: string) {
+function isActivePath(pathname: string, href: string, variant: 'public' | 'app') {
   if (href === '/') return pathname === '/';
-  if (href === '/community' && pathname === '/social') return true;
+  if (variant === 'app' && href === '/community' && (pathname === '/' || pathname === '/social')) return true;
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
@@ -53,7 +53,7 @@ export function PublicDesktopNav({
       }
     >
       {items.map((item) => {
-        const active = isActivePath(pathname, item.href);
+        const active = isActivePath(pathname, item.href, variant);
 
         return (
           <a
