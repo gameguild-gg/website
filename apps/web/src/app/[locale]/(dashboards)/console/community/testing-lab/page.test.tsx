@@ -166,6 +166,16 @@ describe("testing lab dashboard page", () => {
     expect(
       screen.getByRole("region", { name: "Testing Lab calendar" }),
     ).toBeInTheDocument();
+    const calendar = screen.getByRole("region", {
+      name: "Testing Lab calendar",
+    });
+    expect(calendar.parentElement).toHaveClass("min-h-0", "flex-1");
+    expect(calendar.parentElement).not.toHaveClass("p-4");
+    expect(calendar.parentElement?.parentElement).toHaveClass(
+      "-m-4",
+      "sm:-m-6",
+    );
+    expect(screen.getByRole("banner")).not.toHaveClass("border-b");
     expect(screen.getByText("Campus playtest")).toBeInTheDocument();
     expect(screen.getByText("Calendar capacity 10")).toBeInTheDocument();
   });

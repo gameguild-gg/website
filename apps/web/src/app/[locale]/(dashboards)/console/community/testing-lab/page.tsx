@@ -70,12 +70,13 @@ export default async function TestingLabPage() {
   ].filter((item) => item.count > 0);
 
   return (
-    <div className="flex min-h-[calc(100dvh-4rem)] flex-col">
-      <div className="px-4 pt-4 lg:px-6 lg:pt-5">
+    <div className="-m-4 flex h-[calc(100dvh-4rem)] min-h-[38rem] flex-col overflow-hidden sm:-m-6">
+      <div className="px-4 py-3 lg:px-6">
         <TestingLabPageHeader
           icon={FlaskConical}
           title="Testing Lab"
           description="Plan and run project testing events."
+          bordered={false}
           actions={
             <>
               <Button asChild variant="outline" className="h-11 sm:h-9">
@@ -119,7 +120,7 @@ export default async function TestingLabPage() {
         ) : null}
       </div>
 
-      <div className="min-h-0 flex-1 p-4 lg:px-6 lg:pb-6">
+      <div className="min-h-0 flex-1">
         <TestingLabCalendar
           events={events.events}
           eventAnalytics={analytics.events}

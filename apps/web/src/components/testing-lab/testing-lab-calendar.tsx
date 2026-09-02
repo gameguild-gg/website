@@ -449,13 +449,13 @@ function GridView({
   const monthStart = startOfMonth(anchor);
 
   return (
-    <div className="relative overflow-x-auto">
+    <div className="relative min-h-0 flex-1 overflow-auto">
       <section
         aria-label={`${viewLabels[view]} Testing Lab calendar`}
         className={
           view === "month" || view === "week"
-            ? "min-w-[760px] overflow-hidden"
-            : "min-w-[420px] overflow-hidden"
+            ? "flex h-full min-w-[760px] flex-col overflow-hidden"
+            : "flex h-full min-w-[420px] flex-col overflow-hidden"
         }
       >
         <div
@@ -477,7 +477,7 @@ function GridView({
           ))}
         </div>
         <div
-          className="grid"
+          className="grid flex-1 auto-rows-fr"
           style={{
             gridTemplateColumns: `repeat(${view === "month" || view === "week" ? weekdays.length : range.days.length}, minmax(0, 1fr))`,
           }}
@@ -490,7 +490,7 @@ function GridView({
             return (
               <div
                 key={key}
-                className={`group relative min-h-32 border-b border-r p-2 last:border-r-0 xl:min-h-36 ${outsideMonth ? "bg-muted/20 text-muted-foreground" : "bg-background"}`}
+                className={`group relative min-h-24 border-b border-r p-2 last:border-r-0 md:min-h-0 ${outsideMonth ? "bg-muted/20 text-muted-foreground" : "bg-background"}`}
               >
                 <button
                   type="button"
@@ -593,7 +593,7 @@ export function TestingLabCalendar({
   return (
     <section
       aria-label="Testing Lab calendar"
-      className="min-h-[38rem] overflow-hidden rounded-lg border bg-background"
+      className="flex h-full min-h-0 flex-col overflow-hidden bg-background"
     >
       <div className="flex flex-wrap items-center gap-2 border-b p-2.5">
         <div className="flex items-center gap-1">

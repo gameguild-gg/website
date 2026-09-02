@@ -92,6 +92,23 @@ describe("TestingLabCalendar", () => {
     expect(screen.getByText("8/8")).toBeInTheDocument();
   });
 
+  it("fills its work area without an outer card frame", () => {
+    render(
+      <TestingLabCalendar
+        events={events}
+        eventAnalytics={eventAnalytics}
+        initialDate={new Date(2030, 7, 10)}
+      />,
+    );
+
+    const calendar = screen.getByRole("region", {
+      name: "Testing Lab calendar",
+    });
+
+    expect(calendar).toHaveClass("h-full");
+    expect(calendar).not.toHaveClass("border", "rounded-lg");
+  });
+
   it("offers the Google Calendar view set and can switch to the schedule", () => {
     render(
       <TestingLabCalendar

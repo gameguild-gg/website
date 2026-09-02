@@ -8,6 +8,7 @@ export function TestingLabPageHeader({
   actions,
   navigation,
   headingLevel = 1,
+  bordered = true,
 }: {
   icon: LucideIcon;
   title: string;
@@ -15,11 +16,12 @@ export function TestingLabPageHeader({
   actions?: ReactNode;
   navigation?: ReactNode;
   headingLevel?: 1 | 2;
+  bordered?: boolean;
 }) {
   const Heading = headingLevel === 2 ? 'h2' : 'h1';
 
   return (
-    <header className="space-y-4 border-b pb-4">
+    <header className={`space-y-4 ${bordered ? 'border-b pb-4' : ''}`}>
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex min-w-0 items-start gap-3">
           <div className="flex size-10 shrink-0 items-center justify-center rounded-md bg-muted/60">
