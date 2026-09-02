@@ -4,11 +4,11 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using Amazon.SimpleNotificationService.Util;
 using Asp.Versioning;
+using GameGuild.CQRS;
 using GameGuild.Notifications.Services.Email;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace GameGuild.Notifications.Controllers;
@@ -32,21 +32,18 @@ public class EmailEventsController : BaseApiController
     public const string SubscriptionConfirmationClientName = "SnsSubscriptionConfirmation";
 
     private readonly ISnsMessageVerifier _verifier;
-    private readonly IEmailEventProcessor _processor;
-    private readonly IApplicationDbContext _context;
+    private readonly ISender _sender;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger<EmailEventsController> _logger;
 
     public EmailEventsController(
         ISnsMessageVerifier verifier,
-        IEmailEventProcessor processor,
-        IApplicationDbContext context,
+        ISender sender,
         IHttpClientFactory httpClientFactory,
         ILogger<EmailEventsController> logger)
     {
         _verifier = verifier;
-        _processor = processor;
-        _context = context;
+        _sender = sender;
         _httpClientFactory = httpClientFactory;
         _logger = logger;
     }
@@ -139,55 +136,15 @@ public class EmailEventsController : BaseApiController
             return Malformed();
         }
 
-        var processorRan = false;
-        try
+        var result = await _sender.Send(
+            new IngestEmailDeliveryEventCommand(emailEvent),
+            cancellationToken).ConfigureAwait(false);
+        if (!result.IsSuccess)
         {
-            var alreadyIngested = await _context.Set<EmailDeliveryEvent>()
-                .AnyAsync(e => e.SnsMessageId == emailEvent.SnsMessageId, cancellationToken)
-                .ConfigureAwait(false);
-
-            if (!alreadyIngested)
-            {
-                _context.Set<EmailDeliveryEvent>().Add(emailEvent);
-            }
-
-            // The processor mutates tracked entities only (never saves); the single SaveChanges
-            // below persists event + suppression + deadletters atomically. A failure before or
-            // during it persists NOTHING → 500 → SNS retries the identical message.
-            await _processor.ProcessAsync(emailEvent, cancellationToken).ConfigureAwait(false);
-            processorRan = true;
-            await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-            return Ok();
-        }
-        catch (DbUpdateException)
-        {
-            // Unique-index race: a concurrent request ingested the same SnsMessageId between the
-            // pre-check and the save. Drop the poisoned insert (detach pending entries), confirm
-            // it really was a duplicate, re-run the idempotent processor (heals a delivery whose
-            // side effects were lost) and ack — SNS must not retry an already-stored event.
-            ResetContextState();
-            var isDuplicate = await _context.Set<EmailDeliveryEvent>()
-                .AnyAsync(e => e.SnsMessageId == emailEvent.SnsMessageId, cancellationToken)
-                .ConfigureAwait(false);
-            if (!isDuplicate)
-            {
-                // Genuine save failure (not a duplicate race): nothing persisted, SNS retries.
-                return IngestFailed();
-            }
-
-            if (!processorRan)
-            {
-                await _processor.ProcessAsync(emailEvent, cancellationToken).ConfigureAwait(false);
-            }
-
-            await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-            return Ok();
-        }
-        catch (Exception)
-        {
-            // Nothing persisted (the single save never completed); no raw body in the log.
             return IngestFailed();
         }
+
+        return Ok();
     }
 
     /// <summary>
@@ -287,22 +244,6 @@ public class EmailEventsController : BaseApiController
                 }
 
                 break;
-        }
-    }
-
-    private void ResetContextState()
-    {
-        if (_context is not DbContext dbContext)
-        {
-            return; // Same escape hatch as EmailEventProcessor; production context always is one.
-        }
-
-        foreach (var entry in dbContext.ChangeTracker.Entries().ToList())
-        {
-            if (entry.State != EntityState.Unchanged)
-            {
-                entry.State = EntityState.Detached;
-            }
         }
     }
 
