@@ -1,6 +1,6 @@
 import { TestingLabCalendar } from '@/components/testing-lab/testing-lab-calendar';
 import { CreateTestingEventDialog } from '@/components/testing-lab/testing-event-management';
-import { TestingLabOperationsNavigation, TestingLabPageHeader } from '@/components/testing-lab/testing-lab-page-header';
+import { TestingLabPageHeader } from '@/components/testing-lab/testing-lab-page-header';
 import { TestingLabAccessIssues } from '@/components/testing-lab/testing-lab-state';
 import { Link } from '@/i18n/navigation';
 import {
@@ -63,7 +63,6 @@ export default async function TestingLabPage() {
         icon={FlaskConical}
         title="Testing Lab"
         description="Manage applications, testing sessions, and participant feedback."
-        navigation={<TestingLabOperationsNavigation activeHref="/console/community/testing-lab" />}
         actions={
           <>
             {hasEvents ? <CreateTestingEventDialog /> : null}
@@ -223,6 +222,8 @@ export default async function TestingLabPage() {
         ))}
       </section>
 
+      <TestingLabCalendar events={events.events} eventAnalytics={analytics.events} />
+
       <section className="grid gap-6 xl:grid-cols-2">
         <div>
           <div className="mb-3 flex items-center justify-between">
@@ -293,8 +294,6 @@ export default async function TestingLabPage() {
           )}
         </div>
       </section>
-
-      {hasEvents ? <TestingLabCalendar events={events.events} eventAnalytics={analytics.events} /> : null}
     </div>
   );
 }

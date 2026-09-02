@@ -130,19 +130,7 @@ describe('testing lab dashboard page', () => {
 
     expect(screen.getByRole('heading', { name: 'Testing Lab' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /public lab/i })).toHaveAttribute('href', '/testing-lab');
-    const workspaceNavigation = screen.getByRole('navigation', {
-      name: 'Testing Lab operations',
-    });
-    expect(workspaceNavigation.closest('header')).not.toBeNull();
-    expect(screen.getByRole('link', { name: 'Events' })).toHaveAttribute(
-      'href',
-      '/console/community/testing-lab/events',
-    );
-    expect(screen.getByRole('link', { name: 'Applications' })).toHaveAttribute(
-      'href',
-      '/console/community/testing-lab/applications',
-    );
-    expect(screen.getByRole('link', { name: 'Overview' })).toHaveAttribute('aria-current', 'page');
+    expect(screen.queryByRole('navigation', { name: 'Testing Lab operations' })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'New event' })).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: /manage events/i })).not.toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Needs attention' })).toBeInTheDocument();
@@ -206,6 +194,6 @@ describe('testing lab dashboard page', () => {
     expect(screen.getByText('Configure slots and capacity')).toBeInTheDocument();
     expect(screen.getByText('Open applications')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'New event' })).toBeInTheDocument();
-    expect(screen.queryByRole('region', { name: 'Testing Lab calendar' })).not.toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Testing Lab calendar' })).toBeInTheDocument();
   });
 });
