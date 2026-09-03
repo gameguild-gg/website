@@ -554,10 +554,14 @@ function EventFields({
   );
 }
 
-function EventRecurrenceFields({ onDirty }: { onDirty: () => void }) {
-  const [frequency, setFrequency] = useState("");
-  const [endMode, setEndMode] = useState("count");
-  const days = [
+function EventRecurrenceFields({
+  onDirty,
+  startDate,
+}: {
+  onDirty: () => void;
+  startDate: string;
+}) {
+  const allDays = [
     "Sunday",
     "Monday",
     "Tuesday",
@@ -566,24 +570,52 @@ function EventRecurrenceFields({ onDirty }: { onDirty: () => void }) {
     "Friday",
     "Saturday",
   ];
-  const intervalUnit =
-    frequency === "Daily"
-      ? "day(s)"
-      : frequency === "Weekly"
-        ? "week(s)"
-        : "month(s)";
+  const displayDays = [
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+    "Sunday",
+  ];
+  const parsedStart = new Date(startDate);
+  const startDay = Number.isNaN(parsedStart.valueOf())
+    ? "Monday"
+    : allDays[parsedStart.getDay()]!;
+  const startDayOfMonth = Number.isNaN(parsedStart.valueOf())
+    ? 1
+    : parsedStart.getDate();
+  const [repeatOption, setRepeatOption] = useState("none");
+  const [customFrequency, setCustomFrequency] = useState("Weekly");
+  const [customDays, setCustomDays] = useState<string[]>([startDay]);
+  const [endMode, setEndMode] = useState("count");
+  const frequency =
+    repeatOption === "custom"
+      ? customFrequency
+      : repeatOption === "none"
+        ? ""
+        : repeatOption;
+
+  function toggleCustomDay(day: string) {
+    setCustomDays((current) =>
+      current.includes(day)
+        ? current.filter((value) => value !== day)
+        : [...current, day],
+    );
+    onDirty();
+  }
 
   return (
-    <section aria-labelledby="event-recurrence-heading" className="space-y-4">
-      <h3 id="event-recurrence-heading" className="font-medium">
-        Recurrence
-      </h3>
+    <section aria-labelledby="event-recurrence-heading" className="space-y-3">
       <div className="space-y-2">
-        <Label htmlFor="event-recurrence">Repeat event</Label>
+        <Label id="event-recurrence-heading" htmlFor="event-recurrence">
+          Repeats
+        </Label>
         <Select
-          value={frequency || "none"}
+          value={repeatOption}
           onValueChange={(value) => {
-            setFrequency(value === "none" ? "" : value);
+            setRepeatOption(value);
             onDirty();
           }}
         >
@@ -591,30 +623,36 @@ function EventRecurrenceFields({ onDirty }: { onDirty: () => void }) {
             <SelectValue>
               {(value: string | null) =>
                 value === "Daily"
-                  ? "Every day"
+                  ? "Daily"
                   : value === "Weekly"
-                    ? "Every week"
+                    ? `Weekly on ${startDay}`
                     : value === "Monthly"
-                      ? "Every month"
-                      : "Does not repeat"
+                      ? `Monthly on day ${startDayOfMonth}`
+                      : value === "custom"
+                        ? "Custom…"
+                        : "Does not repeat"
               }
             </SelectValue>
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="none">Does not repeat</SelectItem>
-            <SelectItem value="Daily">Every day</SelectItem>
-            <SelectItem value="Weekly">Every week</SelectItem>
-            <SelectItem value="Monthly">Every month</SelectItem>
+            <SelectItem value="Daily">Daily</SelectItem>
+            <SelectItem value="Weekly">Weekly on {startDay}</SelectItem>
+            <SelectItem value="Monthly">
+              Monthly on day {startDayOfMonth}
+            </SelectItem>
+            <SelectItem value="custom">Custom…</SelectItem>
           </SelectContent>
         </Select>
         <input type="hidden" name="recurrenceFrequency" value={frequency} />
       </div>
+
       {frequency ? (
-        <div className="space-y-4 rounded-md bg-muted/30 p-3">
-          <div className="grid gap-4 sm:grid-cols-2">
+        <div className="space-y-3 rounded-md bg-muted/30 p-3">
+          {repeatOption === "custom" ? (
             <div className="space-y-2">
               <Label htmlFor="recurrence-interval">Repeat every</Label>
-              <div className="flex items-center gap-2">
+              <div className="grid grid-cols-[5rem_minmax(0,1fr)] gap-2">
                 <Input
                   id="recurrence-interval"
                   name="recurrenceInterval"
@@ -623,13 +661,73 @@ function EventRecurrenceFields({ onDirty }: { onDirty: () => void }) {
                   max="52"
                   defaultValue="1"
                   required
-                  className="w-20"
                 />
-                <span className="text-sm text-muted-foreground">
-                  {intervalUnit}
-                </span>
+                <Select
+                  value={customFrequency}
+                  onValueChange={(value) => {
+                    setCustomFrequency(value);
+                    onDirty();
+                  }}
+                >
+                  <SelectTrigger aria-label="Repeat unit" className="w-full">
+                    <SelectValue>
+                      {(value: string | null) =>
+                        value === "Daily"
+                          ? "Day(s)"
+                          : value === "Monthly"
+                            ? "Month(s)"
+                            : "Week(s)"
+                      }
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Daily">Day(s)</SelectItem>
+                    <SelectItem value="Weekly">Week(s)</SelectItem>
+                    <SelectItem value="Monthly">Month(s)</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
+          ) : (
+            <input type="hidden" name="recurrenceInterval" value="1" />
+          )}
+
+          {frequency === "Weekly" ? (
+            repeatOption === "custom" ? (
+              <fieldset className="space-y-2">
+                <legend className="text-sm font-medium">Repeat on</legend>
+                <div className="flex flex-wrap gap-1.5">
+                  {displayDays.map((day) => {
+                    const selected = customDays.includes(day);
+                    return (
+                      <label
+                        key={day}
+                        className={`flex size-9 cursor-pointer items-center justify-center rounded-full text-xs font-medium transition-colors ${selected ? "bg-primary text-primary-foreground" : "bg-background text-muted-foreground hover:text-foreground"}`}
+                      >
+                        <input
+                          className="sr-only"
+                          name="recurrenceDaysOfWeek"
+                          type="checkbox"
+                          value={day}
+                          checked={selected}
+                          onChange={() => toggleCustomDay(day)}
+                        />
+                        {day.slice(0, 1)}
+                      </label>
+                    );
+                  })}
+                </div>
+              </fieldset>
+            ) : (
+              <input
+                type="hidden"
+                name="recurrenceDaysOfWeek"
+                value={startDay}
+              />
+            )
+          ) : null}
+
+          <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="recurrence-end-mode">Ends</Label>
               <Select
@@ -642,54 +740,29 @@ function EventRecurrenceFields({ onDirty }: { onDirty: () => void }) {
                 <SelectTrigger id="recurrence-end-mode" className="w-full">
                   <SelectValue>
                     {(value: string | null) =>
-                      value === "date" ? "On a date" : "After several events"
+                      value === "date" ? "On a date" : "After"
                     }
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="count">
-                    After a number of events
-                  </SelectItem>
+                  <SelectItem value="count">After</SelectItem>
                   <SelectItem value="date">On a date</SelectItem>
                 </SelectContent>
               </Select>
               <input type="hidden" name="recurrenceEndMode" value={endMode} />
             </div>
-          </div>
-          {frequency === "Weekly" ? (
-            <fieldset className="space-y-2">
-              <legend className="text-sm font-medium">Repeats on</legend>
-              <div className="flex flex-wrap gap-2">
-                {days.map((day) => (
-                  <label
-                    key={day}
-                    className="flex items-center gap-2 rounded-md bg-background/60 px-3 py-2 text-sm"
-                  >
-                    <input
-                      name="recurrenceDaysOfWeek"
-                      type="checkbox"
-                      value={day}
-                      onChange={onDirty}
-                    />
-                    {day.slice(0, 3)}
-                  </label>
-                ))}
+            {endMode === "date" ? (
+              <div className="space-y-2">
+                <Label htmlFor="recurrence-ends-at">End date</Label>
+                <DateTimePicker
+                  id="recurrence-ends-at"
+                  name="recurrenceEndsAt"
+                  required
+                />
               </div>
-            </fieldset>
-          ) : null}
-          {endMode === "date" ? (
-            <div className="space-y-2">
-              <Label htmlFor="recurrence-ends-at">End date</Label>
-              <DateTimePicker
-                id="recurrence-ends-at"
-                name="recurrenceEndsAt"
-                required
-              />
-            </div>
-          ) : (
-            <div className="space-y-2">
-              <Label htmlFor="recurrence-count">Ends after</Label>
-              <div className="flex items-center gap-2">
+            ) : (
+              <div className="space-y-2">
+                <Label htmlFor="recurrence-count">Number of events</Label>
                 <Input
                   id="recurrence-count"
                   name="recurrenceOccurrenceCount"
@@ -698,12 +771,10 @@ function EventRecurrenceFields({ onDirty }: { onDirty: () => void }) {
                   max="104"
                   defaultValue="4"
                   required
-                  className="w-20"
                 />
-                <span className="text-sm text-muted-foreground">events</span>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       ) : null}
     </section>
@@ -867,7 +938,10 @@ export function CreateTestingEventDialog({
                   />
                 </section>
 
-                <EventRecurrenceFields onDirty={() => setDirty(true)} />
+                <EventRecurrenceFields
+                  startDate={schedule.startsAt}
+                  onDirty={() => setDirty(true)}
+                />
                 <input type="hidden" name="requiresFeedback" value="true" />
               </div>
             </div>

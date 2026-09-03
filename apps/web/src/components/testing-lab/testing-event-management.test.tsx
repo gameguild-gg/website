@@ -5,6 +5,7 @@ import {
   waitFor,
   within,
 } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
 global.ResizeObserver = class ResizeObserver {
@@ -291,12 +292,35 @@ describe("TestingEventApplications", () => {
     ).toHaveTextContent("America/Sao_Paulo");
 
     expect(
-      screen.getByRole("combobox", { name: "Repeat event" }),
+      screen.getByRole("combobox", { name: "Repeats" }),
     ).toBeInTheDocument();
     expect(screen.queryByLabelText("Start from")).not.toBeInTheDocument();
     expect(screen.getByRole("dialog")).toHaveClass(
       "data-[side=right]:sm:max-w-2xl!",
     );
+  });
+
+  it("uses calendar-style repeat presets and keeps custom controls collapsed", async () => {
+    const user = userEvent.setup();
+    render(<CreateTestingEventDialog initialDate={new Date(2030, 7, 19)} />);
+
+    await user.click(screen.getByRole("button", { name: "New event" }));
+
+    const repeats = screen.getByRole("combobox", { name: "Repeats" });
+    expect(repeats).toHaveTextContent("Does not repeat");
+    expect(screen.queryByLabelText("Repeat every")).not.toBeInTheDocument();
+
+    await user.click(repeats);
+    expect(
+      screen.getByRole("option", { name: "Weekly on Monday" }),
+    ).toBeInTheDocument();
+    await user.click(screen.getByRole("option", { name: "Custom…" }));
+
+    expect(screen.getByLabelText("Repeat every")).toBeInTheDocument();
+    expect(
+      screen.getByRole("combobox", { name: "Repeat unit" }),
+    ).toHaveTextContent("Week(s)");
+    expect(screen.getByLabelText("Number of events")).toHaveValue(4);
   });
 
   it("replaces the open action with a setup link while a draft is incomplete", () => {
