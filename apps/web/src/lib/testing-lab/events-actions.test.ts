@@ -98,6 +98,7 @@ describe("Testing Lab event actions", () => {
       form({
         name: "Campus showcase",
         description: "Student projects",
+        timeZoneId: "America/Sao_Paulo",
         mode: "InPerson",
         approvalMode: "Committee",
         applicationsOpenAt: "2026-08-01T09:00",
@@ -114,8 +115,12 @@ describe("Testing Lab event actions", () => {
         name: "Campus showcase",
         mode: "InPerson",
         approvalMode: "Committee",
+        timeZoneId: "America/Sao_Paulo",
         requiresFeedback: true,
-        startsAt: "2026-08-08T18:00:00.000Z",
+        applicationsOpenAt: "2026-08-01T12:00:00.000Z",
+        applicationsCloseAt: "2026-08-05T21:00:00.000Z",
+        startsAt: "2026-08-08T21:00:00.000Z",
+        endsAt: "2026-08-09T00:00:00.000Z",
         configuration: {
           generalRules: "Respect the code of conduct.",
           candidateInstructions: "Provide a playable build.",

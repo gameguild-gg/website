@@ -22,6 +22,7 @@ import {
   waitlistTestingEventApplication,
   type TestingEventActionResult,
 } from "@/lib/testing-lab/events-actions";
+import { formatWallClockInTimeZone } from "@/lib/date-time-zone";
 import { formatEventDateTime } from "@/lib/testing-lab/event-workspace";
 import { formatTestingEventStatus } from "@/lib/testing-lab/format";
 import type {
@@ -47,6 +48,8 @@ import {
 import { Badge } from "@game-guild/ui/components/badge";
 import { Button } from "@game-guild/ui/components/button";
 import { DateTimePicker } from "@/components/ui/date-time-picker";
+import { DateTimeRangePicker } from "@/components/ui/date-time-range-picker";
+import { TimeZoneCombobox } from "@/components/ui/time-zone-combobox";
 import {
   Dialog,
   DialogContent,
@@ -121,13 +124,11 @@ export interface TestingLabLearningActivityOption {
   label: string;
 }
 
-function apiDatetimeLocal(value?: string | null) {
+function apiDatetimeLocal(value?: string | null, timeZoneId = "UTC") {
   if (!value) return "";
-  const wallClock = value.match(/^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2})/);
-  if (wallClock) return wallClock[1];
   const date = new Date(value);
   if (Number.isNaN(date.valueOf())) return "";
-  return date.toISOString().slice(0, 16);
+  return formatWallClockInTimeZone(date, timeZoneId);
 }
 
 function localDatetime(date: Date) {
@@ -330,6 +331,7 @@ type EventFieldsProps = {
   event?: TestingLabTestingEventProjection;
   schedule?: TestingEventSchedule;
   onScheduleChange?: (field: keyof TestingEventSchedule, value: string) => void;
+  timeZoneId?: string;
 };
 
 function EventIdentityFields({
@@ -414,77 +416,83 @@ function EventTimelineFields({
   event,
   schedule,
   onScheduleChange,
+  timeZoneId,
 }: EventFieldsProps) {
+  const eventTimeZone = timeZoneId ?? event?.timeZoneId ?? "UTC";
   const applicationsOpenAt =
-    schedule?.applicationsOpenAt ?? apiDatetimeLocal(event?.applicationsOpenAt);
+    schedule?.applicationsOpenAt ??
+    apiDatetimeLocal(event?.applicationsOpenAt, eventTimeZone);
   const applicationsCloseAt =
     schedule?.applicationsCloseAt ??
-    apiDatetimeLocal(event?.applicationsCloseAt);
-  const startsAt = schedule?.startsAt ?? apiDatetimeLocal(event?.startsAt);
-  const endsAt = schedule?.endsAt ?? apiDatetimeLocal(event?.endsAt);
+    apiDatetimeLocal(event?.applicationsCloseAt, eventTimeZone);
+  const startsAt =
+    schedule?.startsAt ?? apiDatetimeLocal(event?.startsAt, eventTimeZone);
+  const endsAt =
+    schedule?.endsAt ?? apiDatetimeLocal(event?.endsAt, eventTimeZone);
 
   const fieldSuffix = event?.id ?? "new";
 
+  function changeRange(
+    startField: "applicationsOpenAt" | "startsAt",
+    endField: "applicationsCloseAt" | "endsAt",
+    next: { start: string; end: string },
+    currentStart: string,
+    currentEnd: string,
+  ) {
+    if (next.start !== currentStart) {
+      onScheduleChange?.(startField, next.start);
+    }
+    if (next.end !== currentEnd) {
+      onScheduleChange?.(endField, next.end);
+    }
+  }
+
   return (
-    <div className="space-y-5">
-      <fieldset className="min-w-0 space-y-3">
-        <legend className="mb-3 text-sm font-medium">Application window</legend>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div className="min-w-0 space-y-2">
-            <Label htmlFor={`applications-open-${fieldSuffix}`}>Opens</Label>
-            <DateTimePicker
-              id={`applications-open-${fieldSuffix}`}
-              name="applicationsOpenAt"
-              required
-              value={schedule ? applicationsOpenAt : undefined}
-              defaultValue={applicationsOpenAt}
-              onValueChange={(value) =>
-                onScheduleChange?.("applicationsOpenAt", value)
-              }
-            />
-          </div>
-          <div className="min-w-0 space-y-2">
-            <Label htmlFor={`applications-close-${fieldSuffix}`}>Closes</Label>
-            <DateTimePicker
-              id={`applications-close-${fieldSuffix}`}
-              name="applicationsCloseAt"
-              required
-              value={schedule ? applicationsCloseAt : undefined}
-              defaultValue={applicationsCloseAt}
-              onValueChange={(value) =>
-                onScheduleChange?.("applicationsCloseAt", value)
-              }
-            />
-          </div>
-        </div>
-      </fieldset>
-      <fieldset className="min-w-0 space-y-3">
-        <legend className="mb-3 text-sm font-medium">Event schedule</legend>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div className="min-w-0 space-y-2">
-            <Label htmlFor={`event-start-${fieldSuffix}`}>Starts</Label>
-            <DateTimePicker
-              id={`event-start-${fieldSuffix}`}
-              name="startsAt"
-              required
-              value={schedule ? startsAt : undefined}
-              defaultValue={startsAt}
-              onValueChange={(value) => onScheduleChange?.("startsAt", value)}
-            />
-          </div>
-          <div className="min-w-0 space-y-2">
-            <Label htmlFor={`event-end-${fieldSuffix}`}>Ends</Label>
-            <DateTimePicker
-              id={`event-end-${fieldSuffix}`}
-              name="endsAt"
-              required
-              value={schedule ? endsAt : undefined}
-              defaultValue={endsAt}
-              onValueChange={(value) => onScheduleChange?.("endsAt", value)}
-            />
-          </div>
-        </div>
-      </fieldset>
+    <div className="grid gap-4 md:grid-cols-2">
+      <div className="min-w-0 space-y-2">
+        <Label htmlFor={`applications-window-${fieldSuffix}`}>
+          Application window
+        </Label>
+        <DateTimeRangePicker
+          id={`applications-window-${fieldSuffix}`}
+          label="Application window"
+          startName="applicationsOpenAt"
+          endName="applicationsCloseAt"
+          timeZoneId={eventTimeZone}
+          required
+          value={
+            schedule
+              ? { start: applicationsOpenAt, end: applicationsCloseAt }
+              : undefined
+          }
+          defaultValue={{ start: applicationsOpenAt, end: applicationsCloseAt }}
+          onValueChange={(next) =>
+            changeRange(
+              "applicationsOpenAt",
+              "applicationsCloseAt",
+              next,
+              applicationsOpenAt,
+              applicationsCloseAt,
+            )
+          }
+        />
+      </div>
+      <div className="min-w-0 space-y-2">
+        <Label htmlFor={`event-schedule-${fieldSuffix}`}>Event schedule</Label>
+        <DateTimeRangePicker
+          id={`event-schedule-${fieldSuffix}`}
+          label="Event schedule"
+          startName="startsAt"
+          endName="endsAt"
+          timeZoneId={eventTimeZone}
+          required
+          value={schedule ? { start: startsAt, end: endsAt } : undefined}
+          defaultValue={{ start: startsAt, end: endsAt }}
+          onValueChange={(next) =>
+            changeRange("startsAt", "endsAt", next, startsAt, endsAt)
+          }
+        />
+      </div>
     </div>
   );
 }
@@ -512,17 +520,28 @@ function EventFeedbackField({
   );
 }
 
-function EventFields({ event, schedule, onScheduleChange }: EventFieldsProps) {
+function EventFields({
+  event,
+  schedule,
+  onScheduleChange,
+  timeZoneId,
+}: EventFieldsProps) {
   return (
     <div className="space-y-6">
       {event?.id ? (
         <input type="hidden" name="eventId" value={event.id} />
       ) : null}
+      <input
+        type="hidden"
+        name="timeZoneId"
+        value={timeZoneId ?? event?.timeZoneId ?? "UTC"}
+      />
       <EventIdentityFields event={event} />
       <EventTimelineFields
         event={event}
         schedule={schedule}
         onScheduleChange={onScheduleChange}
+        timeZoneId={timeZoneId}
       />
       <EventFeedbackField event={event} />
     </div>
@@ -691,6 +710,7 @@ export interface CreateTestingEventDialogProps {
   onOpenChange?: (open: boolean) => void;
   showTrigger?: boolean;
   templates?: TestingLabTestingEventTemplateProjection[];
+  defaultTimeZone?: string;
 }
 
 export function CreateTestingEventDialog({
@@ -699,6 +719,7 @@ export function CreateTestingEventDialog({
   onOpenChange,
   showTrigger = true,
   templates = [],
+  defaultTimeZone = "UTC",
 }: CreateTestingEventDialogProps = {}) {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
@@ -710,6 +731,7 @@ export function CreateTestingEventDialog({
   const [result, setResult] =
     useState<TestingEventActionResult<unknown> | null>(null);
   const [templateRevisionId, setTemplateRevisionId] = useState("");
+  const [timeZoneId, setTimeZoneId] = useState(defaultTimeZone);
   const [schedule, setSchedule] = useState<TestingEventSchedule>(() =>
     createTestingEventSchedule(new Date(), initialDate),
   );
@@ -726,6 +748,7 @@ export function CreateTestingEventDialog({
     formRef.current?.reset();
     setSchedule(createTestingEventSchedule(new Date(), initialDate));
     setTemplateRevisionId("");
+    setTimeZoneId(defaultTimeZone);
     setDirty(false);
     setResult(null);
   }
@@ -904,12 +927,28 @@ export function CreateTestingEventDialog({
                   aria-labelledby="new-event-timeline-heading"
                   className="space-y-4 lg:col-span-2"
                 >
-                  <h3 id="new-event-timeline-heading" className="font-medium">
-                    Timeline
-                  </h3>
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                    <h3 id="new-event-timeline-heading" className="font-medium">
+                      Timeline
+                    </h3>
+                    <div className="space-y-2">
+                      <Label className="sr-only" htmlFor="new-event-time-zone">
+                        Time zone
+                      </Label>
+                      <TimeZoneCombobox
+                        id="new-event-time-zone"
+                        value={timeZoneId}
+                        onValueChange={(value) => {
+                          setTimeZoneId(value);
+                          setDirty(true);
+                        }}
+                      />
+                    </div>
+                  </div>
                   <EventTimelineFields
                     schedule={schedule}
                     onScheduleChange={changeSchedule}
+                    timeZoneId={timeZoneId}
                   />
                 </section>
 
@@ -980,7 +1019,7 @@ export function EditTestingEventDialog({
       submitLabel="Save event"
       action={updateTestingEvent}
     >
-      <EventFields event={event} />
+      <EventFields event={event} timeZoneId={event.timeZoneId ?? "UTC"} />
     </EventActionDialog>
   );
 }

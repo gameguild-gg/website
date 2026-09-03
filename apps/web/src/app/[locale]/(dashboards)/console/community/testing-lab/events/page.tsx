@@ -3,6 +3,7 @@ import { formatTestingEventStatus } from '@/lib/testing-lab/format';
 import { TestingLabPageHeader } from '@/components/testing-lab/testing-lab-page-header';
 import { TestingLabAccessIssues, TestingLabEmptyState } from '@/components/testing-lab/testing-lab-state';
 import { Link } from '@/i18n/navigation';
+import { getTestingLabSettings } from '@/lib/testing-lab';
 import { getArchivedTestingEventsDirectory, getTestingEventTemplates, getTestingEventsDirectory } from '@/lib/testing-lab/events-queries';
 import type { TestingLabTestingEventStatus } from '@game-guild/client';
 import { Badge } from '@game-guild/ui/components/badge';
@@ -45,6 +46,7 @@ export default async function TestingEventsPage({
     ? await getArchivedTestingEventsDirectory({ skip: 0, take: 100 })
     : await getTestingEventsDirectory({ status: selectedStatus, skip: 0, take: 100 });
   const templates = archived ? { templates: [], accessIssues: [] } : await getTestingEventTemplates();
+  const labSettings = await getTestingLabSettings();
   const searchTerm = query.q?.trim().toLocaleLowerCase() ?? '';
   const filteredEvents = directory.events.filter((event) =>
     searchTerm
@@ -63,9 +65,14 @@ export default async function TestingEventsPage({
         icon={CalendarDays}
         title="Testing events"
         description="Open application windows, review existing community projects, reserve capacity after approval, and operate each tester slot."
-        actions={<CreateTestingEventDialog templates={templates.templates} />}
+        actions={
+          <CreateTestingEventDialog
+            templates={templates.templates}
+            defaultTimeZone={labSettings.settings?.timezone ?? 'UTC'}
+          />
+        }
       />
-      <TestingLabAccessIssues issues={[...directory.accessIssues, ...templates.accessIssues]} />
+      <TestingLabAccessIssues issues={[...directory.accessIssues, ...templates.accessIssues, ...labSettings.accessIssues]} />
       <nav aria-label="Filter testing events" className="flex flex-wrap gap-2">
         {statuses.map((status) => {
           const active = !archived && (status.value === selectedStatus || (!status.value && !selectedStatus));
@@ -102,7 +109,14 @@ export default async function TestingEventsPage({
         <TestingLabEmptyState
           title={searchTerm ? 'No matching events' : archived ? 'No archived events' : 'No testing events'}
           description={searchTerm ? 'Adjust the search or status filter.' : archived ? 'Completed and cancelled events can be archived from their management workspace.' : 'Create an event to collect project applications and organize independent online or campus test slots.'}
-          action={archived ? undefined : <CreateTestingEventDialog templates={templates.templates} />}
+          action={
+            archived ? undefined : (
+              <CreateTestingEventDialog
+                templates={templates.templates}
+                defaultTimeZone={labSettings.settings?.timezone ?? 'UTC'}
+              />
+            )
+          }
         />
       ) : (
         <section className="divide-y rounded-md border" aria-label="Testing event directory">

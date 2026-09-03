@@ -536,10 +536,12 @@ export function TestingLabCalendar({
   events,
   eventAnalytics = [],
   initialDate = new Date(),
+  defaultTimeZone = "UTC",
 }: {
   events: TestingLabTestingEventProjection[];
   eventAnalytics?: TestingLabCalendarEventAnalytics[];
   initialDate?: Date;
+  defaultTimeZone?: string;
 }) {
   const isMobileCalendar = useSyncExternalStore(
     subscribeToMobileCalendar,
@@ -723,6 +725,7 @@ export function TestingLabCalendar({
         open={createOpen}
         onOpenChange={setCreateOpen}
         showTrigger={false}
+        defaultTimeZone={defaultTimeZone}
       />
     </section>
   );

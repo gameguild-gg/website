@@ -6,6 +6,7 @@ import { Link } from "@/i18n/navigation";
 import {
   getTestingLabAnalytics,
   getTestingLabDashboard,
+  getTestingLabSettings,
   normalizeTestingSessionStatus,
 } from "@/lib/testing-lab";
 import {
@@ -22,19 +23,20 @@ import {
 } from "lucide-react";
 
 export default async function TestingLabPage() {
-  const [directory, analytics, events, pendingApplications] = await Promise.all(
-    [
+  const [directory, analytics, events, pendingApplications, labSettings] =
+    await Promise.all([
       getTestingLabDashboard(),
       getTestingLabAnalytics(),
       getTestingEventsDirectory({ take: 100 }),
       getTestingApplicationsDirectory({ status: "Pending" }),
-    ],
-  );
+      getTestingLabSettings(),
+    ]);
   const issues = [
     ...directory.accessIssues,
     ...analytics.accessIssues,
     ...events.accessIssues,
     ...pendingApplications.accessIssues,
+    ...labSettings.accessIssues,
   ];
   const draftEvents = events.events.filter(
     (event) => event.status === "Draft",
@@ -85,7 +87,9 @@ export default async function TestingLabPage() {
                   <ArrowUpRight className="ml-2 size-4" />
                 </Link>
               </Button>
-              <CreateTestingEventDialog />
+              <CreateTestingEventDialog
+                defaultTimeZone={labSettings.settings?.timezone ?? "UTC"}
+              />
             </>
           }
         />
@@ -124,6 +128,7 @@ export default async function TestingLabPage() {
         <TestingLabCalendar
           events={events.events}
           eventAnalytics={analytics.events}
+          defaultTimeZone={labSettings.settings?.timezone ?? "UTC"}
         />
       </div>
     </div>

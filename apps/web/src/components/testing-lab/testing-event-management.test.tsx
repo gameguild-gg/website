@@ -7,6 +7,13 @@ import {
 } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
+global.ResizeObserver = class ResizeObserver {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+};
+Element.prototype.scrollIntoView = vi.fn();
+
 const mocks = vi.hoisted(() => ({
   beginReview: vi.fn(),
   refresh: vi.fn(),
@@ -166,8 +173,8 @@ describe("TestingEventApplications", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("uses a guarded drawer and keeps the shadcn date-time schedule chronological", () => {
-    render(<CreateTestingEventDialog />);
+  it("uses range calendars and keeps the event schedule chronological", () => {
+    render(<CreateTestingEventDialog defaultTimeZone="America/Sao_Paulo" />);
 
     fireEvent.click(screen.getByRole("button", { name: "New event" }));
     const field = (name: string) =>
@@ -194,15 +201,22 @@ describe("TestingEventApplications", () => {
       new Date(startsAt.value).valueOf(),
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "Starts" }));
+    fireEvent.click(screen.getByRole("combobox", { name: "Time zone" }));
+    fireEvent.change(screen.getByPlaceholderText("Search time zones…"), {
+      target: { value: "America/New_York" },
+    });
+    fireEvent.click(screen.getByText("America/New_York"));
+    expect(field("timeZoneId").value).toBe("America/New_York");
+
+    fireEvent.click(screen.getByRole("button", { name: "Event schedule" }));
     const nextMinute = String(
       new Date(startsAt.value).getMinutes() + 1,
     ).padStart(2, "0");
-    fireEvent.change(screen.getByLabelText("Minute"), {
-      target: { value: nextMinute },
+    fireEvent.change(screen.getByLabelText("Start time"), {
+      target: { value: `22:${nextMinute}` },
     });
     fireEvent.click(
-      screen.getByRole("button", { name: "Apply date and time" }),
+      screen.getByRole("button", { name: "Apply event schedule" }),
     );
 
     expect(
@@ -240,7 +254,7 @@ describe("TestingEventApplications", () => {
   });
 
   it("presents the event decisions first and groups its two time windows", () => {
-    render(<CreateTestingEventDialog />);
+    render(<CreateTestingEventDialog defaultTimeZone="America/Sao_Paulo" />);
 
     fireEvent.click(screen.getByRole("button", { name: "New event" }));
 
@@ -260,25 +274,16 @@ describe("TestingEventApplications", () => {
         Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
 
-    const applicationWindow = screen.getByRole("group", {
-      name: "Application window",
-    });
+    const timeline = screen.getByRole("region", { name: "Timeline" });
     expect(
-      within(applicationWindow).getByRole("button", { name: "Opens" }),
+      within(timeline).getByRole("button", { name: "Application window" }),
     ).toBeInTheDocument();
     expect(
-      within(applicationWindow).getByRole("button", { name: "Closes" }),
-    ).toBeInTheDocument();
-
-    const eventSchedule = screen.getByRole("group", {
-      name: "Event schedule",
-    });
-    expect(
-      within(eventSchedule).getByRole("button", { name: "Starts" }),
+      within(timeline).getByRole("button", { name: "Event schedule" }),
     ).toBeInTheDocument();
     expect(
-      within(eventSchedule).getByRole("button", { name: "Ends" }),
-    ).toBeInTheDocument();
+      within(timeline).getByRole("combobox", { name: "Time zone" }),
+    ).toHaveTextContent("America/Sao_Paulo");
 
     expect(
       screen.getByRole("combobox", { name: "Repeat event" }),
@@ -324,10 +329,7 @@ describe("TestingEventApplications", () => {
     ).toMatch(/^2030-08-19T/);
   });
 
-  it("preserves API wall-clock values when editing an event", () => {
-    const timezoneOffset = vi
-      .spyOn(Date.prototype, "getTimezoneOffset")
-      .mockReturnValue(180);
+  it("shows API instants in the event timezone when editing an event", () => {
     render(
       <EditTestingEventDialog
         event={{
@@ -341,6 +343,7 @@ describe("TestingEventApplications", () => {
           approvalMode: "ManagerOnly",
           status: "Draft",
           requiresFeedback: true,
+          timeZoneId: "America/Sao_Paulo",
         }}
       />,
     );
@@ -351,19 +354,22 @@ describe("TestingEventApplications", () => {
       document.querySelector<HTMLInputElement>(
         'input[name="applicationsOpenAt"]',
       )?.value,
-    ).toBe("2026-08-11T17:00");
+    ).toBe("2026-08-11T14:00");
     expect(
       document.querySelector<HTMLInputElement>(
         'input[name="applicationsCloseAt"]',
       )?.value,
-    ).toBe("2026-08-13T16:00");
+    ).toBe("2026-08-13T13:00");
     expect(
       document.querySelector<HTMLInputElement>('input[name="startsAt"]')?.value,
-    ).toBe("2026-08-13T17:00");
+    ).toBe("2026-08-13T14:00");
     expect(
       document.querySelector<HTMLInputElement>('input[name="endsAt"]')?.value,
-    ).toBe("2026-08-13T19:00");
-    timezoneOffset.mockRestore();
+    ).toBe("2026-08-13T16:00");
+    expect(
+      document.querySelector<HTMLInputElement>('input[name="timeZoneId"]')
+        ?.value,
+    ).toBe("America/Sao_Paulo");
   });
 
   it("preserves API wall-clock values when editing a slot", () => {

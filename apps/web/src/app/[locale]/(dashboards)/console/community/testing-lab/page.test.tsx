@@ -1,12 +1,13 @@
 import { render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   getTestingLabAnalytics: vi.fn(),
   getTestingLabDashboard: vi.fn(),
   getTestingEventsDirectory: vi.fn(),
   getTestingApplicationsDirectory: vi.fn(),
+  getTestingLabSettings: vi.fn(),
   normalizeTestingRequestStatus: vi.fn(),
   normalizeTestingSessionStatus: vi.fn(),
 }));
@@ -14,6 +15,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock("@/lib/testing-lab", () => ({
   getTestingLabAnalytics: mocks.getTestingLabAnalytics,
   getTestingLabDashboard: mocks.getTestingLabDashboard,
+  getTestingLabSettings: mocks.getTestingLabSettings,
   normalizeTestingRequestStatus: mocks.normalizeTestingRequestStatus,
   normalizeTestingSessionStatus: mocks.normalizeTestingSessionStatus,
 }));
@@ -62,6 +64,13 @@ vi.mock("@/i18n/navigation", () => ({
 import TestingLabPage from "./page";
 
 describe("testing lab dashboard page", () => {
+  beforeEach(() => {
+    mocks.getTestingLabSettings.mockResolvedValue({
+      settings: { timezone: "America/Sao_Paulo" },
+      accessIssues: [],
+    });
+  });
+
   it("renders the event calendar with a compact operational attention strip", async () => {
     mocks.normalizeTestingRequestStatus.mockReturnValue("Open");
     mocks.normalizeTestingSessionStatus.mockReturnValue("Scheduled");
