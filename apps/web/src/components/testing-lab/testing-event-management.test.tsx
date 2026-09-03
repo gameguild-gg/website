@@ -279,6 +279,12 @@ describe("TestingEventApplications", () => {
       eventFormat.compareDocumentPosition(projectReview) &
         Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
+    expect(eventFormat.closest("div")).toHaveClass(
+      "sm:grid-cols-[7rem_minmax(0,1fr)]",
+    );
+    expect(projectReview.closest("div")).toHaveClass(
+      "sm:grid-cols-[7rem_minmax(0,1fr)]",
+    );
 
     const timeline = screen.getByRole("region", { name: "Schedule" });
     expect(

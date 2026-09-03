@@ -55,7 +55,7 @@ export function TimeZoneCombobox({
             aria-label="Time zone"
             aria-expanded={open}
             disabled={disabled}
-            className="w-full min-w-0 justify-between font-normal sm:w-80"
+            className="h-10 w-full min-w-0 justify-between font-normal"
           >
             <span className="truncate">
               {timeZoneOffsetLabel(value)} · {value}
