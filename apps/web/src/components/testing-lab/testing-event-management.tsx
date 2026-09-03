@@ -338,21 +338,34 @@ type EventFieldsProps = {
 function EventIdentityFields({
   event,
   includeBrief = true,
+  compact = false,
 }: {
   event?: TestingLabTestingEventProjection;
   includeBrief?: boolean;
+  compact?: boolean;
 }) {
   const fieldSuffix = event?.id ?? "new";
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2">
+    <div className={`grid sm:grid-cols-2 ${compact ? "gap-3" : "gap-4"}`}>
       <div className="space-y-2 sm:col-span-2">
-        <Label htmlFor={`event-name-${fieldSuffix}`}>Event name</Label>
+        <Label
+          className={compact ? "sr-only" : undefined}
+          htmlFor={`event-name-${fieldSuffix}`}
+        >
+          Event name
+        </Label>
         <Input
           id={`event-name-${fieldSuffix}`}
           name="name"
           required
+          placeholder={compact ? "Event name" : undefined}
           defaultValue={event?.name ?? ""}
+          className={
+            compact
+              ? "h-12 rounded-none border-x-0 border-t-0 bg-transparent px-0 text-lg font-semibold shadow-none focus-visible:ring-0"
+              : undefined
+          }
         />
       </div>
       <div className="space-y-2">
@@ -880,7 +893,7 @@ export function CreateTestingEventDialog({
       >
         <SheetContent
           side="right"
-          className="gap-0 p-0 data-[side=right]:w-full! data-[side=right]:sm:max-w-2xl!"
+          className="gap-0 p-0 data-[side=right]:w-full! data-[side=right]:sm:max-w-lg!"
         >
           <form
             ref={formRef}
@@ -888,35 +901,30 @@ export function CreateTestingEventDialog({
             onChange={trackChanges}
             className="flex min-h-0 flex-1 flex-col"
           >
-            <SheetHeader className="px-6 pb-4 pt-5 lg:px-8">
-              <SheetTitle>Create testing event</SheetTitle>
-              <SheetDescription>
-                Set the event details and schedule. Participation settings can
-                be completed after creation.
+            <SheetHeader className="px-5 pb-3 pt-4">
+              <SheetTitle>New testing event</SheetTitle>
+              <SheetDescription className="sr-only">
+                Create a testing event draft with its format, review process,
+                schedule, time zone, and recurrence.
               </SheetDescription>
             </SheetHeader>
-            <div className="min-h-0 flex-1 overflow-y-auto px-6 pb-6 lg:px-8">
+            <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-5">
               {result ? <ActionMessage result={result} /> : null}
-              <div className="space-y-7">
-                <section
-                  aria-labelledby="new-event-details-heading"
-                  className="space-y-4"
-                >
-                  <h3 id="new-event-details-heading" className="font-medium">
-                    Event details
-                  </h3>
-                  <EventIdentityFields includeBrief={false} />
-                </section>
+              <div className="space-y-5">
+                <EventIdentityFields includeBrief={false} compact />
 
                 <section
                   aria-labelledby="new-event-timeline-heading"
-                  className="space-y-4"
+                  className="space-y-3 pt-1"
                 >
-                  <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-                    <h3 id="new-event-timeline-heading" className="font-medium">
-                      Timeline
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <h3
+                      id="new-event-timeline-heading"
+                      className="text-sm font-medium"
+                    >
+                      Schedule
                     </h3>
-                    <div className="space-y-2">
+                    <div className="min-w-0 sm:max-w-80 sm:flex-1">
                       <Label className="sr-only" htmlFor="new-event-time-zone">
                         Time zone
                       </Label>
@@ -945,7 +953,7 @@ export function CreateTestingEventDialog({
                 <input type="hidden" name="requiresFeedback" value="true" />
               </div>
             </div>
-            <SheetFooter className="px-6 py-4 lg:px-8 sm:flex-row sm:justify-end">
+            <SheetFooter className="px-5 py-3 sm:flex-row sm:justify-end">
               <Button
                 type="button"
                 variant="outline"

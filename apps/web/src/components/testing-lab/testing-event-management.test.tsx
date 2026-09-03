@@ -235,7 +235,7 @@ describe("TestingEventApplications", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Keep editing" }));
 
-    expect(screen.getByText("Create testing event")).toBeInTheDocument();
+    expect(screen.getByText("New testing event")).toBeInTheDocument();
   });
 
   it("keeps the quick-create sheet focused on event identity and schedule", () => {
@@ -280,7 +280,7 @@ describe("TestingEventApplications", () => {
         Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
 
-    const timeline = screen.getByRole("region", { name: "Timeline" });
+    const timeline = screen.getByRole("region", { name: "Schedule" });
     expect(
       within(timeline).getByRole("button", { name: "Application window" }),
     ).toBeInTheDocument();
@@ -296,7 +296,7 @@ describe("TestingEventApplications", () => {
     ).toBeInTheDocument();
     expect(screen.queryByLabelText("Start from")).not.toBeInTheDocument();
     expect(screen.getByRole("dialog")).toHaveClass(
-      "data-[side=right]:sm:max-w-2xl!",
+      "data-[side=right]:sm:max-w-lg!",
     );
   });
 
