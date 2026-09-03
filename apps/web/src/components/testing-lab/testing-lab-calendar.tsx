@@ -528,16 +528,6 @@ function GridView({
           })}
         </div>
       </section>
-      {segmentsByDay.size === 0 ? (
-        <div className="pointer-events-none absolute inset-x-0 top-32 flex justify-center px-6 text-center">
-          <div className="rounded-md bg-background/90 px-4 py-3 shadow-sm backdrop-blur-sm">
-            <p className="text-sm font-medium">No events in this period</p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Select any day to create one.
-            </p>
-          </div>
-        </div>
-      ) : null}
     </div>
   );
 }

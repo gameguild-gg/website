@@ -109,6 +109,20 @@ describe("TestingLabCalendar", () => {
     expect(calendar).not.toHaveClass("border", "rounded-lg");
   });
 
+  it("keeps an empty month grid unobstructed", () => {
+    render(
+      <TestingLabCalendar
+        events={[]}
+        initialDate={new Date(2030, 7, 10)}
+      />,
+    );
+
+    expect(screen.queryByText("No events in this period")).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Create event on August 19, 2030" }),
+    ).toBeInTheDocument();
+  });
+
   it("offers the Google Calendar view set and can switch to the schedule", () => {
     render(
       <TestingLabCalendar
