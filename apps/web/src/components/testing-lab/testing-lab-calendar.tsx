@@ -444,7 +444,7 @@ function GridView({
     }, new Map());
   }, [events, range]);
   const weekdays = showWeekends
-    ? ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+    ? ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
     : ["Mon", "Tue", "Wed", "Thu", "Fri"];
   const monthStart = startOfMonth(anchor);
 
