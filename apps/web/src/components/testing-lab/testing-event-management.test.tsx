@@ -238,6 +238,33 @@ describe("TestingEventApplications", () => {
     expect(screen.getByText("New testing event")).toBeInTheDocument();
   });
 
+  it("uses the user's browser timezone when the lab still uses UTC", () => {
+    const resolvedOptions = Intl.DateTimeFormat.prototype.resolvedOptions;
+    const timeZone = vi
+      .spyOn(Intl.DateTimeFormat.prototype, "resolvedOptions")
+      .mockImplementation(function (this: Intl.DateTimeFormat) {
+        return {
+          ...resolvedOptions.call(this),
+          timeZone: "America/Sao_Paulo",
+        };
+      });
+
+    try {
+      render(<CreateTestingEventDialog defaultTimeZone="UTC" />);
+      fireEvent.click(screen.getByRole("button", { name: "New event" }));
+
+      expect(
+        screen.getByRole("combobox", { name: "Time zone" }),
+      ).toHaveTextContent("America/Sao_Paulo");
+      expect(
+        document.querySelector<HTMLInputElement>('input[name="timeZoneId"]')
+          ?.value,
+      ).toBe("America/Sao_Paulo");
+    } finally {
+      timeZone.mockRestore();
+    }
+  });
+
   it("keeps the quick-create dialog focused on event identity and schedule", () => {
     render(<CreateTestingEventDialog />);
 

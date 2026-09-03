@@ -112,6 +112,17 @@ export function isSupportedTimeZone(timeZone: string) {
   }
 }
 
+export function browserTimeZone(fallback = "UTC") {
+  if (typeof window === "undefined") return fallback;
+
+  try {
+    const timeZone = new Intl.DateTimeFormat().resolvedOptions().timeZone;
+    return timeZone && isSupportedTimeZone(timeZone) ? timeZone : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
 /** Converts a timezone-local wall clock value into its unique UTC instant. */
 export function wallClockToUtcIso(value: string, timeZone: string) {
   const target = parseWallClock(value);

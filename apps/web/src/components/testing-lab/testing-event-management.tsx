@@ -22,7 +22,10 @@ import {
   waitlistTestingEventApplication,
   type TestingEventActionResult,
 } from "@/lib/testing-lab/events-actions";
-import { formatWallClockInTimeZone } from "@/lib/date-time-zone";
+import {
+  browserTimeZone,
+  formatWallClockInTimeZone,
+} from "@/lib/date-time-zone";
 import { formatEventDateTime } from "@/lib/testing-lab/event-workspace";
 import { formatTestingEventStatus } from "@/lib/testing-lab/format";
 import type {
@@ -849,6 +852,12 @@ export interface CreateTestingEventDialogProps {
   defaultTimeZone?: string;
 }
 
+function preferredNewEventTimeZone(defaultTimeZone: string) {
+  return defaultTimeZone === "UTC"
+    ? browserTimeZone(defaultTimeZone)
+    : defaultTimeZone;
+}
+
 export function CreateTestingEventDialog({
   initialDate,
   open: controlledOpen,
@@ -865,10 +874,13 @@ export function CreateTestingEventDialog({
   const [pending, startTransition] = useTransition();
   const [result, setResult] =
     useState<TestingEventActionResult<unknown> | null>(null);
-  const [timeZoneId, setTimeZoneId] = useState(defaultTimeZone);
+  const [timeZoneId, setTimeZoneId] = useState(() =>
+    preferredNewEventTimeZone(defaultTimeZone),
+  );
   const [schedule, setSchedule] = useState<TestingEventSchedule>(() =>
     createTestingEventSchedule(new Date(), initialDate),
   );
+
   function setOpen(next: boolean) {
     if (controlledOpen === undefined) setInternalOpen(next);
     onOpenChange?.(next);
@@ -877,7 +889,7 @@ export function CreateTestingEventDialog({
   function resetDraft() {
     formRef.current?.reset();
     setSchedule(createTestingEventSchedule(new Date(), initialDate));
-    setTimeZoneId(defaultTimeZone);
+    setTimeZoneId(preferredNewEventTimeZone(defaultTimeZone));
     setDirty(false);
     setResult(null);
   }
