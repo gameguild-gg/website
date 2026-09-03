@@ -325,6 +325,7 @@ type EventFieldsProps = {
   onScheduleChange?: (field: keyof TestingEventSchedule, value: string) => void;
   timeZoneId?: string;
   stacked?: boolean;
+  compact?: boolean;
 };
 
 function EventIdentityFields({
@@ -428,6 +429,7 @@ function EventTimelineFields({
   onScheduleChange,
   timeZoneId,
   stacked = false,
+  compact = false,
 }: EventFieldsProps) {
   const eventTimeZone = timeZoneId ?? event?.timeZoneId ?? "UTC";
   const applicationsOpenAt =
@@ -459,10 +461,19 @@ function EventTimelineFields({
   }
 
   return (
-    <div className={stacked ? "grid gap-4" : "grid gap-4 md:grid-cols-2"}>
-      <div className="min-w-0 space-y-2">
-        <Label htmlFor={`applications-window-${fieldSuffix}`}>
-          Application window
+    <div className={stacked ? "grid gap-3" : "grid gap-4 md:grid-cols-2"}>
+      <div
+        className={
+          compact
+            ? "grid min-w-0 gap-1.5 sm:grid-cols-[7rem_minmax(0,1fr)] sm:items-center sm:gap-3"
+            : "min-w-0 space-y-2"
+        }
+      >
+        <Label
+          className={compact ? "text-xs text-muted-foreground" : undefined}
+          htmlFor={`applications-window-${fieldSuffix}`}
+        >
+          {compact ? "Applications" : "Application window"}
         </Label>
         <DateTimeRangePicker
           id={`applications-window-${fieldSuffix}`}
@@ -488,8 +499,19 @@ function EventTimelineFields({
           }
         />
       </div>
-      <div className="min-w-0 space-y-2">
-        <Label htmlFor={`event-schedule-${fieldSuffix}`}>Event schedule</Label>
+      <div
+        className={
+          compact
+            ? "grid min-w-0 gap-1.5 sm:grid-cols-[7rem_minmax(0,1fr)] sm:items-center sm:gap-3"
+            : "min-w-0 space-y-2"
+        }
+      >
+        <Label
+          className={compact ? "text-xs text-muted-foreground" : undefined}
+          htmlFor={`event-schedule-${fieldSuffix}`}
+        >
+          {compact ? "Testing session" : "Event schedule"}
+        </Label>
         <DateTimeRangePicker
           id={`event-schedule-${fieldSuffix}`}
           label="Event schedule"
@@ -932,6 +954,7 @@ export function CreateTestingEventDialog({
                     onScheduleChange={changeSchedule}
                     timeZoneId={timeZoneId}
                     stacked
+                    compact
                   />
                 </section>
 

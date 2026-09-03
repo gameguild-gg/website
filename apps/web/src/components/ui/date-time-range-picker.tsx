@@ -37,17 +37,38 @@ function timePart(value: string | undefined, fallback: string) {
   return value?.match(/T(\d{2}:\d{2})/)?.[1] ?? fallback;
 }
 
-function displayValue(value: string, timeZoneId: string) {
+function displayParts(value: string, timeZoneId: string) {
   const date = wallClockDate(value, timeZoneId);
-  if (!date) return "";
-  return new Intl.DateTimeFormat(undefined, {
+  if (!date) return null;
+
+  const parts = new Intl.DateTimeFormat("en-GB", {
     timeZone: timeZoneId,
-    month: "short",
-    day: "numeric",
+    day: "2-digit",
+    month: "2-digit",
     year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
-  }).format(date);
+    hourCycle: "h23",
+  }).formatToParts(date);
+  const part = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((item) => item.type === type)?.value ?? "";
+
+  return {
+    date: `${part("day")}/${part("month")}/${part("year")}`,
+    time: `${part("hour")}:${part("minute")}`,
+  };
+}
+
+function displayRange(start: string, end: string, timeZoneId: string) {
+  const startParts = displayParts(start, timeZoneId);
+  const endParts = displayParts(end, timeZoneId);
+  if (!startParts || !endParts) return "";
+
+  if (startParts.date === endParts.date) {
+    return `${startParts.date} · ${startParts.time}–${endParts.time}`;
+  }
+
+  return `${startParts.date} · ${startParts.time} → ${endParts.date} · ${endParts.time}`;
 }
 
 function useResponsiveMonthCount() {
@@ -183,7 +204,7 @@ export function DateTimeRangePicker({
             <CalendarDays className="size-4 shrink-0" aria-hidden="true" />
             <span className="min-w-0 flex-1 truncate">
               {hasValue
-                ? `${displayValue(current.start, timeZoneId)} – ${displayValue(current.end, timeZoneId)}`
+                ? displayRange(current.start, current.end, timeZoneId)
                 : `Choose ${label.toLowerCase()}`}
             </span>
           </Button>

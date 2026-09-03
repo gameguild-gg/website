@@ -283,10 +283,16 @@ describe("TestingEventApplications", () => {
     const timeline = screen.getByRole("region", { name: "Schedule" });
     expect(
       within(timeline).getByRole("button", { name: "Application window" }),
-    ).toBeInTheDocument();
+    ).toHaveTextContent(
+      /\d{2}\/\d{2}\/\d{4} · \d{2}:\d{2}(?:–\d{2}:\d{2}| → \d{2}\/\d{2}\/\d{4} · \d{2}:\d{2})/,
+    );
     expect(
       within(timeline).getByRole("button", { name: "Event schedule" }),
-    ).toBeInTheDocument();
+    ).toHaveTextContent(
+      /\d{2}\/\d{2}\/\d{4} · \d{2}:\d{2}(?:–\d{2}:\d{2}| → \d{2}\/\d{2}\/\d{4} · \d{2}:\d{2})/,
+    );
+    expect(within(timeline).getByText("Applications")).toBeInTheDocument();
+    expect(within(timeline).getByText("Testing session")).toBeInTheDocument();
     expect(
       within(timeline).getByRole("combobox", { name: "Time zone" }),
     ).toHaveTextContent("America/Sao_Paulo");
