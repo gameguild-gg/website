@@ -238,7 +238,7 @@ describe("TestingEventApplications", () => {
     expect(screen.getByText("New testing event")).toBeInTheDocument();
   });
 
-  it("keeps the quick-create sheet focused on event identity and schedule", () => {
+  it("keeps the quick-create dialog focused on event identity and schedule", () => {
     render(<CreateTestingEventDialog />);
 
     fireEvent.click(screen.getByRole("button", { name: "New event" }));
@@ -295,8 +295,10 @@ describe("TestingEventApplications", () => {
       screen.getByRole("combobox", { name: "Repeats" }),
     ).toBeInTheDocument();
     expect(screen.queryByLabelText("Start from")).not.toBeInTheDocument();
-    expect(screen.getByRole("dialog")).toHaveClass(
-      "data-[side=right]:sm:max-w-lg!",
+    expect(screen.getByRole("dialog")).toHaveClass("sm:max-w-lg");
+    expect(screen.getByRole("dialog")).toHaveAttribute(
+      "data-slot",
+      "dialog-content",
     );
   });
 

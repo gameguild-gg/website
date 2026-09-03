@@ -68,14 +68,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@game-guild/ui/components/select";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-} from "@game-guild/ui/components/sheet";
 import { Textarea } from "@game-guild/ui/components/textarea";
 import {
   AlertCircle,
@@ -884,30 +876,27 @@ export function CreateTestingEventDialog({
           New event
         </Button>
       ) : null}
-      <Sheet
+      <Dialog
         open={open}
         onOpenChange={(next) => {
           if (next) setOpen(true);
           else requestClose();
         }}
       >
-        <SheetContent
-          side="right"
-          className="gap-0 p-0 data-[side=right]:w-full! data-[side=right]:sm:max-w-lg!"
-        >
+        <DialogContent className="flex max-h-[calc(100dvh-2rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-lg">
           <form
             ref={formRef}
             onSubmit={submit}
             onChange={trackChanges}
             className="flex min-h-0 flex-1 flex-col"
           >
-            <SheetHeader className="px-5 pb-3 pt-4">
-              <SheetTitle>New testing event</SheetTitle>
-              <SheetDescription className="sr-only">
+            <DialogHeader className="px-5 pb-3 pt-4 text-left">
+              <DialogTitle>New testing event</DialogTitle>
+              <DialogDescription className="sr-only">
                 Create a testing event draft with its format, review process,
                 schedule, time zone, and recurrence.
-              </SheetDescription>
-            </SheetHeader>
+              </DialogDescription>
+            </DialogHeader>
             <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-5">
               {result ? <ActionMessage result={result} /> : null}
               <div className="space-y-5">
@@ -953,7 +942,7 @@ export function CreateTestingEventDialog({
                 <input type="hidden" name="requiresFeedback" value="true" />
               </div>
             </div>
-            <SheetFooter className="px-5 py-3 sm:flex-row sm:justify-end">
+            <DialogFooter className="px-5 py-3 sm:flex-row sm:justify-end">
               <Button
                 type="button"
                 variant="outline"
@@ -965,10 +954,10 @@ export function CreateTestingEventDialog({
               <Button type="submit" disabled={pending}>
                 {pending ? "Creating event..." : "Create event"}
               </Button>
-            </SheetFooter>
+            </DialogFooter>
           </form>
-        </SheetContent>
-      </Sheet>
+        </DialogContent>
+      </Dialog>
       <AlertDialog open={discardOpen} onOpenChange={setDiscardOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
