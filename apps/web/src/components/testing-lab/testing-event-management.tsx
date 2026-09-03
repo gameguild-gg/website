@@ -326,53 +326,43 @@ function EventActionDialog({
   );
 }
 
-function EventFields({
-  event,
-  schedule,
-  onScheduleChange,
-}: {
+type EventFieldsProps = {
   event?: TestingLabTestingEventProjection;
   schedule?: TestingEventSchedule;
   onScheduleChange?: (field: keyof TestingEventSchedule, value: string) => void;
+};
+
+function EventIdentityFields({
+  event,
+}: {
+  event?: TestingLabTestingEventProjection;
 }) {
-  const applicationsOpenAt =
-    schedule?.applicationsOpenAt ?? apiDatetimeLocal(event?.applicationsOpenAt);
-  const applicationsCloseAt =
-    schedule?.applicationsCloseAt ??
-    apiDatetimeLocal(event?.applicationsCloseAt);
-  const startsAt = schedule?.startsAt ?? apiDatetimeLocal(event?.startsAt);
-  const endsAt = schedule?.endsAt ?? apiDatetimeLocal(event?.endsAt);
+  const fieldSuffix = event?.id ?? "new";
 
   return (
     <div className="grid gap-4 sm:grid-cols-2">
-      {event?.id ? (
-        <input type="hidden" name="eventId" value={event.id} />
-      ) : null}
       <div className="space-y-2 sm:col-span-2">
-        <Label htmlFor={`event-name-${event?.id ?? "new"}`}>Event name</Label>
+        <Label htmlFor={`event-name-${fieldSuffix}`}>Event name</Label>
         <Input
-          id={`event-name-${event?.id ?? "new"}`}
+          id={`event-name-${fieldSuffix}`}
           name="name"
           required
           defaultValue={event?.name ?? ""}
         />
       </div>
-      <div className="space-y-2 sm:col-span-2">
-        <Label htmlFor={`event-description-${event?.id ?? "new"}`}>
-          Purpose and tester brief
-        </Label>
-        <Textarea
-          id={`event-description-${event?.id ?? "new"}`}
-          name="description"
-          rows={3}
-          defaultValue={event?.description ?? ""}
-        />
-      </div>
       <div className="space-y-2">
-        <Label>Delivery mode</Label>
+        <Label htmlFor={`event-format-${fieldSuffix}`}>Event format</Label>
         <Select name="mode" defaultValue={event?.mode ?? "Online"}>
-          <SelectTrigger>
-            <SelectValue />
+          <SelectTrigger id={`event-format-${fieldSuffix}`} className="w-full">
+            <SelectValue>
+              {(value: string | null) =>
+                value === "InPerson"
+                  ? "In person"
+                  : value === "Hybrid"
+                    ? "Hybrid"
+                    : "Online"
+              }
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="Online">Online</SelectItem>
@@ -382,89 +372,159 @@ function EventFields({
         </Select>
       </div>
       <div className="space-y-2">
-        <Label>Approval</Label>
+        <Label htmlFor={`project-review-${fieldSuffix}`}>Project review</Label>
         <Select
           name="approvalMode"
           defaultValue={event?.approvalMode ?? "ManagerOnly"}
         >
-          <SelectTrigger>
-            <SelectValue />
+          <SelectTrigger
+            id={`project-review-${fieldSuffix}`}
+            className="w-full"
+          >
+            <SelectValue>
+              {(value: string | null) =>
+                value === "Committee"
+                  ? "Review committee votes"
+                  : "Event managers decide"
+              }
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="ManagerOnly">Manager decision</SelectItem>
-            <SelectItem value="Committee">Review committee</SelectItem>
+            <SelectItem value="ManagerOnly">Event managers decide</SelectItem>
+            <SelectItem value="Committee">Review committee votes</SelectItem>
           </SelectContent>
         </Select>
       </div>
-      <div className="space-y-2">
-        <Label htmlFor={`applications-open-${event?.id ?? "new"}`}>
-          Applications open
+      <div className="space-y-2 sm:col-span-2">
+        <Label htmlFor={`event-description-${fieldSuffix}`}>
+          Purpose and tester brief
         </Label>
-        <DateTimePicker
-          id={`applications-open-${event?.id ?? "new"}`}
-          name="applicationsOpenAt"
-          required
-          value={schedule ? applicationsOpenAt : undefined}
-          defaultValue={applicationsOpenAt}
-          onValueChange={(value) =>
-            onScheduleChange?.("applicationsOpenAt", value)
-          }
+        <Textarea
+          id={`event-description-${fieldSuffix}`}
+          name="description"
+          rows={3}
+          defaultValue={event?.description ?? ""}
         />
       </div>
-      <div className="space-y-2">
-        <Label htmlFor={`applications-close-${event?.id ?? "new"}`}>
-          Applications close
-        </Label>
-        <DateTimePicker
-          id={`applications-close-${event?.id ?? "new"}`}
-          name="applicationsCloseAt"
-          required
-          value={schedule ? applicationsCloseAt : undefined}
-          defaultValue={applicationsCloseAt}
-          onValueChange={(value) =>
-            onScheduleChange?.("applicationsCloseAt", value)
-          }
-        />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor={`event-start-${event?.id ?? "new"}`}>
-          Event starts
-        </Label>
-        <DateTimePicker
-          id={`event-start-${event?.id ?? "new"}`}
-          name="startsAt"
-          required
-          value={schedule ? startsAt : undefined}
-          defaultValue={startsAt}
-          onValueChange={(value) => onScheduleChange?.("startsAt", value)}
-        />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor={`event-end-${event?.id ?? "new"}`}>Event ends</Label>
-        <DateTimePicker
-          id={`event-end-${event?.id ?? "new"}`}
-          name="endsAt"
-          required
-          value={schedule ? endsAt : undefined}
-          defaultValue={endsAt}
-          onValueChange={(value) => onScheduleChange?.("endsAt", value)}
-        />
-      </div>
-      <label className="flex items-start gap-3 rounded-md border p-3 text-sm sm:col-span-2">
-        <input
-          name="requiresFeedback"
-          type="checkbox"
-          defaultChecked={event?.requiresFeedback ?? true}
-          className="mt-1"
-        />
-        <span>
-          <strong className="block font-medium">Require tester feedback</strong>
-          <span className="text-muted-foreground">
-            Attendance can only be completed after required project feedback is
-            submitted.
-          </span>
+    </div>
+  );
+}
+
+function EventTimelineFields({
+  event,
+  schedule,
+  onScheduleChange,
+}: EventFieldsProps) {
+  const applicationsOpenAt =
+    schedule?.applicationsOpenAt ?? apiDatetimeLocal(event?.applicationsOpenAt);
+  const applicationsCloseAt =
+    schedule?.applicationsCloseAt ??
+    apiDatetimeLocal(event?.applicationsCloseAt);
+  const startsAt = schedule?.startsAt ?? apiDatetimeLocal(event?.startsAt);
+  const endsAt = schedule?.endsAt ?? apiDatetimeLocal(event?.endsAt);
+
+  const fieldSuffix = event?.id ?? "new";
+
+  return (
+    <div className="space-y-5">
+      <fieldset className="min-w-0 space-y-3">
+        <legend className="mb-3 text-sm font-medium">Application window</legend>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="min-w-0 space-y-2">
+            <Label htmlFor={`applications-open-${fieldSuffix}`}>Opens</Label>
+            <DateTimePicker
+              id={`applications-open-${fieldSuffix}`}
+              name="applicationsOpenAt"
+              required
+              value={schedule ? applicationsOpenAt : undefined}
+              defaultValue={applicationsOpenAt}
+              onValueChange={(value) =>
+                onScheduleChange?.("applicationsOpenAt", value)
+              }
+            />
+          </div>
+          <div className="min-w-0 space-y-2">
+            <Label htmlFor={`applications-close-${fieldSuffix}`}>Closes</Label>
+            <DateTimePicker
+              id={`applications-close-${fieldSuffix}`}
+              name="applicationsCloseAt"
+              required
+              value={schedule ? applicationsCloseAt : undefined}
+              defaultValue={applicationsCloseAt}
+              onValueChange={(value) =>
+                onScheduleChange?.("applicationsCloseAt", value)
+              }
+            />
+          </div>
+        </div>
+      </fieldset>
+      <fieldset className="min-w-0 space-y-3">
+        <legend className="mb-3 text-sm font-medium">Event schedule</legend>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="min-w-0 space-y-2">
+            <Label htmlFor={`event-start-${fieldSuffix}`}>Starts</Label>
+            <DateTimePicker
+              id={`event-start-${fieldSuffix}`}
+              name="startsAt"
+              required
+              value={schedule ? startsAt : undefined}
+              defaultValue={startsAt}
+              onValueChange={(value) => onScheduleChange?.("startsAt", value)}
+            />
+          </div>
+          <div className="min-w-0 space-y-2">
+            <Label htmlFor={`event-end-${fieldSuffix}`}>Ends</Label>
+            <DateTimePicker
+              id={`event-end-${fieldSuffix}`}
+              name="endsAt"
+              required
+              value={schedule ? endsAt : undefined}
+              defaultValue={endsAt}
+              onValueChange={(value) => onScheduleChange?.("endsAt", value)}
+            />
+          </div>
+        </div>
+      </fieldset>
+    </div>
+  );
+}
+
+function EventFeedbackField({
+  event,
+}: {
+  event?: TestingLabTestingEventProjection;
+}) {
+  return (
+    <label className="flex items-start gap-3 rounded-md bg-muted/30 p-3 text-sm">
+      <input
+        name="requiresFeedback"
+        type="checkbox"
+        defaultChecked={event?.requiresFeedback ?? true}
+        className="mt-1"
+      />
+      <span>
+        <strong className="block font-medium">Require tester feedback</strong>
+        <span className="text-muted-foreground">
+          Testers must submit project feedback before attendance is complete.
         </span>
-      </label>
+      </span>
+    </label>
+  );
+}
+
+function EventFields({ event, schedule, onScheduleChange }: EventFieldsProps) {
+  return (
+    <div className="space-y-6">
+      {event?.id ? (
+        <input type="hidden" name="eventId" value={event.id} />
+      ) : null}
+      <EventIdentityFields event={event} />
+      <EventTimelineFields
+        event={event}
+        schedule={schedule}
+        onScheduleChange={onScheduleChange}
+      />
+      <EventFeedbackField event={event} />
     </div>
   );
 }
@@ -481,12 +541,20 @@ function EventRecurrenceFields({ onDirty }: { onDirty: () => void }) {
     "Friday",
     "Saturday",
   ];
+  const intervalUnit =
+    frequency === "Daily"
+      ? "day(s)"
+      : frequency === "Weekly"
+        ? "week(s)"
+        : "month(s)";
 
   return (
-    <fieldset className="space-y-4 rounded-md border p-4">
-      <legend className="px-1 text-sm font-medium">Repeats</legend>
+    <section aria-labelledby="event-recurrence-heading" className="space-y-4">
+      <h3 id="event-recurrence-heading" className="font-medium">
+        Recurrence
+      </h3>
       <div className="space-y-2">
-        <Label>Frequency</Label>
+        <Label htmlFor="event-recurrence">Repeat event</Label>
         <Select
           value={frequency || "none"}
           onValueChange={(value) => {
@@ -494,35 +562,51 @@ function EventRecurrenceFields({ onDirty }: { onDirty: () => void }) {
             onDirty();
           }}
         >
-          <SelectTrigger>
-            <SelectValue />
+          <SelectTrigger id="event-recurrence" className="w-full">
+            <SelectValue>
+              {(value: string | null) =>
+                value === "Daily"
+                  ? "Every day"
+                  : value === "Weekly"
+                    ? "Every week"
+                    : value === "Monthly"
+                      ? "Every month"
+                      : "Does not repeat"
+              }
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="none">Does not repeat</SelectItem>
-            <SelectItem value="Daily">Daily</SelectItem>
-            <SelectItem value="Weekly">Weekly</SelectItem>
-            <SelectItem value="Monthly">Monthly</SelectItem>
+            <SelectItem value="Daily">Every day</SelectItem>
+            <SelectItem value="Weekly">Every week</SelectItem>
+            <SelectItem value="Monthly">Every month</SelectItem>
           </SelectContent>
         </Select>
         <input type="hidden" name="recurrenceFrequency" value={frequency} />
       </div>
       {frequency ? (
-        <>
+        <div className="space-y-4 rounded-md bg-muted/30 p-3">
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="recurrence-interval">Repeat every</Label>
-              <Input
-                id="recurrence-interval"
-                name="recurrenceInterval"
-                type="number"
-                min="1"
-                max="52"
-                defaultValue="1"
-                required
-              />
+              <div className="flex items-center gap-2">
+                <Input
+                  id="recurrence-interval"
+                  name="recurrenceInterval"
+                  type="number"
+                  min="1"
+                  max="52"
+                  defaultValue="1"
+                  required
+                  className="w-20"
+                />
+                <span className="text-sm text-muted-foreground">
+                  {intervalUnit}
+                </span>
+              </div>
             </div>
             <div className="space-y-2">
-              <Label>Ends</Label>
+              <Label htmlFor="recurrence-end-mode">Ends</Label>
               <Select
                 value={endMode}
                 onValueChange={(value) => {
@@ -530,8 +614,12 @@ function EventRecurrenceFields({ onDirty }: { onDirty: () => void }) {
                   onDirty();
                 }}
               >
-                <SelectTrigger>
-                  <SelectValue />
+                <SelectTrigger id="recurrence-end-mode" className="w-full">
+                  <SelectValue>
+                    {(value: string | null) =>
+                      value === "date" ? "On a date" : "After several events"
+                    }
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="count">
@@ -546,11 +634,11 @@ function EventRecurrenceFields({ onDirty }: { onDirty: () => void }) {
           {frequency === "Weekly" ? (
             <fieldset className="space-y-2">
               <legend className="text-sm font-medium">Repeats on</legend>
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              <div className="flex flex-wrap gap-2">
                 {days.map((day) => (
                   <label
                     key={day}
-                    className="flex items-center gap-2 rounded-md border px-3 py-2 text-sm"
+                    className="flex items-center gap-2 rounded-md bg-background/60 px-3 py-2 text-sm"
                   >
                     <input
                       name="recurrenceDaysOfWeek"
@@ -558,7 +646,7 @@ function EventRecurrenceFields({ onDirty }: { onDirty: () => void }) {
                       value={day}
                       onChange={onDirty}
                     />
-                    {day}
+                    {day.slice(0, 3)}
                   </label>
                 ))}
               </div>
@@ -566,7 +654,7 @@ function EventRecurrenceFields({ onDirty }: { onDirty: () => void }) {
           ) : null}
           {endMode === "date" ? (
             <div className="space-y-2">
-              <Label htmlFor="recurrence-ends-at">Repeat until</Label>
+              <Label htmlFor="recurrence-ends-at">End date</Label>
               <DateTimePicker
                 id="recurrence-ends-at"
                 name="recurrenceEndsAt"
@@ -575,21 +663,25 @@ function EventRecurrenceFields({ onDirty }: { onDirty: () => void }) {
             </div>
           ) : (
             <div className="space-y-2">
-              <Label htmlFor="recurrence-count">Number of events</Label>
-              <Input
-                id="recurrence-count"
-                name="recurrenceOccurrenceCount"
-                type="number"
-                min="1"
-                max="104"
-                defaultValue="4"
-                required
-              />
+              <Label htmlFor="recurrence-count">Ends after</Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  id="recurrence-count"
+                  name="recurrenceOccurrenceCount"
+                  type="number"
+                  min="1"
+                  max="104"
+                  defaultValue="4"
+                  required
+                  className="w-20"
+                />
+                <span className="text-sm text-muted-foreground">events</span>
+              </div>
             </div>
           )}
-        </>
+        </div>
       ) : null}
-    </fieldset>
+    </section>
   );
 }
 
@@ -620,6 +712,9 @@ export function CreateTestingEventDialog({
   const [templateRevisionId, setTemplateRevisionId] = useState("");
   const [schedule, setSchedule] = useState<TestingEventSchedule>(() =>
     createTestingEventSchedule(new Date(), initialDate),
+  );
+  const availableTemplates = templates.filter(
+    (template) => template.currentRevision?.id,
   );
 
   function setOpen(next: boolean) {
@@ -690,111 +785,148 @@ export function CreateTestingEventDialog({
           else requestClose();
         }}
       >
-        <SheetContent side="right" className="w-full gap-0 p-0 sm:max-w-xl">
+        <SheetContent
+          side="right"
+          className="gap-0 p-0 data-[side=right]:w-full! data-[side=right]:sm:max-w-4xl!"
+        >
           <form
             ref={formRef}
             onSubmit={submit}
             onChange={trackChanges}
             className="flex min-h-0 flex-1 flex-col"
           >
-            <SheetHeader className="border-b px-6 py-5">
+            <SheetHeader className="px-6 pb-4 pt-5 lg:px-8">
               <SheetTitle>Create testing event</SheetTitle>
               <SheetDescription>
-                Create the application window first. Project capacity is
-                reserved only after approval.
+                Add the details teams need to apply and participate.
               </SheetDescription>
             </SheetHeader>
-            <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-6 py-5">
+            <div className="min-h-0 flex-1 overflow-y-auto px-6 pb-6 lg:px-8">
               {result ? <ActionMessage result={result} /> : null}
-              <div className="space-y-2 rounded-md border bg-muted/20 p-4">
-                <Label htmlFor="event-template">Start from</Label>
-                <select
-                  id="event-template"
-                  name="templateRevisionId"
-                  value={templateRevisionId}
-                  onChange={(event) =>
-                    setTemplateRevisionId(event.target.value)
-                  }
-                  className="flex h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+              <div className="grid gap-x-8 gap-y-7 lg:grid-cols-2">
+                <section
+                  aria-labelledby="new-event-details-heading"
+                  className="space-y-4"
                 >
-                  <option value="">Blank event</option>
-                  {templates.flatMap((template) =>
-                    template.currentRevision?.id
-                      ? [
+                  <h3 id="new-event-details-heading" className="font-medium">
+                    Event details
+                  </h3>
+                  <EventIdentityFields />
+                </section>
+
+                <section
+                  aria-labelledby="new-event-rules-heading"
+                  className="space-y-4"
+                >
+                  <div>
+                    <h3 id="new-event-rules-heading" className="font-medium">
+                      Rules and instructions
+                    </h3>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      Required before applications can open.
+                    </p>
+                  </div>
+
+                  {availableTemplates.length > 0 ? (
+                    <div className="space-y-2">
+                      <Label htmlFor="event-template">Use a template</Label>
+                      <select
+                        id="event-template"
+                        name="templateRevisionId"
+                        value={templateRevisionId}
+                        onChange={(event) =>
+                          setTemplateRevisionId(event.target.value)
+                        }
+                        className="flex h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                      >
+                        <option value="">No template</option>
+                        {availableTemplates.map((template) => (
                           <option
-                            key={template.currentRevision.id}
-                            value={template.currentRevision.id}
+                            key={template.currentRevision!.id}
+                            value={template.currentRevision!.id}
                           >
                             {template.name} · revision{" "}
-                            {template.currentRevision.revisionNumber}
-                          </option>,
-                        ]
-                      : [],
+                            {template.currentRevision!.revisionNumber}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  ) : null}
+
+                  {!templateRevisionId ? (
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="new-event-general-rules">
+                          General rules
+                        </Label>
+                        <Textarea
+                          id="new-event-general-rules"
+                          name="generalRules"
+                          rows={3}
+                          required
+                          placeholder="Participation, conduct, confidentiality, and completion rules."
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="new-event-candidate-instructions">
+                          Candidate instructions
+                        </Label>
+                        <Textarea
+                          id="new-event-candidate-instructions"
+                          name="candidateInstructions"
+                          rows={3}
+                          required
+                          placeholder="What project teams must prepare before applying."
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="new-event-tester-instructions">
+                          Tester instructions
+                        </Label>
+                        <Textarea
+                          id="new-event-tester-instructions"
+                          name="testerInstructions"
+                          rows={3}
+                          required
+                          placeholder="What testers must do during and after the session."
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="rounded-md bg-muted/30 p-3 text-sm text-muted-foreground">
+                      The selected template supplies this event&apos;s rules and
+                      instructions.
+                    </p>
                   )}
-                </select>
-                <p className="text-xs text-muted-foreground">
-                  A template is copied into an independent event snapshot. Later
-                  template revisions never change this event.
-                </p>
+                </section>
+
+                <section
+                  aria-labelledby="new-event-timeline-heading"
+                  className="space-y-4 lg:col-span-2"
+                >
+                  <h3 id="new-event-timeline-heading" className="font-medium">
+                    Timeline
+                  </h3>
+                  <EventTimelineFields
+                    schedule={schedule}
+                    onScheduleChange={changeSchedule}
+                  />
+                </section>
+
+                <EventRecurrenceFields onDirty={() => setDirty(true)} />
+
+                <section
+                  aria-labelledby="new-event-feedback-heading"
+                  className="space-y-4"
+                >
+                  <h3 id="new-event-feedback-heading" className="font-medium">
+                    Feedback
+                  </h3>
+                  <EventFeedbackField />
+                </section>
               </div>
-              {!templateRevisionId ? (
-                <fieldset className="space-y-4 rounded-md border p-4">
-                  <legend className="px-1 text-sm font-medium">
-                    Rules and instructions
-                  </legend>
-                  <p className="text-sm text-muted-foreground">
-                    These fields are required for a blank event and can still be
-                    edited while it remains a draft.
-                  </p>
-                  <div className="space-y-2">
-                    <Label htmlFor="new-event-general-rules">
-                      General rules
-                    </Label>
-                    <Textarea
-                      id="new-event-general-rules"
-                      name="generalRules"
-                      rows={4}
-                      required
-                      placeholder="Participation, conduct, confidentiality, and completion rules."
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="new-event-candidate-instructions">
-                      Candidate instructions
-                    </Label>
-                    <Textarea
-                      id="new-event-candidate-instructions"
-                      name="candidateInstructions"
-                      rows={4}
-                      required
-                      placeholder="What project teams must prepare before applying."
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="new-event-tester-instructions">
-                      Tester instructions
-                    </Label>
-                    <Textarea
-                      id="new-event-tester-instructions"
-                      name="testerInstructions"
-                      rows={4}
-                      required
-                      placeholder="What assigned testers must do during and after the session."
-                    />
-                  </div>
-                </fieldset>
-              ) : null}
-              <EventFields
-                schedule={schedule}
-                onScheduleChange={changeSchedule}
-              />
-              <p className="text-xs text-muted-foreground">
-                Dates start in a valid order. Changing the event start updates
-                its end time by two hours.
-              </p>
-              <EventRecurrenceFields onDirty={() => setDirty(true)} />
             </div>
-            <SheetFooter className="border-t px-6 py-4 sm:flex-row sm:justify-end">
+            <SheetFooter className="px-6 py-4 lg:px-8 sm:flex-row sm:justify-end">
               <Button
                 type="button"
                 variant="outline"

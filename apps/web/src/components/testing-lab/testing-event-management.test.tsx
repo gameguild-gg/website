@@ -1,4 +1,10 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
@@ -188,7 +194,7 @@ describe("TestingEventApplications", () => {
       new Date(startsAt.value).valueOf(),
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "Event starts" }));
+    fireEvent.click(screen.getByRole("button", { name: "Starts" }));
     const nextMinute = String(
       new Date(startsAt.value).getMinutes() + 1,
     ).padStart(2, "0");
@@ -231,6 +237,56 @@ describe("TestingEventApplications", () => {
     expect(
       screen.getByRole("textbox", { name: "Tester instructions" }),
     ).toBeRequired();
+  });
+
+  it("presents the event decisions first and groups its two time windows", () => {
+    render(<CreateTestingEventDialog />);
+
+    fireEvent.click(screen.getByRole("button", { name: "New event" }));
+
+    const eventName = screen.getByRole("textbox", { name: "Event name" });
+    const eventFormat = screen.getByRole("combobox", {
+      name: "Event format",
+    });
+    const projectReview = screen.getByRole("combobox", {
+      name: "Project review",
+    });
+    expect(
+      eventName.compareDocumentPosition(eventFormat) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      eventFormat.compareDocumentPosition(projectReview) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+
+    const applicationWindow = screen.getByRole("group", {
+      name: "Application window",
+    });
+    expect(
+      within(applicationWindow).getByRole("button", { name: "Opens" }),
+    ).toBeInTheDocument();
+    expect(
+      within(applicationWindow).getByRole("button", { name: "Closes" }),
+    ).toBeInTheDocument();
+
+    const eventSchedule = screen.getByRole("group", {
+      name: "Event schedule",
+    });
+    expect(
+      within(eventSchedule).getByRole("button", { name: "Starts" }),
+    ).toBeInTheDocument();
+    expect(
+      within(eventSchedule).getByRole("button", { name: "Ends" }),
+    ).toBeInTheDocument();
+
+    expect(
+      screen.getByRole("combobox", { name: "Repeat event" }),
+    ).toBeInTheDocument();
+    expect(screen.queryByLabelText("Start from")).not.toBeInTheDocument();
+    expect(screen.getByRole("dialog")).toHaveClass(
+      "data-[side=right]:sm:max-w-4xl!",
+    );
   });
 
   it("replaces the open action with a setup link while a draft is incomplete", () => {
