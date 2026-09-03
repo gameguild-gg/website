@@ -6,22 +6,34 @@ internal static class TestingEventRecurrenceSchedule
 
     public static IReadOnlyList<DateTime> Expand(
         DateTime startsAt,
-        TestingEventRecurrenceRequest? recurrence)
+        TestingEventRecurrenceRequest? recurrence,
+        string timeZoneId = "UTC")
     {
         if (recurrence == null) return [startsAt];
 
-        Validate(startsAt, recurrence);
+        var timeZone = ResolveTimeZone(timeZoneId);
+        var startsAtUtc = AsUtc(startsAt);
+        var localStartsAt = TimeZoneInfo.ConvertTimeFromUtc(startsAtUtc, timeZone);
+        Validate(startsAtUtc, recurrence);
         var occurrences = new List<DateTime>();
         switch (recurrence.Frequency)
         {
             case TestingEventRecurrenceFrequency.Daily:
-                AddIntervalOccurrences(occurrences, startsAt, recurrence, index => startsAt.AddDays(index * recurrence.Interval));
+                AddIntervalOccurrences(
+                    occurrences,
+                    recurrence,
+                    timeZone,
+                    index => localStartsAt.AddDays(index * recurrence.Interval));
                 break;
             case TestingEventRecurrenceFrequency.Weekly:
-                AddWeeklyOccurrences(occurrences, startsAt, recurrence);
+                AddWeeklyOccurrences(occurrences, localStartsAt, recurrence, timeZone);
                 break;
             case TestingEventRecurrenceFrequency.Monthly:
-                AddIntervalOccurrences(occurrences, startsAt, recurrence, index => startsAt.AddMonths(index * recurrence.Interval));
+                AddIntervalOccurrences(
+                    occurrences,
+                    recurrence,
+                    timeZone,
+                    index => localStartsAt.AddMonths(index * recurrence.Interval));
                 break;
             default:
                 throw new ArgumentOutOfRangeException(nameof(recurrence), "Unsupported recurrence frequency.");
@@ -30,7 +42,10 @@ internal static class TestingEventRecurrenceSchedule
         if (occurrences.Count == 0)
             throw new ArgumentException("The recurrence window does not include the event start.", nameof(recurrence));
 
-        if (recurrence.OccurrenceCount == null && occurrences.Count == MaxOccurrences && recurrence.EndsAt > occurrences[^1])
+        if (recurrence.OccurrenceCount == null &&
+            occurrences.Count == MaxOccurrences &&
+            recurrence.EndsAt.HasValue &&
+            AsUtc(recurrence.EndsAt.Value) > occurrences[^1])
             throw new ArgumentException($"A recurrence cannot create more than {MaxOccurrences} events.", nameof(recurrence));
 
         return occurrences;
@@ -38,14 +53,14 @@ internal static class TestingEventRecurrenceSchedule
 
     private static void AddIntervalOccurrences(
         ICollection<DateTime> occurrences,
-        DateTime startsAt,
         TestingEventRecurrenceRequest recurrence,
-        Func<int, DateTime> occurrenceAt)
+        TimeZoneInfo timeZone,
+        Func<int, DateTime> localOccurrenceAt)
     {
         for (var index = 0; occurrences.Count < MaxOccurrences; index++)
         {
-            var candidate = occurrenceAt(index);
-            if (recurrence.EndsAt != null && candidate > recurrence.EndsAt.Value) break;
+            var candidate = ToUtc(localOccurrenceAt(index), timeZone);
+            if (recurrence.EndsAt != null && candidate > AsUtc(recurrence.EndsAt.Value)) break;
 
             occurrences.Add(candidate);
             if (recurrence.OccurrenceCount != null && occurrences.Count == recurrence.OccurrenceCount.Value) break;
@@ -54,31 +69,33 @@ internal static class TestingEventRecurrenceSchedule
 
     private static void AddWeeklyOccurrences(
         ICollection<DateTime> occurrences,
-        DateTime startsAt,
-        TestingEventRecurrenceRequest recurrence)
+        DateTime localStartsAt,
+        TestingEventRecurrenceRequest recurrence,
+        TimeZoneInfo timeZone)
     {
-        var daysOfWeek = (recurrence.DaysOfWeek ?? [startsAt.DayOfWeek])
+        var daysOfWeek = (recurrence.DaysOfWeek ?? [localStartsAt.DayOfWeek])
             .Distinct()
             .OrderBy(day => day)
             .ToArray();
-        var day = startsAt.Date;
+        var day = localStartsAt.Date;
 
         while (occurrences.Count < MaxOccurrences)
         {
-            var candidate = new DateTime(
+            var localCandidate = new DateTime(
                 day.Year,
                 day.Month,
                 day.Day,
-                startsAt.Hour,
-                startsAt.Minute,
-                startsAt.Second,
-                startsAt.Kind);
-            if (recurrence.EndsAt != null && candidate > recurrence.EndsAt.Value) break;
+                localStartsAt.Hour,
+                localStartsAt.Minute,
+                localStartsAt.Second,
+                DateTimeKind.Unspecified);
+            var candidate = ToUtc(localCandidate, timeZone);
+            if (recurrence.EndsAt != null && candidate > AsUtc(recurrence.EndsAt.Value)) break;
 
-            var weeksSinceStart = (day - startsAt.Date).Days / 7;
-            if (candidate >= startsAt &&
+            var weeksSinceStart = (day - localStartsAt.Date).Days / 7;
+            if (localCandidate >= localStartsAt &&
                 weeksSinceStart % recurrence.Interval == 0 &&
-                daysOfWeek.Contains(candidate.DayOfWeek))
+                daysOfWeek.Contains(localCandidate.DayOfWeek))
             {
                 occurrences.Add(candidate);
                 if (recurrence.OccurrenceCount != null && occurrences.Count == recurrence.OccurrenceCount.Value) break;
@@ -87,6 +104,33 @@ internal static class TestingEventRecurrenceSchedule
             day = day.AddDays(1);
         }
     }
+
+    private static TimeZoneInfo ResolveTimeZone(string timeZoneId)
+    {
+        try
+        {
+            return TimeZoneInfo.FindSystemTimeZoneById(timeZoneId);
+        }
+        catch (Exception exception) when (exception is TimeZoneNotFoundException or InvalidTimeZoneException)
+        {
+            throw new ArgumentException("A valid time zone is required.", nameof(timeZoneId), exception);
+        }
+    }
+
+    private static DateTime ToUtc(DateTime localDateTime, TimeZoneInfo timeZone)
+    {
+        var unspecified = DateTime.SpecifyKind(localDateTime, DateTimeKind.Unspecified);
+        if (timeZone.IsInvalidTime(unspecified))
+            throw new ArgumentException("The recurrence falls on a time that does not exist in the selected time zone.");
+        return TimeZoneInfo.ConvertTimeToUtc(unspecified, timeZone);
+    }
+
+    private static DateTime AsUtc(DateTime dateTime) => dateTime.Kind switch
+    {
+        DateTimeKind.Utc => dateTime,
+        DateTimeKind.Local => dateTime.ToUniversalTime(),
+        _ => DateTime.SpecifyKind(dateTime, DateTimeKind.Utc),
+    };
 
     private static void Validate(DateTime startsAt, TestingEventRecurrenceRequest recurrence)
     {
@@ -98,7 +142,7 @@ internal static class TestingEventRecurrenceSchedule
             throw new ArgumentOutOfRangeException(nameof(recurrence), $"Occurrence count must be between 1 and {MaxOccurrences}.");
         if (recurrence.OccurrenceCount == null && recurrence.EndsAt == null)
             throw new ArgumentException("A recurring event requires an end date or occurrence count.", nameof(recurrence));
-        if (recurrence.EndsAt != null && recurrence.EndsAt.Value < startsAt)
+        if (recurrence.EndsAt != null && AsUtc(recurrence.EndsAt.Value) < startsAt)
             throw new ArgumentException("Recurrence end must not precede the event start.", nameof(recurrence));
         if (recurrence.DaysOfWeek != null && recurrence.DaysOfWeek.Any(day => !Enum.IsDefined(day)))
             throw new ArgumentOutOfRangeException(nameof(recurrence), "Every recurrence day must be valid.");

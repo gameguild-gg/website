@@ -518,11 +518,17 @@ export interface APIControllersEconomyTransferProtectedOperationFailureOutput {
 }
 
 export interface APIControllersHealthinessOutput {
+  builtAt?: string | null;
   checks?: Record<string, APIControllersHealthinessResponseItem> | null;
+  deployedAt?: string | null;
   duration?: string;
   error?: string | null;
+  imageDigest?: string | null;
+  releaseSha?: string | null;
+  sourceTree?: string | null;
   status?: string | null;
   timestamp?: string;
+  version?: string | null;
 }
 
 export interface APIControllersHealthinessResponseItem {
@@ -11626,6 +11632,7 @@ export interface TestingLabCreateTestingEventInput {
   requiresFeedback?: boolean;
   startsAt?: string;
   templateRevisionId?: string | null;
+  timeZoneId?: string | null;
 }
 
 export interface TestingLabCreateTestingInput {
@@ -11769,6 +11776,7 @@ export interface TestingLabPublicTestingEventProjection {
   slots?: Array<TestingLabPublicTestingEventSlotProjection> | null;
   startsAt?: string;
   status?: TestingLabTestingEventStatus;
+  timeZoneId?: string | null;
 }
 
 export interface TestingLabPublicTestingEventSlotProjection {
@@ -12075,6 +12083,7 @@ export interface TestingLabTestingEvent {
   testerInstructions?: string | null;
   testerRegistrationSchema?: TestingLabQuestionnaireSchema;
   testerRegistrationSchemaJson?: string | null;
+  timeZoneId: string;
   updatedAt: string;
   version?: number;
 }
@@ -12163,6 +12172,7 @@ export interface TestingLabTestingEventProjection {
   startsAt?: string;
   status?: TestingLabTestingEventStatus;
   tenantId?: string | null;
+  timeZoneId?: string | null;
 }
 
 export type TestingLabTestingEventRecurrenceFrequency = 'Daily' | 'Weekly' | 'Monthly';
@@ -12842,6 +12852,7 @@ export interface TestingLabUpdateTestingEventInput {
   name?: string | null;
   requiresFeedback?: boolean;
   startsAt?: string;
+  timeZoneId?: string | null;
 }
 
 export interface TestingLabUpdateTestingInput {
@@ -15013,6 +15024,7 @@ APIControllersEconomyTransferProtectedOperationFailureOutputSchema = z.object({
 
 /** Zod schema for APIControllersHealthinessOutput */
 APIControllersHealthinessOutputSchema = z.object({
+  builtAt: z.string().nullable().optional(),
   checks: z
     .record(
       z.string(),
@@ -15020,10 +15032,15 @@ APIControllersHealthinessOutputSchema = z.object({
     )
     .nullable()
     .optional(),
+  deployedAt: z.string().nullable().optional(),
   duration: z.string().optional(),
   error: z.string().nullable().optional(),
+  imageDigest: z.string().nullable().optional(),
+  releaseSha: z.string().nullable().optional(),
+  sourceTree: z.string().nullable().optional(),
   status: z.string().nullable().optional(),
   timestamp: z.string().datetime().optional(),
+  version: z.string().nullable().optional(),
 });
 
 /** Zod schema for APIControllersHealthinessResponseItem */
@@ -28308,6 +28325,7 @@ TestingLabCreateTestingEventInputSchema = z.object({
   requiresFeedback: z.boolean().optional(),
   startsAt: z.string().datetime().optional(),
   templateRevisionId: z.string().uuid().nullable().optional(),
+  timeZoneId: z.string().nullable().optional(),
 });
 
 /** Zod schema for TestingLabCreateTestingInput */
@@ -28474,6 +28492,7 @@ TestingLabPublicTestingEventProjectionSchema = z.object({
     .optional(),
   startsAt: z.string().datetime().optional(),
   status: z.lazy(() => TestingLabTestingEventStatusSchema).optional(),
+  timeZoneId: z.string().nullable().optional(),
 });
 
 /** Zod schema for TestingLabPublicTestingEventSlotProjection */
@@ -28849,6 +28868,7 @@ TestingLabTestingEventSchema = z.object({
   testerInstructions: z.string().max(20000).nullable().optional(),
   testerRegistrationSchema: z.lazy(() => TestingLabQuestionnaireSchemaSchema).optional(),
   testerRegistrationSchemaJson: z.string().nullable().optional(),
+  timeZoneId: z.string().min(1).max(100),
   updatedAt: z.string().datetime(),
   version: z.number().int().optional(),
 });
@@ -28948,6 +28968,7 @@ TestingLabTestingEventProjectionSchema = z.object({
   startsAt: z.string().datetime().optional(),
   status: z.lazy(() => TestingLabTestingEventStatusSchema).optional(),
   tenantId: z.string().uuid().nullable().optional(),
+  timeZoneId: z.string().nullable().optional(),
 });
 
 /** Zod schema for TestingLabTestingEventRecurrenceFrequency */
@@ -29752,6 +29773,7 @@ TestingLabUpdateTestingEventInputSchema = z.object({
   name: z.string().nullable().optional(),
   requiresFeedback: z.boolean().optional(),
   startsAt: z.string().datetime().optional(),
+  timeZoneId: z.string().nullable().optional(),
 });
 
 /** Zod schema for TestingLabUpdateTestingInput */
