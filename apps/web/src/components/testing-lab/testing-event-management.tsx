@@ -332,12 +332,15 @@ type EventFieldsProps = {
   schedule?: TestingEventSchedule;
   onScheduleChange?: (field: keyof TestingEventSchedule, value: string) => void;
   timeZoneId?: string;
+  stacked?: boolean;
 };
 
 function EventIdentityFields({
   event,
+  includeBrief = true,
 }: {
   event?: TestingLabTestingEventProjection;
+  includeBrief?: boolean;
 }) {
   const fieldSuffix = event?.id ?? "new";
 
@@ -397,17 +400,19 @@ function EventIdentityFields({
           </SelectContent>
         </Select>
       </div>
-      <div className="space-y-2 sm:col-span-2">
-        <Label htmlFor={`event-description-${fieldSuffix}`}>
-          Purpose and tester brief
-        </Label>
-        <Textarea
-          id={`event-description-${fieldSuffix}`}
-          name="description"
-          rows={3}
-          defaultValue={event?.description ?? ""}
-        />
-      </div>
+      {includeBrief ? (
+        <div className="space-y-2 sm:col-span-2">
+          <Label htmlFor={`event-description-${fieldSuffix}`}>
+            Purpose and tester brief
+          </Label>
+          <Textarea
+            id={`event-description-${fieldSuffix}`}
+            name="description"
+            rows={3}
+            defaultValue={event?.description ?? ""}
+          />
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -417,6 +422,7 @@ function EventTimelineFields({
   schedule,
   onScheduleChange,
   timeZoneId,
+  stacked = false,
 }: EventFieldsProps) {
   const eventTimeZone = timeZoneId ?? event?.timeZoneId ?? "UTC";
   const applicationsOpenAt =
@@ -448,7 +454,7 @@ function EventTimelineFields({
   }
 
   return (
-    <div className="grid gap-4 md:grid-cols-2">
+    <div className={stacked ? "grid gap-4" : "grid gap-4 md:grid-cols-2"}>
       <div className="min-w-0 space-y-2">
         <Label htmlFor={`applications-window-${fieldSuffix}`}>
           Application window
@@ -718,7 +724,6 @@ export function CreateTestingEventDialog({
   open: controlledOpen,
   onOpenChange,
   showTrigger = true,
-  templates = [],
   defaultTimeZone = "UTC",
 }: CreateTestingEventDialogProps = {}) {
   const router = useRouter();
@@ -730,15 +735,10 @@ export function CreateTestingEventDialog({
   const [pending, startTransition] = useTransition();
   const [result, setResult] =
     useState<TestingEventActionResult<unknown> | null>(null);
-  const [templateRevisionId, setTemplateRevisionId] = useState("");
   const [timeZoneId, setTimeZoneId] = useState(defaultTimeZone);
   const [schedule, setSchedule] = useState<TestingEventSchedule>(() =>
     createTestingEventSchedule(new Date(), initialDate),
   );
-  const availableTemplates = templates.filter(
-    (template) => template.currentRevision?.id,
-  );
-
   function setOpen(next: boolean) {
     if (controlledOpen === undefined) setInternalOpen(next);
     onOpenChange?.(next);
@@ -747,7 +747,6 @@ export function CreateTestingEventDialog({
   function resetDraft() {
     formRef.current?.reset();
     setSchedule(createTestingEventSchedule(new Date(), initialDate));
-    setTemplateRevisionId("");
     setTimeZoneId(defaultTimeZone);
     setDirty(false);
     setResult(null);
@@ -810,7 +809,7 @@ export function CreateTestingEventDialog({
       >
         <SheetContent
           side="right"
-          className="gap-0 p-0 data-[side=right]:w-full! data-[side=right]:sm:max-w-4xl!"
+          className="gap-0 p-0 data-[side=right]:w-full! data-[side=right]:sm:max-w-2xl!"
         >
           <form
             ref={formRef}
@@ -821,12 +820,13 @@ export function CreateTestingEventDialog({
             <SheetHeader className="px-6 pb-4 pt-5 lg:px-8">
               <SheetTitle>Create testing event</SheetTitle>
               <SheetDescription>
-                Add the details teams need to apply and participate.
+                Set the event details and schedule. Participation settings can
+                be completed after creation.
               </SheetDescription>
             </SheetHeader>
             <div className="min-h-0 flex-1 overflow-y-auto px-6 pb-6 lg:px-8">
               {result ? <ActionMessage result={result} /> : null}
-              <div className="grid gap-x-8 gap-y-7 lg:grid-cols-2">
+              <div className="space-y-7">
                 <section
                   aria-labelledby="new-event-details-heading"
                   className="space-y-4"
@@ -834,98 +834,12 @@ export function CreateTestingEventDialog({
                   <h3 id="new-event-details-heading" className="font-medium">
                     Event details
                   </h3>
-                  <EventIdentityFields />
-                </section>
-
-                <section
-                  aria-labelledby="new-event-rules-heading"
-                  className="space-y-4"
-                >
-                  <div>
-                    <h3 id="new-event-rules-heading" className="font-medium">
-                      Rules and instructions
-                    </h3>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      Required before applications can open.
-                    </p>
-                  </div>
-
-                  {availableTemplates.length > 0 ? (
-                    <div className="space-y-2">
-                      <Label htmlFor="event-template">Use a template</Label>
-                      <select
-                        id="event-template"
-                        name="templateRevisionId"
-                        value={templateRevisionId}
-                        onChange={(event) =>
-                          setTemplateRevisionId(event.target.value)
-                        }
-                        className="flex h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
-                      >
-                        <option value="">No template</option>
-                        {availableTemplates.map((template) => (
-                          <option
-                            key={template.currentRevision!.id}
-                            value={template.currentRevision!.id}
-                          >
-                            {template.name} · revision{" "}
-                            {template.currentRevision!.revisionNumber}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  ) : null}
-
-                  {!templateRevisionId ? (
-                    <div className="space-y-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="new-event-general-rules">
-                          General rules
-                        </Label>
-                        <Textarea
-                          id="new-event-general-rules"
-                          name="generalRules"
-                          rows={3}
-                          required
-                          placeholder="Participation, conduct, confidentiality, and completion rules."
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="new-event-candidate-instructions">
-                          Candidate instructions
-                        </Label>
-                        <Textarea
-                          id="new-event-candidate-instructions"
-                          name="candidateInstructions"
-                          rows={3}
-                          required
-                          placeholder="What project teams must prepare before applying."
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="new-event-tester-instructions">
-                          Tester instructions
-                        </Label>
-                        <Textarea
-                          id="new-event-tester-instructions"
-                          name="testerInstructions"
-                          rows={3}
-                          required
-                          placeholder="What testers must do during and after the session."
-                        />
-                      </div>
-                    </div>
-                  ) : (
-                    <p className="rounded-md bg-muted/30 p-3 text-sm text-muted-foreground">
-                      The selected template supplies this event&apos;s rules and
-                      instructions.
-                    </p>
-                  )}
+                  <EventIdentityFields includeBrief={false} />
                 </section>
 
                 <section
                   aria-labelledby="new-event-timeline-heading"
-                  className="space-y-4 lg:col-span-2"
+                  className="space-y-4"
                 >
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                     <h3 id="new-event-timeline-heading" className="font-medium">
@@ -949,20 +863,12 @@ export function CreateTestingEventDialog({
                     schedule={schedule}
                     onScheduleChange={changeSchedule}
                     timeZoneId={timeZoneId}
+                    stacked
                   />
                 </section>
 
                 <EventRecurrenceFields onDirty={() => setDirty(true)} />
-
-                <section
-                  aria-labelledby="new-event-feedback-heading"
-                  className="space-y-4"
-                >
-                  <h3 id="new-event-feedback-heading" className="font-medium">
-                    Feedback
-                  </h3>
-                  <EventFeedbackField />
-                </section>
+                <input type="hidden" name="requiresFeedback" value="true" />
               </div>
             </div>
             <SheetFooter className="px-6 py-4 lg:px-8 sm:flex-row sm:justify-end">

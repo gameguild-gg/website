@@ -237,20 +237,25 @@ describe("TestingEventApplications", () => {
     expect(screen.getByText("Create testing event")).toBeInTheDocument();
   });
 
-  it("collects the required rules and instructions when a blank event is created", () => {
+  it("keeps the quick-create sheet focused on event identity and schedule", () => {
     render(<CreateTestingEventDialog />);
 
     fireEvent.click(screen.getByRole("button", { name: "New event" }));
 
+    expect(screen.getByRole("textbox", { name: "Event name" })).toBeRequired();
     expect(
-      screen.getByRole("textbox", { name: "General rules" }),
-    ).toBeRequired();
+      screen.queryByText("Rules and instructions"),
+    ).not.toBeInTheDocument();
     expect(
-      screen.getByRole("textbox", { name: "Candidate instructions" }),
-    ).toBeRequired();
+      screen.queryByRole("textbox", { name: "Purpose and tester brief" }),
+    ).not.toBeInTheDocument();
     expect(
-      screen.getByRole("textbox", { name: "Tester instructions" }),
-    ).toBeRequired();
+      screen.queryByText("Require tester feedback"),
+    ).not.toBeInTheDocument();
+    expect(
+      document.querySelector<HTMLInputElement>('input[name="requiresFeedback"]')
+        ?.value,
+    ).toBe("true");
   });
 
   it("presents the event decisions first and groups its two time windows", () => {
@@ -290,7 +295,7 @@ describe("TestingEventApplications", () => {
     ).toBeInTheDocument();
     expect(screen.queryByLabelText("Start from")).not.toBeInTheDocument();
     expect(screen.getByRole("dialog")).toHaveClass(
-      "data-[side=right]:sm:max-w-4xl!",
+      "data-[side=right]:sm:max-w-2xl!",
     );
   });
 
@@ -350,6 +355,10 @@ describe("TestingEventApplications", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Edit" }));
 
+    expect(
+      screen.getByRole("textbox", { name: "Purpose and tester brief" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Require tester feedback")).toBeInTheDocument();
     expect(
       document.querySelector<HTMLInputElement>(
         'input[name="applicationsOpenAt"]',

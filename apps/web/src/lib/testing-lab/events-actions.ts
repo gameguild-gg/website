@@ -380,21 +380,27 @@ function eventInput(formData: FormData): {
     };
 
   const templateRevisionId = optionalText(formData, "templateRevisionId");
-  const configuration = templateRevisionId
-    ? undefined
-    : {
-        generalRules: text(formData, "generalRules"),
-        candidateInstructions: text(formData, "candidateInstructions"),
-        testerInstructions: text(formData, "testerInstructions"),
-        projectApplicationSchema: {
-          title: "Project application",
-          questions: [],
-        },
-        testerRegistrationSchema: {
-          title: "Tester registration",
-          questions: [],
-        },
-      };
+  const hasInlineConfiguration = [
+    "generalRules",
+    "candidateInstructions",
+    "testerInstructions",
+  ].some((key) => text(formData, key));
+  const configuration =
+    !templateRevisionId && hasInlineConfiguration
+      ? {
+          generalRules: text(formData, "generalRules"),
+          candidateInstructions: text(formData, "candidateInstructions"),
+          testerInstructions: text(formData, "testerInstructions"),
+          projectApplicationSchema: {
+            title: "Project application",
+            questions: [],
+          },
+          testerRegistrationSchema: {
+            title: "Tester registration",
+            questions: [],
+          },
+        }
+      : undefined;
   if (
     configuration &&
     (!configuration.generalRules ||
