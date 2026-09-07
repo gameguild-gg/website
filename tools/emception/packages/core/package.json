@@ -67,6 +67,6 @@
   },
   "devDependencies": {
     "tsd": "^0.33.0",
-    "typescript": "^5.8.3"
+    "typescript": "^6.0.3"
   }
 }

@@ -79,6 +79,6 @@
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "react-resizable-panels": "^4.12.2",
-    "typescript": "^5.8.3"
+    "typescript": "^6.0.3"
   }
 }

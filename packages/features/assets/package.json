@@ -33,7 +33,7 @@
     "fake-indexeddb": "^6.2.4",
     "react": "19.2.8",
     "react-dom": "19.2.8",
-    "typescript": "^5.8.3",
+    "typescript": "^6.0.3",
     "vitest": "^4.1.10"
   }
 }
