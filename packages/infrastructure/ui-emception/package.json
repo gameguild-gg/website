@@ -30,7 +30,8 @@
     "react-resizable-panels": "^4.12.2"
   },
   "devDependencies": {
-    "@babel/preset-env": "7",
+    "@babel/core": "8",
+    "@babel/preset-env": "8",
     "@babel/preset-react": "8",
     "@babel/preset-typescript": "8",
     "@game-guild/jest-config": "workspace:^",
