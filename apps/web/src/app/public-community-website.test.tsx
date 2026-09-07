@@ -181,7 +181,7 @@ describe('public community website UX', () => {
     ]);
   });
 
-  it('offers social actions and one unified community menu', async () => {
+  it('keeps Workspace, Notifications, and the user profile in social header actions', async () => {
     authMock.mockResolvedValueOnce({
       user: {
         id: 'member-1',
@@ -191,28 +191,17 @@ describe('public community website UX', () => {
       },
       expires: '2026-12-31T00:00:00.000Z',
     });
-    const onCompose = vi.fn();
-    window.addEventListener('social:compose', onCompose);
-
     render(await PublicWebsiteHeader({ embedded: true }));
 
-    expect(screen.getByRole('link', { name: 'Explore community' })).toHaveAttribute('href', '/projects');
-    fireEvent.click(screen.getByRole('button', { name: 'Create post' }));
-    expect(onCompose).toHaveBeenCalledOnce();
+    expect(screen.getByRole('link', { name: 'Open Workspace' })).toHaveAttribute('href', '/workspace');
     expect(screen.getByRole('link', { name: 'Notification settings' })).toHaveAttribute(
       'href',
       '/workspace/settings/notifications',
     );
-    expect(screen.getByRole('button', { name: 'Open community navigation' })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Open public navigation' })).not.toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Open community navigation' }));
-    expect(await screen.findByRole('heading', { name: 'Community' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'GameGuild' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Messages' })).toHaveAttribute('href', '/workspace/invitations');
-    expect(screen.getByRole('link', { name: 'Workspace' })).toHaveAttribute('href', '/workspace');
-
-    window.removeEventListener('social:compose', onCompose);
+    expect(screen.queryByRole('link', { name: 'Explore community' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Create post' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Open community navigation' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Open Maya Torres account menu' })).toBeInTheDocument();
   });
 
   it('shows the authenticated member profile instead of sign-in calls to action', async () => {
