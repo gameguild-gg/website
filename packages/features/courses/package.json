@@ -32,7 +32,7 @@
     "@game-guild/typescript-config": "workspace:*",
     "@testing-library/react": "^16.3.3",
     "@testing-library/jest-dom": "^7.0.0",
-    "@types/node": "^20",
+    "@types/node": "^26",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9.39.2",

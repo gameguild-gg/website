@@ -48,7 +48,7 @@
   "devDependencies": {
     "@excalidraw/mermaid-to-excalidraw": "2.2.2",
     "@game-guild/typescript-config": "workspace:*",
-    "@types/node": "^20",
+    "@types/node": "^26",
     "@types/d3-dsv": "^3.0.7",
     "@types/react": "^19",
     "@types/react-dom": "^19",

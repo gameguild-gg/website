@@ -141,7 +141,7 @@
   "devDependencies": {
     "@playwright/test": "^1.58.2",
     "@types/cli-progress": "^3.11.6",
-    "@types/node": "^20",
+    "@types/node": "^26",
     "@types/shelljs": "^0.10.0",
     "@vitejs/plugin-react": "^6.0.5",
     "@xterm/xterm": "^6.0.0",
