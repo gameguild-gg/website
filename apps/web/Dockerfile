@@ -63,6 +63,12 @@ ENV SOURCE_TREE=${SOURCE_TREE}
 ENV BUILT_AT=${BUILD_TIMESTAMP}
 
 COPY --from=pruner /repo/out/full/ ./
+# turbo prune only emits package directories; the emception sub-workspace root
+# files below are required at build time (tsconfig "extends" chain and the
+# coi-serviceworker.js copied by the browser package build).
+COPY --from=pruner /repo/tools/emception/tsconfig.base.json ./tools/emception/tsconfig.base.json
+COPY --from=pruner /repo/tools/emception/public/coi-serviceworker.js ./tools/emception/public/coi-serviceworker.js
+COPY --from=pruner /repo/tools/emception/scripts/ ./tools/emception/scripts/
 COPY --from=pruner /repo/tools/emception/packages/toolchain/package.json ./tools/emception/packages/toolchain/package.json
 COPY --from=toolchain /repo/tools/emception/artifacts/toolchain/release/cdn/ ./tools/emception/artifacts/toolchain/release/cdn/
 
