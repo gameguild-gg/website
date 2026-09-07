@@ -170,7 +170,7 @@ function EventLink({
     <HoverCard openDelay={0} closeDelay={100}>
       <HoverCardTrigger asChild>
         <Link
-          href={`/console/community/testing-lab/events/${event.id}`}
+          href={`/workspace/testing-lab/events/${event.id}`}
           className={`block overflow-hidden rounded-sm border-l-2 px-2 py-1.5 text-left text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${eventStatusClass(event.status)}`}
           aria-label={`${event.name ?? "Untitled event"}${startsAt ? `, ${format(startsAt, "PPp")}` : ""}`}
         >

@@ -375,7 +375,7 @@ describe("TestingEventApplications", () => {
       screen.getByRole("link", { name: "Complete setup" }),
     ).toHaveAttribute(
       "href",
-      "/console/community/testing-lab/events/event-1/overview#event-configuration-heading",
+      "/workspace/testing-lab/events/event-1/overview#event-configuration-heading",
     );
     expect(
       screen.queryByRole("button", { name: "Open applications" }),

@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("@/i18n/navigation", () => ({
-  usePathname: () => "/console/community/testing-lab/settings/locations",
+  usePathname: () => "/workspace/testing-lab/settings/locations",
   Link: ({
     children,
     href,

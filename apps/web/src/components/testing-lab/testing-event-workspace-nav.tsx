@@ -28,7 +28,7 @@ export function TestingEventWorkspaceNav({
   canManageWorkspace?: boolean;
 }) {
   const pathname = usePathname() ?? "";
-  const base = `/console/community/testing-lab/events/${eventId}`;
+  const base = `/workspace/testing-lab/events/${eventId}`;
 
   return (
     <nav

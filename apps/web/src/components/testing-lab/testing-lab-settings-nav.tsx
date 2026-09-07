@@ -7,22 +7,22 @@ import { Files, MapPin, Settings, ShieldCheck } from "lucide-react";
 const sections = [
   {
     label: "General",
-    href: "/console/community/testing-lab/settings/general",
+    href: "/workspace/testing-lab/settings/general",
     icon: Settings,
   },
   {
     label: "Templates",
-    href: "/console/community/testing-lab/settings/templates",
+    href: "/workspace/testing-lab/settings/templates",
     icon: Files,
   },
   {
     label: "Locations",
-    href: "/console/community/testing-lab/settings/locations",
+    href: "/workspace/testing-lab/settings/locations",
     icon: MapPin,
   },
   {
     label: "Access",
-    href: "/console/community/testing-lab/settings/access",
+    href: "/workspace/testing-lab/settings/access",
     icon: ShieldCheck,
   },
 ] as const;

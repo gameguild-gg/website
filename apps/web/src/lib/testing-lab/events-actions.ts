@@ -23,7 +23,7 @@ import {
 } from "@game-guild/client";
 import { revalidatePath } from "next/cache";
 
-const EVENTS_PATH = "/console/community/testing-lab/events";
+const EVENTS_PATH = "/workspace/testing-lab/events";
 
 type ActionData<T> = [T] extends [void] ? null : T | null;
 export type TestingEventActionResult<T = null> =
@@ -194,9 +194,9 @@ function isoDate(formData: FormData, key: string, timeZoneId = "UTC") {
 }
 
 function revalidateEvent(eventId?: string) {
-  revalidatePath("/console/community/testing-lab");
+  revalidatePath("/workspace/testing-lab");
   revalidatePath(EVENTS_PATH);
-  revalidatePath("/console/community/testing-lab/settings/templates");
+  revalidatePath("/workspace/testing-lab/settings/templates");
   revalidatePath("/testing-lab");
   if (eventId) {
     revalidatePath(`${EVENTS_PATH}/${eventId}`);

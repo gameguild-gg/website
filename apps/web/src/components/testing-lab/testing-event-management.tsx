@@ -1331,7 +1331,7 @@ export function TestingEventLifecycleActions({
         {event.status === "Draft" && !draftConfigurationReady && event.id ? (
           <Button asChild size="sm">
             <a
-              href={`/console/community/testing-lab/events/${event.id}/overview#event-configuration-heading`}
+              href={`/workspace/testing-lab/events/${event.id}/overview#event-configuration-heading`}
             >
               <Pencil className="mr-2 size-4" />
               Complete setup
@@ -1385,7 +1385,7 @@ export function TestingEventLifecycleActions({
             submitLabel="Delete draft"
             action={deleteTestingEvent}
             destructive
-            successHref="/console/community/testing-lab/events"
+            successHref="/workspace/testing-lab/events"
           >
             <input type="hidden" name="eventId" value={event.id} />
           </EventActionDialog>
@@ -1402,7 +1402,7 @@ export function TestingEventLifecycleActions({
             description="The event leaves the active directory while its audit history remains available for restoration."
             submitLabel="Archive event"
             action={archiveTestingEvent}
-            successHref="/console/community/testing-lab/events"
+            successHref="/workspace/testing-lab/events"
           >
             <input type="hidden" name="eventId" value={event.id} />
           </EventActionDialog>

@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 vi.mock("@/i18n/navigation", () => ({
   Link: "a",
-  usePathname: () => "/console/community/testing-lab",
+  usePathname: () => "/workspace/testing-lab",
 }));
 
 import {
@@ -28,16 +28,16 @@ describe("dashboard management navigation", () => {
     expect(
       testingLab?.subGroups?.map(({ title, url }) => ({ title, url })),
     ).toEqual([
-      { title: "Overview", url: "/console/community/testing-lab" },
-      { title: "Events", url: "/console/community/testing-lab/events" },
-      { title: "Applications", url: "/console/community/testing-lab/applications" },
-      { title: "Projects", url: "/console/community/testing-lab/projects" },
-      { title: "Participants", url: "/console/community/testing-lab/participants" },
-      { title: "Feedback", url: "/console/community/testing-lab/feedback" },
-      { title: "Analytics", url: "/console/community/testing-lab/analytics" },
-      { title: "Locations", url: "/console/community/testing-lab/locations" },
-      { title: "Access", url: "/console/community/testing-lab/access" },
-      { title: "Settings", url: "/console/community/testing-lab/settings" },
+      { title: "Overview", url: "/workspace/testing-lab" },
+      { title: "Events", url: "/workspace/testing-lab/events" },
+      { title: "Applications", url: "/workspace/testing-lab/applications" },
+      { title: "Projects", url: "/workspace/testing-lab/projects" },
+      { title: "Participants", url: "/workspace/testing-lab/participants" },
+      { title: "Feedback", url: "/workspace/testing-lab/feedback" },
+      { title: "Analytics", url: "/workspace/testing-lab/analytics" },
+      { title: "Locations", url: "/workspace/testing-lab/locations" },
+      { title: "Access", url: "/workspace/testing-lab/access" },
+      { title: "Settings", url: "/workspace/testing-lab/settings" },
     ]);
     expect(launchPad?.url).toBe("/console/community/launch-pad");
     expect(platform?.items.map((item) => item.title)).toEqual(["Economy", "Roles"]);

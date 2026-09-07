@@ -127,7 +127,7 @@ describe("Testing Lab event actions", () => {
       }),
     );
     expect(mocks.revalidatePath).toHaveBeenCalledWith(
-      "/console/community/testing-lab/events",
+      "/workspace/testing-lab/events",
     );
   });
 
