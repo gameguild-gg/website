@@ -26,6 +26,12 @@ export interface TimeZoneComboboxProps {
   disabled?: boolean;
 }
 
+function timeZoneLocation(timeZone: string) {
+  if (timeZone === "UTC") return "UTC";
+  const location = timeZone.split("/").at(-1) ?? timeZone;
+  return location.replaceAll("_", " ");
+}
+
 export function TimeZoneCombobox({
   id,
   name = "timeZoneId",
@@ -55,10 +61,11 @@ export function TimeZoneCombobox({
             aria-label="Time zone"
             aria-expanded={open}
             disabled={disabled}
+            title={value}
             className="h-10 w-full min-w-0 justify-between font-normal"
           >
             <span className="truncate">
-              {timeZoneOffsetLabel(value)} · {value}
+              ({timeZoneOffsetLabel(value)}) {timeZoneLocation(value)}
             </span>
             <ChevronsUpDown
               className="size-4 shrink-0 text-muted-foreground"
@@ -78,7 +85,7 @@ export function TimeZoneCombobox({
                 {zones.map((zone) => (
                   <CommandItem
                     key={zone}
-                    value={`${zone} ${timeZoneOffsetLabel(zone)}`}
+                    value={`${zone} ${timeZoneLocation(zone)} ${timeZoneOffsetLabel(zone)}`}
                     data-checked={zone === value}
                     onSelect={() => {
                       onValueChange(zone);
@@ -88,7 +95,14 @@ export function TimeZoneCombobox({
                     <span className="w-16 shrink-0 text-muted-foreground">
                       {timeZoneOffsetLabel(zone)}
                     </span>
-                    <span>{zone}</span>
+                    <span className="min-w-0">
+                      <span className="block truncate">
+                        {timeZoneLocation(zone)}
+                      </span>
+                      <span className="block truncate text-xs text-muted-foreground">
+                        {zone}
+                      </span>
+                    </span>
                   </CommandItem>
                 ))}
               </CommandGroup>

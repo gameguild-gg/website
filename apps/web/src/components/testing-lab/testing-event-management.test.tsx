@@ -253,9 +253,9 @@ describe("TestingEventApplications", () => {
       render(<CreateTestingEventDialog defaultTimeZone="UTC" />);
       fireEvent.click(screen.getByRole("button", { name: "New event" }));
 
-      expect(
-        screen.getByRole("combobox", { name: "Time zone" }),
-      ).toHaveTextContent("America/Sao_Paulo");
+    expect(
+      screen.getByRole("combobox", { name: "Time zone" }),
+    ).toHaveTextContent("Sao Paulo");
       expect(
         document.querySelector<HTMLInputElement>('input[name="timeZoneId"]')
           ?.value,
@@ -328,7 +328,7 @@ describe("TestingEventApplications", () => {
     expect(within(timeline).getByText("Testing session")).toBeInTheDocument();
     expect(
       within(timeline).getByRole("combobox", { name: "Time zone" }),
-    ).toHaveTextContent("America/Sao_Paulo");
+    ).toHaveTextContent("Sao Paulo");
 
     expect(
       screen.getByRole("combobox", { name: "Repeats" }),
