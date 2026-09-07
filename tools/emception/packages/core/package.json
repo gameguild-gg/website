@@ -51,7 +51,7 @@
   },
   "scripts": {
     "build:ts": "tsc -p tsconfig.json",
-    "build": "pnpm run clean && pnpm run build:ts && node ../../scripts/stage-core-cdn.mjs",
+    "build": "pnpm run clean && pnpm run build:ts && node ../../scripts/stage-core-cdn.mjs --optional",
     "prepack": "npm run build && node ../../scripts/stage-core-cdn.mjs",
     "typecheck": "tsc --noEmit",
     "test": "pnpm run build:ts && node ../../scripts/run-node-tests.mjs tests",
