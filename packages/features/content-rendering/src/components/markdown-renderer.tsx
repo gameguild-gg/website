@@ -11,6 +11,8 @@ import rehypeRaw from 'rehype-raw';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 
+import { MermaidDiagram } from './mermaid-diagram';
+
 export type MarkdownRendererMode = 'markdown' | 'reveal';
 export type MarkdownRendererTone = 'default' | 'learning';
 
@@ -123,7 +125,7 @@ export function MarkdownRenderer({ content, renderer = 'markdown', tone = 'learn
       const inline = !code.includes('\n');
 
       if (language === 'mermaid') {
-        return <div>Mermaid chart not available</div>;
+        return <MermaidDiagram code={code} />;
       }
 
       if (!inline) {
