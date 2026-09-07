@@ -30,7 +30,7 @@
     "react-resizable-panels": "^4.12.2"
   },
   "devDependencies": {
-    "@babel/core": "8",
+    "@babel/core": "^8.0.1",
     "@babel/preset-env": "8",
     "@babel/preset-react": "8",
     "@babel/preset-typescript": "8",
@@ -42,7 +42,7 @@
     "@types/node": "^26.4.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "babel-jest": "30",
+    "babel-jest": "^30.5.1",
     "identity-obj-proxy": "^3.0.0",
     "jest": "30",
     "jest-environment-jsdom": "30",

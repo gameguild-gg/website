@@ -3,7 +3,6 @@
     "extends": "@game-guild/typescript-config/react.library.tsconfig.json",
     "display": "Courses",
     "compilerOptions": {
-        "baseUrl": "./",
         "paths": {
             "@game-guild/courses/*": [
                 "./src/*"

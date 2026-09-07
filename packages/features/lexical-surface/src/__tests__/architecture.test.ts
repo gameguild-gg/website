@@ -21,6 +21,7 @@ describe("package architecture", () => {
     expect(entries).toEqual([
       "__tests__",
       "capabilities",
+      "css.d.ts",
       "editor-ui",
       "features",
       "icons",

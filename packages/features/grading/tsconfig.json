@@ -3,7 +3,6 @@
   "extends": "@game-guild/typescript-config",
   "display": "Grading",
   "compilerOptions": {
-    "baseUrl": "./",
     "module": "ESNext",
     "moduleResolution": "bundler",
     "noEmit": true,

@@ -3,7 +3,7 @@
   "extends": "@game-guild/typescript-config/react.library.tsconfig.json",
   "display": "Quiz Surface",
   "compilerOptions": {
-    "baseUrl": ".",
+    "types": ["node"],
     "module": "ESNext",
     "moduleResolution": "bundler",
     "noEmit": true,

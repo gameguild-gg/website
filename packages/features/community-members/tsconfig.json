@@ -3,7 +3,6 @@
   "extends": "@game-guild/typescript-config/tsconfig.react.json",
   "display": "Community Members",
   "compilerOptions": {
-    "baseUrl": "./",
     "paths": {
       "@game-guild/community-members/*": [
         "./src/*"

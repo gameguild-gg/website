@@ -2,6 +2,7 @@ import { cp, mkdir, rm, stat } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { stageCdnPackage } from './lib/stage-cdn-package.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -39,9 +40,26 @@ function resolveInstalledEmceptionManifest(appDir) {
     });
 }
 
+async function ensureCoreCdnStaged() {
+    const targetCdn = path.join(emceptionRoot, 'packages', 'core', 'cdn');
+    const manifest = path.join(targetCdn, 'manifest.json');
+    if (await exists(manifest)) return;
+
+    const sourceCdn = path.join(emceptionRoot, 'artifacts', 'toolchain', 'release', 'cdn');
+    if (!(await exists(path.join(sourceCdn, 'manifest.json')))) {
+        throw new Error(
+            `Missing ${path.relative(emceptionRoot, sourceCdn)}. Run \`pnpm toolchain release\` or fetch the release artifacts first.`,
+        );
+    }
+    const result = await stageCdnPackage({ sourceCdn, targetCdn });
+    console.log(`[install-app-cdn] staged core cdn: ${result.bundleCount} bundles, ${result.totalBytes} bytes`);
+}
+
 async function installCdnForApp(appArg) {
     const appDir = resolveAppDir(appArg);
-    const appLabel = path.relative(emceptionRoot, appDir) || appDir;
+    const appLabel = path.relative(emceptionRoot, appDir) || appArg;
+
+    await ensureCoreCdnStaged();
 
     const sourceManifest = resolveInstalledEmceptionManifest(appDir);
     const sourceCdnDir = path.dirname(sourceManifest);

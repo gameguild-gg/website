@@ -3,7 +3,6 @@
   "extends": "@game-guild/typescript-config/react.library.tsconfig.json",
   "display": "Block Content Editor",
   "compilerOptions": {
-    "baseUrl": "./",
     "paths": {
       "@game-guild/block-content-editor": [
         "./src/index.ts"

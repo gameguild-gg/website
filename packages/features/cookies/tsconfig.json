@@ -3,7 +3,6 @@
   "extends": "@game-guild/typescript-config/react.library.tsconfig.json",
   "display": "Cookies",
   "compilerOptions": {
-    "baseUrl": "./",
     "composite": true,
     "paths": {
       "@game-guild/cookies/*": ["./src/*"]

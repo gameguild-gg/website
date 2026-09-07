@@ -3,7 +3,6 @@
   "extends": "@game-guild/typescript-config/react.library.tsconfig.json",
   "display": "Web3",
   "compilerOptions": {
-    "baseUrl": "./",
     "composite": true,
     "paths": {
       "@game-guild/web3/*": ["./src/*"]

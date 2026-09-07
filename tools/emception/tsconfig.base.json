@@ -15,7 +15,6 @@
     "noUncheckedIndexedAccess": false,
     "forceConsistentCasingInFileNames": true,
     "jsx": "react-jsx",
-    "baseUrl": ".",
     "paths": {
       "emception": ["packages/core/src/index.ts"],
       "emception/*": ["packages/core/src/*"],

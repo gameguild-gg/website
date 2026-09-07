@@ -3,7 +3,7 @@
   "extends": "@game-guild/typescript-config",
   "display": "Quiz Content",
   "compilerOptions": {
-    "baseUrl": "./",
+    "types": ["node"],
     "module": "ESNext",
     "moduleResolution": "bundler",
     "noEmit": true,

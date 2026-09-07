@@ -3,6 +3,7 @@
   "extends": "@game-guild/typescript-config/react.library.tsconfig.json",
   "display": "Lexical Surface",
   "compilerOptions": {
+    "types": ["node"],
     "module": "ESNext",
     "moduleResolution": "bundler",
     "noEmit": true,

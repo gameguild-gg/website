@@ -1,27 +1,27 @@
 {
-  "name": "@gameguild/emception-demo-run-webcomponent",
-  "version": "4.3.0",
-  "private": true,
-  "description": "Minimal Vite + vanilla HTML demo for the <emception-run> custom element from @gameguild/emception-webcomponent.",
-  "type": "module",
-  "scripts": {
-    "predev": "npm run build:lib --prefix ../../tools/emception && node ../../tools/emception/scripts/install-app-cdn-from-package.mjs ../../demos/emception-run-webcomponent",
-    "dev": "run-p watch:core watch:browser watch:webcomponent vite",
-    "vite": "vite",
-    "watch:core": "tsc -p ../../tools/emception/packages/core/tsconfig.json --watch --preserveWatchOutput",
-    "watch:browser": "tsc -p ../../tools/emception/packages/browser/tsconfig.json --watch --preserveWatchOutput",
-    "watch:webcomponent": "tsc -p ../../tools/emception/packages/webcomponent/tsconfig.json --watch --preserveWatchOutput",
-    "prebuild": "npm run build:lib --prefix ../../tools/emception && node ../../tools/emception/scripts/install-app-cdn-from-package.mjs ../../demos/emception-run-webcomponent",
-    "build": "tsc -b && vite build",
-    "preview": "vite preview"
-  },
-  "dependencies": {
-    "@gameguild/emception-browser": "4.3.0",
-    "@gameguild/emception-webcomponent": "4.3.0",
-    "emception": "4.3.0"
-  },
-  "devDependencies": {
-    "typescript": "^6.0.3",
-    "vite": "^8.2.2"
-  }
+    "name": "@gameguild/emception-demo-run-webcomponent",
+    "version": "4.3.0",
+    "private": true,
+    "description": "Minimal Vite + vanilla HTML demo for the <emception-run> custom element from @gameguild/emception-webcomponent.",
+    "type": "module",
+    "scripts": {
+        "predev": "node ../../tools/emception/scripts/ensure-emception-libs.mjs && node ../../tools/emception/scripts/install-app-cdn-from-package.mjs ../../demos/emception-run-webcomponent",
+        "dev": "run-p watch:core watch:browser watch:webcomponent vite",
+        "vite": "vite",
+        "watch:core": "tsc -p ../../tools/emception/packages/core/tsconfig.json --watch --preserveWatchOutput",
+        "watch:browser": "tsc -p ../../tools/emception/packages/browser/tsconfig.json --watch --preserveWatchOutput",
+        "watch:webcomponent": "tsc -p ../../tools/emception/packages/webcomponent/tsconfig.json --watch --preserveWatchOutput",
+        "prebuild": "node ../../tools/emception/scripts/ensure-emception-libs.mjs && node ../../tools/emception/scripts/install-app-cdn-from-package.mjs ../../demos/emception-run-webcomponent",
+        "build": "tsc -b && vite build",
+        "preview": "vite preview"
+    },
+    "dependencies": {
+        "@gameguild/emception-browser": "4.3.0",
+        "@gameguild/emception-webcomponent": "4.3.0",
+        "emception": "4.3.0"
+    },
+    "devDependencies": {
+        "typescript": "^6.0.3",
+        "vite": "^8.2.2"
+    }
 }

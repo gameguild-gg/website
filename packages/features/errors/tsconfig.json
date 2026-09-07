@@ -3,7 +3,7 @@
   "extends": "@game-guild/typescript-config/react.library.tsconfig.json",
   "display": "Errors",
   "compilerOptions": {
-    "baseUrl": "./",
+    "types": ["node"],
     "composite": true,
     "paths": {
       "@game-guild/errors/*": ["./src/*"]

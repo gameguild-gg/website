@@ -3,7 +3,6 @@
   "extends": "@game-guild/typescript-config/react.library.tsconfig.json",
   "display": "UI",
   "compilerOptions": {
-    "baseUrl": "./",
     "paths": {
       "@game-guild/ui/*": [
         "./src/*"

@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "types": ["node"],
     "target": "ES2020",
     "useDefineForClassFields": true,
     "module": "ESNext",
@@ -22,6 +23,7 @@
     /* Declaration */
     "declaration": true,
     "declarationDir": "./dist",
+    "rootDir": "./src",
     "outDir": "./dist"
   },
   "include": ["src"],

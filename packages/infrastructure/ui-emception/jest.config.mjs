@@ -1,10 +1,27 @@
+import { createRequire } from 'node:module';
 import { reactConfig } from '@game-guild/jest-config';
+
+const require = createRequire(import.meta.url);
 
 /** @type {import('jest').Config} */
 const config = {
   ...reactConfig,
   displayName: '@game-guild/emception-ui',
   rootDir: '.',
+  // Resolve babel-jest from this package so it pairs with the local @babel/core 8
+  // and the @babel/preset-* 8 family; the shared config's copy pairs with core 7.
+  transform: {
+    '^.+\\.(js|jsx|ts|tsx)$': [
+      require.resolve('babel-jest'),
+      {
+        presets: [
+          ['@babel/preset-env', { targets: { node: 'current' } }],
+          ['@babel/preset-react', { runtime: 'automatic' }],
+          '@babel/preset-typescript',
+        ],
+      },
+    ],
+  },
   moduleNameMapper: {
     ...reactConfig.moduleNameMapper,
     '^emception/testing$': '<rootDir>/../../../tools/emception/packages/core/src/testing/index.ts',

@@ -3,7 +3,6 @@
   "extends": "@game-guild/typescript-config/react.library.tsconfig.json",
   "display": "Analytics",
   "compilerOptions": {
-    "baseUrl": "./",
     "composite": true,
     "paths": {
       "@game-guild/analytics/*": ["./src/*"]

@@ -50,11 +50,12 @@
     "access": "public"
   },
   "scripts": {
-    "build": "pnpm run clean && tsc -p tsconfig.json",
+    "build:ts": "tsc -p tsconfig.json",
+    "build": "pnpm run clean && pnpm run build:ts && node ../../scripts/stage-core-cdn.mjs",
     "prepack": "npm run build && node ../../scripts/stage-core-cdn.mjs",
     "typecheck": "tsc --noEmit",
-    "test": "npm run build && node ../../scripts/run-node-tests.mjs tests",
-    "test:types": "npm run build && tsd",
+    "test": "pnpm run build:ts && node ../../scripts/run-node-tests.mjs tests",
+    "test:types": "pnpm run build:ts && tsd",
     "clean": "node -e \"const fs=require('fs');for(const path of ['dist','cdn','tsconfig.tsbuildinfo'])fs.rmSync(path,{recursive:true,force:true})\""
   },
   "tsd": {

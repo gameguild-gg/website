@@ -1,34 +1,34 @@
 {
-  "name": "@gameguild/emception-demo-react",
-  "version": "4.3.0",
-  "private": true,
-  "type": "module",
-  "scripts": {
-    "predev": "npm run build:lib --prefix ../../tools/emception && node ../../tools/emception/scripts/install-app-cdn-from-package.mjs ../../demos/emception-ide-react",
-    "dev": "run-p watch:core watch:browser watch:ide vite",
-    "vite": "vite",
-    "watch:core": "tsc -p ../../tools/emception/packages/core/tsconfig.json --watch --preserveWatchOutput",
-    "watch:browser": "tsc -p ../../tools/emception/packages/browser/tsconfig.json --watch --preserveWatchOutput",
-    "watch:ide": "tsc -p ../../tools/emception/packages/ide/tsconfig.json --watch --preserveWatchOutput",
-    "prebuild": "npm run build:lib --prefix ../../tools/emception && node ../../tools/emception/scripts/install-app-cdn-from-package.mjs ../../demos/emception-ide-react",
-    "build": "tsc -b && vite build",
-    "preview": "vite preview"
-  },
-  "dependencies": {
-    "@gameguild/emception-ide": "4.3.0",
-    "@monaco-editor/react": "^4.7.0",
-    "@xterm/addon-fit": "^0.11.0",
-    "@xterm/xterm": "^6.0.0",
-    "emception": "4.3.0",
-    "react": "19.2.8",
-    "react-dom": "19.2.8",
-    "react-resizable-panels": "^4.12.2"
-  },
-  "devDependencies": {
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "@vitejs/plugin-react": "^6.1.1",
-    "typescript": "^6.0.3",
-    "vite": "^8.2.2"
-  }
+    "name": "@gameguild/emception-demo-react",
+    "version": "4.3.0",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "predev": "node ../../tools/emception/scripts/ensure-emception-libs.mjs && node ../../tools/emception/scripts/install-app-cdn-from-package.mjs ../../demos/emception-ide-react",
+        "dev": "run-p watch:core watch:browser watch:ide vite",
+        "vite": "vite",
+        "watch:core": "tsc -p ../../tools/emception/packages/core/tsconfig.json --watch --preserveWatchOutput",
+        "watch:browser": "tsc -p ../../tools/emception/packages/browser/tsconfig.json --watch --preserveWatchOutput",
+        "watch:ide": "tsc -p ../../tools/emception/packages/ide/tsconfig.json --watch --preserveWatchOutput",
+        "prebuild": "node ../../tools/emception/scripts/ensure-emception-libs.mjs && node ../../tools/emception/scripts/install-app-cdn-from-package.mjs ../../demos/emception-ide-react",
+        "build": "tsc -b && vite build",
+        "preview": "vite preview"
+    },
+    "dependencies": {
+        "@gameguild/emception-ide": "4.3.0",
+        "@monaco-editor/react": "^4.7.0",
+        "@xterm/addon-fit": "^0.11.0",
+        "@xterm/xterm": "^6.0.0",
+        "emception": "4.3.0",
+        "react": "19.2.8",
+        "react-dom": "19.2.8",
+        "react-resizable-panels": "^4.12.2"
+    },
+    "devDependencies": {
+        "@types/react": "^19",
+        "@types/react-dom": "^19",
+        "@vitejs/plugin-react": "^6.1.1",
+        "typescript": "^6.0.3",
+        "vite": "^8.2.2"
+    }
 }
