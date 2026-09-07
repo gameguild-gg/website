@@ -166,7 +166,7 @@
     "@testing-library/user-event": "^14.6.6",
     "@types/d3-dsv": "^3.0.7",
     "@types/node": "^26",
-    "@types/pako": "^2.0.4",
+    "@types/pako": "^3.0.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@vitejs/plugin-react": "^4.7.0",
