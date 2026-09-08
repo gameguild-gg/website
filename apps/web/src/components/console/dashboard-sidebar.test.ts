@@ -29,6 +29,7 @@ describe("dashboard management navigation", () => {
       testingLab?.subGroups?.map(({ title, url }) => ({ title, url })),
     ).toEqual([
       { title: "Calendar", url: "/workspace/testing-lab" },
+      { title: "Sessions", url: "/workspace/testing-lab/events" },
       { title: "Settings", url: "/workspace/testing-lab/settings" },
     ]);
     expect(launchPad?.url).toBe("/console/community/launch-pad");
@@ -102,7 +103,7 @@ describe("dashboard management navigation", () => {
     ]);
     expect(
       community?.items[0]?.subGroups?.map((item) => item.title),
-    ).toEqual(["Calendar"]);
+    ).toEqual(["Calendar", "Sessions"]);
   });
 
   it("keeps global Testing Lab settings grouped behind one entry", () => {

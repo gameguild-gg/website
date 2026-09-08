@@ -32,6 +32,7 @@ import {
   FolderOpen,
   HeadphonesIcon,
   LayoutDashboard,
+  List,
   FolderKanban,
   Globe2,
   MailCheck,
@@ -213,6 +214,13 @@ export const dashboardNavigationData: DashboardNavGroup[] = [
               'TestingLab.ViewAnalytics',
               'TestingLab.ManageSettings',
             ],
+          },
+          {
+            title: 'Sessions',
+            url: '/workspace/testing-lab/events',
+            icon: List,
+            items: [],
+            requiredCapabilities: ['TestingLab.ManageEvents'],
           },
           {
             title: 'Settings',
