@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -33,11 +33,19 @@ vi.mock("@/components/testing-lab/testing-lab-calendar", () => ({
   TestingLabCalendar: ({
     events,
     eventAnalytics,
+    toolbarStart,
+    toolbarEnd,
   }: {
     events: Array<{ name?: string }>;
     eventAnalytics: Array<{ eventId: string; capacity: number }>;
+    toolbarStart?: ReactNode;
+    toolbarEnd?: ReactNode;
   }) => (
     <section aria-label="Testing Lab calendar">
+      <div role="toolbar" aria-label="Testing Lab calendar controls">
+        {toolbarStart}
+        {toolbarEnd}
+      </div>
       {events.map((event) => (
         <span key={event.name}>{event.name}</span>
       ))}
@@ -144,18 +152,22 @@ describe("testing lab dashboard page", () => {
 
     render(await TestingLabPage());
 
+    const toolbar = screen.getByRole("toolbar", {
+      name: "Testing Lab calendar controls",
+    });
     expect(
-      screen.getByRole("heading", { name: "Testing Lab" }),
+      within(toolbar).getByRole("heading", { name: "Testing Lab" }),
     ).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Public view" })).toHaveAttribute(
-      "href",
-      "/testing-lab",
-    );
+    const publicView = within(toolbar).getByRole("link", {
+      name: "Public view",
+    });
+    expect(publicView).toHaveAttribute("href", "/testing-lab");
+    expect(publicView.textContent).toBe("");
     expect(
       screen.queryByRole("navigation", { name: "Testing Lab operations" }),
     ).not.toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: "New event" }),
+      within(toolbar).getByRole("button", { name: "New event" }),
     ).toBeInTheDocument();
     expect(
       screen.queryByRole("link", { name: /manage events/i }),
@@ -184,7 +196,6 @@ describe("testing lab dashboard page", () => {
       "-m-4",
       "sm:-m-6",
     );
-    expect(screen.getByRole("banner")).not.toHaveClass("border-b");
     expect(screen.getByText("Campus playtest")).toBeInTheDocument();
     expect(screen.getByText("Calendar capacity 10")).toBeInTheDocument();
   });

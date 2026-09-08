@@ -19,6 +19,14 @@ import {
   HoverCardTrigger,
 } from "@game-guild/ui/components/hover-card";
 import { Input } from "@game-guild/ui/components/input";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@game-guild/ui/components/select";
 import { format, isSameMonth, isToday, startOfMonth } from "date-fns";
 import {
   Blend,
@@ -31,7 +39,7 @@ import {
   Search,
   UsersRound,
 } from "lucide-react";
-import { useMemo, useState, useSyncExternalStore } from "react";
+import { type ReactNode, useMemo, useState, useSyncExternalStore } from "react";
 
 import { CreateTestingEventDialog } from "./testing-event-management";
 
@@ -43,6 +51,11 @@ const viewLabels: Record<CalendarView, string> = {
   schedule: "Schedule",
   "3days": "3 days",
 };
+
+const calendarViewItems = calendarViews.map((value) => ({
+  value,
+  label: viewLabels[value],
+}));
 
 const eventFilters = [
   { value: "all", label: "All statuses" },
@@ -537,11 +550,15 @@ export function TestingLabCalendar({
   eventAnalytics = [],
   initialDate = new Date(),
   defaultTimeZone = "UTC",
+  toolbarStart,
+  toolbarEnd,
 }: {
   events: TestingLabTestingEventProjection[];
   eventAnalytics?: TestingLabCalendarEventAnalytics[];
   initialDate?: Date;
   defaultTimeZone?: string;
+  toolbarStart?: ReactNode;
+  toolbarEnd?: ReactNode;
 }) {
   const isMobileCalendar = useSyncExternalStore(
     subscribeToMobileCalendar,
@@ -551,12 +568,11 @@ export function TestingLabCalendar({
   const [selectedView, setSelectedView] = useState<CalendarView | null>(null);
   const view = selectedView ?? (isMobileCalendar ? "schedule" : "month");
   const [anchor, setAnchor] = useState(() => initialDate);
-  const [showWeekends, setShowWeekends] = useState(true);
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<EventFilter>("all");
   const [createDate, setCreateDate] = useState<Date | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
-  const range = calendarRange(anchor, view, showWeekends);
+  const range = calendarRange(anchor, view, true);
   const analyticsByEvent = useMemo(
     () =>
       new Map(
@@ -587,105 +603,116 @@ export function TestingLabCalendar({
       aria-label="Testing Lab calendar"
       className="flex h-full min-h-0 flex-col overflow-hidden bg-background"
     >
-      <div className="flex flex-wrap items-center gap-2 border-b p-2.5">
-        <div className="flex items-center gap-1">
-          <Button
-            className="h-11 px-3 sm:h-9"
-            type="button"
-            variant="outline"
-            onClick={() => setAnchor(new Date())}
-          >
-            Today
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="size-11 sm:size-9"
-            aria-label="Previous period"
-            onClick={() =>
-              setAnchor((date) => shiftCalendarAnchor(date, view, -1))
-            }
-          >
-            <ChevronLeft className="size-4" />
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="size-11 sm:size-9"
-            aria-label="Next period"
-            onClick={() =>
-              setAnchor((date) => shiftCalendarAnchor(date, view, 1))
-            }
-          >
-            <ChevronRight className="size-4" />
-          </Button>
-        </div>
-        <h2 className="min-w-44 flex-1 text-lg font-semibold sm:text-xl">
-          {calendarRangeLabel(anchor, view, range)}
-        </h2>
-        <div className="order-3 flex w-full flex-wrap items-center gap-2 lg:order-none lg:w-auto lg:flex-nowrap">
-          <label className="relative min-w-44 flex-1 lg:w-48 lg:flex-none">
-            <span className="sr-only">Search events</span>
-            <Search
-              className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
-              aria-hidden="true"
-            />
-            <Input
-              type="search"
-              aria-label="Search events"
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search events"
-              className="h-11 border-transparent bg-muted/50 pl-9 shadow-none focus-visible:bg-background sm:h-9"
-            />
-          </label>
-          <label className="inline-flex min-h-11 items-center rounded-md bg-muted/50 px-3 text-sm font-medium sm:min-h-9">
-            <span className="sr-only">Filter events</span>
-            <select
-              aria-label="Filter events"
-              value={statusFilter}
-              onChange={(event) =>
-                setStatusFilter(event.target.value as EventFilter)
-              }
-              className="max-w-36 bg-transparent outline-none"
-            >
-              {eventFilters.map(({ value, label }) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="inline-flex min-h-11 items-center rounded-md bg-muted/50 px-3 text-sm font-medium sm:min-h-9">
-            <span className="sr-only">Calendar view</span>
-            <select
-              aria-label="Calendar view"
-              value={view}
-              onChange={(event) =>
-                setSelectedView(event.target.value as CalendarView)
-              }
-              className="bg-transparent outline-none"
-            >
-              {calendarViews.map((value) => (
-                <option key={value} value={value}>
-                  {viewLabels[value]}
-                </option>
-              ))}
-            </select>
-          </label>
-          {view !== "schedule" && view !== "year" ? (
+      <div className="overflow-x-auto border-b">
+        <div
+          role="toolbar"
+          aria-label="Testing Lab calendar controls"
+          className="flex w-full min-w-max items-center gap-2 p-2.5"
+        >
+          {toolbarStart ? (
+            <div className="mr-2 flex shrink-0 items-center">
+              {toolbarStart}
+            </div>
+          ) : null}
+          <div className="flex items-center gap-1">
             <Button
-              className="h-11 sm:h-9"
+              className="h-11 px-3 sm:h-9"
+              type="button"
+              variant="outline"
+              onClick={() => setAnchor(new Date())}
+            >
+              Today
+            </Button>
+            <Button
               type="button"
               variant="ghost"
-              aria-pressed={showWeekends}
-              onClick={() => setShowWeekends((visible) => !visible)}
+              size="icon"
+              className="size-11 sm:size-9"
+              aria-label="Previous period"
+              onClick={() =>
+                setAnchor((date) => shiftCalendarAnchor(date, view, -1))
+              }
             >
-              {showWeekends ? "Hide weekends" : "Show weekends"}
+              <ChevronLeft className="size-4" />
             </Button>
-          ) : null}
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="size-11 sm:size-9"
+              aria-label="Next period"
+              onClick={() =>
+                setAnchor((date) => shiftCalendarAnchor(date, view, 1))
+              }
+            >
+              <ChevronRight className="size-4" />
+            </Button>
+          </div>
+          <h2 className="min-w-44 text-lg font-semibold sm:text-xl">
+            {calendarRangeLabel(anchor, view, range)}
+          </h2>
+          <div className="ml-auto flex items-center gap-2">
+            <label className="relative min-w-44 flex-1 lg:w-48 lg:flex-none">
+              <span className="sr-only">Search events</span>
+              <Search
+                className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+                aria-hidden="true"
+              />
+              <Input
+                type="search"
+                aria-label="Search events"
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Search events"
+                className="h-11 border-transparent bg-muted/50 pl-9 shadow-none focus-visible:bg-background sm:h-9"
+              />
+            </label>
+            <Select
+              items={eventFilters}
+              value={statusFilter}
+              onValueChange={(value) => setStatusFilter(value as EventFilter)}
+            >
+              <SelectTrigger
+                size="sm"
+                aria-label="Filter events"
+                className="w-40"
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent alignItemWithTrigger={false}>
+                <SelectGroup>
+                  {eventFilters.map(({ value, label }) => (
+                    <SelectItem key={value} value={value}>
+                      {label}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+            <Select
+              items={calendarViewItems}
+              value={view}
+              onValueChange={(value) => setSelectedView(value as CalendarView)}
+            >
+              <SelectTrigger
+                size="sm"
+                aria-label="Calendar view"
+                className="w-28"
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent alignItemWithTrigger={false}>
+                <SelectGroup>
+                  {calendarViews.map((value) => (
+                    <SelectItem key={value} value={value}>
+                      {viewLabels[value]}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+            {toolbarEnd}
+          </div>
         </div>
       </div>
 
@@ -713,7 +740,7 @@ export function TestingLabCalendar({
             analyticsByEvent={analyticsByEvent}
             anchor={anchor}
             view={view}
-            showWeekends={showWeekends}
+            showWeekends
             onCreateEvent={(date) => openCreateEvent(date)}
           />
         </>

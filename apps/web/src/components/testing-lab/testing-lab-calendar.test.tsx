@@ -70,20 +70,29 @@ describe("TestingLabCalendar", () => {
       />,
     );
 
-    expect(screen.getByRole("combobox", { name: "Calendar view" })).toHaveValue(
-      "month",
-    );
+    expect(
+      screen.getByRole("combobox", { name: "Calendar view" }),
+    ).toHaveTextContent("Month");
+    expect(
+      screen.getByRole("combobox", { name: "Calendar view" }),
+    ).toHaveAttribute("data-slot", "select-trigger");
     expect(
       screen.getByRole("searchbox", { name: "Search events" }),
     ).toBeInTheDocument();
-    expect(screen.getByRole("combobox", { name: "Filter events" })).toHaveValue(
-      "all",
-    );
+    expect(
+      screen.getByRole("combobox", { name: "Filter events" }),
+    ).toHaveTextContent("All statuses");
+    expect(
+      screen.getByRole("combobox", { name: "Filter events" }),
+    ).toHaveAttribute("data-slot", "select-trigger");
     expect(
       screen.queryByRole("button", { name: "New event" }),
     ).not.toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: "Hide weekends" }),
+      screen.queryByRole("button", { name: "Hide weekends" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("toolbar", { name: "Testing Lab calendar controls" }),
     ).toBeInTheDocument();
     expect(screen.getByText("Campus playtest")).toBeInTheDocument();
     expect(screen.getByLabelText("In-person event")).toBeInTheDocument();
@@ -111,19 +120,19 @@ describe("TestingLabCalendar", () => {
 
   it("keeps an empty month grid unobstructed", () => {
     render(
-      <TestingLabCalendar
-        events={[]}
-        initialDate={new Date(2030, 7, 10)}
-      />,
+      <TestingLabCalendar events={[]} initialDate={new Date(2030, 7, 10)} />,
     );
 
-    expect(screen.queryByText("No events in this period")).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("No events in this period"),
+    ).not.toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: "Create event on August 19, 2030" }),
     ).toBeInTheDocument();
   });
 
-  it("offers the Google Calendar view set and can switch to the schedule", () => {
+  it("offers the Google Calendar view set and can switch to the schedule", async () => {
+    const user = userEvent.setup();
     render(
       <TestingLabCalendar
         events={events}
@@ -133,15 +142,11 @@ describe("TestingLabCalendar", () => {
     );
 
     const view = screen.getByRole("combobox", { name: "Calendar view" });
+    await user.click(view);
     expect(
-      [...view.querySelectorAll("option")].map((option) => option.value),
-    ).toEqual(["day", "week", "month", "year", "schedule", "3days"]);
-
-    expect(
-      screen.getByRole("button", { name: "Hide weekends" }),
-    ).toBeInTheDocument();
-
-    fireEvent.change(view, { target: { value: "schedule" } });
+      screen.getAllByRole("option").map((option) => option.textContent),
+    ).toEqual(["Day", "Week", "Month", "Year", "Schedule", "3 days"]);
+    await user.click(screen.getByRole("option", { name: "Schedule" }));
 
     expect(
       screen.getByRole("heading", { name: "Schedule" }),
@@ -208,9 +213,8 @@ describe("TestingLabCalendar", () => {
     expect(screen.getByText("Remote build review")).toBeInTheDocument();
 
     await user.clear(screen.getByRole("searchbox", { name: "Search events" }));
-    fireEvent.change(screen.getByRole("combobox", { name: "Filter events" }), {
-      target: { value: "Scheduled" },
-    });
+    await user.click(screen.getByRole("combobox", { name: "Filter events" }));
+    await user.click(screen.getByRole("option", { name: "Scheduled" }));
 
     expect(screen.getByText("Campus playtest")).toBeInTheDocument();
     expect(screen.queryByText("Remote build review")).not.toBeInTheDocument();
@@ -239,7 +243,9 @@ describe("TestingLabCalendar", () => {
       />,
     );
 
-    expect(screen.getByRole("combobox", { name: "Calendar view" })).toHaveValue("schedule");
+    expect(
+      screen.getByRole("combobox", { name: "Calendar view" }),
+    ).toHaveTextContent("Schedule");
     vi.unstubAllGlobals();
   });
 });
