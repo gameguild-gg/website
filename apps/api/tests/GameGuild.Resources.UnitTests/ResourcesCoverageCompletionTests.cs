@@ -95,10 +95,10 @@ public sealed class ResourceUserScopedControllerCoverageTests
         => new(sender, Accessor(actor));
 
     private static UserResourceMetadataController CreateMetadataController(IResourceMetadataRepository repository, ActorContext? actor)
-        => new(repository, Accessor(actor));
+        => new(repository, Mock.Of<ISender>(), Accessor(actor));
 
     private static UserResourceSettingsController CreateSettingsController(IResourceSettingsRepository repository, ActorContext? actor)
-        => new(repository, Accessor(actor));
+        => new(repository, Mock.Of<ISender>(), Accessor(actor));
 
     private static IActorContextAccessor Accessor(ActorContext? actor)
     {
@@ -128,7 +128,6 @@ public sealed class ResourceUserScopedControllerCoverageTests
         => (await action()).Should().BeOfType<OkObjectResult>();
 }
 
-[Collection("ResourceUsageTypeRegistry")]
 public sealed class ResourceInfrastructureCoverageCompletionTests
 {
     [Fact]
@@ -554,10 +553,10 @@ public sealed class QuotaExceededAlertHandlerCoverageCompletionTests
         var gate = typeof(QuotaExceededAlertHandler)
             .GetField("ViolationsLock", BindingFlags.Static | BindingFlags.NonPublic)!
             .GetValue(null)!;
-        var expiredKey = $"expired:{Guid.NewGuid():N}";
         lock (gate)
         {
-            dictionary[expiredKey] = (1, SystemClock.UtcNow.AddHours(-1));
+            dictionary.Clear();
+            dictionary["expired"] = (1, SystemClock.UtcNow.AddHours(-1));
         }
 
         var notification = new QuotaExceededEvent(
@@ -576,7 +575,7 @@ public sealed class QuotaExceededAlertHandlerCoverageCompletionTests
 
         lock (gate)
         {
-            dictionary.Should().NotContainKey(expiredKey);
+            dictionary.Should().NotContainKey("expired");
         }
     }
 }

@@ -108,7 +108,7 @@ public class DiExtensionsAndServiceTests
     public void SessionController_CanBeConstructed()
     {
         var controller = new SessionController(
-            Mock.Of<ISessionManagementService>());
+            Mock.Of<ISessionManagementService>(), new CommandHandlerSender());
 
         controller.Should().NotBeNull();
     }

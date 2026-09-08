@@ -163,7 +163,7 @@ public class ResourceQuotaBehavior<TRequest, TResponse> : IPipelineBehavior<TReq
 
             // CQRS handlers commonly report expected failures through Result instead of throwing.
             // A failed result did not create the resource, so release the reservation as well.
-            if (quotaConsumed && response is Result { IsFailure: true })
+            if (quotaConsumed && CommandOutcome.IsFailure(response))
             {
                 await _quotaService.DecrementUsageAsync(
                     tenantId,

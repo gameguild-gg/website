@@ -60,8 +60,7 @@ public class TestingSessionsController(
         if (userId == null)
             return Unauthorized("User ID not found in token");
 
-        var session = sessionDto.ToTestingSession(userId.Value);
-        var createdSession = await sessionService.CreateTestingSessionAsync(session).ConfigureAwait(false);
+        var createdSession = await mediator.Send(new CreateTestingSessionEndpointCommand(sessionDto, userId.Value)).ConfigureAwait(false);
 
         return CreatedAtAction(nameof(GetTestingSession), new { id = createdSession.Id }, createdSession);
     }
@@ -75,7 +74,7 @@ public class TestingSessionsController(
 
         try
         {
-            var updatedSession = await sessionService.UpdateTestingSessionAsync(session).ConfigureAwait(false);
+            var updatedSession = await mediator.Send(new UpdateTestingSessionEndpointCommand(id, session)).ConfigureAwait(false);
             return Ok(updatedSession);
         }
         catch (InvalidOperationException ex)
@@ -90,7 +89,7 @@ public class TestingSessionsController(
     [RequireTestingLabPermission(TestingLabActions.Delete, TestingLabResourceTypes.Session, "id")]
     public async Task<ActionResult> DeleteTestingSession(Guid id)
     {
-        var result = await sessionService.DeleteTestingSessionAsync(id).ConfigureAwait(false);
+        var result = await mediator.Send(new DeleteTestingSessionEndpointCommand(id)).ConfigureAwait(false);
         if (!result) return NotFound();
         return NoContent();
     }
@@ -100,7 +99,7 @@ public class TestingSessionsController(
     [RequireTestingLabPermission(TestingLabActions.Edit, TestingLabResourceTypes.Session, "id")]
     public async Task<ActionResult> RestoreTestingSession(Guid id)
     {
-        var result = await sessionService.RestoreTestingSessionAsync(id).ConfigureAwait(false);
+        var result = await mediator.Send(new RestoreTestingSessionEndpointCommand(id)).ConfigureAwait(false);
         if (!result) return NotFound();
         return Ok();
     }
@@ -191,7 +190,11 @@ public class TestingSessionsController(
         if (currentUserId == null)
             return Unauthorized("User ID not found in token");
 
-        await sessionService.UpdateSessionAttendanceAsync(sessionId, attendanceDto.UserId, attendanceDto.AttendanceStatus, currentUserId.Value).ConfigureAwait(false);
+        await mediator.Send(new UpdateTestingSessionAttendanceEndpointCommand(
+            sessionId,
+            attendanceDto.UserId,
+            attendanceDto.AttendanceStatus,
+            currentUserId.Value)).ConfigureAwait(false);
 
         return Ok(new { message = "Attendance updated successfully" });
     }

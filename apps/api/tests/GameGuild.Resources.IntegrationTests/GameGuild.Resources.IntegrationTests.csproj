@@ -16,6 +16,7 @@
     <PackageReference Include="Microsoft.NET.Test.Sdk"/>
     <PackageReference Include="Moq"/>
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL"/>
+    <PackageReference Include="Testcontainers.PostgreSql"/>
     <PackageReference Include="xunit"/>
     <PackageReference Include="xunit.runner.visualstudio">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -30,7 +31,6 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Source\GameGuild.API\GameGuild.API.csproj"/>
     <ProjectReference Include="..\..\Source\Modules\GameGuild.Resources\GameGuild.Resources.csproj"/>
-    <ProjectReference Include="..\GameGuild.TestSupport.Economy\GameGuild.TestSupport.Economy.csproj"/>
   </ItemGroup>
 
   <ItemGroup>

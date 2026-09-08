@@ -1,4 +1,5 @@
 using Asp.Versioning;
+using GameGuild.CQRS;
 using GameGuild.Identity.Authorization;
 using GameGuild.Learning.Attributes;
 using GameGuild.Learning.Filters;
@@ -26,7 +27,7 @@ namespace GameGuild.Learning.Experience.LearningPaths;
 [LxpCapabilityFilter]
 [LxpCapability(LxpCapabilities.LearningPaths)]
 [Authorize]
-public class LearningPathController(ILearningPathService learningPathService) : BaseApiController
+public class LearningPathController(ILearningPathService learningPathService, ISender sender) : BaseApiController
 {
     // ===== PUBLIC DISCOVERY ENDPOINTS =====
 
@@ -141,7 +142,14 @@ public class LearningPathController(ILearningPathService learningPathService) : 
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
 
-        var path = await learningPathService.CreatePathAsync(dto, creatorId, tenantId).ConfigureAwait(false);
+        var path = await sender.Send(new CreateLearningPathCommand(
+            creatorId,
+            dto.Title,
+            dto.Difficulty,
+            tenantId,
+            dto.Description,
+            dto.ImageUrl,
+            dto.EstimatedHours)).ConfigureAwait(false);
         return CreatedAtAction(nameof(GetPathById), new { id = path.Id }, path.ToDto());
     }
 
@@ -156,7 +164,14 @@ public class LearningPathController(ILearningPathService learningPathService) : 
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
 
-        var path = await learningPathService.UpdatePathAsync(id, dto).ConfigureAwait(false);
+        var path = await sender.Send(new UpdateLearningPathCommand(
+            id,
+            dto.Title,
+            dto.Description,
+            dto.ImageUrl,
+            dto.EstimatedHours,
+            dto.Difficulty,
+            dto.IsFeatured)).ConfigureAwait(false);
         if (path == null) return NotFound();
         return Ok(path.ToDto());
     }
@@ -168,7 +183,7 @@ public class LearningPathController(ILearningPathService learningPathService) : 
     [RequireResourcePermission<PermissionType, LearningPath>(PermissionType.Delete)]
     public async Task<IActionResult> DeletePath(Guid id)
     {
-        var success = await learningPathService.DeletePathAsync(id).ConfigureAwait(false);
+        var success = await sender.Send(new DeleteLearningPathCommand(id)).ConfigureAwait(false);
         if (!success) return NotFound();
         return NoContent();
     }
@@ -182,7 +197,7 @@ public class LearningPathController(ILearningPathService learningPathService) : 
     {
         try
         {
-            var path = await learningPathService.PublishPathAsync(id).ConfigureAwait(false);
+            var path = await sender.Send(new PublishLearningPathCommand(id)).ConfigureAwait(false);
             if (path == null) return NotFound();
             return Ok(path.ToDto());
         }
@@ -199,7 +214,7 @@ public class LearningPathController(ILearningPathService learningPathService) : 
     [RequireResourcePermission<PermissionType, LearningPath>(PermissionType.Unpublish)]
     public async Task<ActionResult<LearningPathDto>> UnpublishPath(Guid id)
     {
-        var path = await learningPathService.UnpublishPathAsync(id).ConfigureAwait(false);
+        var path = await sender.Send(new UnpublishLearningPathCommand(id)).ConfigureAwait(false);
         if (path == null) return NotFound();
         return Ok(path.ToDto());
     }
@@ -219,7 +234,7 @@ public class LearningPathController(ILearningPathService learningPathService) : 
 
         try
         {
-            var path = await learningPathService.AddCourseToPathAsync(id, dto).ConfigureAwait(false);
+            var path = await sender.Send(new AddCourseToPathCommand(id, dto.CourseId, dto.Order, dto.IsRequired)).ConfigureAwait(false);
             if (path == null) return NotFound();
             return Ok(path.ToDetailDto());
         }
@@ -236,7 +251,7 @@ public class LearningPathController(ILearningPathService learningPathService) : 
     [RequireResourcePermission<PermissionType, LearningPath>(PermissionType.Edit)]
     public async Task<IActionResult> RemoveCourseFromPath(Guid id, Guid courseId)
     {
-        var success = await learningPathService.RemoveCourseFromPathAsync(id, courseId).ConfigureAwait(false);
+        var success = await sender.Send(new RemoveCourseFromPathCommand(id, courseId)).ConfigureAwait(false);
         if (!success) return NotFound();
         return NoContent();
     }
@@ -252,7 +267,7 @@ public class LearningPathController(ILearningPathService learningPathService) : 
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
 
-        var path = await learningPathService.ReorderCoursesAsync(id, dto).ConfigureAwait(false);
+        var path = await sender.Send(new ReorderPathCoursesCommand(id, dto.Courses)).ConfigureAwait(false);
         if (path == null) return NotFound();
         return Ok(path.ToDetailDto());
     }
@@ -269,7 +284,7 @@ public class LearningPathController(ILearningPathService learningPathService) : 
     {
         try
         {
-            var enrollment = await learningPathService.EnrollAsync(id, userId).ConfigureAwait(false);
+            var enrollment = await sender.Send(new EnrollInPathCommand(id, userId)).ConfigureAwait(false);
             return CreatedAtAction(nameof(GetUserEnrollment), new { id, userId }, enrollment.ToDto());
         }
         catch (InvalidOperationException ex)
@@ -286,7 +301,7 @@ public class LearningPathController(ILearningPathService learningPathService) : 
         Guid id,
         [FromQuery] Guid userId)
     {
-        var success = await learningPathService.UnenrollAsync(id, userId).ConfigureAwait(false);
+        var success = await sender.Send(new UnenrollFromPathCommand(id, userId)).ConfigureAwait(false);
         if (!success) return NotFound();
         return NoContent();
     }
@@ -323,7 +338,7 @@ public class LearningPathController(ILearningPathService learningPathService) : 
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
 
-        var enrollment = await learningPathService.UpdateProgressAsync(id, userId, dto).ConfigureAwait(false);
+        var enrollment = await sender.Send(new UpdatePathProgressCommand(id, userId, dto.CoursesCompleted)).ConfigureAwait(false);
         if (enrollment == null) return NotFound();
         return Ok(enrollment.ToDto());
     }
@@ -336,7 +351,7 @@ public class LearningPathController(ILearningPathService learningPathService) : 
         Guid id,
         [FromQuery] Guid userId)
     {
-        var enrollment = await learningPathService.CompletePathAsync(id, userId).ConfigureAwait(false);
+        var enrollment = await sender.Send(new CompletePathCommand(id, userId)).ConfigureAwait(false);
         if (enrollment == null) return NotFound();
         return Ok(enrollment.ToDto());
     }
@@ -349,7 +364,7 @@ public class LearningPathController(ILearningPathService learningPathService) : 
         Guid id,
         [FromQuery] Guid userId)
     {
-        var success = await learningPathService.AbandonPathAsync(id, userId).ConfigureAwait(false);
+        var success = await sender.Send(new AbandonPathCommand(id, userId)).ConfigureAwait(false);
         if (!success) return NotFound();
         return NoContent();
     }

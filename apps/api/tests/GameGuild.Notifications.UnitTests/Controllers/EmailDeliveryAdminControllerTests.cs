@@ -360,10 +360,11 @@ public class EmailDeliveryAdminControllerTests
         resolver.Setup(r => r.ResolveAsync(It.IsAny<Notification>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Notification n, CancellationToken _) => n.RecipientEmail);
 
-        return new EmailDeliveryAdminController(new EmailDeliveryAdminService(
+        var service = new EmailDeliveryAdminService(
             new ApplicationDbContextAdapter(context),
             resolver.Object,
-            NullLogger<EmailDeliveryAdminService>.Instance));
+            NullLogger<EmailDeliveryAdminService>.Instance);
+        return new EmailDeliveryAdminController(service, new HandlerSender(new EmailDeliveryAdminCommandHandler(service)));
     }
 
     private static Notification DeadLetteredNotification(string email, NotificationType type)

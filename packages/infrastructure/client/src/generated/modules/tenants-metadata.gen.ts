@@ -20,7 +20,7 @@ export class TenantsMetadataModule {
    *
    * Retrieves comprehensive tenant metadata including custom fields, tags, external references, and business information.
    */
-  async getTenantsMetadata(tenantId: string): Promise<Result<Types.IdentityTenantsTenantMetadata, ApiError>> {
+  async getTenantsMetadata(tenantId: string): Promise<Result<Types.IdentityTenantsTenantMetadataDto, ApiError>> {
     const url = `/v1/tenants/${tenantId}/metadata`;
 
     const result = await this.client.request({
@@ -31,7 +31,7 @@ export class TenantsMetadataModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.IdentityTenantsTenantMetadataSchema, result.data, 'response');
+      const validatedData = safeParse(Types.IdentityTenantsTenantMetadataDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 

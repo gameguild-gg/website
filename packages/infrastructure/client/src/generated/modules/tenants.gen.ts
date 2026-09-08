@@ -25,7 +25,7 @@ export class TenantsModule {
     pageSize?: number;
     status?: string;
     searchTerm?: string;
-  }): Promise<Result<Types.PagedResultOfIdentityTenantsTenant, ApiError>> {
+  }): Promise<Result<Types.PagedResultTenant, ApiError>> {
     const url = '/v1/tenants';
 
     const result = await this.client.request({
@@ -37,7 +37,7 @@ export class TenantsModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.PagedResultOfIdentityTenantsTenantSchema, result.data, 'response');
+      const validatedData = safeParse(Types.PagedResultTenantSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -541,7 +541,7 @@ export class TenantsModule {
   async getTenantsAuditLog(
     tenantId: string,
     query?: { startDate?: string; endDate?: string; action?: string; actorId?: string; page?: number; pageSize?: number },
-  ): Promise<Result<Types.PagedResultOfIdentityTenantsTenantAuditLogEntry, ApiError>> {
+  ): Promise<Result<Types.PagedResultTenantAuditLogEntry, ApiError>> {
     const url = `/v1/tenants/${tenantId}/audit-log`;
 
     const result = await this.client.request({
@@ -553,7 +553,7 @@ export class TenantsModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.PagedResultOfIdentityTenantsTenantAuditLogEntrySchema, result.data, 'response');
+      const validatedData = safeParse(Types.PagedResultTenantAuditLogEntrySchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 

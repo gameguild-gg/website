@@ -344,6 +344,20 @@ public class AssetAccessService : IAssetAccessService
         return payload != null;
     }
 
+    public bool ValidateToken(
+        string token,
+        Guid assetReferenceId,
+        Guid? tenantId,
+        TransformationSpec? transformation)
+    {
+        var payload = _tokenService.ValidateToken(
+            token,
+            assetReferenceId,
+            tenantId ?? Guid.Empty,
+            transformation);
+        return payload != null;
+    }
+
     private string BuildAccessUrl(
         Guid assetReferenceId,
         string token,

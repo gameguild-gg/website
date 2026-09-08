@@ -1,4 +1,5 @@
 using Asp.Versioning;
+using GameGuild.CQRS;
 using GameGuild.Identity.Authorization;
 using GameGuild.Identity.Context.Actors;
 using GameGuild.Learning.Courses;
@@ -26,6 +27,7 @@ public class AssessmentsController : BaseApiController
     private readonly IPermissionQueryService _permissionQueryService;
     private readonly IGradingQueueService _gradingQueueService;
     private readonly ILogger<AssessmentsController> _logger;
+    private readonly ISender _sender;
 
     public AssessmentsController(
         IAssessmentService assessmentService,
@@ -34,7 +36,8 @@ public class AssessmentsController : BaseApiController
         IEnrollmentService enrollmentService,
         IPermissionQueryService permissionQueryService,
         IGradingQueueService gradingQueueService,
-        ILogger<AssessmentsController> logger)
+        ILogger<AssessmentsController> logger,
+        ISender sender)
     {
         _assessmentService = assessmentService;
         _actorContextAccessor = actorContextAccessor;
@@ -43,6 +46,7 @@ public class AssessmentsController : BaseApiController
         _permissionQueryService = permissionQueryService;
         _gradingQueueService = gradingQueueService;
         _logger = logger;
+        _sender = sender;
     }
 
     // ===== ASSESSMENT MANAGEMENT =====
@@ -57,7 +61,7 @@ public class AssessmentsController : BaseApiController
         if (program == null) return NotFound();
         if (!await CanManageCourseAsync(program.Id).ConfigureAwait(false)) return Forbid();
 
-        var result = await _assessmentService.CreateAssessmentAsync(request).ConfigureAwait(false);
+        var result = await _sender.Send(new CreateAssessmentEndpointCommand(request)).ConfigureAwait(false);
         if (!result.IsSuccess)
         {
             return BadRequest(result.Error);
@@ -142,7 +146,7 @@ public class AssessmentsController : BaseApiController
         if (program == null) return NotFound();
         if (!await CanManageCourseAsync(program.Id).ConfigureAwait(false)) return Forbid();
 
-        var result = await _assessmentService.CreateAssessmentGroupAsync(request).ConfigureAwait(false);
+        var result = await _sender.Send(new CreateAssessmentGroupEndpointCommand(request)).ConfigureAwait(false);
         if (!result.IsSuccess)
         {
             return BadRequest(result.Error);
@@ -164,7 +168,7 @@ public class AssessmentsController : BaseApiController
         if (group == null) return NotFound();
         if (!await CanManageCourseAsync(group.CourseId).ConfigureAwait(false)) return Forbid();
 
-        var result = await _assessmentService.UpdateAssessmentGroupAsync(id, request).ConfigureAwait(false);
+        var result = await _sender.Send(new UpdateAssessmentGroupEndpointCommand(id, request)).ConfigureAwait(false);
         if (!result.IsSuccess)
         {
             return result.Error.Type == ErrorType.NotFound
@@ -185,7 +189,7 @@ public class AssessmentsController : BaseApiController
         if (group == null) return NotFound();
         if (!await CanManageCourseAsync(group.CourseId).ConfigureAwait(false)) return Forbid();
 
-        var result = await _assessmentService.DeleteAssessmentGroupAsync(id).ConfigureAwait(false);
+        var result = await _sender.Send(new DeleteAssessmentGroupEndpointCommand(id)).ConfigureAwait(false);
         if (!result.IsSuccess)
         {
             return result.Error.Type == ErrorType.NotFound
@@ -206,7 +210,7 @@ public class AssessmentsController : BaseApiController
         if (assessment == null) return NotFound();
         if (!await CanManageCourseAsync(assessment.CourseId).ConfigureAwait(false)) return Forbid();
 
-        var result = await _assessmentService.UpdateAssessmentAsync(id, request).ConfigureAwait(false);
+        var result = await _sender.Send(new UpdateAssessmentEndpointCommand(id, request)).ConfigureAwait(false);
         if (!result.IsSuccess)
         {
             return result.Error.Type == ErrorType.NotFound 
@@ -227,7 +231,7 @@ public class AssessmentsController : BaseApiController
         if (assessment == null) return NotFound();
         if (!await CanManageCourseAsync(assessment.CourseId).ConfigureAwait(false)) return Forbid();
 
-        var result = await _assessmentService.AssignAssessmentToGroupAsync(id, request).ConfigureAwait(false);
+        var result = await _sender.Send(new AssignAssessmentToGroupEndpointCommand(id, request)).ConfigureAwait(false);
         if (!result.IsSuccess)
         {
             return result.Error.Type == ErrorType.NotFound
@@ -250,7 +254,7 @@ public class AssessmentsController : BaseApiController
         if (assessment == null) return NotFound();
         if (!await CanManageCourseAsync(assessment.CourseId).ConfigureAwait(false)) return Forbid();
 
-        var result = await _assessmentService.LinkInteractiveVideoCueAsync(id, request).ConfigureAwait(false);
+        var result = await _sender.Send(new LinkInteractiveVideoCueEndpointCommand(id, request)).ConfigureAwait(false);
         if (!result.IsSuccess)
         {
             return result.Error.Type == ErrorType.NotFound
@@ -285,7 +289,7 @@ public class AssessmentsController : BaseApiController
         if (assessment == null) return NotFound();
         if (!await CanManageCourseAsync(assessment.CourseId).ConfigureAwait(false)) return Forbid();
 
-        var result = await _assessmentService.UnlinkInteractiveVideoCueAsync(id, cueId).ConfigureAwait(false);
+        var result = await _sender.Send(new UnlinkInteractiveVideoCueEndpointCommand(id, cueId)).ConfigureAwait(false);
         if (!result.IsSuccess)
         {
             return result.Error.Type == ErrorType.NotFound ? NotFound(result.Error) : BadRequest(result.Error);
@@ -327,7 +331,7 @@ public class AssessmentsController : BaseApiController
         if (assessment == null) return NotFound();
         if (!await CanManageCourseAsync(assessment.CourseId).ConfigureAwait(false)) return Forbid();
 
-        var result = await _assessmentService.DeleteAssessmentAsync(id).ConfigureAwait(false);
+        var result = await _sender.Send(new DeleteAssessmentEndpointCommand(id)).ConfigureAwait(false);
         if (!result.IsSuccess)
         {
             return result.Error.Type == ErrorType.NotFound 
@@ -348,7 +352,7 @@ public class AssessmentsController : BaseApiController
         if (assessment == null) return NotFound();
         if (!await CanManageCourseAsync(assessment.CourseId).ConfigureAwait(false)) return Forbid();
 
-        var result = await _assessmentService.RestoreAssessmentAsync(id).ConfigureAwait(false);
+        var result = await _sender.Send(new RestoreAssessmentEndpointCommand(id)).ConfigureAwait(false);
         if (!result.IsSuccess)
         {
             return result.Error.Type == ErrorType.NotFound
@@ -398,10 +402,10 @@ public class AssessmentsController : BaseApiController
             assessmentId,
             request.EnrollmentId,
             enrollmentUserId.Value);
-        var result = await _assessmentService.StartSubmissionAsync(
+        var result = await _sender.Send(new StartAssessmentSubmissionEndpointCommand(
             assessmentId,
             request.EnrollmentId,
-            enrollmentUserId.Value).ConfigureAwait(false);
+            enrollmentUserId.Value)).ConfigureAwait(false);
 
         if (!result.IsSuccess)
         {
@@ -438,7 +442,7 @@ public class AssessmentsController : BaseApiController
         if (submission == null) return NotFound();
         if (submission.UserId != actorUserId.Value) return Forbid();
 
-        var result = await _assessmentService.SubmitAsync(submissionId, request).ConfigureAwait(false);
+        var result = await _sender.Send(new SubmitAssessmentEndpointCommand(submissionId, request)).ConfigureAwait(false);
         if (!result.IsSuccess)
         {
             return BadRequest(result.Error);
@@ -463,9 +467,9 @@ public class AssessmentsController : BaseApiController
 
         var graderId = _actorContextAccessor.ActorContext.SubjectIdAsGuid;
         if (!graderId.HasValue) return Unauthorized();
-        var result = await _assessmentService.GradeSubmissionAsync(
+        var result = await _sender.Send(new GradeAssessmentSubmissionEndpointCommand(
                 submissionId,
-                request with { GradedBy = graderId.Value })
+                request with { GradedBy = graderId.Value }))
             .ConfigureAwait(false);
         if (!result.IsSuccess)
         {

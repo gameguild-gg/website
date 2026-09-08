@@ -120,7 +120,7 @@ export class TenantsSettingsModule {
    *
    * Retrieves third-party integration configurations for the tenant.
    */
-  async getTenantsSettingsIntegrationSettings(tenantId: string): Promise<Result<Types.IdentityTenantsTenantIntegrationSettings, ApiError>> {
+  async getTenantsSettingsIntegrationSettings(tenantId: string): Promise<Result<Types.IdentityTenantsTenantIntegrationSettingsDto, ApiError>> {
     const url = `/v1/tenants/${tenantId}/settings/integration-settings`;
 
     const result = await this.client.request({
@@ -131,7 +131,7 @@ export class TenantsSettingsModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.IdentityTenantsTenantIntegrationSettingsSchema, result.data, 'response');
+      const validatedData = safeParse(Types.IdentityTenantsTenantIntegrationSettingsDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -167,7 +167,7 @@ export class TenantsSettingsModule {
    *
    * Retrieves system limits and resource constraints configured for the tenant.
    */
-  async getTenantsSettingsSystemLimits(tenantId: string): Promise<Result<Types.IdentityTenantsTenantSystemLimits, ApiError>> {
+  async getTenantsSettingsSystemLimits(tenantId: string): Promise<Result<Types.IdentityTenantsTenantSystemLimitsDto, ApiError>> {
     const url = `/v1/tenants/${tenantId}/settings/system-limits`;
 
     const result = await this.client.request({
@@ -178,7 +178,7 @@ export class TenantsSettingsModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.IdentityTenantsTenantSystemLimitsSchema, result.data, 'response');
+      const validatedData = safeParse(Types.IdentityTenantsTenantSystemLimitsDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 

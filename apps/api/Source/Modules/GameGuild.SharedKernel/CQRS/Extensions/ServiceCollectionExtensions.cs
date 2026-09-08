@@ -68,9 +68,34 @@ public static class ServiceCollectionExtensions
             services.AddRequestHandlers(assembly);
             services.AddNotificationHandlers(assembly);
             services.AddFluentValidators(assembly);
+            services.AddUnavailableUseCaseHandlers(assembly);
         }
 
         return services;
+    }
+
+    private static void AddUnavailableUseCaseHandlers(this IServiceCollection services, Assembly assembly)
+    {
+        var contracts = assembly.GetCustomAttributes<UseCaseEventContractAttribute>()
+            .Where(contract => !string.IsNullOrWhiteSpace(contract.UnavailableReason));
+        foreach (var contract in contracts)
+        {
+            var commandInterface = contract.CommandType.GetInterfaces().Single(@interface =>
+                @interface.Namespace == typeof(ICommand).Namespace
+                && @interface.Name.StartsWith(nameof(ICommand), StringComparison.Ordinal));
+            var implementationType = commandInterface.IsGenericType
+                ? typeof(UnavailableCommandHandler<,>).MakeGenericType(
+                    contract.CommandType,
+                    commandInterface.GetGenericArguments()[0])
+                : typeof(UnavailableCommandHandler<>).MakeGenericType(contract.CommandType);
+
+            foreach (var serviceType in implementationType.GetInterfaces().Where(@interface =>
+                         @interface.IsGenericType
+                         && RequestHandlerInterfaceTypes.Contains(@interface.GetGenericTypeDefinition())))
+            {
+                services.TryAdd(new ServiceDescriptor(serviceType, implementationType, ServiceLifetime.Transient));
+            }
+        }
     }
 
     /// <summary>

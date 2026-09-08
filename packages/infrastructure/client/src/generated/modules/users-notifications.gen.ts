@@ -33,7 +33,7 @@ export class UsersNotificationsModule {
       fromDate?: string;
       toDate?: string;
     },
-  ): Promise<Result<Types.PagedResultOfIdentityUsersUserNotification, ApiError>> {
+  ): Promise<Result<Types.PagedResultUserNotificationDto, ApiError>> {
     const url = `/v1/users/${userId}/notifications`;
 
     const result = await this.client.request({
@@ -45,7 +45,7 @@ export class UsersNotificationsModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.PagedResultOfIdentityUsersUserNotificationSchema, result.data, 'response');
+      const validatedData = safeParse(Types.PagedResultUserNotificationDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -146,7 +146,7 @@ export class UsersNotificationsModule {
   async getUsersNotificationsForGetUsersByUserIdNotificationsByNotificationId(
     userId: string,
     notificationId: string,
-  ): Promise<Result<Types.IdentityUsersUserNotificationDetail, ApiError>> {
+  ): Promise<Result<Types.IdentityUsersUserNotificationDetailDto, ApiError>> {
     const url = `/v1/users/${userId}/notifications/${notificationId}`;
 
     const result = await this.client.request({
@@ -157,7 +157,7 @@ export class UsersNotificationsModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.IdentityUsersUserNotificationDetailSchema, result.data, 'response');
+      const validatedData = safeParse(Types.IdentityUsersUserNotificationDetailDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 

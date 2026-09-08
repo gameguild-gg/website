@@ -1,7 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
 using FluentAssertions;
-using GameGuild.Economy.Risk;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Options;
@@ -18,7 +17,7 @@ public sealed class SumSubKycAmlOrchestratorTests
     {
         var request = new StartKycAmlRequest(Guid.NewGuid(), "subject", "key", Now);
         new KycAmlOnboarding("applicant", "subject", KycAmlState.Created, Now).ApplicantId.Should().Be("applicant");
-        new SumSubWebhookIngestionResult(ComplianceEvidenceIngestionStatus.Published, "event", KycAmlState.Approved, Guid.NewGuid())
+        new SumSubWebhookIngestionResult(KycEvidenceIngestionStatus.Published, "event", KycAmlState.Approved, Guid.NewGuid())
             .ProviderEventId.Should().Be("event");
         request.IdempotencyKey.Should().Be("key");
 
@@ -105,21 +104,21 @@ public sealed class SumSubKycAmlOrchestratorTests
         var published = await service.IngestWebhookAsync(payload, "digest", "algorithm", Now, Now, CancellationToken.None);
         var duplicate = await service.IngestWebhookAsync(payload, "digest", "algorithm", Now, Now, CancellationToken.None);
 
-        published.Status.Should().Be(ComplianceEvidenceIngestionStatus.Published);
+        published.Status.Should().Be(KycEvidenceIngestionStatus.Published);
         published.State.Should().Be(KycAmlState.Approved);
-        duplicate.Status.Should().Be(ComplianceEvidenceIngestionStatus.Duplicate);
-        evidence.Envelopes.Should().ContainSingle().Which.Result.Should().Be(ComplianceEvidenceResult.Approved);
+        duplicate.Status.Should().Be(KycEvidenceIngestionStatus.Duplicate);
+        evidence.Envelopes.Should().ContainSingle().Which.Result.Should().Be(KycEvidenceResult.Approved);
         evidence.Envelopes.Single().JurisdictionCode.Should().Be("BRA");
 
         var conflicting = Payload(onboarding.ApplicantId, "event-1", "completed", "RED");
         await FluentActions.Awaiting(() => service.IngestWebhookAsync(
                 conflicting, "digest", "algorithm", Now, Now, CancellationToken.None))
-            .Should().ThrowAsync<ComplianceEvidenceConflictException>();
+            .Should().ThrowAsync<KycEvidenceConflictException>();
 
         var older = Payload(onboarding.ApplicantId, "event-older", "pending", null);
         var deferred = await service.IngestWebhookAsync(
             older, "digest", "algorithm", Now.AddSeconds(-1), Now, CancellationToken.None);
-        deferred.Status.Should().Be(ComplianceEvidenceIngestionStatus.Deferred);
+        deferred.Status.Should().Be(KycEvidenceIngestionStatus.Deferred);
         deferred.State.Should().Be(KycAmlState.Approved);
     }
 
@@ -153,19 +152,19 @@ public sealed class SumSubKycAmlOrchestratorTests
         var invalidSignature = await service.IngestWebhookAsync(
             Payload(onboarding.ApplicantId, "invalid-signature", "pending", null),
             "digest", "algorithm", Now.AddSeconds(1), Now.AddSeconds(1), CancellationToken.None);
-        invalidSignature.Status.Should().Be(ComplianceEvidenceIngestionStatus.Rejected);
+        invalidSignature.Status.Should().Be(KycEvidenceIngestionStatus.Rejected);
 
         provider.VerifyResult = true;
         var unknown = await service.IngestWebhookAsync(
             Payload("unknown-applicant", "unknown", "pending", null),
             "digest", "algorithm", Now.AddSeconds(2), Now.AddSeconds(2), CancellationToken.None);
-        unknown.Status.Should().Be(ComplianceEvidenceIngestionStatus.Rejected);
+        unknown.Status.Should().Be(KycEvidenceIngestionStatus.Rejected);
         unknown.State.Should().Be(KycAmlState.NeedsReview);
 
         var invalidTimestamp = await service.IngestWebhookAsync(
             Payload(onboarding.ApplicantId, "future", "pending", null),
             "digest", "algorithm", Now.AddSeconds(4), Now.AddSeconds(3), CancellationToken.None);
-        invalidTimestamp.Status.Should().Be(ComplianceEvidenceIngestionStatus.Rejected);
+        invalidTimestamp.Status.Should().Be(KycEvidenceIngestionStatus.Rejected);
 
         var cases = new[]
         {
@@ -184,11 +183,11 @@ public sealed class SumSubKycAmlOrchestratorTests
             second++;
         }
 
-        evidence.NextStatus = ComplianceEvidenceIngestionStatus.Deferred;
+        evidence.NextStatus = KycEvidenceIngestionStatus.Deferred;
         var nonPublished = await service.IngestWebhookAsync(
             Payload(onboarding.ApplicantId, "not-published", "completed", "GREEN"),
             "digest", "algorithm", Now.AddSeconds(20), Now.AddSeconds(20), CancellationToken.None);
-        nonPublished.Status.Should().Be(ComplianceEvidenceIngestionStatus.Deferred);
+        nonPublished.Status.Should().Be(KycEvidenceIngestionStatus.Deferred);
     }
 
     [Fact]
@@ -203,13 +202,13 @@ public sealed class SumSubKycAmlOrchestratorTests
 
         var cases = new[]
         {
-            (KycAmlState.Approved, ComplianceEvidenceResult.Approved, TimeSpan.FromDays(30)),
-            (KycAmlState.Rejected, ComplianceEvidenceResult.Rejected, TimeSpan.FromDays(2)),
-            (KycAmlState.Created, ComplianceEvidenceResult.NeedsReview, TimeSpan.FromDays(2)),
-            (KycAmlState.ApplicantPending, ComplianceEvidenceResult.NeedsReview, TimeSpan.FromDays(2)),
-            (KycAmlState.InReview, ComplianceEvidenceResult.NeedsReview, TimeSpan.FromDays(2)),
-            (KycAmlState.NeedsReview, ComplianceEvidenceResult.NeedsReview, TimeSpan.FromDays(2)),
-            (KycAmlState.Expired, ComplianceEvidenceResult.Unavailable, TimeSpan.FromDays(2))
+            (KycAmlState.Approved, KycEvidenceResult.Approved, TimeSpan.FromDays(30)),
+            (KycAmlState.Rejected, KycEvidenceResult.Rejected, TimeSpan.FromDays(2)),
+            (KycAmlState.Created, KycEvidenceResult.NeedsReview, TimeSpan.FromDays(2)),
+            (KycAmlState.ApplicantPending, KycEvidenceResult.NeedsReview, TimeSpan.FromDays(2)),
+            (KycAmlState.InReview, KycEvidenceResult.NeedsReview, TimeSpan.FromDays(2)),
+            (KycAmlState.NeedsReview, KycEvidenceResult.NeedsReview, TimeSpan.FromDays(2)),
+            (KycAmlState.Expired, KycEvidenceResult.Unavailable, TimeSpan.FromDays(2))
         };
         var offset = 1;
         foreach (var (state, expected, lifetime) in cases)
@@ -217,15 +216,15 @@ public sealed class SumSubKycAmlOrchestratorTests
             provider.StatusState = state;
             var at = Now.AddMinutes(offset++);
             var result = await service.ReconcileAsync(tenant, "subject", at, CancellationToken.None);
-            result.Status.Should().Be(ComplianceEvidenceIngestionStatus.Published);
+            result.Status.Should().Be(KycEvidenceIngestionStatus.Published);
             evidence.Envelopes[^1].Result.Should().Be(expected);
             evidence.Envelopes[^1].ExpiresAt.Should().Be(at.Add(lifetime));
         }
 
-        evidence.NextStatus = ComplianceEvidenceIngestionStatus.Deferred;
+        evidence.NextStatus = KycEvidenceIngestionStatus.Deferred;
         provider.StatusState = KycAmlState.Approved;
         (await service.ReconcileAsync(tenant, "subject", Now.AddHours(1), CancellationToken.None)).Status
-            .Should().Be(ComplianceEvidenceIngestionStatus.Deferred);
+            .Should().Be(KycEvidenceIngestionStatus.Deferred);
         await FluentActions.Awaiting(() => service.ReconcileAsync(tenant, "missing", Now, CancellationToken.None))
             .Should().ThrowAsync<KeyNotFoundException>();
 
@@ -366,19 +365,19 @@ public sealed class SumSubKycAmlOrchestratorTests
             DateTimeOffset receivedAt) => VerifyResult;
     }
 
-    private sealed class RecordingEvidenceStore : IComplianceEvidenceStore
+    private sealed class RecordingEvidenceStore : IKycEvidenceStore
     {
-        public List<ComplianceEvidenceEnvelope> Envelopes { get; } = [];
-        public ComplianceEvidenceIngestionStatus NextStatus { get; set; } = ComplianceEvidenceIngestionStatus.Published;
+        public List<KycEvidenceSubmission> Envelopes { get; } = [];
+        public KycEvidenceIngestionStatus NextStatus { get; set; } = KycEvidenceIngestionStatus.Published;
 
-        public ValueTask<ComplianceEvidenceIngestionResult> IngestAsync(
-            ComplianceEvidenceEnvelope envelope,
+        public ValueTask<KycEvidenceIngestionResult> IngestAsync(
+            KycEvidenceSubmission envelope,
             CancellationToken cancellationToken)
         {
             Envelopes.Add(envelope);
-            Guid? evidenceId = NextStatus == ComplianceEvidenceIngestionStatus.Published ? Guid.NewGuid() : null;
-            var result = new ComplianceEvidenceIngestionResult(NextStatus, evidenceId);
-            NextStatus = ComplianceEvidenceIngestionStatus.Published;
+            Guid? evidenceId = NextStatus == KycEvidenceIngestionStatus.Published ? Guid.NewGuid() : null;
+            var result = new KycEvidenceIngestionResult(NextStatus, evidenceId);
+            NextStatus = KycEvidenceIngestionStatus.Published;
             return ValueTask.FromResult(result);
         }
     }

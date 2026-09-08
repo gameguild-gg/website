@@ -21,7 +21,7 @@ export class EconomyLegacyMigrationAdministrationModule {
     state?: Types.EconomyOperationsLegacyEconomyShadowState;
     limit?: number;
     cursor?: string;
-  }): Promise<Result<Types.EconomyOperationsEconomyOperationalPageOfEconomyOperationsLegacyEconomyShadowBatchSummary, ApiError>> {
+  }): Promise<Result<Types.EconomyOperationsEconomyOperationalPageLegacyEconomyShadowBatchSummary, ApiError>> {
     const url = '/api/v1/admin/economy/legacy-migration/batches';
 
     const result = await this.client.request({
@@ -33,11 +33,7 @@ export class EconomyLegacyMigrationAdministrationModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(
-        Types.EconomyOperationsEconomyOperationalPageOfEconomyOperationsLegacyEconomyShadowBatchSummarySchema,
-        result.data,
-        'response',
-      );
+      const validatedData = safeParse(Types.EconomyOperationsEconomyOperationalPageLegacyEconomyShadowBatchSummarySchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 

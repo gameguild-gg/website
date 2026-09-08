@@ -1,7 +1,8 @@
+"use client"
+
 import * as React from "react"
 
 export type LegacyLayerEventHandler = (event: Event) => void
-
 export interface LegacyLayerHandlers {
   onOpenAutoFocus?: LegacyLayerEventHandler
   onCloseAutoFocus?: LegacyLayerEventHandler
@@ -11,54 +12,75 @@ export interface LegacyLayerHandlers {
   onEscapeKeyDown?: LegacyLayerEventHandler
 }
 
+interface ChangeDetails {
+  reason: string
+  event: Event | React.SyntheticEvent
+  cancel(): void
+}
+
+export const LegacyLayerContext = React.createContext<React.RefObject<LegacyLayerHandlers> | null>(null)
+
+// Cancellation must reach the primitive's own state transition. Document-level
+// listeners cannot reliably prevent Base UI dismissal, and also observe closed
+// or unrelated popups. Each root owns exactly its own content handlers.
+export function useLegacyLayerRoot<Details extends ChangeDetails>(onOpenChange?: (open: boolean, details: Details) => void) {
+  const handlers = React.useRef<LegacyLayerHandlers>({})
+  const handleOpenChange = (open: boolean, details: Details) => {
+    if (!open) {
+      const original = "nativeEvent" in details.event ? details.event.nativeEvent : details.event
+      const event = details.reason === "escape-key" ? original : new CustomEvent(details.reason, {
+        cancelable: true, detail: { originalEvent: original },
+      })
+      if (details.reason === "escape-key") handlers.current.onEscapeKeyDown?.(event)
+      if (details.reason === "outside-press") {
+        handlers.current.onPointerDownOutside?.(event)
+        handlers.current.onInteractOutside?.(event)
+      }
+      if (details.reason === "focus-out") {
+        handlers.current.onFocusOutside?.(event)
+        handlers.current.onInteractOutside?.(event)
+      }
+      if (event.defaultPrevented) { details.cancel(); return }
+    }
+    onOpenChange?.(open, details)
+  }
+  return { handlers, onOpenChange: handleOpenChange }
+}
+
 export function useMergedRefs<T>(...refs: Array<React.Ref<T> | undefined>) {
   return React.useCallback((value: T | null) => {
-    for (const ref of refs) {
-      if (typeof ref === "function") ref(value)
-      else if (ref) (ref as React.MutableRefObject<T | null>).current = value
-    }
+    const cleanups = refs.map(ref => {
+      if (typeof ref === "function") {
+        const cleanup = ref(value)
+        return typeof cleanup === "function" ? cleanup : () => ref(null)
+      }
+      if (ref) {
+        ref.current = value
+        return () => { ref.current = null }
+      }
+      return undefined
+    })
+    return () => cleanups.forEach(cleanup => cleanup?.())
   }, refs)
 }
 
 export function useLegacyLayerHandlers(
-  elementRef: React.RefObject<HTMLElement | null>,
+  _elementRef: React.RefObject<HTMLElement | null>,
   handlers: LegacyLayerHandlers
 ) {
-  React.useEffect(() => {
-    handlers.onOpenAutoFocus?.(new Event("openAutoFocus", { cancelable: true }))
-
-    const isOutside = (target: EventTarget | null) =>
-      target instanceof Node && !elementRef.current?.contains(target)
-    const onPointerDown = (event: PointerEvent) => {
-      if (!isOutside(event.target)) return
-      handlers.onPointerDownOutside?.(event)
-      handlers.onInteractOutside?.(event)
-    }
-    const onFocusIn = (event: FocusEvent) => {
-      if (!isOutside(event.target)) return
-      handlers.onFocusOutside?.(event)
-      handlers.onInteractOutside?.(event)
-    }
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") handlers.onEscapeKeyDown?.(event)
-    }
-
-    document.addEventListener("pointerdown", onPointerDown, true)
-    document.addEventListener("focusin", onFocusIn, true)
-    document.addEventListener("keydown", onKeyDown, true)
-    return () => {
-      document.removeEventListener("pointerdown", onPointerDown, true)
-      document.removeEventListener("focusin", onFocusIn, true)
-      document.removeEventListener("keydown", onKeyDown, true)
-      handlers.onCloseAutoFocus?.(new Event("closeAutoFocus", { cancelable: true }))
-    }
-  }, [
-    elementRef,
-    handlers.onOpenAutoFocus,
-    handlers.onCloseAutoFocus,
-    handlers.onPointerDownOutside,
-    handlers.onFocusOutside,
-    handlers.onInteractOutside,
-    handlers.onEscapeKeyDown,
-  ])
+  const context = React.useContext(LegacyLayerContext)
+  React.useLayoutEffect(() => {
+    if (!context) return
+    context.current = handlers
+    return () => { if (context.current === handlers) context.current = {} }
+  }, [context, handlers])
+  const focus = (callback: LegacyLayerEventHandler | undefined, name: string) => {
+    const event = new Event(name, { cancelable: true })
+    callback?.(event)
+    return !event.defaultPrevented
+  }
+  return {
+    initialFocus: () => focus(handlers.onOpenAutoFocus, "openAutoFocus"),
+    finalFocus: () => focus(handlers.onCloseAutoFocus, "closeAutoFocus"),
+  }
 }

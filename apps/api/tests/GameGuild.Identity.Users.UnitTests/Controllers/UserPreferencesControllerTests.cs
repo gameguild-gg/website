@@ -6,8 +6,6 @@ using Moq;
 using System.Text.Json;
 using Xunit;
 
-#pragma warning disable CS0618 // notification preferences subresource is deprecated (doc-only); tests keep covering it unchanged
-
 namespace GameGuild.Identity.Users.UnitTests.Controllers;
 
 public class UserPreferencesControllerTests

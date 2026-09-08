@@ -563,7 +563,7 @@ public class ProductsCoverageCompletionTests
                     "USD")
             });
 
-        var entitlementController = new EntitlementsController(service.Object, actor.Object);
+        var entitlementController = new EntitlementsController(service.Object, actor.Object, new CommandHandlerSender(service.Object));
         var check = await entitlementController.CheckAccess(productId);
         check.Result.Should().BeOfType<OkObjectResult>();
 

@@ -68,7 +68,7 @@ public class DeleteUserCommandHandlerTests
     }
 
     [Fact]
-    public async Task DeleteUser_DecrementsQuota_WhenUserDeleted()
+    public async Task DeleteUser_RecordsQuotaEventBeforePersistence_WithoutSynchronousDecrement()
     {
         // Arrange
         var userId = Guid.NewGuid();
@@ -95,9 +95,10 @@ public class DeleteUserCommandHandlerTests
         _userRepositoryMock.Setup(x => x.UpdateAsync(It.IsAny<User>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        _quotaServiceMock
-            .Setup(x => x.DecrementUsageAsync(tenantId, ResourceUsageType.Users, 1L, It.IsAny<Guid?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(true);
+        _userRepositoryMock.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .Callback(() => user.IntegrationEvents.OfType<UserDeletedEvent>().Should().ContainSingle(e =>
+                e.UserId == userId && e.TenantId == tenantId && e.ActorId == userId))
+            .Returns(Task.CompletedTask);
 
         // Act
         var result = await _handler.Handle(command, CancellationToken.None);
@@ -108,7 +109,8 @@ public class DeleteUserCommandHandlerTests
         _userRepositoryMock.Verify(x => x.UpdateAsync(It.Is<User>(u => u.IsDeleted), It.IsAny<CancellationToken>()), Times.Once);
         _quotaServiceMock.Verify(
             x => x.DecrementUsageAsync(tenantId, ResourceUsageType.Users, 1L, It.IsAny<Guid?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()),
-            Times.Once,
-            "quota should be decremented when user is deleted");
+            Times.Never,
+            "the durable quota listener owns the decrement and prevents double accounting");
+        _userRepositoryMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 }

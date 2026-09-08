@@ -19,6 +19,8 @@ public static class DependencyInjection
     {
         // Configure Resources options using SharedKernel configuration utilities
         services.ConfigureOptions(configuration, () => new ResourcesOptions(), options => options.Validate());
+        services.Configure<AwsCostAccountingOptions>(
+            configuration.GetSection(AwsCostAccountingOptions.SectionName));
 
         // Register DbContext
         RegisterDbContext(services, configuration);
@@ -95,7 +97,8 @@ public static class DependencyInjection
             new CachedResourceQuotaService(
                 sp.GetRequiredService<ResourceQuotaService>(),
                 sp.GetRequiredService<Microsoft.Extensions.Caching.Memory.IMemoryCache>(),
-                sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<CachedResourceQuotaService>>()));
+                sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<CachedResourceQuotaService>>(),
+                sp.GetService<ICostTelemetryRecorder>()));
 
         // ISP: Register segregated interfaces pointing to the unified service
         services.AddScoped<IResourceQuotaReader>(sp => sp.GetRequiredService<IResourceQuotaService>());
@@ -119,6 +122,45 @@ public static class DependencyInjection
         services.AddScoped<IUsageTrendAnalysisService, UsageTrendAnalysisService>();
         services.AddScoped<ISlaImpactAnalysisService, SlaImpactAnalysisService>();
         services.AddScoped<ICostAllocationService, CostAllocationService>();
+        services.AddScoped<ICloudCostIngestionService, CloudCostIngestionService>();
+        services.AddScoped<IInternalCostLedgerReader, InternalCostLedgerReader>();
+        services.AddScoped<InternalCostValuationService>();
+        services.AddScoped<PendingCostValuationService>();
+        services.AddSingleton<IAwsCur2CostSource, AwsCur2CsvCostSource>();
+        if (configuration.GetValue<bool>($"{AwsCostAccountingOptions.SectionName}:Enabled"))
+        {
+            services.AddSingleton<Amazon.Pricing.IAmazonPricing>(
+                _ => new Amazon.Pricing.AmazonPricingClient(Amazon.RegionEndpoint.USEast1));
+            services.AddSingleton<Amazon.CostExplorer.IAmazonCostExplorer>(
+                _ => new Amazon.CostExplorer.AmazonCostExplorerClient(Amazon.RegionEndpoint.USEast1));
+            services.AddSingleton<IAwsPriceListRateSource, AwsPriceListRateSource>();
+            services.AddSingleton<IAwsCostExplorerSource, AwsCostExplorerSource>();
+            services.AddHostedService<AwsCostAccountingBackgroundService>();
+        }
+
+        services.AddScoped<QuotaLedgerEventHandler>();
+        services.AddScoped<IIntegrationEventHandler<UserCreatedEvent>>(provider => provider.GetRequiredService<QuotaLedgerEventHandler>());
+        services.AddScoped<IIntegrationEventHandler<UserDeletedEvent>>(provider => provider.GetRequiredService<QuotaLedgerEventHandler>());
+        services.AddScoped<IIntegrationEventHandler<PropertyCreatedEvent>>(provider => provider.GetRequiredService<QuotaLedgerEventHandler>());
+        services.AddScoped<IIntegrationEventHandler<PropertyDeletedEvent>>(provider => provider.GetRequiredService<QuotaLedgerEventHandler>());
+        services.AddScoped<IIntegrationEventHandler<AssetReferenceCreatedEvent>>(provider => provider.GetRequiredService<QuotaLedgerEventHandler>());
+        services.AddScoped<IIntegrationEventHandler<AssetReferenceRemovedEvent>>(provider => provider.GetRequiredService<QuotaLedgerEventHandler>());
+
+        services.AddScoped<CostAccountingEventHandler>();
+        services.AddScoped<IIntegrationEventHandler<UseCaseOperationOccurredV1>>(provider => provider.GetRequiredService<CostAccountingEventHandler>());
+        services.AddScoped<IIntegrationEventHandler<UserCreatedEvent>>(provider => provider.GetRequiredService<CostAccountingEventHandler>());
+        services.AddScoped<IIntegrationEventHandler<UserDeletedEvent>>(provider => provider.GetRequiredService<CostAccountingEventHandler>());
+        services.AddScoped<IIntegrationEventHandler<PropertyCreatedEvent>>(provider => provider.GetRequiredService<CostAccountingEventHandler>());
+        services.AddScoped<IIntegrationEventHandler<PropertyDeletedEvent>>(provider => provider.GetRequiredService<CostAccountingEventHandler>());
+        services.AddScoped<IIntegrationEventHandler<PropertyMediaAttachedEvent>>(provider => provider.GetRequiredService<CostAccountingEventHandler>());
+        services.AddScoped<IIntegrationEventHandler<PropertyMediaRemovedEvent>>(provider => provider.GetRequiredService<CostAccountingEventHandler>());
+        services.AddScoped<IIntegrationEventHandler<AssetReferenceCreatedEvent>>(provider => provider.GetRequiredService<CostAccountingEventHandler>());
+        services.AddScoped<IIntegrationEventHandler<AssetReferenceRemovedEvent>>(provider => provider.GetRequiredService<CostAccountingEventHandler>());
+        services.AddScoped<IIntegrationEventHandler<AssetObjectStoredEvent>>(provider => provider.GetRequiredService<CostAccountingEventHandler>());
+        services.AddScoped<IIntegrationEventHandler<AssetObjectDeletedEvent>>(provider => provider.GetRequiredService<CostAccountingEventHandler>());
+        services.AddScoped<IIntegrationEventHandler<AssetTransformedEvent>>(provider => provider.GetRequiredService<CostAccountingEventHandler>());
+        services.AddScoped<IIntegrationEventHandler<AssetServedEvent>>(provider => provider.GetRequiredService<CostAccountingEventHandler>());
+        services.AddScoped<IIntegrationEventHandler<ApiRequestMeasuredEventV1>>(provider => provider.GetRequiredService<CostAccountingEventHandler>());
 
         // SLA Incident Escalation Services
         // SlaIncidentEscalationService depends on ISlaImpactAnalysisRepository + IIncidentTicketProvider

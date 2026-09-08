@@ -42,6 +42,15 @@ public interface IAssetAccessService
         Guid? tenantId);
 
     /// <summary>
+    /// Validates a token for a specific transformed asset representation.
+    /// </summary>
+    bool ValidateToken(
+        string token,
+        Guid assetReferenceId,
+        Guid? tenantId,
+        TransformationSpec? transformation);
+
+    /// <summary>
     /// Validates an access token asynchronously with additional checks.
     /// </summary>
     /// <param name="assetReferenceId">The asset reference ID.</param>

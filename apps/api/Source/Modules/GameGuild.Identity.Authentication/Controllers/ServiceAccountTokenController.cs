@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using GameGuild.Configuration.PresentationLayer.RateLimiting;
+using GameGuild.CQRS;
 
 namespace GameGuild.Identity.Authentication;
 
@@ -16,8 +17,7 @@ namespace GameGuild.Identity.Authentication;
 [Route("v{version:apiVersion}/auth/service-accounts")]
 [Produces("application/json")]
 public class ServiceAccountTokenController(
-    IServiceAccountService serviceAccountService,
-    IJwtTokenService jwtTokenService) : AuthControllerBase
+    ISender sender) : AuthControllerBase
 {
     /// <summary>
     ///     OAuth2 client_credentials grant - authenticates a service account and returns a JWT token.
@@ -57,13 +57,12 @@ public class ServiceAccountTokenController(
         }
 
         var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
-        var serviceAccount = await serviceAccountService.AuthenticateAsync(
+        var result = await sender.Send(new IssueServiceAccountTokenCommand(
             request.ClientId,
             request.ClientSecret,
-            ipAddress,
-            cancellationToken).ConfigureAwait(false);
+            ipAddress), cancellationToken).ConfigureAwait(false);
 
-        if (serviceAccount == null)
+        if (result.Account == null)
         {
             return Unauthorized(new OAuth2ErrorResponse
             {
@@ -72,21 +71,12 @@ public class ServiceAccountTokenController(
             });
         }
 
-        // Generate JWT token for the service account
-        var (accessToken, expiresAt) = await jwtTokenService.GenerateServiceAccountTokenAsync(
-            serviceAccount.Id.ToString(),
-            serviceAccount.ClientId,
-            serviceAccount.Name,
-            serviceAccount.GetScopesSet(),
-            serviceAccount.TenantId,
-            cancellationToken).ConfigureAwait(false);
-
         return Ok(new ClientCredentialsTokenResponse
         {
-            AccessToken = accessToken,
+            AccessToken = result.AccessToken!,
             TokenType = "Bearer",
-            ExpiresIn = (int)(expiresAt - SystemClock.UtcNow).TotalSeconds,
-            Scope = serviceAccount.Scopes
+            ExpiresIn = (int)(result.ExpiresAt!.Value - SystemClock.UtcNow).TotalSeconds,
+            Scope = result.Account.Scopes
         });
     }
 }

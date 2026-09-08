@@ -2,6 +2,7 @@ using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using GameGuild.CQRS;
 
 namespace GameGuild.Features;
 
@@ -15,10 +16,12 @@ namespace GameGuild.Features;
 public sealed class CapabilitiesController : BaseApiController
 {
     private readonly ICapabilityService _capabilityService;
+    private readonly ISender? _sender;
 
-    public CapabilitiesController(ICapabilityService capabilityService)
+    public CapabilitiesController(ICapabilityService capabilityService, ISender? sender = null)
     {
         _capabilityService = capabilityService;
+        _sender = sender;
     }
 
     /// <summary>
@@ -93,14 +96,14 @@ public sealed class CapabilitiesController : BaseApiController
         var userIdClaim = User.FindFirst("sub")?.Value ?? User.FindFirst("userId")?.Value;
         Guid? userId = Guid.TryParse(userIdClaim, out var parsedUserId) ? parsedUserId : null;
 
-        await _capabilityService.SetCapabilityOverrideAsync(
+        await _sender!.Send(new SetCapabilityOverrideCommand(
             tenantId,
             request.Capability,
             request.IsEnabled,
             request.Source ?? "override:admin",
             userId,
             request.Reason,
-            request.ExpiresAt,
+            request.ExpiresAt),
             ct).ConfigureAwait(false);
 
         return NoContent();
@@ -126,7 +129,9 @@ public sealed class CapabilitiesController : BaseApiController
         var userIdClaim = User.FindFirst("sub")?.Value ?? User.FindFirst("userId")?.Value;
         Guid? userId = Guid.TryParse(userIdClaim, out var parsedUserId) ? parsedUserId : null;
 
-        await _capabilityService.RemoveCapabilityOverrideAsync(tenantId, capability, userId, reason, ct).ConfigureAwait(false);
+        await _sender!.Send(
+            new RemoveCapabilityOverrideCommand(tenantId, capability, userId, reason),
+            ct).ConfigureAwait(false);
         return NoContent();
     }
 
@@ -142,7 +147,7 @@ public sealed class CapabilitiesController : BaseApiController
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> SyncFromPlan(Guid tenantId, CancellationToken ct)
     {
-        await _capabilityService.SyncCapabilitiesFromPlanAsync(tenantId, ct).ConfigureAwait(false);
+        await _sender!.Send(new SyncCapabilitiesFromPlanCommand(tenantId), ct).ConfigureAwait(false);
         return NoContent();
     }
 

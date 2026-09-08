@@ -17,7 +17,7 @@ export class LearningAssessmentsGroupSetsModule {
 
   /**
    */
-  async getCoursesGroupSets(courseId: string): Promise<Result<Array<Types.LearningAssessmentsGroupSetSummary>, ApiError>> {
+  async getCoursesGroupSets(courseId: string): Promise<Result<Array<Types.LearningAssessmentsGroupSetSummaryDto>, ApiError>> {
     const url = `/v1/courses/${courseId}/group-sets`;
 
     const result = await this.client.request({
@@ -26,7 +26,7 @@ export class LearningAssessmentsGroupSetsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.LearningAssessmentsGroupSetSummary>, ApiError>;
+    return result as Result<Array<Types.LearningAssessmentsGroupSetSummaryDto>, ApiError>;
   }
 
   /**
@@ -34,7 +34,7 @@ export class LearningAssessmentsGroupSetsModule {
   async postCoursesGroupSets(
     courseId: string,
     body: Types.LearningAssessmentsCreateGroupSetInput,
-  ): Promise<Result<Types.LearningAssessmentsGroupSet, ApiError>> {
+  ): Promise<Result<Types.LearningAssessmentsGroupSetDto, ApiError>> {
     const url = `/v1/courses/${courseId}/group-sets`;
 
     // Validate request body
@@ -49,7 +49,7 @@ export class LearningAssessmentsGroupSetsModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.LearningAssessmentsGroupSetSchema, result.data, 'response');
+      const validatedData = safeParse(Types.LearningAssessmentsGroupSetDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -58,7 +58,7 @@ export class LearningAssessmentsGroupSetsModule {
 
   /**
    */
-  async getCoursesGroupSetsGroups(courseId: string, setId: string): Promise<Result<Array<Types.LearningAssessmentsGroupDetail>, ApiError>> {
+  async getCoursesGroupSetsGroups(courseId: string, setId: string): Promise<Result<Array<Types.LearningAssessmentsGroupDetailDto>, ApiError>> {
     const url = `/v1/courses/${courseId}/group-sets/${setId}/groups`;
 
     const result = await this.client.request({
@@ -67,7 +67,7 @@ export class LearningAssessmentsGroupSetsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.LearningAssessmentsGroupDetail>, ApiError>;
+    return result as Result<Array<Types.LearningAssessmentsGroupDetailDto>, ApiError>;
   }
 
   /**
@@ -76,7 +76,7 @@ export class LearningAssessmentsGroupSetsModule {
     courseId: string,
     setId: string,
     body: Types.LearningAssessmentsCreateGroupInput,
-  ): Promise<Result<Types.LearningAssessmentsGroup, ApiError>> {
+  ): Promise<Result<Types.LearningAssessmentsGroupDto, ApiError>> {
     const url = `/v1/courses/${courseId}/group-sets/${setId}/groups`;
 
     // Validate request body
@@ -91,7 +91,7 @@ export class LearningAssessmentsGroupSetsModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.LearningAssessmentsGroupSchema, result.data, 'response');
+      const validatedData = safeParse(Types.LearningAssessmentsGroupDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -100,7 +100,7 @@ export class LearningAssessmentsGroupSetsModule {
 
   /**
    */
-  async postCoursesGroupSetsGroupsJoin(courseId: string, groupId: string): Promise<Result<Types.LearningAssessmentsGroupMembership, ApiError>> {
+  async postCoursesGroupSetsGroupsJoin(courseId: string, groupId: string): Promise<Result<Types.LearningAssessmentsGroupMembershipDto, ApiError>> {
     const url = `/v1/courses/${courseId}/group-sets/groups/${groupId}/join`;
 
     const result = await this.client.request({
@@ -111,7 +111,7 @@ export class LearningAssessmentsGroupSetsModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.LearningAssessmentsGroupMembershipSchema, result.data, 'response');
+      const validatedData = safeParse(Types.LearningAssessmentsGroupMembershipDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -124,7 +124,7 @@ export class LearningAssessmentsGroupSetsModule {
     courseId: string,
     groupId: string,
     userId: string,
-  ): Promise<Result<Types.LearningAssessmentsGroupMembership, ApiError>> {
+  ): Promise<Result<Types.LearningAssessmentsGroupMembershipDto, ApiError>> {
     const url = `/v1/courses/${courseId}/group-sets/groups/${groupId}/members/${userId}`;
 
     const result = await this.client.request({
@@ -135,7 +135,7 @@ export class LearningAssessmentsGroupSetsModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.LearningAssessmentsGroupMembershipSchema, result.data, 'response');
+      const validatedData = safeParse(Types.LearningAssessmentsGroupMembershipDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 

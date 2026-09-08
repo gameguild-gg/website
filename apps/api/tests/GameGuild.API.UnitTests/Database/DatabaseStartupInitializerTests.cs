@@ -17,6 +17,44 @@ namespace GameGuild.API.UnitTests.Database;
 
 public sealed class DatabaseStartupInitializerTests
 {
+    [Fact]
+    public async Task InitializeAsync_RunsPrerequisitesBeforeMigrations()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        var prerequisite = new RecordingPrerequisite();
+        await using var app = CreateApp(new Dictionary<string, string?>
+        {
+            ["Database:RunStartupInitialization"] = "true"
+        }, services =>
+        {
+            services.AddSingleton<IDatabaseMigrationPrerequisite>(prerequisite);
+            services.AddDbContext<ApplicationDbContext>(options =>
+            {
+                options.UseSqlite(connection);
+                options.ReplaceService<IMigrationsAssembly, CoverageMigrationsAssembly>();
+            });
+        });
+
+        (await DatabaseStartupInitializer.InitializeAsync(app, (_, _) => Task.CompletedTask)).Should().BeTrue();
+        prerequisite.Calls.Should().Be(1);
+        await using var command = connection.CreateCommand();
+        command.CommandText = "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = 'StartupCoverage';";
+        Convert.ToInt32(await command.ExecuteScalarAsync()).Should().Be(1);
+    }
+
+    private sealed class RecordingPrerequisite : IDatabaseMigrationPrerequisite
+    {
+        public int Calls { get; private set; }
+        public async Task PrepareAsync(DbContext db, CancellationToken cancellationToken)
+        {
+            await using var command = db.Database.GetDbConnection().CreateCommand();
+            command.CommandText = "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = 'StartupCoverage';";
+            Convert.ToInt32(await command.ExecuteScalarAsync(cancellationToken)).Should().Be(0);
+            Calls++;
+        }
+    }
+
     [Theory]
     [InlineData(1, 2)]
     [InlineData(2, 4)]

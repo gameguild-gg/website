@@ -10,10 +10,19 @@ namespace GameGuild.Identity.Users;
 /// </summary>
 public sealed class DeleteUserCommandHandler(
     IUserRepository userRepository,
-    IPublisher publisher,
-    IResourceQuotaService quotaService,
     IActorContextAccessor actorContextAccessor) : ICommandHandler<DeleteUserCommand>
 {
+    public DeleteUserCommandHandler(
+        IUserRepository userRepository,
+        IPublisher publisher,
+        IResourceQuotaService quotaService,
+        IActorContextAccessor actorContextAccessor)
+        : this(userRepository, actorContextAccessor)
+    {
+        _ = publisher;
+        _ = quotaService;
+    }
+
     private ActorContext Actor => actorContextAccessor.ActorContext;
 
     public async Task<Unit> Handle(DeleteUserCommand request, CancellationToken cancellationToken)
@@ -25,25 +34,17 @@ public sealed class DeleteUserCommandHandler(
 
         // Use domain method for soft delete
         user.MarkDeleted();
-        await userRepository.UpdateAsync(user, cancellationToken).ConfigureAwait(false);
-
-        // Decrement quota to maintain accurate resource accounting
-        if (Actor.TenantId.HasValue)
+        user.AddIntegrationEvent(new UserDeletedEvent(user.Id)
         {
-            // Extract user GUID from SubjectId if available
-            Guid? actorUserId = Guid.TryParse(Actor.SubjectId, out var parsedId) ? parsedId : null;
-
-            await quotaService.DecrementUsageAsync(
-                Actor.TenantId.Value,
-                ResourceUsageType.Users,
-                1,
-                actorUserId,
-                "DeleteUser",
-                cancellationToken);
-        }
-
-        // Publish domain event
-        await publisher.Publish(new UserDeletedNotification(user.Id), cancellationToken).ConfigureAwait(false);
+            TenantId = Actor.TenantId ?? DurableIntegrationEventTenants.Platform,
+            ActorId = Actor.SubjectIdAsGuid ?? DurableIntegrationEventActors.System,
+            AggregateType = nameof(User),
+            AggregateId = user.Id.ToString(),
+            CorrelationId = Guid.NewGuid(),
+            OccurredAt = DateTime.UtcNow
+        });
+        await userRepository.UpdateAsync(user, cancellationToken).ConfigureAwait(false);
+        await userRepository.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
         return Unit.Value;
     }

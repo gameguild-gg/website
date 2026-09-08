@@ -17,7 +17,7 @@ export class LearningCohortsSchedulesModule {
 
   /**
    */
-  async getCoursesCohortsSchedule(courseId: string, cohortId: string): Promise<Result<Types.LearningCohortsCohortSchedule, ApiError>> {
+  async getCoursesCohortsSchedule(courseId: string, cohortId: string): Promise<Result<Types.LearningCohortsCohortScheduleDto, ApiError>> {
     const url = `/v1/courses/${courseId}/cohorts/${cohortId}/schedule`;
 
     const result = await this.client.request({
@@ -28,7 +28,7 @@ export class LearningCohortsSchedulesModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.LearningCohortsCohortScheduleSchema, result.data, 'response');
+      const validatedData = safeParse(Types.LearningCohortsCohortScheduleDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -41,7 +41,7 @@ export class LearningCohortsSchedulesModule {
     courseId: string,
     cohortId: string,
     body: Types.LearningCohortsApplyCohortScheduleInput,
-  ): Promise<Result<Types.LearningCohortsCohortSchedule, ApiError>> {
+  ): Promise<Result<Types.LearningCohortsCohortScheduleDto, ApiError>> {
     const url = `/v1/courses/${courseId}/cohorts/${cohortId}/schedule`;
 
     // Validate request body
@@ -56,7 +56,7 @@ export class LearningCohortsSchedulesModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.LearningCohortsCohortScheduleSchema, result.data, 'response');
+      const validatedData = safeParse(Types.LearningCohortsCohortScheduleDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -68,7 +68,7 @@ export class LearningCohortsSchedulesModule {
   async getCoursesCohortsScheduleAvailableContent(
     courseId: string,
     cohortId: string,
-  ): Promise<Result<Array<Types.LearningCohortsAvailableCohortContent>, ApiError>> {
+  ): Promise<Result<Array<Types.LearningCohortsAvailableCohortContentDto>, ApiError>> {
     const url = `/v1/courses/${courseId}/cohorts/${cohortId}/schedule/available-content`;
 
     const result = await this.client.request({
@@ -77,7 +77,7 @@ export class LearningCohortsSchedulesModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.LearningCohortsAvailableCohortContent>, ApiError>;
+    return result as Result<Array<Types.LearningCohortsAvailableCohortContentDto>, ApiError>;
   }
 
   /**
@@ -87,7 +87,7 @@ export class LearningCohortsSchedulesModule {
     cohortId: string,
     itemId: string,
     body: Types.LearningCohortsUpdateCohortScheduleInput,
-  ): Promise<Result<Types.LearningCohortsCohortSchedule, ApiError>> {
+  ): Promise<Result<Types.LearningCohortsCohortScheduleDto, ApiError>> {
     const url = `/v1/courses/${courseId}/cohorts/${cohortId}/schedule/items/${itemId}`;
 
     // Validate request body
@@ -102,7 +102,7 @@ export class LearningCohortsSchedulesModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.LearningCohortsCohortScheduleSchema, result.data, 'response');
+      const validatedData = safeParse(Types.LearningCohortsCohortScheduleDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -116,7 +116,7 @@ export class LearningCohortsSchedulesModule {
     cohortId: string,
     itemId: string,
     body: Types.LearningCohortsShiftCohortScheduleInput,
-  ): Promise<Result<Types.LearningCohortsCohortSchedule, ApiError>> {
+  ): Promise<Result<Types.LearningCohortsCohortScheduleDto, ApiError>> {
     const url = `/v1/courses/${courseId}/cohorts/${cohortId}/schedule/items/${itemId}/shift`;
 
     // Validate request body
@@ -131,7 +131,7 @@ export class LearningCohortsSchedulesModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.LearningCohortsCohortScheduleSchema, result.data, 'response');
+      const validatedData = safeParse(Types.LearningCohortsCohortScheduleDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -144,7 +144,7 @@ export class LearningCohortsSchedulesModule {
     courseId: string,
     cohortId: string,
     body: Types.LearningCohortsPreviewCohortScheduleInput,
-  ): Promise<Result<Types.LearningCohortsCohortSchedulePreview, ApiError>> {
+  ): Promise<Result<Types.LearningCohortsCohortSchedulePreviewDto, ApiError>> {
     const url = `/v1/courses/${courseId}/cohorts/${cohortId}/schedule/preview`;
 
     // Validate request body
@@ -159,7 +159,7 @@ export class LearningCohortsSchedulesModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.LearningCohortsCohortSchedulePreviewSchema, result.data, 'response');
+      const validatedData = safeParse(Types.LearningCohortsCohortSchedulePreviewDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -171,7 +171,7 @@ export class LearningCohortsSchedulesModule {
   async getCoursesCohortsCalendar(
     courseId: string,
     query?: { cohortId?: string; from?: string; to?: string },
-  ): Promise<Result<Types.LearningCohortsCourseCohortCalendar, ApiError>> {
+  ): Promise<Result<Types.LearningCohortsCourseCohortCalendarDto, ApiError>> {
     const url = `/v1/courses/${courseId}/cohorts/calendar`;
 
     const result = await this.client.request({
@@ -183,7 +183,7 @@ export class LearningCohortsSchedulesModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.LearningCohortsCourseCohortCalendarSchema, result.data, 'response');
+      const validatedData = safeParse(Types.LearningCohortsCourseCohortCalendarDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 

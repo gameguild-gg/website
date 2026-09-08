@@ -1,5 +1,6 @@
 using Asp.Versioning;
 using GameGuild.Configuration.PresentationLayer.RateLimiting;
+using GameGuild.CQRS;
 using GameGuild.Identity.Context.Actors;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -20,6 +21,7 @@ namespace GameGuild.Resources;
 [EnableRateLimiting(RateLimitPolicies.PerUser)]
 public sealed class UserResourceSettingsController(
     IResourceSettingsRepository settingsRepository,
+    ISender sender,
     IActorContextAccessor actorContextAccessor) : BaseApiController
 {
     /// <summary>
@@ -107,22 +109,8 @@ public sealed class UserResourceSettingsController(
         
         ArgumentNullException.ThrowIfNull(body);
 
-        var existing = await settingsRepository.GetByUserKeyAsync(userId, key, ct).ConfigureAwait(false);
-
-        if (existing != null)
-        {
-            existing.Value = body.Value;
-            existing.Touch();
-
-            await settingsRepository.UpdateAsync(existing, ct).ConfigureAwait(false);
-
-            return Ok(existing);
-        }
-
-        var setting = new ResourceSettings { UserId = userId, Key = key, Value = body.Value, IsActive = true };
-
-        await settingsRepository.CreateAsync(setting, ct).ConfigureAwait(false);
-
+        var setting = await sender.Send(new SetUserResourceSettingCommand(userId, key, body), ct)
+            .ConfigureAwait(false);
         return Ok(setting);
     }
 }

@@ -1,10 +1,10 @@
 using System.Reflection;
+using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage;
+using GameGuild.API.Eventing;
 using GameGuild.API.Setup;
 using GameGuild.CQRS;
-using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 
 namespace GameGuild.API.Database;
 
@@ -12,19 +12,140 @@ namespace GameGuild.API.Database;
 ///     Thin-shell database context that delegates module-specific configuration
 ///     to <see cref="IModelConfiguration"/> implementations discovered via assembly scanning.
 /// </summary>
-public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options, IPublisher? publisher = null)
-    : DbContext(options), IApplicationDbContext, IDataProtectionKeyContext
+public class ApplicationDbContext : DbContext, IApplicationDbContext, IDataProtectionKeyContext
 {
+    private readonly IUseCaseOperationContextAccessor? _useCaseOperationContextAccessor;
+
     public DbSet<DataProtectionKey> DataProtectionKeys { get; set; } = null!;
+
+    public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options)
+    {
+    }
+
+    public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options, IPublisher? publisher) : this(options)
+    {
+        _ = publisher;
+    }
+
+    public ApplicationDbContext(
+        DbContextOptions<ApplicationDbContext> options,
+        IPublisher? publisher,
+        IUseCaseOperationContextAccessor useCaseOperationContextAccessor) : this(options, publisher)
+    {
+        _useCaseOperationContextAccessor = useCaseOperationContextAccessor;
+    }
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-        var domainEventEntities = ChangeTracker.Entries()
+        var trackedEventEntities = ChangeTracker.Entries()
             .Select(entry => entry.Entity)
-            .OfType<IHasDomainEvents>()
-            .Where(entity => entity.DomainEvents.Count > 0)
+            .OfType<object>()
             .Distinct()
             .ToList();
+
+        var domainEventEntities = trackedEventEntities
+            .OfType<IHasDomainEvents>()
+            .Where(entity => entity.DomainEvents.Count > 0)
+            .ToList();
+        var integrationEventEntities = trackedEventEntities
+            .OfType<IHasIntegrationEvents>()
+            .Where(entity => entity.IntegrationEvents.Count > 0)
+            .ToList();
+        var integrationEvents = integrationEventEntities
+            .SelectMany(entity => entity.IntegrationEvents)
+            .DistinctBy(integrationEvent => integrationEvent.EventId)
+            .ToList();
+
+        var capturedOutboxCount = 0;
+
+        foreach (var integrationEvent in integrationEvents)
+        {
+            DurableIntegrationEventValidator.Validate(integrationEvent);
+            var trackedOutbox = ChangeTracker.Entries<OutboxMessage>()
+                .FirstOrDefault(entry => entry.Entity.EventId == integrationEvent.EventId);
+            if (trackedOutbox is not null)
+            {
+                if (trackedOutbox.State == EntityState.Added)
+                {
+                    capturedOutboxCount++;
+                }
+
+                continue;
+            }
+
+            Set<OutboxMessage>().Add(new OutboxMessage
+            {
+                EventId = integrationEvent.EventId,
+                TenantId = integrationEvent.TenantId,
+                ActorId = integrationEvent.ActorId,
+                EventName = integrationEvent.EventName,
+                EventType = DurableIntegrationEventValidator.GetStableTypeName(integrationEvent.GetType()),
+                SourceModule = integrationEvent.SourceModule,
+                AggregateType = integrationEvent.AggregateType,
+                AggregateId = integrationEvent.AggregateId,
+                CorrelationId = integrationEvent.CorrelationId,
+                CausationId = integrationEvent.CausationId,
+                OccurredAtUtc = integrationEvent.OccurredAt,
+                SchemaVersion = integrationEvent.SchemaVersion,
+                Payload = DurableEventSerializer.Serialize(integrationEvent),
+                CreatedAtUtc = DateTimeOffset.UtcNow
+            });
+            capturedOutboxCount++;
+        }
+
+        var operationContext = _useCaseOperationContextAccessor?.Current;
+        var aggregateEntry = ChangeTracker.Entries()
+            .FirstOrDefault(entry =>
+                entry.State is EntityState.Added or EntityState.Modified or EntityState.Deleted
+                && entry.Entity is not OutboxMessage
+                && entry.Entity is not InboxReceipt);
+        if (operationContext is not null && aggregateEntry is not null)
+        {
+            operationContext.MarkBusinessMutationObserved();
+            operationContext.RecordProducedEvents(integrationEvents);
+        }
+
+        var operationEventPending = false;
+        if (operationContext is { OperationEventCaptured: false } && aggregateEntry is not null)
+        {
+            var aggregateId = aggregateEntry.Entity is EntityBase<Guid> entity
+                ? entity.Id.ToString()
+                : aggregateEntry.Properties.FirstOrDefault(property => property.Metadata.IsPrimaryKey())?.CurrentValue?.ToString()
+                  ?? "unknown";
+            var operationEvent = operationContext.GetOrCreateOperationEvent(
+                aggregateEntry.Metadata.ClrType.Name,
+                aggregateId);
+            DurableIntegrationEventValidator.Validate(operationEvent);
+            var trackedOperationOutbox = ChangeTracker.Entries<OutboxMessage>()
+                .FirstOrDefault(entry => entry.Entity.EventId == operationEvent.EventId);
+            if (trackedOperationOutbox is null)
+            {
+                Set<OutboxMessage>().Add(new OutboxMessage
+                {
+                    EventId = operationEvent.EventId,
+                    TenantId = operationEvent.TenantId,
+                    ActorId = operationEvent.ActorId,
+                    EventName = operationEvent.EventName,
+                    EventType = DurableIntegrationEventValidator.GetStableTypeName(operationEvent.GetType()),
+                    SourceModule = operationEvent.SourceModule,
+                    AggregateType = operationEvent.AggregateType,
+                    AggregateId = operationEvent.AggregateId,
+                    CorrelationId = operationEvent.CorrelationId,
+                    CausationId = operationEvent.CausationId,
+                    OccurredAtUtc = operationEvent.OccurredAt,
+                    SchemaVersion = operationEvent.SchemaVersion,
+                    Payload = DurableEventSerializer.Serialize(operationEvent),
+                    CreatedAtUtc = DateTimeOffset.UtcNow
+                });
+                capturedOutboxCount++;
+            }
+            else if (trackedOperationOutbox.State == EntityState.Added)
+            {
+                capturedOutboxCount++;
+            }
+
+            operationEventPending = true;
+        }
 
         foreach (var entry in ChangeTracker.Entries())
         {
@@ -38,39 +159,22 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 
         var affectedRows = await base.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
-        if (domainEventEntities.Count == 0)
+        if (operationEventPending)
         {
-            return affectedRows;
+            operationContext!.MarkOperationEventCaptured();
         }
-
-        var eventPublisher = publisher;
-        if (eventPublisher is null)
-        {
-            try
-            {
-                eventPublisher = this.GetService<IPublisher>();
-            }
-            catch (InvalidOperationException)
-            {
-                return affectedRows;
-            }
-        }
-
-        var domainEvents = domainEventEntities
-            .SelectMany(entity => entity.DomainEvents)
-            .ToList();
 
         foreach (var entity in domainEventEntities)
         {
             entity.ClearDomainEvents();
         }
 
-        foreach (var domainEvent in domainEvents)
+        foreach (var entity in integrationEventEntities)
         {
-            await eventPublisher.Publish(domainEvent, cancellationToken).ConfigureAwait(false);
+            entity.ClearIntegrationEvents();
         }
 
-        return affectedRows;
+        return affectedRows - capturedOutboxCount;
     }
 
     public async Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default)

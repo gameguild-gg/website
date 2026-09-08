@@ -3,6 +3,7 @@ using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using GameGuild.CQRS;
 
 namespace GameGuild.Features;
 
@@ -12,7 +13,10 @@ namespace GameGuild.Features;
 [ApiVersion("1.0")]
 [Route("v{version:apiVersion}/features")]
 [Authorize]
-public class FeatureFlagsController(IFeatureFlagEvaluationService evaluationService, ILogger<FeatureFlagsController> logger) : BaseApiController
+public class FeatureFlagsController(
+    IFeatureFlagEvaluationService evaluationService,
+    ILogger<FeatureFlagsController> logger,
+    ISender? sender = null) : BaseApiController
 {
     /// <summary>
     ///     Evaluate a feature flag for runtime decisions
@@ -31,7 +35,9 @@ public class FeatureFlagsController(IFeatureFlagEvaluationService evaluationServ
             UserAgent = HttpContext.Request.Headers.UserAgent.ToString()
         };
 
-        var result = await evaluationService.EvaluateAsync(request.FeatureKey, context, cancellationToken);
+        var result = await sender!.Send(
+            new EvaluateFeatureOperationCommand(request.FeatureKey, context),
+            cancellationToken).ConfigureAwait(false);
 
         return Ok(result);
     }
@@ -70,6 +76,7 @@ public class FeatureFlagsController(IFeatureFlagEvaluationService evaluationServ
     [HttpPost(":evaluate-bulk")]
     public async Task<IActionResult> BulkEvaluateFeatures([FromBody] BulkEvaluationRequest request, CancellationToken cancellationToken)
     {
+        logger.LogDebug("Evaluating {FeatureCount} feature flags", request.FeatureKeys.Count);
         // Use the context from request, or create a default one
         var context = request.Context;
 
@@ -81,24 +88,10 @@ public class FeatureFlagsController(IFeatureFlagEvaluationService evaluationServ
 
         if (context.Permissions.Count == 0) { context.Permissions = GetCurrentUserPermissions(); }
 
-        var results = new List<FeatureEvaluationResult>();
-
-        foreach (var featureKey in request.FeatureKeys)
-        {
-            try
-            {
-                var result = await evaluationService.EvaluateAsync(featureKey, context, cancellationToken);
-                results.Add(result);
-            }
-            catch (Exception ex)
-            {
-                logger.LogWarning(ex, "Failed to evaluate feature '{FeatureKey}' in bulk request", featureKey);
-                results.Add(new FeatureEvaluationResult { FeatureKey = featureKey, IsEnabled = false, Reason = "Evaluation failed" });
-                throw;
-            }
-        }
-
-        return Ok(new BulkEvaluateFeaturesResponse { Results = results.ToDictionary(r => r.FeatureKey, r => r) });
+        var result = await sender!.Send(
+            new BulkEvaluateFeatureOperationCommand(request.FeatureKeys, context),
+            cancellationToken).ConfigureAwait(false);
+        return Ok(result);
     }
 
     /// <summary>

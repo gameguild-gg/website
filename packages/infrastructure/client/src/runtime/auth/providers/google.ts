@@ -21,6 +21,7 @@
 
 import type { OAuthProviderConfig, ProviderResult, SessionUser } from '../types.js';
 import { OAuthError, parseErrorBody, extractErrorMessage } from '../errors.js';
+import { resolveAuthPermissions, resolveAuthRoles } from '../claims.js';
 
 /**
  * Options for the Google provider
@@ -36,7 +37,7 @@ export interface GoogleProviderOptions {
    */
   apiUrl?: string;
   /**
-   * Backend endpoint path for Google sign-in token exchange
+   * Backend endpoint path for Google token exchange
    * @default '/v1/auth/google:sign-in'
    */
   tokenExchangePath?: string;
@@ -48,9 +49,9 @@ export interface GoogleProviderOptions {
  * Unlike a standard OAuth provider, this one takes the Google ID token
  * and sends it to the .NET backend for validation + token issuance.
  */
-export function GoogleProvider(options: GoogleProviderOptions): OAuthProviderConfig & {
-  exchangeToken: (idToken: string, apiUrl: string, tenantId?: string) => Promise<ProviderResult>;
-} {
+export function GoogleProvider(
+  options: GoogleProviderOptions,
+): OAuthProviderConfig & { exchangeToken: (idToken: string, apiUrl: string, tenantId?: string) => Promise<ProviderResult> } {
   const { tokenExchangePath = '/v1/auth/google:sign-in' } = options;
 
   return {
@@ -99,6 +100,8 @@ export function GoogleProvider(options: GoogleProviderOptions): OAuthProviderCon
         email: (data.email as string) || (backendUser?.email as string) || '',
         name: (backendUser?.displayName as string) || null,
         image: (backendUser?.profilePictureUrl as string) || null,
+        roles: resolveAuthRoles(data, backendUser),
+        permissions: resolveAuthPermissions(data, backendUser),
       };
 
       return {

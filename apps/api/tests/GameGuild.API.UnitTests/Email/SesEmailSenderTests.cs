@@ -13,6 +13,43 @@ namespace GameGuild.API.UnitTests.Email;
 public sealed class SesEmailSenderTests
 {
     [Fact]
+    public async Task SharedSender_WhenSesConfigured_ReturnsTheProviderReceipt()
+    {
+        var options = Options.Create(CreateEnabledOptions());
+        options.Value.Provider = "SES";
+        var client = new Mock<IAmazonSimpleEmailServiceV2>();
+        client.Setup(value => value.SendEmailAsync(It.IsAny<SendEmailRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new SendEmailResponse { MessageId = "receipt" });
+        var ses = new SesEmailSender(options, NullLogger<SesEmailSender>.Instance, _ => client.Object);
+        var sender = new EmailSender(options, NullLogger<EmailSender>.Instance, ses);
+
+        (await sender.SendAsync(CreateMessage())).Should().Be("receipt");
+        client.Verify(value => value.SendEmailAsync(It.IsAny<SendEmailRequest>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Theory]
+    [InlineData("recipient")]
+    [InlineData("name")]
+    [InlineData("subject")]
+    [InlineData("filename")]
+    [InlineData("contentType")]
+    public async Task SendAsync_RejectsHeaderInjectionBeforeCreatingProviderClient(string field)
+    {
+        const string injection = "test\r\nBcc: attacker@example.com";
+        var factory = new RecordingClientFactory();
+        var sender = CreateSender(CreateEnabledOptions(), factory);
+        var message = CreateMessage() with
+        {
+            ToEmail = field == "recipient" ? injection : "user@example.com",
+            ToName = field == "name" ? injection : "Name",
+            Subject = field == "subject" ? injection : "Subject",
+            Attachments = [new EmailAttachment(field == "filename" ? injection : "test.txt", field == "contentType" ? injection : "text/plain", [1])]
+        };
+        await Assert.ThrowsAsync<ArgumentException>(() => sender.SendAsync(message));
+        factory.RequestedRegions.Should().BeEmpty();
+    }
+
+    [Fact]
     public async Task SendAsync_WhenEmailDeliveryIsDisabled_ReturnsNullWithoutCreatingClient()
     {
         var factory = new RecordingClientFactory();
@@ -229,7 +266,9 @@ public sealed class SesEmailSenderTests
         public IAmazonSimpleEmailServiceV2 Create(string region)
         {
             RequestedRegions.Add(region);
-            return client ?? new Mock<IAmazonSimpleEmailServiceV2>(MockBehavior.Strict).Object;
+            var result = client ?? new Mock<IAmazonSimpleEmailServiceV2>(MockBehavior.Strict).Object;
+            Mock.Get(result).Setup(value => value.Dispose());
+            return result;
         }
     }
 }
