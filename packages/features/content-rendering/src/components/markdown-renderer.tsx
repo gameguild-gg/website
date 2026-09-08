@@ -81,10 +81,10 @@ function preprocessMarkdown(content: string): string {
 
 function getAdmonitionTone(type: string | undefined, tone: MarkdownRendererTone) {
   if (tone === 'learning') {
-    if (type === 'warning') return 'border-yellow-400 bg-yellow-500/10';
-    if (type === 'danger') return 'border-red-400 bg-red-500/10';
-    if (type === 'info') return 'border-sky-400 bg-sky-500/10';
-    return 'border-slate-500 bg-slate-900';
+    if (type === 'warning') return 'border-yellow-400 bg-yellow-500/10 text-slate-800 dark:text-slate-100';
+    if (type === 'danger') return 'border-red-400 bg-red-500/10 text-slate-800 dark:text-slate-100';
+    if (type === 'info') return 'border-sky-400 bg-sky-500/10 text-slate-800 dark:text-slate-100';
+    return 'border-slate-400 bg-slate-100 text-slate-800 dark:border-slate-500 dark:bg-slate-900 dark:text-slate-100';
   }
 
   if (type === 'warning') return 'border-yellow-400 bg-yellow-50';
@@ -112,12 +112,12 @@ export function MarkdownRenderer({ content, renderer = 'markdown', tone = 'learn
     h4: (props: React.HTMLAttributes<HTMLHeadingElement>) => <h4 className="mt-3 mb-2 text-xl font-semibold" {...props} />,
     h5: (props: React.HTMLAttributes<HTMLHeadingElement>) => <h5 className="mt-2 mb-1 text-lg font-semibold" {...props} />,
     h6: (props: React.HTMLAttributes<HTMLHeadingElement>) => <h6 className="mt-2 mb-1 text-base font-semibold" {...props} />,
-    p: (props: React.HTMLAttributes<HTMLParagraphElement>) => <p className={isLearningTone ? 'mb-4 text-slate-200' : 'mb-4'} {...props} />,
+    p: (props: React.HTMLAttributes<HTMLParagraphElement>) => <p className={isLearningTone ? 'mb-4 text-slate-700 dark:text-slate-200' : 'mb-4'} {...props} />,
     ul: (props: React.HTMLAttributes<HTMLUListElement>) => <ul className="mb-4 list-disc pl-5" {...props} />,
     ol: (props: React.HTMLAttributes<HTMLOListElement>) => <ol className="mb-4 list-decimal pl-5" {...props} />,
     li: (props: React.HTMLAttributes<HTMLLIElement>) => <li className="mb-1" {...props} />,
-    a: (props: React.AnchorHTMLAttributes<HTMLAnchorElement>) => <a className={isLearningTone ? 'text-sky-400 hover:text-sky-300 hover:underline' : 'text-blue-600 hover:underline'} {...props} />,
-    blockquote: (props: React.HTMLAttributes<HTMLQuoteElement>) => <blockquote className={isLearningTone ? 'my-4 border-l-4 border-slate-500 pl-4 italic text-slate-300' : 'border-l-4 border-gray-300 pl-4 italic my-4'} {...props} />,
+    a: (props: React.AnchorHTMLAttributes<HTMLAnchorElement>) => <a className={isLearningTone ? 'text-sky-700 hover:text-sky-600 hover:underline dark:text-sky-400 dark:hover:text-sky-300' : 'text-blue-600 hover:underline'} {...props} />,
+    blockquote: (props: React.HTMLAttributes<HTMLQuoteElement>) => <blockquote className={isLearningTone ? 'my-4 border-l-4 border-slate-300 pl-4 italic text-slate-600 dark:border-slate-500 dark:text-slate-300' : 'border-l-4 border-gray-300 pl-4 italic my-4'} {...props} />,
     code: ({ className, children, ...props }: React.HTMLAttributes<HTMLElement> & { className?: string }) => {
       const match = /language-(\w+)/.exec(className || '');
       const language = match && match[1] ? match[1] : '';
@@ -160,7 +160,7 @@ export function MarkdownRenderer({ content, renderer = 'markdown', tone = 'learn
       }
 
       return (
-        <code className={isLearningTone ? 'rounded-full border border-slate-700 bg-slate-900 px-2 py-1 font-mono text-sm text-slate-100' : 'bg-gray-100 border border-gray-300 rounded-full px-2 py-1 font-mono text-sm inline whitespace-nowrap'} {...props}>
+        <code className={isLearningTone ? 'rounded-full border border-slate-300 bg-slate-100 px-2 py-1 font-mono text-sm text-slate-800 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100' : 'bg-gray-100 border border-gray-300 rounded-full px-2 py-1 font-mono text-sm inline whitespace-nowrap'} {...props}>
           {children}
         </code>
       );
@@ -173,7 +173,7 @@ export function MarkdownRenderer({ content, renderer = 'markdown', tone = 'learn
 
         return (
           <div className={`my-4 border-l-4 p-4 ${isLearningTone ? 'rounded-xl' : ''} ${getAdmonitionTone(type, tone)}`}>
-            {title ? <div className={isLearningTone ? 'mb-2 font-semibold text-white' : 'font-semibold mb-2'}>{title}</div> : null}
+            {title ? <div className={isLearningTone ? 'mb-2 font-semibold text-slate-900 dark:text-white' : 'font-semibold mb-2'}>{title}</div> : null}
             {children}
           </div>
         );
@@ -185,9 +185,9 @@ export function MarkdownRenderer({ content, renderer = 'markdown', tone = 'learn
         const toneClasses = activityType === 'code' ? 'border-violet-500/40 bg-violet-500/10' : 'border-emerald-500/40 bg-emerald-500/10';
 
         return (
-          <div className={`my-4 rounded-xl border p-4 text-sm text-slate-100 ${toneClasses}`}>
-            <div className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-300">{label}</div>
-            <div className={isLearningTone ? 'whitespace-pre-wrap leading-6 text-slate-100' : 'prose prose-invert max-w-none'}>{children}</div>
+          <div className={`my-4 rounded-xl border p-4 text-sm text-slate-800 dark:text-slate-100 ${toneClasses}`}>
+            <div className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-600 dark:text-slate-300">{label}</div>
+            <div className={isLearningTone ? 'whitespace-pre-wrap leading-6 text-slate-800 dark:text-slate-100' : 'prose prose-invert max-w-none'}>{children}</div>
           </div>
         );
       }
@@ -201,7 +201,7 @@ export function MarkdownRenderer({ content, renderer = 'markdown', tone = 'learn
   };
 
   return (
-    <div className={isLearningTone ? 'prose prose-invert max-w-none prose-pre:bg-transparent' : 'markdown-content'}>
+    <div className={isLearningTone ? 'prose dark:prose-invert max-w-none prose-pre:bg-transparent' : 'markdown-content'}>
       <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeRaw, rehypeKatex]} components={components}>
         {processedContent}
       </ReactMarkdown>

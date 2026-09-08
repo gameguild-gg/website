@@ -76,7 +76,9 @@ async function renderMermaidSvg(code: string, isDarkMode: boolean): Promise<stri
     const mermaid = (await import('mermaid')).default;
     mermaid.initialize({
       startOnLoad: false,
-      theme: isDarkMode ? 'base' : 'default',
+      // Built-in 'dark' themes every diagram type (xyChart, pie, gantt, …);
+      // DARK_THEME_VARIABLES only overrides flowchart-ish brand colors.
+      theme: isDarkMode ? 'dark' : 'default',
       themeVariables: isDarkMode ? DARK_THEME_VARIABLES : undefined,
       securityLevel: 'strict',
       htmlLabels: false,
@@ -144,16 +146,16 @@ export function MermaidDiagram({ code, className = '' }: MermaidDiagramProps) {
 
   if (error) {
     return (
-      <div className={`my-4 rounded-lg border border-red-400/40 bg-red-500/10 p-4 text-sm text-red-300 ${className}`}>
+      <div className={`my-4 rounded-lg border border-red-400/40 bg-red-500/10 p-4 text-sm text-red-700 dark:text-red-300 ${className}`}>
         <p className="mb-2 font-semibold">Diagram failed to render</p>
-        <pre className="overflow-x-auto whitespace-pre-wrap font-mono text-xs text-red-200/80">{code}</pre>
+        <pre className="overflow-x-auto whitespace-pre-wrap font-mono text-xs text-red-700/80 dark:text-red-200/80">{code}</pre>
       </div>
     );
   }
 
   return (
     <div
-      className={`my-4 overflow-x-auto rounded-lg border border-slate-700/60 bg-slate-900 p-4 ${className}`}
+      className={`my-4 overflow-x-auto rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-700/60 dark:bg-slate-900 ${className}`}
     >
       {svgContent ? (
         <div
@@ -163,7 +165,7 @@ export function MermaidDiagram({ code, className = '' }: MermaidDiagramProps) {
           dangerouslySetInnerHTML={{ __html: svgContent }}
         />
       ) : (
-        <p className="py-8 text-center text-sm text-slate-400">Loading diagram…</p>
+        <p className="py-8 text-center text-sm text-slate-500 dark:text-slate-400">Loading diagram…</p>
       )}
     </div>
   );
