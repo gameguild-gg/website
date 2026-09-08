@@ -28,15 +28,7 @@ describe("dashboard management navigation", () => {
     expect(
       testingLab?.subGroups?.map(({ title, url }) => ({ title, url })),
     ).toEqual([
-      { title: "Overview", url: "/workspace/testing-lab" },
-      { title: "Events", url: "/workspace/testing-lab/events" },
-      { title: "Applications", url: "/workspace/testing-lab/applications" },
-      { title: "Projects", url: "/workspace/testing-lab/projects" },
-      { title: "Participants", url: "/workspace/testing-lab/participants" },
-      { title: "Feedback", url: "/workspace/testing-lab/feedback" },
-      { title: "Analytics", url: "/workspace/testing-lab/analytics" },
-      { title: "Locations", url: "/workspace/testing-lab/locations" },
-      { title: "Access", url: "/workspace/testing-lab/access" },
+      { title: "Calendar", url: "/workspace/testing-lab" },
       { title: "Settings", url: "/workspace/testing-lab/settings" },
     ]);
     expect(launchPad?.url).toBe("/console/community/launch-pad");
@@ -110,6 +102,21 @@ describe("dashboard management navigation", () => {
     ]);
     expect(
       community?.items[0]?.subGroups?.map((item) => item.title),
-    ).toEqual(["Overview", "Events"]);
+    ).toEqual(["Calendar"]);
+  });
+
+  it("keeps global Testing Lab settings grouped behind one entry", () => {
+    const navigation = filterDashboardNavigation(dashboardNavigationData, [
+      "TestingLab.ManageSettings",
+      "TestingLab.ViewAnalytics",
+    ]);
+    const testingLab = navigation
+      .find((group) => group.label === "Community Management")
+      ?.items.find((item) => item.title === "Testing Lab");
+
+    expect(testingLab?.subGroups?.map((item) => item.title)).toEqual([
+      "Calendar",
+      "Settings",
+    ]);
   });
 });

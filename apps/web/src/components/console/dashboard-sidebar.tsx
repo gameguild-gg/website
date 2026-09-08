@@ -23,6 +23,7 @@ import {
   Accessibility,
   BarChart3,
   BookOpen,
+  CalendarDays,
   ChevronRight,
   ClipboardList,
   CircleDollarSign,
@@ -31,14 +32,12 @@ import {
   FolderOpen,
   HeadphonesIcon,
   LayoutDashboard,
-  MapPin,
   FolderKanban,
   Globe2,
   MailCheck,
   Palette,
   PanelLeftClose,
   PanelLeftOpen,
-  MessageSquareText,
   Rocket,
   Settings,
   ShieldCheck,
@@ -202,9 +201,9 @@ export const dashboardNavigationData: DashboardNavGroup[] = [
         ],
         subGroups: [
           {
-            title: 'Overview',
+            title: 'Calendar',
             url: '/workspace/testing-lab',
-            icon: LayoutDashboard,
+            icon: CalendarDays,
             items: [],
             requiredCapabilities: [
               'TestingLab.ManageEvents',
@@ -216,67 +215,14 @@ export const dashboardNavigationData: DashboardNavGroup[] = [
             ],
           },
           {
-            title: 'Events',
-            url: '/workspace/testing-lab/events',
-            icon: FlaskConical,
-            items: [],
-            requiredCapabilities: ['TestingLab.ManageEvents'],
-          },
-          {
-            title: 'Applications',
-            url: '/workspace/testing-lab/applications',
-            icon: ClipboardList,
-            items: [],
-            requiredCapabilities: ['TestingLab.ReviewApplications'],
-          },
-          {
-            title: 'Projects',
-            url: '/workspace/testing-lab/projects',
-            icon: FolderKanban,
-            items: [],
-            requiredCapabilities: ['TestingLab.ReviewApplications'],
-          },
-          {
-            title: 'Participants',
-            url: '/workspace/testing-lab/participants',
-            icon: Users,
-            items: [],
-            requiredCapabilities: ['TestingLab.ManageParticipants'],
-          },
-          {
-            title: 'Feedback',
-            url: '/workspace/testing-lab/feedback',
-            icon: MessageSquareText,
-            items: [],
-            requiredCapabilities: ['TestingLab.ManageFeedback'],
-          },
-          {
-            title: 'Analytics',
-            url: '/workspace/testing-lab/analytics',
-            icon: BarChart3,
-            items: [],
-            requiredCapabilities: ['TestingLab.ViewAnalytics'],
-          },
-          {
-            title: 'Locations',
-            url: '/workspace/testing-lab/locations',
-            icon: MapPin,
-            items: [],
-            requiredCapabilities: ['TestingLab.ManageSettings'],
-          },
-          {
-            title: 'Access',
-            url: '/workspace/testing-lab/access',
-            icon: ShieldCheck,
-            items: [],
-            requiredCapabilities: ['TestingLab.ManageSettings'],
-          },
-          {
             title: 'Settings',
             url: '/workspace/testing-lab/settings',
             icon: Settings,
             items: [],
-            requiredCapabilities: ['TestingLab.ManageSettings'],
+            requiredCapabilities: [
+              'TestingLab.ManageSettings',
+              'TestingLab.ViewAnalytics',
+            ],
           },
         ],
       },
@@ -567,7 +513,12 @@ function NavGroups({ groups }: { groups: DashboardNavGroup[] }) {
                         <CollapsibleContent>
                           <SidebarMenuSub>
                             {item.subGroups!.map((subGroup) => {
-                              const isActive = pathname === subGroup.url || pathname?.endsWith(subGroup.url ?? '');
+                              const isActive = Boolean(
+                                subGroup.url &&
+                                  (pathname === subGroup.url ||
+                                    (subGroup.url !== '/workspace/testing-lab' &&
+                                      pathname?.startsWith(`${subGroup.url}/`))),
+                              );
                               const SubIcon = subGroup.icon;
                               return (
                                 <SidebarMenuSubItem key={subGroup.title}>

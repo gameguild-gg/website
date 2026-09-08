@@ -28,8 +28,23 @@ describe("TestingLabSettingsNav", () => {
       "aria-current",
       "page",
     );
+    expect(screen.getByRole("link", { name: "Analytics" })).toHaveAttribute(
+      "href",
+      "/workspace/testing-lab/settings/analytics",
+    );
     expect(screen.getByRole("link", { name: "General" })).not.toHaveAttribute(
       "aria-current",
     );
+  });
+
+  it("shows only settings sections the current actor can access", () => {
+    render(
+      <TestingLabSettingsNav capabilities={["TestingLab.ViewAnalytics"]} />,
+    );
+
+    expect(screen.getByRole("link", { name: "Analytics" })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "General" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Locations" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Access" })).not.toBeInTheDocument();
   });
 });

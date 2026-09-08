@@ -21,7 +21,9 @@ vi.mock("@/i18n/navigation", () => ({
 import TestingLabSettingsLayout from "./layout";
 
 vi.mock("@/lib/require-dashboard-capability", () => ({
-  requireDashboardCapability: vi.fn().mockResolvedValue(undefined),
+  requireAnyDashboardCapability: vi.fn().mockResolvedValue({
+    capabilities: ["TestingLab.ManageSettings", "TestingLab.ViewAnalytics"],
+  }),
 }));
 
 describe("TestingLabSettingsLayout", () => {
@@ -35,6 +37,10 @@ describe("TestingLabSettingsLayout", () => {
     expect(screen.getByRole("link", { name: "General" })).toHaveAttribute(
       "href",
       "/workspace/testing-lab/settings/general",
+    );
+    expect(screen.getByRole("link", { name: "Analytics" })).toHaveAttribute(
+      "href",
+      "/workspace/testing-lab/settings/analytics",
     );
     expect(screen.getByRole("link", { name: "Locations" })).toHaveAttribute(
       "href",
