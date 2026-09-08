@@ -14,7 +14,14 @@ import type { TestingLabTestingEventProjection } from "@game-guild/client";
 import { Badge } from "@game-guild/ui/components/badge";
 import { Button } from "@game-guild/ui/components/button";
 import { Calendar } from "@game-guild/ui/components/calendar";
-import { Checkbox } from "@game-guild/ui/components/checkbox";
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@game-guild/ui/components/dropdown-menu";
 import {
   HoverCard,
   HoverCardContent,
@@ -31,7 +38,6 @@ import {
   SelectValue,
 } from "@game-guild/ui/components/select";
 import { Separator } from "@game-guild/ui/components/separator";
-import { cn } from "@game-guild/ui/lib/utils";
 import { format, isSameMonth, isToday, startOfMonth } from "date-fns";
 import {
   Blend,
@@ -40,6 +46,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Clock3,
+  ListFilter,
   MapPin,
   MonitorPlay,
   PanelRightClose,
@@ -78,17 +85,13 @@ const eventFilters = [
 
 type EventFilter = (typeof eventFilters)[number]["value"];
 
-const eventCalendars = [
-  { value: "Online", label: "Online", markerClassName: "bg-primary" },
-  {
-    value: "InPerson",
-    label: "In-person",
-    markerClassName: "bg-chart-2",
-  },
-  { value: "Hybrid", label: "Hybrid", markerClassName: "bg-chart-4" },
+const eventFormats = [
+  { value: "Online", label: "Online" },
+  { value: "InPerson", label: "In-person" },
+  { value: "Hybrid", label: "Hybrid" },
 ] as const;
 
-type EventCalendar = (typeof eventCalendars)[number]["value"];
+type EventFormat = (typeof eventFormats)[number]["value"];
 
 const mobileCalendarQuery = "(max-width: 767px)";
 
@@ -141,7 +144,7 @@ function eventEnd(event: TestingLabTestingEventProjection) {
   return date && !Number.isNaN(date.valueOf()) ? date : null;
 }
 
-function eventCalendar(event: TestingLabTestingEventProjection): EventCalendar {
+function eventFormat(event: TestingLabTestingEventProjection): EventFormat {
   return event.mode === "InPerson" || event.mode === "Hybrid"
     ? event.mode
     : "Online";
@@ -595,15 +598,15 @@ function TestingLabPlanningSidebar({
   onAnchorChange,
   events,
   analyticsByEvent,
-  activeCalendars,
-  onCalendarChange,
+  activeFormats,
+  onFormatChange,
 }: {
   anchor: Date;
   onAnchorChange: (date: Date) => void;
   events: TestingLabTestingEventProjection[];
   analyticsByEvent: Map<string, TestingLabCalendarEventAnalytics>;
-  activeCalendars: Set<EventCalendar>;
-  onCalendarChange: (calendar: EventCalendar, checked: boolean) => void;
+  activeFormats: Set<EventFormat>;
+  onFormatChange: (format: EventFormat, checked: boolean) => void;
 }) {
   const eventCount = events.length;
   const testingHours = events.reduce((total, event) => {
@@ -628,6 +631,14 @@ function TestingLabPlanningSidebar({
   const fillRate = capacity.available
     ? Math.round((capacity.registered / capacity.available) * 100)
     : 0;
+  const activeFormatLabel =
+    activeFormats.size === eventFormats.length
+      ? "All formats"
+      : activeFormats.size === 0
+        ? "No formats"
+        : activeFormats.size === 1
+          ? eventFormats.find(({ value }) => activeFormats.has(value))?.label
+          : `${activeFormats.size} formats`;
 
   return (
     <aside
@@ -658,76 +669,101 @@ function TestingLabPlanningSidebar({
 
       <Separator />
 
-      <section aria-labelledby="time-insights-title" className="p-4">
+      <section aria-labelledby="period-summary-title" className="p-4">
         <div className="flex items-center gap-2">
           <ChartNoAxesCombined
             className="size-4 text-muted-foreground"
             aria-hidden="true"
           />
-          <h2 id="time-insights-title" className="text-sm font-semibold">
-            Time insights
+          <h2 id="period-summary-title" className="text-sm font-semibold">
+            {format(anchor, "MMMM")} summary
           </h2>
         </div>
-        <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
-          <div>
-            <p className="text-lg font-semibold tabular-nums">
-              {eventCount} {eventCount === 1 ? "event" : "events"}
+        {eventCount === 0 ? (
+          <div className="mt-3 flex flex-col gap-1">
+            <p className="text-sm font-medium">No scheduled activity</p>
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              Choose another month or create an event to see testing time and
+              capacity.
             </p>
-            <p className="text-xs text-muted-foreground">This period</p>
           </div>
-          <div>
-            <p className="text-lg font-semibold tabular-nums">
-              {formatTestingHours(testingHours).replace(" testing time", "")}
-            </p>
-            <p className="text-xs text-muted-foreground">Testing time</p>
+        ) : (
+          <div className="mt-3 flex flex-col gap-4">
+            <div className="flex items-baseline justify-between gap-3">
+              <p className="text-sm font-medium tabular-nums">
+                {eventCount} {eventCount === 1 ? "event" : "events"}
+              </p>
+              <p className="text-sm tabular-nums text-muted-foreground">
+                {formatTestingHours(testingHours).replace(
+                  " testing time",
+                  " scheduled",
+                )}
+              </p>
+            </div>
+            {capacity.available ? (
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center justify-between gap-3 text-xs">
+                  <span className="text-muted-foreground">Tester seats</span>
+                  <span className="font-medium tabular-nums">
+                    {capacity.registered} of {capacity.available} seats filled
+                  </span>
+                </div>
+                <Progress
+                  value={fillRate}
+                  aria-label="Tester capacity filled"
+                  className="gap-0"
+                />
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                Tester capacity has not been set for these events.
+              </p>
+            )}
           </div>
-        </div>
-        <div className="mt-4 flex flex-col gap-2">
-          <div className="flex items-center justify-between gap-3 text-xs">
-            <span className="text-muted-foreground">Tester capacity</span>
-            <span className="font-medium tabular-nums">
-              {capacity.available
-                ? `${capacity.registered} of ${capacity.available} seats filled`
-                : "No capacity set"}
-            </span>
-          </div>
-          <Progress
-            value={fillRate}
-            aria-label="Tester capacity filled"
-            className="gap-0"
-          />
-        </div>
+        )}
       </section>
 
       <Separator />
 
-      <section aria-labelledby="event-calendars-title" className="p-4">
-        <h2 id="event-calendars-title" className="text-sm font-semibold">
-          Event calendars
+      <section aria-labelledby="visible-events-title" className="p-4">
+        <h2 id="visible-events-title" className="text-sm font-semibold">
+          Display
         </h2>
         <p className="mt-1 text-xs text-muted-foreground">
-          Show events by format.
+          Choose which event formats appear.
         </p>
-        <div className="mt-3 flex flex-col gap-1">
-          {eventCalendars.map((calendar) => (
-            <label
-              key={calendar.value}
-              className="flex min-h-9 cursor-pointer items-center gap-3 rounded-md px-2 text-sm hover:bg-muted/50"
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="mt-3 w-full justify-between"
+              aria-label="Filter visible event formats"
             >
-              <Checkbox
-                checked={activeCalendars.has(calendar.value)}
-                onCheckedChange={(checked) =>
-                  onCalendarChange(calendar.value, checked)
-                }
-              />
-              <span
-                className={cn("size-2 rounded-full", calendar.markerClassName)}
-                aria-hidden="true"
-              />
-              <span>{calendar.label}</span>
-            </label>
-          ))}
-        </div>
+              <span className="flex items-center gap-2">
+                <ListFilter data-icon="inline-start" aria-hidden="true" />
+                {activeFormatLabel}
+              </span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuGroup>
+              <DropdownMenuLabel>Event format</DropdownMenuLabel>
+              {eventFormats.map((eventFormat) => (
+                <DropdownMenuCheckboxItem
+                  key={eventFormat.value}
+                  checked={activeFormats.has(eventFormat.value)}
+                  onCheckedChange={(checked) =>
+                    onFormatChange(eventFormat.value, checked)
+                  }
+                >
+                  {eventFormat.label}
+                </DropdownMenuCheckboxItem>
+              ))}
+            </DropdownMenuGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </section>
     </aside>
   );
@@ -758,8 +794,8 @@ export function TestingLabCalendar({
   const [anchor, setAnchor] = useState(() => initialDate);
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<EventFilter>("all");
-  const [activeCalendars, setActiveCalendars] = useState<Set<EventCalendar>>(
-    () => new Set(eventCalendars.map(({ value }) => value)),
+  const [activeFormats, setActiveFormats] = useState<Set<EventFormat>>(
+    () => new Set(eventFormats.map(({ value }) => value)),
   );
   const [planningPreference, setPlanningPreference] = useState<boolean | null>(
     null,
@@ -780,14 +816,14 @@ export function TestingLabCalendar({
     return events.filter((event) => {
       const matchesStatus =
         statusFilter === "all" || event.status === statusFilter;
-      const matchesCalendar = activeCalendars.has(eventCalendar(event));
+      const matchesFormat = activeFormats.has(eventFormat(event));
       const matchesQuery =
         normalizedQuery.length === 0 ||
         event.name?.toLocaleLowerCase().includes(normalizedQuery) ||
         event.description?.toLocaleLowerCase().includes(normalizedQuery);
-      return matchesStatus && matchesCalendar && matchesQuery;
+      return matchesStatus && matchesFormat && matchesQuery;
     });
-  }, [activeCalendars, events, query, statusFilter]);
+  }, [activeFormats, events, query, statusFilter]);
   const periodEvents = useMemo(
     () => eventsInsideRange(visibleEvents, range),
     [range, visibleEvents],
@@ -798,11 +834,11 @@ export function TestingLabCalendar({
     setCreateOpen(true);
   }
 
-  function updateEventCalendar(calendar: EventCalendar, checked: boolean) {
-    setActiveCalendars((current) => {
+  function updateEventFormat(eventFormat: EventFormat, checked: boolean) {
+    setActiveFormats((current) => {
       const next = new Set(current);
-      if (checked) next.add(calendar);
-      else next.delete(calendar);
+      if (checked) next.add(eventFormat);
+      else next.delete(eventFormat);
       return next;
     });
   }
@@ -922,17 +958,20 @@ export function TestingLabCalendar({
             </Select>
             <Button
               type="button"
-              variant="ghost"
-              size="icon"
+              variant="outline"
+              size="sm"
               aria-label={
-                planningOpen
-                  ? "Hide planning sidebar"
-                  : "Show planning sidebar"
+                planningOpen ? "Hide details panel" : "Show details panel"
               }
               aria-pressed={planningOpen}
               onClick={() => setPlanningPreference(!planningOpen)}
             >
-              {planningOpen ? <PanelRightClose /> : <PanelRightOpen />}
+              {planningOpen ? (
+                <PanelRightClose data-icon="inline-start" />
+              ) : (
+                <PanelRightOpen data-icon="inline-start" />
+              )}
+              Details
             </Button>
             {toolbarEnd}
           </div>
@@ -977,8 +1016,8 @@ export function TestingLabCalendar({
             onAnchorChange={setAnchor}
             events={periodEvents}
             analyticsByEvent={analyticsByEvent}
-            activeCalendars={activeCalendars}
-            onCalendarChange={updateEventCalendar}
+            activeFormats={activeFormats}
+            onFormatChange={updateEventFormat}
           />
         ) : null}
       </div>

@@ -159,10 +159,10 @@ describe("testing lab dashboard page", () => {
       within(toolbar).getByRole("heading", { name: "Testing Lab" }),
     ).toBeInTheDocument();
     const publicView = within(toolbar).getByRole("link", {
-      name: "Public view",
+      name: "Open public Testing Lab",
     });
     expect(publicView).toHaveAttribute("href", "/testing-lab");
-    expect(publicView.textContent).toBe("");
+    expect(publicView).toHaveTextContent("Public page");
     expect(
       screen.queryByRole("navigation", { name: "Testing Lab operations" }),
     ).not.toBeInTheDocument();

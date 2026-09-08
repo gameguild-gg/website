@@ -12,11 +12,11 @@ import {
   getTestingApplicationsDirectory,
   getTestingEventsDirectory,
 } from "@/lib/testing-lab/events-queries";
-import { Button } from "@game-guild/ui/components/button";
+import { buttonVariants } from "@game-guild/ui/components/button";
 import {
   CalendarClock,
   ClipboardCheck,
-  Eye,
+  ExternalLink,
   FlaskConical,
   TriangleAlert,
 } from "lucide-react";
@@ -120,15 +120,14 @@ export default async function TestingLabPage() {
           }
           toolbarEnd={
             <>
-              <Button asChild variant="ghost" size="icon">
-                <Link
-                  href="/testing-lab"
-                  aria-label="Public view"
-                  title="Public view"
-                >
-                  <Eye aria-hidden="true" />
-                </Link>
-              </Button>
+              <Link
+                href="/testing-lab"
+                aria-label="Open public Testing Lab"
+                className={buttonVariants({ variant: "outline", size: "sm" })}
+              >
+                <ExternalLink data-icon="inline-start" aria-hidden="true" />
+                Public page
+              </Link>
               <CreateTestingEventDialog
                 defaultTimeZone={labSettings.settings?.timezone ?? "UTC"}
               />

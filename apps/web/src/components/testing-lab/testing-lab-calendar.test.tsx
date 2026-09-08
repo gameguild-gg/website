@@ -220,7 +220,7 @@ describe("TestingLabCalendar", () => {
     expect(screen.queryByText("Remote build review")).not.toBeInTheDocument();
   });
 
-  it("adds a synchronized planning sidebar with real period insights", () => {
+  it("adds a synchronized details panel with a useful period summary", () => {
     render(
       <TestingLabCalendar
         events={events}
@@ -234,17 +234,20 @@ describe("TestingLabCalendar", () => {
     });
 
     expect(within(sidebar).getByText("August 2030")).toBeInTheDocument();
+    expect(within(sidebar).getByText("August summary")).toBeInTheDocument();
     expect(within(sidebar).getByText("2 events")).toBeInTheDocument();
-    expect(within(sidebar).getByText("4h")).toBeInTheDocument();
-    expect(within(sidebar).getByText("Testing time")).toBeInTheDocument();
-    expect(within(sidebar).getByText("11 of 18 seats filled")).toBeInTheDocument();
-    expect(within(sidebar).getByRole("checkbox", { name: "Online" })).toBeChecked();
+    expect(within(sidebar).getByText("4h scheduled")).toBeInTheDocument();
     expect(
-      within(sidebar).getByRole("checkbox", { name: "In-person" }),
-    ).toBeChecked();
+      within(sidebar).getByText("11 of 18 seats filled"),
+    ).toBeInTheDocument();
+    expect(
+      within(sidebar).getByRole("button", {
+        name: "Filter visible event formats",
+      }),
+    ).toHaveTextContent("All formats");
   });
 
-  it("filters the calendar by event calendar and can collapse the planning sidebar", async () => {
+  it("filters by format from a compact menu and can collapse the details panel", async () => {
     const user = userEvent.setup();
     render(
       <TestingLabCalendar
@@ -258,7 +261,12 @@ describe("TestingLabCalendar", () => {
       name: "Testing Lab planning",
     });
     await user.click(
-      within(sidebar).getByRole("checkbox", { name: "Online" }),
+      within(sidebar).getByRole("button", {
+        name: "Filter visible event formats",
+      }),
+    );
+    await user.click(
+      await screen.findByRole("menuitemcheckbox", { name: "Online" }),
     );
 
     expect(screen.queryByText("Remote build review")).not.toBeInTheDocument();
@@ -266,20 +274,46 @@ describe("TestingLabCalendar", () => {
     expect(within(sidebar).getByText("1 event")).toBeInTheDocument();
 
     await user.click(
-      screen.getByRole("button", { name: "Hide planning sidebar" }),
+      screen.getByRole("button", { name: "Hide details panel" }),
     );
     expect(
       screen.queryByRole("complementary", { name: "Testing Lab planning" }),
     ).not.toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: "Show planning sidebar" }),
+      screen.getByRole("button", { name: "Show details panel" }),
     ).toBeInTheDocument();
+  });
+
+  it("replaces empty metrics with a concise, actionable empty state", () => {
+    render(
+      <TestingLabCalendar events={[]} initialDate={new Date(2030, 7, 10)} />,
+    );
+
+    const sidebar = screen.getByRole("complementary", {
+      name: "Testing Lab planning",
+    });
+
+    expect(
+      within(sidebar).getByText("No scheduled activity"),
+    ).toBeInTheDocument();
+    expect(
+      within(sidebar).getByText(
+        "Choose another month or create an event to see testing time and capacity.",
+      ),
+    ).toBeInTheDocument();
+    expect(within(sidebar).queryByRole("progressbar")).not.toBeInTheDocument();
+    expect(
+      within(sidebar).queryByText("Event calendars"),
+    ).not.toBeInTheDocument();
   });
 
   it("keeps the mini calendar synchronized with the main calendar", async () => {
     const user = userEvent.setup();
     render(
-      <TestingLabCalendar events={events} initialDate={new Date(2030, 7, 10)} />,
+      <TestingLabCalendar
+        events={events}
+        initialDate={new Date(2030, 7, 10)}
+      />,
     );
 
     const sidebar = screen.getByRole("complementary", {
