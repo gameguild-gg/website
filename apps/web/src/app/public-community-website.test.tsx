@@ -181,7 +181,7 @@ describe('public community website UX', () => {
     ]);
   });
 
-  it('keeps Workspace, Notifications, and the user profile in social header actions', async () => {
+  it('keeps Workspace, Notifications, and a non-duplicated user profile in social header actions', async () => {
     authMock.mockResolvedValueOnce({
       user: {
         id: 'member-1',
@@ -201,7 +201,14 @@ describe('public community website UX', () => {
     expect(screen.queryByRole('link', { name: 'Explore community' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Create post' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Open community navigation' })).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Open Maya Torres account menu' })).toBeInTheDocument();
+    const profile = screen.getByRole('button', { name: 'Open Maya Torres account menu' });
+    expect(profile).toHaveTextContent('Maya Torres');
+    expect(profile).toHaveTextContent('maya@gameguild.gg');
+    expect(profile.querySelector('svg.lucide-chevrons-up-down')).toBeInTheDocument();
+    fireEvent.click(profile);
+    await screen.findByRole('menu');
+    expect(screen.getAllByText('Maya Torres')).toHaveLength(1);
+    expect(screen.getAllByText('maya@gameguild.gg')).toHaveLength(1);
   });
 
   it('shows the authenticated member profile instead of sign-in calls to action', async () => {

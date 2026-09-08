@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import type { ButtonHTMLAttributes, ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DashboardHeader } from './dashboard-header';
@@ -64,7 +64,7 @@ describe('DashboardHeader', () => {
     expect(breadcrumb).toHaveTextContent('Access');
     expect(breadcrumb).not.toHaveTextContent('Reports');
   });
-  it('keeps Feed, Notifications, and the user profile in workspace header actions', () => {
+  it('keeps Feed, Notifications, and a non-duplicated user profile in workspace header actions', async () => {
     render(
       <DashboardHeader
         user={{ id: 'user-123', name: 'Ada Lovelace', email: 'ada@gameguild.gg', image: null }}
@@ -75,7 +75,14 @@ describe('DashboardHeader', () => {
     const actions = screen.getByRole('group', { name: 'Dashboard actions' });
     expect(within(actions).getByRole('link', { name: 'Open Community feed' })).toBeInTheDocument();
     expect(within(actions).getByRole('button', { name: 'Notifications' })).toBeInTheDocument();
-    expect(within(actions).getByRole('button', { name: 'Open Ada Lovelace account menu' })).toBeInTheDocument();
+    const profile = within(actions).getByRole('button', { name: 'Open Ada Lovelace account menu' });
+    expect(profile).toHaveTextContent('Ada Lovelace');
+    expect(profile).toHaveTextContent('ada@gameguild.gg');
+    expect(profile.querySelector('svg.lucide-chevrons-up-down')).toBeInTheDocument();
+    fireEvent.click(profile);
+    await screen.findByRole('menu');
+    expect(screen.getAllByText('Ada Lovelace')).toHaveLength(1);
+    expect(screen.getAllByText('ada@gameguild.gg')).toHaveLength(1);
     expect(within(actions).queryByRole('button', { name: 'Search dashboard' })).not.toBeInTheDocument();
     expect(within(actions).queryByRole('button', { name: 'Toggle theme' })).not.toBeInTheDocument();
   });

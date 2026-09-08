@@ -4,8 +4,8 @@ import { Link, useRouter } from '@/i18n/navigation';
 import { useAuth } from '@game-guild/client/react';
 import { Avatar, AvatarFallback, AvatarImage } from '@game-guild/ui/components/avatar';
 import { Button } from '@game-guild/ui/components/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@game-guild/ui/components/dropdown-menu';
-import { BriefcaseBusiness, LayoutDashboard, LogOut, Settings } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@game-guild/ui/components/dropdown-menu';
+import { BriefcaseBusiness, ChevronsUpDown, LayoutDashboard, LogOut, Settings } from 'lucide-react';
 import type { PublicWebsiteUser } from './public-website-nav';
 
 export function PublicAccountMenu({ user }: { user: PublicWebsiteUser }) {
@@ -17,8 +17,7 @@ export function PublicAccountMenu({ user }: { user: PublicWebsiteUser }) {
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"
-          size="icon"
-          className="hidden size-9 rounded-full text-foreground hover:bg-accent sm:inline-flex"
+          className="hidden h-11 max-w-72 justify-start gap-2 rounded-lg px-2 text-left text-foreground hover:bg-accent sm:inline-flex"
           aria-label={`Open ${user.name} account menu`}
         >
           <Avatar size="sm">
@@ -27,14 +26,16 @@ export function PublicAccountMenu({ user }: { user: PublicWebsiteUser }) {
               {user.initials}
             </AvatarFallback>
           </Avatar>
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-sm font-semibold leading-tight">{user.name}</span>
+            {user.email ? (
+              <span className="block truncate text-xs leading-tight text-muted-foreground">{user.email}</span>
+            ) : null}
+          </span>
+          <ChevronsUpDown className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuLabel className="font-normal">
-          <p className="truncate text-sm font-medium">{user.name}</p>
-          {user.email && <p className="truncate text-xs text-muted-foreground">{user.email}</p>}
-        </DropdownMenuLabel>
-        <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
           <Link href="/workspace">
             <BriefcaseBusiness className="size-4" />
