@@ -333,9 +333,20 @@ describe("TestingLabCalendar", () => {
     const sidebar = screen.getByRole("complementary", {
       name: "Testing Lab planning",
     });
-    await user.click(
-      within(sidebar).getByRole("button", { name: "Go to the Next Month" }),
-    );
+    const previousMonth = within(sidebar).getByRole("button", {
+      name: "Go to the Previous Month",
+    });
+    const nextMonth = within(sidebar).getByRole("button", {
+      name: "Go to the Next Month",
+    });
+
+    const miniCalendarMonths = previousMonth.parentElement?.parentElement;
+
+    expect(previousMonth).toBeVisible();
+    expect(nextMonth).toBeVisible();
+    expect(miniCalendarMonths).toHaveClass("relative");
+
+    await user.click(nextMonth);
 
     expect(
       screen.getByRole("heading", { name: "September 2030" }),

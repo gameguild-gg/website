@@ -692,7 +692,7 @@ function TestingLabPlanningSidebar({
           className="w-full bg-transparent p-0 [--cell-size:--spacing(8)]"
           classNames={{
             root: "w-full",
-            months: "w-full",
+            months: "relative w-full",
             month: "w-full",
           }}
         />
