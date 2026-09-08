@@ -85,7 +85,6 @@ public class LocalAuthServiceTests
             _enumerationProtectionMock.Object,
             _httpContextAccessorMock.Object,
             NullLogger<LocalAuthService>.Instance,
-            _publisherMock.Object,
             _senderMock.Object,
             _sessionManagementServiceMock.Object
         );
@@ -404,7 +403,6 @@ public class LocalAuthServiceTests
             _enumerationProtectionMock.Object,
             _httpContextAccessorMock.Object,
             NullLogger<LocalAuthService>.Instance,
-            _publisherMock.Object,
             _senderMock.Object,
             _sessionManagementServiceMock.Object
         );
@@ -549,11 +547,13 @@ public class LocalAuthServiceTests
     }
 
     [Fact]
-    public async Task LocalSignUpAsync_PublishesUserSignedUpNotification()
+    public async Task LocalSignUpAsync_RegistersDurableUserCreatedEvent()
     {
+        User? persistedUser = null;
         _userRepoMock.Setup(x => x.ExistsByEmailAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
         _userRepoMock.Setup(x => x.AddAsync(It.IsAny<User>(), It.IsAny<CancellationToken>()))
+            .Callback<User, CancellationToken>((user, _) => persistedUser = user)
             .Returns(Task.CompletedTask);
         _userRepoMock.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
@@ -566,12 +566,10 @@ public class LocalAuthServiceTests
 
         await _sut.LocalSignUpAsync(request);
 
-        _publisherMock.Verify(
-            x => x.Publish(
-                It.Is<UserSignedUpNotification>(notification =>
-                    notification.Email == "new@example.com"),
-                It.IsAny<CancellationToken>()),
-            Times.Once);
+        persistedUser.Should().NotBeNull();
+        persistedUser!.IntegrationEvents.Should().ContainSingle()
+            .Which.Should().BeOfType<UserCreatedEvent>()
+            .Which.UserId.Should().Be(persistedUser.Id);
     }
 
     // ── RefreshTokenAsync ─────────────────────────────────────

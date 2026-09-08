@@ -85,7 +85,6 @@ public class PostgreSqlWebApplicationFactory : WebApplicationFactory<GameGuild.A
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         context.Database.Migrate();
-        DatabaseSeeder.SeedAsync(scope.ServiceProvider).GetAwaiter().GetResult();
         SeedAuthorizationFixtures(context);
         return host;
     }

@@ -42,6 +42,8 @@
         <PackageReference Include="FluentAssertions" />
         <PackageReference Include="AutoFixture" />
         <PackageReference Include="AutoFixture.Xunit2" />
+        <PackageReference Include="AWSSDK.CostExplorer" />
+        <PackageReference Include="AWSSDK.Pricing" />
     </ItemGroup>
 
     <ItemGroup>

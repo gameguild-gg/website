@@ -12,7 +12,8 @@ public class CostAllocationService(
     IUsageRecordRepository usageRepository,
     IResourceQuotaRepository quotaRepository,
     IOptions<ResourcesOptions> options,
-    ILogger<CostAllocationService> logger
+    ILogger<CostAllocationService> logger,
+    IInternalCostLedgerReader? internalCostLedgerReader = null
 ) : ICostAllocationService
 {
     private readonly ResourcesOptions _options = options.Value;
@@ -25,13 +26,20 @@ public class CostAllocationService(
 
         var groupedByType = usageRecords.GroupBy(r => r.Type).Select(g => new { UsageType = g.Key, TotalUsage = g.Sum(r => r.UsageAmount) }).ToList();
 
-        decimal totalCost = 0;
+        var ledgerSummary = internalCostLedgerReader is null
+            ? null
+            : await internalCostLedgerReader.SummarizeAsync(tenantId, periodStart, periodEnd, cancellationToken)
+                .ConfigureAwait(false);
+        decimal totalCost = ledgerSummary?.UsdCost ?? 0;
         var allocationTags = new Dictionary<string, string>();
 
         foreach (var group in groupedByType)
         {
-            var costPerUnit = GetCostPerUnit(group.UsageType);
-            totalCost += costPerUnit * group.TotalUsage;
+            if (ledgerSummary is null)
+            {
+                var costPerUnit = GetCostPerUnit(group.UsageType);
+                totalCost += costPerUnit * group.TotalUsage;
+            }
 
             // Get allocation tags from resource quotas
             var quota = await quotaRepository.GetByTenantAndTypeAsync(tenantId, group.UsageType, cancellationToken).ConfigureAwait(false);
@@ -57,18 +65,21 @@ public class CostAllocationService(
             }
         }
 
+        var totalUsage = ledgerSummary?.UsageEntries ?? groupedByType.Sum(group => group.TotalUsage);
         var report = new CostAllocationReport
         {
             PeriodStart = periodStart,
             PeriodEnd = periodEnd,
-            TotalUsage = groupedByType.Sum(g => g.TotalUsage),
-            CostPerUnit = totalCost / Math.Max(1, groupedByType.Sum(g => g.TotalUsage)),
+            ResourceUsageType = ResourceUsageType.ApiCalls,
+            TotalUsage = totalUsage,
+            CostPerUnit = totalCost / Math.Max(1, totalUsage),
             TotalCost = totalCost,
             AllocationTags = allocationTags.Count > 0 ? JsonSerializer.Serialize(allocationTags) : null,
             CostCenter = allocationTags.GetValueOrDefault("CostCenter"),
             Project = allocationTags.GetValueOrDefault("Project"),
             Owner = allocationTags.GetValueOrDefault("Owner"),
-            IsExported = false
+            IsExported = false,
+            Metadata = ledgerSummary is null ? null : JsonSerializer.Serialize(new { Source = "internal-cost-ledger", Currency = "USD" })
         };
         report.SetProperties(new Dictionary<string, object?> { ["TenantId"] = tenantId });
 
@@ -88,6 +99,17 @@ public class CostAllocationService(
 
     public async Task<decimal> CalculateTotalCostAsync(Guid tenantId, DateTime periodStart, DateTime periodEnd, CancellationToken cancellationToken = default)
     {
+        if (internalCostLedgerReader is not null)
+        {
+            var summary = await internalCostLedgerReader.SummarizeAsync(
+                    tenantId,
+                    periodStart,
+                    periodEnd,
+                    cancellationToken)
+                .ConfigureAwait(false);
+            return summary.UsdCost;
+        }
+
         // Get all usage records for tenant and filter by date
         var allRecords = await usageRepository.GetByTenantAsync(tenantId, cancellationToken).ConfigureAwait(false);
         var usageRecords = allRecords.Where(r => r.PeriodStart >= periodStart && r.PeriodStart <= periodEnd);

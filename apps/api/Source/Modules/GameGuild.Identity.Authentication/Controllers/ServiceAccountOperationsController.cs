@@ -2,6 +2,7 @@ using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using GameGuild.CQRS;
 
 namespace GameGuild.Identity.Authentication;
 
@@ -15,7 +16,8 @@ namespace GameGuild.Identity.Authentication;
 [Route("v{version:apiVersion}/auth/service-accounts")]
 [Produces("application/json")]
 public class ServiceAccountOperationsController(
-    IServiceAccountService serviceAccountService) : AuthControllerBase
+    IServiceAccountService serviceAccountService,
+    ISender sender) : AuthControllerBase
 {
     /// <summary>
     ///     Rotates the client secret for a service account.
@@ -32,7 +34,8 @@ public class ServiceAccountOperationsController(
     {
         try
         {
-            var newSecret = await serviceAccountService.RotateSecretAsync(serviceAccountId, cancellationToken).ConfigureAwait(false);
+            var newSecret = await sender.Send(
+                new RotateServiceAccountSecretCommand(serviceAccountId), cancellationToken).ConfigureAwait(false);
             return Ok(new SecretRotationResponse
             {
                 ClientSecret = newSecret,
@@ -56,7 +59,7 @@ public class ServiceAccountOperationsController(
     {
         try
         {
-            await serviceAccountService.UnlockAsync(serviceAccountId, cancellationToken).ConfigureAwait(false);
+            await sender.Send(new UnlockServiceAccountCommand(serviceAccountId), cancellationToken).ConfigureAwait(false);
             return NoContent();
         }
         catch (InvalidOperationException)
@@ -86,7 +89,7 @@ public class ServiceAccountOperationsController(
             return NotFound();
         }
 
-        await serviceAccountService.LockAsync(serviceAccountId, request.Reason, cancellationToken).ConfigureAwait(false);
+        await sender.Send(new LockServiceAccountCommand(serviceAccountId, request.Reason), cancellationToken).ConfigureAwait(false);
         return NoContent();
     }
 
@@ -147,7 +150,7 @@ public class ServiceAccountOperationsController(
     {
         try
         {
-            await serviceAccountService.DeactivateAsync(serviceAccountId, cancellationToken).ConfigureAwait(false);
+            await sender.Send(new DeactivateServiceAccountCommand(serviceAccountId), cancellationToken).ConfigureAwait(false);
             return NoContent();
         }
         catch (InvalidOperationException)
@@ -167,7 +170,7 @@ public class ServiceAccountOperationsController(
     {
         try
         {
-            await serviceAccountService.ReactivateAsync(serviceAccountId, cancellationToken).ConfigureAwait(false);
+            await sender.Send(new ReactivateServiceAccountCommand(serviceAccountId), cancellationToken).ConfigureAwait(false);
             return NoContent();
         }
         catch (InvalidOperationException)
@@ -187,7 +190,9 @@ public class ServiceAccountOperationsController(
     {
         try
         {
-            await serviceAccountService.UpdateScopesAsync(serviceAccountId, request.Scopes, cancellationToken).ConfigureAwait(false);
+            await sender.Send(
+                new UpdateServiceAccountScopesCommand(serviceAccountId, request.Scopes),
+                cancellationToken).ConfigureAwait(false);
             return NoContent();
         }
         catch (InvalidOperationException)

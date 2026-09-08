@@ -15,6 +15,13 @@ public static class DependencyInjection
     /// </summary>
     public static IServiceCollection AddAuthenticationApplication(this IServiceCollection services)
     {
+        services.AddScoped<SendWelcomeEmailHandler>();
+        services.AddScoped<LogAnalyticsEventHandler>();
+        services.AddScoped<IIntegrationEventHandler<UserCreatedEvent>>(provider =>
+            provider.GetRequiredService<SendWelcomeEmailHandler>());
+        services.AddScoped<IIntegrationEventHandler<UserCreatedEvent>>(provider =>
+            provider.GetRequiredService<LogAnalyticsEventHandler>());
+
         // Register Command Handlers
         services.AddScoped<IRequestHandler<LocalSignUpCommand, SignInResponse>, LocalSignUpHandler>();
         services.AddScoped<IRequestHandler<LocalSignInCommand, SignInResponse>, LocalSignInHandler>();

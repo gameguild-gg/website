@@ -268,6 +268,8 @@ public sealed class ServiceAccountOperationsControllerTests
 
     private static ServiceAccountOperationsController CreateController(Mock<IServiceAccountService> service)
     {
-        return new ServiceAccountOperationsController(service.Object);
+        return new ServiceAccountOperationsController(
+            service.Object,
+            IdentityCommandTestSender.ForServiceAccounts(service.Object));
     }
 }

@@ -89,6 +89,8 @@
     <PackageVersion Include="Stripe.net" Version="46.0.0" />
     <!-- AWS SDK -->
     <PackageVersion Include="AWSSDK.S3" Version="3.7.300" />
+    <PackageVersion Include="AWSSDK.Pricing" Version="3.7.502.63" />
+    <PackageVersion Include="AWSSDK.CostExplorer" Version="3.7.509.34" />
     <PackageVersion Include="AWSSDK.KeyManagementService" Version="3.7.506.18" />
     <!-- SES email delivery + SNS event webhook. Floor 3.7.3.96: older 3.7.x only
          validates SigV1 SNS messages (no SHA256), which would 401 every prod event. -->

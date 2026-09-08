@@ -18,21 +18,24 @@ public class ControllerAndServiceCtorTests
     [Fact]
     public void MfaController_CanBeConstructed()
     {
-        var ctrl = new MfaController(Mock.Of<IMfaService>());
+        var service = Mock.Of<IMfaService>();
+        var ctrl = new MfaController(service, IdentityCommandTestSender.ForMfa(service));
         ctrl.Should().NotBeNull();
     }
 
     [Fact]
     public void ServiceAccountCrudController_CanBeConstructed()
     {
-        var ctrl = new ServiceAccountCrudController(Mock.Of<IServiceAccountService>());
+        var service = Mock.Of<IServiceAccountService>();
+        var ctrl = new ServiceAccountCrudController(service, IdentityCommandTestSender.ForServiceAccounts(service));
         ctrl.Should().NotBeNull();
     }
 
     [Fact]
     public void TrustedDevicesController_CanBeConstructed()
     {
-        var ctrl = new TrustedDevicesController(Mock.Of<ISessionManagementService>());
+        var service = Mock.Of<ISessionManagementService>();
+        var ctrl = new TrustedDevicesController(service, IdentityCommandTestSender.ForSessions(service));
         ctrl.Should().NotBeNull();
     }
 

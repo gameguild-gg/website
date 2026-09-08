@@ -280,7 +280,9 @@ public class NotificationsControllerTests
     {
         var actorAccessor = new Mock<IActorContextAccessor>();
         actorAccessor.SetupGet(accessor => accessor.ActorContext).Returns(CreateActorContext(userId));
-        return new NotificationsController(service.Object, (preferences ?? new Mock<INotificationPreferenceService>()).Object, actorAccessor.Object);
+        var preferenceService = (preferences ?? new Mock<INotificationPreferenceService>()).Object;
+        var handler = new NotificationMutationCommandHandler(service.Object, preferenceService);
+        return new NotificationsController(service.Object, actorAccessor.Object, new NotificationCommandTestSender(handler));
     }
 
     private static ActorContext CreateActorContext(Guid? userId)

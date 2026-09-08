@@ -95,10 +95,10 @@ public sealed class ResourceUserScopedControllerCoverageTests
         => new(sender, Accessor(actor));
 
     private static UserResourceMetadataController CreateMetadataController(IResourceMetadataRepository repository, ActorContext? actor)
-        => new(repository, Accessor(actor));
+        => new(repository, Mock.Of<ISender>(), Accessor(actor));
 
     private static UserResourceSettingsController CreateSettingsController(IResourceSettingsRepository repository, ActorContext? actor)
-        => new(repository, Accessor(actor));
+        => new(repository, Mock.Of<ISender>(), Accessor(actor));
 
     private static IActorContextAccessor Accessor(ActorContext? actor)
     {

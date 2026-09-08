@@ -1,4 +1,5 @@
 using Asp.Versioning;
+using GameGuild.CQRS;
 using GameGuild.Identity.Authorization;
 using GameGuild.Notifications.Services.Email;
 using Microsoft.AspNetCore.Authorization;
@@ -20,10 +21,12 @@ public class EmailDeliveryAdminController : BaseApiController
     private const int PayloadPreviewMaxLength = 500;
 
     private readonly IEmailDeliveryAdminService _adminService;
+    private readonly ISender _sender;
 
-    public EmailDeliveryAdminController(IEmailDeliveryAdminService adminService)
+    public EmailDeliveryAdminController(IEmailDeliveryAdminService adminService, ISender sender)
     {
         _adminService = adminService;
+        _sender = sender;
     }
 
     /// <summary>
@@ -84,7 +87,7 @@ public class EmailDeliveryAdminController : BaseApiController
     [ProducesResponseType(typeof(UnsuppressResponse), StatusCodes.Status200OK)]
     public async Task<IActionResult> ReleaseSuppression([FromRoute] string email, CancellationToken cancellationToken = default)
     {
-        var result = await _adminService.ReleaseSuppressionAsync(email, cancellationToken).ConfigureAwait(false);
+        var result = await _sender.Send(new ReleaseEmailSuppressionCommand(email), cancellationToken).ConfigureAwait(false);
         if (!result.IsSuccess)
         {
             return FromError(result.Error);
@@ -128,7 +131,7 @@ public class EmailDeliveryAdminController : BaseApiController
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Requeue([FromRoute] Guid id, CancellationToken cancellationToken = default)
     {
-        var result = await _adminService.RequeueAsync(id, cancellationToken).ConfigureAwait(false);
+        var result = await _sender.Send(new RequeueEmailNotificationCommand(id), cancellationToken).ConfigureAwait(false);
         if (!result.IsSuccess)
         {
             return FromError(result.Error);

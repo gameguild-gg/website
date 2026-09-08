@@ -908,7 +908,10 @@ public class KeyRotationControllerCovTests
 
     public KeyRotationControllerCovTests()
     {
-        _controller = new KeyRotationController(_keyService.Object, NullLogger<KeyRotationController>.Instance);
+        _controller = new KeyRotationController(
+            _keyService.Object,
+            NullLogger<KeyRotationController>.Instance,
+            IdentityCommandTestSender.ForKeyRotation(_keyService.Object));
         _controller.ControllerContext = new ControllerContext
         {
             HttpContext = new DefaultHttpContext
@@ -1109,7 +1112,9 @@ public class WebAuthnControllerCovTests
 
     public WebAuthnControllerCovTests()
     {
-        _controller = new WebAuthnController(_webAuthnService.Object);
+        _controller = new WebAuthnController(
+            _webAuthnService.Object,
+            sender: IdentityCommandTestSender.ForWebAuthn(_webAuthnService.Object));
     }
 
     private void SetUser(Guid? userId)
@@ -1203,7 +1208,12 @@ public class WebAuthnControllerCovTests
             _webAuthnService.Object,
             jwtTokenService.Object,
             userRepository.Object,
-            configuration);
+            configuration,
+            IdentityCommandTestSender.ForWebAuthn(
+                _webAuthnService.Object,
+                jwtTokenService.Object,
+                userRepository.Object,
+                configuration));
         controller.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() };
 
         _webAuthnService.Setup(s => s.CompleteAuthenticationAsync(

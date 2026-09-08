@@ -386,7 +386,8 @@ public sealed class AuthenticationCoverageCompletionTests
     public void SessionController_PrivateHelpers_CoverFingerprintAndCurrentSessionBranches()
     {
         var sessionId = Guid.NewGuid();
-        var controller = new SessionController(Mock.Of<ISessionManagementService>())
+        var service = Mock.Of<ISessionManagementService>();
+        var controller = new SessionController(service, IdentityCommandTestSender.ForSessions(service))
         {
             ControllerContext = new ControllerContext
             {
@@ -420,7 +421,10 @@ public sealed class AuthenticationCoverageCompletionTests
     [Fact]
     public void WebAuthnController_PrivateHelpers_CoverFallbackBranches()
     {
-        var controller = new WebAuthnController(Mock.Of<IWebAuthnService>())
+        var webAuthnService = Mock.Of<IWebAuthnService>();
+        var controller = new WebAuthnController(
+            webAuthnService,
+            sender: IdentityCommandTestSender.ForWebAuthn(webAuthnService))
         {
             ControllerContext = new ControllerContext
             {
