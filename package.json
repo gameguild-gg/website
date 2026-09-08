@@ -80,7 +80,7 @@
       "lodash-es": "4.18.0",
       "syncpack>minimatch": "9.0.7",
       "icu-minify": "4.9.2",
-      "next": "16.3.0",
+      "next": "16.3.4",
       "postcss": "8.5.23",
       "sharp": "0.35.3",
       "prismjs": "1.30.0",
