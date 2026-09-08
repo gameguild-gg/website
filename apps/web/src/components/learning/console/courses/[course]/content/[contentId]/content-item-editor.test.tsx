@@ -1,5 +1,6 @@
 import "@testing-library/jest-dom/vitest";
 import {
+  act,
   fireEvent,
   render,
   screen,
@@ -754,8 +755,7 @@ describe("ContentItemEditor", () => {
     expect(screen.getByText("Saved successfully.")).toBeInTheDocument();
   });
 
-  it("shows a Preview toggle on lessons that swaps the body editor for the learner renderer", async () => {
-    const user = userEvent.setup();
+  it("shows the markdown body and preview side by side without a toggle", () => {
     render(
       <ContentItemEditor
         courseId="course-1"
@@ -764,24 +764,80 @@ describe("ContentItemEditor", () => {
       />,
     );
 
+    expect(
+      screen.queryByRole("button", { name: /preview/i }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Body")).toBeInTheDocument();
+    expect(screen.getByTestId("lesson-preview")).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { level: 1, name: "existing markdown" }),
+    ).toBeInTheDocument();
+  });
+
+  it("shows a Preview toggle on RevealJs lessons that swaps the body editor for the learner renderer", async () => {
+    const user = userEvent.setup();
+    const revealItem = {
+      ...lessonItemMarkdownBody,
+      id: "lesson-reveal",
+      lessonFormat: "RevealJs" as const,
+      content: "slide one",
+    } satisfies ContentItemDetail;
+
+    render(
+      <ContentItemEditor
+        courseId="course-1"
+        item={revealItem}
+        courseTitle="Advanced Game AI"
+      />,
+    );
+
     const previewButton = screen.getByRole("button", { name: /preview/i });
-    expect(previewButton).toBeInTheDocument();
     expect(screen.queryByTestId("lesson-preview")).not.toBeInTheDocument();
 
-    // Body seeded from item.content; renderer sees it without typing into Monaco.
     await user.click(previewButton);
 
     expect(screen.getByRole("button", { name: /^edit$/i })).toBeInTheDocument();
-    expect(
-      screen.queryByRole("button", { name: /^preview$/i }),
-    ).not.toBeInTheDocument();
     expect(screen.getByTestId("lesson-preview")).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: /^edit$/i }));
     expect(
-      screen.getByRole("button", { name: /preview/i }),
-    ).toBeInTheDocument();
-    expect(screen.queryByTestId("lesson-preview")).not.toBeInTheDocument();
+      screen.queryByTestId("lesson-preview"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("autosaves debounced edits without a manual save and updates the last-saved time", async () => {
+    vi.useFakeTimers();
+    try {
+      render(
+        <ContentItemEditor
+          courseId="course-1"
+          item={lessonItemMarkdownBody}
+          courseTitle="Advanced Game AI"
+        />,
+      );
+
+      expect(updateContent).not.toHaveBeenCalled();
+      expect(screen.getByTestId("last-saved-at")).toHaveTextContent(
+        /last saved \d{1,2}:\d{2}:\d{2}/i,
+      );
+
+      fireEvent.change(screen.getByLabelText("Body"), {
+        target: { value: "# autosaved markdown" },
+      });
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(3000);
+      });
+
+      expect(updateContent).toHaveBeenCalledTimes(1);
+      expect(
+        screen.getByTestId("last-saved-at"),
+      ).toHaveTextContent(/last saved \d{1,2}:\d{2}:\d{2}/i);
+      expect(routerMocks.refresh).not.toHaveBeenCalled();
+      expect(routerMocks.replace).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("does not show a Preview toggle on non-lesson items", () => {
