@@ -1,5 +1,6 @@
 using Asp.Versioning;
 using GameGuild.Configuration.PresentationLayer.RateLimiting;
+using GameGuild.CQRS;
 using GameGuild.Identity.Authorization;
 using GameGuild.Identity.Context.Actors;
 using Microsoft.AspNetCore.Authorization;
@@ -21,6 +22,7 @@ namespace GameGuild.Resources;
 [EnableRateLimiting(RateLimitPolicies.PerTenant)]
 public sealed class TenantResourceMetadataController(
     IResourceMetadataRepository metadataRepository,
+    ISender sender,
     IActorContextAccessor actorContextAccessor,
     ITenantMembershipChecker tenantMembershipChecker) : BaseApiController
 {
@@ -119,39 +121,8 @@ public sealed class TenantResourceMetadataController(
         
         ArgumentNullException.ThrowIfNull(body);
 
-        var existing = await metadataRepository.GetByKeyAsync(tenantId, key, ct).ConfigureAwait(false);
-
-        if (existing != null)
-        {
-            existing.Value = body.Value;
-            existing.DataType = body.DataType ?? existing.DataType;
-            existing.Description = body.Description ?? existing.Description;
-            existing.Category = body.Category ?? existing.Category;
-            existing.DisplayOrder = body.DisplayOrder ?? existing.DisplayOrder;
-            existing.Touch();
-
-            await metadataRepository.UpdateAsync(existing, ct).ConfigureAwait(false);
-
-            return Ok(existing);
-        }
-
-        var metadata = new ResourceMetadata
-        {
-            Key = key,
-            Value = body.Value,
-            DataType = body.DataType ?? "String",
-            Description = body.Description,
-            Category = body.Category,
-            DisplayOrder = body.DisplayOrder ?? 0,
-            IsActive = true
-        };
-
-        // Set TenantId using reflection since the setter is protected
-        var tenantIdProperty = typeof(ResourceMetadata).GetProperty("TenantId");
-        tenantIdProperty?.GetSetMethod(nonPublic: true)?.Invoke(metadata, new object[] { tenantId });
-
-        await metadataRepository.CreateAsync(metadata, ct).ConfigureAwait(false);
-
+        var metadata = await sender.Send(new SetTenantResourceMetadataCommand(tenantId, key, body), ct)
+            .ConfigureAwait(false);
         return Ok(metadata);
     }
 
@@ -173,7 +144,8 @@ public sealed class TenantResourceMetadataController(
         if (!await ValidateTenantMembershipAsync(tenantId, ct))
             return Forbid();
         
-        var deleted = await metadataRepository.DeleteByKeyAsync(tenantId, key, ct).ConfigureAwait(false);
+        var deleted = await sender.Send(new DeleteTenantResourceMetadataCommand(tenantId, key), ct)
+            .ConfigureAwait(false);
 
         if (!deleted) return NotFound($"Metadata not found for key: {key}");
 

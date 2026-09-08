@@ -18,6 +18,7 @@ public class CachedResourceQuotaService : IResourceQuotaService
     private readonly IResourceQuotaService _inner;
     private readonly IMemoryCache _cache;
     private readonly ILogger<CachedResourceQuotaService> _logger;
+    private readonly ICostTelemetryRecorder? _costTelemetryRecorder;
 
     private static readonly TimeSpan DefaultCacheDuration = TimeSpan.FromSeconds(30);
     private const string CacheKeyPrefix = "quota:";
@@ -25,11 +26,13 @@ public class CachedResourceQuotaService : IResourceQuotaService
     public CachedResourceQuotaService(
         IResourceQuotaService inner,
         IMemoryCache cache,
-        ILogger<CachedResourceQuotaService> logger)
+        ILogger<CachedResourceQuotaService> logger,
+        ICostTelemetryRecorder? costTelemetryRecorder = null)
     {
         _inner = inner;
         _cache = cache;
         _logger = logger;
+        _costTelemetryRecorder = costTelemetryRecorder;
     }
 
     private static string GetQuotaCacheKey(Guid tenantId, ResourceUsageType type) =>
@@ -44,7 +47,9 @@ public class CachedResourceQuotaService : IResourceQuotaService
         var allKey = GetTenantQuotasCacheKey(tenantId);
 
         _cache.Remove(specificKey);
+        _costTelemetryRecorder?.RecordCacheOperation();
         _cache.Remove(allKey);
+        _costTelemetryRecorder?.RecordCacheOperation();
 
         _logger.LogDebug("Invalidated quota cache for tenant {TenantId}, type {Type}", tenantId, type);
     }
@@ -55,6 +60,7 @@ public class CachedResourceQuotaService : IResourceQuotaService
         // Invalidate all quotas cache for tenant
         var allKey = GetTenantQuotasCacheKey(tenantId);
         _cache.Remove(allKey);
+        _costTelemetryRecorder?.RecordCacheOperation();
 
         _logger.LogDebug("Invalidated all quotas cache for tenant {TenantId}", tenantId);
     }
@@ -81,6 +87,7 @@ public class CachedResourceQuotaService : IResourceQuotaService
     {
         var cacheKey = GetQuotaCacheKey(tenantId, type);
 
+        _costTelemetryRecorder?.RecordCacheOperation();
         if (_cache.TryGetValue<ResourceQuota>(cacheKey, out var cached) && cached != null)
         {
             _logger.LogDebug("Cache hit for quota {TenantId}:{Type}", tenantId, type);
@@ -96,6 +103,7 @@ public class CachedResourceQuotaService : IResourceQuotaService
                 AbsoluteExpirationRelativeToNow = DefaultCacheDuration,
                 Size = 1
             });
+            _costTelemetryRecorder?.RecordCacheOperation();
             _logger.LogDebug("Cached quota for {TenantId}:{Type}", tenantId, type);
         }
 
@@ -108,6 +116,7 @@ public class CachedResourceQuotaService : IResourceQuotaService
     {
         var cacheKey = GetTenantQuotasCacheKey(tenantId);
 
+        _costTelemetryRecorder?.RecordCacheOperation();
         if (_cache.TryGetValue<IEnumerable<ResourceQuota>>(cacheKey, out var cached) && cached != null)
         {
             _logger.LogDebug("Cache hit for all quotas of tenant {TenantId}", tenantId);
@@ -122,6 +131,7 @@ public class CachedResourceQuotaService : IResourceQuotaService
             AbsoluteExpirationRelativeToNow = DefaultCacheDuration,
             Size = quotaList.Count
         });
+        _costTelemetryRecorder?.RecordCacheOperation();
 
         return quotaList;
     }

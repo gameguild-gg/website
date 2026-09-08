@@ -14,38 +14,6 @@ public sealed record UserDeletedEvent(
     public override string SourceModule => "Identity.Users";
 }
 
-public sealed record PropertyCreatedEvent(
-    [property: NonPersonalEventData] Guid PropertyId = default) : DurableIntegrationEventBase
-{
-    public override string EventName => "real-estate.property.created.v1";
-    public override string SourceModule => "RealEstate";
-}
-
-public sealed record PropertyDeletedEvent(
-    [property: NonPersonalEventData] Guid PropertyId = default) : DurableIntegrationEventBase
-{
-    public override string EventName => "real-estate.property.deleted.v1";
-    public override string SourceModule => "RealEstate";
-}
-
-public sealed record PropertyMediaAttachedEvent(
-    [property: NonPersonalEventData] Guid PropertyId = default,
-    [property: NonPersonalEventData] Guid MediaId = default,
-    [property: NonPersonalEventData] string MediaKind = "unknown") : DurableIntegrationEventBase
-{
-    public override string EventName => "real-estate.property-media.attached.v1";
-    public override string SourceModule => "RealEstate";
-}
-
-public sealed record PropertyMediaRemovedEvent(
-    [property: NonPersonalEventData] Guid PropertyId = default,
-    [property: NonPersonalEventData] Guid MediaId = default,
-    [property: NonPersonalEventData] string MediaKind = "unknown") : DurableIntegrationEventBase
-{
-    public override string EventName => "real-estate.property-media.removed.v1";
-    public override string SourceModule => "RealEstate";
-}
-
 public sealed record AssetReferenceCreatedEvent(
     [property: NonPersonalEventData] Guid AssetReferenceId = default,
     [property: NonPersonalEventData] Guid AssetContentId = default,

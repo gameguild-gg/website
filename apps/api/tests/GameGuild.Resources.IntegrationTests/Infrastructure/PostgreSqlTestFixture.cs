@@ -1,5 +1,5 @@
 using Npgsql;
-using GameGuild.TestSupport.Economy;
+using Testcontainers.PostgreSql;
 using Xunit;
 
 namespace GameGuild.Resources.IntegrationTests.Infrastructure;
@@ -11,14 +11,25 @@ namespace GameGuild.Resources.IntegrationTests.Infrastructure;
 /// </summary>
 public class PostgreSqlTestFixture : IAsyncLifetime
 {
-    private EconomyPostgreSqlTestDatabase _container = null!;
+    private readonly PostgreSqlContainer _container;
     
-    public string ConnectionString => _container.ConnectionString;
+    public string ConnectionString => _container.GetConnectionString();
     public bool IsRunning { get; private set; }
+
+    public PostgreSqlTestFixture()
+    {
+        _container = new PostgreSqlBuilder()
+            .WithImage("postgres:16-alpine")
+            .WithDatabase("gameguild_test")
+            .WithUsername("test")
+            .WithPassword("test")
+            .WithCleanUp(true)
+            .Build();
+    }
 
     public async Task InitializeAsync()
     {
-        _container = await EconomyPostgreSqlTestDatabase.CreateAsync("resources_integration");
+        await _container.StartAsync();
         IsRunning = true;
         
         // Note: We don't call EnsureCreatedAsync() here because the application's
