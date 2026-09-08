@@ -681,6 +681,9 @@ export function MermaidViewer({
               </div>
             ) : svgContent ? (
               <div
+                // mermaid bug (htmlLabels:false): mindmap root <text> gets no
+                // text-anchor and spills right of the circle. Recenter it.
+                className="[&_svg_.section-root_text]:[text-anchor:middle]"
                 style={{
                   transform: `scale(${(zoom / 100) * baseScale}) translate(${position.x / ((zoom / 100) * baseScale)}px, ${position.y / ((zoom / 100) * baseScale)}px)`,
                   transformOrigin: "center center",
@@ -809,7 +812,8 @@ export function MermaidViewer({
               >
                 {svgContent && (
                   <div
-                    className="flex justify-center items-center max-w-full max-h-full"
+                    // Same mindmap root-label recenter as the inline viewer.
+                    className="[&_svg_.section-root_text]:[text-anchor:middle] flex justify-center items-center max-w-full max-h-full"
                     style={{
                       transform: `scale(${(fullscreenZoom / 100) * fullscreenBaseScale}) translate(${fullscreenPosition.x / ((fullscreenZoom / 100) * fullscreenBaseScale)}px, ${fullscreenPosition.y / ((fullscreenZoom / 100) * fullscreenBaseScale)}px)`,
                       transformOrigin: "center",

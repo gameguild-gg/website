@@ -155,7 +155,10 @@ export function MermaidDiagram({ code, className = '' }: MermaidDiagramProps) {
 
   return (
     <div
-      className={`my-4 overflow-x-auto rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-700/60 dark:bg-slate-900 ${className}`}
+      // mermaid bug (htmlLabels:false): mindmap root <text> gets no
+      // text-anchor, so the label starts at the circle center and spills
+      // right. Recenters it; scoped to mindmap's .section-root.
+      className={`my-4 overflow-x-auto rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-700/60 dark:bg-slate-900 [&_svg_.section-root_text]:[text-anchor:middle] ${className}`}
     >
       {svgContent ? (
         <div
