@@ -71,12 +71,12 @@ jobs:
         with:
           node-version: '22'
 
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         with:
           path: ~/.local/share/pnpm/store
           key: pnpm-store-${{ runner.os }}-${{ hashFiles('package.json', 'apps/**/package.json') }}
 
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         with:
           path: ~/.nuget/packages
           key: nuget-packages-${{ runner.os }}-${{ hashFiles('apps/api/**/*.csproj', 'apps/api/**/*.props', 'apps/api/**/*.targets', 'apps/api/**/NuGet.config') }}
