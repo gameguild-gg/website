@@ -160,7 +160,9 @@ describe("ContentTree course management", () => {
     await user.click(screen.getByRole("button", { name: /add lesson/i }));
     await user.click(screen.getByRole("combobox", { name: /type/i }));
 
-    expect(screen.getByRole("option", { name: "Lesson" })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("option", { name: "Lesson" }),
+    ).toBeInTheDocument();
     expect(screen.getByRole("option", { name: "Quiz" })).toBeInTheDocument();
     expect(screen.getByRole("option", { name: "Project" })).toBeInTheDocument();
     expect(
@@ -269,6 +271,7 @@ describe("ContentTree course management", () => {
     );
 
     fireEvent.click(screen.getByRole("button", { name: /add lesson/i }));
+    await screen.findByText("Production Foundations");
     dialog = await screen.findByRole("dialog", { name: /add lesson/i });
     fireEvent.change(within(dialog).getByLabelText(/title/i), {
       target: { value: "Define the playable promise" },
@@ -326,7 +329,7 @@ describe("ContentTree course management", () => {
     await user.click(screen.getByRole("button", { name: /add lesson/i }));
     const dialog = screen.getByRole("dialog", { name: /add lesson/i });
     await user.click(within(dialog).getByLabelText(/lesson format/i));
-    await user.click(screen.getByRole("option", { name: /video \(link\)/i }));
+    await user.click(await screen.findByRole("option", { name: /video \(link\)/i }));
     await user.type(
       within(dialog).getByLabelText(/title/i),
       "Camera blocking walkthrough",
@@ -405,7 +408,7 @@ describe("ContentTree course management", () => {
     await user.click(screen.getByRole("button", { name: /add lesson/i }));
     const dialog = screen.getByRole("dialog", { name: /add lesson/i });
     await user.click(within(dialog).getByLabelText(/type/i));
-    await user.click(screen.getByRole("option", { name: "Quiz" }));
+    await user.click(await screen.findByRole("option", { name: "Quiz" }));
 
     expect(
       within(dialog).queryByLabelText(/lesson format/i),

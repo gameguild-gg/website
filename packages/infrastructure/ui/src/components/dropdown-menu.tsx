@@ -7,8 +7,44 @@ import { cn } from "@game-guild/ui/lib/utils"
 import { type LegacyLayerHandlers, useLegacyLayerHandlers, useMergedRefs } from "@game-guild/ui/lib/legacy-layer"
 import { ChevronRightIcon, CheckIcon } from "lucide-react"
 
-function DropdownMenu({ ...props }: MenuPrimitive.Root.Props) {
-  return <MenuPrimitive.Root data-slot="dropdown-menu" {...props} />
+const DropdownMenuCloseContext = React.createContext<((domEvent?: Event) => void) | null>(null)
+
+type DropdownMenuChangeEventDetails = Parameters<
+  NonNullable<MenuPrimitive.Root.Props["onOpenChange"]>
+>[1]
+
+function DropdownMenu({ open, onOpenChange, ...props }: MenuPrimitive.Root.Props) {
+  const [uncontrolledOpen, setUncontrolledOpen] = React.useState(false)
+  const isControlled = open !== undefined
+  const requestClose = React.useCallback(
+    (domEvent?: Event) => {
+      const eventDetails: DropdownMenuChangeEventDetails = {
+        reason: "item-press",
+        event: domEvent instanceof MouseEvent ? domEvent : new MouseEvent("click"),
+        cancel: () => {},
+        allowPropagation: () => {},
+        isCanceled: false,
+        isPropagationAllowed: false,
+        trigger: undefined,
+        preventUnmountOnClose: () => {},
+      }
+      if (!isControlled) setUncontrolledOpen(false)
+      onOpenChange?.(false, eventDetails)
+    },
+    [isControlled, onOpenChange],
+  )
+  const root = (
+    <MenuPrimitive.Root
+      data-slot="dropdown-menu"
+      open={isControlled ? open : uncontrolledOpen}
+      onOpenChange={(nextOpen, eventDetails) => {
+        if (!isControlled) setUncontrolledOpen(nextOpen)
+        onOpenChange?.(nextOpen, eventDetails)
+      }}
+      {...props}
+    />
+  )
+  return <DropdownMenuCloseContext.Provider value={requestClose}>{root}</DropdownMenuCloseContext.Provider>
 }
 
 function DropdownMenuPortal({ ...props }: MenuPrimitive.Portal.Props) {
@@ -92,6 +128,8 @@ function DropdownMenuLabel({
   )
 }
 
+type DropdownMenuItemLegacyOnSelect = (event: React.MouseEvent<HTMLDivElement>) => void
+
 function DropdownMenuItem({
   className,
   inset,
@@ -99,22 +137,35 @@ function DropdownMenuItem({
   asChild,
   children,
   render,
+  onSelect,
   ...props
-}: MenuPrimitive.Item.Props & {
+}: Omit<MenuPrimitive.Item.Props, "onSelect"> & {
   inset?: boolean
   variant?: "default" | "destructive"
   asChild?: boolean
+  onSelect?: DropdownMenuItemLegacyOnSelect
 }) {
+  const requestClose = React.useContext(DropdownMenuCloseContext)
+  const legacyOnSelect = onSelect !== undefined
   return (
     <MenuPrimitive.Item
       data-slot="dropdown-menu-item"
       data-inset={inset}
       data-variant={variant}
       render={asChild && React.isValidElement(children) ? children : render}
+      closeOnClick={legacyOnSelect ? false : undefined}
       className={cn(
         "group/dropdown-menu-item relative flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-inset:pl-8 data-[variant=destructive]:text-destructive data-[variant=destructive]:focus:bg-destructive/10 data-[variant=destructive]:focus:text-destructive dark:data-[variant=destructive]:focus:bg-destructive/20 data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 data-[variant=destructive]:*:[svg]:text-destructive",
-        className
+        className,
       )}
+      onClick={
+        legacyOnSelect
+          ? (event) => {
+              onSelect(event)
+              if (!event.defaultPrevented) requestClose?.(event.nativeEvent)
+            }
+          : undefined
+      }
       {...props}
     >
       {asChild ? null : children}

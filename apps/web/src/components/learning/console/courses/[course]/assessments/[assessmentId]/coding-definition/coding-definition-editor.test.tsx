@@ -536,7 +536,7 @@ describe("CodingDefinitionEditor", () => {
       target: { value: "a" },
     });
     await user.click(screen.getByTestId("functional-param-type-0-0"));
-    await user.click(screen.getByRole("option", { name: "Integer" }));
+    await user.click(await screen.findByRole("option", { name: "Integer" }));
 
     // Add a case and supply its input value — values live in cases now (T11),
     // not on signature parameters.

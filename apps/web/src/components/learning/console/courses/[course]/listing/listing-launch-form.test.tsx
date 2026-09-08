@@ -57,10 +57,10 @@ describe('ListingLaunchForm', () => {
     render(<ListingLaunchForm course={course} />);
 
     await user.click(screen.getByRole('combobox', { name: /catalog visibility/i }));
-    await user.click(screen.getByRole('option', { name: /public/i }));
+    await user.click(await screen.findByRole('option', { name: /public/i }));
 
     await user.click(screen.getByRole('combobox', { name: /enrollment status/i }));
-    await user.click(screen.getByRole('option', { name: /open/i }));
+    await user.click(await screen.findByRole('option', { name: /open/i }));
 
     fireEvent.change(screen.getByLabelText(/enrollment deadline/i), { target: { value: '2026-09-01T09:00' } });
     fireEvent.change(screen.getByLabelText(/enrollment cap/i), { target: { value: '0' } });
