@@ -38,7 +38,13 @@ import {
   SelectValue,
 } from "@game-guild/ui/components/select";
 import { Separator } from "@game-guild/ui/components/separator";
-import { format, isSameMonth, isToday, startOfMonth } from "date-fns";
+import {
+  format,
+  getISOWeek,
+  isSameMonth,
+  isToday,
+  startOfMonth,
+} from "date-fns";
 import {
   Blend,
   CalendarClock,
@@ -54,7 +60,13 @@ import {
   Search,
   UsersRound,
 } from "lucide-react";
-import { type ReactNode, useMemo, useState, useSyncExternalStore } from "react";
+import {
+  Fragment,
+  type ReactNode,
+  useMemo,
+  useState,
+  useSyncExternalStore,
+} from "react";
 
 import { CreateTestingEventDialog } from "./testing-event-management";
 
@@ -508,6 +520,12 @@ function GridView({
     ? ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
     : ["Mon", "Tue", "Wed", "Thu", "Fri"];
   const monthStart = startOfMonth(anchor);
+  const showWeekNumbers = view === "month";
+  const gridTemplateColumns = showWeekNumbers
+    ? `2.25rem repeat(${weekdays.length}, minmax(0, 1fr))`
+    : `repeat(${
+        view === "week" ? weekdays.length : range.days.length
+      }, minmax(0, 1fr))`;
 
   return (
     <div className="relative min-h-0 flex-1 overflow-auto">
@@ -521,10 +539,16 @@ function GridView({
       >
         <div
           className="grid border-b text-center text-xs font-medium text-muted-foreground"
-          style={{
-            gridTemplateColumns: `repeat(${view === "month" || view === "week" ? weekdays.length : range.days.length}, minmax(0, 1fr))`,
-          }}
+          style={{ gridTemplateColumns }}
         >
+          {showWeekNumbers ? (
+            <div
+              aria-label="Week numbers"
+              className="border-r px-1 py-2.5 text-[10px] uppercase tracking-wide"
+            >
+              Wk
+            </div>
+          ) : null}
           {(view === "month" || view === "week"
             ? weekdays.map((weekday) => ({ key: weekday, label: weekday }))
             : range.days.map((day) => ({
@@ -539,52 +563,59 @@ function GridView({
         </div>
         <div
           className="grid flex-1 auto-rows-fr"
-          style={{
-            gridTemplateColumns: `repeat(${view === "month" || view === "week" ? weekdays.length : range.days.length}, minmax(0, 1fr))`,
-          }}
+          style={{ gridTemplateColumns }}
         >
-          {range.days.map((day) => {
+          {range.days.map((day, dayIndex) => {
             const key = format(day, "yyyy-MM-dd");
             const segments = segmentsByDay.get(key) ?? [];
             const outsideMonth =
               view === "month" && !isSameMonth(day, monthStart);
             return (
-              <div
-                key={key}
-                className={`group relative min-h-24 border-b border-r p-2 last:border-r-0 md:min-h-0 ${outsideMonth ? "bg-muted/20 text-muted-foreground" : "bg-background"}`}
-              >
-                <button
-                  type="button"
-                  aria-label={`Create event on ${format(day, "MMMM d, yyyy")}`}
-                  className="absolute inset-0 z-0 rounded-none transition-colors hover:bg-muted/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
-                  onClick={() => onCreateEvent(new Date(day))}
-                />
-                <time
-                  dateTime={day.toISOString()}
-                  className={`pointer-events-none relative z-10 mb-2 flex size-7 items-center justify-center rounded-full text-xs font-medium tabular-nums ${isToday(day) ? "bg-primary text-primary-foreground" : ""}`}
+              <Fragment key={key}>
+                {showWeekNumbers && dayIndex % weekdays.length === 0 ? (
+                  <div
+                    aria-label={`Week ${getISOWeek(day)}`}
+                    className="flex min-h-24 items-start justify-center border-b border-r bg-muted/20 px-1 py-3 text-[11px] font-medium tabular-nums text-muted-foreground md:min-h-0"
+                  >
+                    {getISOWeek(day)}
+                  </div>
+                ) : null}
+                <div
+                  className={`group relative min-h-24 border-b border-r p-2 last:border-r-0 md:min-h-0 ${outsideMonth ? "bg-muted/20 text-muted-foreground" : "bg-background"}`}
                 >
-                  {format(day, "d")}
-                </time>
-                <div className="relative z-10 space-y-1">
-                  {segments.slice(0, 3).map((segment) => (
-                    <EventLink
-                      key={`${segment.event.id}-${segment.dayKey}`}
-                      event={segment.event}
-                      analytics={
-                        segment.event.id
-                          ? analyticsByEvent.get(segment.event.id)
-                          : undefined
-                      }
-                      compact
-                    />
-                  ))}
-                  {segments.length > 3 ? (
-                    <p className="text-xs text-muted-foreground">
-                      +{segments.length - 3} more
-                    </p>
-                  ) : null}
+                  <button
+                    type="button"
+                    aria-label={`Create event on ${format(day, "MMMM d, yyyy")}`}
+                    className="absolute inset-0 z-0 rounded-none transition-colors hover:bg-muted/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+                    onClick={() => onCreateEvent(new Date(day))}
+                  />
+                  <time
+                    dateTime={day.toISOString()}
+                    className={`pointer-events-none relative z-10 mb-2 flex size-7 items-center justify-center rounded-full text-xs font-medium tabular-nums ${isToday(day) ? "bg-primary text-primary-foreground" : ""}`}
+                  >
+                    {format(day, "d")}
+                  </time>
+                  <div className="relative z-10 space-y-1">
+                    {segments.slice(0, 3).map((segment) => (
+                      <EventLink
+                        key={`${segment.event.id}-${segment.dayKey}`}
+                        event={segment.event}
+                        analytics={
+                          segment.event.id
+                            ? analyticsByEvent.get(segment.event.id)
+                            : undefined
+                        }
+                        compact
+                      />
+                    ))}
+                    {segments.length > 3 ? (
+                      <p className="text-xs text-muted-foreground">
+                        +{segments.length - 3} more
+                      </p>
+                    ) : null}
+                  </div>
                 </div>
-              </div>
+              </Fragment>
             );
           })}
         </div>

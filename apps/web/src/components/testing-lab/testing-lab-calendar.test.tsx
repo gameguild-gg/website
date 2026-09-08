@@ -118,6 +118,20 @@ describe("TestingLabCalendar", () => {
     expect(calendar).not.toHaveClass("border", "rounded-lg");
   });
 
+  it("shows ISO week numbers beside each row in the month view", () => {
+    render(
+      <TestingLabCalendar
+        events={events}
+        eventAnalytics={eventAnalytics}
+        initialDate={new Date(2030, 7, 10)}
+      />,
+    );
+
+    expect(screen.getByLabelText("Week numbers")).toHaveTextContent("Wk");
+    expect(screen.getByLabelText("Week 31")).toHaveTextContent("31");
+    expect(screen.getAllByLabelText(/^Week \d+$/)).toHaveLength(5);
+  });
+
   it("keeps an empty month grid unobstructed", () => {
     render(
       <TestingLabCalendar events={[]} initialDate={new Date(2030, 7, 10)} />,
