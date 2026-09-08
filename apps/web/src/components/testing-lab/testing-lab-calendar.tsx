@@ -13,12 +13,15 @@ import { formatTestingEventStatus } from "@/lib/testing-lab/format";
 import type { TestingLabTestingEventProjection } from "@game-guild/client";
 import { Badge } from "@game-guild/ui/components/badge";
 import { Button } from "@game-guild/ui/components/button";
+import { Calendar } from "@game-guild/ui/components/calendar";
+import { Checkbox } from "@game-guild/ui/components/checkbox";
 import {
   HoverCard,
   HoverCardContent,
   HoverCardTrigger,
 } from "@game-guild/ui/components/hover-card";
 import { Input } from "@game-guild/ui/components/input";
+import { Progress } from "@game-guild/ui/components/progress";
 import {
   Select,
   SelectContent,
@@ -27,15 +30,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@game-guild/ui/components/select";
+import { Separator } from "@game-guild/ui/components/separator";
+import { cn } from "@game-guild/ui/lib/utils";
 import { format, isSameMonth, isToday, startOfMonth } from "date-fns";
 import {
   Blend,
   CalendarClock,
+  ChartNoAxesCombined,
   ChevronLeft,
   ChevronRight,
   Clock3,
   MapPin,
   MonitorPlay,
+  PanelRightClose,
+  PanelRightOpen,
   Search,
   UsersRound,
 } from "lucide-react";
@@ -69,6 +77,18 @@ const eventFilters = [
 ] as const;
 
 type EventFilter = (typeof eventFilters)[number]["value"];
+
+const eventCalendars = [
+  { value: "Online", label: "Online", markerClassName: "bg-primary" },
+  {
+    value: "InPerson",
+    label: "In-person",
+    markerClassName: "bg-chart-2",
+  },
+  { value: "Hybrid", label: "Hybrid", markerClassName: "bg-chart-4" },
+] as const;
+
+type EventCalendar = (typeof eventCalendars)[number]["value"];
 
 const mobileCalendarQuery = "(max-width: 767px)";
 
@@ -119,6 +139,31 @@ function eventStart(event: TestingLabTestingEventProjection) {
 function eventEnd(event: TestingLabTestingEventProjection) {
   const date = event.endsAt ? new Date(event.endsAt) : null;
   return date && !Number.isNaN(date.valueOf()) ? date : null;
+}
+
+function eventCalendar(event: TestingLabTestingEventProjection): EventCalendar {
+  return event.mode === "InPerson" || event.mode === "Hybrid"
+    ? event.mode
+    : "Online";
+}
+
+function eventsInsideRange(
+  events: TestingLabTestingEventProjection[],
+  range: ReturnType<typeof calendarRange>,
+) {
+  return events.filter((event) => {
+    const startsAt = eventStart(event);
+    if (!startsAt) return false;
+    const endsAt = eventEnd(event) ?? startsAt;
+    return startsAt <= range.end && endsAt >= range.start;
+  });
+}
+
+function formatTestingHours(hours: number) {
+  const roundedHours = Math.round(hours * 10) / 10;
+  return `${roundedHours.toLocaleString(undefined, {
+    maximumFractionDigits: 1,
+  })}h testing time`;
 }
 
 function eventMode(mode?: TestingLabTestingEventProjection["mode"]) {
@@ -545,6 +590,149 @@ function GridView({
   );
 }
 
+function TestingLabPlanningSidebar({
+  anchor,
+  onAnchorChange,
+  events,
+  analyticsByEvent,
+  activeCalendars,
+  onCalendarChange,
+}: {
+  anchor: Date;
+  onAnchorChange: (date: Date) => void;
+  events: TestingLabTestingEventProjection[];
+  analyticsByEvent: Map<string, TestingLabCalendarEventAnalytics>;
+  activeCalendars: Set<EventCalendar>;
+  onCalendarChange: (calendar: EventCalendar, checked: boolean) => void;
+}) {
+  const eventCount = events.length;
+  const testingHours = events.reduce((total, event) => {
+    const startsAt = eventStart(event);
+    const endsAt = eventEnd(event);
+    if (!startsAt || !endsAt || endsAt <= startsAt) return total;
+    return total + (endsAt.valueOf() - startsAt.valueOf()) / 3_600_000;
+  }, 0);
+  const capacity = events.reduce(
+    (totals, event) => {
+      const analytics = event.id ? analyticsByEvent.get(event.id) : undefined;
+      if (!analytics || analytics.capacity <= 0) return totals;
+      totals.registered += Math.min(
+        analytics.registeredTesters,
+        analytics.capacity,
+      );
+      totals.available += analytics.capacity;
+      return totals;
+    },
+    { registered: 0, available: 0 },
+  );
+  const fillRate = capacity.available
+    ? Math.round((capacity.registered / capacity.available) * 100)
+    : 0;
+
+  return (
+    <aside
+      aria-label="Testing Lab planning"
+      className="absolute inset-y-0 right-0 flex w-72 shrink-0 flex-col overflow-y-auto border-l bg-background shadow-lg md:static md:shadow-none"
+    >
+      <section aria-labelledby="mini-calendar-title" className="p-4">
+        <h2 id="mini-calendar-title" className="sr-only">
+          Mini calendar
+        </h2>
+        <Calendar
+          mode="single"
+          month={anchor}
+          selected={anchor}
+          onMonthChange={onAnchorChange}
+          onSelect={(date) => {
+            if (date) onAnchorChange(date);
+          }}
+          showOutsideDays={false}
+          className="w-full bg-transparent p-0 [--cell-size:--spacing(8)]"
+          classNames={{
+            root: "w-full",
+            months: "w-full",
+            month: "w-full",
+          }}
+        />
+      </section>
+
+      <Separator />
+
+      <section aria-labelledby="time-insights-title" className="p-4">
+        <div className="flex items-center gap-2">
+          <ChartNoAxesCombined
+            className="size-4 text-muted-foreground"
+            aria-hidden="true"
+          />
+          <h2 id="time-insights-title" className="text-sm font-semibold">
+            Time insights
+          </h2>
+        </div>
+        <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
+          <div>
+            <p className="text-lg font-semibold tabular-nums">
+              {eventCount} {eventCount === 1 ? "event" : "events"}
+            </p>
+            <p className="text-xs text-muted-foreground">This period</p>
+          </div>
+          <div>
+            <p className="text-lg font-semibold tabular-nums">
+              {formatTestingHours(testingHours).replace(" testing time", "")}
+            </p>
+            <p className="text-xs text-muted-foreground">Testing time</p>
+          </div>
+        </div>
+        <div className="mt-4 flex flex-col gap-2">
+          <div className="flex items-center justify-between gap-3 text-xs">
+            <span className="text-muted-foreground">Tester capacity</span>
+            <span className="font-medium tabular-nums">
+              {capacity.available
+                ? `${capacity.registered} of ${capacity.available} seats filled`
+                : "No capacity set"}
+            </span>
+          </div>
+          <Progress
+            value={fillRate}
+            aria-label="Tester capacity filled"
+            className="gap-0"
+          />
+        </div>
+      </section>
+
+      <Separator />
+
+      <section aria-labelledby="event-calendars-title" className="p-4">
+        <h2 id="event-calendars-title" className="text-sm font-semibold">
+          Event calendars
+        </h2>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Show events by format.
+        </p>
+        <div className="mt-3 flex flex-col gap-1">
+          {eventCalendars.map((calendar) => (
+            <label
+              key={calendar.value}
+              className="flex min-h-9 cursor-pointer items-center gap-3 rounded-md px-2 text-sm hover:bg-muted/50"
+            >
+              <Checkbox
+                checked={activeCalendars.has(calendar.value)}
+                onCheckedChange={(checked) =>
+                  onCalendarChange(calendar.value, checked)
+                }
+              />
+              <span
+                className={cn("size-2 rounded-full", calendar.markerClassName)}
+                aria-hidden="true"
+              />
+              <span>{calendar.label}</span>
+            </label>
+          ))}
+        </div>
+      </section>
+    </aside>
+  );
+}
+
 export function TestingLabCalendar({
   events,
   eventAnalytics = [],
@@ -570,8 +758,15 @@ export function TestingLabCalendar({
   const [anchor, setAnchor] = useState(() => initialDate);
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<EventFilter>("all");
+  const [activeCalendars, setActiveCalendars] = useState<Set<EventCalendar>>(
+    () => new Set(eventCalendars.map(({ value }) => value)),
+  );
+  const [planningPreference, setPlanningPreference] = useState<boolean | null>(
+    null,
+  );
   const [createDate, setCreateDate] = useState<Date | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
+  const planningOpen = planningPreference ?? !isMobileCalendar;
   const range = calendarRange(anchor, view, true);
   const analyticsByEvent = useMemo(
     () =>
@@ -585,17 +780,31 @@ export function TestingLabCalendar({
     return events.filter((event) => {
       const matchesStatus =
         statusFilter === "all" || event.status === statusFilter;
+      const matchesCalendar = activeCalendars.has(eventCalendar(event));
       const matchesQuery =
         normalizedQuery.length === 0 ||
         event.name?.toLocaleLowerCase().includes(normalizedQuery) ||
         event.description?.toLocaleLowerCase().includes(normalizedQuery);
-      return matchesStatus && matchesQuery;
+      return matchesStatus && matchesCalendar && matchesQuery;
     });
-  }, [events, query, statusFilter]);
+  }, [activeCalendars, events, query, statusFilter]);
+  const periodEvents = useMemo(
+    () => eventsInsideRange(visibleEvents, range),
+    [range, visibleEvents],
+  );
 
   function openCreateEvent(date: Date | null) {
     setCreateDate(date);
     setCreateOpen(true);
+  }
+
+  function updateEventCalendar(calendar: EventCalendar, checked: boolean) {
+    setActiveCalendars((current) => {
+      const next = new Set(current);
+      if (checked) next.add(calendar);
+      else next.delete(calendar);
+      return next;
+    });
   }
 
   return (
@@ -711,40 +920,68 @@ export function TestingLabCalendar({
                 </SelectGroup>
               </SelectContent>
             </Select>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              aria-label={
+                planningOpen
+                  ? "Hide planning sidebar"
+                  : "Show planning sidebar"
+              }
+              aria-pressed={planningOpen}
+              onClick={() => setPlanningPreference(!planningOpen)}
+            >
+              {planningOpen ? <PanelRightClose /> : <PanelRightOpen />}
+            </Button>
             {toolbarEnd}
           </div>
         </div>
       </div>
 
-      {view === "schedule" ? (
-        <ScheduleView
-          events={visibleEvents}
-          analyticsByEvent={analyticsByEvent}
-          anchor={anchor}
-        />
-      ) : null}
-      {view === "year" ? (
-        <YearView
-          events={visibleEvents}
-          analyticsByEvent={analyticsByEvent}
-          anchor={anchor}
-        />
-      ) : null}
-      {view !== "schedule" && view !== "year" ? (
-        <>
-          <p className="text-xs text-muted-foreground md:hidden">
-            Swipe horizontally to view every day.
-          </p>
-          <GridView
-            events={visibleEvents}
-            analyticsByEvent={analyticsByEvent}
+      <div className="relative flex min-h-0 flex-1">
+        <div className="flex min-w-0 flex-1 flex-col">
+          {view === "schedule" ? (
+            <ScheduleView
+              events={visibleEvents}
+              analyticsByEvent={analyticsByEvent}
+              anchor={anchor}
+            />
+          ) : null}
+          {view === "year" ? (
+            <YearView
+              events={visibleEvents}
+              analyticsByEvent={analyticsByEvent}
+              anchor={anchor}
+            />
+          ) : null}
+          {view !== "schedule" && view !== "year" ? (
+            <>
+              <p className="text-xs text-muted-foreground md:hidden">
+                Swipe horizontally to view every day.
+              </p>
+              <GridView
+                events={visibleEvents}
+                analyticsByEvent={analyticsByEvent}
+                anchor={anchor}
+                view={view}
+                showWeekends
+                onCreateEvent={(date) => openCreateEvent(date)}
+              />
+            </>
+          ) : null}
+        </div>
+        {planningOpen ? (
+          <TestingLabPlanningSidebar
             anchor={anchor}
-            view={view}
-            showWeekends
-            onCreateEvent={(date) => openCreateEvent(date)}
+            onAnchorChange={setAnchor}
+            events={periodEvents}
+            analyticsByEvent={analyticsByEvent}
+            activeCalendars={activeCalendars}
+            onCalendarChange={updateEventCalendar}
           />
-        </>
-      ) : null}
+        ) : null}
+      </div>
 
       <CreateTestingEventDialog
         key={createDate?.toISOString() ?? "toolbar"}

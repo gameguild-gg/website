@@ -220,6 +220,80 @@ describe("TestingLabCalendar", () => {
     expect(screen.queryByText("Remote build review")).not.toBeInTheDocument();
   });
 
+  it("adds a synchronized planning sidebar with real period insights", () => {
+    render(
+      <TestingLabCalendar
+        events={events}
+        eventAnalytics={eventAnalytics}
+        initialDate={new Date(2030, 7, 10)}
+      />,
+    );
+
+    const sidebar = screen.getByRole("complementary", {
+      name: "Testing Lab planning",
+    });
+
+    expect(within(sidebar).getByText("August 2030")).toBeInTheDocument();
+    expect(within(sidebar).getByText("2 events")).toBeInTheDocument();
+    expect(within(sidebar).getByText("4h")).toBeInTheDocument();
+    expect(within(sidebar).getByText("Testing time")).toBeInTheDocument();
+    expect(within(sidebar).getByText("11 of 18 seats filled")).toBeInTheDocument();
+    expect(within(sidebar).getByRole("checkbox", { name: "Online" })).toBeChecked();
+    expect(
+      within(sidebar).getByRole("checkbox", { name: "In-person" }),
+    ).toBeChecked();
+  });
+
+  it("filters the calendar by event calendar and can collapse the planning sidebar", async () => {
+    const user = userEvent.setup();
+    render(
+      <TestingLabCalendar
+        events={events}
+        eventAnalytics={eventAnalytics}
+        initialDate={new Date(2030, 7, 10)}
+      />,
+    );
+
+    const sidebar = screen.getByRole("complementary", {
+      name: "Testing Lab planning",
+    });
+    await user.click(
+      within(sidebar).getByRole("checkbox", { name: "Online" }),
+    );
+
+    expect(screen.queryByText("Remote build review")).not.toBeInTheDocument();
+    expect(screen.getByText("Campus playtest")).toBeInTheDocument();
+    expect(within(sidebar).getByText("1 event")).toBeInTheDocument();
+
+    await user.click(
+      screen.getByRole("button", { name: "Hide planning sidebar" }),
+    );
+    expect(
+      screen.queryByRole("complementary", { name: "Testing Lab planning" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Show planning sidebar" }),
+    ).toBeInTheDocument();
+  });
+
+  it("keeps the mini calendar synchronized with the main calendar", async () => {
+    const user = userEvent.setup();
+    render(
+      <TestingLabCalendar events={events} initialDate={new Date(2030, 7, 10)} />,
+    );
+
+    const sidebar = screen.getByRole("complementary", {
+      name: "Testing Lab planning",
+    });
+    await user.click(
+      within(sidebar).getByRole("button", { name: "Go to the Next Month" }),
+    );
+
+    expect(
+      screen.getByRole("heading", { name: "September 2030" }),
+    ).toBeInTheDocument();
+  });
+
   it("uses the schedule as the mobile default view", () => {
     vi.stubGlobal(
       "matchMedia",
