@@ -12,6 +12,7 @@ import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 
 import { MermaidDiagram } from './mermaid-diagram';
+import { VegaLiteDiagram } from './vega-lite-diagram';
 
 export type MarkdownRendererMode = 'markdown' | 'reveal';
 export type MarkdownRendererTone = 'default' | 'learning';
@@ -70,7 +71,7 @@ function extractRenderableContent(content: string): string {
 function preprocessMarkdown(content: string): string {
   return extractRenderableContent(content)
     .replace(
-      /:::\s*(note|abstract|info|tip|success|question|warning|failure|danger|bug|example|quote)(?:\s+"([^"]*)")?\n([\s\S]*?):::/g,
+      /:::\s*(note|abstract|info|tip|success|question|warning|failure|danger|bug|example|quote|important|caution|attention|hint|check|summary)(?:\s+"([^"]*)")?\n([\s\S]*?):::/g,
       (_, type, title, body) => `<div class="admonition admonition-${type}"${title ? ` data-title="${title}"` : ''}>\n\n${body}\n\n</div>`,
     )
     .replace(/!!!\s*(quiz|code)\n([\s\S]*?)\n!!!/g, (_, type, body) => {
@@ -79,12 +80,34 @@ function preprocessMarkdown(content: string): string {
     });
 }
 
+// Accents mirror the lexical-surface Admonition ACCENT_BY_TYPE palette so
+// markdown `:::` callouts and Lexical admonition nodes look the same.
+const LEARNING_TONE_CLASSES: Record<string, string> = {
+  note: 'border-blue-400 bg-blue-500/10 dark:border-blue-500',
+  abstract: 'border-sky-400 bg-sky-500/10 dark:border-sky-500',
+  info: 'border-cyan-400 bg-cyan-500/10 dark:border-cyan-500',
+  tip: 'border-lime-400 bg-lime-500/10 dark:border-lime-500',
+  success: 'border-green-400 bg-green-500/10 dark:border-green-500',
+  question: 'border-amber-400 bg-amber-500/10 dark:border-amber-500',
+  warning: 'border-yellow-400 bg-yellow-500/10 dark:border-yellow-500',
+  failure: 'border-red-400 bg-red-500/10 dark:border-red-500',
+  danger: 'border-orange-400 bg-orange-500/10 dark:border-orange-500',
+  bug: 'border-stone-400 bg-stone-500/10 dark:border-stone-500',
+  example: 'border-teal-400 bg-teal-500/10 dark:border-teal-500',
+  quote: 'border-pink-400 bg-pink-500/10 dark:border-pink-500',
+  important: 'border-purple-400 bg-purple-500/10 dark:border-purple-500',
+  caution: 'border-rose-400 bg-rose-500/10 dark:border-rose-500',
+  attention: 'border-fuchsia-400 bg-fuchsia-500/10 dark:border-fuchsia-500',
+  hint: 'border-emerald-400 bg-emerald-500/10 dark:border-emerald-500',
+  check: 'border-indigo-400 bg-indigo-500/10 dark:border-indigo-500',
+  summary: 'border-violet-400 bg-violet-500/10 dark:border-violet-500',
+};
+
+const ADMONITION_BODY_TEXT = 'text-slate-800 dark:text-slate-100';
+
 function getAdmonitionTone(type: string | undefined, tone: MarkdownRendererTone) {
   if (tone === 'learning') {
-    if (type === 'warning') return 'border-yellow-400 bg-yellow-500/10 text-slate-800 dark:text-slate-100';
-    if (type === 'danger') return 'border-red-400 bg-red-500/10 text-slate-800 dark:text-slate-100';
-    if (type === 'info') return 'border-sky-400 bg-sky-500/10 text-slate-800 dark:text-slate-100';
-    return 'border-slate-400 bg-slate-100 text-slate-800 dark:border-slate-500 dark:bg-slate-900 dark:text-slate-100';
+    return `${LEARNING_TONE_CLASSES[type ?? ''] ?? LEARNING_TONE_CLASSES.note} ${ADMONITION_BODY_TEXT}`;
   }
 
   if (type === 'warning') return 'border-yellow-400 bg-yellow-50';
@@ -119,13 +142,17 @@ export function MarkdownRenderer({ content, renderer = 'markdown', tone = 'learn
     a: (props: React.AnchorHTMLAttributes<HTMLAnchorElement>) => <a className={isLearningTone ? 'text-sky-700 hover:text-sky-600 hover:underline dark:text-sky-400 dark:hover:text-sky-300' : 'text-blue-600 hover:underline'} {...props} />,
     blockquote: (props: React.HTMLAttributes<HTMLQuoteElement>) => <blockquote className={isLearningTone ? 'my-4 border-l-4 border-slate-300 pl-4 italic text-slate-600 dark:border-slate-500 dark:text-slate-300' : 'border-l-4 border-gray-300 pl-4 italic my-4'} {...props} />,
     code: ({ className, children, ...props }: React.HTMLAttributes<HTMLElement> & { className?: string }) => {
-      const match = /language-(\w+)/.exec(className || '');
+      const match = /language-([\w-]+)/.exec(className || '');
       const language = match && match[1] ? match[1] : '';
       const code = String(children).replace(/\n$/, '');
       const inline = !code.includes('\n');
 
       if (language === 'mermaid') {
         return <MermaidDiagram code={code} />;
+      }
+
+      if (language === 'vegalite' || language === 'vega-lite') {
+        return <VegaLiteDiagram spec={code} />;
       }
 
       if (!inline) {
