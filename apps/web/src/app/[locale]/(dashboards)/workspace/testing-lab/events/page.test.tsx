@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   getArchivedTestingEventsDirectory: vi.fn(),
   getTestingEventsDirectory: vi.fn(),
   getTestingEventTemplates: vi.fn(),
+  replace: vi.fn(),
 }));
 
 vi.mock('next/navigation', () => ({
@@ -25,6 +26,8 @@ vi.mock('@/i18n/navigation', () => ({
       {children}
     </a>
   ),
+  usePathname: () => '/workspace/testing-lab/events',
+  useRouter: () => ({ replace: mocks.replace }),
 }));
 
 import TestingEventsPage from './page';
@@ -54,10 +57,11 @@ describe('Testing Events page', () => {
 
     expect(screen.getByRole('heading', { name: 'Testing events' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /new event/i })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Active' })).toHaveAttribute(
-      'href',
-      '/workspace/testing-lab/events?status=Active',
-    );
+    expect(
+      screen.getByRole('combobox', { name: 'Filter testing events by status' }),
+    ).toHaveTextContent('Applications open');
+    expect(screen.getByRole('searchbox', { name: 'Search testing events' })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Active' })).not.toBeInTheDocument();
     expect(screen.getByText('August campus playtest')).toBeInTheDocument();
     expect(screen.getByText('Applications Open')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /manage event/i })).toHaveAttribute(

@@ -1,4 +1,5 @@
 import { CreateTestingEventDialog, RestoreTestingEventDialog } from '@/components/testing-lab/testing-event-management';
+import { TestingEventDirectoryFilters } from '@/components/testing-lab/testing-event-directory-filters';
 import { formatTestingEventStatus } from '@/lib/testing-lab/format';
 import { TestingLabPageHeader } from '@/components/testing-lab/testing-lab-page-header';
 import { TestingLabAccessIssues, TestingLabEmptyState } from '@/components/testing-lab/testing-lab-state';
@@ -7,19 +8,17 @@ import { getTestingLabSettings } from '@/lib/testing-lab';
 import { getArchivedTestingEventsDirectory, getTestingEventTemplates, getTestingEventsDirectory } from '@/lib/testing-lab/events-queries';
 import type { TestingLabTestingEventStatus } from '@game-guild/client';
 import { Badge } from '@game-guild/ui/components/badge';
-import { Button, buttonVariants } from '@game-guild/ui/components/button';
-import { Input } from '@game-guild/ui/components/input';
+import { Button } from '@game-guild/ui/components/button';
 import { CalendarDays, ChevronRight, FlaskConical, Layers3 } from 'lucide-react';
 
-const statuses: Array<{ value?: TestingLabTestingEventStatus; label: string }> = [
-  { label: 'All' },
-  { value: 'Draft', label: 'Draft' },
-  { value: 'ApplicationsOpen', label: 'Applications open' },
-  { value: 'ApplicationsClosed', label: 'Applications closed' },
-  { value: 'Scheduled', label: 'Scheduled' },
-  { value: 'Active', label: 'Active' },
-  { value: 'Completed', label: 'Completed' },
-  { value: 'Cancelled', label: 'Cancelled' },
+const statuses: TestingLabTestingEventStatus[] = [
+  'Draft',
+  'ApplicationsOpen',
+  'ApplicationsClosed',
+  'Scheduled',
+  'Active',
+  'Completed',
+  'Cancelled',
 ];
 
 function eventDate(value?: string | null) {
@@ -41,7 +40,7 @@ export default async function TestingEventsPage({
 }) {
   const query = await searchParams;
   const archived = query.archived === 'true';
-  const selectedStatus = statuses.find((status) => status.value === query.status)?.value;
+  const selectedStatus = statuses.find((status) => status === query.status);
   const directory = archived
     ? await getArchivedTestingEventsDirectory({ skip: 0, take: 100 })
     : await getTestingEventsDirectory({ status: selectedStatus, skip: 0, take: 100 });
@@ -60,51 +59,26 @@ export default async function TestingEventsPage({
   const querySuffix = `${archived ? '&archived=true' : ''}${selectedStatus ? `&status=${selectedStatus}` : ''}${query.q ? `&q=${encodeURIComponent(query.q)}` : ''}`;
 
   return (
-    <div className="space-y-6 p-4 lg:p-6">
+    <div className="flex flex-col gap-6 p-4 lg:p-6">
       <TestingLabPageHeader
         icon={CalendarDays}
         title="Testing events"
-        description="Open application windows, review existing community projects, reserve capacity after approval, and operate each tester slot."
+        description="Manage application windows, schedules, and tester capacity."
         actions={
           <CreateTestingEventDialog
             templates={templates.templates}
             defaultTimeZone={labSettings.settings?.timezone ?? 'UTC'}
           />
         }
+        navigation={
+          <TestingEventDirectoryFilters
+            search={query.q}
+            status={selectedStatus}
+            archived={archived}
+          />
+        }
       />
       <TestingLabAccessIssues issues={[...directory.accessIssues, ...templates.accessIssues, ...labSettings.accessIssues]} />
-      <nav aria-label="Filter testing events" className="flex flex-wrap gap-2">
-        {statuses.map((status) => {
-          const active = !archived && (status.value === selectedStatus || (!status.value && !selectedStatus));
-          return (
-            <Link
-              key={status.label}
-              className={buttonVariants({ size: 'sm', variant: active ? 'default' : 'outline' })}
-              href={status.value ? `/workspace/testing-lab/events?status=${status.value}` : '/workspace/testing-lab/events'}
-            >
-              {status.label}
-            </Link>
-          );
-        })}
-        <Link
-          className={buttonVariants({ size: 'sm', variant: archived ? 'default' : 'outline' })}
-          href="/workspace/testing-lab/events?archived=true"
-        >
-          Archived
-        </Link>
-      </nav>
-      <form method="get" className="flex max-w-2xl flex-col gap-2 sm:flex-row">
-        {selectedStatus ? <input type="hidden" name="status" value={selectedStatus} /> : null}
-        {archived ? <input type="hidden" name="archived" value="true" /> : null}
-        <Input
-          name="q"
-          type="search"
-          defaultValue={query.q ?? ''}
-          placeholder="Search events by name, brief, or mode"
-          aria-label="Search testing events"
-        />
-        <Button type="submit" variant="outline">Search</Button>
-      </form>
       {visibleEvents.length === 0 ? (
         <TestingLabEmptyState
           title={searchTerm ? 'No matching events' : archived ? 'No archived events' : 'No testing events'}
