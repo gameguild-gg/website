@@ -342,15 +342,12 @@ public sealed class EmailEventsControllerTests
         var httpClient = handler is null ? new HttpClient() : new HttpClient(handler);
         httpClientFactory.Setup(f => f.CreateClient(EmailEventsController.SubscriptionConfirmationClientName)).Returns(httpClient);
 
-        var emailDeliveryHandler = new EmailDeliveryMutationCommandHandler(
-            Mock.Of<IEmailDeliveryAdminService>(),
-            processor ?? new Mock<IEmailEventProcessor>().Object,
-            context);
-        var controller = new EmailEventsController(
+        var controller = new EmailEventsController(new HandlerSender(new ReceiveEmailEventsCommandHandler(
             verifier ?? CreateVerifierMock(body).Object,
-            new NotificationCommandTestSender(emailDeliveryHandler: emailDeliveryHandler),
+            processor ?? new Mock<IEmailEventProcessor>().Object,
+            context,
             httpClientFactory.Object,
-            NullLogger<EmailEventsController>.Instance);
+            NullLogger<EmailEventsController>.Instance)));
         controller.ControllerContext = new ControllerContext
         {
             HttpContext = new DefaultHttpContext

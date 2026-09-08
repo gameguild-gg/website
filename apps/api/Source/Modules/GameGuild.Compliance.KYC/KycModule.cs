@@ -32,6 +32,7 @@ public static class KycCompositionExtensions
         services.TryAddSingleton(TimeProvider.System);
         services.TryAddScoped<IKycRepository, KycRepository>();
         services.TryAddScoped<IKycService, KycService>();
+        services.TryAddScoped<IKycEvidenceStore, UnavailableKycEvidenceStore>();
         services.AddHttpClient<IKycAmlProvider, SumSubKycAmlProvider>();
         if (configuration.GetValue<bool>($"{ComplianceRawObjectStoreOptions.SectionName}:Enabled"))
         {

@@ -141,6 +141,8 @@ public static class DependencyInjection
         services.AddScoped<QuotaLedgerEventHandler>();
         services.AddScoped<IIntegrationEventHandler<UserCreatedEvent>>(provider => provider.GetRequiredService<QuotaLedgerEventHandler>());
         services.AddScoped<IIntegrationEventHandler<UserDeletedEvent>>(provider => provider.GetRequiredService<QuotaLedgerEventHandler>());
+        services.AddScoped<IIntegrationEventHandler<PropertyCreatedEvent>>(provider => provider.GetRequiredService<QuotaLedgerEventHandler>());
+        services.AddScoped<IIntegrationEventHandler<PropertyDeletedEvent>>(provider => provider.GetRequiredService<QuotaLedgerEventHandler>());
         services.AddScoped<IIntegrationEventHandler<AssetReferenceCreatedEvent>>(provider => provider.GetRequiredService<QuotaLedgerEventHandler>());
         services.AddScoped<IIntegrationEventHandler<AssetReferenceRemovedEvent>>(provider => provider.GetRequiredService<QuotaLedgerEventHandler>());
 
@@ -148,6 +150,10 @@ public static class DependencyInjection
         services.AddScoped<IIntegrationEventHandler<UseCaseOperationOccurredV1>>(provider => provider.GetRequiredService<CostAccountingEventHandler>());
         services.AddScoped<IIntegrationEventHandler<UserCreatedEvent>>(provider => provider.GetRequiredService<CostAccountingEventHandler>());
         services.AddScoped<IIntegrationEventHandler<UserDeletedEvent>>(provider => provider.GetRequiredService<CostAccountingEventHandler>());
+        services.AddScoped<IIntegrationEventHandler<PropertyCreatedEvent>>(provider => provider.GetRequiredService<CostAccountingEventHandler>());
+        services.AddScoped<IIntegrationEventHandler<PropertyDeletedEvent>>(provider => provider.GetRequiredService<CostAccountingEventHandler>());
+        services.AddScoped<IIntegrationEventHandler<PropertyMediaAttachedEvent>>(provider => provider.GetRequiredService<CostAccountingEventHandler>());
+        services.AddScoped<IIntegrationEventHandler<PropertyMediaRemovedEvent>>(provider => provider.GetRequiredService<CostAccountingEventHandler>());
         services.AddScoped<IIntegrationEventHandler<AssetReferenceCreatedEvent>>(provider => provider.GetRequiredService<CostAccountingEventHandler>());
         services.AddScoped<IIntegrationEventHandler<AssetReferenceRemovedEvent>>(provider => provider.GetRequiredService<CostAccountingEventHandler>());
         services.AddScoped<IIntegrationEventHandler<AssetObjectStoredEvent>>(provider => provider.GetRequiredService<CostAccountingEventHandler>());

@@ -93,7 +93,7 @@ public class FeaturesCoverageCompletionTests
         evaluation.Setup(x => x.GetEnabledFeaturesAsync(It.IsAny<FeatureContext>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new[] { "flag" });
 
-        var controller = new FeatureFlagsController(evaluation.Object, NullLogger<FeatureFlagsController>.Instance)
+        var controller = new FeatureFlagsController(evaluation.Object, NullLogger<FeatureFlagsController>.Instance, new CommandHandlerSender(evaluation.Object, Mock.Of<ICapabilityService>()))
         {
             ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }
         };

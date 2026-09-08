@@ -20,7 +20,7 @@ export class AuthSigningKeysModule {
    *
    * Retrieves signing keys with optional status filtering. Use status=active for current signing key, status=valid for all keys usable for validation.
    */
-  async getAuthSigningKeys(query?: { status?: string }): Promise<Result<Array<Types.IdentityAuthenticationJwtKeyInfo>, ApiError>> {
+  async getAuthSigningKeys(query?: { status?: string }): Promise<Result<Array<Types.IdentityAuthenticationJwtKeyInfoDto>, ApiError>> {
     const url = '/v1/auth/signing-keys';
 
     const result = await this.client.request({
@@ -30,7 +30,7 @@ export class AuthSigningKeysModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.IdentityAuthenticationJwtKeyInfo>, ApiError>;
+    return result as Result<Array<Types.IdentityAuthenticationJwtKeyInfoDto>, ApiError>;
   }
 
   /**
@@ -65,7 +65,7 @@ export class AuthSigningKeysModule {
    *
    * Manually rotates to a new signing key. Previous keys remain valid for token validation during grace period.
    */
-  async postAuthSigningKeysRotate(body: Types.IdentityAuthenticationRotateKeyInput): Promise<Result<Types.IdentityAuthenticationJwtKeyInfo, ApiError>> {
+  async postAuthSigningKeysRotate(body: Types.IdentityAuthenticationRotateKeyInput): Promise<Result<Types.IdentityAuthenticationJwtKeyInfoDto, ApiError>> {
     const url = '/v1/auth/signing-keys:rotate';
 
     // Validate request body
@@ -80,7 +80,7 @@ export class AuthSigningKeysModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.IdentityAuthenticationJwtKeyInfoSchema, result.data, 'response');
+      const validatedData = safeParse(Types.IdentityAuthenticationJwtKeyInfoDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 

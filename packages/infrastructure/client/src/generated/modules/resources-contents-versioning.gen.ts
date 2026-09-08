@@ -17,7 +17,7 @@ export class ResourcesContentsVersioningModule {
 
   /**
    */
-  async getApiContentsVersioning(versionId: string): Promise<Result<Types.ResourcesContentsContentVersion, ApiError>> {
+  async getApiContentsVersioning(versionId: string): Promise<Result<Types.ResourcesContentsContentVersionDto, ApiError>> {
     const url = `/api/contents/versioning/${versionId}`;
 
     const result = await this.client.request({
@@ -28,7 +28,7 @@ export class ResourcesContentsVersioningModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.ResourcesContentsContentVersionSchema, result.data, 'response');
+      const validatedData = safeParse(Types.ResourcesContentsContentVersionDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -40,7 +40,7 @@ export class ResourcesContentsVersioningModule {
   async postApiContentsVersioningApprove(
     versionId: string,
     body: Types.ResourcesContentsReviewInput,
-  ): Promise<Result<Types.ResourcesContentsContentVersion, ApiError>> {
+  ): Promise<Result<Types.ResourcesContentsContentVersionDto, ApiError>> {
     const url = `/api/contents/versioning/${versionId}/approve`;
 
     // Validate request body
@@ -55,7 +55,7 @@ export class ResourcesContentsVersioningModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.ResourcesContentsContentVersionSchema, result.data, 'response');
+      const validatedData = safeParse(Types.ResourcesContentsContentVersionDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -64,7 +64,7 @@ export class ResourcesContentsVersioningModule {
 
   /**
    */
-  async postApiContentsVersioningCancelSchedule(versionId: string): Promise<Result<Types.ResourcesContentsContentVersion, ApiError>> {
+  async postApiContentsVersioningCancelSchedule(versionId: string): Promise<Result<Types.ResourcesContentsContentVersionDto, ApiError>> {
     const url = `/api/contents/versioning/${versionId}/cancel-schedule`;
 
     const result = await this.client.request({
@@ -75,7 +75,7 @@ export class ResourcesContentsVersioningModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.ResourcesContentsContentVersionSchema, result.data, 'response');
+      const validatedData = safeParse(Types.ResourcesContentsContentVersionDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -84,7 +84,7 @@ export class ResourcesContentsVersioningModule {
 
   /**
    */
-  async postApiContentsVersioningPublish(versionId: string): Promise<Result<Types.ResourcesContentsContentVersion, ApiError>> {
+  async postApiContentsVersioningPublish(versionId: string): Promise<Result<Types.ResourcesContentsContentVersionDto, ApiError>> {
     const url = `/api/contents/versioning/${versionId}/publish`;
 
     const result = await this.client.request({
@@ -95,7 +95,7 @@ export class ResourcesContentsVersioningModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.ResourcesContentsContentVersionSchema, result.data, 'response');
+      const validatedData = safeParse(Types.ResourcesContentsContentVersionDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -107,7 +107,7 @@ export class ResourcesContentsVersioningModule {
   async postApiContentsVersioningReject(
     versionId: string,
     body: Types.ResourcesContentsReviewInput,
-  ): Promise<Result<Types.ResourcesContentsContentVersion, ApiError>> {
+  ): Promise<Result<Types.ResourcesContentsContentVersionDto, ApiError>> {
     const url = `/api/contents/versioning/${versionId}/reject`;
 
     // Validate request body
@@ -122,7 +122,7 @@ export class ResourcesContentsVersioningModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.ResourcesContentsContentVersionSchema, result.data, 'response');
+      const validatedData = safeParse(Types.ResourcesContentsContentVersionDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -134,7 +134,7 @@ export class ResourcesContentsVersioningModule {
   async postApiContentsVersioningReviews(
     versionId: string,
     body: Types.ResourcesContentsAddReviewInput,
-  ): Promise<Result<Types.ResourcesContentsContentVersionReview, ApiError>> {
+  ): Promise<Result<Types.ResourcesContentsContentVersionReviewDto, ApiError>> {
     const url = `/api/contents/versioning/${versionId}/reviews`;
 
     // Validate request body
@@ -149,7 +149,7 @@ export class ResourcesContentsVersioningModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.ResourcesContentsContentVersionReviewSchema, result.data, 'response');
+      const validatedData = safeParse(Types.ResourcesContentsContentVersionReviewDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -161,7 +161,7 @@ export class ResourcesContentsVersioningModule {
   async postApiContentsVersioningSchedule(
     versionId: string,
     body: Types.ResourcesContentsScheduleInput,
-  ): Promise<Result<Types.ResourcesContentsContentVersion, ApiError>> {
+  ): Promise<Result<Types.ResourcesContentsContentVersionDto, ApiError>> {
     const url = `/api/contents/versioning/${versionId}/schedule`;
 
     // Validate request body
@@ -176,7 +176,7 @@ export class ResourcesContentsVersioningModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.ResourcesContentsContentVersionSchema, result.data, 'response');
+      const validatedData = safeParse(Types.ResourcesContentsContentVersionDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -185,7 +185,7 @@ export class ResourcesContentsVersioningModule {
 
   /**
    */
-  async postApiContentsVersioningSubmitForReview(versionId: string): Promise<Result<Types.ResourcesContentsContentVersion, ApiError>> {
+  async postApiContentsVersioningSubmitForReview(versionId: string): Promise<Result<Types.ResourcesContentsContentVersionDto, ApiError>> {
     const url = `/api/contents/versioning/${versionId}/submit-for-review`;
 
     const result = await this.client.request({
@@ -196,7 +196,7 @@ export class ResourcesContentsVersioningModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.ResourcesContentsContentVersionSchema, result.data, 'response');
+      const validatedData = safeParse(Types.ResourcesContentsContentVersionDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -229,7 +229,7 @@ export class ResourcesContentsVersioningModule {
 
   /**
    */
-  async postApiContentsVersioningDrafts(body: Types.ResourcesContentsCreateDraftInput): Promise<Result<Types.ResourcesContentsContentVersion, ApiError>> {
+  async postApiContentsVersioningDrafts(body: Types.ResourcesContentsCreateDraftInput): Promise<Result<Types.ResourcesContentsContentVersionDto, ApiError>> {
     const url = '/api/contents/versioning/drafts';
 
     // Validate request body
@@ -244,7 +244,7 @@ export class ResourcesContentsVersioningModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.ResourcesContentsContentVersionSchema, result.data, 'response');
+      const validatedData = safeParse(Types.ResourcesContentsContentVersionDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -256,7 +256,7 @@ export class ResourcesContentsVersioningModule {
   async putApiContentsVersioningDrafts(
     versionId: string,
     body: Types.ResourcesContentsUpdateDraftInput,
-  ): Promise<Result<Types.ResourcesContentsContentVersion, ApiError>> {
+  ): Promise<Result<Types.ResourcesContentsContentVersionDto, ApiError>> {
     const url = `/api/contents/versioning/drafts/${versionId}`;
 
     // Validate request body
@@ -271,7 +271,7 @@ export class ResourcesContentsVersioningModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.ResourcesContentsContentVersionSchema, result.data, 'response');
+      const validatedData = safeParse(Types.ResourcesContentsContentVersionDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -280,7 +280,7 @@ export class ResourcesContentsVersioningModule {
 
   /**
    */
-  async getApiContentsVersioningEntityCurrent(entityType: string, entityId: string): Promise<Result<Types.ResourcesContentsContentVersion, ApiError>> {
+  async getApiContentsVersioningEntityCurrent(entityType: string, entityId: string): Promise<Result<Types.ResourcesContentsContentVersionDto, ApiError>> {
     const url = `/api/contents/versioning/entity/${entityType}/${entityId}/current`;
 
     const result = await this.client.request({
@@ -291,7 +291,7 @@ export class ResourcesContentsVersioningModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.ResourcesContentsContentVersionSchema, result.data, 'response');
+      const validatedData = safeParse(Types.ResourcesContentsContentVersionDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -300,7 +300,10 @@ export class ResourcesContentsVersioningModule {
 
   /**
    */
-  async getApiContentsVersioningEntityHistory(entityType: string, entityId: string): Promise<Result<Array<Types.ResourcesContentsContentVersion>, ApiError>> {
+  async getApiContentsVersioningEntityHistory(
+    entityType: string,
+    entityId: string,
+  ): Promise<Result<Array<Types.ResourcesContentsContentVersionDto>, ApiError>> {
     const url = `/api/contents/versioning/entity/${entityType}/${entityId}/history`;
 
     const result = await this.client.request({
@@ -309,7 +312,7 @@ export class ResourcesContentsVersioningModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.ResourcesContentsContentVersion>, ApiError>;
+    return result as Result<Array<Types.ResourcesContentsContentVersionDto>, ApiError>;
   }
 
   /**
@@ -318,7 +321,7 @@ export class ResourcesContentsVersioningModule {
     entityType: string,
     entityId: string,
     body: Types.ResourcesContentsRollbackInput,
-  ): Promise<Result<Types.ResourcesContentsContentVersion, ApiError>> {
+  ): Promise<Result<Types.ResourcesContentsContentVersionDto, ApiError>> {
     const url = `/api/contents/versioning/entity/${entityType}/${entityId}/rollback`;
 
     // Validate request body
@@ -333,7 +336,7 @@ export class ResourcesContentsVersioningModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.ResourcesContentsContentVersionSchema, result.data, 'response');
+      const validatedData = safeParse(Types.ResourcesContentsContentVersionDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -346,7 +349,7 @@ export class ResourcesContentsVersioningModule {
     entityType: string,
     entityId: string,
     versionNumber: number,
-  ): Promise<Result<Types.ResourcesContentsContentVersion, ApiError>> {
+  ): Promise<Result<Types.ResourcesContentsContentVersionDto, ApiError>> {
     const url = `/api/contents/versioning/entity/${entityType}/${entityId}/version/${versionNumber}`;
 
     const result = await this.client.request({
@@ -357,7 +360,7 @@ export class ResourcesContentsVersioningModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.ResourcesContentsContentVersionSchema, result.data, 'response');
+      const validatedData = safeParse(Types.ResourcesContentsContentVersionDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -370,7 +373,7 @@ export class ResourcesContentsVersioningModule {
     entityType?: string;
     skip?: number;
     take?: number;
-  }): Promise<Result<Array<Types.ResourcesContentsContentVersion>, ApiError>> {
+  }): Promise<Result<Array<Types.ResourcesContentsContentVersionDto>, ApiError>> {
     const url = '/api/contents/versioning/pending-review';
 
     const result = await this.client.request({
@@ -380,7 +383,7 @@ export class ResourcesContentsVersioningModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.ResourcesContentsContentVersion>, ApiError>;
+    return result as Result<Array<Types.ResourcesContentsContentVersionDto>, ApiError>;
   }
 }
 

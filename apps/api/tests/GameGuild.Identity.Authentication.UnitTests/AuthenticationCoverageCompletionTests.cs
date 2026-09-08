@@ -386,8 +386,7 @@ public sealed class AuthenticationCoverageCompletionTests
     public void SessionController_PrivateHelpers_CoverFingerprintAndCurrentSessionBranches()
     {
         var sessionId = Guid.NewGuid();
-        var service = Mock.Of<ISessionManagementService>();
-        var controller = new SessionController(service, IdentityCommandTestSender.ForSessions(service))
+        var controller = new SessionController(Mock.Of<ISessionManagementService>(), new CommandHandlerSender())
         {
             ControllerContext = new ControllerContext
             {
@@ -421,10 +420,7 @@ public sealed class AuthenticationCoverageCompletionTests
     [Fact]
     public void WebAuthnController_PrivateHelpers_CoverFallbackBranches()
     {
-        var webAuthnService = Mock.Of<IWebAuthnService>();
-        var controller = new WebAuthnController(
-            webAuthnService,
-            sender: IdentityCommandTestSender.ForWebAuthn(webAuthnService))
+        var controller = new WebAuthnController(Mock.Of<IWebAuthnService>(), new CommandHandlerSender())
         {
             ControllerContext = new ControllerContext
             {
@@ -443,9 +439,9 @@ public sealed class AuthenticationCoverageCompletionTests
         controller.ControllerContext.HttpContext.Connection.RemoteIpAddress = System.Net.IPAddress.Parse("127.0.0.1");
         InvokePrivateInstance<string?>(controller, "GetClientIpAddress").Should().Be("127.0.0.1");
 
-        InvokePrivateStatic<int>(typeof(WebAuthnController), "ParsePositiveInt", null, 30).Should().Be(30);
-        InvokePrivateStatic<int>(typeof(WebAuthnController), "ParsePositiveInt", "0", 30).Should().Be(30);
-        InvokePrivateStatic<int>(typeof(WebAuthnController), "ParsePositiveInt", "12", 30).Should().Be(12);
+        InvokePrivateStatic<int>(typeof(WebAuthnMutationCommandHandler), "ParsePositiveInt", null, 30).Should().Be(30);
+        InvokePrivateStatic<int>(typeof(WebAuthnMutationCommandHandler), "ParsePositiveInt", "0", 30).Should().Be(30);
+        InvokePrivateStatic<int>(typeof(WebAuthnMutationCommandHandler), "ParsePositiveInt", "12", 30).Should().Be(12);
     }
 
     [Fact]

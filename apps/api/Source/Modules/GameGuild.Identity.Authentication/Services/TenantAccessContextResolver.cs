@@ -34,15 +34,25 @@ internal static class TenantAccessContextResolver
             .ToList();
 
         var defaultMembership = availableMemberships.FirstOrDefault(membership => membership.TenantIsDefault);
-        var selectedTenantId = requestedTenantId.HasValue
-            ? availableTenants.FirstOrDefault(tenant => tenant.Id == requestedTenantId.Value && tenant.IsActive)?.Id
-            : null;
+        Guid? selectedTenantId;
+        if (requestedTenantId.HasValue)
+        {
+            selectedTenantId = availableTenants
+                .FirstOrDefault(tenant => tenant.Id == requestedTenantId.Value && tenant.IsActive)
+                ?.Id;
+        }
+        else
+        {
+            selectedTenantId = defaultMembership is { TenantIsActive: true }
+                ? defaultMembership.TenantId
+                : null;
+            selectedTenantId ??= availableTenants.FirstOrDefault(tenant => tenant.IsActive)?.Id;
+        }
 
-        selectedTenantId ??= defaultMembership is { TenantIsActive: true }
-            ? defaultMembership.TenantId
-            : null;
-        selectedTenantId ??= availableTenants.FirstOrDefault(tenant => tenant.IsActive)?.Id;
-        selectedTenantId ??= availableTenants[0].Id;
+        if (!selectedTenantId.HasValue)
+        {
+            return new TenantAccessContext(null, availableTenants, [UserRole]);
+        }
 
         var roles = activeMemberships
             .Where(membership => membership.TenantId == selectedTenantId)

@@ -1,3 +1,4 @@
+using GameGuild.CQRS;
 using GameGuild.Identity.Context.Actors;
 using GameGuild.Learning.Abstractions;
 using GameGuild.Learning.Attributes;
@@ -20,12 +21,15 @@ namespace GameGuild.Learning.Experience.Social.Controllers;
 public class DiscussionsController : LearningControllerBase
 {
     private readonly IDiscussionService _discussionService;
+    private readonly ISender _sender;
 
     public DiscussionsController(
         IDiscussionService discussionService,
+        ISender sender,
         IActorContextAccessor actorContextAccessor) : base(actorContextAccessor)
     {
         _discussionService = discussionService;
+        _sender = sender;
     }
 
     /// <summary>
@@ -39,13 +43,12 @@ public class DiscussionsController : LearningControllerBase
         CancellationToken cancellationToken = default)
     {
         var userId = GetRequiredUserId();
-        var result = await _discussionService.CreateDiscussionAsync(
+        var result = await _sender.Send(new CreateDiscussionCommand(
             request.CourseId,
             userId,
             request.Title,
             request.Content,
-            request.ContentId,
-            cancellationToken).ConfigureAwait(false);
+            request.ContentId), cancellationToken).ConfigureAwait(false);
 
         if (!result.IsSuccess)
         {
@@ -133,7 +136,7 @@ public class DiscussionsController : LearningControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> PinDiscussion(Guid id, CancellationToken cancellationToken = default)
     {
-        var result = await _discussionService.PinDiscussionAsync(id, cancellationToken).ConfigureAwait(false);
+        var result = await _sender.Send(new PinDiscussionCommand(id), cancellationToken).ConfigureAwait(false);
 
         if (!result.IsSuccess)
         {
@@ -151,7 +154,7 @@ public class DiscussionsController : LearningControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UnpinDiscussion(Guid id, CancellationToken cancellationToken = default)
     {
-        var result = await _discussionService.UnpinDiscussionAsync(id, cancellationToken).ConfigureAwait(false);
+        var result = await _sender.Send(new UnpinDiscussionCommand(id), cancellationToken).ConfigureAwait(false);
 
         if (!result.IsSuccess)
         {
@@ -169,7 +172,7 @@ public class DiscussionsController : LearningControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> MarkDiscussionResolved(Guid id, CancellationToken cancellationToken = default)
     {
-        var result = await _discussionService.MarkDiscussionResolvedAsync(id, cancellationToken).ConfigureAwait(false);
+        var result = await _sender.Send(new MarkDiscussionResolvedCommand(id), cancellationToken).ConfigureAwait(false);
 
         if (!result.IsSuccess)
         {
@@ -188,7 +191,7 @@ public class DiscussionsController : LearningControllerBase
     public async Task<IActionResult> DeleteDiscussion(Guid id, CancellationToken cancellationToken = default)
     {
         var userId = GetRequiredUserId();
-        var result = await _discussionService.DeleteDiscussionAsync(id, userId, cancellationToken).ConfigureAwait(false);
+        var result = await _sender.Send(new DeleteDiscussionCommand(id, userId), cancellationToken).ConfigureAwait(false);
 
         if (!result.IsSuccess)
         {

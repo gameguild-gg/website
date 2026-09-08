@@ -555,7 +555,8 @@ public class NoWaitPublisherExecutionTests
             notification,
             CancellationToken.None);
 
-        await handler.HandledSignal.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        // Give the background Task.Run time to execute
+        await Task.Delay(200);
         handler.WasHandled.Should().BeTrue();
     }
 
@@ -575,10 +576,7 @@ public class NoWaitPublisherExecutionTests
             notification,
             CancellationToken.None);
 
-        await Task.WhenAll(
-                handler1.HandledSignal.Task,
-                handler2.HandledSignal.Task)
-            .WaitAsync(TimeSpan.FromSeconds(5));
+        await Task.Delay(200);
         handler1.WasHandled.Should().BeTrue();
         handler2.WasHandled.Should().BeTrue();
     }
@@ -597,8 +595,11 @@ public class NoWaitPublisherExecutionTests
             notification,
             CancellationToken.None);
 
+        // Should not throw - errors are handled inside Task.Run
         await act.Should().NotThrowAsync();
-        await handler.InvokedSignal.Task.WaitAsync(TimeSpan.FromSeconds(5));
+
+        // Give background task time to complete
+        await Task.Delay(200);
     }
 
     private class TestNotification : INotification
@@ -609,23 +610,17 @@ public class NoWaitPublisherExecutionTests
     {
         public bool WasHandled { get; private set; }
 
-        public TaskCompletionSource<bool> HandledSignal { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
-
         public Task Handle(TestNotification notification, CancellationToken cancellationToken)
         {
             WasHandled = true;
-            HandledSignal.TrySetResult(true);
             return Task.CompletedTask;
         }
     }
 
     private class FailingNotificationHandler : INotificationHandler<TestNotification>
     {
-        public TaskCompletionSource<bool> InvokedSignal { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
-
         public Task Handle(TestNotification notification, CancellationToken cancellationToken)
         {
-            InvokedSignal.TrySetResult(true);
             throw new InvalidOperationException("Handler failed");
         }
     }

@@ -17,7 +17,7 @@ export class EconomyIntegrationsModule {
 
   /**
    */
-  async postIntegrationsEconomyStripeConnectWebhook(): Promise<Result<Types.APIControllersEconomyPayoutExecutionOperation, ApiError>> {
+  async postIntegrationsEconomyStripeConnectWebhook(): Promise<Result<Types.APIControllersEconomyPayoutExecutionOperationDto, ApiError>> {
     const url = '/api/v1/integrations/economy/stripe-connect/webhook';
 
     const result = await this.client.request({
@@ -28,7 +28,7 @@ export class EconomyIntegrationsModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.APIControllersEconomyPayoutExecutionOperationSchema, result.data, 'response');
+      const validatedData = safeParse(Types.APIControllersEconomyPayoutExecutionOperationDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 

@@ -95,7 +95,7 @@ export class UsersProfilesModule {
     search?: string;
     sortBy?: string;
     sortDirection?: string;
-  }): Promise<Result<Types.PagedResultOfIdentityUsersUserProfile, ApiError>> {
+  }): Promise<Result<Types.PagedResultUserProfileDto, ApiError>> {
     const url = '/v1/users/profiles';
 
     const result = await this.client.request({
@@ -107,7 +107,7 @@ export class UsersProfilesModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.PagedResultOfIdentityUsersUserProfileSchema, result.data, 'response');
+      const validatedData = safeParse(Types.PagedResultUserProfileDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 

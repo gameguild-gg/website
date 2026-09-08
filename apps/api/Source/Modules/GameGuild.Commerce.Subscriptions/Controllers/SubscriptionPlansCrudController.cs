@@ -146,6 +146,7 @@ public sealed class SubscriptionPlansCrudController(ISender sender) : BaseApiCon
     /// <param name="ct">Cancellation token</param>
     /// <returns>Plan comparison results</returns>
     [HttpPost("v{version:apiVersion}/subscription-plans:compare")]
+    [NoBusinessMutationEndpoint("This POST-shaped plan comparison is read-only.")]
     [EndpointSummary("Compare subscription plans")]
     [EndpointDescription("Compares multiple subscription plans side by side. Custom action per Google API guidelines.")]
     [ProducesResponseType(StatusCodes.Status200OK)]

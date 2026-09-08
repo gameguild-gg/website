@@ -17,7 +17,7 @@ export class TestingLabSettingsModule {
 
   /**
    */
-  async getApiTestingLabSettings(): Promise<Result<Types.TestingLabTestingLabSettings, ApiError>> {
+  async getApiTestingLabSettings(): Promise<Result<Types.TestingLabTestingLabSettingsDto, ApiError>> {
     const url = '/api/testing-lab/settings';
 
     const result = await this.client.request({
@@ -28,7 +28,7 @@ export class TestingLabSettingsModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.TestingLabTestingLabSettingsSchema, result.data, 'response');
+      const validatedData = safeParse(Types.TestingLabTestingLabSettingsDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -37,11 +37,11 @@ export class TestingLabSettingsModule {
 
   /**
    */
-  async putApiTestingLabSettings(body: Types.TestingLabCreateTestingLabSettings): Promise<Result<Types.TestingLabTestingLabSettings, ApiError>> {
+  async putApiTestingLabSettings(body: Types.TestingLabCreateTestingLabSettingsDto): Promise<Result<Types.TestingLabTestingLabSettingsDto, ApiError>> {
     const url = '/api/testing-lab/settings';
 
     // Validate request body
-    const validatedBody = safeParse(Types.TestingLabCreateTestingLabSettingsSchema, body, 'request');
+    const validatedBody = safeParse(Types.TestingLabCreateTestingLabSettingsDtoSchema, body, 'request');
 
     const result = await this.client.request({
       method: 'PUT',
@@ -52,7 +52,7 @@ export class TestingLabSettingsModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.TestingLabTestingLabSettingsSchema, result.data, 'response');
+      const validatedData = safeParse(Types.TestingLabTestingLabSettingsDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -61,11 +61,11 @@ export class TestingLabSettingsModule {
 
   /**
    */
-  async patchApiTestingLabSettings(body: Types.TestingLabUpdateTestingLabSettings): Promise<Result<Types.TestingLabTestingLabSettings, ApiError>> {
+  async patchApiTestingLabSettings(body: Types.TestingLabUpdateTestingLabSettingsDto): Promise<Result<Types.TestingLabTestingLabSettingsDto, ApiError>> {
     const url = '/api/testing-lab/settings';
 
     // Validate request body
-    const validatedBody = safeParse(Types.TestingLabUpdateTestingLabSettingsSchema, body, 'request');
+    const validatedBody = safeParse(Types.TestingLabUpdateTestingLabSettingsDtoSchema, body, 'request');
 
     const result = await this.client.request({
       method: 'PATCH',
@@ -76,7 +76,7 @@ export class TestingLabSettingsModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.TestingLabTestingLabSettingsSchema, result.data, 'response');
+      const validatedData = safeParse(Types.TestingLabTestingLabSettingsDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -99,7 +99,7 @@ export class TestingLabSettingsModule {
 
   /**
    */
-  async postApiTestingLabSettingsReset(): Promise<Result<Types.TestingLabTestingLabSettings, ApiError>> {
+  async postApiTestingLabSettingsReset(): Promise<Result<Types.TestingLabTestingLabSettingsDto, ApiError>> {
     const url = '/api/testing-lab/settings/reset';
 
     const result = await this.client.request({
@@ -110,7 +110,7 @@ export class TestingLabSettingsModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.TestingLabTestingLabSettingsSchema, result.data, 'response');
+      const validatedData = safeParse(Types.TestingLabTestingLabSettingsDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 

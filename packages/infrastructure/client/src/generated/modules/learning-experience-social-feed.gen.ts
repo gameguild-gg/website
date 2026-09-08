@@ -17,7 +17,7 @@ export class LearningExperienceSocialFeedModule {
 
   /**
    */
-  async postApiSocialFeedDismiss(id: string): Promise<Result<Types.LearningExperienceSocialServicesPersonalizedFeedItem, ApiError>> {
+  async postApiSocialFeedDismiss(id: string): Promise<Result<Types.LearningExperienceSocialServicesPersonalizedFeedItemDto, ApiError>> {
     const url = `/api/social/feed/${id}/dismiss`;
 
     const result = await this.client.request({
@@ -28,7 +28,7 @@ export class LearningExperienceSocialFeedModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.LearningExperienceSocialServicesPersonalizedFeedItemSchema, result.data, 'response');
+      const validatedData = safeParse(Types.LearningExperienceSocialServicesPersonalizedFeedItemDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -37,7 +37,7 @@ export class LearningExperienceSocialFeedModule {
 
   /**
    */
-  async postApiSocialFeedViewed(id: string): Promise<Result<Types.LearningExperienceSocialServicesPersonalizedFeedItem, ApiError>> {
+  async postApiSocialFeedViewed(id: string): Promise<Result<Types.LearningExperienceSocialServicesPersonalizedFeedItemDto, ApiError>> {
     const url = `/api/social/feed/${id}/viewed`;
 
     const result = await this.client.request({
@@ -48,7 +48,7 @@ export class LearningExperienceSocialFeedModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.LearningExperienceSocialServicesPersonalizedFeedItemSchema, result.data, 'response');
+      const validatedData = safeParse(Types.LearningExperienceSocialServicesPersonalizedFeedItemDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -61,7 +61,7 @@ export class LearningExperienceSocialFeedModule {
     skip?: number;
     take?: number;
     filterByType?: Types.LearningExperienceSocialFeedItemType;
-  }): Promise<Result<Array<Types.LearningExperienceSocialServicesPersonalizedFeedItem>, ApiError>> {
+  }): Promise<Result<Array<Types.LearningExperienceSocialServicesPersonalizedFeedItemDto>, ApiError>> {
     const url = '/api/social/feed/me';
 
     const result = await this.client.request({
@@ -71,7 +71,7 @@ export class LearningExperienceSocialFeedModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.LearningExperienceSocialServicesPersonalizedFeedItem>, ApiError>;
+    return result as Result<Array<Types.LearningExperienceSocialServicesPersonalizedFeedItemDto>, ApiError>;
   }
 
   /**

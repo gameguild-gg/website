@@ -3,6 +3,8 @@ using GameGuild.Identity.Context.Actors;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using GameGuild.Assets.Commands;
+using GameGuild.CQRS;
 
 namespace GameGuild.Assets.Controllers;
 
@@ -12,7 +14,8 @@ namespace GameGuild.Assets.Controllers;
 [Authorize]
 public sealed class AssetLibrariesController(
     IAssetLibraryService libraryService,
-    IActorContextAccessor actorContextAccessor) : ControllerBase
+    IActorContextAccessor actorContextAccessor,
+    ISender sender) : ControllerBase
 {
     private ActorContext Actor => actorContextAccessor.ActorContext;
 
@@ -31,8 +34,8 @@ public sealed class AssetLibrariesController(
         CancellationToken ct)
     {
         if (Actor.SubjectIdAsGuid is not { } userId) return Unauthorized();
-        return Map(await libraryService.CreateFolderAsync(
-            resourceType, resourceId, userId, Actor.TenantId, request.Name, request.ParentFolderId, ct).ConfigureAwait(false));
+        return Map(await sender.Send(new CreateAssetFolderCommand(
+            resourceType, resourceId, userId, Actor.TenantId, request.Name, request.ParentFolderId), ct).ConfigureAwait(false));
     }
 
     [HttpPut("folders/{folderId:guid}/restriction")]
@@ -42,16 +45,16 @@ public sealed class AssetLibrariesController(
         CancellationToken ct)
     {
         if (Actor.SubjectIdAsGuid is not { } userId) return Unauthorized();
-        return Map(await libraryService.RestrictFolderAsync(
-            folderId, userId, Actor.TenantId, request.Mode, request.TeamIds ?? [], request.Authorities ?? [], ct).ConfigureAwait(false));
+        return Map(await sender.Send(new RestrictAssetFolderCommand(
+            folderId, userId, Actor.TenantId, request.Mode, request.TeamIds ?? [], request.Authorities ?? []), ct).ConfigureAwait(false));
     }
 
     [HttpPost("assets/{referenceId:guid}/copy")]
     public async Task<IActionResult> Copy(Guid referenceId, [FromBody] CopyAssetReferenceRequest request, CancellationToken ct)
     {
         if (Actor.SubjectIdAsGuid is not { } userId) return Unauthorized();
-        return Map(await libraryService.CopyAsync(
-            referenceId, userId, Actor.TenantId, request.DisplayName, request.FolderId, ct).ConfigureAwait(false));
+        return Map(await sender.Send(new CopyAssetReferenceCommand(
+            referenceId, userId, Actor.TenantId, request.DisplayName, request.FolderId), ct).ConfigureAwait(false));
     }
 
     [HttpGet("assets/{referenceId:guid}/revisions")]
@@ -65,7 +68,8 @@ public sealed class AssetLibrariesController(
     public async Task<IActionResult> Restore(Guid referenceId, Guid revisionId, CancellationToken ct)
     {
         if (Actor.SubjectIdAsGuid is not { } userId) return Unauthorized();
-        return Map(await libraryService.RestoreRevisionAsync(referenceId, revisionId, userId, Actor.TenantId, ct).ConfigureAwait(false));
+        return Map(await sender.Send(new RestoreAssetRevisionCommand(
+            referenceId, revisionId, userId, Actor.TenantId), ct).ConfigureAwait(false));
     }
 
     private IActionResult Map<T>(AssetLibraryResult<T> result) => result.IsSuccess

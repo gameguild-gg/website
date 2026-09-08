@@ -21,7 +21,9 @@ public sealed class TenantInviteRequestedHandlerTests
             Mock.Of<INotificationTemplateService>());
         var handler = new TenantInviteRequestedHandler(
             notificationService,
-            NullLogger<TenantInviteRequestedHandler>.Instance);
+            NullLogger<TenantInviteRequestedHandler>.Instance,
+            Mock.Of<ITenantMemberRepository>(), Mock.Of<ITenantRepository>(),
+            new Microsoft.Extensions.Configuration.ConfigurationBuilder().Build());
         var tenantId = Guid.NewGuid();
 
         await handler.Handle(new TenantInviteRequestedNotification(
@@ -67,7 +69,9 @@ public sealed class TenantInviteRequestedHandlerTests
             .ThrowsAsync(new InvalidOperationException("db down"));
         var handler = new TenantInviteRequestedHandler(
             notificationService.Object,
-            NullLogger<TenantInviteRequestedHandler>.Instance);
+            NullLogger<TenantInviteRequestedHandler>.Instance,
+            Mock.Of<ITenantMemberRepository>(), Mock.Of<ITenantRepository>(),
+            new Microsoft.Extensions.Configuration.ConfigurationBuilder().Build());
 
         var act = () => handler.Handle(new TenantInviteRequestedNotification(
             Guid.NewGuid(),
@@ -80,7 +84,7 @@ public sealed class TenantInviteRequestedHandlerTests
             "https://app.example.com/forgot-password",
             resend: true), CancellationToken.None);
 
-        await act.Should().NotThrowAsync();
+        await act.Should().ThrowAsync<InvalidOperationException>();
     }
 
     private static NotificationsTestDbContext CreateContext()

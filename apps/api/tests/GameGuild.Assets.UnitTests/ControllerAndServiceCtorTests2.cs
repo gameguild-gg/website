@@ -30,6 +30,8 @@ public class ControllerAndServiceCtorTests2
             Mock.Of<IAssetContentRepository>(),
             Mock.Of<IAssetReferenceRepository>(),
             Mock.Of<IActorContextAccessor>(),
+            Mock.Of<IAssetStorageService>(),
+            Options.Create(new AssetAccessOptions()),
             Mock.Of<ILogger<SecureAssetDeliveryController>>());
 
         ctrl.Should().NotBeNull();

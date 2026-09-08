@@ -7,7 +7,7 @@ namespace GameGuild.Identity.Authentication.UnitTests.Services;
 public sealed class TenantAccessContextResolverTests
 {
     [Fact]
-    public void Resolve_AllTenantsInactive_FallsBackToFirstMembershipWithoutElevatingAccess()
+    public void Resolve_AllTenantsInactive_DoesNotGrantTenantAccess()
     {
         var requestedTenantId = Guid.NewGuid();
         var otherTenantId = Guid.NewGuid();
@@ -40,8 +40,8 @@ public sealed class TenantAccessContextResolverTests
 
         var result = TenantAccessContextResolver.Resolve(memberships, requestedTenantId);
 
-        result.TenantId.Should().Be(requestedTenantId);
+        result.TenantId.Should().BeNull();
         result.AvailableTenants.Should().HaveCount(2);
-        result.Roles.Should().BeEquivalentTo("Member", "User");
+        result.Roles.Should().BeEquivalentTo("User");
     }
 }

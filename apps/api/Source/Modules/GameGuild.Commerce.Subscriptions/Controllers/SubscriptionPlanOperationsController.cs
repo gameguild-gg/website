@@ -78,6 +78,7 @@ public sealed class SubscriptionPlanOperationsController(ISender sender) : BaseA
     /// <param name="ct">Cancellation token</param>
     /// <returns>Validation result</returns>
     [HttpPost("v{version:apiVersion}/subscription-plans/{planId:guid}:validate-limits")]
+    [NoBusinessMutationEndpoint("This POST-shaped limit validation is read-only.")]
     [EndpointSummary("Validate subscription plan limits")]
     [EndpointDescription("Validates whether the specified usage fits within the plan limits. Custom action per Google API guidelines.")]
     [ProducesResponseType(StatusCodes.Status200OK)]

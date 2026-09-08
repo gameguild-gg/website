@@ -1,7 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
-using GameGuild.Economy.Risk;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
@@ -23,7 +22,7 @@ public sealed record KycAmlOnboarding(
 }
 
 public sealed record SumSubWebhookIngestionResult(
-    ComplianceEvidenceIngestionStatus Status,
+    KycEvidenceIngestionStatus Status,
     string ProviderEventId,
     KycAmlState State,
     Guid? EvidenceId);
@@ -46,7 +45,7 @@ public interface IKycAmlOrchestrator
         DateTimeOffset receivedAt,
         CancellationToken cancellationToken);
 
-    Task<ComplianceEvidenceIngestionResult> ReconcileAsync(
+    Task<KycEvidenceIngestionResult> ReconcileAsync(
         Guid tenantId,
         string subjectHash,
         DateTimeOffset reconciledAt,
@@ -58,14 +57,14 @@ public sealed class SumSubKycAmlOrchestrator : IKycAmlOrchestrator
     private const string ProviderName = "sumsub";
     private readonly DbContext _db;
     private readonly IKycAmlProvider _provider;
-    private readonly IComplianceEvidenceStore _evidence;
+    private readonly IKycEvidenceStore _evidence;
     private readonly IComplianceRawObjectStore _rawObjects;
     private readonly KycPolicyOptions _policy;
 
     public SumSubKycAmlOrchestrator(
         IApplicationDbContext context,
         IKycAmlProvider provider,
-        IComplianceEvidenceStore evidence,
+        IKycEvidenceStore evidence,
         IComplianceRawObjectStore rawObjects,
         IOptions<KycPolicyOptions> policy)
     {
@@ -154,12 +153,12 @@ public sealed class SumSubKycAmlOrchestrator : IKycAmlOrchestrator
         if (replay is not null)
         {
             if (replay.PayloadHash != stored.PayloadHash)
-                throw new ComplianceEvidenceConflictException(
+                throw new KycEvidenceConflictException(
                     "The SumSub event was replayed with a different payload hash.");
             var replayBinding = await _db.Set<SumSubApplicantBindingRow>().AsNoTracking()
                 .SingleOrDefaultAsync(row => row.ApplicantId == applicantId, cancellationToken);
             return new SumSubWebhookIngestionResult(
-                ComplianceEvidenceIngestionStatus.Duplicate,
+                KycEvidenceIngestionStatus.Duplicate,
                 providerEventId,
                 replayBinding?.State ?? KycAmlState.NeedsReview,
                 null);
@@ -181,7 +180,7 @@ public sealed class SumSubKycAmlOrchestrator : IKycAmlOrchestrator
                 : binding is null ? "unknown-applicant" : "invalid-timestamp";
             await _db.SaveChangesAsync(cancellationToken);
             return new SumSubWebhookIngestionResult(
-                ComplianceEvidenceIngestionStatus.Rejected, providerEventId,
+                KycEvidenceIngestionStatus.Rejected, providerEventId,
                 binding?.State ?? KycAmlState.NeedsReview, null);
         }
         if (binding.LastProviderIssuedAt is not null && issuedAt <= binding.LastProviderIssuedAt)
@@ -189,7 +188,7 @@ public sealed class SumSubKycAmlOrchestrator : IKycAmlOrchestrator
             inbox.ProcessingError = "out-of-order-event";
             await _db.SaveChangesAsync(cancellationToken);
             return new SumSubWebhookIngestionResult(
-                ComplianceEvidenceIngestionStatus.Deferred, providerEventId, binding.State, null);
+                KycEvidenceIngestionStatus.Deferred, providerEventId, binding.State, null);
         }
 
         var state = MapWebhookState(root);
@@ -198,7 +197,7 @@ public sealed class SumSubKycAmlOrchestrator : IKycAmlOrchestrator
         var ingestion = await PublishAsync(
             binding, providerEventId, state, issuedAt, receivedAt,
             stored.PayloadHash, stored.Reference, jurisdiction, cancellationToken);
-        if (ingestion.Status == ComplianceEvidenceIngestionStatus.Published)
+        if (ingestion.Status == KycEvidenceIngestionStatus.Published)
         {
             binding.State = state;
             binding.JurisdictionCode = jurisdiction;
@@ -216,7 +215,7 @@ public sealed class SumSubKycAmlOrchestrator : IKycAmlOrchestrator
         return new SumSubWebhookIngestionResult(ingestion.Status, providerEventId, state, ingestion.EvidenceId);
     }
 
-    public async Task<ComplianceEvidenceIngestionResult> ReconcileAsync(
+    public async Task<KycEvidenceIngestionResult> ReconcileAsync(
         Guid tenantId,
         string subjectHash,
         DateTimeOffset reconciledAt,
@@ -240,7 +239,7 @@ public sealed class SumSubKycAmlOrchestrator : IKycAmlOrchestrator
             binding, eventId, status.State, reconciledAt, reconciledAt,
             stored.PayloadHash, stored.Reference,
             RequireApprovedJurisdiction(status), cancellationToken);
-        if (result.Status == ComplianceEvidenceIngestionStatus.Published)
+        if (result.Status == KycEvidenceIngestionStatus.Published)
         {
             binding.State = status.State;
             binding.JurisdictionCode = RequireApprovedJurisdiction(status);
@@ -253,7 +252,7 @@ public sealed class SumSubKycAmlOrchestrator : IKycAmlOrchestrator
         return result;
     }
 
-    private ValueTask<ComplianceEvidenceIngestionResult> PublishAsync(
+    private ValueTask<KycEvidenceIngestionResult> PublishAsync(
         SumSubApplicantBindingRow binding,
         string providerEventId,
         KycAmlState state,
@@ -269,7 +268,7 @@ public sealed class SumSubKycAmlOrchestrator : IKycAmlOrchestrator
             : _policy.ReviewEvidenceLifetime;
         if (lifetime <= TimeSpan.Zero)
             throw new SumSubNotConfiguredException("KYC evidence lifetimes must be explicitly configured.");
-        var envelope = ComplianceEvidenceEnvelope.Create(
+        var envelope = new KycEvidenceSubmission(
             ProviderName, _policy.Environment.Trim(), providerEventId, binding.TenantId,
             binding.SubjectHash, binding.EvidenceVersion + 1, MapResult(state), issuedAt,
             issuedAt.Add(lifetime), _policy.PolicyVersion, payloadHash, true, rawReference, receivedAt,
@@ -354,13 +353,13 @@ public sealed class SumSubKycAmlOrchestrator : IKycAmlOrchestrator
                 : KycAmlState.InReview;
     }
 
-    private static ComplianceEvidenceResult MapResult(KycAmlState state) => state switch
+    private static KycEvidenceResult MapResult(KycAmlState state) => state switch
     {
-        KycAmlState.Approved => ComplianceEvidenceResult.Approved,
-        KycAmlState.Rejected => ComplianceEvidenceResult.Rejected,
+        KycAmlState.Approved => KycEvidenceResult.Approved,
+        KycAmlState.Rejected => KycEvidenceResult.Rejected,
         KycAmlState.Created or KycAmlState.ApplicantPending or KycAmlState.InReview or KycAmlState.NeedsReview =>
-            ComplianceEvidenceResult.NeedsReview,
-        _ => ComplianceEvidenceResult.Unavailable
+            KycEvidenceResult.NeedsReview,
+        _ => KycEvidenceResult.Unavailable
     };
 
     private static KycAmlOnboarding Map(SumSubApplicantBindingRow row) =>

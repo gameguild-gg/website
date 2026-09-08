@@ -25,7 +25,7 @@ export class CommerceProductsPromoCodesModule {
     searchTerm?: string;
     skip?: number;
     take?: number;
-  }): Promise<Result<Types.PagedResultOfCommerceProductsPromoCode, ApiError>> {
+  }): Promise<Result<Types.PagedResultPromoCodeDto, ApiError>> {
     const url = '/v1/promo-codes';
 
     const result = await this.client.request({
@@ -37,7 +37,7 @@ export class CommerceProductsPromoCodesModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.PagedResultOfCommerceProductsPromoCodeSchema, result.data, 'response');
+      const validatedData = safeParse(Types.PagedResultPromoCodeDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -46,7 +46,7 @@ export class CommerceProductsPromoCodesModule {
 
   /**
    */
-  async postPromoCodes(body: Types.CommerceProductsCreatePromoCodeInput): Promise<Result<Types.CommerceProductsPromoCode, ApiError>> {
+  async postPromoCodes(body: Types.CommerceProductsCreatePromoCodeInput): Promise<Result<Types.CommerceProductsPromoCodeDto, ApiError>> {
     const url = '/v1/promo-codes';
 
     // Validate request body
@@ -61,7 +61,7 @@ export class CommerceProductsPromoCodesModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.CommerceProductsPromoCodeSchema, result.data, 'response');
+      const validatedData = safeParse(Types.CommerceProductsPromoCodeDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -118,7 +118,7 @@ export class CommerceProductsPromoCodesModule {
 
   /**
    */
-  async getPromoCodesForGetPromoCodesByPromoCodeId(promoCodeId: string): Promise<Result<Types.CommerceProductsPromoCode, ApiError>> {
+  async getPromoCodesForGetPromoCodesByPromoCodeId(promoCodeId: string): Promise<Result<Types.CommerceProductsPromoCodeDto, ApiError>> {
     const url = `/v1/promo-codes/${promoCodeId}`;
 
     const result = await this.client.request({
@@ -129,7 +129,7 @@ export class CommerceProductsPromoCodesModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.CommerceProductsPromoCodeSchema, result.data, 'response');
+      const validatedData = safeParse(Types.CommerceProductsPromoCodeDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -138,7 +138,7 @@ export class CommerceProductsPromoCodesModule {
 
   /**
    */
-  async putPromoCodes(promoCodeId: string, body: Types.CommerceProductsUpdatePromoCodeInput): Promise<Result<Types.CommerceProductsPromoCode, ApiError>> {
+  async putPromoCodes(promoCodeId: string, body: Types.CommerceProductsUpdatePromoCodeInput): Promise<Result<Types.CommerceProductsPromoCodeDto, ApiError>> {
     const url = `/v1/promo-codes/${promoCodeId}`;
 
     // Validate request body
@@ -153,7 +153,7 @@ export class CommerceProductsPromoCodesModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.CommerceProductsPromoCodeSchema, result.data, 'response');
+      const validatedData = safeParse(Types.CommerceProductsPromoCodeDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -176,7 +176,7 @@ export class CommerceProductsPromoCodesModule {
 
   /**
    */
-  async patchPromoCodes(promoCodeId: string, body: Types.CommerceProductsPatchPromoCodeInput): Promise<Result<Types.CommerceProductsPromoCode, ApiError>> {
+  async patchPromoCodes(promoCodeId: string, body: Types.CommerceProductsPatchPromoCodeInput): Promise<Result<Types.CommerceProductsPromoCodeDto, ApiError>> {
     const url = `/v1/promo-codes/${promoCodeId}`;
 
     // Validate request body
@@ -191,7 +191,7 @@ export class CommerceProductsPromoCodesModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.CommerceProductsPromoCodeSchema, result.data, 'response');
+      const validatedData = safeParse(Types.CommerceProductsPromoCodeDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -214,7 +214,7 @@ export class CommerceProductsPromoCodesModule {
 
   /**
    */
-  async postPromoCodesActivate(promoCodeId: string): Promise<Result<Types.CommerceProductsPromoCode, ApiError>> {
+  async postPromoCodesActivate(promoCodeId: string): Promise<Result<Types.CommerceProductsPromoCodeDto, ApiError>> {
     const url = `/v1/promo-codes/${promoCodeId}:activate`;
 
     const result = await this.client.request({
@@ -225,7 +225,7 @@ export class CommerceProductsPromoCodesModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.CommerceProductsPromoCodeSchema, result.data, 'response');
+      const validatedData = safeParse(Types.CommerceProductsPromoCodeDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -234,7 +234,7 @@ export class CommerceProductsPromoCodesModule {
 
   /**
    */
-  async postPromoCodesDeactivate(promoCodeId: string): Promise<Result<Types.CommerceProductsPromoCode, ApiError>> {
+  async postPromoCodesDeactivate(promoCodeId: string): Promise<Result<Types.CommerceProductsPromoCodeDto, ApiError>> {
     const url = `/v1/promo-codes/${promoCodeId}:deactivate`;
 
     const result = await this.client.request({
@@ -245,7 +245,7 @@ export class CommerceProductsPromoCodesModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.CommerceProductsPromoCodeSchema, result.data, 'response');
+      const validatedData = safeParse(Types.CommerceProductsPromoCodeDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -254,7 +254,7 @@ export class CommerceProductsPromoCodesModule {
 
   /**
    */
-  async getPromoCodesUsage(promoCodeId: string): Promise<Result<Types.CommerceProductsPromoCodeUsage, ApiError>> {
+  async getPromoCodesUsage(promoCodeId: string): Promise<Result<Types.CommerceProductsPromoCodeUsageDto, ApiError>> {
     const url = `/v1/promo-codes/${promoCodeId}/usage`;
 
     const result = await this.client.request({
@@ -265,7 +265,7 @@ export class CommerceProductsPromoCodesModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.CommerceProductsPromoCodeUsageSchema, result.data, 'response');
+      const validatedData = safeParse(Types.CommerceProductsPromoCodeUsageDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -274,7 +274,7 @@ export class CommerceProductsPromoCodesModule {
 
   /**
    */
-  async getPromoCodesByCode(code: string): Promise<Result<Types.CommerceProductsPromoCode, ApiError>> {
+  async getPromoCodesByCode(code: string): Promise<Result<Types.CommerceProductsPromoCodeDto, ApiError>> {
     const url = `/v1/promo-codes/by-code/${code}`;
 
     const result = await this.client.request({
@@ -285,7 +285,7 @@ export class CommerceProductsPromoCodesModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.CommerceProductsPromoCodeSchema, result.data, 'response');
+      const validatedData = safeParse(Types.CommerceProductsPromoCodeDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 

@@ -98,5 +98,7 @@ public enum ResourceUsageType
     AiTokens = 29,
 
     /// <summary>Teams created per tenant</summary>
-    Teams = 30
+    Teams = 30,
+
+    Properties = 31
 }

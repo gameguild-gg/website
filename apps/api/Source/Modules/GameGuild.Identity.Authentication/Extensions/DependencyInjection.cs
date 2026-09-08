@@ -49,6 +49,12 @@ public static class DependencyInjection
         services.AddScoped<IEmailRenderer, PasswordResetRenderer>();
         services.AddScoped<IEmailRenderer, MagicLinkRenderer>();
 
+        // Each durable listener is invoked with its own transactional inbox receipt.
+        services.AddScoped<SendWelcomeEmailHandler>();
+        services.AddScoped<LogAnalyticsEventHandler>();
+        services.AddScoped<IIntegrationEventHandler<UserCreatedEvent>>(provider => provider.GetRequiredService<SendWelcomeEmailHandler>());
+        services.AddScoped<IIntegrationEventHandler<UserCreatedEvent>>(provider => provider.GetRequiredService<LogAnalyticsEventHandler>());
+
         return services;
     }
 }

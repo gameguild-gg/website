@@ -30,24 +30,35 @@
     <!-- Make ASP.NET Core types available to all module class libraries (e.g. [Tags],
     IEndpointRouteBuilder). Exclude .dcproj and Web SDK projects (which already include it implicitly). -->
     <ItemGroup
-        Condition="'$(MSBuildProjectExtension)' != '.dcproj' AND '$(UsingMicrosoftNETSdkWeb)' != 'true'">
+        Condition="'$(MSBuildProjectExtension)' != '.dcproj' AND '$(UsingMicrosoftNETSdkWeb)' != 'true' AND '$(MSBuildProjectName)' != 'GameGuild.ArchitectureAnalyzers'">
         <FrameworkReference Include="Microsoft.AspNetCore.App" />
     </ItemGroup>
 
     <!-- Global usings for commonly used namespaces across modules -->
-    <ItemGroup>
+    <ItemGroup Condition="'$(MSBuildProjectName)' != 'GameGuild.ArchitectureAnalyzers'">
         <Using Include="Microsoft.EntityFrameworkCore" />
     </ItemGroup>
+
     <!-- Opt-in flag for Sonar analyzers. Disabled by default to unblock current build. -->
     <PropertyGroup>
         <IncludeSonarAnalyzers>false</IncludeSonarAnalyzers>
     </PropertyGroup>
 
     <ItemGroup
-        Condition="'$(MSBuildProjectExtension)' != '.dcproj' AND '$(IncludeSonarAnalyzers)' == 'true'">
+            Condition="'$(MSBuildProjectExtension)' != '.dcproj' AND '$(IncludeSonarAnalyzers)' == 'true'">
         <PackageReference Include="SonarAnalyzer.CSharp">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
     </ItemGroup>
+
+    <ItemGroup Condition="'$(MSBuildProjectName)' != 'GameGuild.ArchitectureAnalyzers' AND '$(MSBuildProjectExtension)' != '.dcproj' AND !$(MSBuildProjectName.EndsWith('Tests'))">
+        <ProjectReference Include="$(MSBuildThisFileDirectory)Source/GameGuild.ArchitectureAnalyzers/GameGuild.ArchitectureAnalyzers.csproj"
+                          OutputItemType="Analyzer"
+                          ReferenceOutputAssembly="false" />
+    </ItemGroup>
+
+    <PropertyGroup Condition="'$(MSBuildProjectName)' != 'GameGuild.ArchitectureAnalyzers' AND '$(MSBuildProjectExtension)' != '.dcproj' AND !$(MSBuildProjectName.EndsWith('Tests')) AND '$(EnforceArchitectureEventContracts)' != 'false'">
+        <WarningsAsErrors>$(WarningsAsErrors);MEARCH001;MEARCH002;MEARCH003;MEARCH004;MEARCH005</WarningsAsErrors>
+    </PropertyGroup>
 </Project>

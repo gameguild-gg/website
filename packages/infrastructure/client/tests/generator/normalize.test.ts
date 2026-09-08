@@ -123,8 +123,8 @@ describe('OpenAPI Spec Normalizer', () => {
     const normalized = normalizeSpec(spec);
     const schemas = (normalized.components as any)?.schemas;
 
-    // Normalize removes Dto suffix and namespace
-    expect(schemas).toHaveProperty('User'); // UserDto -> User
+    // Normalize removes namespace but retains the DTO suffix
+    expect(schemas).toHaveProperty('UserDto'); // Preserve DTO identity
     expect(schemas).not.toHaveProperty('GameGuild.Identity.Users.UserDto');
     expect(schemas).not.toHaveProperty('ProblemDetails'); // Removed by cleanAspNetPatterns
   });
@@ -148,8 +148,8 @@ describe('OpenAPI Spec Normalizer', () => {
     const normalized = normalizeSpec(spec);
     const schemas = (normalized.components as any)?.schemas;
 
-    // Normalize preserves generics but removes Dto suffix from type parameter
-    expect(schemas).toHaveProperty('ResultOfUser'); // ResultOfUserDto -> ResultOfUser
+    // Normalize preserves generics and the DTO suffix of the type parameter
+    expect(schemas).toHaveProperty('ResultOfUserDto'); // Preserve the generic argument
   });
 
   it('should preserve generic argument identity and update each reference independently', () => {
@@ -191,14 +191,14 @@ describe('OpenAPI Spec Normalizer', () => {
     const schemas = (normalized.components as any).schemas;
 
     expect(Object.keys(schemas)).toEqual([
-      'PagedResultOfCommerceSupportTicket',
-      'PagedResultOfIdentityUsersUser',
+      'PagedResultOfCommerceSupportTicketDto',
+      'PagedResultOfIdentityUsersUserDto',
     ]);
     expect((normalized.paths['/users'] as any).get.responses['200'].content['application/json'].schema.$ref).toBe(
-      '#/components/schemas/PagedResultOfIdentityUsersUser',
+      '#/components/schemas/PagedResultOfIdentityUsersUserDto',
     );
     expect((normalized.paths['/tickets'] as any).get.responses['200'].content['application/json'].schema.$ref).toBe(
-      '#/components/schemas/PagedResultOfCommerceSupportTicket',
+      '#/components/schemas/PagedResultOfCommerceSupportTicketDto',
     );
   });
 
@@ -230,9 +230,9 @@ describe('OpenAPI Spec Normalizer', () => {
     const schemas = (normalized.components as any)?.schemas;
     const userListOutput = schemas.UserListOutput; // Response -> Output
 
-    // Normalize removes namespace and Dto suffix
-    expect(schemas).toHaveProperty('User'); // Old.Namespace.UserDto -> User
-    expect(userListOutput.properties.users.items.$ref).toBe('#/components/schemas/User');
+    // Normalize removes namespace but retains the DTO suffix
+    expect(schemas).toHaveProperty('UserDto'); // Preserve DTO identity
+    expect(userListOutput.properties.users.items.$ref).toBe('#/components/schemas/UserDto');
   });
 
   it('should preserve the original spec structure', () => {

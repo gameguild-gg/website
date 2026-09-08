@@ -179,7 +179,19 @@ public class AssetGarbageCollectionService : IAssetGarbageCollectionService
                     // Delete transformed versions
                     // (handled by cascade or separate cleanup)
 
-                    // Delete from database
+                    content.AddIntegrationEvent(new AssetObjectDeletedEvent(
+                        content.Id,
+                        content.ContentHash,
+                        content.SizeBytes,
+                        "object-storage")
+                    {
+                        TenantId = content.TenantId ?? DurableIntegrationEventTenants.Platform,
+                        ActorId = DurableIntegrationEventActors.System,
+                        AggregateType = nameof(AssetContent),
+                        AggregateId = content.Id.ToString(),
+                        CorrelationId = Guid.NewGuid()
+                    });
+
                     await _contentRepository.DeleteAsync(content.Id, ct).ConfigureAwait(false);
 
                     deleted++;

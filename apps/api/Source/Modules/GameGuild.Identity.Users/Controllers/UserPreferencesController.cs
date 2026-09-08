@@ -86,15 +86,12 @@ public sealed class UserPreferencesController(ISender sender) : BaseApiControlle
     }
 
     // ========================================
-    // NOTIFICATION PREFERENCES MANAGEMENT (deprecated)
-    // Deprecated: notification preferences now live in the Notifications module
-    // (GET/PUT /api/notifications/preferences). Kept for backward compatibility; no longer the source of truth.
+    // NOTIFICATION PREFERENCES MANAGEMENT
     // ========================================
 
     /// <summary>
-    ///     Check if notification preferences exist (deprecated: use /api/notifications/preferences)
+    ///     Check if notification preferences exist
     /// </summary>
-    [Obsolete("Deprecated: use the Notifications module preferences endpoints (/api/notifications/preferences) instead.")]
     [HttpHead("v{version:apiVersion}/users/{userId:guid}/preferences/notifications")]
     [Authorize(Policy = Policies.UsersReadSelf)]
     [EndpointSummary("Check if notification preferences exist")]
@@ -109,9 +106,8 @@ public sealed class UserPreferencesController(ISender sender) : BaseApiControlle
     }
 
     /// <summary>
-    ///     Get notification settings for user (deprecated: use /api/notifications/preferences)
+    ///     Get notification settings for user
     /// </summary>
-    [Obsolete("Deprecated: use the Notifications module preferences endpoints (/api/notifications/preferences) instead.")]
     [HttpGet("v{version:apiVersion}/users/{userId:guid}/preferences/notifications")]
     [Authorize(Policy = Policies.UsersReadSelf)]
     [EndpointSummary("Get notification settings for user")]
@@ -126,9 +122,8 @@ public sealed class UserPreferencesController(ISender sender) : BaseApiControlle
     }
 
     /// <summary>
-    ///     Replace notification preferences for user (full update) (deprecated: use /api/notifications/preferences)
+    ///     Replace notification preferences for user (full update)
     /// </summary>
-    [Obsolete("Deprecated: use the Notifications module preferences endpoints (/api/notifications/preferences) instead.")]
     [HttpPut("v{version:apiVersion}/users/{userId:guid}/preferences/notifications")]
     [Authorize(Policy = Policies.UsersEditSelf)]
     [EndpointSummary("Replace notification preferences for user (full update)")]
@@ -146,9 +141,8 @@ public sealed class UserPreferencesController(ISender sender) : BaseApiControlle
     }
 
     /// <summary>
-    ///     Partially update notification preferences for user (deprecated: use /api/notifications/preferences)
+    ///     Partially update notification preferences for user
     /// </summary>
-    [Obsolete("Deprecated: use the Notifications module preferences endpoints (/api/notifications/preferences) instead.")]
     [HttpPatch("v{version:apiVersion}/users/{userId:guid}/preferences/notifications")]
     [Authorize(Policy = Policies.UsersEditSelf)]
     [EndpointSummary("Partially update notification preferences for user")]
@@ -166,9 +160,8 @@ public sealed class UserPreferencesController(ISender sender) : BaseApiControlle
     }
 
     /// <summary>
-    ///     Reset notification preferences to defaults (deprecated: use /api/notifications/preferences)
+    ///     Reset notification preferences to defaults
     /// </summary>
-    [Obsolete("Deprecated: use the Notifications module preferences endpoints (/api/notifications/preferences) instead.")]
     [HttpPost("v{version:apiVersion}/users/{userId:guid}/preferences/notifications:reset")]
     [Authorize(Policy = Policies.UsersEditSelf)]
     [EndpointSummary("Reset notification preferences to defaults")]

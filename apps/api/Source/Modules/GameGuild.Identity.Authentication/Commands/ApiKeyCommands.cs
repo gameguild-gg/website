@@ -8,7 +8,7 @@ namespace GameGuild.Identity.Authentication;
 
 // ==================== CREATE API KEY ====================
 
-public sealed record CreateApiKeyCommand : IRequest<Result<CreateApiKeyResponse>>
+public sealed record CreateApiKeyCommand : ICommand<Result<CreateApiKeyResponse>>
 {
     public required string Name { get; init; }
     public required string[] Scopes { get; init; }
@@ -54,7 +54,7 @@ public sealed class CreateApiKeyValidator : AbstractValidator<CreateApiKeyComman
     }
 }
 
-public sealed class CreateApiKeyHandler : IRequestHandler<CreateApiKeyCommand, Result<CreateApiKeyResponse>>
+public sealed class CreateApiKeyHandler : ICommandHandler<CreateApiKeyCommand, Result<CreateApiKeyResponse>>
 {
     private readonly IApplicationDbContext _dbContext;
     private readonly IActorContextAccessor _actorContext;
@@ -159,13 +159,13 @@ public sealed class ListApiKeysHandler : IRequestHandler<ListApiKeysQuery, Resul
 
 // ==================== REVOKE API KEY ====================
 
-public sealed record RevokeApiKeyCommand : IRequest<Result<bool>>
+public sealed record RevokeApiKeyCommand : ICommand<Result<bool>>
 {
     public required Guid KeyId { get; init; }
     public string? Reason { get; init; }
 }
 
-public sealed class RevokeApiKeyHandler : IRequestHandler<RevokeApiKeyCommand, Result<bool>>
+public sealed class RevokeApiKeyHandler : ICommandHandler<RevokeApiKeyCommand, Result<bool>>
 {
     private readonly IApplicationDbContext _dbContext;
     private readonly IActorContextAccessor _actorContext;

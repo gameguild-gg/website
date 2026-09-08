@@ -168,6 +168,9 @@ public class PaymentsControllerTests
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(new GatewaySetupIntentResult(true, "seti_123", "seti_123_secret_456", "cus_123", null, null));
 
+        var handler = new CreateSetupIntentCommandHandler(stripeCustomerService.Object, paymentContextService.Object);
+        sender.Setup(service => service.Send(It.IsAny<CreateSetupIntentCommand>(), It.IsAny<CancellationToken>()))
+            .Returns((CreateSetupIntentCommand command, CancellationToken token) => handler.Handle(command, token));
         var controller = CreateController(sender.Object, CreateAuthenticatedActorContext(tenantId), stripeCustomerService.Object, paymentContextService.Object);
 
         var result = await controller.CreateSetupIntent(

@@ -76,20 +76,8 @@ public static class ServiceCollectionExtensions
 
     private static void AddUnavailableUseCaseHandlers(this IServiceCollection services, Assembly assembly)
     {
-        UseCaseEventContractAttribute[] contracts;
-        try
-        {
-            contracts = assembly.GetCustomAttributes<UseCaseEventContractAttribute>()
-                .Where(contract => !string.IsNullOrWhiteSpace(contract.UnavailableReason))
-                .ToArray();
-        }
-        catch (Exception exception) when (exception is NotImplementedException or NotSupportedException or ReflectionTypeLoadException)
-        {
-            // Reflection-only and partially loadable assemblies can still contribute
-            // concrete handlers even when assembly-level attributes are unavailable.
-            return;
-        }
-
+        var contracts = assembly.GetCustomAttributes<UseCaseEventContractAttribute>()
+            .Where(contract => !string.IsNullOrWhiteSpace(contract.UnavailableReason));
         foreach (var contract in contracts)
         {
             var commandInterface = contract.CommandType.GetInterfaces().Single(@interface =>

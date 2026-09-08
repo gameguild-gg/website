@@ -327,7 +327,7 @@ public sealed class AuthController(ISender sender) : BaseApiController
     }
 
     private async Task<IActionResult> ExecuteAuthCommandAsync<TCommand>(TCommand command, CancellationToken ct)
-        where TCommand : IRequest<SignInResponse>
+        where TCommand : ICommand<SignInResponse>
     {
         try
         {

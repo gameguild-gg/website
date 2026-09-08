@@ -100,7 +100,7 @@ function makeConfig(overrides?: Partial<ResolvedAuthConfig>): ResolvedAuthConfig
     apiUrl: 'http://localhost:8080',
     pages: {},
     cookies: {
-      name: '__gg',
+      name: '__me',
       secure: false,
       sameSite: 'lax',
       path: '/',
@@ -154,7 +154,7 @@ describe('Handlers — signIn extended', () => {
         email: 'user@example.com',
         password: 'password',
       }),
-      cookies: { '__gg.csrf-token': 'csrf-cookie-value' },
+      cookies: { '__me.csrf-token': 'csrf-cookie-value' },
     });
 
     const response = await POST(request);
@@ -184,7 +184,7 @@ describe('Handlers — signIn extended', () => {
         email: 'test@test.com',
         password: 'pw',
       }),
-      cookies: { '__gg.csrf-token': 'csrf-cookie-value' },
+      cookies: { '__me.csrf-token': 'csrf-cookie-value' },
     });
 
     const response = await POST(request);
@@ -211,7 +211,7 @@ describe('Handlers — signIn extended', () => {
         email: 'test@test.com',
         password: 'pw',
       }),
-      cookies: { '__gg.csrf-token': 'csrf-cookie-value' },
+      cookies: { '__me.csrf-token': 'csrf-cookie-value' },
     });
 
     const response = await POST(request);
@@ -233,7 +233,7 @@ describe('Handlers — signIn extended', () => {
         redirectTo: '/dashboard',
         redirect: true,
       }),
-      cookies: { '__gg.csrf-token': 'csrf-cookie-value' },
+      cookies: { '__me.csrf-token': 'csrf-cookie-value' },
     });
 
     const response = await POST(request);
@@ -257,7 +257,7 @@ describe('Handlers — signIn extended', () => {
     const request = buildRequest('/api/auth/signin/github', {
       method: 'POST',
       body: JSON.stringify({ csrfToken: 'csrf-token-value' }),
-      cookies: { '__gg.csrf-token': 'csrf-cookie-value' },
+      cookies: { '__me.csrf-token': 'csrf-cookie-value' },
     });
 
     const response = await POST(request);
@@ -285,7 +285,7 @@ describe('Handlers — signIn extended', () => {
     const request = buildRequest('/api/auth/signin/google', {
       method: 'POST',
       body: JSON.stringify({ csrfToken: 'csrf-token-value', idToken: 'google-id-token' }),
-      cookies: { '__gg.csrf-token': 'csrf-cookie-value' },
+      cookies: { '__me.csrf-token': 'csrf-cookie-value' },
     });
 
     const response = await POST(request);
@@ -310,7 +310,7 @@ describe('Handlers — signIn extended', () => {
     const request = buildRequest('/api/auth/signin/google', {
       method: 'POST',
       body: JSON.stringify({ csrfToken: 'csrf-token-value' }),
-      cookies: { '__gg.csrf-token': 'csrf-cookie-value' },
+      cookies: { '__me.csrf-token': 'csrf-cookie-value' },
     });
 
     const response = await POST(request);
@@ -353,13 +353,51 @@ describe('Handlers — signUp extended', () => {
         firstName: 'Test',
         lastName: 'User',
       }),
-      cookies: { '__gg.csrf-token': 'csrf-cookie-value' },
+      cookies: { '__me.csrf-token': 'csrf-cookie-value' },
     });
 
     const response = await POST(request);
     expect(response.status).toBe(200);
     const body = await response.json();
     expect(body.user).toBeDefined();
+  });
+
+  it('does not create a session when the signIn callback rejects the new account', async () => {
+    fetchSpy = vi.spyOn(global, 'fetch').mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          accessToken: 'at',
+          refreshToken: 'rt',
+          userId: 'renter',
+          email: 'renter@example.com',
+        }),
+        { status: 200 },
+      ),
+    );
+    const signIn = vi.fn(async () => false as const);
+    const baseConfig = makeConfig();
+    const config = makeConfig({ callbacks: { ...baseConfig.callbacks, signIn } });
+    const { POST } = createHandlers(config);
+
+    const response = await POST(
+      buildRequest('/api/auth/signup', {
+        method: 'POST',
+        body: JSON.stringify({
+          csrfToken: 'csrf-token-value',
+          username: 'renter',
+          email: 'renter@example.com',
+          password: 'Password1!',
+        }),
+        cookies: { '__me.csrf-token': 'csrf-cookie-value' },
+      }),
+    );
+
+    expect(signIn).toHaveBeenCalledWith({
+      user: expect.objectContaining({ email: 'renter@example.com' }),
+      provider: 'credentials',
+    });
+    expect(response.status).toBeGreaterThanOrEqual(400);
+    expect(response.headers.get('set-cookie') ?? '').not.toContain('__me.session-token=');
   });
 
   it('should return error for missing required signup fields', async () => {
@@ -373,7 +411,7 @@ describe('Handlers — signUp extended', () => {
         email: 'test@example.com',
         // missing username and password
       }),
-      cookies: { '__gg.csrf-token': 'csrf-cookie-value' },
+      cookies: { '__me.csrf-token': 'csrf-cookie-value' },
     });
 
     const response = await POST(request);
@@ -398,7 +436,7 @@ describe('Handlers — signUp extended', () => {
         email: 'taken@example.com',
         password: 'Password1!',
       }),
-      cookies: { '__gg.csrf-token': 'csrf-cookie-value' },
+      cookies: { '__me.csrf-token': 'csrf-cookie-value' },
     });
 
     const response = await POST(request);
@@ -418,7 +456,7 @@ describe('Handlers — updateSession', () => {
     const request = buildRequest('/api/auth/session', {
       method: 'POST',
       body: JSON.stringify({ user: { name: 'Updated Name' } }),
-      cookies: { '__gg.session-token': 'valid-encrypted-token' },
+      cookies: { '__me.session-token': 'valid-encrypted-token' },
     });
 
     const response = await POST(request);
@@ -463,7 +501,7 @@ describe('Handlers — form-urlencoded POST', () => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
-        cookie: '__gg.csrf-token=csrf-cookie-value',
+        cookie: '__me.csrf-token=csrf-cookie-value',
       },
       body: body.toString(),
     });
@@ -563,7 +601,7 @@ describe('Handlers — debug logging', () => {
     const request = buildRequest('/api/auth/signin', {
       method: 'POST',
       body: JSON.stringify({ csrfToken: 'csrf-token-value', provider: 'nonexistent' }),
-      cookies: { '__gg.csrf-token': 'csrf-cookie-value' },
+      cookies: { '__me.csrf-token': 'csrf-cookie-value' },
     });
 
     const response = await POST(request);
@@ -593,8 +631,8 @@ describe('Handlers — signOut with session token', () => {
       method: 'POST',
       body: JSON.stringify({ csrfToken: 'csrf-token-value' }),
       cookies: {
-        '__gg.csrf-token': 'csrf-cookie-value',
-        '__gg.session-token': 'valid-encrypted-token',
+        '__me.csrf-token': 'csrf-cookie-value',
+        '__me.session-token': 'valid-encrypted-token',
       },
     });
 

@@ -22,10 +22,7 @@ namespace GameGuild.Identity.Authentication;
 [EnableRateLimiting(RateLimitPolicies.Authentication)]
 public class WebAuthnController(
     IWebAuthnService webAuthnService,
-    IJwtTokenService? jwtTokenService = null,
-    IUserRepository? userRepository = null,
-    IConfiguration? configuration = null,
-    ISender? sender = null) : BaseApiController
+    ISender sender) : BaseApiController
 {
     #region Registration Endpoints
 
@@ -47,7 +44,7 @@ public class WebAuthnController(
         if (!userId.HasValue)
             return Unauthorized();
 
-        var result = await sender!.Send(new BeginWebAuthnRegistrationCommand(
+        var result = await sender.Send(new BeginWebAuthnRegistrationCommand(
             userId.Value,
             request.Email,
             request.DisplayName,
@@ -79,7 +76,7 @@ public class WebAuthnController(
         if (!userId.HasValue)
             return Unauthorized();
 
-        var result = await sender!.Send(new CompleteWebAuthnRegistrationCommand(
+        var result = await sender.Send(new CompleteWebAuthnRegistrationCommand(
             userId.Value,
             request.AttestationResponse,
             request.FriendlyName,
@@ -111,7 +108,7 @@ public class WebAuthnController(
         [FromBody] BeginWebAuthnAuthenticationRequest? request = null,
         CancellationToken cancellationToken = default)
     {
-        var result = await sender!.Send(
+        var result = await sender.Send(
             new BeginWebAuthnAuthenticationCommand(request?.Email),
             cancellationToken).ConfigureAwait(false);
 
@@ -135,7 +132,7 @@ public class WebAuthnController(
         [FromBody] CompleteWebAuthnAuthenticationRequest request,
         CancellationToken cancellationToken = default)
     {
-        var result = await sender!.Send(new CompleteWebAuthnAuthenticationCommand(
+        var result = await sender.Send(new CompleteWebAuthnAuthenticationCommand(
             request.AssertionResponse,
             GetClientIpAddress(),
             Request.Headers.UserAgent.ToString()),
@@ -234,7 +231,7 @@ public class WebAuthnController(
         if (!userId.HasValue)
             return Unauthorized();
 
-        var result = await sender!.Send(
+        var result = await sender.Send(
             new VerifyWebAuthnCredentialCommand(userId.Value, credentialId),
             cancellationToken).ConfigureAwait(false);
         if (!result.Success && result.Error == "Credential not found")
@@ -261,7 +258,7 @@ public class WebAuthnController(
         if (!userId.HasValue)
             return Unauthorized();
 
-        var result = await sender!.Send(
+        var result = await sender.Send(
             new DeleteWebAuthnCredentialCommand(userId.Value, credentialId),
             cancellationToken).ConfigureAwait(false);
         if (!result)
@@ -290,7 +287,7 @@ public class WebAuthnController(
         if (!userId.HasValue)
             return Unauthorized();
 
-        var result = await sender!.Send(new UpdateWebAuthnCredentialNameCommand(
+        var result = await sender.Send(new UpdateWebAuthnCredentialNameCommand(
             userId.Value,
             credentialId,
             request.FriendlyName), cancellationToken).ConfigureAwait(false);
@@ -345,54 +342,7 @@ public class WebAuthnController(
 
     #endregion
 
-    private async Task AttachAuthenticationTokensAsync(WebAuthnAuthenticationResult result, CancellationToken cancellationToken)
-    {
-        if (!result.Success || result.UserId is not { } userId || jwtTokenService is null || userRepository is null)
-        {
-            return;
-        }
 
-        var user = await userRepository.GetByIdAsync(userId, cancellationToken).ConfigureAwait(false);
-        if (user is null)
-        {
-            return;
-        }
-
-        var accessToken = await jwtTokenService.GenerateAccessTokenAsync(
-            user.Id,
-            user.Email,
-            [],
-            null,
-            user.TokenVersion,
-            cancellationToken).ConfigureAwait(false);
-
-        var refreshToken = await jwtTokenService.GenerateRefreshTokenAsync(
-            user.Id,
-            new DeviceInfo
-            {
-                Fingerprint = $"webauthn:{result.CredentialId?.ToString("N") ?? "unknown"}",
-                IpAddress = GetClientIpAddress(),
-                UserAgent = Request.Headers.UserAgent.ToString()
-            },
-            cancellationToken).ConfigureAwait(false);
-
-        var accessTokenMinutes = ParsePositiveInt(configuration?["Jwt:AccessTokenExpirationMinutes"], 60);
-        var refreshTokenDays = ParsePositiveInt(
-            configuration?["Jwt:RefreshTokenExpirationDays"] ?? configuration?["Jwt:RefreshTokenExpiryInDays"],
-            30);
-
-        result.Email = user.Email;
-        result.AccessToken = accessToken;
-        result.RefreshToken = refreshToken;
-        result.AccessTokenExpiresAt = SystemClock.UtcNow.AddMinutes(accessTokenMinutes);
-        result.RefreshTokenExpiresAt = SystemClock.UtcNow.AddDays(refreshTokenDays);
-        result.ExpiresIn = accessTokenMinutes * 60;
-    }
-
-    private static int ParsePositiveInt(string? value, int fallback)
-    {
-        return int.TryParse(value, out var parsed) && parsed > 0 ? parsed : fallback;
-    }
 }
 
 #region DTOs

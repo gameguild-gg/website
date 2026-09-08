@@ -31,8 +31,8 @@ public sealed class StepUpController(ISender sender) : AuthControllerBase
         ArgumentNullException.ThrowIfNull(request);
         try
         {
-            var response = await sender.Send(
-                new CreateStepUpChallengeCommand(new StepUpOperationBinding(
+            var response = await sender.Send(new CreateStepUpChallengeCommand(
+                new StepUpOperationBinding(
                     request.OperationType,
                     request.TargetReference,
                     request.PayloadHash)),
@@ -58,9 +58,7 @@ public sealed class StepUpController(ISender sender) : AuthControllerBase
     {
         try
         {
-            return Ok(await sender.Send(
-                new BeginStepUpWebAuthnCommand(challengeId),
-                cancellationToken).ConfigureAwait(false));
+            return Ok(await sender.Send(new BeginStepUpWebAuthnCommand(challengeId), cancellationToken).ConfigureAwait(false));
         }
         catch (StepUpChallengeUnavailableException exception)
         {
@@ -84,10 +82,9 @@ public sealed class StepUpController(ISender sender) : AuthControllerBase
         ArgumentNullException.ThrowIfNull(request);
         try
         {
-            return Ok(await sender.Send(
-                new VerifyStepUpChallengeCommand(
-                    challengeId,
-                    new StepUpVerification(request.Method, request.Evidence)),
+            return Ok(await sender.Send(new VerifyStepUpChallengeCommand(
+                challengeId,
+                new StepUpVerification(request.Method, request.Evidence)),
                 cancellationToken).ConfigureAwait(false));
         }
         catch (ArgumentException exception)

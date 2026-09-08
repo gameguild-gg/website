@@ -22,16 +22,16 @@ public sealed class QuotaLedgerPostgreSqlTests(PostgreSqlTestFixture fixture)
         context.Add(new ResourceQuota
         {
             TenantId = tenantId,
-            Type = ResourceUsageType.Users,
+            Type = ResourceUsageType.Properties,
             CurrentUsage = 1,
             HardLimit = 10
         });
         await context.SaveChangesAsync();
-        var lifecycleEvent = new UserDeletedEvent(Guid.NewGuid())
+        var lifecycleEvent = new PropertyDeletedEvent(Guid.NewGuid())
         {
             TenantId = tenantId,
             ActorId = Guid.NewGuid(),
-            AggregateType = "User",
+            AggregateType = "Property",
             AggregateId = Guid.NewGuid().ToString(),
             CorrelationId = Guid.NewGuid()
         };

@@ -1,4 +1,5 @@
 using GameGuild.Projects;
+using GameGuild.CQRS;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -11,7 +12,8 @@ namespace GameGuild.LaunchPad;
 public sealed class LaunchPadSettingsController(
     IApplicationDbContext context,
     IRequestContextAccessor requestContext,
-    ILaunchPadAuthorizationService authorization) : ControllerBase
+    ILaunchPadAuthorizationService authorization,
+    ISender sender) : ControllerBase
 {
     [HttpGet]
     public async Task<ActionResult<LaunchPadSettingsProjection>> GetSettings(CancellationToken cancellationToken)
@@ -20,7 +22,11 @@ public sealed class LaunchPadSettingsController(
         if (!tenantId.HasValue) return Unauthorized();
         if (!await authorization.CanParticipateAsync(tenantId.Value, cancellationToken).ConfigureAwait(false)) return Forbid();
 
-        var settings = await GetOrCreateAsync(tenantId.Value, cancellationToken).ConfigureAwait(false);
+        var settings = await context.Set<LaunchPadSettings>()
+            .SingleOrDefaultAsync(candidate => candidate.TenantId == tenantId && candidate.DeletedAt == null, cancellationToken)
+            .ConfigureAwait(false);
+        settings ??= await sender.Send(new CreateDefaultLaunchPadSettingsCommand(tenantId.Value), cancellationToken)
+            .ConfigureAwait(false);
         return Ok(LaunchPadSettingsProjection.FromEntity(settings));
     }
 
@@ -33,28 +39,9 @@ public sealed class LaunchPadSettingsController(
         if (!tenantId.HasValue) return Unauthorized();
         if (!await authorization.CanManageSettingsAsync(tenantId.Value, cancellationToken).ConfigureAwait(false)) return Forbid();
 
-        var settings = await GetOrCreateAsync(tenantId.Value, cancellationToken).ConfigureAwait(false);
-        settings.VersionSubmissionPolicy = request.VersionSubmissionPolicy;
-        await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        var settings = await sender.Send(new UpdateLaunchPadSettingsEndpointCommand(
+            tenantId.Value, request.VersionSubmissionPolicy), cancellationToken).ConfigureAwait(false);
         return Ok(LaunchPadSettingsProjection.FromEntity(settings));
-    }
-
-    private async Task<LaunchPadSettings> GetOrCreateAsync(Guid tenantId, CancellationToken cancellationToken)
-    {
-        var settings = await context.Set<LaunchPadSettings>()
-            .SingleOrDefaultAsync(candidate => candidate.TenantId == tenantId && candidate.DeletedAt == null, cancellationToken)
-            .ConfigureAwait(false);
-        if (settings != null) return settings;
-
-        settings = new LaunchPadSettings
-        {
-            Id = Guid.NewGuid(),
-            TenantId = tenantId,
-            VersionSubmissionPolicy = VersionSubmissionPolicy.ReleasedImmutable
-        };
-        context.Set<LaunchPadSettings>().Add(settings);
-        await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-        return settings;
     }
 }
 public sealed record UpdateLaunchPadSettingsRequest(VersionSubmissionPolicy VersionSubmissionPolicy);

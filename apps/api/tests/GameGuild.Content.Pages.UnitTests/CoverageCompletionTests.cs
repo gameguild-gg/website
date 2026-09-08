@@ -114,7 +114,7 @@ public class MarketingLeadControllerCoverageTests
             .ReturnsAsync([lead]);
         service.Setup(current => current.GetByIdAsync(lead.Id, It.IsAny<CancellationToken>())).ReturnsAsync(lead);
         service.Setup(current => current.GetByIdAsync(Guid.Empty, It.IsAny<CancellationToken>())).ReturnsAsync((MarketingLead?)null);
-        var controller = new MarketingLeadController(service.Object);
+        var controller = new MarketingLeadController(service.Object, new CommandHandlerSender(service.Object));
 
         var listResult = await controller.GetLeads("contact", "new", "sales", "ada", 1, 2);
         var getResult = await controller.GetLead(lead.Id);
@@ -128,7 +128,7 @@ public class MarketingLeadControllerCoverageTests
     [Fact]
     public async Task CreateLead_ShouldReturnBadRequest_WhenModelStateIsInvalid()
     {
-        var controller = new MarketingLeadController(Mock.Of<IMarketingLeadService>());
+        var controller = new MarketingLeadController(Mock.Of<IMarketingLeadService>(), Mock.Of<ISender>());
         controller.ModelState.AddModelError("Email", "Email is required.");
 
         var result = await controller.CreateLead(new CreateMarketingLeadDto(), CancellationToken.None);
@@ -139,7 +139,7 @@ public class MarketingLeadControllerCoverageTests
     [Fact]
     public async Task CreateLead_ShouldReturnValidationProblem_ForInvalidSourceTopicAndContactRequirements()
     {
-        var controller = new MarketingLeadController(Mock.Of<IMarketingLeadService>());
+        var controller = new MarketingLeadController(Mock.Of<IMarketingLeadService>(), Mock.Of<ISender>());
         var dto = new CreateMarketingLeadDto
         {
             Source = "contact",
@@ -164,7 +164,7 @@ public class MarketingLeadControllerCoverageTests
     [Fact]
     public async Task CreateLead_ShouldRequireContactTopicAndNonBlankNameAndMessage()
     {
-        var controller = new MarketingLeadController(Mock.Of<IMarketingLeadService>());
+        var controller = new MarketingLeadController(Mock.Of<IMarketingLeadService>(), Mock.Of<ISender>());
 
         var result = await controller.CreateLead(new CreateMarketingLeadDto
         {
@@ -196,7 +196,7 @@ public class MarketingLeadControllerCoverageTests
                 Topic = dto.Topic,
                 Message = dto.Message
             });
-        var controller = new MarketingLeadController(service.Object);
+        var controller = new MarketingLeadController(service.Object, new CommandHandlerSender(service.Object));
 
         var newsletter = await controller.CreateLead(new CreateMarketingLeadDto
         {

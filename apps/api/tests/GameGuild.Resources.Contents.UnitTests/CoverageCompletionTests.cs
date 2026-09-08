@@ -559,7 +559,7 @@ public class VersioningControllerCoverageCompletionTests
         var diff = new ContentVersionDiff(draft.Id, approved.Id, 1, 3, true, false, true, false, "Title", null, "Body");
         var notFound = Error.NotFound("ContentVersioning.NotFound", "missing");
         var invalid = Error.Validation("ContentVersioning.Invalid", "invalid");
-        var controller = new VersioningController(service.Object);
+        var controller = new VersioningController(service.Object, new CommandHandlerSender(service.Object));
 
         service.Setup(mock => mock.CreateDraftAsync(entityId, "Page", "Draft", userId, "S", "B", "M", "N", It.IsAny<CancellationToken>())).ReturnsAsync(Result.Success(draft));
         service.Setup(mock => mock.UpdateDraftAsync(draft.Id, "Updated", null, null, null, null, It.IsAny<CancellationToken>())).ReturnsAsync(Result.Success(draft));
