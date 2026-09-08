@@ -131,7 +131,7 @@ describe('PricingEditorForm', () => {
 
     await user.click(screen.getByRole('switch', { name: /enable monetization/i }));
     await user.click(screen.getByRole('combobox'));
-    await user.click(screen.getByRole('option', { name: /yearly/i }));
+    await user.click(await screen.findByRole('option', { name: /yearly/i }));
     await user.click(screen.getByRole('button', { name: /save pricing/i }));
 
     await waitFor(() => {

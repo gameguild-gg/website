@@ -254,11 +254,14 @@ export function ContentItemEditor({
       jsonBodyToSave = quizContentRef.current;
     }
     return {
-      title: title.trim(),
+      title: (title ?? "").trim(),
       // Backend keeps the stored slug when sent whitespace — derive locally
       // so a cleared field can't silently revert to the old slug. Re-slugify
-      // to strip the trailing hyphen live typing can leave behind.
-      slug: normalizeSlug(slug) || normalizeSlug(title),
+      // to strip the trailing hyphen live typing can leave behind. Slugs can
+      // be missing on legacy items, so coerce before slugify.
+      slug:
+        normalizeSlug(slug ?? "") ||
+        normalizeSlug(title ?? ""),
       description: description.trim() || undefined,
       body: bodyToSave,
       jsonBody: jsonBodyToSave,
@@ -272,7 +275,6 @@ export function ContentItemEditor({
   const snapshotRef = useRef<string | null>(null);
   const saveInFlightRef = useRef(false);
   const buildPayloadRef = useRef(buildSavePayload);
-  buildPayloadRef.current = buildSavePayload;
 
   async function performSave(isManual: boolean) {
     if (!isManual && saveInFlightRef.current) return;
@@ -344,7 +346,13 @@ export function ContentItemEditor({
   }
 
   const performSaveRef = useRef(performSave);
-  performSaveRef.current = performSave;
+
+  // Keeps both latest-closure refs fresh after every render so the debounced
+  // timer below always fires against current state.
+  useEffect(() => {
+    buildPayloadRef.current = buildSavePayload;
+    performSaveRef.current = performSave;
+  });
 
   // Debounced autosave: waits for edits to settle, then saves silently. The
   // JSON snapshot keeps mount-time and no-op re-renders from firing requests;
@@ -364,7 +372,6 @@ export function ContentItemEditor({
       void performSaveRef.current(false);
     }, AUTOSAVE_DELAY_MS);
     return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- payload is read through buildPayloadRef; the listed deps are every input it closes over.
   }, [
     title,
     slug,
