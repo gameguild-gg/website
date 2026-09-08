@@ -5,7 +5,7 @@
  * (GET /api/auth/signin/:provider → provider → GET /api/auth/callback/:provider).
  *
  * Cookie spec (M6):
- *   - name: `__gg-oauth-state-<providerId>` (sign-in flow; the web link flow
+ *   - name: `__game-guild-oauth-state-<providerId>` (sign-in flow; the web link flow
  *     uses a distinct name but mirrors this spec)
  *   - value: base64url(JSON payload) + '.' + hex HMAC-SHA256(payload, secret)
  *   - attributes: HttpOnly, SameSite=Lax (never Strict — must survive the
@@ -42,7 +42,7 @@ export interface OAuthStatePayload {
  * Cookie name for a provider's sign-in state cookie.
  */
 export function stateCookieName(providerId: string): string {
-  return `__gg-oauth-state-${providerId}`;
+  return `__game-guild-oauth-state-${providerId}`;
 }
 
 /**

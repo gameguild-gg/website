@@ -33,7 +33,7 @@ public sealed class SendEmailVerificationRequestedHandler(
                 userName = notification.UserName
             });
 
-            await notificationService.SendAsync(
+            var result = await notificationService.SendAsync(
                 user.Id,
                 NotificationType.EmailVerification,
                 "Verify your GameGuild email address",
@@ -42,11 +42,15 @@ public sealed class SendEmailVerificationRequestedHandler(
                 metadata: metadata,
                 cancellationToken: cancellationToken).ConfigureAwait(false);
 
+            if (result is null || result.IsFailure)
+                throw new InvalidOperationException("Authentication notification was not durably queued.");
+
             logger.LogInformation("Verification email queued for {Email}", notification.Email);
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Error queueing verification email to {Email}", notification.Email);
+            throw; // Queue persistence failed; do not acknowledge a lost notification.
         }
     }
 }

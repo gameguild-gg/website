@@ -17,7 +17,7 @@ export class ContentPagesOpenGraphModule {
 
   /**
    */
-  async getOg(slug: string): Promise<Result<Types.ContentPagesOpenGraphMetadata, ApiError>> {
+  async getOg(slug: string): Promise<Result<Types.ContentPagesOpenGraphMetadataDto, ApiError>> {
     const url = `/v1/og/${slug}`;
 
     const result = await this.client.request({
@@ -28,7 +28,7 @@ export class ContentPagesOpenGraphModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.ContentPagesOpenGraphMetadataSchema, result.data, 'response');
+      const validatedData = safeParse(Types.ContentPagesOpenGraphMetadataDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 

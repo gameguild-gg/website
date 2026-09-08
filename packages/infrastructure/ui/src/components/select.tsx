@@ -13,14 +13,28 @@ type SelectProps<Value> = Omit<
   onValueChange?: (value: Value) => void
 }
 
-function Select<Value>({ onValueChange, ...props }: SelectProps<Value>) {
+// Legacy consumers declare labels as SelectItem children. Base UI requires its
+// items map before the portalled popup is mounted to display those labels.
+function declaredItems(children: React.ReactNode): { value: unknown; label: React.ReactNode }[] {
+  return React.Children.toArray(children).flatMap((child) => {
+    if (!React.isValidElement<{ value?: unknown; children?: React.ReactNode }>(child)) return []
+    if (child.type === SelectItem) return [{ value: child.props.value, label: child.props.children }]
+    return declaredItems(child.props.children)
+  })
+}
+
+function Select<Value>({ onValueChange, items, children, ...props }: SelectProps<Value>) {
+  const inferredItems = React.useMemo(() => declaredItems(children), [children])
   return (
     <SelectPrimitive.Root<Value, false>
       {...props}
+      items={items ?? (inferredItems.length ? inferredItems : undefined)}
       onValueChange={(value) => {
         if (value !== null) onValueChange?.(value)
       }}
-    />
+    >
+      {children}
+    </SelectPrimitive.Root>
   )
 }
 

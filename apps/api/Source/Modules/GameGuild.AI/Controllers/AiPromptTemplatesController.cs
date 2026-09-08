@@ -2,6 +2,7 @@ using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using GameGuild.CQRS;
 
 namespace GameGuild.AI;
 
@@ -10,8 +11,8 @@ namespace GameGuild.AI;
 [Microsoft.AspNetCore.Http.Tags("ai/prompt-templates")]
 [Authorize]
 public sealed class AiPromptTemplatesController(
+    ISender sender,
     IAiPromptTemplateService promptTemplateService,
-    IAiOrchestrator aiOrchestrator,
     IRequestContextAccessor requestContextAccessor) : BaseApiController
 {
     [HttpGet]
@@ -58,11 +59,11 @@ public sealed class AiPromptTemplatesController(
         if (!requestContextAccessor.CurrentTenantId.HasValue)
             return Forbid();
 
-        var result = await promptTemplateService
-            .CreateAsync(
+        var result = await sender.Send(
+            new CreateAiPromptTemplateCommand(
                 requestContextAccessor.CurrentTenantId.Value,
                 requestContextAccessor.CurrentUserId,
-                request,
+                request),
                 cancellationToken)
             .ConfigureAwait(false);
 
@@ -81,12 +82,12 @@ public sealed class AiPromptTemplatesController(
         if (!requestContextAccessor.CurrentTenantId.HasValue)
             return Forbid();
 
-        var result = await promptTemplateService
-            .UpdateAsync(
+        var result = await sender.Send(
+            new UpdateAiPromptTemplateCommand(
                 requestContextAccessor.CurrentTenantId.Value,
                 id,
                 requestContextAccessor.CurrentUserId,
-                request,
+                request),
                 cancellationToken)
             .ConfigureAwait(false);
 
@@ -102,11 +103,11 @@ public sealed class AiPromptTemplatesController(
         if (!requestContextAccessor.CurrentTenantId.HasValue)
             return Forbid();
 
-        var result = await promptTemplateService
-            .DeleteAsync(
+        var result = await sender.Send(
+            new DeleteAiPromptTemplateCommand(
                 requestContextAccessor.CurrentTenantId.Value,
                 id,
-                requestContextAccessor.CurrentUserId,
+                requestContextAccessor.CurrentUserId),
                 cancellationToken)
             .ConfigureAwait(false);
 
@@ -125,8 +126,12 @@ public sealed class AiPromptTemplatesController(
         if (!requestContextAccessor.CurrentTenantId.HasValue)
             return Forbid();
 
-        var result = await promptTemplateService
-            .RenderAsync(requestContextAccessor.CurrentTenantId.Value, id, request.Variables, cancellationToken)
+        var result = await sender.Send(
+            new RenderAiPromptTemplateCommand(
+                requestContextAccessor.CurrentTenantId.Value,
+                id,
+                request.Variables),
+            cancellationToken)
             .ConfigureAwait(false);
 
         return ToActionResult(result);
@@ -144,22 +149,11 @@ public sealed class AiPromptTemplatesController(
         if (!requestContextAccessor.CurrentTenantId.HasValue)
             return Forbid();
 
-        var rendered = await promptTemplateService
-            .RenderAsync(requestContextAccessor.CurrentTenantId.Value, id, request.Variables, cancellationToken)
-            .ConfigureAwait(false);
-
-        if (rendered.IsFailure)
-            return ToActionResult(Result.Failure<AiCompletionResponse>(rendered.Error));
-
-        var completion = await aiOrchestrator
-            .GenerateAsync(
-                new AiGenerateRequest(
-                    request.Provider,
-                    request.Model,
-                    rendered.Value.SystemPrompt,
-                    rendered.Value.Prompt,
-                    request.Temperature,
-                    request.MaxTokens),
+        var completion = await sender.Send(
+                new GenerateFromAiPromptTemplateCommand(
+                    requestContextAccessor.CurrentTenantId.Value,
+                    id,
+                    request),
                 cancellationToken)
             .ConfigureAwait(false);
 

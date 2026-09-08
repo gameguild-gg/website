@@ -13,22 +13,21 @@ namespace GameGuild.Identity.Authentication;
 public sealed class SendWelcomeEmailHandler(
     ILogger<SendWelcomeEmailHandler> logger,
     INotificationService notificationService,
-    IUserRepository? userRepository = null)
-    : INotificationHandler<UserSignedUpNotification>, IIntegrationEventHandler<UserCreatedEvent>
+    IUserRepository userRepository) : INotificationHandler<UserSignedUpNotification>, IIntegrationEventHandler<UserCreatedEvent>
 {
     public async Task HandleAsync(UserCreatedEvent @event, CancellationToken cancellationToken = default)
     {
-        if (userRepository is null)
-            throw new InvalidOperationException("User repository is required for durable welcome-email delivery.");
+        // The durable payload contains IDs only; personal data is loaded inside the listener.
+        var user = await userRepository.GetByIdAsync(@event.UserId, cancellationToken).ConfigureAwait(false);
+        if (user is null || user.IsDeleted)
+            return; // A deleted account must not receive a delayed welcome email.
 
-        var user = await userRepository.GetByIdAsync(@event.UserId, cancellationToken).ConfigureAwait(false)
-            ?? throw new EntityNotFoundException("User", @event.UserId);
         await Handle(new UserSignedUpNotification
         {
             UserId = user.Id,
             Email = user.Email,
-            Username = user.Username ?? user.Email,
-            TenantId = @event.TenantId == DurableIntegrationEventTenants.Platform ? null : @event.TenantId
+            Username = user.Name,
+            TenantId = @event.TenantId
         }, cancellationToken).ConfigureAwait(false);
     }
 
@@ -44,7 +43,7 @@ public sealed class SendWelcomeEmailHandler(
                 email = notification.Email
             });
 
-            await notificationService.SendAsync(
+            var result = await notificationService.SendAsync(
                 notification.UserId,
                 NotificationType.Onboarding,
                 "Welcome to GameGuild",
@@ -54,11 +53,15 @@ public sealed class SendWelcomeEmailHandler(
                 metadata: metadata,
                 cancellationToken: cancellationToken).ConfigureAwait(false);
 
+            if (result is null || result.IsFailure)
+                throw new InvalidOperationException("Welcome notification was not durably queued.");
+
             logger.LogInformation("Welcome email queued for {Email} (ID: {UserId})", notification.Email, notification.UserId);
         }
         catch (Exception ex)
         {
             logger.LogWarning(ex, "Welcome email queueing failed for user {Email} (ID: {UserId})", notification.Email, notification.UserId);
+            throw; // The asynchronous outbox retries; never acknowledge a lost queue write.
         }
     }
 }

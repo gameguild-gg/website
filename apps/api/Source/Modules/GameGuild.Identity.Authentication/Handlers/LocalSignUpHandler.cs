@@ -7,7 +7,7 @@ namespace GameGuild.Identity.Authentication;
 /// <summary>
 ///     Handler for local sign-up command
 /// </summary>
-public sealed class LocalSignUpHandler(IAuthService authService, IUserRepository userRepository, ILogger<LocalSignUpHandler> logger) : IRequestHandler<LocalSignUpCommand, SignInResponse>
+public sealed class LocalSignUpHandler(IAuthService authService, IUserRepository userRepository, ILogger<LocalSignUpHandler> logger) : ICommandHandler<LocalSignUpCommand, SignInResponse>
 {
     public async Task<SignInResponse> Handle(LocalSignUpCommand command, CancellationToken cancellationToken)
     {

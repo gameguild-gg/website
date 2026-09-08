@@ -17,7 +17,7 @@ export class SocialFeedModule {
 
   /**
    */
-  async postApiSocialFeed(body: Types.SocialFeedAddFeedItemInput): Promise<Result<Types.SocialFeedFeedItem, ApiError>> {
+  async postApiSocialFeed(body: Types.SocialFeedAddFeedItemInput): Promise<Result<Types.SocialFeedFeedItemDto, ApiError>> {
     const url = '/api/social/feed';
 
     // Validate request body
@@ -32,7 +32,7 @@ export class SocialFeedModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.SocialFeedFeedItemSchema, result.data, 'response');
+      const validatedData = safeParse(Types.SocialFeedFeedItemDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -72,7 +72,7 @@ export class SocialFeedModule {
   async getApiSocialFeedUsers(
     userId: string,
     query?: { skip?: number; take?: number; includeRead?: boolean },
-  ): Promise<Result<Array<Types.SocialFeedFeedItem>, ApiError>> {
+  ): Promise<Result<Array<Types.SocialFeedFeedItemDto>, ApiError>> {
     const url = `/api/social/feed/users/${userId}`;
 
     const result = await this.client.request({
@@ -82,7 +82,7 @@ export class SocialFeedModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.SocialFeedFeedItem>, ApiError>;
+    return result as Result<Array<Types.SocialFeedFeedItemDto>, ApiError>;
   }
 }
 

@@ -1,4 +1,5 @@
 using Asp.Versioning;
+using GameGuild.CQRS;
 using GameGuild.Identity.Authorization;
 using GameGuild.Identity.Context.Actors;
 using Microsoft.AspNetCore.Authorization;
@@ -17,7 +18,8 @@ namespace GameGuild.Learning.Courses;
 public class ProgramCrudController(
     IProgramCrudService programService,
     IActorContextAccessor actorContextAccessor,
-    IPermissionQueryService permissionQueryService) : BaseApiController
+    IPermissionQueryService permissionQueryService,
+    ISender sender) : BaseApiController
 {
   // ===== CONTENT-TYPE LEVEL OPERATIONS =====
 
@@ -138,7 +140,8 @@ public class ProgramCrudController(
     var currentUserId = GetCurrentUserId();
     if (!currentUserId.HasValue) return Unauthorized();
 
-    var program = await programService.CreateProgramAsync(createDto with { CreatorId = currentUserId.Value }).ConfigureAwait(false);
+    var program = await sender.Send(new CreateProgramEndpointCommand(
+      createDto with { CreatorId = currentUserId.Value })).ConfigureAwait(false);
 
     return CreatedAtAction(nameof(GetProgram), new { id = program.Id }, program.ToDto());
   }
@@ -176,7 +179,7 @@ public class ProgramCrudController(
   {
     if (!ModelState.IsValid) return BadRequest(ModelState);
 
-    var program = await programService.UpdateProgramAsync(id, updateDto).ConfigureAwait(false);
+    var program = await sender.Send(new UpdateProgramEndpointCommand(id, updateDto)).ConfigureAwait(false);
 
     if (program == null) return NotFound();
 
@@ -192,7 +195,7 @@ public class ProgramCrudController(
 
     if (existingProgram == null) return NotFound();
 
-    await programService.DeleteProgramAsync(id).ConfigureAwait(false);
+    await sender.Send(new DeleteProgramEndpointCommand(id)).ConfigureAwait(false);
 
     return NoContent();
   }
@@ -204,7 +207,7 @@ public class ProgramCrudController(
   {
     if (!ModelState.IsValid) return BadRequest(ModelState);
 
-    var program = await programService.CloneProgramAsync(id, cloneDto.NewTitle).ConfigureAwait(false);
+    var program = await sender.Send(new CloneProgramEndpointCommand(id, cloneDto.NewTitle)).ConfigureAwait(false);
 
     if (program == null) return NotFound();
 
@@ -268,7 +271,7 @@ public class ProgramCrudController(
       });
     }
 
-    var progress = await programService.AddUserToProgramAsync(id, userId.Value).ConfigureAwait(false);
+    var progress = await sender.Send(new AddUserToProgramEndpointCommand(id, userId.Value)).ConfigureAwait(false);
 
     if (progress == null) return NotFound();
 
@@ -282,7 +285,7 @@ public class ProgramCrudController(
   [RequireResourcePermission<PermissionType, Program>(PermissionType.Edit)]
   public async Task<ActionResult<UserProgressDto>> AddUserToProgram(Guid id, Guid userId)
   {
-    var progress = await programService.AddUserToProgramAsync(id, userId).ConfigureAwait(false);
+    var progress = await sender.Send(new AddUserToProgramEndpointCommand(id, userId)).ConfigureAwait(false);
 
     if (progress == null) return NotFound();
 
@@ -294,7 +297,7 @@ public class ProgramCrudController(
   [RequireResourcePermission<PermissionType, Program>(PermissionType.Edit)]
   public async Task<ActionResult> RemoveUserFromProgram(Guid id, Guid userId)
   {
-    var success = await programService.RemoveUserFromProgramAsync(id, userId).ConfigureAwait(false);
+    var success = await sender.Send(new RemoveUserFromProgramEndpointCommand(id, userId)).ConfigureAwait(false);
 
     if (!success) return NotFound();
 
@@ -344,7 +347,7 @@ public class ProgramCrudController(
   {
     if (!ModelState.IsValid) return BadRequest(ModelState);
 
-    var progress = await programService.UpdateUserProgressAsync(id, userId, progressDto).ConfigureAwait(false);
+    var progress = await sender.Send(new UpdateUserProgressEndpointCommand(id, userId, progressDto)).ConfigureAwait(false);
 
     if (progress == null) return NotFound();
 
@@ -360,7 +363,7 @@ public class ProgramCrudController(
     var currentUserId = GetCurrentUserId();
     if (currentUserId == null) return Unauthorized();
 
-    var progress = await programService.UpdateUserProgressAsync(id, currentUserId.Value, progressDto).ConfigureAwait(false);
+    var progress = await sender.Send(new UpdateUserProgressEndpointCommand(id, currentUserId.Value, progressDto)).ConfigureAwait(false);
 
     if (progress == null) return NotFound();
 
@@ -372,7 +375,7 @@ public class ProgramCrudController(
   [RequireResourcePermission<PermissionType, Program>(PermissionType.Edit)]
   public async Task<ActionResult> MarkContentCompleted(Guid id, Guid userId, Guid contentId)
   {
-    var success = await programService.MarkContentCompletedAsync(id, userId, contentId).ConfigureAwait(false);
+    var success = await sender.Send(new MarkProgramContentCompletedEndpointCommand(id, userId, contentId)).ConfigureAwait(false);
 
     if (!success) return NotFound();
 
@@ -386,7 +389,7 @@ public class ProgramCrudController(
     var currentUserId = GetCurrentUserId();
     if (currentUserId == null) return Unauthorized();
 
-    var success = await programService.MarkContentCompletedAsync(id, currentUserId.Value, contentId).ConfigureAwait(false);
+    var success = await sender.Send(new MarkProgramContentCompletedEndpointCommand(id, currentUserId.Value, contentId)).ConfigureAwait(false);
 
     if (!success) return NotFound();
 
@@ -398,7 +401,7 @@ public class ProgramCrudController(
   [RequireResourcePermission<PermissionType, Program>(PermissionType.Edit)]
   public async Task<ActionResult> ResetUserProgress(Guid id, Guid userId)
   {
-    var success = await programService.ResetUserProgressAsync(id, userId).ConfigureAwait(false);
+    var success = await sender.Send(new ResetUserProgressEndpointCommand(id, userId)).ConfigureAwait(false);
 
     if (!success) return NotFound();
 
@@ -423,7 +426,7 @@ public class ProgramCrudController(
   {
     if (!ModelState.IsValid) return BadRequest(ModelState);
 
-    var program = await programService.EnableMonetizationAsync(id, monetizationDto).ConfigureAwait(false);
+    var program = await sender.Send(new EnableProgramMonetizationEndpointCommand(id, monetizationDto)).ConfigureAwait(false);
 
     if (program == null) return NotFound();
 
@@ -435,7 +438,7 @@ public class ProgramCrudController(
   [RequireResourcePermission<PermissionType, Program>(PermissionType.Edit)]
   public async Task<ActionResult<ProgramDto>> DisableMonetization(Guid id)
   {
-    var program = await programService.DisableMonetizationAsync(id).ConfigureAwait(false);
+    var program = await sender.Send(new DisableProgramMonetizationEndpointCommand(id)).ConfigureAwait(false);
 
     if (program == null) return NotFound();
 
@@ -461,7 +464,7 @@ public class ProgramCrudController(
   {
     if (!ModelState.IsValid) return BadRequest(ModelState);
 
-    var pricing = await programService.UpdateProgramPricingAsync(id, pricingDto).ConfigureAwait(false);
+    var pricing = await sender.Send(new UpdateProgramPricingEndpointCommand(id, pricingDto)).ConfigureAwait(false);
 
     if (pricing == null) return NotFound();
 
@@ -527,7 +530,7 @@ public class ProgramCrudController(
   {
     if (!ModelState.IsValid) return BadRequest(ModelState);
 
-    var productId = await programService.CreateProductFromProgramAsync(id, productDto).ConfigureAwait(false);
+    var productId = await sender.Send(new CreateProductFromProgramEndpointCommand(id, productDto)).ConfigureAwait(false);
 
     if (productId == null) return NotFound();
 
@@ -539,7 +542,7 @@ public class ProgramCrudController(
   [RequireResourcePermission<PermissionType, Program>(PermissionType.Edit)]
   public async Task<ActionResult> LinkProgramToProduct(Guid id, Guid productId)
   {
-    var success = await programService.LinkProgramToProductAsync(id, productId).ConfigureAwait(false);
+    var success = await sender.Send(new LinkProgramToProductEndpointCommand(id, productId)).ConfigureAwait(false);
 
     if (!success) return NotFound();
 
@@ -551,7 +554,7 @@ public class ProgramCrudController(
   [RequireResourcePermission<PermissionType, Program>(PermissionType.Edit)]
   public async Task<ActionResult> UnlinkProgramFromProduct(Guid id, Guid productId)
   {
-    var success = await programService.UnlinkProgramFromProductAsync(id, productId).ConfigureAwait(false);
+    var success = await sender.Send(new UnlinkProgramFromProductEndpointCommand(id, productId)).ConfigureAwait(false);
 
     if (!success) return NotFound();
 

@@ -20,7 +20,7 @@ export class LearningCoursesSupportTicketsModule {
   async getCoursesSupportTicketsForGetCoursesByCourseIdSupportTickets(
     courseId: string,
     query?: { skip?: number; take?: number },
-  ): Promise<Result<Types.PagedResultOfCommerceProductsSupportTicket, ApiError>> {
+  ): Promise<Result<Types.PagedResultSupportTicketDto, ApiError>> {
     const url = `/v1/courses/${courseId}/support/tickets`;
 
     const result = await this.client.request({
@@ -32,7 +32,7 @@ export class LearningCoursesSupportTicketsModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.PagedResultOfCommerceProductsSupportTicketSchema, result.data, 'response');
+      const validatedData = safeParse(Types.PagedResultSupportTicketDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -44,7 +44,7 @@ export class LearningCoursesSupportTicketsModule {
   async getCoursesSupportTicketsForGetCoursesByCourseIdSupportTicketsByTicketId(
     courseId: string,
     ticketId: string,
-  ): Promise<Result<Types.CommerceProductsSupportTicket, ApiError>> {
+  ): Promise<Result<Types.CommerceProductsSupportTicketDto, ApiError>> {
     const url = `/v1/courses/${courseId}/support/tickets/${ticketId}`;
 
     const result = await this.client.request({
@@ -55,7 +55,7 @@ export class LearningCoursesSupportTicketsModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.CommerceProductsSupportTicketSchema, result.data, 'response');
+      const validatedData = safeParse(Types.CommerceProductsSupportTicketDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -68,7 +68,7 @@ export class LearningCoursesSupportTicketsModule {
     courseId: string,
     ticketId: string,
     body: Types.LearningCoursesResolveCourseSupportTicketInput,
-  ): Promise<Result<Types.CommerceProductsSupportTicket, ApiError>> {
+  ): Promise<Result<Types.CommerceProductsSupportTicketDto, ApiError>> {
     const url = `/v1/courses/${courseId}/support/tickets/${ticketId}:resolve`;
 
     // Validate request body
@@ -83,7 +83,7 @@ export class LearningCoursesSupportTicketsModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.CommerceProductsSupportTicketSchema, result.data, 'response');
+      const validatedData = safeParse(Types.CommerceProductsSupportTicketDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -96,7 +96,7 @@ export class LearningCoursesSupportTicketsModule {
     courseId: string,
     ticketId: string,
     body: Types.LearningCoursesCourseSupportTicketMessageInput,
-  ): Promise<Result<Types.CommerceProductsSupportTicket, ApiError>> {
+  ): Promise<Result<Types.CommerceProductsSupportTicketDto, ApiError>> {
     const url = `/v1/courses/${courseId}/support/tickets/${ticketId}/messages`;
 
     // Validate request body
@@ -111,7 +111,7 @@ export class LearningCoursesSupportTicketsModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.CommerceProductsSupportTicketSchema, result.data, 'response');
+      const validatedData = safeParse(Types.CommerceProductsSupportTicketDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 

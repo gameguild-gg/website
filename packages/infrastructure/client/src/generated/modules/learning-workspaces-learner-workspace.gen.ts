@@ -17,7 +17,7 @@ export class LearningWorkspacesLearnerWorkspaceModule {
 
   /**
    */
-  async getLearningCoursesWorkspace(courseId: string): Promise<Result<Types.LearningWorkspacesLearnerCourseWorkspace, ApiError>> {
+  async getLearningCoursesWorkspace(courseId: string): Promise<Result<Types.LearningWorkspacesLearnerCourseWorkspaceDto, ApiError>> {
     const url = `/v1/learning/courses/${courseId}/workspace`;
 
     const result = await this.client.request({
@@ -28,7 +28,7 @@ export class LearningWorkspacesLearnerWorkspaceModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.LearningWorkspacesLearnerCourseWorkspaceSchema, result.data, 'response');
+      const validatedData = safeParse(Types.LearningWorkspacesLearnerCourseWorkspaceDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -37,7 +37,7 @@ export class LearningWorkspacesLearnerWorkspaceModule {
 
   /**
    */
-  async getLearningMeDashboard(): Promise<Result<Types.LearningWorkspacesLearnerDashboard, ApiError>> {
+  async getLearningMeDashboard(): Promise<Result<Types.LearningWorkspacesLearnerDashboardDto, ApiError>> {
     const url = '/v1/learning/me/dashboard';
 
     const result = await this.client.request({
@@ -48,7 +48,7 @@ export class LearningWorkspacesLearnerWorkspaceModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.LearningWorkspacesLearnerDashboardSchema, result.data, 'response');
+      const validatedData = safeParse(Types.LearningWorkspacesLearnerDashboardDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -57,7 +57,7 @@ export class LearningWorkspacesLearnerWorkspaceModule {
 
   /**
    */
-  async getLearningMeSearch(query?: { q?: string; take?: number }): Promise<Result<Array<Types.LearningWorkspacesLearnerSearchResult>, ApiError>> {
+  async getLearningMeSearch(query?: { q?: string; take?: number }): Promise<Result<Array<Types.LearningWorkspacesLearnerSearchResultDto>, ApiError>> {
     const url = '/v1/learning/me/search';
 
     const result = await this.client.request({
@@ -67,7 +67,7 @@ export class LearningWorkspacesLearnerWorkspaceModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.LearningWorkspacesLearnerSearchResult>, ApiError>;
+    return result as Result<Array<Types.LearningWorkspacesLearnerSearchResultDto>, ApiError>;
   }
 }
 

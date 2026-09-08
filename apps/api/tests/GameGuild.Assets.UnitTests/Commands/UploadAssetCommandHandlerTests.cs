@@ -4,14 +4,14 @@ namespace GameGuild.Assets.UnitTests.Commands;
 
 public class UploadAssetCommandHandlerTests
 {
-    private readonly Mock<IAssetUploadService> _uploadServiceMock;
+    private readonly Mock<ISecureUploadService> _uploadServiceMock;
     private readonly Mock<IAssetContentRepository> _contentRepositoryMock;
     private readonly Mock<IAssetUploadAuthorizationService> _authorizationServiceMock;
     private readonly UploadAssetHandler _handler;
 
     public UploadAssetCommandHandlerTests()
     {
-        _uploadServiceMock = new Mock<IAssetUploadService>();
+        _uploadServiceMock = new Mock<ISecureUploadService>();
         _contentRepositoryMock = new Mock<IAssetContentRepository>();
         _authorizationServiceMock = new Mock<IAssetUploadAuthorizationService>();
         _authorizationServiceMock.Setup(service => service.CanUploadAsync(
@@ -52,10 +52,35 @@ public class UploadAssetCommandHandlerTests
         var result = await _handler.Handle(command, CancellationToken.None);
 
         result.Error.Should().Be("Forbidden");
-        _uploadServiceMock.Verify(service => service.UploadAsync(
+        _uploadServiceMock.Verify(service => service.UploadWithSecurityChecksAsync(
             It.IsAny<Stream>(),
             It.IsAny<string>(),
             It.IsAny<string>(),
+            It.IsAny<Guid>(),
+            It.IsAny<Guid>(),
+            It.IsAny<UploadAssetOptions>(),
+            It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Handle_MissingTenant_DoesNotUpload()
+    {
+        using var stream = new MemoryStream([1, 2, 3]);
+        var command = new UploadAssetCommand(
+            stream,
+            "private-build.zip",
+            "application/zip",
+            Guid.NewGuid(),
+            null);
+
+        var result = await _handler.Handle(command, CancellationToken.None);
+
+        result.Error.Should().Be("Tenant context is required");
+        _uploadServiceMock.Verify(service => service.UploadWithSecurityChecksAsync(
+            It.IsAny<Stream>(),
+            It.IsAny<string>(),
+            It.IsAny<string>(),
+            It.IsAny<Guid>(),
             It.IsAny<Guid>(),
             It.IsAny<UploadAssetOptions>(),
             It.IsAny<CancellationToken>()), Times.Never);
@@ -80,15 +105,16 @@ public class UploadAssetCommandHandlerTests
             DisplayName: "Test Image",
             AccessPolicy: AssetAccessPolicy.Private);
 
-        var uploadResult = new AssetUploadResult(true, assetReferenceId, assetContentId, null);
+        var uploadResult = new SecureUploadResult(true, assetReferenceId, assetContentId, null);
         var content = CreateAssetContent(assetContentId, "abc123hash", referenceCount: 1);
 
         _uploadServiceMock
-            .Setup(x => x.UploadAsync(
+            .Setup(x => x.UploadWithSecurityChecksAsync(
                 stream,
                 "test.png",
                 "image/png",
                 userId,
+                tenantId,
                 It.IsAny<UploadAssetOptions>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(uploadResult);
@@ -121,13 +147,14 @@ public class UploadAssetCommandHandlerTests
             Guid.NewGuid(),
             Guid.NewGuid());
 
-        var uploadResult = new AssetUploadResult(false, null, null, "Virus detected");
+        var uploadResult = new SecureUploadResult(false, null, null, "Virus detected");
 
         _uploadServiceMock
-            .Setup(x => x.UploadAsync(
+            .Setup(x => x.UploadWithSecurityChecksAsync(
                 It.IsAny<Stream>(),
                 It.IsAny<string>(),
                 It.IsAny<string>(),
+                It.IsAny<Guid>(),
                 It.IsAny<Guid>(),
                 It.IsAny<UploadAssetOptions>(),
                 It.IsAny<CancellationToken>()))
@@ -155,13 +182,14 @@ public class UploadAssetCommandHandlerTests
             Guid.NewGuid(),
             Guid.NewGuid());
 
-        var uploadResult = new AssetUploadResult(false, null, null, null);
+        var uploadResult = new SecureUploadResult(false, null, null, null);
 
         _uploadServiceMock
-            .Setup(x => x.UploadAsync(
+            .Setup(x => x.UploadWithSecurityChecksAsync(
                 It.IsAny<Stream>(),
                 It.IsAny<string>(),
                 It.IsAny<string>(),
+                It.IsAny<Guid>(),
                 It.IsAny<Guid>(),
                 It.IsAny<UploadAssetOptions>(),
                 It.IsAny<CancellationToken>()))
@@ -188,14 +216,15 @@ public class UploadAssetCommandHandlerTests
             Guid.NewGuid(),
             Guid.NewGuid());
 
-        var uploadResult = new AssetUploadResult(true, assetReferenceId, assetContentId, null);
+        var uploadResult = new SecureUploadResult(true, assetReferenceId, assetContentId, null);
         var content = CreateAssetContent(assetContentId, "existinghash", referenceCount: 5);
 
         _uploadServiceMock
-            .Setup(x => x.UploadAsync(
+            .Setup(x => x.UploadWithSecurityChecksAsync(
                 It.IsAny<Stream>(),
                 It.IsAny<string>(),
                 It.IsAny<string>(),
+                It.IsAny<Guid>(),
                 It.IsAny<Guid>(),
                 It.IsAny<UploadAssetOptions>(),
                 It.IsAny<CancellationToken>()))
@@ -226,13 +255,14 @@ public class UploadAssetCommandHandlerTests
             Guid.NewGuid(),
             Guid.NewGuid());
 
-        var uploadResult = new AssetUploadResult(true, assetReferenceId, assetContentId, null);
+        var uploadResult = new SecureUploadResult(true, assetReferenceId, assetContentId, null);
 
         _uploadServiceMock
-            .Setup(x => x.UploadAsync(
+            .Setup(x => x.UploadWithSecurityChecksAsync(
                 It.IsAny<Stream>(),
                 It.IsAny<string>(),
                 It.IsAny<string>(),
+                It.IsAny<Guid>(),
                 It.IsAny<Guid>(),
                 It.IsAny<UploadAssetOptions>(),
                 It.IsAny<CancellationToken>()))
@@ -270,19 +300,20 @@ public class UploadAssetCommandHandlerTests
             FolderId: folderId);
 
         UploadAssetOptions? capturedOptions = null;
-        var uploadResult = new AssetUploadResult(true, Guid.NewGuid(), Guid.NewGuid(), null);
+        var uploadResult = new SecureUploadResult(true, Guid.NewGuid(), Guid.NewGuid(), null);
         var content = CreateAssetContent(Guid.NewGuid(), "hash", referenceCount: 1);
 
         _uploadServiceMock
-            .Setup(x => x.UploadAsync(
+            .Setup(x => x.UploadWithSecurityChecksAsync(
                 It.IsAny<Stream>(),
                 It.IsAny<string>(),
                 It.IsAny<string>(),
                 It.IsAny<Guid>(),
+                It.IsAny<Guid>(),
                 It.IsAny<UploadAssetOptions>(),
                 It.IsAny<CancellationToken>()))
-            .Callback<Stream, string, string, Guid, UploadAssetOptions, CancellationToken>(
-                (_, _, _, _, opts, _) => capturedOptions = opts)
+            .Callback<Stream, string, string, Guid, Guid, UploadAssetOptions, CancellationToken>(
+                (_, _, _, _, _, opts, _) => capturedOptions = opts)
             .ReturnsAsync(uploadResult);
 
         _contentRepositoryMock
@@ -316,19 +347,20 @@ public class UploadAssetCommandHandlerTests
             DisplayName: null);
 
         UploadAssetOptions? capturedOptions = null;
-        var uploadResult = new AssetUploadResult(true, Guid.NewGuid(), Guid.NewGuid(), null);
+        var uploadResult = new SecureUploadResult(true, Guid.NewGuid(), Guid.NewGuid(), null);
         var content = CreateAssetContent(Guid.NewGuid(), "hash", referenceCount: 1);
 
         _uploadServiceMock
-            .Setup(x => x.UploadAsync(
+            .Setup(x => x.UploadWithSecurityChecksAsync(
                 It.IsAny<Stream>(),
                 It.IsAny<string>(),
                 It.IsAny<string>(),
                 It.IsAny<Guid>(),
+                It.IsAny<Guid>(),
                 It.IsAny<UploadAssetOptions>(),
                 It.IsAny<CancellationToken>()))
-            .Callback<Stream, string, string, Guid, UploadAssetOptions, CancellationToken>(
-                (_, _, _, _, opts, _) => capturedOptions = opts)
+            .Callback<Stream, string, string, Guid, Guid, UploadAssetOptions, CancellationToken>(
+                (_, _, _, _, _, opts, _) => capturedOptions = opts)
             .ReturnsAsync(uploadResult);
 
         _contentRepositoryMock

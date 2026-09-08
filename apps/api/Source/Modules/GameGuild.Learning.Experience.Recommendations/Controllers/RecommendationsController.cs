@@ -1,4 +1,5 @@
 using Asp.Versioning;
+using GameGuild.CQRS;
 using GameGuild.Identity.Context.Actors;
 using GameGuild.Learning.Abstractions;
 using GameGuild.Learning.Attributes;
@@ -23,7 +24,10 @@ namespace GameGuild.Learning.Experience.Recommendations;
 [Route("v{version:apiVersion}/recommendations")]
 [LxpCapabilityFilter]
 [LxpCapability(LxpCapabilities.RecommendationsBasic)]
-public class RecommendationsController(IRecommendationService recommendationService, IActorContextAccessor actorContextAccessor) 
+public class RecommendationsController(
+    IRecommendationService recommendationService,
+    IActorContextAccessor actorContextAccessor,
+    ISender sender)
     : LearningControllerBase(actorContextAccessor)
 {
     // ===== RECOMMENDATIONS ENDPOINTS =====
@@ -56,8 +60,8 @@ public class RecommendationsController(IRecommendationService recommendationServ
         [FromQuery] int maxResults = 10)
     {
         var userId = GetRequiredUserId();
-        var recommendations = await recommendationService.GenerateRecommendationsAsync(
-            userId, tenantId, maxResults).ConfigureAwait(false);
+        var recommendations = await sender.Send(
+            new GenerateRecommendationsCommand(userId, tenantId, maxResults)).ConfigureAwait(false);
         return Ok(recommendations.Select(r => r.ToDto()));
     }
 
@@ -69,7 +73,7 @@ public class RecommendationsController(IRecommendationService recommendationServ
     public async Task<ActionResult> MarkRecommendationViewed(Guid id)
     {
         var userId = GetRequiredUserId();
-        await recommendationService.MarkRecommendationViewedAsync(id, userId).ConfigureAwait(false);
+        await sender.Send(new MarkRecommendationViewedCommand(id, userId)).ConfigureAwait(false);
         return NoContent();
     }
 
@@ -81,7 +85,7 @@ public class RecommendationsController(IRecommendationService recommendationServ
     public async Task<ActionResult> DismissRecommendation(Guid id)
     {
         var userId = GetRequiredUserId();
-        await recommendationService.DismissRecommendationAsync(id, userId).ConfigureAwait(false);
+        await sender.Send(new DismissRecommendationCommand(id, userId)).ConfigureAwait(false);
         return NoContent();
     }
 
@@ -94,7 +98,7 @@ public class RecommendationsController(IRecommendationService recommendationServ
         [FromQuery] Guid? tenantId = null)
     {
         var userId = GetRequiredUserId();
-        await recommendationService.RefreshRecommendationsAsync(userId, tenantId).ConfigureAwait(false);
+        await sender.Send(new RefreshRecommendationsCommand(userId, tenantId)).ConfigureAwait(false);
         return NoContent();
     }
 
@@ -135,7 +139,13 @@ public class RecommendationsController(IRecommendationService recommendationServ
         if (!ModelState.IsValid) return BadRequest(ModelState);
 
         var userId = GetRequiredUserId();
-        var profile = await recommendationService.UpdateUserProfileAsync(userId, dto).ConfigureAwait(false);
+        var profile = await sender.Send(new CreateOrUpdateLearningProfileCommand(
+            userId,
+            dto.PreferredCategories,
+            dto.PreferredDifficulty,
+            dto.PreferredDuration,
+            dto.LearningGoals,
+            dto.Skills)).ConfigureAwait(false);
         return Ok(profile.ToDto());
     }
 
@@ -153,7 +163,7 @@ public class RecommendationsController(IRecommendationService recommendationServ
         }
 
         var userId = GetRequiredUserId();
-        var profile = await recommendationService.AddSkillToProfileAsync(userId, request.Skill).ConfigureAwait(false);
+        var profile = await sender.Send(new AddSkillToProfileCommand(userId, request.Skill)).ConfigureAwait(false);
         return Ok(profile.ToDto());
     }
 
@@ -166,7 +176,7 @@ public class RecommendationsController(IRecommendationService recommendationServ
         string skill)
     {
         var userId = GetRequiredUserId();
-        var profile = await recommendationService.RemoveSkillFromProfileAsync(userId, skill).ConfigureAwait(false);
+        var profile = await sender.Send(new RemoveSkillFromProfileCommand(userId, skill)).ConfigureAwait(false);
         return Ok(profile.ToDto());
     }
 

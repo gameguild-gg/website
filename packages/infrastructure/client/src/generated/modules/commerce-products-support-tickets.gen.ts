@@ -25,7 +25,7 @@ export class CommerceProductsSupportTicketsModule {
     skip?: number;
     take?: number;
     customerId?: string;
-  }): Promise<Result<Types.PagedResultOfCommerceProductsSupportTicket, ApiError>> {
+  }): Promise<Result<Types.PagedResultSupportTicketDto, ApiError>> {
     const url = '/v1/support/tickets';
 
     const result = await this.client.request({
@@ -37,7 +37,7 @@ export class CommerceProductsSupportTicketsModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.PagedResultOfCommerceProductsSupportTicketSchema, result.data, 'response');
+      const validatedData = safeParse(Types.PagedResultSupportTicketDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -46,7 +46,7 @@ export class CommerceProductsSupportTicketsModule {
 
   /**
    */
-  async postSupportTickets(body: Types.CommerceProductsCreateSupportTicketInput): Promise<Result<Types.CommerceProductsSupportTicket, ApiError>> {
+  async postSupportTickets(body: Types.CommerceProductsCreateSupportTicketInput): Promise<Result<Types.CommerceProductsSupportTicketDto, ApiError>> {
     const url = '/v1/support/tickets';
 
     // Validate request body
@@ -61,7 +61,7 @@ export class CommerceProductsSupportTicketsModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.CommerceProductsSupportTicketSchema, result.data, 'response');
+      const validatedData = safeParse(Types.CommerceProductsSupportTicketDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -70,7 +70,7 @@ export class CommerceProductsSupportTicketsModule {
 
   /**
    */
-  async getSupportTicketById(ticketId: string, query?: { tenantId?: string }): Promise<Result<Types.CommerceProductsSupportTicket, ApiError>> {
+  async getSupportTicketById(ticketId: string, query?: { tenantId?: string }): Promise<Result<Types.CommerceProductsSupportTicketDto, ApiError>> {
     const url = `/v1/support/tickets/${ticketId}`;
 
     const result = await this.client.request({
@@ -82,7 +82,7 @@ export class CommerceProductsSupportTicketsModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.CommerceProductsSupportTicketSchema, result.data, 'response');
+      const validatedData = safeParse(Types.CommerceProductsSupportTicketDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -94,7 +94,7 @@ export class CommerceProductsSupportTicketsModule {
   async postSupportTicketsAssign(
     ticketId: string,
     body: Types.CommerceProductsAssignSupportTicketInput,
-  ): Promise<Result<Types.CommerceProductsSupportTicket, ApiError>> {
+  ): Promise<Result<Types.CommerceProductsSupportTicketDto, ApiError>> {
     const url = `/v1/support/tickets/${ticketId}:assign`;
 
     // Validate request body
@@ -109,7 +109,7 @@ export class CommerceProductsSupportTicketsModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.CommerceProductsSupportTicketSchema, result.data, 'response');
+      const validatedData = safeParse(Types.CommerceProductsSupportTicketDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -121,7 +121,7 @@ export class CommerceProductsSupportTicketsModule {
   async postSupportTicketsClose(
     ticketId: string,
     body: Types.CommerceProductsCloseSupportTicketInput,
-  ): Promise<Result<Types.CommerceProductsSupportTicket, ApiError>> {
+  ): Promise<Result<Types.CommerceProductsSupportTicketDto, ApiError>> {
     const url = `/v1/support/tickets/${ticketId}:close`;
 
     // Validate request body
@@ -136,7 +136,7 @@ export class CommerceProductsSupportTicketsModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.CommerceProductsSupportTicketSchema, result.data, 'response');
+      const validatedData = safeParse(Types.CommerceProductsSupportTicketDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -148,7 +148,7 @@ export class CommerceProductsSupportTicketsModule {
   async postSupportTicketsResolve(
     ticketId: string,
     body: Types.CommerceProductsResolveSupportTicketInput,
-  ): Promise<Result<Types.CommerceProductsSupportTicket, ApiError>> {
+  ): Promise<Result<Types.CommerceProductsSupportTicketDto, ApiError>> {
     const url = `/v1/support/tickets/${ticketId}:resolve`;
 
     // Validate request body
@@ -163,7 +163,7 @@ export class CommerceProductsSupportTicketsModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.CommerceProductsSupportTicketSchema, result.data, 'response');
+      const validatedData = safeParse(Types.CommerceProductsSupportTicketDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -175,7 +175,7 @@ export class CommerceProductsSupportTicketsModule {
   async postSupportTicketsMessages(
     ticketId: string,
     body: Types.CommerceProductsAddSupportTicketMessageInput,
-  ): Promise<Result<Types.CommerceProductsSupportTicket, ApiError>> {
+  ): Promise<Result<Types.CommerceProductsSupportTicketDto, ApiError>> {
     const url = `/v1/support/tickets/${ticketId}/messages`;
 
     // Validate request body
@@ -190,7 +190,7 @@ export class CommerceProductsSupportTicketsModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.CommerceProductsSupportTicketSchema, result.data, 'response');
+      const validatedData = safeParse(Types.CommerceProductsSupportTicketDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 

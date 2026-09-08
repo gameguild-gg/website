@@ -1,5 +1,4 @@
 using System.Text.Json;
-using GameGuild.Economy.Risk;
 
 namespace GameGuild.Compliance.KYC;
 
@@ -13,7 +12,12 @@ public static class SumSubApplicantJurisdiction
     }
 
     public static string? Normalize(string? value)
-        => EconomyJurisdictionCode.NormalizeOptional(value);
+    {
+        if (string.IsNullOrWhiteSpace(value)) return null;
+        var normalized = value.Trim().ToUpperInvariant();
+        return normalized.Length == 3 && normalized.All(character => character is >= 'A' and <= 'Z')
+            ? normalized : null;
+    }
 
     private static string? DirectCountry(JsonElement applicant) =>
         StringProperty(applicant, "country");

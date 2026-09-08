@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
-import type { ApiClient } from "../../src/runtime/client.js";
-import { TestingLabTestingAnalyticsModule } from "../../src/generated/modules/testing-lab-testing-analytics.gen.js";
+// Product-generated API coverage belongs to the GameGuild host, not the shared client runtime.
+import type { ApiClient } from "../../../../../packages/infrastructure/client/src/runtime/client.js";
+import { TestingLabTestingAnalyticsModule } from "../../../../../packages/infrastructure/client/src/generated/modules/testing-lab-testing-analytics.gen.js";
 
 describe("TestingLabTestingAnalyticsModule", () => {
   it("requests the tenant analytics report with period and comparison parameters", async () => {

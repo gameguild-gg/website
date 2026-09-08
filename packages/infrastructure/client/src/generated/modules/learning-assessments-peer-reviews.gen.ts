@@ -17,7 +17,7 @@ export class LearningAssessmentsPeerReviewsModule {
 
   /**
    */
-  async postAssessmentsPeerReviewsClaim(assessmentId: string): Promise<Result<Types.LearningAssessmentsPeerReviewClaim, ApiError>> {
+  async postAssessmentsPeerReviewsClaim(assessmentId: string): Promise<Result<Types.LearningAssessmentsPeerReviewClaimDto, ApiError>> {
     const url = `/v1/assessments/${assessmentId}/peer-reviews/claim`;
 
     const result = await this.client.request({
@@ -28,7 +28,7 @@ export class LearningAssessmentsPeerReviewsModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.LearningAssessmentsPeerReviewClaimSchema, result.data, 'response');
+      const validatedData = safeParse(Types.LearningAssessmentsPeerReviewClaimDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -37,7 +37,7 @@ export class LearningAssessmentsPeerReviewsModule {
 
   /**
    */
-  async getAssessmentsPeerReviews(reviewId: string): Promise<Result<Types.LearningAssessmentsAnonymousReviewSubmission, ApiError>> {
+  async getAssessmentsPeerReviews(reviewId: string): Promise<Result<Types.LearningAssessmentsAnonymousReviewSubmissionDto, ApiError>> {
     const url = `/v1/assessments/peer-reviews/${reviewId}`;
 
     const result = await this.client.request({
@@ -48,7 +48,7 @@ export class LearningAssessmentsPeerReviewsModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.LearningAssessmentsAnonymousReviewSubmissionSchema, result.data, 'response');
+      const validatedData = safeParse(Types.LearningAssessmentsAnonymousReviewSubmissionDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -75,7 +75,7 @@ export class LearningAssessmentsPeerReviewsModule {
 
   /**
    */
-  async getAssessmentsSubmissionsPeerReviews(submissionId: string): Promise<Result<Array<Types.LearningAssessmentsInstructorPeerReview>, ApiError>> {
+  async getAssessmentsSubmissionsPeerReviews(submissionId: string): Promise<Result<Array<Types.LearningAssessmentsInstructorPeerReviewDto>, ApiError>> {
     const url = `/v1/assessments/submissions/${submissionId}/peer-reviews`;
 
     const result = await this.client.request({
@@ -84,12 +84,12 @@ export class LearningAssessmentsPeerReviewsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.LearningAssessmentsInstructorPeerReview>, ApiError>;
+    return result as Result<Array<Types.LearningAssessmentsInstructorPeerReviewDto>, ApiError>;
   }
 
   /**
    */
-  async getAssessmentsSubmissionsReceivedPeerReviews(submissionId: string): Promise<Result<Array<Types.LearningAssessmentsReceivedPeerReview>, ApiError>> {
+  async getAssessmentsSubmissionsReceivedPeerReviews(submissionId: string): Promise<Result<Array<Types.LearningAssessmentsReceivedPeerReviewDto>, ApiError>> {
     const url = `/v1/assessments/submissions/${submissionId}/received-peer-reviews`;
 
     const result = await this.client.request({
@@ -98,7 +98,7 @@ export class LearningAssessmentsPeerReviewsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.LearningAssessmentsReceivedPeerReview>, ApiError>;
+    return result as Result<Array<Types.LearningAssessmentsReceivedPeerReviewDto>, ApiError>;
   }
 }
 

@@ -354,16 +354,11 @@ public class AddTenantMemberCommandHandlerTests
             CancellationToken.None);
 
         result.Success.Should().BeTrue();
-        var inviteEvent = tenant.DomainEvents
-            .Should().ContainSingle(e => e is TenantInviteRequestedNotification).Subject
-            as TenantInviteRequestedNotification;
-        inviteEvent!.InviteeEmail.Should().Be("learner@example.com");
-        inviteEvent.InviteeName.Should().Be("Learner One");
-        inviteEvent.InvitedByEmail.Should().Be("admin@game-guild.com");
-        inviteEvent.TenantName.Should().Be("GameGuild Studio");
-        inviteEvent.Role.Should().Be("Moderator");
+        var inviteEvent = capturedMember!.IntegrationEvents.OfType<TenantMemberInviteRequestedV1>().Should().ContainSingle().Subject;
+        inviteEvent.MemberId.Should().Be(capturedMember.Id);
+        inviteEvent.TenantId.Should().Be(tenantId);
         inviteEvent.Resend.Should().BeFalse();
-        inviteEvent.ReviewUrl.Should().Contain("callbackUrl=%2Faccount%2Finvitations");
+        System.Text.Json.JsonSerializer.Serialize(inviteEvent).Should().NotContain("learner@example.com");
         capturedMember!.Metadata.Should().Contain("\"inviteeEmail\":\"learner@example.com\"");
         capturedMember.Metadata.Should().Contain("\"inviteeName\":\"Learner One\"");
     }

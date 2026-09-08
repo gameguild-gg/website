@@ -13,7 +13,7 @@ public sealed record BulkUploadAssetsCommand(
     AssetAccessPolicy AccessPolicy = AssetAccessPolicy.Private,
     string? ParentResourceType = null,
     Guid? ParentResourceId = null,
-    Guid? FolderId = null) : IRequest<BulkUploadAssetsResponse>;
+    Guid? FolderId = null) : ICommand<BulkUploadAssetsResponse>;
 
 public sealed record BulkUploadAssetsResponse(
     int TotalRequested,
@@ -29,8 +29,8 @@ public sealed record BulkUploadAssetItem(
     string? Error);
 
 public sealed class BulkUploadAssetsHandler(
-    IAssetUploadService uploadService,
-    IAssetUploadAuthorizationService authorizationService) : IRequestHandler<BulkUploadAssetsCommand, BulkUploadAssetsResponse>
+    ISecureUploadService secureUploadService,
+    IAssetUploadAuthorizationService authorizationService) : ICommandHandler<BulkUploadAssetsCommand, BulkUploadAssetsResponse>
 {
     public async Task<BulkUploadAssetsResponse> Handle(
         BulkUploadAssetsCommand request,
@@ -52,6 +52,16 @@ public sealed class BulkUploadAssetsHandler(
                     file.FileName, false, null, null, "Forbidden")).ToArray());
         }
 
+        if (!request.TenantId.HasValue)
+        {
+            return new BulkUploadAssetsResponse(
+                request.Files.Count,
+                0,
+                request.Files.Count,
+                request.Files.Select(file => new BulkUploadAssetItem(
+                    file.FileName, false, null, null, "Tenant context is required")).ToArray());
+        }
+
         var items = new List<BulkUploadAssetItem>();
 
         foreach (var file in request.Files)
@@ -66,8 +76,15 @@ public sealed class BulkUploadAssetsHandler(
                     request.FolderId,
                     request.TenantId);
 
-                var result = await uploadService
-                    .UploadAsync(file.Content, file.FileName, file.MimeType, request.UserId, options, ct)
+                var result = await secureUploadService
+                    .UploadWithSecurityChecksAsync(
+                        file.Content,
+                        file.FileName,
+                        file.MimeType,
+                        request.UserId,
+                        request.TenantId.Value,
+                        options,
+                        ct)
                     .ConfigureAwait(false);
 
                 items.Add(result.Success

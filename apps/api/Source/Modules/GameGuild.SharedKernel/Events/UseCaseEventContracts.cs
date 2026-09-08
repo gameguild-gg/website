@@ -42,3 +42,11 @@ public sealed class UnavailableEndpointAttribute(string reason) : Attribute
         ? throw new ArgumentException("An unavailable endpoint requires a reason.", nameof(reason))
         : reason;
 }
+
+[AttributeUsage(AttributeTargets.Method)]
+public sealed class NoBusinessMutationEndpointAttribute(string reason) : Attribute
+{
+    public string Reason { get; } = string.IsNullOrWhiteSpace(reason)
+        ? throw new ArgumentException("A non-mutating endpoint exception requires a reason.", nameof(reason))
+        : reason;
+}

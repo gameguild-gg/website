@@ -207,7 +207,7 @@ public class ProjectsController : BaseApiController {
       actorId,
       project.TenantId);
     _context.Set<ProjectVersion>().Add(version);
-    await _context.SaveChangesAsync().ConfigureAwait(false);
+    version = await _mediator.Send(new CreateProjectVersionEndpointCommand(version)).ConfigureAwait(false);
     return CreatedAtAction(nameof(GetProjectVersions), new { id }, ProjectVersionApiResponse.FromEntity(version));
   }
 
@@ -233,7 +233,7 @@ public class ProjectsController : BaseApiController {
 
     try {
       version.UpdateDraft(normalizedVersion, request.ReleaseNotes);
-      await _context.SaveChangesAsync().ConfigureAwait(false);
+      version = await _mediator.Send(new UpdateProjectVersionEndpointCommand(version)).ConfigureAwait(false);
       return Ok(ProjectVersionApiResponse.FromEntity(version));
     }
     catch (InvalidOperationException) {
@@ -266,7 +266,7 @@ public class ProjectsController : BaseApiController {
 
     try {
       transition(version);
-      await _context.SaveChangesAsync().ConfigureAwait(false);
+      version = await _mediator.Send(new TransitionProjectVersionEndpointCommand(version)).ConfigureAwait(false);
       return Ok(ProjectVersionApiResponse.FromEntity(version));
     }
     catch (InvalidOperationException) {
@@ -429,7 +429,7 @@ public class ProjectsController : BaseApiController {
     if (wasSoftDeleted) project.Restore();
     if (wasArchived) project.Status = ContentStatus.Draft;
     project.Touch();
-    await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+    project = await _mediator.Send(new RestoreProjectEndpointCommand(project), cancellationToken).ConfigureAwait(false);
     return Ok(ProjectApiResponse.FromProject(project));
   }
 
@@ -634,7 +634,7 @@ public class ProjectsController : BaseApiController {
       collaborator.LeftAt = null;
     }
 
-    await _context.SaveChangesAsync().ConfigureAwait(false);
+    invitation = await _mediator.Send(new AcceptProjectInvitationEndpointCommand(invitation)).ConfigureAwait(false);
 
     return Ok(ProjectInvitationDto.FromInvitation(invitation));
   }
@@ -651,7 +651,7 @@ public class ProjectsController : BaseApiController {
     if (!userId.HasValue || !await CanRespondToInvitationAsync(invitation, userId.Value).ConfigureAwait(false)) return Forbid();
 
     invitation.Decline();
-    await _context.SaveChangesAsync().ConfigureAwait(false);
+    invitation = await _mediator.Send(new DeclineProjectInvitationEndpointCommand(invitation)).ConfigureAwait(false);
 
     return Ok(ProjectInvitationDto.FromInvitation(invitation));
   }
@@ -711,7 +711,7 @@ public class ProjectsController : BaseApiController {
     };
 
     _context.Set<ProjectCollaborator>().Add(collaborator);
-    await _context.SaveChangesAsync().ConfigureAwait(false);
+    collaborator = await _mediator.Send(new AddProjectCollaboratorEndpointCommand(collaborator)).ConfigureAwait(false);
 
     _logger.LogInformation("User {AdminId} added collaborator {UserId} to project {ProjectId}", userId, request.UserId, id);
 
@@ -742,7 +742,7 @@ public class ProjectsController : BaseApiController {
       collaborator.Permissions = permissions;
     }
 
-    await _context.SaveChangesAsync().ConfigureAwait(false);
+    collaborator = await _mediator.Send(new UpdateProjectCollaboratorEndpointCommand(collaborator)).ConfigureAwait(false);
 
     _logger.LogInformation("User {AdminId} updated collaborator {CollaboratorId} on project {ProjectId}", userId, collaboratorId, id);
 
@@ -769,7 +769,7 @@ public class ProjectsController : BaseApiController {
     // Soft-delete: mark as inactive
     collaborator.IsActive = false;
     collaborator.LeftAt = SystemClock.UtcNow;
-    await _context.SaveChangesAsync().ConfigureAwait(false);
+    await _mediator.Send(new RemoveProjectCollaboratorEndpointCommand(collaborator)).ConfigureAwait(false);
 
     _logger.LogInformation("User {AdminId} removed collaborator {CollaboratorId} from project {ProjectId}", userId, collaboratorId, id);
 
@@ -813,7 +813,7 @@ public class ProjectsController : BaseApiController {
       _context.Set<ProjectCollaborator>().Add(collaborator);
     }
 
-    await _context.SaveChangesAsync().ConfigureAwait(false);
+    await _mediator.Send(new ShareProjectEndpointCommand(id, request.UserId)).ConfigureAwait(false);
 
     _logger.LogInformation("User {AdminId} shared project {ProjectId} with user {TargetUserId}", userId, id, request.UserId);
 
@@ -851,7 +851,7 @@ public class ProjectsController : BaseApiController {
     };
 
     _context.Set<ProjectInvitation>().Add(invitation);
-    await _context.SaveChangesAsync().ConfigureAwait(false);
+    invitation = await _mediator.Send(new InviteProjectCollaboratorEndpointCommand(invitation)).ConfigureAwait(false);
 
     return CreatedAtAction(nameof(GetMyProjectInvitations), new { }, ProjectInvitationDto.FromInvitation(invitation));
   }

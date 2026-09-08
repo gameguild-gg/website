@@ -1,0 +1,14 @@
+using GameGuild;
+using GameGuild.Identity.Authentication;
+
+[assembly: UseCaseEventContract(typeof(LocalSignUpCommand), "identity.authentication.local-sign-up", NoDomainEventReason = "Account creation is observed through the durable operation event without copying credentials or tokens into event payloads.")]
+[assembly: UseCaseEventContract(typeof(LocalSignInCommand), "identity.authentication.local-sign-in", NoDomainEventReason = "Sign-in state changes are observed through the durable operation event without copying credentials or tokens into event payloads.")]
+[assembly: UseCaseEventContract(typeof(GoogleIdTokenSignInCommand), "identity.authentication.google-id-token-sign-in", NoDomainEventReason = "Federated sign-in is observed through the durable operation event without copying provider tokens into event payloads.")]
+[assembly: UseCaseEventContract(typeof(ConsumeMagicLinkCommand), "identity.authentication.consume-magic-link", NoDomainEventReason = "Magic-link consumption is observed through the durable operation event without copying the one-time token into event payloads.")]
+[assembly: UseCaseEventContract(typeof(DiscordCallbackCommand), "identity.authentication.discord-callback", NoDomainEventReason = "Federated sign-in is observed through the durable operation event without copying provider authorization codes or tokens into event payloads.")]
+[assembly: UseCaseEventContract(typeof(RefreshTokenCommand), "identity.authentication.refresh-token", NoDomainEventReason = "Token rotation is observed through the durable operation event without copying refresh or access tokens into event payloads.")]
+[assembly: UseCaseEventContract(typeof(RevokeTokenCommand), "identity.authentication.revoke-token", NoDomainEventReason = "Token revocation is observed through the durable operation event without copying the revoked token into event payloads.")]
+[assembly: UseCaseEventContract(typeof(GenerateWeb3ChallengeCommand), "identity.authentication.generate-web3-challenge", NoDomainEventReason = "Challenge issuance is observed through the durable operation event without exposing authentication challenge material.")]
+[assembly: UseCaseEventContract(typeof(VerifyWeb3SignatureCommand), "identity.authentication.verify-web3-signature", NoDomainEventReason = "Wallet authentication is observed through the durable operation event without copying signatures or issued tokens into event payloads.")]
+[assembly: UseCaseEventContract(typeof(CreateApiKeyCommand), "identity.authentication.create-api-key", NoDomainEventReason = "API-key creation is observed through the durable operation event without copying the generated secret into event payloads.")]
+[assembly: UseCaseEventContract(typeof(RevokeApiKeyCommand), "identity.authentication.revoke-api-key", NoDomainEventReason = "API-key revocation is observed through the durable operation event without copying key material into event payloads.")]

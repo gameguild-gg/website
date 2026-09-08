@@ -180,63 +180,19 @@ public sealed class PaymentsController(
         var validationError = ValidateTenantAccess(body.TenantId, "create a setup intent");
         if (validationError != null) return validationError;
 
-        var subscription = await subscriptionPaymentContextService.GetPaymentContextAsync(body.SubscriptionId, ct).ConfigureAwait(false);
-        if (subscription == null) return NotFound();
-
-        if (subscription.TenantId != body.TenantId)
-        {
-            return BadRequest(new { error = "Subscription does not belong to the specified tenant." });
-        }
-
-        var customerId = subscription.ExternalCustomerId;
-        if (string.IsNullOrWhiteSpace(customerId))
-        {
-            if (string.IsNullOrWhiteSpace(body.CustomerEmail))
-            {
-                return BadRequest(new { error = "CustomerEmail is required when the subscription does not yet have a Stripe customer." });
-            }
-
-            var customerResult = await stripeCustomerService.CreateCustomerAsync(
-                new GatewayCustomerRequest(
-                    body.CustomerEmail.Trim(),
-                    string.IsNullOrWhiteSpace(body.CustomerName) ? null : body.CustomerName.Trim(),
-                    Phone: null,
-                    Metadata: new Dictionary<string, string>
-                    {
-                        ["tenant_id"] = body.TenantId.ToString(),
-                        ["subscription_id"] = body.SubscriptionId.ToString()
-                    }),
-                ct).ConfigureAwait(false);
-
-            if (!customerResult.Success || string.IsNullOrWhiteSpace(customerResult.ExternalCustomerId))
-            {
-                return BadRequest(new { error = customerResult.ErrorMessage ?? "Stripe could not create a customer for this subscription." });
-            }
-
-            customerId = customerResult.ExternalCustomerId;
-            await subscriptionPaymentContextService.SetExternalCustomerIdAsync(body.SubscriptionId, customerId, ct).ConfigureAwait(false);
-        }
-
-        var setupIntentResult = await stripeCustomerService.CreateSetupIntentAsync(
-            new GatewaySetupIntentRequest(
-                customerId,
-                new Dictionary<string, string>
-                {
-                    ["tenant_id"] = body.TenantId.ToString(),
-                    ["subscription_id"] = body.SubscriptionId.ToString()
-                }),
-            ct).ConfigureAwait(false);
-
-        if (!setupIntentResult.Success || string.IsNullOrWhiteSpace(setupIntentResult.ClientSecret) || string.IsNullOrWhiteSpace(setupIntentResult.ExternalSetupIntentId))
-        {
-            return BadRequest(new { error = setupIntentResult.ErrorMessage ?? "Stripe could not create a setup intent for this subscription." });
-        }
+        var setupIntentResult = await sender.Send(new CreateSetupIntentCommand(
+            body.TenantId,
+            body.SubscriptionId,
+            body.CustomerEmail,
+            body.CustomerName), ct).ConfigureAwait(false);
+        if (setupIntentResult.NotFound) return NotFound();
+        if (!setupIntentResult.Success) return BadRequest(new { error = setupIntentResult.Error });
 
         return Ok(new CreateSetupIntentResponse(
-            subscription.SubscriptionId,
-            customerId,
-            setupIntentResult.ExternalSetupIntentId,
-            setupIntentResult.ClientSecret));
+            setupIntentResult.SubscriptionId,
+            setupIntentResult.CustomerId!,
+            setupIntentResult.SetupIntentId!,
+            setupIntentResult.ClientSecret!));
     }
 
     /// <summary>

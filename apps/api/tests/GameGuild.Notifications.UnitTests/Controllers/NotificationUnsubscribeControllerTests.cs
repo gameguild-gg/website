@@ -16,11 +16,11 @@ public class NotificationUnsubscribeControllerTests
     {
         var configuration = new Mock<IConfiguration>();
         configuration.SetupGet(c => c["App:BaseUrl"]).Returns("https://app.example.com/");
-        _controller = new NotificationUnsubscribeController(
+        _controller = new NotificationUnsubscribeController(new HandlerSender(new UnsubscribeNotificationCommandHandler(
             _tokenService,
             new NotificationPreferenceService(new ApplicationDbContextAdapter(_context)),
             configuration.Object,
-            NullLogger<NotificationUnsubscribeController>.Instance);
+            NullLogger<NotificationUnsubscribeController>.Instance)));
     }
 
     [Fact]

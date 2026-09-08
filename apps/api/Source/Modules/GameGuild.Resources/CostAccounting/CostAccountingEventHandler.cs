@@ -6,6 +6,10 @@ public sealed class CostAccountingEventHandler(
     IIntegrationEventHandler<UseCaseOperationOccurredV1>,
     IIntegrationEventHandler<UserCreatedEvent>,
     IIntegrationEventHandler<UserDeletedEvent>,
+    IIntegrationEventHandler<PropertyCreatedEvent>,
+    IIntegrationEventHandler<PropertyDeletedEvent>,
+    IIntegrationEventHandler<PropertyMediaAttachedEvent>,
+    IIntegrationEventHandler<PropertyMediaRemovedEvent>,
     IIntegrationEventHandler<AssetReferenceCreatedEvent>,
     IIntegrationEventHandler<AssetReferenceRemovedEvent>,
     IIntegrationEventHandler<AssetObjectStoredEvent>,
@@ -22,6 +26,18 @@ public sealed class CostAccountingEventHandler(
 
     public Task HandleAsync(UserDeletedEvent @event, CancellationToken cancellationToken = default) =>
         RecordAsync(@event, [(InternalCostMetrics.UserLifecycle, 1, "delete", "shared")], cancellationToken);
+
+    public Task HandleAsync(PropertyCreatedEvent @event, CancellationToken cancellationToken = default) =>
+        RecordAsync(@event, [(InternalCostMetrics.PropertyLifecycle, 1, "create", "shared")], cancellationToken);
+
+    public Task HandleAsync(PropertyDeletedEvent @event, CancellationToken cancellationToken = default) =>
+        RecordAsync(@event, [(InternalCostMetrics.PropertyLifecycle, 1, "delete", "shared")], cancellationToken);
+
+    public Task HandleAsync(PropertyMediaAttachedEvent @event, CancellationToken cancellationToken = default) =>
+        RecordAsync(@event, [(InternalCostMetrics.PropertyMedia, 1, "attachment", "shared")], cancellationToken);
+
+    public Task HandleAsync(PropertyMediaRemovedEvent @event, CancellationToken cancellationToken = default) =>
+        RecordAsync(@event, [(InternalCostMetrics.PropertyMedia, 1, "removal", "shared")], cancellationToken);
 
     public Task HandleAsync(AssetReferenceCreatedEvent @event, CancellationToken cancellationToken = default) =>
         RecordAsync(@event, [(InternalCostMetrics.AssetReference, 1, "create", "shared")], cancellationToken);
@@ -74,7 +90,7 @@ public sealed class CostAccountingEventHandler(
         await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<IReadOnlyList<InternalUsageLedgerEntry>> RecordAsync(
+    private async Task<IReadOnlyList<InternalUsageLedgerEntry>> RecordAsync(
         IDurableIntegrationEvent @event,
         IReadOnlyList<(string MetricCode, decimal Quantity, string Unit, string Provider)> measurements,
         CancellationToken cancellationToken,

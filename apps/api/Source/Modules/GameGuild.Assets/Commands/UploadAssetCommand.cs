@@ -22,7 +22,7 @@ public sealed record UploadAssetCommand(
     AssetAccessPolicy AccessPolicy = AssetAccessPolicy.Private,
     string? ParentResourceType = null,
     Guid? ParentResourceId = null,
-    Guid? FolderId = null) : IRequest<UploadAssetResponse>;
+    Guid? FolderId = null) : ICommand<UploadAssetResponse>;
 
 public sealed record UploadAssetResponse(
     Guid AssetReferenceId,
@@ -48,18 +48,18 @@ public sealed class UploadAssetValidator : AbstractValidator<UploadAssetCommand>
     }
 }
 
-public sealed class UploadAssetHandler : IRequestHandler<UploadAssetCommand, UploadAssetResponse>
+public sealed class UploadAssetHandler : ICommandHandler<UploadAssetCommand, UploadAssetResponse>
 {
-    private readonly IAssetUploadService _uploadService;
+    private readonly ISecureUploadService _secureUploadService;
     private readonly IAssetContentRepository _contentRepository;
     private readonly IAssetUploadAuthorizationService _authorizationService;
 
     public UploadAssetHandler(
-        IAssetUploadService uploadService,
+        ISecureUploadService secureUploadService,
         IAssetContentRepository contentRepository,
         IAssetUploadAuthorizationService authorizationService)
     {
-        _uploadService = uploadService;
+        _secureUploadService = secureUploadService;
         _contentRepository = contentRepository;
         _authorizationService = authorizationService;
     }
@@ -77,6 +77,9 @@ public sealed class UploadAssetHandler : IRequestHandler<UploadAssetCommand, Upl
                 ct).ConfigureAwait(false))
             return new UploadAssetResponse(Guid.Empty, Guid.Empty, string.Empty, false, "Forbidden");
 
+        if (!request.TenantId.HasValue)
+            return new UploadAssetResponse(Guid.Empty, Guid.Empty, string.Empty, false, "Tenant context is required");
+
         var options = new UploadAssetOptions(
             request.DisplayName ?? request.FileName,
             request.AccessPolicy,
@@ -85,13 +88,14 @@ public sealed class UploadAssetHandler : IRequestHandler<UploadAssetCommand, Upl
             request.FolderId,
             request.TenantId);
 
-        var result = await _uploadService.UploadAsync(
+        var result = await _secureUploadService.UploadWithSecurityChecksAsync(
             request.Content,
             request.FileName,
             request.MimeType,
             request.UserId,
+            request.TenantId.Value,
             options,
-            ct);
+            ct).ConfigureAwait(false);
 
         if (!result.Success)
         {

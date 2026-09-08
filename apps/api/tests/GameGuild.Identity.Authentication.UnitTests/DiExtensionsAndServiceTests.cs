@@ -107,10 +107,8 @@ public class DiExtensionsAndServiceTests
     [Fact]
     public void SessionController_CanBeConstructed()
     {
-        var service = Mock.Of<ISessionManagementService>();
         var controller = new SessionController(
-            service,
-            IdentityCommandTestSender.ForSessions(service));
+            Mock.Of<ISessionManagementService>(), new CommandHandlerSender());
 
         controller.Should().NotBeNull();
     }

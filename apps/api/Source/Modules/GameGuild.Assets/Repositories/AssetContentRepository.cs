@@ -48,6 +48,20 @@ public class AssetContentRepository : IAssetContentRepository
             .ToListAsync(ct).ConfigureAwait(false);
     }
 
+    public async Task<bool> TryBeginVirusScanAsync(Guid id, CancellationToken ct = default)
+    {
+        var updated = await _context.Set<AssetContent>()
+            .Where(content => content.Id == id && content.VirusScanStatus == VirusScanStatus.Pending)
+            .ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(content => content.VirusScanStatus, VirusScanStatus.Scanning)
+                    .SetProperty(content => content.VirusScanCompletedAt, (DateTime?)null),
+                ct)
+            .ConfigureAwait(false);
+
+        return updated == 1;
+    }
+
     public async Task<IReadOnlyList<AssetContent>> GetPendingModerationAsync(int limit = 100, CancellationToken ct = default)
     {
         return await _context.Set<AssetContent>()
@@ -101,9 +115,14 @@ public class AssetContentRepository : IAssetContentRepository
 
     public async Task DeleteAsync(Guid id, CancellationToken ct = default)
     {
-        await _context.Set<AssetContent>()
-            .Where(x => x.Id == id)
-            .ExecuteDeleteAsync(ct).ConfigureAwait(false);
+        var content = await _context.Set<AssetContent>()
+            .FirstOrDefaultAsync(x => x.Id == id, ct)
+            .ConfigureAwait(false);
+        if (content is null)
+            return;
+
+        _context.Set<AssetContent>().Remove(content);
+        await _context.SaveChangesAsync(ct).ConfigureAwait(false);
     }
 
     public async Task<List<AssetContent>> GetMarkedForDeletionAsync(

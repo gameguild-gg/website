@@ -28,7 +28,7 @@ export class UsersModule {
     cursor?: string;
     limit?: number;
     sort?: string;
-  }): Promise<Result<Types.PagedResultOfIdentityUsersUser, ApiError>> {
+  }): Promise<Result<Types.PagedResultUserDto, ApiError>> {
     const url = '/v1/users';
 
     const result = await this.client.request({
@@ -40,7 +40,7 @@ export class UsersModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.PagedResultOfIdentityUsersUserSchema, result.data, 'response');
+      const validatedData = safeParse(Types.PagedResultUserDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 

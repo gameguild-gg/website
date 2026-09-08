@@ -23,25 +23,15 @@ public sealed record SetNotificationQuietHoursCommand(
     TimeOnly? Start,
     TimeOnly? End,
     string? Timezone) : ICommand<Result>;
-public sealed record SetNotificationMutedTypesCommand(
-    Guid UserId,
-    IReadOnlyList<string> TypeNames) : ICommand<Result<NotificationPreference>>;
-public sealed record SetNotificationDigestFrequencyCommand(
-    Guid UserId,
-    DigestFrequency? Frequency) : ICommand<Result<NotificationPreference>>;
 
-public sealed class NotificationMutationCommandHandler(
-    INotificationService notificationService,
-    INotificationPreferenceService preferenceService) :
+public sealed class NotificationMutationCommandHandler(INotificationService notificationService) :
     ICommandHandler<MarkNotificationReadCommand, Result>,
     ICommandHandler<MarkAllNotificationsReadCommand, Result>,
     ICommandHandler<MarkNotificationUnreadCommand, Result>,
     ICommandHandler<DeleteNotificationCommand, Result>,
     ICommandHandler<DeleteReadNotificationsCommand, Result<int>>,
     ICommandHandler<UpdateNotificationPreferencesCommand, Result<NotificationPreference>>,
-    ICommandHandler<SetNotificationQuietHoursCommand, Result>,
-    ICommandHandler<SetNotificationMutedTypesCommand, Result<NotificationPreference>>,
-    ICommandHandler<SetNotificationDigestFrequencyCommand, Result<NotificationPreference>>
+    ICommandHandler<SetNotificationQuietHoursCommand, Result>
 {
     public Task<Result> Handle(MarkNotificationReadCommand command, CancellationToken cancellationToken) =>
         notificationService.MarkAsReadAsync(command.NotificationId, cancellationToken);
@@ -80,14 +70,4 @@ public sealed class NotificationMutationCommandHandler(
             command.End,
             command.Timezone,
             cancellationToken);
-
-    public Task<Result<NotificationPreference>> Handle(
-        SetNotificationMutedTypesCommand command,
-        CancellationToken cancellationToken) =>
-        preferenceService.SetMutedTypesAsync(command.UserId, command.TypeNames, cancellationToken);
-
-    public Task<Result<NotificationPreference>> Handle(
-        SetNotificationDigestFrequencyCommand command,
-        CancellationToken cancellationToken) =>
-        preferenceService.SetEmailDigestFrequencyAsync(command.UserId, command.Frequency, cancellationToken);
 }

@@ -52,13 +52,36 @@ public static class OperationalStartupConfiguration
     private static void ValidateEmail(IConfiguration configuration, ICollection<string> failures)
     {
         if (configuration.GetValue<bool?>("EmailDelivery:Enabled") != true)
-        {
             failures.Add("Email delivery must be enabled.");
-            return;
-        }
 
         Require(configuration, failures, "EmailDelivery:FromEmail", "An email delivery sender address is required.");
-        Require(configuration, failures, "EmailDelivery:Ses:Region", "An AWS region for SES email delivery is required.");
+
+        var provider = configuration["EmailDelivery:Provider"]?.Trim();
+        // Preserve region-only SES configuration used before multiple providers were supported.
+        if (string.IsNullOrWhiteSpace(provider) && !string.IsNullOrWhiteSpace(configuration["EmailDelivery:Ses:Region"]))
+            provider = "Ses";
+        if (string.Equals(provider, "Smtp", StringComparison.OrdinalIgnoreCase))
+        {
+            Require(configuration, failures, "EmailDelivery:SmtpHost", "An SMTP host is required.");
+            if (configuration.GetValue<int?>("EmailDelivery:SmtpPort") is not > 0)
+                failures.Add("A positive SMTP port is required.");
+        }
+        else if (string.Equals(provider, "SendGrid", StringComparison.OrdinalIgnoreCase))
+        {
+            Require(configuration, failures, "EmailDelivery:SendGridApiKey", "A SendGrid API key is required.");
+        }
+        else if (string.Equals(provider, "Ses", StringComparison.OrdinalIgnoreCase))
+        {
+            Require(configuration, failures, "EmailDelivery:Ses:Region", "An AWS region for SES email delivery is required.");
+        }
+        else if (string.IsNullOrWhiteSpace(provider))
+        {
+            failures.Add("An email delivery provider is required.");
+        }
+        else
+        {
+            failures.Add("EmailDelivery:Provider must use a supported provider: Ses, Smtp or SendGrid.");
+        }
     }
 
     private static void ValidateStorage(IConfiguration configuration, ICollection<string> failures)
@@ -67,6 +90,37 @@ public static class OperationalStartupConfiguration
         Require(configuration, failures, "Assets:Storage:AccessKey", "An object storage access key is required.");
         Require(configuration, failures, "Assets:Storage:SecretKey", "An object storage secret key is required.");
         Require(configuration, failures, "Assets:Storage:BucketName", "An object storage bucket is required.");
+        RequireBase64Secret(
+            configuration,
+            failures,
+            "Assets:Token:SecretKey",
+            "An asset token signing key is required.",
+            "The asset token signing key must be valid Base64 containing at least 32 bytes.");
+    }
+
+    private static void RequireBase64Secret(
+        IConfiguration configuration,
+        ICollection<string> failures,
+        string key,
+        string missingFailure,
+        string unsafeFailure)
+    {
+        var secret = configuration[key];
+        if (string.IsNullOrWhiteSpace(secret))
+        {
+            failures.Add(missingFailure);
+            return;
+        }
+
+        try
+        {
+            if (Convert.FromBase64String(secret).Length < 32)
+                failures.Add(unsafeFailure);
+        }
+        catch (FormatException)
+        {
+            failures.Add(unsafeFailure);
+        }
     }
 
     private static void RequireAny(

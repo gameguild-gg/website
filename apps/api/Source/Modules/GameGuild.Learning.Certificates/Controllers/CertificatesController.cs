@@ -1,5 +1,6 @@
 using GameGuild.Identity.Authorization;
 using GameGuild.Identity.Context.Actors;
+using GameGuild.CQRS;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -17,17 +18,20 @@ public class CertificatesController : BaseApiController
     private readonly ICertificateTemplateService _templateService;
     private readonly IActorContextAccessor _actorContextAccessor;
     private readonly ILogger<CertificatesController> _logger;
+    private readonly ISender _sender;
 
     public CertificatesController(
         ICertificateService certificateService,
         ICertificateTemplateService templateService,
         IActorContextAccessor actorContextAccessor,
-        ILogger<CertificatesController> logger)
+        ILogger<CertificatesController> logger,
+        ISender sender)
     {
         _certificateService = certificateService;
         _templateService = templateService;
         _actorContextAccessor = actorContextAccessor;
         _logger = logger;
+        _sender = sender;
     }
 
     /// <summary>
@@ -93,12 +97,12 @@ public class CertificatesController : BaseApiController
             return Unauthorized();
         }
 
-        var result = await _certificateService.IssueCertificateAsync(
+        var result = await _sender.Send(new IssueCertificateEndpointCommand(
             request.TemplateId,
             request.EnrollmentId,
             request.UserId,
             request.CourseId,
-            actor.TenantId).ConfigureAwait(false);
+            actor.TenantId)).ConfigureAwait(false);
 
         if (!result.IsSuccess)
         {
@@ -115,7 +119,7 @@ public class CertificatesController : BaseApiController
     [RequireResourcePermission<PermissionType, Certificate>(PermissionType.Delete)]
     public async Task<ActionResult> RevokeCertificate(Guid id, [FromBody] RevokeCertificateRequest request)
     {
-        var result = await _certificateService.RevokeCertificateAsync(id, request.Reason).ConfigureAwait(false);
+        var result = await _sender.Send(new RevokeCertificateEndpointCommand(id, request.Reason)).ConfigureAwait(false);
 
         if (!result.IsSuccess)
         {
@@ -174,8 +178,11 @@ public class CertificatesController : BaseApiController
     public async Task<ActionResult<CertificateTemplateDetailDto>> CreateCertificateTemplate([FromBody] CreateCertificateTemplateRequest request)
     {
         var actor = _actorContextAccessor.ActorContext;
-        var template = CertificateTemplate.Create(request.CourseId, request.Name, request.TemplateHtml, actor.TenantId);
-        var result = await _templateService.CreateTemplateAsync(template, actor.TenantId).ConfigureAwait(false);
+        var result = await _sender.Send(new CreateCertificateTemplateEndpointCommand(
+            request.CourseId,
+            request.Name,
+            request.TemplateHtml,
+            actor.TenantId)).ConfigureAwait(false);
 
         if (!result.IsSuccess)
         {
@@ -197,25 +204,14 @@ public class CertificatesController : BaseApiController
         Guid templateId,
         [FromBody] UpdateCertificateTemplateRequest request)
     {
-        var template = await _templateService.GetTemplateByIdAsync(templateId).ConfigureAwait(false);
-        if (template is null)
-        {
-            return NotFound();
-        }
-
-        template.Update(request.Name, request.Description, request.TemplateHtml, request.TemplateStyles, request.IsActive);
-
-        Result<CertificateTemplate> result;
-        if (request.IsDefault)
-        {
-            template.SetDefault(true);
-            result = await _templateService.SetDefaultTemplateAsync(template.CourseId, template.Id).ConfigureAwait(false);
-        }
-        else
-        {
-            template.SetDefault(false);
-            result = await _templateService.UpdateTemplateAsync(template).ConfigureAwait(false);
-        }
+        var result = await _sender.Send(new UpdateCertificateTemplateEndpointCommand(
+            templateId,
+            request.Name,
+            request.Description,
+            request.TemplateHtml,
+            request.TemplateStyles,
+            request.IsDefault,
+            request.IsActive)).ConfigureAwait(false);
 
         if (!result.IsSuccess)
         {
@@ -232,7 +228,7 @@ public class CertificatesController : BaseApiController
     [RequireContentTypePermission<CertificateTemplate>(PermissionType.Delete)]
     public async Task<ActionResult> DeleteCertificateTemplate(Guid templateId)
     {
-        var result = await _templateService.DeleteTemplateAsync(templateId).ConfigureAwait(false);
+        var result = await _sender.Send(new DeleteCertificateTemplateEndpointCommand(templateId)).ConfigureAwait(false);
         if (!result.IsSuccess)
         {
             return result.Error.Type == ErrorType.NotFound ? NotFound(result.Error) : BadRequest(result.Error);

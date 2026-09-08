@@ -1,4 +1,5 @@
 using GameGuild.Identity.Authorization;
+using GameGuild.CQRS;
 using GameGuild.Identity.Context.Actors;
 using GameGuild.Identity.Tenants;
 using Microsoft.AspNetCore.Mvc;
@@ -15,10 +16,12 @@ public class TestingLabPermissionController : BaseApiController {
   private readonly ITestingLabPermissionService _permissionService;
 
   private readonly IActorContextAccessor _actorContextAccessor;
+  private readonly ISender _sender;
 
-  public TestingLabPermissionController(ITestingLabPermissionService permissionService, IActorContextAccessor actorContextAccessor, ILogger<TestingLabPermissionController> logger) {
+  public TestingLabPermissionController(ITestingLabPermissionService permissionService, IActorContextAccessor actorContextAccessor, ISender sender, ILogger<TestingLabPermissionController> logger) {
     _permissionService = permissionService;
     _actorContextAccessor = actorContextAccessor;
+    _sender = sender;
     _logger = logger;
   }
 
@@ -60,7 +63,7 @@ public class TestingLabPermissionController : BaseApiController {
     try {
       var permissionTemplates = BuildPermissionTemplates(request.Permissions);
 
-      var template = await _permissionService.CreateRoleTemplateAsync(request.Name, request.Description, permissionTemplates).ConfigureAwait(false);
+      var template = await _sender.Send(new CreateTestingLabRoleTemplateEndpointCommand(request.Name, request.Description, permissionTemplates)).ConfigureAwait(false);
 
       _logger.LogInformation("Admin user {UserId} created TestingLab role template '{RoleName}'", GetCurrentUserId(), request.Name);
 
@@ -79,7 +82,7 @@ public class TestingLabPermissionController : BaseApiController {
   public async Task<ActionResult<TestingLabRoleTemplate>> UpdateTestingLabRoleTemplate(string idOrName, [FromBody] UpdateTestingLabRoleRequest request) {
     try {
       var permissionTemplates = BuildPermissionTemplates(request.Permissions);
-      var template = await _permissionService.UpdateRoleTemplateAsync(idOrName, request.Name, request.Description, permissionTemplates).ConfigureAwait(false);
+      var template = await _sender.Send(new UpdateTestingLabRoleTemplateEndpointCommand(idOrName, request.Name, request.Description, permissionTemplates)).ConfigureAwait(false);
 
       if (template == null) { return NotFound($"Role template '{idOrName}' not found"); }
 
@@ -99,7 +102,7 @@ public class TestingLabPermissionController : BaseApiController {
   [HttpDelete("role-templates/{idOrName}")]
   public async Task<ActionResult> DeleteTestingLabRoleTemplate(string idOrName) {
     try {
-      var deleted = await _permissionService.DeleteRoleTemplateAsync(idOrName).ConfigureAwait(false);
+      var deleted = await _sender.Send(new DeleteTestingLabRoleTemplateEndpointCommand(idOrName)).ConfigureAwait(false);
 
       if (!deleted) { return NotFound($"Role template '{idOrName}' not found"); }
 
@@ -120,7 +123,7 @@ public class TestingLabPermissionController : BaseApiController {
   public async Task<ActionResult> DeleteTestingLabRoleTemplateByName(string name) {
     try {
       _logger.LogInformation("Attempting to delete TestingLab role template by name '{Name}'", name);
-      var deleted = await _permissionService.DeleteRoleTemplateAsync(name).ConfigureAwait(false);
+      var deleted = await _sender.Send(new DeleteTestingLabRoleTemplateEndpointCommand(name)).ConfigureAwait(false);
 
       if (!deleted) { return NotFound($"Role template with name '{name}' not found"); }
 
@@ -199,7 +202,7 @@ public class TestingLabPermissionController : BaseApiController {
   public async Task<ActionResult> AssignTestingLabRole(Guid userId, [FromBody] AssignTestingLabRoleRequest request) {
     try {
       if (!TryGetEffectiveTenantId(request.TenantId, out var effectiveTenantId)) return Forbid();
-      await _permissionService.AssignRoleToUserAsync(userId, effectiveTenantId, request.RoleName, request.ExpiresAt).ConfigureAwait(false);
+      await _sender.Send(new AssignTestingLabRoleEndpointCommand(userId, effectiveTenantId, request.RoleName, request.ExpiresAt)).ConfigureAwait(false);
 
       _logger.LogInformation("Admin user {AdminUserId} assigned TestingLab role '{RoleName}' to user {UserId}", GetCurrentUserId(), request.RoleName, userId);
 
@@ -216,7 +219,7 @@ public class TestingLabPermissionController : BaseApiController {
   [HttpDelete("users/{userId}/roles/{roleName}")]
   public async Task<ActionResult> RevokeTestingLabRole(Guid userId, string roleName, [FromQuery] Guid? tenantId = null) {
     if (!TryGetEffectiveTenantId(tenantId, out var effectiveTenantId)) return Forbid();
-    await _permissionService.RevokeRoleFromUserAsync(userId, effectiveTenantId, roleName).ConfigureAwait(false);
+    await _sender.Send(new RevokeTestingLabRoleEndpointCommand(userId, effectiveTenantId, roleName)).ConfigureAwait(false);
 
     _logger.LogInformation("Admin user {AdminUserId} revoked TestingLab role '{RoleName}' from user {UserId}", GetCurrentUserId(), roleName, userId);
 
@@ -231,7 +234,7 @@ public class TestingLabPermissionController : BaseApiController {
     if (!IsTestingLabResource(resourceType)) { return BadRequest($"'{resourceType}' is not a valid TestingLab resource type"); }
 
     if (!TryGetEffectiveTenantId(request.TenantId, out var effectiveTenantId)) return Forbid();
-    await _permissionService.GrantPermissionAsync(userId, effectiveTenantId, request.Action, resourceType, resourceId, null, request.ExpiresAt, GetCurrentUserId()).ConfigureAwait(false);
+    await _sender.Send(new GrantTestingLabResourcePermissionEndpointCommand(userId, effectiveTenantId, request.Action, resourceType, resourceId, request.ExpiresAt, GetCurrentUserId())).ConfigureAwait(false);
 
     _logger.LogInformation("Admin user {AdminUserId} granted permission '{Action}' on {ResourceType} {ResourceId} to user {UserId}", GetCurrentUserId(), request.Action, resourceType, resourceId, userId);
 
@@ -244,7 +247,7 @@ public class TestingLabPermissionController : BaseApiController {
     if (!IsTestingLabResource(resourceType)) { return BadRequest($"'{resourceType}' is not a valid TestingLab resource type"); }
 
     if (!TryGetEffectiveTenantId(tenantId, out var effectiveTenantId)) return Forbid();
-    await _permissionService.RevokePermissionAsync(userId, effectiveTenantId, action, resourceType, resourceId, GetCurrentUserId()).ConfigureAwait(false);
+    await _sender.Send(new RevokeTestingLabResourcePermissionEndpointCommand(userId, effectiveTenantId, action, resourceType, resourceId, GetCurrentUserId())).ConfigureAwait(false);
 
     _logger.LogInformation("Admin user {AdminUserId} revoked permission '{Action}' on {ResourceType} {ResourceId} from user {UserId}", GetCurrentUserId(), action, resourceType, resourceId, userId);
 

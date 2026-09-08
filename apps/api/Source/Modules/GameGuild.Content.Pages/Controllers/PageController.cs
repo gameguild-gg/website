@@ -73,7 +73,7 @@ public class PageController(IPageService pageService, ISender sender, IActorCont
     public async Task<ActionResult<PageDto>> CreatePage([FromBody] CreatePageDto dto)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
-        var page = await pageService.CreateAsync(dto).ConfigureAwait(false);
+        var page = await sender.Send(new CreatePageCommand(dto)).ConfigureAwait(false);
         return CreatedAtAction(nameof(GetPage), new { id = page.Id }, page.ToDto());
     }
 
@@ -82,7 +82,7 @@ public class PageController(IPageService pageService, ISender sender, IActorCont
     public async Task<ActionResult<PageDto>> UpdatePage(Guid id, [FromBody] UpdatePageDto dto)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
-        var page = await pageService.UpdateAsync(id, dto).ConfigureAwait(false);
+        var page = await sender.Send(new UpdatePageCommand(id, dto)).ConfigureAwait(false);
         if (page is null) return NotFound();
         return Ok(page.ToDto());
     }
@@ -91,7 +91,7 @@ public class PageController(IPageService pageService, ISender sender, IActorCont
     [HttpDelete("{id:guid}")]
     public async Task<ActionResult> DeletePage(Guid id)
     {
-        var deleted = await pageService.DeleteAsync(id).ConfigureAwait(false);
+        var deleted = await sender.Send(new DeletePageCommand(id)).ConfigureAwait(false);
         if (!deleted) return NotFound();
         return NoContent();
     }
@@ -112,7 +112,7 @@ public class PageController(IPageService pageService, ISender sender, IActorCont
     [HttpPost("{id:guid}/unpublish")]
     public async Task<ActionResult<PageDto>> Unpublish(Guid id)
     {
-        var page = await pageService.UnpublishAsync(id).ConfigureAwait(false);
+        var page = await sender.Send(new UnpublishPageCommand(id)).ConfigureAwait(false);
         if (page is null) return NotFound();
         return Ok(page.ToDto());
     }
@@ -132,7 +132,7 @@ public class PageController(IPageService pageService, ISender sender, IActorCont
     public async Task<ActionResult<PageSectionDto>> CreateSection(Guid pageId, [FromBody] CreatePageSectionDto dto)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
-        var section = await pageService.CreateSectionAsync(pageId, dto).ConfigureAwait(false);
+        var section = await sender.Send(new CreatePageSectionCommand(pageId, dto)).ConfigureAwait(false);
         return CreatedAtAction(nameof(GetSection), new { pageId, sectionId = section.Id }, section.ToDto());
     }
 
@@ -150,8 +150,8 @@ public class PageController(IPageService pageService, ISender sender, IActorCont
     public async Task<ActionResult<PageSectionDto>> UpdateSection(Guid pageId, Guid sectionId, [FromBody] UpdatePageSectionDto dto)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
-        var section = await pageService.UpdateSectionAsync(sectionId, dto).ConfigureAwait(false);
-        if (section is null || section.PageId != pageId) return NotFound();
+        var section = await sender.Send(new UpdatePageSectionCommand(pageId, sectionId, dto)).ConfigureAwait(false);
+        if (section is null) return NotFound();
         return Ok(section.ToDto());
     }
 
@@ -159,9 +159,7 @@ public class PageController(IPageService pageService, ISender sender, IActorCont
     [HttpDelete("{pageId:guid}/sections/{sectionId:guid}")]
     public async Task<ActionResult> DeleteSection(Guid pageId, Guid sectionId)
     {
-        var existing = await pageService.GetSectionByIdAsync(sectionId).ConfigureAwait(false);
-        if (existing is null || existing.PageId != pageId) return NotFound();
-        await pageService.DeleteSectionAsync(sectionId).ConfigureAwait(false);
+        if (!await sender.Send(new DeletePageSectionCommand(pageId, sectionId)).ConfigureAwait(false)) return NotFound();
         return NoContent();
     }
 
@@ -169,7 +167,7 @@ public class PageController(IPageService pageService, ISender sender, IActorCont
     [HttpPost("{pageId:guid}/sections/reorder")]
     public async Task<ActionResult> ReorderSections(Guid pageId, [FromBody] List<Guid> orderedIds)
     {
-        await pageService.ReorderSectionsAsync(pageId, orderedIds).ConfigureAwait(false);
+        await sender.Send(new ReorderPageSectionsCommand(pageId, orderedIds)).ConfigureAwait(false);
         return NoContent();
     }
 }

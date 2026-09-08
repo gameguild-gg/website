@@ -1,4 +1,5 @@
 using Asp.Versioning;
+using GameGuild.CQRS;
 using GameGuild.Identity.Authorization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -12,7 +13,8 @@ namespace GameGuild.TestingLab;
 [Route("v{version:apiVersion}/testing")]
 [Authorize]
 public class TestingLocationsController(
-    ITestingLocationOperations locationService) : BaseApiController
+    ITestingLocationOperations locationService,
+    ISender sender) : BaseApiController
 {
     // GET: testing/locations
     [HttpGet("locations")]
@@ -40,8 +42,7 @@ public class TestingLocationsController(
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
 
-        var location = locationDto.ToTestingLocation();
-        var createdLocation = await locationService.CreateTestingLocationAsync(location).ConfigureAwait(false);
+        var createdLocation = await sender.Send(new CreateTestingLocationEndpointCommand(locationDto)).ConfigureAwait(false);
 
         return CreatedAtAction(nameof(GetTestingLocation), new { id = createdLocation.Id }, createdLocation);
     }
@@ -51,11 +52,8 @@ public class TestingLocationsController(
     [RequireTestingLabPermission(TestingLabActions.Edit, TestingLabResourceTypes.Location, "id")]
     public async Task<ActionResult<TestingLocation>> UpdateTestingLocation(Guid id, UpdateTestingLocationDto locationDto)
     {
-        var existingLocation = await locationService.GetTestingLocationByIdAsync(id).ConfigureAwait(false);
-        if (existingLocation == null) return NotFound();
-
-        locationDto.UpdateTestingLocation(existingLocation);
-        var updatedLocation = await locationService.UpdateTestingLocationAsync(existingLocation).ConfigureAwait(false);
+        var updatedLocation = await sender.Send(new UpdateTestingLocationEndpointCommand(id, locationDto)).ConfigureAwait(false);
+        if (updatedLocation == null) return NotFound();
 
         return Ok(updatedLocation);
     }
@@ -67,7 +65,7 @@ public class TestingLocationsController(
     {
         try
         {
-            var result = await locationService.DeleteTestingLocationAsync(id).ConfigureAwait(false);
+            var result = await sender.Send(new DeleteTestingLocationEndpointCommand(id)).ConfigureAwait(false);
             if (!result) return NotFound();
             return NoContent();
         }
@@ -82,7 +80,7 @@ public class TestingLocationsController(
     [RequireTestingLabPermission(TestingLabActions.Edit, TestingLabResourceTypes.Location, "id")]
     public async Task<ActionResult> RestoreTestingLocation(Guid id)
     {
-        var result = await locationService.RestoreTestingLocationAsync(id).ConfigureAwait(false);
+        var result = await sender.Send(new RestoreTestingLocationEndpointCommand(id)).ConfigureAwait(false);
         if (!result) return NotFound();
         return Ok(new { message = "Testing location restored successfully" });
     }

@@ -8,21 +8,21 @@ namespace GameGuild.LaunchPad;
 [ApiController]
 [Authorize]
 [Route("v1/launch-pad")]
-public sealed class LaunchPadController(IMediator mediator) : ControllerBase
+public sealed class LaunchPadController(ISender sender) : ControllerBase
 {
     [HttpGet]
     public async Task<ActionResult<IReadOnlyList<LaunchPlan>>> GetDashboard(
         [FromQuery] LaunchPlanStatus? status = null,
         CancellationToken cancellationToken = default)
     {
-        var result = await mediator.Send(new GetLaunchPadDashboardQuery { Status = status }, cancellationToken).ConfigureAwait(false);
+        var result = await sender.Send(new GetLaunchPadDashboardQuery { Status = status }, cancellationToken).ConfigureAwait(false);
         return result.IsSuccess ? Ok(result.Value) : ToActionResult(result);
     }
 
     [HttpGet("{id:guid}")]
     public async Task<ActionResult<LaunchPlan>> GetLaunchPlan(Guid id, CancellationToken cancellationToken = default)
     {
-        var result = await mediator.Send(new GetLaunchPlanQuery { LaunchPlanId = id }, cancellationToken).ConfigureAwait(false);
+        var result = await sender.Send(new GetLaunchPlanQuery { LaunchPlanId = id }, cancellationToken).ConfigureAwait(false);
         if (result.IsFailure) return ToActionResult(result);
         return result.Value == null ? NotFound() : Ok(result.Value);
     }
@@ -30,24 +30,25 @@ public sealed class LaunchPadController(IMediator mediator) : ControllerBase
     [HttpGet("projects/{projectId:guid}")]
     public async Task<ActionResult<LaunchPlan>> GetProjectLaunchPlan(Guid projectId, CancellationToken cancellationToken = default)
     {
-        var result = await mediator.Send(new GetLaunchPlanByProjectQuery { ProjectId = projectId }, cancellationToken).ConfigureAwait(false);
+        var result = await sender.Send(new GetLaunchPlanByProjectQuery { ProjectId = projectId }, cancellationToken).ConfigureAwait(false);
         if (result.IsFailure) return ToActionResult(result);
         return result.Value == null ? NotFound() : Ok(result.Value);
     }
 
     [HttpPost]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
-    public Task<ActionResult<LaunchPlan>> CreateLaunchPlan(
+    public async Task<ActionResult<LaunchPlan>> CreateLaunchPlan(
         [FromBody] CreateLaunchPlanRequest request,
         CancellationToken cancellationToken = default)
     {
         _ = request;
         cancellationToken.ThrowIfCancellationRequested();
-        return Task.FromResult<ActionResult<LaunchPlan>>(Conflict(new
+        await sender.Send(new RejectLegacyDirectPlanCreationCommand(), cancellationToken).ConfigureAwait(false);
+        return Conflict(new
         {
             code = "LaunchPad.ApplicationRequired",
             message = "Launch plans are created only when a Launch Pad application is approved."
-        }));
+        });
     }
 
     [HttpPost("{id:guid}/checklist/{itemId:guid}:complete")]
@@ -56,7 +57,7 @@ public sealed class LaunchPadController(IMediator mediator) : ControllerBase
         Guid itemId,
         CancellationToken cancellationToken = default)
     {
-        var result = await mediator.Send(new CompleteLaunchChecklistItemCommand
+        var result = await sender.Send(new CompleteLaunchChecklistItemCommand
         {
             LaunchPlanId = id,
             ChecklistItemId = itemId
@@ -68,7 +69,7 @@ public sealed class LaunchPadController(IMediator mediator) : ControllerBase
     [HttpPost("{id:guid}:publish")]
     public async Task<ActionResult<LaunchPlan>> PublishLaunch(Guid id, CancellationToken cancellationToken = default)
     {
-        var result = await mediator.Send(new PublishLaunchCommand { LaunchPlanId = id }, cancellationToken).ConfigureAwait(false);
+        var result = await sender.Send(new PublishLaunchCommand { LaunchPlanId = id }, cancellationToken).ConfigureAwait(false);
         return result.IsSuccess ? Ok(result.Value) : ToActionResult(result);
     }
 

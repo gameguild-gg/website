@@ -1,3 +1,4 @@
+using GameGuild.CQRS;
 using GameGuild.Identity.Context.Actors;
 using GameGuild.Learning.Abstractions;
 using GameGuild.Learning.Attributes;
@@ -20,12 +21,15 @@ namespace GameGuild.Learning.Experience.Social.Controllers;
 public class WishlistsController : LearningControllerBase
 {
     private readonly IWishlistService _wishlistService;
+    private readonly ISender _sender;
 
     public WishlistsController(
         IWishlistService wishlistService,
+        ISender sender,
         IActorContextAccessor actorContextAccessor) : base(actorContextAccessor)
     {
         _wishlistService = wishlistService;
+        _sender = sender;
     }
 
     /// <summary>
@@ -41,7 +45,7 @@ public class WishlistsController : LearningControllerBase
         CancellationToken cancellationToken = default)
     {
         var userId = GetRequiredUserId();
-        var result = await _wishlistService.AddToWishlistAsync(courseId, userId, notifyOnSale, notifyOnUpdate, cancellationToken).ConfigureAwait(false);
+        var result = await _sender.Send(new AddToWishlistCommand(courseId, userId, notifyOnSale, notifyOnUpdate), cancellationToken).ConfigureAwait(false);
 
         if (!result.IsSuccess)
         {
@@ -60,7 +64,7 @@ public class WishlistsController : LearningControllerBase
     public async Task<IActionResult> RemoveFromWishlist(Guid courseId, CancellationToken cancellationToken = default)
     {
         var userId = GetRequiredUserId();
-        var result = await _wishlistService.RemoveFromWishlistAsync(courseId, userId, cancellationToken).ConfigureAwait(false);
+        var result = await _sender.Send(new RemoveFromWishlistCommand(courseId, userId), cancellationToken).ConfigureAwait(false);
 
         if (!result.IsSuccess)
         {
@@ -122,8 +126,8 @@ public class WishlistsController : LearningControllerBase
         CancellationToken cancellationToken = default)
     {
         var userId = GetRequiredUserId();
-        var result = await _wishlistService.UpdateWishlistPreferencesAsync(
-            courseId, userId, request.NotifyOnSale, request.NotifyOnUpdate, cancellationToken).ConfigureAwait(false);
+        var result = await _sender.Send(new UpdateWishlistPreferencesCommand(
+            courseId, userId, request.NotifyOnSale, request.NotifyOnUpdate), cancellationToken).ConfigureAwait(false);
 
         if (!result.IsSuccess)
         {

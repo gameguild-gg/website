@@ -21,7 +21,7 @@ export class LearningExperienceSocialDiscussionsModule {
     courseId: string,
     contentId: string,
     query?: { skip?: number; take?: number },
-  ): Promise<Result<Array<Types.LearningExperienceSocialServicesCourseDiscussion>, ApiError>> {
+  ): Promise<Result<Array<Types.LearningExperienceSocialServicesCourseDiscussionDto>, ApiError>> {
     const url = `/api/social/courses/${courseId}/content/${contentId}/discussions`;
 
     const result = await this.client.request({
@@ -31,7 +31,7 @@ export class LearningExperienceSocialDiscussionsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.LearningExperienceSocialServicesCourseDiscussion>, ApiError>;
+    return result as Result<Array<Types.LearningExperienceSocialServicesCourseDiscussionDto>, ApiError>;
   }
 
   /**
@@ -39,7 +39,7 @@ export class LearningExperienceSocialDiscussionsModule {
   async getApiSocialCoursesDiscussions(
     courseId: string,
     query?: { skip?: number; take?: number; pinnedFirst?: boolean },
-  ): Promise<Result<Array<Types.LearningExperienceSocialServicesCourseDiscussion>, ApiError>> {
+  ): Promise<Result<Array<Types.LearningExperienceSocialServicesCourseDiscussionDto>, ApiError>> {
     const url = `/api/social/courses/${courseId}/discussions`;
 
     const result = await this.client.request({
@@ -49,14 +49,14 @@ export class LearningExperienceSocialDiscussionsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.LearningExperienceSocialServicesCourseDiscussion>, ApiError>;
+    return result as Result<Array<Types.LearningExperienceSocialServicesCourseDiscussionDto>, ApiError>;
   }
 
   /**
    */
   async postApiSocialDiscussions(
     body: Types.LearningExperienceSocialServicesCreateDiscussionInput,
-  ): Promise<Result<Types.LearningExperienceSocialServicesCourseDiscussion, ApiError>> {
+  ): Promise<Result<Types.LearningExperienceSocialServicesCourseDiscussionDto, ApiError>> {
     const url = '/api/social/discussions';
 
     // Validate request body
@@ -71,7 +71,7 @@ export class LearningExperienceSocialDiscussionsModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.LearningExperienceSocialServicesCourseDiscussionSchema, result.data, 'response');
+      const validatedData = safeParse(Types.LearningExperienceSocialServicesCourseDiscussionDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -80,7 +80,7 @@ export class LearningExperienceSocialDiscussionsModule {
 
   /**
    */
-  async getApiSocialDiscussions(id: string): Promise<Result<Types.LearningExperienceSocialServicesCourseDiscussion, ApiError>> {
+  async getApiSocialDiscussions(id: string): Promise<Result<Types.LearningExperienceSocialServicesCourseDiscussionDto, ApiError>> {
     const url = `/api/social/discussions/${id}`;
 
     const result = await this.client.request({
@@ -91,7 +91,7 @@ export class LearningExperienceSocialDiscussionsModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.LearningExperienceSocialServicesCourseDiscussionSchema, result.data, 'response');
+      const validatedData = safeParse(Types.LearningExperienceSocialServicesCourseDiscussionDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -114,7 +114,7 @@ export class LearningExperienceSocialDiscussionsModule {
 
   /**
    */
-  async postApiSocialDiscussionsPin(id: string): Promise<Result<Types.LearningExperienceSocialServicesCourseDiscussion, ApiError>> {
+  async postApiSocialDiscussionsPin(id: string): Promise<Result<Types.LearningExperienceSocialServicesCourseDiscussionDto, ApiError>> {
     const url = `/api/social/discussions/${id}/pin`;
 
     const result = await this.client.request({
@@ -125,7 +125,7 @@ export class LearningExperienceSocialDiscussionsModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.LearningExperienceSocialServicesCourseDiscussionSchema, result.data, 'response');
+      const validatedData = safeParse(Types.LearningExperienceSocialServicesCourseDiscussionDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -134,7 +134,7 @@ export class LearningExperienceSocialDiscussionsModule {
 
   /**
    */
-  async postApiSocialDiscussionsResolve(id: string): Promise<Result<Types.LearningExperienceSocialServicesCourseDiscussion, ApiError>> {
+  async postApiSocialDiscussionsResolve(id: string): Promise<Result<Types.LearningExperienceSocialServicesCourseDiscussionDto, ApiError>> {
     const url = `/api/social/discussions/${id}/resolve`;
 
     const result = await this.client.request({
@@ -145,7 +145,7 @@ export class LearningExperienceSocialDiscussionsModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.LearningExperienceSocialServicesCourseDiscussionSchema, result.data, 'response');
+      const validatedData = safeParse(Types.LearningExperienceSocialServicesCourseDiscussionDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -154,7 +154,7 @@ export class LearningExperienceSocialDiscussionsModule {
 
   /**
    */
-  async postApiSocialDiscussionsUnpin(id: string): Promise<Result<Types.LearningExperienceSocialServicesCourseDiscussion, ApiError>> {
+  async postApiSocialDiscussionsUnpin(id: string): Promise<Result<Types.LearningExperienceSocialServicesCourseDiscussionDto, ApiError>> {
     const url = `/api/social/discussions/${id}/unpin`;
 
     const result = await this.client.request({
@@ -165,7 +165,7 @@ export class LearningExperienceSocialDiscussionsModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.LearningExperienceSocialServicesCourseDiscussionSchema, result.data, 'response');
+      const validatedData = safeParse(Types.LearningExperienceSocialServicesCourseDiscussionDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 

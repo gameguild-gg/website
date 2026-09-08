@@ -27,7 +27,7 @@ export class NotificationsSubscriptionsModule {
     isSent?: boolean;
     page?: number;
     pageSize?: number;
-  }): Promise<Result<Types.PagedResultOfCommerceSubscriptionsSubscriptionNotification, ApiError>> {
+  }): Promise<Result<Types.PagedResultSubscriptionNotificationDto, ApiError>> {
     const url = '/api/v1/notifications/subscriptions';
 
     const result = await this.client.request({
@@ -39,7 +39,7 @@ export class NotificationsSubscriptionsModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.PagedResultOfCommerceSubscriptionsSubscriptionNotificationSchema, result.data, 'response');
+      const validatedData = safeParse(Types.PagedResultSubscriptionNotificationDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -54,7 +54,7 @@ export class NotificationsSubscriptionsModule {
   async postNotificationsSubscriptionsResend(
     notificationId: string,
     body: Types.CommerceSubscriptionsSubscriptionNotificationsControllerResendSubscriptionNotificationInput,
-  ): Promise<Result<Types.CommerceSubscriptionsSubscriptionNotification, ApiError>> {
+  ): Promise<Result<Types.CommerceSubscriptionsSubscriptionNotificationDto, ApiError>> {
     const url = `/api/v1/notifications/subscriptions/${notificationId}:resend`;
 
     // Validate request body
@@ -69,7 +69,7 @@ export class NotificationsSubscriptionsModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.CommerceSubscriptionsSubscriptionNotificationSchema, result.data, 'response');
+      const validatedData = safeParse(Types.CommerceSubscriptionsSubscriptionNotificationDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 

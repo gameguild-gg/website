@@ -36,6 +36,7 @@ public class PermissionEvaluationController(IMediator mediator, ILogger<Permissi
     ///     Check if user has a specific tenant permission
     /// </summary>
     [HttpPost("tenant:check")]
+    [NoBusinessMutationEndpoint("This POST-shaped permission evaluation is read-only and does not grant or revoke access.")]
     [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<bool>> CheckTenantPermission([FromBody] HasTenantPermissionQuery query)
@@ -69,6 +70,7 @@ public class PermissionEvaluationController(IMediator mediator, ILogger<Permissi
     ///     Check if user has a specific content type permission
     /// </summary>
     [HttpPost("content-type:check")]
+    [NoBusinessMutationEndpoint("This POST-shaped permission evaluation is read-only and does not grant or revoke access.")]
     [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<bool>> CheckContentTypePermission([FromBody] HasContentTypePermissionQuery query)
@@ -103,6 +105,7 @@ public class PermissionEvaluationController(IMediator mediator, ILogger<Permissi
     ///     Check if user has a specific resource permission
     /// </summary>
     [HttpPost("resource:check")]
+    [NoBusinessMutationEndpoint("This POST-shaped permission evaluation is read-only and does not grant or revoke access.")]
     [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<bool>> CheckResourcePermission([FromBody] HasResourcePermissionQuery query)
@@ -167,6 +170,7 @@ public class PermissionEvaluationController(IMediator mediator, ILogger<Permissi
     ///     Resolve permission hierarchy for a specific permission check
     /// </summary>
     [HttpPost(":resolve-hierarchy")]
+    [NoBusinessMutationEndpoint("Permission hierarchy resolution is a read-only calculation and does not change authorization state.")]
     [ProducesResponseType(typeof(PermissionHierarchyResult), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<PermissionHierarchyResult>> ResolvePermissionHierarchy([FromBody] ResolvePermissionHierarchyQuery query)

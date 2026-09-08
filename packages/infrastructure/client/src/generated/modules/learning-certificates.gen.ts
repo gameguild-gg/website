@@ -17,7 +17,7 @@ export class LearningCertificatesModule {
 
   /**
    */
-  async getApiCertificates(id: string): Promise<Result<Types.LearningCertificatesCertificate, ApiError>> {
+  async getApiCertificates(id: string): Promise<Result<Types.LearningCertificatesCertificateDto, ApiError>> {
     const url = `/api/certificates/${id}`;
 
     const result = await this.client.request({
@@ -28,7 +28,7 @@ export class LearningCertificatesModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.LearningCertificatesCertificateSchema, result.data, 'response');
+      const validatedData = safeParse(Types.LearningCertificatesCertificateDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -55,7 +55,7 @@ export class LearningCertificatesModule {
 
   /**
    */
-  async getApiCertificatesCourse(courseId: string): Promise<Result<Array<Types.LearningCertificatesCertificate>, ApiError>> {
+  async getApiCertificatesCourse(courseId: string): Promise<Result<Array<Types.LearningCertificatesCertificateDto>, ApiError>> {
     const url = `/api/certificates/course/${courseId}`;
 
     const result = await this.client.request({
@@ -64,12 +64,12 @@ export class LearningCertificatesModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.LearningCertificatesCertificate>, ApiError>;
+    return result as Result<Array<Types.LearningCertificatesCertificateDto>, ApiError>;
   }
 
   /**
    */
-  async getApiCertificatesExpiring(query?: { days?: number }): Promise<Result<Array<Types.LearningCertificatesCertificate>, ApiError>> {
+  async getApiCertificatesExpiring(query?: { days?: number }): Promise<Result<Array<Types.LearningCertificatesCertificateDto>, ApiError>> {
     const url = '/api/certificates/expiring';
 
     const result = await this.client.request({
@@ -79,12 +79,12 @@ export class LearningCertificatesModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.LearningCertificatesCertificate>, ApiError>;
+    return result as Result<Array<Types.LearningCertificatesCertificateDto>, ApiError>;
   }
 
   /**
    */
-  async postApiCertificatesIssue(body: Types.LearningCertificatesIssueCertificateInput): Promise<Result<Types.LearningCertificatesCertificate, ApiError>> {
+  async postApiCertificatesIssue(body: Types.LearningCertificatesIssueCertificateInput): Promise<Result<Types.LearningCertificatesCertificateDto, ApiError>> {
     const url = '/api/certificates/issue';
 
     // Validate request body
@@ -99,7 +99,7 @@ export class LearningCertificatesModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.LearningCertificatesCertificateSchema, result.data, 'response');
+      const validatedData = safeParse(Types.LearningCertificatesCertificateDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -108,7 +108,7 @@ export class LearningCertificatesModule {
 
   /**
    */
-  async getApiCertificatesMy(): Promise<Result<Array<Types.LearningCertificatesCertificate>, ApiError>> {
+  async getApiCertificatesMy(): Promise<Result<Array<Types.LearningCertificatesCertificateDto>, ApiError>> {
     const url = '/api/certificates/my';
 
     const result = await this.client.request({
@@ -117,14 +117,14 @@ export class LearningCertificatesModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.LearningCertificatesCertificate>, ApiError>;
+    return result as Result<Array<Types.LearningCertificatesCertificateDto>, ApiError>;
   }
 
   /**
    */
   async postApiCertificatesTemplates(
     body: Types.LearningCertificatesCreateCertificateTemplateInput,
-  ): Promise<Result<Types.LearningCertificatesCertificateTemplateDetail, ApiError>> {
+  ): Promise<Result<Types.LearningCertificatesCertificateTemplateDetailDto, ApiError>> {
     const url = '/api/certificates/templates';
 
     // Validate request body
@@ -139,7 +139,7 @@ export class LearningCertificatesModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.LearningCertificatesCertificateTemplateDetailSchema, result.data, 'response');
+      const validatedData = safeParse(Types.LearningCertificatesCertificateTemplateDetailDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -148,7 +148,7 @@ export class LearningCertificatesModule {
 
   /**
    */
-  async getApiCertificatesTemplates(templateId: string): Promise<Result<Types.LearningCertificatesCertificateTemplateDetail, ApiError>> {
+  async getApiCertificatesTemplates(templateId: string): Promise<Result<Types.LearningCertificatesCertificateTemplateDetailDto, ApiError>> {
     const url = `/api/certificates/templates/${templateId}`;
 
     const result = await this.client.request({
@@ -159,7 +159,7 @@ export class LearningCertificatesModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.LearningCertificatesCertificateTemplateDetailSchema, result.data, 'response');
+      const validatedData = safeParse(Types.LearningCertificatesCertificateTemplateDetailDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -171,7 +171,7 @@ export class LearningCertificatesModule {
   async putApiCertificatesTemplates(
     templateId: string,
     body: Types.LearningCertificatesUpdateCertificateTemplateInput,
-  ): Promise<Result<Types.LearningCertificatesCertificateTemplateDetail, ApiError>> {
+  ): Promise<Result<Types.LearningCertificatesCertificateTemplateDetailDto, ApiError>> {
     const url = `/api/certificates/templates/${templateId}`;
 
     // Validate request body
@@ -186,7 +186,7 @@ export class LearningCertificatesModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.LearningCertificatesCertificateTemplateDetailSchema, result.data, 'response');
+      const validatedData = safeParse(Types.LearningCertificatesCertificateTemplateDetailDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -209,7 +209,7 @@ export class LearningCertificatesModule {
 
   /**
    */
-  async getApiCertificatesTemplatesCourse(courseId: string): Promise<Result<Array<Types.LearningCertificatesCertificateTemplate>, ApiError>> {
+  async getApiCertificatesTemplatesCourse(courseId: string): Promise<Result<Array<Types.LearningCertificatesCertificateTemplateDto>, ApiError>> {
     const url = `/api/certificates/templates/course/${courseId}`;
 
     const result = await this.client.request({
@@ -218,7 +218,7 @@ export class LearningCertificatesModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.LearningCertificatesCertificateTemplate>, ApiError>;
+    return result as Result<Array<Types.LearningCertificatesCertificateTemplateDto>, ApiError>;
   }
 
   /**

@@ -479,7 +479,7 @@ export class CommerceSubscriptionsModule {
    *
    * Retrieves billing history for a specific subscription.
    */
-  async getSubscriptionsBillingHistory(subscriptionId: string): Promise<Result<Array<Types.CommerceSubscriptionsBillingHistory>, ApiError>> {
+  async getSubscriptionsBillingHistory(subscriptionId: string): Promise<Result<Array<Types.CommerceSubscriptionsBillingHistoryDto>, ApiError>> {
     const url = `/api/v1/subscriptions/${subscriptionId}/billing-history`;
 
     const result = await this.client.request({
@@ -488,7 +488,7 @@ export class CommerceSubscriptionsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.CommerceSubscriptionsBillingHistory>, ApiError>;
+    return result as Result<Array<Types.CommerceSubscriptionsBillingHistoryDto>, ApiError>;
   }
 
   /**
@@ -514,7 +514,7 @@ export class CommerceSubscriptionsModule {
    *
    * Retrieves usage information and limits for a specific subscription.
    */
-  async getSubscriptionsUsage(subscriptionId: string): Promise<Result<Types.CommerceSubscriptionsSubscriptionUsage, ApiError>> {
+  async getSubscriptionsUsage(subscriptionId: string): Promise<Result<Types.CommerceSubscriptionsSubscriptionUsageDto, ApiError>> {
     const url = `/api/v1/subscriptions/${subscriptionId}/usage`;
 
     const result = await this.client.request({
@@ -525,7 +525,7 @@ export class CommerceSubscriptionsModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.CommerceSubscriptionsSubscriptionUsageSchema, result.data, 'response');
+      const validatedData = safeParse(Types.CommerceSubscriptionsSubscriptionUsageDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 

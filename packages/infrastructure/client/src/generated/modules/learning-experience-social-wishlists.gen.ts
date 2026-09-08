@@ -20,7 +20,7 @@ export class LearningExperienceSocialWishlistsModule {
   async postApiSocialWishlist(
     courseId: string,
     query?: { notifyOnSale?: boolean; notifyOnUpdate?: boolean },
-  ): Promise<Result<Types.LearningExperienceSocialServicesCourseWishlist, ApiError>> {
+  ): Promise<Result<Types.LearningExperienceSocialServicesCourseWishlistDto, ApiError>> {
     const url = `/api/social/wishlist/${courseId}`;
 
     const result = await this.client.request({
@@ -32,7 +32,7 @@ export class LearningExperienceSocialWishlistsModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.LearningExperienceSocialServicesCourseWishlistSchema, result.data, 'response');
+      const validatedData = safeParse(Types.LearningExperienceSocialServicesCourseWishlistDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -72,7 +72,7 @@ export class LearningExperienceSocialWishlistsModule {
   async putApiSocialWishlistPreferences(
     courseId: string,
     body: Types.LearningExperienceSocialServicesWishlistPreferencesInput,
-  ): Promise<Result<Types.LearningExperienceSocialServicesCourseWishlist, ApiError>> {
+  ): Promise<Result<Types.LearningExperienceSocialServicesCourseWishlistDto, ApiError>> {
     const url = `/api/social/wishlist/${courseId}/preferences`;
 
     // Validate request body
@@ -87,7 +87,7 @@ export class LearningExperienceSocialWishlistsModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.LearningExperienceSocialServicesCourseWishlistSchema, result.data, 'response');
+      const validatedData = safeParse(Types.LearningExperienceSocialServicesCourseWishlistDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -99,7 +99,7 @@ export class LearningExperienceSocialWishlistsModule {
   async getApiSocialWishlistMe(query?: {
     skip?: number;
     take?: number;
-  }): Promise<Result<Array<Types.LearningExperienceSocialServicesCourseWishlist>, ApiError>> {
+  }): Promise<Result<Array<Types.LearningExperienceSocialServicesCourseWishlistDto>, ApiError>> {
     const url = '/api/social/wishlist/me';
 
     const result = await this.client.request({
@@ -109,7 +109,7 @@ export class LearningExperienceSocialWishlistsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.LearningExperienceSocialServicesCourseWishlist>, ApiError>;
+    return result as Result<Array<Types.LearningExperienceSocialServicesCourseWishlistDto>, ApiError>;
   }
 }
 

@@ -1,3 +1,4 @@
+using GameGuild.CQRS;
 using GameGuild.Identity.Context.Actors;
 using GameGuild.Learning.Abstractions;
 using GameGuild.Learning.Attributes;
@@ -20,12 +21,15 @@ namespace GameGuild.Learning.Experience.Social.Controllers;
 public class RepliesController : LearningControllerBase
 {
     private readonly IReplyService _replyService;
+    private readonly ISender _sender;
 
     public RepliesController(
         IReplyService replyService,
+        ISender sender,
         IActorContextAccessor actorContextAccessor) : base(actorContextAccessor)
     {
         _replyService = replyService;
+        _sender = sender;
     }
 
     /// <summary>
@@ -40,12 +44,11 @@ public class RepliesController : LearningControllerBase
         CancellationToken cancellationToken = default)
     {
         var userId = GetRequiredUserId();
-        var result = await _replyService.CreateReplyAsync(
+        var result = await _sender.Send(new CreateReplyCommand(
             discussionId,
             userId,
             request.Content,
-            request.ParentReplyId,
-            cancellationToken).ConfigureAwait(false);
+            request.ParentReplyId), cancellationToken).ConfigureAwait(false);
 
         if (!result.IsSuccess)
         {
@@ -87,7 +90,7 @@ public class RepliesController : LearningControllerBase
     public async Task<IActionResult> AcceptReplyAsAnswer(Guid id, CancellationToken cancellationToken = default)
     {
         var userId = GetRequiredUserId();
-        var result = await _replyService.AcceptReplyAsAnswerAsync(id, userId, cancellationToken).ConfigureAwait(false);
+        var result = await _sender.Send(new AcceptReplyAsAnswerCommand(id, userId), cancellationToken).ConfigureAwait(false);
 
         if (!result.IsSuccess)
         {
@@ -105,7 +108,7 @@ public class RepliesController : LearningControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UpvoteReply(Guid id, CancellationToken cancellationToken = default)
     {
-        var result = await _replyService.UpvoteReplyAsync(id, cancellationToken).ConfigureAwait(false);
+        var result = await _sender.Send(new UpvoteReplyCommand(id), cancellationToken).ConfigureAwait(false);
 
         if (!result.IsSuccess)
         {
@@ -124,7 +127,7 @@ public class RepliesController : LearningControllerBase
     public async Task<IActionResult> DeleteReply(Guid id, CancellationToken cancellationToken = default)
     {
         var userId = GetRequiredUserId();
-        var result = await _replyService.DeleteReplyAsync(id, userId, cancellationToken).ConfigureAwait(false);
+        var result = await _sender.Send(new DeleteReplyCommand(id, userId), cancellationToken).ConfigureAwait(false);
 
         if (!result.IsSuccess)
         {

@@ -141,7 +141,6 @@ public class AssetsCoverageCompletionTests
         var controller = new AssetsController(
             Mock.Of<ISender>(),
             actorAccessor.Object,
-            Mock.Of<IAssetUploadService>(),
             Mock.Of<IAssetUploadAuthorizationService>(),
             Mock.Of<IAssetTextExtractionService>());
 
@@ -615,6 +614,8 @@ public class AssetsCoverageCompletionTests
             Mock.Of<IAssetContentRepository>(),
             Mock.Of<IAssetReferenceRepository>(),
             Mock.Of<IActorContextAccessor>(),
+            Mock.Of<IAssetStorageService>(),
+            Options.Create(new AssetAccessOptions()),
             NullLogger<SecureAssetDeliveryController>.Instance);
 
     private static StorageServiceFactory CreateStorageFactory()

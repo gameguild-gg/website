@@ -63,8 +63,8 @@ public class TestingRequestsController(
 
         try
         {
-            var request = requestDto.ToTestingRequest(userId.Value);
-            var createdRequest = await requestService.CreateTestingRequestAsync(request).ConfigureAwait(false);
+            var createdRequest = await mediator.Send(
+                new CreateTestingRequestEndpointCommand(requestDto, userId.Value)).ConfigureAwait(false);
             return CreatedAtAction(nameof(GetTestingRequest), new { id = createdRequest.Id }, createdRequest);
         }
         catch (KeyNotFoundException ex)
@@ -92,13 +92,12 @@ public class TestingRequestsController(
         UpdateTestingRequestDto requestDto,
         CancellationToken cancellationToken = default)
     {
-        var existingRequest = await requestService.GetTestingRequestByIdAsync(id).ConfigureAwait(false);
-        if (existingRequest == null) return NotFound("The requested testing request was not found.");
-
         try
         {
-            requestDto.UpdateTestingRequest(existingRequest);
-            await requestService.UpdateTestingRequestAsync(existingRequest).ConfigureAwait(false);
+            var updatedRequest = await mediator.Send(
+                new UpdateTestingRequestEndpointCommand(id, requestDto),
+                cancellationToken).ConfigureAwait(false);
+            if (updatedRequest is null) return NotFound("The requested testing request was not found.");
             return ToActionResult(await mediator.Send(
                 new GetTestingRequestDetailQuery(id),
                 cancellationToken).ConfigureAwait(false));
@@ -120,7 +119,7 @@ public class TestingRequestsController(
     [RequireTestingLabPermission(TestingLabActions.Delete, TestingLabResourceTypes.Request, "id")]
     public async Task<ActionResult> DeleteTestingRequest(Guid id)
     {
-        var result = await requestService.DeleteTestingRequestAsync(id).ConfigureAwait(false);
+        var result = await mediator.Send(new DeleteTestingRequestEndpointCommand(id)).ConfigureAwait(false);
         if (!result) return NotFound();
         return NoContent();
     }
@@ -132,7 +131,7 @@ public class TestingRequestsController(
     {
         try
         {
-            var result = await requestService.RestoreTestingRequestAsync(id).ConfigureAwait(false);
+            var result = await mediator.Send(new RestoreTestingRequestEndpointCommand(id)).ConfigureAwait(false);
             if (!result) return NotFound();
             return Ok();
         }
@@ -201,7 +200,9 @@ public class TestingRequestsController(
         TestingRequest request;
         try
         {
-            request = await requestService.CreateSimpleTestingRequestAsync(requestDto, userId.Value).ConfigureAwait(false);
+            request = await mediator.Send(
+                new CreateSimpleTestingRequestEndpointCommand(requestDto, userId.Value),
+                cancellationToken).ConfigureAwait(false);
         }
         catch (UnauthorizedAccessException ex)
         {

@@ -92,7 +92,7 @@ export class UsersPreferencesModule {
   /**
    * Get accessibility settings for user
    */
-  async getUsersPreferencesAccessibility(userId: string): Promise<Result<Types.IdentityUsersUserAccessibilityPreferences, ApiError>> {
+  async getUsersPreferencesAccessibility(userId: string): Promise<Result<Types.IdentityUsersUserAccessibilityPreferencesDto, ApiError>> {
     const url = `/v1/users/${userId}/preferences/accessibility`;
 
     const result = await this.client.request({
@@ -103,7 +103,7 @@ export class UsersPreferencesModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.IdentityUsersUserAccessibilityPreferencesSchema, result.data, 'response');
+      const validatedData = safeParse(Types.IdentityUsersUserAccessibilityPreferencesDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -181,7 +181,7 @@ export class UsersPreferencesModule {
   /**
    * Get localization settings for user
    */
-  async getUsersPreferencesLocalization(userId: string): Promise<Result<Types.IdentityUsersUserLocalizationPreferences, ApiError>> {
+  async getUsersPreferencesLocalization(userId: string): Promise<Result<Types.IdentityUsersUserLocalizationPreferencesDto, ApiError>> {
     const url = `/v1/users/${userId}/preferences/localization`;
 
     const result = await this.client.request({
@@ -192,7 +192,7 @@ export class UsersPreferencesModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.IdentityUsersUserLocalizationPreferencesSchema, result.data, 'response');
+      const validatedData = safeParse(Types.IdentityUsersUserLocalizationPreferencesDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -270,7 +270,7 @@ export class UsersPreferencesModule {
   /**
    * Get notification settings for user
    */
-  async getUsersPreferencesNotifications(userId: string): Promise<Result<Types.IdentityUsersUserNotificationPreferences, ApiError>> {
+  async getUsersPreferencesNotifications(userId: string): Promise<Result<Types.IdentityUsersUserNotificationPreferencesDto, ApiError>> {
     const url = `/v1/users/${userId}/preferences/notifications`;
 
     const result = await this.client.request({
@@ -281,7 +281,7 @@ export class UsersPreferencesModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.IdentityUsersUserNotificationPreferencesSchema, result.data, 'response');
+      const validatedData = safeParse(Types.IdentityUsersUserNotificationPreferencesDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -359,7 +359,7 @@ export class UsersPreferencesModule {
   /**
    * Get privacy settings for user
    */
-  async getUsersPreferencesPrivacy(userId: string): Promise<Result<Types.IdentityUsersUserPrivacyPreferences, ApiError>> {
+  async getUsersPreferencesPrivacy(userId: string): Promise<Result<Types.IdentityUsersUserPrivacyPreferencesDto, ApiError>> {
     const url = `/v1/users/${userId}/preferences/privacy`;
 
     const result = await this.client.request({
@@ -370,7 +370,7 @@ export class UsersPreferencesModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.IdentityUsersUserPrivacyPreferencesSchema, result.data, 'response');
+      const validatedData = safeParse(Types.IdentityUsersUserPrivacyPreferencesDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 

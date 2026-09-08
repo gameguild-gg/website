@@ -1,4 +1,5 @@
 using Asp.Versioning;
+using GameGuild.CQRS;
 using GameGuild.Identity.Authorization;
 using GameGuild.Identity.Context.Actors;
 using GameGuild.Learning.Courses;
@@ -22,6 +23,7 @@ public class RubricsController : BaseApiController
     private readonly IProgramCrudService _programService;
     private readonly IPermissionQueryService _permissionQueryService;
     private readonly ILogger<RubricsController> _logger;
+    private readonly ISender _sender;
 
     public RubricsController(
         IRubricService rubricService,
@@ -29,7 +31,8 @@ public class RubricsController : BaseApiController
         IActorContextAccessor actorContextAccessor,
         IProgramCrudService programService,
         IPermissionQueryService permissionQueryService,
-        ILogger<RubricsController> logger)
+        ILogger<RubricsController> logger,
+        ISender sender)
     {
         _rubricService = rubricService;
         _assessmentService = assessmentService;
@@ -37,6 +40,7 @@ public class RubricsController : BaseApiController
         _programService = programService;
         _permissionQueryService = permissionQueryService;
         _logger = logger;
+        _sender = sender;
     }
 
     /// <summary>
@@ -50,7 +54,7 @@ public class RubricsController : BaseApiController
         if (assessment == null) return NotFound();
         if (!await CanManageCourseAsync(assessment.CourseId).ConfigureAwait(false)) return Forbid();
 
-        var result = await _rubricService.SaveAsync(assessmentId, request).ConfigureAwait(false);
+        var result = await _sender.Send(new PutAssessmentRubricEndpointCommand(assessmentId, request)).ConfigureAwait(false);
         if (!result.IsSuccess)
         {
             return RubricRejection(result.Error);
@@ -89,7 +93,7 @@ public class RubricsController : BaseApiController
         if (assessment == null) return NotFound();
         if (!await CanManageCourseAsync(assessment.CourseId).ConfigureAwait(false)) return Forbid();
 
-        var result = await _rubricService.DeleteAsync(assessmentId).ConfigureAwait(false);
+        var result = await _sender.Send(new DeleteAssessmentRubricEndpointCommand(assessmentId)).ConfigureAwait(false);
         if (!result.IsSuccess)
         {
             return RubricRejection(result.Error);

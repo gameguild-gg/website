@@ -140,7 +140,7 @@ public class AnalyticsControllerTests
             .Setup(service => service.MaterializeAsync(request, It.IsAny<CancellationToken>()))
             .ReturnsAsync(expected);
 
-        var controller = new AnalyticsController(sender.Object, _warehouseService.Object);
+        var controller = new AnalyticsController(new CommandHandlerSender(_warehouseService.Object), _warehouseService.Object);
 
         var result = await controller.RunWarehouse(request, CancellationToken.None);
 

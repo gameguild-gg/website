@@ -315,8 +315,8 @@ public sealed class AiCoverageCompletionTests
     public void AiPromptTemplatesController_ShouldConstruct()
     {
         var controller = new AiPromptTemplatesController(
+            new CommandHandlerSender(Mock.Of<IAiPromptTemplateService>(), Mock.Of<IAiOrchestrator>()),
             Mock.Of<IAiPromptTemplateService>(),
-            Mock.Of<IAiOrchestrator>(),
             Mock.Of<IRequestContextAccessor>());
 
         controller.Should().NotBeNull();
@@ -626,7 +626,7 @@ public sealed class AiCoverageCompletionTests
         requestContextAccessor.SetupGet(accessor => accessor.CurrentUserId).Returns(Guid.NewGuid());
 
         return new AiController(
-            orchestrator ?? Mock.Of<IAiOrchestrator>(),
+            new CommandHandlerSender(orchestrator ?? Mock.Of<IAiOrchestrator>(), Mock.Of<IAiPromptTemplateService>()),
             historyReader ?? Mock.Of<IAiConversationHistoryReader>(),
             requestContextAccessor.Object,
             quotaReader ?? Mock.Of<IResourceQuotaReader>(),
