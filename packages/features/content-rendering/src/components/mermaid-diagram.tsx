@@ -33,7 +33,7 @@ function subscribeToDarkMode(onStoreChange: () => void): () => void {
   };
 }
 
-function useDarkMode(): boolean {
+export function useDarkMode(): boolean {
   return useSyncExternalStore(subscribeToDarkMode, getDarkModeSnapshot, () => false);
 }
 
