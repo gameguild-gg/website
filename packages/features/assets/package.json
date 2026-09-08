@@ -20,7 +20,7 @@
   "dependencies": {
     "@game-guild/ui": "workspace:^",
     "idb": "^8.0.3",
-    "lucide-react": "^1.31.0"
+    "lucide-react": "^1.41.0"
   },
   "peerDependencies": {
     "react": "^19.2.0",

@@ -21,8 +21,8 @@
   "dependencies": {
     "@game-guild/content-rendering": "workspace:*",
     "@game-guild/ui": "workspace:*",
-    "lucide-react": "^1.31.0",
-    "next": "16.3.1",
+    "lucide-react": "^1.41.0",
+    "next": "16.3.4",
     "react": "19.2.8",
     "react-dom": "19.2.8"
   },
@@ -30,7 +30,7 @@
     "@game-guild/eslint-config": "workspace:*",
     "@game-guild/prettier-config": "workspace:*",
     "@game-guild/typescript-config": "workspace:*",
-    "@testing-library/react": "^16.3.2",
+    "@testing-library/react": "^16.3.3",
     "@testing-library/jest-dom": "^7.0.0",
     "@types/node": "^20",
     "@types/react": "^19",
