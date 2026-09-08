@@ -15,14 +15,6 @@ import { Badge } from "@game-guild/ui/components/badge";
 import { Button } from "@game-guild/ui/components/button";
 import { Calendar } from "@game-guild/ui/components/calendar";
 import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuLabel,
-  DropdownMenuTrigger,
-} from "@game-guild/ui/components/dropdown-menu";
-import {
   HoverCard,
   HoverCardContent,
   HoverCardTrigger,
@@ -52,7 +44,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Clock3,
-  ListFilter,
   MapPin,
   MonitorPlay,
   PanelRightClose,
@@ -96,14 +87,6 @@ const eventFilters = [
 ] as const;
 
 type EventFilter = (typeof eventFilters)[number]["value"];
-
-const eventFormats = [
-  { value: "Online", label: "Online" },
-  { value: "InPerson", label: "In-person" },
-  { value: "Hybrid", label: "Hybrid" },
-] as const;
-
-type EventFormat = (typeof eventFormats)[number]["value"];
 
 const mobileCalendarQuery = "(max-width: 767px)";
 
@@ -154,12 +137,6 @@ function eventStart(event: TestingLabTestingEventProjection) {
 function eventEnd(event: TestingLabTestingEventProjection) {
   const date = event.endsAt ? new Date(event.endsAt) : null;
   return date && !Number.isNaN(date.valueOf()) ? date : null;
-}
-
-function eventFormat(event: TestingLabTestingEventProjection): EventFormat {
-  return event.mode === "InPerson" || event.mode === "Hybrid"
-    ? event.mode
-    : "Online";
 }
 
 function eventsInsideRange(
@@ -629,15 +606,11 @@ function TestingLabPlanningSidebar({
   onAnchorChange,
   events,
   analyticsByEvent,
-  activeFormats,
-  onFormatChange,
 }: {
   anchor: Date;
   onAnchorChange: (date: Date) => void;
   events: TestingLabTestingEventProjection[];
   analyticsByEvent: Map<string, TestingLabCalendarEventAnalytics>;
-  activeFormats: Set<EventFormat>;
-  onFormatChange: (format: EventFormat, checked: boolean) => void;
 }) {
   const eventCount = events.length;
   const testingHours = events.reduce((total, event) => {
@@ -662,15 +635,6 @@ function TestingLabPlanningSidebar({
   const fillRate = capacity.available
     ? Math.round((capacity.registered / capacity.available) * 100)
     : 0;
-  const activeFormatLabel =
-    activeFormats.size === eventFormats.length
-      ? "All formats"
-      : activeFormats.size === 0
-        ? "No formats"
-        : activeFormats.size === 1
-          ? eventFormats.find(({ value }) => activeFormats.has(value))?.label
-          : `${activeFormats.size} formats`;
-
   return (
     <aside
       aria-label="Testing Lab planning"
@@ -753,49 +717,6 @@ function TestingLabPlanningSidebar({
           </div>
         )}
       </section>
-
-      <Separator />
-
-      <section aria-labelledby="visible-events-title" className="p-4">
-        <h2 id="visible-events-title" className="text-sm font-semibold">
-          Display
-        </h2>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Choose which event formats appear.
-        </p>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="mt-3 w-full justify-between"
-              aria-label="Filter visible event formats"
-            >
-              <span className="flex items-center gap-2">
-                <ListFilter data-icon="inline-start" aria-hidden="true" />
-                {activeFormatLabel}
-              </span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuGroup>
-              <DropdownMenuLabel>Event format</DropdownMenuLabel>
-              {eventFormats.map((eventFormat) => (
-                <DropdownMenuCheckboxItem
-                  key={eventFormat.value}
-                  checked={activeFormats.has(eventFormat.value)}
-                  onCheckedChange={(checked) =>
-                    onFormatChange(eventFormat.value, checked)
-                  }
-                >
-                  {eventFormat.label}
-                </DropdownMenuCheckboxItem>
-              ))}
-            </DropdownMenuGroup>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </section>
     </aside>
   );
 }
@@ -825,9 +746,6 @@ export function TestingLabCalendar({
   const [anchor, setAnchor] = useState(() => initialDate);
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<EventFilter>("all");
-  const [activeFormats, setActiveFormats] = useState<Set<EventFormat>>(
-    () => new Set(eventFormats.map(({ value }) => value)),
-  );
   const [planningPreference, setPlanningPreference] = useState<boolean | null>(
     null,
   );
@@ -847,14 +765,13 @@ export function TestingLabCalendar({
     return events.filter((event) => {
       const matchesStatus =
         statusFilter === "all" || event.status === statusFilter;
-      const matchesFormat = activeFormats.has(eventFormat(event));
       const matchesQuery =
         normalizedQuery.length === 0 ||
         event.name?.toLocaleLowerCase().includes(normalizedQuery) ||
         event.description?.toLocaleLowerCase().includes(normalizedQuery);
-      return matchesStatus && matchesFormat && matchesQuery;
+      return matchesStatus && matchesQuery;
     });
-  }, [activeFormats, events, query, statusFilter]);
+  }, [events, query, statusFilter]);
   const periodEvents = useMemo(
     () => eventsInsideRange(visibleEvents, range),
     [range, visibleEvents],
@@ -863,15 +780,6 @@ export function TestingLabCalendar({
   function openCreateEvent(date: Date | null) {
     setCreateDate(date);
     setCreateOpen(true);
-  }
-
-  function updateEventFormat(eventFormat: EventFormat, checked: boolean) {
-    setActiveFormats((current) => {
-      const next = new Set(current);
-      if (checked) next.add(eventFormat);
-      else next.delete(eventFormat);
-      return next;
-    });
   }
 
   return (
@@ -1047,8 +955,6 @@ export function TestingLabCalendar({
             onAnchorChange={setAnchor}
             events={periodEvents}
             analyticsByEvent={analyticsByEvent}
-            activeFormats={activeFormats}
-            onFormatChange={updateEventFormat}
           />
         ) : null}
       </div>

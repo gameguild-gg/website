@@ -254,14 +254,15 @@ describe("TestingLabCalendar", () => {
     expect(
       within(sidebar).getByText("11 of 18 seats filled"),
     ).toBeInTheDocument();
+    expect(within(sidebar).queryByText("Display")).not.toBeInTheDocument();
     expect(
-      within(sidebar).getByRole("button", {
+      within(sidebar).queryByRole("button", {
         name: "Filter visible event formats",
       }),
-    ).toHaveTextContent("All formats");
+    ).not.toBeInTheDocument();
   });
 
-  it("filters by format from a compact menu and can collapse the details panel", async () => {
+  it("can collapse the details panel", async () => {
     const user = userEvent.setup();
     render(
       <TestingLabCalendar
@@ -270,22 +271,6 @@ describe("TestingLabCalendar", () => {
         initialDate={new Date(2030, 7, 10)}
       />,
     );
-
-    const sidebar = screen.getByRole("complementary", {
-      name: "Testing Lab planning",
-    });
-    await user.click(
-      within(sidebar).getByRole("button", {
-        name: "Filter visible event formats",
-      }),
-    );
-    await user.click(
-      await screen.findByRole("menuitemcheckbox", { name: "Online" }),
-    );
-
-    expect(screen.queryByText("Remote build review")).not.toBeInTheDocument();
-    expect(screen.getByText("Campus playtest")).toBeInTheDocument();
-    expect(within(sidebar).getByText("1 event")).toBeInTheDocument();
 
     await user.click(
       screen.getByRole("button", { name: "Hide details panel" }),
