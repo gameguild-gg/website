@@ -23,7 +23,7 @@ export class SocialBlogPostsModule {
     featured?: boolean;
     skip?: number;
     take?: number;
-  }): Promise<Result<Array<Types.SocialBlogBlogPost>, ApiError>> {
+  }): Promise<Result<Array<Types.SocialBlogBlogPostDto>, ApiError>> {
     const url = '/api/social/blog';
 
     const result = await this.client.request({
@@ -33,12 +33,12 @@ export class SocialBlogPostsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.SocialBlogBlogPost>, ApiError>;
+    return result as Result<Array<Types.SocialBlogBlogPostDto>, ApiError>;
   }
 
   /**
    */
-  async postApiSocialBlog(body: Types.SocialBlogCreateBlogPostInput): Promise<Result<Types.SocialBlogBlogPost, ApiError>> {
+  async postApiSocialBlog(body: Types.SocialBlogCreateBlogPostInput): Promise<Result<Types.SocialBlogBlogPostDto, ApiError>> {
     const url = '/api/social/blog';
 
     // Validate request body
@@ -53,7 +53,7 @@ export class SocialBlogPostsModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.SocialBlogBlogPostSchema, result.data, 'response');
+      const validatedData = safeParse(Types.SocialBlogBlogPostDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 

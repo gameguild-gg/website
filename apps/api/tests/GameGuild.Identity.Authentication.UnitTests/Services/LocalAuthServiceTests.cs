@@ -547,15 +547,17 @@ public class LocalAuthServiceTests
     }
 
     [Fact]
-    public async Task LocalSignUpAsync_RegistersDurableUserCreatedEvent()
+    public async Task LocalSignUpAsync_RecordsDurableUserCreatedEventBeforeSave()
     {
-        User? persistedUser = null;
+        User? created = null;
+        var eventPresentAtSave = false;
         _userRepoMock.Setup(x => x.ExistsByEmailAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
         _userRepoMock.Setup(x => x.AddAsync(It.IsAny<User>(), It.IsAny<CancellationToken>()))
-            .Callback<User, CancellationToken>((user, _) => persistedUser = user)
+            .Callback<User, CancellationToken>((user, _) => created = user)
             .Returns(Task.CompletedTask);
         _userRepoMock.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .Callback(() => eventPresentAtSave = created?.IntegrationEvents.OfType<UserCreatedEvent>().Any() == true)
             .Returns(Task.CompletedTask);
         _jwtTokenServiceMock.Setup(x => x.GenerateAccessTokenAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string[]>(), It.IsAny<Guid?>(), It.IsAny<int>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync("at");
@@ -566,10 +568,10 @@ public class LocalAuthServiceTests
 
         await _sut.LocalSignUpAsync(request);
 
-        persistedUser.Should().NotBeNull();
-        persistedUser!.IntegrationEvents.Should().ContainSingle()
-            .Which.Should().BeOfType<UserCreatedEvent>()
-            .Which.UserId.Should().Be(persistedUser.Id);
+        eventPresentAtSave.Should().BeTrue();
+        created!.IntegrationEvents.OfType<UserCreatedEvent>().Should().ContainSingle()
+            .Which.UserId.Should().Be(created.Id);
+        _publisherMock.VerifyNoOtherCalls();
     }
 
     // ── RefreshTokenAsync ─────────────────────────────────────

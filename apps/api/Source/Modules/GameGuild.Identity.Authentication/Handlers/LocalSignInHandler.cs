@@ -14,7 +14,7 @@ public sealed class LocalSignInHandler(
     IHttpContextAccessor httpContextAccessor,
     ILogger<LocalSignInHandler> logger,
     FluentValidation.IValidator<LocalSignInCommand> validator
-) : IRequestHandler<LocalSignInCommand, SignInResponse>
+) : ICommandHandler<LocalSignInCommand, SignInResponse>
 {
     public async Task<SignInResponse> Handle(LocalSignInCommand command, CancellationToken cancellationToken)
     {

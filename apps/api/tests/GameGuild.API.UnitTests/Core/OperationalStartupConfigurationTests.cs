@@ -8,6 +8,47 @@ namespace GameGuild.API.UnitTests.Core;
 
 public sealed class OperationalStartupConfigurationTests
 {
+    [Fact]
+    public void Validate_RequiresSesRegionAndSenderWhenSesDeliveryIsEnabled()
+    {
+        var missingRegion = CompleteValues();
+        missingRegion["EmailDelivery:Provider"] = "Ses";
+        missingRegion.Remove("EmailDelivery:Ses:Region");
+
+        var missingFromEmail = CompleteValues();
+        missingFromEmail["EmailDelivery:Provider"] = "Ses";
+        missingFromEmail["EmailDelivery:Ses:Region"] = "us-east-1";
+        missingFromEmail.Remove("EmailDelivery:FromEmail");
+
+        OperationalStartupConfiguration.Validate(CreateConfiguration(missingRegion), Environments.Production)
+            .Should().ContainSingle(message => message.Contains("AWS region", StringComparison.Ordinal));
+        OperationalStartupConfiguration.Validate(CreateConfiguration(missingFromEmail), Environments.Production)
+            .Should().ContainSingle(message => message.Contains("sender address", StringComparison.Ordinal));
+    }
+
+    [Theory]
+    [InlineData("SES")]
+    [InlineData(" ses ")]
+    [InlineData(null)]
+    public void Validate_AcceptsSesIncludingExistingRegionOnlyConfiguration(string? provider)
+    {
+        var values = CompleteValues();
+        values["EmailDelivery:Provider"] = provider;
+        values["EmailDelivery:Ses:Region"] = "us-east-1";
+        values.Remove("EmailDelivery:SmtpHost");
+        values.Remove("EmailDelivery:SendGridApiKey");
+        OperationalStartupConfiguration.Validate(CreateConfiguration(values), Environments.Production).Should().BeEmpty();
+    }
+
+    [Fact]
+    public void Validate_RequiresSesRegionWhenSesIsExplicitlySelected()
+    {
+        var values = CompleteValues();
+        values["EmailDelivery:Provider"] = "Ses";
+        OperationalStartupConfiguration.Validate(CreateConfiguration(values), Environments.Production)
+            .Should().ContainSingle(message => message.Contains("SES", StringComparison.Ordinal));
+    }
+
     [Theory]
     [InlineData("Development")]
     [InlineData("Test")]
@@ -40,18 +81,24 @@ public sealed class OperationalStartupConfigurationTests
     }
 
     [Fact]
-    public void Validate_RequiresSesRegionWhenEmailDeliveryIsEnabled()
+    public void Validate_RequiresProviderSpecificEmailConfiguration()
     {
-        var missingRegion = CompleteValues();
-        missingRegion.Remove("EmailDelivery:Ses:Region");
+        var smtp = CompleteValues();
+        smtp.Remove("EmailDelivery:SmtpHost");
 
-        var missingFromEmail = CompleteValues();
-        missingFromEmail.Remove("EmailDelivery:FromEmail");
+        var sendGrid = CompleteValues();
+        sendGrid["EmailDelivery:Provider"] = "SendGrid";
+        sendGrid.Remove("EmailDelivery:SendGridApiKey");
 
-        OperationalStartupConfiguration.Validate(CreateConfiguration(missingRegion), Environments.Production)
-            .Should().ContainSingle(message => message.Contains("AWS region", StringComparison.Ordinal));
-        OperationalStartupConfiguration.Validate(CreateConfiguration(missingFromEmail), Environments.Production)
-            .Should().ContainSingle(message => message.Contains("sender address", StringComparison.Ordinal));
+        var unsupported = CompleteValues();
+        unsupported["EmailDelivery:Provider"] = "Unknown";
+
+        OperationalStartupConfiguration.Validate(CreateConfiguration(smtp), Environments.Production)
+            .Should().ContainSingle(message => message.Contains("SMTP host", StringComparison.Ordinal));
+        OperationalStartupConfiguration.Validate(CreateConfiguration(sendGrid), Environments.Production)
+            .Should().ContainSingle(message => message.Contains("SendGrid API key", StringComparison.Ordinal));
+        OperationalStartupConfiguration.Validate(CreateConfiguration(unsupported), Environments.Production)
+            .Should().ContainSingle(message => message.Contains("supported", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]
@@ -68,6 +115,26 @@ public sealed class OperationalStartupConfigurationTests
     }
 
     [Fact]
+    public void Validate_RejectsNonPositiveSmtpPort()
+    {
+        var values = CompleteValues();
+        values["EmailDelivery:SmtpPort"] = "0";
+
+        OperationalStartupConfiguration.Validate(CreateConfiguration(values), Environments.Production)
+            .Should().ContainSingle(message => message.Contains("positive SMTP port", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Validate_RejectsMissingSmtpPort()
+    {
+        var values = CompleteValues();
+        values.Remove("EmailDelivery:SmtpPort");
+
+        OperationalStartupConfiguration.Validate(CreateConfiguration(values), Environments.Production)
+            .Should().ContainSingle(message => message.Contains("positive SMTP port", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public void Validate_RejectsPlaceholderAndShortSecrets()
     {
         var values = CompleteValues();
@@ -78,6 +145,20 @@ public sealed class OperationalStartupConfigurationTests
 
         failures.Should().Contain(message => message.Contains("JWT secret", StringComparison.Ordinal));
         failures.Should().Contain(message => message.Contains("encryption key", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("not-base64")]
+    [InlineData("c2hvcnQ=")]
+    public void Validate_RejectsInvalidAssetTokenSigningKeys(string secret)
+    {
+        var values = CompleteValues();
+        values["Assets:Token:SecretKey"] = secret;
+
+        var failures = OperationalStartupConfiguration.Validate(CreateConfiguration(values), Environments.Production);
+
+        failures.Should().ContainSingle(message => message.Contains("asset token signing key", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]
@@ -120,11 +201,15 @@ public sealed class OperationalStartupConfigurationTests
         ["Redis:Enabled"] = "true",
         ["Redis:ConnectionString"] = "redis:6379",
         ["EmailDelivery:Enabled"] = "true",
+        ["EmailDelivery:Provider"] = "Smtp",
         ["EmailDelivery:FromEmail"] = "no-reply@example.com",
-        ["EmailDelivery:Ses:Region"] = "us-east-1",
+        ["EmailDelivery:SmtpHost"] = "mailhog",
+        ["EmailDelivery:SmtpPort"] = "1025",
+        ["EmailDelivery:SendGridApiKey"] = "sendgrid-key",
         ["Assets:Storage:ServiceUrl"] = "http://garage:3900",
         ["Assets:Storage:AccessKey"] = "access-key",
         ["Assets:Storage:SecretKey"] = "secret-key",
+        ["Assets:Token:SecretKey"] = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
         ["Assets:Storage:BucketName"] = "assets"
     };
 }

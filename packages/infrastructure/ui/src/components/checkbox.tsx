@@ -1,11 +1,16 @@
 "use client"
 
+import * as React from "react"
 import { Checkbox as CheckboxPrimitive } from "@base-ui/react/checkbox"
 
 import { cn } from "@game-guild/ui/lib/utils"
 import { CheckIcon } from "lucide-react"
 
-function Checkbox({ className, ...props }: CheckboxPrimitive.Root.Props) {
+function Checkbox({ className, checked, defaultChecked, indeterminate, onCheckedChange, ...props }: Omit<CheckboxPrimitive.Root.Props, "checked" | "defaultChecked"> & {
+  checked?: boolean | "indeterminate"
+  defaultChecked?: boolean | "indeterminate"
+}) {
+  const [defaultMixed, setDefaultMixed] = React.useState(defaultChecked === "indeterminate")
   return (
     <CheckboxPrimitive.Root
       data-slot="checkbox"
@@ -14,6 +19,13 @@ function Checkbox({ className, ...props }: CheckboxPrimitive.Root.Props) {
         className
       )}
       {...props}
+      checked={checked === "indeterminate" ? false : checked}
+      defaultChecked={defaultChecked === "indeterminate" ? false : defaultChecked}
+      indeterminate={indeterminate ?? (checked === "indeterminate" || (checked === undefined && defaultMixed))}
+      onCheckedChange={(next, details) => {
+        onCheckedChange?.(next, details)
+        if (!details.isCanceled) setDefaultMixed(false)
+      }}
     >
       <CheckboxPrimitive.Indicator
         data-slot="checkbox-indicator"

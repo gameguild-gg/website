@@ -17,7 +17,10 @@ export class LearningCoursesLessonInteractionEventsModule {
 
   /**
    */
-  async getCoursesInteractionsEvents(programId: string, interactionId: string): Promise<Result<Array<Types.LearningCoursesContentInteractionEvent>, ApiError>> {
+  async getCoursesInteractionsEvents(
+    programId: string,
+    interactionId: string,
+  ): Promise<Result<Array<Types.LearningCoursesContentInteractionEventDto>, ApiError>> {
     const url = `/v1/courses/${programId}/interactions/${interactionId}/events`;
 
     const result = await this.client.request({
@@ -26,7 +29,7 @@ export class LearningCoursesLessonInteractionEventsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.LearningCoursesContentInteractionEvent>, ApiError>;
+    return result as Result<Array<Types.LearningCoursesContentInteractionEventDto>, ApiError>;
   }
 
   /**
@@ -35,7 +38,7 @@ export class LearningCoursesLessonInteractionEventsModule {
     programId: string,
     interactionId: string,
     body: Types.LearningCoursesRecordContentInteractionEventInput,
-  ): Promise<Result<Types.LearningCoursesContentInteractionEvent, ApiError>> {
+  ): Promise<Result<Types.LearningCoursesContentInteractionEventDto, ApiError>> {
     const url = `/v1/courses/${programId}/interactions/${interactionId}/events`;
 
     // Validate request body
@@ -50,7 +53,7 @@ export class LearningCoursesLessonInteractionEventsModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.LearningCoursesContentInteractionEventSchema, result.data, 'response');
+      const validatedData = safeParse(Types.LearningCoursesContentInteractionEventDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 

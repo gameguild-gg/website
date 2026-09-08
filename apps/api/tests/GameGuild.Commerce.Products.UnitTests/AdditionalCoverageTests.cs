@@ -778,7 +778,8 @@ public class ProductControllerConstructorTests
     {
         var controller = new EntitlementsController(
             new Mock<IEntitlementService>().Object,
-            new Mock<IActorContextAccessor>().Object);
+            new Mock<IActorContextAccessor>().Object,
+            new Mock<ISender>().Object);
         controller.Should().NotBeNull();
     }
 

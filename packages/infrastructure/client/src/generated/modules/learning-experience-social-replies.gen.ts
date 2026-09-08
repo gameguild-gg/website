@@ -20,7 +20,7 @@ export class LearningExperienceSocialRepliesModule {
   async getApiSocialDiscussionsReplies(
     discussionId: string,
     query?: { skip?: number; take?: number },
-  ): Promise<Result<Array<Types.LearningExperienceSocialServicesDiscussionReply>, ApiError>> {
+  ): Promise<Result<Array<Types.LearningExperienceSocialServicesDiscussionReplyDto>, ApiError>> {
     const url = `/api/social/discussions/${discussionId}/replies`;
 
     const result = await this.client.request({
@@ -30,7 +30,7 @@ export class LearningExperienceSocialRepliesModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.LearningExperienceSocialServicesDiscussionReply>, ApiError>;
+    return result as Result<Array<Types.LearningExperienceSocialServicesDiscussionReplyDto>, ApiError>;
   }
 
   /**
@@ -38,7 +38,7 @@ export class LearningExperienceSocialRepliesModule {
   async postApiSocialDiscussionsReplies(
     discussionId: string,
     body: Types.LearningExperienceSocialServicesCreateReplyInput,
-  ): Promise<Result<Types.LearningExperienceSocialServicesDiscussionReply, ApiError>> {
+  ): Promise<Result<Types.LearningExperienceSocialServicesDiscussionReplyDto, ApiError>> {
     const url = `/api/social/discussions/${discussionId}/replies`;
 
     // Validate request body
@@ -53,7 +53,7 @@ export class LearningExperienceSocialRepliesModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.LearningExperienceSocialServicesDiscussionReplySchema, result.data, 'response');
+      const validatedData = safeParse(Types.LearningExperienceSocialServicesDiscussionReplyDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -76,7 +76,7 @@ export class LearningExperienceSocialRepliesModule {
 
   /**
    */
-  async postApiSocialRepliesAccept(id: string): Promise<Result<Types.LearningExperienceSocialServicesDiscussionReply, ApiError>> {
+  async postApiSocialRepliesAccept(id: string): Promise<Result<Types.LearningExperienceSocialServicesDiscussionReplyDto, ApiError>> {
     const url = `/api/social/replies/${id}/accept`;
 
     const result = await this.client.request({
@@ -87,7 +87,7 @@ export class LearningExperienceSocialRepliesModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.LearningExperienceSocialServicesDiscussionReplySchema, result.data, 'response');
+      const validatedData = safeParse(Types.LearningExperienceSocialServicesDiscussionReplyDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -96,7 +96,7 @@ export class LearningExperienceSocialRepliesModule {
 
   /**
    */
-  async postApiSocialRepliesUpvote(id: string): Promise<Result<Types.LearningExperienceSocialServicesDiscussionReply, ApiError>> {
+  async postApiSocialRepliesUpvote(id: string): Promise<Result<Types.LearningExperienceSocialServicesDiscussionReplyDto, ApiError>> {
     const url = `/api/social/replies/${id}/upvote`;
 
     const result = await this.client.request({
@@ -107,7 +107,7 @@ export class LearningExperienceSocialRepliesModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.LearningExperienceSocialServicesDiscussionReplySchema, result.data, 'response');
+      const validatedData = safeParse(Types.LearningExperienceSocialServicesDiscussionReplyDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 

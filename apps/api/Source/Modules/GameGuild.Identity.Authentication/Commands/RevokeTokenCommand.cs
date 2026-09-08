@@ -5,7 +5,7 @@ namespace GameGuild.Identity.Authentication;
 /// <summary>
 ///     Command to handle token revocation
 /// </summary>
-public class RevokeTokenCommand : IRequest<Unit>
+public class RevokeTokenCommand : ICommand
 {
     /// <summary>
     ///     The refresh token to revoke

@@ -1,3 +1,4 @@
+using GameGuild.CQRS;
 using GameGuild.Identity.Context.Actors;
 using GameGuild.Learning.Abstractions;
 using GameGuild.Learning.Attributes;
@@ -20,12 +21,15 @@ namespace GameGuild.Learning.Experience.Social.Controllers;
 public class LikesController : LearningControllerBase
 {
     private readonly ILikeService _likeService;
+    private readonly ISender _sender;
 
     public LikesController(
         ILikeService likeService,
+        ISender sender,
         IActorContextAccessor actorContextAccessor) : base(actorContextAccessor)
     {
         _likeService = likeService;
+        _sender = sender;
     }
 
     /// <summary>
@@ -37,7 +41,7 @@ public class LikesController : LearningControllerBase
     public async Task<IActionResult> LikeCourse(Guid courseId, CancellationToken cancellationToken = default)
     {
         var userId = GetRequiredUserId();
-        var result = await _likeService.LikeCourseAsync(courseId, userId, null, cancellationToken).ConfigureAwait(false);
+        var result = await _sender.Send(new LikeCourseCommand(courseId, userId, null), cancellationToken).ConfigureAwait(false);
 
         if (!result.IsSuccess)
         {
@@ -56,7 +60,7 @@ public class LikesController : LearningControllerBase
     public async Task<IActionResult> UnlikeCourse(Guid courseId, CancellationToken cancellationToken = default)
     {
         var userId = GetRequiredUserId();
-        var result = await _likeService.UnlikeCourseAsync(courseId, userId, cancellationToken).ConfigureAwait(false);
+        var result = await _sender.Send(new UnlikeCourseCommand(courseId, userId), cancellationToken).ConfigureAwait(false);
 
         if (!result.IsSuccess)
         {

@@ -59,7 +59,7 @@ public class AnalyticsController(
         [FromBody] AnalyticsWarehouseRunRequest request,
         CancellationToken ct)
     {
-        return Ok(await warehouseService.MaterializeAsync(request, ct));
+        return Ok(await sender.Send(new RunAnalyticsWarehouseCommand(request), ct));
     }
 
     [HttpGet("warehouse/facts")]

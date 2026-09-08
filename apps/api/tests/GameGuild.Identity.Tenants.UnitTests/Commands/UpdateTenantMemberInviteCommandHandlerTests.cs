@@ -78,15 +78,11 @@ public class UpdateTenantMemberInviteCommandHandlerTests
             CancellationToken.None);
 
         result.Success.Should().BeTrue();
-        var inviteEvent = member.DomainEvents
-            .Should().ContainSingle(e => e is TenantInviteRequestedNotification).Subject
-            as TenantInviteRequestedNotification;
-        inviteEvent!.Resend.Should().BeTrue();
-        inviteEvent.InviteeEmail.Should().Be("learner@example.com");
-        inviteEvent.InviteeName.Should().Be("Learner One");
-        inviteEvent.InvitedByEmail.Should().Be("admin@game-guild.com");
-        inviteEvent.TenantName.Should().Be("GameGuild Studio");
-        inviteEvent.ReviewUrl.Should().Contain("callbackUrl=%2Faccount%2Finvitations");
+        var inviteEvent = member.IntegrationEvents.OfType<TenantMemberInviteRequestedV1>().Should().ContainSingle().Subject;
+        inviteEvent.MemberId.Should().Be(member.Id);
+        inviteEvent.TenantId.Should().Be(member.TenantId);
+        inviteEvent.Resend.Should().BeTrue();
+        System.Text.Json.JsonSerializer.Serialize(inviteEvent).Should().NotContain("learner@example.com");
         updated.Should().NotBeNull();
         updated!.Metadata.Should().Contain("\"resendCount\":2");
     }

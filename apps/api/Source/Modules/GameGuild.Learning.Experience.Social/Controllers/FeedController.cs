@@ -1,3 +1,4 @@
+using GameGuild.CQRS;
 using GameGuild.Identity.Context.Actors;
 using GameGuild.Learning.Abstractions;
 using GameGuild.Learning.Attributes;
@@ -20,12 +21,15 @@ namespace GameGuild.Learning.Experience.Social.Controllers;
 public class FeedController : LearningControllerBase
 {
     private readonly IFeedService _feedService;
+    private readonly ISender _sender;
 
     public FeedController(
         IFeedService feedService,
+        ISender sender,
         IActorContextAccessor actorContextAccessor) : base(actorContextAccessor)
     {
         _feedService = feedService;
+        _sender = sender;
     }
 
     /// <summary>
@@ -59,7 +63,7 @@ public class FeedController : LearningControllerBase
     public async Task<IActionResult> GenerateFeedItems(CancellationToken cancellationToken = default)
     {
         var userId = GetRequiredUserId();
-        var result = await _feedService.GenerateFeedItemsAsync(userId, null, cancellationToken).ConfigureAwait(false);
+        var result = await _sender.Send(new GenerateFeedItemsCommand(userId, null), cancellationToken).ConfigureAwait(false);
 
         if (!result.IsSuccess)
         {
@@ -77,7 +81,7 @@ public class FeedController : LearningControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> MarkFeedItemViewed(Guid id, CancellationToken cancellationToken = default)
     {
-        var result = await _feedService.MarkFeedItemViewedAsync(id, cancellationToken).ConfigureAwait(false);
+        var result = await _sender.Send(new MarkFeedItemViewedCommand(id), cancellationToken).ConfigureAwait(false);
 
         if (!result.IsSuccess)
         {
@@ -96,7 +100,7 @@ public class FeedController : LearningControllerBase
     public async Task<IActionResult> DismissFeedItem(Guid id, CancellationToken cancellationToken = default)
     {
         var userId = GetRequiredUserId();
-        var result = await _feedService.DismissFeedItemAsync(id, userId, cancellationToken).ConfigureAwait(false);
+        var result = await _sender.Send(new DismissFeedItemCommand(id, userId), cancellationToken).ConfigureAwait(false);
 
         if (!result.IsSuccess)
         {

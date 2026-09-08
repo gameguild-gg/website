@@ -119,8 +119,7 @@ public sealed class ServiceAccountTokenControllerTests
         Mock<IJwtTokenService> jwtTokenService,
         string? remoteIpAddress = null)
     {
-        var controller = new ServiceAccountTokenController(
-            IdentityCommandTestSender.ForServiceAccounts(serviceAccountService.Object, jwtTokenService.Object))
+        var controller = new ServiceAccountTokenController(new CommandHandlerSender(serviceAccountService.Object, jwtTokenService.Object))
         {
             ControllerContext = new ControllerContext
             {

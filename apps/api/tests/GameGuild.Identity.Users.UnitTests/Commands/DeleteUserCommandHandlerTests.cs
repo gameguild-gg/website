@@ -1,6 +1,7 @@
 using FluentAssertions;
 using GameGuild.CQRS;
 using GameGuild.Identity.Context.Actors;
+using GameGuild.Resources;
 using Moq;
 using Xunit;
 
@@ -9,19 +10,23 @@ namespace GameGuild.Identity.Users.UnitTests.Commands;
 public class DeleteUserCommandHandlerTests
 {
     private readonly Mock<IUserRepository> _userRepositoryMock;
+    private readonly Mock<IPublisher> _publisherMock;
+    private readonly Mock<IResourceQuotaService> _quotaServiceMock;
     private readonly Mock<IActorContextAccessor> _actorContextAccessorMock;
     private readonly DeleteUserCommandHandler _handler;
 
     public DeleteUserCommandHandlerTests()
     {
         _userRepositoryMock = new Mock<IUserRepository>();
+        _publisherMock = new Mock<IPublisher>();
+        _quotaServiceMock = new Mock<IResourceQuotaService>();
         _actorContextAccessorMock = new Mock<IActorContextAccessor>();
         _actorContextAccessorMock.Setup(x => x.ActorContext).Returns(ActorContext.Anonymous);
         _handler = new DeleteUserCommandHandler(
             _userRepositoryMock.Object,
+            _publisherMock.Object,
+            _quotaServiceMock.Object,
             _actorContextAccessorMock.Object);
-        _userRepositoryMock.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
     }
 
     [Fact]
@@ -63,7 +68,7 @@ public class DeleteUserCommandHandlerTests
     }
 
     [Fact]
-    public async Task DeleteUser_RegistersDurableLifecycleEvent_WhenUserDeleted()
+    public async Task DeleteUser_RecordsQuotaEventBeforePersistence_WithoutSynchronousDecrement()
     {
         // Arrange
         var userId = Guid.NewGuid();
@@ -90,15 +95,22 @@ public class DeleteUserCommandHandlerTests
         _userRepositoryMock.Setup(x => x.UpdateAsync(It.IsAny<User>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
+        _userRepositoryMock.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .Callback(() => user.IntegrationEvents.OfType<UserDeletedEvent>().Should().ContainSingle(e =>
+                e.UserId == userId && e.TenantId == tenantId && e.ActorId == userId))
+            .Returns(Task.CompletedTask);
+
         // Act
         var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
         result.Should().Be(Unit.Value);
+        // Handler uses soft delete via MarkDeleted() + UpdateAsync()
         _userRepositoryMock.Verify(x => x.UpdateAsync(It.Is<User>(u => u.IsDeleted), It.IsAny<CancellationToken>()), Times.Once);
+        _quotaServiceMock.Verify(
+            x => x.DecrementUsageAsync(tenantId, ResourceUsageType.Users, 1L, It.IsAny<Guid?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()),
+            Times.Never,
+            "the durable quota listener owns the decrement and prevents double accounting");
         _userRepositoryMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
-        user.IntegrationEvents.Should().ContainSingle()
-            .Which.Should().BeOfType<UserDeletedEvent>()
-            .Which.TenantId.Should().Be(tenantId);
     }
 }

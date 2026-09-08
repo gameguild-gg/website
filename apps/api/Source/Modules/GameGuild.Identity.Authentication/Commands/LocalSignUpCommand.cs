@@ -5,7 +5,7 @@ namespace GameGuild.Identity.Authentication;
 /// <summary>
 ///     Command to handle local user sign-up
 /// </summary>
-public class LocalSignUpCommand : IRequest<SignInResponse>
+public class LocalSignUpCommand : ICommand<SignInResponse>
 {
     public string Email { get; set; } = string.Empty;
 

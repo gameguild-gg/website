@@ -19,7 +19,7 @@ export class ComplianceFerpaModule {
    */
   async postApiComplianceFerpaConsents(
     body: Types.ComplianceFERPAGrantFerpaDisclosureConsentCommand,
-  ): Promise<Result<Types.ComplianceFERPAFerpaDisclosureConsent, ApiError>> {
+  ): Promise<Result<Types.ComplianceFERPAFerpaDisclosureConsentDto, ApiError>> {
     const url = '/api/compliance/ferpa/consents';
 
     // Validate request body
@@ -34,7 +34,7 @@ export class ComplianceFerpaModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.ComplianceFERPAFerpaDisclosureConsentSchema, result.data, 'response');
+      const validatedData = safeParse(Types.ComplianceFERPAFerpaDisclosureConsentDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -57,7 +57,9 @@ export class ComplianceFerpaModule {
 
   /**
    */
-  async getApiComplianceFerpaDirectoryPolicy(query?: { tenantId?: string }): Promise<Result<Types.ComplianceFERPAFerpaDirectoryInformationPolicy, ApiError>> {
+  async getApiComplianceFerpaDirectoryPolicy(query?: {
+    tenantId?: string;
+  }): Promise<Result<Types.ComplianceFERPAFerpaDirectoryInformationPolicyDto, ApiError>> {
     const url = '/api/compliance/ferpa/directory-policy';
 
     const result = await this.client.request({
@@ -69,7 +71,7 @@ export class ComplianceFerpaModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.ComplianceFERPAFerpaDirectoryInformationPolicySchema, result.data, 'response');
+      const validatedData = safeParse(Types.ComplianceFERPAFerpaDirectoryInformationPolicyDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -80,7 +82,7 @@ export class ComplianceFerpaModule {
    */
   async putApiComplianceFerpaDirectoryPolicy(
     body: Types.ComplianceFERPAUpsertDirectoryInformationPolicyCommand,
-  ): Promise<Result<Types.ComplianceFERPAFerpaDirectoryInformationPolicy, ApiError>> {
+  ): Promise<Result<Types.ComplianceFERPAFerpaDirectoryInformationPolicyDto, ApiError>> {
     const url = '/api/compliance/ferpa/directory-policy';
 
     // Validate request body
@@ -95,7 +97,7 @@ export class ComplianceFerpaModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.ComplianceFERPAFerpaDirectoryInformationPolicySchema, result.data, 'response');
+      const validatedData = safeParse(Types.ComplianceFERPAFerpaDirectoryInformationPolicyDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -106,7 +108,7 @@ export class ComplianceFerpaModule {
    */
   async postApiComplianceFerpaDisclosures(
     body: Types.ComplianceFERPARecordFerpaDisclosureCommand,
-  ): Promise<Result<Types.ComplianceFERPAFerpaDisclosureLog, ApiError>> {
+  ): Promise<Result<Types.ComplianceFERPAFerpaDisclosureLogDto, ApiError>> {
     const url = '/api/compliance/ferpa/disclosures';
 
     // Validate request body
@@ -121,7 +123,7 @@ export class ComplianceFerpaModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.ComplianceFERPAFerpaDisclosureLogSchema, result.data, 'response');
+      const validatedData = safeParse(Types.ComplianceFERPAFerpaDisclosureLogDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -132,7 +134,7 @@ export class ComplianceFerpaModule {
    */
   async postApiComplianceFerpaInspectionRequests(
     body: Types.ComplianceFERPASubmitFerpaInspectionRequestCommand,
-  ): Promise<Result<Types.ComplianceFERPAFerpaInspectionInput, ApiError>> {
+  ): Promise<Result<Types.ComplianceFERPAFerpaInspectionRequestDto, ApiError>> {
     const url = '/api/compliance/ferpa/inspection-requests';
 
     // Validate request body
@@ -147,7 +149,7 @@ export class ComplianceFerpaModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.ComplianceFERPAFerpaInspectionInputSchema, result.data, 'response');
+      const validatedData = safeParse(Types.ComplianceFERPAFerpaInspectionRequestDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -159,7 +161,7 @@ export class ComplianceFerpaModule {
   async postApiComplianceFerpaInspectionRequestsComplete(
     requestId: string,
     body: Types.ComplianceFERPACompleteFerpaInspectionRequestBody,
-  ): Promise<Result<Types.ComplianceFERPAFerpaInspectionInput, ApiError>> {
+  ): Promise<Result<Types.ComplianceFERPAFerpaInspectionRequestDto, ApiError>> {
     const url = `/api/compliance/ferpa/inspection-requests/${requestId}/complete`;
 
     // Validate request body
@@ -174,7 +176,7 @@ export class ComplianceFerpaModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.ComplianceFERPAFerpaInspectionInputSchema, result.data, 'response');
+      const validatedData = safeParse(Types.ComplianceFERPAFerpaInspectionRequestDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -183,7 +185,7 @@ export class ComplianceFerpaModule {
 
   /**
    */
-  async getApiComplianceFerpaInspectionRequestsPending(): Promise<Result<Array<Types.ComplianceFERPAFerpaInspectionInput>, ApiError>> {
+  async getApiComplianceFerpaInspectionRequestsPending(): Promise<Result<Array<Types.ComplianceFERPAFerpaInspectionRequestDto>, ApiError>> {
     const url = '/api/compliance/ferpa/inspection-requests/pending';
 
     const result = await this.client.request({
@@ -192,14 +194,14 @@ export class ComplianceFerpaModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.ComplianceFERPAFerpaInspectionInput>, ApiError>;
+    return result as Result<Array<Types.ComplianceFERPAFerpaInspectionRequestDto>, ApiError>;
   }
 
   /**
    */
   async postApiComplianceFerpaRecords(
     body: Types.ComplianceFERPARegisterEducationRecordCommand,
-  ): Promise<Result<Types.ComplianceFERPAFerpaEducationRecord, ApiError>> {
+  ): Promise<Result<Types.ComplianceFERPAFerpaEducationRecordDto, ApiError>> {
     const url = '/api/compliance/ferpa/records';
 
     // Validate request body
@@ -214,7 +216,7 @@ export class ComplianceFerpaModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.ComplianceFERPAFerpaEducationRecordSchema, result.data, 'response');
+      const validatedData = safeParse(Types.ComplianceFERPAFerpaEducationRecordDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -223,7 +225,7 @@ export class ComplianceFerpaModule {
 
   /**
    */
-  async getApiComplianceFerpaStudentsConsents(studentUserId: string): Promise<Result<Array<Types.ComplianceFERPAFerpaDisclosureConsent>, ApiError>> {
+  async getApiComplianceFerpaStudentsConsents(studentUserId: string): Promise<Result<Array<Types.ComplianceFERPAFerpaDisclosureConsentDto>, ApiError>> {
     const url = `/api/compliance/ferpa/students/${studentUserId}/consents`;
 
     const result = await this.client.request({
@@ -232,12 +234,14 @@ export class ComplianceFerpaModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.ComplianceFERPAFerpaDisclosureConsent>, ApiError>;
+    return result as Result<Array<Types.ComplianceFERPAFerpaDisclosureConsentDto>, ApiError>;
   }
 
   /**
    */
-  async getApiComplianceFerpaStudentsDirectoryInformation(studentUserId: string): Promise<Result<Array<Types.ComplianceFERPAFerpaEducationRecord>, ApiError>> {
+  async getApiComplianceFerpaStudentsDirectoryInformation(
+    studentUserId: string,
+  ): Promise<Result<Array<Types.ComplianceFERPAFerpaEducationRecordDto>, ApiError>> {
     const url = `/api/compliance/ferpa/students/${studentUserId}/directory-information`;
 
     const result = await this.client.request({
@@ -246,12 +250,12 @@ export class ComplianceFerpaModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.ComplianceFERPAFerpaEducationRecord>, ApiError>;
+    return result as Result<Array<Types.ComplianceFERPAFerpaEducationRecordDto>, ApiError>;
   }
 
   /**
    */
-  async getApiComplianceFerpaStudentsDisclosures(studentUserId: string): Promise<Result<Array<Types.ComplianceFERPAFerpaDisclosureLog>, ApiError>> {
+  async getApiComplianceFerpaStudentsDisclosures(studentUserId: string): Promise<Result<Array<Types.ComplianceFERPAFerpaDisclosureLogDto>, ApiError>> {
     const url = `/api/compliance/ferpa/students/${studentUserId}/disclosures`;
 
     const result = await this.client.request({
@@ -260,12 +264,12 @@ export class ComplianceFerpaModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.ComplianceFERPAFerpaDisclosureLog>, ApiError>;
+    return result as Result<Array<Types.ComplianceFERPAFerpaDisclosureLogDto>, ApiError>;
   }
 
   /**
    */
-  async getApiComplianceFerpaStudentsRecords(studentUserId: string): Promise<Result<Array<Types.ComplianceFERPAFerpaEducationRecord>, ApiError>> {
+  async getApiComplianceFerpaStudentsRecords(studentUserId: string): Promise<Result<Array<Types.ComplianceFERPAFerpaEducationRecordDto>, ApiError>> {
     const url = `/api/compliance/ferpa/students/${studentUserId}/records`;
 
     const result = await this.client.request({
@@ -274,7 +278,7 @@ export class ComplianceFerpaModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.ComplianceFERPAFerpaEducationRecord>, ApiError>;
+    return result as Result<Array<Types.ComplianceFERPAFerpaEducationRecordDto>, ApiError>;
   }
 }
 

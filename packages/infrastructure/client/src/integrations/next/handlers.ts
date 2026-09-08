@@ -15,7 +15,7 @@
  *   GET  /api/auth/callback/:provider — OAuth callback
  */
 
-import type { ResolvedAuthConfig, Session, ProviderResult, CredentialsProviderConfig } from '../../runtime/auth/types.js';
+import type { ResolvedAuthConfig, Session, JWTPayload, ProviderResult, CredentialsProviderConfig } from '../../runtime/auth/types.js';
 import { SessionStore, CsrfStore, resolveCookieOptions, type CookieSerializeOptions } from '../../runtime/auth/cookies.js';
 import { createJWTPayload, processSession, encodeSession, toSession } from '../../runtime/auth/session.js';
 import { createCSRFToken, validateCSRFToken } from '../../runtime/auth/csrf.js';
@@ -37,11 +37,7 @@ import {
  * Internal cookie setter that collects Set-Cookie headers
  */
 interface ResponseCookies {
-  cookies: Array<{
-    name: string;
-    value: string;
-    options: CookieSerializeOptions;
-  }>;
+  cookies: Array<{ name: string; value: string; options: CookieSerializeOptions }>;
   set(name: string, value: string, options: CookieSerializeOptions): void;
 }
 
@@ -103,7 +99,13 @@ export function parseCookieHeader(cookieHeader: string): Map<string, string> {
   for (const pair of cookieHeader.split(';')) {
     const [name, ...rest] = pair.trim().split('=');
     if (name) {
-      cookies.set(decodeURIComponent(name.trim()), decodeURIComponent(rest.join('=').trim()));
+      try {
+        cookies.set(decodeURIComponent(name.trim()), decodeURIComponent(rest.join('=').trim()));
+      } catch {
+        // Cookies from another app can contain invalid percent escapes. Ignore
+        // that pair without breaking CSRF issuance or accepting it as auth data.
+        continue;
+      }
     }
   }
 
@@ -474,6 +476,19 @@ export function createHandlers(config: ResolvedAuthConfig) {
 
     const data = (await response.json()) as Record<string, unknown>;
     const providerResult = parseBackendAuthResponse(data, email, username);
+    const signInAllowed = await config.callbacks.signIn({
+      user: providerResult.user,
+      provider: 'credentials',
+    });
+
+    if (signInAllowed === false) {
+      throw new CredentialsSignInError('Sign-in denied by callback');
+    }
+
+    if (typeof signInAllowed === 'string') {
+      return buildRedirect(signInAllowed, responseCookies);
+    }
+
     const session = await finalizeAuth(providerResult, 'signUp', config, sessionStore, responseCookies);
 
     return buildResponse(session, 200, responseCookies);
@@ -484,10 +499,7 @@ export function createHandlers(config: ResolvedAuthConfig) {
     const encryptedToken = sessionStore.read((name) => cookies.get(name));
     if (encryptedToken) {
       try {
-        const token = await decodeJWT({
-          token: encryptedToken,
-          secret: config.secret,
-        });
+        const token = await decodeJWT({ token: encryptedToken, secret: config.secret });
         if (token?.refreshToken) {
           await fetch(`${config.apiUrl}/v1/auth/tokens:revoke`, {
             method: 'POST',
@@ -516,10 +528,7 @@ export function createHandlers(config: ResolvedAuthConfig) {
       return buildResponse({}, 200, responseCookies);
     }
 
-    let token = await decodeJWT({
-      token: encryptedToken,
-      secret: config.secret,
-    });
+    let token = await decodeJWT({ token: encryptedToken, secret: config.secret });
 
     if (!token) {
       return buildResponse({}, 200, responseCookies);
@@ -543,7 +552,11 @@ export function createHandlers(config: ResolvedAuthConfig) {
     /* v8 ignore stop */
   }
 
-  async function handleOAuthSignInRedirect(request: Request, providerId: string, responseCookies: ResponseCookies): Promise<Response> {
+  async function handleOAuthSignInRedirect(
+    request: Request,
+    providerId: string,
+    responseCookies: ResponseCookies,
+  ): Promise<Response> {
     const provider = config.providers.find((candidate) => candidate.id === providerId);
     if (!provider) throw new ProviderNotFoundError(providerId);
 
@@ -617,6 +630,19 @@ export function createHandlers(config: ResolvedAuthConfig) {
 
     if (!result) {
       return Response.redirect(`${url.origin}${errorPage}?error=callback_failed`);
+    }
+
+    const signInAllowed = await config.callbacks.signIn({
+      user: result.user,
+      provider: providerId,
+    });
+
+    if (signInAllowed === false) {
+      return buildRedirect(`${url.origin}${errorPage}?error=access_denied`, responseCookies);
+    }
+
+    if (typeof signInAllowed === 'string') {
+      return buildRedirect(signInAllowed, responseCookies);
     }
 
     await finalizeAuth(result, 'signIn', config, sessionStore, responseCookies);

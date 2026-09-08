@@ -1,5 +1,6 @@
 using GameGuild.CQRS;
 using GameGuild.Identity.Context.Actors;
+using GameGuild.Resources;
 
 namespace GameGuild.Identity.Users;
 
@@ -11,6 +12,17 @@ public sealed class DeleteUserCommandHandler(
     IUserRepository userRepository,
     IActorContextAccessor actorContextAccessor) : ICommandHandler<DeleteUserCommand>
 {
+    public DeleteUserCommandHandler(
+        IUserRepository userRepository,
+        IPublisher publisher,
+        IResourceQuotaService quotaService,
+        IActorContextAccessor actorContextAccessor)
+        : this(userRepository, actorContextAccessor)
+    {
+        _ = publisher;
+        _ = quotaService;
+    }
+
     private ActorContext Actor => actorContextAccessor.ActorContext;
 
     public async Task<Unit> Handle(DeleteUserCommand request, CancellationToken cancellationToken)

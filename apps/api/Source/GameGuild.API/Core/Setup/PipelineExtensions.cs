@@ -2,6 +2,7 @@ using System.Net;
 using Asp.Versioning.ApiExplorer;
 using GameGuild.Identity.Authorization;
 using GameGuild.Identity.Tenants;
+using GameGuild.API.Core.CostAccounting;
 using Serilog;
 
 namespace GameGuild.API.Setup;
@@ -29,7 +30,7 @@ public static class PipelineExtensions
         app.UseForwardedHeaders();
 
         // 03. HSTS (HTTP Strict Transport Security, production only)
-        if (app.Environment.IsProduction()) app.UseHsts();
+        ConfigureHsts(app);
 
         // 04. HTTPS Redirection (force secure connections for external traffic only)
         if (!app.Environment.IsDevelopment())
@@ -82,6 +83,8 @@ public static class PipelineExtensions
         // SECURITY: Must be after Authentication (needs ClaimsPrincipal) and Tenant Resolution
         // SECURITY: Must be before Authorization (authorization handlers use ActorContext)
         app.UseActorContext();
+
+        app.UseMiddleware<CostTelemetryMiddleware>();
 
         // 17. Authorization (enforce permissions after user is identified)
         app.UseAuthorization();
@@ -143,6 +146,11 @@ public static class PipelineExtensions
 
     internal static bool ShouldRedirectToHttps(HttpContext context) =>
         !IsLoopbackRequest(context) && !IsHealthRequest(context);
+
+    internal static void ConfigureHsts(WebApplication app)
+    {
+        if (app.Environment.IsProduction()) app.UseHsts();
+    }
 
     private static bool IsHealthRequest(HttpContext context)
     {

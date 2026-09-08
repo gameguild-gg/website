@@ -62,7 +62,14 @@
     "ci:web:build": "pnpm --filter @game-guild/web build",
     "ci:playwright:smoke": "pnpm --filter @game-guild/web test:browser:public",
     "ci:playwright:learning-student": "pnpm --filter @game-guild/web test:browser:learning-student",
-    "clean": "rimraf --glob ./**/node_modules ./**/dist ./**/coverage ./**/build ./**/.next ./**/.turbo"
+    "clean": "rimraf --glob ./**/node_modules ./**/dist ./**/coverage ./**/build ./**/.next ./**/.turbo",
+    "parity:source": "node scripts/devops/source-feature-parity-check.mjs",
+    "parity:common": "node scripts/devops/source-feature-parity-check.mjs --scope all",
+    "parity:test": "node --test scripts/devops/source-feature-parity-check.test.mjs scripts/devops/common-difference-validation.test.mjs scripts/devops/common-module-reconcile.test.mjs scripts/devops/common-module-tests.test.mjs scripts/devops/common-generated-contract-audit.test.mjs",
+    "parity:contracts": "node scripts/devops/common-generated-contract-audit.mjs",
+    "parity:tests": "node scripts/devops/common-module-tests.mjs",
+    "parity:validate": "node scripts/devops/common-difference-validation.mjs",
+    "parity:reconcile": "node scripts/devops/common-module-reconcile.mjs"
   },
   "packageManager": "pnpm@10.0.0",
   "engines": {
@@ -80,12 +87,12 @@
       "lodash-es": "4.18.0",
       "syncpack>minimatch": "9.0.7",
       "icu-minify": "4.9.2",
-      "next": "16.3.0",
+      "next": "16.3.3",
       "postcss": "8.5.23",
       "sharp": "0.35.3",
       "prismjs": "1.30.0",
-      "react": "19.2.3",
-      "react-dom": "19.2.3",
+      "react": "19.2.8",
+      "react-dom": "19.2.8",
       "tsup>esbuild": "0.28.1",
       "ws": "8.21.0"
     }

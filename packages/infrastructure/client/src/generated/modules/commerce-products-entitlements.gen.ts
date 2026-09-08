@@ -17,7 +17,7 @@ export class CommerceProductsEntitlementsModule {
 
   /**
    */
-  async getEntitlements(query?: { status?: string; days?: number }): Promise<Result<Array<Types.CommerceProductsEntitlementInfo>, ApiError>> {
+  async getEntitlements(query?: { status?: string; days?: number }): Promise<Result<Array<Types.CommerceProductsEntitlementInfoDto>, ApiError>> {
     const url = '/v1/entitlements';
 
     const result = await this.client.request({
@@ -27,12 +27,12 @@ export class CommerceProductsEntitlementsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.CommerceProductsEntitlementInfo>, ApiError>;
+    return result as Result<Array<Types.CommerceProductsEntitlementInfoDto>, ApiError>;
   }
 
   /**
    */
-  async postEntitlements(body: Types.CommerceProductsGrantEntitlementInput): Promise<Result<Types.CommerceProductsEntitlementInfo, ApiError>> {
+  async postEntitlements(body: Types.CommerceProductsGrantEntitlementInput): Promise<Result<Types.CommerceProductsEntitlementInfoDto, ApiError>> {
     const url = '/v1/entitlements';
 
     // Validate request body
@@ -47,7 +47,7 @@ export class CommerceProductsEntitlementsModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.CommerceProductsEntitlementInfoSchema, result.data, 'response');
+      const validatedData = safeParse(Types.CommerceProductsEntitlementInfoDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 

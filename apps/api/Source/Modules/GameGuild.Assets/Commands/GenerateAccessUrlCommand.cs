@@ -10,7 +10,7 @@ public sealed record GenerateAccessUrlCommand(
     Guid? UserId,
     Guid? TenantId,
     TransformationSpec? Transformation = null,
-    bool DirectStorageUrl = false) : IRequest<GenerateAccessUrlResponse?>;
+    bool DirectStorageUrl = false) : ICommand<GenerateAccessUrlResponse?>;
 
 public sealed record GenerateAccessUrlResponse(
     string Url,
@@ -27,7 +27,7 @@ public sealed class GenerateAccessUrlValidator : AbstractValidator<GenerateAcces
     }
 }
 
-public sealed class GenerateAccessUrlHandler : IRequestHandler<GenerateAccessUrlCommand, GenerateAccessUrlResponse?>
+public sealed class GenerateAccessUrlHandler : ICommandHandler<GenerateAccessUrlCommand, GenerateAccessUrlResponse?>
 {
     private readonly IAssetAccessService _accessService;
 

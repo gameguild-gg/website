@@ -17,7 +17,7 @@ export class ApiProjectsOwnershipModule {
 
   /**
    */
-  async getProjectsOwnership(projectId: string): Promise<Result<Types.APIProjectsProjectOwnership, ApiError>> {
+  async getProjectsOwnership(projectId: string): Promise<Result<Types.APIProjectsProjectOwnershipDto, ApiError>> {
     const url = `/v1/projects/${projectId}/ownership`;
 
     const result = await this.client.request({
@@ -28,7 +28,7 @@ export class ApiProjectsOwnershipModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.APIProjectsProjectOwnershipSchema, result.data, 'response');
+      const validatedData = safeParse(Types.APIProjectsProjectOwnershipDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -40,7 +40,7 @@ export class ApiProjectsOwnershipModule {
   async postProjectsOwnershipAgreements(
     projectId: string,
     body: Types.APIProjectsCreateProjectTeamAgreementInput,
-  ): Promise<Result<Types.APIProjectsProjectTeamAgreement, ApiError>> {
+  ): Promise<Result<Types.APIProjectsProjectTeamAgreementDto, ApiError>> {
     const url = `/v1/projects/${projectId}/ownership/agreements`;
 
     // Validate request body
@@ -55,7 +55,7 @@ export class ApiProjectsOwnershipModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.APIProjectsProjectTeamAgreementSchema, result.data, 'response');
+      const validatedData = safeParse(Types.APIProjectsProjectTeamAgreementDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -64,7 +64,7 @@ export class ApiProjectsOwnershipModule {
 
   /**
    */
-  async postProjectsOwnershipAgreementsAccept(projectId: string, agreementId: string): Promise<Result<Types.APIProjectsProjectTeamAgreement, ApiError>> {
+  async postProjectsOwnershipAgreementsAccept(projectId: string, agreementId: string): Promise<Result<Types.APIProjectsProjectTeamAgreementDto, ApiError>> {
     const url = `/v1/projects/${projectId}/ownership/agreements/${agreementId}/accept`;
 
     const result = await this.client.request({
@@ -75,7 +75,7 @@ export class ApiProjectsOwnershipModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.APIProjectsProjectTeamAgreementSchema, result.data, 'response');
+      const validatedData = safeParse(Types.APIProjectsProjectTeamAgreementDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -84,7 +84,7 @@ export class ApiProjectsOwnershipModule {
 
   /**
    */
-  async postProjectsOwnershipAgreementsCancel(projectId: string, agreementId: string): Promise<Result<Types.APIProjectsProjectTeamAgreement, ApiError>> {
+  async postProjectsOwnershipAgreementsCancel(projectId: string, agreementId: string): Promise<Result<Types.APIProjectsProjectTeamAgreementDto, ApiError>> {
     const url = `/v1/projects/${projectId}/ownership/agreements/${agreementId}/cancel`;
 
     const result = await this.client.request({
@@ -95,7 +95,7 @@ export class ApiProjectsOwnershipModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.APIProjectsProjectTeamAgreementSchema, result.data, 'response');
+      const validatedData = safeParse(Types.APIProjectsProjectTeamAgreementDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -104,7 +104,7 @@ export class ApiProjectsOwnershipModule {
 
   /**
    */
-  async postProjectsOwnershipAgreementsComplete(projectId: string, agreementId: string): Promise<Result<Types.APIProjectsProjectTeamAgreement, ApiError>> {
+  async postProjectsOwnershipAgreementsComplete(projectId: string, agreementId: string): Promise<Result<Types.APIProjectsProjectTeamAgreementDto, ApiError>> {
     const url = `/v1/projects/${projectId}/ownership/agreements/${agreementId}/complete`;
 
     const result = await this.client.request({
@@ -115,7 +115,7 @@ export class ApiProjectsOwnershipModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.APIProjectsProjectTeamAgreementSchema, result.data, 'response');
+      const validatedData = safeParse(Types.APIProjectsProjectTeamAgreementDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -128,7 +128,7 @@ export class ApiProjectsOwnershipModule {
     projectId: string,
     agreementId: string,
     body: Types.APIProjectsCounterProjectTeamAgreementInput,
-  ): Promise<Result<Types.APIProjectsProjectTeamAgreement, ApiError>> {
+  ): Promise<Result<Types.APIProjectsProjectTeamAgreementDto, ApiError>> {
     const url = `/v1/projects/${projectId}/ownership/agreements/${agreementId}/counter`;
 
     // Validate request body
@@ -143,7 +143,7 @@ export class ApiProjectsOwnershipModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.APIProjectsProjectTeamAgreementSchema, result.data, 'response');
+      const validatedData = safeParse(Types.APIProjectsProjectTeamAgreementDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -155,7 +155,7 @@ export class ApiProjectsOwnershipModule {
   async postProjectsOwnershipAllocations(
     projectId: string,
     body: Types.APIProjectsCreateProjectAllocationInput,
-  ): Promise<Result<Types.APIProjectsProjectAllocation, ApiError>> {
+  ): Promise<Result<Types.APIProjectsProjectAllocationDto, ApiError>> {
     const url = `/v1/projects/${projectId}/ownership/allocations`;
 
     // Validate request body
@@ -170,7 +170,7 @@ export class ApiProjectsOwnershipModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.APIProjectsProjectAllocationSchema, result.data, 'response');
+      const validatedData = safeParse(Types.APIProjectsProjectAllocationDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -183,7 +183,7 @@ export class ApiProjectsOwnershipModule {
     projectId: string,
     allocationId: string,
     body: Types.APIProjectsUpdateProjectAllocationInput,
-  ): Promise<Result<Types.APIProjectsProjectAllocation, ApiError>> {
+  ): Promise<Result<Types.APIProjectsProjectAllocationDto, ApiError>> {
     const url = `/v1/projects/${projectId}/ownership/allocations/${allocationId}`;
 
     // Validate request body
@@ -198,7 +198,7 @@ export class ApiProjectsOwnershipModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.APIProjectsProjectAllocationSchema, result.data, 'response');
+      const validatedData = safeParse(Types.APIProjectsProjectAllocationDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -224,7 +224,7 @@ export class ApiProjectsOwnershipModule {
   async postProjectsOwnershipOwnerTeam(
     projectId: string,
     body: Types.APIProjectsTransferProjectOwnerTeamInput,
-  ): Promise<Result<Types.APIProjectsProjectOwnership, ApiError>> {
+  ): Promise<Result<Types.APIProjectsProjectOwnershipDto, ApiError>> {
     const url = `/v1/projects/${projectId}/ownership/owner-team`;
 
     // Validate request body
@@ -239,7 +239,7 @@ export class ApiProjectsOwnershipModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.APIProjectsProjectOwnershipSchema, result.data, 'response');
+      const validatedData = safeParse(Types.APIProjectsProjectOwnershipDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -251,7 +251,7 @@ export class ApiProjectsOwnershipModule {
   async postProjectsOwnershipTeams(
     projectId: string,
     body: Types.APIProjectsAddProjectTeamInput,
-  ): Promise<Result<Types.APIProjectsProjectTeamOwnership, ApiError>> {
+  ): Promise<Result<Types.APIProjectsProjectTeamOwnershipDto, ApiError>> {
     const url = `/v1/projects/${projectId}/ownership/teams`;
 
     // Validate request body
@@ -266,7 +266,7 @@ export class ApiProjectsOwnershipModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.APIProjectsProjectTeamOwnershipSchema, result.data, 'response');
+      const validatedData = safeParse(Types.APIProjectsProjectTeamOwnershipDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -279,7 +279,7 @@ export class ApiProjectsOwnershipModule {
     projectId: string,
     projectTeamId: string,
     body: Types.APIProjectsUpdateProjectTeamInput,
-  ): Promise<Result<Types.APIProjectsProjectTeamOwnership, ApiError>> {
+  ): Promise<Result<Types.APIProjectsProjectTeamOwnershipDto, ApiError>> {
     const url = `/v1/projects/${projectId}/ownership/teams/${projectTeamId}`;
 
     // Validate request body
@@ -294,7 +294,7 @@ export class ApiProjectsOwnershipModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.APIProjectsProjectTeamOwnershipSchema, result.data, 'response');
+      const validatedData = safeParse(Types.APIProjectsProjectTeamOwnershipDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 

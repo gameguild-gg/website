@@ -1,4 +1,5 @@
 using Asp.Versioning;
+using GameGuild.CQRS;
 using GameGuild.Identity.Authorization;
 using GameGuild.Identity.Context.Actors;
 using Microsoft.AspNetCore.Authorization;
@@ -14,6 +15,7 @@ namespace GameGuild.TestingLab;
 [Authorize]
 public class TestingFeedbackController(
     ITestingFeedbackOperations feedbackService,
+    ISender sender,
     IActorContextAccessor actorContextAccessor) : BaseApiController
 {
     [HttpGet("feedback")]
@@ -36,7 +38,14 @@ public class TestingFeedbackController(
         if (userId == null)
             return Unauthorized("User ID not found in token");
 
-        var feedback = await feedbackService.AddFeedbackAsync(requestId, userId.Value, request.FeedbackFormId, request.FeedbackData, request.TestingContext, request.SessionId, request.AdditionalNotes).ConfigureAwait(false);
+        var feedback = await sender.Send(new AddTestingFeedbackEndpointCommand(
+            requestId,
+            userId.Value,
+            request.FeedbackFormId,
+            request.FeedbackData,
+            request.TestingContext,
+            request.SessionId,
+            request.AdditionalNotes)).ConfigureAwait(false);
         return Ok(feedback);
     }
 
@@ -68,7 +77,7 @@ public class TestingFeedbackController(
         if (userId == null)
             return Unauthorized("User ID not found in token");
 
-        await feedbackService.SubmitFeedbackAsync(feedbackDto, userId.Value).ConfigureAwait(false);
+        await sender.Send(new SubmitTestingFeedbackEndpointCommand(feedbackDto, userId.Value)).ConfigureAwait(false);
 
         return Ok(new { message = "Feedback submitted successfully" });
     }
@@ -81,7 +90,7 @@ public class TestingFeedbackController(
         if (currentUserId == null)
             return Unauthorized("User ID not found in token");
 
-        await feedbackService.ReportFeedbackAsync(feedbackId, reportDto.Reason, currentUserId.Value).ConfigureAwait(false);
+        await sender.Send(new ReportTestingFeedbackEndpointCommand(feedbackId, reportDto.Reason, currentUserId.Value)).ConfigureAwait(false);
 
         return Ok(new { message = "Feedback reported successfully" });
     }
@@ -95,7 +104,7 @@ public class TestingFeedbackController(
         if (currentUserId == null)
             return Unauthorized("User ID not found in token");
 
-        await feedbackService.RateFeedbackQualityAsync(feedbackId, qualityDto.Quality, currentUserId.Value).ConfigureAwait(false);
+        await sender.Send(new RateTestingFeedbackQualityEndpointCommand(feedbackId, qualityDto.Quality, currentUserId.Value)).ConfigureAwait(false);
 
         return Ok(new { message = "Feedback quality rated successfully" });
     }

@@ -33,7 +33,7 @@ public sealed class SendPasswordResetRequestedHandler(
                 userName = notification.UserName
             });
 
-            await notificationService.SendAsync(
+            var result = await notificationService.SendAsync(
                 user.Id,
                 NotificationType.PasswordReset,
                 "Reset your GameGuild password",
@@ -42,11 +42,15 @@ public sealed class SendPasswordResetRequestedHandler(
                 metadata: metadata,
                 cancellationToken: cancellationToken).ConfigureAwait(false);
 
+            if (result is null || result.IsFailure)
+                throw new InvalidOperationException("Authentication notification was not durably queued.");
+
             logger.LogInformation("Password reset email queued for {Email}", notification.Email);
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Error queueing password reset email to {Email}", notification.Email);
+            throw; // Queue persistence failed; do not acknowledge a lost notification.
         }
     }
 }

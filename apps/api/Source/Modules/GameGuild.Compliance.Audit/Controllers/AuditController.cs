@@ -4,6 +4,7 @@ using GameGuild.Identity.Context.Actors;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using GameGuild.CQRS;
 
 namespace GameGuild.Compliance.Audit;
 
@@ -14,7 +15,11 @@ namespace GameGuild.Compliance.Audit;
 [ApiVersion("1.0")]
 [Route("v{version:apiVersion}/admin/audit-logs")]
 [Authorize(Policy = Policies.SystemAdmin)]
-public class AuditController(IAuditService auditService, IActorContextAccessor actorContextAccessor, ILogger<AuditController> _logger) : BaseApiController
+public class AuditController(
+    IAuditService auditService,
+    IActorContextAccessor actorContextAccessor,
+    ILogger<AuditController> _logger,
+    ISender sender) : BaseApiController
 {
     /// <summary>
     /// Gets the current user ID from the actor context
@@ -118,24 +123,9 @@ public class AuditController(IAuditService auditService, IActorContextAccessor a
         var adminUserId = GetCurrentUserId();
         if (!adminUserId.HasValue) throw new UnauthorizedAccessException("User not authenticated");
 
-        await auditService.LogAdminActionAsync(adminUserId.Value, "ExportAuditLogs", "Admin exported audit logs", new { ExportRequest = request, RequestedBy = adminUserId.Value }).ConfigureAwait(false);
-
-        var query = new AuditLogQuery
-        {
-            UserId = request.UserId,
-            TenantId = request.TenantId,
-            ActionType = request.ActionType,
-            ResourceType = request.ResourceType,
-            Category = request.Category,
-            RiskLevel = request.RiskLevel,
-            Success = request.Success,
-            StartDate = request.StartDate,
-            EndDate = request.EndDate,
-            IpAddress = request.IpAddress,
-            Take = 0 // Get all matching records for export
-        };
-
-        var logs = await auditService.GetAuditLogsAsync(query).ConfigureAwait(false);
+        var logs = await sender.Send(
+            new ExportAuditLogsCommand(adminUserId.Value, request),
+            HttpContext.RequestAborted).ConfigureAwait(false);
 
         // Convert to CSV format
         var csv = GenerateCsv(logs);

@@ -8,7 +8,7 @@ using SesContent = Amazon.SimpleEmailV2.Model.Content;
 
 namespace GameGuild.API.Email;
 
-/// <summary>Sends platform email through Amazon SES SendEmailv2. Sole <see cref="IEmailSender"/> implementation.</summary>
+/// <summary>Amazon SES provider used by the shared, configurable email sender.</summary>
 public sealed class SesEmailSender : IEmailSender
 {
     private readonly Func<string, IAmazonSimpleEmailServiceV2> sesClientFactory;
@@ -56,7 +56,15 @@ public sealed class SesEmailSender : IEmailSender
 
         cancellationToken.ThrowIfCancellationRequested();
 
-        var client = sesClientFactory(region);
+        foreach (var value in new[] { currentOptions.FromEmail, currentOptions.FromName, message.ToEmail, message.ToName, message.Subject })
+            ValidateHeaderValue(value);
+        foreach (var attachment in message.Attachments ?? [])
+        {
+            ValidateHeaderValue(attachment.FileName);
+            ValidateHeaderValue(attachment.ContentType);
+        }
+
+        using var client = sesClientFactory(region);
         var configurationSetName = currentOptions.Ses.ConfigurationSetName?.Trim();
         var request = new SendEmailRequest
         {
@@ -125,9 +133,9 @@ public sealed class SesEmailSender : IEmailSender
         foreach (var attachment in message.Attachments!)
         {
             AppendBoundary(builder, mixedBoundary);
-            AppendHeader(builder, $"Content-Type: {attachment.ContentType}; name=\"{attachment.FileName}\"");
+            AppendHeader(builder, $"Content-Type: {attachment.ContentType}; name=\"{EscapeQuotedValue(attachment.FileName)}\"");
             AppendHeader(builder, "Content-Transfer-Encoding: base64");
-            AppendHeader(builder, $"Content-Disposition: attachment; filename=\"{attachment.FileName}\"");
+            AppendHeader(builder, $"Content-Disposition: attachment; filename=\"{EscapeQuotedValue(attachment.FileName)}\"");
             builder.Append("\r\n");
             builder.Append(WrapBase64(Convert.ToBase64String(attachment.Content)));
             builder.Append("\r\n");
@@ -178,5 +186,13 @@ public sealed class SesEmailSender : IEmailSender
             : $"=?UTF-8?B?{Convert.ToBase64String(Encoding.UTF8.GetBytes(value))}?=";
 
     private static string FormatAddress(string email, string? name) =>
-        string.IsNullOrWhiteSpace(name) || name == email ? email : $"\"{name}\" <{email}>";
+        string.IsNullOrWhiteSpace(name) || name == email ? email : $"\"{EscapeQuotedValue(name)}\" <{email}>";
+
+    private static string EscapeQuotedValue(string value) => value.Replace("\\", "\\\\").Replace("\"", "\\\"");
+
+    private static void ValidateHeaderValue(string? value)
+    {
+        if (value?.Any(character => char.IsControl(character)) == true)
+            throw new ArgumentException("Email headers must not contain control characters.");
+    }
 }

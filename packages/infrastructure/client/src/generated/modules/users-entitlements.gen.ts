@@ -17,7 +17,7 @@ export class UsersEntitlementsModule {
 
   /**
    */
-  async getUsersEntitlements(userId: string): Promise<Result<Array<Types.CommerceProductsEntitlementInfo>, ApiError>> {
+  async getUsersEntitlements(userId: string): Promise<Result<Array<Types.CommerceProductsEntitlementInfoDto>, ApiError>> {
     const url = `/v1/users/${userId}/entitlements`;
 
     const result = await this.client.request({
@@ -26,12 +26,12 @@ export class UsersEntitlementsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.CommerceProductsEntitlementInfo>, ApiError>;
+    return result as Result<Array<Types.CommerceProductsEntitlementInfoDto>, ApiError>;
   }
 
   /**
    */
-  async getUsersMeEntitlements(): Promise<Result<Array<Types.CommerceProductsEntitlementInfo>, ApiError>> {
+  async getUsersMeEntitlements(): Promise<Result<Array<Types.CommerceProductsEntitlementInfoDto>, ApiError>> {
     const url = '/v1/users/me/entitlements';
 
     const result = await this.client.request({
@@ -40,7 +40,7 @@ export class UsersEntitlementsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.CommerceProductsEntitlementInfo>, ApiError>;
+    return result as Result<Array<Types.CommerceProductsEntitlementInfoDto>, ApiError>;
   }
 }
 

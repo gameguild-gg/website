@@ -17,9 +17,9 @@ namespace GameGuild.Assets.Controllers;
 public class AssetsController(
     ISender sender,
     IActorContextAccessor actorContextAccessor,
-    IAssetUploadService uploadService,
     IAssetUploadAuthorizationService uploadAuthorizationService,
-    IAssetTextExtractionService textExtractionService) : BaseApiController
+    IAssetTextExtractionService textExtractionService,
+    IDurableEventProducer? durableEventProducer = null) : BaseApiController
 {
     private ActorContext Actor => actorContextAccessor.ActorContext;
 
@@ -165,11 +165,11 @@ public class AssetsController(
             return BadRequest(new ProblemDetails { Title = "Invalid file parameters" });
         }
 
-        var session = await uploadService.InitiateChunkedUploadAsync(
+        var session = await sender.Send(new InitiateChunkedAssetUploadCommand(
             fileName,
             mimeType,
             totalSize,
-            Actor.SubjectIdAsGuid.Value,
+            Actor.SubjectIdAsGuid.Value),
             ct).ConfigureAwait(false);
 
         return Ok(session);
@@ -206,7 +206,8 @@ public class AssetsController(
         }
 
         await using var stream = chunk.OpenReadStream();
-        var success = await uploadService.UploadChunkAsync(uploadId, chunkIndex, stream, ct).ConfigureAwait(false);
+        var success = await sender.Send(
+            new UploadAssetChunkCommand(uploadId, chunkIndex, stream), ct).ConfigureAwait(false);
 
         if (!success)
         {
@@ -263,7 +264,8 @@ public class AssetsController(
             folderId,
             Actor.TenantId);
 
-        var result = await uploadService.CompleteChunkedUploadAsync(uploadId, options, ct).ConfigureAwait(false);
+        var result = await sender.Send(
+            new CompleteChunkedAssetUploadCommand(uploadId, options), ct).ConfigureAwait(false);
 
         if (!result.Success)
         {
@@ -293,7 +295,7 @@ public class AssetsController(
             return Unauthorized();
         }
 
-        await uploadService.AbortChunkedUploadAsync(uploadId, ct).ConfigureAwait(false);
+        await sender.Send(new AbortChunkedAssetUploadCommand(uploadId), ct).ConfigureAwait(false);
         return NoContent();
     }
 
@@ -517,6 +519,22 @@ public class AssetsController(
             ct).ConfigureAwait(false);
 
         await referenceRepository.RecordAccessAsync(id, ct).ConfigureAwait(false);
+
+        if (durableEventProducer is not null)
+        {
+            await durableEventProducer.RecordAsync(new AssetServedEvent(
+                reference.Id,
+                reference.Content.Id,
+                reference.Content.SizeBytes,
+                "api-download")
+            {
+                TenantId = reference.TenantId ?? DurableIntegrationEventTenants.Platform,
+                ActorId = Actor.SubjectIdAsGuid ?? DurableIntegrationEventActors.System,
+                AggregateType = nameof(AssetReference),
+                AggregateId = reference.Id.ToString(),
+                CorrelationId = Guid.NewGuid()
+            }, ct).ConfigureAwait(false);
+        }
 
         return File(stream, reference.Content.MimeType, reference.DisplayName);
     }

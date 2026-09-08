@@ -10,7 +10,6 @@
         <PackageReference Include="AWSSDK.S3" />
         <ProjectReference Include="..\GameGuild.SharedKernel\GameGuild.SharedKernel.csproj"/>
         <ProjectReference Include="..\GameGuild.Identity.Users\GameGuild.Identity.Users.csproj"/>
-        <ProjectReference Include="..\GameGuild.Economy\GameGuild.Economy.csproj"/>
     </ItemGroup>
 
 </Project>

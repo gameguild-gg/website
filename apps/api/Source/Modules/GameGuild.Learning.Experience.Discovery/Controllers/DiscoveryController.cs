@@ -1,4 +1,5 @@
 using Asp.Versioning;
+using GameGuild.CQRS;
 using GameGuild.Identity.Authorization;
 using GameGuild.Learning.Attributes;
 using GameGuild.Learning.Filters;
@@ -24,7 +25,7 @@ namespace GameGuild.Learning.Experience.Discovery;
 [LxpCapabilityFilter]
 [LxpCapability(LxpCapabilities.Discovery)]
 [Authorize]
-public class DiscoveryController(IDiscoveryService discoveryService) : BaseApiController
+public class DiscoveryController(IDiscoveryService discoveryService, ISender sender) : BaseApiController
 {
     // ===== PUBLIC FEATURED CONTENT ENDPOINTS =====
 
@@ -79,7 +80,19 @@ public class DiscoveryController(IDiscoveryService discoveryService) : BaseApiCo
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
 
-        var content = await discoveryService.CreateFeaturedContentAsync(dto, tenantId).ConfigureAwait(false);
+        var content = await sender.Send(new CreateFeaturedContentCommand(
+            dto.Type,
+            dto.Title,
+            dto.DisplayOrder,
+            dto.CourseId,
+            dto.LearningPathId,
+            tenantId,
+            dto.Subtitle,
+            dto.ImageUrl,
+            dto.LinkUrl,
+            dto.StartsAt,
+            dto.EndsAt,
+            dto.TargetAudience)).ConfigureAwait(false);
         return CreatedAtAction(nameof(GetFeaturedContentById), new { id = content.Id }, content.ToDto());
     }
 
@@ -94,7 +107,17 @@ public class DiscoveryController(IDiscoveryService discoveryService) : BaseApiCo
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
 
-        var content = await discoveryService.UpdateFeaturedContentAsync(id, dto).ConfigureAwait(false);
+        var content = await sender.Send(new UpdateFeaturedContentCommand(
+            id,
+            dto.Title,
+            dto.Subtitle,
+            dto.ImageUrl,
+            dto.LinkUrl,
+            dto.DisplayOrder,
+            dto.StartsAt,
+            dto.EndsAt,
+            dto.IsActive,
+            dto.TargetAudience)).ConfigureAwait(false);
         if (content == null) return NotFound();
         return Ok(content.ToDto());
     }
@@ -108,7 +131,7 @@ public class DiscoveryController(IDiscoveryService discoveryService) : BaseApiCo
         Guid id,
         [FromQuery] bool isActive)
     {
-        var content = await discoveryService.ToggleFeaturedContentAsync(id, isActive).ConfigureAwait(false);
+        var content = await sender.Send(new ToggleFeaturedContentCommand(id, isActive)).ConfigureAwait(false);
         if (content == null) return NotFound();
         return Ok(content.ToDto());
     }
@@ -120,7 +143,7 @@ public class DiscoveryController(IDiscoveryService discoveryService) : BaseApiCo
     [RequireResourcePermission<PermissionType, FeaturedContent>(PermissionType.Delete)]
     public async Task<IActionResult> DeleteFeaturedContent(Guid id)
     {
-        var success = await discoveryService.DeleteFeaturedContentAsync(id).ConfigureAwait(false);
+        var success = await sender.Send(new DeleteFeaturedContentCommand(id)).ConfigureAwait(false);
         if (!success) return NotFound();
         return NoContent();
     }
@@ -205,7 +228,13 @@ public class DiscoveryController(IDiscoveryService discoveryService) : BaseApiCo
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
 
-        var collection = await discoveryService.CreateCollectionAsync(dto, curatorId, tenantId).ConfigureAwait(false);
+        var collection = await sender.Send(new CreateCourseCollectionCommand(
+            curatorId,
+            dto.Title,
+            dto.Type,
+            tenantId,
+            dto.Description,
+            dto.ImageUrl)).ConfigureAwait(false);
         return CreatedAtAction(nameof(GetCollectionById), new { id = collection.Id }, collection.ToDto());
     }
 
@@ -220,7 +249,12 @@ public class DiscoveryController(IDiscoveryService discoveryService) : BaseApiCo
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
 
-        var collection = await discoveryService.UpdateCollectionAsync(id, dto).ConfigureAwait(false);
+        var collection = await sender.Send(new UpdateCourseCollectionCommand(
+            id,
+            dto.Title,
+            dto.Description,
+            dto.ImageUrl,
+            dto.IsFeatured)).ConfigureAwait(false);
         if (collection == null) return NotFound();
         return Ok(collection.ToDto());
     }
@@ -232,7 +266,7 @@ public class DiscoveryController(IDiscoveryService discoveryService) : BaseApiCo
     [RequireResourcePermission<PermissionType, CourseCollection>(PermissionType.Publish)]
     public async Task<ActionResult<CourseCollectionDto>> PublishCollection(Guid id)
     {
-        var collection = await discoveryService.PublishCollectionAsync(id).ConfigureAwait(false);
+        var collection = await sender.Send(new PublishCourseCollectionCommand(id)).ConfigureAwait(false);
         if (collection == null) return NotFound();
         return Ok(collection.ToDto());
     }
@@ -244,7 +278,7 @@ public class DiscoveryController(IDiscoveryService discoveryService) : BaseApiCo
     [RequireResourcePermission<PermissionType, CourseCollection>(PermissionType.Unpublish)]
     public async Task<ActionResult<CourseCollectionDto>> UnpublishCollection(Guid id)
     {
-        var collection = await discoveryService.UnpublishCollectionAsync(id).ConfigureAwait(false);
+        var collection = await sender.Send(new UnpublishCourseCollectionCommand(id)).ConfigureAwait(false);
         if (collection == null) return NotFound();
         return Ok(collection.ToDto());
     }
@@ -256,7 +290,7 @@ public class DiscoveryController(IDiscoveryService discoveryService) : BaseApiCo
     [RequireResourcePermission<PermissionType, CourseCollection>(PermissionType.Delete)]
     public async Task<IActionResult> DeleteCollection(Guid id)
     {
-        var success = await discoveryService.DeleteCollectionAsync(id).ConfigureAwait(false);
+        var success = await sender.Send(new DeleteCourseCollectionCommand(id)).ConfigureAwait(false);
         if (!success) return NotFound();
         return NoContent();
     }
@@ -273,7 +307,11 @@ public class DiscoveryController(IDiscoveryService discoveryService) : BaseApiCo
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
 
-        var searchHistory = await discoveryService.RecordSearchAsync(dto, userId).ConfigureAwait(false);
+        var searchHistory = await sender.Send(new RecordSearchCommand(
+            dto.Query,
+            dto.ResultCount,
+            userId,
+            dto.Filters)).ConfigureAwait(false);
         return Ok(searchHistory.ToDto());
     }
 
@@ -285,7 +323,7 @@ public class DiscoveryController(IDiscoveryService discoveryService) : BaseApiCo
         Guid searchId,
         [FromBody] RecordSearchClickDto dto)
     {
-        var success = await discoveryService.RecordSearchClickAsync(searchId, dto.ClickedCourseId).ConfigureAwait(false);
+        var success = await sender.Send(new RecordSearchClickCommand(searchId, dto.ClickedCourseId)).ConfigureAwait(false);
         if (!success) return NotFound();
         return NoContent();
     }

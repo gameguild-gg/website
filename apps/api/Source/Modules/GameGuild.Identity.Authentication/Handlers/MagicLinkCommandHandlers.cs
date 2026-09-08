@@ -59,7 +59,7 @@ public sealed class ConsumeMagicLinkCommandHandler(
     IEmailVerificationService emailVerificationService,
     IJwtTokenService jwtTokenService,
     IConfiguration configuration,
-    ILogger<ConsumeMagicLinkCommandHandler> logger) : IRequestHandler<ConsumeMagicLinkCommand, SignInResponse>
+    ILogger<ConsumeMagicLinkCommandHandler> logger) : ICommandHandler<ConsumeMagicLinkCommand, SignInResponse>
 {
     public async Task<SignInResponse> Handle(ConsumeMagicLinkCommand request, CancellationToken cancellationToken)
     {

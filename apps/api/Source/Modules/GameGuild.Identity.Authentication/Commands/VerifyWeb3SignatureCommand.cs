@@ -5,7 +5,7 @@ namespace GameGuild.Identity.Authentication;
 /// <summary>
 ///     Command to verify Web3 signature and authenticate a user
 /// </summary>
-public class VerifyWeb3SignatureCommand : IRequest<SignInResponse>
+public class VerifyWeb3SignatureCommand : ICommand<SignInResponse>
 {
     public string WalletAddress { get; set; } = string.Empty;
 

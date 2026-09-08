@@ -1,4 +1,6 @@
-import * as React from "react"
+"use client"
+
+import { Slot } from "@radix-ui/react-slot"
 import { Button as ButtonPrimitive } from "@base-ui/react/button"
 import { cva, type VariantProps } from "class-variance-authority"
 
@@ -55,17 +57,10 @@ function Button({
 }) {
   const buttonClassName = cn(buttonVariants({ variant, size, className }))
 
-  if (asChild && React.isValidElement(children)) {
-    const child = children as React.ReactElement<{
-      className?: string
-      [key: string]: unknown
-    }>
-
-    return React.cloneElement(child, {
-      ...props,
-      "data-slot": "button",
-      className: cn(buttonClassName, child.props.className),
-    })
+  if (asChild) {
+    // Keep semantic anchors and Radix-compatible child/parent handler and ref
+    // composition. Base UI's native render API remains available below.
+    return <Slot data-slot="button" className={buttonClassName} {...props} style={typeof props.style === "function" ? props.style({ disabled: !!props.disabled }) : props.style}>{children}</Slot>
   }
 
   return (

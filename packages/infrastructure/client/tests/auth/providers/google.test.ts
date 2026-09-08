@@ -86,6 +86,27 @@ describe('GoogleProvider', () => {
       expect(result.user.image).toBe('https://lh3.google.com/pic.jpg');
     });
 
+    it('preserves roles and permissions from the backend access token', async () => {
+      const claims = Buffer.from(
+        JSON.stringify({ roles: ['Operator', 'User'], permissions: ['users:read'] }),
+      ).toString('base64url');
+      globalThis.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          accessToken: `header.${claims}.signature`,
+          refreshToken: 'google-refresh',
+          userId: 'operator-1',
+          email: 'operator@example.com',
+        }),
+      });
+      const provider = GoogleProvider({ clientId: 'id', clientSecret: 'secret' });
+
+      const result = await provider.exchangeToken('google-id-token', 'http://localhost:5295');
+
+      expect(result.user.roles).toEqual(['Operator', 'User']);
+      expect(result.user.permissions).toEqual(['users:read']);
+    });
+
     it('should include tenantId when provided', async () => {
       const mockFetch = vi.fn().mockResolvedValue({
         ok: true,

@@ -71,12 +71,12 @@ public sealed class AddTenantMemberCommandHandler(
                 }
             }
 
-            await memberRepository.UpdateAsync(existingMember, cancellationToken).ConfigureAwait(false);
-
             if (request.RequiresAcceptance)
             {
-                QueueInviteEmail(tenant, request);
+                QueueInviteEmail(existingMember, request);
             }
+
+            await memberRepository.UpdateAsync(existingMember, cancellationToken).ConfigureAwait(false);
 
             tenant.AddDomainEvent(new TenantMemberAddedEvent(request.TenantId, request.UserId, request.InvitedByEmail ?? "unknown@email.com", request.Role));
 
@@ -103,35 +103,31 @@ public sealed class AddTenantMemberCommandHandler(
                 .ToJson();
         }
 
-        var createdMember = await memberRepository.CreateAsync(member, cancellationToken).ConfigureAwait(false);
-
         if (request.RequiresAcceptance)
         {
-            QueueInviteEmail(tenant, request);
+            QueueInviteEmail(member, request);
         }
+
+        var createdMember = await memberRepository.CreateAsync(member, cancellationToken).ConfigureAwait(false);
 
         tenant.AddDomainEvent(new TenantMemberAddedEvent(request.TenantId, request.UserId, request.InvitedByEmail ?? "unknown@email.com", request.Role));
 
         return new AddTenantMemberResponse { Success = true, Message = "Member added successfully", MemberId = createdMember.Id };
     }
 
-    private void QueueInviteEmail(Tenant tenant, AddTenantMemberCommand request)
+    private static void QueueInviteEmail(TenantMember member, AddTenantMemberCommand request)
     {
         if (string.IsNullOrWhiteSpace(request.InviteeEmail))
         {
             return;
         }
 
-        tenant.AddDomainEvent(new TenantInviteRequestedNotification(
-            request.TenantId,
-            request.InviteeEmail.Trim(),
-            request.InviteeName,
-            request.InvitedByEmail,
-            tenant.Name,
-            request.Role,
-            BuildReviewUrl(),
-            BuildActivationUrl(request.InviteeEmail),
-            resend: false));
+        member.AddIntegrationEvent(new TenantMemberInviteRequestedV1(member.Id)
+        {
+            TenantId = member.TenantId,
+            AggregateType = "TenantMember",
+            AggregateId = member.Id.ToString()
+        });
     }
 
     private string BuildReviewUrl()

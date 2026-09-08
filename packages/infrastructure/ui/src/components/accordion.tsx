@@ -1,14 +1,36 @@
+"use client"
+
 import { Accordion as AccordionPrimitive } from "@base-ui/react/accordion"
 
 import { cn } from "@game-guild/ui/lib/utils"
 import { ChevronDownIcon, ChevronUpIcon } from "lucide-react"
 
-function Accordion({ className, ...props }: AccordionPrimitive.Root.Props) {
+type AccordionProps =
+  | (AccordionPrimitive.Root.Props<string> & { type?: undefined; collapsible?: boolean })
+  | (Omit<AccordionPrimitive.Root.Props<string>, "value" | "defaultValue" | "onValueChange" | "multiple"> & {
+      type: "single"; collapsible?: boolean; value?: string; defaultValue?: string; onValueChange?: (value: string) => void
+    })
+  | (AccordionPrimitive.Root.Props<string> & { type: "multiple"; collapsible?: boolean })
+
+function Accordion({ className, ...props }: AccordionProps) {
+  const { type, collapsible, value, defaultValue, onValueChange, ...rest } = props
+  const single = type === "single"
   return (
     <AccordionPrimitive.Root
       data-slot="accordion"
       className={cn("flex w-full flex-col", className)}
-      {...props}
+      {...rest}
+      multiple={type === "multiple" || (!single && ('multiple' in rest ? rest.multiple : false))}
+      value={single ? (value === undefined ? undefined : value ? [value as string] : []) : value as string[] | undefined}
+      defaultValue={single ? (defaultValue ? [defaultValue as string] : []) : defaultValue as string[] | undefined}
+      onValueChange={(values, details) => {
+        if (single) {
+          if (!collapsible && values.length === 0) { details.cancel(); return }
+          ;(onValueChange as ((value: string) => void) | undefined)?.(values[0] ?? "")
+        } else {
+          ;(onValueChange as AccordionPrimitive.Root.Props<string>["onValueChange"])?.(values, details)
+        }
+      }}
     />
   )
 }

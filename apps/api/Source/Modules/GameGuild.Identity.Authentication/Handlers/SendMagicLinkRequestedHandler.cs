@@ -33,7 +33,7 @@ public sealed class SendMagicLinkRequestedHandler(
                 userName = notification.UserName
             });
 
-            await notificationService.SendAsync(
+            var result = await notificationService.SendAsync(
                 user.Id,
                 NotificationType.MagicLink,
                 "Your GameGuild sign-in link",
@@ -43,11 +43,15 @@ public sealed class SendMagicLinkRequestedHandler(
                 metadata: metadata,
                 cancellationToken: cancellationToken).ConfigureAwait(false);
 
+            if (result is null || result.IsFailure)
+                throw new InvalidOperationException("Authentication notification was not durably queued.");
+
             logger.LogInformation("Magic-link email queued for {Email}", notification.Email);
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Error queueing magic-link email to {Email}", notification.Email);
+            throw; // Queue persistence failed; do not acknowledge a lost notification.
         }
     }
 }

@@ -153,9 +153,8 @@ public class NotificationsControllerPreferencesTests
             IsAuthenticated = true
         });
 
-        var notificationService = new Mock<INotificationService>().Object;
-        var handler = new NotificationMutationCommandHandler(notificationService, preferenceService);
-        return new NotificationsController(notificationService, actorAccessor.Object, new NotificationCommandTestSender(handler));
+        return new NotificationsController(new Mock<INotificationService>().Object, preferenceService, actorAccessor.Object,
+            new HandlerSender(new EmailPreferenceCommandHandler(preferenceService)));
     }
 
     private static NotificationsTestDbContext CreateContext()
