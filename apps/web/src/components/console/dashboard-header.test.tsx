@@ -1,6 +1,5 @@
-import { render, screen, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import type { ReactNode } from 'react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
+import type { ButtonHTMLAttributes, ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DashboardHeader } from './dashboard-header';
 
@@ -32,19 +31,18 @@ vi.mock('@game-guild/client/react', () => ({
 }));
 
 vi.mock('@game-guild/ui/components/sidebar', () => ({
-  SidebarTrigger: () => <button type="button">Toggle sidebar</button>,
+  SidebarTrigger: (props: ButtonHTMLAttributes<HTMLButtonElement>) => (
+    <button type="button" {...props}>Toggle sidebar</button>
+  ),
 }));
 
 describe('DashboardHeader', () => {
   beforeEach(() => {
     mocks.pathname = '/workspace/learning/courses';
-    mocks.push.mockReset();
-    mocks.signOut.mockReset();
-    mocks.signOut.mockResolvedValue(undefined);
   });
 
   it('updates the accessible breadcrumb when Testing Lab routes change', () => {
-    mocks.pathname = '/console/community/testing-lab/reports';
+    mocks.pathname = '/workspace/testing-lab/reports';
     const { rerender } = render(
       <DashboardHeader
         user={{ id: 'user-123', name: 'Ada Lovelace', email: 'ada@gameguild.gg', image: null }}
@@ -54,7 +52,7 @@ describe('DashboardHeader', () => {
 
     expect(screen.getByRole('navigation', { name: 'Dashboard breadcrumb' })).toHaveTextContent('Reports');
 
-    mocks.pathname = '/console/community/testing-lab/settings/access';
+    mocks.pathname = '/workspace/testing-lab/settings/access';
     rerender(
       <DashboardHeader
         user={{ id: 'user-123', name: 'Ada Lovelace', email: 'ada@gameguild.gg', image: null }}
@@ -66,45 +64,30 @@ describe('DashboardHeader', () => {
     expect(breadcrumb).toHaveTextContent('Access');
     expect(breadcrumb).not.toHaveTextContent('Reports');
   });
-  it('renders the signed-in user menu and routes sign-out through auth', async () => {
-    const user = userEvent.setup();
-
+  it('keeps Feed, Notifications, and a non-duplicated user profile in workspace header actions', async () => {
     render(
       <DashboardHeader
-        user={{
-          id: 'user-123',
-          name: 'Ada Lovelace',
-          email: 'ada@gameguild.gg',
-          image: null,
-        }}
+        user={{ id: 'user-123', name: 'Ada Lovelace', email: 'ada@gameguild.gg', image: null }}
         notifications={{ items: [], unreadCount: 0 }}
       />,
     );
 
-    const menuTrigger = screen.getByRole('button', { name: 'Open Ada Lovelace account menu' });
-    expect(menuTrigger).toBeInTheDocument();
-
-    await user.click(menuTrigger);
-
-    expect(await screen.findByText('ada@gameguild.gg')).toBeInTheDocument();
-    expect(screen.getByRole('menuitem', { name: /my workspace/i })).toHaveAttribute(
-      'href',
-      '/workspace',
-    );
-    expect(screen.getByRole('menuitem', { name: /account settings/i })).toHaveAttribute(
-      'href',
-      '/workspace/settings/account',
-    );
-
-    await user.click(screen.getByRole('menuitem', { name: /sign out/i }));
-
-    await waitFor(() => {
-      expect(mocks.signOut).toHaveBeenCalledWith({ redirect: false });
-    });
-    expect(mocks.push).toHaveBeenCalledWith('/sign-in');
+    const actions = screen.getByRole('group', { name: 'Dashboard actions' });
+    expect(within(actions).getByRole('link', { name: 'Open Community feed' })).toBeInTheDocument();
+    expect(within(actions).getByRole('button', { name: 'Notifications' })).toBeInTheDocument();
+    const profile = within(actions).getByRole('button', { name: 'Open Ada Lovelace account menu' });
+    expect(profile).toHaveTextContent('Ada Lovelace');
+    expect(profile).toHaveTextContent('ada@gameguild.gg');
+    expect(profile.querySelector('svg.lucide-chevrons-up-down')).toBeInTheDocument();
+    fireEvent.click(profile);
+    await screen.findByRole('menu');
+    expect(screen.getAllByText('Ada Lovelace')).toHaveLength(1);
+    expect(screen.getAllByText('ada@gameguild.gg')).toHaveLength(1);
+    expect(within(actions).queryByRole('button', { name: 'Search dashboard' })).not.toBeInTheDocument();
+    expect(within(actions).queryByRole('button', { name: 'Toggle theme' })).not.toBeInTheDocument();
   });
 
-  it('keeps dashboard search responsive across desktop and mobile header layouts', () => {
+  it('temporarily omits dashboard search from desktop and mobile layouts', () => {
     render(
       <DashboardHeader
         user={{
@@ -117,11 +100,40 @@ describe('DashboardHeader', () => {
       />,
     );
 
-    const searchButtons = screen.getAllByRole('button', { name: 'Search dashboard' });
-    expect(searchButtons).toHaveLength(2);
-    expect(searchButtons[0]).toHaveClass('max-w-sm');
-    expect(searchButtons[0]).toHaveClass('lg:max-w-md');
-    expect(searchButtons[0].parentElement).toHaveClass('hidden', 'xl:flex', 'justify-center');
-    expect(searchButtons[1]).toHaveClass('xl:hidden');
+    expect(screen.queryByRole('button', { name: 'Search dashboard' })).not.toBeInTheDocument();
+  });
+
+  it('places the Community feed link with the global header actions', () => {
+    mocks.pathname = '/workspace/projects';
+
+    render(
+      <DashboardHeader
+        user={{ id: 'user-123', name: 'Ada Lovelace', email: 'ada@gameguild.gg', image: null }}
+        notifications={{ items: [], unreadCount: 0 }}
+      />,
+    );
+
+    const actions = screen.getByRole('group', { name: 'Dashboard actions' });
+    const feedLink = within(actions).getByRole('link', { name: 'Open Community feed' });
+    expect(feedLink).toHaveAttribute('href', '/');
+    expect(feedLink.textContent).toBe('');
+    expect(feedLink.querySelector('svg.lucide-rss')).toBeInTheDocument();
+    expect(feedLink).toHaveAttribute('data-slot', 'button');
+    expect(feedLink).not.toHaveClass('text-muted-foreground');
+    expect(screen.getByRole('button', { name: 'Toggle sidebar' })).toHaveClass('md:hidden');
+  });
+
+  it('keeps the existing sidebar toggle and omits the Community return in the console', () => {
+    mocks.pathname = '/console/community';
+
+    render(
+      <DashboardHeader
+        user={{ id: 'user-123', name: 'Ada Lovelace', email: 'ada@gameguild.gg', image: null }}
+        notifications={{ items: [], unreadCount: 0 }}
+      />,
+    );
+
+    expect(screen.queryByRole('link', { name: 'Open Community feed' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Toggle sidebar' })).not.toHaveClass('md:hidden');
   });
 });

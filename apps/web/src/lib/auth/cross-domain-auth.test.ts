@@ -58,6 +58,7 @@ describe("cross-domain auth", () => {
   });
 
   it("allows local application routes", () => {
+    expect(resolveAllowedAuthRedirect(undefined)).toBe("/social");
     expect(resolveAllowedAuthRedirect("/dashboard")).toBe("/dashboard");
     expect(
       resolveAllowedAuthRedirect(

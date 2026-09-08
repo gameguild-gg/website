@@ -80,7 +80,8 @@ public sealed class TestingEventsController(IMediator mediator) : BaseApiControl
             request.RequiresFeedback,
             request.Recurrence,
             request.TemplateRevisionId,
-            request.Configuration), cancellationToken).ConfigureAwait(false);
+            request.Configuration,
+            request.TimeZoneId), cancellationToken).ConfigureAwait(false);
         return result.IsSuccess
             ? CreatedAtAction(nameof(GetEvent), new { eventId = result.Value.Id }, result.Value)
             : ToActionResult(result);
@@ -116,7 +117,8 @@ public sealed class TestingEventsController(IMediator mediator) : BaseApiControl
             request.ApplicationsCloseAt,
             request.StartsAt,
             request.EndsAt,
-            request.RequiresFeedback), cancellationToken).ConfigureAwait(false));
+            request.RequiresFeedback,
+            request.TimeZoneId), cancellationToken).ConfigureAwait(false));
 
     [HttpDelete("{eventId:guid}")]
     [RequireTestingLabPermission(TestingLabActions.Delete, TestingLabResourceTypes.Event, "eventId")]

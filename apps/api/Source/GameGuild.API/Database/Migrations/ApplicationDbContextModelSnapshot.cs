@@ -24730,6 +24730,11 @@ namespace GameGuild.API.Database.Migrations
                     b.Property<string>("TesterRegistrationSchemaJson")
                         .HasColumnType("jsonb");
 
+                    b.Property<string>("TimeZoneId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 

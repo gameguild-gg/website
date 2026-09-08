@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 vi.mock("@/i18n/navigation", () => ({
   Link: "a",
-  usePathname: () => "/console/community/testing-lab",
+  usePathname: () => "/workspace/testing-lab",
 }));
 
 import {
@@ -13,7 +13,7 @@ import {
 describe("dashboard management navigation", () => {
   it("places Testing Lab and Launch Pad under an explicit administration scope", () => {
     const community = dashboardNavigationData.find(
-      (group) => group.label === "Community administration",
+      (group) => group.label === "Community Management",
     );
     const testingLab = community?.items.find(
       (item) => item.title === "Testing Lab",
@@ -28,16 +28,9 @@ describe("dashboard management navigation", () => {
     expect(
       testingLab?.subGroups?.map(({ title, url }) => ({ title, url })),
     ).toEqual([
-      { title: "Overview", url: "/console/community/testing-lab" },
-      { title: "Events", url: "/console/community/testing-lab/events" },
-      { title: "Applications", url: "/console/community/testing-lab/applications" },
-      { title: "Projects", url: "/console/community/testing-lab/projects" },
-      { title: "Participants", url: "/console/community/testing-lab/participants" },
-      { title: "Feedback", url: "/console/community/testing-lab/feedback" },
-      { title: "Analytics", url: "/console/community/testing-lab/analytics" },
-      { title: "Locations", url: "/console/community/testing-lab/locations" },
-      { title: "Access", url: "/console/community/testing-lab/access" },
-      { title: "Settings", url: "/console/community/testing-lab/settings" },
+      { title: "Calendar", url: "/workspace/testing-lab" },
+      { title: "Sessions", url: "/workspace/testing-lab/events" },
+      { title: "Settings", url: "/workspace/testing-lab/settings" },
     ]);
     expect(launchPad?.url).toBe("/console/community/launch-pad");
     expect(platform?.items.map((item) => item.title)).toEqual(["Economy", "Roles"]);
@@ -57,7 +50,7 @@ describe("dashboard management navigation", () => {
   it("hides administrative modules from a regular member", () => {
     const navigation = filterDashboardNavigation(dashboardNavigationData, []);
 
-    expect(navigation.map((group) => group.label)).toEqual(["My Workspace"]);
+    expect(navigation.map((group) => group.label)).toEqual(["Workspace"]);
     expect(navigation[0]?.items.map((item) => item.title)).toEqual([
       "Home",
       "Projects",
@@ -70,7 +63,7 @@ describe("dashboard management navigation", () => {
 
   it("links the workspace settings group to every hub section", () => {
     const workspace = dashboardNavigationData.find(
-      (group) => group.label === "My Workspace",
+      (group) => group.label === "Workspace",
     );
     const settings = workspace?.items.find((item) => item.title === "Settings");
 
@@ -86,7 +79,7 @@ describe("dashboard management navigation", () => {
 
   it("keeps Projects and Teams as direct workspace links without child routes", () => {
     const workspace = dashboardNavigationData.find(
-      (group) => group.label === "My Workspace",
+      (group) => group.label === "Workspace",
     );
     const projects = workspace?.items.find((item) => item.title === "Projects");
     const teams = workspace?.items.find((item) => item.title === "Teams");
@@ -102,7 +95,7 @@ describe("dashboard management navigation", () => {
       "TestingLab.ManageEvents",
     ]);
     const community = navigation.find(
-      (group) => group.label === "Community administration",
+      (group) => group.label === "Community Management",
     );
 
     expect(community?.items.map((item) => item.title)).toEqual([
@@ -110,6 +103,21 @@ describe("dashboard management navigation", () => {
     ]);
     expect(
       community?.items[0]?.subGroups?.map((item) => item.title),
-    ).toEqual(["Overview", "Events"]);
+    ).toEqual(["Calendar", "Sessions"]);
+  });
+
+  it("keeps global Testing Lab settings grouped behind one entry", () => {
+    const navigation = filterDashboardNavigation(dashboardNavigationData, [
+      "TestingLab.ManageSettings",
+      "TestingLab.ViewAnalytics",
+    ]);
+    const testingLab = navigation
+      .find((group) => group.label === "Community Management")
+      ?.items.find((item) => item.title === "Testing Lab");
+
+    expect(testingLab?.subGroups?.map((item) => item.title)).toEqual([
+      "Calendar",
+      "Settings",
+    ]);
   });
 });

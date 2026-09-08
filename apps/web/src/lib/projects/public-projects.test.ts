@@ -72,6 +72,7 @@ describe("public Projects API queries", () => {
       expect.objectContaining({
         slug: "api-project",
         title: "API Project",
+        creatorId: "creator-1",
         creator: "API Creator",
         status: "Beta",
         tags: ["Testing Lab", "Public"],

@@ -641,7 +641,7 @@ async function run() {
     await signIn(page);
     await visit(
       page,
-      `/console/community/testing-lab/events/${fixture.event.id}/applications`,
+      `/workspace/testing-lab/events/${fixture.event.id}/applications`,
       "Testing Lab manager applications",
     );
     await waitForClientHydration(page);
@@ -664,7 +664,7 @@ async function run() {
     );
     await visit(
       reviewerPage,
-      `/console/community/testing-lab/events/${fixture.event.id}/applications`,
+      `/workspace/testing-lab/events/${fixture.event.id}/applications`,
       "committee review applications",
     );
     await waitForClientHydration(reviewerPage);
@@ -768,45 +768,45 @@ async function run() {
 
     console.log("[testing-lab-browser-e2e] manager operations surfaces");
     for (const [pathname, title] of [
-      ["/console/community/testing-lab", "Testing Lab"],
-      ["/console/community/testing-lab/events", "Testing events"],
+      ["/workspace/testing-lab", "Testing Lab"],
+      ["/workspace/testing-lab/events", "Testing events"],
       [
-        `/console/community/testing-lab/events/${fixture.event.id}/overview`,
+        `/workspace/testing-lab/events/${fixture.event.id}/overview`,
         "Event overview",
       ],
       [
-        `/console/community/testing-lab/events/${fixture.event.id}/applications`,
+        `/workspace/testing-lab/events/${fixture.event.id}/applications`,
         "Project applications",
       ],
       [
-        `/console/community/testing-lab/events/${fixture.event.id}/schedule`,
+        `/workspace/testing-lab/events/${fixture.event.id}/schedule`,
         "Schedule and capacity",
       ],
       [
-        `/console/community/testing-lab/events/${fixture.event.id}/testers`,
+        `/workspace/testing-lab/events/${fixture.event.id}/testers`,
         "Testers and attendance",
       ],
       [
-        `/console/community/testing-lab/events/${fixture.event.id}/feedback`,
+        `/workspace/testing-lab/events/${fixture.event.id}/feedback`,
         "Feedback review",
       ],
       [
-        `/console/community/testing-lab/events/${fixture.event.id}/learning`,
+        `/workspace/testing-lab/events/${fixture.event.id}/learning`,
         "Learning evidence",
       ],
-      ["/console/community/testing-lab/projects", "Community projects"],
+      ["/workspace/testing-lab/projects", "Community projects"],
       [
-        "/console/community/testing-lab/participants",
+        "/workspace/testing-lab/participants",
         "Testing Lab participants",
       ],
-      ["/console/community/testing-lab/analytics", "Testing Lab analytics"],
-      ["/console/community/testing-lab/settings/general", "General settings"],
-      ["/console/community/testing-lab/settings/templates", "Event templates"],
+      ["/workspace/testing-lab/analytics", "Testing Lab analytics"],
+      ["/workspace/testing-lab/settings/general", "General settings"],
+      ["/workspace/testing-lab/settings/templates", "Event templates"],
       [
-        "/console/community/testing-lab/settings/locations",
+        "/workspace/testing-lab/settings/locations",
         "Testing locations",
       ],
-      ["/console/community/testing-lab/settings/access", "Access and roles"],
+      ["/workspace/testing-lab/settings/access", "Access and roles"],
     ]) {
       await visit(page, pathname, title);
       await waitForText(page, title);
@@ -816,7 +816,7 @@ async function run() {
     console.log("[testing-lab-browser-e2e] versioned event template creation");
     await visit(
       page,
-      "/console/community/testing-lab/settings/templates",
+      "/workspace/testing-lab/settings/templates",
       "Testing Lab event templates",
     );
     await waitForClientHydration(page);
@@ -852,7 +852,7 @@ async function run() {
     const labName = `GameGuild Browser Lab ${fixture.tag}`;
     await visit(
       page,
-      "/console/community/testing-lab/settings/general",
+      "/workspace/testing-lab/settings/general",
       "Testing Lab general settings",
     );
     await waitForClientHydration(page);
@@ -877,7 +877,7 @@ async function run() {
     const updatedLocationName = `${locationName} Updated`;
     await visit(
       page,
-      "/console/community/testing-lab/settings/locations",
+      "/workspace/testing-lab/settings/locations",
       "Testing Lab location management",
     );
     await waitForClientHydration(page);
@@ -932,7 +932,7 @@ async function run() {
     await confirmDialog.waitFor({ state: "hidden" });
     await visit(
       page,
-      "/console/community/testing-lab/settings/locations?status=archived",
+      "/workspace/testing-lab/settings/locations?status=archived",
       "archived Testing Lab locations",
     );
     await waitForClientHydration(page);
@@ -955,7 +955,7 @@ async function run() {
     const updatedRoleName = `${roleName} updated`;
     await visit(
       page,
-      "/console/community/testing-lab/settings/access",
+      "/workspace/testing-lab/settings/access",
       "Testing Lab access and roles",
     );
     await waitForClientHydration(page);
@@ -1031,7 +1031,7 @@ async function run() {
     console.log("[testing-lab-browser-e2e] attendance and required feedback");
     await visit(
       page,
-      `/console/community/testing-lab/events/${fixture.event.id}/overview`,
+      `/workspace/testing-lab/events/${fixture.event.id}/overview`,
       "active Testing Lab event overview",
     );
     await waitForClientHydration(page);
@@ -1043,7 +1043,7 @@ async function run() {
 
     await visit(
       page,
-      `/console/community/testing-lab/events/${fixture.event.id}/testers`,
+      `/workspace/testing-lab/events/${fixture.event.id}/testers`,
       "Testing Lab attendance operations",
     );
     await waitForClientHydration(page);
@@ -1102,7 +1102,7 @@ async function run() {
 
     await visit(
       page,
-      `/console/community/testing-lab/events/${fixture.event.id}/testers`,
+      `/workspace/testing-lab/events/${fixture.event.id}/testers`,
       "Testing Lab attendance completion",
     );
     await waitForClientHydration(page);
@@ -1128,7 +1128,7 @@ async function run() {
     await waitForText(page, "Completed");
     await visit(
       page,
-      `/console/community/testing-lab/events/${fixture.event.id}/feedback`,
+      `/workspace/testing-lab/events/${fixture.event.id}/feedback`,
       "Testing Lab feedback review after submission",
     );
     await waitForText(page, "Browser-verified required feedback.");
@@ -1136,7 +1136,7 @@ async function run() {
     console.log("[testing-lab-browser-e2e] filters search and pagination");
     await visit(
       page,
-      "/console/community/testing-lab/events",
+      "/workspace/testing-lab/events",
       "Testing Lab event directory filters",
     );
     await page.getByLabel("Search testing events").fill(fixture.event.name);
@@ -1152,7 +1152,7 @@ async function run() {
 
     await visit(
       page,
-      "/console/community/testing-lab/participants",
+      "/workspace/testing-lab/participants",
       "Testing Lab participant filters",
     );
     await waitForClientHydration(page);
@@ -1192,7 +1192,7 @@ async function run() {
     await assertNoViewportOverflow(page, "mobile public Testing Lab event");
     await visit(
       page,
-      `/console/community/testing-lab/events/${fixture.event.id}`,
+      `/workspace/testing-lab/events/${fixture.event.id}`,
       "mobile Testing Lab manager event",
     );
     await waitForText(page, fixture.event.name);
@@ -1208,7 +1208,7 @@ async function run() {
     await page.setViewportSize({ width: 1440, height: 1000 });
     await visit(
       page,
-      `/console/community/testing-lab/events/${fixture.event.id}/overview`,
+      `/workspace/testing-lab/events/${fixture.event.id}/overview`,
       "Testing Lab event cancellation",
     );
     await waitForClientHydration(page);

@@ -1,6 +1,5 @@
 'use client';
 
-import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { Link, usePathname } from '@/i18n/navigation';
 import { DashboardUserMenu, type DashboardUser } from './dashboard-user-menu';
 import { Badge } from '@game-guild/ui/components/badge';
@@ -23,7 +22,7 @@ import {
 } from '@game-guild/ui/components/dropdown-menu';
 import { Separator } from '@game-guild/ui/components/separator';
 import { SidebarTrigger } from '@game-guild/ui/components/sidebar';
-import { Bell, CheckCheck, Command, Mail, Search } from 'lucide-react';
+import { Bell, CheckCheck, Mail, Rss } from 'lucide-react';
 import * as React from 'react';
 import { toast } from 'sonner';
 import type { DashboardNotificationItem, DashboardNotificationSummary } from '@/lib/dashboard-notifications';
@@ -32,7 +31,6 @@ import {
   setNotificationReadAction,
   type NotificationReadActionResult,
 } from '@/lib/notifications/mark-read-action';
-import { openDashboardCommandPalette } from './dashboard-command-palette';
 
 const COURSE_ROUTE_PREFIX = ['dashboard', 'learning', 'courses'];
 
@@ -101,6 +99,7 @@ interface DashboardHeaderProps {
 
 export function DashboardHeader({ notifications, user }: DashboardHeaderProps) {
   const pathname = usePathname();
+  const isWorkspace = pathname?.startsWith('/workspace') ?? false;
   const notificationSummary = notifications ?? { items: [], unreadCount: 0 };
   const [readOverrides, setReadOverrides] = React.useState<Record<string, boolean>>({});
   const [hiddenUnreadCount, setHiddenUnreadCount] = React.useState<number | null>(null);
@@ -196,12 +195,18 @@ export function DashboardHeader({ notifications, user }: DashboardHeaderProps) {
   const breadcrumbs = generateBreadcrumbs();
 
   return (
-    <header className="sticky top-0 z-40 grid h-16 min-w-0 shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 border-b px-3 sm:px-4 xl:grid-cols-[minmax(0,1fr)_minmax(16rem,32rem)_minmax(0,1fr)]">
+    <header className="sticky top-0 z-40 grid h-16 min-w-0 shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 border-b px-3 sm:px-4">
       <div className="flex min-w-0 items-center gap-2">
-        <SidebarTrigger />
+        {isWorkspace ? (
+          <SidebarTrigger className="md:hidden" />
+        ) : (
+          <SidebarTrigger />
+        )}
         {breadcrumbs.length > 0 && (
           <>
-            <Separator orientation="vertical" className="mr-2 hidden data-[orientation=vertical]:h-4 sm:block" />
+            {!isWorkspace && (
+              <Separator orientation="vertical" className="mr-2 hidden data-[orientation=vertical]:h-4 sm:block" />
+            )}
             <Breadcrumb aria-label="Dashboard breadcrumb" className="hidden min-w-0 flex-1 overflow-hidden sm:block">
               <BreadcrumbList className="flex-nowrap overflow-hidden">
                 <BreadcrumbItem>
@@ -233,35 +238,23 @@ export function DashboardHeader({ notifications, user }: DashboardHeaderProps) {
           </>
         )}
       </div>
-      <div className="hidden min-w-0 items-center justify-center xl:flex">
-        {/* Search */}
-        <button
-          type="button"
-          onClick={openDashboardCommandPalette}
-          className="relative flex h-10 w-full max-w-sm items-center rounded-md border bg-background px-3 text-left text-sm text-muted-foreground transition-colors hover:bg-muted/50 lg:max-w-md"
-          aria-label="Search dashboard"
-        >
-          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-          <span className="min-w-0 flex-1 truncate pl-7 pr-16">Search dashboard...</span>
-          <kbd className="pointer-events-none absolute right-3 top-1/2 hidden h-5 -translate-y-1/2 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100 sm:flex">
-            <Command className="size-3" />
-          </kbd>
-        </button>
-      </div>
-      <div className="flex shrink-0 items-center justify-end gap-1 sm:gap-2">
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="xl:hidden"
-          onClick={openDashboardCommandPalette}
-          aria-label="Search dashboard"
-        >
-          <Search className="size-5" />
-        </Button>
-
-        {/* Theme Toggle */}
-        <ThemeToggle />
+      <div
+        role="group"
+        aria-label="Dashboard actions"
+        className="flex shrink-0 items-center justify-end gap-1 sm:gap-2"
+      >
+        {isWorkspace && (
+          <Button
+            asChild
+            variant="ghost"
+            size="icon"
+            className="relative"
+          >
+            <Link href="/" aria-label="Open Community feed" title="Open Community feed">
+              <Rss className="size-5" aria-hidden="true" />
+            </Link>
+          </Button>
+        )}
 
         {/* Notifications */}
         <DropdownMenu>

@@ -29,6 +29,9 @@ public sealed class TestingEvent : EntityBase
 
     public DateTime EndsAt { get; private set; }
 
+    [Required, MaxLength(100)]
+    public string TimeZoneId { get; private set; } = "UTC";
+
     public Guid? RecurrenceSeriesId { get; private set; }
 
     public int? RecurrenceOccurrence { get; private set; }
@@ -119,13 +122,15 @@ public sealed class TestingEvent : EntityBase
         int? recurrenceInterval = null,
         string? recurrenceDaysOfWeek = null,
         DateTime? recurrenceEndsAt = null,
-        int? recurrenceOccurrenceCount = null)
+        int? recurrenceOccurrenceCount = null,
+        string timeZoneId = "UTC")
     {
         if (string.IsNullOrWhiteSpace(name)) throw new ArgumentException("Event name is required.", nameof(name));
         if (managerUserId == Guid.Empty) throw new ArgumentException("Manager is required.", nameof(managerUserId));
         if (applicationsCloseAt <= applicationsOpenAt) throw new ArgumentException("Application window must end after it opens.");
         if (startsAt < applicationsCloseAt) throw new ArgumentException("Event must start after applications close.");
         if (endsAt <= startsAt) throw new ArgumentException("Event must end after it starts.");
+        var validatedTimeZoneId = ValidateTimeZoneId(timeZoneId);
 
         return new TestingEvent
         {
@@ -138,6 +143,7 @@ public sealed class TestingEvent : EntityBase
             ApplicationsCloseAt = applicationsCloseAt,
             StartsAt = startsAt,
             EndsAt = endsAt,
+            TimeZoneId = validatedTimeZoneId,
             RequiresFeedback = requiresFeedback,
             ApprovalMode = approvalMode,
             TenantId = tenantId,
@@ -160,7 +166,8 @@ public sealed class TestingEvent : EntityBase
         DateTime applicationsCloseAt,
         DateTime startsAt,
         DateTime endsAt,
-        bool requiresFeedback)
+        bool requiresFeedback,
+        string timeZoneId = "UTC")
     {
         if (Status is TestingEventStatus.Active or TestingEventStatus.Completed or TestingEventStatus.Cancelled)
             throw new InvalidOperationException("Active or terminal events cannot be edited.");
@@ -168,6 +175,7 @@ public sealed class TestingEvent : EntityBase
         if (applicationsCloseAt <= applicationsOpenAt) throw new ArgumentException("Application window must end after it opens.");
         if (startsAt < applicationsCloseAt) throw new ArgumentException("Event must start after applications close.");
         if (endsAt <= startsAt) throw new ArgumentException("Event must end after it starts.");
+        var validatedTimeZoneId = ValidateTimeZoneId(timeZoneId);
 
         Name = name.Trim();
         Description = string.IsNullOrWhiteSpace(description) ? null : description.Trim();
@@ -177,8 +185,31 @@ public sealed class TestingEvent : EntityBase
         ApplicationsCloseAt = applicationsCloseAt;
         StartsAt = startsAt;
         EndsAt = endsAt;
+        TimeZoneId = validatedTimeZoneId;
         RequiresFeedback = requiresFeedback;
         Touch();
+    }
+
+    private static string ValidateTimeZoneId(string timeZoneId)
+    {
+        if (string.IsNullOrWhiteSpace(timeZoneId))
+            throw new ArgumentException("A valid time zone is required.", nameof(timeZoneId));
+        var normalized = timeZoneId.Trim();
+        if (normalized.Length > 100)
+            throw new ArgumentException("The time zone identifier cannot exceed 100 characters.", nameof(timeZoneId));
+        try
+        {
+            _ = TimeZoneInfo.FindSystemTimeZoneById(normalized);
+            return normalized;
+        }
+        catch (TimeZoneNotFoundException)
+        {
+            throw new ArgumentException("A valid time zone is required.", nameof(timeZoneId));
+        }
+        catch (InvalidTimeZoneException)
+        {
+            throw new ArgumentException("A valid time zone is required.", nameof(timeZoneId));
+        }
     }
     public void OpenApplications()
     {

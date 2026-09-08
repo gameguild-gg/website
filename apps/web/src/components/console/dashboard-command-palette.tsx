@@ -44,7 +44,7 @@ const quickActions: DashboardQuickAction[] = [
   },
   {
     title: 'Review testing lab',
-    url: '/console/community/testing-lab',
+    url: '/workspace/testing-lab',
     icon: FlaskConical,
     requiredCapability: 'TestingLab.ManageEvents',
   },

@@ -1,11 +1,11 @@
-'use client';
+"use client";
 
-import { Loader2 } from 'lucide-react';
-import React from 'react';
+import { Gamepad2, Loader2 } from "lucide-react";
+import React from "react";
 
-import { PostCard } from '@/components/feed/post-card';
-import { loadPostsAction } from '@/lib/posts/actions';
-import type { PostCardData, PostsStream } from '@/lib/posts/queries';
+import { PostCard } from "@/components/feed/post-card";
+import { loadPostsAction } from "@/lib/posts/actions";
+import type { PostCardData, PostsStream } from "@/lib/posts/queries";
 
 /**
  * Infinite-scrolling post stream: renders the SSR page, then appends pages
@@ -21,10 +21,14 @@ export function InfinitePostFeed({
   initialNextSkip: number | null;
 }): React.JSX.Element {
   const [items, setItems] = React.useState(initialItems);
-  const [nextSkip, setNextSkip] = React.useState<number | null>(initialNextSkip);
+  const [nextSkip, setNextSkip] = React.useState<number | null>(
+    initialNextSkip,
+  );
   const [loading, setLoading] = React.useState(false);
   const sentinelRef = React.useRef<HTMLDivElement | null>(null);
-  const seenRef = React.useRef<Set<string>>(new Set(initialItems.map((item) => item.id)));
+  const seenRef = React.useRef<Set<string>>(
+    new Set(initialItems.map((item) => item.id)),
+  );
   const nextSkipRef = React.useRef<number | null>(initialNextSkip);
   const loadingRef = React.useRef(false);
 
@@ -63,33 +67,44 @@ export function InfinitePostFeed({
             setLoading(false);
           });
       },
-      { rootMargin: '600px 0px' },
+      { rootMargin: "600px 0px" },
     );
     observer.observe(node);
     return () => observer.disconnect();
   }, [stream]);
 
   return (
-    <div className="space-y-4">
+    <div>
       {items.map((post) => (
         <PostCard key={post.id} post={post} />
       ))}
 
       {items.length === 0 && !loading ? (
-        <p className="rounded-2xl border border-dashed p-10 text-center text-sm text-muted-foreground">
-          No posts here yet — be the first to share something.
-        </p>
+        <div className="mx-4 my-8 flex flex-col items-center rounded-2xl bg-card px-6 py-12 text-center text-card-foreground sm:mx-6">
+          <span className="flex size-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            <Gamepad2 className="size-5" aria-hidden="true" />
+          </span>
+          <p className="mt-4 text-sm font-semibold text-foreground">
+            Your feed is ready for its first build
+          </p>
+          <p className="mt-1 max-w-sm text-sm leading-6 text-muted-foreground">
+            Follow creators or share what you are making. Project updates and
+            community events will appear here.
+          </p>
+        </div>
       ) : null}
 
       <div ref={sentinelRef} aria-hidden="true" className="h-px" />
 
       {loading ? (
-        <p className="flex items-center justify-center gap-2 py-4 text-sm text-muted-foreground">
+        <p className="flex items-center justify-center gap-2 py-5 text-sm text-muted-foreground">
           <Loader2 className="size-4 animate-spin" aria-hidden="true" />
           Loading more…
         </p>
       ) : nextSkip === null && items.length > 0 ? (
-        <p className="py-4 text-center text-xs text-muted-foreground">You&apos;re all caught up.</p>
+        <p className="py-5 text-center text-xs text-muted-foreground/70">
+          You&apos;re all caught up.
+        </p>
       ) : null}
     </div>
   );

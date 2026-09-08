@@ -2,6 +2,7 @@
 export interface PublicProject {
   slug: string;
   title: string;
+  creatorId?: string;
   creator: string;
   creatorRole: string;
   summary: string;
@@ -19,6 +20,7 @@ export interface PublicProject {
 }
 
 export interface PublicMemberSpotlight {
+  id?: string;
   name: string;
   handle: string;
   role: string;

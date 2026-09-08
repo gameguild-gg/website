@@ -372,6 +372,7 @@ public sealed class TestingLabModelConfiguration : IModelConfiguration
             builder.HasKey(testingEvent => testingEvent.Id);
             builder.Property(testingEvent => testingEvent.Name).IsRequired().HasMaxLength(255);
             builder.Property(testingEvent => testingEvent.Description).HasMaxLength(2000);
+            builder.Property(testingEvent => testingEvent.TimeZoneId).IsRequired().HasMaxLength(100);
             builder.Property(testingEvent => testingEvent.Mode).HasConversion<string>().HasMaxLength(40);
             builder.Property(testingEvent => testingEvent.ApprovalMode).HasConversion<string>().HasMaxLength(40);
             builder.Property(testingEvent => testingEvent.Status).HasConversion<string>().HasMaxLength(40);
