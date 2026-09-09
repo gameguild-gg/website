@@ -6,5 +6,5 @@ export default async function LegacyTestingReportsPage({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
-  redirect({ href: "/workspace/testing-lab/analytics", locale });
+  redirect({ href: "/workspace/testing-lab/settings/analytics", locale });
 }

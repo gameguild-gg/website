@@ -10,8 +10,8 @@ export default async function TestingLabTemplateSettingsPage() {
     <div className="space-y-6 p-4 lg:p-6">
       <TestingLabPageHeader
         icon={Files}
-        title="Event templates"
-        description="Version reusable rules, instructions, forms, and defaults for new Testing Lab events."
+        title="Event calendars"
+        description="Create reusable event groups with their own format, review defaults, rules, and application forms."
       />
       <TestingLabAccessIssues issues={directory.accessIssues} />
       <TestingEventTemplateManagement templates={directory.templates} />

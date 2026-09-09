@@ -10,7 +10,10 @@ import {
   type CalendarView,
 } from "@/lib/testing-lab/calendar";
 import { formatTestingEventStatus } from "@/lib/testing-lab/format";
-import type { TestingLabTestingEventProjection } from "@game-guild/client";
+import type {
+  TestingLabTestingEventProjection,
+  TestingLabTestingEventTemplateProjection,
+} from "@game-guild/client";
 import { Badge } from "@game-guild/ui/components/badge";
 import { Button } from "@game-guild/ui/components/button";
 import { Calendar } from "@game-guild/ui/components/calendar";
@@ -31,6 +34,15 @@ import {
 } from "@game-guild/ui/components/select";
 import { Separator } from "@game-guild/ui/components/separator";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@game-guild/ui/components/dialog";
+import { cn } from "@game-guild/ui/lib/utils";
+import {
   format,
   getISOWeek,
   isSameMonth,
@@ -41,6 +53,7 @@ import {
   Blend,
   CalendarClock,
   ChartNoAxesCombined,
+  Check,
   ChevronLeft,
   ChevronRight,
   Clock3,
@@ -49,6 +62,7 @@ import {
   PanelRightClose,
   PanelRightOpen,
   Search,
+  Settings2,
   UsersRound,
 } from "lucide-react";
 import {
@@ -88,6 +102,79 @@ const eventFilters = [
 
 type EventFilter = (typeof eventFilters)[number]["value"];
 
+interface TestingLabEventCalendar {
+  id: string;
+  label: string;
+  eventClassName: string;
+  dotClassName: string;
+}
+
+const defaultEventCalendar: TestingLabEventCalendar = {
+  id: "default",
+  label: "Testing events",
+  eventClassName:
+    "border-primary bg-primary/12 text-foreground hover:bg-primary/18",
+  dotClassName: "bg-primary",
+};
+
+const eventCalendarPalette = [
+  {
+    eventClassName:
+      "border-chart-2 bg-chart-2/12 text-foreground hover:bg-chart-2/18",
+    dotClassName: "bg-chart-2",
+  },
+  {
+    eventClassName:
+      "border-chart-3 bg-chart-3/12 text-foreground hover:bg-chart-3/18",
+    dotClassName: "bg-chart-3",
+  },
+  {
+    eventClassName:
+      "border-chart-4 bg-chart-4/12 text-foreground hover:bg-chart-4/18",
+    dotClassName: "bg-chart-4",
+  },
+  {
+    eventClassName:
+      "border-chart-5 bg-chart-5/12 text-foreground hover:bg-chart-5/18",
+    dotClassName: "bg-chart-5",
+  },
+] as const;
+
+function eventCalendarId(event: TestingLabTestingEventProjection) {
+  return event.configuration?.sourceTemplateId ?? defaultEventCalendar.id;
+}
+
+function buildEventCalendars(
+  events: TestingLabTestingEventProjection[],
+  templates: TestingLabTestingEventTemplateProjection[],
+) {
+  const names = new Map(
+    templates
+      .filter((template) => template.id)
+      .map((template) => [
+        template.id!,
+        template.name?.trim() || "Untitled calendar",
+      ]),
+  );
+  const templateIds = new Set([
+    ...templates
+      .map((template) => template.id)
+      .filter((id): id is string => Boolean(id)),
+    ...events
+      .map(eventCalendarId)
+      .filter((id) => id !== defaultEventCalendar.id),
+  ]);
+
+  return [
+    defaultEventCalendar,
+    ...[...templateIds].map((id, index) => ({
+      id,
+      label: names.get(id) ?? "Event template",
+      ...eventCalendarPalette[index % eventCalendarPalette.length]!,
+    })),
+  ];
+}
+
 const mobileCalendarQuery = "(max-width: 767px)";
 
 function subscribeToMobileCalendar(callback: () => void) {
@@ -116,17 +203,9 @@ export interface TestingLabCalendarEventAnalytics {
 }
 
 function eventStatusClass(status?: string | null) {
-  switch (status) {
-    case "Active":
-    case "ApplicationsOpen":
-      return "border-primary bg-primary/12 text-foreground hover:bg-primary/18";
-    case "Completed":
-      return "border-muted-foreground/45 bg-muted/60 text-muted-foreground hover:bg-muted/80";
-    case "Cancelled":
-      return "border-destructive bg-destructive/10 text-destructive hover:bg-destructive/15";
-    default:
-      return "border-muted-foreground/45 bg-muted/45 text-foreground hover:bg-muted/70";
-  }
+  if (status === "Cancelled") return "opacity-55 line-through";
+  if (status === "Completed") return "opacity-70";
+  return "";
 }
 
 function eventStart(event: TestingLabTestingEventProjection) {
@@ -204,10 +283,14 @@ function capacityState(analytics?: TestingLabCalendarEventAnalytics) {
 function EventLink({
   event,
   analytics,
+  eventCalendar,
+  onSelect,
   compact = false,
 }: {
   event: TestingLabTestingEventProjection;
   analytics?: TestingLabCalendarEventAnalytics;
+  eventCalendar: TestingLabEventCalendar;
+  onSelect: (event: TestingLabTestingEventProjection) => void;
   compact?: boolean;
 }) {
   if (!event.id) return null;
@@ -219,9 +302,14 @@ function EventLink({
   return (
     <HoverCard openDelay={0} closeDelay={100}>
       <HoverCardTrigger asChild>
-        <Link
-          href={`/workspace/testing-lab/events/${event.id}`}
-          className={`block overflow-hidden rounded-sm border-l-2 px-2 py-1.5 text-left text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${eventStatusClass(event.status)}`}
+        <button
+          type="button"
+          onClick={() => onSelect(event)}
+          className={cn(
+            "block w-full overflow-hidden rounded-sm border-l-2 px-2 py-1.5 text-left text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+            eventCalendar.eventClassName,
+            eventStatusClass(event.status),
+          )}
           aria-label={`${event.name ?? "Untitled event"}${startsAt ? `, ${format(startsAt, "PPp")}` : ""}`}
         >
           <span className="flex min-w-0 items-baseline gap-1.5">
@@ -255,7 +343,7 @@ function EventLink({
               </>
             )}
           </span>
-        </Link>
+        </button>
       </HoverCardTrigger>
       <HoverCardContent align="start" sideOffset={8} className="w-80 space-y-3">
         <div className="flex items-start justify-between gap-3">
@@ -264,7 +352,7 @@ function EventLink({
               {event.name ?? "Untitled event"}
             </p>
             <p className="text-xs text-muted-foreground">
-              {modeLabel} testing event
+              {eventCalendar.label} · {modeLabel}
             </p>
           </div>
           <Badge variant="outline">
@@ -311,10 +399,14 @@ function EventLink({
 function ScheduleView({
   events,
   analyticsByEvent,
+  calendarsById,
+  onSelectEvent,
   anchor,
 }: {
   events: TestingLabTestingEventProjection[];
   analyticsByEvent: Map<string, TestingLabCalendarEventAnalytics>;
+  calendarsById: Map<string, TestingLabEventCalendar>;
+  onSelectEvent: (event: TestingLabTestingEventProjection) => void;
   anchor: Date;
 }) {
   const range = calendarRange(anchor, "schedule", true);
@@ -388,6 +480,11 @@ function ScheduleView({
                       <div className="min-w-0 flex-1">
                         <EventLink
                           event={event}
+                          eventCalendar={
+                            calendarsById.get(eventCalendarId(event)) ??
+                            defaultEventCalendar
+                          }
+                          onSelect={onSelectEvent}
                           analytics={
                             event.id
                               ? analyticsByEvent.get(event.id)
@@ -414,10 +511,14 @@ function ScheduleView({
 function YearView({
   events,
   analyticsByEvent,
+  calendarsById,
+  onSelectEvent,
   anchor,
 }: {
   events: TestingLabTestingEventProjection[];
   analyticsByEvent: Map<string, TestingLabCalendarEventAnalytics>;
+  calendarsById: Map<string, TestingLabEventCalendar>;
+  onSelectEvent: (event: TestingLabTestingEventProjection) => void;
   anchor: Date;
 }) {
   const months = Array.from(
@@ -449,6 +550,11 @@ function YearView({
                   <EventLink
                     key={event.id}
                     event={event}
+                    eventCalendar={
+                      calendarsById.get(eventCalendarId(event)) ??
+                      defaultEventCalendar
+                    }
+                    onSelect={onSelectEvent}
                     analytics={
                       event.id ? analyticsByEvent.get(event.id) : undefined
                     }
@@ -471,18 +577,25 @@ function YearView({
 function GridView({
   events,
   analyticsByEvent,
+  calendarsById,
   anchor,
   view,
   showWeekends,
   onCreateEvent,
+  onSelectEvent,
 }: {
   events: TestingLabTestingEventProjection[];
   analyticsByEvent: Map<string, TestingLabCalendarEventAnalytics>;
+  calendarsById: Map<string, TestingLabEventCalendar>;
   anchor: Date;
   view: Exclude<CalendarView, "year" | "schedule">;
   showWeekends: boolean;
   onCreateEvent: (date: Date) => void;
+  onSelectEvent: (event: TestingLabTestingEventProjection) => void;
 }) {
+  const [expandedDays, setExpandedDays] = useState<Set<string>>(
+    () => new Set(),
+  );
   const range = calendarRange(anchor, view, showWeekends);
   const segmentsByDay = useMemo(() => {
     const segments = calendarEventSegments(events, range);
@@ -562,9 +675,15 @@ function GridView({
                 >
                   <button
                     type="button"
-                    aria-label={`Create event on ${format(day, "MMMM d, yyyy")}`}
+                    aria-label={`Create event on ${format(day, "MMMM d, yyyy")}. Double-click to open.`}
                     className="absolute inset-0 z-0 rounded-none transition-colors hover:bg-muted/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
-                    onClick={() => onCreateEvent(new Date(day))}
+                    onDoubleClick={() => onCreateEvent(new Date(day))}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        onCreateEvent(new Date(day));
+                      }
+                    }}
                   />
                   <time
                     dateTime={day.toISOString()}
@@ -573,10 +692,17 @@ function GridView({
                     {format(day, "d")}
                   </time>
                   <div className="relative z-10 space-y-1">
-                    {segments.slice(0, 3).map((segment) => (
+                    {segments
+                      .slice(0, expandedDays.has(key) ? segments.length : 3)
+                      .map((segment) => (
                       <EventLink
                         key={`${segment.event.id}-${segment.dayKey}`}
                         event={segment.event}
+                        eventCalendar={
+                          calendarsById.get(eventCalendarId(segment.event)) ??
+                          defaultEventCalendar
+                        }
+                        onSelect={onSelectEvent}
                         analytics={
                           segment.event.id
                             ? analyticsByEvent.get(segment.event.id)
@@ -585,10 +711,18 @@ function GridView({
                         compact
                       />
                     ))}
-                    {segments.length > 3 ? (
-                      <p className="text-xs text-muted-foreground">
+                    {segments.length > 3 && !expandedDays.has(key) ? (
+                      <button
+                        type="button"
+                        className="rounded-sm px-1 text-xs font-medium text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        onClick={() =>
+                          setExpandedDays((current) =>
+                            new Set(current).add(key),
+                          )
+                        }
+                      >
                         +{segments.length - 3} more
-                      </p>
+                      </button>
                     ) : null}
                   </div>
                 </div>
@@ -606,11 +740,17 @@ function TestingLabPlanningSidebar({
   onAnchorChange,
   events,
   analyticsByEvent,
+  eventCalendars,
+  visibleCalendarIds,
+  onCalendarVisibilityChange,
 }: {
   anchor: Date;
   onAnchorChange: (date: Date) => void;
   events: TestingLabTestingEventProjection[];
   analyticsByEvent: Map<string, TestingLabCalendarEventAnalytics>;
+  eventCalendars: TestingLabEventCalendar[];
+  visibleCalendarIds: Set<string>;
+  onCalendarVisibilityChange: (calendarId: string, visible: boolean) => void;
 }) {
   const eventCount = events.length;
   const testingHours = events.reduce((total, event) => {
@@ -653,6 +793,7 @@ function TestingLabPlanningSidebar({
             if (date) onAnchorChange(date);
           }}
           showOutsideDays={false}
+          showWeekNumber
           className="w-full bg-transparent p-0 [--cell-size:--spacing(8)]"
           classNames={{
             root: "w-full",
@@ -660,6 +801,70 @@ function TestingLabPlanningSidebar({
             month: "w-full",
           }}
         />
+      </section>
+
+      <Separator />
+
+      <section aria-labelledby="event-calendars-title" className="p-4">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h2 id="event-calendars-title" className="text-sm font-semibold">
+              Event calendars
+            </h2>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Grouped by event template.
+            </p>
+          </div>
+          <Button asChild variant="ghost" size="icon-sm">
+            <Link
+              href="/workspace/testing-lab/settings/templates"
+              aria-label="Manage event calendars"
+              title="Manage event calendars"
+            >
+              <Settings2 aria-hidden="true" />
+            </Link>
+          </Button>
+        </div>
+        <div className="mt-3 space-y-1">
+          {eventCalendars.map((eventCalendar) => {
+            const checked = visibleCalendarIds.has(eventCalendar.id);
+            return (
+              <label
+                key={eventCalendar.id}
+                className="flex min-h-9 cursor-pointer items-center gap-2 rounded-sm px-1.5 text-sm hover:bg-muted/40"
+              >
+                <span
+                  className={cn(
+                    "flex size-4 items-center justify-center rounded-[4px] border",
+                    checked
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : "border-input",
+                  )}
+                >
+                  {checked ? <Check className="size-3" aria-hidden="true" /> : null}
+                </span>
+                <input
+                  type="checkbox"
+                  className="sr-only"
+                  checked={checked}
+                  onChange={(event) =>
+                    onCalendarVisibilityChange(
+                      eventCalendar.id,
+                      event.currentTarget.checked,
+                    )
+                  }
+                />
+                <span
+                  className={cn("size-2.5 rounded-full", eventCalendar.dotClassName)}
+                  aria-hidden="true"
+                />
+                <span className="min-w-0 flex-1 truncate">
+                  {eventCalendar.label}
+                </span>
+              </label>
+            );
+          })}
+        </div>
       </section>
 
       <Separator />
@@ -716,6 +921,11 @@ function TestingLabPlanningSidebar({
             )}
           </div>
         )}
+        <Button asChild variant="link" size="sm" className="mt-3 h-auto px-0">
+          <Link href="/workspace/testing-lab/settings/analytics">
+            View analytics
+          </Link>
+        </Button>
       </section>
     </aside>
   );
@@ -724,6 +934,7 @@ function TestingLabPlanningSidebar({
 export function TestingLabCalendar({
   events,
   eventAnalytics = [],
+  templates = [],
   initialDate = new Date(),
   defaultTimeZone = "UTC",
   toolbarStart,
@@ -731,6 +942,7 @@ export function TestingLabCalendar({
 }: {
   events: TestingLabTestingEventProjection[];
   eventAnalytics?: TestingLabCalendarEventAnalytics[];
+  templates?: TestingLabTestingEventTemplateProjection[];
   initialDate?: Date;
   defaultTimeZone?: string;
   toolbarStart?: ReactNode;
@@ -751,6 +963,28 @@ export function TestingLabCalendar({
   );
   const [createDate, setCreateDate] = useState<Date | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
+  const [selectedEvent, setSelectedEvent] =
+    useState<TestingLabTestingEventProjection | null>(null);
+  const eventCalendars = useMemo(
+    () => buildEventCalendars(events, templates),
+    [events, templates],
+  );
+  const calendarsById = useMemo(
+    () => new Map(eventCalendars.map((calendar) => [calendar.id, calendar])),
+    [eventCalendars],
+  );
+  const [calendarVisibility, setCalendarVisibility] = useState<
+    Record<string, boolean>
+  >({});
+  const visibleCalendarIds = useMemo(
+    () =>
+      new Set(
+        eventCalendars
+          .filter((calendar) => calendarVisibility[calendar.id] !== false)
+          .map((calendar) => calendar.id),
+      ),
+    [calendarVisibility, eventCalendars],
+  );
   const planningOpen = planningPreference ?? !isMobileCalendar;
   const range = calendarRange(anchor, view, true);
   const analyticsByEvent = useMemo(
@@ -765,13 +999,14 @@ export function TestingLabCalendar({
     return events.filter((event) => {
       const matchesStatus =
         statusFilter === "all" || event.status === statusFilter;
+      const matchesCalendar = visibleCalendarIds.has(eventCalendarId(event));
       const matchesQuery =
         normalizedQuery.length === 0 ||
         event.name?.toLocaleLowerCase().includes(normalizedQuery) ||
         event.description?.toLocaleLowerCase().includes(normalizedQuery);
-      return matchesStatus && matchesQuery;
+      return matchesStatus && matchesCalendar && matchesQuery;
     });
-  }, [events, query, statusFilter]);
+  }, [events, query, statusFilter, visibleCalendarIds]);
   const periodEvents = useMemo(
     () => eventsInsideRange(visibleEvents, range),
     [range, visibleEvents],
@@ -897,11 +1132,12 @@ export function TestingLabCalendar({
             </Select>
             <Button
               type="button"
-              variant="outline"
-              size="sm"
+              variant="ghost"
+              size="icon"
               aria-label={
                 planningOpen ? "Hide details panel" : "Show details panel"
               }
+              title={planningOpen ? "Hide details panel" : "Show details panel"}
               aria-pressed={planningOpen}
               onClick={() => setPlanningPreference(!planningOpen)}
             >
@@ -910,7 +1146,6 @@ export function TestingLabCalendar({
               ) : (
                 <PanelRightOpen data-icon="inline-start" />
               )}
-              Details
             </Button>
             {toolbarEnd}
           </div>
@@ -923,6 +1158,8 @@ export function TestingLabCalendar({
             <ScheduleView
               events={visibleEvents}
               analyticsByEvent={analyticsByEvent}
+              calendarsById={calendarsById}
+              onSelectEvent={setSelectedEvent}
               anchor={anchor}
             />
           ) : null}
@@ -930,6 +1167,8 @@ export function TestingLabCalendar({
             <YearView
               events={visibleEvents}
               analyticsByEvent={analyticsByEvent}
+              calendarsById={calendarsById}
+              onSelectEvent={setSelectedEvent}
               anchor={anchor}
             />
           ) : null}
@@ -941,10 +1180,12 @@ export function TestingLabCalendar({
               <GridView
                 events={visibleEvents}
                 analyticsByEvent={analyticsByEvent}
+                calendarsById={calendarsById}
                 anchor={anchor}
                 view={view}
                 showWeekends
                 onCreateEvent={(date) => openCreateEvent(date)}
+                onSelectEvent={setSelectedEvent}
               />
             </>
           ) : null}
@@ -955,6 +1196,14 @@ export function TestingLabCalendar({
             onAnchorChange={setAnchor}
             events={periodEvents}
             analyticsByEvent={analyticsByEvent}
+            eventCalendars={eventCalendars}
+            visibleCalendarIds={visibleCalendarIds}
+            onCalendarVisibilityChange={(calendarId, visible) =>
+              setCalendarVisibility((current) => ({
+                ...current,
+                [calendarId]: visible,
+              }))
+            }
           />
         ) : null}
       </div>
@@ -966,7 +1215,84 @@ export function TestingLabCalendar({
         onOpenChange={setCreateOpen}
         showTrigger={false}
         defaultTimeZone={defaultTimeZone}
+        templates={templates}
       />
+
+      <Dialog
+        open={Boolean(selectedEvent)}
+        onOpenChange={(open) => {
+          if (!open) setSelectedEvent(null);
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          {selectedEvent ? (
+            <>
+              <DialogHeader>
+                <div className="flex items-center gap-2">
+                  <span
+                    className={cn(
+                      "size-2.5 rounded-full",
+                      (calendarsById.get(eventCalendarId(selectedEvent)) ??
+                        defaultEventCalendar).dotClassName,
+                    )}
+                    aria-hidden="true"
+                  />
+                  <DialogTitle>
+                    {selectedEvent.name ?? "Untitled event"}
+                  </DialogTitle>
+                </div>
+                <DialogDescription>
+                  {(calendarsById.get(eventCalendarId(selectedEvent)) ??
+                    defaultEventCalendar).label}
+                </DialogDescription>
+              </DialogHeader>
+              <dl className="space-y-3 text-sm">
+                <div className="flex items-start gap-3">
+                  <Clock3 className="mt-0.5 size-4 text-muted-foreground" aria-hidden="true" />
+                  <div>
+                    <dt className="sr-only">Event schedule</dt>
+                    <dd>
+                      {eventStart(selectedEvent)
+                        ? format(eventStart(selectedEvent)!, "PPp")
+                        : "Schedule pending"}
+                      {eventEnd(selectedEvent)
+                        ? ` to ${format(eventEnd(selectedEvent)!, "p")}`
+                        : ""}
+                    </dd>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <UsersRound className="mt-0.5 size-4 text-muted-foreground" aria-hidden="true" />
+                  <div>
+                    <dt className="sr-only">Capacity</dt>
+                    <dd>
+                      {capacityState(
+                        selectedEvent.id
+                          ? analyticsByEvent.get(selectedEvent.id)
+                          : undefined,
+                      ).detail}
+                    </dd>
+                  </div>
+                </div>
+              </dl>
+              {selectedEvent.description ? (
+                <p className="text-sm text-muted-foreground">
+                  {selectedEvent.description}
+                </p>
+              ) : null}
+              <DialogFooter>
+                <Button asChild>
+                  <Link
+                    href={`/workspace/testing-lab/events/${selectedEvent.id}`}
+                  >
+                    Open event
+                  </Link>
+                </Button>
+              </DialogFooter>
+            </>
+          ) : null}
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }

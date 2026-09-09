@@ -5,6 +5,6 @@ export default async function LegacyTestingRequestPage({
 }: {
   params: Promise<{ locale: string; requestId: string }>;
 }) {
-  const { locale, requestId } = await params;
-  redirect({ href: `/workspace/testing-lab/projects/${requestId}`, locale });
+  const { locale } = await params;
+  redirect({ href: "/workspace/testing-lab/events", locale });
 }
