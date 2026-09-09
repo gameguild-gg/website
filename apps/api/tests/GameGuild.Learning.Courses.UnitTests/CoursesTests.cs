@@ -231,7 +231,7 @@ public class ProgramEnrollmentTests
         enrollment.EnrollmentSource.Should().Be(EnrollmentSource.Manual);
         enrollment.EnrollmentStatus.Should().Be(EnrollmentStatus.Active);
         enrollment.CompletionStatus.Should().Be(CompletionStatus.NotStarted);
-        enrollment.ProgressPercentage.Should().Be(0);
+        enrollment.ProgressPercentage.Should().Be(PercentValue.Zero);
         enrollment.CertificateIssued.Should().BeFalse();
     }
 
@@ -240,32 +240,28 @@ public class ProgramEnrollmentTests
     {
         var enrollment = new ProgramEnrollment();
 
-        enrollment.MarkAsCompleted(85m);
+        enrollment.MarkAsCompleted(Percent("85"));
 
         enrollment.CompletionStatus.Should().Be(CompletionStatus.Completed);
-        enrollment.ProgressPercentage.Should().Be(100m);
+        enrollment.ProgressPercentage.Should().Be(PercentValue.Hundred);
         enrollment.CompletedAt.Should().NotBeNull();
-        enrollment.FinalGrade.Should().Be(85m);
+        enrollment.FinalGrade.Should().Be(Percent("85"));
     }
 
     [Fact]
-    public void MarkAsCompleted_ShouldClampGrade()
+    public void PercentValue_RejectsGradeAboveOneHundred()
     {
-        var enrollment = new ProgramEnrollment();
+        var act = () => Percent("150");
 
-        enrollment.MarkAsCompleted(150m);
-
-        enrollment.FinalGrade.Should().Be(100m);
+        act.Should().Throw<ArgumentOutOfRangeException>();
     }
 
     [Fact]
-    public void MarkAsCompleted_NegativeGrade_ShouldClampToZero()
+    public void PercentValue_RejectsNegativeGrade()
     {
-        var enrollment = new ProgramEnrollment();
+        var act = () => Percent("-10");
 
-        enrollment.MarkAsCompleted(-10m);
-
-        enrollment.FinalGrade.Should().Be(0m);
+        act.Should().Throw<FormatException>();
     }
 
     [Fact]
@@ -291,7 +287,7 @@ public class ProgramUserTests
         var user = new ProgramUser();
 
         user.IsActive.Should().BeTrue();
-        user.CompletionPercentage.Should().Be(0);
+        user.CompletionPercentage.Should().Be(PercentValue.Zero);
     }
 
     [Fact]
@@ -312,24 +308,24 @@ public class ProgramUserTests
     {
         var user = new ProgramUser();
 
-        user.Complete(92m);
+        user.Complete(Percent("92"));
 
         user.CompletedAt.Should().NotBeNull();
-        user.CompletionPercentage.Should().Be(100m);
-        user.FinalGrade.Should().Be(92m);
+        user.CompletionPercentage.Should().Be(PercentValue.Hundred);
+        user.FinalGrade.Should().Be(Percent("92"));
     }
 
     [Fact]
     public void Complete_WhenAlreadyCompleted_ShouldNotChange()
     {
         var user = new ProgramUser();
-        user.Complete(80m);
+        user.Complete(Percent("80"));
         var firstCompleted = user.CompletedAt;
 
-        user.Complete(95m); // second call
+        user.Complete(Percent("95")); // second call
 
         user.CompletedAt.Should().Be(firstCompleted);
-        user.FinalGrade.Should().Be(80m);
+        user.FinalGrade.Should().Be(Percent("80"));
     }
 
     [Fact]
@@ -389,24 +385,21 @@ public class ActivityGradeTests
     }
 
     [Fact]
-    public void AssignPoints_ShouldClampToMax()
+    public void AssignPoints_AboveMaximum_ShouldThrow()
     {
         var grade = new ActivityGrade();
 
-        grade.AssignPoints(150, 100);
+        var act = () => grade.AssignPoints(Score("150"), Score("100"));
 
-        grade.Points.Should().Be(100);
-        grade.MaxPoints.Should().Be(100);
+        act.Should().Throw<ArgumentOutOfRangeException>();
     }
 
     [Fact]
-    public void AssignPoints_ShouldClampToZero()
+    public void ScoreValue_RejectsNegativePoints()
     {
-        var grade = new ActivityGrade();
+        var act = () => Score("-5");
 
-        grade.AssignPoints(-5, 100);
-
-        grade.Points.Should().Be(0);
+        act.Should().Throw<FormatException>();
     }
 
     [Fact]
@@ -443,15 +436,15 @@ public class ActivityGradeTests
     [Fact]
     public void PercentageScore_ShouldCalculateCorrectly()
     {
-        var grade = new ActivityGrade { Points = 85, MaxPoints = 100 };
+        var grade = new ActivityGrade { Points = Score("85"), MaxPoints = Score("100") };
 
-        grade.PercentageScore.Should().Be(85m);
+        grade.PercentageScore.Should().Be(Percent("85"));
     }
 
     [Fact]
     public void IsPassing_Above60_ShouldBeTrue()
     {
-        var grade = new ActivityGrade { Points = 70, MaxPoints = 100 };
+        var grade = new ActivityGrade { Points = Score("70"), MaxPoints = Score("100") };
 
         grade.IsPassing.Should().BeTrue();
     }
@@ -459,7 +452,7 @@ public class ActivityGradeTests
     [Fact]
     public void IsPassing_Below60_ShouldBeFalse()
     {
-        var grade = new ActivityGrade { Points = 50, MaxPoints = 100 };
+        var grade = new ActivityGrade { Points = Score("50"), MaxPoints = Score("100") };
 
         grade.IsPassing.Should().BeFalse();
     }
@@ -476,7 +469,7 @@ public class ActivityGradeTests
     [InlineData(55, "F")]
     public void CalculateLetterGrade_ShouldReturnCorrectLetter(int points, string expected)
     {
-        var grade = new ActivityGrade { Points = points, MaxPoints = 100 };
+        var grade = new ActivityGrade { Points = Score(points.ToString()), MaxPoints = Score("100") };
 
         grade.CalculateLetterGrade().Should().Be(expected);
     }
@@ -484,15 +477,15 @@ public class ActivityGradeTests
     [Fact]
     public void IsValid_WithPointsAboveMax_ShouldBeFalse()
     {
-        var grade = new ActivityGrade { Points = 110, MaxPoints = 100 };
+        var grade = new ActivityGrade { Points = Score("110"), MaxPoints = Score("100") };
 
         grade.IsValid().Should().BeFalse();
     }
 
     [Fact]
-    public void IsValid_WithNegativePoints_ShouldBeFalse()
+    public void IsValid_WithZeroMaximum_ShouldBeFalse()
     {
-        var grade = new ActivityGrade { Points = -5 };
+        var grade = new ActivityGrade { Points = ScoreValue.Zero, MaxPoints = ScoreValue.Zero };
 
         grade.IsValid().Should().BeFalse();
     }
@@ -500,7 +493,7 @@ public class ActivityGradeTests
     [Fact]
     public void IsValid_WithValidData_ShouldBeTrue()
     {
-        var grade = new ActivityGrade { Points = 80, MaxPoints = 100 };
+        var grade = new ActivityGrade { Points = Score("80"), MaxPoints = Score("100") };
 
         grade.IsValid().Should().BeTrue();
     }
@@ -514,28 +507,23 @@ public class ActivityGradeTests
             GraderId = Guid.NewGuid(),
             ContentInteractionId = Guid.NewGuid(),
             ProgramUserId = Guid.NewGuid(),
-            Points = 70,
-            MaxPoints = 100,
+            Points = Score("70"),
+            MaxPoints = Score("100"),
             AttemptNumber = 1
         };
 
-        var revision = grade.CreateRevision(85, "Regraded after appeal");
+        var revision = grade.CreateRevision(Score("85"), "Regraded after appeal");
 
         revision.AttemptNumber.Should().Be(2);
-        revision.Points.Should().Be(85);
+        revision.Points.Should().Be(Score("85"));
         revision.IsFinalized.Should().BeFalse();
         revision.Feedback.Should().Contain("Revision");
     }
 
     [Fact]
-    public void Grade_Shim_ShouldMapToPoints()
+    public void LegacyGradeAlias_IsNotExposed()
     {
-        var grade = new ActivityGrade();
-
-        grade.Grade = 75m;
-
-        grade.Points.Should().Be(75m);
-        grade.Grade.Should().Be(75m);
+        typeof(ActivityGrade).GetProperty("Grade").Should().BeNull();
     }
 }
 
@@ -553,13 +541,13 @@ public class CoursePrerequisiteTests
         var tenantId = Guid.NewGuid();
 
         var prereq = CoursePrerequisite.Create(courseId, prereqId, tenantId,
-            PrerequisiteType.Required, 70, "Must pass with C or better", 1, "Group A");
+            PrerequisiteType.Required, Percent("70"), "Must pass with C or better", 1, "Group A");
 
         prereq.Id.Should().NotBeEmpty();
         prereq.CourseId.Should().Be(courseId);
         prereq.PrerequisiteCourseId.Should().Be(prereqId);
         prereq.Type.Should().Be(PrerequisiteType.Required);
-        prereq.MinimumGrade.Should().Be(70);
+        prereq.MinimumGrade.Should().Be(Percent("70"));
         prereq.Description.Should().Be("Must pass with C or better");
         prereq.DisplayOrder.Should().Be(1);
         prereq.PrerequisiteGroup.Should().Be("Group A");
@@ -580,7 +568,7 @@ public class CoursePrerequisiteTests
     {
         var prereq = CoursePrerequisite.Create(Guid.NewGuid(), Guid.NewGuid(), null);
 
-        var act = () => prereq.SetMinimumGrade(101);
+        var act = () => prereq.SetMinimumGrade(Percent("101"));
 
         act.Should().Throw<ArgumentOutOfRangeException>();
     }
@@ -590,15 +578,15 @@ public class CoursePrerequisiteTests
     {
         var prereq = CoursePrerequisite.Create(Guid.NewGuid(), Guid.NewGuid(), null);
 
-        var act = () => prereq.SetMinimumGrade(-1);
+        var act = () => Percent("-1");
 
-        act.Should().Throw<ArgumentOutOfRangeException>();
+        act.Should().Throw<FormatException>();
     }
 
     [Fact]
     public void SetMinimumGrade_Null_ShouldClear()
     {
-        var prereq = CoursePrerequisite.Create(Guid.NewGuid(), Guid.NewGuid(), null, minimumGrade: 80);
+        var prereq = CoursePrerequisite.Create(Guid.NewGuid(), Guid.NewGuid(), null, minimumGrade: Percent("80"));
 
         prereq.SetMinimumGrade(null);
 
@@ -651,7 +639,7 @@ public class ContentInteractionTests
         var interaction = new ContentInteraction();
 
         interaction.IsCompleted.Should().BeFalse();
-        interaction.ProgressPercentage.Should().Be(0);
+        interaction.ProgressPercentage.Should().Be(PercentValue.Zero);
         interaction.TimeSpentMinutes.Should().Be(0);
         interaction.Status.Should().Be(ProgressStatus.NotStarted);
         interaction.AttemptCount.Should().Be(0);
@@ -671,23 +659,21 @@ public class ContentInteractionTests
     }
 
     [Fact]
-    public void UpdateProgress_ShouldClampTo100()
+    public void UpdateProgress_AtOneHundred_ShouldComplete()
     {
         var interaction = new ContentInteraction();
 
-        interaction.UpdateProgress(150);
+        interaction.UpdateProgress(PercentValue.Hundred);
 
-        interaction.ProgressPercentage.Should().Be(100);
+        interaction.ProgressPercentage.Should().Be(PercentValue.Hundred);
     }
 
     [Fact]
-    public void UpdateProgress_ShouldClampToZero()
+    public void PercentValue_RejectsNegativeProgress()
     {
-        var interaction = new ContentInteraction();
+        var act = () => Percent("-10");
 
-        interaction.UpdateProgress(-10);
-
-        interaction.ProgressPercentage.Should().Be(0);
+        act.Should().Throw<FormatException>();
     }
 
     [Fact]
@@ -695,9 +681,9 @@ public class ContentInteractionTests
     {
         var interaction = new ContentInteraction();
 
-        interaction.CompletionPercentage = 50;
+        interaction.CompletionPercentage = Percent("50");
 
-        interaction.ProgressPercentage.Should().Be(50);
+        interaction.ProgressPercentage.Should().Be(Percent("50"));
     }
 
     [Fact]
@@ -925,11 +911,11 @@ public class ContentInteractionExtendedTests
             ProgramUserId = Guid.NewGuid()
         };
 
-        interaction.RecordAttempt(80);
-        interaction.RecordAttempt(60);
-        interaction.RecordAttempt(90);
+        interaction.RecordAttempt(Score("80"));
+        interaction.RecordAttempt(Score("60"));
+        interaction.RecordAttempt(Score("90"));
         interaction.AttemptCount.Should().Be(3);
-        interaction.BestScore.Should().Be(90);
+        interaction.BestScore.Should().Be(Score("90"));
     }
 
     [Fact]
@@ -986,15 +972,15 @@ public class ContentInteractionExtendedTests
         };
 
         interaction.Start();
-        interaction.UpdateProgress(50);
-        interaction.RecordAttempt(80);
+        interaction.UpdateProgress(Percent("50"));
+        interaction.RecordAttempt(Score("80"));
         interaction.SetBookmark("page:10");
 
         interaction.Reset();
 
         interaction.IsCompleted.Should().BeFalse();
         interaction.CompletedAt.Should().BeNull();
-        interaction.ProgressPercentage.Should().Be(0);
+        interaction.ProgressPercentage.Should().Be(PercentValue.Zero);
         interaction.TimeSpentMinutes.Should().Be(0);
         interaction.AttemptCount.Should().Be(0);
         interaction.BestScore.Should().BeNull();
@@ -1045,23 +1031,13 @@ public class ContentInteractionExtendedTests
     }
 
     [Fact]
-    public void CalculateEngagementScore_WithProgress()
+    public void LegacyEngagementScore_IsNotExposed()
     {
-        var interaction = new ContentInteraction
-        {
-            UserId = Guid.NewGuid(),
-            ContentId = Guid.NewGuid(),
-            ProgramUserId = Guid.NewGuid()
-        };
-
-        interaction.UpdateProgress(50);
-        var score = interaction.CalculateEngagementScore();
-        score.Should().BeGreaterThan(0);
-        score.Should().BeLessThanOrEqualTo(100);
+        typeof(ContentInteraction).GetMethod("CalculateEngagementScore").Should().BeNull();
     }
 
     [Fact]
-    public void CalculateEngagementScore_WhenCompleted_ShouldIncludeBonus()
+    public void Complete_UsesCanonicalProgressWithoutSyntheticEngagementScore()
     {
         var interaction = new ContentInteraction
         {
@@ -1071,8 +1047,8 @@ public class ContentInteractionExtendedTests
         };
 
         interaction.Complete();
-        var score = interaction.CalculateEngagementScore();
-        score.Should().BeGreaterThanOrEqualTo(60); // 100*0.4 + 20
+        interaction.ProgressPercentage.Should().Be(PercentValue.Hundred);
+        typeof(ContentInteraction).GetMethod("CalculateEngagementScore").Should().BeNull();
     }
 }
 

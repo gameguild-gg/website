@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using GameGuild.Learning.Grading.Contracts;
 
 namespace GameGuild.Learning.Courses;
 
@@ -36,7 +37,7 @@ public class CoursePrerequisite : EntityBase
     /// Minimum grade required to satisfy the prerequisite (0-100).
     /// Null means completion is sufficient.
     /// </summary>
-    public int? MinimumGrade { get; private set; }
+    public PercentValue? MinimumGrade { get; private set; }
 
     /// <summary>
     /// Optional description explaining the prerequisite requirement
@@ -71,7 +72,7 @@ public class CoursePrerequisite : EntityBase
         Guid prerequisiteCourseId,
         Guid? tenantId,
         PrerequisiteType type = PrerequisiteType.Required,
-        int? minimumGrade = null,
+        PercentValue? minimumGrade = null,
         string? description = null,
         int displayOrder = 0,
         string? prerequisiteGroup = null)
@@ -100,7 +101,7 @@ public class CoursePrerequisite : EntityBase
     /// </summary>
     public void Update(
         PrerequisiteType? type = null,
-        int? minimumGrade = null,
+        PercentValue? minimumGrade = null,
         string? description = null,
         int? displayOrder = null,
         string? prerequisiteGroup = null)
@@ -121,13 +122,8 @@ public class CoursePrerequisite : EntityBase
     /// <summary>
     /// Sets the minimum grade requirement
     /// </summary>
-    public void SetMinimumGrade(int? grade)
+    public void SetMinimumGrade(PercentValue? grade)
     {
-        if (grade.HasValue && (grade < 0 || grade > 100))
-        {
-            throw new ArgumentOutOfRangeException(nameof(grade), "Grade must be between 0 and 100.");
-        }
-        
         MinimumGrade = grade;
         UpdatedAt = SystemClock.UtcNow;
     }

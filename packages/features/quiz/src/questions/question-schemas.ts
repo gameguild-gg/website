@@ -5,7 +5,7 @@ import {
   QuizEntryType,
   type QuizEntry,
 } from "./question-types";
-import { QUIZ_POINTS_PATTERN } from "./quiz-points";
+import { MAX_QUIZ_POINTS_UNITS, parseQuizPoints } from "./quiz-points";
 
 const finiteNumber = z.number().finite();
 const nonNegativeInteger = z.number().int().nonnegative();
@@ -41,7 +41,7 @@ const quizAuthoringAttachmentsSchema = z.object({
 
 const entryBaseShape = {
   stem: z.string(),
-  points: z.string().regex(QUIZ_POINTS_PATTERN).optional(),
+  points: z.number().int().min(0).max(MAX_QUIZ_POINTS_UNITS).transform(parseQuizPoints).optional(),
   feedback: quizFeedbackSchema.optional(),
   settings: quizSettingsSchema,
   attachments: quizAuthoringAttachmentsSchema.optional(),

@@ -1,76 +1,39 @@
 using GameGuild.Learning.Assessments.Grading.Abstractions;
 using GameGuild.Learning.Assessments.Grading.Contracts;
+using GameGuild.Learning.Courses;
+using GameGuild.Learning.Grading.Contracts;
 
 namespace GameGuild.Learning.Assessments.Grading.Capabilities;
 
-public sealed class AssessmentExecutionComponentResolver(
+public sealed class AssessmentTypeAdapterResolver(
     IReviewCapabilityRegistry capabilities,
-    IEnumerable<IAssessmentItemProjector> projectors,
-    IEnumerable<IAssessmentDeliveryGenerator> deliveryGenerators,
-    IEnumerable<IAssessmentAnswerDecoder> answerDecoders,
-    IEnumerable<IDeterministicReviewAlgorithm> deterministicAlgorithms) : IAssessmentExecutionComponentResolver
+    IEnumerable<IAssessmentTypeAdapter> adapters) : IAssessmentTypeAdapterResolver
 {
-    public IAssessmentItemProjector ResolveItemProjector(
+    public IAssessmentTypeAdapter ResolveForAuthoring(ProgramContentType programContentType) =>
+        ResolveSingle(
+            adapters,
+            candidate => candidate.ProgramContentType == programContentType &&
+                         candidate.IsCurrentForAuthoring,
+            $"current assessment type adapter for {programContentType}");
+
+    public IAssessmentTypeAdapter Resolve(
         string contentType,
         string key,
         string version,
         ReviewExecutionContext context)
     {
-        RequireCapability(ExecutableComponentKind.ItemProjector, key, version, context);
-        return ResolveSingle(
-            projectors,
-            candidate => Same(candidate.ContentType, contentType) && Same(candidate.Key, key) && Same(candidate.Version, version),
-            $"item projector {key}@{version} for {contentType}");
-    }
-
-    public IAssessmentDeliveryGenerator ResolveDeliveryGenerator(
-        string contentType,
-        string key,
-        string version,
-        ReviewExecutionContext context)
-    {
-        RequireCapability(ExecutableComponentKind.DeliveryGenerator, key, version, context);
-        return ResolveSingle(
-            deliveryGenerators,
-            candidate => Same(candidate.ContentType, contentType) && Same(candidate.Key, key) && Same(candidate.Version, version),
-            $"delivery generator {key}@{version} for {contentType}");
-    }
-
-    public IAssessmentAnswerDecoder ResolveAnswerDecoder(
-        string contentType,
-        string key,
-        string version,
-        ReviewExecutionContext context)
-    {
-        RequireCapability(ExecutableComponentKind.AnswerDecoder, key, version, context);
-        return ResolveSingle(
-            answerDecoders,
-            candidate => Same(candidate.ContentType, contentType) && Same(candidate.Key, key) && Same(candidate.Version, version),
-            $"answer decoder {key}@{version} for {contentType}");
-    }
-
-    public IDeterministicReviewAlgorithm ResolveDeterministicAlgorithm(
-        string key,
-        string version,
-        ReviewExecutionContext context)
-    {
-        RequireCapability(ExecutableComponentKind.GradingAlgorithm, key, version, context);
-        return ResolveSingle(
-            deterministicAlgorithms,
-            candidate => Same(candidate.Key, key) && Same(candidate.Version, version),
-            $"deterministic review algorithm {key}@{version}");
-    }
-
-    private void RequireCapability(
-        ExecutableComponentKind kind,
-        string key,
-        string version,
-        ReviewExecutionContext context)
-    {
-        if (capabilities.Resolve(kind, key, version, context) is null)
+        if (capabilities.Resolve(ExecutableComponentKind.AssessmentTypeAdapter, key, version, context) is null)
         {
-            throw Unavailable($"{kind} {key}@{version}", context);
+            throw Unavailable($"assessment type adapter {key}@{version}", context);
         }
+
+        return ResolveSingle(
+            adapters,
+            candidate => Same(candidate.ContentType, contentType) &&
+                         Same(candidate.Key, key) &&
+                         Same(candidate.Version, version) &&
+                         candidate.Contexts.Contains(context),
+            $"assessment type adapter {key}@{version} for {contentType}");
     }
 
     internal static T ResolveSingle<T>(IEnumerable<T> candidates, Func<T, bool> predicate, string label)
@@ -90,6 +53,18 @@ public sealed class AssessmentExecutionComponentResolver(
         new($"The manifest references {component}, which is unavailable for {context}.");
 }
 
+public sealed class AssessmentExecutionPolicyResolver(IReviewCapabilityRegistry capabilities)
+    : IAssessmentExecutionPolicyResolver
+{
+    public void Resolve(string key, string version, ReviewExecutionContext context)
+    {
+        if (capabilities.Resolve(ExecutableComponentKind.ExecutionPolicy, key, version, context) is null)
+        {
+            throw AssessmentTypeAdapterResolver.Unavailable($"execution policy {key}@{version}", context);
+        }
+    }
+}
+
 public sealed class ReviewStageHandlerResolver(
     IReviewCapabilityRegistry capabilities,
     IEnumerable<IReviewStageHandler> handlers) : IReviewStageHandlerResolver
@@ -102,16 +77,16 @@ public sealed class ReviewStageHandlerResolver(
     {
         if (capabilities.ResolveReview(method, key, version, context) is null)
         {
-            throw AssessmentExecutionComponentResolver.Unavailable(
+            throw AssessmentTypeAdapterResolver.Unavailable(
                 $"review handler {method}:{key}@{version}",
                 context);
         }
 
-        return AssessmentExecutionComponentResolver.ResolveSingle(
+        return AssessmentTypeAdapterResolver.ResolveSingle(
             handlers,
             candidate => candidate.Method == method &&
-                         AssessmentExecutionComponentResolver.Same(candidate.Key, key) &&
-                         AssessmentExecutionComponentResolver.Same(candidate.Version, version) &&
+                         AssessmentTypeAdapterResolver.Same(candidate.Key, key) &&
+                         AssessmentTypeAdapterResolver.Same(candidate.Version, version) &&
                          candidate.Contexts.Contains(context),
             $"review handler {method}:{key}@{version}");
     }

@@ -1,4 +1,5 @@
 using GameGuild.CQRS;
+using GameGuild.Learning.Grading.Contracts;
 
 
 
@@ -37,7 +38,7 @@ public sealed class CreateProgramCommandHandler(IApplicationDbContext context, I
       EnrollmentStatus = request.EnrollmentStatus,
       MaxEnrollments = request.MaxEnrollments,
       EnrollmentDeadline = request.EnrollmentDeadline,
-      PassingScore = request.PassingScore,
+      PassingScore = request.PassingScore == default ? PercentValue.FromPercentage("60") : request.PassingScore,
       Status = ContentStatus.Draft,
       Visibility = ContentVisibility.Private,
     };

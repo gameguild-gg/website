@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
+using GameGuild.Learning.Grading.Contracts;
 
 namespace GameGuild.Learning.Courses;
 
@@ -22,8 +23,7 @@ public sealed class ContentInteractionEvent : EntityBase
     [Column(TypeName = "decimal(12,3)")]
     public decimal? PositionSeconds { get; set; }
 
-    [Column(TypeName = "decimal(5,2)")]
-    public decimal? ProgressPercentage { get; set; }
+    public PercentValue? ProgressPercentage { get; set; }
 
     public string? Payload { get; set; }
 
@@ -37,7 +37,7 @@ public sealed class ContentInteractionEvent : EntityBase
         ContentInteractionEventType type,
         int? durationSeconds = null,
         decimal? positionSeconds = null,
-        decimal? progressPercentage = null,
+        PercentValue? progressPercentage = null,
         string? payload = null,
         string? idempotencyKey = null,
         DateTime? occurredAt = null)
@@ -62,13 +62,6 @@ public sealed class ContentInteractionEvent : EntityBase
             throw new ArgumentOutOfRangeException(
                 nameof(positionSeconds),
                 "Position must fit numeric(12,3) and cannot be negative.");
-        }
-
-        if (progressPercentage.HasValue && !IsValidProgressPercentage(progressPercentage.Value))
-        {
-            throw new ArgumentOutOfRangeException(
-                nameof(progressPercentage),
-                "Progress must fit numeric(5,2) and be between 0 and 100.");
         }
 
         if (!string.IsNullOrWhiteSpace(payload))
@@ -108,14 +101,11 @@ public sealed class ContentInteractionEvent : EntityBase
     internal static bool IsValidPositionSeconds(decimal value) =>
         value is >= 0 and <= 999999999.999m && value == decimal.Round(value, 3);
 
-    internal static bool IsValidProgressPercentage(decimal value) =>
-        value is >= 0 and <= 100 && value == decimal.Round(value, 2);
-
     internal bool MatchesReplay(
         ContentInteractionEventType type,
         int? durationSeconds,
         decimal? positionSeconds,
-        decimal? progressPercentage,
+        PercentValue? progressPercentage,
         string? payload,
         DateTime? occurredAt)
     {

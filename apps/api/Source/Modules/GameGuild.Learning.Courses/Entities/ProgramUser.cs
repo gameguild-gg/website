@@ -2,6 +2,7 @@ using GameGuild.Identity.Users;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using GameGuild.Learning.Grading.Contracts;
 
 namespace GameGuild.Learning.Courses;
 
@@ -43,14 +44,12 @@ public class ProgramUser : EntityBase
     /// <summary>
     /// Current completion percentage (0-100)
     /// </summary>
-    [Column(TypeName = "decimal(5,2)")]
-    public decimal CompletionPercentage { get; set; } = 0m;
+    public PercentValue CompletionPercentage { get; set; } = PercentValue.Zero;
 
     /// <summary>
     /// Final grade for the program (0-100)
     /// </summary>
-    [Column(TypeName = "decimal(5,2)")]
-    public decimal? FinalGrade { get; set; }
+    public PercentValue? FinalGrade { get; set; }
 
     /// <summary>
     /// Date when user started the program content
@@ -132,11 +131,18 @@ public class ProgramUser : EntityBase
     /// <summary>
     /// Average grade across all activities
     /// </summary>
-    public decimal? AverageGrade => ReceivedGrades?
-        .Where(grade => grade.Points.HasValue)
-        .Select(grade => (decimal?)grade.Points!.Value)
-        .DefaultIfEmpty()
-        .Average();
+    public PercentValue? AverageGrade
+    {
+        get
+        {
+            var values = ReceivedGrades?
+                .Select(grade => grade.PercentageScore)
+                .Where(value => value.HasValue)
+                .Select(value => value!.Value)
+                .ToArray();
+            return values is { Length: > 0 } ? PercentValue.Average(values) : null;
+        }
+    }
 
     // Domain Methods
     /// <summary>
@@ -154,13 +160,13 @@ public class ProgramUser : EntityBase
     /// <summary>
     /// Completes the program
     /// </summary>
-    public void Complete(decimal? finalGrade = null)
+    public void Complete(PercentValue? finalGrade = null)
     {
         if (CompletedAt.HasValue)
             return; // Already completed
 
         CompletedAt = SystemClock.UtcNow;
-        CompletionPercentage = 100m;
+        CompletionPercentage = PercentValue.Hundred;
         FinalGrade = finalGrade ?? CalculateFinalGrade();
         UpdateLastAccess();
     }
@@ -200,17 +206,17 @@ public class ProgramUser : EntityBase
         var programContents = Program.ProgramContents?.Where(pc => pc.IsRequired).ToList();
         if (programContents?.Any() != true)
         {
-            CompletionPercentage = 0m;
+            CompletionPercentage = PercentValue.Zero;
             return;
         }
 
         var completedCount = programContents.Count(pc =>
             ContentInteractions.Any(ci => ci.ContentId == pc.Id && ci.IsCompleted));
 
-        CompletionPercentage = (decimal)completedCount / programContents.Count * 100m;
+        CompletionPercentage = PercentValue.FromRatio(completedCount, programContents.Count);
 
         // Auto-complete if all required content is done
-        if (CompletionPercentage >= 100m && !CompletedAt.HasValue)
+        if (CompletionPercentage == PercentValue.Hundred && !CompletedAt.HasValue)
         {
             Complete();
         }
@@ -221,14 +227,17 @@ public class ProgramUser : EntityBase
     /// <summary>
     /// Calculates final grade based on all activity grades
     /// </summary>
-    public decimal? CalculateFinalGrade()
+    public PercentValue? CalculateFinalGrade()
     {
-        var grades = ReceivedGrades?.Where(g => g.Points.HasValue).ToList();
-        if (grades?.Any() != true)
+        var grades = ReceivedGrades?
+            .Select(grade => grade.PercentageScore)
+            .Where(value => value.HasValue)
+            .Select(value => value!.Value)
+            .ToArray();
+        if (grades is not { Length: > 0 })
             return null;
 
-        // Weighted average could be implemented here based on activity importance
-        return grades.Average(g => g.Points!.Value);
+        return PercentValue.Average(grades);
     }
 
     /// <summary>

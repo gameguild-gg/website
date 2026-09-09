@@ -18,9 +18,6 @@ public class ContentProgressConfiguration : IEntityTypeConfiguration<ContentProg
         builder.HasIndex(progress => progress.CompletionStatus);
         builder.HasIndex(progress => progress.CompletedAt);
 
-        builder.Property(progress => progress.ProgressPercentage).HasPrecision(5, 2);
-        builder.Property(progress => progress.Score).HasPrecision(5, 2);
-        builder.Property(progress => progress.MaxScore).HasPrecision(5, 2);
         builder.Property(progress => progress.ProgressData).HasColumnType("jsonb");
 
         builder.HasOne(progress => progress.Content)

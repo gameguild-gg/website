@@ -11,8 +11,10 @@ import { Badge } from '@game-guild/ui/components/badge';
 import { Button } from '@game-guild/ui/components/button';
 import { Input } from '@game-guild/ui/components/input';
 import { Textarea } from '@game-guild/ui/components/textarea';
-import { parseGradingMethods } from '@/lib/learning/assessment-grading-methods';
+import { hasReviewMethod } from '@/lib/learning/assessment-grading-methods';
+import { parseReviewMethods, parseScoreValue } from '@game-guild/grading';
 import { gradeSubmission } from '@/lib/learning/grade-action';
+import { pointsToScoreUnits, scoreUnitsToPoints } from '@/lib/learning/academic-values';
 import { composeFeedback } from './compose-feedback';
 import { fetchPeerReviewsAction } from './speedgrader-actions';
 import type { ComputedScore } from './code-grader-panel';
@@ -39,6 +41,15 @@ interface CriterionState {
   comment: string;
 }
 
+function parsePointInput(value: string): { points: number; units: number } | null {
+  if (value.trim() === '') return null;
+  try {
+    return { points: Number(value), units: pointsToScoreUnits(value) };
+  } catch {
+    return null;
+  }
+}
+
 function sortedCriteria(rubric: LearningAssessmentsGradingQueueAssessment['rubric']): LearningAssessmentsRubricCriterion[] {
   return [...(rubric?.criteria ?? [])].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 }
@@ -54,7 +65,8 @@ export function GradingPanel({ item, assessment, computedScore }: GradingPanelPr
   const router = useRouter();
   const criteria = useMemo(() => sortedCriteria(assessment.rubric), [assessment.rubric]);
   const rubricMode = assessment.hasRubric === true && criteria.length > 0;
-  const maxScore = assessment.maxScore ?? 100;
+  const maxScoreUnits = parseScoreValue(assessment.maxScore ?? 10_000);
+  const maxScore = scoreUnitsToPoints(maxScoreUnits);
 
   const [criterionState, setCriterionState] = useState<Record<string, CriterionState>>(() =>
     Object.fromEntries(criteria.map((criterion) => [criterion.id ?? '', { points: '', comment: '' }])),
@@ -66,7 +78,13 @@ export function GradingPanel({ item, assessment, computedScore }: GradingPanelPr
   const [submitting, setSubmitting] = useState(false);
 
   const [reviews, setReviews] = useState<LearningAssessmentsInstructorPeerReview[] | null>(null);
-  const peerReviewEnabled = parseGradingMethods(assessment.gradingMethods).has('PeerReview');
+  const peerReviewEnabled = hasReviewMethod(
+    parseReviewMethods(
+      (assessment as typeof assessment & { reviewMethods?: unknown }).reviewMethods ?? 0,
+      { allowDraft: true },
+    ),
+    'PeerReview',
+  );
 
   // Reset per-item grading state when the queue item changes.
   useEffect(() => {
@@ -105,28 +123,32 @@ export function GradingPanel({ item, assessment, computedScore }: GradingPanelPr
   const rows = criteria.map((criterion) => {
     const id = criterion.id ?? '';
     const raw = criterionState[id]?.points ?? '';
-    const cap = criterion.points ?? 0;
-    const parsed = raw.trim() === '' ? Number.NaN : Number.parseInt(raw, 10);
-    const inRange = Number.isInteger(parsed) && parsed >= 0 && parsed <= cap;
+    const capUnits = parseScoreValue(criterion.points ?? 0);
+    const cap = scoreUnitsToPoints(capUnits);
+    const parsed = parsePointInput(raw);
+    const inRange = parsed !== null && parsed.units <= capUnits;
     return {
       criterion,
       id,
       raw,
-      parsed,
+      parsed: parsed?.points ?? Number.NaN,
+      units: parsed?.units ?? 0,
       cap,
       inRange,
       filled: raw.trim() !== '',
     };
   });
-  const total = rows.reduce((sum, row) => sum + (row.inRange ? row.parsed : 0), 0);
-  const totalAboveMax = total > maxScore;
+  const totalUnits = rows.reduce((sum, row) => sum + (row.inRange ? row.units : 0), 0);
+  const total = scoreUnitsToPoints(totalUnits);
+  const totalAboveMax = totalUnits > maxScoreUnits;
   const rubricComplete = rows.every((row) => row.filled && row.inRange);
   const rubricValid = rubricComplete && !totalAboveMax;
 
   // --- Plain validation ----------------------------------------------------
 
-  const plainParsed = plainScore.trim() === '' ? Number.NaN : Number.parseInt(plainScore, 10);
-  const plainInRange = Number.isInteger(plainParsed) && plainParsed >= 0 && plainParsed <= maxScore;
+  const plain = parsePointInput(plainScore);
+  const plainParsed = plain?.points ?? Number.NaN;
+  const plainInRange = plain !== null && plain.units <= maxScoreUnits;
   const plainValid = plainScore.trim() !== '' && plainInRange;
 
   const canSubmit = !submitting && (rubricMode ? rubricValid : plainValid);
@@ -192,7 +214,7 @@ export function GradingPanel({ item, assessment, computedScore }: GradingPanelPr
         {item.status && <Badge variant="outline">{item.status}</Badge>}
         {item.assignmentScore != null && (
           <Badge data-testid="assignment-score-badge" variant="secondary">
-            Assignment: {item.assignmentScore}/{maxScore}
+            Assignment: {scoreUnitsToPoints(item.assignmentScore)}/{maxScore}
           </Badge>
         )}
         {item.assignmentPassed != null && (
@@ -233,6 +255,7 @@ export function GradingPanel({ item, assessment, computedScore }: GradingPanelPr
                   type="number"
                   min={0}
                   max={row.cap}
+                  step="0.01"
                   value={row.raw}
                   onChange={(e) =>
                     setCriterionState((prev) => ({
@@ -295,6 +318,7 @@ export function GradingPanel({ item, assessment, computedScore }: GradingPanelPr
             type="number"
             min={0}
             max={maxScore}
+            step="0.01"
             value={plainScore}
             onChange={(e) => setPlainScore(e.target.value)}
             className="w-28"
@@ -345,7 +369,7 @@ export function GradingPanel({ item, assessment, computedScore }: GradingPanelPr
                 <span className="text-sm font-medium">{review.reviewerName ?? 'Unknown reviewer'}</span>
                 {review.score != null && (
                   <Badge variant="secondary">
-                    {review.score}/{maxScore}
+                    {scoreUnitsToPoints(review.score)}/{maxScore}
                   </Badge>
                 )}
               </div>

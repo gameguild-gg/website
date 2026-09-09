@@ -2,11 +2,7 @@ import type { AssessmentReviewMethod } from "./review-methods";
 import type { AssessmentExecutionManifestV1, ReviewExecutionContext } from "./types";
 
 export type ExecutableComponentKind =
-  | "item-projector"
-  | "delivery-generator"
-  | "answer-decoder"
-  | "review-handler"
-  | "grading-algorithm"
+  | "assessment-type-adapter"
   | "execution-policy";
 
 export interface ExecutableComponentDescriptorV1 {
@@ -95,9 +91,7 @@ export class ReviewCapabilityRegistry implements IReviewCapabilityRegistry {
   ): CapabilityResolutionIssueV1[] {
     const issues: CapabilityResolutionIssueV1[] = [];
     for (const item of manifest.items) {
-      collectComponentIssue(issues, this, "item-projector", item.projectorKey, item.projectorVersion, context);
-      collectComponentIssue(issues, this, "delivery-generator", item.deliveryGeneratorKey, item.deliveryGeneratorVersion, context);
-      collectComponentIssue(issues, this, "answer-decoder", item.answerDecoderKey, item.answerDecoderVersion, context);
+      collectComponentIssue(issues, this, "assessment-type-adapter", item.adapterKey, item.adapterVersion, context);
     }
     for (const stage of manifest.stages) {
       if (!this.resolveReview(stage.method, stage.handlerKey, stage.handlerVersion, context)) {
@@ -108,9 +102,6 @@ export class ReviewCapabilityRegistry implements IReviewCapabilityRegistry {
           context,
           message: `${stage.method} handler ${stage.handlerKey}@${stage.handlerVersion} is unavailable for ${context}.`,
         });
-      }
-      if (stage.algorithmKey && stage.algorithmVersion) {
-        collectComponentIssue(issues, this, "grading-algorithm", stage.algorithmKey, stage.algorithmVersion, context);
       }
     }
     for (const policy of manifest.policies) {

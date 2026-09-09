@@ -13,9 +13,11 @@ import {
   createAssessment,
   deleteAssessment,
   restoreAssessment,
+  saveQuizAssessmentDraft,
   updateAssessment,
   updateContent,
 } from "@/lib/learning/actions";
+import type { Assessment } from "@/lib/learning/queries/assessments";
 import type { ContentItemDetail } from "@/lib/learning/types";
 
 const routerMocks = vi.hoisted(() => ({
@@ -48,6 +50,7 @@ vi.mock("@/lib/learning/actions", () => ({
   createAssessment: vi.fn(),
   deleteAssessment: vi.fn(),
   restoreAssessment: vi.fn(),
+  saveQuizAssessmentDraft: vi.fn(),
   updateAssessment: vi.fn(),
 }));
 
@@ -86,6 +89,7 @@ vi.mock("./lesson-code-editor", () => ({
 
 const item = {
   id: "content-1",
+  version: 1,
   parentId: "module-1",
   order: 1,
   type: "Questionnaire",
@@ -95,6 +99,7 @@ const item = {
   status: "published",
   visibility: "Public",
   duration: 20,
+  estimatedMinutesSource: "Manual",
   metadata: {},
   gradingConfig: null,
   content: null,
@@ -128,6 +133,7 @@ const quizItemWithBlock = {
 
 const lessonItemMarkdownEmpty = {
   id: "lesson-1",
+  version: 1,
   parentId: "module-1",
   order: 2,
   type: "Lesson",
@@ -137,6 +143,7 @@ const lessonItemMarkdownEmpty = {
   status: "published",
   visibility: "Public",
   duration: 15,
+  estimatedMinutesSource: "Manual",
   metadata: {},
   gradingConfig: null,
   content: "",
@@ -149,6 +156,7 @@ const lessonItemMarkdownEmpty = {
 
 const lessonItemMarkdownBody = {
   id: "lesson-2",
+  version: 1,
   parentId: "module-1",
   order: 3,
   type: "Lesson",
@@ -158,6 +166,7 @@ const lessonItemMarkdownBody = {
   status: "published",
   visibility: "Public",
   duration: 15,
+  estimatedMinutesSource: "Manual",
   metadata: {},
   gradingConfig: null,
   content: "# existing markdown",
@@ -172,6 +181,7 @@ const lessonItemMarkdownBody = {
 // Minimal valid SerializedEditorState: root + empty children.
 const lessonItemLexical = {
   id: "lesson-3",
+  version: 1,
   parentId: "module-1",
   order: 4,
   type: "Lesson",
@@ -181,6 +191,7 @@ const lessonItemLexical = {
   status: "published",
   visibility: "Public",
   duration: 15,
+  estimatedMinutesSource: "Manual",
   metadata: {},
   gradingConfig: null,
   content: "",
@@ -231,6 +242,7 @@ const lessonItemManualDuration = {
 
 const assignmentItem = {
   id: "content-asn",
+  version: 1,
   parentId: "module-1",
   order: 5,
   type: "Assignment",
@@ -240,6 +252,7 @@ const assignmentItem = {
   status: "published",
   visibility: "Public",
   duration: 60,
+  estimatedMinutesSource: "Manual",
   metadata: {},
   gradingConfig: null,
   content: null,
@@ -250,10 +263,60 @@ const assignmentItem = {
   updatedAt: "2026-01-02T00:00:00.000Z",
 } satisfies ContentItemDetail;
 
+function assessmentFixture(
+  overrides: Partial<Assessment> = {},
+): Assessment {
+  return {
+    id: "asmnt-1",
+    slug: "asmnt-1",
+    courseId: "course-1",
+    contentId: "content-1",
+    assessmentGroupId: null,
+    assessmentGroupName: null,
+    assessmentGroupWeightPercent: null,
+    assessmentGroupOrder: null,
+    title: "Assessment",
+    description: null,
+    type: "Quiz",
+    maxScore: 1,
+    passingScore: 0,
+    timeLimitMinutes: null,
+    maxAttempts: 1,
+    isRequired: true,
+    order: 0,
+    availableFrom: null,
+    availableUntil: null,
+    presentationMode: "Continuous",
+    dueAt: null,
+    allowLateSubmissions: false,
+    lateSubmissionDeadline: null,
+    isAvailable: true,
+    reviewMethods: 8 as Assessment["reviewMethods"],
+    groupSetId: null,
+    publishedDefinitionRevisionId: null,
+    reviewConfigurationCanonicalJson: null,
+    attemptContributionMode: null,
+    contentCompletionMode: "on-release-and-pass",
+    resultReleaseMode: "manual",
+    resultReleaseScheduledFor: null,
+    version: 1,
+    ...overrides,
+  };
+}
+
 describe("ContentItemEditor", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(updateContent).mockResolvedValue({ success: true, data: null });
+    vi.mocked(saveQuizAssessmentDraft).mockResolvedValue({
+      success: true,
+      data: {
+        contentId: "content-1",
+        contentVersion: 2,
+        assessmentId: null,
+        assessmentVersion: null,
+      },
+    });
     vi.mocked(createAssessment).mockResolvedValue({
       success: true,
       data: { id: "new-asmnt" },
@@ -322,7 +385,7 @@ describe("ContentItemEditor", () => {
     await user.click(screen.getByRole("button", { name: /save changes/i }));
 
     expect(await screen.findByText("Title is required.")).toBeInTheDocument();
-    expect(updateContent).not.toHaveBeenCalled();
+    expect(saveQuizAssessmentDraft).not.toHaveBeenCalled();
   });
 
   it("saves edited quiz metadata and structured jsonBody, then refreshes the dashboard route", async () => {
@@ -347,19 +410,20 @@ describe("ContentItemEditor", () => {
     await user.click(screen.getByRole("button", { name: /save changes/i }));
 
     await waitFor(() => {
-      expect(updateContent).toHaveBeenCalledWith({
+      expect(saveQuizAssessmentDraft).toHaveBeenCalledWith(expect.objectContaining({
         courseId: "course-1",
         contentId: "content-1",
+        expectedContentVersion: 1,
+        expectedAssessmentVersion: null,
         title: "Updated quiz",
         slug: "updated-quiz",
         description: "Updated description.",
-        body: undefined,
-        jsonBody: item.jsonBody,
+        document: item.jsonBody,
         visibility: "Public",
         isRequired: true,
         estimatedMinutes: 35,
         estimatedMinutesSource: "Manual",
-      });
+      }));
     });
     expect(routerMocks.replace).toHaveBeenCalledWith(
       "/workspace/learning/courses/course-1/content/updated-quiz",
@@ -397,7 +461,7 @@ describe("ContentItemEditor", () => {
     await user.click(screen.getByRole("button", { name: /save changes/i }));
 
     await waitFor(() => {
-      expect(updateContent).toHaveBeenCalledWith(
+      expect(saveQuizAssessmentDraft).toHaveBeenCalledWith(
         expect.objectContaining({
           title: "Another Title",
           slug: "my-custom-slug",
@@ -427,7 +491,7 @@ describe("ContentItemEditor", () => {
     await user.click(screen.getByRole("button", { name: /save changes/i }));
 
     await waitFor(() => {
-      expect(updateContent).toHaveBeenCalledWith(
+      expect(saveQuizAssessmentDraft).toHaveBeenCalledWith(
         expect.objectContaining({
           title: "New Title",
           slug: "new-title",
@@ -502,7 +566,7 @@ describe("ContentItemEditor", () => {
     await user.click(screen.getByRole("button", { name: /save changes/i }));
 
     await waitFor(() => {
-      expect(updateContent).toHaveBeenCalledWith(
+      expect(saveQuizAssessmentDraft).toHaveBeenCalledWith(
         expect.objectContaining({
           title: "Intro quiz",
           slug: "intro-quiz",
@@ -525,7 +589,7 @@ describe("ContentItemEditor", () => {
     await user.click(screen.getByRole("button", { name: /save changes/i }));
 
     await waitFor(() => {
-      expect(updateContent).toHaveBeenCalledWith(
+      expect(saveQuizAssessmentDraft).toHaveBeenCalledWith(
         expect.objectContaining({
           courseId: "course-1",
           contentId: "content-1",
@@ -534,38 +598,43 @@ describe("ContentItemEditor", () => {
       );
     });
 
-    const jsonBody = vi.mocked(updateContent).mock.calls[0]![0].jsonBody as {
-      grading?: {
-        enabled?: boolean;
-        score?: { maxScore?: number };
-      };
-    };
-    expect(vi.mocked(updateContent).mock.calls[0]![0].body).toBeUndefined();
-    expect(jsonBody.grading).toMatchObject({
-      enabled: true,
-      score: {
-        maxScore: 1,
-      },
+    const request = vi.mocked(saveQuizAssessmentDraft).mock.calls[0]![0];
+    expect(request.document.grading).toEqual({
+      schemaVersion: 2,
+      items: {},
     });
-    expect(createAssessment).toHaveBeenCalledWith(
-      expect.objectContaining({
-        courseId: "course-1",
-        contentId: "content-1",
-        type: "Quiz",
-        submissionModalities: "StructuredAnswer",
-        gradingMethods: "AutoGraded,InstructorGraded",
-      }),
-    );
+    expect(request.reviewMethods).toBe(12);
+    expect(createAssessment).not.toHaveBeenCalled();
+    expect(updateAssessment).not.toHaveBeenCalled();
   });
 
   it("keeps one linked assessment while grading is enabled and removes it only when grading is disabled", async () => {
     const user = userEvent.setup();
+    vi.mocked(saveQuizAssessmentDraft)
+      .mockResolvedValueOnce({
+        success: true,
+        data: {
+          contentId: "content-1",
+          contentVersion: 2,
+          assessmentId: "asmnt-quiz",
+          assessmentVersion: 2,
+        },
+      })
+      .mockResolvedValueOnce({
+        success: true,
+        data: {
+          contentId: "content-1",
+          contentVersion: 3,
+          assessmentId: null,
+          assessmentVersion: null,
+        },
+      });
     render(
       <ContentItemEditor
         courseId="course-1"
         item={item}
         courseTitle="Advanced Game AI"
-        linkedAssessmentId="asmnt-quiz"
+        linkedAssessment={assessmentFixture({ id: "asmnt-quiz" })}
       />,
     );
 
@@ -573,23 +642,22 @@ describe("ContentItemEditor", () => {
     await user.click(screen.getByRole("button", { name: /save changes/i }));
 
     await waitFor(() => {
-      expect(updateAssessment).toHaveBeenCalledWith(
-        expect.objectContaining({
-          courseId: "course-1",
-          assessmentId: "asmnt-quiz",
-          contentId: "content-1",
-          gradingMethods: "AutoGraded,InstructorGraded",
-        }),
+      expect(saveQuizAssessmentDraft).toHaveBeenCalledWith(
+        expect.objectContaining({ expectedAssessmentVersion: 1 }),
       );
     });
-    expect(deleteAssessment).not.toHaveBeenCalled();
+    expect(vi.mocked(saveQuizAssessmentDraft).mock.calls[0]![0].document)
+      .toHaveProperty("grading");
 
     await user.click(screen.getByRole("switch", { name: /grading/i }));
     await user.click(screen.getByRole("button", { name: /save changes/i }));
 
     await waitFor(() => {
-      expect(deleteAssessment).toHaveBeenCalledWith("course-1", "asmnt-quiz");
+      expect(saveQuizAssessmentDraft).toHaveBeenCalledTimes(2);
     });
+    expect(vi.mocked(saveQuizAssessmentDraft).mock.calls[1]![0].document)
+      .not.toHaveProperty("grading");
+    expect(deleteAssessment).not.toHaveBeenCalled();
   });
 
   it("leaves result placement to assessment groups", async () => {
@@ -608,17 +676,11 @@ describe("ContentItemEditor", () => {
     ).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: /save changes/i }));
 
-    await waitFor(() => expect(createAssessment).toHaveBeenCalledOnce());
-    expect(createAssessment).toHaveBeenCalledWith(
-      expect.objectContaining({
-        courseId: "course-1",
-        contentId: "content-1",
-        type: "Quiz",
-      }),
-    );
+    await waitFor(() => expect(saveQuizAssessmentDraft).toHaveBeenCalledOnce());
+    expect(createAssessment).not.toHaveBeenCalled();
     expect(deleteAssessment).not.toHaveBeenCalled();
 
-    const jsonBody = vi.mocked(updateContent).mock.calls[0]![0].jsonBody as {
+    const jsonBody = vi.mocked(saveQuizAssessmentDraft).mock.calls[0]![0].document as {
       grading?: Record<string, unknown>;
     };
     expect(jsonBody.grading).not.toHaveProperty("outcome");
@@ -626,7 +688,7 @@ describe("ContentItemEditor", () => {
 
   it("shows update errors and routes cancel back to the course content deterministically", async () => {
     const user = userEvent.setup();
-    vi.mocked(updateContent).mockResolvedValueOnce({
+    vi.mocked(saveQuizAssessmentDraft).mockResolvedValueOnce({
       success: false,
       error: "Bad Request",
     });
@@ -708,8 +770,8 @@ describe("ContentItemEditor", () => {
         jsonBody: undefined,
         visibility: "Public",
         isRequired: true,
-        estimatedMinutes: null,
-        estimatedMinutesSource: "Auto",
+        estimatedMinutes: 15,
+        estimatedMinutesSource: "Manual",
         lessonFormat: "Markdown",
       });
     });
@@ -745,8 +807,8 @@ describe("ContentItemEditor", () => {
         jsonBody: lessonItemLexical.jsonBody,
         visibility: "Public",
         isRequired: true,
-        estimatedMinutes: null,
-        estimatedMinutesSource: "Auto",
+        estimatedMinutes: 15,
+        estimatedMinutesSource: "Manual",
         lessonFormat: "Lexical",
       });
     });
@@ -800,7 +862,7 @@ describe("ContentItemEditor", () => {
 
   // ── Code content: coding-tests bridge ──
 
-  it("enables Configure Coding Tests and bridges to the editor route when a linked AutoGraded assessment exists", async () => {
+  it("enables Configure Coding Tests when a linked assessment uses AutomatedReview", async () => {
     const user = userEvent.setup();
 
     render(
@@ -808,8 +870,12 @@ describe("ContentItemEditor", () => {
         courseId="course-1"
         item={codeItem}
         courseTitle="Advanced Game AI"
-        linkedAssessmentId="asmnt-1"
-        linkedAssessmentGradingMethods="AutoGraded"
+        linkedAssessment={assessmentFixture({
+          id: "asmnt-1",
+          slug: "asmnt-1",
+          contentId: codeItem.id,
+          reviewMethods: 4 as Assessment["reviewMethods"],
+        })}
       />,
     );
 
@@ -833,8 +899,12 @@ describe("ContentItemEditor", () => {
         courseId="course-1"
         item={codeItem}
         courseTitle="Advanced Game AI"
-        linkedAssessmentId="asmnt-1"
-        linkedAssessmentGradingMethods="AutoGraded"
+        linkedAssessment={assessmentFixture({
+          id: "asmnt-1",
+          slug: "asmnt-1",
+          contentId: codeItem.id,
+          reviewMethods: 4 as Assessment["reviewMethods"],
+        })}
         initialCodingDefinition={{
           kind: "coding",
           language: "cpp",
@@ -893,6 +963,15 @@ describe("ContentItemEditor — Graded toggle (Task 7)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(updateContent).mockResolvedValue({ success: true, data: null });
+    vi.mocked(saveQuizAssessmentDraft).mockResolvedValue({
+      success: true,
+      data: {
+        contentId: "content-1",
+        contentVersion: 2,
+        assessmentId: null,
+        assessmentVersion: null,
+      },
+    });
     vi.mocked(createAssessment).mockResolvedValue({
       success: true,
       data: { id: "new-asmnt" },
@@ -907,7 +986,7 @@ describe("ContentItemEditor — Graded toggle (Task 7)", () => {
     });
   });
 
-  it("renders the Graded toggle for Code content; coding-tests panel only appears when an AutoGraded assessment is linked", () => {
+  it("renders the Graded toggle for Code content without an automated-review panel when unlinked", () => {
     // No linked assessment → switch visible, coding-tests panel absent.
     render(
       <ContentItemEditor
@@ -926,14 +1005,17 @@ describe("ContentItemEditor — Graded toggle (Task 7)", () => {
     expect(screen.queryByText(/not yet available/i)).not.toBeInTheDocument();
   });
 
-  it("renders the Graded switch and coding-tests panel together for Code content with a linked AutoGraded assessment", () => {
+  it("renders the Graded switch and coding-tests panel for a linked AutomatedReview assessment", () => {
     render(
       <ContentItemEditor
         courseId="course-1"
         item={codeItem}
         courseTitle="Advanced Game AI"
-        linkedAssessmentId="asmnt-1"
-        linkedAssessmentGradingMethods="AutoGraded"
+        linkedAssessment={assessmentFixture({
+          id: "asmnt-1",
+          contentId: codeItem.id,
+          reviewMethods: 4 as Assessment["reviewMethods"],
+        })}
       />,
     );
 
@@ -1018,7 +1100,7 @@ describe("ContentItemEditor — Graded toggle (Task 7)", () => {
           contentId: "content-code",
           type: "Assignment",
           submissionModalities: "Code",
-          gradingMethods: "AutoGraded,InstructorGraded",
+          reviewMethods: 12,
         }),
       );
     });
@@ -1032,7 +1114,10 @@ describe("ContentItemEditor — Graded toggle (Task 7)", () => {
         courseId="course-1"
         item={codeItem}
         courseTitle="Advanced Game AI"
-        linkedAssessmentId="asmnt-existing"
+        linkedAssessment={assessmentFixture({
+          id: "asmnt-existing",
+          contentId: codeItem.id,
+        })}
       />,
     );
 
@@ -1075,7 +1160,11 @@ describe("ContentItemEditor — Graded toggle (Task 7)", () => {
         courseId="course-1"
         item={assignmentItem}
         courseTitle="Advanced Game AI"
-        linkedAssessmentId="asmnt-2"
+        linkedAssessment={assessmentFixture({
+          id: "asmnt-2",
+          contentId: assignmentItem.id,
+          type: "Assignment",
+        })}
       />,
     );
 
@@ -1098,7 +1187,11 @@ describe("ContentItemEditor — Graded toggle (Task 7)", () => {
         courseId="course-1"
         item={assignmentItem}
         courseTitle="Advanced Game AI"
-        linkedAssessmentId="asmnt-3"
+        linkedAssessment={assessmentFixture({
+          id: "asmnt-3",
+          contentId: assignmentItem.id,
+          type: "Assignment",
+        })}
       />,
     );
 
@@ -1120,6 +1213,15 @@ describe("ContentItemEditor — Reading-time estimation (Task 10)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(updateContent).mockResolvedValue({ success: true, data: null });
+    vi.mocked(saveQuizAssessmentDraft).mockResolvedValue({
+      success: true,
+      data: {
+        contentId: "content-1",
+        contentVersion: 2,
+        assessmentId: null,
+        assessmentVersion: null,
+      },
+    });
     vi.mocked(createAssessment).mockResolvedValue({
       success: true,
       data: { id: "new-asmnt" },

@@ -10,6 +10,7 @@ import type {
   AssessmentGroup,
 } from "@/lib/learning/queries/assessments";
 import type { CourseContentItemViewModel } from "@/lib/learning/queries/course";
+import { createReviewMethods } from "@game-guild/grading";
 
 const routerMocks = vi.hoisted(() => ({
   back: vi.fn(),
@@ -71,7 +72,7 @@ const assessment = {
   maxScore: 10,
   passingScore: 7,
   timeLimitMinutes: 30,
-  maxAttempts: 2,
+  maxAttempts: 1,
   isRequired: true,
   order: 1,
   availableFrom: "2026-07-01T10:00:00.000Z",
@@ -81,9 +82,15 @@ const assessment = {
   allowLateSubmissions: false,
   lateSubmissionDeadline: null,
   isAvailable: true,
-  gradingMethods: "InstructorGraded",
+  reviewMethods: createReviewMethods("InstructorReview"),
   groupSetId: null,
-  peerReviewsRequiredCount: 0,
+  publishedDefinitionRevisionId: null,
+  reviewConfigurationCanonicalJson: null,
+  attemptContributionMode: null,
+  contentCompletionMode: "on-release-and-pass",
+  resultReleaseMode: "manual",
+  resultReleaseScheduledFor: null,
+  version: 1,
 } satisfies Assessment;
 
 const groups = [
@@ -135,7 +142,7 @@ describe("AssessmentEditor", () => {
     vi.clearAllMocks();
     vi.mocked(updateAssessment).mockResolvedValue({
       success: true,
-      data: null,
+      data: { version: 2 },
     });
     vi.mocked(deleteAssessment).mockResolvedValue({
       success: true,
@@ -194,30 +201,30 @@ describe("AssessmentEditor", () => {
     fireEvent.change(screen.getByLabelText(/time limit/i), {
       target: { value: "45" },
     });
-    fireEvent.change(screen.getByLabelText(/max attempts/i), {
-      target: { value: "3" },
-    });
-
     await user.click(screen.getByRole("button", { name: /save changes/i }));
 
     await waitFor(() => {
-      expect(updateAssessment).toHaveBeenCalledWith({
+      expect(updateAssessment).toHaveBeenCalledWith(expect.objectContaining({
         courseId: "course-1",
         assessmentId: "assessment-1",
+        expectedVersion: 1,
         title: "Updated Quiz",
         slug: "updated-quiz",
         description: "Updated instructions.",
         maxScore: 20,
         passingScore: 14,
         timeLimitMinutes: 45,
-        maxAttempts: 3,
+        maxAttempts: 1,
         isRequired: true,
         availableFrom: "2026-08-01T10:00",
         availableUntil: "2026-08-05T10:00",
         assessmentGroupId: "group-quizzes",
         clearAssessmentGroupId: false,
         presentationMode: "Continuous",
-      });
+        reviewMethods: 8,
+        contentCompletionMode: "on-release-and-pass",
+        resultReleaseMode: "manual",
+      }));
     });
     expect(routerMocks.replace).toHaveBeenCalledWith(
       "/workspace/learning/courses/course-1/assessments/updated-quiz",
@@ -377,7 +384,7 @@ describe("AssessmentEditor", () => {
     expect(screen.getByTestId("linked-content-none")).toBeInTheDocument();
   });
 
-  it("toggles grading methods and writes the comma-separated string", async () => {
+  it("persists a primary peer review followed by final instructor review", async () => {
     const user = userEvent.setup();
     render(
       <AssessmentEditor
@@ -388,24 +395,32 @@ describe("AssessmentEditor", () => {
       />,
     );
 
-    // Given: assessment starts with only InstructorGraded
-    expect(screen.getByRole("checkbox", { name: /instructorgraded/i })).toBeChecked();
-    expect(screen.getByRole("checkbox", { name: /peerreview/i })).not.toBeChecked();
-
-    await user.click(screen.getByRole("checkbox", { name: /peerreview/i }));
+    const primaryReview = screen.getByRole("combobox", { name: /primary review/i });
+    expect(primaryReview).toHaveTextContent("Instructor review");
+    await user.click(primaryReview);
+    await user.click(await screen.findByRole("option", { name: "Peer review" }));
+    await user.click(screen.getByRole("switch", { name: /final instructor review/i }));
+    await user.click(screen.getByRole("button", { name: /save changes/i }));
 
     await waitFor(() => {
-      expect(updateAssessment).toHaveBeenCalledWith({
-        courseId: "course-1",
-        assessmentId: "assessment-1",
-        gradingMethods: "InstructorGraded,PeerReview",
-      });
+      expect(updateAssessment).toHaveBeenCalledWith(expect.objectContaining({
+        reviewMethods: 9,
+      }));
     });
+    const configuration = JSON.parse(
+      vi.mocked(updateAssessment).mock.calls.at(-1)![0]
+        .reviewConfigurationCanonicalJson!,
+    );
+    expect(configuration.peer.reviewsRequiredPerSubmission).toBe(3);
+    expect(configuration.instructor).toEqual({ requireOverrideReason: false });
   });
 
-  it("removes a flag from the grading methods string when unchecked", async () => {
+  it("removes final instructor review while preserving the primary review", async () => {
     const user = userEvent.setup();
-    const multi = { ...assessment, gradingMethods: "PeerReview,AutoGraded" };
+    const multi = {
+      ...assessment,
+      reviewMethods: createReviewMethods("AutomatedReview", true),
+    };
     render(
       <AssessmentEditor
         courseId="course-1"
@@ -415,14 +430,15 @@ describe("AssessmentEditor", () => {
       />,
     );
 
-    await user.click(screen.getByRole("checkbox", { name: /autograded/i }));
+    expect(screen.getByRole("combobox", { name: /primary review/i }))
+      .toHaveTextContent("Automated review");
+    await user.click(screen.getByRole("switch", { name: /final instructor review/i }));
+    await user.click(screen.getByRole("button", { name: /save changes/i }));
 
     await waitFor(() => {
-      expect(updateAssessment).toHaveBeenCalledWith({
-        courseId: "course-1",
-        assessmentId: "assessment-1",
-        gradingMethods: "PeerReview",
-      });
+      expect(updateAssessment).toHaveBeenCalledWith(expect.objectContaining({
+        reviewMethods: 4,
+      }));
     });
   });
 

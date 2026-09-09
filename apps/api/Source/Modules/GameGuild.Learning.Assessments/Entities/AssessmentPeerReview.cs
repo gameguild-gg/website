@@ -1,4 +1,7 @@
 
+using GameGuild.Learning.Assessments.Grading.Contracts;
+using GameGuild.Learning.Grading.Contracts;
+
 namespace GameGuild.Learning.Assessments;
 
 /// <summary>
@@ -12,7 +15,7 @@ public class AssessmentPeerReview : EntityBase
     public PeerReviewStatus Status { get; private set; }
     public DateTime AssignedAt { get; private set; }
     public DateTime? SubmittedAt { get; private set; }
-    public int? Score { get; private set; }
+    public ScoreValue? Score { get; private set; }
     public string? Feedback { get; private set; }
     public string? RubricScoresPayload { get; private set; }
 
@@ -31,7 +34,7 @@ public class AssessmentPeerReview : EntityBase
         };
     }
 
-    public void SubmitReview(int? score, string? feedback, string? rubricScores)
+    public void SubmitReview(ScoreValue? score, string? feedback, string? rubricScores)
     {
         if (Status != PeerReviewStatus.Assigned)
         {

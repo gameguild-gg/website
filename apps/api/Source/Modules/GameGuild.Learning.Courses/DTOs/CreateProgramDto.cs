@@ -1,3 +1,5 @@
+using GameGuild.Learning.Grading.Contracts;
+
 namespace GameGuild.Learning.Courses;
 
 // Program Management DTOs
@@ -7,7 +9,7 @@ public sealed record CreateProgramDto(
   string Slug,
   string? Thumbnail = null,
   Guid? CreatorId = null,
-  decimal PassingScore = 60m)
+  PercentValue PassingScore = default)
 {
   public string Title { get; init; } = Title;
 
@@ -19,7 +21,7 @@ public sealed record CreateProgramDto(
 
   public Guid? CreatorId { get; init; } = CreatorId;
 
-  public decimal PassingScore { get; init; } = PassingScore;
+  public PercentValue PassingScore { get; init; } = PassingScore == default ? PercentValue.FromPercentage("60") : PassingScore;
 }
 
 // Content Management DTOs

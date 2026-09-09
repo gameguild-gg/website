@@ -1,3 +1,6 @@
+using GameGuild.Learning.Assessments.Grading.Contracts;
+using GameGuild.Learning.Grading.Contracts;
+
 namespace GameGuild.Learning.Assessments;
 
 /// <summary>
@@ -28,7 +31,7 @@ public interface IRubricService
     /// each score within [0, criterion.Points], and the sum equal to the submitted score.
     /// Shared by instructor grading and peer review submit.
     /// </summary>
-    Task<Result> ValidateScoresAsync(Guid assessmentId, int score, string? rubricScores);
+    Task<Result> ValidateScoresAsync(Guid assessmentId, ScoreValue score, string? rubricScores);
 }
 
 /// <summary>
@@ -39,7 +42,7 @@ public sealed record SaveRubricRequest(string Title, IReadOnlyList<SaveRubricCri
 /// <summary>
 /// One criterion row of a rubric save request.
 /// </summary>
-public sealed record SaveRubricCriterionRequest(string Description, int Points, int Order);
+public sealed record SaveRubricCriterionRequest(string Description, ScoreValue Points, int Order);
 
 /// <summary>
 /// Rubric read shape with criteria ordered by <see cref="RubricCriterionDto.Order"/>.
@@ -61,7 +64,7 @@ public sealed record RubricDto(
 public sealed record RubricCriterionDto(
     Guid Id,
     string Description,
-    int Points,
+    ScoreValue Points,
     int Order)
 {
     public static RubricCriterionDto From(RubricCriterion entity) => new(

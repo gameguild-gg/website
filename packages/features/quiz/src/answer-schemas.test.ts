@@ -24,7 +24,7 @@ describe("quiz answer runtime schema", () => {
     expect(safeParseQuizAnswer({
       type: QuizEntryType.Ordering,
       itemIds: ["a"],
-      score: "00000001.0000",
+      score: 100,
     }).success).toBe(false);
   });
 });

@@ -63,6 +63,9 @@ export async function submitAssessment(formData: FormData): Promise<LearnerMutat
         const courseSlug = String(formData.get('courseSlug') || '');
         const modality = String(formData.get('modality') || 'Text') as LearningAssessmentsSubmissionModality;
         if (!assessmentId || !enrollmentId) return { success: false, error: 'Assessment enrollment context is missing.' };
+        if (modality === 'None' || modality === 'StructuredAnswer') {
+            return { success: false, error: 'Quiz attempts are unavailable through the generic assessment form.' };
+        }
 
         const authenticated = await authenticatedClient();
         if (!authenticated) return { success: false, error: 'Your session expired. Sign in again.' };

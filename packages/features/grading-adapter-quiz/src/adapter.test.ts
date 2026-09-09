@@ -3,7 +3,7 @@ import {
   canonicalizeJson,
   hashAssessmentExecutionDelivery,
 } from "@game-guild/grading";
-import { QuizEntryType } from "@game-guild/quiz";
+import { parseQuizPoints, QuizEntryType } from "@game-guild/quiz";
 import { describe, expect, it } from "vitest";
 import sharedAnswerEnvelope from "../fixtures/quiz-answer-envelope-v1.json";
 import {
@@ -16,6 +16,7 @@ import {
   evaluateDeterministicQuiz,
   parseQuizAnswerEnvelope,
   projectQuizGradingItems,
+  quizAssessmentTypeAdapter,
   registerQuizGradingCapabilities,
 } from "./index";
 import {
@@ -49,7 +50,7 @@ describe("quiz grading adapter contracts", () => {
     })).toThrow();
     expect(() => decodeQuizAnswerEnvelope(
       createQuizAnswerEnvelope({ q1: quizAnswerVariantsV1.boolean }),
-      [{ itemId: "q1", entry: allQuizEntryTypesV1[0]! }],
+      projectQuizGradingItems([{ itemId: "q1", entry: allQuizEntryTypesV1[0]! }]),
     )).toThrow(/does not match/);
   });
 
@@ -59,36 +60,38 @@ describe("quiz grading adapter contracts", () => {
       items: { "true-false": {}, matching: {} },
     });
     expect(projectQuizGradingItems(deterministicQuizItemsV1)).toMatchObject([
-      { itemId: "true-false", itemType: QuizEntryType.TrueFalse, maxScore: "00000002.0000" },
-      { itemId: "matching", itemType: QuizEntryType.Matching, maxScore: "00000003.0000" },
+      { itemId: "true-false", itemType: QuizEntryType.TrueFalse, maxScore: 200 },
+      { itemId: "matching", itemType: QuizEntryType.Matching, maxScore: 300 },
     ]);
   });
 
   it("returns a partial generic result and applies exact matching partial credit", () => {
     const items = [
       ...deterministicQuizItemsV1,
-      { itemId: "essay", entry: { type: QuizEntryType.Essay, stem: "Explain", points: "00000004.0000", settings: { allowRetry: false } } as const },
+      { itemId: "essay", entry: { type: QuizEntryType.Essay, stem: "Explain", points: parseQuizPoints(400), settings: { allowRetry: false } } as const },
     ];
-    const result = evaluateDeterministicQuiz(items, {
+    const result = evaluateDeterministicQuiz(projectQuizGradingItems(items), { answers: {
       "true-false": { type: QuizEntryType.TrueFalse, value: true },
       matching: { type: QuizEntryType.Matching, matches: { a: "1", b: "wrong", c: "3" } },
       essay: { type: QuizEntryType.Essay, richText: null, plainText: "Response" },
+    },
     });
     expect(result.state).toBe("partial");
     expect(result.score).toBeNull();
-    expect(result.items[0]?.score).toBe("00000002.0000");
-    expect(result.items[1]?.score).toBe("00000002.0000");
-    expect(result.maxScore).toBe("00000009.0000");
-    expect(result.items[1]?.score).toBe("00000002.0000");
+    expect(result.items[0]?.score).toBe(200);
+    expect(result.items[1]?.score).toBe(200);
+    expect(result.maxScore).toBe(900);
+    expect(result.items[1]?.score).toBe(200);
     expect(result.items[2]?.state).toBe("pending");
   });
 
   it("keeps delivery concrete, learner-safe and hash-sensitive to order", async () => {
-    const first = createQuizExecutionDelivery("revision-1", "snapshot", deterministicQuizItemsV1);
+    const projected = projectQuizGradingItems(deterministicQuizItemsV1);
+    const first = createQuizExecutionDelivery("revision-1", "snapshot", projected);
     const second = createQuizExecutionDelivery(
       "revision-1",
       "snapshot",
-      deterministicQuizItemsV1,
+      projected,
       ["matching", "true-false"],
     );
     expect(canonicalizeJson(first)).not.toBe(canonicalizeJson(second));
@@ -102,18 +105,33 @@ describe("quiz grading adapter contracts", () => {
     registerQuizGradingCapabilities(registry);
     const manifest = {
       schemaVersion: 1 as const,
-      items: createQuizItemManifest(deterministicQuizItemsV1),
+      items: createQuizItemManifest(projectQuizGradingItems(deterministicQuizItemsV1)),
       stages: [{
         method: "AutomatedReview" as const,
         handlerKey: "quiz-automated-review",
         handlerVersion: "1",
-        algorithmKey: "quiz-deterministic",
-        algorithmVersion: "1",
       }],
       policies: [],
     };
     expect(registry.validateManifest(manifest, "author-test")).toEqual([]);
     expect(registry.validateManifest(manifest, "official-submission").length).toBeGreaterThan(0);
+  });
+
+  it("exposes projection, delivery, decoding and evaluation as one versioned adapter", () => {
+    const projected = quizAssessmentTypeAdapter.projectAuthoring(deterministicQuizItemsV1);
+    const envelope = createQuizAnswerEnvelope({
+      "true-false": { type: QuizEntryType.TrueFalse, value: true },
+      matching: { type: QuizEntryType.Matching, matches: { a: "1", b: "2", c: "3" } },
+    });
+    const decoded = quizAssessmentTypeAdapter.decodeResponse(envelope, projected);
+
+    expect(quizAssessmentTypeAdapter.capability).toMatchObject({
+      kind: "assessment-type-adapter",
+      key: "quiz-assessment-type",
+      version: "1",
+    });
+    expect(quizAssessmentTypeAdapter.isCurrentForAuthoring).toBe(true);
+    expect(quizAssessmentTypeAdapter.evaluateDeterministic(projected, decoded).score).toBe(500);
   });
 
   it("classifies authoring capability independently from grading metadata", () => {

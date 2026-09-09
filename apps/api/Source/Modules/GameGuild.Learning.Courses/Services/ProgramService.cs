@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using GameGuild.Learning.Grading.Contracts;
 
 namespace GameGuild.Learning.Courses;
 
@@ -39,7 +40,7 @@ public class ProgramService(IProgramCrudService crud, IProgramLifecycleService l
   public Task<UserProgressDto?> AddUserToProgramAsync(Guid programId, Guid userId) => crud.AddUserToProgramAsync(programId, userId);
   public Task<bool> RemoveUserFromProgramAsync(Guid programId, Guid userId) => crud.RemoveUserFromProgramAsync(programId, userId);
   public Task<IEnumerable<UserProgressDto>> GetProgramUsersAsync(Guid programId, int skip = 0, int take = 50) => crud.GetProgramUsersAsync(programId, skip, take);
-  public Task<decimal> GetUserProgressAsync(Guid programId, Guid userId) => crud.GetUserProgressAsync(programId, userId);
+  public Task<PercentValue> GetUserProgressAsync(Guid programId, Guid userId) => crud.GetUserProgressAsync(programId, userId);
   public Task<UserProgressDto?> GetUserProgressDtoAsync(Guid programId, Guid userId) => crud.GetUserProgressDtoAsync(programId, userId);
   public Task<IEnumerable<ContentInteraction>> GetUserInteractionsAsync(Guid programId, Guid userId) => crud.GetUserInteractionsAsync(programId, userId);
   public Task<Program> UpdateUserProgressAsync(Guid programId, Guid userId, Guid contentId, ProgressStatus status) => crud.UpdateUserProgressAsync(programId, userId, contentId, status);
@@ -58,7 +59,7 @@ public class ProgramService(IProgramCrudService crud, IProgramLifecycleService l
   public Task<IEnumerable<Program>> GetPublicPublishedProgramsAsync(int skip = 0, int take = 50) => crud.GetPublicPublishedProgramsAsync(skip, take);
   public Task<int> GetProgramCountAsync(ContentStatus? status = null, ContentVisibility? visibility = null) => crud.GetProgramCountAsync(status, visibility);
   public Task<int> GetUserCountForProgramAsync(Guid programId) => crud.GetUserCountForProgramAsync(programId);
-  public Task<decimal> GetAverageCompletionRateAsync(Guid programId) => crud.GetAverageCompletionRateAsync(programId);
+  public Task<PercentValue> GetAverageCompletionRateAsync(Guid programId) => crud.GetAverageCompletionRateAsync(programId);
   public Task<Dictionary<string, object>> GetProgramStatisticsAsync(Guid programId) => crud.GetProgramStatisticsAsync(programId);
   public Task<ProgramAnalyticsDto?> GetProgramAnalyticsAsync(Guid id) => crud.GetProgramAnalyticsAsync(id);
   public Task<CompletionRatesDto?> GetCompletionRatesAsync(Guid id) => crud.GetCompletionRatesAsync(id);

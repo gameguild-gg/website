@@ -1,6 +1,7 @@
 
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore;
+using GameGuild.Learning.Grading.Contracts;
 
  namespace GameGuild.Learning.Courses;
 
@@ -15,7 +16,6 @@ public class ProgramConfiguration : IEntityTypeConfiguration<Program> {
 
     builder.Property(p => p.PassingScore)
       .IsRequired()
-      .HasPrecision(5, 2)
-      .HasDefaultValue(60m);
+      .HasDefaultValue(PercentValue.FromUnits(6000));
   }
 }

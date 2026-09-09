@@ -67,4 +67,26 @@ describe('LearnerActivityForm', () => {
     expect(screen.getByRole('button', { name: 'Submit assessment' })).toBeEnabled();
   });
 
+  it('keeps quiz attempts out of the generic assessment form', () => {
+    render(
+      <LearnerActivityForm
+        courseId="course-1"
+        courseSlug="game-production"
+        enrollmentId="enrollment-1"
+        activity={{
+          kind: 'assessment',
+          assessment: {
+            id: 'quiz-1',
+            title: 'Knowledge check',
+            type: 'Quiz',
+            submissionModalities: 'StructuredAnswer',
+          },
+        }}
+      />,
+    );
+
+    expect(screen.getByText('Quiz attempt unavailable')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Submit assessment' })).not.toBeInTheDocument();
+  });
+
 });

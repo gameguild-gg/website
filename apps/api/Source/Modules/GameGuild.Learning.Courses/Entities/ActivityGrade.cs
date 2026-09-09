@@ -2,6 +2,7 @@ using GameGuild.Identity.Users;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using GameGuild.Learning.Grading.Contracts;
 
 
 namespace GameGuild.Learning.Courses;
@@ -47,23 +48,11 @@ public class ActivityGrade : EntityBase
     /// <summary>
     /// Points awarded (0-100 scale)
     /// </summary>
-    [Column(TypeName = "decimal(5,2)")]
-        public decimal? Points { get; set; }
-
-        /// <summary>
-        /// Compatibility shim for legacy services referencing Grade property
-        /// </summary>
-        [NotMapped]
-        public decimal Grade
-        {
-            get => Points ?? 0m;
-            set => Points = value;
-        }
+    public ScoreValue? Points { get; set; }
     /// <summary>
     /// Maximum points possible for this activity
     /// </summary>
-    [Column(TypeName = "decimal(5,2)")]
-    public decimal? MaxPoints { get; set; }
+    public ScoreValue? MaxPoints { get; set; }
 
     /// <summary>
     /// Grade letter/symbol (A, B, C, etc.)
@@ -151,14 +140,18 @@ public class ActivityGrade : EntityBase
     /// <summary>
     /// Percentage score (points / max points * 100)
     /// </summary>
-    public decimal? PercentageScore => Points.HasValue && MaxPoints.HasValue && MaxPoints > 0
-        ? (Points.Value / MaxPoints.Value) * 100m
+    public PercentValue? PercentageScore => Points.HasValue &&
+                                             MaxPoints.HasValue &&
+                                             MaxPoints.Value.CompareTo(ScoreValue.Zero) > 0
+        ? PercentValue.FromScores(Points.Value, MaxPoints.Value)
         : null;
 
     /// <summary>
     /// Whether this is a passing grade (>=60%)
     /// </summary>
-    public bool? IsPassing => PercentageScore.HasValue ? PercentageScore >= 60m : null;
+    public bool? IsPassing => PercentageScore.HasValue
+        ? PercentageScore.Value.CompareTo(PercentValue.FromPercentage("60")) >= 0
+        : null;
 
     /// <summary>
     /// Whether this is an automatic system grade
@@ -179,10 +172,15 @@ public class ActivityGrade : EntityBase
     /// <summary>
     /// Assigns points to this grade
     /// </summary>
-    public void AssignPoints(decimal points, decimal? maxPoints = null)
+    public void AssignPoints(ScoreValue points, ScoreValue? maxPoints = null)
     {
-        Points = Math.Max(0, Math.Min(maxPoints ?? 100m, points));
-        MaxPoints = maxPoints ?? MaxPoints ?? 100m;
+        var maximum = maxPoints ?? MaxPoints ?? ScoreValue.FromPoints("100");
+        if (maximum.CompareTo(ScoreValue.Zero) <= 0)
+            throw new ArgumentOutOfRangeException(nameof(maxPoints), "Maximum points must be positive.");
+        if (points.CompareTo(maximum) > 0)
+            throw new ArgumentOutOfRangeException(nameof(points), "Points cannot exceed maximum points.");
+        Points = points;
+        MaxPoints = maximum;
         UpdatedAt = SystemClock.UtcNow;
     }
 
@@ -248,22 +246,13 @@ public class ActivityGrade : EntityBase
         if (!PercentageScore.HasValue)
             return null;
 
-        return PercentageScore.Value switch
+        var value = PercentageScore.Value;
+        foreach (var (threshold, letter) in LetterGradeThresholds)
         {
-            >= 97m => "A+",
-            >= 93m => "A",
-            >= 90m => "A-",
-            >= 87m => "B+",
-            >= 83m => "B",
-            >= 80m => "B-",
-            >= 77m => "C+",
-            >= 73m => "C",
-            >= 70m => "C-",
-            >= 67m => "D+",
-            >= 63m => "D",
-            >= 60m => "D-",
-            _ => "F"
-        };
+            if (value.CompareTo(threshold) >= 0) return letter;
+        }
+
+        return "F";
     }
 
     /// <summary>
@@ -271,13 +260,10 @@ public class ActivityGrade : EntityBase
     /// </summary>
     public bool IsValid()
     {
-        if (Points.HasValue && MaxPoints.HasValue && Points > MaxPoints)
+        if (Points.HasValue && MaxPoints.HasValue && Points.Value.CompareTo(MaxPoints.Value) > 0)
             return false;
 
-        if (Points.HasValue && Points < 0)
-            return false;
-
-        if (MaxPoints is <= 0)
+        if (MaxPoints.HasValue && MaxPoints.Value.CompareTo(ScoreValue.Zero) <= 0)
             return false;
 
         return true;
@@ -286,7 +272,7 @@ public class ActivityGrade : EntityBase
     /// <summary>
     /// Creates a revision of this grade
     /// </summary>
-    public ActivityGrade CreateRevision(decimal newPoints, string? reason = null)
+    public ActivityGrade CreateRevision(ScoreValue newPoints, string? reason = null)
     {
         return new ActivityGrade
         {
@@ -305,4 +291,20 @@ public class ActivityGrade : EntityBase
             TenantId = TenantId
         };
     }
+
+    private static readonly (PercentValue Threshold, string Letter)[] LetterGradeThresholds =
+    [
+        (PercentValue.FromPercentage("97"), "A+"),
+        (PercentValue.FromPercentage("93"), "A"),
+        (PercentValue.FromPercentage("90"), "A-"),
+        (PercentValue.FromPercentage("87"), "B+"),
+        (PercentValue.FromPercentage("83"), "B"),
+        (PercentValue.FromPercentage("80"), "B-"),
+        (PercentValue.FromPercentage("77"), "C+"),
+        (PercentValue.FromPercentage("73"), "C"),
+        (PercentValue.FromPercentage("70"), "C-"),
+        (PercentValue.FromPercentage("67"), "D+"),
+        (PercentValue.FromPercentage("63"), "D"),
+        (PercentValue.FromPercentage("60"), "D-"),
+    ];
 }

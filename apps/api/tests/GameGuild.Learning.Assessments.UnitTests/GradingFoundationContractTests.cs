@@ -8,16 +8,16 @@ namespace GameGuild.Learning.Assessments.Tests;
 public sealed class GradingFoundationContractTests
 {
     [Fact]
-    public void AcademicValues_AreSerializedAsCanonicalJsonStrings()
+    public void AcademicValues_AreSerializedAsScaledJsonIntegers()
     {
-        JsonSerializer.Serialize(ScoreValue.Parse("00000012.3400")).Should().Be("\"00000012.3400\"");
-        JsonSerializer.Serialize(PercentValue.Parse("075.5000")).Should().Be("\"075.5000\"");
+        JsonSerializer.Serialize(ScoreValue.FromUnits(1234)).Should().Be("1234");
+        JsonSerializer.Serialize(PercentValue.FromUnits(7550)).Should().Be("7550");
 
-        Action numericScore = () => JsonSerializer.Deserialize<ScoreValue>("12.34");
-        Action numericPercent = () => JsonSerializer.Deserialize<PercentValue>("75.5");
+        Action textScore = () => JsonSerializer.Deserialize<ScoreValue>("\"12.34\"");
+        Action textPercent = () => JsonSerializer.Deserialize<PercentValue>("\"75.5\"");
 
-        numericScore.Should().Throw<JsonException>();
-        numericPercent.Should().Throw<JsonException>();
+        textScore.Should().Throw<JsonException>();
+        textPercent.Should().Throw<JsonException>();
     }
 
     [Fact]
@@ -34,8 +34,8 @@ public sealed class GradingFoundationContractTests
     [Fact]
     public void ScoreRatio_UsesExactMidpointRoundingOnce()
     {
-        ScoreValue.ByRatio(ScoreValue.Parse("00000001.0000"), 1, 6)
-            .Should().Be(ScoreValue.Parse("00000000.1667"));
+        ScoreValue.ByRatio(ScoreValue.FromUnits(100), 1, 6)
+            .Should().Be(ScoreValue.FromUnits(17));
     }
 
     [Fact]
@@ -110,7 +110,7 @@ public sealed class GradingFoundationContractTests
             new Dictionary<string, AssessmentExecutionDeliveryItemV1>
             {
                 ["q1"] = new(
-                    "quiz-delivery-generator",
+                    "quiz-assessment-type",
                     "1",
                     learnerPayload.RootElement.Clone()),
             });
@@ -130,15 +130,15 @@ public sealed class GradingFoundationContractTests
             response);
         wrongHash.Should().Throw<JsonException>().WithMessage("*grading execution snapshot hash*");
 
-        var wrongGenerator = delivery with
+        var wrongAdapter = delivery with
         {
             Items = new Dictionary<string, AssessmentExecutionDeliveryItemV1>
             {
-                ["q1"] = delivery.Items["q1"] with { DeliveryGeneratorVersion = "2" },
+                ["q1"] = delivery.Items["q1"] with { AdapterVersion = "2" },
             },
         };
-        var invalid = () => GradingContractValidator.ValidateBindings(snapshotHash, snapshot, wrongGenerator, response);
-        invalid.Should().Throw<JsonException>().WithMessage("*generator must match*");
+        var invalid = () => GradingContractValidator.ValidateBindings(snapshotHash, snapshot, wrongAdapter, response);
+        invalid.Should().Throw<JsonException>().WithMessage("*adapter must match*");
     }
 
     [Fact]
@@ -186,21 +186,17 @@ public sealed class GradingFoundationContractTests
                 "items":[{
                   "itemId":"q1",
                   "itemType":"TRUE_FALSE",
-                  "projectorKey":"quiz-item-projector",
-                  "projectorVersion":"1",
-                  "deliveryGeneratorKey":"quiz-delivery-generator",
-                  "deliveryGeneratorVersion":"1",
-                  "answerDecoderKey":"quiz-answer-decoder",
-                  "answerDecoderVersion":"1"
+                  "adapterKey":"quiz-assessment-type",
+                  "adapterVersion":"1"
                 }],
                 "stages":[
-                  {"method":"AutomatedReview","handlerKey":"quiz-automated-review","handlerVersion":"1","algorithmKey":"quiz-deterministic","algorithmVersion":"1"},
+                  {"method":"AutomatedReview","handlerKey":"quiz-automated-review","handlerVersion":"1"},
                   {"method":"InstructorReview","handlerKey":"instructor-review","handlerVersion":"1"}
                 ],
                 "policies":[]
               },
               "itemProjections":{
-                "q1":{"schemaVersion":1,"itemId":"q1","itemType":"TRUE_FALSE","maxScore":"00000001.0000","source":{"contentType":"quiz","itemId":"q1"}}
+                "q1":{"schemaVersion":1,"itemId":"q1","itemType":"TRUE_FALSE","maxScore":100,"source":{"contentType":"quiz","itemId":"q1"}}
               }
             }
             """, GradingJson.Options)!;

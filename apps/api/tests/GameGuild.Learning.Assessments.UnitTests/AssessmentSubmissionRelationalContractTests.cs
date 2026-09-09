@@ -13,6 +13,7 @@ public sealed class AssessmentSubmissionRelationalContractTests
     {
         await using var connection = new SqliteConnection("Data Source=:memory:");
         await connection.OpenAsync();
+        connection.CreateCollation("C", string.CompareOrdinal);
         await using var db = await CreateContextAsync(connection);
         var submission = AssessmentSubmission.Start(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), 1);
         db.Add(submission);
@@ -30,6 +31,7 @@ public sealed class AssessmentSubmissionRelationalContractTests
     {
         await using var connection = new SqliteConnection("Data Source=:memory:");
         await connection.OpenAsync();
+        connection.CreateCollation("C", string.CompareOrdinal);
         await using var db = await CreateContextAsync(connection);
         var submission = AssessmentSubmission.Start(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), 1);
         db.Add(submission);
@@ -47,6 +49,7 @@ public sealed class AssessmentSubmissionRelationalContractTests
     {
         await using var connection = new SqliteConnection("Data Source=:memory:");
         await connection.OpenAsync();
+        connection.CreateCollation("C", string.CompareOrdinal);
         await using var db = await CreateContextAsync(connection);
         var submission = AssessmentSubmission.Start(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), 1);
         db.Add(submission);
@@ -75,6 +78,13 @@ public sealed class AssessmentSubmissionRelationalContractTests
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             new AssessmentsModelConfiguration().Configure(modelBuilder);
+
+            // This focused harness exercises the portable submission constraints on SQLite.
+            // PostgreSQL-only regex/JSON checks are covered by the baseline database tests.
+            modelBuilder.Entity<Assessment>().Metadata.RemoveCheckConstraint("CK_Assessments_ScoreRange");
+            modelBuilder.Entity<Assessment>().Metadata.RemoveCheckConstraint("CK_Assessments_ReviewConfiguration");
+            modelBuilder.Entity<AssessmentGroup>().Metadata.RemoveCheckConstraint("CK_AssessmentGroups_WeightPercent");
+            modelBuilder.Entity<AssessmentSubmission>().Metadata.RemoveCheckConstraint("CK_AssessmentSubmissions_ScoreCanonical");
         }
 
         public Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default)

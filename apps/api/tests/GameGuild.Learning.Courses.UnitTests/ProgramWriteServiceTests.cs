@@ -590,7 +590,7 @@ public sealed class ProgramWriteServiceTests
 
         graph.CurrentAttempt.Status.Should().Be(ProgressStatus.Completed);
         graph.CurrentAttempt.IsCompleted.Should().BeTrue();
-        graph.CurrentAttempt.CompletionPercentage.Should().Be(100);
+        graph.CurrentAttempt.CompletionPercentage.Should().Be(PercentValue.Hundred);
     }
 
     [Fact]
@@ -610,7 +610,7 @@ public sealed class ProgramWriteServiceTests
         graph.OldAttempt.SubmittedAt = graph.OldAttempt.CreatedAt.AddMinutes(1);
         graph.OldAttempt.Status = ProgressStatus.Completed;
         graph.OldAttempt.IsCompleted = true;
-        graph.OldAttempt.ProgressPercentage = 100;
+        graph.OldAttempt.ProgressPercentage = PercentValue.Hundred;
         context.AddRange(
             graph.Program,
             graph.Content,
@@ -628,7 +628,7 @@ public sealed class ProgramWriteServiceTests
 
         completed.Should().BeTrue();
         graph.CurrentAttempt.IsCompleted.Should().BeTrue();
-        graph.Enrollment.CompletionPercentage.Should().Be(50);
+        graph.Enrollment.CompletionPercentage.Should().Be(Percent("50"));
     }
 
     [Fact]
@@ -652,7 +652,7 @@ public sealed class ProgramWriteServiceTests
         var rates = await service.GetCompletionRatesAsync(graph.Program.Id);
 
         rates.Should().NotBeNull();
-        rates!.ContentCompletionRates[graph.Content.Id].Should().Be(100);
+        rates!.ContentCompletionRates[graph.Content.Id].Should().Be(100m);
     }
 
     [Fact]
@@ -663,7 +663,7 @@ public sealed class ProgramWriteServiceTests
         graph.OldAttempt.SubmittedAt = graph.OldAttempt.CreatedAt.AddMinutes(1);
         graph.OldAttempt.Status = ProgressStatus.Completed;
         graph.OldAttempt.IsCompleted = true;
-        graph.OldAttempt.ProgressPercentage = 100;
+        graph.OldAttempt.ProgressPercentage = PercentValue.Hundred;
         context.AddRange(
             graph.Program,
             graph.Content,
@@ -690,7 +690,7 @@ public sealed class ProgramWriteServiceTests
         graph.OldAttempt.SubmittedAt = graph.OldAttempt.CreatedAt.AddMinutes(1);
         graph.OldAttempt.Status = ProgressStatus.Completed;
         graph.OldAttempt.IsCompleted = true;
-        graph.OldAttempt.ProgressPercentage = 100;
+        graph.OldAttempt.ProgressPercentage = PercentValue.Hundred;
         context.AddRange(
             graph.Program,
             graph.Content,

@@ -7,6 +7,7 @@ using GameGuild.Learning.Assessments.Grading.Abstractions;
 using GameGuild.Learning.Assessments.Grading.Capabilities;
 using GameGuild.Learning.Assessments.Grading.Contracts;
 using GameGuild.Learning.Assessments.QuizAdapter;
+using GameGuild.Learning.Courses;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
@@ -44,7 +45,7 @@ public sealed class QuizGradingAdapterContractTests
             {
               "type":"MATCHING",
               "stem":"Match",
-              "points":"00000002.0000",
+              "points":200,
               "settings":{"allowRetry":false},
               "pairs":[{"id":"a","left":"A","right":"secret"}],
               "allowPartialCredit":true,
@@ -68,13 +69,13 @@ public sealed class QuizGradingAdapterContractTests
     public async Task Algorithm_PreservesPartialResultsAndExactPartialCredit()
     {
         using var trueFalse = JsonDocument.Parse("""
-            {"type":"TRUE_FALSE","stem":"True","points":"00000002.0000","correctAnswer":true,"settings":{"allowRetry":false}}
+            {"type":"TRUE_FALSE","stem":"True","points":200,"correctAnswer":true,"settings":{"allowRetry":false}}
             """);
         using var matching = JsonDocument.Parse("""
-            {"type":"MATCHING","stem":"Match","points":"00000003.0000","pairs":[{"id":"a","left":"A","right":"1"},{"id":"b","left":"B","right":"2"},{"id":"c","left":"C","right":"3"}],"allowPartialCredit":true,"settings":{"allowRetry":false}}
+            {"type":"MATCHING","stem":"Match","points":300,"pairs":[{"id":"a","left":"A","right":"1"},{"id":"b","left":"B","right":"2"},{"id":"c","left":"C","right":"3"}],"allowPartialCredit":true,"settings":{"allowRetry":false}}
             """);
         using var essay = JsonDocument.Parse("""
-            {"type":"ESSAY","stem":"Explain","points":"00000004.0000","settings":{"allowRetry":false}}
+            {"type":"ESSAY","stem":"Explain","points":400,"settings":{"allowRetry":false}}
             """);
         using var answers = JsonDocument.Parse("""
             {"answers":{"true-false":{"type":"TRUE_FALSE","value":true},"matching":{"type":"MATCHING","matches":{"a":"1","b":"wrong","c":"3"}},"essay":{"type":"ESSAY","richText":null,"plainText":"Response"}}}
@@ -86,26 +87,37 @@ public sealed class QuizGradingAdapterContractTests
             projector.Project("matching", matching.RootElement),
             projector.Project("essay", essay.RootElement),
         };
-        var request = new DeterministicReviewRequest(projections, EmptyDelivery(), answers.RootElement.Clone());
+        var request = new DeterministicReviewRequest(
+            projections,
+            EmptyDelivery(),
+            answers.RootElement.Clone(),
+            "quiz-automated-review",
+            "1");
 
         var result = await new QuizDeterministicReviewAlgorithm().EvaluateAsync(request, CancellationToken.None);
 
         result.State.Should().Be("partial");
         result.Score.Should().BeNull();
-        result.MaxScore.Should().Be(ScoreValue.Parse("00000009.0000"));
-        result.Items[0].Score.Should().Be(ScoreValue.Parse("00000002.0000"));
-        result.Items[1].Score.Should().Be(ScoreValue.Parse("00000002.0000"));
+        result.MaxScore.Should().Be(ScoreValue.FromUnits(900));
+        result.Items[0].Score.Should().Be(ScoreValue.FromUnits(200));
+        result.Items[1].Score.Should().Be(ScoreValue.FromUnits(200));
         result.Items[2].State.Should().Be(GradeItemState.Pending);
     }
 
     [Fact]
-    public void Capability_IsAvailableForAuthorTestButNotOfficialSubmission()
+    public void Foundation_RegistersStructuralComponentsButNoReviewHandler()
     {
         var registry = new ReviewCapabilityRegistry();
         new QuizCapabilityRegistration().Register(registry);
 
-        registry.ResolveReview(ReviewMethod.AutomatedReview, "quiz-automated-review", "1", ReviewExecutionContext.AuthorTest)
+        registry.Resolve(
+                ExecutableComponentKind.AssessmentTypeAdapter,
+                QuizAdapterContracts.AdapterKey,
+                QuizAdapterContracts.Version,
+                ReviewExecutionContext.AuthorTest)
             .Should().NotBeNull();
+        registry.ResolveReview(ReviewMethod.AutomatedReview, "quiz-automated-review", "1", ReviewExecutionContext.AuthorTest)
+            .Should().BeNull();
         registry.ResolveReview(ReviewMethod.AutomatedReview, "quiz-automated-review", "1", ReviewExecutionContext.OfficialSubmission)
             .Should().BeNull();
     }
@@ -134,108 +146,28 @@ public sealed class QuizGradingAdapterContractTests
     }
 
     [Fact]
-    public void ComponentResolver_UsesExactManifestKeysVersionsAndContext()
+    public void AdapterResolver_UsesExactManifestKeyVersionAndContext()
     {
         var services = new ServiceCollection();
         services.AddAssessmentsModule();
         services.AddQuizGradingAdapter();
         using var provider = services.BuildServiceProvider();
-        var resolver = provider.GetRequiredService<IAssessmentExecutionComponentResolver>();
+        var resolver = provider.GetRequiredService<IAssessmentTypeAdapterResolver>();
 
-        resolver.ResolveAnswerDecoder("quiz", "quiz-answer-decoder", "1", ReviewExecutionContext.AuthorTest)
-            .Should().BeOfType<QuizAnswerDecoder>();
-        provider.GetRequiredService<IReviewStageHandlerResolver>()
-            .Resolve(ReviewMethod.AutomatedReview, "quiz-automated-review", "1", ReviewExecutionContext.AuthorTest)
-            .Should().BeOfType<QuizAutomatedReviewHandler>();
-        var wrongVersion = () => resolver.ResolveAnswerDecoder(
-            "quiz", "quiz-answer-decoder", "2", ReviewExecutionContext.AuthorTest);
-        var wrongContext = () => resolver.ResolveAnswerDecoder(
-            "quiz", "quiz-answer-decoder", "1", ReviewExecutionContext.OfficialSubmission);
+        resolver.ResolveForAuthoring(ProgramContentType.Questionnaire)
+            .Should().BeOfType<QuizAssessmentTypeAdapter>()
+            .Which.IsCurrentForAuthoring.Should().BeTrue();
+        resolver.Resolve("quiz", QuizAdapterContracts.AdapterKey, "1", ReviewExecutionContext.AuthorTest)
+            .Should().BeOfType<QuizAssessmentTypeAdapter>();
+        var absentHandler = () => provider.GetRequiredService<IReviewStageHandlerResolver>()
+            .Resolve(ReviewMethod.AutomatedReview, "quiz-automated-review", "1", ReviewExecutionContext.AuthorTest);
+        var wrongVersion = () => resolver.Resolve(
+            "quiz", QuizAdapterContracts.AdapterKey, "2", ReviewExecutionContext.AuthorTest);
+        var wrongContext = () => resolver.Resolve(
+            "quiz", QuizAdapterContracts.AdapterKey, "1", ReviewExecutionContext.OfficialSubmission);
         wrongVersion.Should().Throw<InvalidOperationException>().WithMessage("*unavailable*");
         wrongContext.Should().Throw<InvalidOperationException>().WithMessage("*unavailable*");
-    }
-
-    [Fact]
-    public async Task AutomatedHandler_UsesTheFixedManifestAndRejectsAnswersOutsideIt()
-    {
-        var services = new ServiceCollection();
-        services.AddAssessmentsModule();
-        services.AddQuizGradingAdapter();
-        using var provider = services.BuildServiceProvider();
-        var handler = provider.GetRequiredService<IReviewStageHandlerResolver>().Resolve(
-            ReviewMethod.AutomatedReview,
-            QuizAdapterContracts.AutomatedReviewHandlerKey,
-            QuizAdapterContracts.Version,
-            ReviewExecutionContext.AuthorTest);
-
-        using var authoringEntry = JsonDocument.Parse("""
-            {"type":"TRUE_FALSE","stem":"True","points":"00000001.0000","correctAnswer":true,"settings":{"allowRetry":false}}
-            """);
-        using var authoringContent = JsonDocument.Parse("{}");
-        var projection = new QuizItemProjector().Project("q1", authoringEntry.RootElement);
-        var snapshot = new AssessmentExecutionSnapshotV1(
-            1,
-            new AssessmentAuthoringSourceV1(
-                1,
-                "quiz",
-                authoringContent.RootElement.Clone(),
-                new ContentGradingDefinitionV2(
-                    2,
-                    new Dictionary<string, GradingItemAuthoringV2> { ["q1"] = new() }),
-                AutomatedPolicy()),
-            new AssessmentExecutionManifestV1(
-                1,
-                [new AssessmentItemManifestV1(
-                    "q1",
-                    "TRUE_FALSE",
-                    QuizAdapterContracts.ProjectorKey,
-                    QuizAdapterContracts.Version,
-                    QuizAdapterContracts.DeliveryGeneratorKey,
-                    QuizAdapterContracts.Version,
-                    QuizAdapterContracts.AnswerDecoderKey,
-                    QuizAdapterContracts.Version)],
-                [new AssessmentReviewStageManifestV1(
-                    ReviewMethod.AutomatedReview,
-                    QuizAdapterContracts.AutomatedReviewHandlerKey,
-                    QuizAdapterContracts.Version,
-                    QuizAdapterContracts.DeterministicAlgorithmKey,
-                    QuizAdapterContracts.Version)],
-                []),
-            new Dictionary<string, JsonElement> { ["q1"] = projection });
-        const string snapshotHash = "0000000000000000000000000000000000000000000000000000000000000000";
-        var delivery = new AssessmentExecutionDeliveryV1(
-            1,
-            Guid.NewGuid(),
-            snapshotHash,
-            ["q1"],
-            new Dictionary<string, AssessmentExecutionDeliveryItemV1>
-            {
-                ["q1"] = new(
-                    QuizAdapterContracts.DeliveryGeneratorKey,
-                    QuizAdapterContracts.Version,
-                    new QuizDeliveryGenerator().Generate(projection)),
-            });
-        var request = new ReviewStageRequest(
-            Guid.NewGuid(),
-            Guid.NewGuid(),
-            ReviewExecutionContext.AuthorTest,
-            snapshotHash,
-            snapshot,
-            delivery,
-            Envelope("""{"answers":{"q1":{"type":"TRUE_FALSE","value":true}}}"""),
-            null);
-
-        var result = await handler.ExecuteAsync(request, CancellationToken.None);
-
-        result.State.Should().Be("final");
-        result.Score.Should().Be(ScoreValue.Parse("00000001.0000"));
-
-        var unknownAnswer = request with
-        {
-            Response = Envelope("""{"answers":{"q2":{"type":"TRUE_FALSE","value":true}}}"""),
-        };
-        var invalid = async () => await handler.ExecuteAsync(unknownAnswer, CancellationToken.None);
-        await invalid.Should().ThrowAsync<JsonException>().WithMessage("*unknown item q2*");
+        absentHandler.Should().Throw<InvalidOperationException>().WithMessage("*unavailable*");
     }
 
     private static AssessmentResponseEnvelopeV1 Envelope(string payload)
@@ -250,18 +182,6 @@ public sealed class QuizGradingAdapterContractTests
         "snapshot",
         [],
         new Dictionary<string, AssessmentExecutionDeliveryItemV1>());
-
-    private static AssessmentExecutionPolicyV1 AutomatedPolicy() => new(
-        1,
-        null,
-        1,
-        null,
-        null,
-        new AssessmentAvailabilityPolicyV1(null, null, null, false, null),
-        new AssessmentContentCompletionPolicyV1(ContentCompletionMode.OnRelease),
-        new AssessmentResultReleasePolicyV1(ResultReleaseMode.Manual),
-        new AssessmentPresentationPolicyV1("continuous"),
-        new AssessmentReviewPolicyV1(1, ReviewMethods.AutomatedReview));
 
     private static string ReadFixture()
     {

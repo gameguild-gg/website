@@ -72,24 +72,20 @@ export function validateAssessmentExecutionManifest(value: unknown): AssessmentE
   const itemIds = new Set<string>();
   for (const [index, rawItem] of items.entries()) {
     const item = exactRecord(rawItem, [
-      "itemId", "itemType", "projectorKey", "projectorVersion",
-      "deliveryGeneratorKey", "deliveryGeneratorVersion", "answerDecoderKey",
-      "answerDecoderVersion",
+      "itemId", "itemType", "adapterKey", "adapterVersion",
     ], `manifest.items[${index}]`);
     const itemId = nonEmptyString(item.itemId, `manifest.items[${index}].itemId`);
     if (itemIds.has(itemId)) fail(`manifest contains duplicate itemId ${itemId}.`);
     itemIds.add(itemId);
     for (const key of [
-      "itemType", "projectorKey", "projectorVersion", "deliveryGeneratorKey",
-      "deliveryGeneratorVersion", "answerDecoderKey", "answerDecoderVersion",
+      "itemType", "adapterKey", "adapterVersion",
     ] as const) nonEmptyString(item[key], `manifest.items[${index}].${key}`);
   }
 
   const stages = requireArray(root.stages, "manifest.stages");
   const sequence = stages.map((rawStage, index) => {
     const stage = exactRecord(rawStage, [
-      "method", "handlerKey", "handlerVersion", "algorithmKey",
-      "algorithmVersion", "providerKey", "providerPolicyVersion",
+      "method", "handlerKey", "handlerVersion", "providerKey", "providerPolicyVersion",
     ], `manifest.stages[${index}]`);
     const method = stage.method;
     if (typeof method !== "string" || !REVIEW_METHODS.has(method as AssessmentReviewMethod)) {
@@ -97,7 +93,6 @@ export function validateAssessmentExecutionManifest(value: unknown): AssessmentE
     }
     nonEmptyString(stage.handlerKey, `manifest.stages[${index}].handlerKey`);
     nonEmptyString(stage.handlerVersion, `manifest.stages[${index}].handlerVersion`);
-    pairedFields(stage, "algorithmKey", "algorithmVersion", `manifest.stages[${index}]`);
     pairedFields(stage, "providerKey", "providerPolicyVersion", `manifest.stages[${index}]`);
     return method as AssessmentReviewMethod;
   });
@@ -173,9 +168,9 @@ export function validateAssessmentExecutionDelivery<TPayload = unknown>(
     fail("delivery.itemOrder must contain every delivery item exactly once.");
   }
   for (const [itemId, rawItem] of Object.entries(items)) {
-    const item = exactRecord(rawItem, ["deliveryGeneratorKey", "deliveryGeneratorVersion", "learnerPayload"], `delivery.items.${itemId}`);
-    nonEmptyString(item.deliveryGeneratorKey, `delivery.items.${itemId}.deliveryGeneratorKey`);
-    nonEmptyString(item.deliveryGeneratorVersion, `delivery.items.${itemId}.deliveryGeneratorVersion`);
+    const item = exactRecord(rawItem, ["adapterKey", "adapterVersion", "learnerPayload"], `delivery.items.${itemId}`);
+    nonEmptyString(item.adapterKey, `delivery.items.${itemId}.adapterKey`);
+    nonEmptyString(item.adapterVersion, `delivery.items.${itemId}.adapterVersion`);
     if (!("learnerPayload" in item)) fail(`delivery.items.${itemId}.learnerPayload is required.`);
   }
   return structuredClone(root) as unknown as AssessmentExecutionDeliveryV1<TPayload>;
@@ -292,14 +287,6 @@ function validateStageBindings(
 ): void {
   for (const [index, stage] of manifest.stages.entries()) {
     const label = `manifest.stages[${index}]`;
-    if (stage.method === "AutomatedReview") {
-      if (!stage.algorithmKey || !stage.algorithmVersion) {
-        fail(`${label} must fix an algorithm for AutomatedReview.`);
-      }
-    } else if (stage.algorithmKey || stage.algorithmVersion) {
-      fail(`${label} may only fix an algorithm for AutomatedReview.`);
-    }
-
     if (stage.method === "AIReview") {
       const ai = policy.review.ai;
       if (!ai || stage.providerKey !== ai.providerKey ||

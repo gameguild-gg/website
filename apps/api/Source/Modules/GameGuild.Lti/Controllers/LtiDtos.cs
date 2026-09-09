@@ -1,3 +1,5 @@
+using GameGuild.Learning.Grading.Contracts;
+
 namespace GameGuild.Lti;
 
 /// <summary>Admin request to register a platform deployment. PrivateKeyPem is accepted on write and never returned.</summary>
@@ -33,7 +35,7 @@ public sealed record CreateLtiLineItemRequest(
     Guid AssessmentId,
     string LineItemId,
     string LineItemUrl,
-    int MaxScore);
+    ScoreValue MaxScore);
 
 public sealed record LtiLineItemMappingDto(
     Guid Id,
@@ -41,7 +43,7 @@ public sealed record LtiLineItemMappingDto(
     Guid DeploymentId,
     string LineItemId,
     string LineItemUrl,
-    int MaxScore)
+    ScoreValue MaxScore)
 {
     public static LtiLineItemMappingDto FromEntity(LtiLineItemMapping m) =>
         new(m.Id, m.AssessmentId, m.DeploymentId, m.LineItemId, m.LineItemUrl, m.MaxScore);

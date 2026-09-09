@@ -1,4 +1,5 @@
 using GameGuild.CQRS;
+using GameGuild.Learning.Grading.Contracts;
 
 
 
@@ -125,7 +126,10 @@ public sealed class ProgramEnrollmentAndProgressQueryHandlers(IApplicationDbCont
     var isCompleted = enrollment.CompletedAt.HasValue; // Fixed: use CompletedAt instead of IsCompleted
     var completedAt = enrollment.CompletedAt; // Fixed: use CompletedAt directly
 
-    var progress = new ProgramUserProgress(request.ProgramId, request.UserId, completedContent, totalContent, totalContent > 0 ? (decimal)completedContent / totalContent * 100 : 0, timeSpent, lastActivity, isCompleted, completedAt);
+    var progressPercentage = totalContent > 0
+      ? PercentValue.FromRatio(completedContent, totalContent)
+      : PercentValue.Zero;
+    var progress = new ProgramUserProgress(request.ProgramId, request.UserId, completedContent, totalContent, progressPercentage, timeSpent, lastActivity, isCompleted, completedAt);
 
     return progress;
   }

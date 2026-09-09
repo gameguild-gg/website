@@ -1,6 +1,7 @@
 
 using GameGuild.CQRS;
 using GameGuild.Resources;
+using GameGuild.Learning.Grading.Contracts;
 
 
 namespace GameGuild.Learning.Courses;
@@ -24,6 +25,6 @@ public sealed record CreateProgramCommand(
   EnrollmentStatus EnrollmentStatus = EnrollmentStatus.Open,
   int? MaxEnrollments = null,
   DateTime? EnrollmentDeadline = null,
-  decimal PassingScore = 60m,
+  PercentValue PassingScore = default,
   string? CreatorId = null
 ) : ICommand<Program>;

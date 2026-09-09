@@ -1,5 +1,6 @@
 
 using GameGuild.CQRS;
+using GameGuild.Learning.Grading.Contracts;
 
 
 namespace GameGuild.Learning.Courses;
@@ -18,5 +19,5 @@ public sealed record UpdateProgramCommand(
   EnrollmentStatus? EnrollmentStatus = null,
   int? MaxEnrollments = null,
   DateTime? EnrollmentDeadline = null,
-  decimal? PassingScore = null
+  PercentValue? PassingScore = null
 ) : ICommand<Program>;

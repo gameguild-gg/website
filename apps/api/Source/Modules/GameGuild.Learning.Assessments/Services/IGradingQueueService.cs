@@ -1,3 +1,6 @@
+using GameGuild.Learning.Assessments.Grading.Contracts;
+using GameGuild.Learning.Grading.Contracts;
+
 namespace GameGuild.Learning.Assessments;
 
 /// <summary>
@@ -30,10 +33,9 @@ public sealed record GradingQueueAssessmentDto(
     Guid Id,
     string Title,
     AssessmentType Type,
-    int MaxScore,
-    string GradingMethods,
+    ScoreValue MaxScore,
+    ReviewMethods ReviewMethods,
     Guid? GroupSetId,
-    int PeerReviewsRequiredCount,
     bool HasRubric,
     RubricDto? Rubric);
 
@@ -53,7 +55,7 @@ public sealed record GradingQueueItemDto(
     SubmissionStatus Status,
     bool IsLate,
     DateTime? SubmittedAt,
-    int? AssignmentScore,
+    ScoreValue? AssignmentScore,
     bool? AssignmentPassed,
     bool IsGroup,
     Guid? UserId = null,

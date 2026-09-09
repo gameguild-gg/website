@@ -4,37 +4,30 @@ import type {
 } from "@game-guild/grading";
 import { toQuizLearnerEntry } from "@game-guild/quiz";
 import {
-  QUIZ_ANSWER_DECODER,
-  QUIZ_DELIVERY_GENERATOR,
-  QUIZ_PROJECTOR,
-  type QuizGradingItemInputV1,
+  QUIZ_ASSESSMENT_TYPE_ADAPTER,
+  type QuizItemProjectionV1,
   type QuizLearnerDeliveryItemV1,
 } from "./contracts";
-import { assertQuizGradingItems } from "./items";
 
 export function createQuizItemManifest(
-  items: readonly QuizGradingItemInputV1[],
+  items: readonly QuizItemProjectionV1[],
 ): AssessmentItemManifestV1[] {
-  assertQuizGradingItems(items);
-  return items.map(({ itemId, entry }) => ({
+  assertProjectedItems(items);
+  return items.map(({ itemId, itemType }) => ({
     itemId,
-    itemType: entry.type,
-    projectorKey: QUIZ_PROJECTOR.key,
-    projectorVersion: QUIZ_PROJECTOR.version,
-    deliveryGeneratorKey: QUIZ_DELIVERY_GENERATOR.key,
-    deliveryGeneratorVersion: QUIZ_DELIVERY_GENERATOR.version,
-    answerDecoderKey: QUIZ_ANSWER_DECODER.key,
-    answerDecoderVersion: QUIZ_ANSWER_DECODER.version,
+    itemType,
+    adapterKey: QUIZ_ASSESSMENT_TYPE_ADAPTER.key,
+    adapterVersion: QUIZ_ASSESSMENT_TYPE_ADAPTER.version,
   }));
 }
 
 export function createQuizExecutionDelivery(
   definitionRevisionId: string,
   executionSnapshotHash: string,
-  items: readonly QuizGradingItemInputV1[],
+  items: readonly QuizItemProjectionV1[],
   itemOrder: readonly string[] = items.map(({ itemId }) => itemId),
 ): AssessmentExecutionDeliveryV1<QuizLearnerDeliveryItemV1> {
-  assertQuizGradingItems(items);
+  assertProjectedItems(items);
   assertItemOrder(items, itemOrder);
   const byId = new Map(items.map((item) => [item.itemId, item]));
   return {
@@ -45,11 +38,11 @@ export function createQuizExecutionDelivery(
     items: Object.fromEntries(itemOrder.map((itemId) => {
       const item = byId.get(itemId)!;
       return [itemId, {
-        deliveryGeneratorKey: QUIZ_DELIVERY_GENERATOR.key,
-        deliveryGeneratorVersion: QUIZ_DELIVERY_GENERATOR.version,
+        adapterKey: QUIZ_ASSESSMENT_TYPE_ADAPTER.key,
+        adapterVersion: QUIZ_ASSESSMENT_TYPE_ADAPTER.version,
         learnerPayload: {
           itemId,
-          entry: toQuizLearnerEntry(item.entry),
+          entry: toQuizLearnerEntry(item.authoringEntry),
         },
       }];
     })),
@@ -57,7 +50,7 @@ export function createQuizExecutionDelivery(
 }
 
 function assertItemOrder(
-  items: readonly QuizGradingItemInputV1[],
+  items: readonly QuizItemProjectionV1[],
   itemOrder: readonly string[],
 ): void {
   const expected = new Set(items.map(({ itemId }) => itemId));
@@ -67,5 +60,14 @@ function assertItemOrder(
   }
   for (const itemId of actual) {
     if (!expected.has(itemId)) throw new TypeError(`Quiz delivery itemOrder contains unknown item ${itemId}.`);
+  }
+}
+
+function assertProjectedItems(items: readonly QuizItemProjectionV1[]): void {
+  const ids = new Set<string>();
+  for (const item of items) {
+    if (!item.itemId.trim()) throw new TypeError("Quiz projected item IDs must be non-empty.");
+    if (ids.has(item.itemId)) throw new TypeError(`Duplicate quiz projected item ID: ${item.itemId}.`);
+    ids.add(item.itemId);
   }
 }

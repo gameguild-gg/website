@@ -1,5 +1,6 @@
 import { getToken } from '@/auth';
 import { createServerClient, type LearningAssessmentsAssessmentType } from '@game-guild/client';
+import type { ReviewMethods, ScoreValue } from '@game-guild/grading';
 
 // Local queue contract (camelCase wire shape), kept out of the generated
 // client: the generated types model assessment.rubric as non-nullable but the
@@ -12,10 +13,9 @@ export type SpeedgraderGradingQueue = {
     id?: string;
     title?: string | null;
     type?: LearningAssessmentsAssessmentType;
-    maxScore?: number;
-    gradingMethods?: string | null;
+    maxScore?: ScoreValue;
+    reviewMethods?: ReviewMethods;
     groupSetId?: string | null;
-    peerReviewsRequiredCount?: number;
     hasRubric?: boolean;
     rubric?: {
       id?: string;
@@ -23,7 +23,7 @@ export type SpeedgraderGradingQueue = {
       criteria?: Array<{
         id?: string;
         description?: string | null;
-        points?: number;
+        points?: ScoreValue;
         order?: number;
       }> | null;
     } | null;
@@ -39,7 +39,7 @@ export type SpeedgraderGradingQueue = {
     attemptNumber?: number;
     attemptCount?: number;
     status?: 'InProgress' | 'Submitted' | 'Graded' | 'Returned' | 'Late';
-    assignmentScore?: number | null;
+    assignmentScore?: ScoreValue | null;
     assignmentPassed?: boolean | null;
     isLate?: boolean;
     submittedAt?: string | null;

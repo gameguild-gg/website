@@ -87,7 +87,7 @@ public class GroupSetServiceTests
         await using var db = CreateContext();
         var (courseId, setId, groupId, userId) = await SeedSetWithGroupAsync(db, capacity: 4);
         await SeedEnrollmentAsync(db, courseId, userId);
-        var assessment = Assessment.Create(courseId, "Project", AssessmentType.Project, 100);
+        var assessment = Assessment.Create(courseId, "Project", AssessmentType.Project, Score(100));
         assessment.AssignToGroupSet(setId);
         assessment.SetDeliverySchedule(null, DateTime.UtcNow.AddHours(-1), null, false, null);
         db.Add(assessment);
@@ -481,7 +481,7 @@ public class GroupSetServiceTests
     private static async Task SeedLockedAssessmentAsync(
         TestGroupDbContext db, Guid courseId, Guid setId, DateTime dueAt, DateTime? lateDeadline)
     {
-        var assessment = Assessment.Create(courseId, "Project", AssessmentType.Project, 100);
+        var assessment = Assessment.Create(courseId, "Project", AssessmentType.Project, Score(100));
         assessment.AssignToGroupSet(setId);
         assessment.SetDeliverySchedule(null, null, dueAt, lateDeadline.HasValue, lateDeadline);
         db.Add(assessment);

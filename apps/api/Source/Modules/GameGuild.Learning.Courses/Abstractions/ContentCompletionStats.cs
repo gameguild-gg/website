@@ -1,4 +1,6 @@
-﻿namespace GameGuild.Learning.Courses;
+using GameGuild.Learning.Grading.Contracts;
+
+namespace GameGuild.Learning.Courses;
 
 /// <summary> Content completion statistics </summary>
 public class ContentCompletionStats {
@@ -10,9 +12,9 @@ public class ContentCompletionStats {
 
     public int NotStartedContentItems { get; set; }
 
-    public decimal AverageCompletionRate { get; set; }
+    public PercentValue AverageCompletionRate { get; set; }
 
-    public decimal AverageScore { get; set; }
+    public ScoreValue AverageScore { get; set; }
 
     public int TotalTimeSpentHours { get; set; }
 

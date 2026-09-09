@@ -2,6 +2,7 @@ using FluentAssertions;
 using GameGuild.Identity.Authorization;
 using GameGuild.Identity.Context.Actors;
 using GameGuild.Learning.Courses;
+using GameGuild.Learning.Assessments.Grading.Contracts;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
@@ -138,7 +139,7 @@ public class PeerReviewClaimTests
     {
         await using var db = CreateContext();
         var courseId = Guid.NewGuid();
-        var assessment = Assessment.Create(courseId, "Essay", AssessmentType.Assignment, 100);
+        var assessment = Assessment.Create(courseId, "Essay", AssessmentType.Assignment, ScoreValue.FromPoints("100"));
         db.Add(assessment);
         await db.SaveChangesAsync();
         var actorId = Guid.NewGuid();
@@ -310,7 +311,7 @@ public class PeerReviewClaimTests
 
     private void SetupAssessment(Guid assessmentId, Guid courseId, Guid? programTenantId = null)
     {
-        var assessment = Assessment.Create(courseId, "Essay", AssessmentType.Assignment, 100);
+        var assessment = Assessment.Create(courseId, "Essay", AssessmentType.Assignment, ScoreValue.FromPoints("100"));
         _assessments.Setup(s => s.GetAssessmentByIdAsync(assessmentId)).ReturnsAsync(assessment);
         _programs.Setup(p => p.GetProgramByIdAsync(courseId))
             .ReturnsAsync(new Program { Id = courseId, CreatorId = Guid.NewGuid(), TenantId = programTenantId });
@@ -424,12 +425,27 @@ public class PeerReviewClaimTests
         TestPeerReviewDbContext db, int requiredCount = 3)
     {
         var assessment = Assessment.Create(
-            Guid.NewGuid(), "Peer Essay", AssessmentType.Assignment, 100,
-            gradingMethods: AssessmentGradingMethod.PeerReview);
-        assessment.SetPeerReviewPolicy(requiredCount);
+            Guid.NewGuid(), "Peer Essay", AssessmentType.Assignment, ScoreValue.FromPoints("100"),
+            reviewMethods: ReviewMethods.PeerReview);
+        ConfigurePeerReview(assessment, requiredCount);
         db.Add(assessment);
         await db.SaveChangesAsync();
         return assessment;
+    }
+
+    private static void ConfigurePeerReview(Assessment assessment, int requiredCount)
+    {
+        var configuration =
+            $$"""
+            {"peer":{"aggregation":"mean","claimLeaseMinutes":30,"evidenceWindowMinutes":60,"minimumReviewsToFinalize":{{requiredCount}},"onInsufficientEvidence":"await-instructor-resolution","reviewsPerReviewer":{{requiredCount}},"reviewsRequiredPerSubmission":{{requiredCount}}},"schemaVersion":1}
+            """;
+        assessment.SetReviewPolicy(
+            assessment.ReviewMethods,
+            configuration,
+            null,
+            ContentCompletionMode.OnReleaseAndPass,
+            ResultReleaseMode.Manual,
+            null);
     }
 
     private static Task<AssessmentSubmission> SeedOwnSubmittedRowAsync(

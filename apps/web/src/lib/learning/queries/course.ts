@@ -38,6 +38,10 @@ import {
   getCourseLookupSlug,
   slugifyRoutePart,
 } from "@/lib/learning/course-route";
+import {
+  optionalPercentUnitsToPercentage,
+  percentUnitsToPercentage,
+} from "@/lib/learning/academic-values";
 
 // Re-export generated types for consumers
 export type {
@@ -167,7 +171,7 @@ function mapProgramDtoToCourseViewModel(
     thumbnail: dto.thumbnail ?? null,
     videoShowcaseUrl: dto.videoShowcaseUrl ?? null,
     estimatedHours: dto.estimatedHours ?? null,
-    passingScore: typeof dto.passingScore === "number" ? dto.passingScore : null,
+    passingScore: optionalPercentUnitsToPercentage(dto.passingScore),
     category: dto.category ?? "GeneralEducation",
     difficulty: dto.difficulty ?? "Beginner",
     skillsRequired: dto.skillsRequired ?? null,
@@ -372,9 +376,11 @@ function mapContentDto(
   dto: LearningCoursesProgramContent,
 ): CourseContentItemViewModel {
   const gradingConfig = readDtoGradingConfig(dto);
+  const version = (dto as LearningCoursesProgramContent & { version?: number }).version;
 
   return {
     id: dto.id!,
+    version: version ?? 0,
     slug: dto.slug ?? dto.id!,
     parentId: dto.parentId ?? null,
     order: dto.sortOrder ?? 0,
@@ -527,7 +533,9 @@ export const getCourseStudents = cache(
               `Student ${i + 1}`,
             email: identity?.email ?? "",
             enrolledAt: dto.startedAt ?? new Date().toISOString(),
-            progress: Math.round(dto.completionPercentage ?? 0),
+            progress: Math.round(
+              percentUnitsToPercentage(dto.completionPercentage ?? 0),
+            ),
             completedAt: dto.completedAt ?? null,
             lastActivity:
               dto.lastAccessedAt ?? dto.startedAt ?? new Date().toISOString(),

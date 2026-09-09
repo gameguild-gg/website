@@ -14,7 +14,7 @@ describe('LearnerActivityForm', () => {
     vi.mocked(submitContentActivity).mockResolvedValue({ success: true });
   });
 
-  it('submits a structured quiz answer through the assessment action', async () => {
+  it('keeps quiz attempts out of the generic assessment form', () => {
     render(
       <LearnerActivityForm
         courseId="course-1"
@@ -23,13 +23,9 @@ describe('LearnerActivityForm', () => {
         activity={{ kind: 'assessment', assessment: { id: 'quiz-1', title: 'Knowledge check', type: 'Quiz', submissionModalities: 'StructuredAnswer' } }}
       />,
     );
-    await userEvent.type(screen.getByLabelText('Your answer'), 'A deterministic answer');
-    await userEvent.click(screen.getByRole('button', { name: 'Submit assessment' }));
-    expect(submitAssessment).toHaveBeenCalledOnce();
-    const data = vi.mocked(submitAssessment).mock.calls[0]?.[0];
-    expect(data?.get('modality')).toBe('StructuredAnswer');
-    expect(data?.get('response')).toBe('A deterministic answer');
-    expect(await screen.findByText('Submission received')).toBeInTheDocument();
+    expect(screen.getByText('Quiz attempt unavailable')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Submit assessment' })).not.toBeInTheDocument();
+    expect(submitAssessment).not.toHaveBeenCalled();
   });
 
   it('submits a reflection through the typed content action', async () => {

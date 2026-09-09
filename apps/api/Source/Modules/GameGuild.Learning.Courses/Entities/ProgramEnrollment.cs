@@ -2,6 +2,7 @@ using GameGuild.Identity.Users;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using GameGuild.Learning.Grading.Contracts;
 
 namespace GameGuild.Learning.Courses;
 
@@ -63,14 +64,12 @@ public class ProgramEnrollment : EntityBase
     /// <summary>
     /// Current progress percentage (0-100)
     /// </summary>
-    [Column(TypeName = "decimal(5,2)")]
-    public decimal ProgressPercentage { get; set; } = 0m;
+    public PercentValue ProgressPercentage { get; set; } = PercentValue.Zero;
 
     /// <summary>
     /// Final grade for the program (0-100)
     /// </summary>
-    [Column(TypeName = "decimal(5,2)")]
-    public decimal? FinalGrade { get; set; }
+    public PercentValue? FinalGrade { get; set; }
 
     /// <summary>
     /// Whether a certificate has been issued for this enrollment
@@ -96,14 +95,14 @@ public class ProgramEnrollment : EntityBase
     /// <summary>
     /// Mark enrollment as completed
     /// </summary>
-    public void MarkAsCompleted(decimal? finalGrade = null)
+    public void MarkAsCompleted(PercentValue? finalGrade = null)
     {
         CompletionStatus = CompletionStatus.Completed;
         CompletedAt = SystemClock.UtcNow;
-        ProgressPercentage = 100m;
+        ProgressPercentage = PercentValue.Hundred;
         if (finalGrade.HasValue)
         {
-            FinalGrade = Math.Max(0, Math.Min(100, finalGrade.Value));
+            FinalGrade = finalGrade.Value;
         }
         Touch();
     }

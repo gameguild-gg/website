@@ -20,7 +20,7 @@ public sealed class SurveyGradingProtectionTests
         await context.SaveChangesAsync();
         var service = new ActivityGradeService(context);
 
-        Func<Task> action = () => service.GradeActivityAsync(interaction.Id, grader.Id, 90);
+        Func<Task> action = () => service.GradeActivityAsync(interaction.Id, grader.Id, Score("90"), Score("100"));
 
         await action.Should().ThrowAsync<InvalidOperationException>()
             .WithMessage("Surveys cannot be graded.");
@@ -28,7 +28,7 @@ public sealed class SurveyGradingProtectionTests
     }
 
     [Fact]
-    public async Task GradeReadPaths_WhenLegacySurveyGradeExists_ShouldExcludeIt()
+    public async Task GradeReadPaths_WhenSurveyGradeExists_ShouldExcludeIt()
     {
         await using var context = CreateContext();
         var program = new Program { Id = Guid.NewGuid(), Title = "Course", Slug = "course" };
@@ -36,7 +36,14 @@ public sealed class SurveyGradingProtectionTests
         var learner = new ProgramUser { Id = Guid.NewGuid(), ProgramId = program.Id, UserId = Guid.NewGuid(), IsActive = true };
         var grader = new ProgramUser { Id = Guid.NewGuid(), ProgramId = program.Id, UserId = Guid.NewGuid(), IsActive = true };
         var interaction = new ContentInteraction { Id = Guid.NewGuid(), ContentId = survey.Id, ProgramUserId = learner.Id, UserId = learner.UserId, SubmittedAt = SystemClock.UtcNow };
-        var grade = new ActivityGrade { Id = Guid.NewGuid(), ContentInteractionId = interaction.Id, GraderProgramUserId = grader.Id, Grade = 90 };
+        var grade = new ActivityGrade
+        {
+            Id = Guid.NewGuid(),
+            ContentInteractionId = interaction.Id,
+            GraderProgramUserId = grader.Id,
+            Points = Score("90"),
+            MaxPoints = Score("100"),
+        };
         context.AddRange(program, survey, learner, grader, interaction, grade);
         await context.SaveChangesAsync();
         var service = new ActivityGradeService(context);

@@ -6,6 +6,10 @@ import type { LearningAssessmentsGradingQueueAssessment, LearningAssessmentsGrad
 import { GradingPanel } from './grading-panel';
 import { gradeSubmission } from '@/lib/learning/grade-action';
 
+type GradingQueueAssessmentFixture = LearningAssessmentsGradingQueueAssessment & {
+  reviewMethods: number;
+};
+
 const actionsMock = vi.hoisted(() => ({
   fetchPeerReviews: vi.fn(),
 }));
@@ -31,32 +35,32 @@ vi.mock('@/lib/learning/grade-action', () => ({
 const rubricAssessment = {
   id: 'assessment-1',
   title: 'Final Project',
-  maxScore: 100,
+  maxScore: 10_000,
   hasRubric: true,
-  gradingMethods: 'InstructorGraded',
+  reviewMethods: 8,
   rubric: {
     id: 'rubric-1',
     title: 'Project rubric',
     criteria: [
-      { id: 'c1', description: 'Correctness', points: 60, order: 0 },
-      { id: 'c2', description: 'Style', points: 40, order: 1 },
+      { id: 'c1', description: 'Correctness', points: 6_000, order: 0 },
+      { id: 'c2', description: 'Style', points: 4_000, order: 1 },
     ],
   },
-} satisfies LearningAssessmentsGradingQueueAssessment;
+} satisfies GradingQueueAssessmentFixture;
 
 const plainAssessment = {
   id: 'assessment-1',
   title: 'Essay',
-  maxScore: 100,
+  maxScore: 10_000,
   hasRubric: false,
-  gradingMethods: 'InstructorGraded',
-} satisfies LearningAssessmentsGradingQueueAssessment;
+  reviewMethods: 8,
+} satisfies GradingQueueAssessmentFixture;
 
 const peerAssessment = {
   ...plainAssessment,
-  gradingMethods: 'InstructorGraded, PeerReview',
+  reviewMethods: 9,
   peerReviewsRequiredCount: 3,
-} satisfies LearningAssessmentsGradingQueueAssessment;
+} satisfies GradingQueueAssessmentFixture;
 
 const individualItem = {
   submissionId: 'sub-1',
@@ -238,6 +242,20 @@ describe('GradingPanel — plain score mode', () => {
     expect(call.rubricScores).toBeUndefined();
   });
 
+  it('accepts scores with two decimal places', async () => {
+    const user = userEvent.setup();
+    vi.mocked(gradeSubmission).mockResolvedValue({
+      success: true,
+      data: { submissionId: 'sub-1' },
+    });
+    renderPanel({ assessment: plainAssessment });
+
+    await user.type(screen.getByTestId('plain-score-input'), '0.5');
+    await user.click(screen.getByTestId('submit-grade'));
+
+    await waitFor(() => expect(gradeSubmission).toHaveBeenCalledWith(expect.objectContaining({ score: 0.5 })));
+  });
+
   it('seeds the score input from a computed (run-tests) score', async () => {
     const user = userEvent.setup();
     vi.mocked(gradeSubmission).mockResolvedValue({
@@ -298,7 +316,7 @@ describe('GradingPanel — group + meta + peers', () => {
           reviewId: 'rev-1',
           reviewerName: 'Grace Hopper',
           reviewerUserId: 'user-2',
-          score: 80,
+          score: 8_000,
           feedback: 'Clear structure.',
           submittedAt: '2026-08-02T10:00:00Z',
         },
@@ -322,7 +340,7 @@ describe('GradingPanel — group + meta + peers', () => {
   });
 
   it('shows assignment score badge when assignmentScore is set', () => {
-    renderPanel({ item: { ...individualItem, assignmentScore: 75 } });
+    renderPanel({ item: { ...individualItem, assignmentScore: 7_500 } });
 
     expect(screen.getByTestId('assignment-score-badge')).toHaveTextContent('Assignment: 75/100');
   });

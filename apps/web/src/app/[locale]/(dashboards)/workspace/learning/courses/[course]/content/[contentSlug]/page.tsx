@@ -38,11 +38,7 @@ export default async function ContentItemPage({
   ]);
   const CODING_TYPES = new Set(["Assignment", "Project", "Code"]);
 
-  let linkedAssessmentId: string | undefined;
-  let linkedAssessmentSlug: string | undefined;
-  // ponytail: pass gradingMethods string so the editor can gate the coding-tests
-  // link on the AutoGraded flag without a second fetch.
-  let linkedAssessmentGradingMethods: string | undefined;
+  let linkedAssessment: Awaited<ReturnType<typeof getCourseAssessments>>["assessments"][number] | undefined;
   let initialCodingDefinition: Awaited<
     ReturnType<typeof getCodingDefinitionPublic>
   > = null;
@@ -52,9 +48,7 @@ export default async function ContentItemPage({
       (a) => a.contentId === contentItem.id,
     );
     if (linked) {
-      linkedAssessmentId = linked.id;
-      linkedAssessmentSlug = linked.slug;
-      linkedAssessmentGradingMethods = linked.gradingMethods;
+      linkedAssessment = linked;
       if (CODING_TYPES.has(contentItem.type)) {
         initialCodingDefinition = await getCodingDefinitionPublic(linked.id);
       }
@@ -66,9 +60,7 @@ export default async function ContentItemPage({
       courseId={courseId}
       item={contentItem}
       courseTitle={course.title}
-      linkedAssessmentId={linkedAssessmentId}
-      linkedAssessmentSlug={linkedAssessmentSlug}
-      linkedAssessmentGradingMethods={linkedAssessmentGradingMethods}
+      linkedAssessment={linkedAssessment}
       initialCodingDefinition={initialCodingDefinition}
     />
   );

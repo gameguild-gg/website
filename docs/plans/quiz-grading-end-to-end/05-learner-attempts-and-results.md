@@ -446,8 +446,8 @@ apps/api/Source/Modules/GameGuild.Learning.Courses/Extensions/ProgramContentMapp
 - evento de finalização não dispara notificação de resultado antes da liberação;
 - tentativa iniciada continua usando a mesma revisão após nova publicação;
 - unpublish bloqueia novo start, mas não interrompe tentativa já iniciada;
-- score em string canônica faz round-trip sem parse ou arredondamento no
-  cliente.
+- score em inteiro de unidades faz round-trip sem perda; conversão para decimal
+  humano ocorre somente na borda de apresentação.
 
 ## Critério de saída
 

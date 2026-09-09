@@ -1,4 +1,6 @@
-﻿namespace GameGuild.Learning.Courses;
+using GameGuild.Learning.Grading.Contracts;
+
+namespace GameGuild.Learning.Courses;
 
 /// <summary> Enrollment statistics for a program </summary>
 public class ProgramEnrollmentStats {
@@ -10,11 +12,11 @@ public class ProgramEnrollmentStats {
 
     public int CancelledEnrollments { get; set; }
 
-    public decimal AverageProgressPercentage { get; set; }
+    public PercentValue AverageProgressPercentage { get; set; }
 
-    public decimal CompletionRate { get; set; }
+    public PercentValue CompletionRate { get; set; }
 
-    public decimal? AverageFinalGrade { get; set; }
+    public PercentValue? AverageFinalGrade { get; set; }
 
     public int CertificatesIssued { get; set; }
 }

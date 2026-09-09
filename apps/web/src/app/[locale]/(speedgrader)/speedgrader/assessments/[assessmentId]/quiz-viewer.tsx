@@ -42,7 +42,7 @@ function answerToText(answer: unknown): string {
 }
 
 /**
- * Parse StructuredAnswerPayload JSON into renderable Q/A rows.
+ * Parse a quiz answer envelope into renderable question/answer rows.
  * Tolerant of the legacy `{answer: string}` shape and of an embedded
  * GradeResult-style auto-grade (`gradeResult` key).
  */
@@ -94,7 +94,7 @@ export function parseQuizPayload(payload: string): {
   return { answers, gradeItems };
 }
 
-/** StructuredAnswerPayload viewer: readable Q/A list + auto-grade statuses. */
+/** Quiz response viewer: readable question/answer list and review statuses. */
 export function QuizViewer({ payload }: { payload: string }): React.JSX.Element {
   const { answers, gradeItems } = parseQuizPayload(payload);
   return (

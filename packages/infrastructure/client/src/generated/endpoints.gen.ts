@@ -8049,14 +8049,14 @@ export const deleteAssessmentsEndpoint = {
   requiresAuth: true,
 } as const;
 
-export interface GetAssessmentsDefinitionInput {
+export interface GetAssessmentsAuthoringStateInput {
   id: string;
 }
-export type GetAssessmentsDefinitionOutput = Types.LearningAssessmentsAssessmentDefinition;
-export const getAssessmentsDefinitionEndpoint = {
-  operationId: 'getAssessmentsDefinition' as const,
+export type GetAssessmentsAuthoringStateOutput = Types.LearningAssessmentsGradingAuthoringAssessmentAuthoringStateResult;
+export const getAssessmentsAuthoringStateEndpoint = {
+  operationId: 'getAssessmentsAuthoringState' as const,
   method: 'GET' as const,
-  path: '/v1/assessments/{id}/definition' as const,
+  path: '/v1/assessments/{id}/authoring-state' as const,
   tags: ['LearningAssessments'] as const,
   requiresAuth: true,
 } as const;
@@ -8124,6 +8124,45 @@ export const postAssessmentsRestoreEndpoint = {
   requiresAuth: true,
 } as const;
 
+export interface PostAssessmentsRevisionsPrepareInput {
+  id: string;
+  body?: Types.LearningAssessmentsGradingAuthoringPrepareAssessmentRevisionInput;
+}
+export type PostAssessmentsRevisionsPrepareOutput = Types.LearningAssessmentsGradingAuthoringPreparedAssessmentRevisionResult;
+export const postAssessmentsRevisionsPrepareEndpoint = {
+  operationId: 'postAssessmentsRevisionsPrepare' as const,
+  method: 'POST' as const,
+  path: '/v1/assessments/{id}/revisions/prepare' as const,
+  tags: ['LearningAssessments'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface PostAssessmentsRevisionsPublishInput {
+  id: string;
+  body?: Types.LearningAssessmentsGradingAuthoringPublishAssessmentRevisionInput;
+}
+export type PostAssessmentsRevisionsPublishOutput = Types.LearningAssessmentsGradingAuthoringPreparedAssessmentRevisionResult;
+export const postAssessmentsRevisionsPublishEndpoint = {
+  operationId: 'postAssessmentsRevisionsPublish' as const,
+  method: 'POST' as const,
+  path: '/v1/assessments/{id}/revisions/publish' as const,
+  tags: ['LearningAssessments'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface PostAssessmentsRevisionsUnpublishInput {
+  id: string;
+  body?: Types.LearningAssessmentsGradingAuthoringUnpublishAssessmentRevisionInput;
+}
+export type PostAssessmentsRevisionsUnpublishOutput = void;
+export const postAssessmentsRevisionsUnpublishEndpoint = {
+  operationId: 'postAssessmentsRevisionsUnpublish' as const,
+  method: 'POST' as const,
+  path: '/v1/assessments/{id}/revisions/unpublish' as const,
+  tags: ['LearningAssessments'] as const,
+  requiresAuth: true,
+} as const;
+
 export interface GetAssessmentsCourseInput {
   courseId: string;
 }
@@ -8144,6 +8183,20 @@ export const getAssessmentsCourseAnalyticsEndpoint = {
   operationId: 'getAssessmentsCourseAnalytics' as const,
   method: 'GET' as const,
   path: '/v1/assessments/course/{courseId}/analytics' as const,
+  tags: ['LearningAssessments'] as const,
+  requiresAuth: true,
+} as const;
+
+export interface PutAssessmentsCourseContentDraftInput {
+  courseId: string;
+  contentId: string;
+  body?: Types.LearningAssessmentsGradingAuthoringSaveAssessmentDraftInput;
+}
+export type PutAssessmentsCourseContentDraftOutput = Types.LearningAssessmentsGradingAuthoringAssessmentDraftResult;
+export const putAssessmentsCourseContentDraftEndpoint = {
+  operationId: 'putAssessmentsCourseContentDraft' as const,
+  method: 'PUT' as const,
+  path: '/v1/assessments/course/{courseId}/content/{contentId}/draft' as const,
   tags: ['LearningAssessments'] as const,
   requiresAuth: true,
 } as const;
@@ -21205,14 +21258,18 @@ export const endpoints = {
   getAssessments: getAssessmentsEndpoint,
   putAssessments: putAssessmentsEndpoint,
   deleteAssessments: deleteAssessmentsEndpoint,
-  getAssessmentsDefinition: getAssessmentsDefinitionEndpoint,
+  getAssessmentsAuthoringState: getAssessmentsAuthoringStateEndpoint,
   putAssessmentsGroup: putAssessmentsGroupEndpoint,
   getAssessmentsInteractiveVideoCues: getAssessmentsInteractiveVideoCuesEndpoint,
   postAssessmentsInteractiveVideoCues: postAssessmentsInteractiveVideoCuesEndpoint,
   deleteAssessmentsInteractiveVideoCues: deleteAssessmentsInteractiveVideoCuesEndpoint,
   postAssessmentsRestore: postAssessmentsRestoreEndpoint,
+  postAssessmentsRevisionsPrepare: postAssessmentsRevisionsPrepareEndpoint,
+  postAssessmentsRevisionsPublish: postAssessmentsRevisionsPublishEndpoint,
+  postAssessmentsRevisionsUnpublish: postAssessmentsRevisionsUnpublishEndpoint,
   getAssessmentsCourse: getAssessmentsCourseEndpoint,
   getAssessmentsCourseAnalytics: getAssessmentsCourseAnalyticsEndpoint,
+  putAssessmentsCourseContentDraft: putAssessmentsCourseContentDraftEndpoint,
   getAssessmentsCourseGroups: getAssessmentsCourseGroupsEndpoint,
   postAssessmentsGroups: postAssessmentsGroupsEndpoint,
   putAssessmentsGroups: putAssessmentsGroupsEndpoint,

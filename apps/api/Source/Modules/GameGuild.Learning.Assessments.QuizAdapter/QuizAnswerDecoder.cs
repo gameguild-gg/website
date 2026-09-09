@@ -1,10 +1,11 @@
 using System.Text.Json;
 using GameGuild.Learning.Assessments.Grading.Abstractions;
 using GameGuild.Learning.Assessments.Grading.Contracts;
+using GameGuild.Learning.Grading.Contracts;
 
 namespace GameGuild.Learning.Assessments.QuizAdapter;
 
-public sealed class QuizAnswerDecoder : IAssessmentAnswerDecoder
+public sealed class QuizAnswerDecoder
 {
     private static readonly IReadOnlyDictionary<string, AnswerShape> Shapes =
         new Dictionary<string, AnswerShape>(StringComparer.Ordinal)
@@ -25,14 +26,10 @@ public sealed class QuizAnswerDecoder : IAssessmentAnswerDecoder
             ["HIGHLIGHT"] = Shape("type", "spans"),
         };
 
-    public string Key => QuizAdapterContracts.AnswerDecoderKey;
-    public string Version => QuizAdapterContracts.Version;
-    public string ContentType => QuizAdapterContracts.ContentType;
-
     public JsonElement Decode(AssessmentResponseEnvelopeV1 envelope)
     {
         if (envelope.SchemaVersion != GradingContractVersions.ResponseEnvelope ||
-            !string.Equals(envelope.ContentType, ContentType, StringComparison.Ordinal) ||
+            !string.Equals(envelope.ContentType, QuizAdapterContracts.ContentType, StringComparison.Ordinal) ||
             !string.Equals(envelope.PayloadSchema, QuizAdapterContracts.AnswerPayloadSchema, StringComparison.Ordinal))
         {
             throw new JsonException("Quiz answer envelope version or discriminator is unsupported.");

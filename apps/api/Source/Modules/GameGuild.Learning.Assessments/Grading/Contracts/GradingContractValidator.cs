@@ -1,6 +1,8 @@
 using System.Text.Json;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
+using System.Text;
+using GameGuild.Learning.Grading.Contracts;
 
 namespace GameGuild.Learning.Assessments.Grading.Contracts;
 
@@ -97,6 +99,37 @@ public static class GradingContractValidator
         if (review.Self?.Instructions is not null) RequireText(review.Self.Instructions, "Self review instructions");
     }
 
+    public static string? NormalizeReviewConfiguration(ReviewMethods methods, string? canonicalJson)
+    {
+        methods.EnsureValid(allowDraft: true);
+        if (string.IsNullOrWhiteSpace(canonicalJson)) return null;
+        if (Encoding.UTF8.GetByteCount(canonicalJson) > 65536)
+            throw new ArgumentException("Review configuration cannot exceed 64 KiB.", nameof(canonicalJson));
+
+        var configuration = JsonSerializer.Deserialize<AssessmentReviewConfigurationV1>(canonicalJson, GradingJson.Options)
+            ?? throw new JsonException("Review configuration is required.");
+        Require(configuration.SchemaVersion == 1, "Review configuration schemaVersion must be 1.");
+
+        if (methods == ReviewMethods.None)
+        {
+            Require(configuration.Peer is null && configuration.Ai is null && configuration.Self is null && configuration.Instructor is null,
+                "A draft without reviews cannot contain review configuration.");
+        }
+        else
+        {
+            Validate(new AssessmentReviewPolicyV1(
+                configuration.SchemaVersion,
+                methods,
+                configuration.Peer,
+                configuration.Ai,
+                configuration.Self,
+                configuration.Instructor));
+        }
+
+        var element = JsonSerializer.SerializeToElement(configuration, GradingJson.Options);
+        return CanonicalJson.Serialize(element);
+    }
+
     public static void Validate(AssessmentExecutionManifestV1 manifest)
     {
         ArgumentNullException.ThrowIfNull(manifest);
@@ -113,12 +146,8 @@ public static class GradingContractValidator
             RequireText(item.ItemId, "Manifest item ID");
             Require(itemIds.Add(item.ItemId), $"Manifest contains duplicate item ID {item.ItemId}.");
             RequireText(item.ItemType, $"Manifest item {item.ItemId} type");
-            RequireText(item.ProjectorKey, $"Manifest item {item.ItemId} projector key");
-            RequireText(item.ProjectorVersion, $"Manifest item {item.ItemId} projector version");
-            RequireText(item.DeliveryGeneratorKey, $"Manifest item {item.ItemId} delivery generator key");
-            RequireText(item.DeliveryGeneratorVersion, $"Manifest item {item.ItemId} delivery generator version");
-            RequireText(item.AnswerDecoderKey, $"Manifest item {item.ItemId} answer decoder key");
-            RequireText(item.AnswerDecoderVersion, $"Manifest item {item.ItemId} answer decoder version");
+            RequireText(item.AdapterKey, $"Manifest item {item.ItemId} adapter key");
+            RequireText(item.AdapterVersion, $"Manifest item {item.ItemId} adapter version");
         }
 
         foreach (var stage in manifest.Stages)
@@ -127,7 +156,6 @@ public static class GradingContractValidator
             stage.Method.EnsureValid();
             RequireText(stage.HandlerKey, "Manifest review handler key");
             RequireText(stage.HandlerVersion, "Manifest review handler version");
-            RequirePair(stage.AlgorithmKey, stage.AlgorithmVersion, "algorithm");
             RequirePair(stage.ProviderKey, stage.ProviderPolicyVersion, "provider");
         }
         SequenceToMethods(manifest.Stages.Select(stage => stage.Method).ToArray());
@@ -194,8 +222,8 @@ public static class GradingContractValidator
         {
             RequireText(itemId, "Delivery item ID");
             Require(item is not null, $"Delivery item {itemId} is required.");
-            RequireText(item.DeliveryGeneratorKey, $"Delivery item {itemId} generator key");
-            RequireText(item.DeliveryGeneratorVersion, $"Delivery item {itemId} generator version");
+            RequireText(item.AdapterKey, $"Delivery item {itemId} adapter key");
+            RequireText(item.AdapterVersion, $"Delivery item {itemId} adapter version");
             Require(item.LearnerPayload.ValueKind != JsonValueKind.Undefined,
                 $"Delivery item {itemId} learner payload is required.");
         }
@@ -232,9 +260,9 @@ public static class GradingContractValidator
         foreach (var (itemId, deliveryItem) in delivery.Items)
         {
             var manifestItem = manifestItems[itemId];
-            Require(string.Equals(deliveryItem.DeliveryGeneratorKey, manifestItem.DeliveryGeneratorKey, StringComparison.Ordinal) &&
-                    string.Equals(deliveryItem.DeliveryGeneratorVersion, manifestItem.DeliveryGeneratorVersion, StringComparison.Ordinal),
-                $"Delivery item {itemId} generator must match the execution manifest.");
+            Require(string.Equals(deliveryItem.AdapterKey, manifestItem.AdapterKey, StringComparison.Ordinal) &&
+                    string.Equals(deliveryItem.AdapterVersion, manifestItem.AdapterVersion, StringComparison.Ordinal),
+                $"Delivery item {itemId} adapter must match the execution manifest.");
         }
     }
 
@@ -245,8 +273,8 @@ public static class GradingContractValidator
         RequirePropertyString(projection, "itemId", $"Projection {itemId} itemId", itemId);
         RequirePropertyString(projection, "itemType", $"Projection {itemId} itemType", itemType);
         var maxScore = RequireProperty(projection, "maxScore", $"Projection {itemId} maxScore");
-        Require(maxScore.ValueKind == JsonValueKind.String, $"Projection {itemId} maxScore must be a string.");
-        ScoreValue.Parse(maxScore.GetString()!);
+        Require(maxScore.TryGetInt32(out var maxScoreUnits), $"Projection {itemId} maxScore must be an integer.");
+        ScoreValue.FromUnits(maxScoreUnits);
 
         var source = RequireProperty(projection, "source", $"Projection {itemId} source");
         Require(source.ValueKind == JsonValueKind.Object, $"Projection {itemId} source must be an object.");
@@ -261,17 +289,6 @@ public static class GradingContractValidator
     {
         foreach (var stage in manifest.Stages)
         {
-            if (stage.Method == ReviewMethod.AutomatedReview)
-            {
-                Require(stage.AlgorithmKey is not null && stage.AlgorithmVersion is not null,
-                    "AutomatedReview must fix an algorithm key and version.");
-            }
-            else
-            {
-                Require(stage.AlgorithmKey is null && stage.AlgorithmVersion is null,
-                    "Only AutomatedReview may fix an algorithm.");
-            }
-
             if (stage.Method == ReviewMethod.AIReview)
             {
                 Require(policy.Review.Ai is not null &&

@@ -8,11 +8,16 @@ public static class QuizAdapterModule
 {
     public static IServiceCollection AddQuizGradingAdapter(this IServiceCollection services)
     {
-        services.AddSingleton<IAssessmentItemProjector, QuizItemProjector>();
-        services.AddSingleton<IAssessmentDeliveryGenerator, QuizDeliveryGenerator>();
-        services.AddSingleton<IAssessmentAnswerDecoder, QuizAnswerDecoder>();
-        services.AddSingleton<IDeterministicReviewAlgorithm, QuizDeterministicReviewAlgorithm>();
-        services.AddSingleton<IReviewStageHandler, QuizAutomatedReviewHandler>();
+        services.AddSingleton<QuizItemProjector>();
+        services.AddSingleton<QuizAuthoringAdapter>();
+        services.AddSingleton<QuizDeliveryGenerator>();
+        services.AddSingleton<QuizAnswerDecoder>();
+        services.AddSingleton<QuizDeterministicReviewAlgorithm>();
+        services.AddSingleton<QuizAssessmentTypeAdapter>();
+        services.AddSingleton<IAssessmentTypeAdapter>(provider => provider.GetRequiredService<QuizAssessmentTypeAdapter>());
+        services.AddSingleton<QuizProgramContentBoundary>();
+        services.AddSingleton<GameGuild.Learning.Courses.IProgramContentLearnerProjector>(provider => provider.GetRequiredService<QuizProgramContentBoundary>());
+        services.AddSingleton<GameGuild.Learning.Courses.IProgramContentAcademicMutationGuard>(provider => provider.GetRequiredService<QuizProgramContentBoundary>());
         services.AddSingleton<IReviewCapabilityRegistration, QuizCapabilityRegistration>();
         return services;
     }

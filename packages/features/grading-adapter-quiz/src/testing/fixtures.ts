@@ -1,5 +1,6 @@
 import {
   FillBlankInputType,
+  parseQuizPoints,
   QuizEntryType,
   type QuizAnswer,
   type QuizEntry,
@@ -35,7 +36,7 @@ export const deterministicQuizItemsV1: readonly QuizGradingItemInputV1[] = [
     entry: {
       type: QuizEntryType.TrueFalse,
       stem: "The statement is true.",
-      points: "00000002.0000",
+      points: parseQuizPoints(200),
       correctAnswer: true,
       settings: { allowRetry: false },
     },
@@ -45,7 +46,7 @@ export const deterministicQuizItemsV1: readonly QuizGradingItemInputV1[] = [
     entry: {
       type: QuizEntryType.Matching,
       stem: "Match the values.",
-      points: "00000003.0000",
+      points: parseQuizPoints(300),
       pairs: [
         { id: "a", left: "A", right: "1" },
         { id: "b", left: "B", right: "2" },

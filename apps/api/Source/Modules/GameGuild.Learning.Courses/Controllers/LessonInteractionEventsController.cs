@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using Asp.Versioning;
 using GameGuild.CQRS;
 using GameGuild.Identity.Authorization;
+using GameGuild.Learning.Grading.Contracts;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -53,7 +54,7 @@ public sealed record RecordContentInteractionEventRequest(
     ContentInteractionEventType Type,
     [Range(1, int.MaxValue)] int? DurationSeconds = null,
     [Range(typeof(decimal), "0", "79228162514264337593543950335")] decimal? PositionSeconds = null,
-    [Range(typeof(decimal), "0", "100")] decimal? ProgressPercentage = null,
+    PercentValue? ProgressPercentage = null,
     string? Payload = null,
     [MaxLength(128)] string? IdempotencyKey = null,
     DateTime? OccurredAt = null);

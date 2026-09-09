@@ -186,7 +186,7 @@ public sealed class ProgramContentScheduleProtectionTests
     public async Task AssessmentLifecycleGuard_WhenAssessmentIsDeleted_DoesNotBlockContentDeletion()
     {
         await using var context = CreateContext();
-        var assessment = Assessment.Create(Guid.NewGuid(), "Checkpoint", AssessmentType.Quiz, 10);
+        var assessment = Assessment.Create(Guid.NewGuid(), "Checkpoint", AssessmentType.Quiz, Score("10"));
         assessment.Version = 1;
         var cue = assessment.AddInteractiveVideoCue(Guid.NewGuid(), "chapter-1");
         cue.Version = 1;

@@ -153,8 +153,8 @@ Fronteiras finais:
 - a chave de `ContentGradingDefinitionV2.items` é o ID autoral estável do item;
   seu valor contém somente configuração autoral adicional de grading. Ele não
   repete ID, pontos, tipo de questão nem capability executável;
-- em quiz, `QuizEntry.points` é a única fonte mutável dos pontos e usa a forma
-  textual canônica compatível com `ScoreValue`, nunca `number`. O adapter C#
+- em quiz, `QuizEntry.points` é a única fonte mutável dos pontos e usa unidades
+  inteiras escaladas compatíveis com `ScoreValue`. O adapter C#
   autoritativo projeta no prepare um snapshot imutável por item com `itemId`,
   `maxScore`, tipo de origem e referências privadas necessárias à correção; o
   package TypeScript comprova conformidade por fixtures, mas não fornece os
@@ -184,13 +184,14 @@ A direção de dependência é obrigatória:
 O adapter não redefine contratos genéricos e o core não reexporta símbolos de
 quiz. Outros tipos avaliáveis recebem packages de integração equivalentes.
 
-No servidor, o runtime de assessments/grading possui somente portas genéricas de
-projeção de item, geração de entrega, decode/normalização de resposta e avaliação
-determinística, resolvidas pelas chaves e versões do manifest. As implementações
-C# de quiz vivem em um módulo/assembly adapter e são registradas no composition
-root por `contentType`, capability key e versão. Core, rounds, resultados e
-handlers genéricos não referenciam DTOs, parsers, entidades ou namespaces de
-quiz. Testes de arquitetura .NET tornam essa direção executável.
+No servidor, o runtime de assessments/grading possui uma única porta genérica
+`IAssessmentTypeAdapter`, resolvida por `contentType`, `adapterKey`, versão e
+contexto. Ela agrega projeção autoral, geração de entrega,
+decode/normalização e avaliação determinística. As implementações C# de quiz
+vivem em um módulo/assembly adapter e são registradas uma única vez no
+composition root. Core, autoria genérica, rounds, resultados e handlers
+genéricos não referenciam DTOs, parsers, entidades ou namespaces de quiz.
+Testes de arquitetura .NET tornam essa direção executável.
 
 A entrada do adapter de quiz é
 `QuizGradingItemInputV1 { itemId: string; entry: QuizEntry }`. `quiz-content`
@@ -199,10 +200,10 @@ estável e a questão sem importar `block-list`, aceitar `BlockStorageLike` ou
 redefinir o documento autoral.
 
 `gradingKind` não pertence a `ContentGradingDefinitionV2`. Intenção autoral de
-review pertence a `ReviewMethods` e às policies de review; suporte concreto de
-projector, decoder, handler ou algoritmo pertence somente ao
-`AssessmentExecutionManifestV1`. Alterar catálogo, implementação ou capability
-não modifica a fonte autoral.
+review pertence a `ReviewMethods` e às policies de review; suporte concreto do
+tipo pertence ao adapter agregado e suporte dos stages aos seus handlers e
+providers, todos fixados no `AssessmentExecutionManifestV1`. Alterar catálogo,
+implementação ou capability não modifica a fonte autoral.
 
 ## Envelope de resposta
 
@@ -217,8 +218,8 @@ interface AssessmentResponseEnvelopeV1<TPayload = unknown> {
 }
 ```
 
-O core não interpreta `payload`. O manifest fixa o decoder por
-`contentType + payloadSchema`, e o adapter específico valida o payload antes do
+O core não interpreta `payload`. O manifest fixa o adapter por
+`contentType + adapterKey + adapterVersion`, e o adapter específico valida o payload antes do
 submit. Para quiz, `@game-guild/grading-adapter-quiz` possui
 `QuizAnswerEnvelopeV1`, união discriminada fechada dos 14 tipos detalhada no
 documento [`05`](./05-learner-attempts-and-results.md). Nenhum contrato do core
@@ -276,31 +277,27 @@ executável:
 ```ts
 interface AssessmentExecutionManifestV1 {
   schemaVersion: 1;
-  projectors: Array<{
+  items: Array<{
+    itemId: string;
     itemType: string;
-    projectorKey: string;
-    projectorVersion: string;
-    deliveryGeneratorKey: string;
-    deliveryGeneratorVersion: string;
-    answerDecoderKey: string;
-    answerDecoderVersion: string;
+    adapterKey: string;
+    adapterVersion: string;
   }>;
   stages: Array<{
     method: AssessmentReviewMethod;
     handlerKey: string;
     handlerVersion: string;
-    algorithmKey?: string;
-    algorithmVersion?: string;
     providerKey?: string;
     providerPolicyVersion?: string;
   }>;
 }
 ```
 
-O projector remove dados privados da definição; o gerador materializa o
-challenge concreto de uma execução; o decoder valida e converte a resposta
-recebida para o contrato canônico. Esses papéis podem compartilhar uma
-implementação interna, mas continuam identificados e versionados no manifest.
+O adapter remove dados privados da definição, materializa o challenge concreto,
+valida e normaliza a resposta e executa a avaliação determinística suportada.
+Esses papéis podem ser componentes internos do package específico, mas formam
+uma unidade versionada indivisível no manifest. Isso impede combinar versões
+incompatíveis e reduz a integração de um novo tipo a um adapter e um registro.
 
 Prepare resolve versões exatas e as incorpora ao manifest. Publish e start
 revalidam os mesmos bytes, chaves e versões, sem reconstruir o manifest, mudar
@@ -317,7 +314,7 @@ atualiza implementação implicitamente. Corrigir a mesma resposta contra uma
 definição diferente exige nova submission e nova execução explicitamente
 relacionadas ao caso anterior, e não uma rodada de regrade.
 
-`PrepareRevision` exige projector seguro e capability `author-test` para o
+`PrepareRevision` exige adapter completo e capability `author-test` para o
 workflow exercitado. `PublishRevision` exige `official-submission` para todos
 os seus estágios. Um handler controlado pode comprovar o contrato de publish em
 testes automatizados, mas nunca deve ser registrado na configuração de
@@ -433,8 +430,8 @@ interface AssessmentExecutionDeliveryV1 {
   executionSnapshotHash: string;
   itemOrder: string[];
   items: Record<string, {
-    deliveryGeneratorKey: string;
-    deliveryGeneratorVersion: string;
+    adapterKey: string;
+    adapterVersion: string;
     learnerPayload: unknown;
   }>;
 }
@@ -458,51 +455,48 @@ restart cria outra `GradingExecution` e pode materializar outro challenge.
 
 ## Escala e aprovação
 
-Adotar strings decimais canônicas de largura fixa. Nenhum valor acadêmico
-decimal é persistido como `decimal`, `numeric`, `double` ou `float`:
+Adotar inteiros de ponto fixo com escala `100`. Nenhum valor acadêmico é
+persistido como string decimal, `decimal`, `numeric`, `double` ou `float`:
 
 ```text
-C# domínio         value objects; cálculo exato e formatação invariant
-TypeScript / JSON  strings branded, nunca number
-ScoreValue         varchar(13), ^\d{8}\.\d{4}$
-PercentValue       varchar(8),  ^\d{3}\.\d{4}$, domínio entre 0 e 100
-Exemplos           "00000000.0000", "00000012.5000", "100.0000"
-Arredondamento      uma vez antes de serializar, midpoint away from zero
+C# domínio         value objects sobre int32; intermediários long/BigInteger
+TypeScript / JSON  number branded, inteiro validado
+ScoreValue         integer, 0..2147483647; 100 unidades = 1 ponto
+PercentValue       integer, 0..10000; 100 unidades = 1%
+Exemplos           0, 50 (= 0.5 ponto), 150 (= 1.5 ponto), 10000 (= 100%)
+Arredondamento     uma vez ao materializar o inteiro, half-up
 ```
 
-No contrato público de quiz, `QuizEntry.points` passa atomicamente de `number`
-para string canônica no mesmo formato de `ScoreValue`. O package de quiz valida
-a forma textual de seu documento sem importar implementação de grading; o
-adapter converte esse valor para o value object do core. Não manter leitura
-dupla, coerção de `number` ou formato antigo.
+No contrato público de quiz, `QuizEntry.points` é um inteiro de unidades no
+mesmo formato de `ScoreValue`. O package de quiz valida inteiro e intervalo sem
+importar implementação de grading; o adapter converte esse valor para o value
+object do core. Inputs visuais podem aceitar texto decimal com no máximo duas
+casas e convertê-lo deterministicamente, sem `parseFloat`, leitura dupla ou
+formato antigo.
 
 Aplicar a escala a `Assessment.MaxScore`, `Assessment.PassingScore`,
 `AssessmentSubmission.Score`, `AssessmentPeerReview.Score`, resultados por item,
 DTOs, filas, LTI/passback e contratos do package. Aplicar `PercentValue` a
 `AssessmentGroup.WeightPercent`, `Program.PassingScore` e demais percentuais
-acadêmicos persistidos. Agregações calculam no domínio da API e persistem
-novamente no formato canônico.
+acadêmicos persistidos. Agregações usam intermediários ampliados, validam
+overflow e persistem novamente as unidades `int32`.
 
-O banco valida formato, tamanho e nullability. Como os valores são não negativos
-e têm largura fixa, igualdade, filtros de faixa e `ORDER BY` lexicográfico são
-numericamente corretos dentro do mesmo tipo. Soma, média, mediana, passing score
-e ponderação continuam no domínio da API depois do parse. Não usar cast SQL para
-`numeric`, coluna calculada decimal, `SUM` ou `AVG` sobre strings.
-
-As colunas e índices ordenáveis devem usar collation binária/invariante explícita
-(`C` no PostgreSQL), evitando que a ordenação dependa da locale do banco. Testes
-de schema cobrem os limites `0`, `9.9999`, `10.0000`, máximo e percentuais.
+O banco valida intervalo e nullability. Igualdade, filtros, índices e `ORDER BY`
+mantêm semântica numérica nativa. Soma, média, mediana, passing score e
+ponderação usam somente aritmética inteira, com divisão e arredondamento
+`half-up` explícitos; consultas SQL podem usar `bigint` como intermediário, mas
+nunca `numeric`, `real` ou `double precision`. Testes de schema cobrem `0`, `1`,
+`50`, `100`, os máximos e o limite percentual `10000`.
 
 Gradebook e dashboards não recalculam o curso varrendo e agregando texto a cada
 consulta. Consumers idempotentes mantêm projeções precomputadas por aluno,
-curso e período, também em strings canônicas. A API recalcula a projeção ao
+curso e período, também em unidades inteiras. A API recalcula a projeção ao
 receber alteração de resultado, tentativa escolhida, grupo ou peso. Consultas
-podem filtrar, paginar e ordenar pelas strings fixas sem perder a semântica
-numérica.
+podem filtrar, paginar, somar e ordenar com operadores inteiros.
 
-Converter as colunas relacionais atuais de `int` ou `decimal` para string é uma
-alteração de schema aprovada como direção deste plano, mas sua execução continua
-condicionada ao ADR e ao baseline limpo. Não
+Converter as colunas relacionais atuais de `decimal` para `integer` e redefinir
+as colunas `integer` atuais como unidades escaladas é a alteração de schema
+aprovada para o baseline limpo. Não
 reaproveitar `RubricScoresPayload` ou `StructuredAnswerPayload` para evitar essa
 decisão, pois isso misturaria responsabilidades.
 
@@ -757,7 +751,6 @@ interface GradeItemResultV1 {
   reviewMethod: AssessmentReviewMethod;
   handlerKey: string;
   handlerVersion: string;
-  algorithmVersion?: string;
   providerKey?: string;
 }
 
@@ -1032,8 +1025,8 @@ documento `08`; marcar itens aqui não autoriza aplicar todo o schema de uma vez
 - [ ] criar revisão imutável candidata e ponteiro de publicação ativa;
 - [ ] publicar candidata somente quando o hash do draft ainda coincidir;
 - [ ] implementar unpublish versionado que preserve revisões e execuções;
-- [ ] converter scores, pesos e percentuais acadêmicos para strings canônicas
-  no baseline limpo;
+- [ ] converter scores, pesos e percentuais acadêmicos para inteiros de escala
+  `100` no baseline limpo;
 - [ ] vincular submission e test run à revisão usada no start;
 - [ ] fechar schemas de resposta, estágio, rodada e resultado;
 - [ ] fechar capability descriptor por método e contexto de execução;
@@ -1042,7 +1035,7 @@ documento `08`; marcar itens aqui não autoriza aplicar todo o schema de uma vez
   impeça dependência reversa;
 - [ ] fechar `AssessmentExecutionManifestV1`, catálogo suportado, preflight de
   deploy, retenção de artefatos e inclusão no `ExecutionSnapshotHash`, cobrindo
-  projector, gerador de entrega, decoder/normalizador, handler e algoritmo;
+  adapter agregado por tipo de assessment, handler e provider;
 - [ ] definir a política inicial de contribuição de tentativas e rejeitar
   múltiplas tentativas enquanto ela não estiver implementada;
 - [ ] fechar `AssessmentAuthoringSourceV1`,
@@ -1087,9 +1080,9 @@ documento `08`; marcar itens aqui não autoriza aplicar todo o schema de uma vez
 - draft, revisão publicada e alterações pendentes são distinguíveis;
 - o professor pode testar uma candidata e ativar exatamente a mesma revisão;
 - uma tentativa continua corrigível após edição ou unpublish do quiz;
-- média, mediana e crédito parcial fazem round-trip pela string canônica;
-- score e percentual podem ser ordenados lexicalmente e projeções agregadas
-  são recalculadas no domínio, sem `decimal` no banco;
+- média, mediana e crédito parcial fazem round-trip pelo inteiro de unidades;
+- score e percentual são comparados numericamente e projeções agregadas são
+  recalculadas no domínio, sem `decimal` no banco;
 - submissão e curso possuem limiares de aprovação sem conflito;
 - resultado finalizado alimenta gradebook independentemente de estar liberado
   ao aluno;

@@ -3,7 +3,8 @@ import { notFound } from "next/navigation";
 import {
   canManageCourse,
   getAssessment,
-  getAssessmentRubric,
+      getAssessmentRubric,
+      getAssessmentAuthoringState,
   getCourseAssessmentGroups,
   getCourseContent,
   getCourseGroupSets,
@@ -33,12 +34,16 @@ export default async function AssessmentDetailPage({
     notFound();
   }
 
-  const rubric = await getAssessmentRubric(assessment.id);
+  const [rubric, authoringState] = await Promise.all([
+    getAssessmentRubric(assessment.id),
+    assessment.contentId ? getAssessmentAuthoringState(assessment.id) : null,
+  ]);
 
   return (
     <AssessmentEditor
       courseId={courseId}
       assessment={assessment}
+      authoringState={authoringState}
       assessmentGroups={assessmentGroups}
       courseContent={courseContent.items}
       groupSets={groupSets.map((set) => ({ id: set.id, name: set.name }))}

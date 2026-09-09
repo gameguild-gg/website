@@ -2,6 +2,7 @@ using GameGuild.Identity.Users;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using GameGuild.Learning.Grading.Contracts;
 
 
 namespace GameGuild.Learning.Courses;
@@ -45,8 +46,7 @@ public class ContentInteraction : EntityBase
     /// <summary>
     /// Progress percentage (0-100)
     /// </summary>
-    [Column(TypeName = "decimal(5,2)")]
-    public decimal? ProgressPercentage { get; set; } = 0m;
+    public PercentValue? ProgressPercentage { get; set; } = PercentValue.Zero;
 
     /// <summary>
     /// Time spent on this content in minutes
@@ -91,9 +91,10 @@ public class ContentInteraction : EntityBase
     /// <summary>
     /// Completion percentage (0-100) - alias for ProgressPercentage
     /// </summary>
-    public decimal CompletionPercentage
+    [NotMapped]
+    public PercentValue CompletionPercentage
     {
-        get => ProgressPercentage ?? 0m;
+        get => ProgressPercentage ?? PercentValue.Zero;
         set => ProgressPercentage = value;
     }
 
@@ -110,8 +111,7 @@ public class ContentInteraction : EntityBase
     /// <summary>
     /// Best score achieved
     /// </summary>
-    [Column(TypeName = "decimal(5,2)")]
-    public decimal? BestScore { get; set; }
+    public ScoreValue? BestScore { get; set; }
 
     /// <summary>
     /// User notes/annotations for this content
@@ -195,20 +195,20 @@ public class ContentInteraction : EntityBase
     /// <summary>
     /// Updates progress percentage
     /// </summary>
-    public void UpdateProgress(decimal percentage)
+    public void UpdateProgress(PercentValue percentage)
     {
         if (IsCompleted)
         {
             Status = ProgressStatus.Completed;
-            ProgressPercentage = 100m;
+            ProgressPercentage = PercentValue.Hundred;
             UpdateLastAccess();
             return;
         }
 
-        ProgressPercentage = Math.Max(0, Math.Min(100, percentage));
+        ProgressPercentage = percentage;
 
         // Auto-complete if 100%
-        if (ProgressPercentage >= 100 && !IsCompleted)
+        if (ProgressPercentage == PercentValue.Hundred && !IsCompleted)
         {
             Complete();
         }
@@ -224,7 +224,7 @@ public class ContentInteraction : EntityBase
         IsCompleted = true;
         Status = ProgressStatus.Completed;
         CompletedAt ??= SystemClock.UtcNow;
-        ProgressPercentage = 100m;
+        ProgressPercentage = PercentValue.Hundred;
         UpdateLastAccess();
     }
 
@@ -268,11 +268,11 @@ public class ContentInteraction : EntityBase
     /// <summary>
     /// Increments attempt count (for assessments)
     /// </summary>
-    public void RecordAttempt(decimal? score = null)
+    public void RecordAttempt(ScoreValue? score = null)
     {
         AttemptCount++;
 
-        if (score.HasValue && (BestScore == null || score > BestScore))
+        if (score.HasValue && (!BestScore.HasValue || score.Value.CompareTo(BestScore.Value) > 0))
         {
             BestScore = score;
         }
@@ -305,7 +305,7 @@ public class ContentInteraction : EntityBase
     {
         IsCompleted = false;
         CompletedAt = null;
-        ProgressPercentage = 0m;
+        ProgressPercentage = PercentValue.Zero;
         TimeSpentMinutes = 0;
         TimeSpentSeconds = 0;
         AttemptCount = 0;
@@ -314,38 +314,4 @@ public class ContentInteraction : EntityBase
         UpdateLastAccess();
     }
 
-    /// <summary>
-    /// Calculates engagement quality score
-    /// </summary>
-    public decimal CalculateEngagementScore()
-    {
-        var score = 0m;
-
-        // Progress contribution (0-40 points)
-        score += (ProgressPercentage ?? 0m) * 0.4m;
-
-        // Completion bonus (20 points)
-        if (IsCompleted)
-            score += 20m;
-
-        // Time engagement (0-20 points based on reasonable time spent)
-        if (TimeSpentMinutes.HasValue && Content?.EstimatedMinutes.HasValue == true)
-        {
-            var timeRatio = (decimal)TimeSpentMinutes.Value / Content.EstimatedMinutes.Value;
-            // Optimal engagement is 0.5-2x estimated time
-            if (timeRatio >= 0.5m && timeRatio <= 2m)
-                score += 20m;
-            else if (timeRatio > 0.2m)
-                score += 10m;
-        }
-
-        // Attempt efficiency (0-20 points for assessments)
-        if (AttemptCount > 0 && BestScore.HasValue)
-        {
-            var efficiency = BestScore.Value / AttemptCount;
-            score += Math.Min(20m, efficiency * 0.2m);
-        }
-
-        return Math.Min(100m, score);
-    }
 }

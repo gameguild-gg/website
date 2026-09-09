@@ -1,4 +1,7 @@
 using FluentAssertions;
+using GameGuild.Learning.Assessments.Grading.Contracts;
+using GameGuild.Learning.Grading.Contracts;
+using System.Text.Json;
 using Xunit;
 
 namespace GameGuild.Learning.Assessments.Tests;
@@ -35,10 +38,10 @@ public class AssessmentPeerReviewEntityTests
         var review = AssessmentPeerReview.Create(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
         var rubricScores = "{\"c1\":{\"points\":4,\"comment\":\"clear thesis\"}}";
 
-        review.SubmitReview(4, "Nice work", rubricScores);
+        review.SubmitReview(Score("4"), "Nice work", rubricScores);
 
         review.Status.Should().Be(PeerReviewStatus.Submitted);
-        review.Score.Should().Be(4);
+        review.Score.Should().Be(Score("4"));
         review.Feedback.Should().Be("Nice work");
         review.RubricScoresPayload.Should().Be(rubricScores);
         review.SubmittedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(2));
@@ -48,41 +51,53 @@ public class AssessmentPeerReviewEntityTests
     public void SubmitReview_WhenAlreadySubmitted_Throws()
     {
         var review = AssessmentPeerReview.Create(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
-        review.SubmitReview(3, "ok", null);
+        review.SubmitReview(Score("3"), "ok", null);
 
-        var action = () => review.SubmitReview(5, "again", null);
+        var action = () => review.SubmitReview(Score("5"), "again", null);
 
         action.Should().Throw<InvalidOperationException>();
     }
 
     [Fact]
-    public void Create_DefaultsPeerReviewsRequiredCountToZero()
+    public void Create_WithoutPeerReview_ReturnsZeroRequiredReviews()
     {
-        var assessment = Assessment.Create(Guid.NewGuid(), "Peer essay", AssessmentType.Assignment, 100);
+        var assessment = Assessment.Create(Guid.NewGuid(), "Peer essay", AssessmentType.Assignment, Score("100"));
 
-        assessment.PeerReviewsRequiredCount.Should().Be(0);
+        assessment.GetRequiredPeerReviewCount().Should().Be(0);
     }
 
     [Fact]
-    public void SetPeerReviewPolicy_WithValidCount_SetsCount()
+    public void SetReviewPolicy_WithValidPeerConfiguration_SetsRequiredCount()
     {
-        var assessment = Assessment.Create(Guid.NewGuid(), "Peer essay", AssessmentType.Assignment, 100);
+        var assessment = Assessment.Create(Guid.NewGuid(), "Peer essay", AssessmentType.Assignment, Score("100"));
 
-        assessment.SetPeerReviewPolicy(3);
+        assessment.SetReviewPolicy(
+            ReviewMethods.PeerReview,
+            PeerReviewConfiguration(3),
+            null,
+            ContentCompletionMode.OnReleaseAndPass,
+            ResultReleaseMode.Manual,
+            null);
 
-        assessment.PeerReviewsRequiredCount.Should().Be(3);
+        assessment.GetRequiredPeerReviewCount().Should().Be(3);
     }
 
     [Theory]
     [InlineData(0)]
     [InlineData(-1)]
-    public void SetPeerReviewPolicy_WithCountBelowOne_Throws(int requiredCount)
+    public void SetReviewPolicy_WithPeerCountBelowOne_Throws(int requiredCount)
     {
-        var assessment = Assessment.Create(Guid.NewGuid(), "Peer essay", AssessmentType.Assignment, 100);
+        var assessment = Assessment.Create(Guid.NewGuid(), "Peer essay", AssessmentType.Assignment, Score("100"));
 
-        var action = () => assessment.SetPeerReviewPolicy(requiredCount);
+        var action = () => assessment.SetReviewPolicy(
+            ReviewMethods.PeerReview,
+            PeerReviewConfiguration(requiredCount),
+            null,
+            ContentCompletionMode.OnReleaseAndPass,
+            ResultReleaseMode.Manual,
+            null);
 
-        action.Should().Throw<ArgumentOutOfRangeException>();
+        action.Should().Throw<JsonException>();
     }
 
     [Fact]
@@ -107,11 +122,18 @@ public class AssessmentPeerReviewEntityTests
         submission.Submit();
         var rubricScores = "{\"c1\":{\"points\":5,\"comment\":\"thesis\"},\"c2\":{\"points\":3}}";
 
-        submission.Grade(8, 5, 10, gradedBy: Guid.NewGuid(), feedback: "Solid", rubricScores: rubricScores);
+        submission.Grade(Score("8"), Score("5"), Score("10"), gradedBy: Guid.NewGuid(), feedback: "Solid", rubricScores: rubricScores);
 
-        submission.Score.Should().Be(8);
+        submission.Score.Should().Be(Score("8"));
         submission.Status.Should().Be(SubmissionStatus.Graded);
         submission.Feedback.Should().Be("Solid");
         submission.RubricScoresPayload.Should().Be(rubricScores);
     }
+
+    private static ScoreValue Score(string value) => ScoreValue.FromPoints(value);
+
+    private static string PeerReviewConfiguration(int requiredCount) =>
+        $$"""
+        {"peer":{"aggregation":"mean","claimLeaseMinutes":30,"evidenceWindowMinutes":60,"minimumReviewsToFinalize":{{requiredCount}},"onInsufficientEvidence":"await-instructor-resolution","reviewsPerReviewer":{{requiredCount}},"reviewsRequiredPerSubmission":{{requiredCount}}},"schemaVersion":1}
+        """;
 }

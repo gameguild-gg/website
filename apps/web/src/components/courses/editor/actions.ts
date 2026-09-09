@@ -12,6 +12,7 @@ import {
 import { revalidatePath } from 'next/cache';
 
 import type { Course } from '@/lib/courses';
+import { optionalPercentUnitsToPercentage, percentageToPercentUnits } from '@/lib/learning/academic-values';
 
 interface EditorCourse extends Partial<Course> {
   id: string;
@@ -170,7 +171,7 @@ function mapCourse(program: LearningCoursesProgram): EditorCourse {
     enrollmentStatus: typeof program.enrollmentStatus === 'string' ? program.enrollmentStatus : undefined,
     isPublic: visibility === 'public',
     isFeatured: false,
-    passingScore: typeof program.passingScore === 'number' ? program.passingScore : undefined,
+    passingScore: optionalPercentUnitsToPercentage(program.passingScore) ?? undefined,
     tools: typeof program.skillsRequired === 'string'
       ? program.skillsRequired.split(',').map((tool) => tool.trim()).filter(Boolean)
       : [],
@@ -207,7 +208,7 @@ function toUpdateCourse(course: EditorCourse): LearningCoursesUpdateProgram {
     maxEnrollments: course.maxEnrollments,
     enrollmentDeadline: toIsoDate(course.enrollmentDeadline),
     enrollmentStatus: toEnrollmentStatus(course.enrollmentStatus),
-    passingScore: course.passingScore,
+    passingScore: course.passingScore == null ? undefined : percentageToPercentUnits(course.passingScore),
   };
 }
 

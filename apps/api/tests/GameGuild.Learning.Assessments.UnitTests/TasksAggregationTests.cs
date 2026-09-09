@@ -4,6 +4,7 @@ using GameGuild.Identity.Context.Actors;
 using GameGuild.Identity.Users;
 using GameGuild.Learning.Courses;
 using GameGuild.Learning.Enrollments;
+using GameGuild.Learning.Assessments.Grading.Contracts;
 using GameGuild.Notifications;
 using GameGuild.Notifications.Services;
 using NotificationPriority = GameGuild.Notifications.NotificationPriority;
@@ -80,8 +81,8 @@ public class TasksAggregationTests
         await SeedUserRowAsync(db, inProgress.Id, studentId, "student", 1, SubmissionStatus.InProgress, enrollmentId: enrollment.Id);
 
         var peer = await SeedAssessmentAsync(db, courseId, "Peer Essay", dueAt: FixedDueAt,
-            gradingMethods: AssessmentGradingMethod.PeerReview);
-        peer.SetPeerReviewPolicy(2);
+            reviewMethods: ReviewMethods.PeerReview);
+        ConfigurePeerReview(peer, 2);
         await db.SaveChangesAsync();
 
         var dto = await CreateService(db, studentId).GetTasksAsync(studentId, TenantId, isSystemAdmin: false);
@@ -109,11 +110,11 @@ public class TasksAggregationTests
         await db.SaveChangesAsync();
 
         var peer = await SeedAssessmentAsync(db, courseId, "Peer Lab",
-            gradingMethods: AssessmentGradingMethod.PeerReview);
-        peer.SetPeerReviewPolicy(1);
+            reviewMethods: ReviewMethods.PeerReview);
+        ConfigurePeerReview(peer, 1);
         var (victimId, targetRow) = await SeedRowAsync(db, peer.Id, "Victim", 1, SubmissionStatus.Submitted);
         var review = AssessmentPeerReview.Create(peer.Id, targetRow.Id, studentId);
-        review.SubmitReview(80, "solid work", null);
+        review.SubmitReview(Score(80), "solid work", null);
         db.Add(review);
         await db.SaveChangesAsync();
 
@@ -136,8 +137,8 @@ public class TasksAggregationTests
 
         var todo = await SeedAssessmentAsync(db, courseId, "Lab Report");
         var peer = await SeedAssessmentAsync(db, courseId, "Peer Essay",
-            gradingMethods: AssessmentGradingMethod.PeerReview);
-        peer.SetPeerReviewPolicy(2);
+            reviewMethods: ReviewMethods.PeerReview);
+        ConfigurePeerReview(peer, 2);
         await db.SaveChangesAsync();
 
         var dto = await CreateService(db, studentId).GetTasksAsync(studentId, TenantId, isSystemAdmin: false);
@@ -284,7 +285,7 @@ public class TasksAggregationTests
         var courseId = Guid.NewGuid();
         await SeedCourseAsync(db, courseId, "Art", creatorId: Guid.NewGuid());
         var assessment = await SeedAssessmentAsync(db, courseId, "Group Critique",
-            gradingMethods: AssessmentGradingMethod.PeerReview);
+            reviewMethods: ReviewMethods.PeerReview);
         var group = await SeedGroupAsync(db, assessment, "Alice", "Bob", "Carol");
         var rows = new List<(Guid UserId, AssessmentSubmission Row)>();
         foreach (var (userId, _) in group.Members)
@@ -300,7 +301,7 @@ public class TasksAggregationTests
 
         var notifier = new RecordingNotifier();
         var service = new PeerReviewAssignmentService(db, NullLogger<PeerReviewAssignmentService>.Instance, notifier);
-        var result = await service.SubmitReviewAsync(review, 85, "clear thesis, tight argument", null);
+        var result = await service.SubmitReviewAsync(review, Score(85), "clear thesis, tight argument", null);
 
         result.IsSuccess.Should().BeTrue();
         notifier.Sent.Should().HaveCount(3, "every owner of a row sharing the reviewed (CourseGroupId, AttemptNumber) is notified");
@@ -330,7 +331,7 @@ public class TasksAggregationTests
 
         var notifier = new RecordingNotifier();
         var service = CreateAssessmentService(db, notifier);
-        var result = await service.GradeSubmissionAsync(gradedRow!.Id, new GradeSubmissionRequest(90, GradedBy: Guid.NewGuid(), Feedback: "bravo"));
+        var result = await service.GradeSubmissionAsync(gradedRow!.Id, new GradeSubmissionRequest(Score(90), GradedBy: Guid.NewGuid(), Feedback: "bravo"));
 
         result.IsSuccess.Should().BeTrue();
         notifier.Sent.Should().HaveCount(3, "grade fan-out notifies every graded member");
@@ -430,9 +431,9 @@ public class TasksAggregationTests
         Guid courseId,
         string title,
         DateTime? dueAt = null,
-        AssessmentGradingMethod gradingMethods = AssessmentGradingMethod.InstructorGraded)
+        ReviewMethods reviewMethods = ReviewMethods.InstructorReview)
     {
-        var assessment = Assessment.Create(courseId, title, AssessmentType.Assignment, 100, gradingMethods: gradingMethods);
+        var assessment = Assessment.Create(courseId, title, AssessmentType.Assignment, Score(100), reviewMethods: reviewMethods);
         if (dueAt.HasValue)
         {
             assessment.SetDeliverySchedule(null, null, dueAt, false, null);
@@ -441,6 +442,20 @@ public class TasksAggregationTests
         db.Add(assessment);
         await db.SaveChangesAsync();
         return assessment;
+    }
+
+    private static void ConfigurePeerReview(Assessment assessment, int requiredReviews)
+    {
+        var configuration = $$"""
+            {"peer":{"aggregation":"mean","claimLeaseMinutes":30,"evidenceWindowMinutes":60,"minimumReviewsToFinalize":{{requiredReviews}},"onInsufficientEvidence":"await-instructor-resolution","reviewsPerReviewer":{{requiredReviews}},"reviewsRequiredPerSubmission":{{requiredReviews}}},"schemaVersion":1}
+            """;
+        assessment.SetReviewPolicy(
+            assessment.ReviewMethods,
+            configuration,
+            null,
+            ContentCompletionMode.OnReleaseAndPass,
+            ResultReleaseMode.Manual,
+            null);
     }
 
     private sealed record GroupFixture(Guid GroupId, (Guid UserId, string Name)[] Members);
@@ -499,7 +514,7 @@ public class TasksAggregationTests
             row.Submit(isLate);
             if (status == SubmissionStatus.Graded)
             {
-                row.Grade(score ?? 0, 60, 100, Guid.NewGuid(), "graded");
+                row.Grade(Score(score ?? 0), Score(60), Score(100), Guid.NewGuid(), "graded");
             }
         }
 

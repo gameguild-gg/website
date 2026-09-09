@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using GameGuild.Learning.Grading.Contracts;
 
 // using GameGuild.Modules.Contents.Models;
 
@@ -334,21 +335,23 @@ public class ProgramContent : EntityBase
     /// <summary>
     /// Calculates completion percentage for a user
     /// </summary>
-    public decimal GetCompletionPercentage(Guid userId)
+    public PercentValue GetCompletionPercentage(Guid userId)
     {
         var interactions = ContentInteractions?.Where(ci => ci.UserId == userId).ToList();
         if (interactions?.Any() != true)
-            return 0m;
+            return PercentValue.Zero;
 
         if (Children is { Count: > 0 })
         {
             // For parent content, calculate based on children
             var childCompletions = Children.Select(child => child.GetCompletionPercentage(userId)).ToList();
-            return childCompletions.Average();
+            return PercentValue.Average(childCompletions);
         }
 
         // For leaf content, check if completed
         var latestInteraction = interactions.OrderByDescending(i => i.UpdatedAt).First();
-        return latestInteraction.IsCompleted ? 100m : (latestInteraction.ProgressPercentage ?? 0m);
+        return latestInteraction.IsCompleted
+            ? PercentValue.Hundred
+            : latestInteraction.ProgressPercentage ?? PercentValue.Zero;
     }
 }

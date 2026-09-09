@@ -256,9 +256,8 @@ DELETE /assessment-test-runs/{testRunId}
 Todos exigem permissão de gestão no assessment. O cliente nunca escolhe outro
 workflow ou revisão depois que o test run foi criado.
 O start também congela o `AssessmentExecutionManifestV1` da revisão. Cada
-stage resolve somente projector, gerador de entrega, decoder/normalizador,
-handler e algoritmo nas versões exatas do manifest; um deploy não pode alterar
-silenciosamente uma execução aberta.
+execução resolve somente o adapter agregado e os handlers nas versões exatas do
+manifest; um deploy não pode alterar silenciosamente uma execução aberta.
 O artefato já passou pelo preflight do ambiente antes de receber tráfego;
 falha de resolução durante o test run continua sendo diagnóstico explícito,
 mas não substitui esse bloqueio preventivo de deploy.

@@ -1,3 +1,5 @@
+using GameGuild.Learning.Grading.Contracts;
+
 namespace GameGuild.Learning.Courses;
 
 public sealed record ContentInteractionEventDto(
@@ -7,7 +9,7 @@ public sealed record ContentInteractionEventDto(
     DateTime OccurredAt,
     int? DurationSeconds,
     decimal? PositionSeconds,
-    decimal? ProgressPercentage,
+    PercentValue? ProgressPercentage,
     string? Payload,
     string? IdempotencyKey)
 {

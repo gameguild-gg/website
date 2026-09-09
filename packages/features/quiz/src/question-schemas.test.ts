@@ -73,10 +73,10 @@ describe("quiz entry runtime schema", () => {
     })).toBe(false);
   });
 
-  it("accepts only canonical textual academic points", () => {
+  it("accepts only non-negative integer academic point units", () => {
     expect(isQuizEntry({
       ...createTrueFalseEntry("Question"),
-      points: "00000002.5000",
+      points: 250,
     })).toBe(true);
     expect(isQuizEntry({
       ...createTrueFalseEntry("Question"),
@@ -84,7 +84,7 @@ describe("quiz entry runtime schema", () => {
     })).toBe(false);
     expect(isQuizEntry({
       ...createTrueFalseEntry("Question"),
-      points: "2.5",
+      points: "250",
     })).toBe(false);
   });
 });

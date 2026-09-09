@@ -1,14 +1,11 @@
 using GameGuild.Learning.Assessments.Grading.Contracts;
+using GameGuild.Learning.Grading.Contracts;
 
 namespace GameGuild.Learning.Assessments.Grading.Capabilities;
 
 public enum ExecutableComponentKind
 {
-    ItemProjector,
-    DeliveryGenerator,
-    AnswerDecoder,
-    ReviewHandler,
-    GradingAlgorithm,
+    AssessmentTypeAdapter,
     ExecutionPolicy,
 }
 
@@ -44,6 +41,29 @@ public interface IReviewCapabilityRegistry
 public interface IReviewCapabilityRegistration
 {
     void Register(IReviewCapabilityRegistry registry);
+}
+
+public static class AssessmentExecutionPolicyCapability
+{
+    public const string Key = "grading.execution-policy";
+    public const string Version = "1";
+}
+
+public sealed class CoreGradingCapabilityRegistration : IReviewCapabilityRegistration
+{
+    private static readonly IReadOnlySet<ReviewExecutionContext> Contexts =
+        new HashSet<ReviewExecutionContext>
+        {
+            ReviewExecutionContext.AuthorTest,
+            ReviewExecutionContext.OfficialSubmission,
+        };
+
+    public void Register(IReviewCapabilityRegistry registry) =>
+        registry.Register(new ExecutableComponentDescriptor(
+            ExecutableComponentKind.ExecutionPolicy,
+            AssessmentExecutionPolicyCapability.Key,
+            AssessmentExecutionPolicyCapability.Version,
+            Contexts));
 }
 
 public sealed class ReviewCapabilityRegistry : IReviewCapabilityRegistry

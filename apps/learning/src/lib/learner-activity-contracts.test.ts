@@ -2,10 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { buildAssessmentPayload, buildContentActivityPayload, getPreferredSubmissionModality } from './learner-activity-contracts';
 
 describe('learner activity contracts', () => {
-    it('normalizes quiz answers into structured assessment JSON', () => {
-        expect(buildAssessmentPayload('StructuredAnswer', 'The selected answer')).toEqual({
-            structuredAnswerPayload: JSON.stringify({ answer: 'The selected answer' }),
-        });
+    it('rejects the removed generic structured-answer path', () => {
+        expect(() => buildAssessmentPayload('StructuredAnswer', 'The selected answer')).toThrow(
+            'This assessment does not have a valid submission method.',
+        );
     });
 
     it('maps project and file references without losing traceability', () => {
@@ -20,7 +20,7 @@ describe('learner activity contracts', () => {
     });
 
     it('chooses a real submission modality for each assessment type', () => {
-        expect(getPreferredSubmissionModality('Quiz', 'None')).toBe('StructuredAnswer');
+        expect(getPreferredSubmissionModality('Quiz', 'StructuredAnswer')).toBe('None');
         expect(getPreferredSubmissionModality('Project', 'Text')).toBe('Project');
         expect(getPreferredSubmissionModality('Assignment', 'Url')).toBe('Url');
     });

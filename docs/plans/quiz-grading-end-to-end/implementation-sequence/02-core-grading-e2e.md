@@ -217,8 +217,8 @@ Apresentar e aprovar somente o necessário para:
   puder ser tratado como read model sem autoridade de escrita genérica. Qualquer
   delta relacional necessário deve ser apresentado neste gate;
 - uso de `AssessmentGroup.WeightPercent` e demais pesos ou percentuais já
-  normalizados como strings canônicas em `SEQ-03`, sem reintroduzir coluna ou
-  cálculo `decimal` neste gate;
+  normalizados como inteiros de escala `100` em `SEQ-03`, sem reintroduzir
+  coluna ou cálculo `decimal` neste gate;
 - eventos `GradeResultFinalized` e `GradeResultReleased`;
 - solicitação durável e idempotente de `ReleaseGradeResult` persistida na mesma
   transação da finalização quando a policy for `immediate`, reutilizando a

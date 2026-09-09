@@ -8,6 +8,7 @@ import {
   type LearningAssessmentsPeerReviewSubmitInput,
   type LearningAssessmentsReceivedPeerReview,
 } from '@game-guild/client';
+import { pointsToScoreUnits, rubricScoresToUnits } from '@/lib/learning/academic-values';
 
 type ActionResult<T> = { success: true; data: T } | { success: false; error: string };
 
@@ -79,13 +80,12 @@ export async function submitPeerReview(reviewId: string, input: SubmitPeerReview
     return { success: false, error: 'Feedback comment is required' };
   }
 
-  const body: LearningAssessmentsPeerReviewSubmitInput = {
-    score: input.score ?? null,
-    feedback,
-    rubricScores: input.rubricScores ?? null,
-  };
-
   try {
+    const body: LearningAssessmentsPeerReviewSubmitInput = {
+      score: input.score == null ? null : pointsToScoreUnits(input.score),
+      feedback,
+      rubricScores: input.rubricScores == null ? null : rubricScoresToUnits(input.rubricScores),
+    };
     const module = new GeneratedApi.LearningAssessmentsPeerReviewsModule(getApiClient());
     const result = await module.postAssessmentsPeerReviewsSubmit(reviewId, body);
 

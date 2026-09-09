@@ -146,7 +146,7 @@ internal sealed class ApiProductComposition : IApiProductComposition
 
     public void ConfigureOpenApi(SwaggerGenOptions options)
     {
-        options.SchemaFilter<LegacyAssessmentTypeSchemaFilter>();
+        options.SchemaFilter<LearningContractSchemaFilter>();
         options.SchemaFilter<LegacyProgramContentTypeSchemaFilter>();
     }
 

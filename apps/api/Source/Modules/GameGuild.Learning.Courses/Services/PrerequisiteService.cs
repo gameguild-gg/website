@@ -1,3 +1,4 @@
+using GameGuild.Learning.Grading.Contracts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -161,7 +162,7 @@ public class PrerequisiteService : IPrerequisiteService
 
                 var courseName = prereq.PrerequisiteCourse?.Title ?? "Unknown Course";
                 bool isSatisfied;
-                int? achievedGrade = null;
+                PercentValue? achievedGrade = null;
                 string? reason = null;
 
                 if (enrollment == null)
@@ -176,8 +177,8 @@ public class PrerequisiteService : IPrerequisiteService
                 }
                 else if (prereq.MinimumGrade.HasValue)
                 {
-                    achievedGrade = enrollment.FinalGrade.HasValue ? (int)enrollment.FinalGrade.Value : (int)enrollment.ProgressPercentage;
-                    isSatisfied = achievedGrade >= prereq.MinimumGrade;
+                    achievedGrade = enrollment.FinalGrade ?? enrollment.ProgressPercentage;
+                    isSatisfied = achievedGrade.Value.CompareTo(prereq.MinimumGrade.Value) >= 0;
                     reason = isSatisfied ? null : $"Grade {achievedGrade}% is below required {prereq.MinimumGrade}%.";
                 }
                 else

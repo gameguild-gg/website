@@ -48,21 +48,24 @@ retornam `AwaitingEvidence`.
 Cada endpoint de aluno, peer ou instrutor transforma uma ação autorizada em
 `ReviewEvidence`; somente o handler configurado pode aceitá-la.
 
-Algoritmos e integrações ficam atrás de portas menores, usadas pelos handlers:
+Algoritmos e integrações ficam atrás de portas genéricas, usadas pelos handlers:
 
 ```text
-IDeterministicQuizGrader
+IAssessmentTypeAdapter.EvaluateDeterministicAsync
 IAIReviewProvider
 IPeerReviewAggregator
 ```
 
+A avaliação determinística específica pertence ao adapter do tipo de
+assessment. Não existe `IDeterministicQuizGrader` no core; quiz pode decompor
+sua implementação internamente sem expor essas partes ao grading.
+
 O orquestrador controla ordem, idempotência, rodada e persistência. O handler
 controla a validade e a completude das evidências do método. Nenhum deles decide
 sozinho se o resultado deve seguir para `InstructorReview`.
-O registry do runtime resolve handler, projector, gerador de entrega,
-decoder/normalizador e algoritmo pelas versões exatas do
-`AssessmentExecutionManifestV1`; capability atual não autoriza trocar a
-implementação de uma revisão já preparada.
+O registry do runtime resolve o adapter agregado, o handler e providers pelas
+versões exatas do `AssessmentExecutionManifestV1`; capability atual não
+autoriza trocar a implementação de uma revisão já preparada.
 
 O orquestrador também não executa uma vez por integrante de grupo. Ele recebe um
 `IGradingExecutionContext` para a submission canônica e produz um único

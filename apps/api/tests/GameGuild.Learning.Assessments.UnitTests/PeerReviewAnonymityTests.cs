@@ -4,6 +4,7 @@ using GameGuild.Identity.Authorization;
 using GameGuild.Identity.Context.Actors;
 using GameGuild.Identity.Users;
 using GameGuild.Learning.Courses;
+using GameGuild.Learning.Assessments.Grading.Contracts;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
@@ -70,12 +71,12 @@ public class PeerReviewAnonymityTests
         var review = await SeedReviewAsync(db, assessment.Id, submission.Id, Guid.NewGuid());
         var controller = CreateController(db, review.ReviewerUserId);
 
-        var result = await controller.SubmitReview(review.Id, new PeerReviewSubmitRequest(80, "Strong thesis", null));
+        var result = await controller.SubmitReview(review.Id, new PeerReviewSubmitRequest(Score(80), "Strong thesis", null));
 
         result.Should().BeAssignableTo<ObjectResult>().Which.StatusCode.Should().Be(200);
         var saved = await db.Set<AssessmentPeerReview>().SingleAsync(r => r.Id == review.Id);
         saved.Status.Should().Be(PeerReviewStatus.Submitted);
-        saved.Score.Should().Be(80);
+        saved.Score.Should().Be(Score(80));
         saved.Feedback.Should().Be("Strong thesis");
     }
 
@@ -88,7 +89,7 @@ public class PeerReviewAnonymityTests
         var review = await SeedReviewAsync(db, assessment.Id, submission.Id, Guid.NewGuid());
         var controller = CreateController(db, review.ReviewerUserId);
 
-        var result = await controller.SubmitReview(review.Id, new PeerReviewSubmitRequest(80, "   ", null));
+        var result = await controller.SubmitReview(review.Id, new PeerReviewSubmitRequest(Score(80), "   ", null));
 
         var bad = result.Should().BeAssignableTo<ObjectResult>().Which;
         bad.StatusCode.Should().Be(400);
@@ -106,7 +107,7 @@ public class PeerReviewAnonymityTests
         var review = await SeedReviewAsync(db, assessment.Id, submission.Id, Guid.NewGuid());
         var controller = CreateController(db, review.ReviewerUserId);
 
-        var result = await controller.SubmitReview(review.Id, new PeerReviewSubmitRequest(80, "Late words", null));
+        var result = await controller.SubmitReview(review.Id, new PeerReviewSubmitRequest(Score(80), "Late words", null));
 
         var conflict = result.Should().BeAssignableTo<ObjectResult>().Which;
         conflict.StatusCode.Should().Be(409);
@@ -124,7 +125,7 @@ public class PeerReviewAnonymityTests
         var review = await SeedReviewAsync(db, assessment.Id, submission.Id, Guid.NewGuid());
         var controller = CreateController(db, review.ReviewerUserId);
 
-        var result = await controller.SubmitReview(review.Id, new PeerReviewSubmitRequest(80, "Nice", null));
+        var result = await controller.SubmitReview(review.Id, new PeerReviewSubmitRequest(Score(80), "Nice", null));
 
         result.Should().BeAssignableTo<ObjectResult>().Which.StatusCode.Should().Be(400);
         (await db.Set<AssessmentPeerReview>().SingleAsync(r => r.Id == review.Id))
@@ -143,7 +144,7 @@ public class PeerReviewAnonymityTests
         var overMax = RubricScoresJson((criteria[0].Id, 61, null), (criteria[1].Id, 40, null));
 
         var result = await controller.SubmitReview(
-            review.Id, new PeerReviewSubmitRequest(101, "Too generous", overMax));
+            review.Id, new PeerReviewSubmitRequest(Score(101), "Too generous", overMax));
 
         result.Should().BeAssignableTo<ObjectResult>().Which.StatusCode.Should().Be(400);
     }
@@ -160,7 +161,7 @@ public class PeerReviewAnonymityTests
         var scores = RubricScoresJson((criteria[0].Id, 60, "clear"), (criteria[1].Id, 40, null));
 
         var result = await controller.SubmitReview(
-            review.Id, new PeerReviewSubmitRequest(100, "Great essay", scores));
+            review.Id, new PeerReviewSubmitRequest(Score(100), "Great essay", scores));
 
         result.Should().BeAssignableTo<ObjectResult>().Which.StatusCode.Should().Be(200);
         var saved = await db.Set<AssessmentPeerReview>().SingleAsync(r => r.Id == review.Id);
@@ -175,11 +176,11 @@ public class PeerReviewAnonymityTests
         var assessment = await SeedAssessmentAsync(db, dueAt: SystemClock.UtcNow.AddDays(2));
         var submission = await SeedSubmittedRowAsync(db, assessment.Id, Guid.NewGuid());
         var review = await SeedReviewAsync(db, assessment.Id, submission.Id, Guid.NewGuid());
-        review.SubmitReview(70, "first take", null);
+        review.SubmitReview(Score(70), "first take", null);
         await db.SaveChangesAsync();
         var controller = CreateController(db, review.ReviewerUserId);
 
-        var result = await controller.SubmitReview(review.Id, new PeerReviewSubmitRequest(90, "second take", null));
+        var result = await controller.SubmitReview(review.Id, new PeerReviewSubmitRequest(Score(90), "second take", null));
 
         var conflict = result.Should().BeAssignableTo<ObjectResult>().Which;
         conflict.StatusCode.Should().Be(409);
@@ -197,7 +198,7 @@ public class PeerReviewAnonymityTests
         var owner = Guid.NewGuid();
         var submission = await SeedSubmittedRowAsync(db, assessment.Id, owner);
         var submitted = await SeedReviewAsync(db, assessment.Id, submission.Id, Guid.NewGuid());
-        submitted.SubmitReview(85, "nice work", null);
+        submitted.SubmitReview(Score(85), "nice work", null);
         var stillAssigned = await SeedReviewAsync(db, assessment.Id, submission.Id, Guid.NewGuid());
         await db.SaveChangesAsync();
         var controller = CreateController(db, owner);
@@ -208,7 +209,7 @@ public class PeerReviewAnonymityTests
         var list = ok.Value.Should().BeAssignableTo<IEnumerable<ReceivedPeerReviewDto>>().Subject.ToList();
         list.Should().ContainSingle("assigned-but-not-submitted reviews carry no feedback yet");
         list[0].ReviewId.Should().Be(submitted.Id);
-        list[0].Score.Should().Be(85);
+        list[0].Score.Should().Be(Score(85));
         list[0].Feedback.Should().Be("nice work");
         var keys = CollectPropertyNames(JsonSerializer.SerializeToElement(list));
         keys.Should().NotContain(k => k.ToLowerInvariant().Contains("reviewer"),
@@ -238,7 +239,7 @@ public class PeerReviewAnonymityTests
         var ownRow = await SeedSubmittedRowAsync(db, assessment.Id, owner, groupId: groupId);
         var siblingRow = await SeedSubmittedRowAsync(db, assessment.Id, Guid.NewGuid(), groupId: groupId);
         var review = await SeedReviewAsync(db, assessment.Id, siblingRow.Id, Guid.NewGuid());
-        review.SubmitReview(90, "solid team effort", null);
+        review.SubmitReview(Score(90), "solid team effort", null);
         await db.SaveChangesAsync();
         var controller = CreateController(db, owner);
 
@@ -264,7 +265,7 @@ public class PeerReviewAnonymityTests
         var reviewerId = Guid.NewGuid();
         db.Add(new User { Id = reviewerId, Name = "Grace Hopper", Email = "grace@example.com" });
         var review = await SeedReviewAsync(db, assessment.Id, submission.Id, reviewerId);
-        review.SubmitReview(75, "good structure", null);
+        review.SubmitReview(Score(75), "good structure", null);
         await db.SaveChangesAsync();
         var instructor = Guid.NewGuid();
         var controller = CreateController(db, instructor, programCreatorId: instructor);
@@ -276,7 +277,7 @@ public class PeerReviewAnonymityTests
         list.Should().ContainSingle();
         list[0].ReviewerUserId.Should().Be(reviewerId);
         list[0].ReviewerName.Should().Be("Grace Hopper");
-        list[0].Score.Should().Be(75);
+        list[0].Score.Should().Be(Score(75));
     }
 
     [Fact]
@@ -333,7 +334,7 @@ public class PeerReviewAnonymityTests
     /// <summary>Builds a rubric-scores JSON payload keyed by criterion id (same shape the web client sends).</summary>
     private static string RubricScoresJson(params (Guid Id, int Points, string? Comment)[] entries) =>
         "{" + string.Join(",", entries.Select(e =>
-            $"\"{e.Id}\":{{\"points\":{e.Points}" + (e.Comment == null ? "" : $",\"comment\":\"{e.Comment}\"") + "}")) + "}";
+            $"\"{e.Id}\":{{\"points\":{Score(e.Points).Units}" + (e.Comment == null ? "" : $",\"comment\":\"{e.Comment}\"") + "}")) + "}";
 
     /// <summary>Recursively collects every JSON property name (the serialize-and-check-absent-keys proof).</summary>
     private static List<string> CollectPropertyNames(JsonElement element)
@@ -371,8 +372,8 @@ public class PeerReviewAnonymityTests
         TestPeerReviewAnonymityDbContext db, DateTime? dueAt = null, DateTime? lateDeadline = null)
     {
         var assessment = Assessment.Create(
-            Guid.NewGuid(), "Peer Essay", AssessmentType.Assignment, 100,
-            gradingMethods: AssessmentGradingMethod.PeerReview);
+            Guid.NewGuid(), "Peer Essay", AssessmentType.Assignment, Score(100),
+            reviewMethods: ReviewMethods.PeerReview);
         if (dueAt.HasValue)
         {
             assessment.SetDeliverySchedule(null, null, dueAt.Value, lateDeadline.HasValue, lateDeadline);
@@ -414,8 +415,8 @@ public class PeerReviewAnonymityTests
         var rubric = AssessmentRubric.Create("Essay rubric");
         var criteria = new List<RubricCriterion>
         {
-            RubricCriterion.Create(rubric.Id, "Thesis", 60, 1),
-            RubricCriterion.Create(rubric.Id, "Mechanics", 40, 2)
+            RubricCriterion.Create(rubric.Id, "Thesis", Score(60), 1),
+            RubricCriterion.Create(rubric.Id, "Mechanics", Score(40), 2)
         };
         db.Add(rubric);
         db.AddRange(criteria);

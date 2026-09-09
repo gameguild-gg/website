@@ -237,11 +237,15 @@ public sealed class GetLearnerDashboardQueryHandler(IApplicationDbContext contex
                 Submission = submissions[assessment.Id],
             })
             .ToArray();
-        var earned = graded.Sum(item => (decimal)item.Submission.Score!.Value);
-        var possible = graded.Sum(item => (decimal)item.Assessment.MaxScore);
-        var percentage = graded.Length > 0
-            ? Math.Round(earned / possible * 100m, 2)
-            : (decimal?)null;
+        var earned = graded.Length > 0
+            ? GameGuild.Learning.Grading.Contracts.ScoreValue.Sum(graded.Select(item => item.Submission.Score!.Value))
+            : (GameGuild.Learning.Grading.Contracts.ScoreValue?)null;
+        var possible = graded.Length > 0
+            ? GameGuild.Learning.Grading.Contracts.ScoreValue.Sum(graded.Select(item => item.Assessment.MaxScore))
+            : (GameGuild.Learning.Grading.Contracts.ScoreValue?)null;
+        var percentage = earned.HasValue && possible.HasValue
+            ? GameGuild.Learning.Grading.Contracts.PercentValue.FromScores(earned.Value, possible.Value)
+            : (GameGuild.Learning.Grading.Contracts.PercentValue?)null;
 
         return new LearnerGradeSummaryDto(
             course.CourseId,
@@ -250,8 +254,8 @@ public sealed class GetLearnerDashboardQueryHandler(IApplicationDbContext contex
             course.FinalGrade,
             graded.Length,
             assessments.Count,
-            graded.Length > 0 ? earned : null,
-            graded.Length > 0 ? possible : null,
+            earned,
+            possible,
             percentage,
             groups
                 .OrderBy(group => group.Order)

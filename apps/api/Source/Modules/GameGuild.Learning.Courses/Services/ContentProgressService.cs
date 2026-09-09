@@ -1,5 +1,4 @@
-
-
+using GameGuild.Learning.Grading.Contracts;
 using Microsoft.EntityFrameworkCore;
 
 
@@ -11,13 +10,20 @@ public class ContentProgressService : IContentProgressService {
 
   private readonly IProgramEnrollmentService _enrollmentService;
 
-  public ContentProgressService(IApplicationDbContext context, IProgramEnrollmentService enrollmentService) {
+  private readonly IEnumerable<IProgramContentAcademicMutationGuard> _academicMutationGuards;
+
+  public ContentProgressService(
+    IApplicationDbContext context,
+    IProgramEnrollmentService enrollmentService,
+    IEnumerable<IProgramContentAcademicMutationGuard>? academicMutationGuards = null) {
     _context = context;
     _enrollmentService = enrollmentService;
+    _academicMutationGuards = academicMutationGuards ?? [];
   }
 
   /// <summary> Track user access to content </summary>
   public async Task<ContentProgress> TrackContentAccessAsync(Guid userId, Guid contentId, Guid programEnrollmentId) {
+    await EnsureAcademicMutationAllowedAsync(contentId, ProgramContentAcademicMutation.Start).ConfigureAwait(false);
     var progress = await _context.Set<ContentProgress>().FirstOrDefaultAsync(cp => cp.UserId == userId && cp.ContentId == contentId);
 
     if (progress == null) {
@@ -38,7 +44,8 @@ public class ContentProgressService : IContentProgressService {
   public async Task<ContentProgress> StartContentAsync(Guid userId, Guid contentId, Guid programEnrollmentId) { return await TrackContentAccessAsync(userId, contentId, programEnrollmentId).ConfigureAwait(false); }
 
   /// <summary> Update content progress </summary>
-  public async Task<ContentProgress> UpdateContentProgressAsync(Guid userId, Guid contentId, decimal progressPercentage, int? timeSpentSeconds = null) {
+  public async Task<ContentProgress> UpdateContentProgressAsync(Guid userId, Guid contentId, PercentValue progressPercentage, int? timeSpentSeconds = null) {
+    await EnsureAcademicMutationAllowedAsync(contentId, ProgramContentAcademicMutation.UpdateProgress).ConfigureAwait(false);
     var progress = await _context.Set<ContentProgress>().FirstOrDefaultAsync(cp => cp.UserId == userId && cp.ContentId == contentId);
 
     if (progress == null) { throw new ArgumentException("Content progress not found. Track access first.", nameof(contentId)); }
@@ -56,7 +63,8 @@ public class ContentProgressService : IContentProgressService {
   }
 
   /// <summary> Mark content as completed </summary>
-  public async Task<ContentProgress> CompleteContentAsync(Guid userId, Guid contentId, decimal? score = null, decimal? maxScore = null) {
+  public async Task<ContentProgress> CompleteContentAsync(Guid userId, Guid contentId, ScoreValue? score = null, ScoreValue? maxScore = null) {
+    await EnsureAcademicMutationAllowedAsync(contentId, ProgramContentAcademicMutation.Complete).ConfigureAwait(false);
     var progress = await _context.Set<ContentProgress>().FirstOrDefaultAsync(cp => cp.UserId == userId && cp.ContentId == contentId);
 
     if (progress == null) { throw new ArgumentException("Content progress not found. Track access first.", nameof(contentId)); }
@@ -84,18 +92,18 @@ public class ContentProgressService : IContentProgressService {
   }
 
   /// <summary> Calculate overall program progress percentage </summary>
-  public async Task<decimal> CalculateProgramProgressAsync(Guid userId, Guid programId) {
+  public async Task<PercentValue> CalculateProgramProgressAsync(Guid userId, Guid programId) {
     // Get all content in the program
     var totalContent = await _context.Set<ProgramContent>().Where(pc => pc.ProgramId == programId && pc.IsRequired).CountAsync();
 
-    if (totalContent == 0) return 0;
+    if (totalContent == 0) return PercentValue.Zero;
 
     // Get completed content
     var completedContent = await _context.Set<ContentProgress>().Join(_context.Set<ProgramContent>(), cp => cp.ContentId, pc => pc.Id, (cp, pc) => new { cp, pc })
                                          .Where(x => x.cp.UserId == userId && x.pc.ProgramId == programId && x.pc.IsRequired && x.cp.CompletionStatus == ContentCompletionStatus.Completed)
                                          .CountAsync();
 
-    return totalContent > 0 ? (decimal)completedContent / totalContent * 100 : 0;
+    return PercentValue.FromRatio(completedContent, totalContent);
   }
 
   /// <summary> Get next content item to access in program </summary>
@@ -177,8 +185,10 @@ public class ContentProgressService : IContentProgressService {
       CompletedContentItems = completed,
       InProgressContentItems = inProgress,
       NotStartedContentItems = notStarted,
-      AverageCompletionRate = totalContent > 0 ? (decimal)completed / totalContent * 100 : 0,
-      AverageScore = allProgress.Where(cp => cp.Score.HasValue).Any() ? allProgress.Where(cp => cp.Score.HasValue).Average(cp => cp.Score!.Value) : 0,
+      AverageCompletionRate = totalContent > 0
+        ? PercentValue.FromRatio(completed, totalContent)
+        : PercentValue.Zero,
+      AverageScore = ScoreValue.Average(allProgress.Where(cp => cp.Score.HasValue).Select(cp => cp.Score!.Value)),
       TotalTimeSpentHours = allProgress.Sum(cp => cp.TimeSpentSeconds) / 3600,
       CompletionByContentType = completionByType,
     };
@@ -198,7 +208,7 @@ public class ContentProgressService : IContentProgressService {
     var enrollment = await _context.Set<ProgramEnrollment>().FirstOrDefaultAsync(pe => pe.UserId == userId && pe.ProgramId == programId);
 
     if (enrollment != null) {
-      enrollment.ProgressPercentage = 0;
+      enrollment.ProgressPercentage = PercentValue.Zero;
       enrollment.CompletionStatus = CompletionStatus.NotStarted;
       enrollment.CompletedAt = null;
       enrollment.Touch();
@@ -206,6 +216,15 @@ public class ContentProgressService : IContentProgressService {
     }
 
     return true;
+  }
+
+  private async Task EnsureAcademicMutationAllowedAsync(Guid contentId, ProgramContentAcademicMutation mutation) {
+    var content = await _context.Set<ProgramContent>()
+      .AsNoTracking()
+      .FirstOrDefaultAsync(item => item.Id == contentId && item.DeletedAt == null)
+      .ConfigureAwait(false);
+    if (content is null) throw new ArgumentException("Content was not found.", nameof(contentId));
+    ProgramContentAcademicMutationGuard.EnsureAllowed(_academicMutationGuards, content, mutation);
   }
 
   /// <summary> Update program-level progress based on content completion </summary>

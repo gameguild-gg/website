@@ -1,5 +1,6 @@
 using GameGuild.CQRS;
 using GameGuild.Identity.Authorization;
+using GameGuild.Learning.Grading.Contracts;
 using Microsoft.EntityFrameworkCore;
 
 
@@ -12,7 +13,9 @@ namespace GameGuild.Learning.Courses;
 public class ContentInteractionService(
   IApplicationDbContext context,
   IRequestContextAccessor requestContextAccessor,
-  IPermissionQueryService? permissionQueryService = null) : IContentInteractionService {
+  IPermissionQueryService? permissionQueryService = null,
+  IEnumerable<IProgramContentAcademicMutationGuard>? academicGuards = null) : IContentInteractionService {
+  private readonly IEnumerable<IProgramContentAcademicMutationGuard> academicMutationGuards = academicGuards ?? [];
   /// <summary> Start a new content interaction (or resume existing one if not submitted) </summary>
   public async Task<ContentInteraction> StartContentAsync(Guid programUserId, Guid contentId) {
     if (context is DbContext dbContext &&
@@ -40,32 +43,27 @@ public class ContentInteractionService(
       .ConfigureAwait(false);
     if (programUser == null) throw new RequestValidationException("Active course enrollment was not found.");
 
-    var initialContentType = await context.Set<ProgramContent>()
+    var content = await context.Set<ProgramContent>()
       .AsNoTracking()
-      .Where(item => item.Id == contentId && item.ProgramId == programUser.ProgramId && item.DeletedAt == null)
-      .Select(item => (ProgramContentType?)item.Type)
-      .FirstOrDefaultAsync()
+      .FirstOrDefaultAsync(item =>
+        item.Id == contentId &&
+        item.ProgramId == programUser.ProgramId &&
+        item.DeletedAt == null)
       .ConfigureAwait(false);
-    if (!initialContentType.HasValue) throw new InvalidOperationException("Content does not belong to the enrolled course.");
+    if (content is null)
+      throw new InvalidOperationException("Content does not belong to the enrolled course.");
+    ProgramContentAcademicMutationGuard.EnsureAllowed(academicMutationGuards, content, ProgramContentAcademicMutation.Start);
 
-    var currentContentType = await context.Set<ProgramContent>()
-      .AsNoTracking()
-      .Where(item => item.Id == contentId && item.ProgramId == programUser.ProgramId && item.DeletedAt == null)
-      .Select(item => (ProgramContentType?)item.Type)
-      .FirstOrDefaultAsync()
-      .ConfigureAwait(false);
-    if (!currentContentType.HasValue) throw new InvalidOperationException("Content does not belong to the enrolled course.");
-
-    await using var surveyPolicyTransaction = LearningActivityContract.RequiresSurveyPolicyLock(currentContentType.Value)
+    await using var surveyPolicyTransaction = LearningActivityContract.RequiresSurveyPolicyLock(content.Type)
       ? await ProgramContentLifecycleDatabaseLock.AcquireAsync(context, [contentId]).ConfigureAwait(false)
       : null;
-    var content = LearningActivityContract.RequiresSurveyPolicyLock(currentContentType.Value)
+    content = LearningActivityContract.RequiresSurveyPolicyLock(content.Type)
       ? await context.Set<ProgramContent>()
         .AsNoTracking()
         .FirstOrDefaultAsync(item => item.Id == contentId && item.ProgramId == programUser.ProgramId && item.DeletedAt == null)
         .ConfigureAwait(false)
-      : null;
-    if (LearningActivityContract.RequiresSurveyPolicyLock(currentContentType.Value) && content is null)
+      : content;
+    if (content is null)
       throw new InvalidOperationException("Content does not belong to the enrolled course.");
 
     if (content?.Type == ProgramContentType.Survey && !LearningActivityContract.AllowsMultipleResponses(content)) {
@@ -106,7 +104,7 @@ public class ContentInteractionService(
     }
 
     // Create new interaction
-    var newInteraction = new ContentInteraction { ProgramUserId = programUserId, UserId = programUser.UserId, ContentId = contentId, Status = ProgressStatus.InProgress, FirstAccessedAt = SystemClock.UtcNow, LastAccessedAt = SystemClock.UtcNow, CompletionPercentage = 0 };
+    var newInteraction = new ContentInteraction { ProgramUserId = programUserId, UserId = programUser.UserId, ContentId = contentId, Status = ProgressStatus.InProgress, FirstAccessedAt = SystemClock.UtcNow, LastAccessedAt = SystemClock.UtcNow, CompletionPercentage = PercentValue.Zero };
 
     var created = await SaveNewActiveAttemptAsync(newInteraction).ConfigureAwait(false);
     await ProgramContentLifecycleDatabaseLock.CommitAsync(surveyPolicyTransaction).ConfigureAwait(false);
@@ -114,8 +112,9 @@ public class ContentInteractionService(
   }
 
   /// <summary> Update progress for an interaction (only if not submitted) </summary>
-  public async Task<ContentInteraction> UpdateProgressAsync(Guid interactionId, decimal completionPercentage) {
+  public async Task<ContentInteraction> UpdateProgressAsync(Guid interactionId, PercentValue completionPercentage) {
     var interaction = await GetInteractionByIdAsync(interactionId).ConfigureAwait(false);
+    ProgramContentAcademicMutationGuard.EnsureAllowed(academicMutationGuards, interaction.Content, ProgramContentAcademicMutation.UpdateProgress);
 
     if (interaction.SubmittedAt.HasValue) throw new InvalidOperationException("Cannot update progress on submitted interaction. Create a new interaction to continue work.");
 
@@ -157,6 +156,7 @@ public class ContentInteractionService(
     if (LearningActivityContract.RequiresSubmissionPolicyLock(currentContentType.Value))
       DetachTrackedSubmissionTarget(interactionId, submissionTarget.ContentId);
     var interaction = await GetInteractionForSubmissionAsync(interactionId).ConfigureAwait(false);
+    ProgramContentAcademicMutationGuard.EnsureAllowed(academicMutationGuards, interaction.Content, ProgramContentAcademicMutation.Submit);
 
     if (interaction.SubmittedAt.HasValue) throw new InvalidOperationException("Interaction has already been submitted and cannot be changed.");
 
@@ -195,6 +195,7 @@ public class ContentInteractionService(
   /// <summary> Mark content as completed </summary>
   public async Task<ContentInteraction> CompleteContentAsync(Guid interactionId) {
     var interaction = await GetInteractionByIdAsync(interactionId).ConfigureAwait(false);
+    ProgramContentAcademicMutationGuard.EnsureAllowed(academicMutationGuards, interaction.Content, ProgramContentAcademicMutation.Complete);
 
     if (interaction.SubmittedAt.HasValue) throw new InvalidOperationException("Cannot modify submitted interaction. Create a new interaction to continue work.");
 
@@ -484,7 +485,7 @@ public class ContentInteractionService(
       Status = ProgressStatus.InProgress,
       FirstAccessedAt = SystemClock.UtcNow,
       LastAccessedAt = SystemClock.UtcNow,
-      CompletionPercentage = 0,
+      CompletionPercentage = PercentValue.Zero,
       // Initialize with previous submission data as starting point
       SubmissionData = previousInteraction.SubmissionData,
     };

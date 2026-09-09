@@ -1,21 +1,30 @@
-import { getToken } from '@/auth';
+import { getToken } from "@/auth";
 import {
   createServerClient,
   GeneratedApi,
   type LearningAssessmentsAssessment,
-  type LearningAssessmentsAssessmentDefinition,
   type LearningAssessmentsAssessmentGroup,
   type LearningAssessmentsAssessmentPresentationMode,
   type LearningAssessmentsAssessmentScoreBucket,
   type LearningAssessmentsAssessmentSubmission,
   type LearningAssessmentsAssessmentType,
   type LearningAssessmentsCourseAssessmentAnalytics,
+  type LearningAssessmentsGradingContractsAttemptContributionMode,
+  type LearningAssessmentsGradingContractsContentCompletionMode,
+  type LearningAssessmentsGradingContractsResultReleaseMode,
   type LearningCertificatesCertificate,
   type LearningCertificatesCertificateTemplate,
   type LearningCertificatesCertificateTemplateDetail,
-} from '@game-guild/client';
-import { cache } from 'react';
-import { resolveCourseId } from './course';
+} from "@game-guild/client";
+import {
+  ACADEMIC_VALUE_SCALE,
+  parsePercentValue,
+  parseReviewMethods,
+  parseScoreValue,
+  type ReviewMethods,
+} from "@game-guild/grading";
+import { cache } from "react";
+import { resolveCourseId } from "./course";
 
 function isGuid(value: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
@@ -28,7 +37,10 @@ function isGuid(value: string): boolean {
 // =============================================================================
 
 function getApiClient() {
-  const apiUrl = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+  const apiUrl =
+    process.env.API_URL ||
+    process.env.NEXT_PUBLIC_API_URL ||
+    "http://localhost:8080";
   return createServerClient({
     baseUrl: apiUrl,
     auth: { getAccessToken: () => getToken() },
@@ -44,7 +56,8 @@ function createAssessmentsModule() {
 // =============================================================================
 
 export type AssessmentType = LearningAssessmentsAssessmentType;
-export type AssessmentPresentationMode = LearningAssessmentsAssessmentPresentationMode;
+export type AssessmentPresentationMode =
+  LearningAssessmentsAssessmentPresentationMode;
 
 export interface Assessment {
   id: string;
@@ -71,31 +84,47 @@ export interface Assessment {
   allowLateSubmissions: boolean;
   lateSubmissionDeadline: string | null;
   isAvailable: boolean;
-  // ponytail: [Flags] enum serializes as comma-separated string ("PeerReview,AutoGraded")
-  gradingMethods: string;
+  reviewMethods: ReviewMethods;
   groupSetId: string | null;
-  peerReviewsRequiredCount: number;
+  publishedDefinitionRevisionId: string | null;
+  reviewConfigurationCanonicalJson: string | null;
+  attemptContributionMode: LearningAssessmentsGradingContractsAttemptContributionMode | null;
+  contentCompletionMode: LearningAssessmentsGradingContractsContentCompletionMode;
+  resultReleaseMode: LearningAssessmentsGradingContractsResultReleaseMode;
+  resultReleaseScheduledFor: string | null;
+  version: number;
 }
 
-// Re-export so server-only callers can import everything from queries/assessments.
-// Client components MUST import from @/lib/learning/assessment-grading-methods
-// (this file pulls in next/headers via auth.ts → client/server boundary).
-export {
-  ASSESSMENT_GRADING_METHOD_FLAGS,
-  parseGradingMethods,
-  serializeGradingMethods,
-  type AssessmentGradingMethodFlag,
-} from "@/lib/learning/assessment-grading-methods";
+export interface AssessmentRevisionState {
+  revisionId: string;
+  revisionNumber: number;
+  authoringSourceHash: string;
+  executionSnapshotHash: string;
+  createdAt: string;
+}
+
+export interface AssessmentCapabilityState {
+  available: boolean;
+  code: string | null;
+  message: string | null;
+}
+
+export interface AssessmentAuthoringState {
+  assessmentId: string;
+  assessmentVersion: number;
+  lifecycle: "draft" | "candidate" | "published" | "changes-pending";
+  currentAuthoringSourceHash: string;
+  candidate: AssessmentRevisionState | null;
+  published: AssessmentRevisionState | null;
+  candidateMatchesDraft: boolean;
+  publishedMatchesDraft: boolean;
+  prepare: AssessmentCapabilityState;
+  publish: AssessmentCapabilityState;
+}
 
 export interface CourseAssessments {
   assessments: Assessment[];
   total: number;
-}
-
-export interface AssessmentDefinitionViewModel {
-  assessmentId: string;
-  definitionSchemaVersion: number;
-  definition: Record<string, unknown>;
 }
 
 export interface AssessmentGroup {
@@ -144,30 +173,53 @@ type AssessmentGroupFields = {
   assessmentGroupOrder?: number | null;
 };
 
+type AssessmentWireFields = {
+  maxScore?: unknown;
+  passingScore?: unknown;
+  reviewMethods?: unknown;
+  publishedDefinitionRevisionId?: string | null;
+  reviewConfigurationCanonicalJson?: string | null;
+  attemptContributionMode?: LearningAssessmentsGradingContractsAttemptContributionMode | null;
+  contentCompletionMode?: LearningAssessmentsGradingContractsContentCompletionMode | null;
+  resultReleaseMode?: LearningAssessmentsGradingContractsResultReleaseMode | null;
+  resultReleaseScheduledFor?: string | null;
+  version?: number;
+};
+
+function scoreToNumber(value: unknown, fallbackUnits: number): number {
+  return parseScoreValue(value ?? fallbackUnits) / ACADEMIC_VALUE_SCALE;
+}
+
+function percentToNumber(value: unknown, fallbackUnits: number): number {
+  return parsePercentValue(value ?? fallbackUnits) / ACADEMIC_VALUE_SCALE;
+}
+
 // =============================================================================
 // MAPPERS
 // =============================================================================
 
 function mapAssessment(dto: LearningAssessmentsAssessment): Assessment {
-  const groupFields = dto as LearningAssessmentsAssessment & AssessmentGroupFields;
-  const legacyFields = dto as LearningAssessmentsAssessment & {
-    passingScore?: number;
-  };
+  const groupFields = dto as LearningAssessmentsAssessment &
+    AssessmentGroupFields;
+  const wire = dto as LearningAssessmentsAssessment & AssessmentWireFields;
 
   return {
-    id: dto.id ?? '',
-    slug: dto.slug ?? dto.id ?? '',
-    courseId: dto.courseId ?? '',
+    id: dto.id ?? "",
+    slug: dto.slug ?? dto.id ?? "",
+    courseId: dto.courseId ?? "",
     contentId: dto.contentId ?? null,
     assessmentGroupId: groupFields.assessmentGroupId ?? null,
     assessmentGroupName: groupFields.assessmentGroupName ?? null,
-    assessmentGroupWeightPercent: groupFields.assessmentGroupWeightPercent ?? null,
+    assessmentGroupWeightPercent:
+      groupFields.assessmentGroupWeightPercent == null
+        ? null
+        : percentToNumber(groupFields.assessmentGroupWeightPercent, 0),
     assessmentGroupOrder: groupFields.assessmentGroupOrder ?? null,
-    title: dto.title ?? '',
+    title: dto.title ?? "",
     description: dto.description ?? null,
     type: normalizeAssessmentType(dto.type),
-    maxScore: dto.maxScore ?? 100,
-    passingScore: legacyFields.passingScore ?? 70,
+    maxScore: scoreToNumber(wire.maxScore, 10_000),
+    passingScore: scoreToNumber(wire.passingScore, 7_000),
     timeLimitMinutes: dto.timeLimitMinutes ?? null,
     maxAttempts: dto.maxAttempts ?? null,
     isRequired: dto.isRequired ?? true,
@@ -179,45 +231,65 @@ function mapAssessment(dto: LearningAssessmentsAssessment): Assessment {
     allowLateSubmissions: dto.allowLateSubmissions ?? false,
     lateSubmissionDeadline: dto.lateSubmissionDeadline ?? null,
     isAvailable: dto.isAvailable ?? true,
-    gradingMethods: dto.gradingMethods ?? "",
+    reviewMethods: parseReviewMethods(wire.reviewMethods ?? 8, {
+      allowDraft: true,
+    }),
     groupSetId: dto.groupSetId ?? null,
-    peerReviewsRequiredCount: dto.peerReviewsRequiredCount ?? 0,
+    publishedDefinitionRevisionId: wire.publishedDefinitionRevisionId ?? null,
+    reviewConfigurationCanonicalJson:
+      wire.reviewConfigurationCanonicalJson ?? null,
+    attemptContributionMode: wire.attemptContributionMode ?? null,
+    contentCompletionMode: wire.contentCompletionMode ?? "on-release-and-pass",
+    resultReleaseMode: wire.resultReleaseMode ?? "manual",
+    resultReleaseScheduledFor: wire.resultReleaseScheduledFor ?? null,
+    version: wire.version ?? 0,
   };
 }
 
-function normalizeAssessmentType(type: string | null | undefined): AssessmentType {
-  if (type === 'Exam') return 'Quiz';
+function normalizeAssessmentType(
+  type: string | null | undefined,
+): AssessmentType {
+  if (type === "Exam") return "Quiz";
   if (
-    type === 'Quiz' ||
-    type === 'Assignment' ||
-    type === 'Project' ||
-    type === 'PeerReview' ||
-    type === 'SelfAssessment'
+    type === "Quiz" ||
+    type === "Assignment" ||
+    type === "Project" ||
+    type === "PeerReview" ||
+    type === "SelfAssessment"
   ) {
     return type;
   }
 
-  return 'Quiz';
+  return "Quiz";
 }
 
-function normalizePresentationMode(mode: string | null | undefined): AssessmentPresentationMode {
-  return mode === 'Continuous' ? 'Continuous' : 'SingleStep';
+function normalizePresentationMode(
+  mode: string | null | undefined,
+): AssessmentPresentationMode {
+  return mode === "Continuous" ? "Continuous" : "SingleStep";
 }
 
-function mapAssessmentGroup(dto: LearningAssessmentsAssessmentGroup): AssessmentGroup {
+function mapAssessmentGroup(
+  dto: LearningAssessmentsAssessmentGroup,
+): AssessmentGroup {
+  const wire = dto as LearningAssessmentsAssessmentGroup & {
+    weightPercent?: unknown;
+  };
   return {
-    id: dto.id ?? '',
-    courseId: dto.courseId ?? '',
-    name: dto.name ?? '',
+    id: dto.id ?? "",
+    courseId: dto.courseId ?? "",
+    name: dto.name ?? "",
     description: dto.description ?? null,
-    weightPercent: dto.weightPercent ?? 0,
+    weightPercent: percentToNumber(wire.weightPercent, 0),
     order: dto.order ?? 0,
   };
 }
 
-function mapScoreBucket(dto: LearningAssessmentsAssessmentScoreBucket): AssessmentScoreBucket {
+function mapScoreBucket(
+  dto: LearningAssessmentsAssessmentScoreBucket,
+): AssessmentScoreBucket {
   return {
-    label: dto.label ?? 'Unscored',
+    label: dto.label ?? "Unscored",
     minPercent: dto.minPercent ?? 0,
     maxPercent: dto.maxPercent ?? 0,
     count: dto.count ?? 0,
@@ -228,22 +300,25 @@ function mapCourseAssessmentAnalytics(
   dto: LearningAssessmentsCourseAssessmentAnalytics,
 ): CourseAssessmentAnalytics {
   return {
-    courseId: dto.courseId ?? '',
+    courseId: dto.courseId ?? "",
     assessmentCount: dto.assessmentCount ?? 0,
     gradedCount: dto.gradedCount ?? 0,
     ungradedCount: dto.ungradedCount ?? 0,
-    averagePercent: dto.averagePercent ?? 0,
-    passRate: dto.passRate ?? 0,
+    averagePercent: percentToNumber(dto.averagePercent, 0),
+    passRate: percentToNumber(dto.passRate, 0),
     distribution: (dto.distribution ?? []).map(mapScoreBucket),
     groups: (dto.groups ?? []).map((group) => ({
       groupId: group.groupId ?? null,
-      groupName: group.groupName ?? 'Ungrouped',
-      weightPercent: group.weightPercent ?? null,
+      groupName: group.groupName ?? "Ungrouped",
+      weightPercent:
+        group.weightPercent == null
+          ? null
+          : percentToNumber(group.weightPercent, 0),
       assessmentCount: group.assessmentCount ?? 0,
       gradedCount: group.gradedCount ?? 0,
       ungradedCount: group.ungradedCount ?? 0,
-      averagePercent: group.averagePercent ?? 0,
-      passRate: group.passRate ?? 0,
+      averagePercent: percentToNumber(group.averagePercent, 0),
+      passRate: percentToNumber(group.passRate, 0),
       distribution: (group.distribution ?? []).map(mapScoreBucket),
     })),
   };
@@ -256,82 +331,102 @@ function mapCourseAssessmentAnalytics(
 /**
  * Fetch course assessments (conditional: hasAssessments).
  */
-export const getCourseAssessments = cache(async (courseId: string): Promise<CourseAssessments> => {
-  try {
-    const resolvedCourseId = await resolveCourseId(courseId);
-    const assessmentsModule = createAssessmentsModule();
-    const result = await assessmentsModule.getAssessmentsCourse(resolvedCourseId);
-    if (!result.ok) {
-      console.error('Failed to fetch assessments:', result.error);
+export const getCourseAssessments = cache(
+  async (courseId: string): Promise<CourseAssessments> => {
+    try {
+      const resolvedCourseId = await resolveCourseId(courseId);
+      const assessmentsModule = createAssessmentsModule();
+      const result =
+        await assessmentsModule.getAssessmentsCourse(resolvedCourseId);
+      if (!result.ok) {
+        console.error("Failed to fetch assessments:", result.error);
+        return { assessments: [], total: 0 };
+      }
+      const assessments = (result.data ?? []).map(mapAssessment);
+      return { assessments, total: assessments.length };
+    } catch (err) {
+      console.error("Error fetching course assessments:", err);
       return { assessments: [], total: 0 };
     }
-    const assessments = (result.data ?? []).map(mapAssessment);
-    return { assessments, total: assessments.length };
-  } catch (err) {
-    console.error('Error fetching course assessments:', err);
-    return { assessments: [], total: 0 };
-  }
-});
+  },
+);
 
-export const getCourseAssessmentGroups = cache(async (courseId: string): Promise<AssessmentGroup[]> => {
-  try {
-    const resolvedCourseId = await resolveCourseId(courseId);
-    const result = await createAssessmentsModule().getAssessmentsCourseGroups(resolvedCourseId);
-    return result.ok ? (result.data ?? []).map(mapAssessmentGroup) : [];
-  } catch (err) {
-    console.error('Error fetching course assessment groups:', err);
-    return [];
-  }
-});
+export const getCourseAssessmentGroups = cache(
+  async (courseId: string): Promise<AssessmentGroup[]> => {
+    try {
+      const resolvedCourseId = await resolveCourseId(courseId);
+      const result =
+        await createAssessmentsModule().getAssessmentsCourseGroups(
+          resolvedCourseId,
+        );
+      return result.ok ? (result.data ?? []).map(mapAssessmentGroup) : [];
+    } catch (err) {
+      console.error("Error fetching course assessment groups:", err);
+      return [];
+    }
+  },
+);
 
-export const getCourseAssessmentAnalytics = cache(async (courseId: string): Promise<CourseAssessmentAnalytics | null> => {
-  try {
-    const resolvedCourseId = await resolveCourseId(courseId);
-    const result = await createAssessmentsModule().getAssessmentsCourseAnalytics(resolvedCourseId);
-    return result.ok ? mapCourseAssessmentAnalytics(result.data) : null;
-  } catch (err) {
-    console.error('Error fetching course assessment analytics:', err);
-    return null;
-  }
-});
+export const getCourseAssessmentAnalytics = cache(
+  async (courseId: string): Promise<CourseAssessmentAnalytics | null> => {
+    try {
+      const resolvedCourseId = await resolveCourseId(courseId);
+      const result =
+        await createAssessmentsModule().getAssessmentsCourseAnalytics(
+          resolvedCourseId,
+        );
+      return result.ok ? mapCourseAssessmentAnalytics(result.data) : null;
+    } catch (err) {
+      console.error("Error fetching course assessment analytics:", err);
+      return null;
+    }
+  },
+);
 
 /**
  * Fetch single assessment by ID.
  */
-export const getAssessment = cache(async (courseId: string, assessmentIdOrSlug: string): Promise<Assessment | null> => {
-  try {
-    if (isGuid(assessmentIdOrSlug)) {
-      const assessmentsModule = createAssessmentsModule();
-      const result = await assessmentsModule.getAssessments(assessmentIdOrSlug);
-      if (!result.ok) {
-        return null;
+export const getAssessment = cache(
+  async (
+    courseId: string,
+    assessmentIdOrSlug: string,
+  ): Promise<Assessment | null> => {
+    try {
+      if (isGuid(assessmentIdOrSlug)) {
+        const assessmentsModule = createAssessmentsModule();
+        const result =
+          await assessmentsModule.getAssessments(assessmentIdOrSlug);
+        if (!result.ok) {
+          return null;
+        }
+        return mapAssessment(result.data);
       }
-      return mapAssessment(result.data);
+
+      const assessments = await getCourseAssessments(courseId);
+      return (
+        assessments.assessments.find((a) => a.slug === assessmentIdOrSlug) ??
+        null
+      );
+    } catch {
+      return null;
     }
+  },
+);
 
-    const assessments = await getCourseAssessments(courseId);
-    return assessments.assessments.find((a) => a.slug === assessmentIdOrSlug) ?? null;
-  } catch {
-    return null;
-  }
-});
-
-export const getAssessmentDefinition = cache(async (assessmentId: string): Promise<AssessmentDefinitionViewModel | null> => {
-  try {
-    const result = await createAssessmentsModule().getAssessmentsDefinition(assessmentId);
-    if (!result.ok) return null;
-
-    const dto: LearningAssessmentsAssessmentDefinition = result.data;
-    return {
-      assessmentId: dto.assessmentId ?? assessmentId,
-      definitionSchemaVersion: dto.definitionSchemaVersion ?? 1,
-      definition: dto.definition ?? { order: [], blocks: {} },
-    };
-  } catch (err) {
-    console.error('Error fetching assessment definition:', err);
-    return null;
-  }
-});
+export const getAssessmentAuthoringState = cache(
+  async (assessmentId: string): Promise<AssessmentAuthoringState | null> => {
+    try {
+      const result = await getApiClient().request<AssessmentAuthoringState>({
+        method: "GET",
+        path: `/v1.0/assessments/${assessmentId}/authoring-state`,
+        requiresAuth: true,
+      });
+      return result.ok ? result.data : null;
+    } catch {
+      return null;
+    }
+  },
+);
 
 /**
  * Fetch all submissions for an assessment (instructor view).
@@ -341,16 +436,21 @@ export const getAssessmentDefinition = cache(async (assessmentId: string): Promi
  * generated DTO) — caller renders.
  */
 export const getAssessmentSubmissions = cache(
-  async (assessmentId: string): Promise<LearningAssessmentsAssessmentSubmission[]> => {
+  async (
+    assessmentId: string,
+  ): Promise<LearningAssessmentsAssessmentSubmission[]> => {
     try {
-      const result = await createAssessmentsModule().getAssessmentsSubmissionsForGetAssessmentsByAssessmentIdSubmissions(assessmentId);
+      const result =
+        await createAssessmentsModule().getAssessmentsSubmissionsForGetAssessmentsByAssessmentIdSubmissions(
+          assessmentId,
+        );
       if (!result.ok) {
-        console.error('Failed to fetch assessment submissions:', result.error);
+        console.error("Failed to fetch assessment submissions:", result.error);
         return [];
       }
       return result.data ?? [];
     } catch (err) {
-      console.error('Error fetching assessment submissions:', err);
+      console.error("Error fetching assessment submissions:", err);
       return [];
     }
   },
@@ -361,7 +461,7 @@ export interface CertificateTemplate {
   courseId: string;
   name: string;
   description: string | null;
-  status: 'draft' | 'active' | 'archived';
+  status: "draft" | "active" | "archived";
   isDefault: boolean;
   issuedCount: number;
   createdAt: string;
@@ -385,17 +485,19 @@ function createCertificatesModule() {
 }
 
 function mapCertificateTemplate(
-  dto: LearningCertificatesCertificateTemplate | LearningCertificatesCertificateTemplateDetail,
+  dto:
+    | LearningCertificatesCertificateTemplate
+    | LearningCertificatesCertificateTemplateDetail,
   issuedCount = 0,
 ): CertificateTemplate {
   const createdAt = dto.createdAt ?? new Date().toISOString();
 
   return {
-    id: dto.id ?? '',
-    courseId: dto.courseId ?? '',
-    name: dto.name ?? '',
+    id: dto.id ?? "",
+    courseId: dto.courseId ?? "",
+    name: dto.name ?? "",
     description: dto.description ?? null,
-    status: dto.isActive === false ? 'archived' : 'active',
+    status: dto.isActive === false ? "archived" : "active",
     isDefault: dto.isDefault === true,
     issuedCount,
     createdAt,
@@ -403,36 +505,42 @@ function mapCertificateTemplate(
   };
 }
 
-export const getCourseCertificates = cache(async (courseId: string): Promise<CourseCertificates> => {
-  const resolvedCourseId = await resolveCourseId(courseId);
-  const certificates = createCertificatesModule();
-  const [templatesResult, issuedCertificatesResult] = await Promise.all([
-    certificates.getApiCertificatesTemplatesCourse(resolvedCourseId),
-    certificates.getApiCertificatesCourse(resolvedCourseId),
-  ]);
+export const getCourseCertificates = cache(
+  async (courseId: string): Promise<CourseCertificates> => {
+    const resolvedCourseId = await resolveCourseId(courseId);
+    const certificates = createCertificatesModule();
+    const [templatesResult, issuedCertificatesResult] = await Promise.all([
+      certificates.getApiCertificatesTemplatesCourse(resolvedCourseId),
+      certificates.getApiCertificatesCourse(resolvedCourseId),
+    ]);
 
-  const templates = templatesResult.ok ? templatesResult.data : [];
-  const issuedCertificates: LearningCertificatesCertificate[] = issuedCertificatesResult.ok
-    ? issuedCertificatesResult.data
-    : [];
-  const issuedCount = issuedCertificates.length;
-  const mapped = templates.map((template) => mapCertificateTemplate(template, issuedCount));
+    const templates = templatesResult.ok ? templatesResult.data : [];
+    const issuedCertificates: LearningCertificatesCertificate[] =
+      issuedCertificatesResult.ok ? issuedCertificatesResult.data : [];
+    const issuedCount = issuedCertificates.length;
+    const mapped = templates.map((template) =>
+      mapCertificateTemplate(template, issuedCount),
+    );
 
-  return { templates: mapped, total: mapped.length, issuedCount };
-});
+    return { templates: mapped, total: mapped.length, issuedCount };
+  },
+);
 
-export const getCertificateTemplate = cache(async (templateId: string): Promise<CertificateTemplateDetail | null> => {
-  const result = await createCertificatesModule().getApiCertificatesTemplates(templateId);
-  if (!result.ok) return null;
+export const getCertificateTemplate = cache(
+  async (templateId: string): Promise<CertificateTemplateDetail | null> => {
+    const result =
+      await createCertificatesModule().getApiCertificatesTemplates(templateId);
+    if (!result.ok) return null;
 
-  const template = result.data;
-  return {
-    ...mapCertificateTemplate(template),
-    previewUrl: `/api/certificates/templates/${template.id ?? templateId}`,
-    templateHtml: template.templateHtml ?? '',
-    templateStyles: template.templateStyles ?? null,
-  };
-});
+    const template = result.data;
+    return {
+      ...mapCertificateTemplate(template),
+      previewUrl: `/api/certificates/templates/${template.id ?? templateId}`,
+      templateHtml: template.templateHtml ?? "",
+      templateStyles: template.templateStyles ?? null,
+    };
+  },
+);
 
 // =============================================================================
 // CODING DEFINITION (public — hidden cases already stripped server-side)
@@ -457,13 +565,13 @@ export const getCodingDefinitionPublic = cache(
     try {
       const client = getApiClient();
       const result = await client.request<CodingDefinition>({
-        method: 'GET',
+        method: "GET",
         path: `/v1.0/assessments/${assessmentId}/coding-definition/public`,
       });
       if (!result.ok) return null;
       return result.data;
     } catch (err) {
-      console.error('Error fetching public coding definition:', err);
+      console.error("Error fetching public coding definition:", err);
       return null;
     }
   },
@@ -495,24 +603,26 @@ export const getCourseGroupSets = cache(
   async (courseId: string): Promise<CourseGroupSetSummary[]> => {
     try {
       const resolvedCourseId = await resolveCourseId(courseId);
-      const module = new GeneratedApi.LearningAssessmentsGroupSetsModule(getApiClient());
+      const module = new GeneratedApi.LearningAssessmentsGroupSetsModule(
+        getApiClient(),
+      );
       const result = await module.getCoursesGroupSets(resolvedCourseId);
       if (!result.ok) {
-        console.error('Failed to fetch course group sets:', result.error);
+        console.error("Failed to fetch course group sets:", result.error);
         return [];
       }
       return (result.data ?? []).map((set) => ({
-        id: set.id ?? '',
-        name: set.name ?? '',
+        id: set.id ?? "",
+        name: set.name ?? "",
         groups: (set.groups ?? []).map((group) => ({
-          id: group.id ?? '',
-          name: group.name ?? '',
+          id: group.id ?? "",
+          name: group.name ?? "",
           capacity: group.capacity ?? 0,
           memberCount: group.memberCount ?? 0,
         })),
       }));
     } catch (err) {
-      console.error('Error fetching course group sets:', err);
+      console.error("Error fetching course group sets:", err);
       return [];
     }
   },
@@ -522,24 +632,29 @@ export const getGroupSetGroups = cache(
   async (courseId: string, setId: string): Promise<CourseGroupDetail[]> => {
     try {
       const resolvedCourseId = await resolveCourseId(courseId);
-      const module = new GeneratedApi.LearningAssessmentsGroupSetsModule(getApiClient());
-      const result = await module.getCoursesGroupSetsGroups(resolvedCourseId, setId);
+      const module = new GeneratedApi.LearningAssessmentsGroupSetsModule(
+        getApiClient(),
+      );
+      const result = await module.getCoursesGroupSetsGroups(
+        resolvedCourseId,
+        setId,
+      );
       if (!result.ok) {
-        console.error('Failed to fetch group set groups:', result.error);
+        console.error("Failed to fetch group set groups:", result.error);
         return [];
       }
       return (result.data ?? []).map((group) => ({
-        id: group.id ?? '',
-        name: group.name ?? '',
+        id: group.id ?? "",
+        name: group.name ?? "",
         capacity: group.capacity ?? 0,
         memberCount: group.memberCount ?? 0,
         members: (group.members ?? []).map((member) => ({
-          userId: member.userId ?? '',
-          displayName: member.displayName ?? member.userId ?? '',
+          userId: member.userId ?? "",
+          displayName: member.displayName ?? member.userId ?? "",
         })),
       }));
     } catch (err) {
-      console.error('Error fetching group set groups:', err);
+      console.error("Error fetching group set groups:", err);
       return [];
     }
   },
@@ -566,19 +681,23 @@ export interface AssessmentRubricView {
 }
 
 export const getAssessmentRubric = cache(
-  async (assessmentId: string): Promise<{ rubric: AssessmentRubricView | null; locked: boolean }> => {
+  async (
+    assessmentId: string,
+  ): Promise<{ rubric: AssessmentRubricView | null; locked: boolean }> => {
     try {
-      const module = new GeneratedApi.LearningAssessmentsRubricsModule(getApiClient());
+      const module = new GeneratedApi.LearningAssessmentsRubricsModule(
+        getApiClient(),
+      );
       const result = await module.getAssessmentsRubric(assessmentId);
       if (result.ok) {
         const rubric = result.data;
         return {
           rubric: {
-            id: rubric.id ?? '',
-            title: rubric.title ?? '',
+            id: rubric.id ?? "",
+            title: rubric.title ?? "",
             criteria: (rubric.criteria ?? []).map((criterion) => ({
-              description: criterion.description ?? '',
-              points: criterion.points ?? 0,
+              description: criterion.description ?? "",
+              points: scoreToNumber(criterion.points, 0),
               order: criterion.order ?? 0,
             })),
           },
@@ -592,7 +711,7 @@ export const getAssessmentRubric = cache(
       }
       return { rubric: null, locked: false };
     } catch (err) {
-      console.error('Error fetching assessment rubric:', err);
+      console.error("Error fetching assessment rubric:", err);
       return { rubric: null, locked: false };
     }
   },

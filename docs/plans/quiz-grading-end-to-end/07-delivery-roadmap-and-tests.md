@@ -70,7 +70,7 @@ No test run, cada cenário deve verificar:
 8. finalização direta ou espera pelo instrutor;
 9. isolamento de efeitos acadêmicos;
 10. idempotência;
-11. string decimal canônica e regra de passing score;
+11. inteiro de unidades e regra de passing score;
 12. test run não ativa a revisão nem emite evento acadêmico;
 13. capability `AuthorTest` não é aceita como `OfficialSubmission`;
 14. publish, quando a capability oficial existir, ativa o mesmo revision ID
@@ -290,8 +290,9 @@ resetado de forma coordenada. Preservar seus dados não faz parte deste plano.
 - [ ] lifecycle de publicação explícito e independente de visibility;
 - [ ] capability `OfficialSubmission` obrigatória para publish;
 - [ ] rotas learner/public sem DTO autoral antes de qualquer publish;
-- [ ] score em string canônica e passing score sem conflito de ownership;
-- [ ] peso e percentual acadêmicos em strings canônicas, sem `decimal` no banco;
+- [ ] score em inteiro de unidades e passing score sem conflito de ownership;
+- [ ] peso e percentual acadêmicos em inteiros de escala `100`, sem `decimal`
+  no banco;
 - [ ] ownership separado entre content grading e assessment execution policy;
 - [ ] `AuthoringSourceHash` e `ExecutionSnapshotHash` reproduzíveis entre C# e
   TypeScript, com responsabilidades distintas;

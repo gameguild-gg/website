@@ -1,10 +1,12 @@
 
-﻿namespace GameGuild.Learning.Courses;
+using GameGuild.Learning.Grading.Contracts;
 
-public sealed record UpdateProgressRequest(Guid ProgramUserId, Guid ContentId, decimal CompletionPercentage) {
+namespace GameGuild.Learning.Courses;
+
+public sealed record UpdateProgressRequest(Guid ProgramUserId, Guid ContentId, PercentValue CompletionPercentage) {
   public Guid ProgramUserId { get; init; } = ProgramUserId;
 
   public Guid ContentId { get; init; } = ContentId;
 
-  public decimal CompletionPercentage { get; init; } = CompletionPercentage;
+  public PercentValue CompletionPercentage { get; init; } = CompletionPercentage;
 }

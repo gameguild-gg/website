@@ -14,11 +14,13 @@ import type {
   Assessment,
   AssessmentGroup,
 } from "@/lib/learning/queries/assessments";
+import { createReviewMethods } from "@game-guild/grading";
 
 const routerMocks = vi.hoisted(() => ({
   back: vi.fn(),
   push: vi.fn(),
   refresh: vi.fn(),
+  replace: vi.fn(),
 }));
 
 Object.defineProperties(HTMLElement.prototype, {
@@ -63,6 +65,7 @@ vi.mock("@/lib/learning/actions", () => ({
 
 const assessment = {
   id: "assessment-1",
+  slug: "assessment-1",
   courseId: "course-1",
   contentId: null,
   assessmentGroupId: null,
@@ -85,9 +88,15 @@ const assessment = {
   allowLateSubmissions: false,
   lateSubmissionDeadline: null,
   isAvailable: true,
-  gradingMethods: "InstructorGraded",
+  reviewMethods: createReviewMethods("InstructorReview"),
   groupSetId: null,
-  peerReviewsRequiredCount: 0,
+  publishedDefinitionRevisionId: null,
+  reviewConfigurationCanonicalJson: null,
+  attemptContributionMode: null,
+  contentCompletionMode: "on-release-and-pass",
+  resultReleaseMode: "manual",
+  resultReleaseScheduledFor: null,
+  version: 1,
 } satisfies Assessment;
 
 const groups = [] satisfies AssessmentGroup[];
@@ -102,7 +111,7 @@ describe("AssessmentEditor policy sections", () => {
     vi.clearAllMocks();
     vi.mocked(updateAssessment).mockResolvedValue({
       success: true,
-      data: null,
+      data: { version: 2 },
     });
     vi.mocked(deleteAssessment).mockResolvedValue({
       success: true,
@@ -112,7 +121,7 @@ describe("AssessmentEditor policy sections", () => {
     vi.mocked(deleteRubric).mockResolvedValue({ success: true, data: null });
   });
 
-  it("peer review toggle reveals required reviews defaulting to 3 (min 1)", async () => {
+  it("selecting peer review reveals its required-review policy", async () => {
     const user = userEvent.setup();
     render(
       <AssessmentEditor
@@ -122,30 +131,43 @@ describe("AssessmentEditor policy sections", () => {
       />,
     );
 
-    expect(screen.queryByLabelText(/required reviews/i)).not.toBeInTheDocument();
+    expect(
+      screen.queryByLabelText(/required peer reviews/i),
+    ).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole("switch", { name: /peer review/i }));
+    await user.click(screen.getByRole("combobox", { name: /primary review/i }));
+    await user.click(await screen.findByRole("option", { name: "Peer review" }));
 
-    const countInput = screen.getByLabelText(/required reviews/i);
+    const countInput = screen.getByLabelText(/required peer reviews/i);
     expect(countInput).toHaveValue(3);
     expect(countInput).toHaveAttribute("min", "1");
 
-    await waitFor(() => {
-      expect(updateAssessment).toHaveBeenCalledWith({
-        courseId: "course-1",
-        assessmentId: "assessment-1",
-        gradingMethods: "InstructorGraded,PeerReview",
-        peerReviewsRequiredCount: 3,
-      });
-    });
+    await user.click(screen.getByRole("button", { name: /save changes/i }));
+    await waitFor(() => expect(updateAssessment).toHaveBeenCalled());
+    const call = vi.mocked(updateAssessment).mock.calls.at(-1)![0];
+    expect(call.reviewMethods).toBe(1);
+    expect(JSON.parse(call.reviewConfigurationCanonicalJson!).peer)
+      .toMatchObject({ reviewsRequiredPerSubmission: 3 });
   });
 
-  it("turning peer review off removes the flag but keeps the count server-side", async () => {
+  it("switching away from peer review removes its owned configuration", async () => {
     const user = userEvent.setup();
     const withPeer = {
       ...assessment,
-      gradingMethods: "InstructorGraded,PeerReview",
-      peerReviewsRequiredCount: 4,
+      reviewMethods: createReviewMethods("PeerReview", true),
+      reviewConfigurationCanonicalJson: JSON.stringify({
+        schemaVersion: 1,
+        peer: {
+          reviewsPerReviewer: 4,
+          reviewsRequiredPerSubmission: 4,
+          minimumReviewsToFinalize: 4,
+          aggregation: "median",
+          claimLeaseMinutes: 15,
+          evidenceWindowMinutes: 1440,
+          onInsufficientEvidence: "await-instructor",
+        },
+        instructor: { requireOverrideReason: false },
+      }),
     };
     render(
       <AssessmentEditor
@@ -155,20 +177,16 @@ describe("AssessmentEditor policy sections", () => {
       />,
     );
 
-    expect(screen.getByLabelText(/required reviews/i)).toHaveValue(4);
+    expect(screen.getByLabelText(/required peer reviews/i)).toHaveValue(4);
 
-    await user.click(screen.getByRole("switch", { name: /peer review/i }));
+    await user.click(screen.getByRole("combobox", { name: /primary review/i }));
+    await user.click(await screen.findByRole("option", { name: "Instructor review" }));
+    await user.click(screen.getByRole("button", { name: /save changes/i }));
 
-    await waitFor(() => {
-      expect(updateAssessment).toHaveBeenCalledWith({
-        courseId: "course-1",
-        assessmentId: "assessment-1",
-        gradingMethods: "InstructorGraded",
-      });
-    });
-    expect(
-      vi.mocked(updateAssessment).mock.calls.at(-1)?.[0],
-    ).not.toHaveProperty("peerReviewsRequiredCount");
+    await waitFor(() => expect(updateAssessment).toHaveBeenCalled());
+    const call = vi.mocked(updateAssessment).mock.calls.at(-1)![0];
+    expect(call.reviewMethods).toBe(8);
+    expect(JSON.parse(call.reviewConfigurationCanonicalJson!).peer).toBeNull();
   });
 
   it("group assignment toggle reveals the group set dropdown with course sets", async () => {
@@ -198,6 +216,7 @@ describe("AssessmentEditor policy sections", () => {
       expect(updateAssessment).toHaveBeenCalledWith({
         courseId: "course-1",
         assessmentId: "assessment-1",
+        expectedVersion: 1,
         groupSetId: "set-1",
         clearGroupSetId: false,
       });
@@ -226,6 +245,7 @@ describe("AssessmentEditor policy sections", () => {
       expect(updateAssessment).toHaveBeenCalledWith({
         courseId: "course-1",
         assessmentId: "assessment-1",
+        expectedVersion: 1,
         groupSetId: null,
         clearGroupSetId: true,
       });

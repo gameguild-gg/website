@@ -1,4 +1,5 @@
 using GameGuild.Learning.Abstractions;
+using GameGuild.Learning.Grading.Contracts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -111,19 +112,19 @@ public class ProgramEnrollmentService : IProgramEnrollmentService {
   }
 
   /// <summary> Update enrollment progress </summary>
-  public async Task<ProgramEnrollment> UpdateProgressAsync(Guid enrollmentId, decimal progressPercentage) {
+  public async Task<ProgramEnrollment> UpdateProgressAsync(Guid enrollmentId, PercentValue progressPercentage) {
     var enrollment = await _context.Set<ProgramEnrollment>().FirstOrDefaultAsync(pe => pe.Id == enrollmentId);
 
     if (enrollment == null) throw new ArgumentException("Enrollment not found", nameof(enrollmentId));
 
-    enrollment.ProgressPercentage = Math.Max(0, Math.Min(100, progressPercentage));
+    enrollment.ProgressPercentage = progressPercentage;
 
     // Update completion status based on progress
-    if (enrollment.ProgressPercentage == 100 && enrollment.CompletionStatus != CompletionStatus.Completed) {
+    if (enrollment.ProgressPercentage.CompareTo(PercentValue.Hundred) == 0 && enrollment.CompletionStatus != CompletionStatus.Completed) {
       enrollment.CompletionStatus = CompletionStatus.Completed;
       enrollment.CompletedAt = SystemClock.UtcNow;
     }
-    else if (enrollment.ProgressPercentage > 0 && enrollment.CompletionStatus == CompletionStatus.NotStarted) { enrollment.CompletionStatus = CompletionStatus.InProgress; }
+    else if (enrollment.ProgressPercentage.CompareTo(PercentValue.Zero) > 0 && enrollment.CompletionStatus == CompletionStatus.NotStarted) { enrollment.CompletionStatus = CompletionStatus.InProgress; }
 
     enrollment.Touch();
     await _context.SaveChangesAsync().ConfigureAwait(false);
@@ -132,7 +133,7 @@ public class ProgramEnrollmentService : IProgramEnrollmentService {
   }
 
   /// <summary> Mark enrollment as completed </summary>
-  public async Task<ProgramEnrollment> CompleteEnrollmentAsync(Guid enrollmentId, decimal? finalGrade = null) {
+  public async Task<ProgramEnrollment> CompleteEnrollmentAsync(Guid enrollmentId, PercentValue? finalGrade = null) {
     var enrollment = await _context.Set<ProgramEnrollment>().FirstOrDefaultAsync(pe => pe.Id == enrollmentId);
 
     if (enrollment == null) throw new ArgumentException("Enrollment not found", nameof(enrollmentId));
@@ -173,9 +174,13 @@ public class ProgramEnrollmentService : IProgramEnrollmentService {
       ActiveEnrollments = activeEnrollments,
       CompletedEnrollments = completedEnrollments,
       CancelledEnrollments = cancelledEnrollments,
-      AverageProgressPercentage = totalEnrollments > 0 ? enrollments.Average(e => e.ProgressPercentage) : 0,
-      CompletionRate = totalEnrollments > 0 ? (decimal)completedEnrollments / totalEnrollments * 100 : 0,
-      AverageFinalGrade = enrollments.Where(e => e.FinalGrade.HasValue).Any() ? enrollments.Where(e => e.FinalGrade.HasValue).Average(e => e.FinalGrade!.Value) : null,
+      AverageProgressPercentage = PercentValue.Average(enrollments.Select(e => e.ProgressPercentage)),
+      CompletionRate = totalEnrollments > 0
+        ? PercentValue.FromRatio(completedEnrollments, totalEnrollments)
+        : PercentValue.Zero,
+      AverageFinalGrade = enrollments.Any(e => e.FinalGrade.HasValue)
+        ? PercentValue.Average(enrollments.Where(e => e.FinalGrade.HasValue).Select(e => e.FinalGrade!.Value))
+        : null,
       CertificatesIssued = enrollments.Count(e => e.CertificateIssued),
     };
   }

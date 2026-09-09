@@ -20,8 +20,8 @@ const rubriclessQueue = {
     id: "assessment-1",
     title: "Plain assignment",
     type: "Assignment",
-    maxScore: 100,
-    gradingMethods: "InstructorGraded",
+    maxScore: 10_000,
+    reviewMethods: 8,
     groupSetId: null,
     peerReviewsRequiredCount: 0,
     hasRubric: false,
@@ -53,7 +53,7 @@ const rubricQueue = {
     rubric: {
       id: "rubric-1",
       title: "Rubric",
-      criteria: [{ id: "c1", description: "Correctness", points: 60, order: 0 }],
+      criteria: [{ id: "c1", description: "Correctness", points: 6_000, order: 0 }],
     },
   },
 };

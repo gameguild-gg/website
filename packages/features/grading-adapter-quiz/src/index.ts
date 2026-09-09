@@ -1,3 +1,4 @@
+export * from "./adapter";
 export * from "./capabilities";
 export * from "./contracts";
 export * from "./delivery";

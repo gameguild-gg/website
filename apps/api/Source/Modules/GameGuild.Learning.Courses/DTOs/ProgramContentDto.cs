@@ -46,6 +46,8 @@ public class ProgramContentDto {
 
   public DateTime? UpdatedAt { get; set; }
 
+  public int Version { get; set; }
+
   // Navigation properties
   public string? ProgramTitle { get; set; }
 

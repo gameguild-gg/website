@@ -5,6 +5,8 @@ using GameGuild.Notifications.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using NotificationPriority = GameGuild.Notifications.NotificationPriority;
+using GameGuild.Learning.Assessments.Grading.Contracts;
+using GameGuild.Learning.Grading.Contracts;
 
 namespace GameGuild.Learning.Assessments;
 
@@ -60,7 +62,7 @@ public class PeerReviewAssignmentService : IPeerReviewAssignmentService
                 return Result.Failure<PeerReviewClaimResult>(Error.NotFound("Assessment", "Assessment not found"));
             }
 
-            if ((assessment.GradingMethods & AssessmentGradingMethod.PeerReview) == 0)
+            if (!assessment.ReviewMethods.HasFlag(ReviewMethods.PeerReview))
             {
                 return Result.Failure<PeerReviewClaimResult>(Error.Validation(
                     "PeerReview.NotEnabled",
@@ -85,7 +87,7 @@ public class PeerReviewAssignmentService : IPeerReviewAssignmentService
                                  r.ReviewerUserId == actorUserId &&
                                  r.DeletedAt == null)
                 .ConfigureAwait(false);
-            if (assignedCount >= assessment.PeerReviewsRequiredCount)
+            if (assignedCount >= assessment.GetRequiredPeerReviewCount())
             {
                 return Result.Failure<PeerReviewClaimResult>(Error.Validation(
                     "PeerReview.QuotaReached",
@@ -126,7 +128,7 @@ public class PeerReviewAssignmentService : IPeerReviewAssignmentService
     }
 
     public async Task<Result<AssessmentPeerReview>> SubmitReviewAsync(
-        AssessmentPeerReview review, int score, string feedback, string? rubricScores)
+        AssessmentPeerReview review, ScoreValue score, string feedback, string? rubricScores)
     {
         try
         {

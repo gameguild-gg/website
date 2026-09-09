@@ -23,16 +23,22 @@ import {
   type LearningWorkspacesLearnerScheduleEntry,
   type ProjectsProjectApiOutput,
 } from "@game-guild/client";
+import {
+  optionalPercentUnitsToPercentage,
+  optionalScoreUnitsToPoints,
+  percentUnitsToPercentage,
+  scoreUnitsToPoints,
+} from "@/lib/learning/academic-values";
 
 type LearnerCertificateRecord = LearningCertificatesCertificate & {
   verificationUrl?: string | null;
 };
 
-type AssessmentWithLegacyPassingScore = LearningAssessmentsAssessment & {
+type AssessmentWithPassingScore = LearningAssessmentsAssessment & {
   passingScore?: number;
 };
 
-type LearnerAssessmentWithLegacyPassingScore =
+type LearnerAssessmentWithPassingScore =
   LearningWorkspacesLearnerAssessment & {
     passingScore?: number;
   };
@@ -112,9 +118,12 @@ function mapAssessment(
   assessment: LearningWorkspacesLearnerAssessment,
   courseId: string,
   groupNames: ReadonlyMap<string, string>,
-): AssessmentWithLegacyPassingScore {
+): AssessmentWithPassingScore {
   const groupId = assessment.groupId ?? null;
-  const legacyAssessment = assessment as LearnerAssessmentWithLegacyPassingScore;
+  const assessmentWithPassingScore = assessment as LearnerAssessmentWithPassingScore;
+  const passingScore = optionalScoreUnitsToPoints(
+    assessmentWithPassingScore.passingScore,
+  );
 
   return {
     id: assessment.assessmentId,
@@ -125,8 +134,8 @@ function mapAssessment(
     type: (assessment.type === "Exam"
       ? "Quiz"
       : assessment.type) as LearningAssessmentsAssessment["type"],
-    maxScore: assessment.maxScore,
-    passingScore: legacyAssessment.passingScore,
+    maxScore: scoreUnitsToPoints(assessment.maxScore ?? 0),
+    passingScore: passingScore ?? undefined,
     timeLimitMinutes: assessment.timeLimitMinutes,
     maxAttempts: assessment.maxAttempts,
     isRequired: assessment.isRequired,
@@ -154,7 +163,7 @@ function mapSubmission(
     assessmentId: submission.assessmentId,
     enrollmentId: submission.enrollmentId,
     attemptNumber: submission.attemptNumber,
-    score: submission.score,
+    score: optionalScoreUnitsToPoints(submission.score),
     passed: submission.passed,
     startedAt: submission.startedAt,
     submittedAt: submission.submittedAt,
@@ -241,7 +250,7 @@ function mapWorkspaceContext(
               id: group.groupId,
               name: group.name ?? "Assessment group",
               description: group.description,
-              weightPercent: group.weightPercent ?? 0,
+              weightPercent: percentUnitsToPercentage(group.weightPercent ?? 0),
               order: group.order ?? 0,
             },
           ]
@@ -316,7 +325,7 @@ export async function getMyLearnerRecords(): Promise<LearnerCourseRecord[]> {
                 id: group.groupId,
                 name: group.name ?? "Assessment group",
                 description: group.description,
-                weightPercent: group.weightPercent ?? 0,
+                weightPercent: percentUnitsToPercentage(group.weightPercent ?? 0),
                 order: group.order ?? 0,
               },
             ]
@@ -345,10 +354,13 @@ export async function getMyLearnerRecords(): Promise<LearnerCourseRecord[]> {
               type: (item.type === "Exam"
                 ? "Quiz"
                 : item.type) as LearningAssessmentsAssessment["type"],
-              maxScore: item.maxScore,
-              passingScore: (
-                item as typeof item & { passingScore?: number }
-              ).passingScore,
+              maxScore: scoreUnitsToPoints(item.maxScore ?? 0),
+              passingScore: (() => {
+                const value = optionalScoreUnitsToPoints(
+                  (item as typeof item & { passingScore?: number }).passingScore,
+                );
+                return value ?? undefined;
+              })(),
               availableFrom: item.availableFrom,
               availableUntil: item.availableUntil,
               assessmentGroupId: groupId,
@@ -378,7 +390,7 @@ export async function getMyLearnerRecords(): Promise<LearnerCourseRecord[]> {
                   item.submissionStatus as LearningAssessmentsLearnerAssessmentSubmission["status"],
                 ...("score" in item
                   ? {
-                      score: item.score,
+                      score: optionalScoreUnitsToPoints(item.score),
                       passed: item.passed,
                       feedback: item.feedback,
                       gradedAt: item.gradedAt,
@@ -402,7 +414,24 @@ export async function getMyLearnerRecords(): Promise<LearnerCourseRecord[]> {
         certificates: (dashboard.certificates ?? [])
           .filter((certificate) => certificate.courseId === course.id)
           .map(mapCertificate),
-        gradeSummary,
+        gradeSummary: gradeSummary
+          ? {
+              ...gradeSummary,
+              finalGrade: optionalPercentUnitsToPercentage(gradeSummary.finalGrade),
+              earnedPoints: optionalScoreUnitsToPoints(gradeSummary.earnedPoints),
+              possiblePoints: optionalScoreUnitsToPoints(gradeSummary.possiblePoints),
+              percentage: optionalPercentUnitsToPercentage(gradeSummary.percentage),
+              groups: gradeSummary.groups?.map((group) => ({
+                ...group,
+                weightPercent: percentUnitsToPercentage(group.weightPercent ?? 0),
+              })),
+              items: gradeSummary.items?.map((item) => ({
+                ...item,
+                maxScore: scoreUnitsToPoints(item.maxScore ?? 0),
+                score: optionalScoreUnitsToPoints(item.score),
+              })),
+            }
+          : undefined,
       };
 
       return { course, context };

@@ -8,6 +8,7 @@ import {
   type LearningWorkspacesLearnerDashboard,
 } from "@game-guild/client";
 import { collectHiddenContentIds, flattenUniqueContent } from "@/lib/learner/content-tree";
+import { percentUnitsToPercentage } from "@/lib/learning/academic-values";
 import { unstable_rethrow } from "next/navigation";
 
 export interface LearningCourseSummary {
@@ -160,7 +161,10 @@ export function mapLearnerCourseSummary(
 ): CourseAttendanceData {
   const progress = Math.max(
     0,
-    Math.min(100, Math.round(course.progressPercentage ?? 0)),
+    Math.min(
+      100,
+      Math.round(percentUnitsToPercentage(course.progressPercentage ?? 0)),
+    ),
   );
   const currentItem = course.currentContentId
     ? {

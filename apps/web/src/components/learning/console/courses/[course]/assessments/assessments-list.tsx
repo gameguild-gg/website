@@ -15,6 +15,12 @@ import { CSS } from '@dnd-kit/utilities';
 import { Link, usePathname, useRouter } from '@/i18n/navigation';
 import { createAssessment, createAssessmentGroup, deleteAssessmentGroup, updateAssessment, updateAssessmentGroup } from '@/lib/learning/actions';
 import type { Assessment, AssessmentGroup, AssessmentType, CourseAssessmentAnalytics } from '@/lib/learning/queries/assessments';
+import {
+  ASSESSMENT_PRIMARY_REVIEW_METHODS,
+  buildReviewWorkflow,
+  REVIEW_METHOD_LABELS,
+  type AssessmentReviewMethod,
+} from '@/lib/learning/assessment-grading-methods';
 import { normalizeSlug, slugify } from '@/lib/slugify';
 import { Badge } from '@game-guild/ui/components/badge';
 import { Button } from '@game-guild/ui/components/button';
@@ -30,6 +36,7 @@ import {
 import { Input } from '@game-guild/ui/components/input';
 import { Label } from '@game-guild/ui/components/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@game-guild/ui/components/select';
+import { Switch } from '@game-guild/ui/components/switch';
 import { AlertTriangle, BarChart3, ChevronDown, ClipboardCheck, ClipboardList, GripVertical, Loader2, Pencil, Plus, Target, Trash2, Trophy, Wand2 } from 'lucide-react';
 import React, { useState, useTransition } from 'react';
 
@@ -54,13 +61,6 @@ function typeBadgeVariant(type: AssessmentType): 'default' | 'secondary' | 'outl
 }
 
 const CREATE_ASSESSMENT_TYPES: AssessmentType[] = ['Quiz', 'Assignment', 'Project'];
-type AssessmentGradingMethodFlag = 'PeerReview' | 'AIGraded' | 'AutoGraded' | 'InstructorGraded';
-const GRADING_METHOD_FLAGS: AssessmentGradingMethodFlag[] = [
-  'PeerReview',
-  'AIGraded',
-  'AutoGraded',
-  'InstructorGraded',
-];
 const NO_GROUP_VALUE = '__none__';
 const UNGROUPED_ID = 'ungrouped';
 const UNGROUPED_NAME = 'Unassigned';
@@ -282,9 +282,10 @@ export function AssessmentsList({
   const [newAssessmentAutoSlug, setNewAssessmentAutoSlug] = useState(true);
   const [newAssessmentType, setNewAssessmentType] = useState<AssessmentType>('Assignment');
   const [newAssessmentGroupId, setNewAssessmentGroupId] = useState<string>(NO_GROUP_VALUE);
-  const [newAssessmentGradingMethods, setNewAssessmentGradingMethods] = useState<Set<AssessmentGradingMethodFlag>>(
-    () => new Set<AssessmentGradingMethodFlag>(['InstructorGraded']),
-  );
+  const [newAssessmentPrimaryReview, setNewAssessmentPrimaryReview] =
+    useState<AssessmentReviewMethod>('InstructorReview');
+  const [newAssessmentInstructorReview, setNewAssessmentInstructorReview] =
+    useState(false);
   const [assessmentError, setAssessmentError] = useState<string | null>(null);
   const [isAssessmentPending, startAssessmentTransition] = useTransition();
 
@@ -422,18 +423,6 @@ export function AssessmentsList({
     });
   }
 
-  function toggleGradingMethod(method: AssessmentGradingMethodFlag) {
-    setNewAssessmentGradingMethods((prev) => {
-      const next = new Set(prev);
-      if (next.has(method)) {
-        next.delete(method);
-      } else {
-        next.add(method);
-      }
-      return next;
-    });
-  }
-
   function handleNewAssessmentTitleChange(value: string) {
     setNewAssessmentTitle(value);
     if (newAssessmentAutoSlug) {
@@ -452,7 +441,8 @@ export function AssessmentsList({
     setNewAssessmentAutoSlug(true);
     setNewAssessmentType('Assignment');
     setNewAssessmentGroupId(NO_GROUP_VALUE);
-    setNewAssessmentGradingMethods(new Set<AssessmentGradingMethodFlag>(['InstructorGraded']));
+    setNewAssessmentPrimaryReview('InstructorReview');
+    setNewAssessmentInstructorReview(false);
     setAssessmentError(null);
   }
 
@@ -462,11 +452,6 @@ export function AssessmentsList({
       setAssessmentError('Title is required.');
       return;
     }
-    if (newAssessmentGradingMethods.size === 0) {
-      setAssessmentError('Select at least one grading method.');
-      return;
-    }
-
     setAssessmentError(null);
     startAssessmentTransition(async () => {
       const result = await createAssessment({
@@ -475,7 +460,10 @@ export function AssessmentsList({
         ...(normalizeSlug(newAssessmentSlug) ? { slug: normalizeSlug(newAssessmentSlug) } : {}),
         type: newAssessmentType,
         assessmentGroupId: newAssessmentGroupId === NO_GROUP_VALUE ? null : newAssessmentGroupId,
-        gradingMethods: [...newAssessmentGradingMethods].join(','),
+        reviewMethods: buildReviewWorkflow(
+          newAssessmentPrimaryReview,
+          newAssessmentInstructorReview,
+        ),
       });
 
       if (result.success) {
@@ -524,8 +512,18 @@ export function AssessmentsList({
     setMoveError(null);
     startMoveTransition(async () => {
       const result = targetGroupId === UNGROUPED_ID
-        ? await updateAssessment({ courseId, assessmentId, clearAssessmentGroupId: true })
-        : await updateAssessment({ courseId, assessmentId, assessmentGroupId: targetGroupId });
+        ? await updateAssessment({
+            courseId,
+            assessmentId,
+            expectedVersion: assessment.version,
+            clearAssessmentGroupId: true,
+          })
+        : await updateAssessment({
+            courseId,
+            assessmentId,
+            expectedVersion: assessment.version,
+            assessmentGroupId: targetGroupId,
+          });
 
       if (result.success) {
         router.refresh();
@@ -908,31 +906,51 @@ export function AssessmentsList({
               </Select>
             </div>
 
-            <div className="space-y-2">
-              <Label>Grading methods</Label>
-              <div className="grid grid-cols-2 gap-2">
-                {GRADING_METHOD_FLAGS.map((method) => {
-                  const checked = newAssessmentGradingMethods.has(method);
-                  return (
-                    <Label
-                      key={method}
-                      htmlFor={`grading-method-${method}`}
-                      className={`flex cursor-pointer items-center gap-2 rounded-md border px-3 py-2 text-sm transition ${
-                        checked ? 'border-primary bg-primary/5' : 'hover:bg-muted/40'
-                      }`}
-                    >
-                      <input
-                        id={`grading-method-${method}`}
-                        type="checkbox"
-                        className="size-4 accent-primary"
-                        checked={checked}
-                        onChange={() => toggleGradingMethod(method)}
-                      />
-                      {method}
-                    </Label>
-                  );
-                })}
+            <div className="space-y-3">
+              <div className="space-y-2">
+                <Label htmlFor="new-assessment-primary-review">Primary review</Label>
+                <Select
+                  value={newAssessmentPrimaryReview}
+                  onValueChange={(value) => {
+                    const method = value as AssessmentReviewMethod;
+                    setNewAssessmentPrimaryReview(method);
+                    if (method === 'InstructorReview') {
+                      setNewAssessmentInstructorReview(false);
+                    }
+                  }}
+                >
+                  <SelectTrigger id="new-assessment-primary-review">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ASSESSMENT_PRIMARY_REVIEW_METHODS.map((method) => (
+                      <SelectItem key={method} value={method}>
+                        {REVIEW_METHOD_LABELS[method]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
+
+              {newAssessmentPrimaryReview !== 'InstructorReview' && (
+                <div className="flex items-start justify-between gap-3 rounded-md border p-3">
+                  <span>
+                    <Label htmlFor="new-assessment-instructor-review" className="block text-sm font-medium">
+                      Final instructor review
+                    </Label>
+                    <span className="text-muted-foreground mt-1 block text-xs">
+                      Add an instructor as the final review stage.
+                    </span>
+                  </span>
+                  <Switch
+                    id="new-assessment-instructor-review"
+                    checked={newAssessmentInstructorReview}
+                    onCheckedChange={(checked) =>
+                      setNewAssessmentInstructorReview(checked === true)
+                    }
+                  />
+                </div>
+              )}
             </div>
 
             {assessmentError && <p className="text-destructive text-sm">{assessmentError}</p>}

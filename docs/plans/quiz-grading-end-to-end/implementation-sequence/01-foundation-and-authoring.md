@@ -34,15 +34,20 @@ registradas antes de qualquer mudança estrutural.
 - aprovar ADR de `ScoreValue`, `PercentValue`, precisão, arredondamento,
   agregação, passing score e crédito parcial. O ADR fixa Matching por proporção
   de pares corretos e Ordering por proporção de posições absolutas corretas,
-  sempre com aritmética exata e quantização única;
+  sempre com aritmética inteira exata e arredondamento único `half-up`. Ambos
+  são inteiros escalados por `100`: `100` unidades de score representam `1`
+  ponto e `100` unidades percentuais representam `1%`; `PercentValue` fica no
+  intervalo `0..10000` e `ScoreValue` em `0..int32.MaxValue`;
 - aprovar ADR de rodadas de grading, concorrência, idempotência, outbox e inbox.
   O ADR deve definir fan-out durável: uma mensagem acadêmica é persistida uma
   vez, mas cada consumidor obrigatório possui confirmação/deduplicação própria
   por `(EventId, ConsumerKey)`; a mensagem só encerra o dispatch depois de todos
   os consumidores capturados em sua rota confirmarem;
-- aprovar ADR de versionamento executável: toda revisão fixa o manifest de
-  projector, gerador de entrega, decoder/normalizador, handlers, algoritmos e
-  policies que poderá executá-la, incluindo
+- aprovar ADR de versionamento executável: toda revisão fixa no manifest um
+  único adapter agregado por tipo de assessment, além dos handlers, providers
+  e policies que poderá executá-la. O adapter é responsável de forma coesa por
+  projeção autoral, geração de entrega, decode/normalização e avaliação
+  determinística do tipo, incluindo
   catálogo imutável de versões suportadas, resolução exata, preflight de
   startup/deploy contra revisões ativas, revisões retidas elegíveis a regrade e
   execuções não terminais, retenção de artefatos, rollback e retirada segura
@@ -83,7 +88,7 @@ registradas antes de qualquer mudança estrutural.
   projeção. A decisão define em qual transição canônica o content progride, se
   exige finalização, liberação ou aprovação, e se `ContentInteraction` será
   mantido somente como read model; nenhuma rota genérica pode decidir esse
-  estado para quiz ligado a assessment. O modo dependente de aprovação é
+  estado para conteúdo avaliável ligado a assessment. O modo dependente de aprovação é
   `on-release-and-pass`: a projeção learner-visible não ocorre antes do release
   da rodada, pois a própria conclusão revelaria `Passed`;
 - fechar a política de retenção de revisões, rodadas, evidências e auditoria;
@@ -111,7 +116,7 @@ registradas antes de qualquer mudança estrutural.
   nunca como nota final. Grupo de peso zero e assessment sem grupo não entram na
   soma. Grupo sem denominador positivo não produz contribuição nem resultado
   global oficial. Aritmética é exata na API e cada projeção derivada é
-  quantizada uma única vez para sua string canônica;
+  arredondada uma única vez para unidades inteiras escaladas;
 - exigir, antes de produzir resultado global oficial do curso por
   `Program.PassingScore`, que os grupos de peso positivo publicados totalizem
   exatamente `100%`; drafts podem permanecer incompletos, mas a API não corrige
@@ -189,16 +194,22 @@ persistência.
   borda; a API implementa os handlers C# correspondentes sob os mesmos contratos
   e fixtures, sem transferir ao browser workflow, persistência ou autoridade
   acadêmica;
-- definir no servidor portas genéricas, pertencentes ao runtime de assessments
-  e grading, para projeção de item, geração de entrega, decode/normalização de
-  resposta e avaliação determinística. Elas são resolvidas pelas chaves e
-  versões do manifest, sem mencionar tipos de quiz;
+- definir no servidor a porta genérica e agregada `IAssessmentTypeAdapter`,
+  pertencente ao runtime de assessments e grading. Ela expõe projeção autoral,
+  geração de entrega, decode/normalização de resposta e avaliação
+  determinística e é resolvida uma única vez por
+  `(contentType, adapterKey, adapterVersion, executionContext)`, sem mencionar
+  tipos de quiz no core;
 - manter as implementações C# de quiz em um módulo/assembly adapter explícito,
-  dependente apenas das portas genéricas e dos contratos públicos de quiz. O
-  composition root registra esse adapter por `contentType`, capability key e
-  versão; core, handlers genéricos, rounds e resultados não podem importar DTO,
-  parser, entidade ou namespace específico de quiz. Um novo tipo de assessment
-  recebe outro adapter sem alterar o core;
+  dependente apenas da porta genérica e dos contratos públicos de quiz. O
+  composition root registra um `QuizAssessmentTypeAdapter` por `contentType`,
+  chave e versão; projector, delivery generator, decoder e algoritmo de quiz
+  podem existir como detalhes internos, mas não são portas nem capabilities
+  registradas separadamente. Core, autoria genérica, handlers genéricos, rounds
+  e resultados não podem importar DTO, parser, entidade ou namespace específico
+  de quiz. Exatamente uma versão por `ProgramContentType` é marcada como atual
+  para autoria; versões anteriores continuam resolvíveis por manifests
+  congelados. Um novo tipo de assessment recebe outro adapter sem alterar o core;
 - fechar e versionar `ContentGradingDefinitionV2`,
   `AssessmentExecutionPolicyV1`, `AssessmentAuthoringSourceV1`,
   `AssessmentExecutionSnapshotV1`, `AssessmentResponseEnvelopeV1`,
@@ -213,9 +224,9 @@ persistência.
   referenciada pelo resultado genérico;
 - definir `ContentGradingDefinitionV2.items` por ID autoral estável e remover de
   cada valor as cópias de ID, `points` e `gradingKind`. Para quiz,
-  `QuizEntry.points` é a única fonte mutável e passa a usar string canônica
-  compatível com `ScoreValue`; `ReviewMethods` expressa intenção autoral e o
-  manifest expressa suporte executável;
+  `QuizEntry.points` é a única fonte mutável e passa a usar unidades inteiras
+  escaladas compatíveis com `ScoreValue`; `ReviewMethods` expressa intenção
+  autoral e o manifest expressa suporte executável;
 - definir a projeção imutável de itens criada no servidor pelo adapter C# de
   quiz durante o prepare, contendo `itemId`, `maxScore`, tipo de origem e
   referências privadas necessárias. O package TypeScript fornece a referência
@@ -238,10 +249,11 @@ persistência.
   em teste nunca implica capacidade acadêmica oficial;
 - definir `AssessmentExecutionManifestV1`, referenciado pela revisão imutável e
   coberto por `ExecutionSnapshotHash`, nunca por `AuthoringSourceHash`. O
-  manifest fixa, por item e stage, as chaves e versões exatas de projector,
-  gerador da entrega, decoder/normalizador de resposta, handler, algoritmo
-  determinístico, policy e provider aplicáveis; capability disponível no deploy
-  não substitui versão fixada;
+  manifest fixa por item `adapterKey` e `adapterVersion`, e por stage as chaves
+  e versões exatas de handler, policy e provider aplicáveis. A avaliação
+  determinística pertence à versão do adapter, sem uma segunda identidade de
+  algoritmo no core; capability disponível no deploy não substitui versão
+  fixada;
 - fechar `AssessmentExecutionDeliveryV1`, `DeliveryHash` e `DeliveryHashVersion`
   como contratos distintos do snapshot da revisão. A entrega referencia revisão
   e manifest, registra por item o prompt/challenge learner-safe materializado,
@@ -292,10 +304,18 @@ persistência.
   do draft registra ator, versões anterior e nova, request hash e instante; replay
   idêntico reutiliza o outcome sem duplicar auditoria;
 - implementar value objects, fixtures e parsers puros de `ScoreValue` e
-  `PercentValue` em C# e TypeScript, sem acoplá-los ainda a entidades EF;
-- alterar atomicamente o schema público de `QuizEntry.points` de `number` para
-  string canônica, atualizar factories, schemas, editors, fixtures e adapter e
-  rejeitar números em runtime, sem dual-read;
+  `PercentValue` em C# e TypeScript. O valor serializado é sempre um inteiro de
+  unidades escaladas; parsers de entrada humana recebem texto decimal com no
+  máximo duas casas, sem usar `float` ou `decimal` para a conversão;
+- alterar atomicamente o schema público de `QuizEntry.points` para inteiro de
+  unidades escaladas, atualizar factories, schemas, editors, fixtures e adapter
+  e rejeitar strings ou números fracionários em runtime, sem dual-read;
+- substituir `SaveQuizAssessmentDraft`, seus DTOs e sua interface no core por
+  `SaveAssessmentDraft`, `AssessmentDraftResult` e
+  `IAssessmentAuthoringService`. O caso de uso descobre o `contentType` e o tipo
+  persistido pela fronteira registrada do content, resolve
+  `IAssessmentTypeAdapter` e não contém constante, branch, mensagem ou namespace
+  específico de quiz;
 - encerrar o ownership do atual `Assessment.DefinitionPayload`: remover o
   setter e o payload genéricos. Policies complexas sem coluna só podem possuir
   fonte mutável tipada e com nome específico se o `SCHEMA-GATE` justificar sua
@@ -352,7 +372,7 @@ Persona simulada nunca substitui o ator autenticado no registro de auditoria.
 
 ### Testes
 
-- round-trip C#/JSON/TypeScript;
+- round-trip C#/JSON/TypeScript preserva exatamente o inteiro de unidades;
 - fixtures cross-language cobrem todas as variantes de
   `QuizAnswerEnvelopeV1`, cardinalidade, limites, payloads malformados e versão
   desconhecida;
@@ -360,7 +380,8 @@ Persona simulada nunca substitui o ator autenticado no registro de auditoria.
   textuais e qualquer alias do antigo `StructuredAnswerPayload`;
 - aceitação e rejeição de todas as bitmasks de `0` a `31`;
 - ordem canônica independente da ordem textual das flags;
-- parsing, formatação, comparação, arredondamento e limites de scores;
+- parsing de entrada humana, formatação de exibição, comparação, overflow,
+  arredondamento `half-up` e limites de scores e percentuais;
 - fixtures provam que alterar somente o catálogo ou o manifest executável não
   muda `AuthoringSourceHash`, enquanto qualquer mudança autoral muda os dois
   hashes;
@@ -376,8 +397,9 @@ Persona simulada nunca substitui o ator autenticado no registro de auditoria.
   `DeliveryHash` quando mudam;
 - testes de capability rejeitam gerador cujo resultado correto dependa de estado
   privado aleatório não derivável da revisão e da entrega persistida;
-- testes de contrato provam que gerador de entrega e decoder/normalizador de
-  resposta são resolvidos pela versão exata fixada no manifest;
+- testes de contrato provam que o adapter agregado é resolvido uma única vez
+  pela versão exata fixada no manifest e que suas quatro operações pertencem à
+  mesma implementação;
 - ausência de estado operacional em documentos de quiz;
 - teste de arquitetura falha se `@game-guild/grading` importar ou declarar
   dependência de quiz, quiz-content, quiz-surface ou do adapter de quiz;
@@ -387,9 +409,13 @@ Persona simulada nunca substitui o ator autenticado no registro de auditoria.
   o módulo, namespace, DTOs ou parsers do adapter C# de quiz, e confirma que o
   adapter depende somente das portas genéricas e dos contratos públicos
   permitidos;
-- testes do composition root resolvem os handlers C# de quiz exclusivamente por
-  `contentType`, capability key e versão do manifest, e rejeitam chave ou versão
-  não registrada sem branch específico no core;
+- testes do composition root resolvem o adapter C# de quiz exclusivamente por
+  `contentType`, `adapterKey` e `adapterVersion` do manifest, e rejeitam chave ou
+  versão não registrada sem branch específico no core;
+- teste de arquitetura varre todo o core de assessments/grading e falha diante
+  de símbolos, DTOs, serviços, constantes, mensagens ou branches nomeados para
+  quiz; somente o assembly `QuizAdapter` e seu composition root podem conhecer
+  esse tipo;
 - exports públicos e typecheck comprovam que consumidores específicos de quiz
   importam `@game-guild/grading-adapter-quiz`, enquanto consumidores genéricos
   continuam importando somente `@game-guild/grading`;
@@ -468,8 +494,7 @@ suas fatias.
 - revisão imutável referenciada por `GradingExecution`;
 - `AssessmentExecutionManifestV1` imutável, referenciado pela revisão e coberto
   por `ExecutionSnapshotHash`, incluindo lifecycle das versões executáveis
-  referenciadas de projector, gerador de entrega, decoder/normalizador,
-  handlers, algoritmos e policies;
+  referenciadas do adapter agregado, handlers, providers e policies;
 - fonte autoritativa de `AssessmentContentCompletionPolicyV1`: se o modo inicial
   for global, não criar coluna para repetir constante; se for configurável por
   assessment, apresentar sua persistência e validação neste gate;
@@ -486,9 +511,10 @@ suas fatias.
 - armazenamento de deduplicação necessário ao envelope idempotente, com escopo,
   request hash, outcome, unique constraint e retenção explícitos; reutilizar a
   infraestrutura existente somente se ela provar essas invariantes;
-- colunas textuais canônicas para scores e percentuais usados pelo núcleo;
-- conversão coordenada de todos os scores, pesos e percentuais acadêmicos
-  atualmente persistidos como tipos numéricos, incluindo
+- colunas `integer` para unidades escaladas de scores e percentuais usados pelo
+  núcleo;
+- conversão coordenada de todos os scores, pesos e percentuais acadêmicos para
+  `ScoreValue` ou `PercentValue` inteiros, incluindo
   `Assessment.MaxScore`, `Assessment.PassingScore`,
   `AssessmentSubmission.Score`, `AssessmentPeerReview.Score`,
   `Program.PassingScore` e `AssessmentGroup.WeightPercent`, com inventário de
@@ -532,8 +558,8 @@ Apresentar ao responsável pelo projeto:
 2. tabelas removidas;
 3. colunas novas, removidas ou renomeadas;
 4. constraints e índices;
-5. entidades que deixam de persistir `int`, `decimal` ou outro tipo numérico
-   acadêmico;
+5. entidades que deixam de persistir `decimal`, `double`, `float` ou texto e
+   passam a persistir unidades `integer` acadêmicas;
 6. transações e tokens de concorrência;
 7. baseline EF global que será reescrito;
 8. diff completo do modelo global;
@@ -557,7 +583,7 @@ desenvolvimento.
 - atualizar entidades e configurações EF conforme o artefato aprovado;
 - converter atomicamente `Program.PassingScore`,
   `AssessmentGroup.WeightPercent` e os demais scores, pesos e percentuais
-  acadêmicos existentes aprovados para `ScoreValue` ou `PercentValue` textual,
+  acadêmicos existentes aprovados para `ScoreValue` ou `PercentValue` inteiro,
   atualizando entidades, DTOs, commands, queries, services, clients gerados e
   consumidores no mesmo corte;
 - aplicar no mesmo corte os nomes `ReviewMethods`, `AIReview`,
@@ -586,8 +612,8 @@ desenvolvimento.
   `itemOrder` explícito e leitura byte a byte idêntica em resume e retry;
 - implementar registry capaz de resolver exatamente cada versão fixada pelo
   `AssessmentExecutionManifestV1`;
-- registrar e resolver por versão exata os geradores de entrega e os
-  decoders/normalizadores de resposta, além dos projectors e handlers;
+- registrar e resolver por versão exata um adapter agregado por tipo de
+  assessment, além dos handlers e policies genéricos;
 - publicar, em cada artefato, o catálogo exato de versões suportadas e executar
   preflight no startup/deploy contra as revisões ativas, revisões retidas
   elegíveis a regrade e execuções não terminais do ambiente; falhar antes de
@@ -604,9 +630,10 @@ desenvolvimento.
   por `(EventId, ConsumerKey)` e marcar a mensagem como concluída somente quando
   todas as entregas obrigatórias forem confirmadas; adicionar consumidor futuro
   não reprocessa histórico implicitamente;
-- impedir SQL de somar, tirar média ou converter scores acadêmicos para tipos
-  numéricos;
-- validar ordenação textual por largura fixa e collation definida nos ADRs.
+- executar somas com intermediário `bigint`/`BigInteger`, validar overflow ao
+  materializar `int32` e aplicar arredondamento inteiro `half-up` uma única vez;
+- proibir `decimal`, `numeric`, `real`, `double precision` e texto para os
+  valores acadêmicos convertidos.
 
 ### Testes
 
@@ -628,9 +655,10 @@ desenvolvimento.
   explícita quando uma versão exata não está registrada;
 - preflight rejeita o artefato incompatível antes do tráfego, e o artefato de
   rollback continua capaz de resolver as versões retidas;
-- round-trip e ordenação de score e percentual;
+- round-trip, ordenação e aritmética inteira de score e percentual;
 - busca estática e testes de contrato comprovam ausência de `decimal`,
-  `double`, `float` e casts numéricos nos campos acadêmicos convertidos,
+  `double`, `float`, formatos textuais e casts fracionários nos campos
+  acadêmicos convertidos,
   inclusive nos consumidores de `Program.PassingScore`;
 - rollback atômico, concorrência otimista e deduplicação da outbox;
 - crash após commit e antes do dispatch não perde evento;
@@ -662,14 +690,14 @@ uma fonte canônica estável antes de qualquer revisão ser preparada ou publica
 
 ### Implementação
 
-- criar `SaveQuizAssessmentDraft` transacional;
+- criar `SaveAssessmentDraft` transacional e genérico;
 - validar `QuizContentDocument`, `ContentGradingDefinitionV2`,
   `AssessmentExecutionPolicyV1` e `ReviewMethods` em conjunto;
 - tratar `QuizEntry.points` como fonte única, normalizar
   `ContentGradingDefinitionV2` pelos IDs existentes e rejeitar item órfão ou
   campo derivado enviado pelo cliente;
-- calcular no servidor `MaxScore` exclusivamente dos pontos das questões e as
-  capabilities exigidas pelos itens, sem gravá-las no contrato autoral;
+- calcular no servidor `MaxScore` exclusivamente dos pontos projetados pelo
+  adapter e as capabilities exigidas, sem gravá-las no contrato autoral;
 - gravar content e criar ou atualizar o assessment no mesmo commit;
 - remover policies operacionais duplicadas do JSON autoral;
 - remover qualquer uso do setter genérico `SetDefinition`; toda fonte mutável
@@ -701,17 +729,17 @@ autoral e verifica capacidade real por contexto de execução.
 
 ### Implementação
 
-- criar o projector learner-safe sem answer key, rubrica privada, prompt
+- implementar no adapter a projeção learner-safe sem answer key, rubrica privada, prompt
   privado ou regra de correção; prompts e challenges públicos indispensáveis
   ao sujeito pertencem à entrega concreta da execução;
-- registrar chave e versão executável de cada projector no capability registry,
+- registrar chave e versão executável do adapter agregado no capability registry,
   sem fallback silencioso para a versão mais recente;
-- registrar separadamente as versões dos geradores de entrega e dos
-  decoders/normalizadores de resposta;
+- não registrar projector, gerador de entrega, decoder ou algoritmo como
+  capabilities independentes: todos pertencem à versão indivisível do adapter;
 - inventariar todos os endpoints e mappers de `ProgramContent` acessíveis a
   aluno, visitante ou integração pública;
-- inventariar também todos os caminhos genéricos de escrita hoje usados pelo
-  quiz avaliado: `submitActivity` e seus consumidores em
+- inventariar também todos os caminhos genéricos de escrita hoje usados por
+  conteúdo avaliável ligado a assessment: `submitActivity` e seus consumidores em
   `activity-component.tsx` e `peer-review-interface.tsx`,
   `ProgramContentController.SubmitContent`,
   `ProgramWriteService.SubmitUserContentAsync`,
@@ -729,10 +757,11 @@ autoral e verifica capacidade real por contexto de execução.
 - separar DTO autoral, autorizado somente para gestão do curso, de DTO
   learner-safe; nenhuma rota learner/public pode retornar `JsonBody` autoral;
 - remover o DTO autoral das rotas genéricas learner/public no mesmo corte. Até
-  o start oficial existir em `SEQ-10`, quiz avaliável permanece fail-closed e
+  o start oficial existir em `SEQ-10`, conteúdo avaliável permanece fail-closed e
   só pode ser executado no test run pela projeção segura;
 - fazer as rotas genéricas de submit, conclusão, atualização de progresso e
-  grade rejeitarem no servidor qualquer quiz avaliado ligado a assessment.
+  grade rejeitarem no servidor qualquer conteúdo ligado a assessment com
+  workflow de review ativo.
   `ContentInteraction` pode continuar servindo conteúdo não avaliável,
   telemetria de consumo e, se aprovado no ADR, read model projetado pelo fluxo
   canônico; nunca pode armazenar respostas nem receber conclusão ou grade por
@@ -750,7 +779,8 @@ autoral e verifica capacidade real por contexto de execução.
 - consultar capabilities por `ReviewMethod` e `ExecutionContext`, sem promover
   capability de `AuthorTest` para `OfficialSubmission`;
 - distinguir capability estrutural, provider registrado e health transitório;
-- declarar capability de projeção segura por tipo de questão;
+- o adapter rejeita internamente qualquer tipo de item para o qual não consiga
+  cumprir integralmente projeção segura, entrega, decode e avaliação suportada;
 - bloquear prepare/publish quando algum item não puder ser projetado com
   segurança.
 
@@ -764,7 +794,8 @@ autoral e verifica capacidade real por contexto de execução.
   expansão, mapper alternativo e endpoint genérico não expõem `JsonBody`,
   answer key, rubrica ou policy privada;
 - testes de rota e service confirmam que todo submit, complete, update progress
-  ou grade genérico de quiz avaliado é rejeitado antes de criar ou alterar
+  ou grade genérico de conteúdo ligado a assessment com review ativo é
+  rejeitado antes de criar ou alterar
   `ContentInteraction`, progresso, `ActivityGrade` ou outro resultado
   acadêmico;
 - payload que tenta substituir challenge, variáveis, seed ou ordem congelada é
@@ -776,14 +807,14 @@ autoral e verifica capacidade real por contexto de execução.
 
 ### Gate
 
-- nenhum workflow pode ser preparado para test run sem projector seguro e
+- nenhum workflow pode ser preparado para test run sem adapter completo e
   capability `AuthorTest` registrada;
 - nenhum workflow pode ser publicado oficialmente sem capability
   `OfficialSubmission` registrada;
 - não existe rota learner/public capaz de recuperar DTO autoral; o corte de
   segurança não fica adiado ao primeiro E2E acadêmico;
 - não existe rota genérica capaz de receber resposta ou produzir efeito
-  acadêmico para quiz avaliado;
+  acadêmico para conteúdo ligado a assessment com review ativo;
 - o browser não possui caminho para produzir resultado oficial;
 - registry básico existe antes de qualquer validação de provider em publish.
 
@@ -801,8 +832,8 @@ capability `OfficialSubmission` real.
 
 ### Implementação
 
-- implementar `PrepareQuizAssessmentRevision` e
-  `PublishQuizAssessmentRevision`;
+- implementar `PrepareAssessmentRevision` e `PublishAssessmentRevision` como
+  casos de uso genéricos;
 - materializar `AssessmentExecutionPolicyV1` no servidor a partir do draft
   atômico;
 - construir `AssessmentAuthoringSourceV1` por DTO explícito e calcular
@@ -819,9 +850,9 @@ capability `OfficialSubmission` real.
   mudança de deploy, catálogo ou health não cria `ChangesPending`;
 - impedir prepare, publish ou start quando uma versão exata do manifest não
   puder ser resolvida; health transitório não altera o manifest já fixado;
-- validar workflow, projector, gerador de entrega, decoder/normalizador,
-  handlers e provider por contexto: prepare/test exige `AuthorTest`, enquanto
-  publish exige `OfficialSubmission`;
+- validar workflow, adapter agregado, handlers e provider por contexto:
+  prepare/test exige `AuthorTest`, enquanto publish exige
+  `OfficialSubmission`;
 - manter health de provider como requisito de execução, não da definição;
 - substituir checkboxes por review primário exclusivo e toggle de revisão
   final do instrutor;
@@ -839,7 +870,7 @@ capability `OfficialSubmission` real.
 - permitir salvar métodos ainda indisponíveis e preparar somente quando o
   contexto de teste estiver disponível; bloquear publish com causa explícita
   até existir capability oficial;
-- implementar `UnpublishQuizAssessmentRevision` com autorização, auditoria,
+- implementar `UnpublishAssessmentRevision` com autorização, auditoria,
   versão esperada do ponteiro ativo e idempotência. O comando remove somente a
   referência ativa, bloqueia novos starts oficiais e não altera nem apaga
   revisões, test runs ou execuções já iniciadas;
@@ -880,21 +911,20 @@ capability `OfficialSubmission` real.
   resposta e resultado não expõem campos específicos desse domínio;
 - fixtures das 14 variantes de `QuizAnswerEnvelopeV1` passam nos contratos
   TypeScript e C#, sem subcodificações textuais;
-- autoria de quiz e assessment é transacional e possui um único caminho de
-  escrita autoritativo;
+- autoria de content avaliável e assessment é transacional e possui um único
+  caminho genérico de escrita autoritativo;
 - rotas learner/public não expõem DTO autoral, answer key ou rubrica privada;
 - revisão candidata é imutável, hash-verificada e vinculada ao manifest de
   execução aprovado;
 - `GradingExecution` possui contrato e persistência aprovados para uma entrega
-  concreta imutável, e o manifest fixa gerador e decoder/normalizador por
-  versão exata;
+  concreta imutável, e o manifest fixa o adapter agregado por versão exata;
 - regrade permanece na revisão, manifest, entrega e respostas originais da
   execução; não existe caminho que troque definição dentro de uma rodada
   posterior;
 - todos os scores, pesos e percentuais acadêmicos já existentes no baseline,
-  inclusive `Program.PassingScore`, usam strings canônicas e não possuem
-  consumidor numérico remanescente;
-- `QuizEntry.points` usa texto canônico e não existe outra cópia autoral
+  inclusive `Program.PassingScore`, usam inteiros escalados por `100` e não
+  possuem consumidor fracionário ou textual remanescente;
+- `QuizEntry.points` usa unidades inteiras e não existe outra cópia autoral
   mutável dos pontos do item;
 - preflight de versão executável bloqueia deploy incompatível antes do tráfego
   e existe política operacional de retenção e rollback;

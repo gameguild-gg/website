@@ -8,7 +8,7 @@ import {
   QUIZ_CONTENT_TYPE,
   type QuizAnswerEnvelopeV1,
   type QuizAnswerPayloadV1,
-  type QuizGradingItemInputV1,
+  type QuizItemProjectionV1,
 } from "./contracts";
 
 const ENVELOPE_KEYS = new Set(["schemaVersion", "contentType", "payloadSchema", "payload"]);
@@ -61,10 +61,10 @@ export function parseQuizAnswerEnvelope(value: unknown): QuizAnswerEnvelopeV1 {
 
 export function decodeQuizAnswerEnvelope(
   envelope: AssessmentResponseEnvelopeV1,
-  items: readonly QuizGradingItemInputV1[],
+  items: readonly QuizItemProjectionV1[],
 ): QuizAnswerPayloadV1 {
   const parsed = parseQuizAnswerEnvelope(envelope);
-  const expected = new Map(items.map(({ itemId, entry }) => [itemId, entry.type]));
+  const expected = new Map(items.map(({ itemId, itemType }) => [itemId, itemType]));
   for (const [itemId, answer] of Object.entries(parsed.payload.answers)) {
     const expectedType = expected.get(itemId);
     if (!expectedType) throw new TypeError(`Quiz answer references unknown item ${itemId}.`);

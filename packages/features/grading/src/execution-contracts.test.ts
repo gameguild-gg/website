@@ -8,7 +8,7 @@ import {
 
 const policy = {
   schemaVersion: 1,
-  passingScore: "00000001.0000",
+  passingScore: 100,
   maxAttempts: 2,
   attemptContribution: { mode: "highest-finalized" },
   availability: { allowLateSubmissions: false },
@@ -23,15 +23,11 @@ const manifest = {
   items: [{
     itemId: "q1",
     itemType: "TRUE_FALSE",
-    projectorKey: "quiz-item-projector",
-    projectorVersion: "1",
-    deliveryGeneratorKey: "quiz-delivery-generator",
-    deliveryGeneratorVersion: "1",
-    answerDecoderKey: "quiz-answer-decoder",
-    answerDecoderVersion: "1",
+    adapterKey: "quiz-assessment-type",
+    adapterVersion: "1",
   }],
   stages: [
-    { method: "AutomatedReview", handlerKey: "quiz-automated-review", handlerVersion: "1", algorithmKey: "quiz-deterministic", algorithmVersion: "1" },
+    { method: "AutomatedReview", handlerKey: "quiz-automated-review", handlerVersion: "1" },
     { method: "InstructorReview", handlerKey: "instructor-review", handlerVersion: "1" },
   ],
   policies: [],
@@ -41,7 +37,7 @@ describe("execution contracts", () => {
   it("validates a strict policy and requires contribution for repeated attempts", () => {
     expect(validateAssessmentExecutionPolicy(policy)).toEqual(policy);
     expect(() => validateAssessmentExecutionPolicy({ ...policy, attemptContribution: undefined })).toThrow(/attemptContribution/);
-    expect(() => validateAssessmentExecutionPolicy({ ...policy, maxScore: "00000002.0000" })).toThrow(/not allowed/);
+    expect(() => validateAssessmentExecutionPolicy({ ...policy, maxScore: 200 })).toThrow(/not allowed/);
     expect(() => validateAssessmentExecutionPolicy({
       ...policy,
       review: { schemaVersion: 1, methods: 8 },
@@ -56,8 +52,8 @@ describe("execution contracts", () => {
     expect(validateAssessmentExecutionManifest(manifest)).toEqual(manifest);
     expect(() => validateAssessmentExecutionManifest({
       ...manifest,
-      stages: [{ ...manifest.stages[0], algorithmVersion: undefined }],
-    })).toThrow(/provided together/);
+      stages: [{ ...manifest.stages[0], algorithmVersion: "1" }],
+    })).toThrow(/not allowed/);
     expect(() => validateAssessmentExecutionManifest({
       ...manifest,
       stages: [...manifest.stages].reverse(),
@@ -74,7 +70,7 @@ describe("execution contracts", () => {
           schemaVersion: 1,
           itemId: "q1",
           itemType: "TRUE_FALSE",
-          maxScore: "00000001.0000",
+          maxScore: 100,
           source: { contentType: "quiz", itemId: "q1" },
         },
       },
@@ -110,14 +106,14 @@ describe("execution contracts", () => {
       definitionRevisionId: "00000000-0000-4000-8000-000000000001",
       executionSnapshotHash: "0000000000000000000000000000000000000000000000000000000000000000",
       itemOrder: ["q1"],
-      items: { q1: { deliveryGeneratorKey: "quiz-delivery-generator", deliveryGeneratorVersion: "1", learnerPayload: {} } },
+      items: { q1: { adapterKey: "quiz-assessment-type", adapterVersion: "1", learnerPayload: {} } },
     };
     expect(validateAssessmentExecutionDelivery(delivery)).toEqual(delivery);
     expect(() => validateAssessmentExecutionDelivery({ ...delivery, executionSnapshotHash: "hash" })).toThrow(/SHA-256/);
     expect(() => validateAssessmentExecutionDelivery({ ...delivery, itemOrder: [] })).toThrow(/every delivery item/);
     expect(() => validateAssessmentExecutionDelivery({
       ...delivery,
-      items: { q1: { deliveryGeneratorKey: "generator", deliveryGeneratorVersion: "1" } },
+      items: { q1: { adapterKey: "quiz-assessment-type", adapterVersion: "1" } },
     })).toThrow(/learnerPayload is required/);
   });
 });

@@ -4,6 +4,8 @@ using GameGuild.Learning.Courses;
 using GameGuild.Learning.Enrollments;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using GameGuild.Learning.Assessments.Grading.Contracts;
+using GameGuild.Learning.Grading.Contracts;
 
 namespace GameGuild.Learning.Assessments;
 
@@ -99,9 +101,9 @@ public class TasksService(
 
                 var own = submissions.Where(s => s.AssessmentId == assessment.Id && s.EnrollmentId == enrollment.Id).ToList();
                 var latest = own.OrderByDescending(r => r.AttemptNumber).FirstOrDefault();
-                var latestOpen = latest is null || latest.Status == SubmissionStatus.InProgress;
-                var attemptsRemain = assessment.MaxAttempts is null || own.Count < assessment.MaxAttempts.Value;
-                if (assessment.IsAvailable() && latestOpen && attemptsRemain)
+                var canContinueCurrentAttempt = latest?.Status == SubmissionStatus.InProgress;
+                var canStartAttempt = latest is null && own.Count < assessment.MaxAttempts;
+                if (assessment.IsAvailable() && (canContinueCurrentAttempt || canStartAttempt))
                 {
                     items.Add(new TaskItemDto(
                         "do",
@@ -112,11 +114,12 @@ public class TasksService(
                         assessment.DueAt));
                 }
 
-                var hasPeerReview = (assessment.GradingMethods & AssessmentGradingMethod.PeerReview) != 0;
+                var hasPeerReview = assessment.ReviewMethods.HasFlag(ReviewMethods.PeerReview);
+                var reviewsRequired = assessment.GetRequiredPeerReviewCount();
                 var reviews = actorReviews.Where(r => r.AssessmentId == assessment.Id).ToList();
                 if (hasPeerReview &&
-                    assessment.PeerReviewsRequiredCount > 0 &&
-                    reviews.Count < assessment.PeerReviewsRequiredCount)
+                    reviewsRequired > 0 &&
+                    reviews.Count < reviewsRequired)
                 {
                     items.Add(new TaskItemDto(
                         "review",
@@ -127,7 +130,7 @@ public class TasksService(
                         // Reviews run to the assessment close — same asymmetry as the todo-8 read endpoints.
                         assessment.DueAt ?? assessment.AvailableUntil ?? assessment.LateSubmissionDeadline,
                         ReviewsCompleted: reviews.Count(r => r.Status == PeerReviewStatus.Submitted),
-                        ReviewsRequired: assessment.PeerReviewsRequiredCount));
+                        ReviewsRequired: reviewsRequired));
                 }
             }
         }

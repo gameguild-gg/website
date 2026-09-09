@@ -1,3 +1,5 @@
+using GameGuild.Learning.Grading.Contracts;
+
 namespace GameGuild.Learning.Courses;
 
 /// <summary>
@@ -44,7 +46,7 @@ public interface IProgramCrudService
   Task<IEnumerable<UserProgressDto>> GetProgramUsersAsync(Guid programId, int skip = 0, int take = 50);
 
   // Progress
-  Task<decimal> GetUserProgressAsync(Guid programId, Guid userId);
+  Task<PercentValue> GetUserProgressAsync(Guid programId, Guid userId);
   Task<UserProgressDto?> GetUserProgressDtoAsync(Guid programId, Guid userId);
   Task<IEnumerable<ContentInteraction>> GetUserInteractionsAsync(Guid programId, Guid userId);
   Task<Program> UpdateUserProgressAsync(Guid programId, Guid userId, Guid contentId, ProgressStatus status);
@@ -67,7 +69,7 @@ public interface IProgramCrudService
   // Analytics & Statistics
   Task<int> GetProgramCountAsync(ContentStatus? status = null, ContentVisibility? visibility = null);
   Task<int> GetUserCountForProgramAsync(Guid programId);
-  Task<decimal> GetAverageCompletionRateAsync(Guid programId);
+  Task<PercentValue> GetAverageCompletionRateAsync(Guid programId);
   Task<Dictionary<string, object>> GetProgramStatisticsAsync(Guid programId);
   Task<ProgramAnalyticsDto?> GetProgramAnalyticsAsync(Guid id);
   Task<CompletionRatesDto?> GetCompletionRatesAsync(Guid id);

@@ -1,4 +1,5 @@
 using GameGuild.CQRS;
+using GameGuild.Learning.Grading.Contracts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -53,8 +54,8 @@ public sealed class GetUserProgramProgressQueryHandler(
 
         // Calculate progress percentage
         var progressPercentage = totalContent > 0
-            ? (decimal)completedContent / totalContent * 100
-            : 0m;
+            ? PercentValue.FromRatio(completedContent, totalContent)
+            : PercentValue.Zero;
 
         // Get time spent from content progress records
         var timeSpentSeconds = await context.Set<ContentProgress>()
@@ -73,14 +74,14 @@ public sealed class GetUserProgramProgressQueryHandler(
 
         logger.LogInformation(
             "User {UserId} progress in program {ProgramId}: {CompletedContent}/{TotalContent} ({Progress}%)",
-            request.UserId, request.ProgramId, completedContent, totalContent, Math.Round(progressPercentage, 2));
+            request.UserId, request.ProgramId, completedContent, totalContent, progressPercentage);
 
         return new ProgramUserProgress(
             ProgramId: request.ProgramId,
             UserId: request.UserId,
             CompletedContent: completedContent,
             TotalContent: totalContent,
-            ProgressPercentage: Math.Round(progressPercentage, 2),
+            ProgressPercentage: progressPercentage,
             TimeSpent: TimeSpan.FromSeconds(timeSpentSeconds),
             LastActivityAt: lastActivity,
             IsCompleted: isCompleted,

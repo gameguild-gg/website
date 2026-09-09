@@ -2,7 +2,10 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 using GameGuild.Learning.Assessments;
+using GameGuild.Learning.Assessments.Grading.Contracts;
+using GameGuild.Learning.Grading.Contracts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
@@ -20,7 +23,7 @@ public sealed class AgsScoreService(
 {
     private const string AgsScoreScope = "https://purl.imsglobal.org/spec/lti-ags/scope/score";
 
-    public async Task PostScoreIfMappedAsync(Guid assessmentId, Guid userId, int score, int maxScore)
+    public async Task PostScoreIfMappedAsync(Guid assessmentId, Guid userId, ScoreValue score, ScoreValue maxScore)
     {
         try
         {
@@ -57,7 +60,7 @@ public sealed class AgsScoreService(
                 return;
             }
 
-            await PostScoreAsync(client, mapping, userMapping.Sub, score, accessToken).ConfigureAwait(false);
+            await PostScoreAsync(client, mapping, userMapping.Sub, score, maxScore, accessToken).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
@@ -103,17 +106,29 @@ public sealed class AgsScoreService(
         return doc.RootElement.TryGetProperty("access_token", out var token) ? token.GetString() : null;
     }
 
-    private async Task PostScoreAsync(HttpClient client, LtiLineItemMapping mapping, string sub, int score, string accessToken)
+    private async Task PostScoreAsync(
+        HttpClient client,
+        LtiLineItemMapping mapping,
+        string sub,
+        ScoreValue score,
+        ScoreValue maxScore,
+        string accessToken)
     {
         var scoreUrl = mapping.LineItemUrl.TrimEnd('/') + "/scores";
-        var payload = System.Text.Json.JsonSerializer.Serialize(new
+        using var payloadStream = new MemoryStream();
+        using (var writer = new Utf8JsonWriter(payloadStream))
         {
-            userId = sub,
-            scoreGiven = score,
-            scoreMaximum = mapping.MaxScore,
-            activityProgress = "Completed",
-            gradingProgress = "FullyGraded"
-        });
+            writer.WriteStartObject();
+            writer.WriteString("userId", sub);
+            writer.WritePropertyName("scoreGiven");
+            writer.WriteRawValue(ToJsonNumber(score));
+            writer.WritePropertyName("scoreMaximum");
+            writer.WriteRawValue(ToJsonNumber(maxScore));
+            writer.WriteString("activityProgress", "Completed");
+            writer.WriteString("gradingProgress", "FullyGraded");
+            writer.WriteEndObject();
+        }
+        var payload = Encoding.UTF8.GetString(payloadStream.ToArray());
 
         using var request = new HttpRequestMessage(HttpMethod.Post, scoreUrl);
         request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
@@ -125,6 +140,9 @@ public sealed class AgsScoreService(
             logger.LogError("LTI AGS: score POST to {ScoreUrl} returned {StatusCode}", scoreUrl, (int)response.StatusCode);
         }
     }
+
+    private static string ToJsonNumber(ScoreValue value)
+        => value.ToPointsString();
 
     private static RsaSecurityKey LoadToolKey(LtiDeployment deployment)
     {

@@ -1,5 +1,6 @@
 using System.Text.Json;
 using GameGuild.Learning.Assessments.Grading.Contracts;
+using GameGuild.Learning.Grading.Contracts;
 
 namespace GameGuild.Learning.Assessments.QuizAdapter;
 
@@ -15,8 +16,8 @@ internal static class QuizAuthoringEntryValidator
         RequiredString(entry, "stem", allowEmpty: true);
         if (entry.TryGetProperty("points", out var points))
         {
-            JsonContract.RequireString(points, "points");
-            ScoreValue.Parse(points.GetString()!);
+            if (!points.TryGetInt32(out var units)) throw new JsonException("points must be a JSON integer.");
+            ScoreValue.FromUnits(units);
         }
         if (!entry.TryGetProperty("settings", out var settings)) throw new JsonException("settings is required.");
         ValidateSettings(settings);

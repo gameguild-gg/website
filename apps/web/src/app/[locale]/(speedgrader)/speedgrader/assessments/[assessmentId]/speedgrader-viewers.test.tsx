@@ -274,57 +274,6 @@ describe('UrlViewer', () => {
   });
 });
 
-describe('QuizViewer', () => {
-  it('renders structured answers keyed by question id', async () => {
-    resolveSubmission({
-      submittedModalities: 'StructuredAnswer',
-      structuredAnswerPayload: JSON.stringify({
-        answers: {
-          q1: { textAnswers: { a: '42' } },
-          q2: { selectedOptionIds: ['opt-a', 'opt-b'] },
-        },
-      }),
-    });
-
-    render(<SubmissionViewer submissionId="sub-1" />);
-
-    const viewer = await screen.findByTestId('quiz-viewer');
-    expect(viewer).toHaveTextContent('q1');
-    expect(viewer).toHaveTextContent('42');
-    expect(viewer).toHaveTextContent('q2');
-    expect(viewer).toHaveTextContent('opt-a');
-  });
-
-  it('renders per-item status when a GradeResult is embedded', async () => {
-    resolveSubmission({
-      submittedModalities: 'StructuredAnswer',
-      structuredAnswerPayload: JSON.stringify({
-        answers: { q1: { textAnswers: { a: '42' } } },
-        gradeResult: {
-          status: 'graded',
-          score: 8,
-          maxScore: 10,
-          items: [
-            {
-              contentBlockId: 'q1',
-              status: 'graded',
-              score: 8,
-              maxScore: 10,
-              isCorrect: true,
-            },
-          ],
-        },
-      }),
-    });
-
-    render(<SubmissionViewer submissionId="sub-1" />);
-
-    const viewer = await screen.findByTestId('quiz-viewer');
-    expect(viewer).toHaveTextContent('8');
-    expect(viewer).toHaveTextContent('correct');
-  });
-});
-
 describe('FileViewer', () => {
   it('renders an <img> for image extensions', async () => {
     resolveSubmission({

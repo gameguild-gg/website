@@ -2,6 +2,7 @@ import 'server-only';
 
 import { auth, getToken } from '@/auth';
 import { createServerClient, GeneratedApi, type ApiError } from '@game-guild/client';
+import { percentUnitsToPercentage } from '@/lib/learning/academic-values';
 
 export type CourseViewerAccessState = 'signed-out' | 'has-access' | 'no-access' | 'unavailable';
 
@@ -58,7 +59,9 @@ export async function getCourseViewerAccess(courseId: string): Promise<CourseVie
         if (progressResult.ok) {
             return {
                 state: 'has-access',
-                progressPercentage: progressResult.data.completionPercentage ?? 0,
+                progressPercentage: percentUnitsToPercentage(
+                    progressResult.data.completionPercentage ?? 0,
+                ),
                 lastAccessedAt: progressResult.data.lastAccessedAt ?? null,
             };
         }

@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using GameGuild.Learning.Grading.Contracts;
 
 namespace GameGuild.Learning.Assessments.Grading.Contracts;
 
@@ -101,6 +102,14 @@ public sealed record SelfReviewPolicyV1(string? Instructions, bool RequireFeedba
 public sealed record InstructorReviewPolicyV1(bool RequireOverrideReason);
 
 [JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
+public sealed record AssessmentReviewConfigurationV1(
+    int SchemaVersion,
+    PeerReviewPolicyV1? Peer = null,
+    AiReviewPolicyV1? Ai = null,
+    SelfReviewPolicyV1? Self = null,
+    InstructorReviewPolicyV1? Instructor = null);
+
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed record AssessmentReviewPolicyV1(
     int SchemaVersion,
     ReviewMethods Methods,
@@ -131,19 +140,13 @@ public sealed record AssessmentAuthoringSourceV1(
 public sealed record AssessmentItemManifestV1(
     string ItemId,
     string ItemType,
-    string ProjectorKey,
-    string ProjectorVersion,
-    string DeliveryGeneratorKey,
-    string DeliveryGeneratorVersion,
-    string AnswerDecoderKey,
-    string AnswerDecoderVersion);
+    string AdapterKey,
+    string AdapterVersion);
 
 public sealed record AssessmentReviewStageManifestV1(
     ReviewMethod Method,
     string HandlerKey,
     string HandlerVersion,
-    string? AlgorithmKey = null,
-    string? AlgorithmVersion = null,
     string? ProviderKey = null,
     string? ProviderPolicyVersion = null);
 
@@ -169,8 +172,8 @@ public sealed record AssessmentResponseEnvelopeV1(
     JsonElement Payload);
 
 public sealed record AssessmentExecutionDeliveryItemV1(
-    string DeliveryGeneratorKey,
-    string DeliveryGeneratorVersion,
+    string AdapterKey,
+    string AdapterVersion,
     JsonElement LearnerPayload);
 
 public sealed record AssessmentExecutionDeliveryV1(
@@ -201,7 +204,6 @@ public sealed record GradeItemResultV1(
     string HandlerKey,
     string HandlerVersion,
     string? Feedback = null,
-    string? AlgorithmVersion = null,
     string? ProviderKey = null);
 
 public sealed record GradeResultV1(

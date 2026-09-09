@@ -1,4 +1,6 @@
-﻿namespace GameGuild.Learning.Courses;
+﻿using GameGuild.Learning.Grading.Contracts;
+
+namespace GameGuild.Learning.Courses;
 
 /// <summary>
 /// Grade statistics for reporting
@@ -6,11 +8,11 @@
 public class GradeStatistics {
   public int TotalGrades { get; set; }
 
-  public decimal AverageGrade { get; set; }
+  public PercentValue AverageGrade { get; set; } = PercentValue.Zero;
 
-  public decimal MinGrade { get; set; }
+  public PercentValue MinGrade { get; set; } = PercentValue.Zero;
 
-  public decimal MaxGrade { get; set; }
+  public PercentValue MaxGrade { get; set; } = PercentValue.Zero;
 
-  public decimal PassingRate { get; set; }
+  public PercentValue PassingRate { get; set; } = PercentValue.Zero;
 }

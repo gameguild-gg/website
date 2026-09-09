@@ -6,7 +6,6 @@ import { TextViewer } from './text-viewer';
 import { UrlViewer } from './url-viewer';
 import { FileViewer } from './file-viewer';
 import { MediaViewer } from './media-viewer';
-import { QuizViewer } from './quiz-viewer';
 import { CodeGraderPanel, type ComputedScore } from './code-grader-panel';
 import { codePayloadToFiles } from '@/lib/coding-assignment/code-payload';
 import type { CodingAssignmentContent as WebCodingAssignmentContent } from '@/lib/coding-assignment/client';
@@ -94,9 +93,6 @@ export function SubmissionViewer({
         <CodeFallback key="code" payload={submission.codePayload} />
       ),
     );
-  }
-  if (modalities.has('StructuredAnswer') && submission.structuredAnswerPayload) {
-    panes.push(<QuizViewer key="quiz" payload={submission.structuredAnswerPayload} />);
   }
   if (modalities.has('File') && submission.filePayload) {
     panes.push(<FileViewer key="file" payload={submission.filePayload} />);

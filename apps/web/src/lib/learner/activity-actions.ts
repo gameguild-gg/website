@@ -100,6 +100,11 @@ export async function submitAssessment(
         success: false,
         error: "Assessment enrollment context is missing.",
       };
+    if (modality === "None" || modality === "StructuredAnswer")
+      return {
+        success: false,
+        error: "Quiz attempts are unavailable through the generic assessment form.",
+      };
 
     const authenticated = await authenticatedClient();
     if (!authenticated)

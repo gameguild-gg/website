@@ -108,7 +108,7 @@ describe('SubmissionsList', () => {
         userId: '22222222-2222-2222-2222-222222222222',
         attemptNumber: 2,
         status: 'Graded',
-        score: 87,
+        score: 8700,
       }),
       makeSubmission({
         id: 'sub-3',

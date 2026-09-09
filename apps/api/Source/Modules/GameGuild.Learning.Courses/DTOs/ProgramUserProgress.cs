@@ -1,3 +1,5 @@
+using GameGuild.Learning.Grading.Contracts;
+
 namespace GameGuild.Learning.Courses;
 
 public record ProgramUserProgress(
@@ -5,7 +7,7 @@ public record ProgramUserProgress(
     Guid UserId,
     int CompletedContent,
     int TotalContent,
-    decimal ProgressPercentage,
+    PercentValue ProgressPercentage,
     TimeSpan TimeSpent,
     DateTime? LastActivityAt,
     bool IsCompleted,

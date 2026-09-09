@@ -1,3 +1,6 @@
+using GameGuild.Learning.Assessments.Grading.Contracts;
+using GameGuild.Learning.Grading.Contracts;
+
 namespace GameGuild.Learning.Assessments;
 
 /// <summary>
@@ -7,5 +10,5 @@ namespace GameGuild.Learning.Assessments;
 /// </summary>
 public interface ILtiScorePassback
 {
-    Task PostScoreIfMappedAsync(Guid assessmentId, Guid userId, int score, int maxScore);
+    Task PostScoreIfMappedAsync(Guid assessmentId, Guid userId, ScoreValue score, ScoreValue maxScore);
 }

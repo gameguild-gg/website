@@ -1,4 +1,7 @@
 
+using GameGuild.Learning.Assessments.Grading.Contracts;
+using GameGuild.Learning.Grading.Contracts;
+
 namespace GameGuild.Learning.Assessments;
 
 /// <summary>
@@ -43,19 +46,19 @@ public class RubricCriterion : EntityBase
 {
     public Guid RubricId { get; private set; }
     public string Description { get; private set; } = string.Empty;
-    public int Points { get; private set; }
+    public ScoreValue Points { get; private set; }
     public int Order { get; private set; }
 
     private RubricCriterion() { } // EF Core
 
-    public static RubricCriterion Create(Guid rubricId, string description, int points, int order)
+    public static RubricCriterion Create(Guid rubricId, string description, ScoreValue points, int order)
     {
         if (string.IsNullOrWhiteSpace(description))
         {
             throw new ArgumentException("Description is required.", nameof(description));
         }
 
-        if (points <= 0)
+        if (points.CompareTo(ScoreValue.Zero) <= 0)
         {
             throw new ArgumentException("Points must be positive.", nameof(points));
         }

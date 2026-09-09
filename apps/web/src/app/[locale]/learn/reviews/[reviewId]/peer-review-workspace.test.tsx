@@ -33,11 +33,11 @@ const rubricReview = {
   attemptNumber: 2,
   submittedAt: '2026-08-01T10:00:00Z',
   submissionStatus: 'Submitted',
-  assessment: { id: 'assessment-1', title: 'Final Project', maxScore: 100 },
+  assessment: { id: 'assessment-1', title: 'Final Project', maxScore: 10_000 },
   rubric: {
     criteria: [
-      { id: 'c1', description: 'Correctness', points: 60, order: 0 },
-      { id: 'c2', description: 'Style', points: 40, order: 1 },
+      { id: 'c1', description: 'Correctness', points: 6_000, order: 0 },
+      { id: 'c2', description: 'Style', points: 4_000, order: 1 },
     ],
   },
   textPayload: 'My project reflection essay.',
@@ -47,7 +47,7 @@ const plainReview = {
   ...rubricReview,
   reviewId: 'review-plain',
   rubric: undefined,
-  assessment: { id: 'assessment-2', title: 'Essay', maxScore: 50 },
+  assessment: { id: 'assessment-2', title: 'Essay', maxScore: 5_000 },
 } satisfies LearningAssessmentsAnonymousReviewSubmission;
 
 const submittedReview = {

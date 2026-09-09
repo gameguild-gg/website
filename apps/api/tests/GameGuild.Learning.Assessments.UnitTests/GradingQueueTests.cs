@@ -4,6 +4,8 @@ using GameGuild.Identity.Context.Actors;
 using GameGuild.Identity.Users;
 using GameGuild.Learning.Courses;
 using GameGuild.Learning.Enrollments;
+using GameGuild.Learning.Assessments.Grading.Contracts;
+using GameGuild.Learning.Assessments.Grading.Authoring;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
@@ -45,7 +47,7 @@ public class GradingQueueTests
         alice.AttemptCount.Should().Be(2);
         alice.Status.Should().Be(SubmissionStatus.Submitted);
         alice.SubmittedAt.Should().Be(aliceResubmit.SubmittedAt);
-        alice.AssignmentScore.Should().Be(70, "graded attempt-1 score persists across the resubmission");
+        alice.AssignmentScore.Should().Be(Score(70), "graded attempt-1 score persists across the resubmission");
         alice.AssignmentPassed.Should().BeTrue();
         alice.IsLate.Should().BeFalse();
         alice.IsGroup.Should().BeFalse();
@@ -60,7 +62,7 @@ public class GradingQueueTests
         dave.SubmissionId.Should().Be(daveRow.Id);
         dave.UserId.Should().Be(daveId);
         dave.Status.Should().Be(SubmissionStatus.Graded, "latest graded with no newer submission");
-        dave.AssignmentScore.Should().Be(90);
+        dave.AssignmentScore.Should().Be(Score(90));
         dave.AttemptCount.Should().Be(1);
         queue.Total.Should().Be(3);
         queue.NeedsGrading.Should().Be(2, "Alice (latest attempt submitted) + Bob; Dave's latest attempt is graded");
@@ -126,7 +128,7 @@ public class GradingQueueTests
         item.AttemptNumber.Should().Be(2);
         item.AttemptCount.Should().Be(2);
         item.Status.Should().Be(SubmissionStatus.Submitted);
-        item.AssignmentScore.Should().Be(88, "graded attempt-1 score persists across the resubmission");
+        item.AssignmentScore.Should().Be(Score(88), "graded attempt-1 score persists across the resubmission");
         item.AssignmentPassed.Should().BeTrue();
         item.IsGroup.Should().BeTrue();
         queue.NeedsGrading.Should().Be(1);
@@ -166,18 +168,18 @@ public class GradingQueueTests
         var eve = queue.Items.Single(i => i.DisplayName == "Eve");
         eve.Status.Should().Be(SubmissionStatus.Graded);
         eve.AttemptNumber.Should().Be(2);
-        eve.AssignmentScore.Should().Be(50);
+        eve.AssignmentScore.Should().Be(Score(50));
         queue.Items.Single(i => i.DisplayName == "Carol").Status.Should().Be(SubmissionStatus.Late);
         queue.Items.Single(i => i.DisplayName == "Carol").IsLate.Should().BeTrue();
     }
 
     [Fact]
-    public async Task Assessment_Summary_IncludesRubricPayload_GradingMethodsAndPeerReviewPolicy()
+    public async Task Assessment_Summary_IncludesRubricPayloadAndReviewMethods()
     {
         await using var db = CreateContext();
         var assessment = await SeedAssessmentAsync(db,
-            gradingMethods: AssessmentGradingMethod.PeerReview | AssessmentGradingMethod.InstructorGraded);
-        assessment.SetPeerReviewPolicy(3);
+            reviewMethods: ReviewMethods.PeerReview | ReviewMethods.InstructorReview);
+        ConfigurePeerReview(assessment, 3);
         await SeedRubricAsync(db, assessment);
         await db.SaveChangesAsync();
 
@@ -189,9 +191,8 @@ public class GradingQueueTests
         summary.Id.Should().Be(assessment.Id);
         summary.Title.Should().Be(assessment.Title);
         summary.Type.Should().Be(AssessmentType.Assignment);
-        summary.MaxScore.Should().Be(100);
-        summary.GradingMethods.Should().Contain("PeerReview").And.Contain("InstructorGraded");
-        summary.PeerReviewsRequiredCount.Should().Be(3);
+        summary.MaxScore.Should().Be(Score(100));
+        summary.ReviewMethods.Should().Be(ReviewMethods.PeerReview | ReviewMethods.InstructorReview);
         summary.HasRubric.Should().BeTrue();
         summary.Rubric.Should().NotBeNull();
         summary.Rubric!.Title.Should().Be("Essay rubric");
@@ -235,6 +236,7 @@ public class GradingQueueTests
                 db,
                 new RubricService(db, NullLogger<RubricService>.Instance),
                 NullLogger<GradingQueueService>.Instance),
+            Mock.Of<IAssessmentAuthoringService>(),
             _log.Object);
     }
 
@@ -242,14 +244,28 @@ public class GradingQueueTests
 
     private static async Task<Assessment> SeedAssessmentAsync(
         TestGradingQueueDbContext db,
-        AssessmentGradingMethod gradingMethods = AssessmentGradingMethod.InstructorGraded)
+        ReviewMethods reviewMethods = ReviewMethods.InstructorReview)
     {
         var assessment = Assessment.Create(
-            Guid.NewGuid(), "Essay", AssessmentType.Assignment, 100,
-            gradingMethods: gradingMethods);
+            Guid.NewGuid(), "Essay", AssessmentType.Assignment, Score(100),
+            reviewMethods: reviewMethods);
         db.Add(assessment);
         await db.SaveChangesAsync();
         return assessment;
+    }
+
+    private static void ConfigurePeerReview(Assessment assessment, int requiredReviews)
+    {
+        var configuration = $$"""
+            {"instructor":{"requireOverrideReason":false},"peer":{"aggregation":"mean","claimLeaseMinutes":30,"evidenceWindowMinutes":60,"minimumReviewsToFinalize":{{requiredReviews}},"onInsufficientEvidence":"await-instructor-resolution","reviewsPerReviewer":{{requiredReviews}},"reviewsRequiredPerSubmission":{{requiredReviews}}},"schemaVersion":1}
+            """;
+        assessment.SetReviewPolicy(
+            assessment.ReviewMethods,
+            configuration,
+            null,
+            ContentCompletionMode.OnReleaseAndPass,
+            ResultReleaseMode.Manual,
+            null);
     }
 
     private sealed record QueueGroupFixture(
@@ -331,7 +347,7 @@ public class GradingQueueTests
             row.Submit(isLate);
             if (status == SubmissionStatus.Graded)
             {
-                row.Grade(score ?? 0, 60, 100, Guid.NewGuid(), "graded");
+                row.Grade(Score(score ?? 0), Score(60), Score(100), Guid.NewGuid(), "graded");
             }
         }
 
@@ -350,8 +366,8 @@ public class GradingQueueTests
         var rubric = AssessmentRubric.Create("Essay rubric");
         db.Add(rubric);
         db.AddRange(
-            RubricCriterion.Create(rubric.Id, "Thesis", 60, 1),
-            RubricCriterion.Create(rubric.Id, "Mechanics", 40, 2));
+            RubricCriterion.Create(rubric.Id, "Thesis", Score(60), 1),
+            RubricCriterion.Create(rubric.Id, "Mechanics", Score(40), 2));
         assessment.AssignRubric(rubric.Id);
         db.Update(assessment);
     }

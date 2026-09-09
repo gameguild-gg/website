@@ -1,9 +1,11 @@
 
-﻿namespace GameGuild.Learning.Courses;
+﻿using GameGuild.Learning.Grading.Contracts;
+
+namespace GameGuild.Learning.Courses;
 
 /// <summary> Interface for activity grading services </summary>
 public interface IActivityGradeService {
-  Task<ActivityGrade> GradeActivityAsync(Guid contentInteractionId, Guid graderProgramUserId, decimal grade, string? feedback = null, string? gradingDetails = null);
+  Task<ActivityGrade> GradeActivityAsync(Guid contentInteractionId, Guid graderProgramUserId, ScoreValue points, ScoreValue maxPoints, string? feedback = null, string? gradingDetails = null);
 
   Task<ActivityGrade?> GetGradeAsync(Guid contentInteractionId);
 
@@ -13,7 +15,7 @@ public interface IActivityGradeService {
 
   Task<IEnumerable<ActivityGrade>> GetGradesByStudentAsync(Guid programUserId);
 
-  Task<ActivityGrade?> UpdateGradeAsync(Guid gradeId, decimal? newGrade = null, string? newFeedback = null, string? newGradingDetails = null);
+  Task<ActivityGrade?> UpdateGradeAsync(Guid gradeId, ScoreValue? newPoints = null, ScoreValue? newMaxPoints = null, string? newFeedback = null, string? newGradingDetails = null);
 
   Task<bool> DeleteGradeAsync(Guid gradeId);
 

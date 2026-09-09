@@ -10,6 +10,7 @@ import { claimPeerReview } from '@/lib/learning/actions-peer-review';
 import type { LearningTask } from '@/lib/learning/queries/tasks';
 import type { ReceivedFeedbackGroup } from './page';
 import { useRouter } from '@/i18n/navigation';
+import { scoreUnitsToPoints } from '@/lib/learning/academic-values';
 
 const dateFormatter = new Intl.DateTimeFormat('en-US', {
   year: 'numeric',
@@ -25,7 +26,7 @@ function RubricScoresSummary({ payload }: { payload: string }) {
     const parsed: unknown = JSON.parse(payload);
     if (parsed && typeof parsed === 'object') {
       entries = Object.values(parsed as Record<string, { points?: number; comment?: string }>).map((entry) => ({
-        points: entry?.points ?? 0,
+        points: scoreUnitsToPoints(entry?.points ?? 0),
         comment: entry?.comment,
       }));
     }
@@ -100,7 +101,9 @@ function ReceivedReviewCard({ review }: { review: LearningAssessmentsReceivedPee
     <div data-testid={`received-review-${review.reviewId}`} className="space-y-1 rounded-md border p-3">
       <div className="flex items-center justify-between gap-2">
         <span className="text-sm font-medium">Anonymous peer</span>
-        {review.score != null && <Badge variant="secondary">{review.score}</Badge>}
+        {review.score != null && (
+          <Badge variant="secondary">{scoreUnitsToPoints(review.score)}</Badge>
+        )}
       </div>
       {review.feedback && <p className="text-sm text-muted-foreground">{review.feedback}</p>}
       {review.rubricScoresPayload && <RubricScoresSummary payload={review.rubricScoresPayload} />}

@@ -1,3 +1,5 @@
+using GameGuild.Learning.Grading.Contracts;
+
 namespace GameGuild.Lti;
 
 /// <summary>
@@ -11,7 +13,7 @@ public class LtiLineItemMapping : EntityBase
     public string LineItemUrl { get; private set; } = string.Empty;
 
     /// <summary>Line item maximum score — the scoreMaximum sent to the platform.</summary>
-    public int MaxScore { get; private set; }
+    public ScoreValue MaxScore { get; private set; }
 
     private LtiLineItemMapping() { } // EF Core
 
@@ -20,11 +22,11 @@ public class LtiLineItemMapping : EntityBase
         Guid deploymentId,
         string lineItemId,
         string lineItemUrl,
-        int maxScore)
+        ScoreValue maxScore)
     {
         if (string.IsNullOrWhiteSpace(lineItemId)) throw new ArgumentException("LineItemId is required.", nameof(lineItemId));
         if (string.IsNullOrWhiteSpace(lineItemUrl)) throw new ArgumentException("LineItemUrl is required.", nameof(lineItemUrl));
-        if (maxScore <= 0) throw new ArgumentException("MaxScore must be positive.", nameof(maxScore));
+        if (maxScore.CompareTo(ScoreValue.Zero) <= 0) throw new ArgumentException("MaxScore must be positive.", nameof(maxScore));
 
         return new LtiLineItemMapping
         {

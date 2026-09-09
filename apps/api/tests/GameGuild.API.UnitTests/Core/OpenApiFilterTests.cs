@@ -9,6 +9,8 @@ using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Models;
 using Moq;
 using Swashbuckle.AspNetCore.SwaggerGen;
+using GameGuild.Learning.Assessments.Grading.Contracts;
+using GameGuild.Learning.Grading.Contracts;
 
 namespace GameGuild.API.UnitTests.Core;
 
@@ -57,6 +59,45 @@ public sealed class OpenApiFilterTests
         flagsSchema.Enum.Should().BeEmpty();
         flagsSchema.Description.Should().Contain("comma-separated");
         flagsSchemaWithoutEnum.Type.Should().Be("string");
+    }
+
+    [Theory]
+    [InlineData(typeof(ScoreValue), int.MaxValue)]
+    [InlineData(typeof(PercentValue), 10_000)]
+    public void LearningContractSchemaFilter_DescribesTheAcademicIntegerWireFormat(Type valueType, int maximum)
+    {
+        var schema = new OpenApiSchema
+        {
+            Type = "object",
+            Properties = new Dictionary<string, OpenApiSchema> { ["units"] = new() },
+        };
+        var context = new SchemaFilterContext(valueType, Mock.Of<ISchemaGenerator>(), new SchemaRepository());
+
+        new LearningContractSchemaFilter().Apply(schema, context);
+
+        schema.Type.Should().Be("integer");
+        schema.Format.Should().Be("int32");
+        schema.Minimum.Should().Be(0);
+        schema.Maximum.Should().Be(maximum);
+        schema.Properties.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void LearningContractSchemaFilter_DescribesReviewMethodsAsTheNumericWireBitmask()
+    {
+        var schema = new OpenApiSchema
+        {
+            Type = "string",
+            Enum = [new OpenApiString("AutomatedReview")],
+        };
+        var context = new SchemaFilterContext(typeof(ReviewMethods), Mock.Of<ISchemaGenerator>(), new SchemaRepository());
+
+        new LearningContractSchemaFilter().Apply(schema, context);
+
+        schema.Type.Should().Be("integer");
+        schema.Format.Should().Be("int32");
+        schema.Enum.Cast<OpenApiInteger>().Select(value => value.Value)
+            .Should().Equal(0, 1, 2, 4, 8, 9, 10, 12, 16, 24);
     }
 
     [Fact]

@@ -1,4 +1,5 @@
 using FluentAssertions;
+using GameGuild.Learning.Grading.Contracts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Conventions;
 using Xunit;
@@ -37,7 +38,7 @@ public sealed class AssignmentDeliveryContractTests
     [Fact]
     public void SetDeliverySchedule_WhenAvailabilityEndsBeforeItStarts_ShouldRejectIt()
     {
-        var assessment = Assessment.Create(Guid.NewGuid(), "Assignment", AssessmentType.Assignment, 100);
+        var assessment = Assessment.Create(Guid.NewGuid(), "Assignment", AssessmentType.Assignment, Score("100"));
 
         var action = () => assessment.SetAvailability(DateTime.UtcNow.AddDays(2), DateTime.UtcNow.AddDays(1));
 
@@ -46,7 +47,7 @@ public sealed class AssignmentDeliveryContractTests
     }
 
     [Fact]
-    public void AssessmentSubmission_ShouldExposePersistedPayloadsForEverySupportedModality()
+    public void AssessmentSubmission_ShouldExposeOnlyGenericPersistedPayloads()
     {
         var properties = typeof(AssessmentSubmission).GetProperties().Select(property => property.Name);
 
@@ -57,9 +58,10 @@ public sealed class AssignmentDeliveryContractTests
             "UrlPayload",
             "CodePayload",
             "MediaPayload",
-            "ProjectPayload",
-            "StructuredAnswerPayload"
+            "ProjectPayload"
         });
+        properties.Should().NotContain("StructuredAnswerPayload");
+        typeof(SubmitAssessmentRequest).GetProperty("StructuredAnswerPayload").Should().BeNull();
     }
 
     [Fact]
@@ -71,7 +73,7 @@ public sealed class AssignmentDeliveryContractTests
     [Fact]
     public void SetDeliverySchedule_WhenLateDeadlineIsOutsideAvailability_ShouldRejectIt()
     {
-        var assessment = Assessment.Create(Guid.NewGuid(), "Assignment", AssessmentType.Assignment, 100);
+        var assessment = Assessment.Create(Guid.NewGuid(), "Assignment", AssessmentType.Assignment, Score("100"));
         var dueAt = DateTime.UtcNow.AddDays(1);
 
         var action = () => assessment.SetDeliverySchedule(
@@ -88,7 +90,7 @@ public sealed class AssignmentDeliveryContractTests
     [Fact]
     public void SetDeliverySchedule_WhenLateSubmissionsHaveNoDeadline_ShouldRejectIt()
     {
-        var assessment = Assessment.Create(Guid.NewGuid(), "Assignment", AssessmentType.Assignment, 100);
+        var assessment = Assessment.Create(Guid.NewGuid(), "Assignment", AssessmentType.Assignment, Score("100"));
         var dueAt = DateTime.UtcNow.AddDays(1);
 
         var action = () => assessment.SetDeliverySchedule(
@@ -108,7 +110,7 @@ public sealed class AssignmentDeliveryContractTests
         var now = DateTime.UtcNow;
         var dueAt = now.AddDays(1);
         var deadline = dueAt.AddDays(1);
-        var assessment = Assessment.Create(Guid.NewGuid(), "Assignment", AssessmentType.Assignment, 100);
+        var assessment = Assessment.Create(Guid.NewGuid(), "Assignment", AssessmentType.Assignment, Score("100"));
         assessment.SetDeliverySchedule(now, deadline.AddDays(1), dueAt, true, deadline);
 
         assessment.TryGetSubmissionTiming(dueAt, out var atDueLate).Should().BeTrue();
@@ -126,17 +128,22 @@ public sealed class AssignmentDeliveryContractTests
     [Fact]
     public void Update_WhenAvailabilityEndsBeforeItStarts_ShouldRejectIt()
     {
-        var assessment = Assessment.Create(Guid.NewGuid(), "Assignment", AssessmentType.Assignment, 100);
+        var assessment = Assessment.Create(Guid.NewGuid(), "Assignment", AssessmentType.Assignment, Score("100"));
 
         var action = () => assessment.Update(
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            DateTime.UtcNow.AddDays(2),
-            DateTime.UtcNow.AddDays(1));
+            title: null,
+            description: null,
+            clearDescription: false,
+            maxScore: null,
+            passingScore: null,
+            timeLimitMinutes: null,
+            clearTimeLimitMinutes: false,
+            maxAttempts: null,
+            isRequired: null,
+            availableFrom: DateTime.UtcNow.AddDays(2),
+            clearAvailableFrom: false,
+            availableUntil: DateTime.UtcNow.AddDays(1),
+            clearAvailableUntil: false);
 
         action.Should().Throw<ArgumentException>()
             .WithMessage("*availability end must be on or after availability start*");
@@ -145,7 +152,7 @@ public sealed class AssignmentDeliveryContractTests
     [Fact]
     public void TryGetSubmissionTiming_WhenInsideLateWindow_ShouldAcceptAndMarkLate()
     {
-        var assessment = Assessment.Create(Guid.NewGuid(), "Assignment", AssessmentType.Assignment, 100);
+        var assessment = Assessment.Create(Guid.NewGuid(), "Assignment", AssessmentType.Assignment, Score("100"));
         var dueAt = DateTime.UtcNow.AddDays(1);
         assessment.SetDeliverySchedule(
             DateTime.UtcNow,
@@ -170,44 +177,40 @@ public sealed class AssignmentDeliveryContractTests
             UrlPayload: "https://example.test/demo",
             CodePayload: "Console.WriteLine(\"hello\");",
             MediaPayload: "https://example.test/demo.mp4",
-            ProjectPayload: "project:abc",
-            StructuredAnswerPayload: "{\"answer\":42}");
+            ProjectPayload: "project:abc");
 
         submission.SetPayload(payload, SubmissionModality.Text |
                                        SubmissionModality.File |
                                        SubmissionModality.Url |
                                        SubmissionModality.Code |
                                        SubmissionModality.Media |
-                                       SubmissionModality.Project |
-                                       SubmissionModality.StructuredAnswer);
+                                       SubmissionModality.Project);
 
         submission.SubmittedModalities.Should().Be(SubmissionModality.Text |
                                                     SubmissionModality.File |
                                                     SubmissionModality.Url |
                                                     SubmissionModality.Code |
                                                     SubmissionModality.Media |
-                                                    SubmissionModality.Project |
-                                                    SubmissionModality.StructuredAnswer);
+                                                    SubmissionModality.Project);
         submission.TextPayload.Should().Be(payload.TextPayload);
         submission.FilePayload.Should().Be(payload.FilePayload);
         submission.UrlPayload.Should().Be(payload.UrlPayload);
         submission.CodePayload.Should().Be(payload.CodePayload);
         submission.MediaPayload.Should().Be(payload.MediaPayload);
         submission.ProjectPayload.Should().Be(payload.ProjectPayload);
-        submission.StructuredAnswerPayload.Should().Be(payload.StructuredAnswerPayload);
     }
 
     [Fact]
-    public void SetPayload_WhenStructuredAnswerIsInvalidJson_ShouldRejectIt()
+    public void SetPayload_WhenOnlyStructuredAnswerModalityIsAllowed_ShouldRejectGenericPayload()
     {
         var submission = AssessmentSubmission.Start(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), 1);
 
         var action = () => submission.SetPayload(
-            new SubmitAssessmentRequest(StructuredAnswerPayload: "not-json"),
+            new SubmitAssessmentRequest(TextPayload: "answer owned by grading execution"),
             SubmissionModality.StructuredAnswer);
 
         action.Should().Throw<ArgumentException>()
-            .WithMessage("Structured answer payload must be valid JSON*");
+            .WithMessage("Submission payload contains a modality that is not accepted by this assessment.*");
     }
 
     [Fact]
@@ -239,7 +242,7 @@ public sealed class AssignmentDeliveryContractTests
     {
         var submission = AssessmentSubmission.Start(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), 1);
 
-        var action = () => submission.Grade(80, 60, 100);
+        var action = () => submission.Grade(Score("80"), Score("60"), Score("100"));
 
         action.Should().Throw<InvalidOperationException>()
             .WithMessage("Only submitted submissions can be graded.");
@@ -252,9 +255,9 @@ public sealed class AssignmentDeliveryContractTests
     {
         var submission = AssessmentSubmission.Start(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), 1);
         submission.Submit(isLate);
-        submission.Grade(80, 60, 100);
+        submission.Grade(Score("80"), Score("60"), Score("100"));
 
-        var action = () => submission.Grade(90, 60, 100);
+        var action = () => submission.Grade(Score("90"), Score("60"), Score("100"));
 
         action.Should().Throw<InvalidOperationException>()
             .WithMessage("Only submitted submissions can be graded.");
@@ -334,4 +337,6 @@ public sealed class AssignmentDeliveryContractTests
         entity.GetCheckConstraints().Should().Contain(constraint =>
             constraint.Name == "CK_AssessmentSubmissions_SubmittedModalities");
     }
+
+    private static ScoreValue Score(string value) => ScoreValue.FromPoints(value);
 }

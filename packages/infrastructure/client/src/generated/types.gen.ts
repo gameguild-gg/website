@@ -7606,7 +7606,7 @@ export interface LaunchPadUpdateLaunchPadSettingsInput {
 
 export interface LearningAssessmentsAnonymousReviewAssessment {
   id?: string;
-  maxScore?: number;
+  maxScore?: LearningGradingContractsScoreValue;
   title?: string | null;
 }
 
@@ -7624,7 +7624,6 @@ export interface LearningAssessmentsAnonymousReviewSubmission {
   reviewId?: string;
   rubric?: LearningAssessmentsAnonymousReviewRubric;
   status?: LearningAssessmentsPeerReviewStatus;
-  structuredAnswerPayload?: string | null;
   submissionStatus?: LearningAssessmentsSubmissionStatus;
   submittedAt?: string | null;
   textPayload?: string | null;
@@ -7637,38 +7636,36 @@ export interface LearningAssessmentsAssessment {
   assessmentGroupId?: string | null;
   assessmentGroupName?: string | null;
   assessmentGroupOrder?: number | null;
-  assessmentGroupWeightPercent?: number | null;
+  assessmentGroupWeightPercent?: LearningGradingContractsPercentValue;
+  attemptContributionMode?: LearningAssessmentsGradingContractsAttemptContributionMode;
   availableFrom?: string | null;
   availableUntil?: string | null;
+  contentCompletionMode?: LearningAssessmentsGradingContractsContentCompletionMode;
   contentId?: string | null;
   courseId?: string;
   description?: string | null;
   dueAt?: string | null;
-  gradingMethods?: LearningAssessmentsAssessmentGradingMethod;
   groupSetId?: string | null;
   isAvailable?: boolean;
   isRequired?: boolean;
   lateSubmissionDeadline?: string | null;
-  maxAttempts?: number | null;
-  maxScore?: number;
+  maxAttempts?: number;
+  maxScore?: LearningGradingContractsScoreValue;
   order?: number;
-  peerReviewsRequiredCount?: number;
+  passingScore?: LearningGradingContractsScoreValue;
   presentationMode?: LearningAssessmentsAssessmentPresentationMode;
+  publishedDefinitionRevisionId?: string | null;
+  resultReleaseMode?: LearningAssessmentsGradingContractsResultReleaseMode;
+  resultReleaseScheduledFor?: string | null;
+  reviewConfigurationCanonicalJson?: string | null;
+  reviewMethods?: LearningAssessmentsGradingContractsReviewMethods;
   slug?: string | null;
   submissionModalities?: LearningAssessmentsSubmissionModality;
   timeLimitMinutes?: number | null;
   title?: string | null;
   type?: LearningAssessmentsAssessmentType;
+  version?: number;
 }
-
-export interface LearningAssessmentsAssessmentDefinition {
-  assessmentId?: string;
-  definition?: Record<string, unknown>;
-  definitionSchemaVersion?: number;
-}
-
-/** A comma-separated combination of the declared flag names. */
-export type LearningAssessmentsAssessmentGradingMethod = string;
 
 export interface LearningAssessmentsAssessmentGroup {
   id?: string;
@@ -7676,19 +7673,19 @@ export interface LearningAssessmentsAssessmentGroup {
   description?: string | null;
   name?: string | null;
   order?: number;
-  weightPercent?: number;
+  weightPercent?: LearningGradingContractsPercentValue;
 }
 
 export interface LearningAssessmentsAssessmentGroupAnalytics {
   assessmentCount?: number;
-  averagePercent?: number;
+  averagePercent?: LearningGradingContractsPercentValue;
   distribution?: Array<LearningAssessmentsAssessmentScoreBucket> | null;
   gradedCount?: number;
   groupId?: string | null;
   groupName?: string | null;
-  passRate?: number;
+  passRate?: LearningGradingContractsPercentValue;
   ungradedCount?: number;
-  weightPercent?: number | null;
+  weightPercent?: LearningGradingContractsPercentValue;
 }
 
 export type LearningAssessmentsAssessmentPresentationMode = 'SingleStep' | 'Continuous';
@@ -7714,10 +7711,9 @@ export interface LearningAssessmentsAssessmentSubmission {
   mediaPayload?: string | null;
   passed?: boolean | null;
   projectPayload?: string | null;
-  score?: number | null;
+  score?: LearningGradingContractsScoreValue;
   startedAt?: string;
   status?: LearningAssessmentsSubmissionStatus;
-  structuredAnswerPayload?: string | null;
   submittedAt?: string | null;
   submittedModalities?: LearningAssessmentsSubmissionModality;
   textPayload?: string | null;
@@ -7725,7 +7721,6 @@ export interface LearningAssessmentsAssessmentSubmission {
   userId?: string;
 }
 
-/** Legacy value Exam is normalized on read and is not valid for new assessments. */
 export type LearningAssessmentsAssessmentType = 'Quiz' | 'Assignment' | 'Project' | 'PeerReview' | 'SelfAssessment';
 
 export interface LearningAssessmentsAssignAssessmentGroupInput {
@@ -7740,12 +7735,12 @@ export interface LearningAssessmentsCanAttemptOutput {
 
 export interface LearningAssessmentsCourseAssessmentAnalytics {
   assessmentCount?: number;
-  averagePercent?: number;
+  averagePercent?: LearningGradingContractsPercentValue;
   courseId?: string;
   distribution?: Array<LearningAssessmentsAssessmentScoreBucket> | null;
   gradedCount?: number;
   groups?: Array<LearningAssessmentsAssessmentGroupAnalytics> | null;
-  passRate?: number;
+  passRate?: LearningGradingContractsPercentValue;
   ungradedCount?: number;
 }
 
@@ -7754,7 +7749,7 @@ export interface LearningAssessmentsCreateAssessmentGroupInput {
   description?: string | null;
   name?: string | null;
   order?: number;
-  weightPercent?: number;
+  weightPercent?: LearningGradingContractsPercentValue;
 }
 
 export interface LearningAssessmentsCreateAssessmentInput {
@@ -7766,12 +7761,13 @@ export interface LearningAssessmentsCreateAssessmentInput {
   courseId?: string;
   description?: string | null;
   dueAt?: string | null;
-  gradingMethods?: LearningAssessmentsAssessmentGradingMethod;
   isRequired?: boolean;
   lateSubmissionDeadline?: string | null;
-  maxAttempts?: number | null;
-  maxScore?: number;
+  maxAttempts?: number;
+  maxScore?: LearningGradingContractsScoreValue;
+  passingScore?: LearningGradingContractsScoreValue;
   presentationMode?: LearningAssessmentsAssessmentPresentationMode;
+  reviewMethods?: LearningAssessmentsGradingContractsReviewMethods;
   slug?: string | null;
   submissionModalities?: LearningAssessmentsSubmissionModality;
   timeLimitMinutes?: number | null;
@@ -7792,8 +7788,96 @@ export interface LearningAssessmentsGradeSubmissionInput {
   feedback?: string | null;
   gradedBy?: string | null;
   rubricScores?: string | null;
-  score?: number;
+  score?: LearningGradingContractsScoreValue;
 }
+
+export interface LearningAssessmentsGradingAuthoringAssessmentAuthoringStateResult {
+  assessmentId?: string;
+  assessmentVersion?: number;
+  candidate?: LearningAssessmentsGradingAuthoringAssessmentRevisionStateResult;
+  candidateMatchesDraft?: boolean;
+  currentAuthoringSourceHash?: string | null;
+  lifecycle?: string | null;
+  prepare?: LearningAssessmentsGradingAuthoringAssessmentCapabilityStateResult;
+  publish?: LearningAssessmentsGradingAuthoringAssessmentCapabilityStateResult;
+  published?: LearningAssessmentsGradingAuthoringAssessmentRevisionStateResult;
+  publishedMatchesDraft?: boolean;
+}
+
+export interface LearningAssessmentsGradingAuthoringAssessmentCapabilityStateResult {
+  available?: boolean;
+  code?: string | null;
+  message?: string | null;
+}
+
+export interface LearningAssessmentsGradingAuthoringAssessmentDraftResult {
+  assessmentId?: string | null;
+  assessmentVersion?: number | null;
+  contentId?: string;
+  contentVersion?: number;
+}
+
+export interface LearningAssessmentsGradingAuthoringAssessmentRevisionStateResult {
+  authoringSourceHash?: string | null;
+  createdAt?: string;
+  executionSnapshotHash?: string | null;
+  revisionId?: string;
+  revisionNumber?: number;
+}
+
+export interface LearningAssessmentsGradingAuthoringPrepareAssessmentRevisionInput {
+  expectedAssessmentVersion?: number;
+}
+
+export interface LearningAssessmentsGradingAuthoringPreparedAssessmentRevisionResult {
+  authoringSourceHash?: string | null;
+  executionSnapshotHash?: string | null;
+  revisionId?: string;
+  revisionNumber?: number;
+}
+
+export interface LearningAssessmentsGradingAuthoringPublishAssessmentRevisionInput {
+  expectedAssessmentVersion?: number;
+  revisionId?: string;
+}
+
+export interface LearningAssessmentsGradingAuthoringSaveAssessmentDraftInput {
+  attemptContributionMode?: LearningAssessmentsGradingContractsAttemptContributionMode;
+  contentCompletionMode?: LearningAssessmentsGradingContractsContentCompletionMode;
+  description?: string | null;
+  document?: Record<string, unknown>;
+  estimatedMinutes?: number | null;
+  estimatedMinutesSource?: LearningCoursesEstimatedMinutesSource;
+  expectedAssessmentVersion?: number | null;
+  expectedContentVersion?: number;
+  isRequired?: boolean;
+  maxAttempts?: number;
+  passingScore?: LearningGradingContractsScoreValue;
+  presentationMode?: LearningAssessmentsAssessmentPresentationMode;
+  resultReleaseMode?: LearningAssessmentsGradingContractsResultReleaseMode;
+  resultReleaseScheduledFor?: string | null;
+  reviewConfigurationCanonicalJson?: string | null;
+  reviewMethods?: LearningAssessmentsGradingContractsReviewMethods;
+  slug?: string | null;
+  timeLimitMinutes?: number | null;
+  title?: string | null;
+  visibility?: LearningCoursesVisibility;
+}
+
+export interface LearningAssessmentsGradingAuthoringUnpublishAssessmentRevisionInput {
+  expectedAssessmentVersion?: number;
+  expectedRevisionId?: string;
+  idempotencyKey?: string | null;
+}
+
+export type LearningAssessmentsGradingContractsAttemptContributionMode = 'first-finalized' | 'last-finalized' | 'highest-finalized';
+
+export type LearningAssessmentsGradingContractsContentCompletionMode = 'on-submit' | 'on-finalize' | 'on-release' | 'on-release-and-pass';
+
+export type LearningAssessmentsGradingContractsResultReleaseMode = 'immediate' | 'manual' | 'scheduled';
+
+/** Numeric review-workflow bitmask. Valid values are 0, 1, 2, 4, 8, 9, 10, 12, 16, and 24. */
+export type LearningAssessmentsGradingContractsReviewMethods = 0 | 1 | 2 | 4 | 8 | 9 | 10 | 12 | 16 | 24;
 
 export interface LearningAssessmentsGradingQueue {
   assessment?: LearningAssessmentsGradingQueueAssessment;
@@ -7804,11 +7888,10 @@ export interface LearningAssessmentsGradingQueue {
 
 export interface LearningAssessmentsGradingQueueAssessment {
   id?: string;
-  gradingMethods?: string | null;
   groupSetId?: string | null;
   hasRubric?: boolean;
-  maxScore?: number;
-  peerReviewsRequiredCount?: number;
+  maxScore?: LearningGradingContractsScoreValue;
+  reviewMethods?: LearningAssessmentsGradingContractsReviewMethods;
   rubric?: LearningAssessmentsRubric;
   title?: string | null;
   type?: LearningAssessmentsAssessmentType;
@@ -7816,7 +7899,7 @@ export interface LearningAssessmentsGradingQueueAssessment {
 
 export interface LearningAssessmentsGradingQueueItem {
   assignmentPassed?: boolean | null;
-  assignmentScore?: number | null;
+  assignmentScore?: LearningGradingContractsScoreValue;
   attemptCount?: number;
   attemptNumber?: number;
   canonicalSubmissionId?: string;
@@ -7884,7 +7967,7 @@ export interface LearningAssessmentsInstructorPeerReview {
   reviewerUserId?: string;
   reviewId?: string;
   rubricScoresPayload?: string | null;
-  score?: number | null;
+  score?: LearningGradingContractsScoreValue;
   submittedAt?: string | null;
 }
 
@@ -7913,10 +7996,9 @@ export interface LearningAssessmentsLearnerAssessmentSubmission {
   mediaPayload?: string | null;
   passed?: boolean | null;
   projectPayload?: string | null;
-  score?: number | null;
+  score?: LearningGradingContractsScoreValue;
   startedAt?: string;
   status?: LearningAssessmentsSubmissionStatus;
-  structuredAnswerPayload?: string | null;
   submittedAt?: string | null;
   submittedModalities?: LearningAssessmentsSubmissionModality;
   textPayload?: string | null;
@@ -7944,14 +8026,14 @@ export type LearningAssessmentsPeerReviewStatus = 'Assigned' | 'Submitted';
 export interface LearningAssessmentsPeerReviewSubmitInput {
   feedback?: string | null;
   rubricScores?: string | null;
-  score?: number | null;
+  score?: LearningGradingContractsScoreValue;
 }
 
 export interface LearningAssessmentsReceivedPeerReview {
   feedback?: string | null;
   reviewId?: string;
   rubricScoresPayload?: string | null;
-  score?: number | null;
+  score?: LearningGradingContractsScoreValue;
   submittedAt?: string | null;
 }
 
@@ -7965,13 +8047,13 @@ export interface LearningAssessmentsRubricCriterion {
   id?: string;
   description?: string | null;
   order?: number;
-  points?: number;
+  points?: LearningGradingContractsScoreValue;
 }
 
 export interface LearningAssessmentsSaveRubricCriterionInput {
   description?: string | null;
   order?: number;
-  points?: number;
+  points?: LearningGradingContractsScoreValue;
 }
 
 export interface LearningAssessmentsSaveRubricInput {
@@ -7993,7 +8075,6 @@ export interface LearningAssessmentsSubmitAssessmentInput {
   filePayload?: string | null;
   mediaPayload?: string | null;
   projectPayload?: string | null;
-  structuredAnswerPayload?: string | null;
   textPayload?: string | null;
   urlPayload?: string | null;
 }
@@ -8018,30 +8099,40 @@ export interface LearningAssessmentsUpdateAssessmentGroupInput {
   description?: string | null;
   name?: string | null;
   order?: number | null;
-  weightPercent?: number | null;
+  weightPercent?: LearningGradingContractsPercentValue;
 }
 
 export interface LearningAssessmentsUpdateAssessmentInput {
   allowLateSubmissions?: boolean | null;
   assessmentGroupId?: string | null;
+  attemptContributionMode?: LearningAssessmentsGradingContractsAttemptContributionMode;
   availableFrom?: string | null;
   availableUntil?: string | null;
   clearAssessmentGroupId?: boolean;
+  clearAvailableFrom?: boolean;
+  clearAvailableUntil?: boolean;
   clearContentId?: boolean;
+  clearDescription?: boolean;
   clearDueAt?: boolean;
   clearGroupSetId?: boolean;
   clearLateSubmissionDeadline?: boolean;
+  clearTimeLimitMinutes?: boolean;
+  contentCompletionMode?: LearningAssessmentsGradingContractsContentCompletionMode;
   contentId?: string | null;
   description?: string | null;
   dueAt?: string | null;
-  gradingMethods?: LearningAssessmentsAssessmentGradingMethod;
+  expectedVersion?: number;
   groupSetId?: string | null;
   isRequired?: boolean | null;
   lateSubmissionDeadline?: string | null;
   maxAttempts?: number | null;
-  maxScore?: number | null;
-  peerReviewsRequiredCount?: number | null;
+  maxScore?: LearningGradingContractsScoreValue;
+  passingScore?: LearningGradingContractsScoreValue;
   presentationMode?: LearningAssessmentsAssessmentPresentationMode;
+  resultReleaseMode?: LearningAssessmentsGradingContractsResultReleaseMode;
+  resultReleaseScheduledFor?: string | null;
+  reviewConfigurationCanonicalJson?: string | null;
+  reviewMethods?: LearningAssessmentsGradingContractsReviewMethods;
   slug?: string | null;
   submissionModalities?: LearningAssessmentsSubmissionModality;
   timeLimitMinutes?: number | null;
@@ -8342,7 +8433,6 @@ export interface LearningCoursesActivityGrade {
   contentInteractionId?: string;
   createdAt?: string;
   feedback?: string | null;
-  grade?: number;
   gradedAt?: string;
   gradePercentage?: string | null;
   grader?: LearningCoursesGraderSummary;
@@ -8351,6 +8441,9 @@ export interface LearningCoursesActivityGrade {
   hasFeedback?: boolean;
   hasGradingDetails?: boolean;
   isPassingGrade?: boolean;
+  maxPoints?: LearningGradingContractsScoreValue;
+  percentageScore?: LearningGradingContractsPercentValue;
+  points?: LearningGradingContractsScoreValue;
   updatedAt?: string;
 }
 
@@ -8429,7 +8522,7 @@ export interface LearningCoursesContentInteraction {
   id?: string;
   canModify?: boolean;
   completedAt?: string | null;
-  completionPercentage?: number;
+  completionPercentage?: LearningGradingContractsPercentValue;
   content?: LearningCoursesContentSummary;
   contentId?: string;
   createdAt?: string;
@@ -8457,7 +8550,7 @@ export interface LearningCoursesContentInteractionEvent {
   occurredAt?: string;
   payload?: string | null;
   positionSeconds?: number | null;
-  progressPercentage?: number | null;
+  progressPercentage?: LearningGradingContractsPercentValue;
   type?: LearningCoursesContentInteractionEventType;
 }
 
@@ -8476,7 +8569,7 @@ export interface LearningCoursesContentInteractionSummary {
 
 export interface LearningCoursesContentProgress {
   completedAt?: string | null;
-  completionPercentage?: number;
+  completionPercentage?: LearningGradingContractsPercentValue;
   contentId?: string;
   firstAccessedAt?: string | null;
   lastAccessedAt?: string | null;
@@ -8522,16 +8615,17 @@ export interface LearningCoursesCourseSupportTicketMessageInput {
 export interface LearningCoursesCreateActivityGrade {
   contentInteractionId?: string;
   feedback?: string | null;
-  grade?: number;
   graderProgramUserId?: string;
   gradingDetails?: string | null;
+  maxPoints?: LearningGradingContractsScoreValue;
+  points?: LearningGradingContractsScoreValue;
 }
 
 export interface LearningCoursesCreatePrerequisiteApiInput {
   courseId?: string;
   description?: string | null;
   displayOrder?: number;
-  minimumGrade?: number | null;
+  minimumGrade?: LearningGradingContractsPercentValue;
   prerequisiteCourseId?: string;
   prerequisiteGroup?: string | null;
   type?: LearningCoursesPrerequisiteType;
@@ -8547,7 +8641,7 @@ export interface LearningCoursesCreateProductFromProgram {
 export interface LearningCoursesCreateProgram {
   creatorId?: string | null;
   description?: string | null;
-  passingScore?: number;
+  passingScore?: LearningGradingContractsPercentValue;
   slug?: string | null;
   thumbnail?: string | null;
   title?: string | null;
@@ -8594,12 +8688,12 @@ export interface LearningCoursesGraderSummary {
 }
 
 export interface LearningCoursesGradeStatistics {
-  averageGrade?: number;
+  averageGrade?: LearningGradingContractsPercentValue;
   averageGradeFormatted?: string | null;
   hasGrades?: boolean;
-  maxGrade?: number;
-  minGrade?: number;
-  passingRate?: number;
+  maxGrade?: LearningGradingContractsPercentValue;
+  minGrade?: LearningGradingContractsPercentValue;
+  passingRate?: LearningGradingContractsPercentValue;
   passingRateFormatted?: string | null;
   totalGrades?: number;
 }
@@ -8629,7 +8723,7 @@ export interface LearningCoursesPrerequisite {
   createdAt?: string;
   description?: string | null;
   displayOrder?: number;
-  minimumGrade?: number | null;
+  minimumGrade?: LearningGradingContractsPercentValue;
   prerequisiteCourseId?: string;
   prerequisiteCourseName?: string | null;
   prerequisiteGroup?: string | null;
@@ -8643,13 +8737,13 @@ export interface LearningCoursesPrerequisiteCheckResult {
 }
 
 export interface LearningCoursesPrerequisiteStatus {
-  achievedGrade?: number | null;
+  achievedGrade?: LearningGradingContractsPercentValue;
   courseName?: string | null;
   isSatisfied?: boolean;
   prerequisiteCourseId?: string;
   prerequisiteId?: string;
   reason?: string | null;
-  requiredGrade?: number | null;
+  requiredGrade?: LearningGradingContractsPercentValue;
   type?: LearningCoursesPrerequisiteType;
 }
 
@@ -8678,7 +8772,7 @@ export interface LearningCoursesProgram {
   isEnrollmentOpen?: boolean;
   maxEnrollments?: number | null;
   metadata?: string | null;
-  passingScore?: number;
+  passingScore?: LearningGradingContractsPercentValue;
   skillsProvided?: string | null;
   skillsRequired?: string | null;
   slug?: string | null;
@@ -8726,6 +8820,7 @@ export interface LearningCoursesProgramContent {
   title?: string | null;
   type?: LearningCoursesProgramContentType;
   updatedAt?: string | null;
+  version?: number;
   visibility?: LearningCoursesVisibility;
 }
 
@@ -8749,7 +8844,7 @@ export interface LearningCoursesRecordContentInteractionEventInput {
   occurredAt?: string | null;
   payload?: string | null;
   positionSeconds?: number | null;
-  progressPercentage?: number | null;
+  progressPercentage?: LearningGradingContractsPercentValue;
   type?: LearningCoursesContentInteractionEventType;
 }
 
@@ -8856,14 +8951,15 @@ export interface LearningCoursesTestSuite {
 
 export interface LearningCoursesUpdateActivityGrade {
   feedback?: string | null;
-  grade?: number | null;
   gradingDetails?: string | null;
+  maxPoints?: LearningGradingContractsScoreValue;
+  points?: LearningGradingContractsScoreValue;
 }
 
 export interface LearningCoursesUpdatePrerequisiteApiInput {
   description?: string | null;
   displayOrder?: number | null;
-  minimumGrade?: number | null;
+  minimumGrade?: LearningGradingContractsPercentValue;
   prerequisiteGroup?: string | null;
   type?: LearningCoursesPrerequisiteType;
 }
@@ -8887,7 +8983,7 @@ export interface LearningCoursesUpdateProgram {
   estimatedHours?: number | null;
   maxEnrollments?: number | null;
   metadata?: string | null;
-  passingScore?: number | null;
+  passingScore?: LearningGradingContractsPercentValue;
   skillsProvided?: string | null;
   skillsRequired?: string | null;
   slug?: string | null;
@@ -8921,7 +9017,7 @@ export interface LearningCoursesUpdateProgress {
 }
 
 export interface LearningCoursesUpdateProgressInput {
-  completionPercentage?: number;
+  completionPercentage?: LearningGradingContractsPercentValue;
   contentId?: string;
   programUserId?: string;
 }
@@ -8934,7 +9030,7 @@ export interface LearningCoursesUpdateTimeSpentInput {
 
 export interface LearningCoursesUserProgress {
   completedAt?: string | null;
-  completionPercentage?: number;
+  completionPercentage?: LearningGradingContractsPercentValue;
   contentProgress?: Array<LearningCoursesContentProgress> | null;
   courseId?: string;
   enrollmentId?: string;
@@ -9406,6 +9502,12 @@ export interface LearningExperienceSocialServicesWishlistPreferencesInput {
   notifyOnUpdate?: boolean;
 }
 
+/** Percentage in integer units scaled by 100 (100 units = 1%, range 0..10000). */
+export type LearningGradingContractsPercentValue = number;
+
+/** Score in non-negative integer units scaled by 100 (100 units = 1 point). */
+export type LearningGradingContractsScoreValue = number;
+
 export interface LearningWorkspacesLearnerAnnouncement {
   content?: string | null;
   courseId?: string;
@@ -9429,7 +9531,7 @@ export interface LearningWorkspacesLearnerAssessment {
   isRequired?: boolean;
   lateSubmissionDeadline?: string | null;
   maxAttempts?: number | null;
-  maxScore?: number;
+  maxScore?: LearningGradingContractsScoreValue;
   order?: number;
   presentationMode?: string | null;
   submissionModalities?: string | null;
@@ -9448,7 +9550,7 @@ export interface LearningWorkspacesLearnerAssessmentDeadline {
   courseTitle?: string | null;
   dueAt?: string | null;
   groupId?: string | null;
-  maxScore?: number;
+  maxScore?: LearningGradingContractsScoreValue;
   submissionStatus?: string | null;
   title?: string | null;
   type?: string | null;
@@ -9459,7 +9561,7 @@ export interface LearningWorkspacesLearnerAssessmentGroup {
   groupId?: string;
   name?: string | null;
   order?: number;
-  weightPercent?: number;
+  weightPercent?: LearningGradingContractsPercentValue;
 }
 
 export interface LearningWorkspacesLearnerAssessmentSubmission {
@@ -9470,7 +9572,7 @@ export interface LearningWorkspacesLearnerAssessmentSubmission {
   gradedAt?: string | null;
   isLate?: boolean;
   passed?: boolean | null;
-  score?: number | null;
+  score?: LearningGradingContractsScoreValue;
   startedAt?: string;
   status?: string | null;
   submissionId?: string;
@@ -9524,9 +9626,9 @@ export interface LearningWorkspacesLearnerContentProgress {
   contentId?: string;
   firstAccessedAt?: string | null;
   lastAccessedAt?: string | null;
-  maxScore?: number | null;
-  progressPercentage?: number;
-  score?: number | null;
+  maxScore?: LearningGradingContractsScoreValue;
+  progressPercentage?: LearningGradingContractsPercentValue;
+  score?: LearningGradingContractsScoreValue;
   status?: string | null;
   timeSpentSeconds?: number;
 }
@@ -9545,8 +9647,8 @@ export interface LearningWorkspacesLearnerCourseSummary {
   enrollmentId?: string;
   enrollmentStatus?: string | null;
   estimatedHours?: number | null;
-  finalGrade?: number | null;
-  progressPercentage?: number;
+  finalGrade?: LearningGradingContractsPercentValue;
+  progressPercentage?: LearningGradingContractsPercentValue;
   remainingMinutes?: number;
   slug?: string | null;
   thumbnail?: string | null;
@@ -9599,9 +9701,9 @@ export interface LearningWorkspacesLearnerGradeItem {
   feedback?: string | null;
   gradedAt?: string | null;
   groupId?: string | null;
-  maxScore?: number;
+  maxScore?: LearningGradingContractsScoreValue;
   passed?: boolean | null;
-  score?: number | null;
+  score?: LearningGradingContractsScoreValue;
   submissionStatus?: string | null;
   title?: string | null;
   type?: string | null;
@@ -9611,13 +9713,13 @@ export interface LearningWorkspacesLearnerGradeSummary {
   courseId?: string;
   courseSlug?: string | null;
   courseTitle?: string | null;
-  earnedPoints?: number | null;
-  finalGrade?: number | null;
+  earnedPoints?: LearningGradingContractsScoreValue;
+  finalGrade?: LearningGradingContractsPercentValue;
   gradedAssessments?: number;
   groups?: Array<LearningWorkspacesLearnerAssessmentGroup> | null;
   items?: Array<LearningWorkspacesLearnerGradeItem> | null;
-  percentage?: number | null;
-  possiblePoints?: number | null;
+  percentage?: LearningGradingContractsPercentValue;
+  possiblePoints?: LearningGradingContractsScoreValue;
   totalAssessments?: number;
 }
 
@@ -13854,8 +13956,6 @@ export let LearningAssessmentsAnonymousReviewAssessmentSchema: z.ZodType<Learnin
 export let LearningAssessmentsAnonymousReviewRubricSchema: z.ZodType<LearningAssessmentsAnonymousReviewRubric>;
 export let LearningAssessmentsAnonymousReviewSubmissionSchema: z.ZodType<LearningAssessmentsAnonymousReviewSubmission>;
 export let LearningAssessmentsAssessmentSchema: z.ZodType<LearningAssessmentsAssessment>;
-export let LearningAssessmentsAssessmentDefinitionSchema: z.ZodType<LearningAssessmentsAssessmentDefinition>;
-export let LearningAssessmentsAssessmentGradingMethodSchema: z.ZodType<LearningAssessmentsAssessmentGradingMethod>;
 export let LearningAssessmentsAssessmentGroupSchema: z.ZodType<LearningAssessmentsAssessmentGroup>;
 export let LearningAssessmentsAssessmentGroupAnalyticsSchema: z.ZodType<LearningAssessmentsAssessmentGroupAnalytics>;
 export let LearningAssessmentsAssessmentPresentationModeSchema: z.ZodType<LearningAssessmentsAssessmentPresentationMode>;
@@ -13870,6 +13970,19 @@ export let LearningAssessmentsCreateAssessmentInputSchema: z.ZodType<LearningAss
 export let LearningAssessmentsCreateGroupInputSchema: z.ZodType<LearningAssessmentsCreateGroupInput>;
 export let LearningAssessmentsCreateGroupSetInputSchema: z.ZodType<LearningAssessmentsCreateGroupSetInput>;
 export let LearningAssessmentsGradeSubmissionInputSchema: z.ZodType<LearningAssessmentsGradeSubmissionInput>;
+export let LearningAssessmentsGradingAuthoringAssessmentAuthoringStateResultSchema: z.ZodType<LearningAssessmentsGradingAuthoringAssessmentAuthoringStateResult>;
+export let LearningAssessmentsGradingAuthoringAssessmentCapabilityStateResultSchema: z.ZodType<LearningAssessmentsGradingAuthoringAssessmentCapabilityStateResult>;
+export let LearningAssessmentsGradingAuthoringAssessmentDraftResultSchema: z.ZodType<LearningAssessmentsGradingAuthoringAssessmentDraftResult>;
+export let LearningAssessmentsGradingAuthoringAssessmentRevisionStateResultSchema: z.ZodType<LearningAssessmentsGradingAuthoringAssessmentRevisionStateResult>;
+export let LearningAssessmentsGradingAuthoringPrepareAssessmentRevisionInputSchema: z.ZodType<LearningAssessmentsGradingAuthoringPrepareAssessmentRevisionInput>;
+export let LearningAssessmentsGradingAuthoringPreparedAssessmentRevisionResultSchema: z.ZodType<LearningAssessmentsGradingAuthoringPreparedAssessmentRevisionResult>;
+export let LearningAssessmentsGradingAuthoringPublishAssessmentRevisionInputSchema: z.ZodType<LearningAssessmentsGradingAuthoringPublishAssessmentRevisionInput>;
+export let LearningAssessmentsGradingAuthoringSaveAssessmentDraftInputSchema: z.ZodType<LearningAssessmentsGradingAuthoringSaveAssessmentDraftInput>;
+export let LearningAssessmentsGradingAuthoringUnpublishAssessmentRevisionInputSchema: z.ZodType<LearningAssessmentsGradingAuthoringUnpublishAssessmentRevisionInput>;
+export let LearningAssessmentsGradingContractsAttemptContributionModeSchema: z.ZodType<LearningAssessmentsGradingContractsAttemptContributionMode>;
+export let LearningAssessmentsGradingContractsContentCompletionModeSchema: z.ZodType<LearningAssessmentsGradingContractsContentCompletionMode>;
+export let LearningAssessmentsGradingContractsResultReleaseModeSchema: z.ZodType<LearningAssessmentsGradingContractsResultReleaseMode>;
+export let LearningAssessmentsGradingContractsReviewMethodsSchema: z.ZodType<LearningAssessmentsGradingContractsReviewMethods>;
 export let LearningAssessmentsGradingQueueSchema: z.ZodType<LearningAssessmentsGradingQueue>;
 export let LearningAssessmentsGradingQueueAssessmentSchema: z.ZodType<LearningAssessmentsGradingQueueAssessment>;
 export let LearningAssessmentsGradingQueueItemSchema: z.ZodType<LearningAssessmentsGradingQueueItem>;
@@ -14063,6 +14176,8 @@ export let LearningExperienceSocialServicesCreateReviewInputSchema: z.ZodType<Le
 export let LearningExperienceSocialServicesDiscussionReplySchema: z.ZodType<LearningExperienceSocialServicesDiscussionReply>;
 export let LearningExperienceSocialServicesPersonalizedFeedItemSchema: z.ZodType<LearningExperienceSocialServicesPersonalizedFeedItem>;
 export let LearningExperienceSocialServicesWishlistPreferencesInputSchema: z.ZodType<LearningExperienceSocialServicesWishlistPreferencesInput>;
+export let LearningGradingContractsPercentValueSchema: z.ZodType<LearningGradingContractsPercentValue>;
+export let LearningGradingContractsScoreValueSchema: z.ZodType<LearningGradingContractsScoreValue>;
 export let LearningWorkspacesLearnerAnnouncementSchema: z.ZodType<LearningWorkspacesLearnerAnnouncement>;
 export let LearningWorkspacesLearnerAssessmentSchema: z.ZodType<LearningWorkspacesLearnerAssessment>;
 export let LearningWorkspacesLearnerAssessmentDeadlineSchema: z.ZodType<LearningWorkspacesLearnerAssessmentDeadline>;
@@ -23478,7 +23593,7 @@ LaunchPadUpdateLaunchPadSettingsInputSchema = z.object({
 /** Zod schema for LearningAssessmentsAnonymousReviewAssessment */
 LearningAssessmentsAnonymousReviewAssessmentSchema = z.object({
   id: z.string().uuid().optional(),
-  maxScore: z.number().int().optional(),
+  maxScore: z.lazy(() => LearningGradingContractsScoreValueSchema).optional(),
   title: z.string().nullable().optional(),
 });
 
@@ -23501,7 +23616,6 @@ LearningAssessmentsAnonymousReviewSubmissionSchema = z.object({
   reviewId: z.string().uuid().optional(),
   rubric: z.lazy(() => LearningAssessmentsAnonymousReviewRubricSchema).optional(),
   status: z.lazy(() => LearningAssessmentsPeerReviewStatusSchema).optional(),
-  structuredAnswerPayload: z.string().nullable().optional(),
   submissionStatus: z.lazy(() => LearningAssessmentsSubmissionStatusSchema).optional(),
   submittedAt: z.string().datetime().nullable().optional(),
   textPayload: z.string().nullable().optional(),
@@ -23515,39 +23629,36 @@ LearningAssessmentsAssessmentSchema = z.object({
   assessmentGroupId: z.string().uuid().nullable().optional(),
   assessmentGroupName: z.string().nullable().optional(),
   assessmentGroupOrder: z.number().int().nullable().optional(),
-  assessmentGroupWeightPercent: z.number().nullable().optional(),
+  assessmentGroupWeightPercent: z.lazy(() => LearningGradingContractsPercentValueSchema).optional(),
+  attemptContributionMode: z.lazy(() => LearningAssessmentsGradingContractsAttemptContributionModeSchema).optional(),
   availableFrom: z.string().datetime().nullable().optional(),
   availableUntil: z.string().datetime().nullable().optional(),
+  contentCompletionMode: z.lazy(() => LearningAssessmentsGradingContractsContentCompletionModeSchema).optional(),
   contentId: z.string().uuid().nullable().optional(),
   courseId: z.string().uuid().optional(),
   description: z.string().nullable().optional(),
   dueAt: z.string().datetime().nullable().optional(),
-  gradingMethods: z.lazy(() => LearningAssessmentsAssessmentGradingMethodSchema).optional(),
   groupSetId: z.string().uuid().nullable().optional(),
   isAvailable: z.boolean().optional(),
   isRequired: z.boolean().optional(),
   lateSubmissionDeadline: z.string().datetime().nullable().optional(),
-  maxAttempts: z.number().int().nullable().optional(),
-  maxScore: z.number().int().optional(),
+  maxAttempts: z.number().int().optional(),
+  maxScore: z.lazy(() => LearningGradingContractsScoreValueSchema).optional(),
   order: z.number().int().optional(),
-  peerReviewsRequiredCount: z.number().int().optional(),
+  passingScore: z.lazy(() => LearningGradingContractsScoreValueSchema).optional(),
   presentationMode: z.lazy(() => LearningAssessmentsAssessmentPresentationModeSchema).optional(),
+  publishedDefinitionRevisionId: z.string().uuid().nullable().optional(),
+  resultReleaseMode: z.lazy(() => LearningAssessmentsGradingContractsResultReleaseModeSchema).optional(),
+  resultReleaseScheduledFor: z.string().datetime().nullable().optional(),
+  reviewConfigurationCanonicalJson: z.string().nullable().optional(),
+  reviewMethods: z.lazy(() => LearningAssessmentsGradingContractsReviewMethodsSchema).optional(),
   slug: z.string().nullable().optional(),
   submissionModalities: z.lazy(() => LearningAssessmentsSubmissionModalitySchema).optional(),
   timeLimitMinutes: z.number().int().nullable().optional(),
   title: z.string().nullable().optional(),
   type: z.lazy(() => LearningAssessmentsAssessmentTypeSchema).optional(),
+  version: z.number().int().optional(),
 });
-
-/** Zod schema for LearningAssessmentsAssessmentDefinition */
-LearningAssessmentsAssessmentDefinitionSchema = z.object({
-  assessmentId: z.string().uuid().optional(),
-  definition: z.record(z.string(), z.unknown()).optional(),
-  definitionSchemaVersion: z.number().int().optional(),
-});
-
-/** Zod schema for LearningAssessmentsAssessmentGradingMethod. A comma-separated combination of the declared flag names. */
-LearningAssessmentsAssessmentGradingMethodSchema = z.string();
 
 /** Zod schema for LearningAssessmentsAssessmentGroup */
 LearningAssessmentsAssessmentGroupSchema = z.object({
@@ -23556,13 +23667,13 @@ LearningAssessmentsAssessmentGroupSchema = z.object({
   description: z.string().nullable().optional(),
   name: z.string().nullable().optional(),
   order: z.number().int().optional(),
-  weightPercent: z.number().optional(),
+  weightPercent: z.lazy(() => LearningGradingContractsPercentValueSchema).optional(),
 });
 
 /** Zod schema for LearningAssessmentsAssessmentGroupAnalytics */
 LearningAssessmentsAssessmentGroupAnalyticsSchema = z.object({
   assessmentCount: z.number().int().optional(),
-  averagePercent: z.number().optional(),
+  averagePercent: z.lazy(() => LearningGradingContractsPercentValueSchema).optional(),
   distribution: z
     .array(z.lazy(() => LearningAssessmentsAssessmentScoreBucketSchema))
     .nullable()
@@ -23570,9 +23681,9 @@ LearningAssessmentsAssessmentGroupAnalyticsSchema = z.object({
   gradedCount: z.number().int().optional(),
   groupId: z.string().uuid().nullable().optional(),
   groupName: z.string().nullable().optional(),
-  passRate: z.number().optional(),
+  passRate: z.lazy(() => LearningGradingContractsPercentValueSchema).optional(),
   ungradedCount: z.number().int().optional(),
-  weightPercent: z.number().nullable().optional(),
+  weightPercent: z.lazy(() => LearningGradingContractsPercentValueSchema).optional(),
 });
 
 /** Zod schema for LearningAssessmentsAssessmentPresentationMode */
@@ -23601,10 +23712,9 @@ LearningAssessmentsAssessmentSubmissionSchema = z.object({
   mediaPayload: z.string().nullable().optional(),
   passed: z.boolean().nullable().optional(),
   projectPayload: z.string().nullable().optional(),
-  score: z.number().int().nullable().optional(),
+  score: z.lazy(() => LearningGradingContractsScoreValueSchema).optional(),
   startedAt: z.string().datetime().optional(),
   status: z.lazy(() => LearningAssessmentsSubmissionStatusSchema).optional(),
-  structuredAnswerPayload: z.string().nullable().optional(),
   submittedAt: z.string().datetime().nullable().optional(),
   submittedModalities: z.lazy(() => LearningAssessmentsSubmissionModalitySchema).optional(),
   textPayload: z.string().nullable().optional(),
@@ -23612,7 +23722,7 @@ LearningAssessmentsAssessmentSubmissionSchema = z.object({
   userId: z.string().uuid().optional(),
 });
 
-/** Zod schema for LearningAssessmentsAssessmentType. Legacy value Exam is normalized on read and is not valid for new assessments. */
+/** Zod schema for LearningAssessmentsAssessmentType */
 LearningAssessmentsAssessmentTypeSchema = z.enum(['Quiz', 'Assignment', 'Project', 'PeerReview', 'SelfAssessment']);
 
 /** Zod schema for LearningAssessmentsAssignAssessmentGroupInput */
@@ -23630,7 +23740,7 @@ LearningAssessmentsCanAttemptOutputSchema = z.object({
 /** Zod schema for LearningAssessmentsCourseAssessmentAnalytics */
 LearningAssessmentsCourseAssessmentAnalyticsSchema = z.object({
   assessmentCount: z.number().int().optional(),
-  averagePercent: z.number().optional(),
+  averagePercent: z.lazy(() => LearningGradingContractsPercentValueSchema).optional(),
   courseId: z.string().uuid().optional(),
   distribution: z
     .array(z.lazy(() => LearningAssessmentsAssessmentScoreBucketSchema))
@@ -23641,7 +23751,7 @@ LearningAssessmentsCourseAssessmentAnalyticsSchema = z.object({
     .array(z.lazy(() => LearningAssessmentsAssessmentGroupAnalyticsSchema))
     .nullable()
     .optional(),
-  passRate: z.number().optional(),
+  passRate: z.lazy(() => LearningGradingContractsPercentValueSchema).optional(),
   ungradedCount: z.number().int().optional(),
 });
 
@@ -23651,7 +23761,7 @@ LearningAssessmentsCreateAssessmentGroupInputSchema = z.object({
   description: z.string().nullable().optional(),
   name: z.string().nullable().optional(),
   order: z.number().int().optional(),
-  weightPercent: z.number().optional(),
+  weightPercent: z.lazy(() => LearningGradingContractsPercentValueSchema).optional(),
 });
 
 /** Zod schema for LearningAssessmentsCreateAssessmentInput */
@@ -23664,12 +23774,13 @@ LearningAssessmentsCreateAssessmentInputSchema = z.object({
   courseId: z.string().uuid().optional(),
   description: z.string().nullable().optional(),
   dueAt: z.string().datetime().nullable().optional(),
-  gradingMethods: z.lazy(() => LearningAssessmentsAssessmentGradingMethodSchema).optional(),
   isRequired: z.boolean().optional(),
   lateSubmissionDeadline: z.string().datetime().nullable().optional(),
-  maxAttempts: z.number().int().nullable().optional(),
-  maxScore: z.number().int().optional(),
+  maxAttempts: z.number().int().optional(),
+  maxScore: z.lazy(() => LearningGradingContractsScoreValueSchema).optional(),
+  passingScore: z.lazy(() => LearningGradingContractsScoreValueSchema).optional(),
   presentationMode: z.lazy(() => LearningAssessmentsAssessmentPresentationModeSchema).optional(),
+  reviewMethods: z.lazy(() => LearningAssessmentsGradingContractsReviewMethodsSchema).optional(),
   slug: z.string().nullable().optional(),
   submissionModalities: z.lazy(() => LearningAssessmentsSubmissionModalitySchema).optional(),
   timeLimitMinutes: z.number().int().nullable().optional(),
@@ -23693,8 +23804,119 @@ LearningAssessmentsGradeSubmissionInputSchema = z.object({
   feedback: z.string().nullable().optional(),
   gradedBy: z.string().uuid().nullable().optional(),
   rubricScores: z.string().nullable().optional(),
-  score: z.number().int().optional(),
+  score: z.lazy(() => LearningGradingContractsScoreValueSchema).optional(),
 });
+
+/** Zod schema for LearningAssessmentsGradingAuthoringAssessmentAuthoringStateResult */
+LearningAssessmentsGradingAuthoringAssessmentAuthoringStateResultSchema = z.object({
+  assessmentId: z.string().uuid().optional(),
+  assessmentVersion: z.number().int().optional(),
+  candidate: z.lazy(() => LearningAssessmentsGradingAuthoringAssessmentRevisionStateResultSchema).optional(),
+  candidateMatchesDraft: z.boolean().optional(),
+  currentAuthoringSourceHash: z.string().nullable().optional(),
+  lifecycle: z.string().nullable().optional(),
+  prepare: z.lazy(() => LearningAssessmentsGradingAuthoringAssessmentCapabilityStateResultSchema).optional(),
+  publish: z.lazy(() => LearningAssessmentsGradingAuthoringAssessmentCapabilityStateResultSchema).optional(),
+  published: z.lazy(() => LearningAssessmentsGradingAuthoringAssessmentRevisionStateResultSchema).optional(),
+  publishedMatchesDraft: z.boolean().optional(),
+});
+
+/** Zod schema for LearningAssessmentsGradingAuthoringAssessmentCapabilityStateResult */
+LearningAssessmentsGradingAuthoringAssessmentCapabilityStateResultSchema = z.object({
+  available: z.boolean().optional(),
+  code: z.string().nullable().optional(),
+  message: z.string().nullable().optional(),
+});
+
+/** Zod schema for LearningAssessmentsGradingAuthoringAssessmentDraftResult */
+LearningAssessmentsGradingAuthoringAssessmentDraftResultSchema = z.object({
+  assessmentId: z.string().uuid().nullable().optional(),
+  assessmentVersion: z.number().int().nullable().optional(),
+  contentId: z.string().uuid().optional(),
+  contentVersion: z.number().int().optional(),
+});
+
+/** Zod schema for LearningAssessmentsGradingAuthoringAssessmentRevisionStateResult */
+LearningAssessmentsGradingAuthoringAssessmentRevisionStateResultSchema = z.object({
+  authoringSourceHash: z.string().nullable().optional(),
+  createdAt: z.string().datetime().optional(),
+  executionSnapshotHash: z.string().nullable().optional(),
+  revisionId: z.string().uuid().optional(),
+  revisionNumber: z.number().int().optional(),
+});
+
+/** Zod schema for LearningAssessmentsGradingAuthoringPrepareAssessmentRevisionInput */
+LearningAssessmentsGradingAuthoringPrepareAssessmentRevisionInputSchema = z.object({
+  expectedAssessmentVersion: z.number().int().optional(),
+});
+
+/** Zod schema for LearningAssessmentsGradingAuthoringPreparedAssessmentRevisionResult */
+LearningAssessmentsGradingAuthoringPreparedAssessmentRevisionResultSchema = z.object({
+  authoringSourceHash: z.string().nullable().optional(),
+  executionSnapshotHash: z.string().nullable().optional(),
+  revisionId: z.string().uuid().optional(),
+  revisionNumber: z.number().int().optional(),
+});
+
+/** Zod schema for LearningAssessmentsGradingAuthoringPublishAssessmentRevisionInput */
+LearningAssessmentsGradingAuthoringPublishAssessmentRevisionInputSchema = z.object({
+  expectedAssessmentVersion: z.number().int().optional(),
+  revisionId: z.string().uuid().optional(),
+});
+
+/** Zod schema for LearningAssessmentsGradingAuthoringSaveAssessmentDraftInput */
+LearningAssessmentsGradingAuthoringSaveAssessmentDraftInputSchema = z.object({
+  attemptContributionMode: z.lazy(() => LearningAssessmentsGradingContractsAttemptContributionModeSchema).optional(),
+  contentCompletionMode: z.lazy(() => LearningAssessmentsGradingContractsContentCompletionModeSchema).optional(),
+  description: z.string().nullable().optional(),
+  document: z.record(z.string(), z.unknown()).optional(),
+  estimatedMinutes: z.number().int().nullable().optional(),
+  estimatedMinutesSource: z.lazy(() => LearningCoursesEstimatedMinutesSourceSchema).optional(),
+  expectedAssessmentVersion: z.number().int().nullable().optional(),
+  expectedContentVersion: z.number().int().optional(),
+  isRequired: z.boolean().optional(),
+  maxAttempts: z.number().int().optional(),
+  passingScore: z.lazy(() => LearningGradingContractsScoreValueSchema).optional(),
+  presentationMode: z.lazy(() => LearningAssessmentsAssessmentPresentationModeSchema).optional(),
+  resultReleaseMode: z.lazy(() => LearningAssessmentsGradingContractsResultReleaseModeSchema).optional(),
+  resultReleaseScheduledFor: z.string().datetime().nullable().optional(),
+  reviewConfigurationCanonicalJson: z.string().nullable().optional(),
+  reviewMethods: z.lazy(() => LearningAssessmentsGradingContractsReviewMethodsSchema).optional(),
+  slug: z.string().nullable().optional(),
+  timeLimitMinutes: z.number().int().nullable().optional(),
+  title: z.string().nullable().optional(),
+  visibility: z.lazy(() => LearningCoursesVisibilitySchema).optional(),
+});
+
+/** Zod schema for LearningAssessmentsGradingAuthoringUnpublishAssessmentRevisionInput */
+LearningAssessmentsGradingAuthoringUnpublishAssessmentRevisionInputSchema = z.object({
+  expectedAssessmentVersion: z.number().int().optional(),
+  expectedRevisionId: z.string().uuid().optional(),
+  idempotencyKey: z.string().nullable().optional(),
+});
+
+/** Zod schema for LearningAssessmentsGradingContractsAttemptContributionMode */
+LearningAssessmentsGradingContractsAttemptContributionModeSchema = z.enum(['first-finalized', 'last-finalized', 'highest-finalized']);
+
+/** Zod schema for LearningAssessmentsGradingContractsContentCompletionMode */
+LearningAssessmentsGradingContractsContentCompletionModeSchema = z.enum(['on-submit', 'on-finalize', 'on-release', 'on-release-and-pass']);
+
+/** Zod schema for LearningAssessmentsGradingContractsResultReleaseMode */
+LearningAssessmentsGradingContractsResultReleaseModeSchema = z.enum(['immediate', 'manual', 'scheduled']);
+
+/** Zod schema for LearningAssessmentsGradingContractsReviewMethods. Numeric review-workflow bitmask. Valid values are 0, 1, 2, 4, 8, 9, 10, 12, 16, and 24. */
+LearningAssessmentsGradingContractsReviewMethodsSchema = z.union([
+  z.literal(0),
+  z.literal(1),
+  z.literal(2),
+  z.literal(4),
+  z.literal(8),
+  z.literal(9),
+  z.literal(10),
+  z.literal(12),
+  z.literal(16),
+  z.literal(24),
+]);
 
 /** Zod schema for LearningAssessmentsGradingQueue */
 LearningAssessmentsGradingQueueSchema = z.object({
@@ -23710,11 +23932,10 @@ LearningAssessmentsGradingQueueSchema = z.object({
 /** Zod schema for LearningAssessmentsGradingQueueAssessment */
 LearningAssessmentsGradingQueueAssessmentSchema = z.object({
   id: z.string().uuid().optional(),
-  gradingMethods: z.string().nullable().optional(),
   groupSetId: z.string().uuid().nullable().optional(),
   hasRubric: z.boolean().optional(),
-  maxScore: z.number().int().optional(),
-  peerReviewsRequiredCount: z.number().int().optional(),
+  maxScore: z.lazy(() => LearningGradingContractsScoreValueSchema).optional(),
+  reviewMethods: z.lazy(() => LearningAssessmentsGradingContractsReviewMethodsSchema).optional(),
   rubric: z.lazy(() => LearningAssessmentsRubricSchema).optional(),
   title: z.string().nullable().optional(),
   type: z.lazy(() => LearningAssessmentsAssessmentTypeSchema).optional(),
@@ -23723,7 +23944,7 @@ LearningAssessmentsGradingQueueAssessmentSchema = z.object({
 /** Zod schema for LearningAssessmentsGradingQueueItem */
 LearningAssessmentsGradingQueueItemSchema = z.object({
   assignmentPassed: z.boolean().nullable().optional(),
-  assignmentScore: z.number().int().nullable().optional(),
+  assignmentScore: z.lazy(() => LearningGradingContractsScoreValueSchema).optional(),
   attemptCount: z.number().int().optional(),
   attemptNumber: z.number().int().optional(),
   canonicalSubmissionId: z.string().uuid().optional(),
@@ -23805,7 +24026,7 @@ LearningAssessmentsInstructorPeerReviewSchema = z.object({
   reviewerUserId: z.string().uuid().optional(),
   reviewId: z.string().uuid().optional(),
   rubricScoresPayload: z.string().nullable().optional(),
-  score: z.number().int().nullable().optional(),
+  score: z.lazy(() => LearningGradingContractsScoreValueSchema).optional(),
   submittedAt: z.string().datetime().nullable().optional(),
 });
 
@@ -23837,10 +24058,9 @@ LearningAssessmentsLearnerAssessmentSubmissionSchema = z.object({
   mediaPayload: z.string().nullable().optional(),
   passed: z.boolean().nullable().optional(),
   projectPayload: z.string().nullable().optional(),
-  score: z.number().int().nullable().optional(),
+  score: z.lazy(() => LearningGradingContractsScoreValueSchema).optional(),
   startedAt: z.string().datetime().optional(),
   status: z.lazy(() => LearningAssessmentsSubmissionStatusSchema).optional(),
-  structuredAnswerPayload: z.string().nullable().optional(),
   submittedAt: z.string().datetime().nullable().optional(),
   submittedModalities: z.lazy(() => LearningAssessmentsSubmissionModalitySchema).optional(),
   textPayload: z.string().nullable().optional(),
@@ -23873,7 +24093,7 @@ LearningAssessmentsPeerReviewStatusSchema = z.enum(['Assigned', 'Submitted']);
 LearningAssessmentsPeerReviewSubmitInputSchema = z.object({
   feedback: z.string().nullable().optional(),
   rubricScores: z.string().nullable().optional(),
-  score: z.number().int().nullable().optional(),
+  score: z.lazy(() => LearningGradingContractsScoreValueSchema).optional(),
 });
 
 /** Zod schema for LearningAssessmentsReceivedPeerReview */
@@ -23881,7 +24101,7 @@ LearningAssessmentsReceivedPeerReviewSchema = z.object({
   feedback: z.string().nullable().optional(),
   reviewId: z.string().uuid().optional(),
   rubricScoresPayload: z.string().nullable().optional(),
-  score: z.number().int().nullable().optional(),
+  score: z.lazy(() => LearningGradingContractsScoreValueSchema).optional(),
   submittedAt: z.string().datetime().nullable().optional(),
 });
 
@@ -23900,14 +24120,14 @@ LearningAssessmentsRubricCriterionSchema = z.object({
   id: z.string().uuid().optional(),
   description: z.string().nullable().optional(),
   order: z.number().int().optional(),
-  points: z.number().int().optional(),
+  points: z.lazy(() => LearningGradingContractsScoreValueSchema).optional(),
 });
 
 /** Zod schema for LearningAssessmentsSaveRubricCriterionInput */
 LearningAssessmentsSaveRubricCriterionInputSchema = z.object({
   description: z.string().nullable().optional(),
   order: z.number().int().optional(),
-  points: z.number().int().optional(),
+  points: z.lazy(() => LearningGradingContractsScoreValueSchema).optional(),
 });
 
 /** Zod schema for LearningAssessmentsSaveRubricInput */
@@ -23936,7 +24156,6 @@ LearningAssessmentsSubmitAssessmentInputSchema = z.object({
   filePayload: z.string().nullable().optional(),
   mediaPayload: z.string().nullable().optional(),
   projectPayload: z.string().nullable().optional(),
-  structuredAnswerPayload: z.string().nullable().optional(),
   textPayload: z.string().nullable().optional(),
   urlPayload: z.string().nullable().optional(),
 });
@@ -23967,31 +24186,41 @@ LearningAssessmentsUpdateAssessmentGroupInputSchema = z.object({
   description: z.string().nullable().optional(),
   name: z.string().nullable().optional(),
   order: z.number().int().nullable().optional(),
-  weightPercent: z.number().nullable().optional(),
+  weightPercent: z.lazy(() => LearningGradingContractsPercentValueSchema).optional(),
 });
 
 /** Zod schema for LearningAssessmentsUpdateAssessmentInput */
 LearningAssessmentsUpdateAssessmentInputSchema = z.object({
   allowLateSubmissions: z.boolean().nullable().optional(),
   assessmentGroupId: z.string().uuid().nullable().optional(),
+  attemptContributionMode: z.lazy(() => LearningAssessmentsGradingContractsAttemptContributionModeSchema).optional(),
   availableFrom: z.string().datetime().nullable().optional(),
   availableUntil: z.string().datetime().nullable().optional(),
   clearAssessmentGroupId: z.boolean().optional(),
+  clearAvailableFrom: z.boolean().optional(),
+  clearAvailableUntil: z.boolean().optional(),
   clearContentId: z.boolean().optional(),
+  clearDescription: z.boolean().optional(),
   clearDueAt: z.boolean().optional(),
   clearGroupSetId: z.boolean().optional(),
   clearLateSubmissionDeadline: z.boolean().optional(),
+  clearTimeLimitMinutes: z.boolean().optional(),
+  contentCompletionMode: z.lazy(() => LearningAssessmentsGradingContractsContentCompletionModeSchema).optional(),
   contentId: z.string().uuid().nullable().optional(),
   description: z.string().nullable().optional(),
   dueAt: z.string().datetime().nullable().optional(),
-  gradingMethods: z.lazy(() => LearningAssessmentsAssessmentGradingMethodSchema).optional(),
+  expectedVersion: z.number().int().optional(),
   groupSetId: z.string().uuid().nullable().optional(),
   isRequired: z.boolean().nullable().optional(),
   lateSubmissionDeadline: z.string().datetime().nullable().optional(),
   maxAttempts: z.number().int().nullable().optional(),
-  maxScore: z.number().int().nullable().optional(),
-  peerReviewsRequiredCount: z.number().int().nullable().optional(),
+  maxScore: z.lazy(() => LearningGradingContractsScoreValueSchema).optional(),
+  passingScore: z.lazy(() => LearningGradingContractsScoreValueSchema).optional(),
   presentationMode: z.lazy(() => LearningAssessmentsAssessmentPresentationModeSchema).optional(),
+  resultReleaseMode: z.lazy(() => LearningAssessmentsGradingContractsResultReleaseModeSchema).optional(),
+  resultReleaseScheduledFor: z.string().datetime().nullable().optional(),
+  reviewConfigurationCanonicalJson: z.string().nullable().optional(),
+  reviewMethods: z.lazy(() => LearningAssessmentsGradingContractsReviewMethodsSchema).optional(),
   slug: z.string().nullable().optional(),
   submissionModalities: z.lazy(() => LearningAssessmentsSubmissionModalitySchema).optional(),
   timeLimitMinutes: z.number().int().nullable().optional(),
@@ -24348,7 +24577,6 @@ LearningCoursesActivityGradeSchema = z.object({
   contentInteractionId: z.string().uuid().optional(),
   createdAt: z.string().datetime().optional(),
   feedback: z.string().nullable().optional(),
-  grade: z.number().optional(),
   gradedAt: z.string().datetime().optional(),
   gradePercentage: z.string().nullable().optional(),
   grader: z.lazy(() => LearningCoursesGraderSummarySchema).optional(),
@@ -24357,6 +24585,9 @@ LearningCoursesActivityGradeSchema = z.object({
   hasFeedback: z.boolean().optional(),
   hasGradingDetails: z.boolean().optional(),
   isPassingGrade: z.boolean().optional(),
+  maxPoints: z.lazy(() => LearningGradingContractsScoreValueSchema).optional(),
+  percentageScore: z.lazy(() => LearningGradingContractsPercentValueSchema).optional(),
+  points: z.lazy(() => LearningGradingContractsScoreValueSchema).optional(),
   updatedAt: z.string().datetime().optional(),
 });
 
@@ -24450,7 +24681,7 @@ LearningCoursesContentInteractionSchema = z.object({
   id: z.string().uuid().optional(),
   canModify: z.boolean().optional(),
   completedAt: z.string().datetime().nullable().optional(),
-  completionPercentage: z.number().optional(),
+  completionPercentage: z.lazy(() => LearningGradingContractsPercentValueSchema).optional(),
   content: z.lazy(() => LearningCoursesContentSummarySchema).optional(),
   contentId: z.string().uuid().optional(),
   createdAt: z.string().datetime().optional(),
@@ -24479,7 +24710,7 @@ LearningCoursesContentInteractionEventSchema = z.object({
   occurredAt: z.string().datetime().optional(),
   payload: z.string().nullable().optional(),
   positionSeconds: z.number().nullable().optional(),
-  progressPercentage: z.number().nullable().optional(),
+  progressPercentage: z.lazy(() => LearningGradingContractsPercentValueSchema).optional(),
   type: z.lazy(() => LearningCoursesContentInteractionEventTypeSchema).optional(),
 });
 
@@ -24510,7 +24741,7 @@ LearningCoursesContentInteractionSummarySchema = z.object({
 /** Zod schema for LearningCoursesContentProgress */
 LearningCoursesContentProgressSchema = z.object({
   completedAt: z.string().datetime().nullable().optional(),
-  completionPercentage: z.number().optional(),
+  completionPercentage: z.lazy(() => LearningGradingContractsPercentValueSchema).optional(),
   contentId: z.string().uuid().optional(),
   firstAccessedAt: z.string().datetime().nullable().optional(),
   lastAccessedAt: z.string().datetime().nullable().optional(),
@@ -24571,9 +24802,10 @@ LearningCoursesCourseSupportTicketMessageInputSchema = z.object({
 LearningCoursesCreateActivityGradeSchema = z.object({
   contentInteractionId: z.string().uuid().optional(),
   feedback: z.string().nullable().optional(),
-  grade: z.number().optional(),
   graderProgramUserId: z.string().uuid().optional(),
   gradingDetails: z.string().nullable().optional(),
+  maxPoints: z.lazy(() => LearningGradingContractsScoreValueSchema).optional(),
+  points: z.lazy(() => LearningGradingContractsScoreValueSchema).optional(),
 });
 
 /** Zod schema for LearningCoursesCreatePrerequisiteApiInput */
@@ -24581,7 +24813,7 @@ LearningCoursesCreatePrerequisiteApiInputSchema = z.object({
   courseId: z.string().uuid().optional(),
   description: z.string().nullable().optional(),
   displayOrder: z.number().int().optional(),
-  minimumGrade: z.number().int().nullable().optional(),
+  minimumGrade: z.lazy(() => LearningGradingContractsPercentValueSchema).optional(),
   prerequisiteCourseId: z.string().uuid().optional(),
   prerequisiteGroup: z.string().nullable().optional(),
   type: z.lazy(() => LearningCoursesPrerequisiteTypeSchema).optional(),
@@ -24599,7 +24831,7 @@ LearningCoursesCreateProductFromProgramSchema = z.object({
 LearningCoursesCreateProgramSchema = z.object({
   creatorId: z.string().uuid().nullable().optional(),
   description: z.string().nullable().optional(),
-  passingScore: z.number().optional(),
+  passingScore: z.lazy(() => LearningGradingContractsPercentValueSchema).optional(),
   slug: z.string().nullable().optional(),
   thumbnail: z.string().nullable().optional(),
   title: z.string().nullable().optional(),
@@ -24652,12 +24884,12 @@ LearningCoursesGraderSummarySchema = z.object({
 
 /** Zod schema for LearningCoursesGradeStatistics */
 LearningCoursesGradeStatisticsSchema = z.object({
-  averageGrade: z.number().optional(),
+  averageGrade: z.lazy(() => LearningGradingContractsPercentValueSchema).optional(),
   averageGradeFormatted: z.string().nullable().optional(),
   hasGrades: z.boolean().optional(),
-  maxGrade: z.number().optional(),
-  minGrade: z.number().optional(),
-  passingRate: z.number().optional(),
+  maxGrade: z.lazy(() => LearningGradingContractsPercentValueSchema).optional(),
+  minGrade: z.lazy(() => LearningGradingContractsPercentValueSchema).optional(),
+  passingRate: z.lazy(() => LearningGradingContractsPercentValueSchema).optional(),
   passingRateFormatted: z.string().nullable().optional(),
   totalGrades: z.number().int().optional(),
 });
@@ -24692,7 +24924,7 @@ LearningCoursesPrerequisiteSchema = z.object({
   createdAt: z.string().datetime().optional(),
   description: z.string().nullable().optional(),
   displayOrder: z.number().int().optional(),
-  minimumGrade: z.number().int().nullable().optional(),
+  minimumGrade: z.lazy(() => LearningGradingContractsPercentValueSchema).optional(),
   prerequisiteCourseId: z.string().uuid().optional(),
   prerequisiteCourseName: z.string().nullable().optional(),
   prerequisiteGroup: z.string().nullable().optional(),
@@ -24711,13 +24943,13 @@ LearningCoursesPrerequisiteCheckResultSchema = z.object({
 
 /** Zod schema for LearningCoursesPrerequisiteStatus */
 LearningCoursesPrerequisiteStatusSchema = z.object({
-  achievedGrade: z.number().int().nullable().optional(),
+  achievedGrade: z.lazy(() => LearningGradingContractsPercentValueSchema).optional(),
   courseName: z.string().nullable().optional(),
   isSatisfied: z.boolean().optional(),
   prerequisiteCourseId: z.string().uuid().optional(),
   prerequisiteId: z.string().uuid().optional(),
   reason: z.string().nullable().optional(),
-  requiredGrade: z.number().int().nullable().optional(),
+  requiredGrade: z.lazy(() => LearningGradingContractsPercentValueSchema).optional(),
   type: z.lazy(() => LearningCoursesPrerequisiteTypeSchema).optional(),
 });
 
@@ -24749,7 +24981,7 @@ LearningCoursesProgramSchema = z.object({
   isEnrollmentOpen: z.boolean().optional(),
   maxEnrollments: z.number().int().nullable().optional(),
   metadata: z.string().nullable().optional(),
-  passingScore: z.number().optional(),
+  passingScore: z.lazy(() => LearningGradingContractsPercentValueSchema).optional(),
   skillsProvided: z.string().nullable().optional(),
   skillsRequired: z.string().nullable().optional(),
   slug: z.string().nullable().optional(),
@@ -24802,6 +25034,7 @@ LearningCoursesProgramContentSchema = z.object({
   title: z.string().nullable().optional(),
   type: z.lazy(() => LearningCoursesProgramContentTypeSchema).optional(),
   updatedAt: z.string().datetime().nullable().optional(),
+  version: z.number().int().optional(),
   visibility: z.lazy(() => LearningCoursesVisibilitySchema).optional(),
 });
 
@@ -24828,7 +25061,7 @@ LearningCoursesRecordContentInteractionEventInputSchema = z.object({
   occurredAt: z.string().datetime().nullable().optional(),
   payload: z.string().nullable().optional(),
   positionSeconds: z.number().nullable().optional(),
-  progressPercentage: z.number().nullable().optional(),
+  progressPercentage: z.lazy(() => LearningGradingContractsPercentValueSchema).optional(),
   type: z.lazy(() => LearningCoursesContentInteractionEventTypeSchema).optional(),
 });
 
@@ -24963,15 +25196,16 @@ LearningCoursesTestSuiteSchema = z.object({
 /** Zod schema for LearningCoursesUpdateActivityGrade */
 LearningCoursesUpdateActivityGradeSchema = z.object({
   feedback: z.string().nullable().optional(),
-  grade: z.number().nullable().optional(),
   gradingDetails: z.string().nullable().optional(),
+  maxPoints: z.lazy(() => LearningGradingContractsScoreValueSchema).optional(),
+  points: z.lazy(() => LearningGradingContractsScoreValueSchema).optional(),
 });
 
 /** Zod schema for LearningCoursesUpdatePrerequisiteApiInput */
 LearningCoursesUpdatePrerequisiteApiInputSchema = z.object({
   description: z.string().nullable().optional(),
   displayOrder: z.number().int().nullable().optional(),
-  minimumGrade: z.number().int().nullable().optional(),
+  minimumGrade: z.lazy(() => LearningGradingContractsPercentValueSchema).optional(),
   prerequisiteGroup: z.string().nullable().optional(),
   type: z.lazy(() => LearningCoursesPrerequisiteTypeSchema).optional(),
 });
@@ -24997,7 +25231,7 @@ LearningCoursesUpdateProgramSchema = z.object({
   estimatedHours: z.number().int().nullable().optional(),
   maxEnrollments: z.number().int().nullable().optional(),
   metadata: z.string().nullable().optional(),
-  passingScore: z.number().nullable().optional(),
+  passingScore: z.lazy(() => LearningGradingContractsPercentValueSchema).optional(),
   skillsProvided: z.string().nullable().optional(),
   skillsRequired: z.string().nullable().optional(),
   slug: z.string().nullable().optional(),
@@ -25034,7 +25268,7 @@ LearningCoursesUpdateProgressSchema = z.object({
 
 /** Zod schema for LearningCoursesUpdateProgressInput */
 LearningCoursesUpdateProgressInputSchema = z.object({
-  completionPercentage: z.number().optional(),
+  completionPercentage: z.lazy(() => LearningGradingContractsPercentValueSchema).optional(),
   contentId: z.string().uuid().optional(),
   programUserId: z.string().uuid().optional(),
 });
@@ -25049,7 +25283,7 @@ LearningCoursesUpdateTimeSpentInputSchema = z.object({
 /** Zod schema for LearningCoursesUserProgress */
 LearningCoursesUserProgressSchema = z.object({
   completedAt: z.string().datetime().nullable().optional(),
-  completionPercentage: z.number().optional(),
+  completionPercentage: z.lazy(() => LearningGradingContractsPercentValueSchema).optional(),
   contentProgress: z
     .array(z.lazy(() => LearningCoursesContentProgressSchema))
     .nullable()
@@ -25608,6 +25842,12 @@ LearningExperienceSocialServicesWishlistPreferencesInputSchema = z.object({
   notifyOnUpdate: z.boolean().optional(),
 });
 
+/** Zod schema for LearningGradingContractsPercentValue. Percentage in integer units scaled by 100 (100 units = 1%, range 0..10000). */
+LearningGradingContractsPercentValueSchema = z.number().int().min(0).max(10000);
+
+/** Zod schema for LearningGradingContractsScoreValue. Score in non-negative integer units scaled by 100 (100 units = 1 point). */
+LearningGradingContractsScoreValueSchema = z.number().int().min(0).max(2147483647);
+
 /** Zod schema for LearningWorkspacesLearnerAnnouncement */
 LearningWorkspacesLearnerAnnouncementSchema = z.object({
   content: z.string().nullable().optional(),
@@ -25633,7 +25873,7 @@ LearningWorkspacesLearnerAssessmentSchema = z.object({
   isRequired: z.boolean().optional(),
   lateSubmissionDeadline: z.string().datetime().nullable().optional(),
   maxAttempts: z.number().int().nullable().optional(),
-  maxScore: z.number().int().optional(),
+  maxScore: z.lazy(() => LearningGradingContractsScoreValueSchema).optional(),
   order: z.number().int().optional(),
   presentationMode: z.string().nullable().optional(),
   submissionModalities: z.string().nullable().optional(),
@@ -25653,7 +25893,7 @@ LearningWorkspacesLearnerAssessmentDeadlineSchema = z.object({
   courseTitle: z.string().nullable().optional(),
   dueAt: z.string().datetime().nullable().optional(),
   groupId: z.string().uuid().nullable().optional(),
-  maxScore: z.number().int().optional(),
+  maxScore: z.lazy(() => LearningGradingContractsScoreValueSchema).optional(),
   submissionStatus: z.string().nullable().optional(),
   title: z.string().nullable().optional(),
   type: z.string().nullable().optional(),
@@ -25665,7 +25905,7 @@ LearningWorkspacesLearnerAssessmentGroupSchema = z.object({
   groupId: z.string().uuid().optional(),
   name: z.string().nullable().optional(),
   order: z.number().int().optional(),
-  weightPercent: z.number().optional(),
+  weightPercent: z.lazy(() => LearningGradingContractsPercentValueSchema).optional(),
 });
 
 /** Zod schema for LearningWorkspacesLearnerAssessmentSubmission */
@@ -25677,7 +25917,7 @@ LearningWorkspacesLearnerAssessmentSubmissionSchema = z.object({
   gradedAt: z.string().datetime().nullable().optional(),
   isLate: z.boolean().optional(),
   passed: z.boolean().nullable().optional(),
-  score: z.number().int().nullable().optional(),
+  score: z.lazy(() => LearningGradingContractsScoreValueSchema).optional(),
   startedAt: z.string().datetime().optional(),
   status: z.string().nullable().optional(),
   submissionId: z.string().uuid().optional(),
@@ -25735,9 +25975,9 @@ LearningWorkspacesLearnerContentProgressSchema = z.object({
   contentId: z.string().uuid().optional(),
   firstAccessedAt: z.string().datetime().nullable().optional(),
   lastAccessedAt: z.string().datetime().nullable().optional(),
-  maxScore: z.number().nullable().optional(),
-  progressPercentage: z.number().optional(),
-  score: z.number().nullable().optional(),
+  maxScore: z.lazy(() => LearningGradingContractsScoreValueSchema).optional(),
+  progressPercentage: z.lazy(() => LearningGradingContractsPercentValueSchema).optional(),
+  score: z.lazy(() => LearningGradingContractsScoreValueSchema).optional(),
   status: z.string().nullable().optional(),
   timeSpentSeconds: z.number().int().optional(),
 });
@@ -25757,8 +25997,8 @@ LearningWorkspacesLearnerCourseSummarySchema = z.object({
   enrollmentId: z.string().uuid().optional(),
   enrollmentStatus: z.string().nullable().optional(),
   estimatedHours: z.number().int().nullable().optional(),
-  finalGrade: z.number().nullable().optional(),
-  progressPercentage: z.number().optional(),
+  finalGrade: z.lazy(() => LearningGradingContractsPercentValueSchema).optional(),
+  progressPercentage: z.lazy(() => LearningGradingContractsPercentValueSchema).optional(),
   remainingMinutes: z.number().int().optional(),
   slug: z.string().nullable().optional(),
   thumbnail: z.string().nullable().optional(),
@@ -25857,9 +26097,9 @@ LearningWorkspacesLearnerGradeItemSchema = z.object({
   feedback: z.string().nullable().optional(),
   gradedAt: z.string().datetime().nullable().optional(),
   groupId: z.string().uuid().nullable().optional(),
-  maxScore: z.number().int().optional(),
+  maxScore: z.lazy(() => LearningGradingContractsScoreValueSchema).optional(),
   passed: z.boolean().nullable().optional(),
-  score: z.number().int().nullable().optional(),
+  score: z.lazy(() => LearningGradingContractsScoreValueSchema).optional(),
   submissionStatus: z.string().nullable().optional(),
   title: z.string().nullable().optional(),
   type: z.string().nullable().optional(),
@@ -25870,8 +26110,8 @@ LearningWorkspacesLearnerGradeSummarySchema = z.object({
   courseId: z.string().uuid().optional(),
   courseSlug: z.string().nullable().optional(),
   courseTitle: z.string().nullable().optional(),
-  earnedPoints: z.number().nullable().optional(),
-  finalGrade: z.number().nullable().optional(),
+  earnedPoints: z.lazy(() => LearningGradingContractsScoreValueSchema).optional(),
+  finalGrade: z.lazy(() => LearningGradingContractsPercentValueSchema).optional(),
   gradedAssessments: z.number().int().optional(),
   groups: z
     .array(z.lazy(() => LearningWorkspacesLearnerAssessmentGroupSchema))
@@ -25881,8 +26121,8 @@ LearningWorkspacesLearnerGradeSummarySchema = z.object({
     .array(z.lazy(() => LearningWorkspacesLearnerGradeItemSchema))
     .nullable()
     .optional(),
-  percentage: z.number().nullable().optional(),
-  possiblePoints: z.number().nullable().optional(),
+  percentage: z.lazy(() => LearningGradingContractsPercentValueSchema).optional(),
+  possiblePoints: z.lazy(() => LearningGradingContractsScoreValueSchema).optional(),
   totalAssessments: z.number().int().optional(),
 });
 

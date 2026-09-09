@@ -291,8 +291,8 @@ o baseline de schema do fluxo:
 2. A publicação é explícita: um ponteiro de revisão ativa diferencia draft,
    alterações pendentes e definição executável. `ProgramContent.Visibility`
    não substitui esse lifecycle.
-3. Scores, pesos e percentuais acadêmicos são strings decimais canônicas de
-   largura fixa, inclusive no banco e no JSON. `Assessment.PassingScore` é o
+3. Scores, pesos e percentuais acadêmicos são inteiros de escala `100`,
+   inclusive no banco e no JSON. `Assessment.PassingScore` é o
    limiar absoluto da submissão; `Program.PassingScore` continua sendo o
    percentual global do curso e só é aplicado na consolidação global. Todos os
    campos acadêmicos já existentes são convertidos no baseline da fundação,
@@ -348,10 +348,9 @@ o baseline de schema do fluxo:
     concorrência, idempotência e auditoria.
 19. Cada revisão fixa um `AssessmentExecutionManifestV1` coberto, junto da
     fonte autoral, por `ExecutionSnapshotHash`. Publish, test run, tentativa
-    oficial e regrade resolvem as versões exatas de projector, gerador de
-    entrega, decoder/normalizador, handler, algoritmo, policy e provider, sem
-    fallback implícito após deploy. O manifest não altera o estado autoral do
-    assessment.
+    oficial e regrade resolvem as versões exatas do adapter agregado por tipo
+    de assessment, handler, policy e provider, sem fallback implícito após
+    deploy. O manifest não altera o estado autoral do assessment.
     O publish somente revalida o manifest fixado: `revisionId`, bytes canônicos
     e hash permanecem idênticos entre prepare, teste, publish e start oficial.
     Cada `GradingExecution` materializa separadamente uma

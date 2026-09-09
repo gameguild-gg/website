@@ -1,3 +1,5 @@
+using GameGuild.Learning.Grading.Contracts;
+
 namespace GameGuild.Learning.Courses;
 
 /// <summary> Interface for program enrollment services </summary>
@@ -15,10 +17,10 @@ public interface IProgramEnrollmentService {
   Task<IEnumerable<ProgramEnrollment>> GetUserEnrollmentsAsync(Guid userId, EnrollmentStatus? status = null);
 
   /// <summary> Update enrollment progress </summary>
-  Task<ProgramEnrollment> UpdateProgressAsync(Guid enrollmentId, decimal progressPercentage);
+  Task<ProgramEnrollment> UpdateProgressAsync(Guid enrollmentId, PercentValue progressPercentage);
 
   /// <summary> Mark enrollment as completed </summary>
-  Task<ProgramEnrollment> CompleteEnrollmentAsync(Guid enrollmentId, decimal? finalGrade = null);
+  Task<ProgramEnrollment> CompleteEnrollmentAsync(Guid enrollmentId, PercentValue? finalGrade = null);
 
   /// <summary> Cancel enrollment </summary>
   Task<bool> CancelEnrollmentAsync(Guid enrollmentId);

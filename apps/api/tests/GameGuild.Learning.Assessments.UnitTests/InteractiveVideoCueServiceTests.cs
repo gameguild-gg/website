@@ -24,7 +24,7 @@ public sealed class InteractiveVideoCueServiceTests
         {
             await using var db = CreateContext();
             var dueAt = DateTime.UtcNow.AddHours(1);
-            var assessment = Assessment.Create(Guid.NewGuid(), "Boundary", AssessmentType.Assignment, 10);
+            var assessment = Assessment.Create(Guid.NewGuid(), "Boundary", AssessmentType.Assignment, Score(10));
             assessment.SetDeliverySchedule(null, dueAt, dueAt, false, null);
             var submission = AssessmentSubmission.Start(assessment.Id, Guid.NewGuid(), Guid.NewGuid(), 1);
             db.AddRange(assessment, submission);
@@ -67,7 +67,7 @@ public sealed class InteractiveVideoCueServiceTests
     public async Task LinkInteractiveVideoCueAsync_WhenContentDoesNotResolve_ShouldReturnNotFound()
     {
         await using var db = CreateContext();
-        var assessment = Assessment.Create(Guid.NewGuid(), "Video checkpoint", AssessmentType.Quiz, 10);
+        var assessment = Assessment.Create(Guid.NewGuid(), "Video checkpoint", AssessmentType.Quiz, Score(10));
         db.Set<Assessment>().Add(assessment);
         await db.SaveChangesAsync();
         var contents = new Mock<IProgramContentService>();
@@ -86,7 +86,7 @@ public sealed class InteractiveVideoCueServiceTests
     public async Task LinkInteractiveVideoCueAsync_WhenDeletedContentDoesNotResolve_ShouldReturnNotFound()
     {
         await using var db = CreateContext();
-        var assessment = Assessment.Create(Guid.NewGuid(), "Video checkpoint", AssessmentType.Quiz, 10);
+        var assessment = Assessment.Create(Guid.NewGuid(), "Video checkpoint", AssessmentType.Quiz, Score(10));
         db.Set<Assessment>().Add(assessment);
         await db.SaveChangesAsync();
         var contents = new Mock<IProgramContentService>();
@@ -105,7 +105,7 @@ public sealed class InteractiveVideoCueServiceTests
     public async Task LinkInteractiveVideoCueAsync_WhenContentIsInAnotherCourse_ShouldReturnValidationError()
     {
         await using var db = CreateContext();
-        var assessment = Assessment.Create(Guid.NewGuid(), "Video checkpoint", AssessmentType.Quiz, 10);
+        var assessment = Assessment.Create(Guid.NewGuid(), "Video checkpoint", AssessmentType.Quiz, Score(10));
         db.Set<Assessment>().Add(assessment);
         await db.SaveChangesAsync();
         var content = CreateVideoLesson(Guid.NewGuid());
@@ -126,7 +126,7 @@ public sealed class InteractiveVideoCueServiceTests
     {
         await using var db = CreateContext();
         var courseId = Guid.NewGuid();
-        var assessment = Assessment.Create(courseId, "Video checkpoint", AssessmentType.Quiz, 10);
+        var assessment = Assessment.Create(courseId, "Video checkpoint", AssessmentType.Quiz, Score(10));
         db.Set<Assessment>().Add(assessment);
         await db.SaveChangesAsync();
         var content = CreateVideoLesson(courseId);
@@ -148,7 +148,7 @@ public sealed class InteractiveVideoCueServiceTests
     {
         await using var db = CreateContext();
         var courseId = Guid.NewGuid();
-        var assessment = Assessment.Create(courseId, "Video checkpoint", AssessmentType.Quiz, 10);
+        var assessment = Assessment.Create(courseId, "Video checkpoint", AssessmentType.Quiz, Score(10));
         db.Set<Assessment>().Add(assessment);
         await db.SaveChangesAsync();
         var content = CreateVideoLesson(courseId);
@@ -169,7 +169,7 @@ public sealed class InteractiveVideoCueServiceTests
     public async Task GetInteractiveVideoCuesAsync_WhenLinkedContentNoLongerResolves_ShouldFilterStaleCue()
     {
         await using var db = CreateContext();
-        var assessment = Assessment.Create(Guid.NewGuid(), "Video checkpoint", AssessmentType.Quiz, 10);
+        var assessment = Assessment.Create(Guid.NewGuid(), "Video checkpoint", AssessmentType.Quiz, Score(10));
         var cue = assessment.AddInteractiveVideoCue(Guid.NewGuid(), "chapter-1");
         db.AddRange(assessment, cue);
         await db.SaveChangesAsync();
@@ -187,7 +187,7 @@ public sealed class InteractiveVideoCueServiceTests
     {
         await using var db = CreateContext();
         var courseId = Guid.NewGuid();
-        var assessment = Assessment.Create(courseId, "Video checkpoint", AssessmentType.Quiz, 10);
+        var assessment = Assessment.Create(courseId, "Video checkpoint", AssessmentType.Quiz, Score(10));
         db.Set<Assessment>().Add(assessment);
         await db.SaveChangesAsync();
         var content = CreateVideoLesson(courseId);
@@ -214,7 +214,7 @@ public sealed class InteractiveVideoCueServiceTests
     {
         await using var db = CreateContext();
         var courseId = Guid.NewGuid();
-        var assessment = Assessment.Create(courseId, "Video checkpoint", AssessmentType.Quiz, 10);
+        var assessment = Assessment.Create(courseId, "Video checkpoint", AssessmentType.Quiz, Score(10));
         assessment.Version = 1;
         var cue = assessment.AddInteractiveVideoCue(Guid.NewGuid(), "chapter-1");
         cue.Version = 1;
@@ -241,15 +241,15 @@ public sealed class InteractiveVideoCueServiceTests
     {
         await using var db = CreateContext();
         var courseId = Guid.NewGuid();
-        var assessment = Assessment.Create(courseId, "Quiz", AssessmentType.Quiz, 100);
+        var assessment = Assessment.Create(courseId, "Quiz", AssessmentType.Quiz, Score(100));
         var submission = AssessmentSubmission.Start(assessment.Id, Guid.NewGuid(), Guid.NewGuid(), 1);
         submission.Submit();
-        var program = new Program { Id = courseId, PassingScore = 60m };
+        var program = new Program { Id = courseId, PassingScore = Percent(60) };
         db.AddRange(program, assessment, submission);
         await db.SaveChangesAsync();
         var service = new AssessmentService(db, Mock.Of<IProgramContentService>(), new RubricService(db, NullLogger<RubricService>.Instance), NullLogger<AssessmentService>.Instance);
 
-        var result = await service.GradeSubmissionAsync(submission.Id, new GradeSubmissionRequest(101));
+        var result = await service.GradeSubmissionAsync(submission.Id, new GradeSubmissionRequest(Score(101)));
 
         result.IsSuccess.Should().BeFalse();
         result.Error.Type.Should().Be(ErrorType.Validation);
@@ -260,8 +260,9 @@ public sealed class InteractiveVideoCueServiceTests
     {
         await using var db = CreateContext();
         var courseId = Guid.NewGuid();
-        var assessment = Assessment.Create(courseId, "Quiz", AssessmentType.Quiz, 100);
-        var program = new Program { Id = courseId, PassingScore = 60m };
+        var assessment = Assessment.Create(courseId, "Quiz", AssessmentType.Quiz, Score(100));
+        assessment.SetPassingScore(Score(60));
+        var program = new Program { Id = courseId, PassingScore = Percent(60) };
         var passing = AssessmentSubmission.Start(assessment.Id, Guid.NewGuid(), Guid.NewGuid(), 1);
         passing.Submit();
         var failing = AssessmentSubmission.Start(assessment.Id, Guid.NewGuid(), Guid.NewGuid(), 2);
@@ -270,32 +271,32 @@ public sealed class InteractiveVideoCueServiceTests
         await db.SaveChangesAsync();
         var service = new AssessmentService(db, Mock.Of<IProgramContentService>(), new RubricService(db, NullLogger<RubricService>.Instance), NullLogger<AssessmentService>.Instance);
 
-        var passResult = await service.GradeSubmissionAsync(passing.Id, new GradeSubmissionRequest(70));
-        var failResult = await service.GradeSubmissionAsync(failing.Id, new GradeSubmissionRequest(50));
+        var passResult = await service.GradeSubmissionAsync(passing.Id, new GradeSubmissionRequest(Score(70)));
+        var failResult = await service.GradeSubmissionAsync(failing.Id, new GradeSubmissionRequest(Score(50)));
 
         passResult.IsSuccess.Should().BeTrue();
         passResult.Value.Passed.Should().BeTrue();
-        passResult.Value.Score.Should().Be(70);
+        passResult.Value.Score.Should().Be(Score(70));
         failResult.IsSuccess.Should().BeTrue();
         failResult.Value.Passed.Should().BeFalse();
-        failResult.Value.Score.Should().Be(50);
+        failResult.Value.Score.Should().Be(Score(50));
     }
 
     [Fact]
     public async Task UpdateAssessmentAsync_WhenNewMaximumIsBelowAssignedScore_ReturnsValidationError()
     {
         await using var db = CreateContext();
-        var assessment = Assessment.Create(Guid.NewGuid(), "Quiz", AssessmentType.Quiz, 100);
+        var assessment = Assessment.Create(Guid.NewGuid(), "Quiz", AssessmentType.Quiz, Score(100));
         var submission = AssessmentSubmission.Start(assessment.Id, Guid.NewGuid(), Guid.NewGuid(), 1);
         submission.Submit();
-        submission.Grade(80, 60, assessment.MaxScore);
+        submission.Grade(Score(80), Score(60), assessment.MaxScore);
         db.AddRange(assessment, submission);
         await db.SaveChangesAsync();
         var service = new AssessmentService(db, Mock.Of<IProgramContentService>(), new RubricService(db, NullLogger<RubricService>.Instance), NullLogger<AssessmentService>.Instance);
 
         var result = await service.UpdateAssessmentAsync(
             assessment.Id,
-            new UpdateAssessmentRequest(MaxScore: 70));
+            new UpdateAssessmentRequest(assessment.Version, MaxScore: Score(70)));
 
         result.IsSuccess.Should().BeFalse();
         result.Error.Type.Should().Be(ErrorType.Validation);

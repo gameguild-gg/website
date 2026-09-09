@@ -18,9 +18,6 @@ public sealed class ContentInteractionEventConfiguration : IEntityTypeConfigurat
             table.HasCheckConstraint(
                 "CK_content_interaction_events_PositionSeconds_NonNegative",
                 "\"PositionSeconds\" IS NULL OR \"PositionSeconds\" >= 0");
-            table.HasCheckConstraint(
-                "CK_content_interaction_events_ProgressPercentage_Range",
-                "\"ProgressPercentage\" IS NULL OR (\"ProgressPercentage\" >= 0 AND \"ProgressPercentage\" <= 100)");
         });
 
         builder.HasOne(item => item.Interaction)

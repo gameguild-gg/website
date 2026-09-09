@@ -1,4 +1,6 @@
 
+using GameGuild.Learning.Grading.Contracts;
+
 namespace GameGuild.Learning.Courses;
 
 /// <summary>
@@ -64,14 +66,14 @@ public sealed record CreatePrerequisiteRequest(
     Guid PrerequisiteCourseId,
     Guid? TenantId,
     PrerequisiteType Type = PrerequisiteType.Required,
-    int? MinimumGrade = null,
+    PercentValue? MinimumGrade = null,
     string? Description = null,
     int DisplayOrder = 0,
     string? PrerequisiteGroup = null);
 
 public sealed record UpdatePrerequisiteRequest(
     PrerequisiteType? Type = null,
-    int? MinimumGrade = null,
+    PercentValue? MinimumGrade = null,
     string? Description = null,
     int? DisplayOrder = null,
     string? PrerequisiteGroup = null);
@@ -88,6 +90,6 @@ public record PrerequisiteStatus(
     string CourseName,
     PrerequisiteType Type,
     bool IsSatisfied,
-    int? RequiredGrade,
-    int? AchievedGrade,
+    PercentValue? RequiredGrade,
+    PercentValue? AchievedGrade,
     string? Reason);

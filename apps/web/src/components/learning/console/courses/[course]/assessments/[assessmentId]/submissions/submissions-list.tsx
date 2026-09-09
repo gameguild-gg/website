@@ -13,6 +13,7 @@ import {
 } from '@game-guild/ui/components/table';
 import type { LearningAssessmentsAssessmentSubmission } from '@game-guild/client';
 import { useLearningBase } from '@/lib/learning/use-learning-base';
+import { scoreUnitsToPoints } from '@/lib/learning/academic-values';
 
 // ponytail: simple list render; add server-side pagination when submission count exceeds 200
 
@@ -151,7 +152,9 @@ function SubmissionRow({
     : '—';
 
   const scoreLabel =
-    submission.score != null ? `${submission.score}/${maxScore}` : '—';
+    submission.score != null
+      ? `${scoreUnitsToPoints(submission.score)}/${maxScore}`
+      : '—';
 
   const gradeHref = `${learningBase}/courses/${courseSlug}/assessments/${assessmentSlug}/submissions/${submission.id}/grade`;
 

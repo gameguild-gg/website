@@ -1,6 +1,6 @@
 # SCHEMA-GATE da Parte 1: fundacao e autoria
 
-- Status: aguardando aprovacao explicita
+- Status: aprovado; implementacao em andamento
 - Data do inventario: 2026-09-04
 - Plano executor: [`01-foundation-and-authoring.md`](./01-foundation-and-authoring.md)
 - Escopo liberado apos aprovacao: `SEQ-03` a `SEQ-06`
@@ -19,7 +19,7 @@ Entram neste gate:
 - test runs e sujeitos sinteticos do instrutor;
 - raiz generica de grading, rodadas, stages, resultados por item e evidencias;
 - idempotencia e outbox academica com fan-out duravel;
-- representacao textual canonica de valores academicos;
+- representacao inteira de ponto fixo para valores academicos, com escala `100`;
 - substituicao do baseline global de desenvolvimento.
 
 Nao entram participantes de submission coletiva, claims e leases de
@@ -40,7 +40,7 @@ quando soft delete fizer parte do lifecycle. Registros append-only nao possuem
 | `AssessmentTestRunSubjects` | Persona sintetica pertencente a um test run | `TestRunId`, `PersonaKey`, `DisplayName`, `Version` |
 | `GradingExecutions` | Raiz generica de execucao | `DefinitionRevisionId`, `ExecutionContext`, exatamente um entre `TestRunSubjectId` e `AssessmentSubmissionId`, entrega canonica, resposta canonica, `Status`, `ActiveGradeRoundId`, `SubmittedAt`, `FinalizedAt`, `Version` |
 | `GradeRounds` | Rodada versionada, imutavel depois da finalizacao | `GradingExecutionId`, `RoundNumber`, `SupersedesGradeRoundId`, `Reason`, `Status`, `ResultSchemaVersion`, `ResultState`, `Score`, `MaxScore`, `Feedback`, `StartedAt`, `FinalizedAt`, `Version` |
-| `ReviewStages` | Stage ordenado de uma rodada | `GradeRoundId`, `Sequence`, `ReviewMethod`, chaves e versoes executaveis, `Status`, `StartedAt`, `CompletedAt`, `Version` |
+| `ReviewStages` | Stage ordenado de uma rodada | `GradeRoundId`, `Sequence`, `ReviewMethod`, chave e versao do handler, provider opcional, `Status`, `StartedAt`, `CompletedAt`, `Version` |
 | `GradeItemResults` | Snapshot do resultado de cada item ao fim de um stage | `ReviewStageId`, `ItemId`, `State`, `Score`, `MaxScore`, `Feedback` |
 | `ReviewEvidence` | Evidencia versionada e auditavel produzida por um stage | `ReviewStageId`, `EvidenceKey`, `ItemId` opcional, `EvidenceType`, `SchemaVersion`, `CanonicalJson`, `PayloadHash`, `HashVersion`, ator ou servico produtor, `CreatedAt` |
 | `GradingCommandReceipts` | Deduplicacao duravel de comandos | `TenantId`, `ResourceId`, `CommandType`, `ActorId`, `IdempotencyKey`, `RequestHash`, `OutcomeSchemaVersion`, `OutcomeCanonicalJson`, `CreatedAt`, `ExpiresAt` |
@@ -102,10 +102,9 @@ Removidas:
 - `DefinitionSchemaVersion`;
 - `PeerReviewsRequiredCount`.
 
-Tipo ou nulabilidade alterados:
-
-- `MaxScore`: `integer` para `varchar(13) COLLATE "C"` (`ScoreValue`);
-- `PassingScore`: `integer` para `varchar(13) COLLATE "C"` (`ScoreValue`);
+Sem mudanca de tipo para scores: `MaxScore` e `PassingScore` permanecem
+`integer`, agora definidos explicitamente como unidades `ScoreValue` escaladas
+por `100`.
 - `MaxAttempts`: passa a ser obrigatorio, default `1`, e a Parte 1 rejeita
   qualquer valor diferente de `1`.
 
@@ -117,7 +116,8 @@ Uma revisao preparada congela ambos em `AssessmentAuthoringSourceV1`.
 ### `AssessmentSubmissions`
 
 - remove `StructuredAnswerPayload`;
-- `Score` passa de `integer null` para `varchar(13) COLLATE "C" null`;
+- `Score` permanece `integer null` e passa a representar unidades
+  `ScoreValue` escaladas por `100`;
 - `StructuredAnswer` pode continuar como modalidade declarada, mas os bytes da
   resposta existem somente em `GradingExecutions`;
 - a constraint de consistencia de payload deixa de exigir uma coluna JSON para
@@ -128,7 +128,7 @@ Uma revisao preparada congela ambos em `AssessmentAuthoringSourceV1`.
 - remove a coluna `CompletionPercentage`, criada indevidamente a partir de um
   alias de `ProgressPercentage`;
 - o alias C# passa a ser nao mapeado e usa somente `ProgressPercentage`;
-- `ProgressPercentage` e `BestScore` passam a strings canonicas.
+- `ProgressPercentage` e `BestScore` passam a inteiros de escala `100`.
 
 As demais colunas listadas na secao 5 mudam somente de representacao e
 contrato. Campos numericos nao academicos, como tempo, contadores, valores
@@ -175,15 +175,16 @@ parte deste gate.
 
 - `ReviewMethods IN (0, 1, 2, 4, 8, 9, 10, 12, 16, 24)` no draft;
 - publicacao rejeita `0` no dominio;
-- checks textuais fechados para contextos, estados, review methods, completion,
-  release e contribution mode;
+- checks fechados para contextos, estados, review methods, completion, release
+  e contribution mode;
 - `scheduled` exige `ResultReleaseScheduledFor`; outros modos exigem `null`;
-- `ScoreValue` corresponde a `^[0-9]{8}\.[0-9]{4}$`;
-- `PercentValue` corresponde a `^[0-9]{3}\.[0-9]{4}$` e fica entre
-  `000.0000` e `100.0000` por comparacao ordinal;
+- `ScoreValue` e `integer` no intervalo `0..2147483647`, onde `100` unidades
+  representam `1` ponto;
+- `PercentValue` e `integer` no intervalo `0..10000`, onde `100` unidades
+  representam `1%` e `10000` representa `100%`;
 - scores nao negativos e `Score <= MaxScore` onde os dois campos coexistem;
 - `PassingScore <= MaxScore`;
-- `AssessmentGroup.WeightPercent <= 100.0000`;
+- `AssessmentGroup.WeightPercent <= 10000`;
 - `ActivityGrade.Points <= MaxPoints` quando ambos existirem.
 
 ### Idempotencia e outbox
@@ -198,36 +199,37 @@ parte deste gate.
 Nao sera criada RLS nova neste corte. O escopo de tenant e a matriz de
 autorizacao continuam obrigatorios no servidor.
 
-## 5. Valores que deixam tipos numericos
+## 5. Contrato inteiro final dos valores academicos
 
-| Tabela | Coluna atual | Contrato textual final |
+| Tabela | Coluna atual | Contrato inteiro final |
 | --- | --- | --- |
-| `Assessments` | `MaxScore`, `PassingScore` (`integer`) | `ScoreValue` |
-| `AssessmentSubmissions` | `Score` (`integer`) | `ScoreValue` nullable |
-| `AssessmentPeerReviews` | `Score` (`integer`) | `ScoreValue` nullable |
-| `RubricCriteria` | `Points` (`integer`) | `ScoreValue` |
-| `AssessmentGroups` | `WeightPercent` (`numeric(5,2)`) | `PercentValue` |
-| `LtiLineItemMappings` | `MaxScore` (`integer`) | `ScoreValue` |
-| `activity_grades` | `Points`, `MaxPoints` (`numeric(5,2)`) | `ScoreValue` nullable |
-| `content_interaction_events` | `ProgressPercentage` (`numeric(5,2)`) | `PercentValue` nullable |
-| `content_interactions` | `ProgressPercentage` (`numeric(5,2)`) | `PercentValue` nullable |
-| `content_interactions` | `BestScore` (`numeric(5,2)`) | `ScoreValue` nullable |
+| `Assessments` | `MaxScore`, `PassingScore` (`integer`) | `ScoreValue` (`integer`) |
+| `AssessmentSubmissions` | `Score` (`integer`) | `ScoreValue` (`integer`) nullable |
+| `AssessmentPeerReviews` | `Score` (`integer`) | `ScoreValue` (`integer`) nullable |
+| `RubricCriteria` | `Points` (`integer`) | `ScoreValue` (`integer`) |
+| `AssessmentGroups` | `WeightPercent` (`numeric(5,2)`) | `PercentValue` (`integer`) |
+| `LtiLineItemMappings` | `MaxScore` (`integer`) | `ScoreValue` (`integer`) |
+| `activity_grades` | `Points`, `MaxPoints` (`numeric(5,2)`) | `ScoreValue` (`integer`) nullable |
+| `content_interaction_events` | `ProgressPercentage` (`numeric(5,2)`) | `PercentValue` (`integer`) nullable |
+| `content_interactions` | `ProgressPercentage` (`numeric(5,2)`) | `PercentValue` (`integer`) nullable |
+| `content_interactions` | `BestScore` (`numeric(5,2)`) | `ScoreValue` (`integer`) nullable |
 | `content_interactions` | `CompletionPercentage` (`numeric`) | removida; era alias duplicado |
-| `content_progress` | `ProgressPercentage` (`numeric(5,2)`) | `PercentValue` |
-| `content_progress` | `Score`, `MaxScore` (`numeric(5,2)`) | `ScoreValue` nullable |
-| `course_prerequisites` | `MinimumGrade` (`integer`) | `PercentValue` nullable |
-| `program_enrollments` | `ProgressPercentage`, `FinalGrade` (`numeric(5,2)`) | `PercentValue` / nullable |
-| `program_users` | `CompletionPercentage`, `FinalGrade` (`numeric(5,2)`) | `PercentValue` / nullable |
-| `programs` | `PassingScore` (`numeric(5,2)`) | `PercentValue` |
+| `content_progress` | `ProgressPercentage` (`numeric(5,2)`) | `PercentValue` (`integer`) |
+| `content_progress` | `Score`, `MaxScore` (`numeric(5,2)`) | `ScoreValue` (`integer`) nullable |
+| `course_prerequisites` | `MinimumGrade` (`integer`) | `PercentValue` (`integer`) nullable |
+| `program_enrollments` | `ProgressPercentage`, `FinalGrade` (`numeric(5,2)`) | `PercentValue` (`integer`) / nullable |
+| `program_users` | `CompletionPercentage`, `FinalGrade` (`numeric(5,2)`) | `PercentValue` (`integer`) / nullable |
+| `programs` | `PassingScore` (`numeric(5,2)`) | `PercentValue` (`integer`) |
 
-Isso corresponde a 22 colunas numericas atuais: 21 sao convertidas e uma e
-removida. DTOs, commands, queries, servicos, LTI, clients gerados e web deixam
-de expor esses valores academicos como `int`, `decimal`, `double`, `float` ou
-`number` em contratos persistidos/serializados.
+Isso corresponde a 22 colunas atuais: 21 passam a armazenar unidades inteiras e
+uma e removida. DTOs, commands, queries, servicos, LTI, clients gerados e web
+usam `ScoreValue` ou `PercentValue`; JSON transporta seus inteiros de unidades,
+sem strings, `decimal`, `double` ou `float`. TypeScript usa `number` branded e
+valida `Number.isSafeInteger` mais os limites do contrato.
 
 ## 6. Transacoes e concorrencia
 
-- `SaveQuizAssessmentDraft` grava content e assessment em uma transacao e usa
+- `SaveAssessmentDraft` grava content e assessment em uma transacao e usa
   as versoes esperadas dos dois recursos;
 - prepare grava revisao, manifest, snapshot e outbox na mesma transacao;
 - publish valida revisao, hash do test run concluido e versao do assessment
@@ -330,4 +332,5 @@ A aprovacao deste gate autoriza exclusivamente o delta acima e a substituicao
 global do baseline descrita. Qualquer tabela, coluna ou artefato adicional
 exigira novo destaque e aprovacao antes de ser criado.
 
-**Aguardando aprovacao explicita para iniciar `SEQ-03`.**
+**Gate aprovado pelo responsavel do projeto; implementar diretamente no novo
+baseline, sem migration incremental ou compatibilidade com estado anterior.**

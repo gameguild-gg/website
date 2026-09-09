@@ -1,6 +1,8 @@
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using GameGuild.Learning.Assessments.Grading.Contracts;
+using GameGuild.Learning.Grading.Contracts;
 
 namespace GameGuild.Learning.Assessments;
 
@@ -47,7 +49,7 @@ public class RubricService : IRubricService
 
             // ponytail: Σ==MaxScore is re-validated on every PUT; if MaxScore later changes without a
             // follow-up PUT, grading-time Σ==Score still guards score integrity (residual, documented).
-            if (request.Criteria.Sum(c => c.Points) != assessment.MaxScore)
+            if (ScoreValue.Sum(request.Criteria.Select(c => c.Points)) != assessment.MaxScore)
             {
                 return Result.Failure<RubricDto>(Error.Validation(
                     "Rubric.PointsSumMismatch",
@@ -175,7 +177,7 @@ public class RubricService : IRubricService
         }
     }
 
-    public async Task<Result> ValidateScoresAsync(Guid assessmentId, int score, string? rubricScores)
+    public async Task<Result> ValidateScoresAsync(Guid assessmentId, ScoreValue score, string? rubricScores)
     {
         var assessment = await FindAssessmentAsync(assessmentId).ConfigureAwait(false);
         if (assessment == null)
@@ -237,7 +239,7 @@ public class RubricService : IRubricService
             }
         }
 
-        var total = 0;
+        var awarded = new List<ScoreValue>();
         foreach (var criterion in criteria)
         {
             if (!entries.TryGetValue(criterion.Id.ToString(), out var entry))
@@ -249,24 +251,36 @@ public class RubricService : IRubricService
 
             if (!entry.TryGetProperty("points", out var pointsElement) ||
                 pointsElement.ValueKind != JsonValueKind.Number ||
-                !pointsElement.TryGetInt32(out var points))
+                !pointsElement.TryGetInt32(out var pointUnits))
             {
                 return Result.Failure(Error.Validation(
                     "Rubric.CriterionPointsInvalid",
-                    $"Rubric score for criterion \"{criterion.Description}\" must include an integer points value"));
+                    $"Rubric score for criterion \"{criterion.Description}\" must include integer point units"));
             }
 
-            if (points < 0 || points > criterion.Points)
+            ScoreValue points;
+            try
+            {
+                points = ScoreValue.FromUnits(pointUnits);
+            }
+            catch (ArgumentOutOfRangeException)
+            {
+                return Result.Failure(Error.Validation(
+                    "Rubric.CriterionPointsInvalid",
+                    $"Rubric score for criterion \"{criterion.Description}\" must be non-negative integer units."));
+            }
+
+            if (points.CompareTo(criterion.Points) > 0)
             {
                 return Result.Failure(Error.Validation(
                     "Rubric.CriterionOutOfRange",
                     $"Rubric score for criterion \"{criterion.Description}\" must be between 0 and {criterion.Points}"));
             }
 
-            total += points;
+            awarded.Add(points);
         }
 
-        if (total != score)
+        if (ScoreValue.Sum(awarded) != score)
         {
             return Result.Failure(Error.Validation(
                 "Rubric.ScoreSumMismatch",

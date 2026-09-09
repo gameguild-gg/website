@@ -1,11 +1,13 @@
 
-﻿namespace GameGuild.Learning.Courses;
+using GameGuild.Learning.Grading.Contracts;
+
+namespace GameGuild.Learning.Courses;
 
 /// <summary> Interface for content interaction tracking services </summary>
 public interface IContentInteractionService {
   Task<ContentInteraction> StartContentAsync(Guid programUserId, Guid contentId);
 
-  Task<ContentInteraction> UpdateProgressAsync(Guid interactionId, decimal completionPercentage);
+  Task<ContentInteraction> UpdateProgressAsync(Guid interactionId, PercentValue completionPercentage);
 
   Task<ContentInteraction> SubmitContentAsync(Guid interactionId, string submissionData);
 

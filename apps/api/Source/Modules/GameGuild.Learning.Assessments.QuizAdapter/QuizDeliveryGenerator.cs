@@ -1,16 +1,11 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using GameGuild.Learning.Assessments.Grading.Abstractions;
 
 namespace GameGuild.Learning.Assessments.QuizAdapter;
 
-public sealed class QuizDeliveryGenerator : IAssessmentDeliveryGenerator
+public sealed class QuizDeliveryGenerator
 {
     private static readonly string[] CommonFields = ["type", "stem", "points", "settings"];
-
-    public string Key => QuizAdapterContracts.DeliveryGeneratorKey;
-    public string Version => QuizAdapterContracts.Version;
-    public string ContentType => QuizAdapterContracts.ContentType;
 
     public JsonElement Generate(JsonElement projectedItem)
     {
@@ -22,7 +17,7 @@ public sealed class QuizDeliveryGenerator : IAssessmentDeliveryGenerator
         return JsonSerializer.SerializeToElement(new { itemId, entry = learnerEntry });
     }
 
-    internal static JsonElement RedactEntry(JsonElement entry)
+    public static JsonElement RedactEntry(JsonElement entry)
     {
         JsonContract.RequireObject(entry, "Quiz entry");
         var type = entry.GetProperty("type").GetString() ?? throw new JsonException("Quiz entry type is required.");

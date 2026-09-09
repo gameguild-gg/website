@@ -32,7 +32,7 @@ public class RubricServiceTests
         rubric.Title.Should().Be("Essay Rubric");
         var criteria = await db.Set<RubricCriterion>().Where(c => c.RubricId == rubric.Id).ToListAsync();
         criteria.Should().HaveCount(2);
-        criteria.Sum(c => c.Points).Should().Be(100);
+        ScoreValue.Sum(criteria.Select(c => c.Points)).Should().Be(Score(100));
         (await db.Set<Assessment>().SingleAsync(a => a.Id == assessment.Id)).RubricId
             .Should().Be(rubric.Id);
     }
@@ -45,8 +45,8 @@ public class RubricServiceTests
         var service = CreateRubricService(db);
 
         var result = await service.SaveAsync(assessment.Id, new SaveRubricRequest("Broken", [
-            new SaveRubricCriterionRequest("Correctness", 60, 1),
-            new SaveRubricCriterionRequest("Style", 30, 2)
+            new SaveRubricCriterionRequest("Correctness", Score(60), 1),
+            new SaveRubricCriterionRequest("Style", Score(30), 2)
         ]));
 
         result.IsSuccess.Should().BeFalse();
@@ -76,7 +76,7 @@ public class RubricServiceTests
         var service = CreateRubricService(db);
 
         var result = await service.SaveAsync(assessment.Id, new SaveRubricRequest("   ", [
-            new SaveRubricCriterionRequest("Only", 100, 1)
+            new SaveRubricCriterionRequest("Only", Score(100), 1)
         ]));
 
         result.IsSuccess.Should().BeFalse();
@@ -93,9 +93,9 @@ public class RubricServiceTests
         first.IsSuccess.Should().BeTrue();
 
         var result = await service.SaveAsync(assessment.Id, new SaveRubricRequest("Essay Rubric v2", [
-            new SaveRubricCriterionRequest("Correctness", 30, 1),
-            new SaveRubricCriterionRequest("Style", 30, 2),
-            new SaveRubricCriterionRequest("Depth", 40, 3)
+            new SaveRubricCriterionRequest("Correctness", Score(30), 1),
+            new SaveRubricCriterionRequest("Style", Score(30), 2),
+            new SaveRubricCriterionRequest("Depth", Score(40), 3)
         ]));
 
         result.IsSuccess.Should().BeTrue();
@@ -207,7 +207,7 @@ public class RubricServiceTests
         var scores = Scores((rubric.Criteria[0].Id, 35, "mostly right"), (rubric.Criteria[1].Id, 5, null));
 
         var result = await CreateGradingService(db).GradeSubmissionAsync(
-            submissionId, new GradeSubmissionRequest(40, GradedBy: Guid.NewGuid(), RubricScores: scores));
+            submissionId, new GradeSubmissionRequest(Score(40), GradedBy: Guid.NewGuid(), RubricScores: scores));
 
         result.IsSuccess.Should().BeTrue();
         var rows = await db.Set<AssessmentSubmission>()
@@ -215,7 +215,7 @@ public class RubricServiceTests
         rows.Should().HaveCount(3, "group attempt fan-out");
         rows.Should().OnlyContain(r =>
             r.Status == SubmissionStatus.Graded &&
-            r.Score == 40 &&
+            r.Score == Score(40) &&
             r.RubricScoresPayload == scores);
     }
 
@@ -227,7 +227,7 @@ public class RubricServiceTests
         await SaveStandardRubricAsync(db, assessment);
 
         var result = await CreateGradingService(db).GradeSubmissionAsync(
-            submissionId, new GradeSubmissionRequest(40, GradedBy: Guid.NewGuid()));
+            submissionId, new GradeSubmissionRequest(Score(40), GradedBy: Guid.NewGuid()));
 
         result.IsSuccess.Should().BeFalse();
         result.Error.Description.Should().Be("A rubric score is required for rubric-graded assessments");
@@ -244,7 +244,7 @@ public class RubricServiceTests
         var scores = Scores((rubric.Criteria[0].Id, 61, null), (rubric.Criteria[1].Id, 40, null));
 
         var result = await CreateGradingService(db).GradeSubmissionAsync(
-            submissionId, new GradeSubmissionRequest(101, GradedBy: Guid.NewGuid(), RubricScores: scores));
+            submissionId, new GradeSubmissionRequest(Score(101), GradedBy: Guid.NewGuid(), RubricScores: scores));
 
         result.IsSuccess.Should().BeFalse();
         result.Error.Type.Should().Be(ErrorType.Validation);
@@ -260,7 +260,7 @@ public class RubricServiceTests
         var scores = Scores((rubric.Criteria[0].Id, 40, null));
 
         var result = await CreateGradingService(db).GradeSubmissionAsync(
-            submissionId, new GradeSubmissionRequest(40, GradedBy: Guid.NewGuid(), RubricScores: scores));
+            submissionId, new GradeSubmissionRequest(Score(40), GradedBy: Guid.NewGuid(), RubricScores: scores));
 
         result.IsSuccess.Should().BeFalse();
         result.Error.Type.Should().Be(ErrorType.Validation);
@@ -276,7 +276,7 @@ public class RubricServiceTests
         var scores = Scores((rubric.Criteria[0].Id, 35, null), (rubric.Criteria[1].Id, 5, null));
 
         var result = await CreateGradingService(db).GradeSubmissionAsync(
-            submissionId, new GradeSubmissionRequest(50, GradedBy: Guid.NewGuid(), RubricScores: scores));
+            submissionId, new GradeSubmissionRequest(Score(50), GradedBy: Guid.NewGuid(), RubricScores: scores));
 
         result.IsSuccess.Should().BeFalse();
         result.Error.Description.Should().Be("Rubric scores must sum to the submitted score");
@@ -290,7 +290,7 @@ public class RubricServiceTests
         await SaveStandardRubricAsync(db, assessment);
 
         var result = await CreateGradingService(db).GradeSubmissionAsync(
-            submissionId, new GradeSubmissionRequest(40, GradedBy: Guid.NewGuid(), RubricScores: "not json"));
+            submissionId, new GradeSubmissionRequest(Score(40), GradedBy: Guid.NewGuid(), RubricScores: "not json"));
 
         result.IsSuccess.Should().BeFalse();
         result.Error.Type.Should().Be(ErrorType.Validation);
@@ -306,7 +306,7 @@ public class RubricServiceTests
         var scores = Scores((rubric.Criteria[0].Id, 20, null), (unknownId, 20, null));
 
         var result = await CreateGradingService(db).GradeSubmissionAsync(
-            submissionId, new GradeSubmissionRequest(40, GradedBy: Guid.NewGuid(), RubricScores: scores));
+            submissionId, new GradeSubmissionRequest(Score(40), GradedBy: Guid.NewGuid(), RubricScores: scores));
 
         result.IsSuccess.Should().BeFalse();
         result.Error.Type.Should().Be(ErrorType.Validation);
@@ -320,7 +320,7 @@ public class RubricServiceTests
         var (_, submissionId) = await SeedSubmittedAttemptAsync(db);
 
         var result = await CreateGradingService(db).GradeSubmissionAsync(
-            submissionId, new GradeSubmissionRequest(40, GradedBy: Guid.NewGuid(), RubricScores: Scores((Guid.NewGuid(), 40, null))));
+            submissionId, new GradeSubmissionRequest(Score(40), GradedBy: Guid.NewGuid(), RubricScores: Scores((Guid.NewGuid(), 40, null))));
 
         result.IsSuccess.Should().BeFalse();
         result.Error.Description.Should().Be("This assessment is not rubric-graded");
@@ -361,7 +361,7 @@ public class RubricServiceTests
     {
         var assessmentId = Guid.NewGuid();
         _assessments.Setup(s => s.GetAssessmentByIdAsync(assessmentId))
-            .ReturnsAsync(Assessment.Create(Guid.NewGuid(), "Essay", AssessmentType.Assignment, 100));
+            .ReturnsAsync(Assessment.Create(Guid.NewGuid(), "Essay", AssessmentType.Assignment, Score(100)));
         _programs.Setup(s => s.GetProgramByIdAsync(It.IsAny<Guid>()))
             .ReturnsAsync(new Program { Id = Guid.NewGuid(), CreatorId = Guid.NewGuid() });
 
@@ -377,7 +377,7 @@ public class RubricServiceTests
         var actorId = Guid.NewGuid();
         var courseId = Guid.NewGuid();
         var assessmentId = Guid.NewGuid();
-        var assessment = Assessment.Create(courseId, "Essay", AssessmentType.Assignment, 100);
+        var assessment = Assessment.Create(courseId, "Essay", AssessmentType.Assignment, Score(100));
         _assessments.Setup(s => s.GetAssessmentByIdAsync(assessmentId)).ReturnsAsync(assessment);
         _programs.Setup(s => s.GetProgramByIdAsync(courseId))
             .ReturnsAsync(new Program { Id = courseId, CreatorId = actorId });
@@ -396,7 +396,7 @@ public class RubricServiceTests
         var courseId = Guid.NewGuid();
         var assessmentId = Guid.NewGuid();
         _assessments.Setup(s => s.GetAssessmentByIdAsync(assessmentId))
-            .ReturnsAsync(Assessment.Create(courseId, "Essay", AssessmentType.Assignment, 100));
+            .ReturnsAsync(Assessment.Create(courseId, "Essay", AssessmentType.Assignment, Score(100)));
         _programs.Setup(s => s.GetProgramByIdAsync(courseId))
             .ReturnsAsync(new Program { Id = courseId, CreatorId = actorId });
         _rubrics.Setup(s => s.GetAsync(assessmentId))
@@ -416,19 +416,21 @@ public class RubricServiceTests
         new(db, Mock.Of<IProgramContentService>(), CreateRubricService(db), NullLogger<AssessmentService>.Instance);
 
     private static SaveRubricRequest StandardRubric() => new("Essay Rubric", [
-        new SaveRubricCriterionRequest("Correctness", 60, 1),
-        new SaveRubricCriterionRequest("Style", 40, 2)
+        new SaveRubricCriterionRequest("Correctness", Score(60), 1),
+        new SaveRubricCriterionRequest("Style", Score(40), 2)
     ]);
 
     private static string Scores(params (Guid CriterionId, int Points, string? Comment)[] entries) =>
         JsonSerializer.Serialize(
-            entries.ToDictionary(e => e.CriterionId.ToString(), e => new { points = e.Points, comment = e.Comment }));
+            entries.ToDictionary(
+                e => e.CriterionId.ToString(),
+                e => new { points = Score(e.Points), comment = e.Comment }));
 
     private static async Task<Assessment> SeedAssessmentAsync(TestRubricDbContext db, int maxScore = 100)
     {
         var courseId = Guid.NewGuid();
-        var assessment = Assessment.Create(courseId, "Essay", AssessmentType.Assignment, maxScore);
-        db.AddRange(new Program { Id = courseId, PassingScore = 60m }, assessment);
+        var assessment = Assessment.Create(courseId, "Essay", AssessmentType.Assignment, Score(maxScore));
+        db.AddRange(new Program { Id = courseId, PassingScore = Percent(60) }, assessment);
         await db.SaveChangesAsync();
         return assessment;
     }
@@ -458,9 +460,9 @@ public class RubricServiceTests
         var courseId = Guid.NewGuid();
         var set = CourseGroupSet.Create(courseId, "Project Groups");
         var group = CourseGroup.Create(set.Id, "Team A", 3);
-        var assessment = Assessment.Create(courseId, "Group Essay", AssessmentType.Assignment, 100);
+        var assessment = Assessment.Create(courseId, "Group Essay", AssessmentType.Assignment, Score(100));
         assessment.AssignToGroupSet(set.Id);
-        db.AddRange(new Program { Id = courseId, PassingScore = 60m }, set, group, assessment);
+        db.AddRange(new Program { Id = courseId, PassingScore = Percent(60) }, set, group, assessment);
         var members = Enumerable.Range(0, 3).Select(_ =>
         {
             var user = Guid.NewGuid();
@@ -482,7 +484,7 @@ public class RubricServiceTests
         var row = AssessmentSubmission.Start(assessment.Id, enrollment.Id, enrollment.UserId, 1);
         row.SetPayload(new SubmitAssessmentRequest(TextPayload: "answer"), SubmissionModality.Text);
         row.Submit();
-        row.Grade(80, 60, 100);
+        row.Grade(Score(80), Score(60), Score(100));
         db.AddRange(enrollment, row);
         await db.SaveChangesAsync();
     }

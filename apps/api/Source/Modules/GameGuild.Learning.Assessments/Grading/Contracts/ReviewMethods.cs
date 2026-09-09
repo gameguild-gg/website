@@ -1,8 +1,10 @@
 namespace GameGuild.Learning.Assessments.Grading.Contracts;
 
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 [Flags]
+[JsonConverter(typeof(ReviewMethodsJsonConverter))]
 public enum ReviewMethods
 {
     None = 0,
@@ -11,6 +13,29 @@ public enum ReviewMethods
     AutomatedReview = 4,
     InstructorReview = 8,
     SelfReview = 16,
+}
+
+public sealed class ReviewMethodsJsonConverter : JsonConverter<ReviewMethods>
+{
+    public override ReviewMethods Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        if (reader.TokenType != JsonTokenType.Number || !reader.TryGetInt32(out var value))
+            throw new JsonException("ReviewMethods must be a numeric bitmask.");
+        try
+        {
+            return ((ReviewMethods)value).EnsureValid(allowDraft: true);
+        }
+        catch (ArgumentOutOfRangeException exception)
+        {
+            throw new JsonException(exception.Message, exception);
+        }
+    }
+
+    public override void Write(Utf8JsonWriter writer, ReviewMethods value, JsonSerializerOptions options)
+    {
+        value.EnsureValid(allowDraft: true);
+        writer.WriteNumberValue((int)value);
+    }
 }
 
 [JsonConverter(typeof(JsonStringEnumConverter<ReviewMethod>))]

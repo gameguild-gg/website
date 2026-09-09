@@ -8,6 +8,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
+using GameGuild.Learning.Assessments.Grading.Contracts;
+using GameGuild.Learning.Grading.Contracts;
+using GameGuild.Learning.Assessments.Grading.Authoring;
 
 namespace GameGuild.Learning.Assessments;
 
@@ -25,6 +28,7 @@ public class AssessmentsController : BaseApiController
     private readonly IEnrollmentService _enrollmentService;
     private readonly IPermissionQueryService _permissionQueryService;
     private readonly IGradingQueueService _gradingQueueService;
+    private readonly IAssessmentAuthoringService _authoringService;
     private readonly ILogger<AssessmentsController> _logger;
 
     public AssessmentsController(
@@ -34,6 +38,7 @@ public class AssessmentsController : BaseApiController
         IEnrollmentService enrollmentService,
         IPermissionQueryService permissionQueryService,
         IGradingQueueService gradingQueueService,
+        IAssessmentAuthoringService authoringService,
         ILogger<AssessmentsController> logger)
     {
         _assessmentService = assessmentService;
@@ -42,10 +47,94 @@ public class AssessmentsController : BaseApiController
         _enrollmentService = enrollmentService;
         _permissionQueryService = permissionQueryService;
         _gradingQueueService = gradingQueueService;
+        _authoringService = authoringService;
         _logger = logger;
     }
 
     // ===== ASSESSMENT MANAGEMENT =====
+
+    /// <summary>Atomically saves assessable content and its assessment policy.</summary>
+    [HttpPut("course/{courseId:guid}/content/{contentId:guid}/draft")]
+    public async Task<ActionResult<AssessmentDraftResult>> SaveAssessmentDraft(
+        Guid courseId,
+        Guid contentId,
+        [FromBody] SaveAssessmentDraftRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (!await CanManageCourseAsync(courseId).ConfigureAwait(false)) return Forbid();
+        var actorId = _actorContextAccessor.ActorContext.SubjectIdAsGuid;
+        if (!actorId.HasValue) return Unauthorized();
+
+        var result = await _authoringService
+            .SaveDraftAsync(courseId, contentId, actorId.Value, request, cancellationToken)
+            .ConfigureAwait(false);
+        return result.IsSuccess ? Ok(result.Value) : MapAuthoringError(result.Error);
+    }
+
+    /// <summary>Prepares an immutable candidate revision for instructor testing.</summary>
+    [HttpGet("{id:guid}/authoring-state")]
+    public async Task<ActionResult<AssessmentAuthoringStateResult>> GetAssessmentAuthoringState(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        var assessment = await _assessmentService.GetAssessmentByIdAsync(id).ConfigureAwait(false);
+        if (assessment is null) return NotFound();
+        if (!await CanManageCourseAsync(assessment.CourseId).ConfigureAwait(false)) return Forbid();
+
+        var result = await _authoringService.GetStateAsync(id, cancellationToken).ConfigureAwait(false);
+        return result.IsSuccess ? Ok(result.Value) : MapAuthoringError(result.Error);
+    }
+
+    /// <summary>Prepares an immutable candidate revision for instructor testing.</summary>
+    [HttpPost("{id:guid}/revisions/prepare")]
+    public async Task<ActionResult<PreparedAssessmentRevisionResult>> PrepareAssessmentRevision(
+        Guid id,
+        [FromBody] PrepareAssessmentRevisionRequest request,
+        CancellationToken cancellationToken)
+    {
+        var assessment = await _assessmentService.GetAssessmentByIdAsync(id).ConfigureAwait(false);
+        if (assessment is null) return NotFound();
+        if (!await CanManageCourseAsync(assessment.CourseId).ConfigureAwait(false)) return Forbid();
+        var actorId = _actorContextAccessor.ActorContext.SubjectIdAsGuid;
+        if (!actorId.HasValue) return Unauthorized();
+
+        var result = await _authoringService.PrepareAsync(id, actorId.Value, request, cancellationToken).ConfigureAwait(false);
+        return result.IsSuccess ? Ok(result.Value) : MapAuthoringError(result.Error);
+    }
+
+    /// <summary>Publishes exactly the prepared revision after official capability validation.</summary>
+    [HttpPost("{id:guid}/revisions/publish")]
+    public async Task<ActionResult<PreparedAssessmentRevisionResult>> PublishAssessmentRevision(
+        Guid id,
+        [FromBody] PublishAssessmentRevisionRequest request,
+        CancellationToken cancellationToken)
+    {
+        var assessment = await _assessmentService.GetAssessmentByIdAsync(id).ConfigureAwait(false);
+        if (assessment is null) return NotFound();
+        if (!await CanManageCourseAsync(assessment.CourseId).ConfigureAwait(false)) return Forbid();
+        var actorId = _actorContextAccessor.ActorContext.SubjectIdAsGuid;
+        if (!actorId.HasValue) return Unauthorized();
+
+        var result = await _authoringService.PublishAsync(id, actorId.Value, request, cancellationToken).ConfigureAwait(false);
+        return result.IsSuccess ? Ok(result.Value) : MapAuthoringError(result.Error);
+    }
+
+    /// <summary>Stops new official starts without deleting revisions or existing executions.</summary>
+    [HttpPost("{id:guid}/revisions/unpublish")]
+    public async Task<ActionResult> UnpublishAssessmentRevision(
+        Guid id,
+        [FromBody] UnpublishAssessmentRevisionRequest request,
+        CancellationToken cancellationToken)
+    {
+        var assessment = await _assessmentService.GetAssessmentByIdAsync(id).ConfigureAwait(false);
+        if (assessment is null) return NotFound();
+        if (!await CanManageCourseAsync(assessment.CourseId).ConfigureAwait(false)) return Forbid();
+        var actorId = _actorContextAccessor.ActorContext.SubjectIdAsGuid;
+        if (!actorId.HasValue) return Unauthorized();
+
+        var result = await _authoringService.UnpublishAsync(id, actorId.Value, request, cancellationToken).ConfigureAwait(false);
+        return result.IsSuccess ? NoContent() : MapAuthoringError(result.Error);
+    }
 
     /// <summary>
     /// Create a new assessment for a course
@@ -78,20 +167,9 @@ public class AssessmentsController : BaseApiController
             return NotFound();
         }
 
-        return Ok(AssessmentDto.FromEntity(assessment));
-    }
-
-    /// <summary>
-    /// Gets the structured authoring definition for an assessment.
-    /// </summary>
-    [HttpGet("{id:guid}/definition")]
-    public async Task<ActionResult<AssessmentDefinitionDto>> GetAssessmentDefinition(Guid id)
-    {
-        var assessment = await _assessmentService.GetAssessmentByIdAsync(id).ConfigureAwait(false);
-        if (assessment == null) return NotFound();
         if (!await CanManageCourseAsync(assessment.CourseId).ConfigureAwait(false)) return Forbid();
 
-        return Ok(AssessmentDefinitionDto.FromEntity(assessment));
+        return Ok(AssessmentDto.FromEntity(assessment));
     }
 
     /// <summary>
@@ -100,6 +178,10 @@ public class AssessmentsController : BaseApiController
     [HttpGet("course/{courseId:guid}")]
     public async Task<ActionResult<IEnumerable<AssessmentDto>>> GetCourseAssessments(Guid courseId)
     {
+        var program = await _programService.GetProgramByIdAsync(courseId).ConfigureAwait(false);
+        if (program is null) return NotFound();
+        if (!await CanManageCourseAsync(courseId).ConfigureAwait(false)) return Forbid();
+
         var assessments = await _assessmentService.GetCourseAssessmentsAsync(courseId).ConfigureAwait(false);
         return Ok(assessments.Select(AssessmentDto.FromEntity));
     }
@@ -209,9 +291,12 @@ public class AssessmentsController : BaseApiController
         var result = await _assessmentService.UpdateAssessmentAsync(id, request).ConfigureAwait(false);
         if (!result.IsSuccess)
         {
-            return result.Error.Type == ErrorType.NotFound 
-                ? NotFound(result.Error) 
-                : BadRequest(result.Error);
+            return result.Error.Type switch
+            {
+                ErrorType.NotFound => NotFound(result.Error),
+                ErrorType.Conflict => Conflict(result.Error),
+                _ => BadRequest(result.Error),
+            };
         }
 
         return Ok(AssessmentDto.FromEntity(result.Value));
@@ -695,6 +780,15 @@ public class AssessmentsController : BaseApiController
                 permissionName)
             .ConfigureAwait(false);
     }
+
+    private ActionResult MapAuthoringError(Error error) => error.Type switch
+    {
+        ErrorType.NotFound => NotFound(error),
+        ErrorType.Conflict => Conflict(error),
+        ErrorType.Unauthorized => Unauthorized(error),
+        ErrorType.Forbidden => Forbid(),
+        _ => BadRequest(error),
+    };
 }
 
 // ===== DTOs =====
@@ -707,16 +801,17 @@ public sealed record AssessmentDto(
     string Slug,
     string? Description,
     AssessmentType Type,
-    int MaxScore,
+    ScoreValue MaxScore,
+    ScoreValue PassingScore,
     int? TimeLimitMinutes,
-    int? MaxAttempts,
+    int MaxAttempts,
     bool IsRequired,
     int Order,
     DateTime? AvailableFrom,
     DateTime? AvailableUntil,
     Guid? AssessmentGroupId,
     string? AssessmentGroupName,
-    decimal? AssessmentGroupWeightPercent,
+    PercentValue? AssessmentGroupWeightPercent,
     int? AssessmentGroupOrder,
     bool IsAvailable,
     SubmissionModality SubmissionModalities = SubmissionModality.Text,
@@ -724,9 +819,15 @@ public sealed record AssessmentDto(
     DateTime? DueAt = null,
     bool AllowLateSubmissions = false,
     DateTime? LateSubmissionDeadline = null,
-    AssessmentGradingMethod GradingMethods = AssessmentGradingMethod.InstructorGraded,
+    ReviewMethods ReviewMethods = ReviewMethods.InstructorReview,
     Guid? GroupSetId = null,
-    int PeerReviewsRequiredCount = 0)
+    Guid? PublishedDefinitionRevisionId = null,
+    string? ReviewConfigurationCanonicalJson = null,
+    AttemptContributionMode? AttemptContributionMode = null,
+    ContentCompletionMode ContentCompletionMode = ContentCompletionMode.OnReleaseAndPass,
+    ResultReleaseMode ResultReleaseMode = ResultReleaseMode.Manual,
+    DateTime? ResultReleaseScheduledFor = null,
+    int Version = 0)
 {
     public static AssessmentDto FromEntity(Assessment entity) => new(
         entity.Id,
@@ -735,8 +836,9 @@ public sealed record AssessmentDto(
         entity.Title,
         entity.Slug,
         entity.Description,
-        Assessment.NormalizeType(entity.Type),
+        entity.Type,
         entity.MaxScore,
+        entity.PassingScore,
         entity.TimeLimitMinutes,
         entity.MaxAttempts,
         entity.IsRequired,
@@ -753,21 +855,15 @@ public sealed record AssessmentDto(
         entity.DueAt,
         entity.AllowLateSubmissions,
         entity.LateSubmissionDeadline,
-        entity.GradingMethods,
+        entity.ReviewMethods,
         entity.GroupSetId,
-        entity.PeerReviewsRequiredCount);
-}
-
-public sealed record AssessmentDefinitionDto(
-    Guid AssessmentId,
-    int DefinitionSchemaVersion,
-    JsonElement Definition)
-{
-    public static AssessmentDefinitionDto FromEntity(Assessment entity)
-    {
-        using var document = JsonDocument.Parse(string.IsNullOrWhiteSpace(entity.DefinitionPayload) ? "{}" : entity.DefinitionPayload);
-        return new AssessmentDefinitionDto(entity.Id, entity.DefinitionSchemaVersion, document.RootElement.Clone());
-    }
+        entity.PublishedDefinitionRevisionId,
+        entity.ReviewConfigurationCanonicalJson,
+        entity.AttemptContributionMode,
+        entity.ContentCompletionMode,
+        entity.ResultReleaseMode,
+        entity.ResultReleaseScheduledFor,
+        entity.Version);
 }
 
 public sealed record InteractiveVideoAssessmentCueDto(
@@ -799,7 +895,7 @@ public sealed record AssessmentGroupDto(
     Guid CourseId,
     string Name,
     string? Description,
-    decimal WeightPercent,
+    PercentValue WeightPercent,
     int Order)
 {
     public static AssessmentGroupDto FromEntity(AssessmentGroup entity) => new(
@@ -817,7 +913,7 @@ public sealed record AssessmentSubmissionDto(
     Guid EnrollmentId,
     Guid UserId,
     int AttemptNumber,
-    int? Score,
+    ScoreValue? Score,
     bool? Passed,
     DateTime StartedAt,
     DateTime? SubmittedAt,
@@ -832,8 +928,7 @@ public sealed record AssessmentSubmissionDto(
     string? UrlPayload = null,
     string? CodePayload = null,
     string? MediaPayload = null,
-    string? ProjectPayload = null,
-    string? StructuredAnswerPayload = null)
+    string? ProjectPayload = null)
 {
     public static AssessmentSubmissionDto FromEntity(AssessmentSubmission entity) => new(
         entity.Id,
@@ -856,8 +951,7 @@ public sealed record AssessmentSubmissionDto(
         entity.UrlPayload,
         entity.CodePayload,
         entity.MediaPayload,
-        entity.ProjectPayload,
-        entity.StructuredAnswerPayload);
+        entity.ProjectPayload);
 }
 
 public sealed record LearnerAssessmentSubmissionDto(
@@ -865,7 +959,7 @@ public sealed record LearnerAssessmentSubmissionDto(
     Guid AssessmentId,
     Guid EnrollmentId,
     int AttemptNumber,
-    int? Score,
+    ScoreValue? Score,
     bool? Passed,
     DateTime StartedAt,
     DateTime? SubmittedAt,
@@ -879,15 +973,14 @@ public sealed record LearnerAssessmentSubmissionDto(
     string? UrlPayload,
     string? CodePayload,
     string? MediaPayload,
-    string? ProjectPayload,
-    string? StructuredAnswerPayload)
+    string? ProjectPayload)
 {
     public static LearnerAssessmentSubmissionDto FromEntity(AssessmentSubmission entity) => new(
         entity.Id, entity.AssessmentId, entity.EnrollmentId, entity.AttemptNumber,
         entity.Score, entity.Passed, entity.StartedAt, entity.SubmittedAt, entity.GradedAt,
         entity.Feedback, entity.Status, entity.IsLate, entity.SubmittedModalities,
         entity.TextPayload, entity.FilePayload, entity.UrlPayload, entity.CodePayload,
-        entity.MediaPayload, entity.ProjectPayload, entity.StructuredAnswerPayload);
+        entity.MediaPayload, entity.ProjectPayload);
 }
 
 public sealed record LearnerAssessmentAttemptDto(

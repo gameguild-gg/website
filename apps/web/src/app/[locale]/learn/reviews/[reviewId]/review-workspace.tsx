@@ -10,13 +10,23 @@ import { TextViewer } from '@/app/[locale]/(speedgrader)/speedgrader/assessments
 import { UrlViewer } from '@/app/[locale]/(speedgrader)/speedgrader/assessments/[assessmentId]/url-viewer';
 import { FileViewer } from '@/app/[locale]/(speedgrader)/speedgrader/assessments/[assessmentId]/file-viewer';
 import { MediaViewer } from '@/app/[locale]/(speedgrader)/speedgrader/assessments/[assessmentId]/media-viewer';
-import { QuizViewer } from '@/app/[locale]/(speedgrader)/speedgrader/assessments/[assessmentId]/quiz-viewer';
 import { fetchPeerReviewWorkspace, submitPeerReview } from '@/lib/learning/actions-peer-review';
+import { pointsToScoreUnits, scoreUnitsToPoints } from '@/lib/learning/academic-values';
+import { parseScoreValue } from '@game-guild/grading';
 import { useRouter } from '@/i18n/navigation';
 
 interface CriterionState {
   points: string;
   comment: string;
+}
+
+function parsePointInput(value: string): { points: number; units: number } | null {
+  if (value.trim() === '') return null;
+  try {
+    return { points: Number(value), units: pointsToScoreUnits(value) };
+  } catch {
+    return null;
+  }
 }
 
 function sortedCriteria(rubric: LearningAssessmentsAnonymousReviewSubmission['rubric']): LearningAssessmentsRubricCriterion[] {
@@ -67,7 +77,8 @@ export function ReviewWorkspace({ reviewId }: { reviewId: string }): React.JSX.E
 function WorkspaceForm({ review, onDone }: { review: LearningAssessmentsAnonymousReviewSubmission; onDone: () => void }): React.JSX.Element {
   const criteria = useMemo(() => sortedCriteria(review.rubric), [review.rubric]);
   const rubricMode = (review.rubric?.criteria?.length ?? 0) > 0;
-  const maxScore = review.assessment?.maxScore ?? 100;
+  const maxScoreUnits = parseScoreValue(review.assessment?.maxScore ?? 10_000);
+  const maxScore = scoreUnitsToPoints(maxScoreUnits);
   const title = review.assessment?.title ?? 'Untitled assessment';
 
   const [criterionState, setCriterionState] = useState<Record<string, CriterionState>>(() =>
@@ -81,16 +92,28 @@ function WorkspaceForm({ review, onDone }: { review: LearningAssessmentsAnonymou
   const rows = criteria.map((criterion) => {
     const id = criterion.id ?? '';
     const raw = criterionState[id]?.points ?? '';
-    const cap = criterion.points ?? 0;
-    const parsed = raw.trim() === '' ? Number.NaN : Number.parseInt(raw, 10);
-    const inRange = Number.isInteger(parsed) && parsed >= 0 && parsed <= cap;
-    return { criterion, id, raw, parsed, cap, inRange, filled: raw.trim() !== '' };
+    const capUnits = parseScoreValue(criterion.points ?? 0);
+    const cap = scoreUnitsToPoints(capUnits);
+    const parsed = parsePointInput(raw);
+    const inRange = parsed !== null && parsed.units <= capUnits;
+    return {
+      criterion,
+      id,
+      raw,
+      parsed: parsed?.points ?? Number.NaN,
+      units: parsed?.units ?? 0,
+      cap,
+      inRange,
+      filled: raw.trim() !== '',
+    };
   });
-  const total = rows.reduce((sum, row) => sum + (row.inRange ? row.parsed : 0), 0);
+  const totalUnits = rows.reduce((sum, row) => sum + (row.inRange ? row.units : 0), 0);
+  const total = scoreUnitsToPoints(totalUnits);
   const rubricComplete = rows.every((row) => row.filled && row.inRange);
 
-  const plainParsed = plainScore.trim() === '' ? Number.NaN : Number.parseInt(plainScore, 10);
-  const plainInRange = Number.isInteger(plainParsed) && plainParsed >= 0 && plainParsed <= maxScore;
+  const plain = parsePointInput(plainScore);
+  const plainParsed = plain?.points ?? Number.NaN;
+  const plainInRange = plain !== null && plain.units <= maxScoreUnits;
 
   const canSubmit = !submitting && (rubricMode ? rubricComplete : plainInRange);
 
@@ -160,7 +183,6 @@ function WorkspaceForm({ review, onDone }: { review: LearningAssessmentsAnonymou
       <section data-testid="peer-submission" className="space-y-4">
         {review.textPayload && <TextViewer text={review.textPayload} />}
         {review.urlPayload && <UrlViewer url={review.urlPayload} />}
-        {review.structuredAnswerPayload && <QuizViewer payload={review.structuredAnswerPayload} />}
         {review.filePayload && <FileViewer payload={review.filePayload} />}
         {review.mediaPayload && <MediaViewer url={review.mediaPayload} />}
         {review.codePayload && (
@@ -168,7 +190,7 @@ function WorkspaceForm({ review, onDone }: { review: LearningAssessmentsAnonymou
             {review.codePayload}
           </pre>
         )}
-        {!review.textPayload && !review.urlPayload && !review.structuredAnswerPayload && !review.filePayload && !review.mediaPayload && !review.codePayload && (
+        {!review.textPayload && !review.urlPayload && !review.filePayload && !review.mediaPayload && !review.codePayload && (
           <p className="text-sm text-muted-foreground">This submission has no viewable payload.</p>
         )}
       </section>
@@ -189,6 +211,7 @@ function WorkspaceForm({ review, onDone }: { review: LearningAssessmentsAnonymou
                   type="number"
                   min={0}
                   max={row.cap}
+                  step="0.01"
                   value={row.raw}
                   onChange={(e) =>
                     setCriterionState((prev) => ({
@@ -243,6 +266,7 @@ function WorkspaceForm({ review, onDone }: { review: LearningAssessmentsAnonymou
             type="number"
             min={0}
             max={maxScore}
+            step="0.01"
             value={plainScore}
             onChange={(e) => setPlainScore(e.target.value)}
             className="w-28"

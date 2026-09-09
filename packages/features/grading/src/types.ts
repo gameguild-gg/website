@@ -105,20 +105,14 @@ export interface AssessmentAuthoringSourceV1<TContent = unknown> {
 export interface AssessmentItemManifestV1 {
   itemId: string;
   itemType: string;
-  projectorKey: string;
-  projectorVersion: string;
-  deliveryGeneratorKey: string;
-  deliveryGeneratorVersion: string;
-  answerDecoderKey: string;
-  answerDecoderVersion: string;
+  adapterKey: string;
+  adapterVersion: string;
 }
 
 export interface AssessmentReviewStageManifestV1 {
   method: AssessmentReviewMethod;
   handlerKey: string;
   handlerVersion: string;
-  algorithmKey?: string;
-  algorithmVersion?: string;
   providerKey?: string;
   providerPolicyVersion?: string;
 }
@@ -159,8 +153,8 @@ export interface AssessmentResponseEnvelopeV1<TPayload = unknown> {
 }
 
 export interface AssessmentExecutionDeliveryItemV1<TPayload = unknown> {
-  deliveryGeneratorKey: string;
-  deliveryGeneratorVersion: string;
+  adapterKey: string;
+  adapterVersion: string;
   learnerPayload: TPayload;
 }
 
@@ -184,7 +178,6 @@ export interface GradeItemResultV1 {
   reviewMethod: AssessmentReviewMethod;
   handlerKey: string;
   handlerVersion: string;
-  algorithmVersion?: string;
   providerKey?: string;
 }
 

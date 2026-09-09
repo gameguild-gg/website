@@ -1,5 +1,8 @@
+using System.Globalization;
 using GameGuild.Learning.Courses;
 using Microsoft.EntityFrameworkCore;
+using GameGuild.Learning.Assessments.Grading.Contracts;
+using GameGuild.Learning.Grading.Contracts;
 
 namespace GameGuild.Learning.Assessments;
 
@@ -13,7 +16,7 @@ public sealed class AssessmentGradingSync(IApplicationDbContext context) : IAsse
 
         if (assessment == null) return;
 
-        assessment.SetMaxScore(maxScore);
+        assessment.SetMaxScore(ScoreValue.FromPoints(maxScore.ToString(CultureInfo.InvariantCulture)));
         context.Set<Assessment>().Update(assessment);
         await context.SaveChangesAsync(ct).ConfigureAwait(false);
     }

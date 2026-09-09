@@ -2,6 +2,7 @@ import React from "react";
 import { notFound } from "next/navigation";
 import {
   getAssessment,
+  getAssessmentAuthoringState,
   getCourseAssessmentGroups,
   getCourseContent,
 } from "@/lib/learning";
@@ -27,10 +28,15 @@ export default async function AssessmentDetailPage({
     notFound();
   }
 
+  const authoringState = assessment.contentId
+    ? await getAssessmentAuthoringState(assessment.id)
+    : null;
+
   return (
     <AssessmentEditor
       courseId={courseId}
       assessment={assessment}
+      authoringState={authoringState}
       assessmentGroups={assessmentGroups}
       courseContent={courseContent.items}
     />

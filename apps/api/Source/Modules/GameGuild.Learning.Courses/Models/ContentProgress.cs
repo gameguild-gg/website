@@ -2,6 +2,7 @@ using GameGuild.Identity.Users;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using GameGuild.Learning.Grading.Contracts;
 // using ContentEntity = GameGuild.Modules.Contents.Models.Content; // Module not yet implemented
 
 
@@ -43,8 +44,7 @@ public class ContentProgress : EntityBase {
   public ContentCompletionStatus CompletionStatus { get; set; } = ContentCompletionStatus.NotStarted;
 
   /// <summary> Progress percentage for this content item (0-100) </summary>
-  [Range(0, 100)]
-  public decimal ProgressPercentage { get; set; }
+  public PercentValue ProgressPercentage { get; set; } = PercentValue.Zero;
 
   /// <summary> When the user first accessed this content </summary>
   public DateTime? FirstAccessedAt { get; set; }
@@ -59,10 +59,10 @@ public class ContentProgress : EntityBase {
   public int TimeSpentSeconds { get; set; }
 
   /// <summary> Score/grade for this content (if applicable) </summary>
-  public decimal? Score { get; set; }
+  public ScoreValue? Score { get; set; }
 
   /// <summary> Maximum possible score for this content </summary>
-  public decimal? MaxScore { get; set; }
+  public ScoreValue? MaxScore { get; set; }
 
   /// <summary> Number of attempts made on this content </summary>
   public int Attempts { get; set; }
@@ -84,10 +84,10 @@ public class ContentProgress : EntityBase {
   }
 
   /// <summary> Mark content as completed </summary>
-  public void MarkAsCompleted(decimal? score = null, decimal? maxScore = null) {
+  public void MarkAsCompleted(ScoreValue? score = null, ScoreValue? maxScore = null) {
     CompletionStatus = ContentCompletionStatus.Completed;
     CompletedAt = SystemClock.UtcNow;
-    ProgressPercentage = 100;
+    ProgressPercentage = PercentValue.Hundred;
 
     if (score.HasValue) Score = score.Value;
     if (maxScore.HasValue) MaxScore = maxScore.Value;
@@ -96,14 +96,14 @@ public class ContentProgress : EntityBase {
   }
 
   /// <summary> Update progress percentage </summary>
-  public void UpdateProgress(decimal progressPercentage) {
-    ProgressPercentage = Math.Max(0, Math.Min(100, progressPercentage));
+  public void UpdateProgress(PercentValue progressPercentage) {
+    ProgressPercentage = progressPercentage;
 
-    if (ProgressPercentage == 100 && CompletionStatus != ContentCompletionStatus.Completed) {
+    if (ProgressPercentage == PercentValue.Hundred && CompletionStatus != ContentCompletionStatus.Completed) {
       CompletionStatus = ContentCompletionStatus.Completed;
       CompletedAt = SystemClock.UtcNow;
     }
-    else if (ProgressPercentage > 0 && CompletionStatus == ContentCompletionStatus.NotStarted) {
+    else if (ProgressPercentage.CompareTo(PercentValue.Zero) > 0 && CompletionStatus == ContentCompletionStatus.NotStarted) {
       CompletionStatus = ContentCompletionStatus.InProgress;
     }
 

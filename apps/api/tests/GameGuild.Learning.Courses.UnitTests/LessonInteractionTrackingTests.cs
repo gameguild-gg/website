@@ -118,7 +118,7 @@ public sealed class LessonInteractionTrackingTests
     }
 
     [Fact]
-    public void RecordEventCommandValidator_ShouldEnforceDatabaseDecimalPrecision()
+    public void RecordEventCommandValidator_ShouldEnforcePositionPrecisionAndAcceptCanonicalProgress()
     {
         var validator = new RecordContentInteractionEventCommandValidator();
         var baseline = new RecordContentInteractionEventCommand(
@@ -129,7 +129,7 @@ public sealed class LessonInteractionTrackingTests
         validator.Validate(baseline with
         {
             PositionSeconds = 999999999.999m,
-            ProgressPercentage = 99.99m,
+            ProgressPercentage = Percent("99.99"),
         }).IsValid.Should().BeTrue();
 
         var positionOverflow = validator.Validate(baseline with { PositionSeconds = 1000000000m });
@@ -138,26 +138,23 @@ public sealed class LessonInteractionTrackingTests
         var positionScale = validator.Validate(baseline with { PositionSeconds = 1.2345m });
         positionScale.Errors.Should().Contain(error => error.PropertyName == nameof(baseline.PositionSeconds));
 
-        var progressScale = validator.Validate(baseline with { ProgressPercentage = 99.999m });
-        progressScale.Errors.Should().Contain(error => error.PropertyName == nameof(baseline.ProgressPercentage));
+        var progress = validator.Validate(baseline with { ProgressPercentage = Percent("99.99") });
+        progress.Errors.Should().NotContain(error => error.PropertyName == nameof(baseline.ProgressPercentage));
     }
 
     [Fact]
-    public void CreateEvent_ShouldEnforceDatabaseDecimalPrecision()
+    public void CreateEvent_ShouldEnforcePositionPrecisionAndPercentValueShouldRejectExcessScale()
     {
         var positionOverflow = () => ContentInteractionEvent.Create(
             Guid.NewGuid(),
             ContentInteractionEventType.Paused,
             positionSeconds: 1000000000m);
-        var progressScale = () => ContentInteractionEvent.Create(
-            Guid.NewGuid(),
-            ContentInteractionEventType.Progressed,
-            progressPercentage: 99.999m);
+        var progressScale = () => Percent("99.999");
 
         positionOverflow.Should().Throw<ArgumentOutOfRangeException>()
             .WithParameterName("positionSeconds");
-        progressScale.Should().Throw<ArgumentOutOfRangeException>()
-            .WithParameterName("progressPercentage");
+        progressScale.Should().Throw<FormatException>()
+            .WithMessage("*at most two fractional digits*");
     }
 
     [Fact]
@@ -167,11 +164,11 @@ public sealed class LessonInteractionTrackingTests
         interaction.Status = ProgressStatus.InProgress;
 
         interaction.Complete();
-        interaction.UpdateProgress(25);
+        interaction.UpdateProgress(Percent("25"));
 
         interaction.IsCompleted.Should().BeTrue();
         interaction.Status.Should().Be(ProgressStatus.Completed);
-        interaction.ProgressPercentage.Should().Be(100);
+        interaction.ProgressPercentage.Should().Be(PercentValue.Hundred);
     }
 
     [Fact]
@@ -242,7 +239,7 @@ public sealed class LessonInteractionTrackingTests
             ContentInteractionEventType.Heartbeat,
             DurationSeconds: 45,
             PositionSeconds: 90.5m,
-            ProgressPercentage: 25,
+            ProgressPercentage: Percent("25"),
             Payload: """{"player":"html5"}""",
             IdempotencyKey: "heartbeat-0001");
 
@@ -253,7 +250,7 @@ public sealed class LessonInteractionTrackingTests
         (await context.Set<ContentInteractionEvent>().CountAsync()).Should().Be(1);
         var persistedInteraction = await context.Set<ContentInteraction>().SingleAsync();
         persistedInteraction.TimeSpentSeconds.Should().Be(45);
-        persistedInteraction.ProgressPercentage.Should().Be(25);
+        persistedInteraction.ProgressPercentage.Should().Be(Percent("25"));
         persistedInteraction.BookmarkPosition.Should().Be("video:90.5");
 
         var crossCourseRetry = () => handler.Handle(
@@ -406,7 +403,7 @@ public sealed class LessonInteractionTrackingTests
 
         interaction.IsCompleted.Should().BeTrue();
         interaction.Status.Should().Be(ProgressStatus.Completed);
-        interaction.ProgressPercentage.Should().Be(100);
+        interaction.ProgressPercentage.Should().Be(PercentValue.Hundred);
     }
 
     [Fact]
@@ -651,7 +648,7 @@ public sealed class LessonInteractionTrackingTests
         reopened.Id.Should().Be(interaction.Id);
         reopened.IsCompleted.Should().BeTrue();
         reopened.Status.Should().Be(ProgressStatus.Completed);
-        reopened.ProgressPercentage.Should().Be(100);
+        reopened.ProgressPercentage.Should().Be(PercentValue.Hundred);
     }
 
     [Fact]
@@ -685,7 +682,7 @@ public sealed class LessonInteractionTrackingTests
         completed.IsCompleted.Should().BeTrue();
         reopened.IsCompleted.Should().BeTrue();
         reopened.Status.Should().Be(ProgressStatus.Completed);
-        reopened.ProgressPercentage.Should().Be(100);
+        reopened.ProgressPercentage.Should().Be(PercentValue.Hundred);
     }
 
     [Fact]
@@ -717,7 +714,7 @@ public sealed class LessonInteractionTrackingTests
 
         submitted.IsCompleted.Should().BeTrue();
         submitted.Status.Should().Be(ProgressStatus.Completed);
-        submitted.ProgressPercentage.Should().Be(100);
+        submitted.ProgressPercentage.Should().Be(PercentValue.Hundred);
     }
 
     [Fact]

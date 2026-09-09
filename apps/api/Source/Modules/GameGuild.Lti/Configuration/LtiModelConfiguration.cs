@@ -1,4 +1,6 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using GameGuild.Learning.Grading.Contracts;
 
 namespace GameGuild.Lti;
 
@@ -8,6 +10,9 @@ namespace GameGuild.Lti;
 /// </summary>
 public sealed class LtiModelConfiguration : IModelConfiguration
 {
+    private static readonly ValueConverter<ScoreValue, int> ScoreConverter =
+        new(value => value.Units, value => ScoreValue.FromUnits(value));
+
     public void Configure(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<LtiDeployment>(entity =>
@@ -33,6 +38,10 @@ public sealed class LtiModelConfiguration : IModelConfiguration
             entity.HasKey(e => e.Id);
             entity.Property(e => e.LineItemId).HasMaxLength(512).IsRequired();
             entity.Property(e => e.LineItemUrl).HasMaxLength(1024).IsRequired();
+            entity.Property(e => e.MaxScore).HasConversion(ScoreConverter).HasColumnType("integer");
+            entity.ToTable(table => table.HasCheckConstraint(
+                "CK_LtiLineItemMappings_MaxScoreCanonical",
+                "\"MaxScore\" > 0"));
             entity.HasIndex(e => e.AssessmentId).IsUnique();
             entity.HasIndex(e => e.DeploymentId);
         });

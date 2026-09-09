@@ -200,8 +200,8 @@ export class LearningAssessmentsModule {
 
   /**
    */
-  async getAssessmentsDefinition(id: string): Promise<Result<Types.LearningAssessmentsAssessmentDefinition, ApiError>> {
-    const url = `/v1/assessments/${id}/definition`;
+  async getAssessmentsAuthoringState(id: string): Promise<Result<Types.LearningAssessmentsGradingAuthoringAssessmentAuthoringStateResult, ApiError>> {
+    const url = `/v1/assessments/${id}/authoring-state`;
 
     const result = await this.client.request({
       method: 'GET',
@@ -211,7 +211,7 @@ export class LearningAssessmentsModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.LearningAssessmentsAssessmentDefinitionSchema, result.data, 'response');
+      const validatedData = safeParse(Types.LearningAssessmentsGradingAuthoringAssessmentAuthoringStateResultSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -316,6 +316,81 @@ export class LearningAssessmentsModule {
 
   /**
    */
+  async postAssessmentsRevisionsPrepare(
+    id: string,
+    body: Types.LearningAssessmentsGradingAuthoringPrepareAssessmentRevisionInput,
+  ): Promise<Result<Types.LearningAssessmentsGradingAuthoringPreparedAssessmentRevisionResult, ApiError>> {
+    const url = `/v1/assessments/${id}/revisions/prepare`;
+
+    // Validate request body
+    const validatedBody = safeParse(Types.LearningAssessmentsGradingAuthoringPrepareAssessmentRevisionInputSchema, body, 'request');
+
+    const result = await this.client.request({
+      method: 'POST',
+      path: url,
+      body: validatedBody,
+      requiresAuth: true,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.LearningAssessmentsGradingAuthoringPreparedAssessmentRevisionResultSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
+   */
+  async postAssessmentsRevisionsPublish(
+    id: string,
+    body: Types.LearningAssessmentsGradingAuthoringPublishAssessmentRevisionInput,
+  ): Promise<Result<Types.LearningAssessmentsGradingAuthoringPreparedAssessmentRevisionResult, ApiError>> {
+    const url = `/v1/assessments/${id}/revisions/publish`;
+
+    // Validate request body
+    const validatedBody = safeParse(Types.LearningAssessmentsGradingAuthoringPublishAssessmentRevisionInputSchema, body, 'request');
+
+    const result = await this.client.request({
+      method: 'POST',
+      path: url,
+      body: validatedBody,
+      requiresAuth: true,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.LearningAssessmentsGradingAuthoringPreparedAssessmentRevisionResultSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
+   */
+  async postAssessmentsRevisionsUnpublish(
+    id: string,
+    body: Types.LearningAssessmentsGradingAuthoringUnpublishAssessmentRevisionInput,
+  ): Promise<Result<void, ApiError>> {
+    const url = `/v1/assessments/${id}/revisions/unpublish`;
+
+    // Validate request body
+    const validatedBody = safeParse(Types.LearningAssessmentsGradingAuthoringUnpublishAssessmentRevisionInputSchema, body, 'request');
+
+    const result = await this.client.request({
+      method: 'POST',
+      path: url,
+      body: validatedBody,
+      requiresAuth: true,
+    });
+
+    return result as Result<void, ApiError>;
+  }
+
+  /**
+   */
   async getAssessmentsCourse(courseId: string): Promise<Result<Array<Types.LearningAssessmentsAssessment>, ApiError>> {
     const url = `/v1/assessments/course/${courseId}`;
 
@@ -342,6 +417,34 @@ export class LearningAssessmentsModule {
     // Validate response
     if (result.ok) {
       const validatedData = safeParse(Types.LearningAssessmentsCourseAssessmentAnalyticsSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
+   */
+  async putAssessmentsCourseContentDraft(
+    courseId: string,
+    contentId: string,
+    body: Types.LearningAssessmentsGradingAuthoringSaveAssessmentDraftInput,
+  ): Promise<Result<Types.LearningAssessmentsGradingAuthoringAssessmentDraftResult, ApiError>> {
+    const url = `/v1/assessments/course/${courseId}/content/${contentId}/draft`;
+
+    // Validate request body
+    const validatedBody = safeParse(Types.LearningAssessmentsGradingAuthoringSaveAssessmentDraftInputSchema, body, 'request');
+
+    const result = await this.client.request({
+      method: 'PUT',
+      path: url,
+      body: validatedBody,
+      requiresAuth: true,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.LearningAssessmentsGradingAuthoringAssessmentDraftResultSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 

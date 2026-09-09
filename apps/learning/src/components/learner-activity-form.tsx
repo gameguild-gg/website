@@ -36,7 +36,6 @@ function responseLabel(activity: LearnerActivityDescriptor, modality: string) {
     if (activity.contentType === 'Survey') return 'Your response';
     return 'Your contribution';
   }
-  if (modality === 'StructuredAnswer') return 'Your answer';
   if (modality === 'Code') return 'Your code';
   if (modality === 'Url' || modality === 'Media') return 'Submission URL';
   return 'Your submission';
@@ -114,6 +113,15 @@ export function LearnerActivityForm({
         <CheckCircle2 className="size-4" />
         <AlertTitle>Activity completed</AlertTitle>
         <AlertDescription>Your course response has already been submitted.</AlertDescription>
+      </Alert>
+    );
+  }
+
+  if (activity.kind === 'assessment' && activity.assessment.type === 'Quiz') {
+    return (
+      <Alert>
+        <AlertTitle>Quiz attempt unavailable</AlertTitle>
+        <AlertDescription>This quiz cannot be answered through the generic assessment form.</AlertDescription>
       </Alert>
     );
   }

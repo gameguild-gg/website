@@ -1,4 +1,5 @@
 export * from "./canonical-json";
+export * from "./assessment-type-adapter";
 export * from "./capabilities";
 export * from "./config";
 export * from "./content-storage";

@@ -1,6 +1,7 @@
 'use server';
 
 import { createServerClient, GeneratedApi, type LearningCoursesContentInteractionEventType } from '@game-guild/client';
+import { percentageToPercentUnits } from '@/lib/learning/academic-values';
 
 export interface LessonEventInput {
     courseId: string;
@@ -31,7 +32,9 @@ export async function recordLessonEvent(input: LessonEventInput): Promise<{ succ
             occurredAt: new Date().toISOString(),
             positionSeconds: input.positionSeconds,
             durationSeconds: input.durationSeconds,
-            progressPercentage: input.progressPercentage,
+            progressPercentage: input.progressPercentage == null
+                ? undefined
+                : percentageToPercentUnits(input.progressPercentage),
             idempotencyKey: input.idempotencyKey,
         });
         return eventResult.ok ? { success: true } : { success: false, error: 'Unable to record lesson progress.' };

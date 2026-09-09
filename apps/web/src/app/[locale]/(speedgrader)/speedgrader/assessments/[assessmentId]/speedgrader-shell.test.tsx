@@ -207,7 +207,9 @@ describe("SpeedgraderShell", () => {
     renderShell(individualItems);
 
     await user.click(screen.getByRole("combobox", { name: /submission/i }));
-    await user.click(screen.getByRole("option", { name: /Grace Hopper/i }));
+    await user.click(
+      await screen.findByRole("option", { name: /Grace Hopper/i }),
+    );
 
     await waitFor(() => {
       expect(screen.getByTestId("item-counter")).toHaveTextContent("2 of 3");

@@ -1,3 +1,6 @@
+using GameGuild.Learning.Assessments.Grading.Contracts;
+using GameGuild.Learning.Grading.Contracts;
+
 namespace GameGuild.Learning.Assessments;
 
 /// <summary>
@@ -22,7 +25,7 @@ public interface IPeerReviewAssignmentService
     /// Fails with Conflict when the review was already submitted.
     /// </summary>
     Task<Result<AssessmentPeerReview>> SubmitReviewAsync(
-        AssessmentPeerReview review, int score, string feedback, string? rubricScores);
+        AssessmentPeerReview review, ScoreValue score, string feedback, string? rubricScores);
 
     /// <summary>
     /// Submitted reviews visible on a submission: its own rows, plus — for a group submission —

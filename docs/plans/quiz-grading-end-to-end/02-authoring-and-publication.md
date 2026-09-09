@@ -28,8 +28,8 @@ fonte de verdade para enunciados, opções ou answer keys.
 ### Quiz content
 
 - enunciados, opções e resposta correta;
-- pontos como string canônica compatível com `ScoreValue` e única fonte mutável
-  da pontuação por questão, além da configuração da questão;
+- pontos como inteiro de unidades compatível com `ScoreValue` e única fonte
+  mutável da pontuação por questão, além da configuração da questão;
 - feedback autoral;
 - apresentação visual autoral do quiz;
 - `ContentGradingDefinitionV2` limitado à configuração adicional de grading
@@ -235,8 +235,7 @@ só é criado no start da tentativa.
 - [ ] consultar capabilities por método e contexto `AuthorTest` ou
   `OfficialSubmission`;
 - [ ] fixar `AssessmentExecutionManifestV1` na candidata e impedir fallback
-  para projector, gerador de entrega, decoder/normalizador, handler ou algoritmo
-  mais recente;
+  para outra versão do adapter agregado, handler, policy ou provider;
 - [ ] separar readiness de publicação de health operacional do provider;
 - [ ] persistir a seleção somente ao salvar o formulário;
 - [ ] validar pré-requisitos por método na publicação;

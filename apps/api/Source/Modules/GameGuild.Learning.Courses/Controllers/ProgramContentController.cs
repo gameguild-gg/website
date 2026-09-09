@@ -2,7 +2,9 @@ using Asp.Versioning;
 using GameGuild.Identity.Authorization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using System.Security.Claims;
+using System.Text.Json;
 
 namespace GameGuild.Learning.Courses;
 
@@ -14,7 +16,10 @@ public class ProgramContentController(
   IProgramContentService contentService,
   IProgramCrudService programService,
   ICodingAssignmentContentService codingAssignmentService,
-  IAuthorizationService authorizationService) : BaseApiController
+  IAuthorizationService authorizationService,
+  IEnumerable<IProgramContentLearnerProjector> learnerProjectors,
+  IEnumerable<IProgramContentAcademicMutationGuard> academicMutationGuards,
+  ILogger<ProgramContentController> logger) : BaseApiController
 {
   /// <summary> Get all content for a course with optional filtering (resource-level Read permission required on parent Program) </summary>
   /// <remarks>
@@ -50,7 +55,7 @@ public class ProgramContentController(
   public async Task<ActionResult<ProgramContentDto>> GetContent(Guid programId, Guid id)
   {
     var access = await ResolveContentAccessAsync(programId).ConfigureAwait(false);
-    if (!access.CanManageContent && !access.CanViewLearnerContent)
+    if (!access.HasAnyAccess)
     {
       return NotFound();
     }
@@ -58,11 +63,11 @@ public class ProgramContentController(
     var content = await contentService.GetContentByIdAsync(id).ConfigureAwait(false);
 
     if (content == null || content.ProgramId != programId) return NotFound();
-    if (!access.CanManageContent && content.Visibility == Visibility.Private) return NotFound();
+    if (!access.CanManageContent && access.CanViewLearnerContent && content.Visibility == Visibility.Private) return NotFound();
+    if (!access.CanManageContent && !access.CanViewLearnerContent && content.Visibility != Visibility.Public) return NotFound();
 
     var contentDto = content.ToDto();
-
-    return Ok(contentDto);
+    return Ok(ResolveProjectedContent([contentDto], access).Single());
   }
 
   /// <summary>Submit work for the current learner on a course content item.</summary>
@@ -74,6 +79,17 @@ public class ProgramContentController(
     var currentUserId = GetCurrentUserId();
     if (currentUserId == null) return Unauthorized();
     if (!await AuthorizeCourseContentAsync(programId, Policies.CourseContentLearner).ConfigureAwait(false)) return Forbid();
+
+    var content = await contentService.GetContentByIdAsync(id).ConfigureAwait(false);
+    if (content is null || content.ProgramId != programId) return NotFound();
+    try
+    {
+      ProgramContentAcademicMutationGuard.EnsureAllowed(academicMutationGuards, content, ProgramContentAcademicMutation.Submit);
+    }
+    catch (InvalidOperationException exception)
+    {
+      return Conflict(exception.Message);
+    }
 
     var interaction = await programService.SubmitUserContentAsync(programId, currentUserId.Value, id, submitDto.SubmissionData).ConfigureAwait(false);
 
@@ -90,6 +106,14 @@ public class ProgramContentController(
     if (createDto.ProgramId != programId) return BadRequest("Program ID in URL must match Program ID in request body");
 
     var content = createDto.ToEntity();
+    try
+    {
+      ProgramContentAcademicMutationGuard.EnsureAllowed(academicMutationGuards, content, ProgramContentAcademicMutation.Authoring);
+    }
+    catch (InvalidOperationException exception)
+    {
+      return Conflict(exception.Message);
+    }
     var createdContent = await contentService.CreateContentAsync(content).ConfigureAwait(false);
     var contentDto = createdContent.ToDto();
 
@@ -109,6 +133,14 @@ public class ProgramContentController(
 
     // Apply updates from DTO
     existingContent.ApplyUpdates(updateDto);
+    try
+    {
+      ProgramContentAcademicMutationGuard.EnsureAllowed(academicMutationGuards, existingContent, ProgramContentAcademicMutation.Authoring);
+    }
+    catch (InvalidOperationException exception)
+    {
+      return Conflict(exception.Message);
+    }
 
     var updatedContent = await contentService.UpdateContentAsync(existingContent).ConfigureAwait(false);
     var contentDto = updatedContent.ToDto();
@@ -124,6 +156,15 @@ public class ProgramContentController(
     var content = await contentService.GetContentByIdAsync(id).ConfigureAwait(false);
 
     if (content == null || content.ProgramId != programId) return NotFound();
+
+    try
+    {
+      ProgramContentAcademicMutationGuard.EnsureAllowed(academicMutationGuards, content, ProgramContentAcademicMutation.Delete);
+    }
+    catch (InvalidOperationException exception)
+    {
+      return Conflict(exception.Message);
+    }
 
     var deleted = await contentService.DeleteContentAsync(id).ConfigureAwait(false);
 
@@ -148,7 +189,7 @@ public class ProgramContentController(
     var children = await contentService.GetContentByParentAsync(parentId).ConfigureAwait(false);
     var childrenDtos = children.ToDtos();
 
-    return Ok(access.CanManageContent ? childrenDtos : ExcludePrivateContent(childrenDtos));
+    return Ok(ResolveProjectedContent(childrenDtos.ToList(), access));
   }
 
   /// <summary> Reorder content within a program (resource-level Edit permission required on parent Program) </summary>
@@ -193,7 +234,7 @@ public class ProgramContentController(
     var requiredContent = await contentService.GetRequiredContentAsync(programId).ConfigureAwait(false);
     var contentDtos = requiredContent.ToDtos();
 
-    return Ok(access.CanManageContent ? contentDtos : ExcludePrivateContent(contentDtos));
+    return Ok(ResolveProjectedContent(contentDtos.ToList(), access));
   }
 
   /// <summary> Get content by type (resource-level Read permission required on parent Program) </summary>
@@ -206,7 +247,7 @@ public class ProgramContentController(
     var content = await contentService.GetContentByTypeAsync(programId, type).ConfigureAwait(false);
     var contentDtos = content.ToDtos();
 
-    return Ok(access.CanManageContent ? contentDtos : ExcludePrivateContent(contentDtos));
+    return Ok(ResolveProjectedContent(contentDtos.ToList(), access));
   }
 
   /// <summary> Get content by visibility (resource-level Read permission required on parent Program) </summary>
@@ -222,7 +263,7 @@ public class ProgramContentController(
     var content = await contentService.GetContentByVisibilityAsync(programId, visibility).ConfigureAwait(false);
     var contentDtos = content.ToDtos();
 
-    return Ok(contentDtos);
+    return Ok(ResolveProjectedContent(contentDtos.ToList(), access));
   }
 
   /// <summary> Search content within a program (resource-level Read permission required on parent Program) </summary>
@@ -236,7 +277,7 @@ public class ProgramContentController(
     var content = await contentService.SearchContentAsync(programId, searchDto.SearchTerm).ConfigureAwait(false);
     var contentDtos = content.ToDtos();
 
-    return Ok(access.CanManageContent ? contentDtos : ExcludePrivateContent(contentDtos));
+    return Ok(ResolveProjectedContent(contentDtos.ToList(), access));
   }
 
   /// <summary> Get content statistics for a program (resource-level Read permission required on parent Program) </summary>
@@ -345,11 +386,38 @@ public class ProgramContentController(
     return result.Succeeded;
   }
 
-  private static List<ProgramContentDto> ResolveProjectedContent(List<ProgramContentDto> content, ContentAccessResolution access)
+  private List<ProgramContentDto> ResolveProjectedContent(List<ProgramContentDto> content, ContentAccessResolution access)
   {
     if (access.CanManageContent) return content;
-    if (access.CanViewLearnerContent) return ExcludePrivateContent(content);
+    if (access.CanViewLearnerContent) return ProjectLearnerContent(content);
     return SanitizePublicContent(content);
+  }
+
+  private List<ProgramContentDto> ProjectLearnerContent(IEnumerable<ProgramContentDto> content)
+  {
+    return content
+      .Where(item => item.Visibility != Visibility.Private)
+      .Select(item =>
+      {
+        var projector = learnerProjectors.SingleOrDefault(candidate => candidate.ContentType == item.Type);
+        if (projector is not null && item.JsonBody.HasValue)
+        {
+          try
+          {
+            item.JsonBody = projector.Project(item.JsonBody.Value);
+          }
+          catch (Exception exception) when (exception is JsonException or ArgumentException or FormatException or InvalidOperationException)
+          {
+            logger.LogError(exception, "Learner-safe projection failed for content {ContentId}", item.Id);
+            item.Body = null;
+            item.JsonBody = null;
+          }
+        }
+        item.Children = ProjectLearnerContent(item.Children);
+        item.ChildrenCount = item.Children.Count;
+        return item;
+      })
+      .ToList();
   }
 
   private static List<ProgramContentDto> ExcludePrivateContent(IEnumerable<ProgramContentDto> content)
@@ -372,6 +440,7 @@ public class ProgramContentController(
       .Select(item =>
       {
         item.Body = null;
+        item.JsonBody = null;
         item.Children = SanitizePublicContent(item.Children);
         item.ChildrenCount = item.Children.Count;
         return item;

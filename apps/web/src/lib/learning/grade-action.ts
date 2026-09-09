@@ -5,6 +5,7 @@ import {
   createServerClient,
   GeneratedApi,
 } from '@game-guild/client';
+import { pointsToScoreUnits, rubricScoresToUnits } from '@/lib/learning/academic-values';
 
 type ActionResult<T> =
   | { success: true; data: T }
@@ -38,24 +39,31 @@ export async function gradeSubmission(input: {
   feedback: string;
   rubricScores?: string;
 }): Promise<ActionResult<{ submissionId: string }>> {
-  const client = getApiClient();
-  const assessments = new GeneratedApi.LearningAssessmentsModule(client);
-  const result = await assessments.postAssessmentsSubmissionsGrade(
-    input.submissionId,
-    {
-      score: input.score,
-      feedback: input.feedback,
-      rubricScores: input.rubricScores ?? null,
-    },
-  );
-  if (!result.ok) {
+  try {
+    const client = getApiClient();
+    const assessments = new GeneratedApi.LearningAssessmentsModule(client);
+    const result = await assessments.postAssessmentsSubmissionsGrade(
+      input.submissionId,
+      {
+        score: pointsToScoreUnits(input.score),
+        feedback: input.feedback,
+        rubricScores: input.rubricScores == null ? null : rubricScoresToUnits(input.rubricScores),
+      },
+    );
+    if (!result.ok) {
+      return {
+        success: false,
+        error: result.error?.message ?? 'Failed to post grade.',
+      };
+    }
+    return {
+      success: true,
+      data: { submissionId: input.submissionId },
+    };
+  } catch (error) {
     return {
       success: false,
-      error: result.error?.message ?? 'Failed to post grade.',
+      error: error instanceof Error ? error.message : 'Invalid grade.',
     };
   }
-  return {
-    success: true,
-    data: { submissionId: input.submissionId },
-  };
 }

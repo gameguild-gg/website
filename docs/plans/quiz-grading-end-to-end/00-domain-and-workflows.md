@@ -22,8 +22,9 @@ review e etapa de grading que publica o resultado.
   para uma revisão imutável da definição;
 - stages, rodadas, evidências e resultado ainda não possuem uma raiz persistente
   compartilhada entre test run e submission oficial;
-- scores acadêmicos do módulo ainda são inteiros e pesos/percentuais ainda usam
-  `decimal`, embora o contrato final exija strings canônicas;
+- scores acadêmicos do módulo ainda não possuem semântica uniforme e
+  pesos/percentuais ainda usam `decimal`, embora o contrato final exija
+  inteiros de escala `100`;
 - `Assessment.PassingScore` e `Program.PassingScore` são usados com semânticas
   concorrentes em partes diferentes do sistema.
 
@@ -142,8 +143,8 @@ exige um workflow válido e todas as capabilities necessárias.
     a revisão usada por tentativas existentes.
 13. A visibilidade do content não substitui o estado de publicação do
     assessment.
-14. Score, score máximo, score por item e agregações usam a mesma string decimal
-    canônica de precisão fixa na persistência e no wire format.
+14. Score, score máximo, score por item e agregações usam inteiros de escala
+    `100` na persistência e no wire format.
 15. `Assessment.PassingScore` é um valor absoluto na escala do assessment;
     `Program.PassingScore` é o percentual aplicado ao resultado global do curso.
 16. `ReviewMethods` descreve o workflow publicado; indisponibilidade transitória
@@ -159,8 +160,8 @@ exige um workflow válido e todas as capabilities necessárias.
     estágio por falta de avaliador.
 20. Finalizar um `GradeResult` e liberá-lo ao aluno são transições diferentes.
     Gradebook consome finalização; aluno e notificação consomem liberação.
-21. Scores, pesos e percentuais acadêmicos persistidos usam strings canônicas;
-    nenhuma tabela do fluxo mantém `decimal` ou ponto flutuante.
+21. Scores, pesos e percentuais acadêmicos persistidos usam inteiros de escala
+    `100`; nenhuma tabela do fluxo mantém `decimal` ou ponto flutuante.
 22. Quiz atribuído a grupo cria uma única submission coletiva, uma única rodada
     e um único `GradeResult`; os integrantes recebem projeções do resultado
     depois da finalização.

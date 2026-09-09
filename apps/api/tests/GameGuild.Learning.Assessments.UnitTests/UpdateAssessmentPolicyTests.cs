@@ -1,4 +1,6 @@
 using FluentAssertions;
+using GameGuild.Learning.Assessments.Grading.Contracts;
+using GameGuild.Learning.Grading.Contracts;
 using GameGuild.Learning.Courses;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
@@ -9,8 +11,7 @@ using Xunit;
 namespace GameGuild.Learning.Assessments.Tests;
 
 /// <summary>
-/// Tests for UpdateAssessment wiring of group-set assignment and peer-review policy
-/// (todo 14 backend plumbing: UpdateAssessmentRequest.GroupSetId/ClearGroupSetId/PeerReviewsRequiredCount).
+/// Tests for UpdateAssessment wiring of group-set assignment and typed review policy.
 /// </summary>
 public class UpdateAssessmentPolicyTests
 {
@@ -20,14 +21,14 @@ public class UpdateAssessmentPolicyTests
         await using var db = CreateContext();
         var courseId = Guid.NewGuid();
         var set = CourseGroupSet.Create(courseId, "Project teams");
-        var assessment = Assessment.Create(courseId, "Group project", AssessmentType.Project, 100);
+        var assessment = Assessment.Create(courseId, "Group project", AssessmentType.Project, Score("100"));
         db.AddRange(set, assessment);
         await db.SaveChangesAsync();
         var service = CreateService(db);
 
         var result = await service.UpdateAssessmentAsync(
             assessment.Id,
-            new UpdateAssessmentRequest(GroupSetId: set.Id));
+            new UpdateAssessmentRequest(assessment.Version, GroupSetId: set.Id));
 
         result.IsSuccess.Should().BeTrue();
         result.Value.GroupSetId.Should().Be(set.Id);
@@ -38,14 +39,14 @@ public class UpdateAssessmentPolicyTests
     {
         await using var db = CreateContext();
         var set = CourseGroupSet.Create(Guid.NewGuid(), "Other course teams");
-        var assessment = Assessment.Create(Guid.NewGuid(), "Group project", AssessmentType.Project, 100);
+        var assessment = Assessment.Create(Guid.NewGuid(), "Group project", AssessmentType.Project, Score("100"));
         db.AddRange(set, assessment);
         await db.SaveChangesAsync();
         var service = CreateService(db);
 
         var result = await service.UpdateAssessmentAsync(
             assessment.Id,
-            new UpdateAssessmentRequest(GroupSetId: set.Id));
+            new UpdateAssessmentRequest(assessment.Version, GroupSetId: set.Id));
 
         result.IsSuccess.Should().BeFalse();
         result.Error.Type.Should().Be(ErrorType.Validation);
@@ -59,7 +60,7 @@ public class UpdateAssessmentPolicyTests
         await using var db = CreateContext();
         var courseId = Guid.NewGuid();
         var set = CourseGroupSet.Create(courseId, "Project teams");
-        var assessment = Assessment.Create(courseId, "Group project", AssessmentType.Project, 100);
+        var assessment = Assessment.Create(courseId, "Group project", AssessmentType.Project, Score("100"));
         assessment.AssignToGroupSet(set.Id);
         db.AddRange(set, assessment);
         await db.SaveChangesAsync();
@@ -67,59 +68,72 @@ public class UpdateAssessmentPolicyTests
 
         var result = await service.UpdateAssessmentAsync(
             assessment.Id,
-            new UpdateAssessmentRequest(ClearGroupSetId: true));
+            new UpdateAssessmentRequest(assessment.Version, ClearGroupSetId: true));
 
         result.IsSuccess.Should().BeTrue();
         result.Value.GroupSetId.Should().BeNull();
     }
 
     [Fact]
-    public async Task UpdateAssessmentAsync_SetsPeerReviewRequiredCount()
+    public async Task UpdateAssessmentAsync_SetsTypedPeerReviewConfiguration()
     {
         await using var db = CreateContext();
-        var assessment = Assessment.Create(Guid.NewGuid(), "Peer task", AssessmentType.Assignment, 10);
+        var assessment = Assessment.Create(Guid.NewGuid(), "Peer task", AssessmentType.Assignment, Score("10"));
         db.Add(assessment);
         await db.SaveChangesAsync();
         var service = CreateService(db);
 
         var result = await service.UpdateAssessmentAsync(
             assessment.Id,
-            new UpdateAssessmentRequest(PeerReviewsRequiredCount: 3));
+            new UpdateAssessmentRequest(
+                assessment.Version,
+                ReviewMethods: ReviewMethods.PeerReview,
+                ReviewConfigurationCanonicalJson: PeerReviewConfiguration(3)));
 
         result.IsSuccess.Should().BeTrue();
-        result.Value.PeerReviewsRequiredCount.Should().Be(3);
+        result.Value.GetRequiredPeerReviewCount().Should().Be(3);
     }
 
     [Fact]
-    public async Task UpdateAssessmentAsync_RejectsPeerReviewCountBelowOne()
+    public async Task UpdateAssessmentAsync_RejectsInvalidPeerReviewConfiguration()
     {
         await using var db = CreateContext();
-        var assessment = Assessment.Create(Guid.NewGuid(), "Peer task", AssessmentType.Assignment, 10);
+        var assessment = Assessment.Create(Guid.NewGuid(), "Peer task", AssessmentType.Assignment, Score("10"));
         db.Add(assessment);
         await db.SaveChangesAsync();
         var service = CreateService(db);
 
         var result = await service.UpdateAssessmentAsync(
             assessment.Id,
-            new UpdateAssessmentRequest(PeerReviewsRequiredCount: 0));
+            new UpdateAssessmentRequest(
+                assessment.Version,
+                ReviewMethods: ReviewMethods.PeerReview,
+                ReviewConfigurationCanonicalJson: PeerReviewConfiguration(0)));
 
         result.IsSuccess.Should().BeFalse();
         result.Error.Type.Should().Be(ErrorType.Validation);
     }
 
     [Fact]
-    public void AssessmentDto_ExposesGroupSetAndPeerReviewPolicy()
+    public void AssessmentDto_ExposesGroupSetAndReviewPolicy()
     {
         var courseId = Guid.NewGuid();
         var set = CourseGroupSet.Create(courseId, "Project teams");
-        var assessment = Assessment.Create(courseId, "Group project", AssessmentType.Project, 100);
+        var assessment = Assessment.Create(courseId, "Group project", AssessmentType.Project, Score("100"));
         assessment.AssignToGroupSet(set.Id);
-        assessment.SetPeerReviewPolicy(3);
+        assessment.SetReviewPolicy(
+            ReviewMethods.PeerReview,
+            PeerReviewConfiguration(3),
+            null,
+            ContentCompletionMode.OnReleaseAndPass,
+            ResultReleaseMode.Manual,
+            null);
 
         var dto = AssessmentDto.FromEntity(assessment);
 
         dto.GroupSetId.Should().Be(set.Id);
-        dto.PeerReviewsRequiredCount.Should().Be(3);
+        dto.ReviewMethods.Should().Be(ReviewMethods.PeerReview);
+        dto.ReviewConfigurationCanonicalJson.Should().Be(PeerReviewConfiguration(3));
     }
 
     private static AssessmentService CreateService(TestAssessmentDbContext db)
@@ -138,6 +152,13 @@ public class UpdateAssessmentPolicyTests
             .Options;
         return new TestAssessmentDbContext(options);
     }
+
+    private static ScoreValue Score(string value) => ScoreValue.FromPoints(value);
+
+    private static string PeerReviewConfiguration(int requiredCount) =>
+        $$"""
+        {"peer":{"aggregation":"mean","claimLeaseMinutes":30,"evidenceWindowMinutes":60,"minimumReviewsToFinalize":{{requiredCount}},"onInsufficientEvidence":"await-instructor-resolution","reviewsPerReviewer":{{requiredCount}},"reviewsRequiredPerSubmission":{{requiredCount}}},"schemaVersion":1}
+        """;
 
     private sealed class TestAssessmentDbContext(DbContextOptions<TestAssessmentDbContext> options)
         : DbContext(options), IApplicationDbContext

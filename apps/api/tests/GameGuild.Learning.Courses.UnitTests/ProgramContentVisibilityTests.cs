@@ -5,6 +5,7 @@ using GameGuild.Learning.Courses;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
 
@@ -111,7 +112,10 @@ public sealed class ProgramContentVisibilityTests
             contentMock.Object,
             programMock.Object,
             new Mock<ICodingAssignmentContentService>().Object,
-            authorizationMock.Object);
+            authorizationMock.Object,
+            [],
+            [],
+            Mock.Of<ILogger<ProgramContentController>>());
 
         if (userId.HasValue)
         {

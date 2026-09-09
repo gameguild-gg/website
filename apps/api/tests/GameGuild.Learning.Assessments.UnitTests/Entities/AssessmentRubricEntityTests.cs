@@ -31,21 +31,19 @@ public class AssessmentRubricEntityTests
     public void RubricCriterion_Create_ShouldSetFields()
     {
         var rubricId = Guid.NewGuid();
-        var criterion = RubricCriterion.Create(rubricId, "  Correctness  ", 10, 1);
+        var criterion = RubricCriterion.Create(rubricId, "  Correctness  ", Score(10), 1);
 
         criterion.Id.Should().NotBeEmpty();
         criterion.RubricId.Should().Be(rubricId);
         criterion.Description.Should().Be("Correctness");
-        criterion.Points.Should().Be(10);
+        criterion.Points.Should().Be(Score(10));
         criterion.Order.Should().Be(1);
     }
 
-    [Theory]
-    [InlineData(0)]
-    [InlineData(-1)]
-    public void RubricCriterion_Create_WithNonPositivePoints_Throws(int points)
+    [Fact]
+    public void RubricCriterion_Create_WithZeroPoints_Throws()
     {
-        var action = () => RubricCriterion.Create(Guid.NewGuid(), "Correctness", points, 1);
+        var action = () => RubricCriterion.Create(Guid.NewGuid(), "Correctness", ScoreValue.Zero, 1);
 
         action.Should().Throw<ArgumentException>();
     }
@@ -55,7 +53,7 @@ public class AssessmentRubricEntityTests
     [InlineData("   ")]
     public void RubricCriterion_Create_WithEmptyDescription_Throws(string description)
     {
-        var action = () => RubricCriterion.Create(Guid.NewGuid(), description, 10, 1);
+        var action = () => RubricCriterion.Create(Guid.NewGuid(), description, Score(10), 1);
 
         action.Should().Throw<ArgumentException>();
     }
@@ -63,7 +61,7 @@ public class AssessmentRubricEntityTests
     [Fact]
     public void Assessment_AssignRubric_ShouldSetRubricIdAndTouchUpdatedAt()
     {
-        var assessment = Assessment.Create(Guid.NewGuid(), "Essay", AssessmentType.Assignment, 100);
+        var assessment = Assessment.Create(Guid.NewGuid(), "Essay", AssessmentType.Assignment, Score(100));
         var originalUpdatedAt = assessment.UpdatedAt;
         Thread.Sleep(20);
         var rubricId = Guid.NewGuid();
@@ -77,7 +75,7 @@ public class AssessmentRubricEntityTests
     [Fact]
     public void Assessment_AssignRubric_WithNull_ShouldClearRubricId()
     {
-        var assessment = Assessment.Create(Guid.NewGuid(), "Essay", AssessmentType.Assignment, 100);
+        var assessment = Assessment.Create(Guid.NewGuid(), "Essay", AssessmentType.Assignment, Score(100));
         assessment.AssignRubric(Guid.NewGuid());
 
         assessment.AssignRubric(null);

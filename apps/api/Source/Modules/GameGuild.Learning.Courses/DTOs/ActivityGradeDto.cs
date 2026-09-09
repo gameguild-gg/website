@@ -1,3 +1,5 @@
+using GameGuild.Learning.Grading.Contracts;
+
 namespace GameGuild.Learning.Courses;
 
 /// <summary> DTO for ActivityGrade responses - avoids circular references for Swagger/OpenAPI </summary>
@@ -8,7 +10,11 @@ public class ActivityGradeDto {
 
   public Guid? GraderProgramUserId { get; set; }
 
-  public decimal Grade { get; set; }
+  public ScoreValue? Points { get; set; }
+
+  public ScoreValue? MaxPoints { get; set; }
+
+  public PercentValue? PercentageScore { get; set; }
 
   public string? Feedback { get; set; }
 
@@ -26,11 +32,10 @@ public class ActivityGradeDto {
   public GraderSummaryDto? Grader { get; set; }
 
   // Computed properties for convenience
-  public bool IsPassingGrade {
-    get => Grade >= 70; // Assuming 70% is passing
-  }
+  public bool IsPassingGrade => PercentageScore.HasValue &&
+                                PercentageScore.Value.CompareTo(PercentValue.FromPercentage("70")) >= 0;
 
-  public string GradePercentage { get => $"{Grade:F1}%"; }
+  public string? GradePercentage => PercentageScore.HasValue ? $"{PercentageScore.Value}%" : null;
 
   public bool HasFeedback { get => !string.IsNullOrEmpty(Feedback); }
 

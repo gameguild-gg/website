@@ -106,6 +106,7 @@ export interface CourseAnalyticsViewModel {
  */
 export interface CourseContentItemViewModel {
   id: string;
+  version: number;
   slug: string;
   parentId: string | null;
   order: number;

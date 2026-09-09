@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using GameGuild.Learning.Grading.Contracts;
 
 namespace GameGuild.Learning.Courses;
 
@@ -126,11 +127,11 @@ public class ProgramReadService(IApplicationDbContext context) : IProgramReadSer
     return result;
   }
 
-  public async Task<decimal> GetUserProgressAsync(Guid programId, Guid userId)
+  public async Task<PercentValue> GetUserProgressAsync(Guid programId, Guid userId)
   {
     var programUser = await context.Set<ProgramUser>().Where(pu => pu.DeletedAt == null && pu.ProgramId == programId && pu.UserId == userId).FirstOrDefaultAsync();
 
-    return programUser?.CompletionPercentage ?? 0;
+    return programUser?.CompletionPercentage ?? PercentValue.Zero;
   }
 
   public async Task<UserProgressDto?> GetUserProgressDtoAsync(Guid programId, Guid userId)
@@ -191,11 +192,14 @@ public class ProgramReadService(IApplicationDbContext context) : IProgramReadSer
 
   public async Task<int> GetUserCountForProgramAsync(Guid programId) { return await context.Set<ProgramUser>().Where(pu => pu.DeletedAt == null && pu.ProgramId == programId && pu.IsActive).CountAsync(); }
 
-  public async Task<decimal> GetAverageCompletionRateAsync(Guid programId)
+  public async Task<PercentValue> GetAverageCompletionRateAsync(Guid programId)
   {
-    var averageCompletion = await context.Set<ProgramUser>().Where(pu => pu.DeletedAt == null && pu.ProgramId == programId && pu.IsActive).AverageAsync(pu => (decimal?)pu.CompletionPercentage) ?? 0;
-
-    return averageCompletion;
+    var values = await context.Set<ProgramUser>()
+      .Where(pu => pu.DeletedAt == null && pu.ProgramId == programId && pu.IsActive)
+      .Select(pu => pu.CompletionPercentage)
+      .ToListAsync()
+      .ConfigureAwait(false);
+    return PercentValue.Average(values);
   }
 
   public async Task<Dictionary<string, object>> GetProgramStatisticsAsync(Guid programId)
@@ -204,7 +208,13 @@ public class ProgramReadService(IApplicationDbContext context) : IProgramReadSer
     var averageCompletion = await GetAverageCompletionRateAsync(programId).ConfigureAwait(false);
     var completedCount = await context.Set<ProgramUser>().Where(pu => pu.DeletedAt == null && pu.ProgramId == programId && pu.IsActive && pu.CompletedAt != null).CountAsync();
 
-    return new Dictionary<string, object> { ["totalUsers"] = userCount, ["averageCompletion"] = averageCompletion, ["completedUsers"] = completedCount, ["completionRate"] = userCount > 0 ? (decimal)completedCount / userCount * 100 : 0 };
+    return new Dictionary<string, object>
+    {
+      ["totalUsers"] = userCount,
+      ["averageCompletion"] = averageCompletion,
+      ["completedUsers"] = completedCount,
+      ["completionRate"] = userCount > 0 ? PercentValue.FromRatio(completedCount, userCount) : PercentValue.Zero,
+    };
   }
 
   public async Task<ProgramAnalyticsDto?> GetProgramAnalyticsAsync(Guid id)
@@ -267,7 +277,7 @@ public class ProgramReadService(IApplicationDbContext context) : IProgramReadSer
       lastActivity,
       new Dictionary<string, object>
       {
-        ["averageProgress"] = totalUsers == 0 ? 0m : Math.Round(programUsers.Average(pu => pu.CompletionPercentage), 2),
+        ["averageProgress"] = PercentValue.Average(programUsers.Select(pu => pu.CompletionPercentage)),
         ["contentItems"] = contentIds.Count,
         ["totalTimeSpentMinutes"] = interactions.Sum(interaction => interaction.TimeSpentMinutes ?? 0),
       }

@@ -1,3 +1,5 @@
+using GameGuild.Learning.Grading.Contracts;
+
 namespace GameGuild.Learning.Courses;
 
 /// <summary>
@@ -28,12 +30,12 @@ public class ProgramCrudService(IProgramReadService read, IProgramWriteService w
   public Task<IEnumerable<Program>> GetUserProgramsAsync(Guid userId) => read.GetUserProgramsAsync(userId);
   public Task<bool> IsUserInProgramAsync(Guid programId, Guid userId) => read.IsUserInProgramAsync(programId, userId);
   public Task<IEnumerable<UserProgressDto>> GetProgramUsersAsync(Guid programId, int skip = 0, int take = 50) => read.GetProgramUsersAsync(programId, skip, take);
-  public Task<decimal> GetUserProgressAsync(Guid programId, Guid userId) => read.GetUserProgressAsync(programId, userId);
+  public Task<PercentValue> GetUserProgressAsync(Guid programId, Guid userId) => read.GetUserProgressAsync(programId, userId);
   public Task<UserProgressDto?> GetUserProgressDtoAsync(Guid programId, Guid userId) => read.GetUserProgressDtoAsync(programId, userId);
   public Task<IEnumerable<ContentInteraction>> GetUserInteractionsAsync(Guid programId, Guid userId) => read.GetUserInteractionsAsync(programId, userId);
   public Task<int> GetProgramCountAsync(ContentStatus? status = null, ContentVisibility? visibility = null) => read.GetProgramCountAsync(status, visibility);
   public Task<int> GetUserCountForProgramAsync(Guid programId) => read.GetUserCountForProgramAsync(programId);
-  public Task<decimal> GetAverageCompletionRateAsync(Guid programId) => read.GetAverageCompletionRateAsync(programId);
+  public Task<PercentValue> GetAverageCompletionRateAsync(Guid programId) => read.GetAverageCompletionRateAsync(programId);
   public Task<Dictionary<string, object>> GetProgramStatisticsAsync(Guid programId) => read.GetProgramStatisticsAsync(programId);
   public Task<ProgramAnalyticsDto?> GetProgramAnalyticsAsync(Guid id) => read.GetProgramAnalyticsAsync(id);
   public Task<CompletionRatesDto?> GetCompletionRatesAsync(Guid id) => read.GetCompletionRatesAsync(id);

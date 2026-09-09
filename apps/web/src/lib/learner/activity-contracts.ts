@@ -10,7 +10,7 @@ export function getPreferredSubmissionModality(
     assessmentType: LearningAssessmentsAssessmentType | undefined,
     configured: LearningAssessmentsSubmissionModality | undefined,
 ): LearningAssessmentsSubmissionModality {
-    if (assessmentType === 'Quiz') return 'StructuredAnswer';
+    if (assessmentType === 'Quiz') return 'None';
     if (assessmentType === 'Project') return 'Project';
     return configured && configured !== 'None' ? configured : 'Text';
 }
@@ -23,8 +23,6 @@ export function buildAssessmentPayload(
     if (!normalized) throw new Error('A submission response is required.');
 
     switch (modality) {
-        case 'StructuredAnswer':
-            return { structuredAnswerPayload: JSON.stringify({ answer: normalized }) };
         case 'File':
             return { filePayload: normalized };
         case 'Url':

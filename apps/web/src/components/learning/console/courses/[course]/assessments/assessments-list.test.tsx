@@ -594,7 +594,7 @@ describe('Create Assessment dialog', () => {
 
       expect(await screen.findByRole('dialog', { name: /create assessment/i })).toBeInTheDocument();
       expect(screen.getByLabelText(/title/i)).toBeInTheDocument();
-      expect(screen.getByText(/grading methods/i)).toBeInTheDocument();
+      expect(screen.getByText(/primary review/i)).toBeInTheDocument();
     });
 
     it('creates a standalone assessment with default fields when title is filled', async () => {
@@ -620,7 +620,7 @@ describe('Create Assessment dialog', () => {
           slug: 'final-exam',
           type: 'Assignment',
           assessmentGroupId: null,
-          gradingMethods: 'InstructorGraded',
+          reviewMethods: 8,
         });
       });
     });

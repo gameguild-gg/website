@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using GameGuild.Learning.Grading.Contracts;
 // using GameGuild.Modules.Certificates.Entities;
 // using GameGuild.Modules.Feedbacks.Entities;
 
@@ -85,7 +86,7 @@ public class Program : EntityBase {
     /// <summary>
     /// Passing score percentage (0-100) used to determine successful program completion. Default 60.
     /// </summary>
-    public decimal PassingScore { get; set; } = 60m;
+    public PercentValue PassingScore { get; set; } = PercentValue.FromPercentage("60");
 
     /// <summary>
     /// Current enrollment status

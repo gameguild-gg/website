@@ -32,8 +32,9 @@ package nor `@game-guild/quiz` depends on that adapter.
 - `GradeResultV1`, `GradeRoundV1`, and `GradingExecutionV1` describe generic
   review output and execution state.
 
-`ScoreValue` and `PercentValue` are canonical strings. JSON numbers are not
-accepted for academic values.
+`ScoreValue` and `PercentValue` are integer units with a fixed scale of `100`.
+JSON decimals and numeric strings are not accepted for academic values;
+human decimal input is parsed only at UI boundaries.
 
 ## Validation and identity
 
@@ -80,8 +81,9 @@ grading.
 - Keep content-specific projection, redaction, decoding, and evaluation in an
   adapter package.
 - Keep operational state out of authored content documents.
-- Resolve executable components by the exact key, version, and execution
-  context fixed in the manifest.
+- Resolve one aggregate assessment-type adapter, plus generic handlers and
+  policies, by the exact key, version, and execution context fixed in the
+  manifest.
 - Add cross-language fixtures whenever a wire contract is implemented in both
   TypeScript and C#.
 

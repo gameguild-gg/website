@@ -35,22 +35,23 @@ Learning.Assessments.Grading <--- Learning.Assessments.QuizAdapter
 | Hash canonico | [`canonical-json.ts`](../../packages/features/grading/src/canonical-json.ts) | [`CanonicalJson.cs`](../../apps/api/Source/Modules/GameGuild.Learning.Assessments/Grading/Contracts/CanonicalJson.cs) |
 | Registry | [`capabilities.ts`](../../packages/features/grading/src/capabilities.ts) | [`ReviewCapabilityRegistry.cs`](../../apps/api/Source/Modules/GameGuild.Learning.Assessments/Grading/Capabilities/ReviewCapabilityRegistry.cs) |
 | Portas do runtime | tipos acima | [`ExecutionPorts.cs`](../../apps/api/Source/Modules/GameGuild.Learning.Assessments/Grading/Abstractions/ExecutionPorts.cs) |
+| Adapter agregado de quiz | [`adapter.ts`](../../packages/features/grading-adapter-quiz/src/adapter.ts) | [`QuizAssessmentTypeAdapter.cs`](../../apps/api/Source/Modules/GameGuild.Learning.Assessments.QuizAdapter/QuizAssessmentTypeAdapter.cs) |
 | Contrato do adapter quiz | [`contracts.ts`](../../packages/features/grading-adapter-quiz/src/contracts.ts) | [`QuizAdapterContracts.cs`](../../apps/api/Source/Modules/GameGuild.Learning.Assessments.QuizAdapter/QuizAdapterContracts.cs) |
-| Projecao privada | [`items.ts`](../../packages/features/grading-adapter-quiz/src/items.ts) | [`QuizItemProjector.cs`](../../apps/api/Source/Modules/GameGuild.Learning.Assessments.QuizAdapter/QuizItemProjector.cs) |
-| Resposta | [`responses.ts`](../../packages/features/grading-adapter-quiz/src/responses.ts) | [`QuizAnswerDecoder.cs`](../../apps/api/Source/Modules/GameGuild.Learning.Assessments.QuizAdapter/QuizAnswerDecoder.cs) |
-| Entrega learner-safe | [`delivery.ts`](../../packages/features/grading-adapter-quiz/src/delivery.ts) | [`QuizDeliveryGenerator.cs`](../../apps/api/Source/Modules/GameGuild.Learning.Assessments.QuizAdapter/QuizDeliveryGenerator.cs) |
-| Avaliacao deterministica | [`evaluation.ts`](../../packages/features/grading-adapter-quiz/src/evaluation.ts) | [`QuizDeterministicReviewAlgorithm.cs`](../../apps/api/Source/Modules/GameGuild.Learning.Assessments.QuizAdapter/QuizDeterministicReviewAlgorithm.cs) |
+| Detalhes internos do adapter | [`items.ts`](../../packages/features/grading-adapter-quiz/src/items.ts), [`responses.ts`](../../packages/features/grading-adapter-quiz/src/responses.ts), [`delivery.ts`](../../packages/features/grading-adapter-quiz/src/delivery.ts) e [`evaluation.ts`](../../packages/features/grading-adapter-quiz/src/evaluation.ts) | [`QuizItemProjector.cs`](../../apps/api/Source/Modules/GameGuild.Learning.Assessments.QuizAdapter/QuizItemProjector.cs), [`QuizAnswerDecoder.cs`](../../apps/api/Source/Modules/GameGuild.Learning.Assessments.QuizAdapter/QuizAnswerDecoder.cs), [`QuizDeliveryGenerator.cs`](../../apps/api/Source/Modules/GameGuild.Learning.Assessments.QuizAdapter/QuizDeliveryGenerator.cs) e [`QuizDeterministicReviewAlgorithm.cs`](../../apps/api/Source/Modules/GameGuild.Learning.Assessments.QuizAdapter/QuizDeterministicReviewAlgorithm.cs) |
 | Documento de quiz | [`quiz-content/src/types.ts`](../../packages/features/quiz-content/src/types.ts) | persistido hoje em `ProgramContent.JsonBody` |
 
 ## Valores academicos
 
-`ScoreValue` e uma string `^\d{8}\.\d{4}$`, por exemplo
-`"00000012.5000"`. `PercentValue` e uma string `^\d{3}\.\d{4}$` limitada a
-`"100.0000"`. JSON numerico e rejeitado.
+`ScoreValue` e um inteiro de unidades no intervalo `0..2147483647`.
+`PercentValue` e um inteiro de unidades no intervalo `0..10000`. A escala fixa
+e `100`: `100` representa `1` ponto ou `1%`, `50` representa `0.5` e `150`
+representa `1.5`. JSON decimal e string numerica sao rejeitados.
 
-Calculos usam inteiros escalados e arredondamento half-up somente no ponto de
-quantizacao. Nenhum score, peso ou percentual academico deve ser calculado com
-`number`, `double`, `float` ou `decimal` na fronteira persistente.
+Calculos usam inteiros escalados, intermediarios largos (`bigint`, `long` ou
+`BigInteger`) e arredondamento half-up somente no ponto de quantizacao.
+TypeScript usa `number` branded apenas depois de validar `Number.isSafeInteger`;
+nenhum score, peso ou percentual academico persistido usa `decimal`, `numeric`,
+`double`, `float` ou string.
 
 `QuizEntry.points` e a unica fonte autoral mutavel de pontos de uma pergunta.
 `ContentGradingDefinitionV2.items` nao repete `points`, ID ou capability.
@@ -134,8 +135,8 @@ AssessmentAuthoringSourceV1
   contentType + content + grading + policy
 
 AssessmentExecutionManifestV1
-  items[]   -> projector, delivery generator e decoder exatos
-  stages[]  -> handler, algoritmo e provider exatos
+  items[]   -> adapter agregado exato por tipo de assessment
+  stages[]  -> handler e provider exatos
   policies[] -> implementacoes exatas
 
 AssessmentExecutionSnapshotV1
@@ -167,8 +168,8 @@ interface AssessmentExecutionDeliveryV1<TLearnerPayload> {
   executionSnapshotHash: string;
   itemOrder: string[];
   items: Record<string, {
-    deliveryGeneratorKey: string;
-    deliveryGeneratorVersion: string;
+    adapterKey: string;
+    adapterVersion: string;
     learnerPayload: TLearnerPayload;
   }>;
 }
@@ -177,8 +178,8 @@ interface AssessmentExecutionDeliveryV1<TLearnerPayload> {
 `itemOrder` contem cada item uma vez. A entrega nao contem answer key,
 tolerance privada, score calculado ou attachments `authorOnly`. `DeliveryHash`
 cobre os bytes JCS completos. Resume e regrade da execucao reutilizam os mesmos
-bytes. Antes da avaliacao, a API exige que IDs e versoes dos geradores da
-entrega coincidam exatamente com o manifest fixado no snapshot.
+bytes. Antes da avaliacao, a API exige que IDs e versoes dos adapters da entrega
+coincidam exatamente com o manifest fixado no snapshot.
 
 ## Resposta de quiz
 
@@ -215,20 +216,18 @@ neste marco apenas `AuthorTest`, permitindo teste do instrutor sem afirmar
 prontidao academica oficial.
 
 Na API, [`AssessmentExecutionComponentResolver.cs`](../../apps/api/Source/Modules/GameGuild.Learning.Assessments/Grading/Capabilities/AssessmentExecutionComponentResolver.cs)
-resolve as instancias reais de projector, gerador, decoder, algoritmo e handler.
-O handler nao pode injetar uma versao concreta e ignorar a identidade fixada no
+resolve o adapter agregado e os handlers genericos. O core nunca resolve nem
+registra projector, gerador, decoder ou algoritmo especifico de quiz de forma
+independente. O adapter resolvido deve coincidir com a identidade fixada no
 manifest.
 
 ## Persistencia e invariantes
 
-Entidades, configuracoes EF, baseline e tabelas ainda nao foram alterados nesta
-etapa. O schema novo depende do `SCHEMA-GATE` manual de `SEQ-02`.
-
 No corte aprovado nao havera migration incremental, backfill, dual-read ou
 preservacao legacy. Bancos descartaveis nascerao do baseline limpo. JSON que
 participa de hash sera persistido como texto/bytes canonicos. Scores e
-percentuais relacionais serao strings canonicas. O payload generico antigo sera
-removido, nao mantido como alias.
+percentuais relacionais usam colunas `integer` em unidades de escala `100`. O
+payload generico antigo sera removido, nao mantido como alias.
 
 Regras de manutencao:
 
@@ -237,6 +236,7 @@ Regras de manutencao:
 3. Policy operacional nao entra no documento de quiz.
 4. Answer key nao entra em entrega ou resposta learner-visible.
 5. Stage singular nao usa a bitmask `ReviewMethods`.
-6. Score ou percentual persistente nunca usa JSON numerico.
+6. Score ou percentual persistente usa somente inteiro de unidades no JSON e
+   no banco; decimal humano existe apenas na borda de entrada/apresentacao.
 7. Versao, campo ou shape desconhecido falha fechado.
 8. Capability em `AuthorTest` nao implica `OfficialSubmission`.

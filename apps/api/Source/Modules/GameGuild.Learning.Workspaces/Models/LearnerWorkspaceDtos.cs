@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using GameGuild.Learning.Grading.Contracts;
 
 namespace GameGuild.Learning.Workspaces;
 
@@ -22,8 +23,8 @@ public sealed record LearnerCourseSummaryDto(
     int? EstimatedHours,
     string EnrollmentStatus,
     string CompletionStatus,
-    decimal ProgressPercentage,
-    decimal? FinalGrade,
+    PercentValue ProgressPercentage,
+    PercentValue? FinalGrade,
     DateTime EnrolledAt,
     int TotalItems,
     int CompletedItems,
@@ -61,7 +62,7 @@ public sealed record LearnerAssessmentDeadlineDto(
     Guid? GroupId,
     string Title,
     string Type,
-    int MaxScore,
+    ScoreValue MaxScore,
     DateTime? AvailableFrom,
     DateTime? AvailableUntil,
     DateTime? DueAt,
@@ -71,12 +72,12 @@ public sealed record LearnerGradeSummaryDto(
     Guid CourseId,
     string CourseTitle,
     string CourseSlug,
-    decimal? FinalGrade,
+    PercentValue? FinalGrade,
     int GradedAssessments,
     int TotalAssessments,
-    decimal? EarnedPoints,
-    decimal? PossiblePoints,
-    decimal? Percentage,
+    ScoreValue? EarnedPoints,
+    ScoreValue? PossiblePoints,
+    PercentValue? Percentage,
     IReadOnlyList<LearnerAssessmentGroupDto> Groups,
     IReadOnlyList<LearnerGradeItemDto> Items);
 
@@ -86,12 +87,12 @@ public sealed record LearnerGradeItemDto(
     Guid? GroupId,
     string Title,
     string Type,
-    int MaxScore,
+    ScoreValue MaxScore,
     DateTime? AvailableFrom,
     DateTime? AvailableUntil,
     DateTime? DueAt,
     string SubmissionStatus,
-    int? Score,
+    ScoreValue? Score,
     bool? Passed,
     string? Feedback,
     DateTime? GradedAt);
@@ -147,13 +148,13 @@ public sealed record LearnerContentDto(
 public sealed record LearnerContentProgressDto(
     Guid ContentId,
     string Status,
-    decimal ProgressPercentage,
+    PercentValue ProgressPercentage,
     DateTime? FirstAccessedAt,
     DateTime? LastAccessedAt,
     DateTime? CompletedAt,
     int TimeSpentSeconds,
-    decimal? Score,
-    decimal? MaxScore,
+    ScoreValue? Score,
+    ScoreValue? MaxScore,
     int Attempts);
 
 public sealed record LearnerCohortDto(
@@ -172,7 +173,7 @@ public sealed record LearnerAssessmentGroupDto(
     Guid GroupId,
     string Name,
     string? Description,
-    decimal WeightPercent,
+    PercentValue WeightPercent,
     int Order);
 
 public sealed record LearnerAssessmentDto(
@@ -182,7 +183,7 @@ public sealed record LearnerAssessmentDto(
     string Title,
     string? Description,
     string Type,
-    int MaxScore,
+    ScoreValue MaxScore,
     int? TimeLimitMinutes,
     int? MaxAttempts,
     bool IsRequired,
@@ -200,7 +201,7 @@ public sealed record LearnerAssessmentSubmissionDto(
     Guid AssessmentId,
     Guid EnrollmentId,
     int AttemptNumber,
-    int? Score,
+    ScoreValue? Score,
     bool? Passed,
     DateTime StartedAt,
     DateTime? SubmittedAt,

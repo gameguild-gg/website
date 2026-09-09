@@ -200,6 +200,7 @@ const assessmentGroups = [
 // Auto-created assessment for an Assignment content item (Task 6 chain result).
 const baseAssessment = {
   id: "assessment-lifecycle",
+  slug: "assessment-lifecycle",
   courseId: "course-1",
   contentId: "content-1",
   title: "Milestone 1 brief",
@@ -213,15 +214,29 @@ const baseAssessment = {
   order: 1,
   availableFrom: null,
   availableUntil: null,
+  presentationMode: "SingleStep",
+  dueAt: null,
+  allowLateSubmissions: false,
+  lateSubmissionDeadline: null,
   isAvailable: true,
   assessmentGroupId: null,
   assessmentGroupName: null,
   assessmentGroupWeightPercent: null,
   assessmentGroupOrder: null,
-} as unknown as Assessment;
+  reviewMethods: 8,
+  groupSetId: null,
+  publishedDefinitionRevisionId: null,
+  reviewConfigurationCanonicalJson: null,
+  attemptContributionMode: null,
+  contentCompletionMode: "on-release-and-pass",
+  resultReleaseMode: "manual",
+  resultReleaseScheduledFor: null,
+  version: 1,
+} as Assessment;
 
 const assignmentItem = {
   id: "content-1",
+  version: 1,
   parentId: "module-1",
   order: 1,
   type: "Assignment",
@@ -230,6 +245,7 @@ const assignmentItem = {
   status: "published",
   visibility: "Public",
   duration: 60,
+  estimatedMinutesSource: "Manual",
   metadata: {},
   gradingConfig: null,
   content: null,
@@ -295,7 +311,10 @@ describe("assessment lifecycle integration (Tasks 6, 7, 9, 11)", () => {
       success: true,
       data: null,
     });
-    vi.mocked(updateAssessment).mockResolvedValue({ success: true, data: null });
+    vi.mocked(updateAssessment).mockResolvedValue({
+      success: true,
+      data: { version: 2 },
+    });
   });
 
   it("1. addContent(Assignment) chains createAssessment with the new contentId", async () => {
@@ -324,7 +343,7 @@ describe("assessment lifecycle integration (Tasks 6, 7, 9, 11)", () => {
         title: "Milestone 1 brief",
         type: "Assignment",
         contentId: "fresh-content-id",
-        gradingMethods: "InstructorGraded",
+        reviewMethods: 8,
       }),
     );
   });
@@ -353,6 +372,7 @@ describe("assessment lifecycle integration (Tasks 6, 7, 9, 11)", () => {
       expect(updateAssessment).toHaveBeenCalledWith({
         courseId: "course-1",
         assessmentId: "assessment-lifecycle",
+        expectedVersion: 1,
         assessmentGroupId: "group-a",
       });
     });
@@ -366,7 +386,7 @@ describe("assessment lifecycle integration (Tasks 6, 7, 9, 11)", () => {
         courseId="course-1"
         item={assignmentItem}
         courseTitle="Game AI"
-        linkedAssessmentId="assessment-lifecycle"
+        linkedAssessment={baseAssessment}
       />,
     );
 
@@ -399,7 +419,7 @@ describe("assessment lifecycle integration (Tasks 6, 7, 9, 11)", () => {
         courseId="course-1"
         item={assignmentItem}
         courseTitle="Game AI"
-        linkedAssessmentId="assessment-lifecycle"
+        linkedAssessment={baseAssessment}
       />,
     );
 
@@ -441,14 +461,17 @@ describe("assessment lifecycle integration (Tasks 6, 7, 9, 11)", () => {
     ).toBeInTheDocument();
   });
 
-  it("6. Code content with a linked AutoGraded assessment surfaces the Configure Coding Tests link", () => {
+  it("6. Code content with a linked AutomatedReview assessment surfaces the Configure Coding Tests link", () => {
     render(
       <ContentItemEditor
         courseId="course-1"
         item={codeItem}
         courseTitle="Game AI"
-        linkedAssessmentId="assessment-lifecycle"
-        linkedAssessmentGradingMethods="AutoGraded"
+        linkedAssessment={{
+          ...baseAssessment,
+          contentId: codeItem.id,
+          reviewMethods: 4,
+        }}
       />,
     );
 
@@ -458,14 +481,13 @@ describe("assessment lifecycle integration (Tasks 6, 7, 9, 11)", () => {
     ).toBeInTheDocument();
   });
 
-  it("6b. Code content WITHOUT AutoGraded does NOT surface the coding-tests bridge", () => {
+  it("6b. Code content without AutomatedReview does not surface the coding-tests bridge", () => {
     render(
       <ContentItemEditor
         courseId="course-1"
         item={codeItem}
         courseTitle="Game AI"
-        linkedAssessmentId="assessment-lifecycle"
-        linkedAssessmentGradingMethods="InstructorGraded"
+        linkedAssessment={{ ...baseAssessment, contentId: codeItem.id }}
       />,
     );
 

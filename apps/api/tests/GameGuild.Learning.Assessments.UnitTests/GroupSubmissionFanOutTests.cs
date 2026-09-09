@@ -54,7 +54,7 @@ public class GroupSubmissionFanOutTests
         var gradedBy = Guid.NewGuid();
 
         var result = await service.GradeSubmissionAsync(
-            gradedRow.Id, new GradeSubmissionRequest(85, gradedBy, "Solid work"));
+            gradedRow.Id, new GradeSubmissionRequest(Score(85), gradedBy, "Solid work"));
 
         result.IsSuccess.Should().BeTrue();
         var rows = await db.Set<AssessmentSubmission>()
@@ -63,14 +63,14 @@ public class GroupSubmissionFanOutTests
         rows.Should().HaveCount(3);
         rows.Should().OnlyContain(r =>
             r.Status == SubmissionStatus.Graded &&
-            r.Score == 85 &&
+            r.Score == Score(85) &&
             r.Passed == true &&
             r.Feedback == "Solid work" &&
             r.GradedBy == gradedBy &&
             r.RubricScoresPayload == null);
         foreach (var member in fixture.Members)
         {
-            lti.Verify(p => p.PostScoreIfMappedAsync(fixture.Assessment.Id, member.UserId, 85, 100), Times.Once);
+            lti.Verify(p => p.PostScoreIfMappedAsync(fixture.Assessment.Id, member.UserId, Score(85), Score(100)), Times.Once);
         }
     }
 
@@ -176,7 +176,7 @@ public class GroupSubmissionFanOutTests
     }
 
     [Fact]
-    public async Task Start_AfterGroupAttemptSubmitted_NumbersSecondAttemptAsTwo()
+    public async Task Start_AfterGroupAttemptSubmitted_RejectsSecondAttemptUntilContributionPolicyExists()
     {
         await using var db = CreateContext();
         var fixture = await SeedGroupAsync(db);
@@ -186,15 +186,14 @@ public class GroupSubmissionFanOutTests
 
         var secondStart = await service.StartSubmissionAsync(fixture.Assessment.Id, aEnrollment.Id, aUser);
 
-        secondStart.Value.AttemptNumber.Should().Be(2);
-        var secondSubmit = await service.SubmitAsync(secondStart.Value.Id, new SubmitAssessmentRequest(TextPayload: "v2"));
-        secondSubmit.IsSuccess.Should().BeTrue();
+        secondStart.IsSuccess.Should().BeFalse();
+        secondStart.Error.Code.Should().Be("Assessment.MaxAttemptsReached");
         var rows = await db.Set<AssessmentSubmission>()
             .Where(s => s.AssessmentId == fixture.Assessment.Id)
             .ToListAsync();
-        rows.Should().HaveCount(6);
+        rows.Should().HaveCount(3);
         rows.Count(r => r.AttemptNumber == 1).Should().Be(3);
-        rows.Count(r => r.AttemptNumber == 2).Should().Be(3);
+        rows.Should().NotContain(r => r.AttemptNumber == 2);
     }
 
     // ===== FIXTURE =====
@@ -224,9 +223,9 @@ public class GroupSubmissionFanOutTests
         var courseId = Guid.NewGuid();
         var set = CourseGroupSet.Create(courseId, "Project Groups");
         var group = CourseGroup.Create(set.Id, "Team A", Math.Max(2, memberCount));
-        var assessment = Assessment.Create(courseId, "Group Project", AssessmentType.Project, 100);
+        var assessment = Assessment.Create(courseId, "Group Project", AssessmentType.Project, Score(100));
         assessment.AssignToGroupSet(set.Id);
-        db.AddRange(new Program { Id = courseId, PassingScore = 60m }, set, group, assessment);
+        db.AddRange(new Program { Id = courseId, PassingScore = Percent(60) }, set, group, assessment);
         var members = Enumerable.Range(0, memberCount).Select(_ =>
         {
             var user = Guid.NewGuid();

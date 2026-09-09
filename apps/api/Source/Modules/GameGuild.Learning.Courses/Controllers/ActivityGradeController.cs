@@ -17,7 +17,13 @@ public class ActivityGradeController(IActivityGradeService activityGradeService)
     if (!ModelState.IsValid) return BadRequest(ModelState);
 
     try {
-      var grade = await activityGradeService.GradeActivityAsync(gradeDto.ContentInteractionId, gradeDto.GraderProgramUserId, gradeDto.Grade, gradeDto.Feedback, gradeDto.GradingDetails).ConfigureAwait(false);
+      var grade = await activityGradeService.GradeActivityAsync(
+        gradeDto.ContentInteractionId,
+        gradeDto.GraderProgramUserId,
+        gradeDto.Points,
+        gradeDto.MaxPoints,
+        gradeDto.Feedback,
+        gradeDto.GradingDetails).ConfigureAwait(false);
 
       // Verify the grade belongs to the specified program
       await ValidateGradeBelongsToProgram(grade.Id, programId).ConfigureAwait(false);
@@ -75,7 +81,12 @@ public class ActivityGradeController(IActivityGradeService activityGradeService)
     // Verify the grade belongs to the specified program
     await ValidateGradeBelongsToProgram(gradeId, programId).ConfigureAwait(false);
 
-    var updatedGrade = await activityGradeService.UpdateGradeAsync(gradeId, updateDto.Grade, updateDto.Feedback, updateDto.GradingDetails).ConfigureAwait(false);
+    var updatedGrade = await activityGradeService.UpdateGradeAsync(
+      gradeId,
+      updateDto.Points,
+      updateDto.MaxPoints,
+      updateDto.Feedback,
+      updateDto.GradingDetails).ConfigureAwait(false);
 
     if (updatedGrade == null) return NotFound("Grade not found");
 

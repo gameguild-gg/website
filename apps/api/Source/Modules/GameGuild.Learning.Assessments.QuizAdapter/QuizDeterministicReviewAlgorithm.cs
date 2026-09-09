@@ -2,14 +2,12 @@ using System.Numerics;
 using System.Text.Json;
 using GameGuild.Learning.Assessments.Grading.Abstractions;
 using GameGuild.Learning.Assessments.Grading.Contracts;
+using GameGuild.Learning.Grading.Contracts;
 
 namespace GameGuild.Learning.Assessments.QuizAdapter;
 
-public sealed class QuizDeterministicReviewAlgorithm : IDeterministicReviewAlgorithm
+public sealed class QuizDeterministicReviewAlgorithm
 {
-    public string Key => QuizAdapterContracts.DeterministicAlgorithmKey;
-    public string Version => QuizAdapterContracts.Version;
-
     public ValueTask<GradeResultV1> EvaluateAsync(
         DeterministicReviewRequest request,
         CancellationToken cancellationToken)
@@ -20,7 +18,7 @@ public sealed class QuizDeterministicReviewAlgorithm : IDeterministicReviewAlgor
         JsonContract.RequireObject(answers, "Quiz answers");
 
         var results = request.ProjectedItems
-            .Select(projectedItem => EvaluateItem(projectedItem, answers))
+            .Select(projectedItem => EvaluateItem(projectedItem, answers, request.HandlerKey, request.HandlerVersion))
             .ToArray();
         var state = results.All(result => result.State == GradeItemState.Graded) ? "final" : "partial";
         ScoreValue? score = state == "final"
@@ -37,41 +35,47 @@ public sealed class QuizDeterministicReviewAlgorithm : IDeterministicReviewAlgor
             []));
     }
 
-    private static GradeItemResultV1 EvaluateItem(JsonElement projection, JsonElement answers)
+    private static GradeItemResultV1 EvaluateItem(
+        JsonElement projection,
+        JsonElement answers,
+        string handlerKey,
+        string handlerVersion)
     {
         JsonContract.RequireObject(projection, "Quiz item projection");
         var itemId = projection.GetProperty("itemId").GetString()
             ?? throw new JsonException("Quiz item projection requires itemId.");
         var itemType = projection.GetProperty("itemType").GetString()
             ?? throw new JsonException("Quiz item projection requires itemType.");
-        var maxScore = ScoreValue.Parse(projection.GetProperty("maxScore").GetString()
-            ?? throw new JsonException("Quiz item maxScore must be a canonical string."));
+        var maxScoreElement = projection.GetProperty("maxScore");
+        var maxScore = ScoreValue.FromUnits(maxScoreElement.TryGetInt32(out var maxScoreUnits)
+            ? maxScoreUnits
+            : throw new JsonException("Quiz item maxScore must be an integer."));
         var entry = projection.GetProperty("authoringEntry");
 
-        if (itemType is "ESSAY") return Unresolved(itemId, maxScore, GradeItemState.Pending, "Essay requires instructor review.");
-        if (itemType is "NUMERIC" or "FORMULA") return Unresolved(itemId, maxScore, GradeItemState.Unsupported, "Generated formula prompts are not available.");
+        if (itemType is "ESSAY") return Unresolved(itemId, maxScore, handlerKey, handlerVersion, GradeItemState.Pending, "Essay requires instructor review.");
+        if (itemType is "NUMERIC" or "FORMULA") return Unresolved(itemId, maxScore, handlerKey, handlerVersion, GradeItemState.Unsupported, "Generated formula prompts are not available.");
         if (itemType == "RATING" && !entry.TryGetProperty("correctRating", out _))
         {
-            return Unresolved(itemId, maxScore, GradeItemState.Unsupported, "Rating does not define a deterministic answer.");
+            return Unresolved(itemId, maxScore, handlerKey, handlerVersion, GradeItemState.Unsupported, "Rating does not define a deterministic answer.");
         }
 
-        if (!answers.TryGetProperty(itemId, out var answer)) return Graded(itemId, ScoreValue.Zero, maxScore);
+        if (!answers.TryGetProperty(itemId, out var answer)) return Graded(itemId, ScoreValue.Zero, maxScore, handlerKey, handlerVersion);
         if (!string.Equals(answer.GetProperty("type").GetString(), itemType, StringComparison.Ordinal))
         {
-            return Graded(itemId, ScoreValue.Zero, maxScore, "Answer type does not match question type.");
+            return Graded(itemId, ScoreValue.Zero, maxScore, handlerKey, handlerVersion, "Answer type does not match question type.");
         }
 
         if (itemType == "MATCHING" && entry.TryGetProperty("allowPartialCredit", out var matchingPartial) && matchingPartial.GetBoolean())
         {
-            return GradeMatchingPartial(itemId, entry, answer, maxScore);
+            return GradeMatchingPartial(itemId, entry, answer, maxScore, handlerKey, handlerVersion);
         }
 
         if (itemType == "ORDERING" && entry.TryGetProperty("allowPartialCredit", out var orderingPartial) && orderingPartial.GetBoolean())
         {
-            return GradeOrderingPartial(itemId, entry, answer, maxScore);
+            return GradeOrderingPartial(itemId, entry, answer, maxScore, handlerKey, handlerVersion);
         }
 
-        return Graded(itemId, IsCorrect(itemType, entry, answer) ? maxScore : ScoreValue.Zero, maxScore);
+        return Graded(itemId, IsCorrect(itemType, entry, answer) ? maxScore : ScoreValue.Zero, maxScore, handlerKey, handlerVersion);
     }
 
     private static bool IsCorrect(string itemType, JsonElement entry, JsonElement answer) => itemType switch
@@ -160,13 +164,15 @@ public sealed class QuizDeterministicReviewAlgorithm : IDeterministicReviewAlgor
         string itemId,
         JsonElement entry,
         JsonElement answer,
-        ScoreValue maxScore)
+        ScoreValue maxScore,
+        string handlerKey,
+        string handlerVersion)
     {
         var pairs = entry.GetProperty("pairs").EnumerateArray().ToArray();
-        if (pairs.Length == 0) return Graded(itemId, ScoreValue.Zero, maxScore);
+        if (pairs.Length == 0) return Graded(itemId, ScoreValue.Zero, maxScore, handlerKey, handlerVersion);
         var matches = answer.GetProperty("matches");
         var correct = pairs.Count(pair => MatchIsCorrect(pair, matches));
-        return Graded(itemId, ScoreValue.ByRatio(maxScore, correct, pairs.Length), maxScore);
+        return Graded(itemId, ScoreValue.ByRatio(maxScore, correct, pairs.Length), maxScore, handlerKey, handlerVersion);
     }
 
     private static bool MatchIsCorrect(JsonElement pair, JsonElement matches)
@@ -185,13 +191,15 @@ public sealed class QuizDeterministicReviewAlgorithm : IDeterministicReviewAlgor
         string itemId,
         JsonElement entry,
         JsonElement answer,
-        ScoreValue maxScore)
+        ScoreValue maxScore,
+        string handlerKey,
+        string handlerVersion)
     {
         var expected = ExpectedOrdering(entry);
-        if (expected.Length == 0) return Graded(itemId, ScoreValue.Zero, maxScore);
+        if (expected.Length == 0) return Graded(itemId, ScoreValue.Zero, maxScore, handlerKey, handlerVersion);
         var actual = StringArray(answer, "itemIds");
         var correct = expected.Where((value, index) => actual.ElementAtOrDefault(index) == value).Count();
-        return Graded(itemId, ScoreValue.ByRatio(maxScore, correct, expected.Length), maxScore);
+        return Graded(itemId, ScoreValue.ByRatio(maxScore, correct, expected.Length), maxScore, handlerKey, handlerVersion);
     }
 
     private static bool GradeCategorization(JsonElement entry, JsonElement answer)
@@ -283,7 +291,13 @@ public sealed class QuizDeterministicReviewAlgorithm : IDeterministicReviewAlgor
     private static bool OptionalBoolean(JsonElement owner, string property, bool defaultValue = false) =>
         owner.TryGetProperty(property, out var value) ? value.GetBoolean() : defaultValue;
 
-    private static GradeItemResultV1 Graded(string itemId, ScoreValue score, ScoreValue maxScore, string? feedback = null) =>
+    private static GradeItemResultV1 Graded(
+        string itemId,
+        ScoreValue score,
+        ScoreValue maxScore,
+        string handlerKey,
+        string handlerVersion,
+        string? feedback = null) =>
         new(
             itemId,
             GradeItemState.Graded,
@@ -291,14 +305,15 @@ public sealed class QuizDeterministicReviewAlgorithm : IDeterministicReviewAlgor
             maxScore,
             [],
             ReviewMethod.AutomatedReview,
-            QuizAdapterContracts.AutomatedReviewHandlerKey,
-            QuizAdapterContracts.Version,
-            feedback,
-            QuizAdapterContracts.Version);
+            handlerKey,
+            handlerVersion,
+            feedback);
 
     private static GradeItemResultV1 Unresolved(
         string itemId,
         ScoreValue maxScore,
+        string handlerKey,
+        string handlerVersion,
         GradeItemState state,
         string feedback) =>
         new(
@@ -308,8 +323,7 @@ public sealed class QuizDeterministicReviewAlgorithm : IDeterministicReviewAlgor
             maxScore,
             [],
             ReviewMethod.AutomatedReview,
-            QuizAdapterContracts.AutomatedReviewHandlerKey,
-            QuizAdapterContracts.Version,
-            feedback,
-            QuizAdapterContracts.Version);
+            handlerKey,
+            handlerVersion,
+            feedback);
 }

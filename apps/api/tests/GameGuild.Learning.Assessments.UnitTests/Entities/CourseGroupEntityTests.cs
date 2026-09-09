@@ -79,7 +79,7 @@ public class CourseGroupEntityTests
     [Fact]
     public void Assessment_AssignToGroupSet_ShouldSetGroupSetIdAndTouchUpdatedAt()
     {
-        var assessment = Assessment.Create(Guid.NewGuid(), "Group project", AssessmentType.Project, 100);
+        var assessment = Assessment.Create(Guid.NewGuid(), "Group project", AssessmentType.Project, Score(100));
         var originalUpdatedAt = assessment.UpdatedAt;
         Thread.Sleep(20);
         var groupSetId = Guid.NewGuid();
@@ -93,7 +93,7 @@ public class CourseGroupEntityTests
     [Fact]
     public void Assessment_AssignToGroupSet_WithNull_ShouldClearGroupSetId()
     {
-        var assessment = Assessment.Create(Guid.NewGuid(), "Group project", AssessmentType.Project, 100);
+        var assessment = Assessment.Create(Guid.NewGuid(), "Group project", AssessmentType.Project, Score(100));
         assessment.AssignToGroupSet(Guid.NewGuid());
 
         assessment.AssignToGroupSet(null);

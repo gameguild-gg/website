@@ -1,4 +1,5 @@
 using GameGuild.CQRS;
+using GameGuild.Learning.Grading.Contracts;
 
 namespace GameGuild.Learning.Courses;
 
@@ -8,7 +9,7 @@ public sealed record RecordContentInteractionEventCommand(
     ContentInteractionEventType Type,
     int? DurationSeconds = null,
     decimal? PositionSeconds = null,
-    decimal? ProgressPercentage = null,
+    PercentValue? ProgressPercentage = null,
     string? Payload = null,
     string? IdempotencyKey = null,
     DateTime? OccurredAt = null) : ICommand<ContentInteractionEventDto>;

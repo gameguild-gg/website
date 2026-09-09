@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using GameGuild.Learning.Grading.Contracts;
 
 namespace GameGuild.Learning.Courses;
 
@@ -14,7 +15,7 @@ public class ContentInteractionDto {
 
   public string? SubmissionData { get; set; }
 
-  public decimal CompletionPercentage { get; set; }
+  public PercentValue CompletionPercentage { get; set; }
 
   public int? TimeSpentMinutes { get; set; }
 

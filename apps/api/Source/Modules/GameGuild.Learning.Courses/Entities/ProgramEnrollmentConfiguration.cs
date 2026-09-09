@@ -20,9 +20,6 @@ public class ProgramEnrollmentConfiguration : IEntityTypeConfiguration<ProgramEn
         builder.HasIndex(enrollment => enrollment.CompletedAt);
         builder.HasIndex(enrollment => enrollment.TenantId);
 
-        builder.Property(enrollment => enrollment.ProgressPercentage).HasPrecision(5, 2);
-        builder.Property(enrollment => enrollment.FinalGrade).HasPrecision(5, 2);
-
         builder.HasOne(enrollment => enrollment.Program)
             .WithMany()
             .HasForeignKey(enrollment => enrollment.ProgramId)

@@ -42,22 +42,18 @@ import { buttonVariants } from "@game-guild/ui/components/button";
 import { ArrowLeft, Clock, Eye, Loader2, Pencil, Save } from "lucide-react";
 import type { SerializedEditorState } from "lexical";
 import type { LearningCoursesLessonContentFormat, LearningCoursesVisibility } from "@game-guild/client";
-import {
-  readContentGradingDefinition,
-  type ContentGradingDefinitionV2,
-} from "@game-guild/grading";
-import { sumQuizItemPoints } from "@game-guild/grading-adapter-quiz";
-import {
-  parseQuizContentDocument,
-  quizDocumentToGradingItems,
-} from "@game-guild/quiz-content";
+import { createReviewMethods } from "@game-guild/grading";
 import type { ContentItemDetail } from "@/lib/learning/types";
-import type { CodingDefinition } from "@/lib/learning/queries/assessments";
+import type {
+  Assessment,
+  CodingDefinition,
+} from "@/lib/learning/queries/assessments";
+import { hasReviewMethod } from "@/lib/learning/assessment-grading-methods";
 import {
   createAssessment,
   deleteAssessment,
   restoreAssessment,
-  updateAssessment,
+  saveQuizAssessmentDraft,
   updateContent,
 } from "@/lib/learning/actions";
 import { CONTENT_ITEM_VISIBILITIES, formatEnumLabel } from "@/lib/learning/enums";
@@ -82,11 +78,7 @@ interface ContentItemEditorProps {
   courseId: string;
   item: ContentItemDetail;
   courseTitle: string;
-  linkedAssessmentId?: string;
-  linkedAssessmentSlug?: string;
-  // ponytail: raw [Flags] string from linked Assessment — editor does substring check
-  // for "AutoGraded" rather than re-fetching the assessment.
-  linkedAssessmentGradingMethods?: string;
+  linkedAssessment?: Assessment;
   initialCodingDefinition?: CodingDefinition | null;
 }
 
@@ -94,9 +86,7 @@ export function ContentItemEditor({
   courseId,
   item,
   courseTitle,
-  linkedAssessmentId,
-  linkedAssessmentSlug,
-  linkedAssessmentGradingMethods,
+  linkedAssessment,
   initialCodingDefinition,
 }: ContentItemEditorProps) {
   const learningBase = useLearningBase();
@@ -131,7 +121,7 @@ export function ContentItemEditor({
   // a re-toggle ON restores instead of creating a duplicate — the GET assessments
   // endpoint filters deleted rows server-side, so this is the only client-side signal.
   const [gradedChecked, setGradedChecked] =
-    useState<boolean>(!!linkedAssessmentId);
+    useState<boolean>(!!linkedAssessment);
   const [recentlyDeletedAssessmentId, setRecentlyDeletedAssessmentId] =
     useState<string | null>(null);
   const [showGradedOffConfirm, setShowGradedOffConfirm] = useState(false);
@@ -141,13 +131,9 @@ export function ContentItemEditor({
   const isLesson = item.type === "Lesson";
   const isQuiz = item.type === "Questionnaire";
   const isCode = item.type === "Code";
-  // ponytail: substring check is enough — full parseGradingMethods is overkill for one flag.
-  const isAutoGraded = (linkedAssessmentGradingMethods ?? "").includes(
-    "AutoGraded",
-  );
-  // ponytail: isGradedType drives the Graded toggle (wider set); the Coding Assignment card
-  // below gates on `isCode && gradedChecked && isAutoGraded` per Task 11 — only Code content
-  // with AutoGraded-flagged linked assessment exposes the coding-tests bridge.
+  const isAutomatedReview = linkedAssessment
+    ? hasReviewMethod(linkedAssessment.reviewMethods, "AutomatedReview")
+    : false;
   const GRADED_CONTENT_TYPES: ReadonlySet<string> = new Set([
     "Assignment",
     "Project",
@@ -171,7 +157,10 @@ export function ContentItemEditor({
   const quizContentRef = useRef<Record<string, unknown> | undefined>(
     initialQuizContent,
   );
-  const quizAssessmentIdRef = useRef<string | undefined>(linkedAssessmentId);
+  const contentVersionRef = useRef(item.version);
+  const quizAssessmentVersionRef = useRef<number | null>(
+    linkedAssessment?.version ?? null,
+  );
 
   // ── Selected lesson format ──
   const initialSelectedFormat = useMemo(() => {
@@ -257,47 +246,64 @@ export function ContentItemEditor({
     } else if (isQuiz) {
       jsonBodyToSave = quizContentRef.current;
     }
-    const quizGrading = isQuiz
-      ? readContentGradingDefinition(jsonBodyToSave)
-      : null;
-    const quizItems = isQuiz
-      ? quizDocumentToGradingItems(parseQuizContentDocument(jsonBodyToSave).document)
-      : [];
-
     startTransition(async () => {
-      const result = await updateContent({
-        courseId,
-        contentId: item.id,
-        title: title.trim(),
-        // Backend keeps the stored slug when sent whitespace — derive locally
-        // so a cleared field can't silently revert to the old slug. Re-slugify
-        // to strip the trailing hyphen live typing can leave behind.
-        slug: normalizeSlug(slug) || normalizeSlug(title),
-        description: description.trim() || undefined,
-        body: bodyToSave,
-        ...(isLesson
-          ? { jsonBody: jsonBodyToSave, lessonFormat: selectedFormat }
-          : {}),
-        ...(isQuiz ? { jsonBody: jsonBodyToSave } : {}),
-        visibility,
-        isRequired,
-        estimatedMinutes: estimatedMinutes ? Number(estimatedMinutes) : null,
-        estimatedMinutesSource: estimatedMinutes ? "Manual" : "Auto",
-      });
+      const result = isQuiz
+        ? await saveQuizAssessmentDraft({
+            courseId,
+            contentId: item.id,
+            expectedContentVersion: contentVersionRef.current,
+            expectedAssessmentVersion: quizAssessmentVersionRef.current,
+            title: title.trim(),
+            slug: normalizeSlug(slug) || normalizeSlug(title),
+            description: description.trim() || undefined,
+            document: jsonBodyToSave ?? {},
+            visibility,
+            isRequired,
+            estimatedMinutes: estimatedMinutes ? Number(estimatedMinutes) : null,
+            estimatedMinutesSource: estimatedMinutes ? "Manual" : "Auto",
+            reviewMethods:
+              linkedAssessment?.reviewMethods ??
+              createReviewMethods("AutomatedReview", true),
+            passingScore: linkedAssessment?.passingScore ?? 0,
+            timeLimitMinutes: linkedAssessment?.timeLimitMinutes ?? null,
+            maxAttempts: linkedAssessment?.maxAttempts ?? 1,
+            presentationMode:
+              linkedAssessment?.presentationMode ?? "Continuous",
+            contentCompletionMode:
+              linkedAssessment?.contentCompletionMode ?? "on-release-and-pass",
+            resultReleaseMode:
+              linkedAssessment?.resultReleaseMode ?? "manual",
+            resultReleaseScheduledFor:
+              linkedAssessment?.resultReleaseScheduledFor ?? null,
+            attemptContributionMode:
+              linkedAssessment?.attemptContributionMode ?? null,
+            reviewConfigurationCanonicalJson:
+              linkedAssessment?.reviewConfigurationCanonicalJson ?? null,
+          })
+        : await updateContent({
+            courseId,
+            contentId: item.id,
+            title: title.trim(),
+            slug: normalizeSlug(slug) || normalizeSlug(title),
+            description: description.trim() || undefined,
+            body: bodyToSave,
+            ...(isLesson
+              ? { jsonBody: jsonBodyToSave, lessonFormat: selectedFormat }
+              : {}),
+            visibility,
+            isRequired,
+            estimatedMinutes: estimatedMinutes ? Number(estimatedMinutes) : null,
+            estimatedMinutesSource: estimatedMinutes ? "Manual" : "Auto",
+          });
 
       if (!result.success) {
         setError(result.error);
         return;
       }
 
-      if (isQuiz) {
-        const assessmentResult = await reconcileQuizAssessment(quizGrading, quizItems);
-        if (!assessmentResult.success) {
-          setError(
-            `Quiz content was saved, but its assessment could not be synchronized: ${assessmentResult.error}`,
-          );
-          return;
-        }
+      if (isQuiz && result.data) {
+        contentVersionRef.current = result.data.contentVersion;
+        quizAssessmentVersionRef.current = result.data.assessmentVersion;
       }
 
       setSaved(true);
@@ -315,56 +321,6 @@ export function ContentItemEditor({
         router.refresh();
       }
     });
-  }
-
-  async function reconcileQuizAssessment(
-    grading: ContentGradingDefinitionV2 | null,
-    gradingItems: ReturnType<typeof quizDocumentToGradingItems>,
-  ): Promise<{ success: true } | { success: false; error: string }> {
-    const assessmentId = quizAssessmentIdRef.current;
-
-    if (!grading) {
-      if (!assessmentId) return { success: true };
-
-      const result = await deleteAssessment(courseId, assessmentId);
-      if (!result.success) return result;
-
-      quizAssessmentIdRef.current = undefined;
-      return { success: true };
-    }
-
-    const assessmentFields = {
-      title: title.trim(),
-      description: description.trim() || undefined,
-      maxScore: Math.max(1, Math.round(Number(sumQuizItemPoints(gradingItems)))),
-      timeLimitMinutes: null,
-      maxAttempts: null,
-      isRequired,
-      presentationMode: "Continuous" as const,
-      gradingMethods: "AutoGraded,InstructorGraded",
-    };
-
-    if (assessmentId) {
-      const result = await updateAssessment({
-        courseId,
-        assessmentId,
-        contentId: item.id,
-        ...assessmentFields,
-      });
-      return result.success ? { success: true } : result;
-    }
-
-    const result = await createAssessment({
-      courseId,
-      type: "Quiz",
-      contentId: item.id,
-      submissionModalities: "StructuredAnswer",
-      ...assessmentFields,
-    });
-    if (!result.success) return result;
-
-    quizAssessmentIdRef.current = result.data.id;
-    return { success: true };
   }
 
   function handleBack() {
@@ -387,13 +343,13 @@ export function ContentItemEditor({
 
   async function handleConfigureCoding() {
     setCodingError(null);
-    if (!linkedAssessmentSlug && !linkedAssessmentId) {
+    if (!linkedAssessment?.slug && !linkedAssessment?.id) {
       setCodingError(
         "No assessment is linked to this content item yet. Add an assessment in the Assessments tab first.",
       );
       return;
     }
-    router.push(codingDefinitionRoute(linkedAssessmentSlug ?? linkedAssessmentId!));
+    router.push(codingDefinitionRoute(linkedAssessment.slug ?? linkedAssessment.id));
   }
 
   // ── Graded toggle handlers (Task 7) ──
@@ -416,7 +372,7 @@ export function ContentItemEditor({
       setShowGradedOffConfirm(true);
       return;
     }
-    const restoreTargetId = recentlyDeletedAssessmentId ?? linkedAssessmentId;
+    const restoreTargetId = recentlyDeletedAssessmentId ?? linkedAssessment?.id;
     startGradedTransition(async () => {
       setGradedChecked(true);
       setGradedError(null);
@@ -439,10 +395,10 @@ export function ContentItemEditor({
         type: assessmentType,
         contentId: item.id,
         submissionModalities: item.type === "Code" ? "Code" : undefined,
-        gradingMethods:
+        reviewMethods:
           item.type === "Code"
-            ? "AutoGraded,InstructorGraded"
-            : "InstructorGraded",
+            ? createReviewMethods("AutomatedReview", true)
+            : createReviewMethods("InstructorReview"),
       });
       if (!result.success) {
         setGradedChecked(false);
@@ -454,7 +410,7 @@ export function ContentItemEditor({
   }
 
   function confirmGradedOff() {
-    const targetId = linkedAssessmentId;
+    const targetId = linkedAssessment?.id;
     setShowGradedOffConfirm(false);
     if (!targetId) return;
     startGradedTransition(async () => {
@@ -471,7 +427,7 @@ export function ContentItemEditor({
     });
   }
 
-  // ── Coding test-plan stats (Code + AutoGraded only) ──
+  // ── Coding test-plan stats (Code + deterministic review only) ──
   // ponytail: narrow cast on the testPlan shape; the public endpoint strips hidden cases
   // server-side so cases[].length is the public count and the hidden count is unknown here.
   const codingCases =
@@ -485,6 +441,8 @@ export function ContentItemEditor({
   const functionalCaseCount = codingCases.filter(
     (c) => c.kind === "doctest" || c.kind === "clang-query",
   ).length;
+  const linkedAssessmentRouteKey =
+    linkedAssessment?.slug || linkedAssessment?.id;
 
   const previewContent: unknown = (() => {
     switch (selectedFormat) {
@@ -721,7 +679,7 @@ export function ContentItemEditor({
                 />
               )}
 
-              {isCode && gradedChecked && isAutoGraded && (
+              {isCode && gradedChecked && isAutomatedReview && (
                 <div
                   className="space-y-3 rounded-md border p-4"
                   data-testid="coding-tests-section"
@@ -740,14 +698,12 @@ export function ContentItemEditor({
                         variant="outline"
                         size="sm"
                         onClick={() =>
-                          (linkedAssessmentSlug ?? linkedAssessmentId) &&
+                          linkedAssessmentRouteKey &&
                           router.push(
-                            codingDefinitionRoute(
-                              linkedAssessmentSlug ?? linkedAssessmentId!,
-                            ),
+                            codingDefinitionRoute(linkedAssessmentRouteKey),
                           )
                         }
-                        disabled={!linkedAssessmentSlug && !linkedAssessmentId}
+                        disabled={!linkedAssessmentRouteKey}
                       >
                         <Pencil className="mr-2 h-4 w-4" />
                         Edit Coding Tests
@@ -757,7 +713,7 @@ export function ContentItemEditor({
                         type="button"
                         size="sm"
                         onClick={handleConfigureCoding}
-                        disabled={!linkedAssessmentId}
+                        disabled={!linkedAssessmentRouteKey}
                       >
                         <Pencil className="mr-2 h-4 w-4" />
                         Configure Coding Tests
@@ -777,7 +733,7 @@ export function ContentItemEditor({
                         {initialCodingDefinition.maxScore}
                       </p>
                     </div>
-                  ) : !linkedAssessmentId ? (
+                  ) : !linkedAssessmentRouteKey ? (
                     <p className="text-muted-foreground text-sm">
                       Link this content item to an assessment to enable coding
                       tests.
