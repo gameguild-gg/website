@@ -52,6 +52,5 @@ describe("Mermaid render configuration", () => {
       expect(svg).toMatch(/>end<\/tspan>/);
       expect(svg).not.toContain("foreignObject");
     },
-    15_000,
   );
 });
