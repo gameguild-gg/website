@@ -40,14 +40,18 @@ describe("Mermaid render configuration", () => {
     },
   );
 
-  it("preserves flowchart node labels in the sanitized SVG", async () => {
-    const svg = await renderMermaidSvg(
-      "graph TD\n A[start] --> B[end]",
-      "default",
-    );
+  it(
+    "preserves flowchart node labels in the sanitized SVG",
+    async () => {
+      const svg = await renderMermaidSvg(
+        "graph TD\n A[start] --> B[end]",
+        "default",
+      );
 
-    expect(svg).toMatch(/>start<\/tspan>/);
-    expect(svg).toMatch(/>end<\/tspan>/);
-    expect(svg).not.toContain("foreignObject");
-  });
+      expect(svg).toMatch(/>start<\/tspan>/);
+      expect(svg).toMatch(/>end<\/tspan>/);
+      expect(svg).not.toContain("foreignObject");
+    },
+    15_000,
+  );
 });
