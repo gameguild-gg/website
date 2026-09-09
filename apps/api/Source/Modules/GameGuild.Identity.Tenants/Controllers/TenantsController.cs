@@ -120,6 +120,7 @@ public sealed class TenantsController(ISender sender) : BaseApiController
     ///     - Getting alternative slug suggestions
     /// </remarks>
     [HttpPost("v{version:apiVersion}/tenants:validate")]
+    [NoBusinessMutationEndpoint("Tenant validation is read-only and never creates or updates a tenant.")]
     [EndpointSummary("Validate tenant data before creation")]
     [EndpointDescription("Validates tenant data without creating. Returns errors, warnings, and suggestions.")]
     [ProducesResponseType<TenantValidationResponse>(StatusCodes.Status200OK)]

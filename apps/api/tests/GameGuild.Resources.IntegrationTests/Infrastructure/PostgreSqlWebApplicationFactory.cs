@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using System.Text.Encodings.Web;
 using GameGuild.API.Database;
+using GameGuild.Identity.Authorization;
 using GameGuild.Identity.Context.Actors;
 using GameGuild.Identity.Tenants;
 using GameGuild.Identity.Users;
@@ -85,6 +86,10 @@ public class PostgreSqlWebApplicationFactory : WebApplicationFactory<GameGuild.A
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         context.Database.Migrate();
+        scope.ServiceProvider.GetRequiredService<PolicyDefinitionSeeder>()
+            .SeedAsync()
+            .GetAwaiter()
+            .GetResult();
         SeedAuthorizationFixtures(context);
         return host;
     }

@@ -40,7 +40,8 @@ public sealed class EconomyPayoutExecutionControllerTests
             .ReturnsAsync(onboarding);
         payouts.Setup(service => service.GetAccountAsync(tenantId, actorId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(account);
-        var controller = new EconomyPayoutAccountController(payouts.Object, Accessor(actor));
+        var controller = new EconomyPayoutAccountController(
+            EconomyHandlerSenders.Funds(payouts: payouts.Object), payouts.Object, Accessor(actor));
 
         var onboardingResult = await controller.CreateOrRefreshOnboarding(CancellationToken.None);
         var accountResult = await controller.GetAccount(CancellationToken.None);
@@ -54,7 +55,8 @@ public sealed class EconomyPayoutExecutionControllerTests
     public async Task AccountEndpointsFailClosedForMissingContextProviderOrConfiguration()
     {
         var payouts = new Mock<IDurablePayoutApplicationService>(MockBehavior.Strict);
-        var anonymous = new EconomyPayoutAccountController(payouts.Object, Accessor(ActorContext.Anonymous));
+        var anonymous = new EconomyPayoutAccountController(
+            EconomyHandlerSenders.Funds(payouts: payouts.Object), payouts.Object, Accessor(ActorContext.Anonymous));
         (await anonymous.CreateOrRefreshOnboarding(CancellationToken.None)).Should().BeOfType<ForbidResult>();
         (await anonymous.GetAccount(CancellationToken.None)).Should().BeOfType<ForbidResult>();
 
@@ -64,7 +66,10 @@ public sealed class EconomyPayoutExecutionControllerTests
             .ThrowsAsync(new PayoutExecutionDisabledException("provider disabled"));
         payouts.Setup(service => service.GetAccountAsync(tenantId, actorId, It.IsAny<CancellationToken>()))
             .ThrowsAsync(new PayoutEligibilityException("account missing"));
-        var controller = new EconomyPayoutAccountController(payouts.Object, Accessor(Actor(tenantId, actorId)));
+        var controller = new EconomyPayoutAccountController(
+            EconomyHandlerSenders.Funds(payouts: payouts.Object),
+            payouts.Object,
+            Accessor(Actor(tenantId, actorId)));
 
         (await controller.CreateOrRefreshOnboarding(CancellationToken.None))
             .Should().BeOfType<ObjectResult>().Which.StatusCode.Should().Be(StatusCodes.Status503ServiceUnavailable);
@@ -244,8 +249,16 @@ public sealed class EconomyPayoutExecutionControllerTests
     private static EconomyPayoutExecutionAdministrationController AdminController(
         IDurablePayoutApplicationService payouts,
         ActorContext actor,
-        TestEconomyStepUpExecutor? stepUp = null) =>
-        new(payouts, stepUp ?? new TestEconomyStepUpExecutor(), Accessor(actor), new FixedTimeProvider(Now));
+        TestEconomyStepUpExecutor? stepUp = null)
+    {
+        var resolvedStepUp = stepUp ?? new TestEconomyStepUpExecutor();
+        return new EconomyPayoutExecutionAdministrationController(
+            EconomyHandlerSenders.Funds(
+                payouts: payouts, stepUp: resolvedStepUp, timeProvider: new FixedTimeProvider(Now)),
+            payouts,
+            Accessor(actor),
+            new FixedTimeProvider(Now));
+    }
 
     private static EconomyStripeConnectWebhookController WebhookController(
         IStripeConnectWebhookNormalizer normalizer,
@@ -253,7 +266,9 @@ public sealed class EconomyPayoutExecutionControllerTests
         string? signature)
     {
         var controller = new EconomyStripeConnectWebhookController(
-            normalizer, payouts, new FixedTimeProvider(Now));
+            EconomyHandlerSenders.Funds(payouts: payouts, timeProvider: new FixedTimeProvider(Now)),
+            normalizer,
+            new FixedTimeProvider(Now));
         var context = new DefaultHttpContext();
         context.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes("payload"));
         if (signature is not null) context.Request.Headers["Stripe-Signature"] = signature;

@@ -15,13 +15,6 @@ public static class DependencyInjection
     /// </summary>
     public static IServiceCollection AddAuthenticationApplication(this IServiceCollection services)
     {
-        services.AddScoped<SendWelcomeEmailHandler>();
-        services.AddScoped<LogAnalyticsEventHandler>();
-        services.AddScoped<IIntegrationEventHandler<UserCreatedEvent>>(provider =>
-            provider.GetRequiredService<SendWelcomeEmailHandler>());
-        services.AddScoped<IIntegrationEventHandler<UserCreatedEvent>>(provider =>
-            provider.GetRequiredService<LogAnalyticsEventHandler>());
-
         // Register Command Handlers
         services.AddScoped<IRequestHandler<LocalSignUpCommand, SignInResponse>, LocalSignUpHandler>();
         services.AddScoped<IRequestHandler<LocalSignInCommand, SignInResponse>, LocalSignInHandler>();
@@ -48,6 +41,12 @@ public static class DependencyInjection
         services.AddScoped<IEmailRenderer, EmailVerificationRenderer>();
         services.AddScoped<IEmailRenderer, PasswordResetRenderer>();
         services.AddScoped<IEmailRenderer, MagicLinkRenderer>();
+
+        // Each durable listener is invoked with its own transactional inbox receipt.
+        services.AddScoped<SendWelcomeEmailHandler>();
+        services.AddScoped<LogAnalyticsEventHandler>();
+        services.AddScoped<IIntegrationEventHandler<UserCreatedEvent>>(provider => provider.GetRequiredService<SendWelcomeEmailHandler>());
+        services.AddScoped<IIntegrationEventHandler<UserCreatedEvent>>(provider => provider.GetRequiredService<LogAnalyticsEventHandler>());
 
         return services;
     }

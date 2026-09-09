@@ -1,6 +1,9 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using GameGuild.Assets.Commands;
+using GameGuild.CQRS;
 
 namespace GameGuild.Assets.Security;
 
@@ -19,7 +22,10 @@ public class SecureAssetDeliveryController : BaseApiController
     private readonly IAssetContentRepository _contentRepository;
     private readonly IAssetReferenceRepository _referenceRepository;
     private readonly IActorContextAccessor _actorContextAccessor;
+    private readonly IAssetStorageService _storageService;
+    private readonly AssetAccessOptions _accessOptions;
     private readonly ILogger<SecureAssetDeliveryController> _logger;
+    private readonly ISender? _sender;
 
     public SecureAssetDeliveryController(
         IAssetAccessService accessService,
@@ -30,7 +36,10 @@ public class SecureAssetDeliveryController : BaseApiController
         IAssetContentRepository contentRepository,
         IAssetReferenceRepository referenceRepository,
         IActorContextAccessor actorContextAccessor,
-        ILogger<SecureAssetDeliveryController> logger)
+        IAssetStorageService storageService,
+        IOptions<AssetAccessOptions> accessOptions,
+        ILogger<SecureAssetDeliveryController> logger,
+        ISender? sender = null)
     {
         _accessService = accessService;
         _rateLimitService = rateLimitService;
@@ -40,7 +49,10 @@ public class SecureAssetDeliveryController : BaseApiController
         _contentRepository = contentRepository;
         _referenceRepository = referenceRepository;
         _actorContextAccessor = actorContextAccessor;
+        _storageService = storageService;
+        _accessOptions = accessOptions.Value;
         _logger = logger;
+        _sender = sender;
     }
 
     /// <summary>
@@ -91,21 +103,28 @@ public class SecureAssetDeliveryController : BaseApiController
             return NotFound();
         }
 
-        // Threat #2 & #4: Validate token (includes tenant in signature)
-        if (!string.IsNullOrEmpty(token))
+        var hasSignedToken = !string.IsNullOrEmpty(token);
+        var assetTenantId = reference.TenantId ?? Guid.Empty;
+        var transformSpec = ValidateTransformation(transform, reference.Content.Kind, out var transformationError);
+        if (transformationError != null)
         {
-            if (!_accessService.ValidateToken(token, assetId, actor.TenantId))
-            {
-                await Record403IfApplicable(clientIp, ct).ConfigureAwait(false);
-                return Forbid("Invalid or expired token");
-            }
+            return transformationError;
+        }
+
+        // Threat #2 & #4: validate bearer tokens against the persisted asset tenant.
+        if (hasSignedToken && !_accessService.ValidateToken(token!, assetId, reference.TenantId, transformSpec))
+        {
+            await Record403IfApplicable(clientIp, ct).ConfigureAwait(false);
+            return ForbiddenProblem("Invalid or expired token");
         }
 
         // Threat #6: Fail-closed tenant validation
-        var tenantValidation = _tenantValidation.ValidateTenantAccess(
-            actor.TenantId,
-            reference.ParentResourceId ?? Guid.Empty, // Asset's tenant context
-            actor);
+        var tenantValidation = hasSignedToken
+            ? _tenantValidation.ValidateTokenTenant(assetTenantId, actor.TenantId)
+            : _tenantValidation.ValidateTenantAccess(
+                actor.TenantId,
+                assetTenantId,
+                actor);
 
         if (!tenantValidation.IsValid)
         {
@@ -113,7 +132,7 @@ public class SecureAssetDeliveryController : BaseApiController
                 "Tenant validation failed for asset {AssetId}: {Error}",
                 assetId, tenantValidation.Error);
             await Record403IfApplicable(clientIp, ct).ConfigureAwait(false);
-            return Forbid(tenantValidation.Error ?? "Tenant access denied");
+            return ForbiddenProblem(tenantValidation.Error ?? "Tenant access denied");
         }
 
         // Threat #7: Block serving content pending or failed virus scan
@@ -191,44 +210,49 @@ public class SecureAssetDeliveryController : BaseApiController
             }
         }
 
-        // Threat #5: Validate transformation limits
-        TransformationSpec? transformSpec = null;
-        if (!string.IsNullOrEmpty(transform))
+        if (hasSignedToken)
         {
-            transformSpec = TransformationSpec.Parse(transform);
-            if (transformSpec != null)
-            {
-                var transformValidation = _transformationValidator.Validate(
-                    transformSpec, reference.Content.Kind);
+            var bucketName = reference.Content.BucketName;
+            var objectKey = reference.Content.ObjectKey;
 
-                if (!transformValidation.IsValid)
+            if (transformSpec is { IsIdentity: false })
+            {
+                var transformed = await _accessService.GetOrCreateTransformationAsync(
+                    reference.Content.Id,
+                    transformSpec,
+                    ct).ConfigureAwait(false);
+                if (transformed == null)
                 {
-                    return BadRequest(new ProblemDetails
-                    {
-                        Title = "Invalid Transformation",
-                        Detail = transformValidation.Error
-                    });
+                    return ForbiddenProblem("Transformation is unavailable");
                 }
 
-                transformSpec = transformValidation.SanitizedSpec;
+                bucketName = transformed.BucketName;
+                objectKey = transformed.ObjectKey;
             }
+
+            var expiry = TimeSpan.FromMinutes(Math.Max(1, _accessOptions.DefaultExpiryMinutes));
+            var storageUrl = await _storageService.GeneratePresignedUrlAsync(
+                bucketName,
+                objectKey,
+                expiry,
+                isDownload: true,
+                ct).ConfigureAwait(false);
+            await _referenceRepository.RecordAccessAsync(assetId, ct).ConfigureAwait(false);
+            return Redirect(storageUrl);
         }
 
-        // Generate access URL or serve content directly
-        var accessUrl = await _accessService.GenerateAccessUrlAsync(
+        var accessUrl = await _accessService.GenerateDirectStorageUrlAsync(
             assetId,
             actor.SubjectIdAsGuid,
             actor.TenantId,
-            transformSpec,
             ct).ConfigureAwait(false);
 
         if (accessUrl == null)
         {
             await Record403IfApplicable(clientIp, ct).ConfigureAwait(false);
-            return Forbid("Access denied");
+            return ForbiddenProblem("Access denied");
         }
 
-        // Redirect to storage URL or return URL
         return Redirect(accessUrl.Url);
     }
 
@@ -286,11 +310,11 @@ public class SecureAssetDeliveryController : BaseApiController
             }
         }
 
-        var accessUrl = await _accessService.GenerateAccessUrlAsync(
+        var accessUrl = await _sender!.Send(new GenerateAccessUrlCommand(
             assetId,
             actor.SubjectIdAsGuid,
             actor.TenantId,
-            transformSpec,
+            transformSpec),
             ct).ConfigureAwait(false);
 
         if (accessUrl == null)
@@ -312,6 +336,47 @@ public class SecureAssetDeliveryController : BaseApiController
         }
 
         return HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+    }
+
+    private ObjectResult ForbiddenProblem(string detail)
+    {
+        return StatusCode(StatusCodes.Status403Forbidden, new ProblemDetails
+        {
+            Title = "Access Denied",
+            Detail = detail,
+            Status = StatusCodes.Status403Forbidden
+        });
+    }
+
+    private TransformationSpec? ValidateTransformation(
+        string? transform,
+        AssetKind assetKind,
+        out ObjectResult? error)
+    {
+        error = null;
+        if (string.IsNullOrEmpty(transform))
+        {
+            return null;
+        }
+
+        var transformSpec = TransformationSpec.Parse(transform);
+        if (transformSpec == null)
+        {
+            return null;
+        }
+
+        var validation = _transformationValidator.Validate(transformSpec, assetKind);
+        if (validation.IsValid)
+        {
+            return validation.SanitizedSpec;
+        }
+
+        error = BadRequest(new ProblemDetails
+        {
+            Title = "Invalid Transformation",
+            Detail = validation.Error
+        });
+        return null;
     }
 
     private async Task Record403IfApplicable(string clientIp, CancellationToken ct)

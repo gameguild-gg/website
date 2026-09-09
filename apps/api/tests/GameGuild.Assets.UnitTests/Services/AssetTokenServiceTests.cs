@@ -173,6 +173,27 @@ public class AssetTokenServiceTests
         payload.Should().BeNull();
     }
 
+    [Theory]
+    [InlineData(0, true)]
+    [InlineData(-1, true)]
+    [InlineData(-2, false)]
+    public void ValidateToken_LegacyWindowEncoding_HandlesSupportedWindows(int windowOffset, bool expectedValid)
+    {
+        // Arrange
+        var assetId = Guid.NewGuid();
+        var tenantId = Guid.NewGuid();
+
+        // Act
+        var token = CreateLegacyToken(assetId, tenantId, AssetAccessPolicy.Private, windowOffset);
+        var payload = _service.ValidateToken(token, assetId, tenantId);
+
+        // Assert
+        if (expectedValid)
+            payload.Should().NotBeNull();
+        else
+            payload.Should().BeNull();
+    }
+
     #endregion
 
     #region Token Expiry Tests
@@ -222,6 +243,24 @@ public class AssetTokenServiceTests
     }
 
     [Fact]
+    public void EmptySecretKey_UsesProcessWideDevelopmentKey()
+    {
+        // Arrange
+        var options = Options.Create(new AssetTokenOptions { SecretKey = string.Empty });
+        var issuer = new AssetTokenService(options);
+        var validator = new AssetTokenService(options);
+        var assetId = Guid.NewGuid();
+        var tenantId = Guid.NewGuid();
+
+        // Act
+        var token = issuer.GenerateToken(assetId, tenantId, AssetAccessPolicy.Private);
+        var payload = validator.ValidateToken(token, assetId, tenantId);
+
+        // Assert
+        payload.Should().NotBeNull();
+    }
+
+    [Fact]
     public void Constructor_WithInvalidExpiryHours_UsesDefault()
     {
         // Arrange
@@ -266,4 +305,24 @@ public class AssetTokenServiceTests
     }
 
     #endregion
+
+    private string CreateLegacyToken(Guid assetId, Guid tenantId, AssetAccessPolicy policy, int windowOffset)
+    {
+        var timeWindow = _service.GetCurrentTimeWindow() + windowOffset;
+        var expiryTimestamp = DateTimeOffset.UtcNow.AddHours(1).ToUnixTimeSeconds();
+        var baseTimestamp = new DateTimeOffset(2024, 1, 1, 0, 0, 0, TimeSpan.Zero).ToUnixTimeSeconds();
+        var payload = $"{assetId}|{timeWindow}|{expiryTimestamp}|{(int)policy}||{tenantId}";
+
+        using var hmac = new HMACSHA256(_secretKey);
+        var signature = hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(payload));
+        var tokenBytes = new byte[22];
+        BitConverter.GetBytes((short)timeWindow).CopyTo(tokenBytes, 0);
+        BitConverter.GetBytes((int)(expiryTimestamp - baseTimestamp)).CopyTo(tokenBytes, 2);
+        signature.AsSpan(0, 16).CopyTo(tokenBytes.AsSpan(6));
+
+        return Convert.ToBase64String(tokenBytes)
+            .Replace('+', '-')
+            .Replace('/', '_')
+            .TrimEnd('=');
+    }
 }

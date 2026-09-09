@@ -96,16 +96,16 @@ public sealed class EconomyControlPlaneStepUpTests
             IsAuthenticated = true
         });
         return new EconomyControlPlaneAdministrationController(
-            policies,
+            EconomyHandlerSenders.ControlPlane(
+                policies: policies,
+                killSwitches: killSwitches,
+                projections: projections,
+                reserves: reserves,
+                stepUp: stepUp,
+                timeProvider: new FixedTimeProvider()),
             Mock.Of<IEconomyCapabilityReadinessInspector>(),
             Mock.Of<IEconomyOperationsReader>(),
-            killSwitches,
-            Mock.Of<IJournalIntegrityService>(),
-            Mock.Of<IEconomyAnchorPublisher>(),
-            Mock.Of<IEconomyAnchorVerificationService>(),
-            projections,
             reserves,
-            stepUp,
             actor.Object,
             new FixedTimeProvider());
     }

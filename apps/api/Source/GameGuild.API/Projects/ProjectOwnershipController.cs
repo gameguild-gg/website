@@ -1,4 +1,5 @@
 using Asp.Versioning;
+using GameGuild.CQRS;
 using GameGuild.Identity.Authentication;
 using GameGuild.Identity.Authorization;
 using GameGuild.Identity.Context.Actors;
@@ -103,6 +104,7 @@ public sealed record CounterProjectTeamAgreementRequest(
 [Route("v{version:apiVersion}/projects/{projectId:guid}/ownership")]
 public sealed class ProjectOwnershipController(
     IApplicationDbContext context,
+    ISender sender,
     IActorContextAccessor actorContextAccessor,
     IProjectAuthorizationService projectAuthorization,
     ITeamAuthorizationService teamAuthorization) : ControllerBase
@@ -143,8 +145,7 @@ public sealed class ProjectOwnershipController(
             // added to an already tracked Project as Added; otherwise EF can infer an
             // update and produce an optimistic-concurrency failure for a row that does
             // not exist yet.
-            context.Set<ProjectTeam>().Add(team);
-            await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+            await sender.Send(new AddProjectTeamOwnershipEndpointCommand(team), cancellationToken).ConfigureAwait(false);
             return Ok(Map(team, targetTeam));
         }
         catch (InvalidOperationException exception)
@@ -174,7 +175,7 @@ public sealed class ProjectOwnershipController(
         team.Role = request.Role;
         Apply(team, request.ParticipationMode, request.Permissions, request.Notes, request.ContributionPercentage);
         team.Touch();
-        await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        await sender.Send(new UpdateProjectTeamOwnershipEndpointCommand(team), cancellationToken).ConfigureAwait(false);
         return Ok(Map(team));
     }
 
@@ -196,7 +197,7 @@ public sealed class ProjectOwnershipController(
             allocation.EndsAt ??= SystemClock.UtcNow;
             allocation.Touch();
         }
-        await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        await sender.Send(new RemoveProjectTeamOwnershipEndpointCommand(team), cancellationToken).ConfigureAwait(false);
         return NoContent();
     }
 
@@ -222,7 +223,7 @@ public sealed class ProjectOwnershipController(
             return Conflict(Problem("An accepted agreement approved by a distinct team owner is required for this owner transfer.", StatusCodes.Status409Conflict));
 
         project.SetOwnerTeam(request.TeamId);
-        await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        await sender.Send(new TransferProjectOwnerTeamEndpointCommand(project), cancellationToken).ConfigureAwait(false);
         return Ok(Map(project));
     }
 
@@ -251,8 +252,7 @@ public sealed class ProjectOwnershipController(
                 request.CapacityPercentage,
                 request.StartsAt,
                 request.EndsAt);
-            context.Set<ProjectMemberAllocation>().Add(allocation);
-            await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+            await sender.Send(new CreateProjectAllocationEndpointCommand(allocation), cancellationToken).ConfigureAwait(false);
             return Ok(Map(allocation));
         }
         catch (ArgumentException exception)
@@ -280,7 +280,7 @@ public sealed class ProjectOwnershipController(
         allocation.EndsAt = request.EndsAt;
         allocation.IsActive = request.IsActive;
         allocation.Touch();
-        await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        await sender.Send(new UpdateProjectAllocationEndpointCommand(allocation), cancellationToken).ConfigureAwait(false);
         return Ok(Map(allocation));
     }
 
@@ -294,7 +294,7 @@ public sealed class ProjectOwnershipController(
         allocation.IsActive = false;
         allocation.EndsAt ??= SystemClock.UtcNow;
         allocation.Touch();
-        await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        await sender.Send(new RemoveProjectAllocationEndpointCommand(allocation), cancellationToken).ConfigureAwait(false);
         return NoContent();
     }
 
@@ -325,8 +325,7 @@ public sealed class ProjectOwnershipController(
                 request.StartsAt,
                 request.EndsAt);
             agreement.TenantId = project.TenantId;
-            context.Set<ProjectTeamAgreement>().Add(agreement);
-            await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+            await sender.Send(new CreateProjectTeamAgreementEndpointCommand(agreement), cancellationToken).ConfigureAwait(false);
             return Ok(Map(agreement));
         }
         catch (ArgumentException exception)
@@ -336,35 +335,55 @@ public sealed class ProjectOwnershipController(
     }
 
     [HttpPost("agreements/{agreementId:guid}/counter")]
-    public Task<ActionResult<ProjectTeamAgreementDto>> CounterAgreement(
+    public async Task<ActionResult<ProjectTeamAgreementDto>> CounterAgreement(
         Guid projectId,
         Guid agreementId,
         CounterProjectTeamAgreementRequest request,
-        CancellationToken cancellationToken) =>
-        ChangeAgreementAsync(projectId, agreementId, "counter", request, cancellationToken);
+        CancellationToken cancellationToken)
+    {
+        var change = await PrepareAgreementChangeAsync(projectId, agreementId, "counter", request, cancellationToken).ConfigureAwait(false);
+        if (change.Result != null) return change.Result;
+        await sender.Send(new CounterProjectTeamAgreementEndpointCommand(change.Agreement!), cancellationToken).ConfigureAwait(false);
+        return Ok(Map(change.Agreement!));
+    }
 
     [HttpPost("agreements/{agreementId:guid}/accept")]
-    public Task<ActionResult<ProjectTeamAgreementDto>> AcceptAgreement(
+    public async Task<ActionResult<ProjectTeamAgreementDto>> AcceptAgreement(
         Guid projectId,
         Guid agreementId,
-        CancellationToken cancellationToken) =>
-        ChangeAgreementAsync(projectId, agreementId, "accept", null, cancellationToken);
+        CancellationToken cancellationToken)
+    {
+        var change = await PrepareAgreementChangeAsync(projectId, agreementId, "accept", null, cancellationToken).ConfigureAwait(false);
+        if (change.Result != null) return change.Result;
+        await sender.Send(new AcceptProjectTeamAgreementEndpointCommand(change.Agreement!), cancellationToken).ConfigureAwait(false);
+        return Ok(Map(change.Agreement!));
+    }
 
     [HttpPost("agreements/{agreementId:guid}/cancel")]
-    public Task<ActionResult<ProjectTeamAgreementDto>> CancelAgreement(
+    public async Task<ActionResult<ProjectTeamAgreementDto>> CancelAgreement(
         Guid projectId,
         Guid agreementId,
-        CancellationToken cancellationToken) =>
-        ChangeAgreementAsync(projectId, agreementId, "cancel", null, cancellationToken);
+        CancellationToken cancellationToken)
+    {
+        var change = await PrepareAgreementChangeAsync(projectId, agreementId, "cancel", null, cancellationToken).ConfigureAwait(false);
+        if (change.Result != null) return change.Result;
+        await sender.Send(new CancelProjectTeamAgreementEndpointCommand(change.Agreement!), cancellationToken).ConfigureAwait(false);
+        return Ok(Map(change.Agreement!));
+    }
 
     [HttpPost("agreements/{agreementId:guid}/complete")]
-    public Task<ActionResult<ProjectTeamAgreementDto>> CompleteAgreement(
+    public async Task<ActionResult<ProjectTeamAgreementDto>> CompleteAgreement(
         Guid projectId,
         Guid agreementId,
-        CancellationToken cancellationToken) =>
-        ChangeAgreementAsync(projectId, agreementId, "complete", null, cancellationToken);
+        CancellationToken cancellationToken)
+    {
+        var change = await PrepareAgreementChangeAsync(projectId, agreementId, "complete", null, cancellationToken).ConfigureAwait(false);
+        if (change.Result != null) return change.Result;
+        await sender.Send(new CompleteProjectTeamAgreementEndpointCommand(change.Agreement!), cancellationToken).ConfigureAwait(false);
+        return Ok(Map(change.Agreement!));
+    }
 
-    private async Task<ActionResult<ProjectTeamAgreementDto>> ChangeAgreementAsync(
+    private async Task<(ProjectTeamAgreement? Agreement, ActionResult<ProjectTeamAgreementDto>? Result)> PrepareAgreementChangeAsync(
         Guid projectId,
         Guid agreementId,
         string action,
@@ -372,22 +391,22 @@ public sealed class ProjectOwnershipController(
         CancellationToken cancellationToken)
     {
         var actor = actorContextAccessor.ActorContext;
-        if (actor.TenantId is not { } tenantId) return Unauthorized();
+        if (actor.TenantId is not { } tenantId) return (null, Unauthorized());
         var project = await LoadProjectAsync(projectId, cancellationToken).ConfigureAwait(false);
-        if (project == null || project.TenantId != tenantId) return NotFound();
+        if (project == null || project.TenantId != tenantId) return (null, NotFound());
         var agreement = project.TeamAgreements.SingleOrDefault(candidate => candidate.Id == agreementId && candidate.DeletedAt == null);
-        if (agreement == null) return NotFound();
+        if (agreement == null) return (null, NotFound());
         var authorityTeamId = action == "accept" ? agreement.ReceivingTeamId :
             await teamAuthorization.HasAuthorityAsync(agreement.ProposingTeamId, TeamMemberAuthority.Manager, cancellationToken).ConfigureAwait(false)
                 ? agreement.ProposingTeamId
                 : agreement.ReceivingTeamId;
         if (!await teamAuthorization.HasAuthorityAsync(authorityTeamId, TeamMemberAuthority.Manager, cancellationToken).ConfigureAwait(false))
-            return Forbid();
-        if (actorContextAccessor.ActorContext.SubjectIdAsGuid is not { } actorId) return Unauthorized();
+            return (null, Forbid());
+        if (actorContextAccessor.ActorContext.SubjectIdAsGuid is not { } actorId) return (null, Unauthorized());
         if (action == "accept" && agreement.ProposedByUserId == actorId)
-            return Conflict(Problem("An agreement must be accepted by a different actor.", StatusCodes.Status409Conflict));
+            return (null, Conflict(Problem("An agreement must be accepted by a different actor.", StatusCodes.Status409Conflict)));
         if (action == "accept" && !await HasSensitiveActionAssuranceAsync(cancellationToken).ConfigureAwait(false))
-            return Forbid();
+            return (null, Forbid());
 
         try
         {
@@ -401,16 +420,15 @@ public sealed class ProjectOwnershipController(
                 case "complete": agreement.Complete(); break;
                 default: throw new InvalidOperationException("Unsupported agreement action.");
             }
-            await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-            return Ok(Map(agreement));
+            return (agreement, null);
         }
         catch (InvalidOperationException exception)
         {
-            return Conflict(Problem(exception.Message, StatusCodes.Status409Conflict));
+            return (null, Conflict(Problem(exception.Message, StatusCodes.Status409Conflict)));
         }
         catch (ArgumentException exception)
         {
-            return UnprocessableEntity(new { code = "Projects.InvalidAgreement", detail = exception.Message });
+            return (null, UnprocessableEntity(new { code = "Projects.InvalidAgreement", detail = exception.Message }));
         }
     }
 

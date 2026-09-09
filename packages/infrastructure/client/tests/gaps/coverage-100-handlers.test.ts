@@ -61,7 +61,7 @@ describe('handlers — signUp non-200 response (L507)', () => {
       secret: 'test-secret-min-32-chars-long-ok',
       apiUrl: 'http://localhost:8080',
       pages: {},
-      cookies: { name: '__gg', secure: false, sameSite: 'lax', path: '/', maxAge: 2592000, httpOnly: true },
+      cookies: { name: '__me', secure: false, sameSite: 'lax', path: '/', maxAge: 2592000, httpOnly: true },
       maxAge: 2592000,
       updateAge: 0,
       basePath: '/api/auth',
@@ -76,7 +76,7 @@ describe('handlers — signUp non-200 response (L507)', () => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        cookie: '__gg.csrf-token=c',
+        cookie: '__me.csrf-token=c',
       },
       body: JSON.stringify({
         csrfToken: 't',
@@ -143,7 +143,7 @@ describe('handlers — signOut without refreshToken (L528)', () => {
       secret: 'test-secret-min-32-chars-long-ok',
       apiUrl: 'http://localhost:8080',
       pages: {},
-      cookies: { name: '__gg', secure: false, sameSite: 'lax', path: '/', maxAge: 2592000, httpOnly: true },
+      cookies: { name: '__me', secure: false, sameSite: 'lax', path: '/', maxAge: 2592000, httpOnly: true },
       maxAge: 2592000,
       updateAge: 0,
       basePath: '/api/auth',
@@ -158,7 +158,7 @@ describe('handlers — signOut without refreshToken (L528)', () => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        cookie: '__gg.session-token=valid-tok; __gg.csrf-token=c',
+        cookie: '__me.session-token=valid-tok; __me.csrf-token=c',
       },
       body: JSON.stringify({ csrfToken: 't' }),
     });
@@ -220,7 +220,7 @@ describe('handlers — OAuth callback null result (L609)', () => {
       secret: 'test-secret-min-32-chars-long-ok',
       apiUrl: 'http://localhost:8080',
       pages: { error: '/auth/error' },
-      cookies: { name: '__gg', secure: false, sameSite: 'lax', path: '/', maxAge: 2592000, httpOnly: true },
+      cookies: { name: '__me', secure: false, sameSite: 'lax', path: '/', maxAge: 2592000, httpOnly: true },
       maxAge: 2592000,
       updateAge: 0,
       basePath: '/api/auth',
@@ -262,7 +262,7 @@ describe('actions — signOut without refreshToken (L316)', () => {
     vi.resetModules();
 
     const mockCookieStore = new Map<string, string>();
-    mockCookieStore.set('__gg.session-token', 'encrypted-session');
+    mockCookieStore.set('__me.session-token', 'encrypted-session');
 
     const mockAdapter = {
       get: (name: string) => {
@@ -319,7 +319,7 @@ describe('actions — signOut without refreshToken (L316)', () => {
       secret: 'test-secret-min-32-chars-long-ok',
       apiUrl: 'http://localhost:8080',
       pages: { signIn: '/login', newUser: '/welcome' },
-      cookies: { name: '__gg', secure: false, sameSite: 'lax', path: '/', maxAge: 2592000, httpOnly: true },
+      cookies: { name: '__me', secure: false, sameSite: 'lax', path: '/', maxAge: 2592000, httpOnly: true },
       maxAge: 2592000,
       updateAge: 0,
       basePath: '/api/auth',
@@ -339,7 +339,7 @@ describe('actions — signOut without refreshToken (L316)', () => {
     }
 
     // Cookie should have been deleted (set to empty string with maxAge=0)
-    expect(mockCookieStore.get('__gg.session-token')).toBe('');
+    expect(mockCookieStore.get('__me.session-token')).toBe('');
 
     vi.resetModules();
   });
@@ -464,7 +464,7 @@ describe('handlers — additional branch paths', () => {
       secret: 'test-secret-min-32-chars-long-ok',
       apiUrl: 'http://localhost:8080',
       pages: {},
-      cookies: { name: '__gg', secure: false, sameSite: 'lax', path: '/', maxAge: 2592000, httpOnly: true },
+      cookies: { name: '__me', secure: false, sameSite: 'lax', path: '/', maxAge: 2592000, httpOnly: true },
       maxAge: 2592000,
       updateAge: 0,
       basePath: '/api/auth',
@@ -479,7 +479,7 @@ describe('handlers — additional branch paths', () => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        cookie: '__gg.csrf-token=c',
+        cookie: '__me.csrf-token=c',
       },
       body: JSON.stringify({
         csrfToken: 't',

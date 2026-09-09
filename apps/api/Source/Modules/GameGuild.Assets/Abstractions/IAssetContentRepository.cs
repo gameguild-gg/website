@@ -31,6 +31,11 @@ public interface IAssetContentRepository
     Task<IReadOnlyList<AssetContent>> GetPendingVirusScanAsync(int limit = 100, CancellationToken ct = default);
 
     /// <summary>
+    /// Atomically claims pending content for virus scanning.
+    /// </summary>
+    Task<bool> TryBeginVirusScanAsync(Guid id, CancellationToken ct = default);
+
+    /// <summary>
     /// Gets assets pending moderation.
     /// </summary>
     Task<IReadOnlyList<AssetContent>> GetPendingModerationAsync(int limit = 100, CancellationToken ct = default);

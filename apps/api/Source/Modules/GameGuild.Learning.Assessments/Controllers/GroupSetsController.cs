@@ -1,4 +1,5 @@
 using Asp.Versioning;
+using GameGuild.CQRS;
 using GameGuild.Identity.Authorization;
 using GameGuild.Identity.Context.Actors;
 using GameGuild.Learning.Courses;
@@ -21,19 +22,22 @@ public class GroupSetsController : BaseApiController
     private readonly IProgramCrudService _programService;
     private readonly IPermissionQueryService _permissionQueryService;
     private readonly ILogger<GroupSetsController> _logger;
+    private readonly ISender _sender;
 
     public GroupSetsController(
         IGroupSetService groupSetService,
         IActorContextAccessor actorContextAccessor,
         IProgramCrudService programService,
         IPermissionQueryService permissionQueryService,
-        ILogger<GroupSetsController> logger)
+        ILogger<GroupSetsController> logger,
+        ISender sender)
     {
         _groupSetService = groupSetService;
         _actorContextAccessor = actorContextAccessor;
         _programService = programService;
         _permissionQueryService = permissionQueryService;
         _logger = logger;
+        _sender = sender;
     }
 
     /// <summary>
@@ -60,7 +64,7 @@ public class GroupSetsController : BaseApiController
         if (program == null) return NotFound();
         if (!await CanManageCourseAsync(courseId).ConfigureAwait(false)) return Forbid();
 
-        var result = await _groupSetService.CreateGroupSetAsync(courseId, request.Name).ConfigureAwait(false);
+        var result = await _sender.Send(new CreateCourseGroupSetEndpointCommand(courseId, request.Name)).ConfigureAwait(false);
         if (!result.IsSuccess)
         {
             return BadRequest(result.Error);
@@ -85,7 +89,7 @@ public class GroupSetsController : BaseApiController
         if (program == null) return NotFound();
         if (!await CanManageCourseAsync(courseId).ConfigureAwait(false)) return Forbid();
 
-        var result = await _groupSetService.CreateGroupAsync(courseId, setId, request.Name, request.Capacity)
+        var result = await _sender.Send(new CreateCourseGroupEndpointCommand(courseId, setId, request.Name, request.Capacity))
             .ConfigureAwait(false);
         if (!result.IsSuccess)
         {
@@ -128,7 +132,7 @@ public class GroupSetsController : BaseApiController
         var actorUserId = _actorContextAccessor.ActorContext.SubjectIdAsGuid;
         if (!actorUserId.HasValue) return Unauthorized();
 
-        var result = await _groupSetService.JoinAsync(courseId, groupId, actorUserId.Value).ConfigureAwait(false);
+        var result = await _sender.Send(new JoinCourseGroupEndpointCommand(courseId, groupId, actorUserId.Value)).ConfigureAwait(false);
         if (!result.IsSuccess)
         {
             return MembershipRejection(result.Error, "Group join rejected");
@@ -146,7 +150,7 @@ public class GroupSetsController : BaseApiController
         var actorUserId = _actorContextAccessor.ActorContext.SubjectIdAsGuid;
         if (!actorUserId.HasValue) return Unauthorized();
 
-        var result = await _groupSetService.LeaveAsync(courseId, groupId, actorUserId.Value).ConfigureAwait(false);
+        var result = await _sender.Send(new LeaveCourseGroupEndpointCommand(courseId, groupId, actorUserId.Value)).ConfigureAwait(false);
         if (!result.IsSuccess)
         {
             return result.Error.Type == ErrorType.NotFound
@@ -165,7 +169,7 @@ public class GroupSetsController : BaseApiController
     {
         if (!await CanManageCourseAsync(courseId).ConfigureAwait(false)) return Forbid();
 
-        var result = await _groupSetService.AddMemberAsync(courseId, groupId, userId).ConfigureAwait(false);
+        var result = await _sender.Send(new AddCourseGroupMemberEndpointCommand(courseId, groupId, userId)).ConfigureAwait(false);
         if (!result.IsSuccess)
         {
             return result.Error.Type == ErrorType.NotFound
@@ -184,7 +188,7 @@ public class GroupSetsController : BaseApiController
     {
         if (!await CanManageCourseAsync(courseId).ConfigureAwait(false)) return Forbid();
 
-        var result = await _groupSetService.RemoveMemberAsync(courseId, groupId, userId).ConfigureAwait(false);
+        var result = await _sender.Send(new RemoveCourseGroupMemberEndpointCommand(courseId, groupId, userId)).ConfigureAwait(false);
         if (!result.IsSuccess)
         {
             return result.Error.Type == ErrorType.NotFound

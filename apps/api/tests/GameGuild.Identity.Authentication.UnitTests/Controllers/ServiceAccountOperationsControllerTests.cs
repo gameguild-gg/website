@@ -268,8 +268,6 @@ public sealed class ServiceAccountOperationsControllerTests
 
     private static ServiceAccountOperationsController CreateController(Mock<IServiceAccountService> service)
     {
-        return new ServiceAccountOperationsController(
-            service.Object,
-            IdentityCommandTestSender.ForServiceAccounts(service.Object));
+        return new ServiceAccountOperationsController(service.Object, new CommandHandlerSender(service.Object, Mock.Of<IJwtTokenService>()));
     }
 }

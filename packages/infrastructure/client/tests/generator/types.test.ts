@@ -34,6 +34,54 @@ describe('Type Generator', () => {
     expect(output).toContain('name?: string'); // Optional because not in required array
   });
 
+  it('should generate collision-safe legacy aliases for DTO schemas', () => {
+    const spec: OpenApiSpec = {
+      ...simpleSpec,
+      components: {
+        schemas: {
+          UserDto: {
+            type: 'object',
+            properties: {
+              id: { type: 'string' },
+            },
+          },
+        },
+      },
+    } as OpenApiSpec;
+
+    const output = generateTypes(spec);
+
+    expect(output).toContain('export type User = UserDto;');
+    expect(output).toContain('export { UserDtoSchema as UserSchema };');
+  });
+
+  it('should not generate a legacy DTO alias when the entity name already exists', () => {
+    const spec: OpenApiSpec = {
+      ...simpleSpec,
+      components: {
+        schemas: {
+          User: {
+            type: 'object',
+            properties: {
+              passwordHash: { type: 'string' },
+            },
+          },
+          UserDto: {
+            type: 'object',
+            properties: {
+              id: { type: 'string' },
+            },
+          },
+        },
+      },
+    } as OpenApiSpec;
+
+    const output = generateTypes(spec);
+
+    expect(output).not.toContain('export type User = UserDto;');
+    expect(output).not.toContain('export { UserDtoSchema as UserSchema };');
+  });
+
   it('should generate enum for string enum schema', () => {
     const spec: OpenApiSpec = {
       ...simpleSpec,
@@ -157,10 +205,7 @@ describe('Type Generator', () => {
       components: {
         schemas: {
           Response: {
-            oneOf: [
-              { $ref: '#/components/schemas/SuccessResponse' },
-              { $ref: '#/components/schemas/ErrorResponse' },
-            ],
+            oneOf: [{ $ref: '#/components/schemas/SuccessResponse' }, { $ref: '#/components/schemas/ErrorResponse' }],
           },
           SuccessResponse: {
             type: 'object',

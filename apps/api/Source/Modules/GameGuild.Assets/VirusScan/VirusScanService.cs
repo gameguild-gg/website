@@ -72,6 +72,16 @@ public class VirusScanOptions
     public int TimeoutSeconds { get; set; } = 60;
 
     /// <summary>
+    /// Delay between asynchronous scan cycles.
+    /// </summary>
+    public int PollingIntervalSeconds { get; set; } = 5;
+
+    /// <summary>
+    /// Maximum number of pending objects claimed in one cycle.
+    /// </summary>
+    public int BatchSize { get; set; } = 20;
+
+    /// <summary>
     /// Maximum file size to scan (larger files are rejected).
     /// </summary>
     public long MaxScanSizeBytes { get; set; } = 100 * 1024 * 1024; // 100 MB

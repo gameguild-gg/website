@@ -116,7 +116,7 @@ public sealed class AiControllerTests
         requestContextAccessor.SetupGet(accessor => accessor.CurrentUserId).Returns(Guid.NewGuid());
 
         return new AiController(
-            orchestrator ?? Mock.Of<IAiOrchestrator>(),
+            new CommandHandlerSender(orchestrator ?? Mock.Of<IAiOrchestrator>(), Mock.Of<IAiPromptTemplateService>()),
             Mock.Of<IAiConversationHistoryReader>(),
             requestContextAccessor.Object,
             Mock.Of<IResourceQuotaReader>(),

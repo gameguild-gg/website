@@ -1,4 +1,5 @@
 using Asp.Versioning;
+using GameGuild.CQRS;
 using GameGuild.ProjectWork;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -56,7 +57,7 @@ public sealed record CreateProjectTaskLabelRequest(string Name, string Color);
 [ApiVersion("1.0")]
 [Authorize]
 [Route("v{version:apiVersion}/projects/{projectId:guid}/work")]
-public sealed class ProjectWorkController(IProjectWorkService service) : ControllerBase
+public sealed class ProjectWorkController(IProjectWorkService service, ISender sender) : ControllerBase
 {
     [HttpGet]
     public async Task<ActionResult<ProjectBoardDto>> Get(Guid projectId, CancellationToken cancellationToken)
@@ -71,7 +72,8 @@ public sealed class ProjectWorkController(IProjectWorkService service) : Control
         ConfigureProjectWorkColumnRequest request,
         CancellationToken cancellationToken)
     {
-        var result = await service.ConfigureColumnAsync(projectId, null, request.Name, request.Kind, request.Position, request.WorkInProgressLimit, cancellationToken).ConfigureAwait(false);
+        var result = await sender.Send(new CreateProjectWorkColumnCommand(
+            projectId, request.Name, request.Kind, request.Position, request.WorkInProgressLimit), cancellationToken).ConfigureAwait(false);
         return result.IsSuccess ? Created(string.Empty, Map(result.Value)) : Error(result.Error);
     }
 
@@ -82,14 +84,15 @@ public sealed class ProjectWorkController(IProjectWorkService service) : Control
         ConfigureProjectWorkColumnRequest request,
         CancellationToken cancellationToken)
     {
-        var result = await service.ConfigureColumnAsync(projectId, columnId, request.Name, request.Kind, request.Position, request.WorkInProgressLimit, cancellationToken).ConfigureAwait(false);
+        var result = await sender.Send(new UpdateProjectWorkColumnCommand(
+            projectId, columnId, request.Name, request.Kind, request.Position, request.WorkInProgressLimit), cancellationToken).ConfigureAwait(false);
         return result.IsSuccess ? Ok(Map(result.Value)) : Error(result.Error);
     }
 
     [HttpDelete("columns/{columnId:guid}")]
     public async Task<IActionResult> DeleteColumn(Guid projectId, Guid columnId, CancellationToken cancellationToken)
     {
-        var result = await service.DeleteColumnAsync(projectId, columnId, cancellationToken).ConfigureAwait(false);
+        var result = await sender.Send(new DeleteProjectWorkColumnCommand(projectId, columnId), cancellationToken).ConfigureAwait(false);
         return result.IsSuccess ? NoContent() : Error(result.Error);
     }
 
@@ -104,7 +107,8 @@ public sealed class ProjectWorkController(IProjectWorkService service) : Control
     public async Task<ActionResult<ProjectMilestoneDto>> CreateMilestone(
         Guid projectId, CreateProjectMilestoneRequest request, CancellationToken cancellationToken)
     {
-        var result = await service.CreateMilestoneAsync(projectId, request.Name, request.Description, request.DueAt, cancellationToken).ConfigureAwait(false);
+        var result = await sender.Send(new CreateProjectWorkMilestoneCommand(
+            projectId, request.Name, request.Description, request.DueAt), cancellationToken).ConfigureAwait(false);
         return result.IsSuccess ? Created(string.Empty, Map(result.Value)) : Error(result.Error);
     }
 
@@ -112,14 +116,15 @@ public sealed class ProjectWorkController(IProjectWorkService service) : Control
     public async Task<ActionResult<ProjectMilestoneDto>> UpdateMilestone(
         Guid projectId, Guid milestoneId, UpdateProjectMilestoneRequest request, CancellationToken cancellationToken)
     {
-        var result = await service.UpdateMilestoneAsync(projectId, milestoneId, request.Name, request.Description, request.DueAt, request.CompletedAt, cancellationToken).ConfigureAwait(false);
+        var result = await sender.Send(new UpdateProjectWorkMilestoneCommand(
+            projectId, milestoneId, request.Name, request.Description, request.DueAt, request.CompletedAt), cancellationToken).ConfigureAwait(false);
         return result.IsSuccess ? Ok(Map(result.Value)) : Error(result.Error);
     }
 
     [HttpDelete("milestones/{milestoneId:guid}")]
     public async Task<IActionResult> DeleteMilestone(Guid projectId, Guid milestoneId, CancellationToken cancellationToken)
     {
-        var result = await service.DeleteMilestoneAsync(projectId, milestoneId, cancellationToken).ConfigureAwait(false);
+        var result = await sender.Send(new DeleteProjectWorkMilestoneCommand(projectId, milestoneId), cancellationToken).ConfigureAwait(false);
         return result.IsSuccess ? NoContent() : Error(result.Error);
     }
 
@@ -129,14 +134,14 @@ public sealed class ProjectWorkController(IProjectWorkService service) : Control
         CreateProjectWorkTaskRequest request,
         CancellationToken cancellationToken)
     {
-        var result = await service.CreateTaskAsync(projectId, new CreateProjectWorkTask(
+        var result = await sender.Send(new CreateProjectWorkTaskCommand(projectId, new CreateProjectWorkTask(
             request.ColumnId,
             request.Title,
             request.Description,
             request.Priority,
             request.AssigneeUserId,
             request.MilestoneId,
-            request.DueAt), cancellationToken).ConfigureAwait(false);
+            request.DueAt)), cancellationToken).ConfigureAwait(false);
         return result.IsSuccess ? Created($"/v1/projects/{projectId}/work/tasks/{result.Value.Id}", Map(result.Value)) : Error(result.Error);
     }
 
@@ -155,20 +160,20 @@ public sealed class ProjectWorkController(IProjectWorkService service) : Control
         UpdateProjectWorkTaskRequest request,
         CancellationToken cancellationToken)
     {
-        var result = await service.UpdateTaskAsync(projectId, taskId, new UpdateProjectWorkTask(
+        var result = await sender.Send(new UpdateProjectWorkTaskCommand(projectId, taskId, new UpdateProjectWorkTask(
             request.Title,
             request.Description,
             request.Priority,
             request.AssigneeUserId,
             request.MilestoneId,
-            request.DueAt), cancellationToken).ConfigureAwait(false);
+            request.DueAt)), cancellationToken).ConfigureAwait(false);
         return result.IsSuccess ? Ok(Map(result.Value)) : Error(result.Error);
     }
 
     [HttpDelete("tasks/{taskId:guid}")]
     public async Task<IActionResult> DeleteTask(Guid projectId, Guid taskId, CancellationToken cancellationToken)
     {
-        var result = await service.DeleteTaskAsync(projectId, taskId, cancellationToken).ConfigureAwait(false);
+        var result = await sender.Send(new DeleteProjectWorkTaskCommand(projectId, taskId), cancellationToken).ConfigureAwait(false);
         return result.IsSuccess ? NoContent() : Error(result.Error);
     }
 
@@ -179,7 +184,8 @@ public sealed class ProjectWorkController(IProjectWorkService service) : Control
         MoveProjectWorkTaskRequest request,
         CancellationToken cancellationToken)
     {
-        var result = await service.MoveTaskAsync(projectId, taskId, request.ColumnId, request.Position, cancellationToken).ConfigureAwait(false);
+        var result = await sender.Send(new MoveProjectWorkTaskCommand(
+            projectId, taskId, request.ColumnId, request.Position), cancellationToken).ConfigureAwait(false);
         return result.IsSuccess ? Ok(Map(result.Value)) : Error(result.Error);
     }
 
@@ -190,7 +196,8 @@ public sealed class ProjectWorkController(IProjectWorkService service) : Control
         AddProjectTaskDependencyRequest request,
         CancellationToken cancellationToken)
     {
-        var result = await service.AddDependencyAsync(projectId, taskId, request.DependsOnTaskId, cancellationToken).ConfigureAwait(false);
+        var result = await sender.Send(new AddProjectWorkDependencyCommand(
+            projectId, taskId, request.DependsOnTaskId), cancellationToken).ConfigureAwait(false);
         return result.IsSuccess ? Created(string.Empty, new { result.Value.Id, result.Value.TaskId, result.Value.DependsOnTaskId }) : Error(result.Error);
     }
 
@@ -201,7 +208,8 @@ public sealed class ProjectWorkController(IProjectWorkService service) : Control
         Guid dependencyId,
         CancellationToken cancellationToken)
     {
-        var result = await service.RemoveDependencyAsync(projectId, taskId, dependencyId, cancellationToken).ConfigureAwait(false);
+        var result = await sender.Send(new RemoveProjectWorkDependencyCommand(
+            projectId, taskId, dependencyId), cancellationToken).ConfigureAwait(false);
         return result.IsSuccess ? NoContent() : Error(result.Error);
     }
 
@@ -216,28 +224,31 @@ public sealed class ProjectWorkController(IProjectWorkService service) : Control
     public async Task<ActionResult<ProjectTaskLabelDto>> CreateLabel(
         Guid projectId, CreateProjectTaskLabelRequest request, CancellationToken cancellationToken)
     {
-        var result = await service.CreateLabelAsync(projectId, request.Name, request.Color, cancellationToken).ConfigureAwait(false);
+        var result = await sender.Send(new CreateProjectWorkLabelCommand(
+            projectId, request.Name, request.Color), cancellationToken).ConfigureAwait(false);
         return result.IsSuccess ? Created(string.Empty, Map(result.Value)) : Error(result.Error);
     }
 
     [HttpDelete("labels/{labelId:guid}")]
     public async Task<IActionResult> DeleteLabel(Guid projectId, Guid labelId, CancellationToken cancellationToken)
     {
-        var result = await service.DeleteLabelAsync(projectId, labelId, cancellationToken).ConfigureAwait(false);
+        var result = await sender.Send(new DeleteProjectWorkLabelCommand(projectId, labelId), cancellationToken).ConfigureAwait(false);
         return result.IsSuccess ? NoContent() : Error(result.Error);
     }
 
     [HttpPost("tasks/{taskId:guid}/labels/{labelId:guid}")]
     public async Task<IActionResult> AssignLabel(Guid projectId, Guid taskId, Guid labelId, CancellationToken cancellationToken)
     {
-        var result = await service.AssignLabelAsync(projectId, taskId, labelId, cancellationToken).ConfigureAwait(false);
+        var result = await sender.Send(new AssignProjectWorkLabelCommand(
+            projectId, taskId, labelId), cancellationToken).ConfigureAwait(false);
         return result.IsSuccess ? Created(string.Empty, new { result.Value.Id, result.Value.TaskId, result.Value.LabelId }) : Error(result.Error);
     }
 
     [HttpDelete("tasks/{taskId:guid}/labels/{labelId:guid}")]
     public async Task<IActionResult> UnassignLabel(Guid projectId, Guid taskId, Guid labelId, CancellationToken cancellationToken)
     {
-        var result = await service.UnassignLabelAsync(projectId, taskId, labelId, cancellationToken).ConfigureAwait(false);
+        var result = await sender.Send(new UnassignProjectWorkLabelCommand(
+            projectId, taskId, labelId), cancellationToken).ConfigureAwait(false);
         return result.IsSuccess ? NoContent() : Error(result.Error);
     }
 
@@ -248,7 +259,8 @@ public sealed class ProjectWorkController(IProjectWorkService service) : Control
         AddProjectTaskCommentRequest request,
         CancellationToken cancellationToken)
     {
-        var result = await service.AddCommentAsync(projectId, taskId, request.Body, cancellationToken).ConfigureAwait(false);
+        var result = await sender.Send(new AddProjectWorkCommentCommand(
+            projectId, taskId, request.Body), cancellationToken).ConfigureAwait(false);
         return result.IsSuccess ? Created(string.Empty, new { result.Value.Id, result.Value.Body, result.Value.AuthorUserId, result.Value.CreatedAt }) : Error(result.Error);
     }
 
@@ -260,7 +272,8 @@ public sealed class ProjectWorkController(IProjectWorkService service) : Control
         UpdateProjectTaskCommentRequest request,
         CancellationToken cancellationToken)
     {
-        var result = await service.UpdateCommentAsync(projectId, taskId, commentId, request.Body, cancellationToken).ConfigureAwait(false);
+        var result = await sender.Send(new UpdateProjectWorkCommentCommand(
+            projectId, taskId, commentId, request.Body), cancellationToken).ConfigureAwait(false);
         return result.IsSuccess ? Ok(Map(result.Value)) : Error(result.Error);
     }
 
@@ -268,7 +281,8 @@ public sealed class ProjectWorkController(IProjectWorkService service) : Control
     public async Task<IActionResult> DeleteComment(
         Guid projectId, Guid taskId, Guid commentId, CancellationToken cancellationToken)
     {
-        var result = await service.DeleteCommentAsync(projectId, taskId, commentId, cancellationToken).ConfigureAwait(false);
+        var result = await sender.Send(new DeleteProjectWorkCommentCommand(
+            projectId, taskId, commentId), cancellationToken).ConfigureAwait(false);
         return result.IsSuccess ? NoContent() : Error(result.Error);
     }
 
@@ -279,7 +293,8 @@ public sealed class ProjectWorkController(IProjectWorkService service) : Control
         AddProjectTaskChecklistRequest request,
         CancellationToken cancellationToken)
     {
-        var result = await service.AddChecklistItemAsync(projectId, taskId, request.Text, cancellationToken).ConfigureAwait(false);
+        var result = await sender.Send(new AddProjectWorkChecklistItemCommand(
+            projectId, taskId, request.Text), cancellationToken).ConfigureAwait(false);
         return result.IsSuccess ? Created(string.Empty, new { result.Value.Id, result.Value.Text, result.Value.Position }) : Error(result.Error);
     }
 
@@ -291,7 +306,8 @@ public sealed class ProjectWorkController(IProjectWorkService service) : Control
         UpdateProjectTaskChecklistRequest request,
         CancellationToken cancellationToken)
     {
-        var result = await service.SetChecklistCompletionAsync(projectId, taskId, itemId, request.IsCompleted, cancellationToken).ConfigureAwait(false);
+        var result = await sender.Send(new UpdateProjectWorkChecklistItemCommand(
+            projectId, taskId, itemId, request.IsCompleted), cancellationToken).ConfigureAwait(false);
         return result.IsSuccess ? Ok(Map(result.Value)) : Error(result.Error);
     }
 
@@ -299,7 +315,8 @@ public sealed class ProjectWorkController(IProjectWorkService service) : Control
     public async Task<IActionResult> DeleteChecklist(
         Guid projectId, Guid taskId, Guid itemId, CancellationToken cancellationToken)
     {
-        var result = await service.DeleteChecklistItemAsync(projectId, taskId, itemId, cancellationToken).ConfigureAwait(false);
+        var result = await sender.Send(new DeleteProjectWorkChecklistItemCommand(
+            projectId, taskId, itemId), cancellationToken).ConfigureAwait(false);
         return result.IsSuccess ? NoContent() : Error(result.Error);
     }
 

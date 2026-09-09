@@ -3,7 +3,6 @@ using GameGuild.API.Database;
 using GameGuild.CQRS;
 using GameGuild.Identity.Tenants;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 using Moq;
 
 namespace GameGuild.API.UnitTests.Database;
@@ -11,13 +10,10 @@ namespace GameGuild.API.UnitTests.Database;
 public sealed class ApplicationDbContextDomainEventTests
 {
     [Fact]
-    public async Task SaveChangesAsync_ShouldPublishAndClearDomainEventsAfterPersistence()
+    public async Task SaveChangesAsync_DoesNotPublishLegacyDomainEventsAfterPersistence()
     {
+        // Given
         var publisher = new Mock<IPublisher>(MockBehavior.Strict);
-        publisher
-            .Setup(instance => instance.Publish(It.IsAny<IDomainEvent>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
-
         var options = new DbContextOptionsBuilder<ApplicationDbContext>()
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
             .Options;
@@ -32,44 +28,11 @@ public sealed class ApplicationDbContextDomainEventTests
         context.Add(tenant);
         tenant.Deactivate();
 
+        // When
         await context.SaveChangesAsync();
 
-        publisher.Verify(
-            instance => instance.Publish(
-                It.Is<IDomainEvent>(domainEvent => domainEvent is TenantDeactivatedEvent),
-                It.IsAny<CancellationToken>()),
-            Times.Once);
+        // Then
+        publisher.VerifyNoOtherCalls();
         tenant.DomainEvents.Should().BeEmpty();
-    }
-
-    [Fact]
-    public async Task SaveChangesAsync_ShouldResolvePublisherFromContextServices()
-    {
-        var publisher = new Mock<IPublisher>(MockBehavior.Strict);
-        publisher.Setup(instance => instance.Publish(It.IsAny<IDomainEvent>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
-        var services = new ServiceCollection();
-        services.AddEntityFrameworkInMemoryDatabase();
-        services.AddSingleton(publisher.Object);
-        await using var provider = services.BuildServiceProvider();
-        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
-            .UseInMemoryDatabase(Guid.NewGuid().ToString())
-            .UseInternalServiceProvider(provider)
-            .Options;
-        await using var context = new ApplicationDbContext(options);
-        var tenant = new Tenant
-        {
-            Name = "Context publisher",
-            Slug = "context-publisher",
-            AdminEmail = "admin@example.com"
-        };
-        context.Add(tenant);
-        tenant.Deactivate();
-
-        await context.SaveChangesAsync();
-
-        publisher.Verify(instance => instance.Publish(
-            It.Is<IDomainEvent>(domainEvent => domainEvent is TenantDeactivatedEvent),
-            It.IsAny<CancellationToken>()), Times.Once);
     }
 }

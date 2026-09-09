@@ -1,6 +1,8 @@
 using GameGuild.Notifications.Services;
 using GameGuild.Notifications.Services.Email;
 using GameGuild.Notifications.Services.Email.Renderers;
+using GameGuild.Notifications.Services.Email.Handlers;
+using GameGuild.Identity.Tenants;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace GameGuild.Notifications;
@@ -38,6 +40,7 @@ public static class NotificationsModule
         // Tenant invite renderer. Registered here (not in the producing Identity.Tenants module) because
         // Identity.Tenants cannot reference GameGuild.Notifications (circular: Tenants -> Notifications -> Users -> Tenants).
         services.AddScoped<IEmailRenderer, TenantInviteRenderer>();
+        services.AddScoped<IIntegrationEventHandler<TenantMemberInviteRequestedV1>, TenantInviteRequestedHandler>();
 
         // One-click unsubscribe tokens (IDataProtectionProvider is registered by the API host)
         services.AddScoped<IUnsubscribeTokenService, UnsubscribeTokenService>();
@@ -49,7 +52,7 @@ public static class NotificationsModule
         services.AddScoped<IEmailDeliveryAdminService, EmailDeliveryAdminService>();
 
         // SES/SNS email-events webhook: signature verification + inline suppression processing
-        // (the webhook controller owns the single transactional SaveChanges for both)
+        // (the webhook command owns the single transactional SaveChanges for both)
         services.AddScoped<ISnsMessageVerifier, SnsMessageVerifier>();
         services.AddScoped<IEmailEventProcessor, EmailEventProcessor>();
         services.AddHttpClient(Controllers.EmailEventsController.SubscriptionConfirmationClientName, client =>

@@ -1,4 +1,6 @@
+using GameGuild.CQRS;
 using GameGuild.Identity.Context.Actors;
+using GameGuild.Social.Follows.Commands;
 using GameGuild.Social.Follows.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -13,15 +15,18 @@ public class FollowersController : BaseApiController
     private readonly IFollowerService _followerService;
     private readonly IActorContextAccessor _actorContextAccessor;
     private readonly ILogger<FollowersController> _logger;
+    private readonly ISender _sender;
 
     public FollowersController(
         IFollowerService followerService,
         IActorContextAccessor actorContextAccessor,
-        ILogger<FollowersController> logger)
+        ILogger<FollowersController> logger,
+        ISender sender)
     {
         _followerService = followerService;
         _actorContextAccessor = actorContextAccessor;
         _logger = logger;
+        _sender = sender;
     }
 
     private Guid GetCurrentUserId() => _actorContextAccessor.ActorContext.SubjectIdAsGuid ?? Guid.Empty;
@@ -33,7 +38,11 @@ public class FollowersController : BaseApiController
     public async Task<ActionResult<FollowDto>> Follow([FromBody] FollowRequest request, CancellationToken ct)
     {
         var userId = GetCurrentUserId();
-        var result = await _followerService.FollowAsync(userId, request.EntityId, request.EntityType, request.NotificationsEnabled, ct).ConfigureAwait(false);
+        var result = await _sender.Send(new FollowEntityEndpointCommand(
+            userId,
+            request.EntityId,
+            request.EntityType,
+            request.NotificationsEnabled), ct).ConfigureAwait(false);
 
         if (!result.IsSuccess)
         {
@@ -48,7 +57,9 @@ public class FollowersController : BaseApiController
     public async Task<ActionResult> Unfollow([FromQuery] Guid entityId, [FromQuery] string entityType, CancellationToken ct)
     {
         var userId = GetCurrentUserId();
-        var result = await _followerService.UnfollowAsync(userId, entityId, entityType, ct).ConfigureAwait(false);
+        var result = await _sender.Send(
+            new UnfollowEntityEndpointCommand(userId, entityId, entityType),
+            ct).ConfigureAwait(false);
 
         if (!result.IsSuccess)
         {
@@ -72,7 +83,11 @@ public class FollowersController : BaseApiController
     public async Task<ActionResult<FollowDto>> UpdateNotifications([FromBody] UpdateNotificationsRequest request, CancellationToken ct)
     {
         var userId = GetCurrentUserId();
-        var result = await _followerService.UpdateNotificationSettingsAsync(userId, request.EntityId, request.EntityType, request.NotificationsEnabled, ct).ConfigureAwait(false);
+        var result = await _sender.Send(new UpdateFollowNotificationsEndpointCommand(
+            userId,
+            request.EntityId,
+            request.EntityType,
+            request.NotificationsEnabled), ct).ConfigureAwait(false);
 
         if (!result.IsSuccess)
         {
@@ -141,6 +156,7 @@ public class FollowersController : BaseApiController
 
     /// <summary>Batch get follow status for multiple entities</summary>
     [HttpPost("batch/status")]
+    [NoBusinessMutationEndpoint("Batch follow-status lookup is read-only; POST is used only to carry the ID collection.")]
     public async Task<ActionResult<Dictionary<Guid, bool>>> GetFollowStatusBatch([FromBody] BatchStatusRequest request, CancellationToken ct)
     {
         var userId = GetCurrentUserId();
@@ -150,6 +166,7 @@ public class FollowersController : BaseApiController
 
     /// <summary>Batch get follower counts for multiple entities</summary>
     [HttpPost("batch/counts")]
+    [NoBusinessMutationEndpoint("Batch follower-count lookup is read-only; POST is used only to carry the ID collection.")]
     [AllowAnonymous]
     public async Task<ActionResult<Dictionary<Guid, int>>> GetFollowerCountsBatch([FromBody] BatchCountsRequest request, CancellationToken ct)
     {
@@ -175,15 +192,14 @@ public class FollowersController : BaseApiController
     public async Task<ActionResult<FollowPrivacySettingsDto>> UpdatePrivacySettings([FromBody] UpdatePrivacySettingsRequest request, CancellationToken ct)
     {
         var userId = GetCurrentUserId();
-        var result = await _followerService.UpdatePrivacySettingsAsync(
+        var result = await _sender.Send(new UpdateFollowPrivacyEndpointCommand(
             userId,
             request.IsFollowerListPublic,
             request.IsFollowingListPublic,
             request.AllowFollowers,
             request.NotifyOnNewFollower,
             request.ShowFollowerCount,
-            request.ShowFollowingCount,
-            ct).ConfigureAwait(false);
+            request.ShowFollowingCount), ct).ConfigureAwait(false);
 
         return Ok(MapToDto(result.Value));
     }
@@ -197,7 +213,9 @@ public class FollowersController : BaseApiController
     public async Task<ActionResult<BlockDto>> BlockUser([FromBody] BlockRequest request, CancellationToken ct)
     {
         var userId = GetCurrentUserId();
-        var result = await _followerService.BlockUserAsync(userId, request.BlockedUserId, request.Reason, ct).ConfigureAwait(false);
+        var result = await _sender.Send(
+            new BlockUserEndpointCommand(userId, request.BlockedUserId, request.Reason),
+            ct).ConfigureAwait(false);
 
         if (!result.IsSuccess)
         {
@@ -212,7 +230,9 @@ public class FollowersController : BaseApiController
     public async Task<ActionResult> UnblockUser(Guid blockedUserId, CancellationToken ct)
     {
         var userId = GetCurrentUserId();
-        var result = await _followerService.UnblockUserAsync(userId, blockedUserId, ct).ConfigureAwait(false);
+        var result = await _sender.Send(
+            new UnblockUserEndpointCommand(userId, blockedUserId),
+            ct).ConfigureAwait(false);
 
         if (!result.IsSuccess)
         {
@@ -252,7 +272,11 @@ public class FollowersController : BaseApiController
     public async Task<ActionResult<MuteDto>> MuteUser([FromBody] MuteRequest request, CancellationToken ct)
     {
         var userId = GetCurrentUserId();
-        var result = await _followerService.MuteUserAsync(userId, request.MutedUserId, request.Reason, request.ExpiresAt, ct).ConfigureAwait(false);
+        var result = await _sender.Send(new MuteUserEndpointCommand(
+            userId,
+            request.MutedUserId,
+            request.Reason,
+            request.ExpiresAt), ct).ConfigureAwait(false);
 
         if (!result.IsSuccess)
         {
@@ -267,7 +291,9 @@ public class FollowersController : BaseApiController
     public async Task<ActionResult> UnmuteUser(Guid mutedUserId, CancellationToken ct)
     {
         var userId = GetCurrentUserId();
-        var result = await _followerService.UnmuteUserAsync(userId, mutedUserId, ct).ConfigureAwait(false);
+        var result = await _sender.Send(
+            new UnmuteUserEndpointCommand(userId, mutedUserId),
+            ct).ConfigureAwait(false);
 
         if (!result.IsSuccess)
         {

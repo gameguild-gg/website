@@ -48,6 +48,7 @@ public class AnalyticsController(
     }
 
     [HttpPost("funnel")]
+    [NoBusinessMutationEndpoint("Funnel analysis is a read-only aggregation over existing analytics events.")]
     public async Task<IActionResult> AnalyzeFunnel([FromBody] AnalyzeFunnelQuery query, CancellationToken ct)
     {
         var result = await sender.Send(query, ct);
@@ -59,7 +60,7 @@ public class AnalyticsController(
         [FromBody] AnalyticsWarehouseRunRequest request,
         CancellationToken ct)
     {
-        return Ok(await warehouseService.MaterializeAsync(request, ct));
+        return Ok(await sender.Send(new RunAnalyticsWarehouseCommand(request), ct));
     }
 
     [HttpGet("warehouse/facts")]

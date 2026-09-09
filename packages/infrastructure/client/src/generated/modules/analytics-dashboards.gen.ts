@@ -17,7 +17,7 @@ export class AnalyticsDashboardsModule {
 
   /**
    */
-  async getApiAnalyticsDashboards(query?: { tenantId?: string }): Promise<Result<Array<Types.AnalyticsDashboard>, ApiError>> {
+  async getApiAnalyticsDashboards(query?: { tenantId?: string }): Promise<Result<Array<Types.AnalyticsDashboardDto>, ApiError>> {
     const url = '/api/analytics/dashboards';
 
     const result = await this.client.request({
@@ -27,12 +27,12 @@ export class AnalyticsDashboardsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.AnalyticsDashboard>, ApiError>;
+    return result as Result<Array<Types.AnalyticsDashboardDto>, ApiError>;
   }
 
   /**
    */
-  async postApiAnalyticsDashboards(body: Types.AnalyticsCreateDashboardInput): Promise<Result<Types.AnalyticsDashboard, ApiError>> {
+  async postApiAnalyticsDashboards(body: Types.AnalyticsCreateDashboardInput): Promise<Result<Types.AnalyticsDashboardDto, ApiError>> {
     const url = '/api/analytics/dashboards';
 
     // Validate request body
@@ -47,7 +47,7 @@ export class AnalyticsDashboardsModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.AnalyticsDashboardSchema, result.data, 'response');
+      const validatedData = safeParse(Types.AnalyticsDashboardDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -56,7 +56,7 @@ export class AnalyticsDashboardsModule {
 
   /**
    */
-  async getAnalyticsDashboardById(id: string): Promise<Result<Types.AnalyticsDashboard, ApiError>> {
+  async getAnalyticsDashboardById(id: string): Promise<Result<Types.AnalyticsDashboardDto, ApiError>> {
     const url = `/api/analytics/dashboards/${id}`;
 
     const result = await this.client.request({
@@ -67,7 +67,7 @@ export class AnalyticsDashboardsModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.AnalyticsDashboardSchema, result.data, 'response');
+      const validatedData = safeParse(Types.AnalyticsDashboardDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -76,7 +76,7 @@ export class AnalyticsDashboardsModule {
 
   /**
    */
-  async putApiAnalyticsDashboards(id: string, body: Types.AnalyticsUpdateDashboardInput): Promise<Result<Types.AnalyticsDashboard, ApiError>> {
+  async putApiAnalyticsDashboards(id: string, body: Types.AnalyticsUpdateDashboardInput): Promise<Result<Types.AnalyticsDashboardDto, ApiError>> {
     const url = `/api/analytics/dashboards/${id}`;
 
     // Validate request body
@@ -91,7 +91,7 @@ export class AnalyticsDashboardsModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.AnalyticsDashboardSchema, result.data, 'response');
+      const validatedData = safeParse(Types.AnalyticsDashboardDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 

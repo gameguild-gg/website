@@ -19,7 +19,7 @@ public sealed class RequestMagicLinkCommand : ICommand<MagicLinkRequestResult>
 /// <summary>
 ///     Consumes a one-time magic-link token and issues authentication tokens.
 /// </summary>
-public sealed class ConsumeMagicLinkCommand : IRequest<SignInResponse>
+public sealed class ConsumeMagicLinkCommand : ICommand<SignInResponse>
 {
     public string Token { get; init; } = string.Empty;
 

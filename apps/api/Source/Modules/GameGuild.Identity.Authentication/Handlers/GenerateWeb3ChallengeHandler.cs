@@ -5,7 +5,7 @@ namespace GameGuild.Identity.Authentication;
 /// <summary>
 ///     Handler for generating Web3 challenge
 /// </summary>
-public sealed class GenerateWeb3ChallengeHandler(IWeb3Service web3Service) : IRequestHandler<GenerateWeb3ChallengeCommand, Web3ChallengeResponse>
+public sealed class GenerateWeb3ChallengeHandler(IWeb3Service web3Service) : ICommandHandler<GenerateWeb3ChallengeCommand, Web3ChallengeResponse>
 {
     public async Task<Web3ChallengeResponse> Handle(GenerateWeb3ChallengeCommand request, CancellationToken cancellationToken)
     {

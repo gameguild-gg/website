@@ -1,4 +1,5 @@
 using Asp.Versioning;
+using GameGuild.CQRS;
 using GameGuild.Identity.Authorization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -14,7 +15,8 @@ public class ProgramContentController(
   IProgramContentService contentService,
   IProgramCrudService programService,
   ICodingAssignmentContentService codingAssignmentService,
-  IAuthorizationService authorizationService) : BaseApiController
+  IAuthorizationService authorizationService,
+  ISender sender) : BaseApiController
 {
   /// <summary> Get all content for a course with optional filtering (resource-level Read permission required on parent Program) </summary>
   /// <remarks>
@@ -75,7 +77,11 @@ public class ProgramContentController(
     if (currentUserId == null) return Unauthorized();
     if (!await AuthorizeCourseContentAsync(programId, Policies.CourseContentLearner).ConfigureAwait(false)) return Forbid();
 
-    var interaction = await programService.SubmitUserContentAsync(programId, currentUserId.Value, id, submitDto.SubmissionData).ConfigureAwait(false);
+    var interaction = await sender.Send(new SubmitProgramContentEndpointCommand(
+      programId,
+      currentUserId.Value,
+      id,
+      submitDto.SubmissionData)).ConfigureAwait(false);
 
     if (interaction == null) return NotFound();
 
@@ -90,7 +96,7 @@ public class ProgramContentController(
     if (createDto.ProgramId != programId) return BadRequest("Program ID in URL must match Program ID in request body");
 
     var content = createDto.ToEntity();
-    var createdContent = await contentService.CreateContentAsync(content).ConfigureAwait(false);
+    var createdContent = await sender.Send(new CreateProgramContentEndpointCommand(content)).ConfigureAwait(false);
     var contentDto = createdContent.ToDto();
 
     return CreatedAtAction(nameof(GetContent), new { programId = createdContent.ProgramId, id = createdContent.Id }, contentDto);
@@ -110,7 +116,7 @@ public class ProgramContentController(
     // Apply updates from DTO
     existingContent.ApplyUpdates(updateDto);
 
-    var updatedContent = await contentService.UpdateContentAsync(existingContent).ConfigureAwait(false);
+    var updatedContent = await sender.Send(new UpdateProgramContentEndpointCommand(existingContent)).ConfigureAwait(false);
     var contentDto = updatedContent.ToDto();
 
     return Ok(contentDto);
@@ -125,7 +131,7 @@ public class ProgramContentController(
 
     if (content == null || content.ProgramId != programId) return NotFound();
 
-    var deleted = await contentService.DeleteContentAsync(id).ConfigureAwait(false);
+    var deleted = await sender.Send(new DeleteProgramContentEndpointCommand(id)).ConfigureAwait(false);
 
     if (!deleted) return NotFound();
 
@@ -158,7 +164,7 @@ public class ProgramContentController(
   {
     // Convert the simple list to (Id, SortOrder) tuples
     var newOrder = reorderDto.ContentIds.Select((id, index) => (id, index + 1)).ToList();
-    var success = await contentService.ReorderContentAsync(programId, newOrder).ConfigureAwait(false);
+    var success = await sender.Send(new ReorderProgramContentEndpointCommand(programId, newOrder)).ConfigureAwait(false);
 
     if (!success) return BadRequest("Failed to reorder content. Some content items may not exist.");
 
@@ -176,7 +182,7 @@ public class ProgramContentController(
 
     if (content == null || content.ProgramId != programId) return NotFound();
 
-    var success = await contentService.MoveContentAsync(id, moveDto.NewParentId, moveDto.NewSortOrder).ConfigureAwait(false);
+    var success = await sender.Send(new MoveProgramContentEndpointCommand(id, moveDto.NewParentId, moveDto.NewSortOrder)).ConfigureAwait(false);
 
     if (!success) return BadRequest("Failed to move content");
 
@@ -227,13 +233,14 @@ public class ProgramContentController(
 
   /// <summary> Search content within a program (resource-level Read permission required on parent Program) </summary>
   [HttpPost("search")]
+  [NoBusinessMutationEndpoint("Content search is read-only and uses POST only for its structured filter payload.")]
   public async Task<ActionResult<IEnumerable<ProgramContentDto>>> SearchContent(Guid programId, [FromBody] SearchContentDto searchDto)
   {
     var access = await ResolveContentAccessAsync(programId).ConfigureAwait(false);
     if (!access.CanManageContent && !access.CanViewLearnerContent) return NotFound();
     if (searchDto.ProgramId != programId) return BadRequest("Program ID in URL must match Program ID in request body");
 
-    var content = await contentService.SearchContentAsync(programId, searchDto.SearchTerm).ConfigureAwait(false);
+    var content = await sender.Send(new SearchProgramContentEndpointQuery(programId, searchDto.SearchTerm)).ConfigureAwait(false);
     var contentDtos = content.ToDtos();
 
     return Ok(access.CanManageContent ? contentDtos : ExcludePrivateContent(contentDtos));
@@ -296,7 +303,7 @@ public class ProgramContentController(
     if (currentUserId == null) return Unauthorized();
     if (!await AuthorizeCourseContentAsync(programId, Policies.CourseContentManage).ConfigureAwait(false)) return Forbid();
 
-    var result = await codingAssignmentService.UpsertAsync(programId, id, body, currentUserId.Value).ConfigureAwait(false);
+    var result = await sender.Send(new PutCodingAssignmentEndpointCommand(programId, id, body, currentUserId.Value)).ConfigureAwait(false);
     if (!result.IsSuccess)
     {
       return result.Error.Type == ErrorType.NotFound

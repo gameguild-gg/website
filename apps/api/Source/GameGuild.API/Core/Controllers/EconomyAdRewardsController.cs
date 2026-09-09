@@ -1,4 +1,5 @@
 using Asp.Versioning;
+using GameGuild.CQRS;
 using GameGuild.Economy.AdRewards;
 using GameGuild.Economy.Contracts;
 using GameGuild.Economy.Ledger;
@@ -42,8 +43,7 @@ public interface IAdRewardRequestRiskContextResolver
 [Tags("economy-ad-rewards")]
 [Authorize]
 public sealed class EconomyAdRewardsController(
-    IDurableAdRewardSessionService sessions,
-    IDurableAdRewardCompletionService completions,
+    ISender sender,
     IDurableAdRewardSessionReader reader,
     IEconomyWalletDirectory wallets,
     IAdRewardRequestRiskContextResolver requestRiskContext,
@@ -74,7 +74,7 @@ public sealed class EconomyAdRewardsController(
                 Message = "Ad reward risk evidence is unavailable."
             });
         }
-        var result = await sessions.StartAsync(new StartDurableAdRewardSessionRequest(
+        var result = await sender.Send(new StartAdRewardSessionEndpointCommand(new StartDurableAdRewardSessionRequest(
             tenantId,
             actorId,
             wallet.WalletId,
@@ -85,7 +85,7 @@ public sealed class EconomyAdRewardsController(
             risk.AsnRiskHash,
             TimeSpan.FromSeconds(request.RequiredDurationSeconds),
             new IdempotencyKey(request.IdempotencyKey),
-            timeProvider.GetUtcNow()), cancellationToken).ConfigureAwait(false);
+            timeProvider.GetUtcNow())), cancellationToken).ConfigureAwait(false);
         return StatusCode(StatusCodes.Status201Created, result);
     }
 
@@ -105,12 +105,12 @@ public sealed class EconomyAdRewardsController(
             return BadRequest("Provider proof is bound to another ad reward session.");
         try
         {
-            var result = await completions.CompleteAsync(new CompleteDurableAdRewardSessionRequest(
+            var result = await sender.Send(new CompleteAdRewardSessionEndpointCommand(new CompleteDurableAdRewardSessionRequest(
                 new SignedAdRewardSession(request.Token),
                 request.Playback,
                 request.ProviderProof,
                 new IdempotencyKey(request.IdempotencyKey),
-                timeProvider.GetUtcNow()), cancellationToken).ConfigureAwait(false);
+                timeProvider.GetUtcNow())), cancellationToken).ConfigureAwait(false);
             return result.SessionId == sessionId
                 ? Ok(result)
                 : Conflict("The signed token is bound to another ad reward session.");
@@ -158,7 +158,7 @@ public sealed class EconomyAdRewardsController(
 [Tags("economy-administration")]
 [Authorize]
 public sealed class EconomyAdRewardsAdministrationController(
-    IDurableAdRewardReportService reports,
+    ISender sender,
     IDurableAdRewardReportReader reportReader,
     IActorContextAccessor actorContextAccessor,
     TimeProvider timeProvider) : BaseApiController
@@ -173,11 +173,11 @@ public sealed class EconomyAdRewardsAdministrationController(
         if (!actor.IsAuthenticated || !actor.TenantId.HasValue ||
             !actor.HasPermission(EconomyPermission.Keys.OperateAdRewards))
             return Forbid();
-        return Ok(await reports.ImportAsync(
-            new ImportDurableAdProviderReportRequest(
+        return Ok(await sender.Send(
+            new ImportAdRewardReportEndpointCommand(new ImportDurableAdProviderReportRequest(
                 actor.TenantId.Value,
                 report,
-                timeProvider.GetUtcNow()),
+                timeProvider.GetUtcNow())),
             cancellationToken).ConfigureAwait(false));
     }
 

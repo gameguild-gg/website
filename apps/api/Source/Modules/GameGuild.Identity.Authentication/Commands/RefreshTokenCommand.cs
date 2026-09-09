@@ -5,7 +5,7 @@ namespace GameGuild.Identity.Authentication;
 /// <summary>
 ///     Command to handle token refresh
 /// </summary>
-public class RefreshTokenCommand : IRequest<SignInResponse>
+public class RefreshTokenCommand : ICommand<SignInResponse>
 {
     /// <summary>
     ///     The refresh token to use for generating new access/refresh tokens

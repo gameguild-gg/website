@@ -17,7 +17,7 @@ export class LearningEnrollmentsModule {
 
   /**
    */
-  async postApiLearningEnrollments(body: Types.LearningEnrollmentsEnrollUserInput): Promise<Result<Types.LearningEnrollmentsEnrollment, ApiError>> {
+  async postApiLearningEnrollments(body: Types.LearningEnrollmentsEnrollUserInput): Promise<Result<Types.LearningEnrollmentsEnrollmentDto, ApiError>> {
     const url = '/api/learning/enrollments';
 
     // Validate request body
@@ -32,7 +32,7 @@ export class LearningEnrollmentsModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.LearningEnrollmentsEnrollmentSchema, result.data, 'response');
+      const validatedData = safeParse(Types.LearningEnrollmentsEnrollmentDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -90,7 +90,7 @@ export class LearningEnrollmentsModule {
   async getApiLearningEnrollmentsCourses(
     courseId: string,
     query?: { status?: Types.LearningEnrollmentsEnrollmentStatus },
-  ): Promise<Result<Array<Types.LearningEnrollmentsEnrollment>, ApiError>> {
+  ): Promise<Result<Array<Types.LearningEnrollmentsEnrollmentDto>, ApiError>> {
     const url = `/api/learning/enrollments/courses/${courseId}`;
 
     const result = await this.client.request({
@@ -100,7 +100,7 @@ export class LearningEnrollmentsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.LearningEnrollmentsEnrollment>, ApiError>;
+    return result as Result<Array<Types.LearningEnrollmentsEnrollmentDto>, ApiError>;
   }
 
   /**
@@ -108,7 +108,7 @@ export class LearningEnrollmentsModule {
   async getApiLearningEnrollmentsUsers(
     userId: string,
     query?: { status?: Types.LearningEnrollmentsEnrollmentStatus },
-  ): Promise<Result<Array<Types.LearningEnrollmentsEnrollment>, ApiError>> {
+  ): Promise<Result<Array<Types.LearningEnrollmentsEnrollmentDto>, ApiError>> {
     const url = `/api/learning/enrollments/users/${userId}`;
 
     const result = await this.client.request({
@@ -118,7 +118,7 @@ export class LearningEnrollmentsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.LearningEnrollmentsEnrollment>, ApiError>;
+    return result as Result<Array<Types.LearningEnrollmentsEnrollmentDto>, ApiError>;
   }
 }
 

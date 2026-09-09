@@ -1,4 +1,5 @@
 using Asp.Versioning;
+using GameGuild.CQRS;
 using GameGuild.Economy.Contracts;
 using GameGuild.Economy.Marketplace;
 using GameGuild.Economy.Risk;
@@ -29,8 +30,7 @@ public sealed record MarketplaceProtectedOperationFailureResponse(
 [Tags("economy-marketplace")]
 [Authorize]
 public sealed class EconomyMarketplaceController(
-    IDurableMarketplaceSettlementService settlements,
-    IDurableMarketplaceRefundService refunds,
+    ISender sender,
     IActorContextAccessor actorContextAccessor,
     TimeProvider timeProvider) : BaseApiController
 {
@@ -47,11 +47,11 @@ public sealed class EconomyMarketplaceController(
         if (!TryActor(out _, out _)) return Forbid();
         ArgumentNullException.ThrowIfNull(request);
         return await MarketplaceProtectedOperationResponse.ExecuteAsync(() =>
-            settlements.SettleAsync(new SettleAuthoritativeMarketplaceOrderRequest(
+            sender.Send(new SettleMarketplaceOrderEndpointCommand(new SettleAuthoritativeMarketplaceOrderRequest(
                 orderId,
                 request.CurrencyChoice,
                 new IdempotencyKey(request.IdempotencyKey),
-                timeProvider.GetUtcNow()), cancellationToken).AsTask());
+                timeProvider.GetUtcNow())), cancellationToken));
     }
 
     [HttpPost("settlements/{settlementId:guid}:refund")]
@@ -67,13 +67,13 @@ public sealed class EconomyMarketplaceController(
         if (!TryActor(out _, out _)) return Forbid();
         ArgumentNullException.ThrowIfNull(request);
         return await MarketplaceProtectedOperationResponse.ExecuteAsync(() =>
-            refunds.RefundAsync(new RefundAuthoritativeMarketplaceOrderRequest(
+            sender.Send(new RefundMarketplaceOrderEndpointCommand(new RefundAuthoritativeMarketplaceOrderRequest(
                 MarketplaceRefundAuthority.SelfService,
                 settlementId,
                 request.Quantity,
                 request.ReasonCode,
                 new IdempotencyKey(request.IdempotencyKey),
-                timeProvider.GetUtcNow()), cancellationToken).AsTask());
+                timeProvider.GetUtcNow())), cancellationToken));
     }
 
     private bool TryActor(out Guid tenantId, out Guid actorId)
@@ -94,7 +94,7 @@ public sealed class EconomyMarketplaceController(
 [Tags("economy-administration")]
 [Authorize]
 public sealed class EconomyMarketplaceAdministrationController(
-    IDurableMarketplaceRefundService refunds,
+    ISender sender,
     IActorContextAccessor actorContextAccessor,
     TimeProvider timeProvider) : BaseApiController
 {
@@ -114,13 +114,13 @@ public sealed class EconomyMarketplaceAdministrationController(
             return Forbid();
         ArgumentNullException.ThrowIfNull(request);
         return await MarketplaceProtectedOperationResponse.ExecuteAsync(() =>
-            refunds.RefundAsync(new RefundAuthoritativeMarketplaceOrderRequest(
+            sender.Send(new RefundMarketplaceOrderAdministrationEndpointCommand(new RefundAuthoritativeMarketplaceOrderRequest(
                 MarketplaceRefundAuthority.Operations,
                 settlementId,
                 request.Quantity,
                 request.ReasonCode,
                 new IdempotencyKey(request.IdempotencyKey),
-                timeProvider.GetUtcNow()), cancellationToken).AsTask());
+                timeProvider.GetUtcNow())), cancellationToken));
     }
 }
 

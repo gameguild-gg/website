@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using Asp.Versioning;
+using GameGuild.CQRS;
 using GameGuild.Identity.Authentication;
 using GameGuild.Identity.Authorization;
 using GameGuild.Identity.Context.Actors;
@@ -86,7 +87,8 @@ public sealed class TeamsController(
     IApplicationDbContext context,
     IActorContextAccessor actorContextAccessor,
     ITeamAuthorizationService authorization,
-    IResourceQuotaEnforcer quotaEnforcer) : ControllerBase
+    IResourceQuotaEnforcer quotaEnforcer,
+    ISender sender) : ControllerBase
 {
     private static readonly TimeSpan RecentAuthenticationWindow = TimeSpan.FromMinutes(15);
 
@@ -207,8 +209,7 @@ public sealed class TeamsController(
             team = Team.Create(tenantId, request.Name, normalizedSlug, ownerUserId);
             team.Visibility = request.Visibility;
             team.Description = request.Description?.Trim();
-            context.Set<Team>().Add(team);
-            await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+            await sender.Send(new CreateTeamEndpointCommand(team), cancellationToken).ConfigureAwait(false);
         }
         catch
         {
@@ -245,7 +246,7 @@ public sealed class TeamsController(
         team.Description = request.Description?.Trim();
         team.Visibility = request.Visibility;
         team.Touch();
-        await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        await sender.Send(new UpdateTeamEndpointCommand(team), cancellationToken).ConfigureAwait(false);
         return Ok(Map(team));
     }
 
@@ -257,7 +258,7 @@ public sealed class TeamsController(
         var team = await LoadTeamAsync(teamId, cancellationToken).ConfigureAwait(false);
         if (team == null) return NotFound();
         team.Archive();
-        await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        await sender.Send(new ArchiveTeamEndpointCommand(team), cancellationToken).ConfigureAwait(false);
         return NoContent();
     }
 
@@ -278,7 +279,7 @@ public sealed class TeamsController(
         {
             return Conflict(new ProblemDetails { Title = exception.Message, Status = StatusCodes.Status409Conflict });
         }
-        await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        await sender.Send(new RestoreTeamEndpointCommand(team), cancellationToken).ConfigureAwait(false);
         return Ok(Map(team));
     }
 
@@ -302,8 +303,7 @@ public sealed class TeamsController(
             return Forbid();
         var existing = team.Members.SingleOrDefault(member => member.UserId == request.UserId && member.DeletedAt == null);
         var member = team.AddMember(request.UserId, request.Authority, request.ProfessionalTitle);
-        if (existing == null) context.Set<TeamMember>().Add(member);
-        await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        await sender.Send(new AddTeamMemberEndpointCommand(member, existing == null), cancellationToken).ConfigureAwait(false);
         return Ok(Map(member));
     }
 
@@ -331,7 +331,7 @@ public sealed class TeamsController(
         }
         var member = team.Members.Single(candidate => candidate.UserId == userId && candidate.IsActive);
         member.ProfessionalTitle = request.ProfessionalTitle?.Trim();
-        await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        await sender.Send(new ChangeTeamMemberEndpointCommand(member), cancellationToken).ConfigureAwait(false);
         return Ok(Map(member));
     }
 
@@ -347,7 +347,7 @@ public sealed class TeamsController(
         {
             return Conflict(new ProblemDetails { Title = exception.Message, Status = StatusCodes.Status409Conflict });
         }
-        await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        await sender.Send(new RemoveTeamMemberEndpointCommand(team), cancellationToken).ConfigureAwait(false);
         return NoContent();
     }
 
@@ -380,8 +380,7 @@ public sealed class TeamsController(
             token,
             request.ExpiresAt,
             request.UserId);
-        context.Set<TeamInvitation>().Add(invitation);
-        await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        await sender.Send(new CreateTeamInvitationEndpointCommand(invitation), cancellationToken).ConfigureAwait(false);
         return Ok(new TeamInvitationCreatedDto(invitation.Id, token, invitation.ExpiresAt));
     }
 
@@ -466,7 +465,7 @@ public sealed class TeamsController(
         if (invitation.UsedAt.HasValue)
             return Conflict(new ProblemDetails { Title = "An accepted invitation cannot be revoked.", Status = StatusCodes.Status409Conflict });
         invitation.Revoke(SystemClock.UtcNow);
-        await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        await sender.Send(new RevokeTeamInvitationEndpointCommand(invitation), cancellationToken).ConfigureAwait(false);
         return NoContent();
     }
 
@@ -505,8 +504,10 @@ public sealed class TeamsController(
             return Conflict(new ProblemDetails { Title = "Invitation is expired, revoked, or already used.", Status = StatusCodes.Status409Conflict });
         var existingMember = invitation.Team.Members.SingleOrDefault(member => member.UserId == actorId && member.DeletedAt == null);
         var acceptedMember = invitation.Team.AddMember(actorId, invitation.Authority);
-        if (existingMember == null) context.Set<TeamMember>().Add(acceptedMember);
-        await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        await sender.Send(new AcceptTeamInvitationEndpointCommand(
+            invitation.Team,
+            acceptedMember,
+            existingMember == null), cancellationToken).ConfigureAwait(false);
         return Ok(Map(invitation.Team));
     }
 
@@ -543,8 +544,10 @@ public sealed class TeamsController(
             return Conflict(new ProblemDetails { Title = "Invitation is expired, revoked, or already used.", Status = StatusCodes.Status409Conflict });
         var existingMember = invitation.Team.Members.SingleOrDefault(member => member.UserId == actorId && member.DeletedAt == null);
         var acceptedMember = invitation.Team.AddMember(actorId, invitation.Authority);
-        if (existingMember == null) context.Set<TeamMember>().Add(acceptedMember);
-        await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        await sender.Send(new AcceptAuthenticatedTeamInvitationEndpointCommand(
+            invitation.Team,
+            acceptedMember,
+            existingMember == null), cancellationToken).ConfigureAwait(false);
         return Ok(Map(invitation.Team));
     }
 

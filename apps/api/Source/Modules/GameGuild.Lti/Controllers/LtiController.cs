@@ -1,8 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Cryptography;
-using GameGuild.Identity.Authentication;
+using GameGuild.CQRS;
 using GameGuild.Identity.Context.Actors;
-using GameGuild.Identity.Users;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -21,10 +20,9 @@ namespace GameGuild.Lti;
 public sealed class LtiController(
     IApplicationDbContext context,
     LtiLaunchStateStore stateStore,
-    LtiPlatformJwksService jwksService,
-    IJwtTokenService jwtTokenService,
     IActorContextAccessor actorContextAccessor,
-    ILogger<LtiController> logger) : BaseApiController
+    ILogger<LtiController> logger,
+    ISender sender) : BaseApiController
 {
     private const string SessionCookieName = "gg_session";
 
@@ -72,6 +70,7 @@ public sealed class LtiController(
     /// </summary>
     [AllowAnonymous]
     [HttpPost("lti/login")]
+    [NoBusinessMutationEndpoint("OIDC login initiation only validates configuration and creates ephemeral anti-replay state; it does not change durable business state.")]
     public async Task<IActionResult> Login()
     {
         if (!Request.HasFormContentType)
@@ -146,59 +145,28 @@ public sealed class LtiController(
             return BadRequest("state and id_token are required.");
         }
 
-        // Decode the header unvalidated ONLY to locate the deployment; no claim is
-        // trusted until the signature validates against the platform JWKS.
-        string issuer;
-        string audience;
-        try
-        {
-            var unvalidated = new JwtSecurityTokenHandler().ReadJwtToken(idToken);
-            issuer = unvalidated.Issuer;
-            audience = unvalidated.Audiences.FirstOrDefault() ?? string.Empty;
-        }
-        catch (ArgumentException)
+        var result = await sender.Send(new LaunchLtiCommand(state, idToken)).ConfigureAwait(false);
+        if (result.Status == LtiLaunchStatus.MalformedToken)
         {
             return BadRequest("Malformed id_token.");
         }
 
-        var deployment = await FindActiveDeploymentAsync(issuer, audience).ConfigureAwait(false);
-        if (deployment is null)
+        if (result.Status != LtiLaunchStatus.Success)
         {
-            return Unauthorized("Unknown LTI platform.");
+            var message = result.Status switch
+            {
+                LtiLaunchStatus.UnknownPlatform => "Unknown LTI platform.",
+                LtiLaunchStatus.InvalidToken => "Invalid launch token.",
+                LtiLaunchStatus.MissingClaims => "Launch token is missing required claims.",
+                LtiLaunchStatus.InvalidState => "Unknown or already used launch state.",
+                LtiLaunchStatus.UserNotFound => "No gameguild account matches this launch",
+                _ => "Invalid LTI launch."
+            };
+            return Unauthorized(message);
         }
-
-        var principal = await jwksService.ValidateIdTokenAsync(idToken, deployment).ConfigureAwait(false);
-        if (principal is null)
-        {
-            return Unauthorized("Invalid launch token.");
-        }
-
-        var sub = principal.FindFirst("sub")?.Value;
-        var nonce = principal.FindFirst("nonce")?.Value;
-        if (string.IsNullOrEmpty(sub) || string.IsNullOrEmpty(nonce))
-        {
-            return Unauthorized("Launch token is missing required claims.");
-        }
-
-        // Single-use: consuming the state also consumes its nonce.
-        if (!stateStore.TryConsume(state, nonce, deployment.Id))
-        {
-            return Unauthorized("Unknown or already used launch state.");
-        }
-
-        var user = await ResolveUserAsync(deployment, sub, principal.FindFirst("email")?.Value).ConfigureAwait(false);
-        if (user is null)
-        {
-            // Fail closed — never auto-provision from platform identity.
-            return Unauthorized("No gameguild account matches this launch");
-        }
-
-        var sessionToken = await jwtTokenService
-            .GenerateAccessTokenAsync(user.Id, user.Email, Array.Empty<string>(), user.TenantId)
-            .ConfigureAwait(false);
 
         // SameSite=None is required: the tool runs inside the platform's iframe.
-        Response.Cookies.Append(SessionCookieName, sessionToken, new CookieOptions
+        Response.Cookies.Append(SessionCookieName, result.SessionToken!, new CookieOptions
         {
             HttpOnly = true,
             Secure = true,
@@ -218,24 +186,19 @@ public sealed class LtiController(
             return Forbid();
         }
 
-        LtiDeployment deployment;
         try
         {
-            deployment = LtiDeployment.Create(
+            var deployment = await sender.Send(new CreateLtiDeploymentCommand(
                 request.Issuer, request.ClientId, request.DeploymentId,
                 request.AuthTokenUrl, request.PlatformJwksUrl, request.AuthorizationUrl,
-                request.KeyId, request.PrivateKeyPem, request.Active);
+                request.KeyId, request.PrivateKeyPem, request.Active)).ConfigureAwait(false);
+
+            return Created($"/v1/lti/deployments/{deployment.Id}", LtiDeploymentDto.FromEntity(deployment));
         }
         catch (ArgumentException ex)
         {
             return BadRequest(ex.Message);
         }
-
-        context.Set<LtiDeployment>().Add(deployment);
-        await context.SaveChangesAsync().ConfigureAwait(false);
-        logger.LogInformation("LTI deployment created: {DeploymentId}", deployment.Id);
-
-        return Created($"/v1/lti/deployments/{deployment.Id}", LtiDeploymentDto.FromEntity(deployment));
     }
 
     [HttpPost("v1/lti/deployments/{id:guid}/line-items")]
@@ -246,38 +209,32 @@ public sealed class LtiController(
             return Forbid();
         }
 
-        var deployment = await context.Set<LtiDeployment>()
-            .FirstOrDefaultAsync(d => d.Id == id && d.DeletedAt == null)
-            .ConfigureAwait(false);
-        if (deployment is null)
-        {
-            return NotFound();
-        }
-
-        var exists = await context.Set<LtiLineItemMapping>()
-            .AnyAsync(m => m.AssessmentId == request.AssessmentId)
-            .ConfigureAwait(false);
-        if (exists)
-        {
-            return Conflict($"Assessment {request.AssessmentId} is already mapped to a line item.");
-        }
-
-        LtiLineItemMapping mapping;
         try
         {
-            mapping = LtiLineItemMapping.Create(
-                request.AssessmentId, deployment.Id, request.LineItemId, request.LineItemUrl, request.MaxScore);
+            var result = await sender.Send(new CreateLtiLineItemCommand(
+                id,
+                request.AssessmentId,
+                request.LineItemId,
+                request.LineItemUrl,
+                request.MaxScore)).ConfigureAwait(false);
+
+            if (result.Status == CreateLtiLineItemStatus.DeploymentNotFound)
+            {
+                return NotFound();
+            }
+
+            if (result.Status == CreateLtiLineItemStatus.AssessmentAlreadyMapped)
+            {
+                return Conflict($"Assessment {request.AssessmentId} is already mapped to a line item.");
+            }
+
+            var mapping = result.Mapping!;
+            return Created($"/v1/lti/deployments/{id}/line-items/{mapping.Id}", LtiLineItemMappingDto.FromEntity(mapping));
         }
         catch (ArgumentException ex)
         {
             return BadRequest(ex.Message);
         }
-
-        context.Set<LtiLineItemMapping>().Add(mapping);
-        await context.SaveChangesAsync().ConfigureAwait(false);
-        logger.LogInformation("LTI line item mapping created: assessment {AssessmentId} -> {LineItemUrl}", request.AssessmentId, request.LineItemUrl);
-
-        return Created($"/v1/lti/deployments/{deployment.Id}/line-items/{mapping.Id}", LtiLineItemMappingDto.FromEntity(mapping));
     }
 
     private async Task<LtiDeployment?> FindActiveDeploymentAsync(string issuer, string clientId)
@@ -292,45 +249,4 @@ public sealed class LtiController(
             .ConfigureAwait(false);
     }
 
-    private async Task<User?> ResolveUserAsync(LtiDeployment deployment, string sub, string? email)
-    {
-        var mapping = await context.Set<LtiUserMapping>()
-            .FirstOrDefaultAsync(u => u.DeploymentId == deployment.Id && u.Sub == sub)
-            .ConfigureAwait(false);
-
-        if (mapping is not null)
-        {
-            return await context.Set<User>()
-                .FirstOrDefaultAsync(u => u.Id == mapping.UserId && u.DeletedAt == null)
-                .ConfigureAwait(false);
-        }
-
-        if (string.IsNullOrEmpty(email))
-        {
-            return null;
-        }
-
-        var normalized = email.Trim().ToLowerInvariant();
-        var user = await context.Set<User>()
-            .FirstOrDefaultAsync(u => u.DeletedAt == null && u.Email.ToLower() == normalized)
-            .ConfigureAwait(false);
-        if (user is null)
-        {
-            return null;
-        }
-
-        try
-        {
-            context.Set<LtiUserMapping>().Add(LtiUserMapping.Create(deployment.Id, user.Id, sub));
-            await context.SaveChangesAsync().ConfigureAwait(false);
-        }
-        catch (Exception ex)
-        {
-            // Concurrent launch already inserted the mapping — the DB unique index
-            // (DeploymentId, Sub) is the authority; continue signing the user in.
-            logger.LogWarning(ex, "LTI: user mapping upsert raced for deployment {DeploymentId} sub {Sub}", deployment.Id, sub);
-        }
-
-        return user;
-    }
 }

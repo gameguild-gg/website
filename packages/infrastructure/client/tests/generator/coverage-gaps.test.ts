@@ -71,7 +71,7 @@ describe('generator coverage edge cases', () => {
       '#/components/schemas/ExistingDto',
     );
     expect(normalizeSchemaName('PagedResult`1[[Acme_Identity_Users_UserDto, Acme.Identity.Users')).toBe(
-      'PagedResultOfIdentityUsersUser',
+      'PagedResultOfIdentityUsersUserDto',
     );
     expect(toSchemaTypeName('App.UserResponse')).toBe('UserOutput');
     expect(resolveKnownSchemaTypeName('App.UserDto', new Set(['User']))).toBe('User');

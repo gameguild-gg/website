@@ -68,6 +68,26 @@ export class AnalyticsModule {
 
   /**
    */
+  async getApiAnalyticsPlatformKpis(): Promise<Result<Types.APIControllersPlatformKpisOutput, ApiError>> {
+    const url = '/api/analytics/platform-kpis';
+
+    const result = await this.client.request({
+      method: 'GET',
+      path: url,
+      requiresAuth: true,
+    });
+
+    // Validate response
+    if (result.ok) {
+      const validatedData = safeParse(Types.APIControllersPlatformKpisOutputSchema, result.data, 'response');
+      return { ok: true, data: validatedData };
+    }
+
+    return result;
+  }
+
+  /**
+   */
   async getApiAnalyticsTimeseries(query?: {
     eventName?: string;
     startDate?: string;
@@ -116,7 +136,7 @@ export class AnalyticsModule {
     tenantId?: string;
     factName?: string;
     take?: number;
-  }): Promise<Result<Array<Types.AnalyticsAnalyticsWarehouseFact>, ApiError>> {
+  }): Promise<Result<Array<Types.AnalyticsAnalyticsWarehouseFactDto>, ApiError>> {
     const url = '/api/analytics/warehouse/facts';
 
     const result = await this.client.request({
@@ -126,7 +146,7 @@ export class AnalyticsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.AnalyticsAnalyticsWarehouseFact>, ApiError>;
+    return result as Result<Array<Types.AnalyticsAnalyticsWarehouseFactDto>, ApiError>;
   }
 
   /**

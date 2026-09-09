@@ -21,7 +21,7 @@ export class CommerceProductsSupportTicketsSelfServiceModule {
     status?: Types.CommerceProductsSupportTicketStatus;
     skip?: number;
     take?: number;
-  }): Promise<Result<Types.PagedResultOfCommerceProductsSupportTicket, ApiError>> {
+  }): Promise<Result<Types.PagedResultSupportTicketDto, ApiError>> {
     const url = '/v1/support/tickets/mine';
 
     const result = await this.client.request({
@@ -33,7 +33,7 @@ export class CommerceProductsSupportTicketsSelfServiceModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.PagedResultOfCommerceProductsSupportTicketSchema, result.data, 'response');
+      const validatedData = safeParse(Types.PagedResultSupportTicketDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -42,7 +42,7 @@ export class CommerceProductsSupportTicketsSelfServiceModule {
 
   /**
    */
-  async postSupportTicketsMine(body: Types.CommerceProductsCreateMySupportTicketInput): Promise<Result<Types.CommerceProductsSupportTicket, ApiError>> {
+  async postSupportTicketsMine(body: Types.CommerceProductsCreateMySupportTicketInput): Promise<Result<Types.CommerceProductsSupportTicketDto, ApiError>> {
     const url = '/v1/support/tickets/mine';
 
     // Validate request body
@@ -57,7 +57,7 @@ export class CommerceProductsSupportTicketsSelfServiceModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.CommerceProductsSupportTicketSchema, result.data, 'response');
+      const validatedData = safeParse(Types.CommerceProductsSupportTicketDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -69,7 +69,7 @@ export class CommerceProductsSupportTicketsSelfServiceModule {
   async postSupportTicketsMineMessages(
     ticketId: string,
     body: Types.CommerceProductsAddMySupportTicketMessageInput,
-  ): Promise<Result<Types.CommerceProductsSupportTicket, ApiError>> {
+  ): Promise<Result<Types.CommerceProductsSupportTicketDto, ApiError>> {
     const url = `/v1/support/tickets/mine/${ticketId}/messages`;
 
     // Validate request body
@@ -84,7 +84,7 @@ export class CommerceProductsSupportTicketsSelfServiceModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.CommerceProductsSupportTicketSchema, result.data, 'response');
+      const validatedData = safeParse(Types.CommerceProductsSupportTicketDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 

@@ -19,7 +19,7 @@ export class ComplianceConsentModule {
    */
   async postApiComplianceConsentDataSubjectRequests(
     body: Types.ComplianceConsentSubmitDataSubjectRequestCommand,
-  ): Promise<Result<Types.ComplianceConsentDataSubjectInput, ApiError>> {
+  ): Promise<Result<Types.ComplianceConsentDataSubjectRequestDto, ApiError>> {
     const url = '/api/compliance/consent/data-subject-requests';
 
     // Validate request body
@@ -34,7 +34,7 @@ export class ComplianceConsentModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.ComplianceConsentDataSubjectInputSchema, result.data, 'response');
+      const validatedData = safeParse(Types.ComplianceConsentDataSubjectRequestDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -46,7 +46,7 @@ export class ComplianceConsentModule {
   async postApiComplianceConsentDataSubjectRequestsProcess(
     requestId: string,
     body: Types.ComplianceConsentProcessRequestBody,
-  ): Promise<Result<Types.ComplianceConsentDataSubjectInput, ApiError>> {
+  ): Promise<Result<Types.ComplianceConsentDataSubjectRequestDto, ApiError>> {
     const url = `/api/compliance/consent/data-subject-requests/${requestId}/process`;
 
     // Validate request body
@@ -61,7 +61,7 @@ export class ComplianceConsentModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.ComplianceConsentDataSubjectInputSchema, result.data, 'response');
+      const validatedData = safeParse(Types.ComplianceConsentDataSubjectRequestDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -70,7 +70,7 @@ export class ComplianceConsentModule {
 
   /**
    */
-  async getApiComplianceConsentDataSubjectRequestsPending(): Promise<Result<Array<Types.ComplianceConsentDataSubjectInput>, ApiError>> {
+  async getApiComplianceConsentDataSubjectRequestsPending(): Promise<Result<Array<Types.ComplianceConsentDataSubjectRequestDto>, ApiError>> {
     const url = '/api/compliance/consent/data-subject-requests/pending';
 
     const result = await this.client.request({
@@ -79,12 +79,12 @@ export class ComplianceConsentModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.ComplianceConsentDataSubjectInput>, ApiError>;
+    return result as Result<Array<Types.ComplianceConsentDataSubjectRequestDto>, ApiError>;
   }
 
   /**
    */
-  async postApiComplianceConsentGrant(body: Types.ComplianceConsentGrantConsentCommand): Promise<Result<Types.ComplianceConsentUserConsent, ApiError>> {
+  async postApiComplianceConsentGrant(body: Types.ComplianceConsentGrantConsentCommand): Promise<Result<Types.ComplianceConsentUserConsentDto, ApiError>> {
     const url = '/api/compliance/consent/grant';
 
     // Validate request body
@@ -99,7 +99,7 @@ export class ComplianceConsentModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.ComplianceConsentUserConsentSchema, result.data, 'response');
+      const validatedData = safeParse(Types.ComplianceConsentUserConsentDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -108,7 +108,7 @@ export class ComplianceConsentModule {
 
   /**
    */
-  async getApiComplianceConsentPolicies(query?: { tenantId?: string }): Promise<Result<Array<Types.ComplianceConsentConsentPolicy>, ApiError>> {
+  async getApiComplianceConsentPolicies(query?: { tenantId?: string }): Promise<Result<Array<Types.ComplianceConsentConsentPolicyDto>, ApiError>> {
     const url = '/api/compliance/consent/policies';
 
     const result = await this.client.request({
@@ -118,7 +118,7 @@ export class ComplianceConsentModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.ComplianceConsentConsentPolicy>, ApiError>;
+    return result as Result<Array<Types.ComplianceConsentConsentPolicyDto>, ApiError>;
   }
 
   /**
@@ -144,7 +144,7 @@ export class ComplianceConsentModule {
   async postApiComplianceConsentPoliciesVersions(
     policyId: string,
     body: Types.ComplianceConsentPublishVersionInput,
-  ): Promise<Result<Types.ComplianceConsentPolicyVersion, ApiError>> {
+  ): Promise<Result<Types.ComplianceConsentPolicyVersionDto, ApiError>> {
     const url = `/api/compliance/consent/policies/${policyId}/versions`;
 
     // Validate request body
@@ -159,7 +159,7 @@ export class ComplianceConsentModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.ComplianceConsentPolicyVersionSchema, result.data, 'response');
+      const validatedData = safeParse(Types.ComplianceConsentPolicyVersionDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -186,7 +186,7 @@ export class ComplianceConsentModule {
 
   /**
    */
-  async getApiComplianceConsentUsers(userId: string): Promise<Result<Array<Types.ComplianceConsentUserConsent>, ApiError>> {
+  async getApiComplianceConsentUsers(userId: string): Promise<Result<Array<Types.ComplianceConsentUserConsentDto>, ApiError>> {
     const url = `/api/compliance/consent/users/${userId}`;
 
     const result = await this.client.request({
@@ -195,7 +195,7 @@ export class ComplianceConsentModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.ComplianceConsentUserConsent>, ApiError>;
+    return result as Result<Array<Types.ComplianceConsentUserConsentDto>, ApiError>;
   }
 }
 

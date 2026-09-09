@@ -1376,8 +1376,7 @@ public class FeatureControllerConstructorTests
     public void FeaturesController_CanBeConstructed()
     {
         var sender = new Mock<GameGuild.CQRS.ISender>();
-        var management = new Mock<IFeatureFlagManagementService>();
-        var controller = new FeaturesController(sender.Object, management.Object);
+        var controller = new FeaturesController(sender.Object);
         controller.Should().NotBeNull();
     }
 

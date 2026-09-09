@@ -252,7 +252,7 @@ function normalizeTagNames(spec: OpenApiSpec): void {
 }
 
 /**
- * Normalize schema names (remove Dto suffix, clean Microsoft namespaces)
+ * Normalize schema names without conflating DTOs with domain entities.
  */
 function normalizeSchemaNames(spec: OpenApiSpec): void {
   const schemas = (spec.components as OpenAPIV3.ComponentsObject)?.schemas;
@@ -315,8 +315,8 @@ function normalizeSimpleSchemaName(name: string): string {
   // Remove nested class separator
   normalized = normalized.replace(/\+/g, '');
 
-  // Remove common suffixes
-  normalized = normalized.replace(/Dto$/i, '');
+  // DTO identity must not depend on which product-specific entities are present.
+  // Removing Dto causes common contracts to change names when a product adds User.
   normalized = normalized.replace(/Request$/i, 'Input');
   normalized = normalized.replace(/Response$/i, 'Output');
 
@@ -336,13 +336,17 @@ export function resolveKnownSchemaTypeName(name: string, knownSchemaNames?: Set<
     return sanitizedRawName;
   }
 
+  if (knownSchemaNames.has(sanitizedRawName)) {
+    return sanitizedRawName;
+  }
+
   if (knownSchemaNames.has(normalizedName)) {
     return normalizedName;
   }
 
-  if (knownSchemaNames.has(sanitizedRawName)) {
-    return sanitizedRawName;
-  }
+  // Compatibility when consuming an older, already-normalized specification.
+  const legacyName = normalizedName.replace(/Dto$/i, '');
+  if (knownSchemaNames.has(legacyName)) return legacyName;
 
   return undefined;
 }

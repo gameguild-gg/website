@@ -17,7 +17,7 @@ export class CommerceMarketplaceCartModule {
 
   /**
    */
-  async getVMarketplaceCart(version: string): Promise<Result<Types.CommerceOrdersMarketplaceCart, ApiError>> {
+  async getVMarketplaceCart(version: string): Promise<Result<Types.CommerceOrdersMarketplaceCartDto, ApiError>> {
     const url = `/v${version}/marketplace/cart`;
 
     const result = await this.client.request({
@@ -28,7 +28,7 @@ export class CommerceMarketplaceCartModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.CommerceOrdersMarketplaceCartSchema, result.data, 'response');
+      const validatedData = safeParse(Types.CommerceOrdersMarketplaceCartDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -40,7 +40,7 @@ export class CommerceMarketplaceCartModule {
   async postVMarketplaceCartCheckout(
     version: string,
     body: Types.CommerceOrdersCheckoutMarketplaceCartInput,
-  ): Promise<Result<Types.CommerceOrdersMarketplaceCheckout, ApiError>> {
+  ): Promise<Result<Types.CommerceOrdersMarketplaceCheckoutDto, ApiError>> {
     const url = `/v${version}/marketplace/cart/checkout`;
 
     // Validate request body
@@ -55,7 +55,7 @@ export class CommerceMarketplaceCartModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.CommerceOrdersMarketplaceCheckoutSchema, result.data, 'response');
+      const validatedData = safeParse(Types.CommerceOrdersMarketplaceCheckoutDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -67,7 +67,7 @@ export class CommerceMarketplaceCartModule {
   async postVMarketplaceCartItems(
     version: string,
     body: Types.CommerceOrdersAddMarketplaceCartItemInput,
-  ): Promise<Result<Types.CommerceOrdersMarketplaceCart, ApiError>> {
+  ): Promise<Result<Types.CommerceOrdersMarketplaceCartDto, ApiError>> {
     const url = `/v${version}/marketplace/cart/items`;
 
     // Validate request body
@@ -82,7 +82,7 @@ export class CommerceMarketplaceCartModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.CommerceOrdersMarketplaceCartSchema, result.data, 'response');
+      const validatedData = safeParse(Types.CommerceOrdersMarketplaceCartDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -95,7 +95,7 @@ export class CommerceMarketplaceCartModule {
     itemId: string,
     version: string,
     query?: { expectedVersion?: number },
-  ): Promise<Result<Types.CommerceOrdersMarketplaceCart, ApiError>> {
+  ): Promise<Result<Types.CommerceOrdersMarketplaceCartDto, ApiError>> {
     const url = `/v${version}/marketplace/cart/items/${itemId}`;
 
     const result = await this.client.request({
@@ -107,7 +107,7 @@ export class CommerceMarketplaceCartModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.CommerceOrdersMarketplaceCartSchema, result.data, 'response');
+      const validatedData = safeParse(Types.CommerceOrdersMarketplaceCartDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -120,7 +120,7 @@ export class CommerceMarketplaceCartModule {
     itemId: string,
     version: string,
     body: Types.CommerceOrdersSetMarketplaceCartItemQuantityInput,
-  ): Promise<Result<Types.CommerceOrdersMarketplaceCart, ApiError>> {
+  ): Promise<Result<Types.CommerceOrdersMarketplaceCartDto, ApiError>> {
     const url = `/v${version}/marketplace/cart/items/${itemId}`;
 
     // Validate request body
@@ -135,7 +135,7 @@ export class CommerceMarketplaceCartModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.CommerceOrdersMarketplaceCartSchema, result.data, 'response');
+      const validatedData = safeParse(Types.CommerceOrdersMarketplaceCartDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 

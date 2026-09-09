@@ -8,7 +8,7 @@ namespace GameGuild.Assets.Commands;
 public sealed record DeleteAssetCommand(
     Guid AssetReferenceId,
     Guid UserId,
-    bool ForceDelete = false) : IRequest<DeleteAssetResponse>;
+    bool ForceDelete = false) : ICommand<DeleteAssetResponse>;
 
 public sealed record DeleteAssetResponse(
     bool Success,
@@ -23,7 +23,7 @@ public sealed class DeleteAssetValidator : AbstractValidator<DeleteAssetCommand>
     }
 }
 
-public sealed class DeleteAssetHandler : IRequestHandler<DeleteAssetCommand, DeleteAssetResponse>
+public sealed class DeleteAssetHandler : ICommandHandler<DeleteAssetCommand, DeleteAssetResponse>
 {
     private readonly IAssetReferenceRepository _referenceRepository;
     private readonly IAssetContentRepository _contentRepository;
@@ -54,6 +54,15 @@ public sealed class DeleteAssetHandler : IRequestHandler<DeleteAssetCommand, Del
         }
 
         var contentId = reference.AssetContentId;
+
+        reference.AddIntegrationEvent(new AssetReferenceRemovedEvent(reference.Id, contentId)
+        {
+            TenantId = reference.TenantId ?? DurableIntegrationEventTenants.Platform,
+            ActorId = request.UserId,
+            AggregateType = nameof(AssetReference),
+            AggregateId = reference.Id.ToString(),
+            CorrelationId = Guid.NewGuid()
+        });
 
         // Soft delete the reference
         await _referenceRepository.DeleteAsync(request.AssetReferenceId, ct).ConfigureAwait(false);

@@ -26,7 +26,7 @@ export class SocialGroupsSocialGroupsModule {
     search?: string;
     skip?: number;
     take?: number;
-  }): Promise<Result<Array<Types.SocialGroupsSocialGroup>, ApiError>> {
+  }): Promise<Result<Array<Types.SocialGroupsSocialGroupDto>, ApiError>> {
     const url = '/api/social/groups';
 
     const result = await this.client.request({
@@ -36,12 +36,12 @@ export class SocialGroupsSocialGroupsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.SocialGroupsSocialGroup>, ApiError>;
+    return result as Result<Array<Types.SocialGroupsSocialGroupDto>, ApiError>;
   }
 
   /**
    */
-  async postApiSocialGroups(body: Types.SocialGroupsCreateSocialGroupInput): Promise<Result<Types.SocialGroupsSocialGroup, ApiError>> {
+  async postApiSocialGroups(body: Types.SocialGroupsCreateSocialGroupInput): Promise<Result<Types.SocialGroupsSocialGroupDto, ApiError>> {
     const url = '/api/social/groups';
 
     // Validate request body
@@ -56,7 +56,7 @@ export class SocialGroupsSocialGroupsModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.SocialGroupsSocialGroupSchema, result.data, 'response');
+      const validatedData = safeParse(Types.SocialGroupsSocialGroupDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -65,7 +65,7 @@ export class SocialGroupsSocialGroupsModule {
 
   /**
    */
-  async getApiSocialGroupsForGetApiSocialGroupsById(id: string): Promise<Result<Types.SocialGroupsSocialGroup, ApiError>> {
+  async getApiSocialGroupsForGetApiSocialGroupsById(id: string): Promise<Result<Types.SocialGroupsSocialGroupDto, ApiError>> {
     const url = `/api/social/groups/${id}`;
 
     const result = await this.client.request({
@@ -76,7 +76,7 @@ export class SocialGroupsSocialGroupsModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.SocialGroupsSocialGroupSchema, result.data, 'response');
+      const validatedData = safeParse(Types.SocialGroupsSocialGroupDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -85,7 +85,7 @@ export class SocialGroupsSocialGroupsModule {
 
   /**
    */
-  async putApiSocialGroups(id: string, body: Types.SocialGroupsUpdateSocialGroupInput): Promise<Result<Types.SocialGroupsSocialGroup, ApiError>> {
+  async putApiSocialGroups(id: string, body: Types.SocialGroupsUpdateSocialGroupInput): Promise<Result<Types.SocialGroupsSocialGroupDto, ApiError>> {
     const url = `/api/social/groups/${id}`;
 
     // Validate request body
@@ -100,7 +100,7 @@ export class SocialGroupsSocialGroupsModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.SocialGroupsSocialGroupSchema, result.data, 'response');
+      const validatedData = safeParse(Types.SocialGroupsSocialGroupDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -140,7 +140,7 @@ export class SocialGroupsSocialGroupsModule {
   async getApiSocialGroupsMembers(
     id: string,
     query?: { status?: Types.SocialGroupsSocialGroupMembershipStatus; skip?: number; take?: number },
-  ): Promise<Result<Array<Types.SocialGroupsSocialGroupMember>, ApiError>> {
+  ): Promise<Result<Array<Types.SocialGroupsSocialGroupMemberDto>, ApiError>> {
     const url = `/api/social/groups/${id}/members`;
 
     const result = await this.client.request({
@@ -150,12 +150,15 @@ export class SocialGroupsSocialGroupsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.SocialGroupsSocialGroupMember>, ApiError>;
+    return result as Result<Array<Types.SocialGroupsSocialGroupMemberDto>, ApiError>;
   }
 
   /**
    */
-  async postApiSocialGroupsMembers(id: string, body: Types.SocialGroupsJoinSocialGroupInput): Promise<Result<Types.SocialGroupsSocialGroupMember, ApiError>> {
+  async postApiSocialGroupsMembers(
+    id: string,
+    body: Types.SocialGroupsJoinSocialGroupInput,
+  ): Promise<Result<Types.SocialGroupsSocialGroupMemberDto, ApiError>> {
     const url = `/api/social/groups/${id}/members`;
 
     // Validate request body
@@ -170,7 +173,7 @@ export class SocialGroupsSocialGroupsModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.SocialGroupsSocialGroupMemberSchema, result.data, 'response');
+      const validatedData = safeParse(Types.SocialGroupsSocialGroupMemberDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 

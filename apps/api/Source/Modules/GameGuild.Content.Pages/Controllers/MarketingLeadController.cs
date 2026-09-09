@@ -1,4 +1,5 @@
 using Asp.Versioning;
+using GameGuild.CQRS;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -9,7 +10,7 @@ namespace GameGuild.Content.Pages;
 [Microsoft.AspNetCore.Http.Tags("content/marketing-leads")]
 [ApiVersion("1.0")]
 [Route("v{version:apiVersion}/marketing/leads")]
-public class MarketingLeadController(IMarketingLeadService marketingLeadService) : BaseApiController
+public class MarketingLeadController(IMarketingLeadService marketingLeadService, ISender sender) : BaseApiController
 {
     [HttpGet]
     [Authorize]
@@ -63,7 +64,7 @@ public class MarketingLeadController(IMarketingLeadService marketingLeadService)
             });
         }
 
-        var lead = await marketingLeadService.CreateAsync(dto, ct).ConfigureAwait(false);
+        var lead = await sender.Send(new CreateMarketingLeadCommand(dto), ct).ConfigureAwait(false);
         return CreatedAtAction(nameof(GetLead), new { id = lead.Id }, lead.ToDto());
     }
 

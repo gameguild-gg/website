@@ -20,8 +20,6 @@ public class DeleteUserCommandHandlerTests
         _handler = new DeleteUserCommandHandler(
             _userRepositoryMock.Object,
             _actorContextAccessorMock.Object);
-        _userRepositoryMock.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
     }
 
     [Fact]
@@ -63,7 +61,7 @@ public class DeleteUserCommandHandlerTests
     }
 
     [Fact]
-    public async Task DeleteUser_RegistersDurableLifecycleEvent_WhenUserDeleted()
+    public async Task DeleteUser_RecordsQuotaEventBeforePersistence()
     {
         // Arrange
         var userId = Guid.NewGuid();
@@ -90,15 +88,18 @@ public class DeleteUserCommandHandlerTests
         _userRepositoryMock.Setup(x => x.UpdateAsync(It.IsAny<User>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
+        _userRepositoryMock.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .Callback(() => user.IntegrationEvents.OfType<UserDeletedEvent>().Should().ContainSingle(e =>
+                e.UserId == userId && e.TenantId == tenantId && e.ActorId == userId))
+            .Returns(Task.CompletedTask);
+
         // Act
         var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
         result.Should().Be(Unit.Value);
+        // Handler uses soft delete via MarkDeleted() + UpdateAsync()
         _userRepositoryMock.Verify(x => x.UpdateAsync(It.Is<User>(u => u.IsDeleted), It.IsAny<CancellationToken>()), Times.Once);
         _userRepositoryMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
-        user.IntegrationEvents.Should().ContainSingle()
-            .Which.Should().BeOfType<UserDeletedEvent>()
-            .Which.TenantId.Should().Be(tenantId);
     }
 }

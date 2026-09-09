@@ -1,6 +1,7 @@
 using Asp.Versioning;
 using GameGuild.API.Authorization;
 using GameGuild.API.Setup;
+using GameGuild.CQRS;
 using GameGuild.Economy.Payouts;
 using GameGuild.Economy.Risk;
 using GameGuild.Identity.Authorization;
@@ -64,6 +65,7 @@ public sealed record EconomyPayoutExecutionOperationDto(
 [Tags("economy")]
 [Authorize]
 public sealed class EconomyPayoutAccountController(
+    ISender sender,
     IDurablePayoutApplicationService payouts,
     IActorContextAccessor actorContextAccessor) : BaseApiController
 {
@@ -77,8 +79,9 @@ public sealed class EconomyPayoutAccountController(
         if (!TryActor(out var tenantId, out var actorId)) return Forbid();
         try
         {
-            return Ok(await payouts.CreateOrRefreshAccountAsync(
-                tenantId, actorId, cancellationToken).ConfigureAwait(false));
+            return Ok(await sender.Send(
+                new CreateOrRefreshPayoutOnboardingEndpointCommand(tenantId, actorId),
+                cancellationToken).ConfigureAwait(false));
         }
         catch (PayoutExecutionDisabledException exception)
         {
@@ -127,8 +130,8 @@ public sealed class EconomyPayoutAccountController(
 [Tags("economy-administration")]
 [Authorize]
 public sealed class EconomyPayoutExecutionAdministrationController(
+    ISender sender,
     IDurablePayoutApplicationService payouts,
-    IEconomyStepUpExecutor stepUp,
     IActorContextAccessor actorContextAccessor,
     TimeProvider timeProvider) : BaseApiController
 {
@@ -139,25 +142,26 @@ public sealed class EconomyPayoutExecutionAdministrationController(
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     [ProducesResponseType(typeof(PayoutProtectedOperationFailureResponse), StatusCodes.Status503ServiceUnavailable)]
-    public Task<IActionResult> Reserve(
+    public async Task<IActionResult> Reserve(
         Guid requestId,
         [FromBody] ReserveApprovedPayoutExecutionRequest request,
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
+        if (!TryOperator(out var tenantId, out var actorId, out _)) return Forbid();
         var transactionBinding = PayoutProtectedOperationBinding.Reservation(requestId);
         var operation = EconomyStepUpOperation.Create(
             "economy.payout.reserve",
             $"payout-request:{requestId:N}",
             transactionBinding);
-        return ExecuteProtectedAsync(
+        return await ExecuteAsync(sender.Send(new ReservePayoutExecutionEndpointCommand(
             operation,
             request.StepUpReceipt,
             transactionBinding,
-            (tenantId, actorId, evidence, token) => payouts.ReserveApprovedAsync(
-                new ReserveApprovedPayoutCommand(tenantId, actorId, requestId, evidence),
-                token),
-            cancellationToken);
+            tenantId,
+            actorId,
+            requestId,
+            timeProvider.GetUtcNow()), cancellationToken)).ConfigureAwait(false);
     }
 
     [HttpPost("operations/{operationId:guid}/dispatch")]
@@ -166,27 +170,28 @@ public sealed class EconomyPayoutExecutionAdministrationController(
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     [ProducesResponseType(typeof(PayoutProtectedOperationFailureResponse), StatusCodes.Status503ServiceUnavailable)]
-    public Task<IActionResult> Dispatch(
+    public async Task<IActionResult> Dispatch(
         Guid operationId,
         [FromBody] DispatchPayoutExecutionRequest request,
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
+        if (!TryOperator(out var tenantId, out var actorId, out _)) return Forbid();
         var transactionBinding = PayoutProtectedOperationBinding.Dispatch(
             operationId, request.ExpectedVersion);
         var operation = EconomyStepUpOperation.Create(
             "economy.payout.dispatch",
             $"payout-operation:{operationId:N}",
             transactionBinding);
-        return ExecuteProtectedAsync(
+        return await ExecuteAsync(sender.Send(new DispatchPayoutExecutionEndpointCommand(
             operation,
             request.StepUpReceipt,
             transactionBinding,
-            (tenantId, actorId, evidence, token) => payouts.DispatchAsync(
-                new DispatchPayoutOperationCommand(
-                    tenantId, actorId, operationId, request.ExpectedVersion, evidence),
-                token),
-            cancellationToken);
+            tenantId,
+            actorId,
+            operationId,
+            request.ExpectedVersion,
+            timeProvider.GetUtcNow()), cancellationToken)).ConfigureAwait(false);
     }
 
     [HttpPost("operations/{operationId:guid}/reconcile")]
@@ -198,9 +203,8 @@ public sealed class EconomyPayoutExecutionAdministrationController(
     public async Task<IActionResult> Reconcile(Guid operationId, CancellationToken cancellationToken)
     {
         if (!TryOperator(out var tenantId, out var actorId, out _)) return Forbid();
-        return await ExecuteAsync(
-            () => payouts.ReconcileAsync(
-                new ReconcilePayoutOperationCommand(tenantId, actorId, operationId), cancellationToken))
+        return await ExecuteAsync(sender.Send(new ReconcilePayoutExecutionEndpointCommand(
+            new ReconcilePayoutOperationCommand(tenantId, actorId, operationId)), cancellationToken))
             .ConfigureAwait(false);
     }
 
@@ -234,38 +238,11 @@ public sealed class EconomyPayoutExecutionAdministrationController(
         }
     }
 
-    private async Task<IActionResult> ExecuteProtectedAsync(
-        EconomyStepUpOperation operation,
-        string receipt,
-        string operationFingerprint,
-        Func<Guid, Guid, ReauthenticationEvidence, CancellationToken, ValueTask<PayoutOperation>> action,
-        CancellationToken cancellationToken)
-    {
-        if (!TryOperator(out var tenantId, out var actorId, out _)) return Forbid();
-        var now = timeProvider.GetUtcNow();
-        return await ExecuteAsync(() => new ValueTask<PayoutOperation>(stepUp.ExecuteAsync(
-            operation,
-            receipt,
-            (evidenceHash, token) => action(
-                tenantId,
-                actorId,
-                new ReauthenticationEvidence(
-                    actorId,
-                    ProtectedOperationKind.Payout,
-                    operationFingerprint,
-                    ReauthenticationAssurance.MultiFactor,
-                    now,
-                    now.AddMinutes(1),
-                    evidenceHash),
-                token).AsTask(),
-            cancellationToken))).ConfigureAwait(false);
-    }
-
-    private static async Task<IActionResult> ExecuteAsync(Func<ValueTask<PayoutOperation>> action)
+    private static async Task<IActionResult> ExecuteAsync(Task<PayoutOperation> operation)
     {
         try
         {
-            return new OkObjectResult(EconomyPayoutExecutionOperationDto.From(await action().ConfigureAwait(false)));
+            return new OkObjectResult(EconomyPayoutExecutionOperationDto.From(await operation.ConfigureAwait(false)));
         }
         catch (KeyNotFoundException)
         {
@@ -315,8 +292,8 @@ public sealed class EconomyPayoutExecutionAdministrationController(
 [Tags("economy-integrations")]
 [ApiController]
 public sealed class EconomyStripeConnectWebhookController(
+    ISender sender,
     IStripeConnectWebhookNormalizer normalizer,
-    IDurablePayoutApplicationService payouts,
     TimeProvider timeProvider) : ControllerBase
 {
     [HttpPost("webhook")]
@@ -333,8 +310,9 @@ public sealed class EconomyStripeConnectWebhookController(
         var providerEvent = await normalizer.NormalizeAsync(
             payload.ToArray(), signature.ToString(), timeProvider.GetUtcNow(), cancellationToken)
             .ConfigureAwait(false);
-        var operation = await payouts.ApplyProviderEventAsync(providerEvent, cancellationToken)
-            .ConfigureAwait(false);
+        var operation = await sender.Send(
+            new ApplyStripePayoutProviderEventEndpointCommand(providerEvent),
+            cancellationToken).ConfigureAwait(false);
         return Ok(EconomyPayoutExecutionOperationDto.From(operation));
     }
 }

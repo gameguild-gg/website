@@ -3,7 +3,7 @@ namespace GameGuild.Assets.Commands;
 public sealed record BulkDeleteAssetsCommand(
     IReadOnlyList<Guid> AssetReferenceIds,
     Guid UserId,
-    bool ForceDelete = false) : IRequest<BulkDeleteAssetsResponse>;
+    bool ForceDelete = false) : ICommand<BulkDeleteAssetsResponse>;
 
 public sealed record BulkDeleteAssetsResponse(
     int TotalRequested,
@@ -19,7 +19,7 @@ public sealed record BulkDeleteAssetItem(
 
 public sealed class BulkDeleteAssetsHandler(
     IAssetReferenceRepository referenceRepository,
-    IAssetContentRepository contentRepository) : IRequestHandler<BulkDeleteAssetsCommand, BulkDeleteAssetsResponse>
+    IAssetContentRepository contentRepository) : ICommandHandler<BulkDeleteAssetsCommand, BulkDeleteAssetsResponse>
 {
     public async Task<BulkDeleteAssetsResponse> Handle(
         BulkDeleteAssetsCommand request,

@@ -1,6 +1,7 @@
 using System.Globalization;
 using Asp.Versioning;
 using GameGuild.Compliance.KYC;
+using GameGuild.CQRS;
 using GameGuild.Economy.Risk;
 using GameGuild.Identity.Context.Actors;
 using Microsoft.AspNetCore.Authorization;
@@ -24,7 +25,7 @@ public sealed record EconomyKycStatusDto(
 [Tags("economy-kyc")]
 [Authorize]
 public sealed class EconomyKycController(
-    IKycAmlOrchestrator orchestrator,
+    ISender sender,
     IComplianceEvidenceReader evidence,
     IActorContextAccessor actorContextAccessor,
     TimeProvider timeProvider) : BaseApiController
@@ -38,12 +39,12 @@ public sealed class EconomyKycController(
     {
         if (!TryActor(out var tenantId, out var actorId)) return Forbid();
         ArgumentNullException.ThrowIfNull(request);
-        var onboarding = await orchestrator.StartAsync(
-            new StartKycAmlRequest(
+        var onboarding = await sender.Send(
+            new StartKycOnboardingEndpointCommand(new StartKycAmlRequest(
                 tenantId,
                 EconomySubjectReference.ForUser(tenantId, actorId),
                 request.IdempotencyKey,
-                timeProvider.GetUtcNow()),
+                timeProvider.GetUtcNow())),
             cancellationToken).ConfigureAwait(false);
         return StatusCode(StatusCodes.Status201Created, onboarding);
     }
@@ -60,10 +61,10 @@ public sealed class EconomyKycController(
         ArgumentNullException.ThrowIfNull(request);
         try
         {
-            var token = await orchestrator.CreateAccessTokenAsync(
+            var token = await sender.Send(new CreateKycAccessTokenEndpointCommand(
                 tenantId,
                 EconomySubjectReference.ForUser(tenantId, actorId),
-                request.LifetimeSeconds,
+                request.LifetimeSeconds),
                 cancellationToken).ConfigureAwait(false);
             return Ok(token);
         }
@@ -114,7 +115,7 @@ public sealed class EconomyKycController(
 [Tags("economy-integrations")]
 [ApiController]
 public sealed class EconomySumSubWebhookController(
-    IKycAmlOrchestrator orchestrator,
+    ISender sender,
     TimeProvider timeProvider) : ControllerBase
 {
     [HttpPost("webhook")]
@@ -131,12 +132,12 @@ public sealed class EconomySumSubWebhookController(
 
         await using var payload = new MemoryStream();
         await Request.Body.CopyToAsync(payload, cancellationToken).ConfigureAwait(false);
-        var result = await orchestrator.IngestWebhookAsync(
+        var result = await sender.Send(new IngestSumSubWebhookEndpointCommand(
             payload.ToArray(),
             digest.ToString(),
             algorithm.ToString(),
             issuedAt,
-            timeProvider.GetUtcNow(),
+            timeProvider.GetUtcNow()),
             cancellationToken).ConfigureAwait(false);
         return Ok(result);
     }

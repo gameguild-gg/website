@@ -1,7 +1,7 @@
 using System.Text.RegularExpressions;
+using GameGuild.CQRS;
 using GameGuild.Identity.Context.Actors;
 using GameGuild.Notifications.Services;
-using GameGuild.CQRS;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -19,15 +19,18 @@ public class NotificationsController : BaseApiController
     private static readonly Regex CamelCaseBoundary = new("(?<=[a-z])(?=[A-Z])", RegexOptions.Compiled);
 
     private readonly INotificationService _notificationService;
+    private readonly INotificationPreferenceService _preferenceService;
     private readonly IActorContextAccessor _actorContextAccessor;
     private readonly ISender _sender;
 
     public NotificationsController(
         INotificationService notificationService,
+        INotificationPreferenceService preferenceService,
         IActorContextAccessor actorContextAccessor,
         ISender sender)
     {
         _notificationService = notificationService;
+        _preferenceService = preferenceService;
         _actorContextAccessor = actorContextAccessor;
         _sender = sender;
     }
@@ -334,9 +337,7 @@ public class NotificationsController : BaseApiController
         }
 
         var userId = GetRequiredUserId();
-        var result = await _sender.Send(
-            new SetNotificationMutedTypesCommand(userId, canonicalNames),
-            cancellationToken).ConfigureAwait(false);
+        var result = await _sender.Send(new SetMutedNotificationTypesCommand(userId, canonicalNames), cancellationToken).ConfigureAwait(false);
 
         if (!result.IsSuccess)
         {
@@ -368,9 +369,7 @@ public class NotificationsController : BaseApiController
         }
 
         var userId = GetRequiredUserId();
-        var result = await _sender.Send(
-            new SetNotificationDigestFrequencyCommand(userId, frequency),
-            cancellationToken).ConfigureAwait(false);
+        var result = await _sender.Send(new SetNotificationDigestFrequencyCommand(userId, frequency), cancellationToken).ConfigureAwait(false);
 
         if (!result.IsSuccess)
         {

@@ -5,6 +5,9 @@ using GameGuild.API.Context;
 using GameGuild.AI;
 using GameGuild.Analytics;
 using GameGuild.API.Database;
+using GameGuild.API.Eventing;
+using GameGuild.API.Core.Quotas;
+using GameGuild.API.Core.CostAccounting;
 using GameGuild.Assets.Extensions;
 using GameGuild.Commerce.Billing;
 using GameGuild.Commerce.Orders;
@@ -17,7 +20,6 @@ using GameGuild.Identity.Authorization;
 using GameGuild.Identity.Context;
 using GameGuild.Identity.Tenants;
 using GameGuild.Localization;
-using GameGuild.Lti;
 using GameGuild.Monitoring.SLA;
 using GameGuild.Configuration.ConfigurationFromAPI.InfrastructureLayer;
 using GameGuild.Configuration.InfrastructureLayer;
@@ -127,6 +129,7 @@ public static class InfrastructureLayerExtensions
         if (options.EnableDatabase)
         {
             services.AddDatabase(configuration, options.Database);
+            services.AddDurableEventTransport();
             logger.LogInformation("Database registered in {ElapsedMs}ms", stepStopwatch.ElapsedMilliseconds);
         }
 
@@ -197,6 +200,12 @@ public static class InfrastructureLayerExtensions
         // 10a. Resources Module (quota, usage tracking, SLA services)
         stepStopwatch.Restart();
         services.AddResourcesInfrastructure(configuration);
+        services.AddResourceQuotaBehavior();
+        services.AddTransient(typeof(GameGuild.CQRS.IPipelineBehavior<,>), typeof(UseCaseOperationBehavior<,>));
+        services.Configure<QuotaReconciliationOptions>(
+            configuration.GetSection(QuotaReconciliationOptions.SectionName));
+        services.AddScoped<QuotaReconciliationService>();
+        services.AddHostedService<QuotaReconciliationBackgroundService>();
         logger.LogInformation("Resources Module registered in {ElapsedMs}ms", stepStopwatch.ElapsedMilliseconds);
 
         // 10a.0. SLA Monitoring Module (repositories, calculators, alerts, and monitoring service)
@@ -249,11 +258,6 @@ public static class InfrastructureLayerExtensions
         services.AddFeaturesModule();
         logger.LogInformation("Features Module registered in {ElapsedMs}ms", stepStopwatch.ElapsedMilliseconds);
 
-        // 10f.1a. LTI 1.3 tool module (launch and AGS score passback).
-        stepStopwatch.Restart();
-        services.AddLtiModule();
-        logger.LogInformation("LTI Module registered in {ElapsedMs}ms", stepStopwatch.ElapsedMilliseconds);
-
         // 10g. Content Pages Module (pages, sections, content resources, OpenGraph)
         stepStopwatch.Restart();
         services.AddContentPagesModule();
@@ -301,8 +305,12 @@ public static class InfrastructureLayerExtensions
                                    $"Connection string '{databaseOptions.ConnectionStringName}' not found. " +
                                    $"Add 'ConnectionStrings:{databaseOptions.ConnectionStringName}' or POSTGRES_* values.");
 
-        services.AddDbContext<ApplicationDbContext>(options =>
+        services.AddScoped<CostTelemetryContext>();
+        services.AddScoped<ICostTelemetryRecorder>(provider => provider.GetRequiredService<CostTelemetryContext>());
+        services.AddScoped<CostTelemetryDbCommandInterceptor>();
+        services.AddDbContext<ApplicationDbContext>((provider, options) =>
         {
+            options.AddInterceptors(provider.GetRequiredService<CostTelemetryDbCommandInterceptor>());
             options.UseNpgsql(connectionString, npgsqlOptions =>
             {
                 npgsqlOptions.MigrationsAssembly(typeof(ApplicationDbContext).Assembly.FullName);

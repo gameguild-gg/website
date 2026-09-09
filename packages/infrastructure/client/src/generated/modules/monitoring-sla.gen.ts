@@ -41,7 +41,7 @@ export class MonitoringSlaModule {
     isEnabled?: boolean;
     skip?: number;
     take?: number;
-  }): Promise<Result<Array<Types.MonitoringSLASlo>, ApiError>> {
+  }): Promise<Result<Array<Types.MonitoringSLASloDto>, ApiError>> {
     const url = '/api/v1/sla/slos';
 
     const result = await this.client.request({
@@ -51,12 +51,12 @@ export class MonitoringSlaModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.MonitoringSLASlo>, ApiError>;
+    return result as Result<Array<Types.MonitoringSLASloDto>, ApiError>;
   }
 
   /**
    */
-  async postSlaSlos(body: Types.MonitoringSLACreateSloCommand): Promise<Result<Types.MonitoringSLASlo, ApiError>> {
+  async postSlaSlos(body: Types.MonitoringSLACreateSloCommand): Promise<Result<Types.MonitoringSLASloDto, ApiError>> {
     const url = '/api/v1/sla/slos';
 
     // Validate request body
@@ -71,7 +71,7 @@ export class MonitoringSlaModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.MonitoringSLASloSchema, result.data, 'response');
+      const validatedData = safeParse(Types.MonitoringSLASloDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -80,7 +80,7 @@ export class MonitoringSlaModule {
 
   /**
    */
-  async getSlaSlosForGetSlaSlosById(id: string): Promise<Result<Types.MonitoringSLASlo, ApiError>> {
+  async getSlaSlosForGetSlaSlosById(id: string): Promise<Result<Types.MonitoringSLASloDto, ApiError>> {
     const url = `/api/v1/sla/slos/${id}`;
 
     const result = await this.client.request({
@@ -91,7 +91,7 @@ export class MonitoringSlaModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.MonitoringSLASloSchema, result.data, 'response');
+      const validatedData = safeParse(Types.MonitoringSLASloDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -100,7 +100,7 @@ export class MonitoringSlaModule {
 
   /**
    */
-  async putSlaSlos(id: string, body: Types.MonitoringSLAUpdateSloCommand): Promise<Result<Types.MonitoringSLASlo, ApiError>> {
+  async putSlaSlos(id: string, body: Types.MonitoringSLAUpdateSloCommand): Promise<Result<Types.MonitoringSLASloDto, ApiError>> {
     const url = `/api/v1/sla/slos/${id}`;
 
     // Validate request body
@@ -115,7 +115,7 @@ export class MonitoringSlaModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.MonitoringSLASloSchema, result.data, 'response');
+      const validatedData = safeParse(Types.MonitoringSLASloDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -138,7 +138,7 @@ export class MonitoringSlaModule {
 
   /**
    */
-  async getSlaSlosCompliance(id: string, query?: { startDate?: string; endDate?: string }): Promise<Result<Types.MonitoringSLASloCompliance, ApiError>> {
+  async getSlaSlosCompliance(id: string, query?: { startDate?: string; endDate?: string }): Promise<Result<Types.MonitoringSLASloComplianceDto, ApiError>> {
     const url = `/api/v1/sla/slos/${id}/compliance`;
 
     const result = await this.client.request({
@@ -150,7 +150,7 @@ export class MonitoringSlaModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.MonitoringSLASloComplianceSchema, result.data, 'response');
+      const validatedData = safeParse(Types.MonitoringSLASloComplianceDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -159,7 +159,7 @@ export class MonitoringSlaModule {
 
   /**
    */
-  async getSlaSlosErrorBudget(id: string): Promise<Result<Types.MonitoringSLAErrorBudget, ApiError>> {
+  async getSlaSlosErrorBudget(id: string): Promise<Result<Types.MonitoringSLAErrorBudgetDto, ApiError>> {
     const url = `/api/v1/sla/slos/${id}/error-budget`;
 
     const result = await this.client.request({
@@ -170,7 +170,7 @@ export class MonitoringSlaModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.MonitoringSLAErrorBudgetSchema, result.data, 'response');
+      const validatedData = safeParse(Types.MonitoringSLAErrorBudgetDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -187,7 +187,7 @@ export class MonitoringSlaModule {
     endDate?: string;
     skip?: number;
     take?: number;
-  }): Promise<Result<Array<Types.MonitoringSLASloViolation>, ApiError>> {
+  }): Promise<Result<Array<Types.MonitoringSLASloViolationDto>, ApiError>> {
     const url = '/api/v1/sla/violations';
 
     const result = await this.client.request({
@@ -197,7 +197,7 @@ export class MonitoringSlaModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.MonitoringSLASloViolation>, ApiError>;
+    return result as Result<Array<Types.MonitoringSLASloViolationDto>, ApiError>;
   }
 
   /**

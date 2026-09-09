@@ -90,7 +90,7 @@ export class FeaturesCapabilitiesModule {
   async getTenantsCapabilitiesAuditLog(
     tenantId: string,
     query?: { capability?: string; fromDate?: string; toDate?: string },
-  ): Promise<Result<Array<Types.FeaturesCapabilityAuditLog>, ApiError>> {
+  ): Promise<Result<Array<Types.FeaturesCapabilityAuditLogDto>, ApiError>> {
     const url = `/v1/tenants/${tenantId}/capabilities/audit-log`;
 
     const result = await this.client.request({
@@ -100,7 +100,7 @@ export class FeaturesCapabilitiesModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.FeaturesCapabilityAuditLog>, ApiError>;
+    return result as Result<Array<Types.FeaturesCapabilityAuditLogDto>, ApiError>;
   }
 
   /**
