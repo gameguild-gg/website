@@ -29,7 +29,7 @@ describe('public website layouts', () => {
     const mainNavigation = within(banner).getByRole('navigation', { name: /main navigation/i });
 
     expect(within(banner).getByRole('link', { name: /gameguild home/i })).toBeInTheDocument();
-    expect(within(mainNavigation).getByRole('link', { name: /^courses$/i })).toBeInTheDocument();
+    expect(within(mainNavigation).getByRole('button', { name: /^learn$/i })).toBeInTheDocument();
     expect(within(mainNavigation).getByRole('link', { name: /^testing lab$/i })).toBeInTheDocument();
     expect(screen.getByRole('contentinfo')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /about gameguild/i })).toBeInTheDocument();
