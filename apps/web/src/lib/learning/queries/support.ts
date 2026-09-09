@@ -6,7 +6,7 @@ import {
   type CommerceProductsSupportTicketMessage,
   type LearningExperienceSocialServicesCourseDiscussion,
   type LearningExperienceSocialServicesDiscussionReply,
-  type PagedResultOfCommerceProductsSupportTicket,
+  type PagedResultSupportTicketDto,
 } from '@game-guild/client';
 import { cache } from 'react';
 import { resolveCourseId } from './course';
@@ -205,7 +205,7 @@ export const getCourseSupportTickets = cache(async (courseId: string): Promise<C
     skip: 0,
     take: 100,
   });
-  const response: PagedResultOfCommerceProductsSupportTicket | undefined = result.ok
+  const response: PagedResultSupportTicketDto | undefined = result.ok
     ? result.data
     : undefined;
   const tickets = (response?.items ?? []).map(mapSupportTicket);
