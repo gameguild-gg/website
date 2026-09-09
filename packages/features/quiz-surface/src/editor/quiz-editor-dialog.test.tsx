@@ -17,8 +17,11 @@ class ResizeObserverMock {
   disconnect() {}
 }
 
+class PointerEventMock extends MouseEvent {}
+
 beforeAll(() => {
   vi.stubGlobal("ResizeObserver", ResizeObserverMock);
+  vi.stubGlobal("PointerEvent", PointerEventMock);
 });
 
 afterAll(() => {
