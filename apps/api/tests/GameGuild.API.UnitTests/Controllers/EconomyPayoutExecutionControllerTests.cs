@@ -1,9 +1,9 @@
 using System.Text;
 using FluentAssertions;
 using GameGuild.API.Controllers;
-using GameGuild.Economy.Contracts;
-using GameGuild.Economy.Payouts;
-using GameGuild.Economy.Risk;
+using GameGuild.Finance.Economy.Contracts;
+using GameGuild.Finance.Economy.Payouts;
+using GameGuild.Finance.Economy.Risk;
 using GameGuild.Identity.Authorization;
 using GameGuild.Identity.Context.Actors;
 using Microsoft.AspNetCore.Http;
@@ -91,7 +91,7 @@ public sealed class EconomyPayoutExecutionControllerTests
                     command.RequestId == requestId &&
                     command.Reauthentication.ActorId == actorId &&
                     command.Reauthentication.TransactionBinding == transactionBinding &&
-                    command.Reauthentication.Assurance == GameGuild.Economy.Risk.ReauthenticationAssurance.MultiFactor &&
+                    command.Reauthentication.Assurance == GameGuild.Finance.Economy.Risk.ReauthenticationAssurance.MultiFactor &&
                     command.Reauthentication.EvidenceHash ==
                     TestEconomyStepUpExecutor.EvidenceHash("reserve-receipt")),
                 It.IsAny<CancellationToken>()))

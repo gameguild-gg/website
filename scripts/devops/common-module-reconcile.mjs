@@ -27,6 +27,16 @@ function readExpected(root, evidence) {
   return bytes;
 }
 
+function resolveAreaRoot(area, brand) {
+  if (area.roots[brand]) return area.roots[brand];
+  if (area.kind === 'module') return `apps/api/Source/Modules/${brand}.${area.name}`;
+  if (area.kind === 'test') {
+    const directory = brand === 'ModuEstate' ? 'Tests' : 'tests';
+    return `apps/api/${directory}/${brand}.${area.name}`;
+  }
+  return null;
+}
+
 // Applies only explicit reviewed file preferences and mechanical namespace
 // translation. It never infers a semantic merge or deletes one-sided features.
 export function reconcile(report, selection, output, apply = false) {
@@ -42,7 +52,8 @@ export function reconcile(report, selection, output, apply = false) {
     if (!brands.includes(decision.prefer) || !decision.reason?.trim()) throw new Error(`Missing preference/reason: ${key}`);
     const area = report.areas.find((a) => `${a.kind}:${a.name}` === key);
     if (!area) throw new Error(`Unknown area: ${key}`);
-    if (!brands.every((brand) => area.roots[brand])) throw new Error(`Both area roots are required: ${key}`);
+    const areaRoots = Object.fromEntries(brands.map((brand) => [brand, resolveAreaRoot(area, brand)]));
+    if (!brands.every((brand) => areaRoots[brand])) throw new Error(`Both area roots are required: ${key}`);
     if (decision.include !== undefined) {
       if (!Array.isArray(decision.include) || decision.include.length === 0
           || new Set(decision.include).size !== decision.include.length)
@@ -60,9 +71,9 @@ export function reconcile(report, selection, output, apply = false) {
       const targetBrand = brands.find((brand) => brand !== sourceBrand);
       const source = row[sourceBrand];
       const original = readExpected(roots[sourceBrand], source);
-      const sourceSuffix = path.relative(area.roots[sourceBrand], source.path);
+      const sourceSuffix = path.relative(areaRoots[sourceBrand], source.path);
       if (sourceSuffix.startsWith('..') || path.isAbsolute(sourceSuffix)) throw new Error('Source escapes area.');
-      const targetPath = row[targetBrand]?.path ?? path.join(area.roots[targetBrand], translate(sourceSuffix, sourceBrand, targetBrand));
+      const targetPath = row[targetBrand]?.path ?? path.join(areaRoots[targetBrand], translate(sourceSuffix, sourceBrand, targetBrand));
       const destination = inside(roots[targetBrand], targetPath);
       const before = row[targetBrand] ? readExpected(roots[targetBrand], row[targetBrand]) : null;
       if (!before && fs.existsSync(destination)) throw new Error(`Stale missing counterpart: ${destination}`);

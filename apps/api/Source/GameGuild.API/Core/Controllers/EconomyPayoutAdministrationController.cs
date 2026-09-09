@@ -1,9 +1,9 @@
 using Asp.Versioning;
 using GameGuild.API.Setup;
 using GameGuild.CQRS;
-using GameGuild.Economy.Payouts;
-using GameGuild.Economy.Payouts.Commands;
-using GameGuild.Economy.Payouts.Queries;
+using GameGuild.Finance.Economy.Payouts;
+using GameGuild.Finance.Economy.Payouts.Commands;
+using GameGuild.Finance.Economy.Payouts.Queries;
 using GameGuild.Identity.Authorization;
 using GameGuild.Identity.Context.Actors;
 using Microsoft.AspNetCore.Authorization;

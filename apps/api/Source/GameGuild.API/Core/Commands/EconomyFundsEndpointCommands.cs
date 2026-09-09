@@ -1,10 +1,10 @@
 using GameGuild.API.Authorization;
 using GameGuild.API.Setup;
 using GameGuild.CQRS;
-using GameGuild.Economy.Operations;
-using GameGuild.Economy.Payouts;
-using GameGuild.Economy.Risk;
-using GameGuild.Economy.Treasury;
+using GameGuild.Finance.Economy.Operations;
+using GameGuild.Finance.Economy.Payouts;
+using GameGuild.Finance.Economy.Risk;
+using GameGuild.Finance.Economy.Treasury;
 
 namespace GameGuild.API.Controllers;
 

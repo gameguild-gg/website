@@ -1,8 +1,8 @@
 using Asp.Versioning;
 using GameGuild.API.Authorization;
 using GameGuild.CQRS;
-using GameGuild.Economy.Operations;
-using GameGuild.Economy.Risk;
+using GameGuild.Finance.Economy.Operations;
+using GameGuild.Finance.Economy.Risk;
 using GameGuild.Identity.Authorization;
 using GameGuild.Identity.Context.Actors;
 using Microsoft.AspNetCore.Authorization;

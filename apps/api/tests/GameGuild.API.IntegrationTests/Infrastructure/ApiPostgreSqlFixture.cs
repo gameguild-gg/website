@@ -9,7 +9,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Npgsql;
-using GameGuild.TestSupport.Economy;
+using GameGuild.TestSupport.Finance.Economy;
 
 namespace GameGuild.API.IntegrationTests.Infrastructure;
 

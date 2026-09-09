@@ -1,8 +1,8 @@
 using FluentAssertions;
 using GameGuild.API.Controllers;
-using GameGuild.Economy.Bounties;
-using GameGuild.Economy.Contracts;
-using GameGuild.Economy.Risk;
+using GameGuild.Finance.Economy.Bounties;
+using GameGuild.Finance.Economy.Contracts;
+using GameGuild.Finance.Economy.Risk;
 using GameGuild.Identity.Context.Actors;
 using Microsoft.AspNetCore.Mvc;
 

@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\GameGuild.Finance.Economy\GameGuild.Finance.Economy.csproj" />
+    <ProjectReference Include="..\GameGuild.SharedKernel\GameGuild.SharedKernel.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="GameGuild.Finance.Economy.Bounties.UnitTests" />
+  </ItemGroup>
+</Project>

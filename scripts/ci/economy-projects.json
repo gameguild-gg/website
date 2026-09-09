@@ -2,34 +2,34 @@
   "schemaVersion": 1,
   "projects": [
     {
-      "productionProject": "apps/api/Source/Modules/GameGuild.Economy/GameGuild.Economy.csproj",
-      "testProjects": ["apps/api/tests/GameGuild.Economy.UnitTests/GameGuild.Economy.UnitTests.csproj"],
-      "coverageAssemblies": ["GameGuild.Economy"]
+      "productionProject": "apps/api/Source/Modules/GameGuild.Finance.Economy/GameGuild.Finance.Economy.csproj",
+      "testProjects": ["apps/api/tests/GameGuild.Finance.Economy.UnitTests/GameGuild.Finance.Economy.UnitTests.csproj"],
+      "coverageAssemblies": ["GameGuild.Finance.Economy"]
     },
     {
-      "productionProject": "apps/api/Source/Modules/GameGuild.Economy.AdRewards/GameGuild.Economy.AdRewards.csproj",
-      "testProjects": ["apps/api/tests/GameGuild.Economy.AdRewards.UnitTests/GameGuild.Economy.AdRewards.UnitTests.csproj"],
-      "coverageAssemblies": ["GameGuild.Economy.AdRewards"]
+      "productionProject": "apps/api/Source/Modules/GameGuild.Finance.Economy.AdRewards/GameGuild.Finance.Economy.AdRewards.csproj",
+      "testProjects": ["apps/api/tests/GameGuild.Finance.Economy.AdRewards.UnitTests/GameGuild.Finance.Economy.AdRewards.UnitTests.csproj"],
+      "coverageAssemblies": ["GameGuild.Finance.Economy.AdRewards"]
     },
     {
-      "productionProject": "apps/api/Source/Modules/GameGuild.Economy.Bounties/GameGuild.Economy.Bounties.csproj",
-      "testProjects": ["apps/api/tests/GameGuild.Economy.Bounties.UnitTests/GameGuild.Economy.Bounties.UnitTests.csproj"],
-      "coverageAssemblies": ["GameGuild.Economy.Bounties"]
+      "productionProject": "apps/api/Source/Modules/GameGuild.Finance.Economy.Bounties/GameGuild.Finance.Economy.Bounties.csproj",
+      "testProjects": ["apps/api/tests/GameGuild.Finance.Economy.Bounties.UnitTests/GameGuild.Finance.Economy.Bounties.UnitTests.csproj"],
+      "coverageAssemblies": ["GameGuild.Finance.Economy.Bounties"]
     },
     {
-      "productionProject": "apps/api/Source/Modules/GameGuild.Economy.Marketplace/GameGuild.Economy.Marketplace.csproj",
-      "testProjects": ["apps/api/tests/GameGuild.Economy.Marketplace.UnitTests/GameGuild.Economy.Marketplace.UnitTests.csproj"],
-      "coverageAssemblies": ["GameGuild.Economy.Marketplace"]
+      "productionProject": "apps/api/Source/Modules/GameGuild.Finance.Economy.Marketplace/GameGuild.Finance.Economy.Marketplace.csproj",
+      "testProjects": ["apps/api/tests/GameGuild.Finance.Economy.Marketplace.UnitTests/GameGuild.Finance.Economy.Marketplace.UnitTests.csproj"],
+      "coverageAssemblies": ["GameGuild.Finance.Economy.Marketplace"]
     },
     {
-      "productionProject": "apps/api/Source/Modules/GameGuild.Economy.Payouts/GameGuild.Economy.Payouts.csproj",
-      "testProjects": ["apps/api/tests/GameGuild.Economy.Payouts.UnitTests/GameGuild.Economy.Payouts.UnitTests.csproj"],
-      "coverageAssemblies": ["GameGuild.Economy.Payouts"]
+      "productionProject": "apps/api/Source/Modules/GameGuild.Finance.Economy.Payouts/GameGuild.Finance.Economy.Payouts.csproj",
+      "testProjects": ["apps/api/tests/GameGuild.Finance.Economy.Payouts.UnitTests/GameGuild.Finance.Economy.Payouts.UnitTests.csproj"],
+      "coverageAssemblies": ["GameGuild.Finance.Economy.Payouts"]
     },
     {
-      "productionProject": "apps/api/Source/Modules/GameGuild.Economy.Treasury/GameGuild.Economy.Treasury.csproj",
-      "testProjects": ["apps/api/tests/GameGuild.Economy.Treasury.UnitTests/GameGuild.Economy.Treasury.UnitTests.csproj"],
-      "coverageAssemblies": ["GameGuild.Economy.Treasury"]
+      "productionProject": "apps/api/Source/Modules/GameGuild.Finance.Economy.Treasury/GameGuild.Finance.Economy.Treasury.csproj",
+      "testProjects": ["apps/api/tests/GameGuild.Finance.Economy.Treasury.UnitTests/GameGuild.Finance.Economy.Treasury.UnitTests.csproj"],
+      "coverageAssemblies": ["GameGuild.Finance.Economy.Treasury"]
     },
     {
       "productionProject": "apps/api/Source/Modules/GameGuild.Compliance.KYC/GameGuild.Compliance.KYC.csproj",

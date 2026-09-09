@@ -28,7 +28,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\Source\GameGuild.API\GameGuild.API.csproj" />
-        <ProjectReference Include="..\GameGuild.TestSupport.Economy\GameGuild.TestSupport.Economy.csproj" />
+        <ProjectReference Include="..\GameGuild.TestSupport.Finance.Economy\GameGuild.TestSupport.Finance.Economy.csproj" />
     </ItemGroup>
 
     <ItemGroup>

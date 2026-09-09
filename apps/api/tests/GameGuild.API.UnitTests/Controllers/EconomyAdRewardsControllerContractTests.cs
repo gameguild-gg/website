@@ -1,9 +1,9 @@
 using FluentAssertions;
 using GameGuild.API.Controllers;
-using GameGuild.Economy.AdRewards;
-using GameGuild.Economy.Contracts;
-using GameGuild.Economy.Ledger;
-using GameGuild.Economy.Risk;
+using GameGuild.Finance.Economy.AdRewards;
+using GameGuild.Finance.Economy.Contracts;
+using GameGuild.Finance.Economy.Ledger;
+using GameGuild.Finance.Economy.Risk;
 using GameGuild.Identity.Context.Actors;
 using Microsoft.AspNetCore.Mvc;
 using Moq;

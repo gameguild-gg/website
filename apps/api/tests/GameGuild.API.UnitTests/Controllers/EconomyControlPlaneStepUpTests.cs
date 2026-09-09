@@ -1,10 +1,10 @@
 using FluentAssertions;
 using GameGuild.API.Controllers;
-using GameGuild.Economy.Ledger;
-using GameGuild.Economy.Operations;
-using GameGuild.Economy.Projections;
-using GameGuild.Economy.Reserves;
-using GameGuild.Economy.Risk;
+using GameGuild.Finance.Economy.Ledger;
+using GameGuild.Finance.Economy.Operations;
+using GameGuild.Finance.Economy.Projections;
+using GameGuild.Finance.Economy.Reserves;
+using GameGuild.Finance.Economy.Risk;
 using GameGuild.Identity.Authorization;
 using GameGuild.Identity.Context.Actors;
 using Microsoft.AspNetCore.Mvc;

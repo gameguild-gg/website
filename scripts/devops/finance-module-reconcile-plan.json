@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "areas": [
+    { "kind": "module", "name": "Finance.Contracts", "prefer": "GameGuild", "reason": "Reviewed common finance contracts." },
+    { "kind": "module", "name": "Finance.Economy", "prefer": "GameGuild", "reason": "Reviewed economy implementation." },
+    { "kind": "module", "name": "Finance.Economy.AdRewards", "prefer": "GameGuild", "reason": "Reviewed ad rewards implementation." },
+    { "kind": "module", "name": "Finance.Economy.Bounties", "prefer": "GameGuild", "reason": "Reviewed bounties implementation." },
+    { "kind": "module", "name": "Finance.Economy.Marketplace", "prefer": "GameGuild", "reason": "Reviewed marketplace implementation." },
+    { "kind": "module", "name": "Finance.Economy.Payouts", "prefer": "GameGuild", "reason": "Reviewed payouts implementation." },
+    { "kind": "module", "name": "Finance.Economy.Treasury", "prefer": "GameGuild", "reason": "Reviewed treasury implementation." },
+    { "kind": "module", "name": "Finance.Ledgers", "prefer": "ModuEstate", "reason": "Reviewed hierarchical ledger implementation." },
+    { "kind": "module", "name": "TrustSafety", "prefer": "GameGuild", "reason": "Reviewed trust and safety implementation." },
+    { "kind": "test", "name": "Finance.Contracts.UnitTests", "prefer": "GameGuild", "reason": "Mirror common tests." },
+    { "kind": "test", "name": "Finance.Economy.UnitTests", "prefer": "GameGuild", "reason": "Mirror common tests." },
+    { "kind": "test", "name": "Finance.Economy.AdRewards.UnitTests", "prefer": "GameGuild", "reason": "Mirror common tests." },
+    { "kind": "test", "name": "Finance.Economy.Bounties.UnitTests", "prefer": "GameGuild", "reason": "Mirror common tests." },
+    { "kind": "test", "name": "Finance.Economy.Marketplace.UnitTests", "prefer": "GameGuild", "reason": "Mirror common tests." },
+    { "kind": "test", "name": "Finance.Economy.Payouts.UnitTests", "prefer": "GameGuild", "reason": "Mirror common tests." },
+    { "kind": "test", "name": "Finance.Economy.Treasury.UnitTests", "prefer": "GameGuild", "reason": "Mirror common tests." },
+    { "kind": "test", "name": "TestSupport.Finance.Economy", "prefer": "GameGuild", "reason": "Mirror common test support." },
+    { "kind": "test", "name": "TrustSafety.UnitTests", "prefer": "GameGuild", "reason": "Mirror common tests." }
+  ]
+}

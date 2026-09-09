@@ -1,6 +1,6 @@
 using Asp.Versioning;
-using GameGuild.Economy.AdRewards;
-using GameGuild.Economy.Operations;
+using GameGuild.Finance.Economy.AdRewards;
+using GameGuild.Finance.Economy.Operations;
 using GameGuild.Identity.Authorization;
 using GameGuild.Identity.Context.Actors;
 using Microsoft.AspNetCore.Authorization;

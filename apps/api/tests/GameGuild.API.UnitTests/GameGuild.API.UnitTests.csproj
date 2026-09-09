@@ -50,7 +50,7 @@
         <ProjectReference Include="..\..\Source\GameGuild.API\GameGuild.API.csproj" />
         <ProjectReference Include="..\..\Source\GameGuild.ArchitectureAnalyzers\GameGuild.ArchitectureAnalyzers.csproj" />
         <ProjectReference Include="..\..\Source\Modules\GameGuild.Assets\GameGuild.Assets.csproj" />
-        <ProjectReference Include="..\GameGuild.TestSupport.Economy\GameGuild.TestSupport.Economy.csproj" />
+        <ProjectReference Include="..\GameGuild.TestSupport.Finance.Economy\GameGuild.TestSupport.Finance.Economy.csproj" />
     </ItemGroup>
 
     <ItemGroup>

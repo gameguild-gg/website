@@ -1,9 +1,9 @@
-using GameGuild.Economy.Bounties;
-using GameGuild.Economy.Ledger;
-using GameGuild.Economy.Marketplace;
-using GameGuild.Economy.Payouts;
-using GameGuild.Economy.Risk;
-using GameGuild.Economy.Treasury;
+using GameGuild.Finance.Economy.Bounties;
+using GameGuild.Finance.Economy.Ledger;
+using GameGuild.Finance.Economy.Marketplace;
+using GameGuild.Finance.Economy.Payouts;
+using GameGuild.Finance.Economy.Risk;
+using GameGuild.Finance.Economy.Treasury;
 using Microsoft.Extensions.Options;
 
 namespace GameGuild.API.HostedServices;

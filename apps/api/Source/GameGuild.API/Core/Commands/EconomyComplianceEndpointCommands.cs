@@ -2,7 +2,7 @@ using GameGuild.API.Authorization;
 using GameGuild.Compliance.FinancialCrime;
 using GameGuild.Compliance.KYC;
 using GameGuild.CQRS;
-using GameGuild.Economy.Risk;
+using GameGuild.Finance.Economy.Risk;
 using GameGuild.TrustSafety;
 
 namespace GameGuild.API.Controllers;

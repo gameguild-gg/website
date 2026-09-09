@@ -8,7 +8,7 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\GameGuild.Economy\GameGuild.Economy.csproj" />
+    <ProjectReference Include="..\GameGuild.Finance.Economy\GameGuild.Finance.Economy.csproj" />
     <ProjectReference Include="..\GameGuild.SharedKernel\GameGuild.SharedKernel.csproj" />
   </ItemGroup>
   <ItemGroup>

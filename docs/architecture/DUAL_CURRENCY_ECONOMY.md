@@ -87,7 +87,7 @@ This would reuse `UserWallet` and `FinancialLedgerEntry` directly.
 
 Rejected because the current wallet stores a mutable balance, supports one three-character currency per user, and has no lots, holds, maturity, hash chain, or immutable posting group. Payments also owns provider concerns, which would couple Stripe behavior to internal ledger truth.
 
-### Option B: One Large `GameGuild.Economy` Module
+### Option B: One Large `GameGuild.Finance.Economy` Module
 
 This provides one clear source of truth and the fewest project references.
 
@@ -107,12 +107,12 @@ This keeps the ledger centralized without turning every economy feature into one
 
 | Module                                | Owns                                                                                                                                                                                                                           | Must never own                                                                                                      |
 | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------- |
-| `GameGuild.Economy`                   | Wallet identities, accounts, posting groups, journal entries, credit lots, fragment lineage, projections, holds, authoritative reserve head/allocation locks, fee/rate policy versions, idempotent posting, chain verification | Stripe SDK calls, ad playback, product catalog, orders, KYC provider calls, risk scoring                            |
-| `GameGuild.Economy.Risk`              | Versioned risk policies, transaction risk decisions, entity graph references, velocity/exposure limits, fraud holds, review queues, and risk-decision evidence                                                                 | Journal mutation, monetary balances, KYC document storage, sanctions screening ownership                            |
-| `GameGuild.Economy.AdRewards`         | Ad sessions, signed reward claims, network yield policies, reward quotes, provider proof checks, revenue batches, reconciliation                                                                                               | Direct balance mutation, Stripe payouts, product fulfillment, global risk-policy ownership                          |
-| `GameGuild.Economy.Bounties`          | Bounty lifecycle, eligibility snapshots, escrow positions, claim and reclaim decisions                                                                                                                                         | Generic wallet mutation, product checkout, KYC                                                                      |
-| `GameGuild.Economy.Payouts`           | Payout requests, earned-lot reservation, connected-account status, payout lifecycle, dispute-to-hold orchestration, seller debt                                                                                                | Provider webhook ingress, journal table mutation outside core posting contracts, KYC/sanctions policy ownership     |
-| `GameGuild.Economy.Treasury`          | External-asset observations, reserve calculations proposed to Core, custody reconciliation, admin revenue maturity, monthly withdrawal runs, variance and shortfall reporting                                                  | User checkout, mutable wallet balances, ad playback verification, direct mutation of the authoritative reserve head |
+| `GameGuild.Finance.Economy`                   | Wallet identities, accounts, posting groups, journal entries, credit lots, fragment lineage, projections, holds, authoritative reserve head/allocation locks, fee/rate policy versions, idempotent posting, chain verification | Stripe SDK calls, ad playback, product catalog, orders, KYC provider calls, risk scoring                            |
+| `GameGuild.Finance.Economy.Risk`              | Versioned risk policies, transaction risk decisions, entity graph references, velocity/exposure limits, fraud holds, review queues, and risk-decision evidence                                                                 | Journal mutation, monetary balances, KYC document storage, sanctions screening ownership                            |
+| `GameGuild.Finance.Economy.AdRewards`         | Ad sessions, signed reward claims, network yield policies, reward quotes, provider proof checks, revenue batches, reconciliation                                                                                               | Direct balance mutation, Stripe payouts, product fulfillment, global risk-policy ownership                          |
+| `GameGuild.Finance.Economy.Bounties`          | Bounty lifecycle, eligibility snapshots, escrow positions, claim and reclaim decisions                                                                                                                                         | Generic wallet mutation, product checkout, KYC                                                                      |
+| `GameGuild.Finance.Economy.Payouts`           | Payout requests, earned-lot reservation, connected-account status, payout lifecycle, dispute-to-hold orchestration, seller debt                                                                                                | Provider webhook ingress, journal table mutation outside core posting contracts, KYC/sanctions policy ownership     |
+| `GameGuild.Finance.Economy.Treasury`          | External-asset observations, reserve calculations proposed to Core, custody reconciliation, admin revenue maturity, monthly withdrawal runs, variance and shortfall reporting                                                  | User checkout, mutable wallet balances, ad playback verification, direct mutation of the authoritative reserve head |
 | `GameGuild.Compliance.FinancialCrime` | KYC status aggregation, sanctions/PEP/adverse-media screening status, financial-crime monitoring cases, SAR/STR workflow references, and compliance hold inputs                                                                | Balance calculation, journal mutation, product trust/safety enforcement                                             |
 | `GameGuild.TrustSafety`               | Platform policy infractions, abuse reports, marketplace/project enforcement, content/product risk cases, and nonfinancial account restrictions                                                                                 | Ledger mutation, financial-crime legal determinations, reserve calculations                                         |
 
@@ -120,7 +120,7 @@ This keeps the ledger centralized without turning every economy feature into one
 
 ```text
 apps/api/Source/Modules/
-  GameGuild.Economy/
+  GameGuild.Finance.Economy/
     Accounts/             wallet accounts and account-purpose contracts
     Journal/              posting templates, entries, lots, fragment lineage, chain
     Policies/             fixed parity, fees, limits, maturity, holds
@@ -128,27 +128,27 @@ apps/api/Source/Modules/
     Reserves/             authoritative reserve head, asset-allocation lock, epochs
     Persistence/          EF mappings and constrained writer integration
     Reconciliation/       chain, projection, and anchor verification
-  GameGuild.Economy.Risk/
+  GameGuild.Finance.Economy.Risk/
     Decisions/            versioned transaction risk decisions and reason codes
     EntityGraph/          HMAC-tokenized relationship edges and exposure clusters
     Limits/               velocity, aggregate, source-root, destination, and pair limits
     Reviews/              risk holds, case links, appeals, and decision evidence
-  GameGuild.Economy.AdRewards/
-  GameGuild.Economy.Bounties/
-  GameGuild.Economy.Payouts/
-  GameGuild.Economy.Treasury/
+  GameGuild.Finance.Economy.AdRewards/
+  GameGuild.Finance.Economy.Bounties/
+  GameGuild.Finance.Economy.Payouts/
+  GameGuild.Finance.Economy.Treasury/
   GameGuild.Compliance.FinancialCrime/
   GameGuild.TrustSafety/
 
 apps/api/tests/
-  GameGuild.Economy.UnitTests/
-  GameGuild.Economy.IntegrationTests/
-  GameGuild.Economy.Risk.UnitTests/
-  GameGuild.Economy.Risk.IntegrationTests/
-  GameGuild.Economy.AdRewards.UnitTests/
-  GameGuild.Economy.Bounties.UnitTests/
-  GameGuild.Economy.Payouts.UnitTests/
-  GameGuild.Economy.Treasury.UnitTests/
+  GameGuild.Finance.Economy.UnitTests/
+  GameGuild.Finance.Economy.IntegrationTests/
+  GameGuild.Finance.Economy.Risk.UnitTests/
+  GameGuild.Finance.Economy.Risk.IntegrationTests/
+  GameGuild.Finance.Economy.AdRewards.UnitTests/
+  GameGuild.Finance.Economy.Bounties.UnitTests/
+  GameGuild.Finance.Economy.Payouts.UnitTests/
+  GameGuild.Finance.Economy.Treasury.UnitTests/
   GameGuild.Compliance.FinancialCrime.UnitTests/
   GameGuild.TrustSafety.UnitTests/
 ```
@@ -171,7 +171,7 @@ Each project exposes a narrow `Contracts` namespace and keeps persistence intern
 
 ```mermaid
 flowchart LR
-    Core[GameGuild.Economy]
+    Core[GameGuild.Finance.Economy]
     Ads[Economy.AdRewards] --> Core
     Bounties[Economy.Bounties] --> Core
     Payouts[Economy.Payouts] --> Core
@@ -218,7 +218,7 @@ The core never references Ads, Bounties, Payouts, Treasury, Products, Orders, Pa
 
 Provenance and account purpose are different dimensions. `Purchased` and `Earned` describe origin. `FeeRevenue`, `Reserve`, and `PayoutClearing` describe accounting purpose. They must not share one `source_tag` field.
 
-### Tables Owned By `GameGuild.Economy`
+### Tables Owned By `GameGuild.Finance.Economy`
 
 All names below are logical. Final EF names follow project conventions.
 
@@ -448,7 +448,7 @@ Ad playback callbacks prove protocol events, not final revenue. Final revenue no
 2. The backend issues a short-lived, single-use token bound to user, session, creative, device-risk token, duration, and nonce.
 3. The client reports ordered playback milestones with server-observable wall-clock constraints.
 4. `CompleteAdSession` evaluates visibility, timing, replay, velocity, account, device, IP, and network limits.
-5. A valid completion atomically consumes the token, all applicable user/device/network/global issuance budgets, and the funded loss-budget headroom before posting the soft reward through `GameGuild.Economy`.
+5. A valid completion atomically consumes the token, all applicable user/device/network/global issuance budgets, and the funded loss-budget headroom before posting the soft reward through `GameGuild.Finance.Economy`.
 6. The reward quote stores estimated net eCPM, contracted revenue share, buffer, conversion policy, and granted units.
 7. The session is assigned to a provider reporting batch.
 
@@ -583,7 +583,7 @@ Monthly platform withdrawal may select only matured, unheld, unswept platform-fe
 
 Every protected financial operation must carry a versioned, immutable risk decision before it can reach the economy writer. Protected operations include minting, confirmation, hard-to-soft conversion, marketplace settlement, escrow deposit/release, ad reward issuance, bounty claim, service authorization, refund, hold release, payout reservation, payout dispatch, and administrative adjustment.
 
-The decision contract is deliberately separate from the ledger. `GameGuild.Economy.Risk` answers whether a requested operation may proceed, which constraints apply, and which evidence supports the answer. `GameGuild.Economy` remains the only monetary authority and validates that the decision matches the final operation shape before posting.
+The decision contract is deliberately separate from the ledger. `GameGuild.Finance.Economy.Risk` answers whether a requested operation may proceed, which constraints apply, and which evidence supports the answer. `GameGuild.Finance.Economy` remains the only monetary authority and validates that the decision matches the final operation shape before posting.
 
 Risk decisions use these terminal outcomes:
 
@@ -624,7 +624,7 @@ Purchased hard cannot become withdrawable through self-purchase, bounty cycling,
 
 ### Financial Crime And Trust/Safety Boundaries
 
-`GameGuild.Compliance.FinancialCrime` owns regulatory screening status, monitoring cases, required evidence, and compliance hold inputs. It does not decide balances or post journal entries. `GameGuild.TrustSafety` owns product, content, marketplace, and community enforcement. It does not decide KYC legality or mutate balances. `GameGuild.Economy.Risk` consumes both as inputs and returns one bounded risk decision to Core.
+`GameGuild.Compliance.FinancialCrime` owns regulatory screening status, monitoring cases, required evidence, and compliance hold inputs. It does not decide balances or post journal entries. `GameGuild.TrustSafety` owns product, content, marketplace, and community enforcement. It does not decide KYC legality or mutate balances. `GameGuild.Finance.Economy.Risk` consumes both as inputs and returns one bounded risk decision to Core.
 
 No protected financial operation is recorded unless all of the following are true:
 

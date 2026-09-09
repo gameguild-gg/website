@@ -53,6 +53,14 @@
     "Compliance.KYC",
     "Content.Pages",
     "Features",
+    "Finance.Contracts",
+    "Finance.Economy",
+    "Finance.Economy.AdRewards",
+    "Finance.Economy.Bounties",
+    "Finance.Economy.Marketplace",
+    "Finance.Economy.Payouts",
+    "Finance.Economy.Treasury",
+    "Finance.Ledgers",
     "Identity.Authentication",
     "Identity.Authorization",
     "Identity.Context",
@@ -64,30 +72,23 @@
     "Resources",
     "Resources.Contents",
     "SharedKernel",
-    "Tags"
+    "Tags",
+    "TrustSafety"
   ],
   "productModules": {
     "ModuEstate": {
-      "Finance.Ledgers": "Real-estate financial ledgers.",
       "HumanResources": "Real-estate business workforce.",
       "RealEstate": "Property, rental and customer-portal domain."
     },
     "GameGuild": {
       "Announcements.Contracts": "GameGuild community announcement contracts.",
       "Compliance.FinancialCrime": "GameGuild marketplace financial-crime compliance composition.",
-      "Economy": "GameGuild virtual economy and compliance evidence ledger.",
-      "Economy.AdRewards": "GameGuild advertising reward economy.",
-      "Economy.Bounties": "GameGuild game-development bounties.",
-      "Economy.Marketplace": "GameGuild marketplace economy.",
-      "Economy.Payouts": "GameGuild creator economy payouts.",
-      "Economy.Treasury": "GameGuild virtual economy treasury.",
       "Learning.TestingLab": "GameGuild learning evidence from testing labs.",
       "Learning.Workspaces": "GameGuild learner workspaces.",
-      "Lti": "GameGuild learning-tools interoperability.",
+      "Learning.Lti": "GameGuild learning-tools interoperability.",
       "ProjectWork": "GameGuild game-development project work.",
       "Social.Announcements": "GameGuild community announcements.",
       "Teams": "GameGuild game-development teams.",
-      "TrustSafety": "GameGuild community trust and safety composition.",
       "Compliance.FERPA": "Education records compliance.",
       "GameJams": "Game-jam domain.",
       "Gamification.Achievements": "Learning and game achievements.",
@@ -120,7 +121,7 @@
     "Permissions": "Identity.Authorization",
     "UserProfiles": "Identity.Users",
     "Recommendations": "Learning.Experience.Recommendations",
-    "TestSupport.Economy": "Economy"
+    "TestSupport.Finance.Economy": "Finance.Economy"
   },
   "requiredCommonPackages": ["client", "ui", "eslint-config", "prettier-config", "tailwind-config", "typescript-config"]
 }

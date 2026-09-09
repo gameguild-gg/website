@@ -2,8 +2,8 @@ using System.Data;
 using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
-using GameGuild.Economy.Persistence;
-using GameGuild.Economy.Risk;
+using GameGuild.Finance.Economy.Persistence;
+using GameGuild.Finance.Economy.Risk;
 using Microsoft.EntityFrameworkCore;
 
 namespace GameGuild.TrustSafety;

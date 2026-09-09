@@ -16,6 +16,7 @@
     <PackageVersion Include="Google.Apis.Auth" Version="1.75.0" />
     <PackageVersion Include="FluentValidation" Version="12.0.0" />
     <PackageVersion Include="FluentValidation.DependencyInjectionExtensions" Version="12.0.0" />
+    <PackageVersion Include="MediatR" Version="12.4.1" />
     <PackageVersion Include="HotChocolate.AspNetCore" Version="15.1.16" />
     <PackageVersion Include="HotChocolate.AspNetCore.Authorization" Version="15.1.16" />
     <PackageVersion Include="HotChocolate.Data.EntityFramework" Version="15.1.16" />

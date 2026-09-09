@@ -209,13 +209,13 @@ test_economy_gate_batches_whole_solution_tests() {
 }
 
 test_economy_unit_tests_bound_parallelism_without_global_serialization() {
-  local assembly_info="$repository_root/apps/api/tests/GameGuild.Economy.UnitTests/AssemblyInfo.cs"
-  local database_support="$repository_root/apps/api/tests/GameGuild.TestSupport.Economy/EconomyPostgreSqlTestDatabase.cs"
+  local assembly_info="$repository_root/apps/api/tests/GameGuild.Finance.Economy.UnitTests/AssemblyInfo.cs"
+  local database_support="$repository_root/apps/api/tests/GameGuild.TestSupport.Finance.Economy/EconomyPostgreSqlTestDatabase.cs"
 
   grep -Fq '[assembly: CollectionBehavior(MaxParallelThreads = 3)]' "$assembly_info" || return 1
   ! grep -Fq 'DisableTestParallelization = true' "$assembly_info" || return 1
   ! grep -R -Fq --include='*.cs' '[Collection("Economy PostgreSQL")]' \
-    "$repository_root/apps/api/tests/GameGuild.Economy.UnitTests" || return 1
+    "$repository_root/apps/api/tests/GameGuild.Finance.Economy.UnitTests" || return 1
   grep -Fq 'GateRoleBootstrapLock' "$database_support" || return 1
   grep -Fq 'EnsureGateRolesAsync' "$database_support" || return 1
   grep -Fq 'adminBuilder.CommandTimeout = 120;' "$database_support"
@@ -248,7 +248,7 @@ test_economy_gate_rejects_nested_postgres_testcontainers() {
   grep -Fq "gate_stage='preflight-postgres-isolation'" "$gate" || return 1
   grep -Fq 'ECONOMY_POSTGRES_CONNECTION' "$gate" || return 1
   grep -Fq "grep -RIl --include='*.cs' --exclude-dir=bin --exclude-dir=obj 'new PostgreSqlBuilder' apps/api/tests" "$gate" || return 1
-  grep -Fq 'GameGuild.TestSupport.Economy/' "$gate"
+  grep -Fq 'GameGuild.TestSupport.Finance.Economy/' "$gate"
 }
 
 test_economy_gate_isolates_global_economy_roles_from_application_databases() {
@@ -291,7 +291,7 @@ test_economy_gate_uses_memory_backed_disposable_postgres() {
 
 test_economy_gate_migrates_one_template_and_clones_isolated_test_databases() {
   local gate="$ci_dir/verify-economy.sh"
-  local database_support="$repository_root/apps/api/tests/GameGuild.TestSupport.Economy/EconomyPostgreSqlTestDatabase.cs"
+  local database_support="$repository_root/apps/api/tests/GameGuild.TestSupport.Finance.Economy/EconomyPostgreSqlTestDatabase.cs"
 
   grep -Fq "gate_stage='postgres-economy-template'" "$gate" || return 1
   grep -Fq "economy_template_database='economy_tests_template'" "$gate" || return 1
@@ -492,8 +492,8 @@ test_windows_gate_disables_reusable_msbuild_workers() {
 
 test_manifest_rejects_undeclared_project() {
   local root="$fixture_root/manifest-invalid"
-  mkdir -p "$root/apps/api/Source/Modules/GameGuild.Economy"
-  printf '<Project />\n' > "$root/apps/api/Source/Modules/GameGuild.Economy/GameGuild.Economy.csproj"
+  mkdir -p "$root/apps/api/Source/Modules/GameGuild.Finance.Economy"
+  printf '<Project />\n' > "$root/apps/api/Source/Modules/GameGuild.Finance.Economy/GameGuild.Finance.Economy.csproj"
   printf '{"schemaVersion":1,"projects":[]}\n' > "$root/manifest.json"
   assert_throws 'not declared' assert_economy_manifest "$root" "$root/manifest.json"
 }
@@ -508,14 +508,14 @@ test_manifest_rejects_undeclared_compliance_project() {
 
 test_manifest_accepts_declared_projects() {
   local root="$fixture_root/manifest-valid"
-  local production='apps/api/Source/Modules/GameGuild.Economy/GameGuild.Economy.csproj'
-  local unit='apps/api/tests/GameGuild.Economy.UnitTests/GameGuild.Economy.UnitTests.csproj'
-  local integration='apps/api/tests/GameGuild.Economy.IntegrationTests/GameGuild.Economy.IntegrationTests.csproj'
+  local production='apps/api/Source/Modules/GameGuild.Finance.Economy/GameGuild.Finance.Economy.csproj'
+  local unit='apps/api/tests/GameGuild.Finance.Economy.UnitTests/GameGuild.Finance.Economy.UnitTests.csproj'
+  local integration='apps/api/tests/GameGuild.Finance.Economy.IntegrationTests/GameGuild.Finance.Economy.IntegrationTests.csproj'
   mkdir -p "$root/$(dirname "$production")" "$root/$(dirname "$unit")" "$root/$(dirname "$integration")"
   printf '<Project />\n' > "$root/$production"
   printf '<Project />\n' > "$root/$unit"
   printf '<Project />\n' > "$root/$integration"
-  printf '{"schemaVersion":1,"projects":[{"productionProject":"%s","testProjects":["%s","%s"],"coverageAssemblies":["GameGuild.Economy"]}]}\n' \
+  printf '{"schemaVersion":1,"projects":[{"productionProject":"%s","testProjects":["%s","%s"],"coverageAssemblies":["GameGuild.Finance.Economy"]}]}\n' \
     "$production" "$unit" "$integration" > "$root/manifest.json"
   assert_economy_manifest "$root" "$root/manifest.json" >/dev/null
 }
@@ -540,8 +540,8 @@ PY
 
 test_manifest_prunes_build_outputs() {
   local root="$fixture_root/manifest-build-outputs"
-  local production='apps/api/Source/Modules/GameGuild.Economy/GameGuild.Economy.csproj'
-  local unit='apps/api/tests/GameGuild.Economy.UnitTests/GameGuild.Economy.UnitTests.csproj'
+  local production='apps/api/Source/Modules/GameGuild.Finance.Economy/GameGuild.Finance.Economy.csproj'
+  local unit='apps/api/tests/GameGuild.Finance.Economy.UnitTests/GameGuild.Finance.Economy.UnitTests.csproj'
   local gate_library="$ci_dir/economy-gate.sh"
 
   mkdir -p "$root/$(dirname "$production")" "$root/$(dirname "$unit")/bin/Release" "$root/$(dirname "$unit")/obj"
@@ -549,7 +549,7 @@ test_manifest_prunes_build_outputs() {
   printf '<Project />\n' > "$root/$unit"
   printf '<Project />\n' > "$root/$(dirname "$unit")/bin/Release/Generated.csproj"
   printf '<Project />\n' > "$root/$(dirname "$unit")/obj/Generated.csproj"
-  printf '{"schemaVersion":1,"projects":[{"productionProject":"%s","testProjects":["%s"],"coverageAssemblies":["GameGuild.Economy"]}]}\n' \
+  printf '{"schemaVersion":1,"projects":[{"productionProject":"%s","testProjects":["%s"],"coverageAssemblies":["GameGuild.Finance.Economy"]}]}\n' \
     "$production" "$unit" > "$root/manifest.json"
 
   grep -Fq 'for current, directories, filenames in os.walk(base_directory):' "$gate_library" || return 1
@@ -558,8 +558,8 @@ test_manifest_prunes_build_outputs() {
 }
 test_manifest_record_fields_normalize_windows_line_endings() {
   local assembly
-  assembly="$(normalize_shell_record_field $'GameGuild.Economy\r')"
-  assert_equal "$assembly" 'GameGuild.Economy' 'Windows Python output must not alter assembly names'
+  assembly="$(normalize_shell_record_field $'GameGuild.Finance.Economy\r')"
+  assert_equal "$assembly" 'GameGuild.Finance.Economy' 'Windows Python output must not alter assembly names'
 }
 
 test_coverage_record_fields_preserve_empty_prefixes() {
@@ -568,12 +568,12 @@ test_coverage_record_fields_preserve_empty_prefixes() {
   while IFS=$'\t' read -r record_type first second third fourth; do
     [[ "$record_type" == 'coverage' ]] || continue
     records+=("$first"$'\t'"$second"$'\t'"$third"$'\t'"$fourth")
-  done <<< $'coverage\tEconomy.UnitTests.csproj\tGameGuild.Economy\t__all__\t1'
+  done <<< $'coverage\tEconomy.UnitTests.csproj\tGameGuild.Finance.Economy\t__all__\t1'
 
   IFS=$'\t' read -r first second third fourth <<< "${records[0]}"
   [[ "$third" == '__all__' ]] && third=''
   assert_equal "$first" 'Economy.UnitTests.csproj' 'coverage test project must be preserved' || return 1
-  assert_equal "$second" 'GameGuild.Economy' 'coverage assembly must be preserved' || return 1
+  assert_equal "$second" 'GameGuild.Finance.Economy' 'coverage assembly must be preserved' || return 1
   assert_equal "$third" '' 'an empty prefix list must remain empty' || return 1
   assert_equal "$fourth" '1' 'branch threshold must not shift into the prefixes field'
 }
@@ -722,21 +722,21 @@ XML
 test_cobertura_requires_full_method_coverage() {
   local coverage="$fixture_root/coverage.cobertura.xml"
   cat > "$coverage" <<'XML'
-<coverage><packages><package name="GameGuild.Economy" line-rate="1" branch-rate="1"><classes><class name="A"><methods><method name="Covered"><lines><line number="1" hits="1" /></lines></method><method name="Missed"><lines><line number="2" hits="0" /></lines></method></methods><lines><line number="1" hits="1" /><line number="2" hits="1" /></lines></class></classes></package></packages></coverage>
+<coverage><packages><package name="GameGuild.Finance.Economy" line-rate="1" branch-rate="1"><classes><class name="A"><methods><method name="Covered"><lines><line number="1" hits="1" /></lines></method><method name="Missed"><lines><line number="2" hits="0" /></lines></method></methods><lines><line number="1" hits="1" /><line number="2" hits="1" /></lines></class></classes></package></packages></coverage>
 XML
-  assert_throws 'method coverage' assert_cobertura_coverage "$coverage" 'GameGuild.Economy' || return 1
+  assert_throws 'method coverage' assert_cobertura_coverage "$coverage" 'GameGuild.Finance.Economy' || return 1
   sed -i 's/number="2" hits="0"/number="2" hits="1"/' "$coverage"
-  assert_cobertura_coverage "$coverage" 'GameGuild.Economy' >/dev/null
+  assert_cobertura_coverage "$coverage" 'GameGuild.Finance.Economy' >/dev/null
 }
 
 test_cobertura_requires_full_branch_coverage() {
   local coverage="$fixture_root/branch-threshold.cobertura.xml"
   cat > "$coverage" <<'XML'
-<coverage><packages><package name="GameGuild.Economy" line-rate="1" branch-rate="1"><classes><class name="A"><methods><method name="Covered"><lines><line number="1" hits="1" branch="true" condition-coverage="50% (1/2)" /></lines></method></methods><lines><line number="1" hits="1" branch="true" condition-coverage="50% (1/2)" /></lines></class></classes></package></packages></coverage>
+<coverage><packages><package name="GameGuild.Finance.Economy" line-rate="1" branch-rate="1"><classes><class name="A"><methods><method name="Covered"><lines><line number="1" hits="1" branch="true" condition-coverage="50% (1/2)" /></lines></method></methods><lines><line number="1" hits="1" branch="true" condition-coverage="50% (1/2)" /></lines></class></classes></package></packages></coverage>
 XML
-  assert_throws 'branch coverage' assert_cobertura_coverage "$coverage" 'GameGuild.Economy' || return 1
+  assert_throws 'branch coverage' assert_cobertura_coverage "$coverage" 'GameGuild.Finance.Economy' || return 1
   sed -i 's/condition-coverage="50% (1\/2)"/condition-coverage="100% (2\/2)"/g' "$coverage"
-  assert_cobertura_coverage "$coverage" 'GameGuild.Economy' >/dev/null
+  assert_cobertura_coverage "$coverage" 'GameGuild.Finance.Economy' >/dev/null
 }
 
 test_cobertura_supports_path_scoped_capabilities() {

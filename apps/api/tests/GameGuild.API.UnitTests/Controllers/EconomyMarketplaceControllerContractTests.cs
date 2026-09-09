@@ -1,8 +1,8 @@
 using FluentAssertions;
 using GameGuild.API.Controllers;
 using GameGuild.Commerce.Orders;
-using GameGuild.Economy.Marketplace;
-using GameGuild.Economy.Risk;
+using GameGuild.Finance.Economy.Marketplace;
+using GameGuild.Finance.Economy.Risk;
 using GameGuild.Identity.Context.Actors;
 using Microsoft.AspNetCore.Mvc;
 using Moq;

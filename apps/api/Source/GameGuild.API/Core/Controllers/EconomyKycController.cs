@@ -2,7 +2,7 @@ using System.Globalization;
 using Asp.Versioning;
 using GameGuild.Compliance.KYC;
 using GameGuild.CQRS;
-using GameGuild.Economy.Risk;
+using GameGuild.Finance.Economy.Risk;
 using GameGuild.Identity.Context.Actors;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;

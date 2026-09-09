@@ -1,6 +1,6 @@
 using System.Reflection;
 using FluentAssertions;
-using GameGuild.Economy.Risk;
+using GameGuild.Finance.Economy.Risk;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 

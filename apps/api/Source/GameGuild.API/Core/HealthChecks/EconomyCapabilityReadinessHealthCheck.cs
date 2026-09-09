@@ -1,5 +1,5 @@
 using GameGuild.API.Setup;
-using GameGuild.Economy.Risk;
+using GameGuild.Finance.Economy.Risk;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 namespace GameGuild.API.HealthChecks;

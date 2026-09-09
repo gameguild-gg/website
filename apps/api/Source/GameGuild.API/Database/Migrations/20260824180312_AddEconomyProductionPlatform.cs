@@ -4009,7 +4009,7 @@ public class AddEconomyProductionPlatform : Migration
 			b.HasIndex("PageId", "SortOrder");
 			b.ToTable("page_sections");
 		});
-		modelBuilder.Entity("GameGuild.Economy.AdRewards.Persistence.AdNetworkPolicyVersionRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.AdRewards.Persistence.AdNetworkPolicyVersionRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("TenantId").HasColumnType("uuid");
 			b.Property<string>("Network").HasMaxLength(100).HasColumnType("character varying(100)");
@@ -4058,7 +4058,7 @@ public class AddEconomyProductionPlatform : Migration
 				t.HasCheckConstraint("ck_economy_ad_network_policy_versions_window", "\"ExpiresAt\" > \"EffectiveAt\"");
 			});
 		});
-		modelBuilder.Entity("GameGuild.Economy.AdRewards.Persistence.AdProviderReportRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.AdRewards.Persistence.AdProviderReportRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("Id").HasColumnType("uuid");
 			b.Property<long>("ActualRevenueUsdNanos").HasColumnType("bigint");
@@ -4093,7 +4093,7 @@ public class AddEconomyProductionPlatform : Migration
 				t.HasCheckConstraint("ck_economy_ad_provider_reports_window", "\"PeriodEnd\" > \"PeriodStart\" AND \"ImportedAt\" >= \"PeriodEnd\"");
 			});
 		});
-		modelBuilder.Entity("GameGuild.Economy.AdRewards.Persistence.AdRewardAccumulatorRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.AdRewards.Persistence.AdRewardAccumulatorRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("TenantId").HasColumnType("uuid");
 			b.Property<Guid>("WalletId").HasColumnType("uuid");
@@ -4110,7 +4110,7 @@ public class AddEconomyProductionPlatform : Migration
 				t.HasCheckConstraint("ck_economy_ad_reward_accumulators_version", "\"PolicyVersion\" > 0 AND \"Version\" > 0");
 			});
 		});
-		modelBuilder.Entity("GameGuild.Economy.AdRewards.Persistence.AdRewardAttributionRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.AdRewards.Persistence.AdRewardAttributionRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("SessionId").ValueGeneratedOnAdd().HasColumnType("uuid");
 			b.Property<DateTimeOffset>("CompletedAt").HasColumnType("timestamp with time zone");
@@ -4129,7 +4129,7 @@ public class AddEconomyProductionPlatform : Migration
 				t.HasCheckConstraint("ck_economy_ad_reward_attributions_nonnegative", "\"EstimatedRevenueUsdNanos\" >= 0 AND \"RewardSoftUnits\" >= 0");
 			});
 		});
-		modelBuilder.Entity("GameGuild.Economy.AdRewards.Persistence.AdRewardBudgetConsumptionRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.AdRewards.Persistence.AdRewardBudgetConsumptionRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("SessionId").ValueGeneratedOnAdd().HasColumnType("uuid");
 			b.Property<DateTimeOffset>("ConsumedAt").HasColumnType("timestamp with time zone");
@@ -4150,7 +4150,7 @@ public class AddEconomyProductionPlatform : Migration
 				t.HasCheckConstraint("ck_economy_ad_reward_budget_consumptions_positive", "\"SoftUnits\" > 0 AND \"LossBudgetUsdNanos\" > 0");
 			});
 		});
-		modelBuilder.Entity("GameGuild.Economy.AdRewards.Persistence.AdRewardCapConsumptionRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.AdRewards.Persistence.AdRewardCapConsumptionRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uuid");
 			b.Property<DateTimeOffset>("ConsumedAt").HasColumnType("timestamp with time zone");
@@ -4173,7 +4173,7 @@ public class AddEconomyProductionPlatform : Migration
 				t.HasCheckConstraint("ck_economy_ad_reward_cap_consumptions_window", "\"WindowEndsAt\" > \"WindowStartedAt\" AND \"ConsumedAt\" >= \"WindowStartedAt\" AND \"ConsumedAt\" < \"WindowEndsAt\"");
 			});
 		});
-		modelBuilder.Entity("GameGuild.Economy.AdRewards.Persistence.AdRewardCompletionRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.AdRewards.Persistence.AdRewardCompletionRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("SessionId").ValueGeneratedOnAdd().HasColumnType("uuid");
 			b.Property<string>("CapabilityReceiptHash").HasMaxLength(128).HasColumnType("character varying(128)");
@@ -4213,7 +4213,7 @@ public class AddEconomyProductionPlatform : Migration
 				t.HasCheckConstraint("ck_economy_ad_reward_completions_state", "\"State\" BETWEEN 1 AND 3");
 			});
 		});
-		modelBuilder.Entity("GameGuild.Economy.AdRewards.Persistence.AdRewardPendingClaimRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.AdRewards.Persistence.AdRewardPendingClaimRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("SessionId").HasColumnType("uuid");
 			b.Property<string>("CompletionIdempotencyKeyHash").IsRequired().HasMaxLength(128)
@@ -4233,7 +4233,7 @@ public class AddEconomyProductionPlatform : Migration
 			b.HasIndex("TenantId", "ConfirmationIdempotencyKeyHash").IsUnique().HasFilter("\"ConfirmationIdempotencyKeyHash\" IS NOT NULL");
 			b.ToTable("economy_ad_reward_pending_claims", (string?)null);
 		});
-		modelBuilder.Entity("GameGuild.Economy.AdRewards.Persistence.AdRewardPlaybackMilestoneRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.AdRewards.Persistence.AdRewardPlaybackMilestoneRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uuid");
 			b.Property<string>("EvidenceHash").IsRequired().HasMaxLength(128)
@@ -4249,7 +4249,7 @@ public class AddEconomyProductionPlatform : Migration
 				t.HasCheckConstraint("ck_economy_ad_reward_playback_milestones_percentage", "\"Percentage\" BETWEEN 0 AND 100 AND \"Sequence\" > 0");
 			});
 		});
-		modelBuilder.Entity("GameGuild.Economy.AdRewards.Persistence.AdRewardProviderBatchClaimRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.AdRewards.Persistence.AdRewardProviderBatchClaimRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uuid");
 			b.Property<string>("BatchId").IsRequired().HasMaxLength(256)
@@ -4263,7 +4263,7 @@ public class AddEconomyProductionPlatform : Migration
 			b.HasIndex("ProviderReportId", "SessionId").IsUnique();
 			b.ToTable("economy_ad_reward_provider_batch_claims", (string?)null);
 		});
-		modelBuilder.Entity("GameGuild.Economy.AdRewards.Persistence.AdRewardProviderProofInboxRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.AdRewards.Persistence.AdRewardProviderProofInboxRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uuid");
 			b.Property<string>("EvidenceHash").IsRequired().HasMaxLength(128)
@@ -4285,7 +4285,7 @@ public class AddEconomyProductionPlatform : Migration
 			b.HasIndex("TenantId", "Network", "ProviderEventId").IsUnique();
 			b.ToTable("economy_ad_reward_provider_proof_inbox", (string?)null);
 		});
-		modelBuilder.Entity("GameGuild.Economy.AdRewards.Persistence.AdRewardReconciliationRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.AdRewards.Persistence.AdRewardReconciliationRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("Id").HasColumnType("uuid");
 			b.Property<long>("ActualDeltaUsdNanos").HasColumnType("bigint");
@@ -4314,7 +4314,7 @@ public class AddEconomyProductionPlatform : Migration
 				t.HasCheckConstraint("ck_economy_ad_reward_reconciliations_version", "\"Version\" > 0");
 			});
 		});
-		modelBuilder.Entity("GameGuild.Economy.AdRewards.Persistence.AdRewardSessionEventRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.AdRewards.Persistence.AdRewardSessionEventRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uuid");
 			b.Property<string>("EvidenceHash").IsRequired().HasMaxLength(128)
@@ -4331,7 +4331,7 @@ public class AddEconomyProductionPlatform : Migration
 				t.HasCheckConstraint("ck_economy_ad_reward_session_events_state", "\"State\" BETWEEN 1 AND 7");
 			});
 		});
-		modelBuilder.Entity("GameGuild.Economy.AdRewards.Persistence.AdRewardSessionRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.AdRewards.Persistence.AdRewardSessionRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uuid");
 			b.Property<string>("AsnRiskHash").IsRequired().HasMaxLength(128)
@@ -4375,7 +4375,7 @@ public class AddEconomyProductionPlatform : Migration
 				t.HasCheckConstraint("ck_economy_ad_reward_sessions_window", "\"ExpiresAt\" > \"IssuedAt\" AND \"UpdatedAt\" >= \"IssuedAt\"");
 			});
 		});
-		modelBuilder.Entity("GameGuild.Economy.Bounties.Persistence.BountyEscrowFragmentRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Bounties.Persistence.BountyEscrowFragmentRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("Id").HasColumnType("uuid");
 			b.Property<long>("AmountUnits").HasColumnType("bigint");
@@ -4397,7 +4397,7 @@ public class AddEconomyProductionPlatform : Migration
 				t.HasCheckConstraint("ck_economy_bounty_escrow_fragments_scale_positive", "\"TraceUnitsPerCoinUnit\" > 0");
 			});
 		});
-		modelBuilder.Entity("GameGuild.Economy.Bounties.Persistence.BountyExpirationEventRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Bounties.Persistence.BountyExpirationEventRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("Id").HasColumnType("uuid");
 			b.Property<Guid>("BountyId").HasColumnType("uuid");
@@ -4413,7 +4413,7 @@ public class AddEconomyProductionPlatform : Migration
 				t.HasCheckConstraint("ck_economy_bounty_expiration_events_version", "\"BountyVersion\" > 1");
 			});
 		});
-		modelBuilder.Entity("GameGuild.Economy.Bounties.Persistence.BountyRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Bounties.Persistence.BountyRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("Id").HasColumnType("uuid");
 			b.Property<long>("AmountUnits").HasColumnType("bigint");
@@ -4446,7 +4446,7 @@ public class AddEconomyProductionPlatform : Migration
 				t.HasCheckConstraint("ck_economy_bounties_window", "\"ExpiresAt\" > \"PostedAt\"");
 			});
 		});
-		modelBuilder.Entity("GameGuild.Economy.Bounties.Persistence.BountyTerminalEventRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Bounties.Persistence.BountyTerminalEventRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("Id").HasColumnType("uuid");
 			b.Property<Guid>("ActorId").HasColumnType("uuid");
@@ -4473,7 +4473,7 @@ public class AddEconomyProductionPlatform : Migration
 				t.HasCheckConstraint("ck_economy_bounty_terminal_events_units", "\"ReturnedUnits\" >= 0 AND \"FeeUnits\" >= 0 AND \"FirstJournalSequence\" > 0");
 			});
 		});
-		modelBuilder.Entity("GameGuild.Economy.Integrations.AI.AiProviderCostFactEntity", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Integrations.AI.AiProviderCostFactEntity", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("Id").HasColumnType("uuid");
 			b.Property<Guid>("ActorId").HasColumnType("uuid");
@@ -4509,7 +4509,7 @@ public class AddEconomyProductionPlatform : Migration
 				t.HasCheckConstraint("ck_ai_provider_cost_facts_token_conservation", "\"InputTokens\" >= 0 AND \"OutputTokens\" >= 0 AND \"TotalTokens\" = \"InputTokens\" + \"OutputTokens\"");
 			});
 		});
-		modelBuilder.Entity("GameGuild.Economy.Marketplace.Persistence.MarketplaceCurrencyPolicyVersionRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Marketplace.Persistence.MarketplaceCurrencyPolicyVersionRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("TenantId").HasColumnType("uuid");
 			b.Property<Guid>("ProductId").HasColumnType("uuid");
@@ -4543,7 +4543,7 @@ public class AddEconomyProductionPlatform : Migration
 				t.HasCheckConstraint("ck_economy_marketplace_currency_policy_versions_window", "\"ExpiresAt\" > \"EffectiveAt\" AND \"RefundHoldTicks\" > 0");
 			});
 		});
-		modelBuilder.Entity("GameGuild.Economy.Marketplace.Persistence.MarketplaceEventRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Marketplace.Persistence.MarketplaceEventRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uuid");
 			b.Property<string>("EventKind").IsRequired().HasMaxLength(100)
@@ -4561,7 +4561,7 @@ public class AddEconomyProductionPlatform : Migration
 				t.HasCheckConstraint("ck_economy_marketplace_events_sequence", "\"Sequence\" > 0");
 			});
 		});
-		modelBuilder.Entity("GameGuild.Economy.Marketplace.Persistence.MarketplaceFundingFragmentRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Marketplace.Persistence.MarketplaceFundingFragmentRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("Id").HasColumnType("uuid");
 			b.Property<long>("AmountUnits").HasColumnType("bigint");
@@ -4580,7 +4580,7 @@ public class AddEconomyProductionPlatform : Migration
 				t.HasCheckConstraint("ck_economy_marketplace_funding_fragments_scale", "\"TraceUnitsPerCoinUnit\" > 0");
 			});
 		});
-		modelBuilder.Entity("GameGuild.Economy.Marketplace.Persistence.MarketplaceOutboxRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Marketplace.Persistence.MarketplaceOutboxRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uuid");
 			b.Property<int>("AttemptCount").HasColumnType("integer");
@@ -4601,7 +4601,7 @@ public class AddEconomyProductionPlatform : Migration
 				t.HasCheckConstraint("ck_economy_marketplace_outbox_attempts", "\"AttemptCount\" >= 0");
 			});
 		});
-		modelBuilder.Entity("GameGuild.Economy.Marketplace.Persistence.MarketplaceRefundDebtRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Marketplace.Persistence.MarketplaceRefundDebtRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uuid");
 			b.Property<long>("AmountUnits").HasColumnType("bigint");
@@ -4622,7 +4622,7 @@ public class AddEconomyProductionPlatform : Migration
 				t.HasCheckConstraint("ck_economy_marketplace_refund_debts_amount", "\"AmountUnits\" > 0");
 			});
 		});
-		modelBuilder.Entity("GameGuild.Economy.Marketplace.Persistence.MarketplaceRefundLegRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Marketplace.Persistence.MarketplaceRefundLegRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("RefundId").HasColumnType("uuid");
 			b.Property<int>("Currency").HasColumnType("integer");
@@ -4635,7 +4635,7 @@ public class AddEconomyProductionPlatform : Migration
 				t.HasCheckConstraint("ck_economy_marketplace_refund_legs_amount", "\"Units\" > 0");
 			});
 		});
-		modelBuilder.Entity("GameGuild.Economy.Marketplace.Persistence.MarketplaceRefundRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Marketplace.Persistence.MarketplaceRefundRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("Id").HasColumnType("uuid");
 			b.Property<Guid>("BuyerId").HasColumnType("uuid");
@@ -4678,7 +4678,7 @@ public class AddEconomyProductionPlatform : Migration
 				t.HasCheckConstraint("ck_economy_marketplace_refunds_versions", "\"MarketplacePolicyVersion\" > 0 AND \"PolicyVersion\" > 0 AND \"ReserveVersion\" > 0");
 			});
 		});
-		modelBuilder.Entity("GameGuild.Economy.Marketplace.Persistence.MarketplaceSettlementCreditRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Marketplace.Persistence.MarketplaceSettlementCreditRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("Id").HasColumnType("uuid");
 			b.Property<long>("AmountUnits").HasColumnType("bigint");
@@ -4702,7 +4702,7 @@ public class AddEconomyProductionPlatform : Migration
 				t.HasCheckConstraint("ck_economy_marketplace_settlement_credits_purpose", "\"Purpose\" BETWEEN 1 AND 2");
 			});
 		});
-		modelBuilder.Entity("GameGuild.Economy.Marketplace.Persistence.MarketplaceSettlementLegRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Marketplace.Persistence.MarketplaceSettlementLegRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("SettlementId").HasColumnType("uuid");
 			b.Property<int>("Currency").HasColumnType("integer");
@@ -4717,7 +4717,7 @@ public class AddEconomyProductionPlatform : Migration
 				t.HasCheckConstraint("ck_economy_marketplace_settlement_legs_refund", "\"RefundedUnits\" BETWEEN 0 AND \"Units\"");
 			});
 		});
-		modelBuilder.Entity("GameGuild.Economy.Marketplace.Persistence.MarketplaceSettlementRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Marketplace.Persistence.MarketplaceSettlementRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("Id").HasColumnType("uuid");
 			b.Property<Guid>("BuyerId").HasColumnType("uuid");
@@ -4777,7 +4777,7 @@ public class AddEconomyProductionPlatform : Migration
 				t.HasCheckConstraint("ck_economy_marketplace_settlements_wallets", "\"BuyerWalletId\" <> \"SellerWalletId\" AND \"BuyerWalletId\" <> \"PlatformFeeWalletId\" AND \"SellerWalletId\" <> \"PlatformFeeWalletId\"");
 			});
 		});
-		modelBuilder.Entity("GameGuild.Economy.Payouts.PayoutConnectAccountRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Payouts.PayoutConnectAccountRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("PayeeId").ValueGeneratedOnAdd().HasColumnType("uuid");
 			b.Property<bool>("ChargesEnabled").HasColumnType("boolean");
@@ -4806,7 +4806,7 @@ public class AddEconomyProductionPlatform : Migration
 				t.HasCheckConstraint("ck_economy_payout_connect_accounts_window", "\"ExpiresAt\" > \"ObservedAt\"");
 			});
 		});
-		modelBuilder.Entity("GameGuild.Economy.Payouts.PayoutDispatchOutboxRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Payouts.PayoutDispatchOutboxRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("Id").HasColumnType("uuid");
 			b.Property<int>("AttemptCount").HasColumnType("integer");
@@ -4830,7 +4830,7 @@ public class AddEconomyProductionPlatform : Migration
 				t.HasCheckConstraint("ck_economy_payout_dispatch_outbox_attempts", "\"AttemptCount\" >= 0");
 			});
 		});
-		modelBuilder.Entity("GameGuild.Economy.Payouts.PayoutOperationRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Payouts.PayoutOperationRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("Id").HasColumnType("uuid");
 			b.Property<Guid>("ActorId").HasColumnType("uuid");
@@ -4872,7 +4872,7 @@ public class AddEconomyProductionPlatform : Migration
 				t.HasCheckConstraint("ck_economy_payout_operations_timestamps", "\"UpdatedAt\" >= \"CreatedAt\"");
 			});
 		});
-		modelBuilder.Entity("GameGuild.Economy.Payouts.PayoutProviderEventRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Payouts.PayoutProviderEventRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<string>("EventId").HasMaxLength(256).HasColumnType("character varying(256)");
 			b.Property<string>("EventHash").IsRequired().HasMaxLength(128)
@@ -4884,7 +4884,7 @@ public class AddEconomyProductionPlatform : Migration
 			b.HasIndex("OperationId", "RecordedAt").HasDatabaseName("ix_economy_payout_provider_events_operation_recorded");
 			b.ToTable("economy_payout_provider_events", (string?)null);
 		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyAccountRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyAccountRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uuid");
 			b.Property<int>("Code").HasColumnType("integer");
@@ -4899,7 +4899,7 @@ public class AddEconomyProductionPlatform : Migration
 				t.HasCheckConstraint("ck_economy_accounts_wallet_partition", "(\"WalletId\" IS NULL AND \"Code\" NOT IN (2, 3, 4)) OR (\"WalletId\" IS NOT NULL AND \"Code\" IN (2, 3, 4))");
 			});
 		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyAnchorVerificationRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyAnchorVerificationRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uuid");
 			b.Property<string>("ETag").IsRequired().HasMaxLength(256)
@@ -4919,7 +4919,7 @@ public class AddEconomyProductionPlatform : Migration
 			b.HasIndex("ExternalAnchorId", "VerifiedAt");
 			b.ToTable("economy_anchor_verifications", (string?)null);
 		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyCapabilityPolicyApprovalRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyCapabilityPolicyApprovalRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uuid");
 			b.Property<Guid>("ActorId").HasColumnType("uuid");
@@ -4931,7 +4931,7 @@ public class AddEconomyProductionPlatform : Migration
 			b.HasIndex("PolicyId", "ActorId").IsUnique().HasDatabaseName("ux_economy_capability_policy_approvals_policy_actor");
 			b.ToTable("economy_capability_policy_approvals", (string?)null);
 		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyCapabilityPolicyRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyCapabilityPolicyRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uuid");
 			b.Property<DateTimeOffset?>("ApprovedAt").HasColumnType("timestamp with time zone");
@@ -4970,7 +4970,7 @@ public class AddEconomyProductionPlatform : Migration
 				t.HasCheckConstraint("ck_economy_capability_policies_window", "\"ExpiresAt\" > \"EffectiveAt\" AND (\"ApprovedAt\" IS NULL OR \"EffectiveAt\" >= \"ApprovedAt\")");
 			});
 		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyCapabilityReceiptConsumptionRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyCapabilityReceiptConsumptionRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uuid");
 			b.Property<Guid>("ActorId").HasColumnType("uuid");
@@ -4984,7 +4984,7 @@ public class AddEconomyProductionPlatform : Migration
 			b.HasIndex("ReceiptId").IsUnique().HasDatabaseName("ux_economy_capability_receipt_consumptions_receipt");
 			b.ToTable("economy_capability_receipt_consumptions", (string?)null);
 		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyCapabilityReceiptRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyCapabilityReceiptRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uuid");
 			b.Property<Guid>("ActorId").HasColumnType("uuid");
@@ -5024,7 +5024,7 @@ public class AddEconomyProductionPlatform : Migration
 				t.HasCheckConstraint("ck_economy_capability_receipts_versions", "\"PolicyVersion\" > 0 AND \"ReserveVersion\" > 0 AND \"KillSwitchEpoch\" >= 0");
 			});
 		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyChainHeadRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyChainHeadRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<short>("Id").ValueGeneratedOnAdd().HasColumnType("smallint");
 			b.Property<short>("Id").UseIdentityByDefaultColumn();
@@ -5038,7 +5038,7 @@ public class AddEconomyProductionPlatform : Migration
 				t.HasCheckConstraint("ck_economy_chain_head_singleton", "\"Id\" = 1");
 			});
 		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyComplianceEvidenceRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyComplianceEvidenceRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uuid");
 			b.Property<string>("Environment").IsRequired().HasMaxLength(50)
@@ -5075,7 +5075,7 @@ public class AddEconomyProductionPlatform : Migration
 				t.HasCheckConstraint("ck_economy_compliance_evidence_versions", "\"Version\" > 0 AND \"PolicyVersion\" > 0 AND length(btrim(\"EvidenceKind\")) > 0");
 			});
 		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyComplianceHoldEventRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyComplianceHoldEventRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uuid");
 			b.Property<Guid>("ActorId").HasColumnType("uuid");
@@ -5093,7 +5093,7 @@ public class AddEconomyProductionPlatform : Migration
 				t.HasCheckConstraint("ck_economy_compliance_hold_events_sequence", "\"Sequence\" > 0");
 			});
 		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyComplianceHoldRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyComplianceHoldRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uuid");
 			b.Property<DateTimeOffset>("ActivatedAt").HasColumnType("timestamp with time zone");
@@ -5127,7 +5127,7 @@ public class AddEconomyProductionPlatform : Migration
 				t.HasCheckConstraint("ck_economy_compliance_holds_release", "(\"ReleasedAt\" IS NULL AND \"ReleasedBy\" IS NULL) OR (\"ReleasedAt\" >= \"ActivatedAt\" AND \"ReleasedBy\" IS NOT NULL)");
 			});
 		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyComplianceInboxRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyComplianceInboxRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uuid");
 			b.Property<string>("Environment").IsRequired().HasMaxLength(50)
@@ -5147,7 +5147,7 @@ public class AddEconomyProductionPlatform : Migration
 			b.HasIndex("Provider", "Environment", "ProviderEventId").IsUnique().HasDatabaseName("ux_economy_compliance_inbox_provider_event");
 			b.ToTable("economy_compliance_inbox", (string?)null);
 		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyComplianceOutboxRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyComplianceOutboxRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uuid");
 			b.Property<DateTimeOffset?>("DispatchedAt").HasColumnType("timestamp with time zone");
@@ -5162,7 +5162,7 @@ public class AddEconomyProductionPlatform : Migration
 			b.HasIndex("EvidenceId").IsUnique().HasDatabaseName("ux_economy_compliance_outbox_evidence");
 			b.ToTable("economy_compliance_outbox", (string?)null);
 		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyCreditLotRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyCreditLotRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uuid");
 			b.Property<long>("AmountUnits").HasColumnType("bigint");
@@ -5187,7 +5187,7 @@ public class AddEconomyProductionPlatform : Migration
 				t.HasCheckConstraint("ck_economy_credit_lots_maturity_policy", "(\"Provenance\" = 2 AND \"Currency\" = 1 AND \"CashOutEligible\" AND \"OriginalMaturesAt\" = \"ConfirmedAt\" + INTERVAL '120 days') OR (\"Provenance\" <> 2 AND NOT \"CashOutEligible\")");
 			});
 		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyCustodyObservationRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyCustodyObservationRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uuid");
 			b.Property<string>("AssetKey").IsRequired().HasMaxLength(256)
@@ -5213,7 +5213,7 @@ public class AddEconomyProductionPlatform : Migration
 				t.HasCheckConstraint("ck_economy_custody_observations_values", "\"Version\" > 0 AND \"EligibleUsdNanos\" >= 0");
 			});
 		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyCustodyReconciliationRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyCustodyReconciliationRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uuid");
 			b.Property<long>("EligibleAssetUsdNanos").HasColumnType("bigint");
@@ -5233,7 +5233,7 @@ public class AddEconomyProductionPlatform : Migration
 				t.HasCheckConstraint("ck_economy_custody_reconciliations_values", "\"ReserveVersion\" > 0 AND \"LiabilityUsdNanos\" >= 0 AND \"EligibleAssetUsdNanos\" >= 0");
 			});
 		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyDispatchSnapshotRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyDispatchSnapshotRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uuid");
 			b.Property<long>("AmountUnits").HasColumnType("bigint");
@@ -5261,7 +5261,7 @@ public class AddEconomyProductionPlatform : Migration
 				t.HasCheckConstraint("ck_economy_dispatch_snapshots_reserve_authorization", "\"ReserveVersion\" > 0 AND \"ReserveAuthorizationEpoch\" > 0");
 			});
 		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyDisputeFragmentFreezeRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyDisputeFragmentFreezeRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uuid");
 			b.Property<long>("AmountUnits").HasColumnType("bigint");
@@ -5285,7 +5285,7 @@ public class AddEconomyProductionPlatform : Migration
 				t.HasCheckConstraint("ck_economy_dispute_fragment_freezes_state_timestamp", "(\"Status\" = 1 AND \"TerminalAt\" IS NULL) OR (\"Status\" IN (2, 3) AND \"TerminalAt\" >= \"PlacedAt\")");
 			});
 		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyDisputeFragmentRangeRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyDisputeFragmentRangeRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uuid");
 			b.Property<Guid>("DisputeFragmentFreezeId").HasColumnType("uuid");
@@ -5299,7 +5299,7 @@ public class AddEconomyProductionPlatform : Migration
 				t.HasCheckConstraint("ck_economy_dispute_fragment_ranges_half_open", "\"StartInclusive\" >= 0 AND \"EndExclusive\" > \"StartInclusive\" AND \"ReversalEpoch\" >= 0");
 			});
 		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyEntityGraphEdgeRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyEntityGraphEdgeRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uuid");
 			b.Property<string>("EvidenceHash").IsRequired().HasMaxLength(128)
@@ -5322,7 +5322,7 @@ public class AddEconomyProductionPlatform : Migration
 				t.HasCheckConstraint("ck_economy_entity_graph_edges_version", "\"Version\" > 0");
 			});
 		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyEntityGraphNodeRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyEntityGraphNodeRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uuid");
 			b.Property<string>("EvidenceHash").IsRequired().HasMaxLength(128)
@@ -5341,7 +5341,7 @@ public class AddEconomyProductionPlatform : Migration
 				t.HasCheckConstraint("ck_economy_entity_graph_nodes_version", "\"Version\" > 0");
 			});
 		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyEntryAllocationRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyEntryAllocationRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uuid");
 			b.Property<long>("AmountUnits").HasColumnType("bigint");
@@ -5355,7 +5355,7 @@ public class AddEconomyProductionPlatform : Migration
 				t.HasCheckConstraint("ck_economy_entry_allocations_amount_positive", "\"AmountUnits\" > 0");
 			});
 		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyExternalAnchorRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyExternalAnchorRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uuid");
 			b.Property<DateTimeOffset>("AnchoredAt").HasColumnType("timestamp with time zone");
@@ -5375,7 +5375,7 @@ public class AddEconomyProductionPlatform : Migration
 			b.HasIndex("JournalSequence").HasDatabaseName("ix_economy_external_anchors_chain_sequence");
 			b.ToTable("economy_external_anchors", (string?)null);
 		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyFragmentRootRangeRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyFragmentRootRangeRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uuid");
 			b.Property<Guid?>("CreditLotId").HasColumnType("uuid");
@@ -5394,7 +5394,7 @@ public class AddEconomyProductionPlatform : Migration
 				t.HasCheckConstraint("ck_economy_fragment_root_ranges_single_owner", "(\"CreditLotId\" IS NULL) <> (\"EntryAllocationId\" IS NULL)");
 			});
 		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyFundingClaimRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyFundingClaimRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("SourceStampId").HasColumnType("uuid");
 			b.Property<long>("AuthoritativeUsdMinorUnits").HasColumnType("bigint");
@@ -5432,7 +5432,7 @@ public class AddEconomyProductionPlatform : Migration
 				t.HasCheckConstraint("ck_economy_funding_claims_version_positive", "\"Version\" > 0");
 			});
 		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyHoldEventRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyHoldEventRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uuid");
 			b.Property<Guid>("ActorId").HasColumnType("uuid");
@@ -5449,7 +5449,7 @@ public class AddEconomyProductionPlatform : Migration
 				t.HasCheckConstraint("ck_economy_hold_events_sequence_positive", "\"Sequence\" > 0");
 			});
 		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyHoldRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyHoldRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uuid");
 			b.Property<long>("AmountUnits").HasColumnType("bigint");
@@ -5467,7 +5467,7 @@ public class AddEconomyProductionPlatform : Migration
 				t.HasCheckConstraint("ck_economy_holds_state_timestamp", "(\"Status\" = 1 AND \"ReleasedAt\" IS NULL) OR (\"Status\" <> 1 AND \"ReleasedAt\" >= \"EffectiveAt\")");
 			});
 		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyIdempotencyRecordRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyIdempotencyRecordRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uuid");
 			b.Property<DateTimeOffset>("CreatedAt").HasColumnType("timestamp with time zone");
@@ -5481,7 +5481,7 @@ public class AddEconomyProductionPlatform : Migration
 			b.HasIndex("PostingGroupId");
 			b.ToTable("economy_idempotency_records", (string?)null);
 		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyJournalEntryRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyJournalEntryRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uuid");
 			b.Property<string>("CanonicalPayloadHash").HasMaxLength(128).HasColumnType("character varying(128)");
@@ -5501,7 +5501,7 @@ public class AddEconomyProductionPlatform : Migration
 				t.HasCheckConstraint("ck_economy_journal_entries_hash_algorithm", "(\"HashAlgorithmVersion\" = 0 AND \"CanonicalPayloadHash\" IS NULL) OR (\"HashAlgorithmVersion\" IN (1, 2) AND length(btrim(\"CanonicalPayloadHash\")) > 0)");
 			});
 		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyJournalLineRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyJournalLineRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uuid");
 			b.Property<Guid>("AccountId").HasColumnType("uuid");
@@ -5523,7 +5523,7 @@ public class AddEconomyProductionPlatform : Migration
 				t.HasCheckConstraint("ck_economy_journal_lines_amount_positive", "\"AmountUnits\" > 0");
 			});
 		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyJournalVerificationCheckpointRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyJournalVerificationCheckpointRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uuid");
 			b.Property<DateTimeOffset>("CompletedAt").HasColumnType("timestamp with time zone");
@@ -5545,7 +5545,7 @@ public class AddEconomyProductionPlatform : Migration
 				t.HasCheckConstraint("ck_economy_journal_verification_checkpoints_time", "\"CompletedAt\" >= \"StartedAt\"");
 			});
 		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyKillSwitchReleaseApprovalRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyKillSwitchReleaseApprovalRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uuid");
 			b.Property<Guid>("ActorId").HasColumnType("uuid");
@@ -5557,7 +5557,7 @@ public class AddEconomyProductionPlatform : Migration
 			b.HasIndex("KillSwitchId", "ActorId").IsUnique().HasDatabaseName("ux_economy_kill_switch_release_approvals_switch_actor");
 			b.ToTable("economy_kill_switch_release_approvals", (string?)null);
 		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyKillSwitchRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyKillSwitchRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uuid");
 			b.Property<DateTimeOffset>("ActivatedAt").HasColumnType("timestamp with time zone");
@@ -5588,7 +5588,7 @@ public class AddEconomyProductionPlatform : Migration
 				t.HasCheckConstraint("ck_economy_kill_switches_state", "(\"IsActive\" AND \"ReleasedAt\" IS NULL) OR (NOT \"IsActive\" AND \"ReleasedAt\" >= \"ActivatedAt\")");
 			});
 		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyLotLineageEdgeRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyLotLineageEdgeRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uuid");
 			b.Property<long>("AmountUnits").HasColumnType("bigint");
@@ -5604,7 +5604,7 @@ public class AddEconomyProductionPlatform : Migration
 				t.HasCheckConstraint("ck_economy_lot_lineage_edges_amount_positive", "\"AmountUnits\" > 0");
 			});
 		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyOutboxMessageRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyOutboxMessageRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uuid");
 			b.Property<DateTimeOffset>("OccurredAt").HasColumnType("timestamp with time zone");
@@ -5619,7 +5619,7 @@ public class AddEconomyProductionPlatform : Migration
 			b.HasIndex("PostingGroupId");
 			b.ToTable("economy_outbox_messages", (string?)null);
 		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyPostingGroupRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyPostingGroupRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uuid");
 			b.Property<Guid>("ActorId").HasColumnType("uuid");
@@ -5649,7 +5649,7 @@ public class AddEconomyProductionPlatform : Migration
 				t.HasCheckConstraint("ck_economy_posting_groups_template_state", "\"TemplateKind\" BETWEEN 1 AND 26 AND \"TemplateVersion\" = 1 AND \"Status\" = 1");
 			});
 		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyProjectionGenerationApprovalRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyProjectionGenerationApprovalRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uuid");
 			b.Property<Guid>("ActorId").HasColumnType("uuid");
@@ -5661,7 +5661,7 @@ public class AddEconomyProductionPlatform : Migration
 			b.HasIndex("Generation", "ActorId").IsUnique();
 			b.ToTable("economy_projection_generation_approvals", (string?)null);
 		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyProjectionGenerationRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyProjectionGenerationRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uuid");
 			b.Property<DateTimeOffset?>("ActivatedAt").HasColumnType("timestamp with time zone");
@@ -5691,7 +5691,7 @@ public class AddEconomyProductionPlatform : Migration
 				t.HasCheckConstraint("ck_economy_projection_generations_range", "\"Generation\" > 0 AND \"FromSequence\" >= 0 AND \"ToSequence\" >= \"FromSequence\"");
 			});
 		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyProjectionReconciliationEventRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyProjectionReconciliationEventRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uuid");
 			b.Property<DateTimeOffset>("DetectedAt").HasColumnType("timestamp with time zone");
@@ -5708,7 +5708,7 @@ public class AddEconomyProductionPlatform : Migration
 				t.HasCheckConstraint("ck_economy_projection_events_sequence_nonnegative", "\"SourceJournalSequence\" >= 0");
 			});
 		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyProtectedChangeCooldownRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyProtectedChangeCooldownRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uuid");
 			b.Property<DateTimeOffset>("AvailableAt").HasColumnType("timestamp with time zone");
@@ -5727,7 +5727,7 @@ public class AddEconomyProductionPlatform : Migration
 				t.HasCheckConstraint("ck_economy_protected_change_cooldowns_window", "\"AvailableAt\" > \"ChangedAt\"");
 			});
 		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyProviderDisputeEventRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyProviderDisputeEventRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<string>("ProviderEventId").HasMaxLength(256).HasColumnType("character varying(256)");
 			b.Property<long>("CumulativeDisputedHardUnits").HasColumnType("bigint");
@@ -5748,7 +5748,7 @@ public class AddEconomyProductionPlatform : Migration
 				t.HasCheckConstraint("ck_economy_provider_dispute_events_sequence_positive", "\"ProviderSequence\" > 0");
 			});
 		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyProviderDisputeRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyProviderDisputeRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<string>("ProviderDisputeReference").HasMaxLength(256).HasColumnType("character varying(256)");
 			b.Property<long>("BaselineReversedHardUnits").HasColumnType("bigint");
@@ -5773,7 +5773,7 @@ public class AddEconomyProductionPlatform : Migration
 				t.HasCheckConstraint("ck_economy_provider_disputes_version_positive", "\"Version\" > 0");
 			});
 		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyProviderFactAllocationRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyProviderFactAllocationRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uuid");
 			b.Property<long>("AllocatedUnits").HasColumnType("bigint");
@@ -5801,7 +5801,7 @@ public class AddEconomyProductionPlatform : Migration
 				t.HasCheckConstraint("ck_economy_provider_fact_allocations_cumulative_bounds", "\"AllocatedUnits\" > 0 AND \"CumulativeCreditedUnits\" >= \"AllocatedUnits\" AND \"CumulativeCreditedUnits\" <= \"AuthoritativeUnits\"");
 			});
 		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyRegisteredCapabilityRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyRegisteredCapabilityRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uuid");
 			b.Property<string>("AllowedTemplateKinds").IsRequired().HasColumnType("jsonb");
@@ -5817,7 +5817,7 @@ public class AddEconomyProductionPlatform : Migration
 				t.HasCheckConstraint("ck_economy_registered_capabilities_state", "(\"IsEnabled\" AND \"RevokedAt\" IS NULL) OR (NOT \"IsEnabled\" AND \"RevokedAt\" IS NOT NULL)");
 			});
 		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyReserveAssetAllocationRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyReserveAssetAllocationRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uuid");
 			b.Property<string>("AssetKey").IsRequired().HasMaxLength(256)
@@ -5833,7 +5833,7 @@ public class AddEconomyProductionPlatform : Migration
 				t.HasCheckConstraint("ck_economy_reserve_asset_allocations_values_valid", "\"Purpose\" IN (1, 2) AND length(btrim(\"AssetKey\")) > 0");
 			});
 		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyReserveHeadRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyReserveHeadRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<long>("Version").HasColumnType("bigint");
 			b.Property<DateTimeOffset>("ActivatedAt").HasColumnType("timestamp with time zone");
@@ -5864,7 +5864,7 @@ public class AddEconomyProductionPlatform : Migration
 				t.HasCheckConstraint("ck_economy_reserve_heads_window", "\"ExpiresAt\" > \"ObservedAt\" AND \"ActivatedAt\" >= \"ObservedAt\"");
 			});
 		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyReserveProposalRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyReserveProposalRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uuid");
 			b.Property<string>("ApprovalReauthenticationHash").HasMaxLength(128).HasColumnType("character varying(128)");
@@ -5907,7 +5907,7 @@ public class AddEconomyProductionPlatform : Migration
 				t.HasCheckConstraint("ck_economy_reserve_proposals_window", "\"ExpiresAt\" > \"ObservedAt\" AND \"ProposedAt\" >= \"ObservedAt\"");
 			});
 		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyRiskAuditEvidenceRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyRiskAuditEvidenceRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uuid");
 			b.Property<string>("EventKind").IsRequired().HasMaxLength(100)
@@ -5923,7 +5923,7 @@ public class AddEconomyProductionPlatform : Migration
 			b.HasIndex("RiskDecisionId", "EvidenceHash").IsUnique().HasDatabaseName("ux_economy_risk_audit_evidence_decision_hash");
 			b.ToTable("economy_risk_audit_evidence", (string?)null);
 		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyRiskCounterReservationRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyRiskCounterReservationRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uuid");
 			b.Property<long>("AmountUnits").HasColumnType("bigint");
@@ -5948,7 +5948,7 @@ public class AddEconomyProductionPlatform : Migration
 				t.HasCheckConstraint("ck_economy_risk_counter_reservations_state", "(\"Status\" = 1 AND \"ConsumedAt\" IS NULL AND \"ReleasedAt\" IS NULL) OR (\"Status\" = 2 AND \"ConsumedAt\" >= \"ReservedAt\" AND \"ReleasedAt\" IS NULL) OR (\"Status\" = 3 AND \"ReleasedAt\" >= \"ReservedAt\" AND \"ConsumedAt\" IS NULL) OR (\"Status\" = 4 AND \"ReleasedAt\" >= \"ExpiresAt\" AND \"ConsumedAt\" IS NULL)");
 			});
 		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyRiskCounterRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyRiskCounterRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uuid");
 			b.Property<long>("CounterVersion").HasColumnType("bigint");
@@ -5971,7 +5971,7 @@ public class AddEconomyProductionPlatform : Migration
 				t.HasCheckConstraint("ck_economy_risk_counters_window", "\"WindowEndsAt\" > \"WindowStartedAt\"");
 			});
 		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyRiskDecisionConsumptionRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyRiskDecisionConsumptionRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uuid");
 			b.Property<DateTimeOffset>("ConsumedAt").HasColumnType("timestamp with time zone");
@@ -5984,7 +5984,7 @@ public class AddEconomyProductionPlatform : Migration
 			b.HasIndex("RiskDecisionId").IsUnique().HasDatabaseName("ux_economy_risk_decision_consumptions_decision");
 			b.ToTable("economy_risk_decision_consumptions", (string?)null);
 		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyRiskDecisionRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyRiskDecisionRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uuid");
 			b.Property<string>("ActorHash").IsRequired().HasMaxLength(128)
@@ -6025,7 +6025,7 @@ public class AddEconomyProductionPlatform : Migration
 				t.HasCheckConstraint("ck_economy_risk_decisions_versions_positive", "\"PolicyVersion\" > 0 AND \"ReserveVersion\" > 0 AND \"ReserveAuthorizationEpoch\" > 0 AND \"FeatureVersion\" > 0 AND \"CounterVersion\" > 0 AND \"EntityGraphVersion\" >= 0");
 			});
 		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyRiskReviewCaseRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyRiskReviewCaseRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uuid");
 			b.Property<Guid?>("AppealOf").HasColumnType("uuid");
@@ -6048,7 +6048,7 @@ public class AddEconomyProductionPlatform : Migration
 				t.HasCheckConstraint("ck_economy_risk_review_cases_state", "(\"Status\" = 1 AND \"ResolvedAt\" IS NULL AND \"ResolvedBy\" IS NULL AND \"Resolution\" IS NULL) OR (\"Status\" IN (2, 3) AND \"ResolvedAt\" >= \"SubmittedAt\" AND \"ResolvedBy\" IS NOT NULL AND length(btrim(\"Resolution\")) > 0)");
 			});
 		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyRiskReviewEventRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyRiskReviewEventRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uuid");
 			b.Property<Guid>("ActorId").HasColumnType("uuid");
@@ -6066,7 +6066,7 @@ public class AddEconomyProductionPlatform : Migration
 				t.HasCheckConstraint("ck_economy_risk_review_events_sequence_positive", "\"Sequence\" > 0");
 			});
 		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyRootReversalStateRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyRootReversalStateRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("RootSourceStampId").HasColumnType("uuid");
 			b.Property<long>("CumulativeProviderUnits").HasColumnType("bigint");
@@ -6084,7 +6084,7 @@ public class AddEconomyProductionPlatform : Migration
 				t.HasCheckConstraint("ck_economy_root_reversal_states_epoch_nonnegative", "\"Epoch\" >= 0");
 			});
 		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomySourceStampEventRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomySourceStampEventRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uuid");
 			b.Property<string>("EvidenceHash").IsRequired().HasMaxLength(128)
@@ -6100,7 +6100,7 @@ public class AddEconomyProductionPlatform : Migration
 				t.HasCheckConstraint("ck_economy_source_stamp_events_sequence_positive", "\"Sequence\" > 0");
 			});
 		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomySourceStampRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomySourceStampRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uuid");
 			b.Property<Guid>("ActorId").HasColumnType("uuid");
@@ -6132,7 +6132,7 @@ public class AddEconomyProductionPlatform : Migration
 				t.HasCheckConstraint("ck_economy_source_stamps_units_nonnegative", "\"AuthoritativeUnits\" >= 0");
 			});
 		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyWalletBalanceProjectionRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyWalletBalanceProjectionRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("WalletId").HasColumnType("uuid");
 			b.Property<long>("AvailableHardToSpend").HasColumnType("bigint");
@@ -6160,7 +6160,7 @@ public class AddEconomyProductionPlatform : Migration
 				t.HasCheckConstraint("ck_economy_wallet_balance_projections_sequence_nonnegative", "\"SourceJournalSequence\" >= 0");
 			});
 		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyWalletDebtEventRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyWalletDebtEventRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uuid");
 			b.Property<long>("DeltaHardUnits").HasColumnType("bigint");
@@ -6178,7 +6178,7 @@ public class AddEconomyProductionPlatform : Migration
 				t.HasCheckConstraint("ck_economy_wallet_debt_events_sequence_positive", "\"Sequence\" > 0");
 			});
 		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyWalletDebtRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyWalletDebtRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("WalletId").HasColumnType("uuid");
 			b.Property<long>("OutstandingHardUnits").HasColumnType("bigint");
@@ -6191,7 +6191,7 @@ public class AddEconomyProductionPlatform : Migration
 				t.HasCheckConstraint("ck_economy_wallet_debts_version_positive", "\"Version\" > 0");
 			});
 		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyWalletProjectionGenerationRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyWalletProjectionGenerationRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<long>("Generation").HasColumnType("bigint");
 			b.Property<Guid>("WalletId").HasColumnType("uuid");
@@ -6220,7 +6220,7 @@ public class AddEconomyProductionPlatform : Migration
 				t.HasCheckConstraint("ck_economy_wallet_projection_generations_amounts", "\"Generation\" > 0 AND \"PendingHard\" >= 0 AND \"PendingSoft\" >= 0 AND \"PurchasedHard\" >= 0 AND \"EarnedHard\" >= 0 AND \"RestrictedHard\" >= 0 AND \"Soft\" >= 0 AND \"ImmatureEarnedHard\" >= 0 AND \"HeldHard\" >= 0 AND \"HeldSoft\" >= 0 AND \"AvailableHardToSpend\" >= 0 AND \"AvailableSoftToSpend\" >= 0 AND \"WithdrawableHard\" >= 0");
 			});
 		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyWalletRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyWalletRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uuid");
 			b.Property<DateTimeOffset>("CreatedAt").HasColumnType("timestamp with time zone");
@@ -6231,7 +6231,7 @@ public class AddEconomyProductionPlatform : Migration
 			b.HasIndex("TenantId", "OwnerId").IsUnique();
 			b.ToTable("economy_wallets", (string?)null);
 		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyWorkerLeaseRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyWorkerLeaseRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<string>("Name").HasMaxLength(100).HasColumnType("character varying(100)");
 			b.Property<DateTimeOffset>("AcquiredAt").HasColumnType("timestamp with time zone");
@@ -6247,7 +6247,7 @@ public class AddEconomyProductionPlatform : Migration
 				t.HasCheckConstraint("ck_economy_worker_leases_lifetime", "\"ExpiresAt\" > \"AcquiredAt\"");
 			});
 		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.FifoFragmentReservationReceiptRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.FifoFragmentReservationReceiptRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<long>("AmountUnits").HasColumnType("bigint").HasColumnName("amount_units");
 			b.Property<long>("EndExclusive").HasColumnType("bigint").HasColumnName("end_exclusive");
@@ -6259,7 +6259,7 @@ public class AddEconomyProductionPlatform : Migration
 			b.ToTable((string?)null);
 			b.ToView((string?)null, (string?)null);
 		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.HardToSoftConversionRiskDecisionReceiptRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.HardToSoftConversionRiskDecisionReceiptRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("RiskDecisionId").HasColumnType("uuid").HasColumnName("risk_decision_id");
 			b.Property<string>("SourceRoots").IsRequired().HasColumnType("text")
@@ -6267,7 +6267,7 @@ public class AddEconomyProductionPlatform : Migration
 			b.ToTable((string?)null);
 			b.ToView((string?)null, (string?)null);
 		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.MarketplaceFifoReservationReceiptRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.MarketplaceFifoReservationReceiptRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<long>("AmountUnits").HasColumnType("bigint").HasColumnName("amount_units");
 			b.Property<int>("Currency").HasColumnType("integer").HasColumnName("currency");
@@ -6280,7 +6280,7 @@ public class AddEconomyProductionPlatform : Migration
 			b.ToTable((string?)null);
 			b.ToView((string?)null, (string?)null);
 		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.ProviderReversalReceiptRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.ProviderReversalReceiptRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<bool>("Duplicate").HasColumnType("boolean").HasColumnName("duplicate");
 			b.Property<Guid>("OperationId").HasColumnType("uuid").HasColumnName("operation_id");
@@ -6291,7 +6291,7 @@ public class AddEconomyProductionPlatform : Migration
 			b.ToTable((string?)null);
 			b.ToView((string?)null, (string?)null);
 		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.RegisteredPostingReceiptRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.RegisteredPostingReceiptRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<bool>("Duplicate").HasColumnType("boolean").HasColumnName("duplicate");
 			b.Property<string>("JournalHash").IsRequired().HasColumnType("text")
@@ -6301,7 +6301,7 @@ public class AddEconomyProductionPlatform : Migration
 			b.ToTable((string?)null);
 			b.ToView((string?)null, (string?)null);
 		});
-		modelBuilder.Entity("GameGuild.Economy.Treasury.AdminWithdrawalAuditEventRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Treasury.AdminWithdrawalAuditEventRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("RunId").HasColumnType("uuid");
 			b.Property<long>("Sequence").HasColumnType("bigint");
@@ -6321,7 +6321,7 @@ public class AddEconomyProductionPlatform : Migration
 				t.HasCheckConstraint("ck_economy_admin_withdrawal_audit_events_sequence", "\"Sequence\" > 0");
 			});
 		});
-		modelBuilder.Entity("GameGuild.Economy.Treasury.AdminWithdrawalDispatchOutboxRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Treasury.AdminWithdrawalDispatchOutboxRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("Id").HasColumnType("uuid");
 			b.Property<int>("AttemptCount").HasColumnType("integer");
@@ -6345,7 +6345,7 @@ public class AddEconomyProductionPlatform : Migration
 				t.HasCheckConstraint("ck_economy_admin_withdrawal_dispatch_outbox_attempts", "\"AttemptCount\" >= 0");
 			});
 		});
-		modelBuilder.Entity("GameGuild.Economy.Treasury.AdminWithdrawalProviderEventRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Treasury.AdminWithdrawalProviderEventRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<string>("EventId").HasMaxLength(256).HasColumnType("character varying(256)");
 			b.Property<string>("EventHash").IsRequired().HasMaxLength(128)
@@ -6356,7 +6356,7 @@ public class AddEconomyProductionPlatform : Migration
 			b.HasIndex("RunId", "RecordedAt").HasDatabaseName("ix_economy_admin_withdrawal_provider_events_run_recorded");
 			b.ToTable("economy_admin_withdrawal_provider_events", (string?)null);
 		});
-		modelBuilder.Entity("GameGuild.Economy.Treasury.AdminWithdrawalRunRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Treasury.AdminWithdrawalRunRow", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("Id").HasColumnType("uuid");
 			b.Property<long>("AmountUnits").HasColumnType("bigint");
@@ -9286,7 +9286,7 @@ public class AddEconomyProductionPlatform : Migration
 			b.HasIndex("ResourceId", "FieldName", "LanguageId").IsUnique();
 			b.ToTable("resource_localizations");
 		});
-		modelBuilder.Entity("GameGuild.Lti.LtiDeployment", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Learning.Lti.LtiDeployment", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uuid");
 			b.Property<bool>("Active").HasColumnType("boolean");
@@ -9314,7 +9314,7 @@ public class AddEconomyProductionPlatform : Migration
 			b.HasIndex("Issuer", "ClientId", "DeploymentId").IsUnique().HasDatabaseName("UX_LtiDeployments_Issuer_Client_Deployment");
 			b.ToTable("LtiDeployments", (string?)null);
 		});
-		modelBuilder.Entity("GameGuild.Lti.LtiLineItemMapping", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Learning.Lti.LtiLineItemMapping", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uuid");
 			b.Property<Guid>("AssessmentId").HasColumnType("uuid");
@@ -9334,7 +9334,7 @@ public class AddEconomyProductionPlatform : Migration
 			b.HasIndex("DeploymentId");
 			b.ToTable("LtiLineItemMappings", (string?)null);
 		});
-		modelBuilder.Entity("GameGuild.Lti.LtiUserMapping", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Learning.Lti.LtiUserMapping", delegate(EntityTypeBuilder b)
 		{
 			b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uuid");
 			b.Property<DateTime>("CreatedAt").HasColumnType("timestamp with time zone");
@@ -12066,469 +12066,469 @@ public class AddEconomyProductionPlatform : Migration
 				.IsRequired();
 			b.Navigation("Page");
 		});
-		modelBuilder.Entity("GameGuild.Economy.AdRewards.Persistence.AdRewardCapConsumptionRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.AdRewards.Persistence.AdRewardCapConsumptionRow", delegate(EntityTypeBuilder b)
 		{
-			b.HasOne("GameGuild.Economy.AdRewards.Persistence.AdRewardSessionRow", null).WithMany().HasForeignKey("SessionId")
+			b.HasOne("GameGuild.Finance.Economy.AdRewards.Persistence.AdRewardSessionRow", null).WithMany().HasForeignKey("SessionId")
 				.OnDelete(DeleteBehavior.Restrict)
 				.IsRequired();
 		});
-		modelBuilder.Entity("GameGuild.Economy.AdRewards.Persistence.AdRewardPendingClaimRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.AdRewards.Persistence.AdRewardPendingClaimRow", delegate(EntityTypeBuilder b)
 		{
-			b.HasOne("GameGuild.Economy.AdRewards.Persistence.AdProviderReportRow", null).WithMany().HasForeignKey("ProviderReportId")
+			b.HasOne("GameGuild.Finance.Economy.AdRewards.Persistence.AdProviderReportRow", null).WithMany().HasForeignKey("ProviderReportId")
 				.OnDelete(DeleteBehavior.Restrict);
-			b.HasOne("GameGuild.Economy.AdRewards.Persistence.AdRewardSessionRow", null).WithOne().HasForeignKey("GameGuild.Economy.AdRewards.Persistence.AdRewardPendingClaimRow", "SessionId")
+			b.HasOne("GameGuild.Finance.Economy.AdRewards.Persistence.AdRewardSessionRow", null).WithOne().HasForeignKey("GameGuild.Finance.Economy.AdRewards.Persistence.AdRewardPendingClaimRow", "SessionId")
 				.OnDelete(DeleteBehavior.Restrict)
 				.IsRequired();
 		});
-		modelBuilder.Entity("GameGuild.Economy.AdRewards.Persistence.AdRewardPlaybackMilestoneRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.AdRewards.Persistence.AdRewardPlaybackMilestoneRow", delegate(EntityTypeBuilder b)
 		{
-			b.HasOne("GameGuild.Economy.AdRewards.Persistence.AdRewardSessionRow", null).WithMany().HasForeignKey("SessionId")
+			b.HasOne("GameGuild.Finance.Economy.AdRewards.Persistence.AdRewardSessionRow", null).WithMany().HasForeignKey("SessionId")
 				.OnDelete(DeleteBehavior.Restrict)
 				.IsRequired();
 		});
-		modelBuilder.Entity("GameGuild.Economy.AdRewards.Persistence.AdRewardProviderBatchClaimRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.AdRewards.Persistence.AdRewardProviderBatchClaimRow", delegate(EntityTypeBuilder b)
 		{
-			b.HasOne("GameGuild.Economy.AdRewards.Persistence.AdProviderReportRow", null).WithMany().HasForeignKey("ProviderReportId")
+			b.HasOne("GameGuild.Finance.Economy.AdRewards.Persistence.AdProviderReportRow", null).WithMany().HasForeignKey("ProviderReportId")
 				.OnDelete(DeleteBehavior.Restrict)
 				.IsRequired();
-			b.HasOne("GameGuild.Economy.AdRewards.Persistence.AdRewardSessionRow", null).WithMany().HasForeignKey("SessionId")
+			b.HasOne("GameGuild.Finance.Economy.AdRewards.Persistence.AdRewardSessionRow", null).WithMany().HasForeignKey("SessionId")
 				.OnDelete(DeleteBehavior.Restrict)
 				.IsRequired();
 		});
-		modelBuilder.Entity("GameGuild.Economy.AdRewards.Persistence.AdRewardProviderProofInboxRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.AdRewards.Persistence.AdRewardProviderProofInboxRow", delegate(EntityTypeBuilder b)
 		{
-			b.HasOne("GameGuild.Economy.AdRewards.Persistence.AdRewardSessionRow", null).WithMany().HasForeignKey("SessionId")
+			b.HasOne("GameGuild.Finance.Economy.AdRewards.Persistence.AdRewardSessionRow", null).WithMany().HasForeignKey("SessionId")
 				.OnDelete(DeleteBehavior.Restrict)
 				.IsRequired();
 		});
-		modelBuilder.Entity("GameGuild.Economy.AdRewards.Persistence.AdRewardReconciliationRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.AdRewards.Persistence.AdRewardReconciliationRow", delegate(EntityTypeBuilder b)
 		{
-			b.HasOne("GameGuild.Economy.AdRewards.Persistence.AdProviderReportRow", null).WithOne().HasForeignKey("GameGuild.Economy.AdRewards.Persistence.AdRewardReconciliationRow", "ProviderReportId")
+			b.HasOne("GameGuild.Finance.Economy.AdRewards.Persistence.AdProviderReportRow", null).WithOne().HasForeignKey("GameGuild.Finance.Economy.AdRewards.Persistence.AdRewardReconciliationRow", "ProviderReportId")
 				.OnDelete(DeleteBehavior.Restrict)
 				.IsRequired();
 		});
-		modelBuilder.Entity("GameGuild.Economy.AdRewards.Persistence.AdRewardSessionEventRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.AdRewards.Persistence.AdRewardSessionEventRow", delegate(EntityTypeBuilder b)
 		{
-			b.HasOne("GameGuild.Economy.AdRewards.Persistence.AdRewardSessionRow", null).WithMany().HasForeignKey("SessionId")
+			b.HasOne("GameGuild.Finance.Economy.AdRewards.Persistence.AdRewardSessionRow", null).WithMany().HasForeignKey("SessionId")
 				.OnDelete(DeleteBehavior.Restrict)
 				.IsRequired();
 		});
-		modelBuilder.Entity("GameGuild.Economy.Bounties.Persistence.BountyEscrowFragmentRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Bounties.Persistence.BountyEscrowFragmentRow", delegate(EntityTypeBuilder b)
 		{
-			b.HasOne("GameGuild.Economy.Bounties.Persistence.BountyRow", null).WithMany().HasForeignKey("BountyId")
+			b.HasOne("GameGuild.Finance.Economy.Bounties.Persistence.BountyRow", null).WithMany().HasForeignKey("BountyId")
 				.OnDelete(DeleteBehavior.Restrict)
 				.IsRequired();
 		});
-		modelBuilder.Entity("GameGuild.Economy.Bounties.Persistence.BountyExpirationEventRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Bounties.Persistence.BountyExpirationEventRow", delegate(EntityTypeBuilder b)
 		{
-			b.HasOne("GameGuild.Economy.Bounties.Persistence.BountyRow", null).WithOne().HasForeignKey("GameGuild.Economy.Bounties.Persistence.BountyExpirationEventRow", "BountyId")
+			b.HasOne("GameGuild.Finance.Economy.Bounties.Persistence.BountyRow", null).WithOne().HasForeignKey("GameGuild.Finance.Economy.Bounties.Persistence.BountyExpirationEventRow", "BountyId")
 				.OnDelete(DeleteBehavior.Restrict)
 				.IsRequired();
 		});
-		modelBuilder.Entity("GameGuild.Economy.Bounties.Persistence.BountyTerminalEventRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Bounties.Persistence.BountyTerminalEventRow", delegate(EntityTypeBuilder b)
 		{
-			b.HasOne("GameGuild.Economy.Bounties.Persistence.BountyRow", null).WithOne().HasForeignKey("GameGuild.Economy.Bounties.Persistence.BountyTerminalEventRow", "BountyId")
+			b.HasOne("GameGuild.Finance.Economy.Bounties.Persistence.BountyRow", null).WithOne().HasForeignKey("GameGuild.Finance.Economy.Bounties.Persistence.BountyTerminalEventRow", "BountyId")
 				.OnDelete(DeleteBehavior.Restrict)
 				.IsRequired();
 		});
-		modelBuilder.Entity("GameGuild.Economy.Marketplace.Persistence.MarketplaceEventRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Marketplace.Persistence.MarketplaceEventRow", delegate(EntityTypeBuilder b)
 		{
-			b.HasOne("GameGuild.Economy.Marketplace.Persistence.MarketplaceSettlementRow", null).WithMany().HasForeignKey("SettlementId")
+			b.HasOne("GameGuild.Finance.Economy.Marketplace.Persistence.MarketplaceSettlementRow", null).WithMany().HasForeignKey("SettlementId")
 				.OnDelete(DeleteBehavior.Restrict)
 				.IsRequired();
 		});
-		modelBuilder.Entity("GameGuild.Economy.Marketplace.Persistence.MarketplaceFundingFragmentRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Marketplace.Persistence.MarketplaceFundingFragmentRow", delegate(EntityTypeBuilder b)
 		{
-			b.HasOne("GameGuild.Economy.Marketplace.Persistence.MarketplaceSettlementRow", null).WithMany().HasForeignKey("SettlementId")
+			b.HasOne("GameGuild.Finance.Economy.Marketplace.Persistence.MarketplaceSettlementRow", null).WithMany().HasForeignKey("SettlementId")
 				.OnDelete(DeleteBehavior.Restrict)
 				.IsRequired();
 		});
-		modelBuilder.Entity("GameGuild.Economy.Marketplace.Persistence.MarketplaceOutboxRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Marketplace.Persistence.MarketplaceOutboxRow", delegate(EntityTypeBuilder b)
 		{
-			b.HasOne("GameGuild.Economy.Marketplace.Persistence.MarketplaceSettlementRow", null).WithMany().HasForeignKey("SettlementId")
+			b.HasOne("GameGuild.Finance.Economy.Marketplace.Persistence.MarketplaceSettlementRow", null).WithMany().HasForeignKey("SettlementId")
 				.OnDelete(DeleteBehavior.Restrict)
 				.IsRequired();
 		});
-		modelBuilder.Entity("GameGuild.Economy.Marketplace.Persistence.MarketplaceRefundDebtRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Marketplace.Persistence.MarketplaceRefundDebtRow", delegate(EntityTypeBuilder b)
 		{
-			b.HasOne("GameGuild.Economy.Marketplace.Persistence.MarketplaceRefundRow", null).WithMany().HasForeignKey("RefundId")
+			b.HasOne("GameGuild.Finance.Economy.Marketplace.Persistence.MarketplaceRefundRow", null).WithMany().HasForeignKey("RefundId")
 				.OnDelete(DeleteBehavior.Restrict)
 				.IsRequired();
-			b.HasOne("GameGuild.Economy.Marketplace.Persistence.MarketplaceSettlementRow", null).WithMany().HasForeignKey("SettlementId")
+			b.HasOne("GameGuild.Finance.Economy.Marketplace.Persistence.MarketplaceSettlementRow", null).WithMany().HasForeignKey("SettlementId")
 				.OnDelete(DeleteBehavior.Restrict)
 				.IsRequired();
 		});
-		modelBuilder.Entity("GameGuild.Economy.Marketplace.Persistence.MarketplaceRefundLegRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Marketplace.Persistence.MarketplaceRefundLegRow", delegate(EntityTypeBuilder b)
 		{
-			b.HasOne("GameGuild.Economy.Marketplace.Persistence.MarketplaceRefundRow", null).WithMany().HasForeignKey("RefundId")
+			b.HasOne("GameGuild.Finance.Economy.Marketplace.Persistence.MarketplaceRefundRow", null).WithMany().HasForeignKey("RefundId")
 				.OnDelete(DeleteBehavior.Restrict)
 				.IsRequired();
-			b.HasOne("GameGuild.Economy.Marketplace.Persistence.MarketplaceSettlementRow", null).WithMany().HasForeignKey("SettlementId")
+			b.HasOne("GameGuild.Finance.Economy.Marketplace.Persistence.MarketplaceSettlementRow", null).WithMany().HasForeignKey("SettlementId")
 				.OnDelete(DeleteBehavior.Restrict)
 				.IsRequired();
 		});
-		modelBuilder.Entity("GameGuild.Economy.Marketplace.Persistence.MarketplaceRefundRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Marketplace.Persistence.MarketplaceRefundRow", delegate(EntityTypeBuilder b)
 		{
-			b.HasOne("GameGuild.Economy.Marketplace.Persistence.MarketplaceSettlementRow", null).WithMany().HasForeignKey("SettlementId")
+			b.HasOne("GameGuild.Finance.Economy.Marketplace.Persistence.MarketplaceSettlementRow", null).WithMany().HasForeignKey("SettlementId")
 				.OnDelete(DeleteBehavior.Restrict)
 				.IsRequired();
 		});
-		modelBuilder.Entity("GameGuild.Economy.Marketplace.Persistence.MarketplaceSettlementCreditRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Marketplace.Persistence.MarketplaceSettlementCreditRow", delegate(EntityTypeBuilder b)
 		{
-			b.HasOne("GameGuild.Economy.Marketplace.Persistence.MarketplaceSettlementRow", null).WithMany().HasForeignKey("SettlementId")
+			b.HasOne("GameGuild.Finance.Economy.Marketplace.Persistence.MarketplaceSettlementRow", null).WithMany().HasForeignKey("SettlementId")
 				.OnDelete(DeleteBehavior.Restrict)
 				.IsRequired();
 		});
-		modelBuilder.Entity("GameGuild.Economy.Marketplace.Persistence.MarketplaceSettlementLegRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Marketplace.Persistence.MarketplaceSettlementLegRow", delegate(EntityTypeBuilder b)
 		{
-			b.HasOne("GameGuild.Economy.Marketplace.Persistence.MarketplaceSettlementRow", null).WithMany().HasForeignKey("SettlementId")
+			b.HasOne("GameGuild.Finance.Economy.Marketplace.Persistence.MarketplaceSettlementRow", null).WithMany().HasForeignKey("SettlementId")
 				.OnDelete(DeleteBehavior.Restrict)
 				.IsRequired();
 		});
-		modelBuilder.Entity("GameGuild.Economy.Payouts.PayoutDispatchOutboxRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Payouts.PayoutDispatchOutboxRow", delegate(EntityTypeBuilder b)
 		{
-			b.HasOne("GameGuild.Economy.Payouts.PayoutOperationRow", null).WithMany().HasForeignKey("OperationId")
+			b.HasOne("GameGuild.Finance.Economy.Payouts.PayoutOperationRow", null).WithMany().HasForeignKey("OperationId")
 				.OnDelete(DeleteBehavior.Restrict)
 				.IsRequired();
 		});
-		modelBuilder.Entity("GameGuild.Economy.Payouts.PayoutProviderEventRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Payouts.PayoutProviderEventRow", delegate(EntityTypeBuilder b)
 		{
-			b.HasOne("GameGuild.Economy.Payouts.PayoutOperationRow", null).WithMany().HasForeignKey("OperationId")
+			b.HasOne("GameGuild.Finance.Economy.Payouts.PayoutOperationRow", null).WithMany().HasForeignKey("OperationId")
 				.OnDelete(DeleteBehavior.Restrict)
 				.IsRequired();
 		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyAccountRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyAccountRow", delegate(EntityTypeBuilder b)
 		{
-			b.HasOne("GameGuild.Economy.Persistence.EconomyWalletRow", null).WithMany().HasForeignKey("WalletId")
-				.OnDelete(DeleteBehavior.Restrict);
-		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyAnchorVerificationRow", delegate(EntityTypeBuilder b)
-		{
-			b.HasOne("GameGuild.Economy.Persistence.EconomyExternalAnchorRow", null).WithMany().HasForeignKey("ExternalAnchorId")
-				.OnDelete(DeleteBehavior.Restrict)
-				.IsRequired();
-		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyCapabilityPolicyApprovalRow", delegate(EntityTypeBuilder b)
-		{
-			b.HasOne("GameGuild.Economy.Persistence.EconomyCapabilityPolicyRow", null).WithMany().HasForeignKey("PolicyId")
-				.OnDelete(DeleteBehavior.Restrict)
-				.IsRequired();
-		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyCapabilityReceiptConsumptionRow", delegate(EntityTypeBuilder b)
-		{
-			b.HasOne("GameGuild.Economy.Persistence.EconomyCapabilityReceiptRow", null).WithMany().HasForeignKey("ReceiptId")
-				.OnDelete(DeleteBehavior.Restrict)
-				.IsRequired();
-		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyCapabilityReceiptRow", delegate(EntityTypeBuilder b)
-		{
-			b.HasOne("GameGuild.Economy.Persistence.EconomyRiskDecisionRow", null).WithMany().HasForeignKey("RiskDecisionId")
-				.OnDelete(DeleteBehavior.Restrict)
-				.IsRequired();
-		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyComplianceHoldEventRow", delegate(EntityTypeBuilder b)
-		{
-			b.HasOne("GameGuild.Economy.Persistence.EconomyComplianceHoldRow", null).WithMany().HasForeignKey("HoldId")
-				.OnDelete(DeleteBehavior.Restrict)
-				.IsRequired();
-		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyComplianceOutboxRow", delegate(EntityTypeBuilder b)
-		{
-			b.HasOne("GameGuild.Economy.Persistence.EconomyComplianceEvidenceRow", null).WithMany().HasForeignKey("EvidenceId")
-				.OnDelete(DeleteBehavior.Restrict)
-				.IsRequired();
-		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyCreditLotRow", delegate(EntityTypeBuilder b)
-		{
-			b.HasOne("GameGuild.Economy.Persistence.EconomySourceStampRow", null).WithMany().HasForeignKey("RootSourceStampId")
-				.OnDelete(DeleteBehavior.Restrict)
-				.IsRequired();
-			b.HasOne("GameGuild.Economy.Persistence.EconomyWalletRow", null).WithMany().HasForeignKey("WalletId")
-				.OnDelete(DeleteBehavior.Restrict)
-				.IsRequired();
-		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyDispatchSnapshotRow", delegate(EntityTypeBuilder b)
-		{
-			b.HasOne("GameGuild.Economy.Persistence.EconomyPostingGroupRow", null).WithMany().HasForeignKey("PostingGroupId")
-				.OnDelete(DeleteBehavior.Restrict)
-				.IsRequired();
-		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyDisputeFragmentFreezeRow", delegate(EntityTypeBuilder b)
-		{
-			b.HasOne("GameGuild.Economy.Persistence.EconomyCreditLotRow", null).WithMany().HasForeignKey("CreditLotId")
-				.OnDelete(DeleteBehavior.Restrict)
-				.IsRequired();
-			b.HasOne("GameGuild.Economy.Persistence.EconomyProviderDisputeRow", null).WithMany().HasForeignKey("ProviderDisputeReference")
-				.OnDelete(DeleteBehavior.Restrict)
-				.IsRequired();
-			b.HasOne("GameGuild.Economy.Persistence.EconomySourceStampRow", null).WithMany().HasForeignKey("RootSourceStampId")
-				.OnDelete(DeleteBehavior.Restrict)
-				.IsRequired();
-			b.HasOne("GameGuild.Economy.Persistence.EconomyWalletRow", null).WithMany().HasForeignKey("WalletId")
-				.OnDelete(DeleteBehavior.Restrict)
-				.IsRequired();
-		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyDisputeFragmentRangeRow", delegate(EntityTypeBuilder b)
-		{
-			b.HasOne("GameGuild.Economy.Persistence.EconomyDisputeFragmentFreezeRow", null).WithMany().HasForeignKey("DisputeFragmentFreezeId")
-				.OnDelete(DeleteBehavior.Restrict)
-				.IsRequired();
-		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyEntityGraphEdgeRow", delegate(EntityTypeBuilder b)
-		{
-			b.HasOne("GameGuild.Economy.Persistence.EconomyEntityGraphNodeRow", null).WithMany().HasForeignKey("LeftNodeId")
-				.OnDelete(DeleteBehavior.Restrict)
-				.IsRequired();
-			b.HasOne("GameGuild.Economy.Persistence.EconomyEntityGraphNodeRow", null).WithMany().HasForeignKey("RightNodeId")
-				.OnDelete(DeleteBehavior.Restrict)
-				.IsRequired();
-		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyEntryAllocationRow", delegate(EntityTypeBuilder b)
-		{
-			b.HasOne("GameGuild.Economy.Persistence.EconomyJournalLineRow", null).WithMany().HasForeignKey("JournalLineId")
-				.OnDelete(DeleteBehavior.Restrict)
-				.IsRequired();
-			b.HasOne("GameGuild.Economy.Persistence.EconomyCreditLotRow", null).WithMany().HasForeignKey("ParentLotId")
-				.OnDelete(DeleteBehavior.Restrict)
-				.IsRequired();
-		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyFragmentRootRangeRow", delegate(EntityTypeBuilder b)
-		{
-			b.HasOne("GameGuild.Economy.Persistence.EconomyCreditLotRow", null).WithMany().HasForeignKey("CreditLotId")
-				.OnDelete(DeleteBehavior.Restrict);
-			b.HasOne("GameGuild.Economy.Persistence.EconomyEntryAllocationRow", null).WithMany().HasForeignKey("EntryAllocationId")
-				.OnDelete(DeleteBehavior.Restrict);
-			b.HasOne("GameGuild.Economy.Persistence.EconomySourceStampRow", null).WithMany().HasForeignKey("RootSourceStampId")
-				.OnDelete(DeleteBehavior.Restrict)
-				.IsRequired();
-		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyFundingClaimRow", delegate(EntityTypeBuilder b)
-		{
-			b.HasOne("GameGuild.Economy.Persistence.EconomyPostingGroupRow", null).WithOne().HasForeignKey("GameGuild.Economy.Persistence.EconomyFundingClaimRow", "PostingGroupId")
-				.OnDelete(DeleteBehavior.Restrict);
-			b.HasOne("GameGuild.Economy.Persistence.EconomyCreditLotRow", null).WithOne().HasForeignKey("GameGuild.Economy.Persistence.EconomyFundingClaimRow", "RootCreditLotId")
-				.OnDelete(DeleteBehavior.Restrict);
-			b.HasOne("GameGuild.Economy.Persistence.EconomySourceStampRow", null).WithOne().HasForeignKey("GameGuild.Economy.Persistence.EconomyFundingClaimRow", "SourceStampId")
-				.OnDelete(DeleteBehavior.Restrict)
-				.IsRequired();
-			b.HasOne("GameGuild.Economy.Persistence.EconomyWalletRow", null).WithMany().HasForeignKey("WalletId")
-				.OnDelete(DeleteBehavior.Restrict)
-				.IsRequired();
-		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyHoldEventRow", delegate(EntityTypeBuilder b)
-		{
-			b.HasOne("GameGuild.Economy.Persistence.EconomyHoldRow", null).WithMany().HasForeignKey("HoldId")
-				.OnDelete(DeleteBehavior.Restrict)
-				.IsRequired();
-		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyHoldRow", delegate(EntityTypeBuilder b)
-		{
-			b.HasOne("GameGuild.Economy.Persistence.EconomyWalletRow", null).WithMany().HasForeignKey("WalletId")
-				.OnDelete(DeleteBehavior.Restrict)
-				.IsRequired();
-		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyIdempotencyRecordRow", delegate(EntityTypeBuilder b)
-		{
-			b.HasOne("GameGuild.Economy.Persistence.EconomyPostingGroupRow", null).WithMany().HasForeignKey("PostingGroupId")
-				.OnDelete(DeleteBehavior.Restrict)
-				.IsRequired();
-		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyJournalEntryRow", delegate(EntityTypeBuilder b)
-		{
-			b.HasOne("GameGuild.Economy.Persistence.EconomyPostingGroupRow", null).WithMany().HasForeignKey("PostingGroupId")
-				.OnDelete(DeleteBehavior.Restrict)
-				.IsRequired();
-		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyJournalLineRow", delegate(EntityTypeBuilder b)
-		{
-			b.HasOne("GameGuild.Economy.Persistence.EconomyAccountRow", null).WithMany().HasForeignKey("AccountId")
-				.OnDelete(DeleteBehavior.Restrict)
-				.IsRequired();
-			b.HasOne("GameGuild.Economy.Persistence.EconomyCreditLotRow", null).WithMany().HasForeignKey("CreditLotId")
-				.OnDelete(DeleteBehavior.Restrict);
-			b.HasOne("GameGuild.Economy.Persistence.EconomyJournalEntryRow", null).WithMany().HasForeignKey("JournalEntryId")
-				.OnDelete(DeleteBehavior.Restrict)
-				.IsRequired();
-			b.HasOne("GameGuild.Economy.Persistence.EconomyWalletRow", null).WithMany().HasForeignKey("WalletId")
+			b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyWalletRow", null).WithMany().HasForeignKey("WalletId")
 				.OnDelete(DeleteBehavior.Restrict);
 		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyKillSwitchReleaseApprovalRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyAnchorVerificationRow", delegate(EntityTypeBuilder b)
 		{
-			b.HasOne("GameGuild.Economy.Persistence.EconomyKillSwitchRow", null).WithMany().HasForeignKey("KillSwitchId")
+			b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyExternalAnchorRow", null).WithMany().HasForeignKey("ExternalAnchorId")
 				.OnDelete(DeleteBehavior.Restrict)
 				.IsRequired();
 		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyLotLineageEdgeRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyCapabilityPolicyApprovalRow", delegate(EntityTypeBuilder b)
 		{
-			b.HasOne("GameGuild.Economy.Persistence.EconomyCreditLotRow", null).WithMany().HasForeignKey("ChildLotId")
-				.OnDelete(DeleteBehavior.Restrict)
-				.IsRequired();
-			b.HasOne("GameGuild.Economy.Persistence.EconomyCreditLotRow", null).WithMany().HasForeignKey("ParentLotId")
+			b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyCapabilityPolicyRow", null).WithMany().HasForeignKey("PolicyId")
 				.OnDelete(DeleteBehavior.Restrict)
 				.IsRequired();
 		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyOutboxMessageRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyCapabilityReceiptConsumptionRow", delegate(EntityTypeBuilder b)
 		{
-			b.HasOne("GameGuild.Economy.Persistence.EconomyPostingGroupRow", null).WithMany().HasForeignKey("PostingGroupId")
+			b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyCapabilityReceiptRow", null).WithMany().HasForeignKey("ReceiptId")
 				.OnDelete(DeleteBehavior.Restrict)
 				.IsRequired();
 		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyPostingGroupRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyCapabilityReceiptRow", delegate(EntityTypeBuilder b)
 		{
-			b.HasOne("GameGuild.Economy.Persistence.EconomySourceStampRow", null).WithMany().HasForeignKey("SourceStampId")
+			b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyRiskDecisionRow", null).WithMany().HasForeignKey("RiskDecisionId")
+				.OnDelete(DeleteBehavior.Restrict)
+				.IsRequired();
+		});
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyComplianceHoldEventRow", delegate(EntityTypeBuilder b)
+		{
+			b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyComplianceHoldRow", null).WithMany().HasForeignKey("HoldId")
+				.OnDelete(DeleteBehavior.Restrict)
+				.IsRequired();
+		});
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyComplianceOutboxRow", delegate(EntityTypeBuilder b)
+		{
+			b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyComplianceEvidenceRow", null).WithMany().HasForeignKey("EvidenceId")
+				.OnDelete(DeleteBehavior.Restrict)
+				.IsRequired();
+		});
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyCreditLotRow", delegate(EntityTypeBuilder b)
+		{
+			b.HasOne("GameGuild.Finance.Economy.Persistence.EconomySourceStampRow", null).WithMany().HasForeignKey("RootSourceStampId")
+				.OnDelete(DeleteBehavior.Restrict)
+				.IsRequired();
+			b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyWalletRow", null).WithMany().HasForeignKey("WalletId")
+				.OnDelete(DeleteBehavior.Restrict)
+				.IsRequired();
+		});
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyDispatchSnapshotRow", delegate(EntityTypeBuilder b)
+		{
+			b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyPostingGroupRow", null).WithMany().HasForeignKey("PostingGroupId")
+				.OnDelete(DeleteBehavior.Restrict)
+				.IsRequired();
+		});
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyDisputeFragmentFreezeRow", delegate(EntityTypeBuilder b)
+		{
+			b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyCreditLotRow", null).WithMany().HasForeignKey("CreditLotId")
+				.OnDelete(DeleteBehavior.Restrict)
+				.IsRequired();
+			b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyProviderDisputeRow", null).WithMany().HasForeignKey("ProviderDisputeReference")
+				.OnDelete(DeleteBehavior.Restrict)
+				.IsRequired();
+			b.HasOne("GameGuild.Finance.Economy.Persistence.EconomySourceStampRow", null).WithMany().HasForeignKey("RootSourceStampId")
+				.OnDelete(DeleteBehavior.Restrict)
+				.IsRequired();
+			b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyWalletRow", null).WithMany().HasForeignKey("WalletId")
+				.OnDelete(DeleteBehavior.Restrict)
+				.IsRequired();
+		});
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyDisputeFragmentRangeRow", delegate(EntityTypeBuilder b)
+		{
+			b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyDisputeFragmentFreezeRow", null).WithMany().HasForeignKey("DisputeFragmentFreezeId")
+				.OnDelete(DeleteBehavior.Restrict)
+				.IsRequired();
+		});
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyEntityGraphEdgeRow", delegate(EntityTypeBuilder b)
+		{
+			b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyEntityGraphNodeRow", null).WithMany().HasForeignKey("LeftNodeId")
+				.OnDelete(DeleteBehavior.Restrict)
+				.IsRequired();
+			b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyEntityGraphNodeRow", null).WithMany().HasForeignKey("RightNodeId")
+				.OnDelete(DeleteBehavior.Restrict)
+				.IsRequired();
+		});
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyEntryAllocationRow", delegate(EntityTypeBuilder b)
+		{
+			b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyJournalLineRow", null).WithMany().HasForeignKey("JournalLineId")
+				.OnDelete(DeleteBehavior.Restrict)
+				.IsRequired();
+			b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyCreditLotRow", null).WithMany().HasForeignKey("ParentLotId")
+				.OnDelete(DeleteBehavior.Restrict)
+				.IsRequired();
+		});
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyFragmentRootRangeRow", delegate(EntityTypeBuilder b)
+		{
+			b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyCreditLotRow", null).WithMany().HasForeignKey("CreditLotId")
+				.OnDelete(DeleteBehavior.Restrict);
+			b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyEntryAllocationRow", null).WithMany().HasForeignKey("EntryAllocationId")
+				.OnDelete(DeleteBehavior.Restrict);
+			b.HasOne("GameGuild.Finance.Economy.Persistence.EconomySourceStampRow", null).WithMany().HasForeignKey("RootSourceStampId")
+				.OnDelete(DeleteBehavior.Restrict)
+				.IsRequired();
+		});
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyFundingClaimRow", delegate(EntityTypeBuilder b)
+		{
+			b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyPostingGroupRow", null).WithOne().HasForeignKey("GameGuild.Finance.Economy.Persistence.EconomyFundingClaimRow", "PostingGroupId")
+				.OnDelete(DeleteBehavior.Restrict);
+			b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyCreditLotRow", null).WithOne().HasForeignKey("GameGuild.Finance.Economy.Persistence.EconomyFundingClaimRow", "RootCreditLotId")
+				.OnDelete(DeleteBehavior.Restrict);
+			b.HasOne("GameGuild.Finance.Economy.Persistence.EconomySourceStampRow", null).WithOne().HasForeignKey("GameGuild.Finance.Economy.Persistence.EconomyFundingClaimRow", "SourceStampId")
+				.OnDelete(DeleteBehavior.Restrict)
+				.IsRequired();
+			b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyWalletRow", null).WithMany().HasForeignKey("WalletId")
+				.OnDelete(DeleteBehavior.Restrict)
+				.IsRequired();
+		});
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyHoldEventRow", delegate(EntityTypeBuilder b)
+		{
+			b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyHoldRow", null).WithMany().HasForeignKey("HoldId")
+				.OnDelete(DeleteBehavior.Restrict)
+				.IsRequired();
+		});
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyHoldRow", delegate(EntityTypeBuilder b)
+		{
+			b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyWalletRow", null).WithMany().HasForeignKey("WalletId")
+				.OnDelete(DeleteBehavior.Restrict)
+				.IsRequired();
+		});
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyIdempotencyRecordRow", delegate(EntityTypeBuilder b)
+		{
+			b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyPostingGroupRow", null).WithMany().HasForeignKey("PostingGroupId")
+				.OnDelete(DeleteBehavior.Restrict)
+				.IsRequired();
+		});
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyJournalEntryRow", delegate(EntityTypeBuilder b)
+		{
+			b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyPostingGroupRow", null).WithMany().HasForeignKey("PostingGroupId")
+				.OnDelete(DeleteBehavior.Restrict)
+				.IsRequired();
+		});
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyJournalLineRow", delegate(EntityTypeBuilder b)
+		{
+			b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyAccountRow", null).WithMany().HasForeignKey("AccountId")
+				.OnDelete(DeleteBehavior.Restrict)
+				.IsRequired();
+			b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyCreditLotRow", null).WithMany().HasForeignKey("CreditLotId")
+				.OnDelete(DeleteBehavior.Restrict);
+			b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyJournalEntryRow", null).WithMany().HasForeignKey("JournalEntryId")
+				.OnDelete(DeleteBehavior.Restrict)
+				.IsRequired();
+			b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyWalletRow", null).WithMany().HasForeignKey("WalletId")
 				.OnDelete(DeleteBehavior.Restrict);
 		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyProjectionGenerationApprovalRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyKillSwitchReleaseApprovalRow", delegate(EntityTypeBuilder b)
 		{
-			b.HasOne("GameGuild.Economy.Persistence.EconomyProjectionGenerationRow", null).WithMany().HasForeignKey("Generation")
+			b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyKillSwitchRow", null).WithMany().HasForeignKey("KillSwitchId")
+				.OnDelete(DeleteBehavior.Restrict)
+				.IsRequired();
+		});
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyLotLineageEdgeRow", delegate(EntityTypeBuilder b)
+		{
+			b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyCreditLotRow", null).WithMany().HasForeignKey("ChildLotId")
+				.OnDelete(DeleteBehavior.Restrict)
+				.IsRequired();
+			b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyCreditLotRow", null).WithMany().HasForeignKey("ParentLotId")
+				.OnDelete(DeleteBehavior.Restrict)
+				.IsRequired();
+		});
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyOutboxMessageRow", delegate(EntityTypeBuilder b)
+		{
+			b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyPostingGroupRow", null).WithMany().HasForeignKey("PostingGroupId")
+				.OnDelete(DeleteBehavior.Restrict)
+				.IsRequired();
+		});
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyPostingGroupRow", delegate(EntityTypeBuilder b)
+		{
+			b.HasOne("GameGuild.Finance.Economy.Persistence.EconomySourceStampRow", null).WithMany().HasForeignKey("SourceStampId")
+				.OnDelete(DeleteBehavior.Restrict);
+		});
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyProjectionGenerationApprovalRow", delegate(EntityTypeBuilder b)
+		{
+			b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyProjectionGenerationRow", null).WithMany().HasForeignKey("Generation")
 				.HasPrincipalKey("Generation")
 				.OnDelete(DeleteBehavior.Restrict)
 				.IsRequired();
 		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyProjectionReconciliationEventRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyProjectionReconciliationEventRow", delegate(EntityTypeBuilder b)
 		{
-			b.HasOne("GameGuild.Economy.Persistence.EconomyWalletRow", null).WithMany().HasForeignKey("WalletId")
+			b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyWalletRow", null).WithMany().HasForeignKey("WalletId")
 				.OnDelete(DeleteBehavior.Restrict)
 				.IsRequired();
 		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyProviderDisputeEventRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyProviderDisputeEventRow", delegate(EntityTypeBuilder b)
 		{
-			b.HasOne("GameGuild.Economy.Persistence.EconomyProviderDisputeRow", null).WithMany().HasForeignKey("ProviderDisputeReference")
+			b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyProviderDisputeRow", null).WithMany().HasForeignKey("ProviderDisputeReference")
 				.OnDelete(DeleteBehavior.Restrict)
 				.IsRequired();
-			b.HasOne("GameGuild.Economy.Persistence.EconomySourceStampRow", null).WithMany().HasForeignKey("SourceStampId")
+			b.HasOne("GameGuild.Finance.Economy.Persistence.EconomySourceStampRow", null).WithMany().HasForeignKey("SourceStampId")
 				.OnDelete(DeleteBehavior.Restrict)
 				.IsRequired();
 		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyProviderDisputeRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyProviderDisputeRow", delegate(EntityTypeBuilder b)
 		{
-			b.HasOne("GameGuild.Economy.Persistence.EconomyWalletRow", null).WithMany().HasForeignKey("ResponsibleWalletId")
+			b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyWalletRow", null).WithMany().HasForeignKey("ResponsibleWalletId")
 				.OnDelete(DeleteBehavior.Restrict)
 				.IsRequired();
-			b.HasOne("GameGuild.Economy.Persistence.EconomySourceStampRow", null).WithMany().HasForeignKey("SourceStampId")
+			b.HasOne("GameGuild.Finance.Economy.Persistence.EconomySourceStampRow", null).WithMany().HasForeignKey("SourceStampId")
 				.OnDelete(DeleteBehavior.Restrict)
 				.IsRequired();
 		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyProviderFactAllocationRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyProviderFactAllocationRow", delegate(EntityTypeBuilder b)
 		{
-			b.HasOne("GameGuild.Economy.Persistence.EconomyJournalLineRow", null).WithMany().HasForeignKey("JournalLineId")
+			b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyJournalLineRow", null).WithMany().HasForeignKey("JournalLineId")
 				.OnDelete(DeleteBehavior.Restrict)
 				.IsRequired();
-			b.HasOne("GameGuild.Economy.Persistence.EconomySourceStampRow", null).WithMany().HasForeignKey("SourceStampId")
+			b.HasOne("GameGuild.Finance.Economy.Persistence.EconomySourceStampRow", null).WithMany().HasForeignKey("SourceStampId")
 				.OnDelete(DeleteBehavior.Restrict)
 				.IsRequired();
 		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyReserveAssetAllocationRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyReserveAssetAllocationRow", delegate(EntityTypeBuilder b)
 		{
-			b.HasOne("GameGuild.Economy.Persistence.EconomyReserveHeadRow", null).WithMany().HasForeignKey("ReserveVersion")
+			b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyReserveHeadRow", null).WithMany().HasForeignKey("ReserveVersion")
 				.OnDelete(DeleteBehavior.Restrict)
 				.IsRequired();
 		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyRiskAuditEvidenceRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyRiskAuditEvidenceRow", delegate(EntityTypeBuilder b)
 		{
-			b.HasOne("GameGuild.Economy.Persistence.EconomyRiskDecisionRow", null).WithMany().HasForeignKey("RiskDecisionId")
+			b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyRiskDecisionRow", null).WithMany().HasForeignKey("RiskDecisionId")
 				.OnDelete(DeleteBehavior.Restrict)
 				.IsRequired();
 		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyRiskCounterReservationRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyRiskCounterReservationRow", delegate(EntityTypeBuilder b)
 		{
-			b.HasOne("GameGuild.Economy.Persistence.EconomyRiskCounterRow", null).WithMany().HasForeignKey("RiskCounterId")
+			b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyRiskCounterRow", null).WithMany().HasForeignKey("RiskCounterId")
 				.OnDelete(DeleteBehavior.Restrict)
 				.IsRequired();
-			b.HasOne("GameGuild.Economy.Persistence.EconomyRiskDecisionRow", null).WithMany().HasForeignKey("RiskDecisionId")
+			b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyRiskDecisionRow", null).WithMany().HasForeignKey("RiskDecisionId")
 				.OnDelete(DeleteBehavior.Restrict)
 				.IsRequired();
 		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyRiskDecisionConsumptionRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyRiskDecisionConsumptionRow", delegate(EntityTypeBuilder b)
 		{
-			b.HasOne("GameGuild.Economy.Persistence.EconomyPostingGroupRow", null).WithMany().HasForeignKey("PostingGroupId")
+			b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyPostingGroupRow", null).WithMany().HasForeignKey("PostingGroupId")
 				.OnDelete(DeleteBehavior.Restrict)
 				.IsRequired();
-			b.HasOne("GameGuild.Economy.Persistence.EconomyRiskDecisionRow", null).WithMany().HasForeignKey("RiskDecisionId")
+			b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyRiskDecisionRow", null).WithMany().HasForeignKey("RiskDecisionId")
 				.OnDelete(DeleteBehavior.Restrict)
 				.IsRequired();
 		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyRiskDecisionRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyRiskDecisionRow", delegate(EntityTypeBuilder b)
 		{
-			b.HasOne("GameGuild.Economy.Persistence.EconomyWalletRow", null).WithMany().HasForeignKey("DestinationWalletId")
+			b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyWalletRow", null).WithMany().HasForeignKey("DestinationWalletId")
 				.OnDelete(DeleteBehavior.Restrict)
 				.IsRequired();
-			b.HasOne("GameGuild.Economy.Persistence.EconomyWalletRow", null).WithMany().HasForeignKey("SourceWalletId")
+			b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyWalletRow", null).WithMany().HasForeignKey("SourceWalletId")
 				.OnDelete(DeleteBehavior.Restrict)
 				.IsRequired();
 		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyRiskReviewCaseRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyRiskReviewCaseRow", delegate(EntityTypeBuilder b)
 		{
-			b.HasOne("GameGuild.Economy.Persistence.EconomyRiskReviewCaseRow", null).WithMany().HasForeignKey("AppealOf")
+			b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyRiskReviewCaseRow", null).WithMany().HasForeignKey("AppealOf")
 				.OnDelete(DeleteBehavior.Restrict);
-			b.HasOne("GameGuild.Economy.Persistence.EconomyRiskDecisionRow", null).WithMany().HasForeignKey("RiskDecisionId")
+			b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyRiskDecisionRow", null).WithMany().HasForeignKey("RiskDecisionId")
 				.OnDelete(DeleteBehavior.Restrict)
 				.IsRequired();
 		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyRiskReviewEventRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyRiskReviewEventRow", delegate(EntityTypeBuilder b)
 		{
-			b.HasOne("GameGuild.Economy.Persistence.EconomyRiskReviewCaseRow", null).WithMany().HasForeignKey("RiskReviewCaseId")
+			b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyRiskReviewCaseRow", null).WithMany().HasForeignKey("RiskReviewCaseId")
 				.OnDelete(DeleteBehavior.Restrict)
 				.IsRequired();
 		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyRootReversalStateRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyRootReversalStateRow", delegate(EntityTypeBuilder b)
 		{
-			b.HasOne("GameGuild.Economy.Persistence.EconomySourceStampRow", null).WithMany().HasForeignKey("RootSourceStampId")
+			b.HasOne("GameGuild.Finance.Economy.Persistence.EconomySourceStampRow", null).WithMany().HasForeignKey("RootSourceStampId")
 				.OnDelete(DeleteBehavior.Restrict)
 				.IsRequired();
 		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomySourceStampEventRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomySourceStampEventRow", delegate(EntityTypeBuilder b)
 		{
-			b.HasOne("GameGuild.Economy.Persistence.EconomySourceStampRow", null).WithMany().HasForeignKey("SourceStampId")
+			b.HasOne("GameGuild.Finance.Economy.Persistence.EconomySourceStampRow", null).WithMany().HasForeignKey("SourceStampId")
 				.OnDelete(DeleteBehavior.Restrict)
 				.IsRequired();
 		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyWalletBalanceProjectionRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyWalletBalanceProjectionRow", delegate(EntityTypeBuilder b)
 		{
-			b.HasOne("GameGuild.Economy.Persistence.EconomyWalletRow", null).WithOne().HasForeignKey("GameGuild.Economy.Persistence.EconomyWalletBalanceProjectionRow", "WalletId")
+			b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyWalletRow", null).WithOne().HasForeignKey("GameGuild.Finance.Economy.Persistence.EconomyWalletBalanceProjectionRow", "WalletId")
 				.OnDelete(DeleteBehavior.Restrict)
 				.IsRequired();
 		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyWalletDebtEventRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyWalletDebtEventRow", delegate(EntityTypeBuilder b)
 		{
-			b.HasOne("GameGuild.Economy.Persistence.EconomySourceStampRow", null).WithMany().HasForeignKey("SourceStampId")
+			b.HasOne("GameGuild.Finance.Economy.Persistence.EconomySourceStampRow", null).WithMany().HasForeignKey("SourceStampId")
 				.OnDelete(DeleteBehavior.Restrict)
 				.IsRequired();
-			b.HasOne("GameGuild.Economy.Persistence.EconomyWalletDebtRow", null).WithMany().HasForeignKey("WalletId")
-				.OnDelete(DeleteBehavior.Restrict)
-				.IsRequired();
-		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyWalletDebtRow", delegate(EntityTypeBuilder b)
-		{
-			b.HasOne("GameGuild.Economy.Persistence.EconomyWalletRow", null).WithOne().HasForeignKey("GameGuild.Economy.Persistence.EconomyWalletDebtRow", "WalletId")
+			b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyWalletDebtRow", null).WithMany().HasForeignKey("WalletId")
 				.OnDelete(DeleteBehavior.Restrict)
 				.IsRequired();
 		});
-		modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyWalletProjectionGenerationRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyWalletDebtRow", delegate(EntityTypeBuilder b)
 		{
-			b.HasOne("GameGuild.Economy.Persistence.EconomyProjectionGenerationRow", null).WithMany().HasForeignKey("Generation")
+			b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyWalletRow", null).WithOne().HasForeignKey("GameGuild.Finance.Economy.Persistence.EconomyWalletDebtRow", "WalletId")
+				.OnDelete(DeleteBehavior.Restrict)
+				.IsRequired();
+		});
+		modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyWalletProjectionGenerationRow", delegate(EntityTypeBuilder b)
+		{
+			b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyProjectionGenerationRow", null).WithMany().HasForeignKey("Generation")
 				.HasPrincipalKey("Generation")
 				.OnDelete(DeleteBehavior.Restrict)
 				.IsRequired();
-			b.HasOne("GameGuild.Economy.Persistence.EconomyWalletRow", null).WithMany().HasForeignKey("WalletId")
+			b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyWalletRow", null).WithMany().HasForeignKey("WalletId")
 				.OnDelete(DeleteBehavior.Restrict)
 				.IsRequired();
 		});
-		modelBuilder.Entity("GameGuild.Economy.Treasury.AdminWithdrawalAuditEventRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Treasury.AdminWithdrawalAuditEventRow", delegate(EntityTypeBuilder b)
 		{
-			b.HasOne("GameGuild.Economy.Treasury.AdminWithdrawalRunRow", null).WithMany().HasForeignKey("RunId")
+			b.HasOne("GameGuild.Finance.Economy.Treasury.AdminWithdrawalRunRow", null).WithMany().HasForeignKey("RunId")
 				.OnDelete(DeleteBehavior.Restrict)
 				.IsRequired();
 		});
-		modelBuilder.Entity("GameGuild.Economy.Treasury.AdminWithdrawalDispatchOutboxRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Treasury.AdminWithdrawalDispatchOutboxRow", delegate(EntityTypeBuilder b)
 		{
-			b.HasOne("GameGuild.Economy.Treasury.AdminWithdrawalRunRow", null).WithMany().HasForeignKey("RunId")
+			b.HasOne("GameGuild.Finance.Economy.Treasury.AdminWithdrawalRunRow", null).WithMany().HasForeignKey("RunId")
 				.OnDelete(DeleteBehavior.Restrict)
 				.IsRequired();
 		});
-		modelBuilder.Entity("GameGuild.Economy.Treasury.AdminWithdrawalProviderEventRow", delegate(EntityTypeBuilder b)
+		modelBuilder.Entity("GameGuild.Finance.Economy.Treasury.AdminWithdrawalProviderEventRow", delegate(EntityTypeBuilder b)
 		{
-			b.HasOne("GameGuild.Economy.Treasury.AdminWithdrawalRunRow", null).WithMany().HasForeignKey("RunId")
+			b.HasOne("GameGuild.Finance.Economy.Treasury.AdminWithdrawalRunRow", null).WithMany().HasForeignKey("RunId")
 				.OnDelete(DeleteBehavior.Restrict)
 				.IsRequired();
 		});

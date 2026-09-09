@@ -1,7 +1,7 @@
 using System.Data;
 using System.Security.Cryptography;
 using System.Text;
-using GameGuild.Economy.Persistence;
+using GameGuild.Finance.Economy.Persistence;
 using GameGuild.Identity.Authentication;
 
 namespace GameGuild.API.Authorization;

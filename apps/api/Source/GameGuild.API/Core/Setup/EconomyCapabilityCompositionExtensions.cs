@@ -1,7 +1,7 @@
 using GameGuild.Commerce.Billing;
 using GameGuild.Commerce.Payments;
 using GameGuild.Compliance.FinancialCrime;
-using GameGuild.Economy.Risk;
+using GameGuild.Finance.Economy.Risk;
 using GameGuild.TrustSafety;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;

@@ -82,3 +82,48 @@ test('an unknown exact file selection is rejected instead of silently doing noth
   selection.areas[0].include = ['Typo.cs'];
   assert.throws(() => reconcile(report, selection, path.join(root, 'unknown'), true), /Unknown included file/);
 });
+
+test('creates a missing common module root from the repository naming convention', (t) => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'common-reconcile-missing-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const repositories = ['ModuEstate', 'GameGuild'].map((brand) => ({ brand, root: path.join(root, brand) }));
+  for (const repository of repositories) fs.mkdirSync(repository.root, { recursive: true });
+
+  const sourceRoot = 'apps/api/Source/Modules/GameGuild.Finance.Economy';
+  const sourcePath = `${sourceRoot}/GameGuild.Finance.Economy.csproj`;
+  const source = '<Project>GameGuild.Finance.Economy</Project>';
+  fs.mkdirSync(path.join(repositories[1].root, sourceRoot), { recursive: true });
+  fs.writeFileSync(path.join(repositories[1].root, sourcePath), source);
+
+  const report = {
+    schemaVersion: 1,
+    consistentSnapshot: true,
+    repositories,
+    areas: [{
+      kind: 'module',
+      name: 'Finance.Economy',
+      roots: { ModuEstate: null, GameGuild: sourceRoot },
+      files: [{
+        path: 'GameGuild.Finance.Economy.csproj',
+        comparison: 'normalized-text',
+        status: 'onlyGameGuild',
+        ModuEstate: null,
+        GameGuild: { path: sourcePath, rawSha256: hash(source) },
+      }],
+    }],
+  };
+  const selection = { areas: [{
+    kind: 'module',
+    name: 'Finance.Economy',
+    prefer: 'GameGuild',
+    reason: 'Establish the reviewed common module on the missing product.',
+  }] };
+
+  reconcile(report, selection, path.join(root, 'applied'), true);
+
+  assert.equal(
+    fs.readFileSync(path.join(repositories[0].root,
+      'apps/api/Source/Modules/ModuEstate.Finance.Economy/ModuEstate.Finance.Economy.csproj'), 'utf8'),
+    '<Project>ModuEstate.Finance.Economy</Project>',
+  );
+});

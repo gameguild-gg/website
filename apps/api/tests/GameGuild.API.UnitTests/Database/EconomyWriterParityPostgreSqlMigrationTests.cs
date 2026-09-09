@@ -1,8 +1,8 @@
 using System.Text.Json;
 using FluentAssertions;
 using GameGuild.API.Database;
-using GameGuild.Economy.Contracts;
-using GameGuild.Economy.Writer;
+using GameGuild.Finance.Economy.Contracts;
+using GameGuild.Finance.Economy.Writer;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore;
