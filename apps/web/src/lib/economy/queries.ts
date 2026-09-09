@@ -9,8 +9,8 @@ import {
   type EconomyContractsEconomyWalletTransaction,
   type EconomyFundingEconomyTopUpStatus,
   type EconomyPayoutsConnectAccountSnapshot,
-  type EconomyPayoutsQueriesEconomyPayoutInput,
   type EconomyPayoutsQueriesEconomyPayoutOperation,
+  type EconomyPayoutsQueriesEconomyPayoutRequestDto,
 } from '@game-guild/client';
 import { cache } from 'react';
 
@@ -18,7 +18,7 @@ export interface EconomyWorkspaceData {
   capabilities: APIControllersEconomySelfServiceCapability[];
   issue: string | null;
   payoutOperations: EconomyPayoutsQueriesEconomyPayoutOperation[];
-  payoutRequests: EconomyPayoutsQueriesEconomyPayoutInput[];
+  payoutRequests: EconomyPayoutsQueriesEconomyPayoutRequestDto[];
   transactions: EconomyContractsEconomyWalletTransaction[];
   wallet: EconomyContractsEconomyWalletSummary | null;
 }
@@ -131,7 +131,7 @@ export interface EconomyPayoutsData {
   account: EconomyPayoutsConnectAccountSnapshot | null;
   issue: string | null;
   operations: EconomyPayoutsQueriesEconomyPayoutOperation[];
-  requests: EconomyPayoutsQueriesEconomyPayoutInput[];
+  requests: EconomyPayoutsQueriesEconomyPayoutRequestDto[];
 }
 
 export const getEconomyPayoutsData = cache(async (): Promise<EconomyPayoutsData> => {
