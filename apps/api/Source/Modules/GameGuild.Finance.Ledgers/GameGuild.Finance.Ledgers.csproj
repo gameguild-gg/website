@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\GameGuild.SharedKernel\GameGuild.SharedKernel.csproj" />
+    <ProjectReference Include="..\GameGuild.Finance.Contracts\GameGuild.Finance.Contracts.csproj" />
   </ItemGroup>
 
   <ItemGroup>

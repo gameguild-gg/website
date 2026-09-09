@@ -8,7 +8,7 @@
     { "kind": "module", "name": "Finance.Economy.Marketplace", "prefer": "GameGuild", "reason": "Reviewed marketplace implementation." },
     { "kind": "module", "name": "Finance.Economy.Payouts", "prefer": "GameGuild", "reason": "Reviewed payouts implementation." },
     { "kind": "module", "name": "Finance.Economy.Treasury", "prefer": "GameGuild", "reason": "Reviewed treasury implementation." },
-    { "kind": "module", "name": "Finance.Ledgers", "prefer": "ModuEstate", "reason": "Reviewed hierarchical ledger implementation." },
+    { "kind": "module", "name": "Finance.Ledgers", "prefer": "GameGuild", "reason": "Reviewed hierarchical ledger and durable event implementation." },
     { "kind": "module", "name": "TrustSafety", "prefer": "GameGuild", "reason": "Reviewed trust and safety implementation." },
     { "kind": "test", "name": "Finance.Contracts.UnitTests", "prefer": "GameGuild", "reason": "Mirror common tests." },
     { "kind": "test", "name": "Finance.Economy.UnitTests", "prefer": "GameGuild", "reason": "Mirror common tests." },
@@ -17,6 +17,7 @@
     { "kind": "test", "name": "Finance.Economy.Marketplace.UnitTests", "prefer": "GameGuild", "reason": "Mirror common tests." },
     { "kind": "test", "name": "Finance.Economy.Payouts.UnitTests", "prefer": "GameGuild", "reason": "Mirror common tests." },
     { "kind": "test", "name": "Finance.Economy.Treasury.UnitTests", "prefer": "GameGuild", "reason": "Mirror common tests." },
+    { "kind": "test", "name": "Finance.Ledgers.UnitTests", "prefer": "GameGuild", "reason": "Mirror common tests." },
     { "kind": "test", "name": "TestSupport.Finance.Economy", "prefer": "GameGuild", "reason": "Mirror common test support." },
     { "kind": "test", "name": "TrustSafety.UnitTests", "prefer": "GameGuild", "reason": "Mirror common tests." }
   ]

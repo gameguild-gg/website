@@ -9,6 +9,7 @@
     "Database/ApplicationDbContextCommonTests.cs",
     "Database/ApplicationDbContextDomainEventTests.cs",
     "Database/DurableEventTransportTests.cs",
+    "Database/EconomyPostingIntegrationOutboxMigrationTests.cs",
     "Core/OpenApiDeterminismTests.cs",
     "Core/OpenApiSetupTests.cs",
     "Core/OpenApiFilterTests.cs",

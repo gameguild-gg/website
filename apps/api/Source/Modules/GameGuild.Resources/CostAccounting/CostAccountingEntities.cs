@@ -6,6 +6,8 @@ public static class InternalCostMetrics
     public const string UseCaseOperation = "saas.use-case.operation";
     public const string UserLifecycle = "saas.user.lifecycle";
     public const string AssetReference = "saas.asset.reference";
+    public const string EconomyPosting = "saas.finance.economy.posting";
+    public const string EconomyJournalLine = "saas.finance.economy.journal-line";
     public const string S3PutRequest = "aws.s3.put-request";
     public const string S3DeleteRequest = "aws.s3.delete-request";
     public const string S3GetRequest = "aws.s3.get-request";

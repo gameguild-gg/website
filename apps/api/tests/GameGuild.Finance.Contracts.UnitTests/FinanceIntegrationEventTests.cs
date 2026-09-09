@@ -1,4 +1,5 @@
 using GameGuild.Finance.Contracts;
+using System.Reflection;
 using Xunit;
 
 namespace GameGuild.Finance.Contracts.UnitTests;
@@ -25,7 +26,7 @@ public sealed class FinanceIntegrationEventTests
             CorrelationId = Guid.NewGuid()
         };
 
-        Assert.Equal("finance.economy.posting-accepted.v1", integrationEvent.EventName);
+        Assert.Equal("economy.posting.accepted.v1", integrationEvent.EventName);
         Assert.Equal("Finance.Economy", integrationEvent.SourceModule);
         Assert.Equal(1, integrationEvent.SchemaVersion);
         Assert.NotEqual(Guid.Empty, integrationEvent.EventId);
@@ -58,5 +59,25 @@ public sealed class FinanceIntegrationEventTests
         Assert.Equal("finance.ledger-entry.posted.v1", integrationEvent.EventName);
         Assert.Equal("Finance.Ledgers", integrationEvent.SourceModule);
         Assert.Equal(1, integrationEvent.SchemaVersion);
+    }
+
+    [Theory]
+    [InlineData(typeof(FinancePostingLineV1))]
+    [InlineData(typeof(EconomyPostingAcceptedEventV1))]
+    [InlineData(typeof(FinanceLedgerEntryPostedEventV1))]
+    public void DurablePayloadProperties_AreExplicitlyClassified(Type payloadType)
+    {
+        var metadata = typeof(IDurableIntegrationEvent).GetProperties()
+            .Select(property => property.Name)
+            .Concat(typeof(IIntegrationEvent).GetProperties().Select(property => property.Name))
+            .ToHashSet(StringComparer.Ordinal);
+
+        var unclassified = payloadType.GetProperties(BindingFlags.Instance | BindingFlags.Public)
+            .Where(property => !metadata.Contains(property.Name))
+            .Where(property => property.GetCustomAttribute<NonPersonalEventDataAttribute>() is null)
+            .Select(property => property.Name)
+            .ToArray();
+
+        Assert.Empty(unclassified);
     }
 }

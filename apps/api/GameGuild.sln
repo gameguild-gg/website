@@ -312,6 +312,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameGuild.Learning.Lti.Unit
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameGuild.TestSupport.Finance.Economy", "tests\GameGuild.TestSupport.Finance.Economy\GameGuild.TestSupport.Finance.Economy.csproj", "{EE207B52-1260-4BB5-BF21-60B180A8B3EB}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameGuild.Finance.Ledgers.UnitTests", "tests\GameGuild.Finance.Ledgers.UnitTests\GameGuild.Finance.Ledgers.UnitTests.csproj", "{5A741EDB-E2AF-4B16-AC01-2F7FD3EDF051}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -2054,6 +2056,18 @@ Global
 		{EE207B52-1260-4BB5-BF21-60B180A8B3EB}.Release|x64.Build.0 = Release|Any CPU
 		{EE207B52-1260-4BB5-BF21-60B180A8B3EB}.Release|x86.ActiveCfg = Release|Any CPU
 		{EE207B52-1260-4BB5-BF21-60B180A8B3EB}.Release|x86.Build.0 = Release|Any CPU
+		{5A741EDB-E2AF-4B16-AC01-2F7FD3EDF051}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5A741EDB-E2AF-4B16-AC01-2F7FD3EDF051}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5A741EDB-E2AF-4B16-AC01-2F7FD3EDF051}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{5A741EDB-E2AF-4B16-AC01-2F7FD3EDF051}.Debug|x64.Build.0 = Debug|Any CPU
+		{5A741EDB-E2AF-4B16-AC01-2F7FD3EDF051}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{5A741EDB-E2AF-4B16-AC01-2F7FD3EDF051}.Debug|x86.Build.0 = Debug|Any CPU
+		{5A741EDB-E2AF-4B16-AC01-2F7FD3EDF051}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5A741EDB-E2AF-4B16-AC01-2F7FD3EDF051}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5A741EDB-E2AF-4B16-AC01-2F7FD3EDF051}.Release|x64.ActiveCfg = Release|Any CPU
+		{5A741EDB-E2AF-4B16-AC01-2F7FD3EDF051}.Release|x64.Build.0 = Release|Any CPU
+		{5A741EDB-E2AF-4B16-AC01-2F7FD3EDF051}.Release|x86.ActiveCfg = Release|Any CPU
+		{5A741EDB-E2AF-4B16-AC01-2F7FD3EDF051}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -2206,5 +2220,6 @@ Global
 		{13A4018E-06B6-43B6-BA74-EFD271A3A8BD} = {3E5E3798-9DEC-4CDB-86F7-0722667D13C5}
 		{270FA3C6-7BF7-4363-989B-3BC7B297A8FA} = {94462590-D4AF-4FE8-BA8F-111A28B4D121}
 		{96D4BE85-FB76-4C52-9136-26D913DEB6A1} = {3E5E3798-9DEC-4CDB-86F7-0722667D13C5}
+		{5A741EDB-E2AF-4B16-AC01-2F7FD3EDF051} = {3E5E3798-9DEC-4CDB-86F7-0722667D13C5}
 	EndGlobalSection
 EndGlobal

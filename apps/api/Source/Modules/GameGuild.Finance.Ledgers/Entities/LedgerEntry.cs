@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations.Schema;
 using GameGuild.Finance.Ledgers.Enums;
 
 namespace GameGuild.Finance.Ledgers.Entities;
@@ -7,8 +8,21 @@ namespace GameGuild.Finance.Ledgers.Entities;
 /// Follows double-entry principles where debits and credits must balance.
 /// Tracks full ancestry via ParentLedgerIds for efficient rollup queries.
 /// </summary>
-public class LedgerEntry
+public class LedgerEntry : IHasIntegrationEvents
 {
+    private readonly List<IDurableIntegrationEvent> _integrationEvents = [];
+
+    [NotMapped]
+    public IReadOnlyList<IDurableIntegrationEvent> IntegrationEvents => _integrationEvents.AsReadOnly();
+
+    public void AddIntegrationEvent(IDurableIntegrationEvent integrationEvent)
+    {
+        ArgumentNullException.ThrowIfNull(integrationEvent);
+        _integrationEvents.Add(integrationEvent);
+    }
+
+    public void ClearIntegrationEvents() => _integrationEvents.Clear();
+
     // ========================================================================
     // Identity
     // ========================================================================

@@ -1,3 +1,4 @@
+using GameGuild.Finance.Contracts;
 using GameGuild.Finance.Ledgers.Abstractions;
 using GameGuild.Finance.Ledgers.Entities;
 using GameGuild.Finance.Ledgers.Enums;
@@ -16,17 +17,20 @@ public class LedgerEntryService : ILedgerEntryService
     private readonly ILedgerClosureRepository _closureRepository;
     private readonly ILedgerEntryRepository _entryRepository;
     private readonly ILogger<LedgerEntryService> _logger;
+    private readonly IUseCaseOperationContextAccessor? _operationContextAccessor;
 
     public LedgerEntryService(
         ILedgerRepository ledgerRepository,
         ILedgerClosureRepository closureRepository,
         ILedgerEntryRepository entryRepository,
-        ILogger<LedgerEntryService> logger)
+        ILogger<LedgerEntryService> logger,
+        IUseCaseOperationContextAccessor? operationContextAccessor = null)
     {
         _ledgerRepository = ledgerRepository;
         _closureRepository = closureRepository;
         _entryRepository = entryRepository;
         _logger = logger;
+        _operationContextAccessor = operationContextAccessor;
     }
 
     /// <inheritdoc />
@@ -65,6 +69,7 @@ public class LedgerEntryService : ILedgerEntryService
 
         // Post immediately
         entry.Post(createdByUserId);
+        QueuePostedEvent(entry, entry, createdByUserId);
 
         await _entryRepository.AddAsync(entry, ct);
         LogFinanceAudit("LedgerEntryPosted", entry.Id, ledgerId, createdByUserId, amount, externalReferenceId);
@@ -113,6 +118,8 @@ public class LedgerEntryService : ILedgerEntryService
         // Post both entries
         sourceEntry.Post(createdByUserId);
         destEntry.Post(createdByUserId);
+        QueuePostedEvent(sourceEntry, sourceEntry, createdByUserId);
+        QueuePostedEvent(destEntry, destEntry, createdByUserId);
 
         await _entryRepository.AddRangeAsync([sourceEntry, destEntry], ct);
         LogFinanceAudit("LedgerTransferPosted", sourceEntry.Id, sourceLedgerId, createdByUserId, amount, null);
@@ -133,6 +140,7 @@ public class LedgerEntryService : ILedgerEntryService
 
         // Create reversal
         var reversal = entry.CreateReversal(reversedByUserId, reason);
+        QueuePostedEvent(entry, reversal, reversedByUserId);
 
         // Update original and add reversal
         await _entryRepository.UpdateAsync(entry, ct);
@@ -146,6 +154,7 @@ public class LedgerEntryService : ILedgerEntryService
             if (pairEntry != null && pairEntry.Status != EntryStatus.Voided)
             {
                 var pairReversal = pairEntry.CreateReversal(reversedByUserId, reason);
+                QueuePostedEvent(pairEntry, pairReversal, reversedByUserId);
                 await _entryRepository.UpdateAsync(pairEntry, ct);
                 await _entryRepository.AddAsync(pairReversal, ct);
                 LogFinanceAudit("LedgerEntryReversed", pairReversal.Id, pairReversal.LedgerId, reversedByUserId, pairReversal.Amount, pairEntry.Id.ToString());
@@ -242,6 +251,7 @@ public class LedgerEntryService : ILedgerEntryService
             }
 
             entry.Post(createdByUserId);
+            QueuePostedEvent(entry, entry, createdByUserId);
             entries.Add(entry);
         }
 
@@ -268,6 +278,28 @@ public class LedgerEntryService : ILedgerEntryService
 
         await _entryRepository.UpdateAsync(entry, ct);
         LogFinanceAudit("LedgerEntryReconciled", entry.Id, entry.LedgerId, reconciledByUserId, entry.Amount, externalReferenceId ?? entry.ExternalReferenceId);
+    }
+
+    private void QueuePostedEvent(LedgerEntry carrier, LedgerEntry postedEntry, Guid actorId)
+    {
+        var operation = _operationContextAccessor?.Current;
+        carrier.AddIntegrationEvent(new FinanceLedgerEntryPostedEventV1(
+            postedEntry.LedgerId,
+            postedEntry.Id,
+            postedEntry.ReferenceNumber,
+            postedEntry.CurrencyCode,
+            postedEntry.Amount,
+            postedEntry.Type.ToString(),
+            postedEntry.TransactionDate)
+        {
+            TenantId = postedEntry.TenantId,
+            ActorId = actorId,
+            AggregateType = nameof(LedgerEntry),
+            AggregateId = postedEntry.Id.ToString(),
+            CorrelationId = operation?.CorrelationId ?? Guid.NewGuid(),
+            CausationId = operation?.CausationId,
+            OccurredAt = postedEntry.CreatedAt
+        });
     }
 
     private void LogFinanceAudit(

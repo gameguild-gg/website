@@ -1,5 +1,6 @@
 using FluentAssertions;
 using GameGuild.CQRS;
+using GameGuild.Finance.Contracts;
 using GameGuild.Identity.Context.Actors;
 using GameGuild.Identity.Authorization;
 using GameGuild.Resources;
@@ -1048,6 +1049,7 @@ public class DependencyInjectionTests : IDisposable
         registeredTypes.Should().Contain(typeof(IResourceQuotaService));
         registeredTypes.Should().Contain(typeof(IResourceSettingsRepository));
         registeredTypes.Should().Contain(typeof(IResourceMetadataRepository));
+        registeredTypes.Should().Contain(typeof(IIntegrationEventHandler<EconomyPostingAcceptedEventV1>));
     }
 
     public void Dispose()
