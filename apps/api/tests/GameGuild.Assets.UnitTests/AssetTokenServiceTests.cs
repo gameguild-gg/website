@@ -83,6 +83,32 @@ public class AssetTokenServiceTests
     }
 
     [Fact]
+    public void ValidateToken_WithTransformation_RequiresMatchingCanonicalSpec()
+    {
+        var assetId = Guid.NewGuid();
+        var tenantId = Guid.NewGuid();
+        var transformation = TransformationSpec.Parse("w=320,h=180");
+        var token = _tokenService.GenerateToken(
+            assetId,
+            tenantId,
+            AssetAccessPolicy.Public,
+            transformation);
+
+        var matching = _tokenService.ValidateToken(token, assetId, tenantId, transformation);
+        var missing = _tokenService.ValidateToken(token, assetId, tenantId);
+        var different = _tokenService.ValidateToken(
+            token,
+            assetId,
+            tenantId,
+            TransformationSpec.Parse("w=640,h=360"));
+
+        matching.Should().NotBeNull();
+        matching!.TransformationSpec.Should().Be(transformation!.ToCanonicalString());
+        missing.Should().BeNull();
+        different.Should().BeNull();
+    }
+
+    [Fact]
     public void ValidateToken_WithInvalidAssetId_ShouldReturnNull()
     {
         // Arrange

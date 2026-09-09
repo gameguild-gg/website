@@ -37,7 +37,7 @@ public class SendWelcomeEmailHandlerCovTests
     public async Task Handle_LogsAndCompletes()
     {
         var logger = new Mock<ILogger<SendWelcomeEmailHandler>>();
-        var handler = new SendWelcomeEmailHandler(logger.Object, Mock.Of<INotificationService>());
+        var handler = new SendWelcomeEmailHandler(logger.Object, NotificationQueueStub.Success().Object, Mock.Of<IUserRepository>());
 
         var notification = new UserSignedUpNotification
         {
@@ -54,7 +54,7 @@ public class SendWelcomeEmailHandlerCovTests
     [Fact]
     public async Task Handle_WithTenantId_Completes()
     {
-        var handler = new SendWelcomeEmailHandler(NullLogger<SendWelcomeEmailHandler>.Instance, Mock.Of<INotificationService>());
+        var handler = new SendWelcomeEmailHandler(NullLogger<SendWelcomeEmailHandler>.Instance, NotificationQueueStub.Success().Object, Mock.Of<IUserRepository>());
 
         var notification = new UserSignedUpNotification
         {
@@ -908,7 +908,7 @@ public class KeyRotationControllerCovTests
 
     public KeyRotationControllerCovTests()
     {
-        _controller = new KeyRotationController(_keyService.Object, NullLogger<KeyRotationController>.Instance);
+        _controller = new KeyRotationController(_keyService.Object, NullLogger<KeyRotationController>.Instance, new CommandHandlerSender(_keyService.Object));
         _controller.ControllerContext = new ControllerContext
         {
             HttpContext = new DefaultHttpContext
@@ -1109,7 +1109,8 @@ public class WebAuthnControllerCovTests
 
     public WebAuthnControllerCovTests()
     {
-        _controller = new WebAuthnController(_webAuthnService.Object);
+        _controller = new WebAuthnController(_webAuthnService.Object,
+            new CommandHandlerSender(_webAuthnService.Object, Mock.Of<IJwtTokenService>(), Mock.Of<IUserRepository>(), new ConfigurationBuilder().Build()));
     }
 
     private void SetUser(Guid? userId)
@@ -1201,9 +1202,7 @@ public class WebAuthnControllerCovTests
             .Build();
         var controller = new WebAuthnController(
             _webAuthnService.Object,
-            jwtTokenService.Object,
-            userRepository.Object,
-            configuration);
+            new CommandHandlerSender(_webAuthnService.Object, jwtTokenService.Object, userRepository.Object, configuration));
         controller.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() };
 
         _webAuthnService.Setup(s => s.CompleteAuthenticationAsync(

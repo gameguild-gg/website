@@ -134,7 +134,7 @@ describe('Testing Lab server actions', () => {
       }),
     );
     expect(mocks.postTestingSubmitSimple.mock.calls[0]?.[0]).not.toHaveProperty('teamIdentifier');
-    expect(mocks.revalidatePath).toHaveBeenCalledWith('/console/community/testing-lab');
+    expect(mocks.revalidatePath).toHaveBeenCalledWith('/workspace/testing-lab');
   });
 
   it('returns validation errors without calling the API', async () => {

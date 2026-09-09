@@ -61,11 +61,11 @@ export class TestingLabTestingSessionsModule {
 
   /**
    */
-  async postTestingSessions(body: Types.TestingLabCreateTestingSession): Promise<Result<Types.TestingLabTestingSession, ApiError>> {
+  async postTestingSessions(body: Types.TestingLabCreateTestingSessionDto): Promise<Result<Types.TestingLabTestingSession, ApiError>> {
     const url = '/v1/testing/sessions';
 
     // Validate request body
-    const validatedBody = safeParse(Types.TestingLabCreateTestingSessionSchema, body, 'request');
+    const validatedBody = safeParse(Types.TestingLabCreateTestingSessionDtoSchema, body, 'request');
 
     const result = await this.client.request({
       method: 'POST',
@@ -177,11 +177,11 @@ export class TestingLabTestingSessionsModule {
 
   /**
    */
-  async postTestingSessionsAttendance(sessionId: string, body: Types.TestingLabUpdateAttendance): Promise<Result<void, ApiError>> {
+  async postTestingSessionsAttendance(sessionId: string, body: Types.TestingLabUpdateAttendanceDto): Promise<Result<void, ApiError>> {
     const url = `/v1/testing/sessions/${sessionId}/attendance`;
 
     // Validate request body
-    const validatedBody = safeParse(Types.TestingLabUpdateAttendanceSchema, body, 'request');
+    const validatedBody = safeParse(Types.TestingLabUpdateAttendanceDtoSchema, body, 'request');
 
     const result = await this.client.request({
       method: 'POST',

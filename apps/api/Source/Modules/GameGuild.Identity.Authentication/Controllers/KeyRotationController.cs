@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using GameGuild.CQRS;
 
 namespace GameGuild.Identity.Authentication;
 
@@ -17,13 +18,16 @@ public class KeyRotationController : BaseApiController
 {
     private readonly IKeyRotationService _keyRotationService;
     private readonly ILogger<KeyRotationController> _logger;
+    private readonly ISender _sender;
 
     public KeyRotationController(
         IKeyRotationService keyRotationService,
-        ILogger<KeyRotationController> logger)
+        ILogger<KeyRotationController> logger,
+        ISender sender)
     {
         _keyRotationService = keyRotationService;
         _logger = logger;
+        _sender = sender;
     }
 
     /// <summary>
@@ -70,10 +74,9 @@ public class KeyRotationController : BaseApiController
         _logger.LogWarning("Manual key rotation requested by {User}. Reason: {Reason}",
             User.Identity?.Name, request.Reason);
 
-        var newKey = await _keyRotationService.RotateKeyAsync(
+        var newKey = await _sender.Send(new RotateSigningKeyCommand(
             request.Reason ?? "manual-rotation",
-            request.ValidityDays ?? 90,
-            cancellationToken).ConfigureAwait(false);
+            request.ValidityDays ?? 90), cancellationToken).ConfigureAwait(false);
 
         return Ok(JwtKeyInfoDto.FromEntity(newKey));
     }
@@ -89,8 +92,8 @@ public class KeyRotationController : BaseApiController
         [FromBody] CleanupKeysRequest? request,
         CancellationToken cancellationToken)
     {
-        var count = await _keyRotationService.CleanupExpiredKeysAsync(
-            request?.RetentionDays ?? 30,
+        var count = await _sender.Send(
+            new CleanupExpiredSigningKeysCommand(request?.RetentionDays ?? 30),
             cancellationToken).ConfigureAwait(false);
 
         return Ok(new CleanupResult { DeletedCount = count });

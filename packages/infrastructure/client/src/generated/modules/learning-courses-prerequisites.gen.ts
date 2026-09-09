@@ -17,7 +17,7 @@ export class LearningCoursesPrerequisitesModule {
 
   /**
    */
-  async postApiPrerequisites(body: Types.LearningCoursesCreatePrerequisiteApiInput): Promise<Result<Types.LearningCoursesPrerequisite, ApiError>> {
+  async postApiPrerequisites(body: Types.LearningCoursesCreatePrerequisiteApiInput): Promise<Result<Types.LearningCoursesPrerequisiteDto, ApiError>> {
     const url = '/api/prerequisites';
 
     // Validate request body
@@ -32,7 +32,7 @@ export class LearningCoursesPrerequisitesModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.LearningCoursesPrerequisiteSchema, result.data, 'response');
+      const validatedData = safeParse(Types.LearningCoursesPrerequisiteDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -41,7 +41,7 @@ export class LearningCoursesPrerequisitesModule {
 
   /**
    */
-  async getApiPrerequisites(id: string): Promise<Result<Types.LearningCoursesPrerequisite, ApiError>> {
+  async getApiPrerequisites(id: string): Promise<Result<Types.LearningCoursesPrerequisiteDto, ApiError>> {
     const url = `/api/prerequisites/${id}`;
 
     const result = await this.client.request({
@@ -52,7 +52,7 @@ export class LearningCoursesPrerequisitesModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.LearningCoursesPrerequisiteSchema, result.data, 'response');
+      const validatedData = safeParse(Types.LearningCoursesPrerequisiteDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -61,7 +61,10 @@ export class LearningCoursesPrerequisitesModule {
 
   /**
    */
-  async putApiPrerequisites(id: string, body: Types.LearningCoursesUpdatePrerequisiteApiInput): Promise<Result<Types.LearningCoursesPrerequisite, ApiError>> {
+  async putApiPrerequisites(
+    id: string,
+    body: Types.LearningCoursesUpdatePrerequisiteApiInput,
+  ): Promise<Result<Types.LearningCoursesPrerequisiteDto, ApiError>> {
     const url = `/api/prerequisites/${id}`;
 
     // Validate request body
@@ -76,7 +79,7 @@ export class LearningCoursesPrerequisitesModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.LearningCoursesPrerequisiteSchema, result.data, 'response');
+      const validatedData = safeParse(Types.LearningCoursesPrerequisiteDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -99,7 +102,7 @@ export class LearningCoursesPrerequisitesModule {
 
   /**
    */
-  async getApiPrerequisitesCourse(courseId: string): Promise<Result<Array<Types.LearningCoursesPrerequisite>, ApiError>> {
+  async getApiPrerequisitesCourse(courseId: string): Promise<Result<Array<Types.LearningCoursesPrerequisiteDto>, ApiError>> {
     const url = `/api/prerequisites/course/${courseId}`;
 
     const result = await this.client.request({
@@ -108,12 +111,12 @@ export class LearningCoursesPrerequisitesModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.LearningCoursesPrerequisite>, ApiError>;
+    return result as Result<Array<Types.LearningCoursesPrerequisiteDto>, ApiError>;
   }
 
   /**
    */
-  async getApiPrerequisitesCourseChain(courseId: string): Promise<Result<Array<Types.LearningCoursesPrerequisite>, ApiError>> {
+  async getApiPrerequisitesCourseChain(courseId: string): Promise<Result<Array<Types.LearningCoursesPrerequisiteDto>, ApiError>> {
     const url = `/api/prerequisites/course/${courseId}/chain`;
 
     const result = await this.client.request({
@@ -122,14 +125,14 @@ export class LearningCoursesPrerequisitesModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.LearningCoursesPrerequisite>, ApiError>;
+    return result as Result<Array<Types.LearningCoursesPrerequisiteDto>, ApiError>;
   }
 
   /**
    */
   async getApiPrerequisitesCourseCheckForGetApiPrerequisitesCourseByCourseIdCheck(
     courseId: string,
-  ): Promise<Result<Types.LearningCoursesPrerequisiteCheckResult, ApiError>> {
+  ): Promise<Result<Types.LearningCoursesPrerequisiteCheckResultDto, ApiError>> {
     const url = `/api/prerequisites/course/${courseId}/check`;
 
     const result = await this.client.request({
@@ -140,7 +143,7 @@ export class LearningCoursesPrerequisitesModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.LearningCoursesPrerequisiteCheckResultSchema, result.data, 'response');
+      const validatedData = safeParse(Types.LearningCoursesPrerequisiteCheckResultDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -152,7 +155,7 @@ export class LearningCoursesPrerequisitesModule {
   async getApiPrerequisitesCourseCheckForGetApiPrerequisitesCourseByCourseIdCheckByUserId(
     courseId: string,
     userId: string,
-  ): Promise<Result<Types.LearningCoursesPrerequisiteCheckResult, ApiError>> {
+  ): Promise<Result<Types.LearningCoursesPrerequisiteCheckResultDto, ApiError>> {
     const url = `/api/prerequisites/course/${courseId}/check/${userId}`;
 
     const result = await this.client.request({
@@ -163,7 +166,7 @@ export class LearningCoursesPrerequisitesModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.LearningCoursesPrerequisiteCheckResultSchema, result.data, 'response');
+      const validatedData = safeParse(Types.LearningCoursesPrerequisiteCheckResultDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -213,7 +216,7 @@ export class LearningCoursesPrerequisitesModule {
 
   /**
    */
-  async getApiPrerequisitesDependents(courseId: string): Promise<Result<Array<Types.LearningCoursesPrerequisite>, ApiError>> {
+  async getApiPrerequisitesDependents(courseId: string): Promise<Result<Array<Types.LearningCoursesPrerequisiteDto>, ApiError>> {
     const url = `/api/prerequisites/dependents/${courseId}`;
 
     const result = await this.client.request({
@@ -222,7 +225,7 @@ export class LearningCoursesPrerequisitesModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.LearningCoursesPrerequisite>, ApiError>;
+    return result as Result<Array<Types.LearningCoursesPrerequisiteDto>, ApiError>;
   }
 }
 

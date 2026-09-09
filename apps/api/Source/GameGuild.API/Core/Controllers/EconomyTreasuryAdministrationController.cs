@@ -1,6 +1,7 @@
 using Asp.Versioning;
 using GameGuild.API.Authorization;
 using GameGuild.API.Setup;
+using GameGuild.CQRS;
 using GameGuild.Economy.Reserves;
 using GameGuild.Economy.Risk;
 using GameGuild.Economy.Treasury;
@@ -35,8 +36,8 @@ public sealed record TreasuryProtectedOperationFailureResponse(
 [Tags("economy-treasury-administration")]
 [Authorize]
 public sealed class EconomyTreasuryAdministrationController(
+    ISender sender,
     IDurableAdminWithdrawalApplicationService withdrawals,
-    IEconomyStepUpExecutor stepUp,
     IActorContextAccessor actorContextAccessor,
     TimeProvider timeProvider) : BaseApiController
 {
@@ -91,20 +92,16 @@ public sealed class EconomyTreasuryAdministrationController(
             "economy.treasury.propose",
             $"treasury-period:{request.PeriodStart:yyyy-MM-dd}",
             transactionBinding);
-        return await ExecuteAsync(() => stepUp.ExecuteAsync(
+        return await ExecuteAsync(() => sender.Send(new ProposeTreasuryWithdrawalEndpointCommand(
             operation,
             request.StepUpReceipt,
-            (evidenceHash, token) => withdrawals.ProposeAsync(
-                new ProposeAdminWithdrawalCommand(
-                    tenantId,
-                    actorId,
-                    request.PeriodStart,
-                    request.AmountUnits,
-                    request.DestinationHash,
-                    request.IdempotencyKey,
-                    Reauthentication(actorId, transactionBinding, evidenceHash)),
-                token).AsTask(),
-            cancellationToken), created: true).ConfigureAwait(false);
+            tenantId,
+            actorId,
+            request.PeriodStart,
+            request.AmountUnits,
+            request.DestinationHash,
+            request.IdempotencyKey,
+            transactionBinding), cancellationToken), created: true).ConfigureAwait(false);
     }
 
     [HttpPost("{runId:guid}/approve")]
@@ -125,12 +122,10 @@ public sealed class EconomyTreasuryAdministrationController(
             $"treasury-withdrawal:{runId:N}",
             runId.ToString("N"),
             request.ExpectedVersion.ToString(System.Globalization.CultureInfo.InvariantCulture));
-        return await ExecuteAsync(() => stepUp.ExecuteAsync(
+        return await ExecuteAsync(() => sender.Send(new ApproveTreasuryWithdrawalEndpointCommand(
             operation,
             request.StepUpReceipt,
-            (_, token) => withdrawals.ApproveAsync(
-                new ApproveAdminWithdrawalCommand(
-                    tenantId, actorId, runId, request.ExpectedVersion), token),
+            new ApproveAdminWithdrawalCommand(tenantId, actorId, runId, request.ExpectedVersion)),
             cancellationToken)).ConfigureAwait(false);
     }
 
@@ -154,18 +149,14 @@ public sealed class EconomyTreasuryAdministrationController(
             "economy.treasury.dispatch",
             $"treasury-withdrawal:{runId:N}",
             transactionBinding);
-        return await ExecuteAsync(() => stepUp.ExecuteAsync(
+        return await ExecuteAsync(() => sender.Send(new DispatchTreasuryWithdrawalEndpointCommand(
             operation,
             request.StepUpReceipt,
-            (evidenceHash, token) => withdrawals.DispatchAsync(
-                new DispatchAdminWithdrawalCommand(
-                    tenantId,
-                    actorId,
-                    runId,
-                    request.ExpectedVersion,
-                    Reauthentication(actorId, transactionBinding, evidenceHash)),
-                token),
-            cancellationToken)).ConfigureAwait(false);
+            tenantId,
+            actorId,
+            runId,
+            request.ExpectedVersion,
+            transactionBinding), cancellationToken)).ConfigureAwait(false);
     }
 
     [HttpPost("{runId:guid}/reconcile")]
@@ -177,8 +168,8 @@ public sealed class EconomyTreasuryAdministrationController(
     public async Task<IActionResult> Reconcile(Guid runId, CancellationToken cancellationToken)
     {
         if (!TryActor(out var tenantId, out var actorId)) return Forbid();
-        return await ExecuteAsync(() => withdrawals.ReconcileAsync(
-            new ReconcileAdminWithdrawalCommand(tenantId, actorId, runId), cancellationToken))
+        return await ExecuteAsync(() => sender.Send(new ReconcileTreasuryWithdrawalEndpointCommand(
+            new ReconcileAdminWithdrawalCommand(tenantId, actorId, runId)), cancellationToken))
             .ConfigureAwait(false);
     }
 

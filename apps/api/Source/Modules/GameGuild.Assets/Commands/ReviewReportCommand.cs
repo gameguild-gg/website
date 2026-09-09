@@ -9,7 +9,7 @@ public sealed record ReviewReportCommand(
     Guid ReportId,
     Guid ReviewerId,
     ReviewDecision Decision,
-    string? Notes = null) : IRequest<ReviewReportResponse?>;
+    string? Notes = null) : ICommand<ReviewReportResponse?>;
 
 public sealed record ReviewReportResponse(
     Guid ReportId,
@@ -27,7 +27,7 @@ public sealed class ReviewReportValidator : AbstractValidator<ReviewReportComman
     }
 }
 
-public sealed class ReviewReportHandler : IRequestHandler<ReviewReportCommand, ReviewReportResponse?>
+public sealed class ReviewReportHandler : ICommandHandler<ReviewReportCommand, ReviewReportResponse?>
 {
     private readonly IAssetModerationService _moderationService;
 

@@ -1,7 +1,7 @@
 import { redirect } from '@/i18n/navigation';
 import React from 'react';
 
-/** The feed lives at `/` for signed-in members; old /feed links forward there. */
+/** The authenticated social feed is the signed-in home page. */
 export default async function LegacyFeedRedirectPage({
   params,
 }: {

@@ -5,6 +5,7 @@ using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using GameGuild.CQRS;
 
 namespace GameGuild.Identity.Authentication;
 
@@ -15,7 +16,7 @@ namespace GameGuild.Identity.Authentication;
 [ApiVersion("1.0")]
 [Microsoft.AspNetCore.Http.Tags("auth/sessions")]
 [Authorize]
-public sealed class SessionController(ISessionManagementService sessionService) : AuthControllerBase
+public sealed class SessionController(ISessionManagementService sessionService, ISender sender) : AuthControllerBase
 {
     #region Collection Operations - /v1/auth/sessions
 
@@ -102,7 +103,8 @@ public sealed class SessionController(ISessionManagementService sessionService) 
             return NotFound(new SessionErrorResponse { Error = "Session not found" });
         }
 
-        var success = await sessionService.TerminateSessionAsync(sessionId, SessionTerminationReason.UserLogout).ConfigureAwait(false);
+        var success = await sender.Send(
+            new TerminateSessionCommand(sessionId, SessionTerminationReason.UserLogout), ct).ConfigureAwait(false);
 
         if (!success)
         {
@@ -131,7 +133,8 @@ public sealed class SessionController(ISessionManagementService sessionService) 
         var userId = GetCurrentUserId();
         var currentSessionId = GetCurrentSessionId();
 
-        var terminatedCount = await sessionService.TerminateAllUserSessionsAsync(userId, SessionTerminationReason.UserLogout, currentSessionId).ConfigureAwait(false);
+        var terminatedCount = await sender.Send(
+            new TerminateUserSessionsCommand(userId, SessionTerminationReason.UserLogout, currentSessionId), ct).ConfigureAwait(false);
 
         return Ok(new SessionTerminationResponse
         {
@@ -154,7 +157,8 @@ public sealed class SessionController(ISessionManagementService sessionService) 
     {
         var userId = GetCurrentUserId();
 
-        var terminatedCount = await sessionService.TerminateAllUserSessionsAsync(userId, SessionTerminationReason.UserLogout).ConfigureAwait(false);
+        var terminatedCount = await sender.Send(
+            new TerminateUserSessionsCommand(userId, SessionTerminationReason.UserLogout), ct).ConfigureAwait(false);
 
         return Ok(new SessionTerminationResponse
         {
@@ -183,7 +187,7 @@ public sealed class SessionController(ISessionManagementService sessionService) 
             return BadRequest(new SessionErrorResponse { Error = "No active session found" });
         }
 
-        var success = await sessionService.RefreshSessionAsync(currentSessionId.Value).ConfigureAwait(false);
+        var success = await sender.Send(new RefreshUserSessionCommand(currentSessionId.Value), ct).ConfigureAwait(false);
 
         if (!success)
         {

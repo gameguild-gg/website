@@ -209,14 +209,11 @@ public class AssetsAdminController(
         [FromServices] IAssetContentRepository contentRepository,
         CancellationToken ct = default)
     {
-        var content = await contentRepository.GetByIdAsync(contentId, ct).ConfigureAwait(false);
-        if (content == null)
-        {
-            return NotFound();
-        }
-
-        content.SetVirusScanStatus(request.Status, request.ScanResult);
-        await contentRepository.UpdateAsync(content, ct).ConfigureAwait(false);
+        var content = await sender.Send(new UpdateAssetVirusScanStatusCommand(
+            contentId,
+            request.Status,
+            request.ScanResult), ct).ConfigureAwait(false);
+        if (content == null) return NotFound();
 
         return Ok(new { content.Id, content.VirusScanStatus });
     }
@@ -327,14 +324,13 @@ public class AssetsAdminController(
             return Unauthorized();
         }
 
-        var content = await contentRepository.GetByIdAsync(contentId, ct).ConfigureAwait(false);
-        if (content == null)
-        {
-            return NotFound();
-        }
-
-        content.SetModerationStatus(request.Status, Actor.SubjectIdAsGuid.Value, request.Labels, request.Notes);
-        await contentRepository.UpdateAsync(content, ct).ConfigureAwait(false);
+        var content = await sender.Send(new ReviewAssetContentModerationCommand(
+            contentId,
+            request.Status,
+            Actor.SubjectIdAsGuid.Value,
+            request.Labels,
+            request.Notes), ct).ConfigureAwait(false);
+        if (content == null) return NotFound();
 
         return Ok(new
         {

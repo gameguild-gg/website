@@ -1,4 +1,6 @@
+using GameGuild.CQRS;
 using GameGuild.Identity.Context.Actors;
+using GameGuild.Social.Posts.Commands;
 using GameGuild.Social.Posts.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -10,7 +12,10 @@ namespace GameGuild.Social.Posts.Controllers;
 /// </summary>
 [Route("api/v1/posts")]
 [Authorize]
-public class PostInteractionsController(IPostService postService, IActorContextAccessor actorContextAccessor)
+public class PostInteractionsController(
+    IPostService postService,
+    IActorContextAccessor actorContextAccessor,
+    ISender sender)
     : BaseApiController
 {
     private Guid GetCurrentUserId()
@@ -29,7 +34,9 @@ public class PostInteractionsController(IPostService postService, IActorContextA
         if (userId == Guid.Empty)
             return Unauthorized();
 
-        var result = await postService.TogglePostLikeAsync(postId, userId, reactionType, cancellationToken).ConfigureAwait(false);
+        var result = await sender.Send(
+            new TogglePostLikeEndpointCommand(postId, userId, reactionType),
+            cancellationToken).ConfigureAwait(false);
         return result.IsSuccess
             ? Ok(new { Liked = result.Value })
             : BadRequest(result.Error);
@@ -47,7 +54,9 @@ public class PostInteractionsController(IPostService postService, IActorContextA
         if (!canPerform.IsSuccess || !canPerform.Value)
             return Forbid();
 
-        var result = await postService.TogglePostPinAsync(postId, cancellationToken).ConfigureAwait(false);
+        var result = await sender.Send(
+            new TogglePostPinEndpointCommand(postId),
+            cancellationToken).ConfigureAwait(false);
         return result.IsSuccess
             ? Ok(new { Pinned = result.Value })
             : BadRequest(result.Error);
@@ -58,7 +67,9 @@ public class PostInteractionsController(IPostService postService, IActorContextA
     [AllowAnonymous]
     public async Task<IActionResult> Share(Guid postId, CancellationToken cancellationToken = default)
     {
-        var result = await postService.SharePostAsync(postId, cancellationToken).ConfigureAwait(false);
+        var result = await sender.Send(
+            new SharePostEndpointCommand(postId),
+            cancellationToken).ConfigureAwait(false);
         return result.IsSuccess
             ? Ok()
             : BadRequest(result.Error);
@@ -75,13 +86,12 @@ public class PostInteractionsController(IPostService postService, IActorContextA
         CancellationToken cancellationToken = default)
     {
         var userId = GetCurrentUserId();
-        var result = await postService.RecordPostViewAsync(
+        var result = await sender.Send(new RecordPostViewEndpointCommand(
             postId,
             userId == Guid.Empty ? null : userId,
             ipAddress,
             userAgent,
-            referrer,
-            cancellationToken).ConfigureAwait(false);
+            referrer), cancellationToken).ConfigureAwait(false);
 
         return result.IsSuccess
             ? Ok()
@@ -111,14 +121,13 @@ public class PostInteractionsController(IPostService postService, IActorContextA
         if (userId == Guid.Empty)
             return Unauthorized();
 
-        var result = await postService.FollowPostAsync(
+        var result = await sender.Send(new FollowPostEndpointCommand(
             postId,
             userId,
             request?.NotifyOnComments ?? true,
             request?.NotifyOnLikes ?? false,
             request?.NotifyOnShares ?? false,
-            request?.NotifyOnUpdates ?? true,
-            cancellationToken).ConfigureAwait(false);
+            request?.NotifyOnUpdates ?? true), cancellationToken).ConfigureAwait(false);
 
         return result.IsSuccess
             ? Ok(PostMappings.MapFollowerToDto(result.Value!))
@@ -133,7 +142,9 @@ public class PostInteractionsController(IPostService postService, IActorContextA
         if (userId == Guid.Empty)
             return Unauthorized();
 
-        var result = await postService.UnfollowPostAsync(postId, userId, cancellationToken).ConfigureAwait(false);
+        var result = await sender.Send(
+            new UnfollowPostEndpointCommand(postId, userId),
+            cancellationToken).ConfigureAwait(false);
         return result.IsSuccess
             ? NoContent()
             : BadRequest(result.Error);

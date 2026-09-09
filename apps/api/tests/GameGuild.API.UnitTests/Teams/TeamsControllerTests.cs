@@ -246,7 +246,8 @@ public sealed class TeamsControllerTests : IDisposable
     private TeamsController Controller()
     {
         var authorization = new TeamAuthorizationService(_context, _actorAccessor.Object);
-        return new TeamsController(_context, _actorAccessor.Object, authorization, _quotaEnforcer.Object);
+        var sender = new DirectHandlerSender(new TeamEndpointCommandHandler(_context));
+        return new TeamsController(_context, _actorAccessor.Object, authorization, _quotaEnforcer.Object, sender);
     }
 
     private void AddIdentity()

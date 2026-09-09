@@ -1426,6 +1426,8 @@ public class ExtensionsAndModelBranchCoverageCompletionTests
 
     private sealed class ThrowingTypeAssembly(params Type[] loadableTypes) : Assembly
     {
+        public override object[] GetCustomAttributes(Type attributeType, bool inherit) => (object[])Array.CreateInstance(attributeType, 0);
+
         public override Type[] GetTypes()
             => throw new ReflectionTypeLoadException(loadableTypes, loadableTypes.Select(_ => new Exception("load")).ToArray());
     }
@@ -1457,6 +1459,8 @@ public class ExtensionsAndModelBranchCoverageCompletionTests
 
     private sealed class FixedTypeAssembly(params Type[] types) : System.Reflection.Assembly
     {
+        public override object[] GetCustomAttributes(Type attributeType, bool inherit) => (object[])Array.CreateInstance(attributeType, 0);
+
         public override Type[] GetTypes() => types;
     }
 

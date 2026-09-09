@@ -693,7 +693,11 @@ public class AuditControllerCoverageCompletionTests
         return new AuditController(
             auditService ?? Mock.Of<IAuditService>(),
             actorAccessor.Object,
-            NullLogger<AuditController>.Instance);
+            NullLogger<AuditController>.Instance,
+            new CommandHandlerSender(auditService ?? Mock.Of<IAuditService>(), Mock.Of<ISecurityAuditAggregator>(), actorAccessor.Object))
+        {
+            ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }
+        };
     }
 
     private static AuditLog CreateAuditLog(Guid userId, Guid tenantId)
@@ -820,7 +824,8 @@ public class SecurityAuditControllerCoverageCompletionTests
             aggregator ?? Mock.Of<ISecurityAuditAggregator>(),
             auditService ?? Mock.Of<IAuditService>(),
             actorAccessor.Object,
-            NullLogger<SecurityAuditController>.Instance);
+            NullLogger<SecurityAuditController>.Instance,
+            new CommandHandlerSender(aggregator ?? Mock.Of<ISecurityAuditAggregator>(), auditService ?? Mock.Of<IAuditService>(), actorAccessor.Object));
     }
 
     private static ActorContext CreateActor(Guid userId)

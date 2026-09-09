@@ -17,7 +17,7 @@ export class LearningAssessmentsTasksModule {
 
   /**
    */
-  async getMeTasks(): Promise<Result<Types.LearningAssessmentsTasks, ApiError>> {
+  async getMeTasks(): Promise<Result<Types.LearningAssessmentsTasksDto, ApiError>> {
     const url = '/v1/me/tasks';
 
     const result = await this.client.request({
@@ -28,7 +28,7 @@ export class LearningAssessmentsTasksModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.LearningAssessmentsTasksSchema, result.data, 'response');
+      const validatedData = safeParse(Types.LearningAssessmentsTasksDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 

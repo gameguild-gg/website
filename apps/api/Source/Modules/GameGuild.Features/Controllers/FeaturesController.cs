@@ -16,7 +16,7 @@ namespace GameGuild.Features;
 
 [ApiVersion("1.0")]
 [Route("v{version:apiVersion}/features")]
-public sealed class FeaturesController(ISender sender, IFeatureFlagManagementService management) : BaseApiController
+public sealed class FeaturesController(ISender sender) : BaseApiController
 {
     // GET /api/v1/features - Get all feature flags with optional filtering
     [HttpGet]
@@ -86,7 +86,7 @@ public sealed class FeaturesController(ISender sender, IFeatureFlagManagementSer
 
         if (existing is null) return NotFound();
 
-        await management.DeleteFeatureFlagAsync(existing.Id, ct).ConfigureAwait(false);
+        await sender.Send(new DeleteFeatureFlagCommand(existing.Id), ct).ConfigureAwait(false);
 
         return NoContent();
     }

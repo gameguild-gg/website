@@ -913,7 +913,6 @@ public class OAuthAuthServiceTests
             enumeration.Object,
             httpCtx.Object,
             NullLogger<LocalAuthService>.Instance,
-            publisher.Object,
             sender.Object,
             Mock.Of<ISessionManagementService>());
 

@@ -1,5 +1,6 @@
 using Asp.Versioning;
 using GameGuild.API.Authorization;
+using GameGuild.CQRS;
 using GameGuild.Economy.Operations;
 using GameGuild.Economy.Risk;
 using GameGuild.Identity.Authorization;
@@ -29,9 +30,9 @@ public sealed record RollbackLegacyEconomyCutoverRequest(string Reason, string S
 [Tags("economy-legacy-migration-administration")]
 [Authorize]
 public sealed class EconomyLegacyMigrationAdministrationController(
+    ISender sender,
     ILegacyEconomyShadowMigration migration,
     ILegacyEconomyQueryReader queries,
-    IEconomyStepUpExecutor stepUp,
     IActorContextAccessor actorContextAccessor,
     TimeProvider timeProvider) : BaseApiController
 {
@@ -70,13 +71,13 @@ public sealed class EconomyLegacyMigrationAdministrationController(
     {
         if (!TryActor(out var tenantId, out var actorId)) return Forbid();
         ArgumentNullException.ThrowIfNull(request);
-        return await ExecuteAsync(() => migration.CaptureAsync(
+        return await ExecuteAsync(() => sender.Send(new CaptureLegacyEconomyEndpointCommand(
             new CaptureLegacyEconomyShadowCommand(
                 request.BatchId,
                 tenantId,
                 actorId,
                 request.JurisdictionCode,
-                timeProvider.GetUtcNow()),
+                timeProvider.GetUtcNow())),
             cancellationToken), created: true).ConfigureAwait(false);
     }
 
@@ -89,7 +90,7 @@ public sealed class EconomyLegacyMigrationAdministrationController(
     {
         if (!TryActor(out var tenantId, out var actorId)) return Forbid();
         ArgumentNullException.ThrowIfNull(request);
-        return await ExecuteAsync(() => migration.BackfillAsync(
+        return await ExecuteAsync(() => sender.Send(new BackfillLegacyEconomyEndpointCommand(
             new BackfillLegacyEconomyWalletCommand(
                 batchId,
                 tenantId,
@@ -97,7 +98,7 @@ public sealed class EconomyLegacyMigrationAdministrationController(
                 request.LegacyWalletId,
                 request.RiskDecisionId,
                 request.OperationFingerprint,
-                timeProvider.GetUtcNow()),
+                timeProvider.GetUtcNow())),
             cancellationToken)).ConfigureAwait(false);
     }
 
@@ -106,9 +107,9 @@ public sealed class EconomyLegacyMigrationAdministrationController(
     public async Task<IActionResult> Reconcile(Guid batchId, CancellationToken cancellationToken)
     {
         if (!TryActor(out var tenantId, out var actorId)) return Forbid();
-        return await ExecuteAsync(() => migration.ReconcileAsync(
+        return await ExecuteAsync(() => sender.Send(new ReconcileLegacyEconomyEndpointCommand(
             new ReconcileLegacyEconomyShadowCommand(
-                batchId, tenantId, actorId, timeProvider.GetUtcNow()),
+                batchId, tenantId, actorId, timeProvider.GetUtcNow())),
             cancellationToken)).ConfigureAwait(false);
     }
 
@@ -126,20 +127,9 @@ public sealed class EconomyLegacyMigrationAdministrationController(
             $"legacy-cutover:{batchId:N}",
             batchId.ToString("N"),
             request.Reason);
-        return await ExecuteAsync(() => new ValueTask<LegacyEconomyShadowBatchView>(
-            stepUp.ExecuteAsync(
-                operation,
-                request.StepUpReceipt,
-                (evidenceHash, token) => migration.ProposeCutoverAsync(
-                    new ProposeLegacyEconomyCutoverCommand(
-                        batchId,
-                        tenantId,
-                        actorId,
-                        request.Reason,
-                        evidenceHash,
-                        timeProvider.GetUtcNow()),
-                    token).AsTask(),
-                cancellationToken))).ConfigureAwait(false);
+        return await ExecuteAsync(() => sender.Send(new ProposeLegacyEconomyCutoverEndpointCommand(
+            operation, request.StepUpReceipt, batchId, tenantId, actorId, request.Reason),
+            cancellationToken)).ConfigureAwait(false);
     }
 
     [HttpPost("{batchId:guid}/cutover:approve")]
@@ -155,19 +145,9 @@ public sealed class EconomyLegacyMigrationAdministrationController(
             "economy.legacy-cutover.approve",
             $"legacy-cutover:{batchId:N}",
             batchId.ToString("N"));
-        return await ExecuteAsync(() => new ValueTask<LegacyEconomyShadowBatchView>(
-            stepUp.ExecuteAsync(
-                operation,
-                request.StepUpReceipt,
-                (evidenceHash, token) => migration.ApproveCutoverAsync(
-                    new ApproveLegacyEconomyCutoverCommand(
-                        batchId,
-                        tenantId,
-                        actorId,
-                        evidenceHash,
-                        timeProvider.GetUtcNow()),
-                    token).AsTask(),
-                cancellationToken))).ConfigureAwait(false);
+        return await ExecuteAsync(() => sender.Send(new ApproveLegacyEconomyCutoverEndpointCommand(
+            operation, request.StepUpReceipt, batchId, tenantId, actorId),
+            cancellationToken)).ConfigureAwait(false);
     }
 
     [HttpPost("{batchId:guid}/cutover:rollback")]
@@ -184,24 +164,13 @@ public sealed class EconomyLegacyMigrationAdministrationController(
             $"legacy-cutover:{batchId:N}",
             batchId.ToString("N"),
             request.Reason);
-        return await ExecuteAsync(() => new ValueTask<LegacyEconomyShadowBatchView>(
-            stepUp.ExecuteAsync(
-                operation,
-                request.StepUpReceipt,
-                (evidenceHash, token) => migration.RollbackCutoverAsync(
-                    new RollbackLegacyEconomyCutoverCommand(
-                        batchId,
-                        tenantId,
-                        actorId,
-                        request.Reason,
-                        evidenceHash,
-                        timeProvider.GetUtcNow()),
-                    token).AsTask(),
-                cancellationToken))).ConfigureAwait(false);
+        return await ExecuteAsync(() => sender.Send(new RollbackLegacyEconomyCutoverEndpointCommand(
+            operation, request.StepUpReceipt, batchId, tenantId, actorId, request.Reason),
+            cancellationToken)).ConfigureAwait(false);
     }
 
     private async Task<IActionResult> ExecuteAsync(
-        Func<ValueTask<LegacyEconomyShadowBatchView>> action,
+        Func<Task<LegacyEconomyShadowBatchView>> action,
         bool created = false)
     {
         try

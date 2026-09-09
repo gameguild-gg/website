@@ -97,7 +97,7 @@ public class SendEmailVerificationRequestedHandlerTests
         TestLogger<SendEmailVerificationRequestedHandler> logger,
         User? user = null)
     {
-        var service = new Mock<INotificationService>();
+        var service = NotificationQueueStub.Success();
         var userRepo = new Mock<IUserRepository>();
         userRepo
             .Setup(r => r.GetByEmailAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
@@ -160,7 +160,7 @@ public class SendEmailVerificationRequestedHandlerTests
     }
 
     [Fact]
-    public async Task Handle_ShouldNotThrow_WhenNotificationServiceFails()
+    public async Task Handle_ShouldThrow_WhenNotificationServiceFails()
     {
         var logger = new TestLogger<SendEmailVerificationRequestedHandler>();
         var (handler, service) = CreateSubject(logger, new User { Id = UserId, Email = "user@example.com" });
@@ -178,7 +178,7 @@ public class SendEmailVerificationRequestedHandlerTests
 
         var act = () => handler.Handle(notification, CancellationToken.None);
 
-        await act.Should().NotThrowAsync();
+        await act.Should().ThrowAsync<InvalidOperationException>();
         logger.Entries.Should().ContainSingle(entry =>
             entry.Level == LogLevel.Error &&
             entry.Message.Contains("user@example.com"));
@@ -193,8 +193,8 @@ public class SendWelcomeEmailHandlerTests
     public async Task Handle_ShouldCreateOnboardingRow_WithDisplayNameMetadata()
     {
         var logger = new TestLogger<SendWelcomeEmailHandler>();
-        var service = new Mock<INotificationService>();
-        var handler = new SendWelcomeEmailHandler(logger, service.Object);
+        var service = NotificationQueueStub.Success();
+        var handler = new SendWelcomeEmailHandler(logger, service.Object, Mock.Of<IUserRepository>());
         var notification = new UserSignedUpNotification
         {
             UserId = UserId,
@@ -225,16 +225,16 @@ public class SendWelcomeEmailHandlerTests
     }
 
     [Fact]
-    public async Task Handle_ShouldNotThrow_WhenNotificationServiceFails()
+    public async Task Handle_ShouldThrow_WhenNotificationServiceFails()
     {
         var logger = new TestLogger<SendWelcomeEmailHandler>();
-        var service = new Mock<INotificationService>();
+        var service = NotificationQueueStub.Success();
         service
             .Setup(s => s.SendAsync(It.IsAny<Guid>(), It.IsAny<NotificationType>(), It.IsAny<string>(), It.IsAny<string>(),
                 It.IsAny<NotificationChannel>(), It.IsAny<Guid?>(), It.IsAny<string?>(), It.IsAny<NotificationPriority>(),
                 It.IsAny<Guid?>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("notifications offline"));
-        var handler = new SendWelcomeEmailHandler(logger, service.Object);
+        var handler = new SendWelcomeEmailHandler(logger, service.Object, Mock.Of<IUserRepository>());
         var notification = new UserSignedUpNotification
         {
             UserId = UserId,
@@ -244,7 +244,7 @@ public class SendWelcomeEmailHandlerTests
 
         var act = () => handler.Handle(notification, CancellationToken.None);
 
-        await act.Should().NotThrowAsync();
+        await act.Should().ThrowAsync<InvalidOperationException>();
         logger.Entries.Should().ContainSingle(entry =>
             entry.Level == LogLevel.Warning &&
             entry.Message.Contains("user@example.com"));
@@ -259,7 +259,7 @@ public class SendPasswordResetRequestedHandlerTests
     public async Task Handle_ShouldCreatePasswordResetRow_WithTokenMetadata()
     {
         var logger = new TestLogger<SendPasswordResetRequestedHandler>();
-        var service = new Mock<INotificationService>();
+        var service = NotificationQueueStub.Success();
         var userRepo = new Mock<IUserRepository>();
         userRepo
             .Setup(r => r.GetByEmailAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
@@ -295,10 +295,10 @@ public class SendPasswordResetRequestedHandlerTests
     }
 
     [Fact]
-    public async Task Handle_ShouldNotThrow_WhenNotificationServiceFails()
+    public async Task Handle_ShouldThrow_WhenNotificationServiceFails()
     {
         var logger = new TestLogger<SendPasswordResetRequestedHandler>();
-        var service = new Mock<INotificationService>();
+        var service = NotificationQueueStub.Success();
         var userRepo = new Mock<IUserRepository>();
         userRepo
             .Setup(r => r.GetByEmailAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
@@ -318,7 +318,7 @@ public class SendPasswordResetRequestedHandlerTests
 
         var act = () => handler.Handle(notification, CancellationToken.None);
 
-        await act.Should().NotThrowAsync();
+        await act.Should().ThrowAsync<InvalidOperationException>();
         logger.Entries.Should().ContainSingle(entry =>
             entry.Level == LogLevel.Error &&
             entry.Message.Contains("user@example.com"));
@@ -333,7 +333,7 @@ public class SendMagicLinkRequestedHandlerTests
     public async Task Handle_ShouldCreateMagicLinkRow_WithTokenMetadata()
     {
         var logger = new TestLogger<SendMagicLinkRequestedHandler>();
-        var service = new Mock<INotificationService>();
+        var service = NotificationQueueStub.Success();
         var userRepo = new Mock<IUserRepository>();
         userRepo
             .Setup(r => r.GetByEmailAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
@@ -370,10 +370,10 @@ public class SendMagicLinkRequestedHandlerTests
     }
 
     [Fact]
-    public async Task Handle_ShouldNotThrow_WhenNotificationServiceFails()
+    public async Task Handle_ShouldThrow_WhenNotificationServiceFails()
     {
         var logger = new TestLogger<SendMagicLinkRequestedHandler>();
-        var service = new Mock<INotificationService>();
+        var service = NotificationQueueStub.Success();
         var userRepo = new Mock<IUserRepository>();
         userRepo
             .Setup(r => r.GetByEmailAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
@@ -393,7 +393,7 @@ public class SendMagicLinkRequestedHandlerTests
 
         var act = () => handler.Handle(notification, CancellationToken.None);
 
-        await act.Should().NotThrowAsync();
+        await act.Should().ThrowAsync<InvalidOperationException>();
         logger.Entries.Should().ContainSingle(entry =>
             entry.Level == LogLevel.Error &&
             entry.Message.Contains("user@example.com"));

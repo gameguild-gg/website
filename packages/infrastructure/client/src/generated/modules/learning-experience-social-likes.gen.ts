@@ -17,7 +17,7 @@ export class LearningExperienceSocialLikesModule {
 
   /**
    */
-  async postApiSocialCoursesLike(courseId: string): Promise<Result<Types.LearningExperienceSocialServicesCourseLike, ApiError>> {
+  async postApiSocialCoursesLike(courseId: string): Promise<Result<Types.LearningExperienceSocialServicesCourseLikeDto, ApiError>> {
     const url = `/api/social/courses/${courseId}/like`;
 
     const result = await this.client.request({
@@ -28,7 +28,7 @@ export class LearningExperienceSocialLikesModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.LearningExperienceSocialServicesCourseLikeSchema, result.data, 'response');
+      const validatedData = safeParse(Types.LearningExperienceSocialServicesCourseLikeDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -79,7 +79,7 @@ export class LearningExperienceSocialLikesModule {
 
   /**
    */
-  async getApiSocialLikesMe(query?: { skip?: number; take?: number }): Promise<Result<Array<Types.LearningExperienceSocialServicesCourseLike>, ApiError>> {
+  async getApiSocialLikesMe(query?: { skip?: number; take?: number }): Promise<Result<Array<Types.LearningExperienceSocialServicesCourseLikeDto>, ApiError>> {
     const url = '/api/social/likes/me';
 
     const result = await this.client.request({
@@ -89,7 +89,7 @@ export class LearningExperienceSocialLikesModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.LearningExperienceSocialServicesCourseLike>, ApiError>;
+    return result as Result<Array<Types.LearningExperienceSocialServicesCourseLikeDto>, ApiError>;
   }
 }
 

@@ -564,6 +564,24 @@ export const getTestingSessionDetail = cache(async (sessionId: string): Promise<
   };
 });
 
+export interface TestingLabSettingsData {
+  settings: TestingLabTestingLabSettings | null;
+  accessIssues: string[];
+}
+
+export const getTestingLabSettings = cache(async (): Promise<TestingLabSettingsData> => {
+  const api = createTestingLabModules();
+  const settings = await readResult(
+    api.settings.getApiTestingLabSettings(),
+    'Testing Lab settings',
+  );
+
+  return {
+    settings: settings.data,
+    accessIssues: settings.issue ? [settings.issue] : [],
+  };
+});
+
 export interface TestingLabAdministrationData {
   settings: TestingLabTestingLabSettings | null;
   roles: TestingLabTestingLabRoleTemplate[];

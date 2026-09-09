@@ -7,20 +7,20 @@ export async function FeaturedProjects(): Promise<React.JSX.Element> {
   const projects = (await getPublishedProjects()).slice(0, 5);
 
   return (
-    <div className="rounded-3xl border border-white/10 bg-slate-900/70 p-6">
+    <div className="rounded-3xl border border-border bg-card p-6 text-card-foreground">
       <h2 className="text-xl font-semibold">Featured projects</h2>
       <div className="mt-5 space-y-3">
         {projects.length === 0 ? (
-          <p className="text-sm text-slate-400">Published projects will appear here.</p>
+          <p className="text-sm text-muted-foreground">Published projects will appear here.</p>
         ) : (
           projects.map((project) => (
             <Link
               key={project.slug}
               href={`/projects/${project.slug}`}
-              className="group flex items-center justify-between gap-4 rounded-2xl border border-white/10 bg-white/[0.03] p-4 transition hover:border-white/20"
+              className="group flex items-center justify-between gap-4 rounded-2xl border border-border bg-accent/30 p-4 transition hover:border-primary/30"
             >
-              <span className="text-sm font-semibold text-white">{project.title}</span>
-              <ArrowRight className="size-4 text-sky-200 transition group-hover:translate-x-1" aria-hidden="true" />
+              <span className="text-sm font-semibold text-foreground">{project.title}</span>
+              <ArrowRight className="size-4 text-primary transition group-hover:translate-x-1" aria-hidden="true" />
             </Link>
           ))
         )}

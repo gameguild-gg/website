@@ -6,6 +6,7 @@ using GameGuild.API.HostedServices;
 using GameGuild.Commerce.Billing;
 using GameGuild.Commerce.Payments;
 using GameGuild.Compliance.FERPA;
+using GameGuild.Compliance.KYC;
 using GameGuild.Economy;
 using GameGuild.Economy.AdRewards;
 using GameGuild.Economy.Bounties;
@@ -24,6 +25,7 @@ using GameGuild.Learning.Experience.Discovery;
 using GameGuild.Learning.Experience.LearningPaths;
 using GameGuild.Learning.Experience.Recommendations;
 using GameGuild.Learning.Workspaces;
+using GameGuild.Lti;
 using GameGuild.ProjectWork;
 using GameGuild.Projects;
 using GameGuild.Social.Blog;
@@ -70,6 +72,7 @@ internal sealed class ApiProductComposition : IApiProductComposition
         "Learning.Experience.Social",
         "Learning.TestingLab",
         "Learning.Workspaces",
+        "Lti",
         "Projects",
         "ProjectWork",
         "Social.Announcements",
@@ -92,8 +95,10 @@ internal sealed class ApiProductComposition : IApiProductComposition
     public void ConfigureServices(WebApplicationBuilder builder)
     {
         builder.Services.AddFerpaModule();
+        builder.Services.AddKycComposition(builder.Configuration);
         builder.Services.AddEconomyCapabilityComposition(builder.Configuration);
         builder.Services.AddEconomyCoreComposition(builder.Configuration);
+        builder.Services.AddScoped<global::GameGuild.Compliance.KYC.IKycEvidenceStore, global::GameGuild.API.Core.Integration.EconomyKycEvidenceStore>();
         builder.Services.AddScoped<IEconomyStepUpExecutor, EconomyStepUpExecutor>();
         builder.Services.AddScoped<IAdRewardRequestRiskContextResolver, AdRewardRequestRiskContextResolver>();
         builder.Services.AddAdRewardsComposition(builder.Configuration);
@@ -113,6 +118,7 @@ internal sealed class ApiProductComposition : IApiProductComposition
         builder.Services.AddCohortsModule();
         builder.Services.AddCertificatesModule();
         builder.Services.AddLearningWorkspacesModule();
+        builder.Services.AddLtiModule();
         builder.Services.AddDiscoveryModule();
         builder.Services.AddLearningPathsModule();
         builder.Services.AddRecommendationsModule();

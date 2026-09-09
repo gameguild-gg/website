@@ -17,11 +17,13 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
   SidebarRail,
+  useSidebar,
 } from '@game-guild/ui/components/sidebar';
 import {
   Accessibility,
   BarChart3,
   BookOpen,
+  CalendarDays,
   ChevronRight,
   ClipboardList,
   CircleDollarSign,
@@ -30,12 +32,13 @@ import {
   FolderOpen,
   HeadphonesIcon,
   LayoutDashboard,
-  MapPin,
+  List,
   FolderKanban,
   Globe2,
   MailCheck,
   Palette,
-  MessageSquareText,
+  PanelLeftClose,
+  PanelLeftOpen,
   Rocket,
   Settings,
   ShieldCheck,
@@ -45,9 +48,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import * as React from 'react';
-import type { DashboardContextSummary } from '@/lib/dashboard-contexts';
 import { GraduationCap } from 'lucide-react';
-import { ContextSwitcher } from './team-switcher';
 import { TenantSwitcher, type Tenant } from './tenant-switcher';
 
 // Types for navigation structure
@@ -86,7 +87,7 @@ export interface DashboardNavGroup {
 // Routes map to: /[locale]/(dashboard)/dashboard/...
 export const dashboardNavigationData: DashboardNavGroup[] = [
   {
-    label: 'My Workspace',
+    label: 'Workspace',
     items: [
       {
         title: 'Home',
@@ -133,7 +134,7 @@ export const dashboardNavigationData: DashboardNavGroup[] = [
     ],
   },
   {
-    label: 'Community administration',
+    label: 'Community Management',
     items: [
       {
         title: 'Overview',
@@ -201,9 +202,9 @@ export const dashboardNavigationData: DashboardNavGroup[] = [
         ],
         subGroups: [
           {
-            title: 'Overview',
-            url: '/console/community/testing-lab',
-            icon: LayoutDashboard,
+            title: 'Calendar',
+            url: '/workspace/testing-lab',
+            icon: CalendarDays,
             items: [],
             requiredCapabilities: [
               'TestingLab.ManageEvents',
@@ -215,67 +216,21 @@ export const dashboardNavigationData: DashboardNavGroup[] = [
             ],
           },
           {
-            title: 'Events',
-            url: '/console/community/testing-lab/events',
-            icon: FlaskConical,
+            title: 'Sessions',
+            url: '/workspace/testing-lab/events',
+            icon: List,
             items: [],
             requiredCapabilities: ['TestingLab.ManageEvents'],
           },
           {
-            title: 'Applications',
-            url: '/console/community/testing-lab/applications',
-            icon: ClipboardList,
-            items: [],
-            requiredCapabilities: ['TestingLab.ReviewApplications'],
-          },
-          {
-            title: 'Projects',
-            url: '/console/community/testing-lab/projects',
-            icon: FolderKanban,
-            items: [],
-            requiredCapabilities: ['TestingLab.ReviewApplications'],
-          },
-          {
-            title: 'Participants',
-            url: '/console/community/testing-lab/participants',
-            icon: Users,
-            items: [],
-            requiredCapabilities: ['TestingLab.ManageParticipants'],
-          },
-          {
-            title: 'Feedback',
-            url: '/console/community/testing-lab/feedback',
-            icon: MessageSquareText,
-            items: [],
-            requiredCapabilities: ['TestingLab.ManageFeedback'],
-          },
-          {
-            title: 'Analytics',
-            url: '/console/community/testing-lab/analytics',
-            icon: BarChart3,
-            items: [],
-            requiredCapabilities: ['TestingLab.ViewAnalytics'],
-          },
-          {
-            title: 'Locations',
-            url: '/console/community/testing-lab/locations',
-            icon: MapPin,
-            items: [],
-            requiredCapabilities: ['TestingLab.ManageSettings'],
-          },
-          {
-            title: 'Access',
-            url: '/console/community/testing-lab/access',
-            icon: ShieldCheck,
-            items: [],
-            requiredCapabilities: ['TestingLab.ManageSettings'],
-          },
-          {
             title: 'Settings',
-            url: '/console/community/testing-lab/settings',
+            url: '/workspace/testing-lab/settings',
             icon: Settings,
             items: [],
-            requiredCapabilities: ['TestingLab.ManageSettings'],
+            requiredCapabilities: [
+              'TestingLab.ManageSettings',
+              'TestingLab.ViewAnalytics',
+            ],
           },
         ],
       },
@@ -566,7 +521,12 @@ function NavGroups({ groups }: { groups: DashboardNavGroup[] }) {
                         <CollapsibleContent>
                           <SidebarMenuSub>
                             {item.subGroups!.map((subGroup) => {
-                              const isActive = pathname === subGroup.url || pathname?.endsWith(subGroup.url ?? '');
+                              const isActive = Boolean(
+                                subGroup.url &&
+                                  (pathname === subGroup.url ||
+                                    (subGroup.url !== '/workspace/testing-lab' &&
+                                      pathname?.startsWith(`${subGroup.url}/`))),
+                              );
                               const SubIcon = subGroup.icon;
                               return (
                                 <SidebarMenuSubItem key={subGroup.title}>
@@ -598,7 +558,6 @@ function NavGroups({ groups }: { groups: DashboardNavGroup[] }) {
 
 interface DashboardSidebarProps extends React.ComponentProps<typeof Sidebar> {
   navigation?: DashboardNavGroup[];
-  contexts?: readonly DashboardContextSummary[];
 }
 
 /** Default console tenant — GameGuild platform until multi-tenant switching ships. */
@@ -606,21 +565,57 @@ const consoleTenants: Tenant[] = [
   { id: 'gameguild', name: 'GameGuild', logo: GraduationCap, plan: 'Platform' },
 ];
 
+export function DashboardSidebarFooter() {
+  const pathname = usePathname();
+  const { isMobile, openMobile, state, toggleSidebar } = useSidebar();
+  const isWorkspace = pathname?.startsWith('/workspace') ?? false;
+
+  if (!isWorkspace) {
+    return <SidebarFooter />;
+  }
+
+  const expanded = isMobile ? openMobile : state === 'expanded';
+  const label = isMobile
+    ? expanded
+      ? 'Close sidebar'
+      : 'Open sidebar'
+    : expanded
+      ? 'Collapse sidebar'
+      : 'Expand sidebar';
+  const Icon = expanded ? PanelLeftClose : PanelLeftOpen;
+
+  return (
+    <SidebarFooter>
+      <SidebarMenu>
+        <SidebarMenuItem>
+          <SidebarMenuButton
+            type="button"
+            onClick={toggleSidebar}
+            aria-label={label}
+            title={label}
+            tooltip={label}
+          >
+            <Icon aria-hidden="true" />
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+      </SidebarMenu>
+    </SidebarFooter>
+  );
+}
+
 export function DashboardSidebar({
   navigation = filterDashboardNavigation(dashboardNavigationData, []),
-  contexts = [],
   ...props
 }: DashboardSidebarProps) {
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
         <TenantSwitcher tenants={consoleTenants} />
-        <ContextSwitcher contexts={contexts} />
       </SidebarHeader>
       <SidebarContent className="gap-0">
         <NavGroups groups={navigation} />
       </SidebarContent>
-      <SidebarFooter />
+      <DashboardSidebarFooter />
       <SidebarRail />
     </Sidebar>
   );

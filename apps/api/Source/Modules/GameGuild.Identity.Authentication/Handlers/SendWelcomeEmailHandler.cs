@@ -1,5 +1,6 @@
 using System.Text.Json;
 using GameGuild.CQRS;
+using GameGuild.Identity.Users;
 using GameGuild.Notifications;
 using GameGuild.Notifications.Services;
 using Microsoft.Extensions.Logging;
@@ -11,8 +12,25 @@ namespace GameGuild.Identity.Authentication;
 /// </summary>
 public sealed class SendWelcomeEmailHandler(
     ILogger<SendWelcomeEmailHandler> logger,
-    INotificationService notificationService) : INotificationHandler<UserSignedUpNotification>
+    INotificationService notificationService,
+    IUserRepository userRepository) : INotificationHandler<UserSignedUpNotification>, IIntegrationEventHandler<UserCreatedEvent>
 {
+    public async Task HandleAsync(UserCreatedEvent @event, CancellationToken cancellationToken = default)
+    {
+        // The durable payload contains IDs only; personal data is loaded inside the listener.
+        var user = await userRepository.GetByIdAsync(@event.UserId, cancellationToken).ConfigureAwait(false);
+        if (user is null || user.IsDeleted)
+            return; // A deleted account must not receive a delayed welcome email.
+
+        await Handle(new UserSignedUpNotification
+        {
+            UserId = user.Id,
+            Email = user.Email,
+            Username = user.Name,
+            TenantId = @event.TenantId
+        }, cancellationToken).ConfigureAwait(false);
+    }
+
     public async Task Handle(UserSignedUpNotification notification, CancellationToken cancellationToken)
     {
         try
@@ -25,7 +43,7 @@ public sealed class SendWelcomeEmailHandler(
                 email = notification.Email
             });
 
-            await notificationService.SendAsync(
+            var result = await notificationService.SendAsync(
                 notification.UserId,
                 NotificationType.Onboarding,
                 "Welcome to GameGuild",
@@ -35,11 +53,15 @@ public sealed class SendWelcomeEmailHandler(
                 metadata: metadata,
                 cancellationToken: cancellationToken).ConfigureAwait(false);
 
+            if (result is null || result.IsFailure)
+                throw new InvalidOperationException("Welcome notification was not durably queued.");
+
             logger.LogInformation("Welcome email queued for {Email} (ID: {UserId})", notification.Email, notification.UserId);
         }
         catch (Exception ex)
         {
             logger.LogWarning(ex, "Welcome email queueing failed for user {Email} (ID: {UserId})", notification.Email, notification.UserId);
+            throw; // The asynchronous outbox retries; never acknowledge a lost queue write.
         }
     }
 }

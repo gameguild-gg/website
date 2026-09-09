@@ -23,17 +23,20 @@ public class AssetsCdnController : BaseApiController
     private readonly IAssetStorageService _storageService;
     private readonly IAssetContentRepository _contentRepository;
     private readonly IAssetReferenceRepository _referenceRepository;
+    private readonly IDurableEventProducer? _durableEventProducer;
 
     public AssetsCdnController(
         IAssetAccessService accessService,
         IAssetStorageService storageService,
         IAssetContentRepository contentRepository,
-        IAssetReferenceRepository referenceRepository)
+        IAssetReferenceRepository referenceRepository,
+        IDurableEventProducer? durableEventProducer = null)
     {
         _accessService = accessService;
         _storageService = storageService;
         _contentRepository = contentRepository;
         _referenceRepository = referenceRepository;
+        _durableEventProducer = durableEventProducer;
     }
 
     /// <summary>
@@ -83,6 +86,7 @@ public class AssetsCdnController : BaseApiController
 
         // Stream content
         var stream = await _storageService.DownloadAsync(content.BucketName, content.ObjectKey, ct).ConfigureAwait(false);
+        await RecordServedAsync(reference, content.Id, content.SizeBytes, "cdn-path", ct).ConfigureAwait(false);
 
         // Set cache headers for CDN
         Response.Headers.CacheControl = "public, max-age=86400"; // 24 hours
@@ -145,6 +149,7 @@ public class AssetsCdnController : BaseApiController
 
         // Stream content
         var stream = await _storageService.DownloadAsync(content.BucketName, content.ObjectKey, ct).ConfigureAwait(false);
+        await RecordServedAsync(reference, content.Id, content.SizeBytes, "cdn-ephemeral", ct).ConfigureAwait(false);
 
         // Set cache headers (shorter for ephemeral)
         Response.Headers.CacheControl = "private, max-age=300"; // 5 minutes
@@ -220,6 +225,8 @@ public class AssetsCdnController : BaseApiController
             transformedAsset.BucketName,
             transformedAsset.ObjectKey,
             ct).ConfigureAwait(false);
+        await RecordServedAsync(reference, transformedAsset.Id, transformedAsset.SizeBytes, "cdn-transformed", ct)
+            .ConfigureAwait(false);
 
         // Set aggressive cache headers for transformed assets
         Response.Headers.CacheControl = "public, max-age=604800, immutable"; // 7 days, immutable
@@ -227,4 +234,22 @@ public class AssetsCdnController : BaseApiController
 
         return File(stream, transformedAsset.MimeType);
     }
+
+    private Task RecordServedAsync(
+        AssetReference reference,
+        Guid contentId,
+        long byteCount,
+        string deliveryUnit,
+        CancellationToken ct) => _durableEventProducer?.RecordAsync(new AssetServedEvent(
+            reference.Id,
+            contentId,
+            byteCount,
+            deliveryUnit)
+        {
+            TenantId = reference.TenantId ?? DurableIntegrationEventTenants.Platform,
+            ActorId = DurableIntegrationEventActors.System,
+            AggregateType = nameof(AssetReference),
+            AggregateId = reference.Id.ToString(),
+            CorrelationId = Guid.NewGuid()
+        }, ct) ?? Task.CompletedTask;
 }

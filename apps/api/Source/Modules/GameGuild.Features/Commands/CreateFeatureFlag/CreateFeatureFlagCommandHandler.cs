@@ -9,7 +9,7 @@ namespace GameGuild.Features;
 public sealed class CreateFeatureFlagCommandHandler(
     IFeatureFlagQueryRepository repository,
     ILogger<CreateFeatureFlagCommandHandler> logger
-) : IRequestHandler<CreateFeatureFlagCommand, Guid>
+) : ICommandHandler<CreateFeatureFlagCommand, Guid>
 {
     public async Task<Guid> Handle(CreateFeatureFlagCommand request, CancellationToken cancellationToken)
     {

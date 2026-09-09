@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Asp.Versioning;
 using GameGuild.API.Authorization;
+using GameGuild.CQRS;
 using GameGuild.Economy.Ledger;
 using GameGuild.Economy.Operations;
 using GameGuild.Economy.Projections;
@@ -58,16 +59,10 @@ public sealed record ProposeEconomyReserveRequest(
 [Tags("economy-administration")]
 [Authorize]
 public sealed class EconomyControlPlaneAdministrationController(
-    IEconomyCapabilityPolicyStore policies,
+    ISender sender,
     IEconomyCapabilityReadinessInspector capabilityReadiness,
     IEconomyOperationsReader operations,
-    IEconomyKillSwitchStore killSwitches,
-    IJournalIntegrityService journal,
-    IEconomyAnchorPublisher anchors,
-    IEconomyAnchorVerificationService anchorVerification,
-    IEconomyProjectionGenerationService projections,
     IEconomyReserveCustodyControlPlane reserves,
-    IEconomyStepUpExecutor stepUp,
     IActorContextAccessor actorContextAccessor,
     TimeProvider timeProvider) : BaseApiController
 {
@@ -80,7 +75,7 @@ public sealed class EconomyControlPlaneAdministrationController(
         if (!TryActor(EconomyPermission.Keys.ManagePolicies, out var tenantId, out var actorId)) return Forbid();
         ArgumentNullException.ThrowIfNull(request);
         var now = timeProvider.GetUtcNow();
-        var policy = await policies.ProposeAsync(new EconomyCapabilityPolicyProposal(
+        var policy = await sender.Send(new ProposeEconomyPolicyEndpointCommand(new EconomyCapabilityPolicyProposal(
             request.Id,
             tenantId,
             request.Capability,
@@ -91,7 +86,7 @@ public sealed class EconomyControlPlaneAdministrationController(
             now,
             request.EffectiveAt,
             request.ExpiresAt,
-            request.ProviderReady), cancellationToken).ConfigureAwait(false);
+            request.ProviderReady)), cancellationToken).ConfigureAwait(false);
         return StatusCode(StatusCodes.Status201Created, policy);
     }
 
@@ -108,19 +103,16 @@ public sealed class EconomyControlPlaneAdministrationController(
             "economy.policy.approve",
             $"policy:{policyId:N}",
             policyId.ToString("N"));
-        return Ok(await stepUp.ExecuteAsync(
+        return Ok(await sender.Send(new ApproveEconomyPolicyEndpointCommand(
             operation,
             request.StepUpReceipt,
-            (evidenceHash, token) => policies.ApproveAsync(
-                policyId,
-                actorId,
-                evidenceHash,
-                timeProvider.GetUtcNow(),
-                token).AsTask(),
+            policyId,
+            actorId),
             cancellationToken).ConfigureAwait(false));
     }
 
     [HttpPost("capabilities/readiness")]
+    [NoBusinessMutationEndpoint("Capability readiness inspection is read-only and uses POST for its structured evaluation context.")]
     [ProducesResponseType(typeof(EconomyCapabilityEvaluationResult), StatusCodes.Status200OK)]
     public async Task<IActionResult> InspectCapabilityReadiness(
         [FromBody] InspectEconomyCapabilityReadinessRequest request,
@@ -170,12 +162,12 @@ public sealed class EconomyControlPlaneAdministrationController(
         var scope = request.Capability.HasValue
             ? EconomyKillSwitchScope.ForCapability(tenantId, request.Capability.Value)
             : EconomyKillSwitchScope.ForTenant(tenantId);
-        var state = await killSwitches.ActivateAsync(
+        var state = await sender.Send(new ActivateEconomyKillSwitchEndpointCommand(
             request.Id,
             scope,
             request.Reason,
             actorId,
-            timeProvider.GetUtcNow(),
+            timeProvider.GetUtcNow()),
             cancellationToken).ConfigureAwait(false);
         return StatusCode(StatusCodes.Status201Created, state);
     }
@@ -192,15 +184,11 @@ public sealed class EconomyControlPlaneAdministrationController(
             "economy.kill-switch.release.propose",
             $"kill-switch:{killSwitchId:N}",
             killSwitchId.ToString("N"));
-        return Ok(await stepUp.ExecuteAsync(
+        return Ok(await sender.Send(new ProposeEconomyKillSwitchReleaseEndpointCommand(
             operation,
             request.StepUpReceipt,
-            (evidenceHash, token) => killSwitches.ProposeReleaseAsync(
-                killSwitchId,
-                actorId,
-                evidenceHash,
-                timeProvider.GetUtcNow(),
-                token).AsTask(),
+            killSwitchId,
+            actorId),
             cancellationToken).ConfigureAwait(false));
     }
 
@@ -216,15 +204,11 @@ public sealed class EconomyControlPlaneAdministrationController(
             "economy.kill-switch.release.approve",
             $"kill-switch:{killSwitchId:N}",
             killSwitchId.ToString("N"));
-        return Ok(await stepUp.ExecuteAsync(
+        return Ok(await sender.Send(new ApproveEconomyKillSwitchReleaseEndpointCommand(
             operation,
             request.StepUpReceipt,
-            (evidenceHash, token) => killSwitches.ApproveReleaseAsync(
-                killSwitchId,
-                actorId,
-                evidenceHash,
-                timeProvider.GetUtcNow(),
-                token).AsTask(),
+            killSwitchId,
+            actorId),
             cancellationToken).ConfigureAwait(false));
     }
 
@@ -233,9 +217,9 @@ public sealed class EconomyControlPlaneAdministrationController(
     public async Task<IActionResult> ReleaseKillSwitch(Guid killSwitchId, CancellationToken cancellationToken)
     {
         if (!TryActor(EconomyPermission.Keys.ManageKillSwitches, out _, out _)) return Forbid();
-        return Ok(await killSwitches.TryReleaseAsync(
+        return Ok(await sender.Send(new ReleaseEconomyKillSwitchEndpointCommand(
             killSwitchId,
-            timeProvider.GetUtcNow(),
+            timeProvider.GetUtcNow()),
             cancellationToken).ConfigureAwait(false));
     }
 
@@ -244,10 +228,10 @@ public sealed class EconomyControlPlaneAdministrationController(
     public async Task<IActionResult> VerifyJournal(CancellationToken cancellationToken)
     {
         if (!TryActor(EconomyPermission.Keys.OperateLedger, out _, out var actorId)) return Forbid();
-        var result = await journal.RunIncrementAsync(
+        var result = await sender.Send(new VerifyEconomyJournalEndpointCommand(
             $"admin:{actorId:N}",
             timeProvider.GetUtcNow(),
-            10_000,
+            10_000),
             cancellationToken).ConfigureAwait(false);
         return Ok(result);
     }
@@ -269,10 +253,10 @@ public sealed class EconomyControlPlaneAdministrationController(
         CancellationToken cancellationToken)
     {
         if (!TryActor(EconomyPermission.Keys.OperateLedger, out _, out _)) return Forbid();
-        var result = await anchors.PublishIfDueAsync(
+        var result = await sender.Send(new PublishEconomyAnchorEndpointCommand(
             timeProvider.GetUtcNow(),
             true,
-            request.DispatchSnapshotHash,
+            request.DispatchSnapshotHash),
             cancellationToken).ConfigureAwait(false);
         return result is null ? NoContent() : Ok(result);
     }
@@ -282,8 +266,8 @@ public sealed class EconomyControlPlaneAdministrationController(
     public async Task<IActionResult> VerifyAnchors(CancellationToken cancellationToken)
     {
         if (!TryActor(EconomyPermission.Keys.OperateLedger, out _, out _)) return Forbid();
-        return Ok(await anchorVerification.VerifyPublishedAnchorsAsync(
-            timeProvider.GetUtcNow(), cancellationToken).ConfigureAwait(false));
+        return Ok(await sender.Send(new VerifyEconomyAnchorsEndpointCommand(
+            timeProvider.GetUtcNow()), cancellationToken).ConfigureAwait(false));
     }
 
     [HttpPost("ledger/projection-generations")]
@@ -291,8 +275,8 @@ public sealed class EconomyControlPlaneAdministrationController(
     public async Task<IActionResult> RebuildProjections(CancellationToken cancellationToken)
     {
         if (!TryActor(EconomyPermission.Keys.OperateLedger, out _, out var actorId)) return Forbid();
-        var generation = await projections.RebuildAsync(
-            actorId, timeProvider.GetUtcNow(), cancellationToken).ConfigureAwait(false);
+        var generation = await sender.Send(new RebuildEconomyProjectionsEndpointCommand(
+            actorId, timeProvider.GetUtcNow()), cancellationToken).ConfigureAwait(false);
         return StatusCode(StatusCodes.Status201Created, generation);
     }
 
@@ -308,15 +292,11 @@ public sealed class EconomyControlPlaneAdministrationController(
             "economy.projection.approve",
             $"projection:{generation}",
             generation.ToString(System.Globalization.CultureInfo.InvariantCulture));
-        return Ok(await stepUp.ExecuteAsync(
+        return Ok(await sender.Send(new ApproveEconomyProjectionEndpointCommand(
             operation,
             request.StepUpReceipt,
-            (evidenceHash, token) => projections.ApproveAndTryActivateAsync(
-                generation,
-                actorId,
-                evidenceHash,
-                timeProvider.GetUtcNow(),
-                token).AsTask(),
+            generation,
+            actorId),
             cancellationToken).ConfigureAwait(false));
     }
 
@@ -329,7 +309,7 @@ public sealed class EconomyControlPlaneAdministrationController(
         if (!TryActor(EconomyPermission.Keys.ManageReserves, out _, out _)) return Forbid();
         return StatusCode(
             StatusCodes.Status201Created,
-            await reserves.IngestObservationAsync(request, cancellationToken).ConfigureAwait(false));
+            await sender.Send(new IngestEconomyCustodyObservationEndpointCommand(request), cancellationToken).ConfigureAwait(false));
     }
 
     [HttpGet("reserves/liabilities")]
@@ -347,7 +327,7 @@ public sealed class EconomyControlPlaneAdministrationController(
         CancellationToken cancellationToken)
     {
         if (!TryActor(EconomyPermission.Keys.ManageReserves, out _, out var actorId)) return Forbid();
-        var proposed = await reserves.ProposeAsync(new DurableReserveProposalCommand(
+        var proposed = await sender.Send(new ProposeEconomyReserveEndpointCommand(new DurableReserveProposalCommand(
             request.Id,
             request.Version,
             request.ExpectedActiveVersion,
@@ -360,7 +340,7 @@ public sealed class EconomyControlPlaneAdministrationController(
             request.CustodyObservationIds,
             request.IrreversibleInFlightProviderCostUsdNanos,
             actorId,
-            timeProvider.GetUtcNow()), cancellationToken).ConfigureAwait(false);
+            timeProvider.GetUtcNow())), cancellationToken).ConfigureAwait(false);
         return StatusCode(StatusCodes.Status201Created, proposed);
     }
 
@@ -376,15 +356,11 @@ public sealed class EconomyControlPlaneAdministrationController(
             "economy.reserve.approve",
             $"reserve:{proposalId:N}",
             proposalId.ToString("N"));
-        return Ok(await stepUp.ExecuteAsync(
+        return Ok(await sender.Send(new ApproveEconomyReserveEndpointCommand(
             operation,
             request.StepUpReceipt,
-            (evidenceHash, token) => reserves.ApproveAndActivateAsync(
-                proposalId,
-                actorId,
-                evidenceHash,
-                timeProvider.GetUtcNow(),
-                token).AsTask(),
+            proposalId,
+            actorId),
             cancellationToken).ConfigureAwait(false));
     }
 

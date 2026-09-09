@@ -156,6 +156,7 @@ public sealed class ProjectOwnershipControllerTests : IDisposable
 
     private ProjectOwnershipController Controller() => new(
         _context,
+        new DirectHandlerSender(new ProjectOwnershipEndpointCommandHandler(_context)),
         _actorAccessor.Object,
         new ProjectAuthorizationService(_context, _actorAccessor.Object),
         new TeamAuthorizationService(_context, _actorAccessor.Object));

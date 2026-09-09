@@ -4,16 +4,17 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   auth: vi.fn(),
+  redirect: vi.fn((args: unknown) => {
+    throw new Error(`redirect:${JSON.stringify(args)}`);
+  }),
 }));
 
 vi.mock('@/auth', () => ({ auth: mocks.auth, getToken: vi.fn().mockResolvedValue(null) }));
-vi.mock('@/components/feed/feed-shell', () => ({
-  FeedShell: ({ tab }: { tab?: string }) => <div data-testid="feed-shell" data-tab={tab ?? 'foryou'} />,
-}));
 vi.mock('@/i18n/navigation', () => ({
   Link: ({ href, children }: { href: string; children: React.ReactNode }) => (
     <a href={href}>{children}</a>
   ),
+  redirect: mocks.redirect,
 }));
 vi.mock('@/lib/community/public-community-queries', () => ({
   getPublicActivities: vi.fn().mockResolvedValue([]),
@@ -32,25 +33,25 @@ describe('contextual root page', () => {
   beforeEach(() => vi.clearAllMocks());
   afterEach(cleanup);
 
-  it('renders the community feed for signed-in members', async () => {
+  it('sends signed-in members to the social shell', async () => {
     mocks.auth.mockResolvedValue({ user: { id: 'user-1' } });
 
-    render(await RootPage(props));
-
-    expect(screen.getByTestId('feed-shell')).toHaveAttribute('data-tab', 'foryou');
+    await expect(RootPage(props)).rejects.toThrow(
+      'redirect:{"href":"/social","locale":"en-US"}',
+    );
   });
 
-  it('passes the requested tab to the feed', async () => {
+  it('preserves a supported social tab during the redirect', async () => {
     mocks.auth.mockResolvedValue({ user: { id: 'user-1' } });
 
-    render(
-      await RootPage({
+    await expect(
+      RootPage({
         params: Promise.resolve({ locale: 'en-US' }),
-        searchParams: Promise.resolve({ tab: 'trending' }),
+        searchParams: Promise.resolve({ tab: 'following' }),
       } as never),
+    ).rejects.toThrow(
+      'redirect:{"href":"/social?tab=following","locale":"en-US"}',
     );
-
-    expect(screen.getByTestId('feed-shell')).toHaveAttribute('data-tab', 'trending');
   });
 
   it('renders the marketing landing for anonymous visitors', async () => {
@@ -58,7 +59,6 @@ describe('contextual root page', () => {
 
     render(await RootPage(props));
 
-    expect(screen.queryByTestId('feed-shell')).not.toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Learn, Build & Connect' })).toBeInTheDocument();
   });
 });

@@ -1,4 +1,5 @@
 using Asp.Versioning;
+using GameGuild.CQRS;
 using GameGuild.Identity.Context.Actors;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -19,12 +20,14 @@ public class ProjectPermissionController : BaseApiController {
   private readonly IResourcePermissionService _resourcePermissionService;
 
   private readonly IActorContextAccessor _actorContextAccessor;
+  private readonly ISender _sender;
 
-  public ProjectPermissionController(IPermissionResolver permissionResolver, IResourcePermissionService resourcePermissionService, IActorContextAccessor actorContextAccessor, ILogger<ProjectPermissionController> logger) {
+  public ProjectPermissionController(IPermissionResolver permissionResolver, IResourcePermissionService resourcePermissionService, IActorContextAccessor actorContextAccessor, ILogger<ProjectPermissionController> logger, ISender sender) {
     _permissionResolver = permissionResolver;
     _resourcePermissionService = resourcePermissionService;
     _actorContextAccessor = actorContextAccessor;
     _logger = logger;
+    _sender = sender;
   }
 
   /// <summary> Get current user's permissions on the project </summary>
@@ -77,7 +80,7 @@ public class ProjectPermissionController : BaseApiController {
 
     var inviteRequest = new InviteUserRequest { Email = request.Email, Permissions = request.Permissions, ExpiresAt = request.ExpiresAt, Message = request.Message, RequireAcceptance = request.RequireAcceptance };
 
-    var result = await _resourcePermissionService.InviteUserToResourceAsync("projects", projectId, inviteRequest, userId).ConfigureAwait(false);
+    var result = await _sender.Send(new AddProjectPermissionCollaboratorCommand(projectId, inviteRequest, userId)).ConfigureAwait(false);
 
     if (!result.Success) return BadRequest(result.ErrorMessage);
 
@@ -95,7 +98,12 @@ public class ProjectPermissionController : BaseApiController {
 
     if (!canGrantPermissions) return Forbid("You don't have permission to grant some of the requested permissions");
 
-    var result = await _resourcePermissionService.UpdateUserPermissionsAsync("projects", projectId, collaboratorUserId, request.Permissions, userId, request.ExpiresAt).ConfigureAwait(false);
+    var result = await _sender.Send(new UpdateProjectPermissionCollaboratorCommand(
+      projectId,
+      collaboratorUserId,
+      request.Permissions,
+      userId,
+      request.ExpiresAt)).ConfigureAwait(false);
 
     if (!result.Success) return BadRequest(result.ErrorMessage);
 
@@ -108,7 +116,7 @@ public class ProjectPermissionController : BaseApiController {
   public async Task<ActionResult<PermissionUpdateResult>> RemoveCollaborator(Guid projectId, Guid collaboratorUserId) {
     var userId = GetCurrentUserId();
 
-    var result = await _resourcePermissionService.RemoveUserAccessAsync("projects", projectId, collaboratorUserId, userId).ConfigureAwait(false);
+    var result = await _sender.Send(new RemoveProjectPermissionCollaboratorCommand(projectId, collaboratorUserId, userId)).ConfigureAwait(false);
 
     if (!result.Success) return BadRequest(result.ErrorMessage);
 
@@ -180,7 +188,7 @@ public class ProjectPermissionController : BaseApiController {
       NotifyUsers = request.NotifyUsers,
     };
 
-    var result = await _resourcePermissionService.ShareResourceAsync("projects", projectId, shareRequest, userId).ConfigureAwait(false);
+    var result = await _sender.Send(new ShareProjectWithRoleCommand(projectId, shareRequest, userId)).ConfigureAwait(false);
 
     if (!result.Success) return BadRequest(result.ErrorMessage);
 

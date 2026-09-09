@@ -258,6 +258,7 @@ public class ApplicationStartupIntegrationTests : IClassFixture<WebApplicationFa
             ["Assets:Storage:AccessKey"] = "startup-test-access-key",
             ["Assets:Storage:SecretKey"] = "startup-test-secret-key",
             ["Assets:Storage:BucketName"] = "startup-tests",
+            ["Assets:Token:SecretKey"] = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
             ["PaymentGateways:Stripe:IsEnabled"] = "true",
             ["PaymentGateways:Stripe:UseSimulation"] = "false",
             ["PaymentGateways:Stripe:ApiKey"] = environmentName == "Production" ? "sk_live_startup_test" : "sk_test_startup_test",

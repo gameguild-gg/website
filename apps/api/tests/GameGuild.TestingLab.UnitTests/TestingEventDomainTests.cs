@@ -147,6 +147,48 @@ public sealed class TestingEventDomainTests
     }
 
     [Fact]
+    public void Event_PersistsAValidIanaTimeZone()
+    {
+        var startsAt = new DateTime(2026, 8, 8, 21, 0, 0, DateTimeKind.Utc);
+
+        var testingEvent = TestingEvent.Create(
+            "Showcase",
+            TestingEventMode.Online,
+            Guid.NewGuid(),
+            startsAt.AddDays(-7),
+            startsAt.AddDays(-1),
+            startsAt,
+            startsAt.AddHours(2),
+            true,
+            TestingEventApprovalMode.ManagerOnly,
+            Guid.NewGuid(),
+            timeZoneId: "America/Sao_Paulo");
+
+        testingEvent.TimeZoneId.Should().Be("America/Sao_Paulo");
+    }
+
+    [Fact]
+    public void Event_RejectsAnUnknownTimeZone()
+    {
+        var startsAt = SystemClock.UtcNow.AddDays(2);
+
+        var act = () => TestingEvent.Create(
+            "Showcase",
+            TestingEventMode.Online,
+            Guid.NewGuid(),
+            startsAt.AddDays(-7),
+            startsAt.AddDays(-1),
+            startsAt,
+            startsAt.AddHours(2),
+            true,
+            TestingEventApprovalMode.ManagerOnly,
+            Guid.NewGuid(),
+            timeZoneId: "Mars/Olympus_Mons");
+
+        act.Should().Throw<ArgumentException>().WithMessage("*time zone*");
+    }
+
+    [Fact]
     public void ReassignSlot_ReplacesRatherThanDuplicatesAssignment()
     {
         var application = NewApplication();

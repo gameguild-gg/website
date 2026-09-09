@@ -18,7 +18,7 @@ export class EconomyModule {
   /**
    * List payout requests awaiting administrative review
    */
-  async getAdminEconomyPayoutRequests(query?: { take?: number }): Promise<Result<Array<Types.EconomyPayoutsQueriesEconomyPayoutRequestReview>, ApiError>> {
+  async getAdminEconomyPayoutRequests(query?: { take?: number }): Promise<Result<Array<Types.EconomyPayoutsQueriesEconomyPayoutRequestReviewDto>, ApiError>> {
     const url = '/api/v1/admin/economy/payout-requests';
 
     const result = await this.client.request({
@@ -28,7 +28,7 @@ export class EconomyModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.EconomyPayoutsQueriesEconomyPayoutRequestReview>, ApiError>;
+    return result as Result<Array<Types.EconomyPayoutsQueriesEconomyPayoutRequestReviewDto>, ApiError>;
   }
 
   /**
@@ -39,7 +39,7 @@ export class EconomyModule {
   async postAdminEconomyPayoutRequestsApprove(
     requestId: string,
     body: Types.EconomyPayoutsCommandsReviewPayoutRequestInput,
-  ): Promise<Result<Types.EconomyPayoutsQueriesEconomyPayoutRequestReview, ApiError>> {
+  ): Promise<Result<Types.EconomyPayoutsQueriesEconomyPayoutRequestReviewDto, ApiError>> {
     const url = `/api/v1/admin/economy/payout-requests/${requestId}/approve`;
 
     // Validate request body
@@ -54,7 +54,7 @@ export class EconomyModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.EconomyPayoutsQueriesEconomyPayoutRequestReviewSchema, result.data, 'response');
+      const validatedData = safeParse(Types.EconomyPayoutsQueriesEconomyPayoutRequestReviewDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -64,7 +64,7 @@ export class EconomyModule {
   /**
    * Get the immutable administrative review trail for a payout request
    */
-  async getAdminEconomyPayoutRequestsAudit(requestId: string): Promise<Result<Array<Types.EconomyPayoutsQueriesEconomyPayoutRequestReviewAudit>, ApiError>> {
+  async getAdminEconomyPayoutRequestsAudit(requestId: string): Promise<Result<Array<Types.EconomyPayoutsQueriesEconomyPayoutRequestReviewAuditDto>, ApiError>> {
     const url = `/api/v1/admin/economy/payout-requests/${requestId}/audit`;
 
     const result = await this.client.request({
@@ -73,7 +73,7 @@ export class EconomyModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.EconomyPayoutsQueriesEconomyPayoutRequestReviewAudit>, ApiError>;
+    return result as Result<Array<Types.EconomyPayoutsQueriesEconomyPayoutRequestReviewAuditDto>, ApiError>;
   }
 
   /**
@@ -82,7 +82,7 @@ export class EconomyModule {
   async postAdminEconomyPayoutRequestsReject(
     requestId: string,
     body: Types.EconomyPayoutsCommandsReviewPayoutRequestInput,
-  ): Promise<Result<Types.EconomyPayoutsQueriesEconomyPayoutRequestReview, ApiError>> {
+  ): Promise<Result<Types.EconomyPayoutsQueriesEconomyPayoutRequestReviewDto, ApiError>> {
     const url = `/api/v1/admin/economy/payout-requests/${requestId}/reject`;
 
     // Validate request body
@@ -97,7 +97,7 @@ export class EconomyModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.EconomyPayoutsQueriesEconomyPayoutRequestReviewSchema, result.data, 'response');
+      const validatedData = safeParse(Types.EconomyPayoutsQueriesEconomyPayoutRequestReviewDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -107,7 +107,7 @@ export class EconomyModule {
   /**
    * Get my Economy capability readiness
    */
-  async getEconomyCapabilities(): Promise<Result<Array<Types.APIControllersEconomySelfServiceCapability>, ApiError>> {
+  async getEconomyCapabilities(): Promise<Result<Array<Types.APIControllersEconomySelfServiceCapabilityDto>, ApiError>> {
     const url = '/api/v1/economy/capabilities';
 
     const result = await this.client.request({
@@ -116,7 +116,7 @@ export class EconomyModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.APIControllersEconomySelfServiceCapability>, ApiError>;
+    return result as Result<Array<Types.APIControllersEconomySelfServiceCapabilityDto>, ApiError>;
   }
 
   /**
@@ -149,7 +149,7 @@ export class EconomyModule {
   /**
    * List my payout requests
    */
-  async getEconomyPayoutRequests(query?: { take?: number }): Promise<Result<Array<Types.EconomyPayoutsQueriesEconomyPayoutInput>, ApiError>> {
+  async getEconomyPayoutRequests(query?: { take?: number }): Promise<Result<Array<Types.EconomyPayoutsQueriesEconomyPayoutRequestDto>, ApiError>> {
     const url = '/api/v1/economy/payout-requests';
 
     const result = await this.client.request({
@@ -159,7 +159,7 @@ export class EconomyModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.EconomyPayoutsQueriesEconomyPayoutInput>, ApiError>;
+    return result as Result<Array<Types.EconomyPayoutsQueriesEconomyPayoutRequestDto>, ApiError>;
   }
 
   /**
@@ -169,7 +169,7 @@ export class EconomyModule {
    */
   async postEconomyPayoutRequests(
     body: Types.EconomyPayoutsCommandsCreateMyPayoutRequestInput,
-  ): Promise<Result<Types.EconomyPayoutsQueriesEconomyPayoutInput, ApiError>> {
+  ): Promise<Result<Types.EconomyPayoutsQueriesEconomyPayoutRequestDto, ApiError>> {
     const url = '/api/v1/economy/payout-requests';
 
     // Validate request body
@@ -184,7 +184,7 @@ export class EconomyModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.EconomyPayoutsQueriesEconomyPayoutInputSchema, result.data, 'response');
+      const validatedData = safeParse(Types.EconomyPayoutsQueriesEconomyPayoutRequestDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -194,7 +194,7 @@ export class EconomyModule {
   /**
    * Cancel my pending payout request
    */
-  async postEconomyPayoutRequestsCancel(requestId: string): Promise<Result<Types.EconomyPayoutsQueriesEconomyPayoutInput, ApiError>> {
+  async postEconomyPayoutRequestsCancel(requestId: string): Promise<Result<Types.EconomyPayoutsQueriesEconomyPayoutRequestDto, ApiError>> {
     const url = `/api/v1/economy/payout-requests/${requestId}/cancel`;
 
     const result = await this.client.request({
@@ -205,7 +205,7 @@ export class EconomyModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.EconomyPayoutsQueriesEconomyPayoutInputSchema, result.data, 'response');
+      const validatedData = safeParse(Types.EconomyPayoutsQueriesEconomyPayoutRequestDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -215,7 +215,9 @@ export class EconomyModule {
   /**
    * List my payout operations
    */
-  async getEconomyPayoutsForGetEconomyPayouts(query?: { take?: number }): Promise<Result<Array<Types.EconomyPayoutsQueriesEconomyPayoutOperation>, ApiError>> {
+  async getEconomyPayoutsForGetEconomyPayouts(query?: {
+    take?: number;
+  }): Promise<Result<Array<Types.EconomyPayoutsQueriesEconomyPayoutOperationDto>, ApiError>> {
     const url = '/api/v1/economy/payouts';
 
     const result = await this.client.request({
@@ -225,13 +227,15 @@ export class EconomyModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.EconomyPayoutsQueriesEconomyPayoutOperation>, ApiError>;
+    return result as Result<Array<Types.EconomyPayoutsQueriesEconomyPayoutOperationDto>, ApiError>;
   }
 
   /**
    * Get my payout operation
    */
-  async getEconomyPayoutsForGetEconomyPayoutsByOperationId(operationId: string): Promise<Result<Types.EconomyPayoutsQueriesEconomyPayoutOperation, ApiError>> {
+  async getEconomyPayoutsForGetEconomyPayoutsByOperationId(
+    operationId: string,
+  ): Promise<Result<Types.EconomyPayoutsQueriesEconomyPayoutOperationDto, ApiError>> {
     const url = `/api/v1/economy/payouts/${operationId}`;
 
     const result = await this.client.request({
@@ -242,7 +246,7 @@ export class EconomyModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.EconomyPayoutsQueriesEconomyPayoutOperationSchema, result.data, 'response');
+      const validatedData = safeParse(Types.EconomyPayoutsQueriesEconomyPayoutOperationDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -294,7 +298,7 @@ export class EconomyModule {
   /**
    * List my HardCoin top-ups
    */
-  async getEconomyTopUpsForGetEconomyTopUps(query?: { take?: number }): Promise<Result<Array<Types.EconomyFundingEconomyTopUpStatus>, ApiError>> {
+  async getEconomyTopUpsForGetEconomyTopUps(query?: { take?: number }): Promise<Result<Array<Types.EconomyFundingEconomyTopUpStatusDto>, ApiError>> {
     const url = '/api/v1/economy/top-ups';
 
     const result = await this.client.request({
@@ -304,7 +308,7 @@ export class EconomyModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.EconomyFundingEconomyTopUpStatus>, ApiError>;
+    return result as Result<Array<Types.EconomyFundingEconomyTopUpStatusDto>, ApiError>;
   }
 
   /**
@@ -339,7 +343,7 @@ export class EconomyModule {
   /**
    * Get one of my HardCoin top-ups
    */
-  async getEconomyTopUpsForGetEconomyTopUpsByTopUpId(topUpId: string): Promise<Result<Types.EconomyFundingEconomyTopUpStatus, ApiError>> {
+  async getEconomyTopUpsForGetEconomyTopUpsByTopUpId(topUpId: string): Promise<Result<Types.EconomyFundingEconomyTopUpStatusDto, ApiError>> {
     const url = `/api/v1/economy/top-ups/${topUpId}`;
 
     const result = await this.client.request({
@@ -350,7 +354,7 @@ export class EconomyModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.EconomyFundingEconomyTopUpStatusSchema, result.data, 'response');
+      const validatedData = safeParse(Types.EconomyFundingEconomyTopUpStatusDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -389,7 +393,7 @@ export class EconomyModule {
   /**
    * Get my Economy wallet
    */
-  async getEconomyWallet(): Promise<Result<Types.EconomyContractsEconomyWalletSummary, ApiError>> {
+  async getEconomyWallet(): Promise<Result<Types.EconomyContractsEconomyWalletSummaryDto, ApiError>> {
     const url = '/api/v1/economy/wallet';
 
     const result = await this.client.request({
@@ -400,7 +404,7 @@ export class EconomyModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.EconomyContractsEconomyWalletSummarySchema, result.data, 'response');
+      const validatedData = safeParse(Types.EconomyContractsEconomyWalletSummaryDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -410,7 +414,7 @@ export class EconomyModule {
   /**
    * List my Economy wallet transactions
    */
-  async getEconomyWalletTransactions(query?: { take?: number }): Promise<Result<Array<Types.EconomyContractsEconomyWalletTransaction>, ApiError>> {
+  async getEconomyWalletTransactions(query?: { take?: number }): Promise<Result<Array<Types.EconomyContractsEconomyWalletTransactionDto>, ApiError>> {
     const url = '/api/v1/economy/wallet/transactions';
 
     const result = await this.client.request({
@@ -420,7 +424,7 @@ export class EconomyModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.EconomyContractsEconomyWalletTransaction>, ApiError>;
+    return result as Result<Array<Types.EconomyContractsEconomyWalletTransactionDto>, ApiError>;
   }
 }
 

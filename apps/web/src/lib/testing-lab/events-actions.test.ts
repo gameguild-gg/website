@@ -88,25 +88,28 @@ describe("Testing Lab event actions", () => {
     });
   });
 
-  it("creates an event through the generated client with normalized UTC dates", async () => {
+  it("creates a draft event without requiring its participation configuration", async () => {
     mocks.events.postTestingEvents.mockResolvedValue({
       ok: true,
       data: { id: "event-1", name: "Campus showcase" },
     });
 
-    const result = await createTestingEvent(
-      form({
-        name: "Campus showcase",
-        description: "Student projects",
-        mode: "InPerson",
-        approvalMode: "Committee",
-        applicationsOpenAt: "2026-08-01T09:00",
-        applicationsCloseAt: "2026-08-05T18:00",
-        startsAt: "2026-08-08T18:00",
-        endsAt: "2026-08-08T21:00",
-        requiresFeedback: "on",
-      }),
-    );
+    const data = form({
+      name: "Campus showcase",
+      timeZoneId: "America/Sao_Paulo",
+      mode: "InPerson",
+      approvalMode: "Committee",
+      applicationsOpenAt: "2026-08-01T09:00",
+      applicationsCloseAt: "2026-08-05T18:00",
+      startsAt: "2026-08-08T18:00",
+      endsAt: "2026-08-08T21:00",
+      requiresFeedback: "true",
+    });
+    data.delete("generalRules");
+    data.delete("candidateInstructions");
+    data.delete("testerInstructions");
+
+    const result = await createTestingEvent(data);
 
     expect(result.success).toBe(true);
     expect(mocks.events.postTestingEvents).toHaveBeenCalledWith(
@@ -114,25 +117,17 @@ describe("Testing Lab event actions", () => {
         name: "Campus showcase",
         mode: "InPerson",
         approvalMode: "Committee",
+        timeZoneId: "America/Sao_Paulo",
         requiresFeedback: true,
-        startsAt: "2026-08-08T18:00:00.000Z",
-        configuration: {
-          generalRules: "Respect the code of conduct.",
-          candidateInstructions: "Provide a playable build.",
-          testerInstructions: "Complete the assigned tasks.",
-          projectApplicationSchema: {
-            title: "Project application",
-            questions: [],
-          },
-          testerRegistrationSchema: {
-            title: "Tester registration",
-            questions: [],
-          },
-        },
+        applicationsOpenAt: "2026-08-01T12:00:00.000Z",
+        applicationsCloseAt: "2026-08-05T21:00:00.000Z",
+        startsAt: "2026-08-08T21:00:00.000Z",
+        endsAt: "2026-08-09T00:00:00.000Z",
+        configuration: undefined,
       }),
     );
     expect(mocks.revalidatePath).toHaveBeenCalledWith(
-      "/console/community/testing-lab/events",
+      "/workspace/testing-lab/events",
     );
   });
 

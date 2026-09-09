@@ -20,7 +20,7 @@ export class CommerceOrdersModule {
   async getOrdersForGetOrders(query?: {
     owner?: string;
     status?: Types.CommerceOrdersOrderStatus;
-  }): Promise<Result<Array<Types.CommerceOrdersOrder>, ApiError>> {
+  }): Promise<Result<Array<Types.CommerceOrdersOrderDto>, ApiError>> {
     const url = '/v1/orders';
 
     const result = await this.client.request({
@@ -30,12 +30,12 @@ export class CommerceOrdersModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.CommerceOrdersOrder>, ApiError>;
+    return result as Result<Array<Types.CommerceOrdersOrderDto>, ApiError>;
   }
 
   /**
    */
-  async postOrders(body: Types.CommerceOrdersCreateOrderInput): Promise<Result<Types.CommerceOrdersOrder, ApiError>> {
+  async postOrders(body: Types.CommerceOrdersCreateOrderInput): Promise<Result<Types.CommerceOrdersOrderDto, ApiError>> {
     const url = '/v1/orders';
 
     // Validate request body
@@ -50,7 +50,7 @@ export class CommerceOrdersModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.CommerceOrdersOrderSchema, result.data, 'response');
+      const validatedData = safeParse(Types.CommerceOrdersOrderDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -59,7 +59,7 @@ export class CommerceOrdersModule {
 
   /**
    */
-  async getOrdersForGetOrdersByOrderId(orderId: string): Promise<Result<Types.CommerceOrdersOrder, ApiError>> {
+  async getOrdersForGetOrdersByOrderId(orderId: string): Promise<Result<Types.CommerceOrdersOrderDto, ApiError>> {
     const url = `/v1/orders/${orderId}`;
 
     const result = await this.client.request({
@@ -70,7 +70,7 @@ export class CommerceOrdersModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.CommerceOrdersOrderSchema, result.data, 'response');
+      const validatedData = safeParse(Types.CommerceOrdersOrderDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -79,7 +79,7 @@ export class CommerceOrdersModule {
 
   /**
    */
-  async postOrdersCapture(orderId: string, body: Types.CommerceOrdersCaptureOrderInput): Promise<Result<Types.CommerceOrdersOrderCapture, ApiError>> {
+  async postOrdersCapture(orderId: string, body: Types.CommerceOrdersCaptureOrderInput): Promise<Result<Types.CommerceOrdersOrderCaptureDto, ApiError>> {
     const url = `/v1/orders/${orderId}:capture`;
 
     // Validate request body
@@ -94,7 +94,7 @@ export class CommerceOrdersModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.CommerceOrdersOrderCaptureSchema, result.data, 'response');
+      const validatedData = safeParse(Types.CommerceOrdersOrderCaptureDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -103,7 +103,7 @@ export class CommerceOrdersModule {
 
   /**
    */
-  async postOrdersComplete(orderId: string, body: Types.CommerceOrdersCompleteOrderInput): Promise<Result<Types.CommerceOrdersOrder, ApiError>> {
+  async postOrdersComplete(orderId: string, body: Types.CommerceOrdersCompleteOrderInput): Promise<Result<Types.CommerceOrdersOrderDto, ApiError>> {
     const url = `/v1/orders/${orderId}:complete`;
 
     // Validate request body
@@ -118,7 +118,7 @@ export class CommerceOrdersModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.CommerceOrdersOrderSchema, result.data, 'response');
+      const validatedData = safeParse(Types.CommerceOrdersOrderDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -147,7 +147,7 @@ export class CommerceOrdersModule {
 
   /**
    */
-  async postOrdersItems(orderId: string, body: Types.CommerceOrdersAddOrderItemInput): Promise<Result<Types.CommerceOrdersOrder, ApiError>> {
+  async postOrdersItems(orderId: string, body: Types.CommerceOrdersAddOrderItemInput): Promise<Result<Types.CommerceOrdersOrderDto, ApiError>> {
     const url = `/v1/orders/${orderId}/items`;
 
     // Validate request body
@@ -162,7 +162,7 @@ export class CommerceOrdersModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.CommerceOrdersOrderSchema, result.data, 'response');
+      const validatedData = safeParse(Types.CommerceOrdersOrderDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 

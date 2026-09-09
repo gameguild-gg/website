@@ -85,7 +85,6 @@ public class LocalAuthServiceTests
             _enumerationProtectionMock.Object,
             _httpContextAccessorMock.Object,
             NullLogger<LocalAuthService>.Instance,
-            _publisherMock.Object,
             _senderMock.Object,
             _sessionManagementServiceMock.Object
         );
@@ -404,7 +403,6 @@ public class LocalAuthServiceTests
             _enumerationProtectionMock.Object,
             _httpContextAccessorMock.Object,
             NullLogger<LocalAuthService>.Instance,
-            _publisherMock.Object,
             _senderMock.Object,
             _sessionManagementServiceMock.Object
         );
@@ -549,13 +547,17 @@ public class LocalAuthServiceTests
     }
 
     [Fact]
-    public async Task LocalSignUpAsync_PublishesUserSignedUpNotification()
+    public async Task LocalSignUpAsync_RecordsDurableUserCreatedEventBeforeSave()
     {
+        User? created = null;
+        var eventPresentAtSave = false;
         _userRepoMock.Setup(x => x.ExistsByEmailAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
         _userRepoMock.Setup(x => x.AddAsync(It.IsAny<User>(), It.IsAny<CancellationToken>()))
+            .Callback<User, CancellationToken>((user, _) => created = user)
             .Returns(Task.CompletedTask);
         _userRepoMock.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .Callback(() => eventPresentAtSave = created?.IntegrationEvents.OfType<UserCreatedEvent>().Any() == true)
             .Returns(Task.CompletedTask);
         _jwtTokenServiceMock.Setup(x => x.GenerateAccessTokenAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string[]>(), It.IsAny<Guid?>(), It.IsAny<int>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync("at");
@@ -566,12 +568,10 @@ public class LocalAuthServiceTests
 
         await _sut.LocalSignUpAsync(request);
 
-        _publisherMock.Verify(
-            x => x.Publish(
-                It.Is<UserSignedUpNotification>(notification =>
-                    notification.Email == "new@example.com"),
-                It.IsAny<CancellationToken>()),
-            Times.Once);
+        eventPresentAtSave.Should().BeTrue();
+        created!.IntegrationEvents.OfType<UserCreatedEvent>().Should().ContainSingle()
+            .Which.UserId.Should().Be(created.Id);
+        _publisherMock.VerifyNoOtherCalls();
     }
 
     // ── RefreshTokenAsync ─────────────────────────────────────

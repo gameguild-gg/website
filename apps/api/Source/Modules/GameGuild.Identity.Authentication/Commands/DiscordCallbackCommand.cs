@@ -6,7 +6,7 @@ namespace GameGuild.Identity.Authentication;
 ///     Command to handle Discord OAuth callback: exchange the authorization code
 ///     for tokens and complete sign-in
 /// </summary>
-public class DiscordCallbackCommand : IRequest<SignInResponse>
+public class DiscordCallbackCommand : ICommand<SignInResponse>
 {
     /// <summary>
     ///     OAuth authorization code from the Discord callback

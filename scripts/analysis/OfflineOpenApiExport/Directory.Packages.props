@@ -1,0 +1,4 @@
+<Project>
+  <!-- Match the referenced API's transitive pins; the tool lives outside apps/api. -->
+  <Import Project="../../../apps/api/Directory.Packages.props" />
+</Project>

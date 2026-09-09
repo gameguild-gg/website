@@ -1,4 +1,5 @@
 using FluentAssertions;
+using GameGuild.CQRS;
 using GameGuild.Identity.Authorization;
 using GameGuild.Identity.Context.Actors;
 using Microsoft.AspNetCore.Mvc;
@@ -12,6 +13,7 @@ public class AchievementsControllerTests
 {
     private readonly Mock<IAchievementService> _serviceMock = new();
     private readonly Mock<IActorContextAccessor> _actorMock = new();
+    private readonly Mock<ISender> _senderMock = new();
     private readonly AchievementsController _sut;
     private readonly Guid _userId = Guid.NewGuid();
     private readonly Guid _tenantId = Guid.NewGuid();
@@ -36,7 +38,7 @@ public class AchievementsControllerTests
             IsAuthenticated = true
         };
         _actorMock.Setup(a => a.ActorContext).Returns(actorContext);
-        _sut = new AchievementsController(_serviceMock.Object, _actorMock.Object);
+        _sut = new AchievementsController(_serviceMock.Object, _actorMock.Object, _senderMock.Object);
     }
 
     [Theory]
@@ -141,7 +143,7 @@ public class AchievementsControllerTests
     public async Task MarkAsNotified_ReturnsNoContent_OnSuccess()
     {
         var uaId = Guid.NewGuid();
-        _serviceMock.Setup(s => s.MarkNotifiedAsync(uaId))
+        _senderMock.Setup(s => s.Send(It.Is<MarkAchievementNotifiedCommand>(command => command.UserAchievementId == uaId), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Success());
 
         var result = await _sut.MarkAsNotified(uaId);
@@ -153,7 +155,7 @@ public class AchievementsControllerTests
     public async Task MarkAsNotified_ReturnsNotFound_WhenErrorCodeNotFound()
     {
         var uaId = Guid.NewGuid();
-        _serviceMock.Setup(s => s.MarkNotifiedAsync(uaId))
+        _senderMock.Setup(s => s.Send(It.Is<MarkAchievementNotifiedCommand>(command => command.UserAchievementId == uaId), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Failure(Error.NotFound("NotFound", "not found")));
 
         var result = await _sut.MarkAsNotified(uaId);
@@ -165,7 +167,7 @@ public class AchievementsControllerTests
     public async Task MarkAsNotified_Returns500_WhenOtherError()
     {
         var uaId = Guid.NewGuid();
-        _serviceMock.Setup(s => s.MarkNotifiedAsync(uaId))
+        _senderMock.Setup(s => s.Send(It.Is<MarkAchievementNotifiedCommand>(command => command.UserAchievementId == uaId), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Failure(Error.Failure("ServerError", "server error")));
 
         var result = await _sut.MarkAsNotified(uaId);
@@ -253,8 +255,9 @@ public class AchievementsControllerTests
     [Fact]
     public async Task CreateAchievement_ReturnsCreated_OnSuccess()
     {
-        _serviceMock.Setup(s => s.CreateAchievementAsync(It.IsAny<Achievement>()))
-            .ReturnsAsync((Achievement a) => Result.Success<Achievement>(a));
+        var created = Achievement.Create("New", "cat");
+        _senderMock.Setup(s => s.Send(It.IsAny<CreateAchievementCommand>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result.Success(created));
 
         var request = new CreateAchievementRequest
         {
@@ -276,7 +279,7 @@ public class AchievementsControllerTests
     [Fact]
     public async Task CreateAchievement_Returns500_OnFailure()
     {
-        _serviceMock.Setup(s => s.CreateAchievementAsync(It.IsAny<Achievement>()))
+        _senderMock.Setup(s => s.Send(It.IsAny<CreateAchievementCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Failure<Achievement>(Error.Failure("GeneralError", "fail")));
 
         var request = new CreateAchievementRequest { Name = "New", Points = 10 };
@@ -293,8 +296,7 @@ public class AchievementsControllerTests
     public async Task UpdateAchievement_ReturnsOk_OnSuccess()
     {
         var a = Achievement.Create("Old", "cat", "badge", 10);
-        _serviceMock.Setup(s => s.GetAchievementByIdAsync(a.Id)).ReturnsAsync(a);
-        _serviceMock.Setup(s => s.UpdateAchievementAsync(It.IsAny<Achievement>()))
+        _senderMock.Setup(s => s.Send(It.IsAny<UpdateAchievementCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Success<Achievement>(a));
 
         var request = new UpdateAchievementRequest
@@ -316,7 +318,8 @@ public class AchievementsControllerTests
     public async Task UpdateAchievement_ReturnsNotFound_WhenMissing()
     {
         var id = Guid.NewGuid();
-        _serviceMock.Setup(s => s.GetAchievementByIdAsync(id)).ReturnsAsync((Achievement?)null);
+        _senderMock.Setup(s => s.Send(It.IsAny<UpdateAchievementCommand>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result.Failure<Achievement>(Error.NotFound("NotFound", "not found")));
 
         var result = await _sut.UpdateAchievement(id, new UpdateAchievementRequest());
 
@@ -327,8 +330,7 @@ public class AchievementsControllerTests
     public async Task UpdateAchievement_Returns500_OnUpdateFailure()
     {
         var a = Achievement.Create("Old", "cat");
-        _serviceMock.Setup(s => s.GetAchievementByIdAsync(a.Id)).ReturnsAsync(a);
-        _serviceMock.Setup(s => s.UpdateAchievementAsync(It.IsAny<Achievement>()))
+        _senderMock.Setup(s => s.Send(It.IsAny<UpdateAchievementCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Failure<Achievement>(Error.Failure("GeneralError", "fail")));
 
         var result = await _sut.UpdateAchievement(a.Id, new UpdateAchievementRequest { Name = "X" });
@@ -343,7 +345,7 @@ public class AchievementsControllerTests
     public async Task DeleteAchievement_ReturnsNoContent_OnSuccess()
     {
         var id = Guid.NewGuid();
-        _serviceMock.Setup(s => s.DeleteAchievementAsync(id))
+        _senderMock.Setup(s => s.Send(It.Is<DeleteAchievementCommand>(command => command.AchievementId == id), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Success());
 
         var result = await _sut.DeleteAchievement(id);
@@ -355,7 +357,7 @@ public class AchievementsControllerTests
     public async Task DeleteAchievement_ReturnsNotFound_WhenNotFoundError()
     {
         var id = Guid.NewGuid();
-        _serviceMock.Setup(s => s.DeleteAchievementAsync(id))
+        _senderMock.Setup(s => s.Send(It.Is<DeleteAchievementCommand>(command => command.AchievementId == id), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Failure(Error.NotFound("NotFound", "not found")));
 
         var result = await _sut.DeleteAchievement(id);
@@ -367,7 +369,7 @@ public class AchievementsControllerTests
     public async Task DeleteAchievement_Returns500_WhenOtherError()
     {
         var id = Guid.NewGuid();
-        _serviceMock.Setup(s => s.DeleteAchievementAsync(id))
+        _senderMock.Setup(s => s.Send(It.Is<DeleteAchievementCommand>(command => command.AchievementId == id), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Failure(Error.Failure("ServerError", "server error")));
 
         var result = await _sut.DeleteAchievement(id);
@@ -385,7 +387,9 @@ public class AchievementsControllerTests
         var targetUserId = Guid.NewGuid();
         var ua = UserAchievement.Create(targetUserId, achievementId, 10);
 
-        _serviceMock.Setup(s => s.AwardAchievementAsync(targetUserId, achievementId, "manual", _tenantId))
+        _senderMock.Setup(s => s.Send(It.Is<AwardAchievementCommand>(command =>
+                command.UserId == targetUserId && command.AchievementId == achievementId && command.Context == "manual"),
+            It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Success<UserAchievement>(ua));
 
         var request = new AwardAchievementRequest { UserId = targetUserId, Context = "manual" };
@@ -401,7 +405,7 @@ public class AchievementsControllerTests
         var achievementId = Guid.NewGuid();
         var userId = Guid.NewGuid();
 
-        _serviceMock.Setup(s => s.AwardAchievementAsync(userId, achievementId, null, _tenantId))
+        _senderMock.Setup(s => s.Send(It.IsAny<AwardAchievementCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Failure<UserAchievement>(Error.NotFound("NotFound", "not found")));
 
         var result = await _sut.AwardAchievement(achievementId, new AwardAchievementRequest { UserId = userId });
@@ -415,7 +419,7 @@ public class AchievementsControllerTests
         var achievementId = Guid.NewGuid();
         var userId = Guid.NewGuid();
 
-        _serviceMock.Setup(s => s.AwardAchievementAsync(userId, achievementId, null, _tenantId))
+        _senderMock.Setup(s => s.Send(It.IsAny<AwardAchievementCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Failure<UserAchievement>(Error.Conflict("Conflict", "already earned")));
 
         var result = await _sut.AwardAchievement(achievementId, new AwardAchievementRequest { UserId = userId });
@@ -429,7 +433,7 @@ public class AchievementsControllerTests
         var achievementId = Guid.NewGuid();
         var userId = Guid.NewGuid();
 
-        _serviceMock.Setup(s => s.AwardAchievementAsync(userId, achievementId, null, _tenantId))
+        _senderMock.Setup(s => s.Send(It.IsAny<AwardAchievementCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Failure<UserAchievement>(Error.Validation("Validation", "invalid")));
 
         var result = await _sut.AwardAchievement(achievementId, new AwardAchievementRequest { UserId = userId });

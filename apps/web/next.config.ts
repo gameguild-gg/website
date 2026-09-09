@@ -77,6 +77,16 @@ const nextConfig: NextConfig = {
   },
   async redirects() {
     return [
+      {
+        source: "/console/community/testing-lab/:path*",
+        destination: "/workspace/testing-lab/:path*",
+        permanent: true,
+      },
+      {
+        source: "/:locale/console/community/testing-lab/:path*",
+        destination: "/:locale/workspace/testing-lab/:path*",
+        permanent: true,
+      },
       { source: "/dashboard/teams/:path*", destination: "/my/teams/:path*", permanent: true },
       { source: "/dashboard/projects/:path*", destination: "/my/projects/:path*", permanent: true },
       { source: "/dashboard/invitations", destination: "/my/invitations", permanent: true },

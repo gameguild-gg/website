@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using GameGuild.CQRS;
 using GameGuild.Identity.Context.Actors;
 using GameGuild.Notifications.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -20,15 +21,18 @@ public class NotificationsController : BaseApiController
     private readonly INotificationService _notificationService;
     private readonly INotificationPreferenceService _preferenceService;
     private readonly IActorContextAccessor _actorContextAccessor;
+    private readonly ISender _sender;
 
     public NotificationsController(
         INotificationService notificationService,
         INotificationPreferenceService preferenceService,
-        IActorContextAccessor actorContextAccessor)
+        IActorContextAccessor actorContextAccessor,
+        ISender sender)
     {
         _notificationService = notificationService;
         _preferenceService = preferenceService;
         _actorContextAccessor = actorContextAccessor;
+        _sender = sender;
     }
 
     private Guid GetRequiredUserId()
@@ -130,7 +134,7 @@ public class NotificationsController : BaseApiController
             return Forbid();
         }
 
-        var result = await _notificationService.MarkAsReadAsync(id, cancellationToken).ConfigureAwait(false);
+        var result = await _sender.Send(new MarkNotificationReadCommand(id), cancellationToken).ConfigureAwait(false);
         if (!result.IsSuccess)
         {
             return BadRequest(result.Error);
@@ -147,7 +151,7 @@ public class NotificationsController : BaseApiController
     public async Task<IActionResult> MarkAllAsRead(CancellationToken cancellationToken = default)
     {
         var userId = GetRequiredUserId();
-        var result = await _notificationService.MarkAllAsReadAsync(userId, cancellationToken).ConfigureAwait(false);
+        var result = await _sender.Send(new MarkAllNotificationsReadCommand(userId), cancellationToken).ConfigureAwait(false);
 
         if (!result.IsSuccess)
         {
@@ -177,7 +181,7 @@ public class NotificationsController : BaseApiController
             return Forbid();
         }
 
-        var result = await _notificationService.MarkAsUnreadAsync(id, cancellationToken).ConfigureAwait(false);
+        var result = await _sender.Send(new MarkNotificationUnreadCommand(id), cancellationToken).ConfigureAwait(false);
         if (!result.IsSuccess)
         {
             return BadRequest(result.Error);
@@ -206,7 +210,7 @@ public class NotificationsController : BaseApiController
             return Forbid();
         }
 
-        var result = await _notificationService.DeleteAsync(id, cancellationToken).ConfigureAwait(false);
+        var result = await _sender.Send(new DeleteNotificationCommand(id), cancellationToken).ConfigureAwait(false);
         if (!result.IsSuccess)
         {
             return BadRequest(result.Error);
@@ -223,7 +227,7 @@ public class NotificationsController : BaseApiController
     public async Task<IActionResult> DeleteReadNotifications(CancellationToken cancellationToken = default)
     {
         var userId = GetRequiredUserId();
-        var result = await _notificationService.DeleteReadNotificationsAsync(userId, cancellationToken).ConfigureAwait(false);
+        var result = await _sender.Send(new DeleteReadNotificationsCommand(userId), cancellationToken).ConfigureAwait(false);
 
         if (!result.IsSuccess)
         {
@@ -261,7 +265,7 @@ public class NotificationsController : BaseApiController
         CancellationToken cancellationToken = default)
     {
         var userId = GetRequiredUserId();
-        var result = await _notificationService.UpdatePreferencesAsync(
+        var result = await _sender.Send(new UpdateNotificationPreferencesCommand(
             userId,
             request.EmailEnabled,
             request.PushEnabled,
@@ -270,7 +274,7 @@ public class NotificationsController : BaseApiController
             request.MarketingEnabled,
             request.SocialEnabled,
             request.LearningEnabled,
-            request.AchievementsEnabled,
+            request.AchievementsEnabled),
             cancellationToken).ConfigureAwait(false);
 
         if (!result.IsSuccess)
@@ -291,11 +295,11 @@ public class NotificationsController : BaseApiController
         CancellationToken cancellationToken = default)
     {
         var userId = GetRequiredUserId();
-        var result = await _notificationService.SetQuietHoursAsync(
+        var result = await _sender.Send(new SetNotificationQuietHoursCommand(
             userId,
             request.Start,
             request.End,
-            request.Timezone,
+            request.Timezone),
             cancellationToken).ConfigureAwait(false);
 
         if (!result.IsSuccess)
@@ -333,7 +337,7 @@ public class NotificationsController : BaseApiController
         }
 
         var userId = GetRequiredUserId();
-        var result = await _preferenceService.SetMutedTypesAsync(userId, canonicalNames, cancellationToken).ConfigureAwait(false);
+        var result = await _sender.Send(new SetMutedNotificationTypesCommand(userId, canonicalNames), cancellationToken).ConfigureAwait(false);
 
         if (!result.IsSuccess)
         {
@@ -365,7 +369,7 @@ public class NotificationsController : BaseApiController
         }
 
         var userId = GetRequiredUserId();
-        var result = await _preferenceService.SetEmailDigestFrequencyAsync(userId, frequency, cancellationToken).ConfigureAwait(false);
+        var result = await _sender.Send(new SetNotificationDigestFrequencyCommand(userId, frequency), cancellationToken).ConfigureAwait(false);
 
         if (!result.IsSuccess)
         {

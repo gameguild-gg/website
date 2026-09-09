@@ -46,7 +46,8 @@ public sealed record TestingEventProjection(
     DateTime? RecurrenceEndsAt = null,
     int? RecurrenceOccurrenceCount = null,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    TestingEventConfigurationProjection? Configuration = null);
+    TestingEventConfigurationProjection? Configuration = null,
+    string TimeZoneId = "UTC");
 
 public sealed record TestingEventConfigurationProjection(
     Guid? SourceTemplateId,
@@ -110,7 +111,8 @@ public sealed record PublicTestingEventProjection(
     int ApplicationCount,
     IReadOnlyList<PublicTestingEventSlotProjection> Slots,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    TestingEventConfigurationProjection? Configuration = null);
+    TestingEventConfigurationProjection? Configuration = null,
+    string TimeZoneId = "UTC");
 
 public sealed record CreateTestingEventCommand(
     string Name,
@@ -124,7 +126,8 @@ public sealed record CreateTestingEventCommand(
     bool RequiresFeedback,
     TestingEventRecurrenceRequest? Recurrence = null,
     Guid? TemplateRevisionId = null,
-    ConfigureTestingEventRequest? Configuration = null) : ICommand<Result<TestingEventProjection>>;
+    ConfigureTestingEventRequest? Configuration = null,
+    string TimeZoneId = "UTC") : ICommand<Result<TestingEventProjection>>;
 
 public sealed record ConfigureTestingEventCommand(
     Guid EventId,
@@ -144,7 +147,8 @@ public sealed record UpdateTestingEventCommand(
     DateTime ApplicationsCloseAt,
     DateTime StartsAt,
     DateTime EndsAt,
-    bool RequiresFeedback) : ICommand<Result<TestingEventProjection>>;
+    bool RequiresFeedback,
+    string TimeZoneId = "UTC") : ICommand<Result<TestingEventProjection>>;
 
 public sealed record DeleteTestingEventCommand(Guid EventId) : ICommand<Result<bool>>;
 
@@ -256,7 +260,8 @@ public sealed record CreateTestingEventRequest(
     bool RequiresFeedback,
     TestingEventRecurrenceRequest? Recurrence = null,
     Guid? TemplateRevisionId = null,
-    ConfigureTestingEventRequest? Configuration = null);
+    ConfigureTestingEventRequest? Configuration = null,
+    string TimeZoneId = "UTC");
 
 public sealed record ConfigureTestingEventRequest(
     string GeneralRules,
@@ -274,7 +279,8 @@ public sealed record UpdateTestingEventRequest(
     DateTime ApplicationsCloseAt,
     DateTime StartsAt,
     DateTime EndsAt,
-    bool RequiresFeedback);
+    bool RequiresFeedback,
+    string TimeZoneId = "UTC");
 
 public sealed record UpsertTestingEventSlotRequest(
     TestingEventMode Mode,

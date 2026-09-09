@@ -17,7 +17,7 @@ export class LearningAssessmentsRubricsModule {
 
   /**
    */
-  async getAssessmentsRubric(assessmentId: string): Promise<Result<Types.LearningAssessmentsRubric, ApiError>> {
+  async getAssessmentsRubric(assessmentId: string): Promise<Result<Types.LearningAssessmentsRubricDto, ApiError>> {
     const url = `/v1/assessments/${assessmentId}/rubric`;
 
     const result = await this.client.request({
@@ -28,7 +28,7 @@ export class LearningAssessmentsRubricsModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.LearningAssessmentsRubricSchema, result.data, 'response');
+      const validatedData = safeParse(Types.LearningAssessmentsRubricDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -37,7 +37,10 @@ export class LearningAssessmentsRubricsModule {
 
   /**
    */
-  async putAssessmentsRubric(assessmentId: string, body: Types.LearningAssessmentsSaveRubricInput): Promise<Result<Types.LearningAssessmentsRubric, ApiError>> {
+  async putAssessmentsRubric(
+    assessmentId: string,
+    body: Types.LearningAssessmentsSaveRubricInput,
+  ): Promise<Result<Types.LearningAssessmentsRubricDto, ApiError>> {
     const url = `/v1/assessments/${assessmentId}/rubric`;
 
     // Validate request body
@@ -52,7 +55,7 @@ export class LearningAssessmentsRubricsModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.LearningAssessmentsRubricSchema, result.data, 'response');
+      const validatedData = safeParse(Types.LearningAssessmentsRubricDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 

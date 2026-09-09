@@ -189,10 +189,14 @@ public sealed class EconomyLegacyMigrationAdministrationControllerTests
             TypedAttributes = ActorAttributes.Empty,
             IsAuthenticated = true
         });
+        var resolvedStepUp = stepUp ?? new TestEconomyStepUpExecutor();
         return new EconomyLegacyMigrationAdministrationController(
+            EconomyHandlerSenders.Funds(
+                legacyMigration: migration,
+                stepUp: resolvedStepUp,
+                timeProvider: new FixedTimeProvider()),
             migration,
             queries ?? Mock.Of<ILegacyEconomyQueryReader>(),
-            stepUp ?? new TestEconomyStepUpExecutor(),
             actorContext.Object,
             new FixedTimeProvider());
     }

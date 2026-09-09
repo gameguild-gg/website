@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using GameGuild.CQRS;
 
 namespace GameGuild.Compliance.Audit;
 
@@ -23,7 +24,8 @@ public class SecurityAuditController(
     ISecurityAuditAggregator auditAggregator,
     IAuditService auditService,
     IActorContextAccessor actorContextAccessor,
-    ILogger<SecurityAuditController> _logger) : BaseApiController
+    ILogger<SecurityAuditController> _logger,
+    ISender sender) : BaseApiController
 {
     /// <summary>
     ///     Get unified security audit logs from all sources with filtering and pagination.
@@ -145,13 +147,9 @@ public class SecurityAuditController(
         if (!adminUserId.HasValue)
             return Unauthorized("User not authenticated");
 
-        await auditService.LogAdminActionAsync(
-            adminUserId.Value,
-            "ExportSecurityAuditLogs",
-            "Admin exported unified security audit logs",
-            new { Filters = request }).ConfigureAwait(false);
-
-        var exportData = await auditAggregator.ExportAuditLogsAsync(request, cancellationToken).ConfigureAwait(false);
+        var exportData = await sender.Send(
+            new ExportSecurityAuditLogsCommand(adminUserId.Value, request),
+            cancellationToken).ConfigureAwait(false);
         var fileName = $"security-audit-{SystemClock.UtcNow:yyyy-MM-dd-HH-mm-ss}.csv";
 
         return File(exportData, "text/csv", fileName);

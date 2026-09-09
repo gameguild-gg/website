@@ -61,6 +61,9 @@ public sealed class InMemoryIntegrationEventBus : IIntegrationEventBus
         where TEvent : IIntegrationEvent
     {
         ArgumentNullException.ThrowIfNull(@event);
+        if (@event is IDurableIntegrationEvent)
+            throw new InvalidOperationException(
+                "Durable integration events must be recorded in the transactional outbox and dispatched through the inbox-aware outbox dispatcher.");
 
         var eventType = typeof(TEvent);
         var eventName = eventType.Name;

@@ -1,5 +1,6 @@
 using Asp.Versioning;
 using GameGuild.Compliance.FinancialCrime;
+using GameGuild.CQRS;
 using GameGuild.Identity.Authorization;
 using GameGuild.Identity.Context.Actors;
 using GameGuild.TrustSafety;
@@ -36,6 +37,7 @@ public sealed record DecideTrustSafetyAppealRequest(
 [Tags("economy-compliance-administration")]
 [Authorize]
 public sealed class EconomyComplianceAdministrationController(
+    ISender sender,
     IFinancialCrimeControlPlane financialCrime,
     ITrustSafetyControlPlane trustSafety,
     IActorContextAccessor actorContextAccessor,
@@ -84,9 +86,9 @@ public sealed class EconomyComplianceAdministrationController(
         if (!TryActor(out var tenantId, out var actorId)) return Forbid();
         try
         {
-            return Ok(await financialCrime.AssignCaseAsync(
+            return Ok(await sender.Send(new AssignFinancialCrimeCaseEndpointCommand(
                 tenantId, caseId, actorId, request.ExpectedVersion,
-                timeProvider.GetUtcNow(), cancellationToken).ConfigureAwait(false));
+                timeProvider.GetUtcNow()), cancellationToken).ConfigureAwait(false));
         }
         catch (KeyNotFoundException)
         {
@@ -126,8 +128,9 @@ public sealed class EconomyComplianceAdministrationController(
                 actorId,
                 timeProvider.GetUtcNow(),
                 request.ExpiresAt);
-            var result = await financialCrime.DecideCaseAsync(
-                decision, request.ExpectedCaseVersion, cancellationToken).ConfigureAwait(false);
+            var result = await sender.Send(
+                new DecideFinancialCrimeCaseEndpointCommand(decision, request.ExpectedCaseVersion),
+                cancellationToken).ConfigureAwait(false);
             return StatusCode(StatusCodes.Status201Created, result);
         }
         catch (KeyNotFoundException)
@@ -151,10 +154,9 @@ public sealed class EconomyComplianceAdministrationController(
         if (!TryActor(out var tenantId, out var actorId)) return Forbid();
         try
         {
-            await financialCrime.RecordRegulatoryReferenceAsync(
+            await sender.Send(new RecordRegulatoryReferenceEndpointCommand(
                 tenantId, caseId, request.Kind, request.JurisdictionCode,
-                request.ReferenceHash, actorId, timeProvider.GetUtcNow(), cancellationToken)
-                .ConfigureAwait(false);
+                request.ReferenceHash, actorId, timeProvider.GetUtcNow()), cancellationToken).ConfigureAwait(false);
             return NoContent();
         }
         catch (KeyNotFoundException)
@@ -187,9 +189,9 @@ public sealed class EconomyComplianceAdministrationController(
         if (!TryActor(out var tenantId, out var actorId)) return Forbid();
         try
         {
-            return Ok(await trustSafety.AssignAppealAsync(
+            return Ok(await sender.Send(new AssignTrustSafetyAppealEndpointCommand(
                 tenantId, appealId, actorId, request.ExpectedVersion,
-                timeProvider.GetUtcNow(), cancellationToken).ConfigureAwait(false));
+                timeProvider.GetUtcNow()), cancellationToken).ConfigureAwait(false));
         }
         catch (KeyNotFoundException)
         {
@@ -213,10 +215,9 @@ public sealed class EconomyComplianceAdministrationController(
         if (!TryActor(out var tenantId, out var actorId)) return Forbid();
         try
         {
-            return Ok(await trustSafety.DecideAppealAsync(
+            return Ok(await sender.Send(new DecideTrustSafetyAppealEndpointCommand(
                 tenantId, appealId, actorId, request.ExpectedVersion, request.Overturn,
-                request.ReasonCode, request.EvidenceHash, timeProvider.GetUtcNow(), cancellationToken)
-                .ConfigureAwait(false));
+                request.ReasonCode, request.EvidenceHash, timeProvider.GetUtcNow()), cancellationToken).ConfigureAwait(false));
         }
         catch (KeyNotFoundException)
         {

@@ -36,11 +36,11 @@ export class TestingLabTestingLocationsModule {
 
   /**
    */
-  async postTestingLocations(body: Types.TestingLabCreateTestingLocation): Promise<Result<Types.TestingLabTestingLocation, ApiError>> {
+  async postTestingLocations(body: Types.TestingLabCreateTestingLocationDto): Promise<Result<Types.TestingLabTestingLocation, ApiError>> {
     const url = '/v1/testing/locations';
 
     // Validate request body
-    const validatedBody = safeParse(Types.TestingLabCreateTestingLocationSchema, body, 'request');
+    const validatedBody = safeParse(Types.TestingLabCreateTestingLocationDtoSchema, body, 'request');
 
     const result = await this.client.request({
       method: 'POST',
@@ -80,11 +80,11 @@ export class TestingLabTestingLocationsModule {
 
   /**
    */
-  async putTestingLocations(id: string, body: Types.TestingLabUpdateTestingLocation): Promise<Result<Types.TestingLabTestingLocation, ApiError>> {
+  async putTestingLocations(id: string, body: Types.TestingLabUpdateTestingLocationDto): Promise<Result<Types.TestingLabTestingLocation, ApiError>> {
     const url = `/v1/testing/locations/${id}`;
 
     // Validate request body
-    const validatedBody = safeParse(Types.TestingLabUpdateTestingLocationSchema, body, 'request');
+    const validatedBody = safeParse(Types.TestingLabUpdateTestingLocationDtoSchema, body, 'request');
 
     const result = await this.client.request({
       method: 'PUT',

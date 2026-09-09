@@ -26,7 +26,7 @@ export class ContentPagesResourcesModule {
     q?: string;
     skip?: number;
     take?: number;
-  }): Promise<Result<Array<Types.ContentPagesContentResource>, ApiError>> {
+  }): Promise<Result<Array<Types.ContentPagesContentResourceDto>, ApiError>> {
     const url = '/v1/content-resources';
 
     const result = await this.client.request({
@@ -36,16 +36,16 @@ export class ContentPagesResourcesModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.ContentPagesContentResource>, ApiError>;
+    return result as Result<Array<Types.ContentPagesContentResourceDto>, ApiError>;
   }
 
   /**
    */
-  async postContentResources(body: Types.ContentPagesCreateContentResource): Promise<Result<Types.ContentPagesContentResource, ApiError>> {
+  async postContentResources(body: Types.ContentPagesCreateContentResourceDto): Promise<Result<Types.ContentPagesContentResourceDto, ApiError>> {
     const url = '/v1/content-resources';
 
     // Validate request body
-    const validatedBody = safeParse(Types.ContentPagesCreateContentResourceSchema, body, 'request');
+    const validatedBody = safeParse(Types.ContentPagesCreateContentResourceDtoSchema, body, 'request');
 
     const result = await this.client.request({
       method: 'POST',
@@ -56,7 +56,7 @@ export class ContentPagesResourcesModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.ContentPagesContentResourceSchema, result.data, 'response');
+      const validatedData = safeParse(Types.ContentPagesContentResourceDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -65,7 +65,7 @@ export class ContentPagesResourcesModule {
 
   /**
    */
-  async getContentResourcesForGetContentResourcesById(id: string): Promise<Result<Types.ContentPagesContentResource, ApiError>> {
+  async getContentResourcesForGetContentResourcesById(id: string): Promise<Result<Types.ContentPagesContentResourceDto, ApiError>> {
     const url = `/v1/content-resources/${id}`;
 
     const result = await this.client.request({
@@ -76,7 +76,7 @@ export class ContentPagesResourcesModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.ContentPagesContentResourceSchema, result.data, 'response');
+      const validatedData = safeParse(Types.ContentPagesContentResourceDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -85,11 +85,11 @@ export class ContentPagesResourcesModule {
 
   /**
    */
-  async putContentResources(id: string, body: Types.ContentPagesUpdateContentResource): Promise<Result<Types.ContentPagesContentResource, ApiError>> {
+  async putContentResources(id: string, body: Types.ContentPagesUpdateContentResourceDto): Promise<Result<Types.ContentPagesContentResourceDto, ApiError>> {
     const url = `/v1/content-resources/${id}`;
 
     // Validate request body
-    const validatedBody = safeParse(Types.ContentPagesUpdateContentResourceSchema, body, 'request');
+    const validatedBody = safeParse(Types.ContentPagesUpdateContentResourceDtoSchema, body, 'request');
 
     const result = await this.client.request({
       method: 'PUT',
@@ -100,7 +100,7 @@ export class ContentPagesResourcesModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.ContentPagesContentResourceSchema, result.data, 'response');
+      const validatedData = safeParse(Types.ContentPagesContentResourceDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -123,7 +123,7 @@ export class ContentPagesResourcesModule {
 
   /**
    */
-  async postContentResourcesPublish(id: string): Promise<Result<Types.ContentPagesContentResource, ApiError>> {
+  async postContentResourcesPublish(id: string): Promise<Result<Types.ContentPagesContentResourceDto, ApiError>> {
     const url = `/v1/content-resources/${id}/publish`;
 
     const result = await this.client.request({
@@ -134,7 +134,7 @@ export class ContentPagesResourcesModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.ContentPagesContentResourceSchema, result.data, 'response');
+      const validatedData = safeParse(Types.ContentPagesContentResourceDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -143,7 +143,7 @@ export class ContentPagesResourcesModule {
 
   /**
    */
-  async getContentResourcesBySlug(slug: string): Promise<Result<Types.ContentPagesContentResource, ApiError>> {
+  async getContentResourcesBySlug(slug: string): Promise<Result<Types.ContentPagesContentResourceDto, ApiError>> {
     const url = `/v1/content-resources/by-slug/${slug}`;
 
     const result = await this.client.request({
@@ -154,7 +154,7 @@ export class ContentPagesResourcesModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.ContentPagesContentResourceSchema, result.data, 'response');
+      const validatedData = safeParse(Types.ContentPagesContentResourceDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 

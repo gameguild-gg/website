@@ -4,6 +4,7 @@
     <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
   </PropertyGroup>
   <ItemGroup>
+    <PackageVersion Include="SendGrid" Version="9.29.3" />
     <PackageVersion Include="Asp.Versioning.Mvc" Version="8.1.0" />
     <PackageVersion Include="Asp.Versioning.Mvc.ApiExplorer" Version="8.1.0" />
     <PackageVersion Include="Azure.Identity" Version="1.13.1" />
@@ -30,6 +31,7 @@
     <PackageVersion Include="Microsoft.AspNetCore.Routing" Version="2.3.0" />
     <PackageVersion Include="Microsoft.AspNetCore.Routing.Abstractions" Version="2.3.0" />
     <PackageVersion Include="System.ComponentModel.Annotations" Version="6.0.0-preview.4.21253.7" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="5.0.0" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="10.0.9" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.9" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.InMemory" Version="10.0.9" />
@@ -89,6 +91,8 @@
     <PackageVersion Include="Stripe.net" Version="46.0.0" />
     <!-- AWS SDK -->
     <PackageVersion Include="AWSSDK.S3" Version="3.7.300" />
+    <PackageVersion Include="AWSSDK.Pricing" Version="3.7.502.63" />
+    <PackageVersion Include="AWSSDK.CostExplorer" Version="3.7.509.34" />
     <PackageVersion Include="AWSSDK.KeyManagementService" Version="3.7.506.18" />
     <!-- SES email delivery + SNS event webhook. Floor 3.7.3.96: older 3.7.x only
          validates SigV1 SNS messages (no SHA256), which would 401 every prod event. -->

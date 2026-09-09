@@ -17,7 +17,7 @@ export class ApiProjectWorkModule {
 
   /**
    */
-  async getProjectsWork(projectId: string): Promise<Result<Types.APIProjectWorkProjectBoard, ApiError>> {
+  async getProjectsWork(projectId: string): Promise<Result<Types.APIProjectWorkProjectBoardDto, ApiError>> {
     const url = `/v1/projects/${projectId}/work`;
 
     const result = await this.client.request({
@@ -28,7 +28,7 @@ export class ApiProjectWorkModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.APIProjectWorkProjectBoardSchema, result.data, 'response');
+      const validatedData = safeParse(Types.APIProjectWorkProjectBoardDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -40,7 +40,7 @@ export class ApiProjectWorkModule {
   async postProjectsWorkColumns(
     projectId: string,
     body: Types.APIProjectWorkConfigureProjectWorkColumnInput,
-  ): Promise<Result<Types.APIProjectWorkProjectWorkColumn, ApiError>> {
+  ): Promise<Result<Types.APIProjectWorkProjectWorkColumnDto, ApiError>> {
     const url = `/v1/projects/${projectId}/work/columns`;
 
     // Validate request body
@@ -55,7 +55,7 @@ export class ApiProjectWorkModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.APIProjectWorkProjectWorkColumnSchema, result.data, 'response');
+      const validatedData = safeParse(Types.APIProjectWorkProjectWorkColumnDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -68,7 +68,7 @@ export class ApiProjectWorkModule {
     projectId: string,
     columnId: string,
     body: Types.APIProjectWorkConfigureProjectWorkColumnInput,
-  ): Promise<Result<Types.APIProjectWorkProjectWorkColumn, ApiError>> {
+  ): Promise<Result<Types.APIProjectWorkProjectWorkColumnDto, ApiError>> {
     const url = `/v1/projects/${projectId}/work/columns/${columnId}`;
 
     // Validate request body
@@ -83,7 +83,7 @@ export class ApiProjectWorkModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.APIProjectWorkProjectWorkColumnSchema, result.data, 'response');
+      const validatedData = safeParse(Types.APIProjectWorkProjectWorkColumnDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -106,7 +106,7 @@ export class ApiProjectWorkModule {
 
   /**
    */
-  async getProjectsWorkHistory(projectId: string, query?: { take?: number }): Promise<Result<Array<Types.APIProjectWorkProjectWorkHistory>, ApiError>> {
+  async getProjectsWorkHistory(projectId: string, query?: { take?: number }): Promise<Result<Array<Types.APIProjectWorkProjectWorkHistoryDto>, ApiError>> {
     const url = `/v1/projects/${projectId}/work/history`;
 
     const result = await this.client.request({
@@ -116,12 +116,12 @@ export class ApiProjectWorkModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.APIProjectWorkProjectWorkHistory>, ApiError>;
+    return result as Result<Array<Types.APIProjectWorkProjectWorkHistoryDto>, ApiError>;
   }
 
   /**
    */
-  async getProjectsWorkLabels(projectId: string): Promise<Result<Array<Types.APIProjectWorkProjectTaskLabel>, ApiError>> {
+  async getProjectsWorkLabels(projectId: string): Promise<Result<Array<Types.APIProjectWorkProjectTaskLabelDto>, ApiError>> {
     const url = `/v1/projects/${projectId}/work/labels`;
 
     const result = await this.client.request({
@@ -130,7 +130,7 @@ export class ApiProjectWorkModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.APIProjectWorkProjectTaskLabel>, ApiError>;
+    return result as Result<Array<Types.APIProjectWorkProjectTaskLabelDto>, ApiError>;
   }
 
   /**
@@ -138,7 +138,7 @@ export class ApiProjectWorkModule {
   async postProjectsWorkLabels(
     projectId: string,
     body: Types.APIProjectWorkCreateProjectTaskLabelInput,
-  ): Promise<Result<Types.APIProjectWorkProjectTaskLabel, ApiError>> {
+  ): Promise<Result<Types.APIProjectWorkProjectTaskLabelDto, ApiError>> {
     const url = `/v1/projects/${projectId}/work/labels`;
 
     // Validate request body
@@ -153,7 +153,7 @@ export class ApiProjectWorkModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.APIProjectWorkProjectTaskLabelSchema, result.data, 'response');
+      const validatedData = safeParse(Types.APIProjectWorkProjectTaskLabelDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -176,7 +176,7 @@ export class ApiProjectWorkModule {
 
   /**
    */
-  async getProjectsWorkMilestones(projectId: string): Promise<Result<Array<Types.APIProjectWorkProjectMilestone>, ApiError>> {
+  async getProjectsWorkMilestones(projectId: string): Promise<Result<Array<Types.APIProjectWorkProjectMilestoneDto>, ApiError>> {
     const url = `/v1/projects/${projectId}/work/milestones`;
 
     const result = await this.client.request({
@@ -185,7 +185,7 @@ export class ApiProjectWorkModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.APIProjectWorkProjectMilestone>, ApiError>;
+    return result as Result<Array<Types.APIProjectWorkProjectMilestoneDto>, ApiError>;
   }
 
   /**
@@ -193,7 +193,7 @@ export class ApiProjectWorkModule {
   async postProjectsWorkMilestones(
     projectId: string,
     body: Types.APIProjectWorkCreateProjectMilestoneInput,
-  ): Promise<Result<Types.APIProjectWorkProjectMilestone, ApiError>> {
+  ): Promise<Result<Types.APIProjectWorkProjectMilestoneDto, ApiError>> {
     const url = `/v1/projects/${projectId}/work/milestones`;
 
     // Validate request body
@@ -208,7 +208,7 @@ export class ApiProjectWorkModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.APIProjectWorkProjectMilestoneSchema, result.data, 'response');
+      const validatedData = safeParse(Types.APIProjectWorkProjectMilestoneDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -221,7 +221,7 @@ export class ApiProjectWorkModule {
     projectId: string,
     milestoneId: string,
     body: Types.APIProjectWorkUpdateProjectMilestoneInput,
-  ): Promise<Result<Types.APIProjectWorkProjectMilestone, ApiError>> {
+  ): Promise<Result<Types.APIProjectWorkProjectMilestoneDto, ApiError>> {
     const url = `/v1/projects/${projectId}/work/milestones/${milestoneId}`;
 
     // Validate request body
@@ -236,7 +236,7 @@ export class ApiProjectWorkModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.APIProjectWorkProjectMilestoneSchema, result.data, 'response');
+      const validatedData = safeParse(Types.APIProjectWorkProjectMilestoneDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -262,7 +262,7 @@ export class ApiProjectWorkModule {
   async postProjectsWorkTasks(
     projectId: string,
     body: Types.APIProjectWorkCreateProjectWorkTaskInput,
-  ): Promise<Result<Types.APIProjectWorkProjectWorkTask, ApiError>> {
+  ): Promise<Result<Types.APIProjectWorkProjectWorkTaskDto, ApiError>> {
     const url = `/v1/projects/${projectId}/work/tasks`;
 
     // Validate request body
@@ -277,7 +277,7 @@ export class ApiProjectWorkModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.APIProjectWorkProjectWorkTaskSchema, result.data, 'response');
+      const validatedData = safeParse(Types.APIProjectWorkProjectWorkTaskDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -286,7 +286,7 @@ export class ApiProjectWorkModule {
 
   /**
    */
-  async getProjectsWorkTasks(projectId: string, taskId: string): Promise<Result<Types.APIProjectWorkProjectWorkTaskDetails, ApiError>> {
+  async getProjectsWorkTasks(projectId: string, taskId: string): Promise<Result<Types.APIProjectWorkProjectWorkTaskDetailsDto, ApiError>> {
     const url = `/v1/projects/${projectId}/work/tasks/${taskId}`;
 
     const result = await this.client.request({
@@ -297,7 +297,7 @@ export class ApiProjectWorkModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.APIProjectWorkProjectWorkTaskDetailsSchema, result.data, 'response');
+      const validatedData = safeParse(Types.APIProjectWorkProjectWorkTaskDetailsDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -310,7 +310,7 @@ export class ApiProjectWorkModule {
     projectId: string,
     taskId: string,
     body: Types.APIProjectWorkUpdateProjectWorkTaskInput,
-  ): Promise<Result<Types.APIProjectWorkProjectWorkTask, ApiError>> {
+  ): Promise<Result<Types.APIProjectWorkProjectWorkTaskDto, ApiError>> {
     const url = `/v1/projects/${projectId}/work/tasks/${taskId}`;
 
     // Validate request body
@@ -325,7 +325,7 @@ export class ApiProjectWorkModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.APIProjectWorkProjectWorkTaskSchema, result.data, 'response');
+      const validatedData = safeParse(Types.APIProjectWorkProjectWorkTaskDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -375,7 +375,7 @@ export class ApiProjectWorkModule {
     taskId: string,
     itemId: string,
     body: Types.APIProjectWorkUpdateProjectTaskChecklistInput,
-  ): Promise<Result<Types.APIProjectWorkProjectChecklistItem, ApiError>> {
+  ): Promise<Result<Types.APIProjectWorkProjectChecklistItemDto, ApiError>> {
     const url = `/v1/projects/${projectId}/work/tasks/${taskId}/checklist/${itemId}`;
 
     // Validate request body
@@ -390,7 +390,7 @@ export class ApiProjectWorkModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.APIProjectWorkProjectChecklistItemSchema, result.data, 'response');
+      const validatedData = safeParse(Types.APIProjectWorkProjectChecklistItemDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -440,7 +440,7 @@ export class ApiProjectWorkModule {
     taskId: string,
     commentId: string,
     body: Types.APIProjectWorkUpdateProjectTaskCommentInput,
-  ): Promise<Result<Types.APIProjectWorkProjectTaskComment, ApiError>> {
+  ): Promise<Result<Types.APIProjectWorkProjectTaskCommentDto, ApiError>> {
     const url = `/v1/projects/${projectId}/work/tasks/${taskId}/comments/${commentId}`;
 
     // Validate request body
@@ -455,7 +455,7 @@ export class ApiProjectWorkModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.APIProjectWorkProjectTaskCommentSchema, result.data, 'response');
+      const validatedData = safeParse(Types.APIProjectWorkProjectTaskCommentDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -546,7 +546,7 @@ export class ApiProjectWorkModule {
     projectId: string,
     taskId: string,
     body: Types.APIProjectWorkMoveProjectWorkTaskInput,
-  ): Promise<Result<Types.APIProjectWorkProjectWorkTask, ApiError>> {
+  ): Promise<Result<Types.APIProjectWorkProjectWorkTaskDto, ApiError>> {
     const url = `/v1/projects/${projectId}/work/tasks/${taskId}/move`;
 
     // Validate request body
@@ -561,7 +561,7 @@ export class ApiProjectWorkModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.APIProjectWorkProjectWorkTaskSchema, result.data, 'response');
+      const validatedData = safeParse(Types.APIProjectWorkProjectWorkTaskDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 

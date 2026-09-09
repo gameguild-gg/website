@@ -2,6 +2,7 @@ using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using GameGuild.CQRS;
 
 namespace GameGuild.Identity.Authentication;
 
@@ -12,7 +13,7 @@ namespace GameGuild.Identity.Authentication;
 [ApiVersion("1.0")]
 [Microsoft.AspNetCore.Http.Tags("auth/multi-factor")]
 [Authorize]
-public sealed class MfaController(IMfaService mfaService) : AuthControllerBase
+public sealed class MfaController(IMfaService mfaService, ISender sender) : AuthControllerBase
 {
     #region Configuration Operations - /v1/auth/mfa
 
@@ -53,7 +54,7 @@ public sealed class MfaController(IMfaService mfaService) : AuthControllerBase
     {
         var userId = GetCurrentUserId();
         var userEmail = GetCurrentUserEmail();
-        var result = await mfaService.InitiateMfaSetupAsync(userId, userEmail).ConfigureAwait(false);
+        var result = await sender.Send(new InitiateMfaSetupCommand(userId, userEmail), ct).ConfigureAwait(false);
 
         if (!result.Success)
         {
@@ -84,7 +85,7 @@ public sealed class MfaController(IMfaService mfaService) : AuthControllerBase
     {
         ArgumentNullException.ThrowIfNull(body);
         var userId = GetCurrentUserId();
-        var result = await mfaService.CompleteMfaSetupAsync(userId, body.Code).ConfigureAwait(false);
+        var result = await sender.Send(new CompleteMfaSetupCommand(userId, body.Code), ct).ConfigureAwait(false);
 
         if (!result.Success)
         {
@@ -113,7 +114,7 @@ public sealed class MfaController(IMfaService mfaService) : AuthControllerBase
     public async Task<IActionResult> VerifyMfa([FromBody] VerifyMfaRequest body, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(body);
-        var result = await mfaService.VerifyMfaAsync(body.UserId, body.Code, body.Method).ConfigureAwait(false);
+        var result = await sender.Send(new VerifyMfaCodeCommand(body.UserId, body.Code, body.Method), ct).ConfigureAwait(false);
 
         if (!result.Success)
         {
@@ -164,7 +165,7 @@ public sealed class MfaController(IMfaService mfaService) : AuthControllerBase
     public async Task<IActionResult> RegenerateBackupCodes(CancellationToken ct)
     {
         var userId = GetCurrentUserId();
-        var backupCodes = await mfaService.GenerateBackupCodesAsync(userId).ConfigureAwait(false);
+        var backupCodes = await sender.Send(new RegenerateMfaBackupCodesCommand(userId), ct).ConfigureAwait(false);
 
         return Ok(new BackupCodesResponse
         {
@@ -184,6 +185,7 @@ public sealed class MfaController(IMfaService mfaService) : AuthControllerBase
     /// <param name="ct">Cancellation token</param>
     /// <returns>Setup initiation result</returns>
     [HttpPost("v{version:apiVersion}/auth/mfa/sms:setup")]
+    [UnavailableEndpoint("SMS MFA is disabled until an SMS provider is configured.")]
     [EndpointSummary("Setup SMS MFA")]
     [EndpointDescription("Initiates SMS-based MFA setup by sending a verification code to the provided phone number.")]
     [ProducesResponseType<SmsMfaSetupResponse>(StatusCodes.Status200OK)]
@@ -207,6 +209,7 @@ public sealed class MfaController(IMfaService mfaService) : AuthControllerBase
     /// <param name="ct">Cancellation token</param>
     /// <returns>Setup completion result</returns>
     [HttpPost("v{version:apiVersion}/auth/mfa/sms:complete")]
+    [UnavailableEndpoint("SMS MFA is disabled until an SMS provider is configured.")]
     [EndpointSummary("Complete SMS MFA setup")]
     [EndpointDescription("Completes SMS MFA setup by verifying the code sent to the user's phone.")]
     [ProducesResponseType<MfaSuccessResponse>(StatusCodes.Status200OK)]
@@ -323,7 +326,7 @@ public sealed class MfaController(IMfaService mfaService) : AuthControllerBase
     {
         ArgumentNullException.ThrowIfNull(body);
         var userId = GetCurrentUserId();
-        var result = await mfaService.DisableMfaAsync(userId, body.Password).ConfigureAwait(false);
+        var result = await sender.Send(new DisableMfaCommand(userId, body.Password), ct).ConfigureAwait(false);
 
         if (!result)
         {

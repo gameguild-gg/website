@@ -20,12 +20,7 @@ export class CommerceSubscriptionsClientsModule {
    *
    * Lists client accounts through the canonical tenant page query.
    */
-  async getClients(query?: {
-    page?: number;
-    pageSize?: number;
-    status?: string;
-    searchTerm?: string;
-  }): Promise<Result<Types.PagedResultOfIdentityTenantsTenant, ApiError>> {
+  async getClients(query?: { page?: number; pageSize?: number; status?: string; searchTerm?: string }): Promise<Result<Types.PagedResultTenant, ApiError>> {
     const url = '/v1/clients';
 
     const result = await this.client.request({
@@ -37,7 +32,7 @@ export class CommerceSubscriptionsClientsModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.PagedResultOfIdentityTenantsTenantSchema, result.data, 'response');
+      const validatedData = safeParse(Types.PagedResultTenantSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 

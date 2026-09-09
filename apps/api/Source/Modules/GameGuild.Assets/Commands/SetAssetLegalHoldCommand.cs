@@ -3,7 +3,7 @@ namespace GameGuild.Assets.Commands;
 public sealed record SetAssetLegalHoldCommand(
     Guid AssetContentId,
     bool Enabled,
-    string? Reason = null) : IRequest<AssetLegalHoldResponse?>;
+    string? Reason = null) : ICommand<AssetLegalHoldResponse?>;
 
 public sealed record AssetLegalHoldResponse(
     Guid AssetContentId,
@@ -12,7 +12,7 @@ public sealed record AssetLegalHoldResponse(
     string? Reason);
 
 public sealed class SetAssetLegalHoldHandler(
-    IAssetContentRepository contentRepository) : IRequestHandler<SetAssetLegalHoldCommand, AssetLegalHoldResponse?>
+    IAssetContentRepository contentRepository) : ICommandHandler<SetAssetLegalHoldCommand, AssetLegalHoldResponse?>
 {
     public async Task<AssetLegalHoldResponse?> Handle(SetAssetLegalHoldCommand request, CancellationToken ct = default)
     {

@@ -4,6 +4,7 @@ using GameGuild.Identity.Context.Actors;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using GameGuild.CQRS;
 
 namespace GameGuild.Commerce.Products;
 
@@ -14,7 +15,10 @@ namespace GameGuild.Commerce.Products;
 [Route("v{version:apiVersion}/entitlements")]
 [Microsoft.AspNetCore.Http.Tags("entitlements")]
 [Authorize]
-public class EntitlementsController(IEntitlementService entitlementService, IActorContextAccessor actorContextAccessor) : BaseApiController
+public class EntitlementsController(
+    IEntitlementService entitlementService,
+    IActorContextAccessor actorContextAccessor,
+    ISender sender) : BaseApiController
 {
     /// <summary>
     /// List entitlements with optional status filter
@@ -84,9 +88,8 @@ public class EntitlementsController(IEntitlementService entitlementService, IAct
         [FromBody] CheckMultipleAccessRequest request,
         CancellationToken cancellationToken = default)
     {
-        var results = await entitlementService.HasAccessAsync(
-            GetUserId(),
-            request.ProductIds,
+        var results = await sender.Send(
+            new CheckMultipleEntitlementsCommand(GetUserId(), request.ProductIds),
             cancellationToken).ConfigureAwait(false);
 
         return Ok(results);
@@ -101,26 +104,20 @@ public class EntitlementsController(IEntitlementService entitlementService, IAct
         [FromBody] GrantEntitlementRequest request,
         CancellationToken cancellationToken = default)
     {
-        var result = await entitlementService.GrantEntitlementAsync(
+        var outcome = await sender.Send(new GrantEntitlementCommand(
             request.UserId,
             request.ProductId,
             request.AcquisitionType,
             request.PricePaid,
             request.Currency,
-            request.ExpiresAt,
-            orderId: null,
-            cancellationToken);
+            request.ExpiresAt), cancellationToken).ConfigureAwait(false);
 
-        if (!result.Success)
+        if (!outcome.Result.Success)
         {
-            return BadRequest(new { error = result.ErrorMessage });
+            return BadRequest(new { error = outcome.Result.ErrorMessage });
         }
 
-        var entitlements = await entitlementService.GetUserEntitlementsAsync(
-            request.UserId, cancellationToken).ConfigureAwait(false);
-        var entitlement = entitlements.FirstOrDefault(e => e.ProductId == request.ProductId);
-
-        return Ok(entitlement != null ? MapToDto(entitlement) : null);
+        return Ok(outcome.Entitlement != null ? MapToDto(outcome.Entitlement) : null);
     }
 
     /// <summary>
@@ -136,11 +133,11 @@ public class EntitlementsController(IEntitlementService entitlementService, IAct
         [FromBody] RevokeEntitlementRequest request,
         CancellationToken cancellationToken = default)
     {
-        var success = await entitlementService.RevokeEntitlementAsync(
+        var success = await sender.Send(new RevokeEntitlementCommand(
+            entitlementId,
             request.UserId,
             request.ProductId,
-            request.Reason,
-            cancellationToken).ConfigureAwait(false);
+            request.Reason), cancellationToken).ConfigureAwait(false);
 
         if (!success)
         {

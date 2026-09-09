@@ -20,6 +20,13 @@ const ToggleGroupContext = React.createContext<
   orientation: "horizontal",
 })
 
+type ToggleGroupProps = VariantProps<typeof toggleVariants> & { spacing?: number } & (
+  | (ToggleGroupPrimitive.Props & { type?: undefined | "multiple" })
+  | (Omit<ToggleGroupPrimitive.Props, "value" | "defaultValue" | "onValueChange" | "multiple"> & {
+      type: "single"; value?: string; defaultValue?: string; onValueChange?: (value: string) => void
+    })
+)
+
 function ToggleGroup({
   className,
   variant,
@@ -27,12 +34,13 @@ function ToggleGroup({
   spacing = 2,
   orientation = "horizontal",
   children,
+  type,
+  value,
+  defaultValue,
+  onValueChange,
   ...props
-}: ToggleGroupPrimitive.Props &
-  VariantProps<typeof toggleVariants> & {
-    spacing?: number
-    orientation?: "horizontal" | "vertical"
-  }) {
+}: ToggleGroupProps) {
+  const single = type === "single"
   return (
     <ToggleGroupPrimitive
       data-slot="toggle-group"
@@ -46,6 +54,17 @@ function ToggleGroup({
         className
       )}
       {...props}
+      orientation={orientation}
+      multiple={type === "multiple" || (!single && ('multiple' in props ? props.multiple : false))}
+      value={single ? (value === undefined ? undefined : value ? [value as string] : []) : value as string[] | undefined}
+      defaultValue={single ? (defaultValue ? [defaultValue as string] : []) : defaultValue as string[] | undefined}
+      onValueChange={(values, details) => {
+        if (single) {
+          ;(onValueChange as ((value: string) => void) | undefined)?.(values[0] ?? "")
+        } else {
+          ;(onValueChange as ToggleGroupPrimitive.Props["onValueChange"])?.(values, details)
+        }
+      }}
     >
       <ToggleGroupContext.Provider
         value={{ variant, size, spacing, orientation }}

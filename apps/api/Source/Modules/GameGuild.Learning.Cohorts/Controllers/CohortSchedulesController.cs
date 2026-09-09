@@ -39,6 +39,7 @@ public sealed class CohortSchedulesController(ISender sender) : BaseApiControlle
     }
 
     [HttpPost("preview")]
+    [NoBusinessMutationEndpoint("Schedule preview is a read-only calculation and does not persist cohort state.")]
     [RequireResourcePermission<PermissionType, Program>(PermissionType.Edit, "courseId")]
     [ProducesResponseType<CohortSchedulePreviewDto>(StatusCodes.Status200OK)]
     public async Task<ActionResult<CohortSchedulePreviewDto>> Preview(

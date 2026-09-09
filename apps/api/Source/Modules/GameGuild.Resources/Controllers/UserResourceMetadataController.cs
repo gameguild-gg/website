@@ -1,5 +1,6 @@
 using Asp.Versioning;
 using GameGuild.Configuration.PresentationLayer.RateLimiting;
+using GameGuild.CQRS;
 using GameGuild.Identity.Context.Actors;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -20,6 +21,7 @@ namespace GameGuild.Resources;
 [EnableRateLimiting(RateLimitPolicies.PerUser)]
 public sealed class UserResourceMetadataController(
     IResourceMetadataRepository metadataRepository,
+    ISender sender,
     IActorContextAccessor actorContextAccessor) : BaseApiController
 {
     /// <summary>
@@ -107,36 +109,8 @@ public sealed class UserResourceMetadataController(
         
         ArgumentNullException.ThrowIfNull(body);
 
-        var existing = await metadataRepository.GetByUserKeyAsync(userId, key, ct).ConfigureAwait(false);
-
-        if (existing != null)
-        {
-            existing.Value = body.Value;
-            existing.DataType = body.DataType ?? existing.DataType;
-            existing.Description = body.Description ?? existing.Description;
-            existing.Category = body.Category ?? existing.Category;
-            existing.DisplayOrder = body.DisplayOrder ?? existing.DisplayOrder;
-            existing.Touch();
-
-            await metadataRepository.UpdateAsync(existing, ct).ConfigureAwait(false);
-
-            return Ok(existing);
-        }
-
-        var metadata = new ResourceMetadata
-        {
-            UserId = userId,
-            Key = key,
-            Value = body.Value,
-            DataType = body.DataType ?? "String",
-            Description = body.Description,
-            Category = body.Category,
-            DisplayOrder = body.DisplayOrder ?? 0,
-            IsActive = true
-        };
-
-        await metadataRepository.CreateAsync(metadata, ct).ConfigureAwait(false);
-
+        var metadata = await sender.Send(new SetUserResourceMetadataCommand(userId, key, body), ct)
+            .ConfigureAwait(false);
         return Ok(metadata);
     }
 }

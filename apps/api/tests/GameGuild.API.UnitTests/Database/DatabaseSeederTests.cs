@@ -3,9 +3,7 @@ using GameGuild.API.Database;
 using GameGuild.Identity.Authorization;
 using GameGuild.Identity.Tenants;
 using GameGuild.Identity.Users;
-using GameGuild.LaunchPad;
 using GameGuild.Projects;
-using GameGuild.TestingLab;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -87,7 +85,7 @@ public sealed class DatabaseSeederTests
     }
 
     [Fact]
-    public async Task SeedAsync_Should_Create_ProjectBacked_TestingLab_And_LaunchPad_Content()
+    public async Task SeedAsync_Should_Not_Create_Demo_Showcase_Content()
     {
         var services = CreateSeederServices("UnitTestAdmin123!");
         await using var provider = services.BuildServiceProvider();
@@ -97,71 +95,13 @@ public sealed class DatabaseSeederTests
 
         var dbContext = provider.GetRequiredService<ApplicationDbContext>();
 
-        var projects = await dbContext.Set<Project>()
-            .Include(project => project.Versions)
+        var showcaseProjects = await dbContext.Set<Project>()
+            .IgnoreQueryFilters()
             .Where(project => project.Slug.StartsWith("gameguild-showcase-"))
             .ToListAsync();
-        projects.Should().HaveCount(3);
-        projects.Should().OnlyContain(project => project.Status == ContentStatus.Published);
-        projects.Should().OnlyContain(project => project.Visibility == ContentVisibility.Public);
-        projects.Should().OnlyContain(project => project.Versions.Count > 0);
-        projects.Should().OnlyContain(project => project.ImageUrl == null && project.FeaturedImageUrl == null,
-            "seed data must not publish placeholder CDN URLs that return 404");
 
-        var launchPlans = await dbContext.Set<LaunchPlan>()
-            .Include(plan => plan.Project)
-            .Include(plan => plan.ChecklistItems)
-            .ToListAsync();
-        launchPlans.Should().HaveCount(3);
-        launchPlans.Should().OnlyContain(plan => plan.Project != null && plan.Project.Slug.StartsWith("gameguild-showcase-"));
-        launchPlans.Should().OnlyContain(plan => plan.ChecklistItems.Count >= 5);
-
-        var testingRequests = await dbContext.Set<TestingRequest>()
-            .Include(request => request.ProjectVersion)
-            .ThenInclude(version => version!.Project)
-            .ToListAsync();
-        testingRequests.Should().HaveCount(3);
-        testingRequests.Should().OnlyContain(request => request.ProjectVersionId.HasValue);
-        testingRequests.Should().OnlyContain(request => request.ProjectVersion != null);
-        testingRequests.Should().OnlyContain(request => request.ProjectVersion!.Project.Slug.StartsWith("gameguild-showcase-"));
-
-        var locations = await dbContext.Set<TestingLocation>().ToListAsync();
-        locations.Should().HaveCountGreaterThanOrEqualTo(2);
-
-        var sessions = await dbContext.Set<TestingSession>()
-            .Include(session => session.TestingRequest)
-            .Include(session => session.Location)
-            .ToListAsync();
-        sessions.Should().HaveCount(3);
-        sessions.Should().OnlyContain(session => session.TestingRequest != null && session.Location != null);
-    }
-
-    [Fact]
-    public async Task SeedAsync_When_Showcase_Project_Is_SoftDeleted_Should_Not_Resurrect_It()
-    {
-        var services = CreateSeederServices("UnitTestAdmin123!");
-        await using var provider = services.BuildServiceProvider();
-
-        await DatabaseSeeder.SeedAsync(provider);
-
-        var dbContext = provider.GetRequiredService<ApplicationDbContext>();
-        var project = await dbContext.Set<Project>()
-            .IgnoreQueryFilters()
-            .SingleAsync(candidate => candidate.Slug == "gameguild-showcase-neon-runner");
-        project.SoftDelete();
-        await dbContext.SaveChangesAsync();
-
-        await DatabaseSeeder.SeedAsync(provider);
-
-        var reloadedProject = await dbContext.Set<Project>()
-            .IgnoreQueryFilters()
-            .SingleAsync(candidate => candidate.Slug == "gameguild-showcase-neon-runner");
-        reloadedProject.DeletedAt.Should().NotBeNull();
-
-        var visibleProjects = await dbContext.Set<Project>()
-            .Where(candidate => candidate.Slug.StartsWith("gameguild-showcase-") && candidate.DeletedAt == null)
-            .ToListAsync();
-        visibleProjects.Should().HaveCount(2);
+        showcaseProjects.Should().BeEmpty(
+            "production database seeding must not create product demonstration content");
     }
 
     private static ServiceCollection CreateSeederServices(string adminPassword)

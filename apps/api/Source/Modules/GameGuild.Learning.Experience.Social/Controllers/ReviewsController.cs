@@ -1,3 +1,4 @@
+using GameGuild.CQRS;
 using GameGuild.Identity.Context.Actors;
 using GameGuild.Identity.Authorization;
 using GameGuild.Learning.Abstractions;
@@ -21,12 +22,15 @@ namespace GameGuild.Learning.Experience.Social.Controllers;
 public class ReviewsController : LearningControllerBase
 {
     private readonly IReviewService _reviewService;
+    private readonly ISender _sender;
 
     public ReviewsController(
         IReviewService reviewService,
+        ISender sender,
         IActorContextAccessor actorContextAccessor) : base(actorContextAccessor)
     {
         _reviewService = reviewService;
+        _sender = sender;
     }
 
     /// <summary>
@@ -40,14 +44,13 @@ public class ReviewsController : LearningControllerBase
         CancellationToken cancellationToken = default)
     {
         var userId = GetRequiredUserId();
-        var result = await _reviewService.CreateReviewAsync(
+        var result = await _sender.Send(new CreateReviewCommand(
             request.CourseId,
             userId,
             request.Rating,
             request.Title,
             request.Content,
-            request.EnrollmentId,
-            cancellationToken).ConfigureAwait(false);
+            request.EnrollmentId), cancellationToken).ConfigureAwait(false);
 
         if (!result.IsSuccess)
         {
@@ -130,7 +133,7 @@ public class ReviewsController : LearningControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> MarkReviewHelpful(Guid id, CancellationToken cancellationToken = default)
     {
-        var result = await _reviewService.MarkReviewHelpfulAsync(id, cancellationToken).ConfigureAwait(false);
+        var result = await _sender.Send(new MarkReviewHelpfulCommand(id), cancellationToken).ConfigureAwait(false);
 
         if (!result.IsSuccess)
         {
@@ -149,7 +152,7 @@ public class ReviewsController : LearningControllerBase
     public async Task<IActionResult> DeleteReview(Guid id, CancellationToken cancellationToken = default)
     {
         var userId = GetRequiredUserId();
-        var result = await _reviewService.DeleteReviewAsync(id, userId, cancellationToken).ConfigureAwait(false);
+        var result = await _sender.Send(new DeleteReviewCommand(id, userId), cancellationToken).ConfigureAwait(false);
 
         if (!result.IsSuccess)
         {
@@ -186,7 +189,7 @@ public class ReviewsController : LearningControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ApproveReview(Guid id, CancellationToken cancellationToken = default)
     {
-        var result = await _reviewService.ApproveReviewAsync(id, cancellationToken).ConfigureAwait(false);
+        var result = await _sender.Send(new ApproveReviewCommand(id), cancellationToken).ConfigureAwait(false);
 
         if (!result.IsSuccess)
         {
@@ -205,7 +208,7 @@ public class ReviewsController : LearningControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> FeatureReview(Guid id, CancellationToken cancellationToken = default)
     {
-        var result = await _reviewService.FeatureReviewAsync(id, cancellationToken).ConfigureAwait(false);
+        var result = await _sender.Send(new FeatureReviewCommand(id), cancellationToken).ConfigureAwait(false);
 
         if (!result.IsSuccess)
         {
@@ -227,11 +230,10 @@ public class ReviewsController : LearningControllerBase
         [FromBody] UpdateReviewModerationRequest request,
         CancellationToken cancellationToken = default)
     {
-        var result = await _reviewService.UpdateReviewModerationAsync(
+        var result = await _sender.Send(new UpdateReviewModerationCommand(
             id,
             request.IsApproved,
-            request.IsFeatured,
-            cancellationToken).ConfigureAwait(false);
+            request.IsFeatured), cancellationToken).ConfigureAwait(false);
 
         if (!result.IsSuccess)
         {

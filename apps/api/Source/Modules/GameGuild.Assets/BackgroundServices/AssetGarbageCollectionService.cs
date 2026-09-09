@@ -78,7 +78,7 @@ public class AssetGarbageCollectionService : BackgroundService
                 // Delete from storage
                 await storageService.DeleteAsync(content.BucketName, content.ObjectKey, ct).ConfigureAwait(false);
 
-                // Delete record
+                content.AddIntegrationEvent(CreateObjectDeletedEvent(content));
                 await contentRepository.DeleteAsync(content.Id, ct).ConfigureAwait(false);
 
                 deleted++;
@@ -102,4 +102,14 @@ public class AssetGarbageCollectionService : BackgroundService
             "Garbage collection completed: {Deleted} deleted, {Failed} failed",
             deleted, failed);
     }
+
+    private static AssetObjectDeletedEvent CreateObjectDeletedEvent(AssetContent content) =>
+        new(content.Id, content.ContentHash, content.SizeBytes, "object-storage")
+        {
+            TenantId = content.TenantId ?? DurableIntegrationEventTenants.Platform,
+            ActorId = DurableIntegrationEventActors.System,
+            AggregateType = nameof(AssetContent),
+            AggregateId = content.Id.ToString(),
+            CorrelationId = Guid.NewGuid()
+        };
 }
