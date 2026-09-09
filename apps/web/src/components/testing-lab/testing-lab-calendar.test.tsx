@@ -1,6 +1,9 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import type { TestingLabTestingEventProjection } from "@game-guild/client";
+import type {
+  TestingLabTestingEventProjection,
+  TestingLabTestingEventTemplateProjection,
+} from "@game-guild/client";
 import { forwardRef, type ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -59,6 +62,14 @@ const eventAnalytics = [
   { eventId: "event-1", registeredTesters: 3, capacity: 10, fillRate: 30 },
   { eventId: "event-2", registeredTesters: 8, capacity: 8, fillRate: 100 },
 ];
+
+const templates = [
+  {
+    id: "template-1",
+    name: "Prototype reviews",
+    currentRevision: { id: "revision-1" },
+  },
+] as TestingLabTestingEventTemplateProjection[];
 
 describe("TestingLabCalendar", () => {
   it("opens as a month calendar and identifies event mode and capacity", () => {
@@ -128,8 +139,13 @@ describe("TestingLabCalendar", () => {
     );
 
     expect(screen.getByLabelText("Week numbers")).toHaveTextContent("Wk");
-    expect(screen.getByLabelText("Week 31")).toHaveTextContent("31");
-    expect(screen.getAllByLabelText(/^Week \d+$/)).toHaveLength(5);
+    const monthGrid = screen.getByRole("region", {
+      name: "Month Testing Lab calendar",
+    });
+    expect(within(monthGrid).getByLabelText("Week 31")).toHaveTextContent(
+      "31",
+    );
+    expect(within(monthGrid).getAllByLabelText(/^Week \d+$/)).toHaveLength(5);
   });
 
   it("keeps an empty month grid unobstructed", () => {
@@ -141,7 +157,9 @@ describe("TestingLabCalendar", () => {
       screen.queryByText("No events in this period"),
     ).not.toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: "Create event on August 19, 2030" }),
+      screen.getByRole("button", {
+        name: /Create event on August 19, 2030/,
+      }),
     ).toBeInTheDocument();
   });
 
@@ -158,7 +176,7 @@ describe("TestingLabCalendar", () => {
     const view = screen.getByRole("combobox", { name: "Calendar view" });
     await user.click(view);
     expect(
-      screen.getAllByRole("option").map((option) => option.textContent),
+      (await screen.findAllByRole("option")).map((option) => option.textContent),
     ).toEqual(["Day", "Week", "Month", "Year", "Schedule", "3 days"]);
     await user.click(screen.getByRole("option", { name: "Schedule" }));
 
@@ -181,8 +199,10 @@ describe("TestingLabCalendar", () => {
       />,
     );
 
-    fireEvent.click(
-      screen.getByRole("button", { name: "Create event on August 19, 2030" }),
+    fireEvent.doubleClick(
+      screen.getByRole("button", {
+        name: /Create event on August 19, 2030/,
+      }),
     );
 
     expect(screen.getByRole("dialog")).toHaveTextContent(
@@ -200,12 +220,85 @@ describe("TestingLabCalendar", () => {
       />,
     );
 
-    await user.hover(screen.getByRole("link", { name: /Campus playtest/i }));
+    await user.hover(screen.getByRole("button", { name: /Campus playtest/i }));
 
     expect(
       await screen.findByText("Hands-on lab for the new combat build."),
     ).toBeInTheDocument();
     expect(screen.getByText("7 tester spots available")).toBeInTheDocument();
+  });
+
+  it("opens a compact event summary before navigating to its workspace", async () => {
+    const user = userEvent.setup();
+    render(
+      <TestingLabCalendar
+        events={events}
+        eventAnalytics={eventAnalytics}
+        initialDate={new Date(2030, 7, 10)}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: /Campus playtest/i }));
+
+    const dialog = screen.getByRole("dialog");
+    expect(within(dialog).getByText("Campus playtest")).toBeInTheDocument();
+    expect(within(dialog).getByText("7 tester spots available")).toBeInTheDocument();
+    expect(within(dialog).getByRole("link", { name: "Open event" })).toHaveAttribute(
+      "href",
+      "/workspace/testing-lab/events/event-1",
+    );
+  });
+
+  it("groups events by calendar and lets managers hide a calendar", async () => {
+    const user = userEvent.setup();
+    const categorizedEvents = [
+      {
+        ...events[0],
+        configuration: { sourceTemplateId: "template-1" },
+      },
+      events[1],
+    ] as TestingLabTestingEventProjection[];
+
+    render(
+      <TestingLabCalendar
+        events={categorizedEvents}
+        templates={templates}
+        initialDate={new Date(2030, 7, 10)}
+      />,
+    );
+
+    const sidebar = screen.getByRole("complementary", {
+      name: "Testing Lab planning",
+    });
+    const category = within(sidebar).getByRole("checkbox", {
+      name: "Prototype reviews",
+    });
+    expect(category).toBeChecked();
+
+    await user.click(category);
+
+    expect(screen.queryByText("Campus playtest")).not.toBeInTheDocument();
+    expect(screen.getByText("Remote build review")).toBeInTheDocument();
+  });
+
+  it("expands crowded days without navigating away from the calendar", async () => {
+    const user = userEvent.setup();
+    const crowdedEvents = Array.from({ length: 5 }, (_, index) => ({
+      ...events[0],
+      id: `event-${index + 1}`,
+      name: `Playtest ${index + 1}`,
+    })) as TestingLabTestingEventProjection[];
+
+    render(
+      <TestingLabCalendar
+        events={crowdedEvents}
+        initialDate={new Date(2030, 7, 10)}
+      />,
+    );
+
+    expect(screen.queryByText("Playtest 5")).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "+2 more" }));
+    expect(screen.getByText("Playtest 5")).toBeInTheDocument();
   });
 
   it("filters the visible calendar without changing the event directory", async () => {
@@ -301,9 +394,10 @@ describe("TestingLabCalendar", () => {
       ),
     ).toBeInTheDocument();
     expect(within(sidebar).queryByRole("progressbar")).not.toBeInTheDocument();
+    expect(within(sidebar).getByText("Event calendars")).toBeInTheDocument();
     expect(
-      within(sidebar).queryByText("Event calendars"),
-    ).not.toBeInTheDocument();
+      within(sidebar).getByRole("checkbox", { name: "Testing events" }),
+    ).toBeChecked();
   });
 
   it("keeps the mini calendar synchronized with the main calendar", async () => {

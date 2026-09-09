@@ -149,7 +149,7 @@ export async function saveTestingEventTemplate(
     templateId
       ? createTemplateModule().putVTestingTemplates(templateId, "1", body)
       : createTemplateModule().postVTestingTemplates("1", body),
-    templateId ? "New template revision saved." : "Event template created.",
+    templateId ? "New calendar revision saved." : "Event calendar created.",
     undefined,
   );
 }
@@ -158,12 +158,12 @@ export async function setTestingEventTemplateArchived(
   formData: FormData,
 ): Promise<TestingEventActionResult<TestingLabTestingEventTemplateProjection>> {
   const templateId = text(formData, "templateId");
-  if (!templateId) return { success: false, error: "Template is required." };
+  if (!templateId) return { success: false, error: "Calendar is required." };
   return complete(
     checked(formData, "restore")
       ? createTemplateModule().postVTestingTemplatesRestore(templateId, "1")
       : createTemplateModule().postVTestingTemplatesArchive(templateId, "1"),
-    checked(formData, "restore") ? "Template restored." : "Template archived.",
+    checked(formData, "restore") ? "Calendar restored." : "Calendar archived.",
   );
 }
 

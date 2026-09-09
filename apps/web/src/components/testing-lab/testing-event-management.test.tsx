@@ -6,6 +6,7 @@ import {
   within,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import type { TestingLabTestingEventTemplateProjection } from "@game-guild/client";
 import { describe, expect, it, vi } from "vitest";
 
 global.ResizeObserver = class ResizeObserver {
@@ -284,6 +285,28 @@ describe("TestingEventApplications", () => {
       document.querySelector<HTMLInputElement>('input[name="requiresFeedback"]')
         ?.value,
     ).toBe("true");
+  });
+
+  it("uses an event calendar template when one is available", () => {
+    const templates = [
+      {
+        id: "template-1",
+        name: "Community playtests",
+        currentRevision: { id: "revision-1" },
+      },
+    ] as TestingLabTestingEventTemplateProjection[];
+
+    render(<CreateTestingEventDialog templates={templates} />);
+    fireEvent.click(screen.getByRole("button", { name: "New event" }));
+
+    expect(
+      screen.getByRole("combobox", { name: "Event calendar" }),
+    ).toHaveTextContent("Community playtests");
+    expect(
+      document.querySelector<HTMLInputElement>(
+        'input[name="templateRevisionId"]',
+      )?.value,
+    ).toBe("revision-1");
   });
 
   it("presents the event decisions first and groups its two time windows", () => {

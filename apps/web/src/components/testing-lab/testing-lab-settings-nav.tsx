@@ -12,7 +12,7 @@ const sections = [
     requiredCapabilities: ["TestingLab.ManageSettings"],
   },
   {
-    label: "Templates",
+    label: "Calendars",
     href: "/workspace/testing-lab/settings/templates",
     icon: Files,
     requiredCapabilities: ["TestingLab.ManageSettings"],
@@ -24,16 +24,16 @@ const sections = [
     requiredCapabilities: ["TestingLab.ManageSettings"],
   },
   {
-    label: "Analytics",
-    href: "/workspace/testing-lab/settings/analytics",
-    icon: BarChart3,
-    requiredCapabilities: ["TestingLab.ViewAnalytics"],
-  },
-  {
     label: "Access",
     href: "/workspace/testing-lab/settings/access",
     icon: ShieldCheck,
     requiredCapabilities: ["TestingLab.ManageSettings"],
+  },
+  {
+    label: "Analytics",
+    href: "/workspace/testing-lab/settings/analytics",
+    icon: BarChart3,
+    requiredCapabilities: ["TestingLab.ViewAnalytics"],
   },
 ] as const;
 

@@ -32,6 +32,10 @@ describe("TestingLabSettingsNav", () => {
       "href",
       "/workspace/testing-lab/settings/analytics",
     );
+    expect(screen.getByRole("link", { name: "Calendars" })).toHaveAttribute(
+      "href",
+      "/workspace/testing-lab/settings/templates",
+    );
     expect(screen.getByRole("link", { name: "General" })).not.toHaveAttribute(
       "aria-current",
     );
@@ -46,5 +50,6 @@ describe("TestingLabSettingsNav", () => {
     expect(screen.queryByRole("link", { name: "General" })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Locations" })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Access" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Calendars" })).not.toBeInTheDocument();
   });
 });

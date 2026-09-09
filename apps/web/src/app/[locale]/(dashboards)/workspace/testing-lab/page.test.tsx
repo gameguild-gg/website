@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   getTestingLabDashboard: vi.fn(),
   getTestingEventsDirectory: vi.fn(),
   getTestingApplicationsDirectory: vi.fn(),
+  getTestingEventTemplates: vi.fn(),
   getTestingLabSettings: vi.fn(),
   normalizeTestingRequestStatus: vi.fn(),
   normalizeTestingSessionStatus: vi.fn(),
@@ -23,6 +24,7 @@ vi.mock("@/lib/testing-lab", () => ({
 vi.mock("@/lib/testing-lab/events-queries", () => ({
   getTestingEventsDirectory: mocks.getTestingEventsDirectory,
   getTestingApplicationsDirectory: mocks.getTestingApplicationsDirectory,
+  getTestingEventTemplates: mocks.getTestingEventTemplates,
 }));
 
 vi.mock("@/components/testing-lab/testing-event-management", () => ({
@@ -73,6 +75,10 @@ import TestingLabPage from "./page";
 
 describe("testing lab dashboard page", () => {
   beforeEach(() => {
+    mocks.getTestingEventTemplates.mockResolvedValue({
+      templates: [],
+      accessIssues: [],
+    });
     mocks.getTestingLabSettings.mockResolvedValue({
       settings: { timezone: "America/Sao_Paulo" },
       accessIssues: [],
@@ -162,7 +168,7 @@ describe("testing lab dashboard page", () => {
       name: "Open public Testing Lab",
     });
     expect(publicView).toHaveAttribute("href", "/testing-lab");
-    expect(publicView).toHaveTextContent("Public page");
+    expect(publicView).not.toHaveTextContent("Public page");
     expect(
       screen.queryByRole("navigation", { name: "Testing Lab operations" }),
     ).not.toBeInTheDocument();
@@ -176,7 +182,8 @@ describe("testing lab dashboard page", () => {
       screen.getByRole("region", { name: "Testing Lab attention" }),
     ).toBeInTheDocument();
     expect(screen.getByText("1 pending application")).toBeInTheDocument();
-    expect(screen.getByText("1 incomplete session")).toBeInTheDocument();
+    expect(screen.queryByText(/incomplete session/i)).not.toBeInTheDocument();
+    expect(mocks.getTestingLabDashboard).not.toHaveBeenCalled();
     expect(
       screen.queryByRole("region", { name: "Testing Lab metrics" }),
     ).not.toBeInTheDocument();

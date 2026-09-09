@@ -74,6 +74,19 @@ describe("Testing Event workspace layout", () => {
       "href",
       "/workspace/testing-lab/events/event-1/applications",
     );
+    expect(screen.getByRole("link", { name: "Projects" })).toHaveAttribute(
+      "href",
+      "/workspace/testing-lab/events/event-1/projects",
+    );
+    expect(screen.getByRole("link", { name: "Participants" })).toHaveAttribute(
+      "href",
+      "/workspace/testing-lab/events/event-1/participants",
+    );
+    expect(screen.queryByRole("link", { name: "Learning" })).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Calendar" })).toHaveAttribute(
+      "href",
+      "/workspace/testing-lab",
+    );
     expect(screen.getByText("Workspace content")).toBeInTheDocument();
   });
 

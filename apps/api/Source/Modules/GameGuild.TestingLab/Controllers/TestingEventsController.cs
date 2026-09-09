@@ -56,12 +56,6 @@ public sealed class TestingEventsController(IMediator mediator) : BaseApiControl
         CreateTestingEventRequest request,
         CancellationToken cancellationToken = default)
     {
-        if (request.TemplateRevisionId == null && request.Configuration == null)
-            return UnprocessableEntity(new
-            {
-                code = "TestingLab.EventConfigurationRequired",
-                message = "Choose a template or provide rules and instructions while creating the event."
-            });
         if (request.TemplateRevisionId != null && request.Configuration != null)
             return UnprocessableEntity(new
             {

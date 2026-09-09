@@ -55,7 +55,7 @@ describe('Testing Events page', () => {
 
     render(await TestingEventsPage({ searchParams: Promise.resolve({ status: 'ApplicationsOpen' }) }));
 
-    expect(screen.getByRole('heading', { name: 'Testing events' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Testing sessions' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /new event/i })).toBeInTheDocument();
     expect(
       screen.getByRole('combobox', { name: 'Filter testing events by status' }),

@@ -62,8 +62,8 @@ export default async function TestingEventsPage({
     <div className="flex flex-col gap-6 p-4 lg:p-6">
       <TestingLabPageHeader
         icon={CalendarDays}
-        title="Testing events"
-        description="Manage application windows, schedules, and tester capacity."
+        title="Testing sessions"
+        description="Review every event and open its operational workspace."
         actions={
           <CreateTestingEventDialog
             templates={templates.templates}
@@ -93,7 +93,7 @@ export default async function TestingEventsPage({
           }
         />
       ) : (
-        <section className="divide-y rounded-md border" aria-label="Testing event directory">
+        <section className="divide-y border-y" aria-label="Testing session directory">
           {visibleEvents.map((event) => (
             <article key={event.id} className="grid gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
               <div className="min-w-0">

@@ -335,14 +335,19 @@ function EventIdentityFields({
   event,
   includeBrief = true,
   compact = false,
+  templates = [],
 }: {
   event?: TestingLabTestingEventProjection;
   includeBrief?: boolean;
   compact?: boolean;
+  templates?: TestingLabTestingEventTemplateProjection[];
 }) {
   const fieldSuffix = event?.id ?? "new";
   const compactRow =
     "grid gap-1.5 sm:grid-cols-[7rem_minmax(0,1fr)] sm:items-center sm:gap-3";
+  const availableTemplates = templates.filter(
+    (template) => template.currentRevision?.id,
+  );
 
   return (
     <div className={compact ? "grid gap-2.5" : "grid gap-4 sm:grid-cols-2"}>
@@ -366,6 +371,38 @@ function EventIdentityFields({
           }
         />
       </div>
+      {availableTemplates.length > 0 ? (
+        <div className={compact ? compactRow : "space-y-2"}>
+          <Label
+            className={compact ? "text-xs text-muted-foreground" : undefined}
+            htmlFor={`event-calendar-${fieldSuffix}`}
+          >
+            Calendar
+          </Label>
+          <Select
+            name="templateRevisionId"
+            defaultValue={availableTemplates[0]!.currentRevision!.id}
+          >
+            <SelectTrigger
+              id={`event-calendar-${fieldSuffix}`}
+              aria-label="Event calendar"
+              className="h-10 w-full"
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {availableTemplates.map((template) => (
+                  <SelectItem
+                    key={template.id}
+                    value={template.currentRevision!.id!}
+                  >
+                    {template.name?.trim() || "Untitled calendar"}
+                  </SelectItem>
+                ))}
+            </SelectContent>
+          </Select>
+        </div>
+      ) : null}
       <div className={compact ? compactRow : "space-y-2"}>
         <Label
           className={compact ? "text-xs text-muted-foreground" : undefined}
@@ -480,43 +517,55 @@ function EventTimelineFields({
 
   return (
     <div className={stacked ? "grid gap-3" : "grid gap-4 md:grid-cols-2"}>
-      <div
-        className={
-          compact
-            ? "grid min-w-0 gap-1.5 sm:grid-cols-[7rem_minmax(0,1fr)] sm:items-center sm:gap-3"
-            : "min-w-0 space-y-2"
-        }
+      <details
+        open={compact ? undefined : true}
+        className={compact ? "group min-w-0" : "min-w-0 space-y-2"}
       >
-        <Label
-          className={compact ? "text-xs text-muted-foreground" : undefined}
-          htmlFor={`applications-window-${fieldSuffix}`}
+        <summary
+          className={
+            compact
+              ? "grid min-h-10 cursor-pointer list-none items-center gap-1.5 rounded-md px-2 hover:bg-muted/40 sm:grid-cols-[7rem_minmax(0,1fr)] sm:gap-3"
+              : "pointer-events-none list-none"
+          }
         >
-          {compact ? "Applications" : "Application window"}
-        </Label>
-        <DateTimeRangePicker
-          id={`applications-window-${fieldSuffix}`}
-          label="Application window"
-          startName="applicationsOpenAt"
-          endName="applicationsCloseAt"
-          timeZoneId={eventTimeZone}
-          required
-          value={
-            schedule
-              ? { start: applicationsOpenAt, end: applicationsCloseAt }
-              : undefined
-          }
-          defaultValue={{ start: applicationsOpenAt, end: applicationsCloseAt }}
-          onValueChange={(next) =>
-            changeRange(
-              "applicationsOpenAt",
-              "applicationsCloseAt",
-              next,
-              applicationsOpenAt,
-              applicationsCloseAt,
-            )
-          }
-        />
-      </div>
+          <Label
+            className={compact ? "text-xs text-muted-foreground" : undefined}
+            htmlFor={`applications-window-${fieldSuffix}`}
+          >
+            {compact ? "Applications" : "Application window"}
+          </Label>
+          {compact ? (
+            <span className="text-sm text-muted-foreground group-open:hidden">
+              Set application window
+            </span>
+          ) : null}
+        </summary>
+        <div className={compact ? "mt-2 sm:ml-[7.75rem]" : undefined}>
+          <DateTimeRangePicker
+            id={`applications-window-${fieldSuffix}`}
+            label="Application window"
+            startName="applicationsOpenAt"
+            endName="applicationsCloseAt"
+            timeZoneId={eventTimeZone}
+            required
+            value={
+              schedule
+                ? { start: applicationsOpenAt, end: applicationsCloseAt }
+                : undefined
+            }
+            defaultValue={{ start: applicationsOpenAt, end: applicationsCloseAt }}
+            onValueChange={(next) =>
+              changeRange(
+                "applicationsOpenAt",
+                "applicationsCloseAt",
+                next,
+                applicationsOpenAt,
+                applicationsCloseAt,
+              )
+            }
+          />
+        </div>
+      </details>
       <div
         className={
           compact
@@ -863,6 +912,7 @@ export function CreateTestingEventDialog({
   open: controlledOpen,
   onOpenChange,
   showTrigger = true,
+  templates = [],
   defaultTimeZone = "UTC",
 }: CreateTestingEventDialogProps = {}) {
   const router = useRouter();
@@ -966,7 +1016,11 @@ export function CreateTestingEventDialog({
             <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-5">
               {result ? <ActionMessage result={result} /> : null}
               <div className="space-y-3">
-                <EventIdentityFields includeBrief={false} compact />
+                <EventIdentityFields
+                  includeBrief={false}
+                  compact
+                  templates={templates}
+                />
 
                 <section aria-label="Schedule" className="space-y-2.5">
                   <div className="grid min-w-0 gap-1.5 sm:grid-cols-[7rem_minmax(0,1fr)] sm:items-center sm:gap-3">

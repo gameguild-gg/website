@@ -56,7 +56,7 @@ export default async function TestingEventTestersPage({ params }: { params: Prom
 
   return (
     <div className="space-y-5">
-      <TestingLabPageHeader headingLevel={2} icon={UsersRound} title="Testers and attendance" description="Manage tester participation per slot and preserve check-in, check-out, no-show, and completion evidence." />
+      <TestingLabPageHeader headingLevel={2} icon={UsersRound} title="Participants and attendance" description="Manage participation per slot and preserve check-in, check-out, no-show, and completion evidence." />
 
       <p className="text-sm text-muted-foreground">{total === 1 ? '1 tester registered across this event.' : `${total} testers registered across this event.`}</p>
       {testerEligibility.accessIssues.length > 0 ? (
