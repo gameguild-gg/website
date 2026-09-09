@@ -94,6 +94,17 @@ function projectCreator(project: ProjectsProjectApiOutput) {
   return owner?.userName || "GameGuild creator";
 }
 
+function projectCreatorId(project: ProjectsProjectApiOutput) {
+  if (project.creator?.id) return project.creator.id;
+
+  const owner = project.collaborators?.find(
+    (collaborator) =>
+      collaborator.isActive !== false &&
+      collaborator.role?.toLowerCase() === "owner",
+  );
+  return owner?.userId || project.createdById || undefined;
+}
+
 function projectMedia(
   project: ProjectsProjectApiOutput,
 ): PublicProject["media"] {
@@ -134,6 +145,7 @@ function mapProject(project: ProjectsProjectApiOutput): PublicProject {
   return {
     slug,
     title: project.title || slug,
+    creatorId: projectCreatorId(project),
     creator: projectCreator(project),
     creatorRole: project.type ? `${project.type} creator` : "Project creator",
     summary:

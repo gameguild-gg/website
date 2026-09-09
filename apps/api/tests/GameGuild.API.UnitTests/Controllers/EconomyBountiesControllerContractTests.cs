@@ -47,8 +47,9 @@ public sealed class EconomyBountiesControllerContractTests
             IsAuthenticated = true
         });
         Guid? reviewId = state == EconomyProtectedOperationState.ReviewRequired ? Guid.NewGuid() : null;
-        var controller = new EconomyBountiesController(
-            new ThrowingBountyService(state, reviewId), actor, TimeProvider.System);
+        var service = new ThrowingBountyService(state, reviewId);
+        var sender = EconomyHandlerSenders.Public(bounties: service);
+        var controller = new EconomyBountiesController(sender, service, actor, TimeProvider.System);
 
         var result = await controller.Create(new CreateMyBountyRequest(
             CurrencyCode.HardCoin,

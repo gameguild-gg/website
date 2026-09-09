@@ -23,7 +23,7 @@ public class SessionControllerCovTests
 
     public SessionControllerCovTests()
     {
-        _controller = new SessionController(_sessionService.Object);
+        _controller = new SessionController(_sessionService.Object, new CommandHandlerSender(_sessionService.Object));
         SetUser(_userId);
     }
 
@@ -213,7 +213,7 @@ public class MfaControllerCovTests
 
     public MfaControllerCovTests()
     {
-        _controller = new MfaController(_mfaService.Object);
+        _controller = new MfaController(_mfaService.Object, new CommandHandlerSender(_mfaService.Object));
         SetUser(_userId);
     }
 
@@ -416,7 +416,7 @@ public class TrustedDevicesControllerCovTests
 
     public TrustedDevicesControllerCovTests()
     {
-        _controller = new TrustedDevicesController(_sessionService.Object);
+        _controller = new TrustedDevicesController(_sessionService.Object, new CommandHandlerSender(_sessionService.Object));
         _controller.ControllerContext = new ControllerContext
         {
             HttpContext = new DefaultHttpContext
@@ -514,7 +514,7 @@ public class ServiceAccountCrudControllerCovTests
 
     public ServiceAccountCrudControllerCovTests()
     {
-        _controller = new ServiceAccountCrudController(_svcAccountService.Object);
+        _controller = new ServiceAccountCrudController(_svcAccountService.Object, new CommandHandlerSender(_svcAccountService.Object, Mock.Of<IJwtTokenService>()));
         _controller.ControllerContext = new ControllerContext
         {
             HttpContext = new DefaultHttpContext

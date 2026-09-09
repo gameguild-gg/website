@@ -134,6 +134,7 @@ docs/devlog/2025-08-10-permissions-refactor-conversation-summary.md
 # Miscellaneous
 *.pem
 .superpowers/
+.worktrees/
 
 # Security: infra/ contains secrets (CF tokens, origin certs, kubeconfig, ansible vault)
 # Repo is PUBLIC — infra must NEVER be tracked

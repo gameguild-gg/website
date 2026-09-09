@@ -133,8 +133,8 @@ public sealed class EconomyComplianceHoldAdministrationControllerTests
         var store = new Mock<IComplianceHoldAdministrationStore>(MockBehavior.Strict);
         var accessor = Actor([]);
         var controller = new EconomyComplianceHoldAdministrationController(
+            EconomyHandlerSenders.Compliance(holds: store.Object, stepUp: new RecordingStepUpExecutor()),
             store.Object,
-            new RecordingStepUpExecutor(),
             accessor,
             new FixedTimeProvider(Now));
         var holdId = Guid.NewGuid();
@@ -152,8 +152,10 @@ public sealed class EconomyComplianceHoldAdministrationControllerTests
         IComplianceHoldAdministrationStore store,
         IEconomyStepUpExecutor? executor = null) =>
         new(
+            EconomyHandlerSenders.Compliance(
+                holds: store,
+                stepUp: executor ?? new RecordingStepUpExecutor()),
             store,
-            executor ?? new RecordingStepUpExecutor(),
             Actor([EconomyPermission.Keys.OperateCompliance]),
             new FixedTimeProvider(Now));
 

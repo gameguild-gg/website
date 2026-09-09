@@ -1,4 +1,5 @@
 using Asp.Versioning;
+using GameGuild.CQRS;
 using GameGuild.Identity.Context.Actors;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -11,7 +12,8 @@ namespace GameGuild.TestingLab;
 [Authorize]
 public sealed class TestingEventTemplatesController(
     IApplicationDbContext context,
-    IActorContextAccessor actors) : ControllerBase
+    IActorContextAccessor actors,
+    ISender sender) : ControllerBase
 {
     [HttpGet]
     [RequireTestingLabPermission(TestingLabActions.Read, TestingLabResourceTypes.Settings)]
@@ -56,21 +58,10 @@ public sealed class TestingEventTemplatesController(
         if (!await IsActiveActorAsync(actor, cancellationToken).ConfigureAwait(false)) return Unauthorized();
         try
         {
-            var template = TestingEventTemplate.Create(
+            var template = await sender.Send(new CreateTestingEventTemplateEndpointCommand(
                 actor.TenantId!.Value,
-                request.Name,
-                request.GeneralRules,
-                request.CandidateInstructions,
-                request.TesterInstructions,
-                request.ProjectApplicationSchema,
-                request.TesterRegistrationSchema,
-                request.DefaultMode,
-                request.DefaultApprovalMode,
-                request.DefaultRequiresFeedback,
                 actor.SubjectIdAsGuid!.Value,
-                request.Description);
-            context.Set<TestingEventTemplate>().Add(template);
-            await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+                request), cancellationToken).ConfigureAwait(false);
             return CreatedAtAction(nameof(GetRevision),
                 new { templateId = template.Id, revisionId = template.CurrentRevision.Id },
                 TestingEventTemplateProjection.FromEntity(template));
@@ -90,27 +81,14 @@ public sealed class TestingEventTemplatesController(
     {
         var actor = actors.ActorContext;
         if (!await IsActiveActorAsync(actor, cancellationToken).ConfigureAwait(false)) return Unauthorized();
-        var template = await context.Set<TestingEventTemplate>()
-            .Include(candidate => candidate.Revisions)
-            .FirstOrDefaultAsync(candidate =>
-                candidate.Id == templateId && candidate.TenantId == actor.TenantId && candidate.DeletedAt == null,
-                cancellationToken).ConfigureAwait(false);
-        if (template == null) return NotFound();
         try
         {
-            template.CreateRevision(
-                request.GeneralRules,
-                request.CandidateInstructions,
-                request.TesterInstructions,
-                request.ProjectApplicationSchema,
-                request.TesterRegistrationSchema,
-                request.DefaultMode,
-                request.DefaultApprovalMode,
-                request.DefaultRequiresFeedback,
+            var template = await sender.Send(new CreateTestingEventTemplateRevisionEndpointCommand(
+                templateId,
+                actor.TenantId!.Value,
                 actor.SubjectIdAsGuid!.Value,
-                request.Name,
-                request.Description);
-            await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+                request), cancellationToken).ConfigureAwait(false);
+            if (template == null) return NotFound();
             return Ok(TestingEventTemplateProjection.FromEntity(template));
         }
         catch (InvalidOperationException exception)
@@ -142,14 +120,11 @@ public sealed class TestingEventTemplatesController(
     {
         var actor = actors.ActorContext;
         if (!await IsActiveActorAsync(actor, cancellationToken).ConfigureAwait(false)) return Unauthorized();
-        var template = await context.Set<TestingEventTemplate>()
-            .Include(candidate => candidate.Revisions)
-            .FirstOrDefaultAsync(candidate =>
-                candidate.Id == templateId && candidate.TenantId == actor.TenantId && candidate.DeletedAt == null,
-                cancellationToken).ConfigureAwait(false);
+        var template = await sender.Send(new SetTestingEventTemplateArchivedEndpointCommand(
+            templateId,
+            actor.TenantId!.Value,
+            archived), cancellationToken).ConfigureAwait(false);
         if (template == null) return NotFound();
-        if (archived) template.Archive(); else template.RestoreArchivedTemplate();
-        await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         return Ok(TestingEventTemplateProjection.FromEntity(template));
     }
 

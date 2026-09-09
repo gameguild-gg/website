@@ -185,7 +185,7 @@ export class AiModule {
 
   /**
    */
-  async getAiHistory(query?: { take?: number }): Promise<Result<Array<Types.AIAiConversationHistoryEntry>, ApiError>> {
+  async getAiHistory(query?: { take?: number }): Promise<Result<Array<Types.AIAiConversationHistoryEntryDto>, ApiError>> {
     const url = '/v1/ai/history';
 
     const result = await this.client.request({
@@ -195,7 +195,7 @@ export class AiModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.AIAiConversationHistoryEntry>, ApiError>;
+    return result as Result<Array<Types.AIAiConversationHistoryEntryDto>, ApiError>;
   }
 
   /**

@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using FluentAssertions;
 using GameGuild.Commerce.Products;
+using GameGuild.CQRS;
 using GameGuild.Learning.Courses;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -129,7 +130,12 @@ public sealed class CourseCheckoutControllerTests
         IEntitlementService entitlementService,
         IProductRepository productRepository)
     {
-        return new CourseCheckoutController(programService, enrollmentService, entitlementService, productRepository)
+        var handler = new CompleteCourseCheckoutCommandHandler(
+            programService,
+            enrollmentService,
+            entitlementService,
+            productRepository);
+        return new CourseCheckoutController(new DirectSender(handler))
         {
             ControllerContext = new ControllerContext
             {
@@ -141,5 +147,28 @@ public sealed class CourseCheckoutControllerTests
                 },
             },
         };
+    }
+
+    private sealed class DirectSender(CompleteCourseCheckoutCommandHandler handler) : ISender
+    {
+        public async Task<TResponse> Send<TResponse>(
+            IRequest<TResponse> request,
+            CancellationToken cancellationToken = default)
+        {
+            if (request is CompleteCourseCheckoutCommand command)
+                return (TResponse)(object)await handler.Handle(command, cancellationToken).ConfigureAwait(false);
+            throw new InvalidOperationException($"Unsupported request type: {request.GetType().FullName}");
+        }
+
+        public Task Send<TRequest>(TRequest request, CancellationToken cancellationToken = default)
+            where TRequest : IRequest =>
+            throw new InvalidOperationException($"Unsupported request type: {request.GetType().FullName}");
+
+        public async Task<object?> Send(object request, CancellationToken cancellationToken = default)
+        {
+            if (request is CompleteCourseCheckoutCommand command)
+                return await handler.Handle(command, cancellationToken).ConfigureAwait(false);
+            throw new InvalidOperationException($"Unsupported request type: {request.GetType().FullName}");
+        }
     }
 }

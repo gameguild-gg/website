@@ -1,4 +1,5 @@
 using Asp.Versioning;
+using GameGuild.CQRS;
 using GameGuild.Identity.Authorization;
 using GameGuild.Identity.Context.Actors;
 using Microsoft.AspNetCore.Authorization;
@@ -22,6 +23,7 @@ public sealed record TestingParticipantMutationProjection(
 [Authorize]
 public class TestingParticipantsController(
     ITestingParticipantOperations participantService,
+    ISender sender,
     IActorContextAccessor actorContextAccessor) : BaseApiController
 {
     #region Participant Management
@@ -33,7 +35,7 @@ public class TestingParticipantsController(
     {
         return await Execute(async () =>
         {
-            var participant = await participantService.AddParticipantAsync(requestId, userId).ConfigureAwait(false);
+            var participant = await sender.Send(new AddTestingParticipantEndpointCommand(requestId, userId)).ConfigureAwait(false);
             return new TestingParticipantMutationProjection(
                 participant.Id,
                 participant.TestingRequestId,
@@ -48,7 +50,7 @@ public class TestingParticipantsController(
     [RequireTestingLabPermission(TestingLabActions.Manage, TestingLabResourceTypes.Participant)]
     public async Task<ActionResult> RemoveParticipant(Guid requestId, Guid userId)
     {
-        var result = await participantService.RemoveParticipantAsync(requestId, userId).ConfigureAwait(false);
+        var result = await sender.Send(new RemoveTestingParticipantEndpointCommand(requestId, userId)).ConfigureAwait(false);
         if (!result) return NotFound();
         return NoContent();
     }
@@ -83,8 +85,8 @@ public class TestingParticipantsController(
         if (userId == null)
             return Unauthorized("User ID not found in token");
 
-        return await Execute(() => participantService.RegisterForSessionAsync(
-            sessionId, userId.Value, request.RegistrationType, request.Notes)).ConfigureAwait(false);
+        return await Execute(() => sender.Send(new RegisterTestingSessionEndpointCommand(
+            sessionId, userId.Value, request.RegistrationType, request.Notes))).ConfigureAwait(false);
     }
 
     // DELETE: testing/sessions/{sessionId}/register
@@ -97,7 +99,7 @@ public class TestingParticipantsController(
 
         try
         {
-            var result = await participantService.UnregisterFromSessionAsync(sessionId, userId.Value).ConfigureAwait(false);
+            var result = await sender.Send(new UnregisterTestingSessionEndpointCommand(sessionId, userId.Value)).ConfigureAwait(false);
             return result ? NoContent() : NotFound();
         }
         catch (UnauthorizedAccessException) { return Forbid(); }
@@ -124,8 +126,8 @@ public class TestingParticipantsController(
         if (userId == null)
             return Unauthorized("User ID not found in token");
 
-        return await Execute(() => participantService.AddToWaitlistAsync(
-            sessionId, userId.Value, request.RegistrationType, request.Notes)).ConfigureAwait(false);
+        return await Execute(() => sender.Send(new AddTestingSessionWaitlistEndpointCommand(
+            sessionId, userId.Value, request.RegistrationType, request.Notes))).ConfigureAwait(false);
     }
 
     // DELETE: testing/sessions/{sessionId}/waitlist
@@ -138,7 +140,7 @@ public class TestingParticipantsController(
 
         try
         {
-            var result = await participantService.RemoveFromWaitlistAsync(sessionId, userId.Value).ConfigureAwait(false);
+            var result = await sender.Send(new RemoveTestingSessionWaitlistEndpointCommand(sessionId, userId.Value)).ConfigureAwait(false);
             return result ? NoContent() : NotFound();
         }
         catch (UnauthorizedAccessException) { return Forbid(); }

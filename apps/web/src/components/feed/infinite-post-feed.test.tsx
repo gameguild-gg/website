@@ -115,6 +115,6 @@ describe('InfinitePostFeed', () => {
 
     render(<InfinitePostFeed stream="feed" initialItems={[]} initialNextSkip={null} />);
 
-    expect(screen.getByText(/no posts here yet/i)).toBeInTheDocument();
+    expect(screen.getByText(/your feed is ready for its first build/i)).toBeInTheDocument();
   });
 });

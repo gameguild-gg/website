@@ -2,9 +2,8 @@ import { defineRouting } from 'next-intl/routing';
 
 export const routing = defineRouting({
   locales: ['en-US', 'pt-BR'],
-  // Next 16 reprocesses the internal default-locale rewrite produced by
-  // `as-needed`, which turns it into a redirect back to the unprefixed URL.
-  // Keeping every locale explicit avoids that production-only redirect loop.
-  localePrefix: 'always',
+  // The default language is canonical without a URL prefix. The proxy owns
+  // the internal rewrite so Next 16 never reprocesses next-intl's rewrite.
+  localePrefix: 'as-needed',
   defaultLocale: 'en-US',
 });

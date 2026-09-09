@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using GameGuild.Resources;
+using GameGuild.CQRS;
 
 namespace GameGuild.AI;
 
@@ -18,7 +19,7 @@ namespace GameGuild.AI;
 [Microsoft.AspNetCore.Http.Tags("ai")]
 [Authorize]
 public sealed class AiController(
-    IAiOrchestrator aiOrchestrator,
+    ISender sender,
     IAiConversationHistoryReader historyRepository,
     IRequestContextAccessor requestContextAccessor,
     IResourceQuotaReader quotaReader,
@@ -59,7 +60,7 @@ public sealed class AiController(
         [FromBody] AiChatRequest request,
         CancellationToken cancellationToken = default)
     {
-        var result = await aiOrchestrator.ChatAsync(request, cancellationToken).ConfigureAwait(false);
+        var result = await sender.Send(new ChatAiCommand(request), cancellationToken).ConfigureAwait(false);
         return ToActionResult(result);
     }
 
@@ -147,13 +148,13 @@ public sealed class AiController(
             return BadRequest(new ProblemDetails { Title = "Context is required", Status = StatusCodes.Status400BadRequest });
 
         var prompt = BuildGeneratedContentPrompt(kind, subject, context, audience, tone);
-        var result = await aiOrchestrator.GenerateAsync(new AiGenerateRequest(
+        var result = await sender.Send(new GenerateAiCommand(new AiGenerateRequest(
             provider,
             model,
             BuildGeneratedContentSystemPrompt(kind),
             prompt,
             Temperature: 0.4,
-            MaxTokens: maxTokens ?? DefaultMaxTokens(kind)), cancellationToken).ConfigureAwait(false);
+            MaxTokens: maxTokens ?? DefaultMaxTokens(kind))), cancellationToken).ConfigureAwait(false);
 
         return ToActionResult(result);
     }
@@ -167,7 +168,7 @@ public sealed class AiController(
         [FromBody] AiGenerateRequest request,
         CancellationToken cancellationToken = default)
     {
-        var result = await aiOrchestrator.GenerateAsync(request, cancellationToken).ConfigureAwait(false);
+        var result = await sender.Send(new GenerateAiCommand(request), cancellationToken).ConfigureAwait(false);
         return ToActionResult(result);
     }
 

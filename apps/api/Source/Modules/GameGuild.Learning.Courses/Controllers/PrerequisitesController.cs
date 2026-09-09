@@ -1,3 +1,4 @@
+using GameGuild.CQRS;
 using GameGuild.Identity.Context.Actors;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -15,15 +16,18 @@ public class PrerequisitesController : BaseApiController
     private readonly IPrerequisiteService _prerequisiteService;
     private readonly IActorContextAccessor _actorContextAccessor;
     private readonly ILogger<PrerequisitesController> _logger;
+    private readonly ISender _sender;
 
     public PrerequisitesController(
         IPrerequisiteService prerequisiteService,
         IActorContextAccessor actorContextAccessor,
-        ILogger<PrerequisitesController> logger)
+        ILogger<PrerequisitesController> logger,
+        ISender sender)
     {
         _prerequisiteService = prerequisiteService;
         _actorContextAccessor = actorContextAccessor;
         _logger = logger;
+        _sender = sender;
     }
 
     /// <summary>
@@ -44,7 +48,7 @@ public class PrerequisitesController : BaseApiController
             request.DisplayOrder,
             request.PrerequisiteGroup);
 
-        var result = await _prerequisiteService.CreatePrerequisiteAsync(createRequest).ConfigureAwait(false);
+        var result = await _sender.Send(new CreatePrerequisiteEndpointCommand(createRequest)).ConfigureAwait(false);
         
         if (!result.IsSuccess)
         {
@@ -177,7 +181,7 @@ public class PrerequisitesController : BaseApiController
             request.DisplayOrder,
             request.PrerequisiteGroup);
 
-        var result = await _prerequisiteService.UpdatePrerequisiteAsync(id, updateRequest).ConfigureAwait(false);
+        var result = await _sender.Send(new UpdatePrerequisiteEndpointCommand(id, updateRequest)).ConfigureAwait(false);
         
         if (!result.IsSuccess)
         {
@@ -195,7 +199,7 @@ public class PrerequisitesController : BaseApiController
     [HttpDelete("{id:guid}")]
     public async Task<ActionResult> DeletePrerequisite(Guid id)
     {
-        var result = await _prerequisiteService.DeletePrerequisiteAsync(id).ConfigureAwait(false);
+        var result = await _sender.Send(new DeletePrerequisiteEndpointCommand(id)).ConfigureAwait(false);
         
         if (!result.IsSuccess)
         {
@@ -213,7 +217,7 @@ public class PrerequisitesController : BaseApiController
     [HttpPost("course/{courseId:guid}/reorder")]
     public async Task<ActionResult> ReorderPrerequisites(Guid courseId, [FromBody] ReorderPrerequisitesRequest request)
     {
-        var result = await _prerequisiteService.ReorderPrerequisitesAsync(courseId, request.PrerequisiteIds).ConfigureAwait(false);
+        var result = await _sender.Send(new ReorderPrerequisitesEndpointCommand(courseId, request.PrerequisiteIds)).ConfigureAwait(false);
         
         if (!result.IsSuccess)
         {

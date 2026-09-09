@@ -67,16 +67,32 @@ class TypesGenerator extends BaseGenerator {
       lines.push('');
     }
 
+    const knownSchemaNames = new Set(schemaEntries.map(({ sanitizedName }) => sanitizedName));
+    const legacyDtoAliases = schemaEntries.flatMap(({ sanitizedName }) => {
+      if (!/Dto$/i.test(sanitizedName)) return [];
+
+      const legacyName = sanitizedName.replace(/Dto$/i, '');
+      if (!legacyName || knownSchemaNames.has(legacyName)) return [];
+
+      return [{ legacyName, dtoName: sanitizedName }];
+    });
+
+    if (legacyDtoAliases.length > 0) {
+      lines.push('// Backwards-compatible aliases for names generated before DTO identity was preserved');
+      for (const { legacyName, dtoName } of legacyDtoAliases) {
+        lines.push(`export type ${legacyName} = ${dtoName};`);
+        lines.push(`export { ${dtoName}Schema as ${legacyName}Schema };`);
+      }
+      lines.push('');
+    }
+
     return lines.join('\n');
   }
 
   /**
    * Generate TypeScript type for a single schema
    */
-  private generateSchemaType(
-    name: string,
-    schema: OpenAPIV3.SchemaObject
-  ): string {
+  private generateSchemaType(name: string, schema: OpenAPIV3.SchemaObject): string {
     // Handle enums
     if (schema.enum) {
       return this.generateEnumType(name, schema);
@@ -138,10 +154,7 @@ class TypesGenerator extends BaseGenerator {
   /**
    * Generate intersection type from allOf
    */
-  private generateIntersectionType(
-    name: string,
-    schema: OpenAPIV3.SchemaObject
-  ): string {
+  private generateIntersectionType(name: string, schema: OpenAPIV3.SchemaObject): string {
     const parts = schema.allOf!;
     const description = schema.description ? `/** ${schema.description} */\n` : '';
 
@@ -217,7 +230,7 @@ class TypesGenerator extends BaseGenerator {
    */
   private generateZodSchema(name: string, schema: OpenAPIV3.SchemaObject): string {
     const description = schema.description ? `/** Zod schema for ${name}. ${schema.description} */\n` : `/** Zod schema for ${name} */\n`;
-    
+
     // Handle enums specially for better Zod output
     if (schema.enum) {
       return this.generateZodEnum(name, schema);
@@ -260,12 +273,14 @@ class TypesGenerator extends BaseGenerator {
     }
 
     // For non-string enums, use union of literals
-    const literals = values.map((v) => {
-      if (typeof v === 'string') return `z.literal('${v}')`;
-      if (typeof v === 'number') return `z.literal(${v})`;
-      if (typeof v === 'boolean') return `z.literal(${v})`;
-      return `z.literal(${JSON.stringify(v)})`;
-    }).join(', ');
+    const literals = values
+      .map((v) => {
+        if (typeof v === 'string') return `z.literal('${v}')`;
+        if (typeof v === 'number') return `z.literal(${v})`;
+        if (typeof v === 'boolean') return `z.literal(${v})`;
+        return `z.literal(${JSON.stringify(v)})`;
+      })
+      .join(', ');
 
     return `${description}${name}Schema = z.union([${literals}]);`;
   }
@@ -298,7 +313,7 @@ class TypesGenerator extends BaseGenerator {
     // Use merge() for object intersections
     const schemas = parts.map((part) => this.zodMapper.map(part as OpenAPIV3.SchemaObject));
     const mergedSchema = schemas.reduce((acc, curr) => `${acc}.merge(${curr})`);
-    
+
     return `${description}${name}Schema = ${mergedSchema};`;
   }
 
@@ -316,18 +331,18 @@ class TypesGenerator extends BaseGenerator {
       const propObj = propSchema as OpenAPIV3.SchemaObject | OpenAPIV3.ReferenceObject;
       const isRequired = required.has(propName);
       const zodPropSchema = this.zodMapper.map(propObj);
-      
+
       // Make optional if not required
       const finalSchema = isRequired ? zodPropSchema : `${zodPropSchema}.optional()`;
-      
+
       // Use quotes for property names with special characters
       const safePropName = /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(propName) ? propName : `'${propName}'`;
-      
+
       propEntries.push(`  ${safePropName}: ${finalSchema}`);
     }
 
     let zodSchema: string;
-    
+
     if (propEntries.length > 0) {
       zodSchema = `z.object({\n${propEntries.join(',\n')}\n})`;
     } else {

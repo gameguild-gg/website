@@ -35,8 +35,15 @@ export interface DashboardWorkspaceCounts {
   invitations: number;
 }
 
+const workspaceContext: DashboardContextSummary = {
+  type: 'Workspace',
+  id: null,
+  name: 'Workspace',
+  route: '/workspace',
+};
+
 const safeManagementContext: DashboardContexts = {
-  contexts: [],
+  contexts: [workspaceContext],
   capabilities: [],
   counts: { teams: 0, projects: 0, pendingTasks: 0, invitations: 0 },
   navigation: [],
@@ -74,11 +81,24 @@ export async function getDashboardContexts(): Promise<DashboardContexts> {
     const capabilities = Array.isArray(result.data.capabilities)
       ? result.data.capabilities.filter((capability): capability is string => typeof capability === 'string')
       : [];
+    const canAccessOperations = hasAnyDashboardCapability(
+      capabilities,
+      'Community.Manage',
+      'TestingLab.Manage',
+      'TestingLab.Review',
+      'TestingLab.ViewAnalytics',
+      'LaunchPad.Manage',
+      'LaunchPad.Review',
+      'LaunchPad.ViewAnalytics',
+      'Learning.Manage',
+      'Economy.Manage',
+      'Platform.Manage',
+    );
 
     return {
-      contexts: capabilities.length > 0
-        ? [{ type: 'Operations', id: null, name: 'Operations', route: '/dashboard' }]
-        : [],
+      contexts: canAccessOperations
+        ? [workspaceContext, { type: 'Operations', id: null, name: 'Operations', route: '/dashboard' }]
+        : [workspaceContext],
       capabilities,
       counts: safeManagementContext.counts,
       navigation: safeManagementContext.navigation,

@@ -112,6 +112,9 @@ public class AssetUploadService : IAssetUploadService
                 width,
                 height);
 
+            assetContent.TenantId = options.TenantId;
+            assetContent.AddIntegrationEvent(CreateObjectStoredEvent(assetContent, userId, options.TenantId));
+
             assetContent = await _contentRepository.AddAsync(assetContent, ct).ConfigureAwait(false);
         }
 
@@ -128,6 +131,8 @@ public class AssetUploadService : IAssetUploadService
         reference.MoveToFolder(options.FolderId);
 
         reference.CreateInitialRevision(userId);
+
+        reference.AddIntegrationEvent(CreateReferenceCreatedEvent(reference, assetContent, userId, options.TenantId));
 
         reference = await _referenceRepository.AddAsync(reference, ct).ConfigureAwait(false);
 
@@ -264,6 +269,9 @@ public class AssetUploadService : IAssetUploadService
             session.TotalSize,
             null, null);
 
+        assetContent.TenantId = options.TenantId;
+        assetContent.AddIntegrationEvent(CreateObjectStoredEvent(assetContent, session.UserId, options.TenantId));
+
         assetContent = await _contentRepository.AddAsync(assetContent, ct).ConfigureAwait(false);
 
         // Create reference
@@ -279,6 +287,8 @@ public class AssetUploadService : IAssetUploadService
         reference.MoveToFolder(options.FolderId);
 
         reference.CreateInitialRevision(session.UserId);
+
+        reference.AddIntegrationEvent(CreateReferenceCreatedEvent(reference, assetContent, session.UserId, options.TenantId));
 
         reference = await _referenceRepository.AddAsync(reference, ct).ConfigureAwait(false);
 
@@ -301,6 +311,31 @@ public class AssetUploadService : IAssetUploadService
         var hashBytes = await sha256.ComputeHashAsync(content, ct).ConfigureAwait(false);
         return Convert.ToHexString(hashBytes).ToLowerInvariant();
     }
+
+    private static AssetObjectStoredEvent CreateObjectStoredEvent(
+        AssetContent content,
+        Guid actorId,
+        Guid? tenantId) => new(content.Id, content.ContentHash, content.SizeBytes, "object-storage")
+    {
+        TenantId = tenantId ?? DurableIntegrationEventTenants.Platform,
+        ActorId = actorId,
+        AggregateType = nameof(AssetContent),
+        AggregateId = content.Id.ToString(),
+        CorrelationId = Guid.NewGuid()
+    };
+
+    private static AssetReferenceCreatedEvent CreateReferenceCreatedEvent(
+        AssetReference reference,
+        AssetContent content,
+        Guid actorId,
+        Guid? tenantId) => new(reference.Id, content.Id, content.ContentHash, content.SizeBytes)
+    {
+        TenantId = tenantId ?? DurableIntegrationEventTenants.Platform,
+        ActorId = actorId,
+        AggregateType = nameof(AssetReference),
+        AggregateId = reference.Id.ToString(),
+        CorrelationId = Guid.NewGuid()
+    };
 
     private static async Task<(int? Width, int? Height)> ExtractImageDimensionsAsync(
         Stream content, CancellationToken ct)

@@ -6,7 +6,7 @@ namespace GameGuild.Identity.Authentication;
 /// <summary>
 ///     Handler for revoke token command
 /// </summary>
-public sealed class RevokeTokenHandler(IAuthService authService, ILogger<RevokeTokenHandler> logger) : IRequestHandler<RevokeTokenCommand, Unit>
+public sealed class RevokeTokenHandler(IAuthService authService, ILogger<RevokeTokenHandler> logger) : ICommandHandler<RevokeTokenCommand>
 {
     private readonly IAuthService _authService = authService ?? throw new ArgumentNullException(nameof(authService));
 

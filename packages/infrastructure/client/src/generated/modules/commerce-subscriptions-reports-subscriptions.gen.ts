@@ -24,7 +24,7 @@ export class CommerceSubscriptionsReportsSubscriptionsModule {
     tenantId?: string;
     startDate?: string;
     endDate?: string;
-  }): Promise<Result<Types.CommerceSubscriptionsSubscriptionChurnReport, ApiError>> {
+  }): Promise<Result<Types.CommerceSubscriptionsSubscriptionChurnReportDto, ApiError>> {
     const url = '/api/v1/reports/churn';
 
     const result = await this.client.request({
@@ -36,7 +36,7 @@ export class CommerceSubscriptionsReportsSubscriptionsModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.CommerceSubscriptionsSubscriptionChurnReportSchema, result.data, 'response');
+      const validatedData = safeParse(Types.CommerceSubscriptionsSubscriptionChurnReportDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 

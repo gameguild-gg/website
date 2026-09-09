@@ -153,25 +153,27 @@ public sealed class M3DocumentCloseoutTests
     [Fact]
     public async Task BulkUploadAssetsHandler_ReturnsPerFileResults()
     {
-        var upload = new Mock<IAssetUploadService>();
+        var upload = new Mock<ISecureUploadService>();
         var successId = Guid.NewGuid();
         var contentId = Guid.NewGuid();
-        upload.Setup(service => service.UploadAsync(
+        upload.Setup(service => service.UploadWithSecurityChecksAsync(
                 It.IsAny<Stream>(),
                 "ok.pdf",
                 "application/pdf",
                 It.IsAny<Guid>(),
+                It.IsAny<Guid>(),
                 It.IsAny<UploadAssetOptions>(),
                 It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new AssetUploadResult(true, successId, contentId, null));
-        upload.Setup(service => service.UploadAsync(
+            .ReturnsAsync(new SecureUploadResult(true, successId, contentId, null));
+        upload.Setup(service => service.UploadWithSecurityChecksAsync(
                 It.IsAny<Stream>(),
                 "bad.pdf",
                 "application/pdf",
                 It.IsAny<Guid>(),
+                It.IsAny<Guid>(),
                 It.IsAny<UploadAssetOptions>(),
                 It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new AssetUploadResult(false, null, null, "Rejected"));
+            .ReturnsAsync(new SecureUploadResult(false, null, null, "Rejected"));
 
         var authorization = new Mock<IAssetUploadAuthorizationService>();
         authorization.Setup(service => service.CanUploadAsync(
@@ -196,6 +198,32 @@ public sealed class M3DocumentCloseoutTests
         result.Failed.Should().Be(1);
         result.Items.Single(item => item.FileName == "ok.pdf").AssetReferenceId.Should().Be(successId);
         result.Items.Single(item => item.FileName == "bad.pdf").Error.Should().Be("Rejected");
+    }
+
+    [Fact]
+    public async Task BulkUploadAssetsHandler_MissingTenant_FailsAllFiles()
+    {
+        var upload = new Mock<ISecureUploadService>();
+        var authorization = new Mock<IAssetUploadAuthorizationService>();
+        authorization.Setup(service => service.CanUploadAsync(
+                It.IsAny<string?>(),
+                It.IsAny<Guid?>(),
+                It.IsAny<Guid?>(),
+                It.IsAny<Guid>(),
+                It.IsAny<Guid?>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+        var handler = new BulkUploadAssetsHandler(upload.Object, authorization.Object);
+
+        var result = await handler.Handle(new BulkUploadAssetsCommand(
+            [new BulkUploadAssetInput(new MemoryStream([1]), "tenantless.pdf", "application/pdf")],
+            Guid.NewGuid(),
+            null));
+
+        result.Successful.Should().Be(0);
+        result.Failed.Should().Be(1);
+        result.Items.Single().Error.Should().Be("Tenant context is required");
+        upload.VerifyNoOtherCalls();
     }
 
     [Fact]

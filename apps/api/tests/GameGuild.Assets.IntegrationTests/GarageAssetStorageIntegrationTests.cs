@@ -14,7 +14,7 @@ namespace GameGuild.Assets.IntegrationTests;
 public sealed class GarageAssetStorageIntegrationTests
 {
     private static readonly string Endpoint = Environment.GetEnvironmentVariable("S3_SERVICE_URL") ?? "http://localhost:3900";
-    private static readonly string AccessKey = Environment.GetEnvironmentVariable("S3_ACCESS_KEY") ?? "GK111111111111111111111111";
+    private static readonly string AccessKey = Environment.GetEnvironmentVariable("S3_ACCESS_KEY") ?? "GK333333333333333333333333";
     private static readonly string SecretKey = Environment.GetEnvironmentVariable("S3_SECRET_KEY") ?? "2222222222222222222222222222222222222222222222222222222222222222";
     private static readonly string Region = Environment.GetEnvironmentVariable("S3_REGION") ?? "garage";
     private static readonly string BucketName = Environment.GetEnvironmentVariable("S3_BUCKET") ?? "assets";

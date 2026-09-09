@@ -26,7 +26,7 @@ export class CommerceSubscriptionsBillingSubscriptionsModule {
     planId?: string;
     page?: number;
     pageSize?: number;
-  }): Promise<Result<Types.PagedResultOfCommerceSubscriptionsSubscription, ApiError>> {
+  }): Promise<Result<Types.PagedResultSubscription, ApiError>> {
     const url = '/api/v1/billing/subscriptions';
 
     const result = await this.client.request({
@@ -38,7 +38,7 @@ export class CommerceSubscriptionsBillingSubscriptionsModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.PagedResultOfCommerceSubscriptionsSubscriptionSchema, result.data, 'response');
+      const validatedData = safeParse(Types.PagedResultSubscriptionSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 

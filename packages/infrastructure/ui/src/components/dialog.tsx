@@ -4,12 +4,13 @@ import * as React from "react"
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog"
 
 import { cn } from "@game-guild/ui/lib/utils"
-import { type LegacyLayerHandlers, useLegacyLayerHandlers, useMergedRefs } from "@game-guild/ui/lib/legacy-layer"
+import { type LegacyLayerHandlers, LegacyLayerContext, useLegacyLayerRoot, useLegacyLayerHandlers, useMergedRefs } from "@game-guild/ui/lib/legacy-layer"
 import { Button } from "@game-guild/ui/components/button"
 import { XIcon } from "lucide-react"
 
-function Dialog({ ...props }: DialogPrimitive.Root.Props) {
-  return <DialogPrimitive.Root data-slot="dialog" {...props} />
+function Dialog({ onOpenChange, ...props }: DialogPrimitive.Root.Props) {
+  const layer = useLegacyLayerRoot(onOpenChange)
+  return <LegacyLayerContext.Provider value={layer.handlers}><DialogPrimitive.Root data-slot="dialog" {...props} onOpenChange={layer.onOpenChange} /></LegacyLayerContext.Provider>
 }
 
 function DialogTrigger({ asChild, children, render, ...props }: DialogPrimitive.Trigger.Props & { asChild?: boolean }) {
@@ -56,7 +57,7 @@ function DialogContent({
   showCloseButton?: boolean
 } & LegacyLayerHandlers) {
   const popupRef = React.useRef<HTMLDivElement>(null)
-  useLegacyLayerHandlers(popupRef, {
+  const focusProps = useLegacyLayerHandlers(popupRef, {
     onOpenAutoFocus,
     onCloseAutoFocus,
     onPointerDownOutside,
@@ -70,6 +71,7 @@ function DialogContent({
       <DialogOverlay />
       <DialogPrimitive.Popup
         ref={mergedRef}
+          {...focusProps}
         data-slot="dialog-content"
         className={cn(
           "fixed top-1/2 left-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-6 rounded-xl bg-popover p-6 text-sm text-popover-foreground ring-1 ring-foreground/10 duration-100 outline-none sm:max-w-md data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",

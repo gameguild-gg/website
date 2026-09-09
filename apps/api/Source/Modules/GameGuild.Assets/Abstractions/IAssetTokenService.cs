@@ -21,6 +21,15 @@ public interface IAssetTokenService
     AssetTokenPayload? ValidateToken(string token, Guid assetReferenceId, Guid? tenantId);
 
     /// <summary>
+    /// Validates a token for a specific transformed asset representation.
+    /// </summary>
+    AssetTokenPayload? ValidateToken(
+        string token,
+        Guid assetReferenceId,
+        Guid? tenantId,
+        TransformationSpec? transformation);
+
+    /// <summary>
     /// Generates an ephemeral token (self-contained, with embedded asset reference).
     /// </summary>
     string GenerateEphemeralToken(

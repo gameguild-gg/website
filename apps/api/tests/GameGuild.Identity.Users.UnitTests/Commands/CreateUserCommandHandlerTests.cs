@@ -97,6 +97,26 @@ public class CreateUserCommandHandlerTests
     }
 
     [Fact]
+    public async Task Handle_RegistersDurableUserCreatedEvent()
+    {
+        User? persistedUser = null;
+        _userRepositoryMock
+            .Setup(x => x.AddAsync(It.IsAny<User>(), It.IsAny<CancellationToken>()))
+            .Callback<User, CancellationToken>((user, _) => persistedUser = user)
+            .Returns(Task.CompletedTask);
+        _userRepositoryMock
+            .Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        await _handler.Handle(new CreateUserCommand("event@example.com", "Event User"), CancellationToken.None);
+
+        persistedUser.Should().NotBeNull();
+        persistedUser!.IntegrationEvents.Should().ContainSingle()
+            .Which.Should().BeOfType<UserCreatedEvent>()
+            .Which.UserId.Should().Be(persistedUser.Id);
+    }
+
+    [Fact]
     public async Task Handle_WithNullCommand_ShouldThrowArgumentNullException()
     {
         // Act & Assert

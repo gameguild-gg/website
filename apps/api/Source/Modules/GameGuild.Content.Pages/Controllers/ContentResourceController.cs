@@ -66,7 +66,7 @@ public class ContentResourceController(
     public async Task<ActionResult<ContentResourceDto>> Create([FromBody] CreateContentResourceDto dto)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
-        var resource = await resourceService.CreateAsync(dto).ConfigureAwait(false);
+        var resource = await sender.Send(new CreateContentResourceCommand(dto)).ConfigureAwait(false);
         return CreatedAtAction(nameof(GetById), new { id = resource.Id }, resource.ToDto());
     }
 
@@ -75,7 +75,7 @@ public class ContentResourceController(
     public async Task<ActionResult<ContentResourceDto>> Update(Guid id, [FromBody] UpdateContentResourceDto dto)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
-        var resource = await resourceService.UpdateAsync(id, dto).ConfigureAwait(false);
+        var resource = await sender.Send(new UpdateContentResourceCommand(id, dto)).ConfigureAwait(false);
         if (resource is null) return NotFound();
         return Ok(resource.ToDto());
     }
@@ -84,7 +84,7 @@ public class ContentResourceController(
     [HttpDelete("{id:guid}")]
     public async Task<ActionResult> Delete(Guid id)
     {
-        var deleted = await resourceService.DeleteAsync(id).ConfigureAwait(false);
+        var deleted = await sender.Send(new DeleteContentResourceCommand(id)).ConfigureAwait(false);
         if (!deleted) return NotFound();
         return NoContent();
     }

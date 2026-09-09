@@ -20,7 +20,7 @@ export class SocialProfilesModule {
   async postApiSocialProfilesPortfolio(
     profileId: string,
     body: Types.SocialProfilesAddProfilePortfolioItemBody,
-  ): Promise<Result<Types.SocialProfilesProfilePortfolioItem, ApiError>> {
+  ): Promise<Result<Types.SocialProfilesProfilePortfolioItemDto, ApiError>> {
     const url = `/api/social/profiles/${profileId}/portfolio`;
 
     // Validate request body
@@ -35,7 +35,7 @@ export class SocialProfilesModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.SocialProfilesProfilePortfolioItemSchema, result.data, 'response');
+      const validatedData = safeParse(Types.SocialProfilesProfilePortfolioItemDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -47,7 +47,7 @@ export class SocialProfilesModule {
   async postApiSocialProfilesSkills(
     profileId: string,
     body: Types.SocialProfilesAddProfileSkillBody,
-  ): Promise<Result<Types.SocialProfilesProfileSkill, ApiError>> {
+  ): Promise<Result<Types.SocialProfilesProfileSkillDto, ApiError>> {
     const url = `/api/social/profiles/${profileId}/skills`;
 
     // Validate request body
@@ -62,7 +62,7 @@ export class SocialProfilesModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.SocialProfilesProfileSkillSchema, result.data, 'response');
+      const validatedData = safeParse(Types.SocialProfilesProfileSkillDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -71,7 +71,7 @@ export class SocialProfilesModule {
 
   /**
    */
-  async getApiSocialProfiles(handle: string): Promise<Result<Types.SocialProfilesSocialProfile, ApiError>> {
+  async getApiSocialProfiles(handle: string): Promise<Result<Types.SocialProfilesSocialProfileDto, ApiError>> {
     const url = `/api/social/profiles/@${handle}`;
 
     const result = await this.client.request({
@@ -82,7 +82,7 @@ export class SocialProfilesModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.SocialProfilesSocialProfileSchema, result.data, 'response');
+      const validatedData = safeParse(Types.SocialProfilesSocialProfileDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -94,7 +94,7 @@ export class SocialProfilesModule {
   async putApiSocialProfilesPortfolio(
     itemId: string,
     body: Types.SocialProfilesUpdateProfilePortfolioItemBody,
-  ): Promise<Result<Types.SocialProfilesProfilePortfolioItem, ApiError>> {
+  ): Promise<Result<Types.SocialProfilesProfilePortfolioItemDto, ApiError>> {
     const url = `/api/social/profiles/portfolio/${itemId}`;
 
     // Validate request body
@@ -109,7 +109,7 @@ export class SocialProfilesModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.SocialProfilesProfilePortfolioItemSchema, result.data, 'response');
+      const validatedData = safeParse(Types.SocialProfilesProfilePortfolioItemDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -132,7 +132,7 @@ export class SocialProfilesModule {
 
   /**
    */
-  async getApiSocialProfilesSearch(query?: { query?: string; take?: number }): Promise<Result<Array<Types.SocialProfilesSocialProfile>, ApiError>> {
+  async getApiSocialProfilesSearch(query?: { query?: string; take?: number }): Promise<Result<Array<Types.SocialProfilesSocialProfileDto>, ApiError>> {
     const url = '/api/social/profiles/search';
 
     const result = await this.client.request({
@@ -142,7 +142,7 @@ export class SocialProfilesModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.SocialProfilesSocialProfile>, ApiError>;
+    return result as Result<Array<Types.SocialProfilesSocialProfileDto>, ApiError>;
   }
 
   /**
@@ -161,7 +161,7 @@ export class SocialProfilesModule {
 
   /**
    */
-  async getApiSocialProfilesUsers(userId: string): Promise<Result<Types.SocialProfilesSocialProfile, ApiError>> {
+  async getApiSocialProfilesUsers(userId: string): Promise<Result<Types.SocialProfilesSocialProfileDto, ApiError>> {
     const url = `/api/social/profiles/users/${userId}`;
 
     const result = await this.client.request({
@@ -172,7 +172,7 @@ export class SocialProfilesModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.SocialProfilesSocialProfileSchema, result.data, 'response');
+      const validatedData = safeParse(Types.SocialProfilesSocialProfileDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -184,7 +184,7 @@ export class SocialProfilesModule {
   async putApiSocialProfilesUsers(
     userId: string,
     body: Types.SocialProfilesUpdateSocialProfileBody,
-  ): Promise<Result<Types.SocialProfilesSocialProfile, ApiError>> {
+  ): Promise<Result<Types.SocialProfilesSocialProfileDto, ApiError>> {
     const url = `/api/social/profiles/users/${userId}`;
 
     // Validate request body
@@ -199,7 +199,7 @@ export class SocialProfilesModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.SocialProfilesSocialProfileSchema, result.data, 'response');
+      const validatedData = safeParse(Types.SocialProfilesSocialProfileDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -211,7 +211,7 @@ export class SocialProfilesModule {
   async putApiSocialProfilesUsersPrivacy(
     userId: string,
     body: Types.SocialProfilesUpdateProfilePrivacyBody,
-  ): Promise<Result<Types.SocialProfilesSocialProfile, ApiError>> {
+  ): Promise<Result<Types.SocialProfilesSocialProfileDto, ApiError>> {
     const url = `/api/social/profiles/users/${userId}/privacy`;
 
     // Validate request body
@@ -226,7 +226,7 @@ export class SocialProfilesModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.SocialProfilesSocialProfileSchema, result.data, 'response');
+      const validatedData = safeParse(Types.SocialProfilesSocialProfileDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -238,7 +238,7 @@ export class SocialProfilesModule {
   async putApiSocialProfilesUsersStats(
     userId: string,
     body: Types.SocialProfilesUpdateProfileStatsBody,
-  ): Promise<Result<Types.SocialProfilesSocialProfile, ApiError>> {
+  ): Promise<Result<Types.SocialProfilesSocialProfileDto, ApiError>> {
     const url = `/api/social/profiles/users/${userId}/stats`;
 
     // Validate request body
@@ -253,7 +253,7 @@ export class SocialProfilesModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.SocialProfilesSocialProfileSchema, result.data, 'response');
+      const validatedData = safeParse(Types.SocialProfilesSocialProfileDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 

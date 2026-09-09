@@ -1,3 +1,4 @@
+using GameGuild.CQRS;
 using GameGuild.Identity.Context.Actors;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -11,6 +12,7 @@ namespace GameGuild.TestingLab;
 [Authorize]
 public class TestingLabSettingsController(
   ITestingLabSettingsService settingsService,
+  ISender sender,
   IActorContextAccessor actorContextAccessor,
   ILogger<TestingLabSettingsController> _logger
 ) : BaseApiController {
@@ -37,8 +39,7 @@ public class TestingLabSettingsController(
     try {
       // Allow null tenant (global) – pass through nullable context
       var tenantId = Actor.TenantId; // may be null for global settings
-      await settingsService.CreateOrUpdateTestingLabSettingsAsync(tenantId, dto);
-      var settingsDto = await settingsService.GetTestingLabSettingsDtoAsync(tenantId);
+      var settingsDto = await sender.Send(new CreateOrUpdateTestingLabSettingsEndpointCommand(tenantId, dto));
 
       return Ok(settingsDto);
     }
@@ -55,8 +56,7 @@ public class TestingLabSettingsController(
   public async Task<ActionResult<TestingLabSettingsDto>> UpdateSettings([FromBody] UpdateTestingLabSettingsDto dto) {
     try {
       var tenantId = Actor.TenantId; // nullable allowed
-      await settingsService.UpdateTestingLabSettingsAsync(tenantId, dto);
-      var settingsDto = await settingsService.GetTestingLabSettingsDtoAsync(tenantId);
+      var settingsDto = await sender.Send(new UpdateTestingLabSettingsEndpointCommand(tenantId, dto));
 
       return Ok(settingsDto);
     }
@@ -73,8 +73,7 @@ public class TestingLabSettingsController(
   public async Task<ActionResult<TestingLabSettingsDto>> ResetSettings() {
     try {
       var tenantId = Actor.TenantId;
-      await settingsService.ResetTestingLabSettingsAsync(tenantId);
-      var settingsDto = await settingsService.GetTestingLabSettingsDtoAsync(tenantId);
+      var settingsDto = await sender.Send(new ResetTestingLabSettingsEndpointCommand(tenantId));
 
       return Ok(settingsDto);
     }

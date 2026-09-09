@@ -1,5 +1,6 @@
 using Asp.Versioning;
 using GameGuild.Configuration.PresentationLayer.RateLimiting;
+using GameGuild.CQRS;
 using GameGuild.Identity.Authorization;
 using GameGuild.Identity.Context.Actors;
 using Microsoft.AspNetCore.Authorization;
@@ -21,6 +22,7 @@ namespace GameGuild.Resources;
 [EnableRateLimiting(RateLimitPolicies.PerTenant)]
 public sealed class TenantResourceSettingsController(
     IResourceSettingsRepository settingsRepository,
+    ISender sender,
     IActorContextAccessor actorContextAccessor,
     ITenantMembershipChecker tenantMembershipChecker) : BaseApiController
 {
@@ -145,45 +147,8 @@ public sealed class TenantResourceSettingsController(
         
         ArgumentNullException.ThrowIfNull(body);
 
-        var existing = await settingsRepository.GetByKeyAsync(tenantId, key, ct).ConfigureAwait(false);
-
-        if (existing != null)
-        {
-            existing.Value = body.Value;
-            existing.DefaultValue = body.DefaultValue ?? existing.DefaultValue;
-            existing.DataType = body.DataType ?? existing.DataType;
-            existing.Description = body.Description ?? existing.Description;
-            existing.Category = body.Category ?? existing.Category;
-            existing.AllowUserOverride = body.AllowUserOverride ?? existing.AllowUserOverride;
-            existing.DisplayOrder = body.DisplayOrder ?? existing.DisplayOrder;
-            existing.ValidationRules = body.ValidationRules ?? existing.ValidationRules;
-            existing.Touch();
-
-            await settingsRepository.UpdateAsync(existing, ct).ConfigureAwait(false);
-
-            return Ok(existing);
-        }
-
-        var setting = new ResourceSettings
-        {
-            Key = key,
-            Value = body.Value,
-            DefaultValue = body.DefaultValue,
-            DataType = body.DataType ?? "String",
-            Description = body.Description,
-            Category = body.Category,
-            AllowUserOverride = body.AllowUserOverride ?? true,
-            DisplayOrder = body.DisplayOrder ?? 0,
-            ValidationRules = body.ValidationRules,
-            IsActive = true
-        };
-
-        // Set TenantId using reflection since the setter is protected
-        var tenantIdProperty = typeof(ResourceSettings).GetProperty("TenantId");
-        tenantIdProperty?.GetSetMethod(nonPublic: true)?.Invoke(setting, new object[] { tenantId });
-
-        await settingsRepository.CreateAsync(setting, ct).ConfigureAwait(false);
-
+        var setting = await sender.Send(new SetTenantResourceSettingCommand(tenantId, key, body), ct)
+            .ConfigureAwait(false);
         return Ok(setting);
     }
 
@@ -205,7 +170,8 @@ public sealed class TenantResourceSettingsController(
         if (!await ValidateTenantMembershipAsync(tenantId, ct))
             return Forbid();
         
-        var deleted = await settingsRepository.DeleteByKeyAsync(tenantId, key, ct).ConfigureAwait(false);
+        var deleted = await sender.Send(new DeleteTenantResourceSettingCommand(tenantId, key), ct)
+            .ConfigureAwait(false);
 
         if (!deleted) return NotFound($"Setting not found for key: {key}");
 

@@ -65,7 +65,7 @@ export class EconomyKycModule {
 
   /**
    */
-  async getEconomyKycStatus(): Promise<Result<Types.APIControllersEconomyKycStatus, ApiError>> {
+  async getEconomyKycStatus(): Promise<Result<Types.APIControllersEconomyKycStatusDto, ApiError>> {
     const url = '/api/v1/economy/kyc/status';
 
     const result = await this.client.request({
@@ -76,7 +76,7 @@ export class EconomyKycModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.APIControllersEconomyKycStatusSchema, result.data, 'response');
+      const validatedData = safeParse(Types.APIControllersEconomyKycStatusDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 

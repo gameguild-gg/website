@@ -217,6 +217,41 @@ public sealed class TestingEventHandlerTests : IDisposable
     }
 
     [Fact]
+    public async Task CreateEvent_KeepsRecurringLocalTimeAcrossDaylightSavingChanges()
+    {
+        var handler = CreateEventHandler();
+        var startsAt = new DateTime(2026, 3, 1, 15, 0, 0, DateTimeKind.Utc);
+
+        var result = await handler.Handle(new CreateTestingEventCommand(
+            "Weekly playtest",
+            null,
+            TestingEventMode.Online,
+            TestingEventApprovalMode.ManagerOnly,
+            startsAt.AddDays(-14),
+            startsAt.AddDays(-1),
+            startsAt,
+            startsAt.AddHours(2),
+            true,
+            new TestingEventRecurrenceRequest(
+                TestingEventRecurrenceFrequency.Weekly,
+                1,
+                [DayOfWeek.Sunday],
+                null,
+                3),
+            TimeZoneId: "America/New_York"), default);
+
+        result.IsSuccess.Should().BeTrue();
+        var events = await _context.Set<TestingEvent>()
+            .OrderBy(item => item.StartsAt)
+            .ToListAsync();
+        events.Select(item => item.StartsAt).Should().Equal(
+            startsAt,
+            new DateTime(2026, 3, 8, 14, 0, 0, DateTimeKind.Utc),
+            new DateTime(2026, 3, 15, 14, 0, 0, DateTimeKind.Utc));
+        events.Should().OnlyContain(item => item.TimeZoneId == "America/New_York");
+    }
+
+    [Fact]
     public async Task SubmitApplication_DoesNotConsumeSlotBeforeApproval()
     {
         var testingEvent = AddOpenEvent(TestingEventApprovalMode.ManagerOnly);

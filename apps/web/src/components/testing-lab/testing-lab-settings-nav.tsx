@@ -2,40 +2,61 @@
 
 import { Link, usePathname } from "@/i18n/navigation";
 import { cn } from "@game-guild/ui/lib/utils";
-import { Files, MapPin, Settings, ShieldCheck } from "lucide-react";
+import { BarChart3, Files, MapPin, Settings, ShieldCheck } from "lucide-react";
 
 const sections = [
   {
     label: "General",
-    href: "/console/community/testing-lab/settings/general",
+    href: "/workspace/testing-lab/settings/general",
     icon: Settings,
+    requiredCapabilities: ["TestingLab.ManageSettings"],
   },
   {
     label: "Templates",
-    href: "/console/community/testing-lab/settings/templates",
+    href: "/workspace/testing-lab/settings/templates",
     icon: Files,
+    requiredCapabilities: ["TestingLab.ManageSettings"],
   },
   {
     label: "Locations",
-    href: "/console/community/testing-lab/settings/locations",
+    href: "/workspace/testing-lab/settings/locations",
     icon: MapPin,
+    requiredCapabilities: ["TestingLab.ManageSettings"],
+  },
+  {
+    label: "Analytics",
+    href: "/workspace/testing-lab/settings/analytics",
+    icon: BarChart3,
+    requiredCapabilities: ["TestingLab.ViewAnalytics"],
   },
   {
     label: "Access",
-    href: "/console/community/testing-lab/settings/access",
+    href: "/workspace/testing-lab/settings/access",
     icon: ShieldCheck,
+    requiredCapabilities: ["TestingLab.ManageSettings"],
   },
 ] as const;
 
-export function TestingLabSettingsNav() {
+export function TestingLabSettingsNav({
+  capabilities,
+}: {
+  capabilities?: readonly string[];
+} = {}) {
   const pathname = usePathname() ?? "";
+  const visibleSections = capabilities
+    ? sections.filter((section) =>
+        section.requiredCapabilities.some((capability) =>
+          capabilities.includes(capability),
+        ),
+      )
+    : sections;
 
   return (
     <nav
       aria-label="Testing Lab settings"
-      className="grid grid-cols-2 gap-1 sm:grid-cols-4 lg:sticky lg:top-20 lg:grid-cols-1"
+      className="grid grid-cols-2 gap-1 sm:grid-cols-5 lg:sticky lg:top-20 lg:grid-cols-1"
     >
-      {sections.map((section) => {
+      {visibleSections.map((section) => {
         const Icon = section.icon;
         const current =
           pathname === section.href || pathname.startsWith(section.href + "/");

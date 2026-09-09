@@ -54,8 +54,7 @@ public sealed class EconomyMarketplaceControllerContractTests
             .Returns(ValueTask.FromException<DurableMarketplaceSettlementResult>(
                 new EconomyProtectedOperationException(state, reviewId, ["not-ready"])));
         var controller = new EconomyMarketplaceController(
-            settlements.Object,
-            Mock.Of<IDurableMarketplaceRefundService>(),
+            EconomyHandlerSenders.Public(marketplaceSettlements: settlements.Object),
             actor,
             TimeProvider.System);
 

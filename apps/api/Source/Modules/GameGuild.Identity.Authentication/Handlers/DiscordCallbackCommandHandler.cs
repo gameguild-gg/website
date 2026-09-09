@@ -13,7 +13,7 @@ public sealed class DiscordCallbackCommandHandler(
     IUserRepository userRepository,
     ILogger<DiscordCallbackCommandHandler> logger,
     FluentValidation.IValidator<DiscordCallbackCommand> validator
-) : IRequestHandler<DiscordCallbackCommand, SignInResponse>
+) : ICommandHandler<DiscordCallbackCommand, SignInResponse>
 {
     public async Task<SignInResponse> Handle(DiscordCallbackCommand command, CancellationToken cancellationToken)
     {

@@ -21,7 +21,7 @@ export class NotificationsModule {
     skip?: number;
     take?: number;
     isRead?: boolean;
-  }): Promise<Result<Array<Types.NotificationsControllersNotification>, ApiError>> {
+  }): Promise<Result<Array<Types.NotificationsControllersNotificationDto>, ApiError>> {
     const url = '/api/notifications';
 
     const result = await this.client.request({
@@ -31,12 +31,12 @@ export class NotificationsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.NotificationsControllersNotification>, ApiError>;
+    return result as Result<Array<Types.NotificationsControllersNotificationDto>, ApiError>;
   }
 
   /**
    */
-  async getApiNotificationsForGetApiNotificationsById(id: string): Promise<Result<Types.NotificationsControllersNotification, ApiError>> {
+  async getApiNotificationsForGetApiNotificationsById(id: string): Promise<Result<Types.NotificationsControllersNotificationDto, ApiError>> {
     const url = `/api/notifications/${id}`;
 
     const result = await this.client.request({
@@ -47,7 +47,7 @@ export class NotificationsModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.NotificationsControllersNotificationSchema, result.data, 'response');
+      const validatedData = safeParse(Types.NotificationsControllersNotificationDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -98,7 +98,7 @@ export class NotificationsModule {
 
   /**
    */
-  async getApiNotificationsPreferences(): Promise<Result<Types.NotificationsControllersNotificationPreference, ApiError>> {
+  async getApiNotificationsPreferences(): Promise<Result<Types.NotificationsControllersNotificationPreferenceDto, ApiError>> {
     const url = '/api/notifications/preferences';
 
     const result = await this.client.request({
@@ -109,7 +109,7 @@ export class NotificationsModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.NotificationsControllersNotificationPreferenceSchema, result.data, 'response');
+      const validatedData = safeParse(Types.NotificationsControllersNotificationPreferenceDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -120,7 +120,7 @@ export class NotificationsModule {
    */
   async putApiNotificationsPreferences(
     body: Types.NotificationsControllersUpdatePreferencesInput,
-  ): Promise<Result<Types.NotificationsControllersNotificationPreference, ApiError>> {
+  ): Promise<Result<Types.NotificationsControllersNotificationPreferenceDto, ApiError>> {
     const url = '/api/notifications/preferences';
 
     // Validate request body
@@ -135,7 +135,7 @@ export class NotificationsModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.NotificationsControllersNotificationPreferenceSchema, result.data, 'response');
+      const validatedData = safeParse(Types.NotificationsControllersNotificationPreferenceDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -287,7 +287,7 @@ export class NotificationsModule {
     take?: number;
     type?: string;
     email?: string;
-  }): Promise<Result<Types.PagedResultOfNotificationsControllersDeadLetter, ApiError>> {
+  }): Promise<Result<Types.PagedResultDeadLetterDto, ApiError>> {
     const url = '/api/v1/email-delivery/deadletters';
 
     const result = await this.client.request({
@@ -299,7 +299,7 @@ export class NotificationsModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.PagedResultOfNotificationsControllersDeadLetterSchema, result.data, 'response');
+      const validatedData = safeParse(Types.PagedResultDeadLetterDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -314,7 +314,7 @@ export class NotificationsModule {
     eventType?: string;
     email?: string;
     providerMessageId?: string;
-  }): Promise<Result<Types.PagedResultOfNotificationsControllersEmailDeliveryEvent, ApiError>> {
+  }): Promise<Result<Types.PagedResultEmailDeliveryEventDto, ApiError>> {
     const url = '/api/v1/email-delivery/email-events';
 
     const result = await this.client.request({
@@ -326,7 +326,7 @@ export class NotificationsModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.PagedResultOfNotificationsControllersEmailDeliveryEventSchema, result.data, 'response');
+      const validatedData = safeParse(Types.PagedResultEmailDeliveryEventDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -355,7 +355,7 @@ export class NotificationsModule {
 
   /**
    */
-  async getEmailDeliveryNotificationsTimeline(id: string): Promise<Result<Types.NotificationsControllersNotificationTimeline, ApiError>> {
+  async getEmailDeliveryNotificationsTimeline(id: string): Promise<Result<Types.NotificationsControllersNotificationTimelineDto, ApiError>> {
     const url = `/api/v1/email-delivery/notifications/${id}/timeline`;
 
     const result = await this.client.request({
@@ -366,7 +366,7 @@ export class NotificationsModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.NotificationsControllersNotificationTimelineSchema, result.data, 'response');
+      const validatedData = safeParse(Types.NotificationsControllersNotificationTimelineDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -379,7 +379,7 @@ export class NotificationsModule {
     skip?: number;
     take?: number;
     includeReleased?: boolean;
-  }): Promise<Result<Types.PagedResultOfNotificationsControllersEmailSuppression, ApiError>> {
+  }): Promise<Result<Types.PagedResultEmailSuppressionDto, ApiError>> {
     const url = '/api/v1/email-delivery/suppressions';
 
     const result = await this.client.request({
@@ -391,7 +391,7 @@ export class NotificationsModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.PagedResultOfNotificationsControllersEmailSuppressionSchema, result.data, 'response');
+      const validatedData = safeParse(Types.PagedResultEmailSuppressionDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 

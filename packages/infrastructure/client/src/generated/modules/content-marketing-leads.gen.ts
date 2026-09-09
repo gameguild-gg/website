@@ -24,7 +24,7 @@ export class ContentMarketingLeadsModule {
     search?: string;
     skip?: number;
     take?: number;
-  }): Promise<Result<Array<Types.ContentPagesMarketingLead>, ApiError>> {
+  }): Promise<Result<Array<Types.ContentPagesMarketingLeadDto>, ApiError>> {
     const url = '/v1/marketing/leads';
 
     const result = await this.client.request({
@@ -34,16 +34,16 @@ export class ContentMarketingLeadsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.ContentPagesMarketingLead>, ApiError>;
+    return result as Result<Array<Types.ContentPagesMarketingLeadDto>, ApiError>;
   }
 
   /**
    */
-  async postMarketingLeads(body: Types.ContentPagesCreateMarketingLead): Promise<Result<Types.ContentPagesMarketingLead, ApiError>> {
+  async postMarketingLeads(body: Types.ContentPagesCreateMarketingLeadDto): Promise<Result<Types.ContentPagesMarketingLeadDto, ApiError>> {
     const url = '/v1/marketing/leads';
 
     // Validate request body
-    const validatedBody = safeParse(Types.ContentPagesCreateMarketingLeadSchema, body, 'request');
+    const validatedBody = safeParse(Types.ContentPagesCreateMarketingLeadDtoSchema, body, 'request');
 
     const result = await this.client.request({
       method: 'POST',
@@ -54,7 +54,7 @@ export class ContentMarketingLeadsModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.ContentPagesMarketingLeadSchema, result.data, 'response');
+      const validatedData = safeParse(Types.ContentPagesMarketingLeadDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -63,7 +63,7 @@ export class ContentMarketingLeadsModule {
 
   /**
    */
-  async getMarketingLeadById(id: string): Promise<Result<Types.ContentPagesMarketingLead, ApiError>> {
+  async getMarketingLeadById(id: string): Promise<Result<Types.ContentPagesMarketingLeadDto, ApiError>> {
     const url = `/v1/marketing/leads/${id}`;
 
     const result = await this.client.request({
@@ -74,7 +74,7 @@ export class ContentMarketingLeadsModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.ContentPagesMarketingLeadSchema, result.data, 'response');
+      const validatedData = safeParse(Types.ContentPagesMarketingLeadDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 

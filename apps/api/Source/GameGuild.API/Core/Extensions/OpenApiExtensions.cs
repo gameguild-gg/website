@@ -22,13 +22,10 @@ public static class OpenApiExtensions
 {
     internal const string AllowAnonymousExtensionName = "x-gameguild-allow-anonymous";
 
-    // The release/monorepo version from the assembly (csproj <Version>), e.g. "4.1.0".
-    // Reported as the OpenAPI document version instead of the URL api version, so
-    // generated clients carry the release version.
+    // Document keys remain URL API versions; document metadata carries the product release.
     private static readonly string ReleaseVersion =
         typeof(OpenApiExtensions).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()
-            ?.InformationalVersion.Split('+')[0]
-        ?? "1.0";
+            ?.InformationalVersion.Split('+')[0] ?? "1.0";
 
     /// <summary>
     ///     Sets up OpenAPI/Swagger with configurable options.
@@ -92,10 +89,8 @@ public static class OpenApiExtensions
                             if (cad.ControllerTypeInfo.GetCustomAttributes(typeof(ApiVersionAttribute), false)
                                     .FirstOrDefault() is not ApiVersionAttribute apiVersionAttr)
                                 return string.Equals(apiDesc.GroupName, docName, StringComparison.OrdinalIgnoreCase);
-                            var version = apiVersionAttr.Versions.FirstOrDefault();
-
-                            return version != null && docName.Equals($"v{version.MajorVersion}",
-                                StringComparison.OrdinalIgnoreCase);
+                            return apiVersionAttr.Versions.Any(version =>
+                                docName.Equals($"v{version.MajorVersion}", StringComparison.OrdinalIgnoreCase));
                         }
                     );
                 }
@@ -125,13 +120,14 @@ public static class OpenApiExtensions
                 // e.g., "GameGuild.Identity.Authentication.UserDto" -> "Identity_Authentication_UserDto"
                 c.CustomSchemaIds(type =>
                 {
-                    var fullName = type.FullName ?? type.Name;
+                    var schemaType = type.IsGenericType ? type.GetGenericTypeDefinition() : type;
+                    var fullName = schemaType.FullName ?? schemaType.Name;
                     var parts = fullName.Split('.');
 
                     if (type.IsGenericType)
                     {
                         // For generic types, include module path + generic type + args
-                        var genericTypeName = type.Name.Split('`')[0];
+                        var genericTypeName = schemaType.Name.Split('`')[0];
                         var genericArgs = string.Join("", type.GetGenericArguments().Select(t => t.Name));
 
                         // Find module path (everything between the product prefix and the type name)
@@ -236,8 +232,8 @@ public static class OpenApiExtensions
                     setup.AssumeDefaultVersionWhenUnspecified = options.AssumeDefaultVersionWhenUnspecified;
                     // Parse DefaultVersion (e.g., "1.0") into ApiVersion
                     var versionParts = options.DefaultVersion.Split('.');
-                    var major = int.TryParse(versionParts.ElementAtOrDefault(0) ?? "1", out var mj) ? mj : 1;
-                    var minor = int.TryParse(versionParts.ElementAtOrDefault(1) ?? "0", out var mn) ? mn : 0;
+                    var major = ParseVersionPart(versionParts, 0, 1);
+                    var minor = ParseVersionPart(versionParts, 1, 0);
                     setup.DefaultApiVersion = new ApiVersion(major, minor);
                     setup.ApiVersionReader = ApiVersioningOptionsBuilder.CreateReader(options.ReadingStrategy, options);
                 }
@@ -250,6 +246,14 @@ public static class OpenApiExtensions
             );
 
         return services;
+    }
+
+    private static int ParseVersionPart(IReadOnlyList<string> versionParts, int index, int fallback)
+    {
+        if (index >= versionParts.Count)
+            return fallback;
+
+        return int.TryParse(versionParts[index], out var value) ? value : fallback;
     }
 
     /// <summary>
@@ -290,72 +294,51 @@ internal sealed class FlagsEnumSchemaFilter : ISchemaFilter
     }
 }
 
-internal sealed class DeterministicOpenApiDocumentFilter : IDocumentFilter
-{
-    public void Apply(OpenApiDocument swaggerDoc, DocumentFilterContext context)
-    {
-        var sortedPaths = swaggerDoc.Paths.OrderBy(pair => pair.Key, StringComparer.Ordinal).ToList();
-        swaggerDoc.Paths.Clear();
-        foreach (var (path, item) in sortedPaths)
-        {
-            swaggerDoc.Paths.Add(path, item);
-        }
-
-        if (swaggerDoc.Components?.Schemas is not null)
-        {
-            var sortedSchemas = swaggerDoc.Components.Schemas
-                .OrderBy(pair => pair.Key, StringComparer.Ordinal)
-                .ToList();
-            swaggerDoc.Components.Schemas.Clear();
-            foreach (var (name, schema) in sortedSchemas)
-            {
-                swaggerDoc.Components.Schemas.Add(name, schema);
-                SortSchema(schema);
-            }
-        }
-    }
-
-    private static void SortSchema(OpenApiSchema? schema)
-    {
-        if (schema is null) return;
-
-        if (schema.Properties is { Count: > 1 })
-        {
-            var sortedProperties = schema.Properties
-                .OrderBy(pair => pair.Key, StringComparer.Ordinal)
-                .ToList();
-            schema.Properties.Clear();
-            foreach (var (name, property) in sortedProperties)
-            {
-                schema.Properties.Add(name, property);
-            }
-        }
-
-        if (schema.Required is { Count: > 1 })
-        {
-            var sortedRequired = schema.Required.OrderBy(name => name, StringComparer.Ordinal).ToList();
-            schema.Required.Clear();
-            foreach (var name in sortedRequired)
-            {
-                schema.Required.Add(name);
-            }
-        }
-
-        foreach (var property in schema.Properties.Values) SortSchema(property);
-        foreach (var subSchema in schema.AllOf) SortSchema(subSchema);
-        foreach (var subSchema in schema.OneOf) SortSchema(subSchema);
-        foreach (var subSchema in schema.AnyOf) SortSchema(subSchema);
-        SortSchema(schema.Items);
-        SortSchema(schema.AdditionalProperties);
-    }
-}
-
 internal sealed class OpenApiDocumentTransformer : Microsoft.AspNetCore.OpenApi.IOpenApiDocumentTransformer
 {
     public Task TransformAsync(Microsoft.OpenApi.Models.OpenApiDocument document, Microsoft.AspNetCore.OpenApi.OpenApiDocumentTransformerContext context, CancellationToken cancellationToken)
     {
         // Document transformation is currently handled by the default pipeline.
         return Task.CompletedTask;
+    }
+}
+
+internal sealed class DeterministicOpenApiDocumentFilter : IDocumentFilter
+{
+    public void Apply(OpenApiDocument document, DocumentFilterContext context)
+    {
+        var paths = document.Paths.OrderBy(pair => pair.Key, StringComparer.Ordinal).ToArray();
+        document.Paths.Clear();
+        foreach (var (path, item) in paths) document.Paths.Add(path, item);
+
+        if (document.Components?.Schemas is not { } schemas) return;
+        var sorted = schemas.OrderBy(pair => pair.Key, StringComparer.Ordinal).ToArray();
+        schemas.Clear();
+        var visited = new HashSet<OpenApiSchema>(ReferenceEqualityComparer.Instance);
+        foreach (var (name, schema) in sorted)
+        {
+            schemas.Add(name, schema);
+            SortSchema(schema, visited);
+        }
+    }
+
+    private static void SortSchema(OpenApiSchema? schema, ISet<OpenApiSchema> visited)
+    {
+        if (schema is null || !visited.Add(schema)) return;
+        if (schema.Properties is { Count: > 1 })
+        {
+            var properties = schema.Properties.OrderBy(pair => pair.Key, StringComparer.Ordinal).ToArray();
+            schema.Properties.Clear();
+            foreach (var (name, property) in properties) schema.Properties.Add(name, property);
+        }
+        if (schema.Required is { Count: > 1 })
+            schema.Required = new SortedSet<string>(schema.Required, StringComparer.Ordinal);
+        foreach (var property in schema.Properties.Values) SortSchema(property, visited);
+        foreach (var child in schema.AllOf) SortSchema(child, visited);
+        foreach (var child in schema.OneOf) SortSchema(child, visited);
+        foreach (var child in schema.AnyOf) SortSchema(child, visited);
+        SortSchema(schema.Items, visited);
+        SortSchema(schema.AdditionalProperties, visited);
     }
 }
 
@@ -633,7 +616,7 @@ internal sealed class ModuleControllerTagOperationFilter : IOperationFilter
 
             if (char.IsUpper(character))
             {
-                if (index > 0 && builder[^1] != '-')
+                if (index > 0 && builder.Length > 0 && builder[^1] != '-')
                 {
                     var previous = value[index - 1];
                     var nextIsLower = index + 1 < value.Length && char.IsLower(value[index + 1]);

@@ -50,12 +50,12 @@ export class AuthModule {
    * Exchanges the Discord OAuth authorization code for access and refresh tokens, applying the same account matching and auto-link policy as Google sign-in. Account-linking counterpart: POST /v1/auth/external-logins/discord:link-callback.
    */
   async postAuthDiscordSignInCallback(
-    body: Types.IdentityAuthenticationDiscordCallbackInput,
+    body: Types.IdentityAuthenticationDiscordCallbackRequestDto,
   ): Promise<Result<Types.IdentityAuthenticationSignInOutput, ApiError>> {
     const url = '/v1/auth/discord:sign-in-callback';
 
     // Validate request body
-    const validatedBody = safeParse(Types.IdentityAuthenticationDiscordCallbackInputSchema, body, 'request');
+    const validatedBody = safeParse(Types.IdentityAuthenticationDiscordCallbackRequestDtoSchema, body, 'request');
 
     const result = await this.client.request({
       method: 'POST',
@@ -289,11 +289,11 @@ export class AuthModule {
    *
    * Authenticates a user using a Google ID Token (for NextAuth.js integration), returning access and refresh tokens. Account-linking counterpart: POST /v1/auth/external-logins/google.
    */
-  async postAuthGoogleSignIn(body: Types.IdentityAuthenticationGoogleIdTokenInput): Promise<Result<Types.IdentityAuthenticationSignInOutput, ApiError>> {
+  async postAuthGoogleSignIn(body: Types.IdentityAuthenticationGoogleIdTokenRequestDto): Promise<Result<Types.IdentityAuthenticationSignInOutput, ApiError>> {
     const url = '/v1/auth/google:sign-in';
 
     // Validate request body
-    const validatedBody = safeParse(Types.IdentityAuthenticationGoogleIdTokenInputSchema, body, 'request');
+    const validatedBody = safeParse(Types.IdentityAuthenticationGoogleIdTokenRequestDtoSchema, body, 'request');
 
     const result = await this.client.request({
       method: 'POST',

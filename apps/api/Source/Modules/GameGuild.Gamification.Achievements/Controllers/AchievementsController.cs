@@ -1,3 +1,4 @@
+using GameGuild.CQRS;
 using GameGuild.Identity.Authorization;
 using GameGuild.Identity.Context.Actors;
 using Microsoft.AspNetCore.Authorization;
@@ -14,13 +15,16 @@ public class AchievementsController : BaseApiController
 {
     private readonly IAchievementService _achievementService;
     private readonly IActorContextAccessor _actorContextAccessor;
+    private readonly ISender _sender;
 
     public AchievementsController(
         IAchievementService achievementService,
-        IActorContextAccessor actorContextAccessor)
+        IActorContextAccessor actorContextAccessor,
+        ISender sender)
     {
         _achievementService = achievementService;
         _actorContextAccessor = actorContextAccessor;
+        _sender = sender;
     }
 
     /// <summary>
@@ -118,7 +122,7 @@ public class AchievementsController : BaseApiController
     [HttpPost("my/{userAchievementId}/mark-notified")]
     public async Task<ActionResult> MarkAsNotified(Guid userAchievementId)
     {
-        var result = await _achievementService.MarkNotifiedAsync(userAchievementId).ConfigureAwait(false);
+        var result = await _sender.Send(new MarkAchievementNotifiedCommand(userAchievementId)).ConfigureAwait(false);
 
         if (!result.IsSuccess)
         {
@@ -197,33 +201,24 @@ public class AchievementsController : BaseApiController
     [RequirePermission(AchievementsPermission.Keys.Create)]
     public async Task<ActionResult<AchievementDto>> CreateAchievement([FromBody] CreateAchievementRequest request)
     {
-        var actorContext = _actorContextAccessor.ActorContext;
-
-        var achievement = Achievement.Create(
+        var result = await _sender.Send(new CreateAchievementCommand(
             request.Name,
-            request.Category ?? "general",
-            request.Type ?? "badge",
-            request.Points,
             request.Description,
-            actorContext.TenantId);
-
-        if (!string.IsNullOrEmpty(request.IconUrl))
-            achievement.IconUrl = request.IconUrl;
-
-        if (!string.IsNullOrEmpty(request.Color))
-            achievement.Color = request.Color;
-
-        achievement.IsSecret = request.IsSecret;
-        achievement.IsRepeatable = request.IsRepeatable;
-        achievement.DisplayOrder = request.DisplayOrder;
-
-        var result = await _achievementService.CreateAchievementAsync(achievement).ConfigureAwait(false);
+            request.Category,
+            request.Type,
+            request.Points,
+            request.IconUrl,
+            request.Color,
+            request.IsSecret,
+            request.IsRepeatable,
+            request.DisplayOrder)).ConfigureAwait(false);
 
         if (!result.IsSuccess)
         {
             return StatusCode(500, result.Error);
         }
 
+        var achievement = result.Value!;
         return CreatedAtAction(nameof(GetAchievement), new { achievementId = achievement.Id }, MapToDto(achievement));
     }
 
@@ -236,47 +231,27 @@ public class AchievementsController : BaseApiController
         Guid achievementId,
         [FromBody] UpdateAchievementRequest request)
     {
-        var achievement = await _achievementService.GetAchievementByIdAsync(achievementId).ConfigureAwait(false);
-
-        if (achievement == null)
-        {
-            return NotFound();
-        }
-
-        achievement.Name = request.Name ?? achievement.Name;
-        achievement.Description = request.Description ?? achievement.Description;
-        achievement.Category = request.Category ?? achievement.Category;
-        achievement.IconUrl = request.IconUrl ?? achievement.IconUrl;
-        achievement.Color = request.Color ?? achievement.Color;
-
-        if (request.Points.HasValue)
-            achievement.UpdatePoints(request.Points.Value);
-
-        if (request.IsActive.HasValue)
-        {
-            if (request.IsActive.Value)
-                achievement.Activate();
-            else
-                achievement.Deactivate();
-        }
-
-        if (request.IsSecret.HasValue)
-            achievement.IsSecret = request.IsSecret.Value;
-
-        if (request.IsRepeatable.HasValue)
-            achievement.IsRepeatable = request.IsRepeatable.Value;
-
-        if (request.DisplayOrder.HasValue)
-            achievement.DisplayOrder = request.DisplayOrder.Value;
-
-        var result = await _achievementService.UpdateAchievementAsync(achievement).ConfigureAwait(false);
+        var result = await _sender.Send(new UpdateAchievementCommand(
+            achievementId,
+            request.Name,
+            request.Description,
+            request.Category,
+            request.Points,
+            request.IconUrl,
+            request.Color,
+            request.IsActive,
+            request.IsSecret,
+            request.IsRepeatable,
+            request.DisplayOrder)).ConfigureAwait(false);
 
         if (!result.IsSuccess)
         {
+            if (result.Error.Code == "NotFound")
+                return NotFound();
             return StatusCode(500, result.Error);
         }
 
-        return Ok(MapToDto(achievement));
+        return Ok(MapToDto(result.Value!));
     }
 
     /// <summary>
@@ -286,7 +261,7 @@ public class AchievementsController : BaseApiController
     [RequirePermission(AchievementsPermission.Keys.Delete)]
     public async Task<ActionResult> DeleteAchievement(Guid achievementId)
     {
-        var result = await _achievementService.DeleteAchievementAsync(achievementId).ConfigureAwait(false);
+        var result = await _sender.Send(new DeleteAchievementCommand(achievementId)).ConfigureAwait(false);
 
         if (!result.IsSuccess)
         {
@@ -307,13 +282,10 @@ public class AchievementsController : BaseApiController
         Guid achievementId,
         [FromBody] AwardAchievementRequest request)
     {
-        var actorContext = _actorContextAccessor.ActorContext;
-
-        var result = await _achievementService.AwardAchievementAsync(
+        var result = await _sender.Send(new AwardAchievementCommand(
             request.UserId,
             achievementId,
-            request.Context,
-            actorContext.TenantId).ConfigureAwait(false);
+            request.Context)).ConfigureAwait(false);
 
         if (!result.IsSuccess)
         {

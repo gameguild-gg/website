@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import type { AnchorHTMLAttributes, ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -128,22 +128,87 @@ describe('public community website UX', () => {
     );
   });
 
-  it('exposes the learning-to-community information architecture in the header', async () => {
+  it('exposes a compact community-first information architecture in the header', async () => {
     authMock.mockResolvedValueOnce(null);
 
     render(await PublicWebsiteHeader());
 
     const nav = screen.getByRole('navigation', { name: /main navigation/i });
     expect(within(nav).getAllByRole('link').map((link) => link.textContent)).toEqual([
-      'Courses',
-      'Programs',
+      'Community',
+      'Projects',
       'Testing Lab',
       'Launch Pad',
-      'Projects',
-      'Community',
-      'Jobs',
-      'About',
     ]);
+    expect(within(nav).getAllByRole('button').map((button) => button.textContent)).toEqual(['Learn', 'More']);
+
+    fireEvent.click(within(nav).getByRole('button', { name: /learn/i }));
+    expect((await screen.findAllByRole('menuitem')).map((item) => item.textContent)).toEqual(['Courses', 'Programs']);
+  });
+
+  it('groups the authenticated social header around learning, building, and release', async () => {
+    authMock.mockResolvedValueOnce({
+      user: {
+        id: 'member-1',
+        name: 'Maya Torres',
+        email: 'maya@gameguild.gg',
+        image: null,
+      },
+      expires: '2026-12-31T00:00:00.000Z',
+    });
+
+    render(await PublicWebsiteHeader({ embedded: true }));
+
+    const nav = screen.getByRole('navigation', { name: /main navigation/i });
+    expect(within(nav).getAllByRole('link').map((link) => link.textContent)).toEqual(['Community']);
+    expect(within(nav).getAllByRole('button').map((button) => button.textContent)).toEqual([
+      'Learn',
+      'Build',
+      'Test & Launch',
+    ]);
+
+    fireEvent.click(within(nav).getByRole('button', { name: 'Build' }));
+    expect((await screen.findAllByRole('menuitem')).map((item) => item.textContent)).toEqual([
+      'Workspace',
+      'Projects',
+    ]);
+
+    fireEvent.click(within(nav).getByRole('button', { name: 'Build' }));
+    fireEvent.click(within(nav).getByRole('button', { name: 'Test & Launch' }));
+    expect((await screen.findAllByRole('menuitem')).map((item) => item.textContent)).toEqual([
+      'Testing Lab',
+      'Launch Pad',
+    ]);
+  });
+
+  it('keeps Workspace, Notifications, and a non-duplicated user profile in social header actions', async () => {
+    authMock.mockResolvedValueOnce({
+      user: {
+        id: 'member-1',
+        name: 'Maya Torres',
+        email: 'maya@gameguild.gg',
+        image: null,
+      },
+      expires: '2026-12-31T00:00:00.000Z',
+    });
+    render(await PublicWebsiteHeader({ embedded: true }));
+
+    expect(screen.getByRole('link', { name: 'Open Workspace' })).toHaveAttribute('href', '/workspace');
+    expect(screen.getByRole('link', { name: 'Notification settings' })).toHaveAttribute(
+      'href',
+      '/workspace/settings/notifications',
+    );
+    expect(screen.queryByRole('link', { name: 'Explore community' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Create post' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Open community navigation' })).not.toBeInTheDocument();
+    const profile = screen.getByRole('button', { name: 'Open Maya Torres account menu' });
+    expect(profile).toHaveTextContent('Maya Torres');
+    expect(profile).toHaveTextContent('maya@gameguild.gg');
+    expect(profile.querySelector('svg.lucide-chevrons-up-down')).toBeInTheDocument();
+    fireEvent.click(profile);
+    await screen.findByRole('menu');
+    expect(screen.getAllByText('Maya Torres')).toHaveLength(1);
+    expect(screen.getAllByText('maya@gameguild.gg')).toHaveLength(1);
   });
 
   it('shows the authenticated member profile instead of sign-in calls to action', async () => {

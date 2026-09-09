@@ -5,4 +5,4 @@ namespace GameGuild.Features;
 /// <summary>
 ///     Command to disable a feature flag
 /// </summary>
-public sealed record DisableFeatureFlagCommand(Guid Id) : IRequest;
+public sealed record DisableFeatureFlagCommand(Guid Id) : ICommand;

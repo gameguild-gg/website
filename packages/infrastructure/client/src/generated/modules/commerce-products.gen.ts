@@ -27,7 +27,7 @@ export class CommerceProductsModule {
     take?: number;
     sortBy?: string;
     sortDirection?: string;
-  }): Promise<Result<Types.PagedResultOfCommerceProductsProduct, ApiError>> {
+  }): Promise<Result<Types.PagedResultProductDto, ApiError>> {
     const url = '/v1/products';
 
     const result = await this.client.request({
@@ -39,7 +39,7 @@ export class CommerceProductsModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.PagedResultOfCommerceProductsProductSchema, result.data, 'response');
+      const validatedData = safeParse(Types.PagedResultProductDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -48,7 +48,7 @@ export class CommerceProductsModule {
 
   /**
    */
-  async postProducts(body: Types.CommerceProductsCreateProductInput): Promise<Result<Types.CommerceProductsProduct, ApiError>> {
+  async postProducts(body: Types.CommerceProductsCreateProductInput): Promise<Result<Types.CommerceProductsProductDto, ApiError>> {
     const url = '/v1/products';
 
     // Validate request body
@@ -63,7 +63,7 @@ export class CommerceProductsModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.CommerceProductsProductSchema, result.data, 'response');
+      const validatedData = safeParse(Types.CommerceProductsProductDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -72,7 +72,7 @@ export class CommerceProductsModule {
 
   /**
    */
-  async postProductsBatchCreate(body: Types.CommerceProductsBatchCreateProductsInput): Promise<Result<Array<Types.CommerceProductsProduct>, ApiError>> {
+  async postProductsBatchCreate(body: Types.CommerceProductsBatchCreateProductsInput): Promise<Result<Array<Types.CommerceProductsProductDto>, ApiError>> {
     const url = '/v1/products/:batch-create';
 
     // Validate request body
@@ -85,7 +85,7 @@ export class CommerceProductsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.CommerceProductsProduct>, ApiError>;
+    return result as Result<Array<Types.CommerceProductsProductDto>, ApiError>;
   }
 
   /**
@@ -93,7 +93,7 @@ export class CommerceProductsModule {
   async getProductsForGetProductsByProductId(
     productId: string,
     query?: { includePricing?: boolean; includeUnpublished?: boolean },
-  ): Promise<Result<Types.CommerceProductsProduct, ApiError>> {
+  ): Promise<Result<Types.CommerceProductsProductDto, ApiError>> {
     const url = `/v1/products/${productId}`;
 
     const result = await this.client.request({
@@ -105,7 +105,7 @@ export class CommerceProductsModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.CommerceProductsProductSchema, result.data, 'response');
+      const validatedData = safeParse(Types.CommerceProductsProductDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -114,7 +114,7 @@ export class CommerceProductsModule {
 
   /**
    */
-  async putProducts(productId: string, body: Types.CommerceProductsUpdateProductInput): Promise<Result<Types.CommerceProductsProduct, ApiError>> {
+  async putProducts(productId: string, body: Types.CommerceProductsUpdateProductInput): Promise<Result<Types.CommerceProductsProductDto, ApiError>> {
     const url = `/v1/products/${productId}`;
 
     // Validate request body
@@ -129,7 +129,7 @@ export class CommerceProductsModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.CommerceProductsProductSchema, result.data, 'response');
+      const validatedData = safeParse(Types.CommerceProductsProductDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -153,7 +153,7 @@ export class CommerceProductsModule {
 
   /**
    */
-  async patchProducts(productId: string, body: Types.CommerceProductsPatchProductInput): Promise<Result<Types.CommerceProductsProduct, ApiError>> {
+  async patchProducts(productId: string, body: Types.CommerceProductsPatchProductInput): Promise<Result<Types.CommerceProductsProductDto, ApiError>> {
     const url = `/v1/products/${productId}`;
 
     // Validate request body
@@ -168,7 +168,7 @@ export class CommerceProductsModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.CommerceProductsProductSchema, result.data, 'response');
+      const validatedData = safeParse(Types.CommerceProductsProductDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -192,7 +192,7 @@ export class CommerceProductsModule {
 
   /**
    */
-  async postProductsActivate(productId: string): Promise<Result<Types.CommerceProductsProduct, ApiError>> {
+  async postProductsActivate(productId: string): Promise<Result<Types.CommerceProductsProductDto, ApiError>> {
     const url = `/v1/products/${productId}:activate`;
 
     const result = await this.client.request({
@@ -203,7 +203,7 @@ export class CommerceProductsModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.CommerceProductsProductSchema, result.data, 'response');
+      const validatedData = safeParse(Types.CommerceProductsProductDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -212,7 +212,7 @@ export class CommerceProductsModule {
 
   /**
    */
-  async postProductsArchive(productId: string): Promise<Result<Types.CommerceProductsProduct, ApiError>> {
+  async postProductsArchive(productId: string): Promise<Result<Types.CommerceProductsProductDto, ApiError>> {
     const url = `/v1/products/${productId}:archive`;
 
     const result = await this.client.request({
@@ -223,7 +223,7 @@ export class CommerceProductsModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.CommerceProductsProductSchema, result.data, 'response');
+      const validatedData = safeParse(Types.CommerceProductsProductDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -232,7 +232,7 @@ export class CommerceProductsModule {
 
   /**
    */
-  async postProductsDeactivate(productId: string): Promise<Result<Types.CommerceProductsProduct, ApiError>> {
+  async postProductsDeactivate(productId: string): Promise<Result<Types.CommerceProductsProductDto, ApiError>> {
     const url = `/v1/products/${productId}:deactivate`;
 
     const result = await this.client.request({
@@ -243,7 +243,7 @@ export class CommerceProductsModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.CommerceProductsProductSchema, result.data, 'response');
+      const validatedData = safeParse(Types.CommerceProductsProductDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -255,7 +255,7 @@ export class CommerceProductsModule {
   async getProductsPricing(
     productId: string,
     query?: { includeUnpublished?: boolean },
-  ): Promise<Result<Array<Types.CommerceProductsProductPricing>, ApiError>> {
+  ): Promise<Result<Array<Types.CommerceProductsProductPricingDto>, ApiError>> {
     const url = `/v1/products/${productId}/pricing`;
 
     const result = await this.client.request({
@@ -265,7 +265,7 @@ export class CommerceProductsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.CommerceProductsProductPricing>, ApiError>;
+    return result as Result<Array<Types.CommerceProductsProductPricingDto>, ApiError>;
   }
 
   /**
@@ -273,7 +273,7 @@ export class CommerceProductsModule {
   async putProductsPricing(
     productId: string,
     body: Types.CommerceProductsSetProductPricingInput,
-  ): Promise<Result<Types.CommerceProductsProductPricing, ApiError>> {
+  ): Promise<Result<Types.CommerceProductsProductPricingDto, ApiError>> {
     const url = `/v1/products/${productId}/pricing`;
 
     // Validate request body
@@ -288,7 +288,7 @@ export class CommerceProductsModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.CommerceProductsProductPricingSchema, result.data, 'response');
+      const validatedData = safeParse(Types.CommerceProductsProductPricingDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 

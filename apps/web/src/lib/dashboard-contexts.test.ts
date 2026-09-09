@@ -47,6 +47,7 @@ describe("dashboard contexts query", () => {
     expect(await clientOptions?.tenant.getTenantId()).toBe("reviewer-tenant");
     expect(result.capabilities).toEqual(["TestingLab.ManageEvents"]);
     expect(result.contexts.map((context) => context.type)).toEqual([
+      "Workspace",
       "Operations",
     ]);
     expect(result.counts).toEqual({
@@ -61,11 +62,26 @@ describe("dashboard contexts query", () => {
     mocks.request.mockResolvedValue({ ok: false, error: { status: 503 } });
 
     await expect(getDashboardContexts()).resolves.toEqual({
-      contexts: [],
+      contexts: [
+        { type: "Workspace", id: null, name: "Workspace", route: "/workspace" },
+      ],
       capabilities: [],
       counts: { teams: 0, projects: 0, pendingTasks: 0, invitations: 0 },
       navigation: [],
     });
+  });
+
+  it("does not expose Operations for non-management capabilities", async () => {
+    mocks.request.mockResolvedValue({
+      ok: true,
+      data: { capabilities: ["TestingLab.Participate"] },
+    });
+
+    const result = await getDashboardContexts();
+
+    expect(result.contexts).toEqual([
+      { type: "Workspace", id: null, name: "Workspace", route: "/workspace" },
+    ]);
   });
 
   it("matches management modules without treating participation as management", () => {

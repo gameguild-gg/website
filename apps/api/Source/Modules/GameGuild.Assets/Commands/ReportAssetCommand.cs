@@ -9,7 +9,7 @@ public sealed record ReportAssetCommand(
     Guid AssetReferenceId,
     Guid ReportedByUserId,
     ReportReason Reason,
-    string? Description = null) : IRequest<ReportAssetResponse?>;
+    string? Description = null) : ICommand<ReportAssetResponse?>;
 
 public sealed record ReportAssetResponse(
     Guid ReportId,
@@ -26,7 +26,7 @@ public sealed class ReportAssetValidator : AbstractValidator<ReportAssetCommand>
     }
 }
 
-public sealed class ReportAssetHandler : IRequestHandler<ReportAssetCommand, ReportAssetResponse?>
+public sealed class ReportAssetHandler : ICommandHandler<ReportAssetCommand, ReportAssetResponse?>
 {
     private readonly IAssetModerationService _moderationService;
     private readonly IAssetReferenceRepository _referenceRepository;

@@ -21,7 +21,7 @@ const contextMeta: Record<DashboardContextType, { label: string; icon: React.Ele
 };
 
 function isOperationsPath(pathname: string | null): boolean {
-  return Boolean(pathname?.startsWith('/console/community/testing-lab') || pathname?.startsWith('/console/community/launch-pad'));
+  return Boolean(pathname?.startsWith('/workspace/testing-lab') || pathname?.startsWith('/console/community/launch-pad'));
 }
 
 export function ContextSwitcher({ contexts }: { contexts: readonly DashboardContextSummary[] }) {
@@ -29,13 +29,37 @@ export function ContextSwitcher({ contexts }: { contexts: readonly DashboardCont
   const pathname = usePathname();
   const available = contexts.length > 0
     ? contexts
-    : [{ type: 'Operations' as const, id: null, name: 'Operations', route: '/dashboard' }];
+    : [{ type: 'Workspace' as const, id: null, name: 'Workspace', route: '/workspace' }];
   const active = available.find((context) =>
     context.type === 'Operations'
       ? isOperationsPath(pathname)
       : context.route !== '/dashboard' && (pathname === context.route || pathname?.startsWith(`${context.route}/`)),
   ) ?? available.find((context) => context.type === 'Operations') ?? available[0]!;
   const ActiveIcon = contextMeta[active.type].icon;
+  const activeTypeLabel = contextMeta[active.type].label;
+  const showActiveType = active.name.trim().toLowerCase() !== activeTypeLabel.toLowerCase();
+
+  if (available.length === 1) {
+    return (
+      <SidebarMenu>
+        <SidebarMenuItem>
+          <SidebarMenuButton size="lg" asChild>
+            <Link href={active.route}>
+              <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
+                <ActiveIcon className="size-4" />
+              </div>
+              <div className="grid flex-1 text-left text-sm leading-tight">
+                <span className="truncate font-medium">{active.name}</span>
+                {showActiveType && (
+                  <span className="truncate text-xs text-sidebar-foreground/70">{activeTypeLabel}</span>
+                )}
+              </div>
+            </Link>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+      </SidebarMenu>
+    );
+  }
 
   return (
     <SidebarMenu>
@@ -48,7 +72,9 @@ export function ContextSwitcher({ contexts }: { contexts: readonly DashboardCont
               </div>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-medium">{active.name}</span>
-                <span className="truncate text-xs text-sidebar-foreground/70">{contextMeta[active.type].label}</span>
+                {showActiveType && (
+                  <span className="truncate text-xs text-sidebar-foreground/70">{activeTypeLabel}</span>
+                )}
               </div>
               <ChevronsUpDown className="ml-auto size-4" />
             </SidebarMenuButton>
@@ -59,7 +85,7 @@ export function ContextSwitcher({ contexts }: { contexts: readonly DashboardCont
             side={isMobile ? 'bottom' : 'right'}
             sideOffset={4}
           >
-            <DropdownMenuLabel className="text-xs text-muted-foreground">Management context</DropdownMenuLabel>
+            <DropdownMenuLabel className="text-xs text-muted-foreground">Switch context</DropdownMenuLabel>
             {available.map((context) => {
               const Icon = contextMeta[context.type].icon;
               return (

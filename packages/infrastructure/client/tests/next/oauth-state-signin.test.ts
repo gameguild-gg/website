@@ -354,6 +354,30 @@ describe('GET /api/auth/callback/:provider (state cookie verification)', () => {
     expect(allCookies.some((c) => c.startsWith('__gg.session-token='))).toBe(true);
   });
 
+  it('does not create a session when the signIn callback rejects an OAuth identity', async () => {
+    const signIn = vi.fn(async () => false as const);
+    const config = makeConfig({
+      callbacks: {
+        jwt: async ({ token }) => token,
+        session: async ({ session }) => session,
+        signIn,
+        redirect: async ({ url, baseUrl }) => (url.startsWith('/') ? `${baseUrl}${url}` : url),
+        authorized: async ({ auth }) => !!auth,
+      },
+    });
+    const { GET } = createHandlers(config);
+
+    const response = await GET(callbackRequest(await makeStateCookie()));
+
+    expect(signIn).toHaveBeenCalledWith({
+      user: expect.objectContaining({ email: 'discord@example.com' }),
+      provider: 'discord',
+    });
+    expect(response.status).toBe(302);
+    expect(response.headers.get('Location')).toContain('error=access_denied');
+    expect(getSetCookies(response).some((cookie) => cookie.startsWith('__gg.session-token='))).toBe(false);
+  });
+
   it('does not double-prefix an already locale-prefixed redirectTo', async () => {
     const config = makeConfig();
     const { GET } = createHandlers(config);

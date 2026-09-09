@@ -1,3 +1,4 @@
+using GameGuild.CQRS;
 using GameGuild.Identity.Context.Actors;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -18,16 +19,19 @@ public class CohortsController : BaseApiController
     private readonly IActorContextAccessor _actorContextAccessor;
     private readonly ILogger<CohortsController> _logger;
     private readonly IApplicationDbContext _context;
+    private readonly ISender _sender;
 
     public CohortsController(
         ICohortService cohortService,
         IActorContextAccessor actorContextAccessor,
         IApplicationDbContext context,
+        ISender sender,
         ILogger<CohortsController> logger)
     {
         _cohortService = cohortService;
         _actorContextAccessor = actorContextAccessor;
         _context = context;
+        _sender = sender;
         _logger = logger;
     }
 
@@ -42,7 +46,7 @@ public class CohortsController : BaseApiController
         // Use tenant from actor if not specified in request
         var effectiveRequest = request with { TenantId = request.TenantId ?? actor.TenantId };
 
-        var result = await _cohortService.CreateCohortAsync(effectiveRequest).ConfigureAwait(false);
+        var result = await _sender.Send(new CreateCohortCommand(effectiveRequest)).ConfigureAwait(false);
         if (!result.IsSuccess)
         {
             return BadRequest(result.Error);
@@ -105,7 +109,7 @@ public class CohortsController : BaseApiController
     [HttpPut("{id:guid}")]
     public async Task<ActionResult<CohortDto>> UpdateCohort(Guid id, [FromBody] UpdateCohortRequest request)
     {
-        var result = await _cohortService.UpdateCohortAsync(id, request).ConfigureAwait(false);
+        var result = await _sender.Send(new UpdateCohortCommand(id, request)).ConfigureAwait(false);
         if (!result.IsSuccess)
         {
             return result.Error.Type == ErrorType.NotFound 
@@ -122,7 +126,7 @@ public class CohortsController : BaseApiController
     [HttpPost("{id:guid}/open")]
     public async Task<ActionResult<CohortDto>> OpenCohort(Guid id)
     {
-        var result = await _cohortService.OpenCohortAsync(id).ConfigureAwait(false);
+        var result = await _sender.Send(new OpenCohortCommand(id)).ConfigureAwait(false);
         if (!result.IsSuccess)
         {
             return result.Error.Type == ErrorType.NotFound 
@@ -139,7 +143,7 @@ public class CohortsController : BaseApiController
     [HttpPost("{id:guid}/close")]
     public async Task<ActionResult<CohortDto>> CloseCohort(Guid id)
     {
-        var result = await _cohortService.CloseCohortAsync(id).ConfigureAwait(false);
+        var result = await _sender.Send(new CloseCohortCommand(id)).ConfigureAwait(false);
         if (!result.IsSuccess)
         {
             return result.Error.Type == ErrorType.NotFound 
@@ -156,7 +160,7 @@ public class CohortsController : BaseApiController
     [HttpPost("{id:guid}/complete")]
     public async Task<ActionResult<CohortDto>> CompleteCohort(Guid id)
     {
-        var result = await _cohortService.CompleteCohortAsync(id).ConfigureAwait(false);
+        var result = await _sender.Send(new CompleteCohortCommand(id)).ConfigureAwait(false);
         if (!result.IsSuccess)
         {
             return result.Error.Type == ErrorType.NotFound 
@@ -173,7 +177,7 @@ public class CohortsController : BaseApiController
     [HttpPost("{id:guid}/cancel")]
     public async Task<ActionResult<CohortDto>> CancelCohort(Guid id)
     {
-        var result = await _cohortService.CancelCohortAsync(id).ConfigureAwait(false);
+        var result = await _sender.Send(new CancelCohortCommand(id)).ConfigureAwait(false);
         if (!result.IsSuccess)
         {
             return result.Error.Type == ErrorType.NotFound 
@@ -190,7 +194,7 @@ public class CohortsController : BaseApiController
     [HttpDelete("{id:guid}")]
     public async Task<ActionResult> DeleteCohort(Guid id)
     {
-        var result = await _cohortService.DeleteCohortAsync(id).ConfigureAwait(false);
+        var result = await _sender.Send(new DeleteCohortCommand(id)).ConfigureAwait(false);
         if (!result.IsSuccess)
         {
             return result.Error.Type == ErrorType.NotFound 

@@ -8,11 +8,10 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@game-guild/ui/components/dropdown-menu';
-import { BriefcaseBusiness, LogOut, Settings } from 'lucide-react';
+import { BriefcaseBusiness, ChevronsUpDown, LogOut, Settings } from 'lucide-react';
 import * as React from 'react';
 
 export interface DashboardUser {
@@ -59,30 +58,21 @@ export function DashboardUserMenu({ user }: { user: DashboardUser }) {
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"
-          className="h-10 gap-2 px-2"
+          className="h-11 max-w-72 justify-start gap-2 rounded-lg px-2 text-left"
           aria-label={`Open ${user.name} account menu`}
         >
           <Avatar size="sm">
             {user.image ? <AvatarImage src={user.image} alt={user.name} /> : null}
             <AvatarFallback>{getInitials(user.name, user.email)}</AvatarFallback>
           </Avatar>
-          <span className="hidden max-w-32 truncate text-sm font-medium md:inline">{user.name}</span>
+          <span className="hidden min-w-0 flex-1 sm:block">
+            <span className="block truncate text-sm font-semibold leading-tight">{user.name}</span>
+            <span className="block truncate text-xs leading-tight text-muted-foreground">{user.email}</span>
+          </span>
+          <ChevronsUpDown className="hidden size-4 shrink-0 text-muted-foreground sm:block" aria-hidden="true" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-64">
-        <DropdownMenuLabel className="font-normal">
-          <div className="flex items-center gap-3">
-            <Avatar>
-              {user.image ? <AvatarImage src={user.image} alt={user.name} /> : null}
-              <AvatarFallback>{getInitials(user.name, user.email)}</AvatarFallback>
-            </Avatar>
-            <div className="min-w-0">
-              <p className="truncate text-sm font-medium">{user.name}</p>
-              <p className="truncate text-xs text-muted-foreground">{user.email}</p>
-            </div>
-          </div>
-        </DropdownMenuLabel>
-        <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
           <Link href="/workspace">
             <BriefcaseBusiness className="size-4" />

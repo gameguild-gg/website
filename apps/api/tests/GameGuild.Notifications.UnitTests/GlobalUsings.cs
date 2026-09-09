@@ -12,4 +12,5 @@ global using GameGuild.Notifications;
 global using GameGuild.Notifications.Configuration;
 global using GameGuild.Notifications.Controllers;
 global using GameGuild.Notifications.Services;
+global using GameGuild.Notifications.UnitTests.Infrastructure;
 global using Xunit;

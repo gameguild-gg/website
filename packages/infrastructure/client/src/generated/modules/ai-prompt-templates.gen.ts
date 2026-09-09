@@ -20,7 +20,7 @@ export class AiPromptTemplatesModule {
   async getAiPromptTemplatesForGetAiPromptTemplates(query?: {
     category?: string;
     includeInactive?: boolean;
-  }): Promise<Result<Array<Types.AIAiPromptTemplate>, ApiError>> {
+  }): Promise<Result<Array<Types.AIAiPromptTemplateDto>, ApiError>> {
     const url = '/v1/ai/prompt-templates';
 
     const result = await this.client.request({
@@ -30,12 +30,12 @@ export class AiPromptTemplatesModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.AIAiPromptTemplate>, ApiError>;
+    return result as Result<Array<Types.AIAiPromptTemplateDto>, ApiError>;
   }
 
   /**
    */
-  async postAiPromptTemplates(body: Types.AICreateAiPromptTemplateInput): Promise<Result<Types.AIAiPromptTemplate, ApiError>> {
+  async postAiPromptTemplates(body: Types.AICreateAiPromptTemplateInput): Promise<Result<Types.AIAiPromptTemplateDto, ApiError>> {
     const url = '/v1/ai/prompt-templates';
 
     // Validate request body
@@ -50,7 +50,7 @@ export class AiPromptTemplatesModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.AIAiPromptTemplateSchema, result.data, 'response');
+      const validatedData = safeParse(Types.AIAiPromptTemplateDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -59,7 +59,7 @@ export class AiPromptTemplatesModule {
 
   /**
    */
-  async getAiPromptTemplatesForGetAiPromptTemplatesById(id: string): Promise<Result<Types.AIAiPromptTemplate, ApiError>> {
+  async getAiPromptTemplatesForGetAiPromptTemplatesById(id: string): Promise<Result<Types.AIAiPromptTemplateDto, ApiError>> {
     const url = `/v1/ai/prompt-templates/${id}`;
 
     const result = await this.client.request({
@@ -70,7 +70,7 @@ export class AiPromptTemplatesModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.AIAiPromptTemplateSchema, result.data, 'response');
+      const validatedData = safeParse(Types.AIAiPromptTemplateDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -79,7 +79,7 @@ export class AiPromptTemplatesModule {
 
   /**
    */
-  async putAiPromptTemplates(id: string, body: Types.AIUpdateAiPromptTemplateInput): Promise<Result<Types.AIAiPromptTemplate, ApiError>> {
+  async putAiPromptTemplates(id: string, body: Types.AIUpdateAiPromptTemplateInput): Promise<Result<Types.AIAiPromptTemplateDto, ApiError>> {
     const url = `/v1/ai/prompt-templates/${id}`;
 
     // Validate request body
@@ -94,7 +94,7 @@ export class AiPromptTemplatesModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.AIAiPromptTemplateSchema, result.data, 'response');
+      const validatedData = safeParse(Types.AIAiPromptTemplateDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 

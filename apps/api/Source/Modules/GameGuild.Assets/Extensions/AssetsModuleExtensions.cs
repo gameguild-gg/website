@@ -104,6 +104,8 @@ public static class AssetsModuleExtensions
         services.AddScoped<IAssetRateLimitService, AssetRateLimitService>();
         services.AddScoped<ITransformationValidator, TransformationValidator>();
         services.AddScoped<IVirusScanService, VirusScanService>();
+        services.AddScoped<BackgroundServices.IAssetVirusScanProcessor, BackgroundServices.AssetVirusScanProcessor>();
+        services.AddHostedService<BackgroundServices.VirusScanBackgroundService>();
         services.AddScoped<IAssetGarbageCollectionService, AssetGarbageCollectionService>();
         services.AddScoped<ITenantAssetValidationService, TenantAssetValidationService>();
         services.AddScoped<IDownloadWindowService, DownloadWindowService>();

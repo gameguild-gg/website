@@ -1,5 +1,6 @@
 using Asp.Versioning;
 using GameGuild.API.Authorization;
+using GameGuild.CQRS;
 using GameGuild.Economy.Risk;
 using GameGuild.Identity.Authorization;
 using GameGuild.Identity.Context.Actors;
@@ -14,8 +15,8 @@ namespace GameGuild.API.Controllers;
 [Tags("economy-compliance-hold-administration")]
 [Authorize]
 public sealed class EconomyComplianceHoldAdministrationController(
+    ISender sender,
     IComplianceHoldAdministrationStore holds,
-    IEconomyStepUpExecutor stepUp,
     IActorContextAccessor actorContextAccessor,
     TimeProvider timeProvider) : BaseApiController
 {
@@ -77,57 +78,47 @@ public sealed class EconomyComplianceHoldAdministrationController(
     [ProducesResponseType(typeof(ComplianceHoldAdministrationState), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
-    public Task<IActionResult> ProposeRelease(
+    public async Task<IActionResult> ProposeRelease(
         Guid holdId,
         [FromBody] EconomyStepUpRequest request,
-        CancellationToken cancellationToken) =>
-        MutateRelease(holdId, request, approve: false, cancellationToken);
+        CancellationToken cancellationToken)
+    {
+        if (!TryOperator(out var tenantId, out var actorId)) return Forbid();
+        ArgumentNullException.ThrowIfNull(request);
+        var operation = EconomyStepUpOperation.Create(
+            "economy.compliance-hold.release.propose",
+            $"compliance-hold:{holdId:N}",
+            holdId.ToString("N"));
+        return await ExecuteReleaseAsync(sender.Send(new ProposeComplianceHoldReleaseEndpointCommand(
+            operation, request.StepUpReceipt, tenantId, holdId, actorId, timeProvider.GetUtcNow()),
+            cancellationToken)).ConfigureAwait(false);
+    }
 
     [HttpPost("{holdId:guid}/release-approvals")]
     [ProducesResponseType(typeof(ComplianceHoldAdministrationState), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
-    public Task<IActionResult> ApproveRelease(
+    public async Task<IActionResult> ApproveRelease(
         Guid holdId,
         [FromBody] EconomyStepUpRequest request,
-        CancellationToken cancellationToken) =>
-        MutateRelease(holdId, request, approve: true, cancellationToken);
-
-    private async Task<IActionResult> MutateRelease(
-        Guid holdId,
-        EconomyStepUpRequest request,
-        bool approve,
         CancellationToken cancellationToken)
     {
         if (!TryOperator(out var tenantId, out var actorId)) return Forbid();
         ArgumentNullException.ThrowIfNull(request);
-        var action = approve ? "approve" : "propose";
         var operation = EconomyStepUpOperation.Create(
-            $"economy.compliance-hold.release.{action}",
+            "economy.compliance-hold.release.approve",
             $"compliance-hold:{holdId:N}",
             holdId.ToString("N"));
+        return await ExecuteReleaseAsync(sender.Send(new ApproveComplianceHoldReleaseEndpointCommand(
+            operation, request.StepUpReceipt, tenantId, holdId, actorId, timeProvider.GetUtcNow()),
+            cancellationToken)).ConfigureAwait(false);
+    }
+
+    private async Task<IActionResult> ExecuteReleaseAsync(Task<ComplianceHoldAdministrationState> operation)
+    {
         try
         {
-            var result = await stepUp.ExecuteAsync(
-                operation,
-                request.StepUpReceipt,
-                (evidenceHash, token) => approve
-                    ? holds.ApproveReleaseAsync(
-                        tenantId,
-                        holdId,
-                        actorId,
-                        evidenceHash,
-                        timeProvider.GetUtcNow(),
-                        token).AsTask()
-                    : holds.ProposeReleaseAsync(
-                        tenantId,
-                        holdId,
-                        actorId,
-                        evidenceHash,
-                        timeProvider.GetUtcNow(),
-                        token).AsTask(),
-                cancellationToken).ConfigureAwait(false);
-            return Ok(result);
+            return Ok(await operation.ConfigureAwait(false));
         }
         catch (KeyNotFoundException)
         {

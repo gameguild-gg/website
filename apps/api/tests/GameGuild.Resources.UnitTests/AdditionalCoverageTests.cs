@@ -939,9 +939,10 @@ public class ControllerConstructorTests
     public void TenantResourceMetadataController_CanBeConstructed()
     {
         var repo = new Mock<IResourceMetadataRepository>();
+        var sender = new Mock<ISender>();
         var accessor = new Mock<IActorContextAccessor>();
         var checker = new Mock<GameGuild.Identity.Authorization.ITenantMembershipChecker>();
-        var controller = new TenantResourceMetadataController(repo.Object, accessor.Object, checker.Object);
+        var controller = new TenantResourceMetadataController(repo.Object, sender.Object, accessor.Object, checker.Object);
         controller.Should().NotBeNull();
     }
 
@@ -960,9 +961,10 @@ public class ControllerConstructorTests
     public void TenantResourceSettingsController_CanBeConstructed()
     {
         var repo = new Mock<IResourceSettingsRepository>();
+        var sender = new Mock<ISender>();
         var accessor = new Mock<IActorContextAccessor>();
         var checker = new Mock<GameGuild.Identity.Authorization.ITenantMembershipChecker>();
-        var controller = new TenantResourceSettingsController(repo.Object, accessor.Object, checker.Object);
+        var controller = new TenantResourceSettingsController(repo.Object, sender.Object, accessor.Object, checker.Object);
         controller.Should().NotBeNull();
     }
 
@@ -979,8 +981,9 @@ public class ControllerConstructorTests
     public void UserResourceMetadataController_CanBeConstructed()
     {
         var repo = new Mock<IResourceMetadataRepository>();
+        var sender = new Mock<ISender>();
         var accessor = new Mock<IActorContextAccessor>();
-        var controller = new UserResourceMetadataController(repo.Object, accessor.Object);
+        var controller = new UserResourceMetadataController(repo.Object, sender.Object, accessor.Object);
         controller.Should().NotBeNull();
     }
 
@@ -997,8 +1000,9 @@ public class ControllerConstructorTests
     public void UserResourceSettingsController_CanBeConstructed()
     {
         var repo = new Mock<IResourceSettingsRepository>();
+        var sender = new Mock<ISender>();
         var accessor = new Mock<IActorContextAccessor>();
-        var controller = new UserResourceSettingsController(repo.Object, accessor.Object);
+        var controller = new UserResourceSettingsController(repo.Object, sender.Object, accessor.Object);
         controller.Should().NotBeNull();
     }
 }

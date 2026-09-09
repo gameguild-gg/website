@@ -231,6 +231,7 @@ public sealed class TenantQuotasController(
     /// <param name="ct">Cancellation token</param>
     /// <returns>Quota enforcement result indicating if usage is allowed</returns>
     [HttpPost("v{version:apiVersion}/tenants/{tenantId:guid}/quotas/{type}:check")]
+    [NoBusinessMutationEndpoint("This POST-shaped quota check is read-only and records no usage.")]
     [EndpointSummary("Check if a usage amount would exceed quota")]
     [EndpointDescription("Validates whether a proposed usage amount would exceed the configured quota limits without recording any usage.")]
     [ProducesResponseType<ResourceQuotaEnforcementResult>(StatusCodes.Status200OK)]

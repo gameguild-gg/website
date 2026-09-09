@@ -1,6 +1,7 @@
 "use server";
 
 import { getRequestAuthContext } from "@/auth";
+import { isSupportedTimeZone, wallClockToUtcIso } from "@/lib/date-time-zone";
 import {
   createServerClient,
   GeneratedApi,
@@ -22,7 +23,7 @@ import {
 } from "@game-guild/client";
 import { revalidatePath } from "next/cache";
 
-const EVENTS_PATH = "/console/community/testing-lab/events";
+const EVENTS_PATH = "/workspace/testing-lab/events";
 
 type ActionData<T> = [T] extends [void] ? null : T | null;
 export type TestingEventActionResult<T = null> =
@@ -183,20 +184,19 @@ function optionalNumber(formData: FormData, key: string) {
   return Number.isFinite(value) ? value : null;
 }
 
-function isoDate(formData: FormData, key: string) {
+function isoDate(formData: FormData, key: string, timeZoneId = "UTC") {
   const raw = text(formData, key);
   if (!raw) return null;
-  const wallClock = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(raw)
-    ? `${raw}:00.000Z`
-    : raw;
-  const value = new Date(wallClock);
+  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(raw))
+    return wallClockToUtcIso(raw, timeZoneId);
+  const value = new Date(raw);
   return Number.isNaN(value.valueOf()) ? null : value.toISOString();
 }
 
 function revalidateEvent(eventId?: string) {
-  revalidatePath("/console/community/testing-lab");
+  revalidatePath("/workspace/testing-lab");
   revalidatePath(EVENTS_PATH);
-  revalidatePath("/console/community/testing-lab/settings/templates");
+  revalidatePath("/workspace/testing-lab/settings/templates");
   revalidatePath("/testing-lab");
   if (eventId) {
     revalidatePath(`${EVENTS_PATH}/${eventId}`);
@@ -283,7 +283,10 @@ function dayOfWeek(value: string): SystemDayOfWeek | null {
     : null;
 }
 
-function recurrenceInput(formData: FormData): {
+function recurrenceInput(
+  formData: FormData,
+  timeZoneId: string,
+): {
   data: TestingLabCreateTestingEventInput["recurrence"] | null;
   error: string | null;
 } {
@@ -305,7 +308,9 @@ function recurrenceInput(formData: FormData): {
     };
 
   const endsByDate = text(formData, "recurrenceEndMode") === "date";
-  const endsAt = endsByDate ? isoDate(formData, "recurrenceEndsAt") : null;
+  const endsAt = endsByDate
+    ? isoDate(formData, "recurrenceEndsAt", timeZoneId)
+    : null;
   const occurrenceCount = endsByDate
     ? null
     : optionalNumber(formData, "recurrenceOccurrenceCount");
@@ -336,10 +341,21 @@ function eventInput(formData: FormData): {
   data: TestingLabCreateTestingEventInput | null;
   error: string | null;
 } {
-  const applicationsOpenAt = isoDate(formData, "applicationsOpenAt");
-  const applicationsCloseAt = isoDate(formData, "applicationsCloseAt");
-  const startsAt = isoDate(formData, "startsAt");
-  const endsAt = isoDate(formData, "endsAt");
+  const timeZoneId = text(formData, "timeZoneId") || "UTC";
+  if (!isSupportedTimeZone(timeZoneId))
+    return { data: null, error: "Choose a valid time zone." };
+  const applicationsOpenAt = isoDate(
+    formData,
+    "applicationsOpenAt",
+    timeZoneId,
+  );
+  const applicationsCloseAt = isoDate(
+    formData,
+    "applicationsCloseAt",
+    timeZoneId,
+  );
+  const startsAt = isoDate(formData, "startsAt", timeZoneId);
+  const endsAt = isoDate(formData, "endsAt", timeZoneId);
   if (!applicationsOpenAt || !applicationsCloseAt || !startsAt || !endsAt)
     return { data: null, error: "Enter valid event dates." };
   if (new Date(applicationsCloseAt) <= new Date(applicationsOpenAt))
@@ -352,7 +368,7 @@ function eventInput(formData: FormData): {
   if (new Date(endsAt) <= new Date(startsAt))
     return { data: null, error: "Event end must be after its start." };
 
-  const recurrence = recurrenceInput(formData);
+  const recurrence = recurrenceInput(formData, timeZoneId);
   if (recurrence.error) return { data: null, error: recurrence.error };
   if (
     recurrence.data?.endsAt &&
@@ -364,21 +380,27 @@ function eventInput(formData: FormData): {
     };
 
   const templateRevisionId = optionalText(formData, "templateRevisionId");
-  const configuration = templateRevisionId
-    ? undefined
-    : {
-        generalRules: text(formData, "generalRules"),
-        candidateInstructions: text(formData, "candidateInstructions"),
-        testerInstructions: text(formData, "testerInstructions"),
-        projectApplicationSchema: {
-          title: "Project application",
-          questions: [],
-        },
-        testerRegistrationSchema: {
-          title: "Tester registration",
-          questions: [],
-        },
-      };
+  const hasInlineConfiguration = [
+    "generalRules",
+    "candidateInstructions",
+    "testerInstructions",
+  ].some((key) => text(formData, key));
+  const configuration =
+    !templateRevisionId && hasInlineConfiguration
+      ? {
+          generalRules: text(formData, "generalRules"),
+          candidateInstructions: text(formData, "candidateInstructions"),
+          testerInstructions: text(formData, "testerInstructions"),
+          projectApplicationSchema: {
+            title: "Project application",
+            questions: [],
+          },
+          testerRegistrationSchema: {
+            title: "Tester registration",
+            questions: [],
+          },
+        }
+      : undefined;
   if (
     configuration &&
     (!configuration.generalRules ||
@@ -401,6 +423,7 @@ function eventInput(formData: FormData): {
       applicationsCloseAt,
       startsAt,
       endsAt,
+      timeZoneId,
       requiresFeedback: checked(formData, "requiresFeedback"),
       templateRevisionId,
       configuration,

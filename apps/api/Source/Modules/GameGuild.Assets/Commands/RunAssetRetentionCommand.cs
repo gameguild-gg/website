@@ -3,7 +3,7 @@ namespace GameGuild.Assets.Commands;
 public sealed record RunAssetRetentionCommand(
     int GracePeriodHours = 24,
     int Limit = 100,
-    bool DryRun = false) : IRequest<AssetRetentionRunResponse>;
+    bool DryRun = false) : ICommand<AssetRetentionRunResponse>;
 
 public sealed record AssetRetentionRunResponse(
     int CandidatesFound,
@@ -15,7 +15,7 @@ public sealed record AssetRetentionRunResponse(
 public sealed class RunAssetRetentionHandler(
     IAssetContentRepository contentRepository,
     IAssetStorageService storageService,
-    ITransformedAssetRepository transformedRepository) : IRequestHandler<RunAssetRetentionCommand, AssetRetentionRunResponse>
+    ITransformedAssetRepository transformedRepository) : ICommandHandler<RunAssetRetentionCommand, AssetRetentionRunResponse>
 {
     public async Task<AssetRetentionRunResponse> Handle(
         RunAssetRetentionCommand request,
@@ -42,6 +42,18 @@ public sealed class RunAssetRetentionHandler(
             {
                 await transformedRepository.DeleteBySourceAsync(content.Id, ct).ConfigureAwait(false);
                 await storageService.DeleteAsync(content.BucketName, content.ObjectKey, ct).ConfigureAwait(false);
+                content.AddIntegrationEvent(new AssetObjectDeletedEvent(
+                    content.Id,
+                    content.ContentHash,
+                    content.SizeBytes,
+                    "object-storage")
+                {
+                    TenantId = content.TenantId ?? DurableIntegrationEventTenants.Platform,
+                    ActorId = DurableIntegrationEventActors.System,
+                    AggregateType = nameof(AssetContent),
+                    AggregateId = content.Id.ToString(),
+                    CorrelationId = Guid.NewGuid()
+                });
                 await contentRepository.DeleteAsync(content.Id, ct).ConfigureAwait(false);
                 deleted++;
             }

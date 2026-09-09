@@ -51,6 +51,55 @@ public abstract record IntegrationEventBase : IIntegrationEvent
     public abstract string SourceModule { get; }
 }
 
+public interface IDurableIntegrationEvent : IIntegrationEvent
+{
+    string EventName { get; }
+    int SchemaVersion { get; }
+    Guid TenantId { get; }
+    Guid ActorId { get; }
+    string AggregateType { get; }
+    string AggregateId { get; }
+    Guid CorrelationId { get; }
+    Guid? CausationId { get; }
+}
+
+public abstract record DurableIntegrationEventBase : IntegrationEventBase, IDurableIntegrationEvent
+{
+    public abstract string EventName { get; }
+    public virtual int SchemaVersion => 1;
+    public Guid TenantId { get; init; }
+    public Guid ActorId { get; init; }
+    public required string AggregateType { get; init; }
+    public required string AggregateId { get; init; }
+    public Guid CorrelationId { get; init; } = Guid.NewGuid();
+    public Guid? CausationId { get; init; }
+}
+
+[AttributeUsage(AttributeTargets.Property)]
+public sealed class NonPersonalEventDataAttribute : Attribute;
+
+public static class DurableIntegrationEventActors
+{
+    public static readonly Guid System = Guid.Parse("00000000-0000-0000-0000-000000000001");
+}
+
+public static class DurableIntegrationEventTenants
+{
+    public static readonly Guid Platform = Guid.Parse("00000000-0000-0000-0000-000000000002");
+}
+
+public interface IHasIntegrationEvents
+{
+    IReadOnlyList<IDurableIntegrationEvent> IntegrationEvents { get; }
+    void AddIntegrationEvent(IDurableIntegrationEvent integrationEvent);
+    void ClearIntegrationEvents();
+}
+
+public interface IDurableEventProducer
+{
+    Task RecordAsync(IDurableIntegrationEvent integrationEvent, CancellationToken cancellationToken = default);
+}
+
 /// <summary>
 ///     Handler for integration events.
 ///     Each module can register handlers for integration events from other modules.

@@ -1,4 +1,5 @@
 using Asp.Versioning;
+using GameGuild.CQRS;
 using GameGuild.Economy.Risk;
 using GameGuild.Identity.Authorization;
 using GameGuild.Identity.Context.Actors;
@@ -17,6 +18,7 @@ public sealed record ResolveEconomyRiskReviewRequest(
 [Tags("economy-risk-review-administration")]
 [Authorize]
 public sealed class EconomyRiskReviewAdministrationController(
+    ISender sender,
     IRiskReviewStore reviews,
     IActorContextAccessor actorContextAccessor,
     TimeProvider timeProvider) : BaseApiController
@@ -72,40 +74,39 @@ public sealed class EconomyRiskReviewAdministrationController(
     [ProducesResponseType(typeof(RiskReviewCase), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
-    public Task<IActionResult> Approve(
+    public async Task<IActionResult> Approve(
         Guid reviewId,
         [FromBody] ResolveEconomyRiskReviewRequest request,
-        CancellationToken cancellationToken) =>
-        Resolve(reviewId, request, approve: true, cancellationToken);
+        CancellationToken cancellationToken)
+    {
+        if (!TryReviewer(out var tenantId, out var actorId)) return Forbid();
+        ArgumentNullException.ThrowIfNull(request);
+        return await ResolveAsync(sender.Send(new ApproveEconomyRiskReviewEndpointCommand(
+            tenantId, reviewId, actorId, request.DecisionCode, request.Resolution, timeProvider.GetUtcNow()),
+            cancellationToken)).ConfigureAwait(false);
+    }
 
     [HttpPost("{reviewId:guid}:reject")]
     [ProducesResponseType(typeof(RiskReviewCase), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
-    public Task<IActionResult> Reject(
+    public async Task<IActionResult> Reject(
         Guid reviewId,
         [FromBody] ResolveEconomyRiskReviewRequest request,
-        CancellationToken cancellationToken) =>
-        Resolve(reviewId, request, approve: false, cancellationToken);
-
-    private async Task<IActionResult> Resolve(
-        Guid reviewId,
-        ResolveEconomyRiskReviewRequest request,
-        bool approve,
         CancellationToken cancellationToken)
     {
         if (!TryReviewer(out var tenantId, out var actorId)) return Forbid();
         ArgumentNullException.ThrowIfNull(request);
+        return await ResolveAsync(sender.Send(new RejectEconomyRiskReviewEndpointCommand(
+            tenantId, reviewId, actorId, request.DecisionCode, request.Resolution, timeProvider.GetUtcNow()),
+            cancellationToken)).ConfigureAwait(false);
+    }
+
+    private async Task<IActionResult> ResolveAsync(Task<RiskReviewCase> operation)
+    {
         try
         {
-            var result = approve
-                ? await reviews.ApproveAsync(
-                    tenantId, reviewId, actorId, request.DecisionCode, request.Resolution,
-                    timeProvider.GetUtcNow(), cancellationToken).ConfigureAwait(false)
-                : await reviews.RejectAsync(
-                    tenantId, reviewId, actorId, request.DecisionCode, request.Resolution,
-                    timeProvider.GetUtcNow(), cancellationToken).ConfigureAwait(false);
-            return Ok(result);
+            return Ok(await operation.ConfigureAwait(false));
         }
         catch (KeyNotFoundException)
         {

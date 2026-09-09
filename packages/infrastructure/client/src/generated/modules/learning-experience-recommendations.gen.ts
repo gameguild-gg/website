@@ -48,7 +48,7 @@ export class LearningExperienceRecommendationsModule {
   async getRecommendationsCoursesSimilar(
     courseId: string,
     query?: { tenantId?: string; maxResults?: number },
-  ): Promise<Result<Array<Types.LearningExperienceRecommendationsSimilarCourse>, ApiError>> {
+  ): Promise<Result<Array<Types.LearningExperienceRecommendationsSimilarCourseDto>, ApiError>> {
     const url = `/v1/recommendations/courses/${courseId}/similar`;
 
     const result = await this.client.request({
@@ -58,7 +58,7 @@ export class LearningExperienceRecommendationsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.LearningExperienceRecommendationsSimilarCourse>, ApiError>;
+    return result as Result<Array<Types.LearningExperienceRecommendationsSimilarCourseDto>, ApiError>;
   }
 
   /**
@@ -69,7 +69,7 @@ export class LearningExperienceRecommendationsModule {
     includeViewed?: boolean;
     skip?: number;
     take?: number;
-  }): Promise<Result<Array<Types.LearningExperienceRecommendationsRecommendation>, ApiError>> {
+  }): Promise<Result<Array<Types.LearningExperienceRecommendationsRecommendationDto>, ApiError>> {
     const url = '/v1/recommendations/me';
 
     const result = await this.client.request({
@@ -79,7 +79,7 @@ export class LearningExperienceRecommendationsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.LearningExperienceRecommendationsRecommendation>, ApiError>;
+    return result as Result<Array<Types.LearningExperienceRecommendationsRecommendationDto>, ApiError>;
   }
 
   /**
@@ -87,7 +87,7 @@ export class LearningExperienceRecommendationsModule {
   async postRecommendationsMeGenerate(query?: {
     tenantId?: string;
     maxResults?: number;
-  }): Promise<Result<Array<Types.LearningExperienceRecommendationsRecommendation>, ApiError>> {
+  }): Promise<Result<Array<Types.LearningExperienceRecommendationsRecommendationDto>, ApiError>> {
     const url = '/v1/recommendations/me/generate';
 
     const result = await this.client.request({
@@ -97,12 +97,12 @@ export class LearningExperienceRecommendationsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.LearningExperienceRecommendationsRecommendation>, ApiError>;
+    return result as Result<Array<Types.LearningExperienceRecommendationsRecommendationDto>, ApiError>;
   }
 
   /**
    */
-  async getRecommendationsMeProfile(): Promise<Result<Types.LearningExperienceRecommendationsUserLearningProfile, ApiError>> {
+  async getRecommendationsMeProfile(): Promise<Result<Types.LearningExperienceRecommendationsUserLearningProfileDto, ApiError>> {
     const url = '/v1/recommendations/me/profile';
 
     const result = await this.client.request({
@@ -113,7 +113,7 @@ export class LearningExperienceRecommendationsModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.LearningExperienceRecommendationsUserLearningProfileSchema, result.data, 'response');
+      const validatedData = safeParse(Types.LearningExperienceRecommendationsUserLearningProfileDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -123,12 +123,12 @@ export class LearningExperienceRecommendationsModule {
   /**
    */
   async putRecommendationsMeProfile(
-    body: Types.LearningExperienceRecommendationsCreateOrUpdateLearningProfile,
-  ): Promise<Result<Types.LearningExperienceRecommendationsUserLearningProfile, ApiError>> {
+    body: Types.LearningExperienceRecommendationsCreateOrUpdateLearningProfileDto,
+  ): Promise<Result<Types.LearningExperienceRecommendationsUserLearningProfileDto, ApiError>> {
     const url = '/v1/recommendations/me/profile';
 
     // Validate request body
-    const validatedBody = safeParse(Types.LearningExperienceRecommendationsCreateOrUpdateLearningProfileSchema, body, 'request');
+    const validatedBody = safeParse(Types.LearningExperienceRecommendationsCreateOrUpdateLearningProfileDtoSchema, body, 'request');
 
     const result = await this.client.request({
       method: 'PUT',
@@ -139,7 +139,7 @@ export class LearningExperienceRecommendationsModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.LearningExperienceRecommendationsUserLearningProfileSchema, result.data, 'response');
+      const validatedData = safeParse(Types.LearningExperienceRecommendationsUserLearningProfileDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -150,7 +150,7 @@ export class LearningExperienceRecommendationsModule {
    */
   async postRecommendationsMeProfileSkills(
     body: Types.LearningExperienceRecommendationsAddSkillInput,
-  ): Promise<Result<Types.LearningExperienceRecommendationsUserLearningProfile, ApiError>> {
+  ): Promise<Result<Types.LearningExperienceRecommendationsUserLearningProfileDto, ApiError>> {
     const url = '/v1/recommendations/me/profile/skills';
 
     // Validate request body
@@ -165,7 +165,7 @@ export class LearningExperienceRecommendationsModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.LearningExperienceRecommendationsUserLearningProfileSchema, result.data, 'response');
+      const validatedData = safeParse(Types.LearningExperienceRecommendationsUserLearningProfileDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -174,7 +174,7 @@ export class LearningExperienceRecommendationsModule {
 
   /**
    */
-  async deleteRecommendationsMeProfileSkills(skill: string): Promise<Result<Types.LearningExperienceRecommendationsUserLearningProfile, ApiError>> {
+  async deleteRecommendationsMeProfileSkills(skill: string): Promise<Result<Types.LearningExperienceRecommendationsUserLearningProfileDto, ApiError>> {
     const url = `/v1/recommendations/me/profile/skills/${skill}`;
 
     const result = await this.client.request({
@@ -185,7 +185,7 @@ export class LearningExperienceRecommendationsModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.LearningExperienceRecommendationsUserLearningProfileSchema, result.data, 'response');
+      const validatedData = safeParse(Types.LearningExperienceRecommendationsUserLearningProfileDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -209,7 +209,7 @@ export class LearningExperienceRecommendationsModule {
 
   /**
    */
-  async getRecommendationsMeStatistics(): Promise<Result<Types.LearningExperienceRecommendationsRecommendationStatistics, ApiError>> {
+  async getRecommendationsMeStatistics(): Promise<Result<Types.LearningExperienceRecommendationsRecommendationStatisticsDto, ApiError>> {
     const url = '/v1/recommendations/me/statistics';
 
     const result = await this.client.request({
@@ -220,7 +220,7 @@ export class LearningExperienceRecommendationsModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.LearningExperienceRecommendationsRecommendationStatisticsSchema, result.data, 'response');
+      const validatedData = safeParse(Types.LearningExperienceRecommendationsRecommendationStatisticsDtoSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -234,7 +234,7 @@ export class LearningExperienceRecommendationsModule {
     category?: string;
     skip?: number;
     take?: number;
-  }): Promise<Result<Array<Types.LearningExperienceRecommendationsPopularCourse>, ApiError>> {
+  }): Promise<Result<Array<Types.LearningExperienceRecommendationsPopularCourseDto>, ApiError>> {
     const url = '/v1/recommendations/popular';
 
     const result = await this.client.request({
@@ -244,7 +244,7 @@ export class LearningExperienceRecommendationsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.LearningExperienceRecommendationsPopularCourse>, ApiError>;
+    return result as Result<Array<Types.LearningExperienceRecommendationsPopularCourseDto>, ApiError>;
   }
 
   /**
@@ -254,7 +254,7 @@ export class LearningExperienceRecommendationsModule {
     daysWindow?: number;
     skip?: number;
     take?: number;
-  }): Promise<Result<Array<Types.LearningExperienceRecommendationsTrendingCourse>, ApiError>> {
+  }): Promise<Result<Array<Types.LearningExperienceRecommendationsTrendingCourseDto>, ApiError>> {
     const url = '/v1/recommendations/trending';
 
     const result = await this.client.request({
@@ -264,7 +264,7 @@ export class LearningExperienceRecommendationsModule {
       requiresAuth: true,
     });
 
-    return result as Result<Array<Types.LearningExperienceRecommendationsTrendingCourse>, ApiError>;
+    return result as Result<Array<Types.LearningExperienceRecommendationsTrendingCourseDto>, ApiError>;
   }
 }
 

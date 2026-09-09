@@ -1,9 +1,14 @@
 import '@testing-library/jest-dom/vitest';
 import { render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+const dashboardSidebarSpy = vi.hoisted(() => vi.fn());
 
 vi.mock('./dashboard-sidebar', () => ({
-  DashboardSidebar: () => <nav aria-label="Workspace navigation" />,
+  DashboardSidebar: (props: unknown) => {
+    dashboardSidebarSpy(props);
+    return <nav aria-label="Workspace navigation" />;
+  },
   dashboardNavigationData: [],
   filterDashboardNavigation: () => [],
 }));
@@ -18,6 +23,10 @@ vi.mock('@game-guild/ui/components/sidebar', () => ({
 import { ConsoleShell } from './console-shell';
 
 describe('dashboard keyboard navigation', () => {
+  beforeEach(() => {
+    dashboardSidebarSpy.mockClear();
+  });
+
   it('offers a direct skip link to the focusable main content', () => {
     render(
       <ConsoleShell user={{ id: 'user-1', name: 'Member', initials: 'M' }}>
@@ -32,5 +41,22 @@ describe('dashboard keyboard navigation', () => {
     const skipTarget = document.getElementById('dashboard-main');
     expect(skipTarget).toHaveAttribute('tabindex', '-1');
     expect(skipTarget?.tagName).toBe('DIV');
+  });
+
+  it('does not expose workspace and operations as switchable tenant contexts', () => {
+    render(
+      <ConsoleShell
+        user={{ id: 'user-1', name: 'Member', initials: 'M' }}
+        contexts={[
+          { type: 'Workspace', id: null, name: 'Workspace', route: '/workspace' },
+          { type: 'Operations', id: null, name: 'Operations', route: '/dashboard' },
+        ]}
+      >
+        <p>Workspace content</p>
+      </ConsoleShell>,
+    );
+
+    expect(dashboardSidebarSpy).toHaveBeenCalledOnce();
+    expect(dashboardSidebarSpy.mock.calls[0]?.[0]).not.toHaveProperty('contexts');
   });
 });

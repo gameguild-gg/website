@@ -13,6 +13,9 @@
         <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" />
         <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
         <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+        <PackageReference Include="AWSSDK.Pricing" />
+        <PackageReference Include="AWSSDK.CostExplorer" />
+        <PackageReference Include="AWSSDK.S3" />
     </ItemGroup>
 
     <ItemGroup>

@@ -55,12 +55,12 @@ public sealed class UpdateTenantMemberInviteCommandHandler(
         };
 
         member.Metadata = metadata.ToJson();
-        await memberRepository.UpdateAsync(member, cancellationToken).ConfigureAwait(false);
-
         if (request.Action == TenantMemberInviteAction.Resend)
         {
             QueueInviteEmail(member, metadata, request.ActorEmail);
         }
+
+        await memberRepository.UpdateAsync(member, cancellationToken).ConfigureAwait(false);
 
         return new UpdateTenantMemberInviteResponse
         {
@@ -102,16 +102,12 @@ public sealed class UpdateTenantMemberInviteCommandHandler(
             return;
         }
 
-        member.AddDomainEvent(new TenantInviteRequestedNotification(
-            member.TenantId,
-            metadata.InviteeEmail.Trim(),
-            metadata.InviteeName,
-            string.IsNullOrWhiteSpace(actorEmail) ? metadata.InvitedByEmail : actorEmail.Trim(),
-            member.Tenant?.Name ?? "GameGuild",
-            member.Role,
-            BuildReviewUrl(),
-            BuildActivationUrl(metadata.InviteeEmail),
-            resend: true));
+        member.AddIntegrationEvent(new TenantMemberInviteRequestedV1(member.Id, Resend: true)
+        {
+            TenantId = member.TenantId,
+            AggregateType = "TenantMember",
+            AggregateId = member.Id.ToString()
+        });
     }
 
     private string BuildReviewUrl()

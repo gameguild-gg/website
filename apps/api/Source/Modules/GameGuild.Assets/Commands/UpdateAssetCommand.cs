@@ -9,7 +9,7 @@ public sealed record UpdateAssetCommand(
     Guid AssetReferenceId,
     Guid UserId,
     string? DisplayName = null,
-    AssetAccessPolicy? AccessPolicy = null) : IRequest<UpdateAssetResponse?>;
+    AssetAccessPolicy? AccessPolicy = null) : ICommand<UpdateAssetResponse?>;
 
 public sealed record UpdateAssetResponse(
     Guid AssetReferenceId,
@@ -26,7 +26,7 @@ public sealed class UpdateAssetValidator : AbstractValidator<UpdateAssetCommand>
     }
 }
 
-public sealed class UpdateAssetHandler : IRequestHandler<UpdateAssetCommand, UpdateAssetResponse?>
+public sealed class UpdateAssetHandler : ICommandHandler<UpdateAssetCommand, UpdateAssetResponse?>
 {
     private readonly IAssetReferenceRepository _referenceRepository;
 

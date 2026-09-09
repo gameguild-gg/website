@@ -10,9 +10,10 @@ namespace GameGuild;
 ///     Supports different ID types while maintaining the same base functionality.
 /// </summary>
 /// <typeparam name="TKey">The type of the entity's identifier</typeparam>
-public abstract class EntityBase<TKey> : IEntity<TKey>, ITenantScoped, IHasDomainEvents where TKey : IEquatable<TKey>
+public abstract class EntityBase<TKey> : IEntity<TKey>, ITenantScoped, IHasDomainEvents, IHasIntegrationEvents where TKey : IEquatable<TKey>
 {
     private readonly List<IDomainEvent> _domainEvents = [];
+    private readonly List<IDurableIntegrationEvent> _integrationEvents = [];
 
     /// <summary>
     ///     Default constructor
@@ -40,6 +41,9 @@ public abstract class EntityBase<TKey> : IEntity<TKey>, ITenantScoped, IHasDomai
 
     /// <summary> Domain events raised by this entity </summary>
     public IReadOnlyList<IDomainEvent> DomainEvents { get => _domainEvents.AsReadOnly(); }
+
+    [NotMapped]
+    public IReadOnlyList<IDurableIntegrationEvent> IntegrationEvents => _integrationEvents.AsReadOnly();
 
     /// <summary>
     ///     Unique identifier for the entity.
@@ -142,6 +146,14 @@ public abstract class EntityBase<TKey> : IEntity<TKey>, ITenantScoped, IHasDomai
 
     /// <summary> Clears all domain events from the entity's event collection </summary>
     public void ClearDomainEvents() { _domainEvents.Clear(); }
+
+    public void AddIntegrationEvent(IDurableIntegrationEvent integrationEvent)
+    {
+        ArgumentNullException.ThrowIfNull(integrationEvent);
+        _integrationEvents.Add(integrationEvent);
+    }
+
+    public void ClearIntegrationEvents() { _integrationEvents.Clear(); }
 
     protected void Raise(IDomainEvent domainEvent) { _domainEvents.Add(domainEvent); }
 
