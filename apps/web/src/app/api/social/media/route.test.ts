@@ -17,7 +17,11 @@ describe("social media upload proxy", () => {
   it("forwards only the browser file with the server-derived viewer token", async () => {
     mocks.fetch.mockResolvedValue(new Response(JSON.stringify({ assetReferenceId: "asset-1", state: "Ready" }), { status: 201, headers: { "content-type": "application/json" } }));
     const request = new NextRequest("http://localhost/api/social/media", { method: "POST" });
-    vi.spyOn(request, "formData").mockResolvedValue({ get: () => new Blob(["png"], { type: "image/png" }) } as FormData);
+    const incoming = new FormData();
+    incoming.append("file", new Blob(["png"], { type: "image/png" }), "build.png");
+    incoming.append("actorId", "attacker");
+    incoming.append("tenantId", "other-tenant");
+    vi.spyOn(request, "formData").mockResolvedValue(incoming);
     const response = await POST(request);
     expect(mocks.fetch).toHaveBeenCalledWith(new URL("http://localhost:8080/v1/assets/social-media"), expect.objectContaining({
       method: "POST",
@@ -25,6 +29,21 @@ describe("social media upload proxy", () => {
       cache: "no-store",
     }));
     expect(response.status).toBe(201);
+    const upstreamBody = mocks.fetch.mock.calls[0]?.[1].body as FormData;
+    expect([...upstreamBody.keys()]).toEqual(["file"]);
+    expect((upstreamBody.get("file") as File).name).toBe("build.png");
+    expect(mocks.fetch.mock.calls[0]?.[1].signal).toBe(request.signal);
+  });
+
+  it("rejects duplicate file fields without forwarding them", async () => {
+    const request = new NextRequest("http://localhost/api/social/media", { method: "POST" });
+    const incoming = new FormData();
+    incoming.append("file", new Blob(["one"]), "one.png");
+    incoming.append("file", new Blob(["two"]), "two.png");
+    vi.spyOn(request, "formData").mockResolvedValue(incoming);
+    const response = await POST(request);
+    expect(response.status).toBe(400);
+    expect(mocks.fetch).not.toHaveBeenCalled();
   });
 
   it("rejects anonymous uploads without contacting the API", async () => {

@@ -61,6 +61,18 @@ function postMutation(value: SocialPostMutation): SocialPostMutation {
   };
 }
 
+export class SocialPostHydrationError extends Error {
+  constructor(readonly postId: string) {
+    super("Your post was published, but it is still being prepared for the feed.");
+    this.name = "SocialPostHydrationError";
+  }
+}
+
+export async function hydrateSocialPost(postId: string): Promise<SocialPostItem> {
+  const item = await request<unknown>({ method: "GET", path: `/api/social/feed/posts/${postId}`, requiresAuth: true });
+  return mapSocialFeedItem(item);
+}
+
 function mediaAsset(value: AssetsSocialMediaSocialMediaAssetDescriptor): SocialMediaAsset {
   return {
     assetReferenceId: value.assetReferenceId ?? "",
@@ -139,12 +151,11 @@ export async function createSocialPost(input: {
     requiresAuth: true,
   });
   const post = postMutation(data);
-  const item = await request<unknown>({
-    method: "GET",
-    path: `/api/social/feed/posts/${post.id}`,
-    requiresAuth: true,
-  });
-  return mapSocialFeedItem(item);
+  try {
+    return await hydrateSocialPost(post.id);
+  } catch {
+    throw new SocialPostHydrationError(post.id);
+  }
 }
 
 export async function updateSocialPost(postId: string, content: string): Promise<SocialPostMutation> {

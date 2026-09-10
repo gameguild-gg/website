@@ -13,9 +13,10 @@ export function SocialFeedClient({ userName, scope, tag, initialItems, initialNe
   initialNextCursor: string | null;
   currentUserId?: string | null;
 }): React.JSX.Element {
-  const [publishedItem, setPublishedItem] = React.useState<SocialPostItem | null>(null);
+  const identity = `${scope}:${tag ?? ""}`;
+  const [published, setPublished] = React.useState<{ item: SocialPostItem; identity: string } | null>(null);
   const publish = React.useCallback((item: SocialPostItem) => {
-    setPublishedItem((current) => current?.id === item.id ? current : item);
-  }, []);
-  return <><SocialComposer userName={userName} onPublished={publish} /><InfinitePostFeed scope={scope} tag={tag} initialItems={initialItems} initialNextCursor={initialNextCursor} currentUserId={currentUserId} publishedItem={publishedItem} /></>;
+    setPublished((current) => current?.item.id === item.id && current.identity === identity ? current : { item, identity });
+  }, [identity]);
+  return <><SocialComposer userName={userName} onPublished={publish} /><InfinitePostFeed scope={scope} tag={tag} initialItems={initialItems} initialNextCursor={initialNextCursor} currentUserId={currentUserId} publishedItem={published?.item} publishedIdentity={published?.identity} /></>;
 }

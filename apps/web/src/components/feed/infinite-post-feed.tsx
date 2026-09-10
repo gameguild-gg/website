@@ -40,6 +40,7 @@ export function InfinitePostFeed({
   initialNextCursor,
   currentUserId,
   publishedItem = null,
+  publishedIdentity,
 }: {
   scope: FeedScope;
   tag?: string | null;
@@ -47,7 +48,9 @@ export function InfinitePostFeed({
   initialNextCursor: string | null;
   currentUserId?: string | null;
   publishedItem?: SocialFeedItem | null;
+  publishedIdentity?: string;
 }): React.JSX.Element {
+  const feedIdentity = `${scope}:${tag ?? ""}`;
   const [items, setItems] = React.useState(initialItems);
   const [nextCursor, setNextCursor] = React.useState(initialNextCursor);
   const [loading, setLoading] = React.useState(false);
@@ -59,12 +62,17 @@ export function InfinitePostFeed({
   const requestRef = React.useRef(0);
   const activeControllerRef = React.useRef<AbortController | null>(null);
   const publishedItemRef = React.useRef<SocialFeedItem | null>(null);
+  const identityRef = React.useRef(feedIdentity);
 
   React.useEffect(() => {
     activeControllerRef.current?.abort();
     activeControllerRef.current = null;
     loadingRef.current = false;
     setLoading(false);
+    if (identityRef.current !== feedIdentity) {
+      identityRef.current = feedIdentity;
+      publishedItemRef.current = null;
+    }
     const retained = publishedItemRef.current;
     setItems(retained && !initialItems.some((item) => item.id === retained.id) ? [retained, ...initialItems] : initialItems);
     setNextCursor(initialNextCursor);
@@ -72,14 +80,14 @@ export function InfinitePostFeed({
     cursorRef.current = initialNextCursor;
     seenRef.current = new Set([...(retained ? [retained] : []), ...initialItems].map((item) => item.id));
     requestRef.current += 1;
-  }, [initialItems, initialNextCursor, scope, tag]);
+  }, [feedIdentity, initialItems, initialNextCursor, scope, tag]);
 
   React.useEffect(() => {
-    if (!publishedItem || seenRef.current.has(publishedItem.id)) return;
+    if (!publishedItem || (publishedIdentity ?? feedIdentity) !== feedIdentity || seenRef.current.has(publishedItem.id)) return;
     publishedItemRef.current = publishedItem;
     seenRef.current.add(publishedItem.id);
     setItems((current) => [publishedItem, ...current]);
-  }, [publishedItem]);
+  }, [feedIdentity, publishedIdentity, publishedItem]);
 
   React.useEffect(
     () => () => activeControllerRef.current?.abort(),
