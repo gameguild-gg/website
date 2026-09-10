@@ -1,7 +1,7 @@
 "use client";
 
 import { createSocialPost, getSocialMediaStatus, hydrateSocialPost } from "@/lib/feed/actions";
-import type { SocialMediaAsset, SocialPostItem } from "@/lib/feed/contracts";
+import type { SocialMediaAsset, SocialPostItem, SocialPostPublicationResult } from "@/lib/feed/contracts";
 import { uploadSocialMediaWithProgress } from "@/lib/feed/social-media-upload";
 import { Button } from "@game-guild/ui/components/button";
 import { Textarea } from "@game-guild/ui/components/textarea";
@@ -54,15 +54,18 @@ export function SocialComposer({ userName, onPublished }: { userName: string; on
     pendingRef.current = true; setPending(true); setFailure(null);
     const controller = new AbortController(); controllerRef.current = controller;
     try {
-      let assetReferenceId: string | null = null;
-      if (media) {
-        setPhase("uploading");
-        const uploaded = await uploadSocialMediaWithProgress(media.file, { signal: controller.signal, onProgress: setProgress });
-        assetReferenceId = (await waitUntilReady(uploaded, controller.signal, () => setPhase("processing"))).assetReferenceId;
+      let publication: SocialPostPublicationResult;
+      if (committedPostId) {
+        publication = { kind: "published", post: await hydrateSocialPost(committedPostId) };
+      } else {
+        let assetReferenceId: string | null = null;
+        if (media) {
+          setPhase("uploading");
+          const uploaded = await uploadSocialMediaWithProgress(media.file, { signal: controller.signal, onProgress: setProgress });
+          assetReferenceId = (await waitUntilReady(uploaded, controller.signal, () => setPhase("processing"))).assetReferenceId;
+        }
+        publication = await createSocialPost({ content: text, visibility: "Public", assetReferenceId, tags: tagsFrom(text) });
       }
-      const publication = committedPostId
-        ? { kind: "published" as const, post: await hydrateSocialPost(committedPostId) }
-        : await createSocialPost({ content: text, visibility: "Public", assetReferenceId, tags: tagsFrom(text) });
       if (publication.kind === "needs-hydration") {
         const message = "Your post was published. Retry to add it to the feed.";
         setCommittedPostId(publication.postId);
@@ -73,7 +76,7 @@ export function SocialComposer({ userName, onPublished }: { userName: string; on
       }
       const post = publication.post;
       if (!publishedIdsRef.current.has(post.id)) { publishedIdsRef.current.add(post.id); onPublished?.(post); }
-      setContent(""); setMedia(null); setProgress(null); setPhase("idle"); setCommittedPostId(null); setExpanded(false); toast.success("Post published.");
+    setContent(""); setMedia(null); setProgress(null); setPhase("idle"); setCommittedPostId(null); setExpanded(false); toast.success("Post published.");
     } catch (error) {
       const message = error instanceof Error ? error.message : "The post could not be published.";
       setFailure(message); setPhase("failed"); toast.error(message);

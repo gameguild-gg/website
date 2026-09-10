@@ -108,7 +108,7 @@ describe("SocialComposer", () => {
     expect(onPublished).toHaveBeenCalledTimes(1);
   });
 
-  it("hydrates a committed post on retry without issuing a second POST", async () => {
+  it("hydrates a committed media post on retry without another upload or POST", async () => {
     const onPublished = vi.fn();
     mocks.createSocialPost.mockResolvedValueOnce({
       kind: "needs-hydration",
@@ -118,12 +118,18 @@ describe("SocialComposer", () => {
     render(React.createElement(SocialComposer, { userName: "Ada Builder", onPublished } as never));
     fireEvent.click(screen.getByRole("button", { name: /share your progress/i }));
     fireEvent.change(screen.getByPlaceholderText(/what are you building/i), { target: { value: "One post" } });
+    fireEvent.change(screen.getByLabelText(/add photo or video/i), {
+      target: {
+        files: [new File(["png"], "build.png", { type: "image/png" })],
+      },
+    });
     fireEvent.click(screen.getByRole("button", { name: /^publish$/i }));
     expect(await screen.findByRole("button", { name: /retry feed update/i })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /retry feed update/i }));
     await waitFor(() => expect(onPublished).toHaveBeenCalledWith({ id: "post-1", kind: "Post" }));
     expect(mocks.createSocialPost).toHaveBeenCalledTimes(1);
     expect(mocks.hydrateSocialPost).toHaveBeenCalledWith("post-1");
+    expect(mocks.uploadSocialMediaWithProgress).toHaveBeenCalledTimes(1);
   });
 
   it("cancels an upload and retries without losing the valid draft", async () => {
