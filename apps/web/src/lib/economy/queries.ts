@@ -4,13 +4,13 @@ import {
   GeneratedApi,
   type APIControllersEconomySelfServiceCapability,
   type APIControllersEconomyKycStatus,
-  type EconomyBountiesDurableBountyView,
-  type EconomyContractsEconomyWalletSummary,
-  type EconomyContractsEconomyWalletTransaction,
-  type EconomyFundingEconomyTopUpStatus,
-  type EconomyPayoutsConnectAccountSnapshot,
-  type EconomyPayoutsQueriesEconomyPayoutInput,
-  type EconomyPayoutsQueriesEconomyPayoutOperation,
+  type FinanceEconomyBountiesDurableBountyView as EconomyBountiesDurableBountyView,
+  type FinanceEconomyContractsEconomyWalletSummary as EconomyContractsEconomyWalletSummary,
+  type FinanceEconomyContractsEconomyWalletTransaction as EconomyContractsEconomyWalletTransaction,
+  type FinanceEconomyFundingEconomyTopUpStatus as EconomyFundingEconomyTopUpStatus,
+  type FinanceEconomyPayoutsConnectAccountSnapshot as EconomyPayoutsConnectAccountSnapshot,
+  type FinanceEconomyPayoutsQueriesEconomyPayoutOperation as EconomyPayoutsQueriesEconomyPayoutOperation,
+  type FinanceEconomyPayoutsQueriesEconomyPayoutRequestDto as EconomyPayoutsQueriesEconomyPayoutRequestDto,
 } from '@game-guild/client';
 import { cache } from 'react';
 
@@ -18,7 +18,7 @@ export interface EconomyWorkspaceData {
   capabilities: APIControllersEconomySelfServiceCapability[];
   issue: string | null;
   payoutOperations: EconomyPayoutsQueriesEconomyPayoutOperation[];
-  payoutRequests: EconomyPayoutsQueriesEconomyPayoutInput[];
+  payoutRequests: EconomyPayoutsQueriesEconomyPayoutRequestDto[];
   transactions: EconomyContractsEconomyWalletTransaction[];
   wallet: EconomyContractsEconomyWalletSummary | null;
 }
@@ -131,7 +131,7 @@ export interface EconomyPayoutsData {
   account: EconomyPayoutsConnectAccountSnapshot | null;
   issue: string | null;
   operations: EconomyPayoutsQueriesEconomyPayoutOperation[];
-  requests: EconomyPayoutsQueriesEconomyPayoutInput[];
+  requests: EconomyPayoutsQueriesEconomyPayoutRequestDto[];
 }
 
 export const getEconomyPayoutsData = cache(async (): Promise<EconomyPayoutsData> => {

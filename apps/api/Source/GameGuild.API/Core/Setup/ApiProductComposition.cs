@@ -7,12 +7,12 @@ using GameGuild.Commerce.Billing;
 using GameGuild.Commerce.Payments;
 using GameGuild.Compliance.FERPA;
 using GameGuild.Compliance.KYC;
-using GameGuild.Economy;
-using GameGuild.Economy.AdRewards;
-using GameGuild.Economy.Bounties;
-using GameGuild.Economy.Marketplace;
-using GameGuild.Economy.Payouts;
-using GameGuild.Economy.Treasury;
+using GameGuild.Finance.Economy;
+using GameGuild.Finance.Economy.AdRewards;
+using GameGuild.Finance.Economy.Bounties;
+using GameGuild.Finance.Economy.Marketplace;
+using GameGuild.Finance.Economy.Payouts;
+using GameGuild.Finance.Economy.Treasury;
 using GameGuild.GameJams;
 using GameGuild.Identity.Authorization;
 using GameGuild.LaunchPad;
@@ -25,7 +25,7 @@ using GameGuild.Learning.Experience.Discovery;
 using GameGuild.Learning.Experience.LearningPaths;
 using GameGuild.Learning.Experience.Recommendations;
 using GameGuild.Learning.Workspaces;
-using GameGuild.Lti;
+using GameGuild.Learning.Lti;
 using GameGuild.ProjectWork;
 using GameGuild.Projects;
 using GameGuild.Social.Blog;
@@ -53,12 +53,12 @@ internal sealed class ApiProductComposition : IApiProductComposition
     public IReadOnlyList<string> EnabledModules { get; } =
     [
         "Compliance.FERPA",
-        "Economy",
-        "Economy.AdRewards",
-        "Economy.Bounties",
-        "Economy.Marketplace",
-        "Economy.Payouts",
-        "Economy.Treasury",
+        "Finance.Economy",
+        "Finance.Economy.AdRewards",
+        "Finance.Economy.Bounties",
+        "Finance.Economy.Marketplace",
+        "Finance.Economy.Payouts",
+        "Finance.Economy.Treasury",
         "GameJams",
         "LaunchPad",
         "Learning.Assessments",
@@ -72,12 +72,13 @@ internal sealed class ApiProductComposition : IApiProductComposition
         "Learning.Experience.Social",
         "Learning.TestingLab",
         "Learning.Workspaces",
-        "Lti",
+        "Learning.Lti",
         "Projects",
         "ProjectWork",
         "Social.Announcements",
         "Social.Blog",
         "Social.Feed",
+        "Social.Follows",
         "Social.Groups",
         "Social.Posts",
         "Social.Profiles",
@@ -89,6 +90,7 @@ internal sealed class ApiProductComposition : IApiProductComposition
     public IReadOnlyList<string> DisabledModules { get; } =
     [
         "Compliance.FinancialCrime",
+        "Finance.Ledgers",
         "TrustSafety"
     ];
 

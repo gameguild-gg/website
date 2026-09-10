@@ -12,9 +12,9 @@ public sealed record CreatePostEndpointCommand(
     Guid? TenantId,
     string[]? Tags) : ICommand<Result<Post>>;
 
-public sealed record UpdatePostEndpointCommand(Guid PostId, string Content) : ICommand<Result<Post>>;
+public sealed record UpdatePostEndpointCommand(Guid PostId, Guid ActorId, string Content) : ICommand<Result<Post>>;
 
-public sealed record DeletePostEndpointCommand(Guid PostId) : ICommand<Result>;
+public sealed record DeletePostEndpointCommand(Guid PostId, Guid ActorId) : ICommand<Result>;
 
 public sealed record AddPostCommentEndpointCommand(
     Guid PostId,
@@ -22,16 +22,18 @@ public sealed record AddPostCommentEndpointCommand(
     string Content,
     Guid? ParentCommentId) : ICommand<Result<PostComment>>;
 
-public sealed record UpdatePostCommentEndpointCommand(Guid CommentId, string Content) : ICommand<Result<PostComment>>;
+public sealed record UpdatePostCommentEndpointCommand(Guid CommentId, Guid ActorId, string Content) : ICommand<Result<PostComment>>;
 
-public sealed record DeletePostCommentEndpointCommand(Guid CommentId) : ICommand<Result>;
+public sealed record DeletePostCommentEndpointCommand(Guid CommentId, Guid ActorId) : ICommand<Result>;
 
 public sealed record TogglePostLikeEndpointCommand(
     Guid PostId,
     Guid UserId,
     string ReactionType) : ICommand<Result<bool>>;
 
-public sealed record TogglePostPinEndpointCommand(Guid PostId) : ICommand<Result<bool>>;
+public sealed record TogglePostPinEndpointCommand(Guid PostId, Guid ActorId) : ICommand<Result<bool>>;
+
+public sealed record CreateRepostEndpointCommand(Guid SourcePostId, Guid ActorId, string? Content) : ICommand<Result<Post>>;
 
 public sealed record SharePostEndpointCommand(Guid PostId) : ICommand<Result>;
 
@@ -61,6 +63,7 @@ public sealed class PostEndpointCommandHandler(IPostService postService) :
     ICommandHandler<DeletePostCommentEndpointCommand, Result>,
     ICommandHandler<TogglePostLikeEndpointCommand, Result<bool>>,
     ICommandHandler<TogglePostPinEndpointCommand, Result<bool>>,
+    ICommandHandler<CreateRepostEndpointCommand, Result<Post>>,
     ICommandHandler<SharePostEndpointCommand, Result>,
     ICommandHandler<RecordPostViewEndpointCommand, Result>,
     ICommandHandler<FollowPostEndpointCommand, Result<PostFollower>>,
@@ -90,10 +93,10 @@ public sealed class PostEndpointCommandHandler(IPostService postService) :
     }
 
     public Task<Result<Post>> Handle(UpdatePostEndpointCommand request, CancellationToken cancellationToken) =>
-        postService.UpdatePostAsync(request.PostId, request.Content, cancellationToken);
+        postService.UpdatePostAsync(request.PostId, request.ActorId, request.Content, cancellationToken);
 
     public Task<Result> Handle(DeletePostEndpointCommand request, CancellationToken cancellationToken) =>
-        postService.DeletePostAsync(request.PostId, cancellationToken);
+        postService.DeletePostAsync(request.PostId, request.ActorId, cancellationToken);
 
     public Task<Result<PostComment>> Handle(AddPostCommentEndpointCommand request, CancellationToken cancellationToken) =>
         postService.AddCommentAsync(
@@ -104,16 +107,19 @@ public sealed class PostEndpointCommandHandler(IPostService postService) :
             cancellationToken);
 
     public Task<Result<PostComment>> Handle(UpdatePostCommentEndpointCommand request, CancellationToken cancellationToken) =>
-        postService.UpdateCommentAsync(request.CommentId, request.Content, cancellationToken);
+        postService.UpdateCommentAsync(request.CommentId, request.ActorId, request.Content, cancellationToken);
 
     public Task<Result> Handle(DeletePostCommentEndpointCommand request, CancellationToken cancellationToken) =>
-        postService.DeleteCommentAsync(request.CommentId, cancellationToken);
+        postService.DeleteCommentAsync(request.CommentId, request.ActorId, cancellationToken);
 
     public Task<Result<bool>> Handle(TogglePostLikeEndpointCommand request, CancellationToken cancellationToken) =>
         postService.TogglePostLikeAsync(request.PostId, request.UserId, request.ReactionType, cancellationToken);
 
     public Task<Result<bool>> Handle(TogglePostPinEndpointCommand request, CancellationToken cancellationToken) =>
-        postService.TogglePostPinAsync(request.PostId, cancellationToken);
+        postService.TogglePostPinAsync(request.PostId, request.ActorId, cancellationToken);
+
+    public Task<Result<Post>> Handle(CreateRepostEndpointCommand request, CancellationToken cancellationToken) =>
+        postService.CreateRepostAsync(request.SourcePostId, request.ActorId, request.Content, cancellationToken);
 
     public Task<Result> Handle(SharePostEndpointCommand request, CancellationToken cancellationToken) =>
         postService.SharePostAsync(request.PostId, cancellationToken);

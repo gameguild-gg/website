@@ -16,8 +16,13 @@
 
     <ItemGroup>
         <ProjectReference Include="..\GameGuild.SharedKernel\GameGuild.SharedKernel.csproj" />
+        <ProjectReference Include="..\GameGuild.Identity.Context\GameGuild.Identity.Context.csproj" />
+        <ProjectReference Include="..\GameGuild.Assets\GameGuild.Assets.csproj" />
+        <ProjectReference Include="..\GameGuild.Social.Follows\GameGuild.Social.Follows.csproj" />
         <ProjectReference Include="..\GameGuild.Social.Profiles\GameGuild.Social.Profiles.csproj" />
         <ProjectReference Include="..\GameGuild.Social.Posts\GameGuild.Social.Posts.csproj" />
+        <ProjectReference Include="..\GameGuild.Social.Reactions\GameGuild.Social.Reactions.csproj" />
+        <ProjectReference Include="..\GameGuild.TestingLab\GameGuild.TestingLab.csproj" />
     </ItemGroup>
 
 </Project>

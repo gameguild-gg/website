@@ -1,9 +1,9 @@
 using GameGuild.API.Authorization;
 using GameGuild.CQRS;
-using GameGuild.Economy.Ledger;
-using GameGuild.Economy.Projections;
-using GameGuild.Economy.Reserves;
-using GameGuild.Economy.Risk;
+using GameGuild.Finance.Economy.Ledger;
+using GameGuild.Finance.Economy.Projections;
+using GameGuild.Finance.Economy.Reserves;
+using GameGuild.Finance.Economy.Risk;
 
 namespace GameGuild.API.Controllers;
 

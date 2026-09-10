@@ -75,18 +75,20 @@ public class PostServiceFacadeTests
     public async Task UpdatePostAsync_ShouldDelegate()
     {
         var id = Guid.NewGuid();
-        _crudMock.Setup(s => s.UpdatePostAsync(id, "new", default)).ReturnsAsync(Result<Post>.Success(Post.Create(Guid.NewGuid(), "new")));
-        await _sut.UpdatePostAsync(id, "new");
-        _crudMock.Verify(s => s.UpdatePostAsync(id, "new", default), Times.Once);
+        var actorId = Guid.NewGuid();
+        _crudMock.Setup(s => s.UpdatePostAsync(id, actorId, "new", default)).ReturnsAsync(Result<Post>.Success(Post.Create(actorId, "new")));
+        await _sut.UpdatePostAsync(id, actorId, "new");
+        _crudMock.Verify(s => s.UpdatePostAsync(id, actorId, "new", default), Times.Once);
     }
 
     [Fact]
     public async Task DeletePostAsync_ShouldDelegate()
     {
         var id = Guid.NewGuid();
-        _crudMock.Setup(s => s.DeletePostAsync(id, default)).ReturnsAsync(Result.Success());
-        await _sut.DeletePostAsync(id);
-        _crudMock.Verify(s => s.DeletePostAsync(id, default), Times.Once);
+        var actorId = Guid.NewGuid();
+        _crudMock.Setup(s => s.DeletePostAsync(id, actorId, default)).ReturnsAsync(Result.Success());
+        await _sut.DeletePostAsync(id, actorId);
+        _crudMock.Verify(s => s.DeletePostAsync(id, actorId, default), Times.Once);
     }
 
     [Fact]
@@ -201,9 +203,10 @@ public class PostServiceFacadeTests
     public async Task TogglePostPinAsync_ShouldDelegate()
     {
         var postId = Guid.NewGuid();
-        _engagementMock.Setup(s => s.TogglePostPinAsync(postId, default)).ReturnsAsync(Result<bool>.Success(true));
-        await _sut.TogglePostPinAsync(postId);
-        _engagementMock.Verify(s => s.TogglePostPinAsync(postId, default), Times.Once);
+        var actorId = Guid.NewGuid();
+        _engagementMock.Setup(s => s.TogglePostPinAsync(postId, actorId, default)).ReturnsAsync(Result<bool>.Success(true));
+        await _sut.TogglePostPinAsync(postId, actorId);
+        _engagementMock.Verify(s => s.TogglePostPinAsync(postId, actorId, default), Times.Once);
     }
 
     [Fact]
@@ -337,18 +340,20 @@ public class PostServiceFacadeTests
     public async Task UpdateCommentAsync_ShouldDelegate()
     {
         var id = Guid.NewGuid();
-        _commentMock.Setup(s => s.UpdateCommentAsync(id, "new", default)).ReturnsAsync(Result<PostComment>.Success(PostComment.Create(Guid.NewGuid(), Guid.NewGuid(), "new")));
-        await _sut.UpdateCommentAsync(id, "new");
-        _commentMock.Verify(s => s.UpdateCommentAsync(id, "new", default), Times.Once);
+        var actorId = Guid.NewGuid();
+        _commentMock.Setup(s => s.UpdateCommentAsync(id, actorId, "new", default)).ReturnsAsync(Result<PostComment>.Success(PostComment.Create(Guid.NewGuid(), actorId, "new")));
+        await _sut.UpdateCommentAsync(id, actorId, "new");
+        _commentMock.Verify(s => s.UpdateCommentAsync(id, actorId, "new", default), Times.Once);
     }
 
     [Fact]
     public async Task DeleteCommentAsync_ShouldDelegate()
     {
         var id = Guid.NewGuid();
-        _commentMock.Setup(s => s.DeleteCommentAsync(id, default)).ReturnsAsync(Result.Success());
-        await _sut.DeleteCommentAsync(id);
-        _commentMock.Verify(s => s.DeleteCommentAsync(id, default), Times.Once);
+        var actorId = Guid.NewGuid();
+        _commentMock.Setup(s => s.DeleteCommentAsync(id, actorId, default)).ReturnsAsync(Result.Success());
+        await _sut.DeleteCommentAsync(id, actorId);
+        _commentMock.Verify(s => s.DeleteCommentAsync(id, actorId, default), Times.Once);
     }
 
     [Fact]

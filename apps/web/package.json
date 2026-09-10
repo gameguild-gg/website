@@ -22,6 +22,7 @@
     "test:browser:learning-professor": "node scripts/learning-professor-browser-e2e.mjs",
     "test:browser:learning-support": "node --test scripts/learning-browser-e2e-support.test.mjs",
     "test:browser:community-admin": "node scripts/community-admin-browser-e2e.mjs",
+    "test:browser:social-feed": "node --test scripts/social-feed-browser-e2e.test.mjs && node scripts/social-feed-browser-e2e.mjs",
     "test:browser:user-settings": "node scripts/user-settings-browser-e2e.mjs",
     "test:browser:testing-lab": "node scripts/run-testing-lab-browser-e2e.mjs",
     "test:browser:testing-lab:existing": "node scripts/testing-lab-browser-e2e.mjs",

@@ -1,6 +1,8 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using GameGuild;
 using GameGuild.Assets;
+using GameGuild.Assets.Commands;
 
 namespace GameGuild.Assets.UnitTests.Services;
 
@@ -172,6 +174,16 @@ public class AssetUploadServiceTests
         var content = new byte[1024];
         using var stream = new MemoryStream(content);
         var userId = Guid.NewGuid();
+        var tenantId = Guid.NewGuid();
+        var correlationId = Guid.NewGuid();
+        var operationAccessor = new UseCaseOperationContextAccessor();
+        using var operation = operationAccessor.Begin(new UseCaseOperationContext(
+            "assets.upload-asset",
+            nameof(UploadAssetCommand),
+            tenantId,
+            userId,
+            correlationId,
+            null));
         var options = new UploadAssetOptions("test.png", AssetAccessPolicy.Private, null, null);
 
         _contentRepositoryMock
@@ -193,20 +205,31 @@ public class AssetUploadServiceTests
             .Setup(x => x.AddAsync(It.IsAny<AssetContent>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(newContent);
 
-        var reference = new AssetReference(newContent.Id, userId, "test.png", AssetAccessPolicy.Private, null, null);
-        typeof(AssetReference).GetProperty("Id")?.SetValue(reference, Guid.NewGuid());
+        AssetReference? reference = null;
         _referenceRepositoryMock
             .Setup(x => x.AddAsync(It.IsAny<AssetReference>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(reference);
+            .Callback<AssetReference, CancellationToken>((candidate, _) => reference = candidate)
+            .ReturnsAsync((AssetReference candidate, CancellationToken _) => candidate);
 
         // Act
-        var result = await _service.UploadAsync(
+        var service = new AssetUploadService(
+            _contentRepositoryMock.Object,
+            _referenceRepositoryMock.Object,
+            _storageServiceMock.Object,
+            Options.Create(_config),
+            _loggerMock.Object,
+            operationAccessor);
+
+        var result = await service.UploadAsync(
             stream, "test.png", "image/png", userId, options);
 
         // Assert
         result.Success.Should().BeTrue();
-        result.AssetReferenceId.Should().Be(reference.Id);
+        reference.Should().NotBeNull();
+        result.AssetReferenceId.Should().Be(reference!.Id);
         result.AssetContentId.Should().Be(newContent.Id);
+        reference.IntegrationEvents.Should().ContainSingle(candidate =>
+            candidate is AssetReferenceCreatedEvent && candidate.CorrelationId == correlationId);
 
         _storageServiceMock.Verify(
             x => x.UploadAsync(It.IsAny<Stream>(), It.IsAny<string>(), "image/png", false, It.IsAny<CancellationToken>()),

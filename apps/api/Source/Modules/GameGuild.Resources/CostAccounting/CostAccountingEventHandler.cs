@@ -1,3 +1,5 @@
+using GameGuild.Finance.Contracts;
+
 namespace GameGuild.Resources;
 
 public sealed class CostAccountingEventHandler(
@@ -12,6 +14,7 @@ public sealed class CostAccountingEventHandler(
     IIntegrationEventHandler<AssetObjectDeletedEvent>,
     IIntegrationEventHandler<AssetTransformedEvent>,
     IIntegrationEventHandler<AssetServedEvent>,
+    IIntegrationEventHandler<EconomyPostingAcceptedEventV1>,
     IIntegrationEventHandler<ApiRequestMeasuredEventV1>
 {
     public Task HandleAsync(UseCaseOperationOccurredV1 @event, CancellationToken cancellationToken = default) =>
@@ -47,6 +50,13 @@ public sealed class CostAccountingEventHandler(
             [
                 (InternalCostMetrics.S3GetRequest, 1, "request", "aws"),
                 (InternalCostMetrics.DataTransferOutByte, @event.ByteCount, "byte", "aws")
+            ], cancellationToken);
+
+    public Task HandleAsync(EconomyPostingAcceptedEventV1 @event, CancellationToken cancellationToken = default) =>
+        RecordAsync(@event,
+            [
+                (InternalCostMetrics.EconomyPosting, 1, "posting", "shared"),
+                (InternalCostMetrics.EconomyJournalLine, @event.Lines.Count, "line", "shared")
             ], cancellationToken);
 
     public async Task HandleAsync(ApiRequestMeasuredEventV1 @event, CancellationToken cancellationToken = default)

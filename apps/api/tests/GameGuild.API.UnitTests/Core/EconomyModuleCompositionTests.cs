@@ -1,9 +1,9 @@
 using FluentAssertions;
 using GameGuild.API.Setup;
-using GameGuild.Economy.Bounties;
-using GameGuild.Economy.Payouts;
-using GameGuild.Economy.Risk;
-using GameGuild.Economy.Treasury;
+using GameGuild.Finance.Economy.Bounties;
+using GameGuild.Finance.Economy.Payouts;
+using GameGuild.Finance.Economy.Risk;
+using GameGuild.Finance.Economy.Treasury;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -19,18 +19,18 @@ public sealed class EconomyModuleCompositionTests
         ApiProductComposition.Instance.ConfigureServices(builder);
 
         ApiProductComposition.Instance.EnabledModules.Should().Contain([
-            "Economy",
-            "Economy.AdRewards",
-            "Economy.Bounties",
-            "Economy.Marketplace",
-            "Economy.Payouts",
-            "Economy.Treasury"
+            "Finance.Economy",
+            "Finance.Economy.AdRewards",
+            "Finance.Economy.Bounties",
+            "Finance.Economy.Marketplace",
+            "Finance.Economy.Payouts",
+            "Finance.Economy.Treasury"
         ]);
         ApiProductComposition.Instance.DisabledModules.Should().NotContain([
-            "Economy.AdRewards",
-            "Economy.Bounties",
-            "Economy.Marketplace",
-            "Economy.Treasury"
+            "Finance.Economy.AdRewards",
+            "Finance.Economy.Bounties",
+            "Finance.Economy.Marketplace",
+            "Finance.Economy.Treasury"
         ]);
         builder.Services.Should().Contain(descriptor =>
             descriptor.ServiceType == typeof(IBountyEscrowStore) &&

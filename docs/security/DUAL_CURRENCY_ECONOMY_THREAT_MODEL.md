@@ -443,7 +443,7 @@ Controls:
 
 - `GameGuild.Compliance.FinancialCrime` owns KYC aggregation, sanctions/PEP/adverse-media status, monitoring cases, jurisdiction restrictions, and compliance hold inputs.
 - `GameGuild.TrustSafety` owns platform abuse, prohibited products, content/project enforcement, marketplace integrity, and nonfinancial account restrictions.
-- `GameGuild.Economy.Risk` consumes both inputs and returns one protected-operation decision to Core. Neither Compliance nor Trust/Safety mutates journal state.
+- `GameGuild.Finance.Economy.Risk` consumes both inputs and returns one protected-operation decision to Core. Neither Compliance nor Trust/Safety mutates journal state.
 - Payout and high-risk marketplace settlement require current financial-crime status. Product monetization and project/bounty settlement require current Trust/Safety status.
 - Compliance holds, Trust/Safety holds, and risk holds are typed separately, visible to authorized operators, and released only by the owning policy path plus a fresh risk decision.
 - Every compliance or Trust/Safety read that exposes protected personal or enforcement data is audited before data is released.

@@ -5212,6357 +5212,6 @@ namespace GameGuild.API.Database.Migrations
                     b.ToTable("page_sections");
                 });
 
-            modelBuilder.Entity("GameGuild.Economy.AdRewards.Persistence.AdNetworkPolicyVersionRow", b =>
-                {
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Network")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<long>("Version")
-                        .HasColumnType("bigint");
-
-                    b.Property<Guid>("ApprovedBy")
-                        .HasColumnType("uuid");
-
-                    b.Property<long>("BudgetWindowTicks")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("CanonicalPayload")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<int>("ContractedRevenueSharePpm")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTimeOffset>("EffectiveAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<long>("EstimatedNetEcpmUsdNanos")
-                        .HasColumnType("bigint");
-
-                    b.Property<DateTimeOffset>("ExpiresAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<long>("FundedLossBudgetUsdNanos")
-                        .HasColumnType("bigint");
-
-                    b.Property<int>("IssuanceMode")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("KeyId")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<long>("MaximumAsnSoftUnits")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("MaximumDeviceSoftUnits")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("MaximumFocusLossTicks")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("MaximumGlobalSoftUnits")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("MaximumIpSoftUnits")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("MaximumNetworkSoftUnits")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("MaximumRewardSoftUnits")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("MaximumUserSoftUnits")
-                        .HasColumnType("bigint");
-
-                    b.Property<int>("MinimumVisiblePpm")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("PayloadHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<Guid>("ProposedBy")
-                        .HasColumnType("uuid");
-
-                    b.Property<bool>("ProviderCertified")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("ProviderHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<DateTimeOffset>("PublishedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("Ranking")
-                        .HasColumnType("integer");
-
-                    b.Property<long>("ReportStaleAfterTicks")
-                        .HasColumnType("bigint");
-
-                    b.Property<DateTimeOffset>("ReportsCurrentThrough")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("SafetyBufferPpm")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Signature")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<int>("YieldState")
-                        .HasColumnType("integer");
-
-                    b.HasKey("TenantId", "Network", "Version");
-
-                    b.HasIndex("TenantId", "Network", "EffectiveAt", "ExpiresAt");
-
-                    b.ToTable("economy_ad_network_policy_versions", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_economy_ad_network_policy_versions_caps", "\"MaximumUserSoftUnits\" > 0 AND \"MaximumDeviceSoftUnits\" > 0 AND \"MaximumIpSoftUnits\" > 0 AND \"MaximumAsnSoftUnits\" > 0 AND \"MaximumNetworkSoftUnits\" > 0 AND \"MaximumGlobalSoftUnits\" > 0 AND \"FundedLossBudgetUsdNanos\" > 0");
-
-                            t.HasCheckConstraint("ck_economy_ad_network_policy_versions_dual_control", "\"ProposedBy\" <> \"ApprovedBy\"");
-
-                            t.HasCheckConstraint("ck_economy_ad_network_policy_versions_ppm", "\"ContractedRevenueSharePpm\" BETWEEN 0 AND 1000000 AND \"SafetyBufferPpm\" BETWEEN 0 AND 999999 AND \"MinimumVisiblePpm\" BETWEEN 0 AND 1000000");
-
-                            t.HasCheckConstraint("ck_economy_ad_network_policy_versions_values", "\"Version\" > 0 AND \"EstimatedNetEcpmUsdNanos\" > 0 AND \"MaximumRewardSoftUnits\" > 0 AND \"MaximumFocusLossTicks\" >= 0 AND \"ReportStaleAfterTicks\" > 0 AND \"Ranking\" >= 0 AND \"BudgetWindowTicks\" > 0");
-
-                            t.HasCheckConstraint("ck_economy_ad_network_policy_versions_window", "\"ExpiresAt\" > \"EffectiveAt\"");
-                        });
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.AdRewards.Persistence.AdProviderReportRow", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
-
-                    b.Property<long>("ActualRevenueUsdNanos")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("BatchId")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<string>("EvidenceHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<DateTimeOffset>("ImportedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Network")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("PayloadHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<DateTimeOffset>("PeriodEnd")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTimeOffset>("PeriodStart")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTimeOffset?>("ProcessedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("ProcessingError")
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<DateTimeOffset>("ReceivedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("ReportId")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<string>("Signature")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<bool>("SignatureVerified")
-                        .HasColumnType("boolean");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("VerifiedSessionIds")
-                        .IsRequired()
-                        .HasColumnType("jsonb");
-
-                    b.Property<int>("Version")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TenantId", "Network", "BatchId", "Version")
-                        .IsUnique();
-
-                    b.HasIndex("TenantId", "Network", "ReportId", "Version")
-                        .IsUnique();
-
-                    b.ToTable("economy_ad_provider_reports", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_economy_ad_provider_reports_revenue", "\"ActualRevenueUsdNanos\" >= 0");
-
-                            t.HasCheckConstraint("ck_economy_ad_provider_reports_version", "\"Version\" > 0");
-
-                            t.HasCheckConstraint("ck_economy_ad_provider_reports_window", "\"PeriodEnd\" > \"PeriodStart\" AND \"ImportedAt\" >= \"PeriodEnd\"");
-                        });
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.AdRewards.Persistence.AdRewardAccumulatorRow", b =>
-                {
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("WalletId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Network")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("CanonicalDenominator")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<long>("PolicyVersion")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("RemainderNumerator")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTimeOffset>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<long>("Version")
-                        .HasColumnType("bigint");
-
-                    b.HasKey("TenantId", "WalletId", "Network");
-
-                    b.ToTable("economy_ad_reward_accumulators", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_economy_ad_reward_accumulators_numbers", "\"RemainderNumerator\" ~ '^[0-9]+$' AND \"CanonicalDenominator\" ~ '^[1-9][0-9]*$'");
-
-                            t.HasCheckConstraint("ck_economy_ad_reward_accumulators_version", "\"PolicyVersion\" > 0 AND \"Version\" > 0");
-                        });
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.AdRewards.Persistence.AdRewardAttributionRow", b =>
-                {
-                    b.Property<Guid>("SessionId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset>("CompletedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<long>("EstimatedRevenueUsdNanos")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("Network")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<long>("PolicyVersion")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("ProviderBatchId")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<long>("RewardSoftUnits")
-                        .HasColumnType("bigint");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("SessionId");
-
-                    b.HasIndex("Network", "ProviderBatchId", "CompletedAt");
-
-                    b.ToTable("economy_ad_reward_attributions", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_economy_ad_reward_attributions_nonnegative", "\"EstimatedRevenueUsdNanos\" >= 0 AND \"RewardSoftUnits\" >= 0");
-                        });
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.AdRewards.Persistence.AdRewardBudgetConsumptionRow", b =>
-                {
-                    b.Property<Guid>("SessionId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset>("ConsumedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("DeviceRiskHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<long>("LossBudgetUsdNanos")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("Network")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<long>("SoftUnits")
-                        .HasColumnType("bigint");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("SessionId");
-
-                    b.HasIndex("DeviceRiskHash", "ConsumedAt");
-
-                    b.HasIndex("Network", "ConsumedAt");
-
-                    b.HasIndex("UserId", "ConsumedAt");
-
-                    b.ToTable("economy_ad_reward_budget_consumptions", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_economy_ad_reward_budget_consumptions_positive", "\"SoftUnits\" > 0 AND \"LossBudgetUsdNanos\" > 0");
-                        });
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.AdRewards.Persistence.AdRewardCapConsumptionRow", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset>("ConsumedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<long>("LossBudgetUsdNanos")
-                        .HasColumnType("bigint");
-
-                    b.Property<int>("Scope")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("SessionId")
-                        .HasColumnType("uuid");
-
-                    b.Property<long>("SoftUnits")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("SubjectHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset>("WindowEndsAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTimeOffset>("WindowStartedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("SessionId", "Scope")
-                        .IsUnique();
-
-                    b.HasIndex("TenantId", "Scope", "SubjectHash", "ConsumedAt");
-
-                    b.ToTable("economy_ad_reward_cap_consumptions", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_economy_ad_reward_cap_consumptions_positive", "\"SoftUnits\" > 0 AND \"LossBudgetUsdNanos\" >= 0");
-
-                            t.HasCheckConstraint("ck_economy_ad_reward_cap_consumptions_scope", "\"Scope\" BETWEEN 1 AND 6");
-
-                            t.HasCheckConstraint("ck_economy_ad_reward_cap_consumptions_window", "\"WindowEndsAt\" > \"WindowStartedAt\" AND \"ConsumedAt\" >= \"WindowStartedAt\" AND \"ConsumedAt\" < \"WindowEndsAt\"");
-                        });
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.AdRewards.Persistence.AdRewardCompletionRow", b =>
-                {
-                    b.Property<Guid>("SessionId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("CapabilityReceiptHash")
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<Guid?>("CapabilityReceiptId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset>("CompletedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("DestinationHash")
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<string>("EvidenceHashes")
-                        .IsRequired()
-                        .HasColumnType("jsonb");
-
-                    b.Property<string>("IdempotencyKey")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<string>("JurisdictionCode")
-                        .HasMaxLength(16)
-                        .HasColumnType("character varying(16)");
-
-                    b.Property<long?>("KillSwitchEpoch")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("Network")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<Guid?>("OutputLotId")
-                        .HasColumnType("uuid");
-
-                    b.Property<long>("PolicyVersion")
-                        .HasColumnType("bigint");
-
-                    b.Property<Guid?>("PostingId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("ProviderEventId")
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<string>("ProviderHash")
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<long?>("ReserveVersion")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("RewardSoftUnits")
-                        .HasColumnType("bigint");
-
-                    b.Property<Guid?>("RiskDecisionId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("SourceStampId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("State")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.Property<long>("Version")
-                        .IsConcurrencyToken()
-                        .HasColumnType("bigint");
-
-                    b.Property<Guid>("WalletId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("SessionId");
-
-                    b.HasIndex("IdempotencyKey")
-                        .IsUnique();
-
-                    b.HasIndex("ProviderEventId")
-                        .IsUnique()
-                        .HasFilter("\"ProviderEventId\" IS NOT NULL");
-
-                    b.HasIndex("Network", "PolicyVersion");
-
-                    b.HasIndex("UserId", "CompletedAt");
-
-                    b.ToTable("economy_ad_reward_completions", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_economy_ad_reward_completions_issued_binding", "\"State\" <> 1 OR (\"RewardSoftUnits\" > 0 AND \"SourceStampId\" IS NOT NULL AND \"PostingId\" IS NOT NULL AND \"OutputLotId\" IS NOT NULL)");
-
-                            t.HasCheckConstraint("ck_economy_ad_reward_completions_reward_nonnegative", "\"RewardSoftUnits\" >= 0");
-
-                            t.HasCheckConstraint("ck_economy_ad_reward_completions_state", "\"State\" BETWEEN 1 AND 3");
-                        });
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.AdRewards.Persistence.AdRewardPendingClaimRow", b =>
-                {
-                    b.Property<Guid>("SessionId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("CompletionIdempotencyKeyHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<string>("CompletionRequestHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<string>("ConfirmationIdempotencyKeyHash")
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<string>("ConfirmationRequestHash")
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<DateTimeOffset?>("ConfirmedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTimeOffset>("DeferredAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid?>("ProviderReportId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("SourceStampId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("SessionId");
-
-                    b.HasIndex("ProviderReportId");
-
-                    b.HasIndex("TenantId", "CompletionIdempotencyKeyHash")
-                        .IsUnique();
-
-                    b.HasIndex("TenantId", "ConfirmationIdempotencyKeyHash")
-                        .IsUnique()
-                        .HasFilter("\"ConfirmationIdempotencyKeyHash\" IS NOT NULL");
-
-                    b.ToTable("economy_ad_reward_pending_claims", (string)null);
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.AdRewards.Persistence.AdRewardPlaybackMilestoneRow", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("EvidenceHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<DateTimeOffset>("ObservedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("Percentage")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("Sequence")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("SessionId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("SessionId", "Sequence")
-                        .IsUnique();
-
-                    b.ToTable("economy_ad_reward_playback_milestones", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_economy_ad_reward_playback_milestones_percentage", "\"Percentage\" BETWEEN 0 AND 100 AND \"Sequence\" > 0");
-                        });
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.AdRewards.Persistence.AdRewardProviderBatchClaimRow", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("BatchId")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<DateTimeOffset>("ClaimedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("ProviderReportId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("SessionId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("SessionId");
-
-                    b.HasIndex("ProviderReportId", "SessionId")
-                        .IsUnique();
-
-                    b.ToTable("economy_ad_reward_provider_batch_claims", (string)null);
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.AdRewards.Persistence.AdRewardProviderProofInboxRow", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("EvidenceHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<string>("Network")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("PayloadHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<DateTimeOffset?>("ProcessedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("ProcessingError")
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<string>("ProviderEventId")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<DateTimeOffset>("ReceivedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("SessionId")
-                        .HasColumnType("uuid");
-
-                    b.Property<bool>("SignatureVerified")
-                        .HasColumnType("boolean");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("SessionId");
-
-                    b.HasIndex("TenantId", "Network", "ProviderEventId")
-                        .IsUnique();
-
-                    b.ToTable("economy_ad_reward_provider_proof_inbox", (string)null);
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.AdRewards.Persistence.AdRewardReconciliationRow", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
-
-                    b.Property<long>("ActualDeltaUsdNanos")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("ActualRevenueUsdNanos")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("BatchId")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<long>("EstimatedRevenueUsdNanos")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("HistoricalRewardSoftUnits")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("Network")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<long>("PreviousActualRevenueUsdNanos")
-                        .HasColumnType("bigint");
-
-                    b.Property<Guid>("ProviderReportId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset>("ReconciledAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("ReportId")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
-
-                    b.Property<long>("VarianceUsdNanos")
-                        .HasColumnType("bigint");
-
-                    b.Property<int>("Version")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ProviderReportId")
-                        .IsUnique();
-
-                    b.HasIndex("TenantId", "Network", "ReportId", "Version")
-                        .IsUnique();
-
-                    b.ToTable("economy_ad_reward_reconciliations", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_economy_ad_reward_reconciliations_conservation", "\"ActualDeltaUsdNanos\" = \"ActualRevenueUsdNanos\" - \"PreviousActualRevenueUsdNanos\" AND \"VarianceUsdNanos\" = \"ActualRevenueUsdNanos\" - \"EstimatedRevenueUsdNanos\"");
-
-                            t.HasCheckConstraint("ck_economy_ad_reward_reconciliations_nonnegative", "\"EstimatedRevenueUsdNanos\" >= 0 AND \"PreviousActualRevenueUsdNanos\" >= 0 AND \"ActualRevenueUsdNanos\" >= 0 AND \"HistoricalRewardSoftUnits\" >= 0");
-
-                            t.HasCheckConstraint("ck_economy_ad_reward_reconciliations_version", "\"Version\" > 0");
-                        });
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.AdRewards.Persistence.AdRewardSessionEventRow", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("EvidenceHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<DateTimeOffset>("OccurredAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<long>("Sequence")
-                        .HasColumnType("bigint");
-
-                    b.Property<Guid>("SessionId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("State")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("SessionId", "Sequence")
-                        .IsUnique();
-
-                    b.ToTable("economy_ad_reward_session_events", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_economy_ad_reward_session_events_sequence", "\"Sequence\" > 0");
-
-                            t.HasCheckConstraint("ck_economy_ad_reward_session_events_state", "\"State\" BETWEEN 1 AND 7");
-                        });
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.AdRewards.Persistence.AdRewardSessionRow", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("AsnRiskHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<string>("CreativeId")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<string>("DeviceRiskHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<DateTimeOffset>("ExpiresAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("IpRiskHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<DateTimeOffset>("IssuedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Network")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("NonceHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<long>("PolicyVersion")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("RequiredDurationTicks")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("StartIdempotencyKeyHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<string>("StartRequestHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<int>("State")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("TokenHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<string>("TokenKeyId")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<DateTimeOffset>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.Property<long>("Version")
-                        .IsConcurrencyToken()
-                        .HasColumnType("bigint");
-
-                    b.Property<Guid>("WalletId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TenantId", "NonceHash")
-                        .IsUnique();
-
-                    b.HasIndex("TenantId", "StartIdempotencyKeyHash")
-                        .IsUnique();
-
-                    b.HasIndex("TenantId", "UserId", "IssuedAt");
-
-                    b.ToTable("economy_ad_reward_sessions", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_economy_ad_reward_sessions_state", "\"State\" BETWEEN 1 AND 7");
-
-                            t.HasCheckConstraint("ck_economy_ad_reward_sessions_values", "\"PolicyVersion\" > 0 AND \"RequiredDurationTicks\" > 0 AND \"Version\" > 0");
-
-                            t.HasCheckConstraint("ck_economy_ad_reward_sessions_window", "\"ExpiresAt\" > \"IssuedAt\" AND \"UpdatedAt\" >= \"IssuedAt\"");
-                        });
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Bounties.Persistence.BountyEscrowFragmentRow", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
-
-                    b.Property<long>("AmountUnits")
-                        .HasColumnType("bigint");
-
-                    b.Property<Guid>("BountyId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("Currency")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid?>("EscrowLotId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("ParentLotId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("Provenance")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("SelectedRootRanges")
-                        .IsRequired()
-                        .HasColumnType("jsonb");
-
-                    b.Property<long>("TraceUnitsPerCoinUnit")
-                        .HasColumnType("bigint");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("BountyId", "EscrowLotId")
-                        .IsUnique()
-                        .HasDatabaseName("ux_economy_bounty_escrow_fragments_bounty_escrow_lot")
-                        .HasFilter("\"EscrowLotId\" IS NOT NULL");
-
-                    b.HasIndex("BountyId", "ParentLotId")
-                        .IsUnique();
-
-                    b.ToTable("economy_bounty_escrow_fragments", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_economy_bounty_escrow_fragments_amount_positive", "\"AmountUnits\" > 0");
-
-                            t.HasCheckConstraint("ck_economy_bounty_escrow_fragments_provenance", "\"Provenance\" BETWEEN 1 AND 7");
-
-                            t.HasCheckConstraint("ck_economy_bounty_escrow_fragments_scale_positive", "\"TraceUnitsPerCoinUnit\" > 0");
-                        });
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Bounties.Persistence.BountyExpirationEventRow", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("BountyId")
-                        .HasColumnType("uuid");
-
-                    b.Property<long>("BountyVersion")
-                        .HasColumnType("bigint");
-
-                    b.Property<DateTimeOffset>("ExpiresAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTimeOffset>("RecordedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("BountyId")
-                        .IsUnique();
-
-                    b.HasIndex("RecordedAt", "Id");
-
-                    b.ToTable("economy_bounty_expiration_events", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_economy_bounty_expiration_events_time", "\"RecordedAt\" >= \"ExpiresAt\"");
-
-                            t.HasCheckConstraint("ck_economy_bounty_expiration_events_version", "\"BountyVersion\" > 1");
-                        });
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Bounties.Persistence.BountyRow", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
-
-                    b.Property<long>("AmountUnits")
-                        .HasColumnType("bigint");
-
-                    b.Property<int>("Currency")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("EscrowWalletId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset>("ExpiresAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("IdempotencyKey")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<int>("MinimumReputation")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTimeOffset>("PostedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("PosterId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("PosterWalletId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("ReclaimFeePpm")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("RequestHash")
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<bool>("RequiresInstructorVerification")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("RequiresPrerequisite")
-                        .HasColumnType("boolean");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
-
-                    b.Property<long>("Version")
-                        .HasColumnType("bigint");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("IdempotencyKey")
-                        .IsUnique();
-
-                    b.HasIndex("TenantId", "Status", "ExpiresAt");
-
-                    b.HasIndex("TenantId", "PosterId", "Status", "ExpiresAt");
-
-                    b.ToTable("economy_bounties", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_economy_bounties_amount_positive", "\"AmountUnits\" > 0");
-
-                            t.HasCheckConstraint("ck_economy_bounties_fee", "\"ReclaimFeePpm\" BETWEEN 0 AND 999999");
-
-                            t.HasCheckConstraint("ck_economy_bounties_reputation", "\"MinimumReputation\" >= 0");
-
-                            t.HasCheckConstraint("ck_economy_bounties_state", "\"Status\" BETWEEN 1 AND 4");
-
-                            t.HasCheckConstraint("ck_economy_bounties_version", "\"Version\" > 0");
-
-                            t.HasCheckConstraint("ck_economy_bounties_window", "\"ExpiresAt\" > \"PostedAt\"");
-                        });
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Bounties.Persistence.BountyTerminalEventRow", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("ActorId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("BountyId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("DestinationWalletId")
-                        .HasColumnType("uuid");
-
-                    b.Property<long>("FeeUnits")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("FirstJournalSequence")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("IdempotencyKey")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<DateTimeOffset>("OccurredAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("OutputLots")
-                        .IsRequired()
-                        .HasColumnType("jsonb");
-
-                    b.Property<Guid?>("ProceedsLotId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("ProceedsSourceStampId")
-                        .HasColumnType("uuid");
-
-                    b.Property<long>("ReturnedUnits")
-                        .HasColumnType("bigint");
-
-                    b.Property<Guid?>("RiskDecisionId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("BountyId")
-                        .IsUnique();
-
-                    b.HasIndex("IdempotencyKey")
-                        .IsUnique();
-
-                    b.ToTable("economy_bounty_terminal_events", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_economy_bounty_terminal_events_claim_binding", "\"Status\" <> 3 OR (\"RiskDecisionId\" IS NOT NULL AND \"ProceedsSourceStampId\" IS NOT NULL AND \"ProceedsLotId\" IS NOT NULL)");
-
-                            t.HasCheckConstraint("ck_economy_bounty_terminal_events_state", "\"Status\" IN (3, 4)");
-
-                            t.HasCheckConstraint("ck_economy_bounty_terminal_events_units", "\"ReturnedUnits\" >= 0 AND \"FeeUnits\" >= 0 AND \"FirstJournalSequence\" > 0");
-                        });
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Integrations.AI.AiProviderCostFactEntity", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("ActorId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("AuthorizationId")
-                        .HasColumnType("uuid");
-
-                    b.Property<long>("ChargedSoftUnits")
-                        .HasColumnType("bigint");
-
-                    b.Property<DateTimeOffset>("CompletedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<long>("ExactProviderCostUsdNanos")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("InputCostUsdNanos")
-                        .HasColumnType("bigint");
-
-                    b.Property<int>("InputTokens")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Model")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<long>("OutputCostUsdNanos")
-                        .HasColumnType("bigint");
-
-                    b.Property<int>("OutputTokens")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("Provider")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("ProviderUsageId")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<string>("RateCardVersion")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<Guid>("RequestId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("ServiceCode")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("TotalTokens")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AuthorizationId")
-                        .IsUnique();
-
-                    b.HasIndex("Provider", "ProviderUsageId")
-                        .IsUnique();
-
-                    b.HasIndex("ServiceCode", "CompletedAt");
-
-                    b.HasIndex("TenantId", "CompletedAt");
-
-                    b.ToTable("ai_provider_cost_facts", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_ai_provider_cost_facts_charge_positive", "\"ChargedSoftUnits\" > 0");
-
-                            t.HasCheckConstraint("ck_ai_provider_cost_facts_cost_conservation", "\"InputCostUsdNanos\" >= 0 AND \"OutputCostUsdNanos\" >= 0 AND \"ExactProviderCostUsdNanos\" = \"InputCostUsdNanos\" + \"OutputCostUsdNanos\"");
-
-                            t.HasCheckConstraint("ck_ai_provider_cost_facts_token_conservation", "\"InputTokens\" >= 0 AND \"OutputTokens\" >= 0 AND \"TotalTokens\" = \"InputTokens\" + \"OutputTokens\"");
-                        });
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Ledger.EconomyWalletProvisioningReceiptRow", b =>
-                {
-                    b.Property<bool>("Created")
-                        .HasColumnType("boolean")
-                        .HasColumnName("created");
-
-                    b.Property<Guid>("WalletId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("wallet_id");
-
-                    b.ToTable((string)null);
-
-                    b.ToView(null, (string)null);
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Marketplace.Persistence.MarketplaceCurrencyPolicyVersionRow", b =>
-                {
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("ProductId")
-                        .HasColumnType("uuid");
-
-                    b.Property<long>("Version")
-                        .HasColumnType("bigint");
-
-                    b.Property<Guid>("ApprovedBy")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("CanonicalPayload")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTimeOffset>("EffectiveAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTimeOffset>("ExpiresAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<long>("HardPriceUnits")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("KeyId")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<int>("Mode")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("PayloadHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<int>("PlatformFeePpm")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("PlatformFeeWalletId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("ProposedBy")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset>("PublishedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<long>("RefundHoldTicks")
-                        .HasColumnType("bigint");
-
-                    b.Property<Guid>("SellerId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Signature")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<long>("SoftPriceUnits")
-                        .HasColumnType("bigint");
-
-                    b.HasKey("TenantId", "ProductId", "Version");
-
-                    b.HasIndex("TenantId", "ProductId", "EffectiveAt", "ExpiresAt");
-
-                    b.ToTable("economy_marketplace_currency_policy_versions", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_economy_marketplace_currency_policy_versions_dual_control", "\"ProposedBy\" <> \"ApprovedBy\"");
-
-                            t.HasCheckConstraint("ck_economy_marketplace_currency_policy_versions_fee", "\"PlatformFeePpm\" BETWEEN 0 AND 999999");
-
-                            t.HasCheckConstraint("ck_economy_marketplace_currency_policy_versions_prices", "(\"Mode\" = 1 AND \"HardPriceUnits\" > 0 AND \"SoftPriceUnits\" = 0) OR (\"Mode\" = 2 AND \"HardPriceUnits\" = 0 AND \"SoftPriceUnits\" > 0) OR (\"Mode\" IN (3, 4) AND \"HardPriceUnits\" > 0 AND \"SoftPriceUnits\" > 0)");
-
-                            t.HasCheckConstraint("ck_economy_marketplace_currency_policy_versions_version", "\"Version\" > 0");
-
-                            t.HasCheckConstraint("ck_economy_marketplace_currency_policy_versions_window", "\"ExpiresAt\" > \"EffectiveAt\" AND \"RefundHoldTicks\" > 0");
-                        });
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Marketplace.Persistence.MarketplaceEventRow", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("EventKind")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("EvidenceHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<DateTimeOffset>("OccurredAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<long>("Sequence")
-                        .HasColumnType("bigint");
-
-                    b.Property<Guid>("SettlementId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("SettlementId", "Sequence")
-                        .IsUnique();
-
-                    b.ToTable("economy_marketplace_events", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_economy_marketplace_events_sequence", "\"Sequence\" > 0");
-                        });
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Marketplace.Persistence.MarketplaceFundingFragmentRow", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
-
-                    b.Property<long>("AmountUnits")
-                        .HasColumnType("bigint");
-
-                    b.Property<int>("Currency")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("ParentLotId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("ReservationId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("SelectedRootRanges")
-                        .IsRequired()
-                        .HasColumnType("jsonb");
-
-                    b.Property<Guid>("SettlementId")
-                        .HasColumnType("uuid");
-
-                    b.Property<long>("TraceUnitsPerCoinUnit")
-                        .HasColumnType("bigint");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ReservationId")
-                        .IsUnique();
-
-                    b.HasIndex("SettlementId", "ParentLotId", "Currency");
-
-                    b.ToTable("economy_marketplace_funding_fragments", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_economy_marketplace_funding_fragments_amount", "\"AmountUnits\" > 0");
-
-                            t.HasCheckConstraint("ck_economy_marketplace_funding_fragments_scale", "\"TraceUnitsPerCoinUnit\" > 0");
-                        });
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Marketplace.Persistence.MarketplaceOutboxRow", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("AttemptCount")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("LastError")
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)");
-
-                    b.Property<DateTimeOffset?>("LeaseExpiresAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("LeaseOwner")
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<string>("MessageType")
-                        .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("character varying(150)");
-
-                    b.Property<DateTimeOffset>("OccurredAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Payload")
-                        .IsRequired()
-                        .HasColumnType("jsonb");
-
-                    b.Property<string>("PayloadHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<DateTimeOffset?>("PublishedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("SettlementId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("SettlementId");
-
-                    b.HasIndex("PublishedAt", "OccurredAt");
-
-                    b.HasIndex("PublishedAt", "LeaseExpiresAt", "OccurredAt");
-
-                    b.ToTable("economy_marketplace_outbox", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_economy_marketplace_outbox_attempts", "\"AttemptCount\" >= 0");
-                        });
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Marketplace.Persistence.MarketplaceRefundDebtRow", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<long>("AmountUnits")
-                        .HasColumnType("bigint");
-
-                    b.Property<int>("Currency")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("EvidenceHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<DateTimeOffset>("RecordedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("RefundId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("ResponsibleWalletId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("SettlementId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("RefundId");
-
-                    b.HasIndex("SettlementId");
-
-                    b.HasIndex("TenantId", "ResponsibleWalletId", "RecordedAt");
-
-                    b.ToTable("economy_marketplace_refund_debts", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_economy_marketplace_refund_debts_amount", "\"AmountUnits\" > 0");
-                        });
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Marketplace.Persistence.MarketplaceRefundLegRow", b =>
-                {
-                    b.Property<Guid>("RefundId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("Currency")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("SettlementId")
-                        .HasColumnType("uuid");
-
-                    b.Property<long>("Units")
-                        .HasColumnType("bigint");
-
-                    b.HasKey("RefundId", "Currency");
-
-                    b.HasIndex("SettlementId", "Currency");
-
-                    b.ToTable("economy_marketplace_refund_legs", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_economy_marketplace_refund_legs_amount", "\"Units\" > 0");
-                        });
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Marketplace.Persistence.MarketplaceRefundRow", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("BuyerId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("CapabilityReceiptHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<Guid>("CapabilityReceiptId")
-                        .HasColumnType("uuid");
-
-                    b.Property<bool>("EntitlementRevoked")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("EvidenceHashes")
-                        .IsRequired()
-                        .HasColumnType("jsonb");
-
-                    b.Property<long>("FirstJournalSequence")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("IdempotencyKey")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<bool>("IsFullRefund")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("JournalHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<string>("JurisdictionCode")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("character varying(16)");
-
-                    b.Property<long>("KillSwitchEpoch")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("MarketplacePolicyVersion")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("PolicyVersion")
-                        .HasColumnType("bigint");
-
-                    b.Property<Guid>("PostingId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("Quantity")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("ReasonCode")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("ReasonHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<DateTimeOffset>("RefundedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("RefundedQuantity")
-                        .HasColumnType("integer");
-
-                    b.Property<long>("ReserveVersion")
-                        .HasColumnType("bigint");
-
-                    b.Property<Guid>("RiskDecisionId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("SettlementId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("SettlementId");
-
-                    b.HasIndex("TenantId", "IdempotencyKey")
-                        .IsUnique();
-
-                    b.HasIndex("TenantId", "SettlementId", "RefundedAt");
-
-                    b.ToTable("economy_marketplace_refunds", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_economy_marketplace_refunds_quantity", "\"Quantity\" > 0 AND \"RefundedQuantity\" >= \"Quantity\"");
-
-                            t.HasCheckConstraint("ck_economy_marketplace_refunds_sequence", "\"FirstJournalSequence\" > 0");
-
-                            t.HasCheckConstraint("ck_economy_marketplace_refunds_versions", "\"MarketplacePolicyVersion\" > 0 AND \"PolicyVersion\" > 0 AND \"ReserveVersion\" > 0");
-                        });
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Marketplace.Persistence.MarketplaceSettlementCreditRow", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
-
-                    b.Property<long>("AmountUnits")
-                        .HasColumnType("bigint");
-
-                    b.Property<Guid>("CreditLotId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("Currency")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("ParentLineage")
-                        .IsRequired()
-                        .HasColumnType("jsonb");
-
-                    b.Property<int>("Purpose")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("RefundHoldId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset>("RefundHoldUntil")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<long>("RemainingUnits")
-                        .HasColumnType("bigint");
-
-                    b.Property<Guid>("SettlementId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("SourceStampId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("WalletId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CreditLotId")
-                        .IsUnique();
-
-                    b.HasIndex("SettlementId");
-
-                    b.HasIndex("SourceStampId")
-                        .IsUnique()
-                        .HasFilter("\"SourceStampId\" IS NOT NULL");
-
-                    b.ToTable("economy_marketplace_settlement_credits", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_economy_marketplace_settlement_credits_amount", "\"AmountUnits\" > 0");
-
-                            t.HasCheckConstraint("ck_economy_marketplace_settlement_credits_purpose", "\"Purpose\" BETWEEN 1 AND 2");
-                        });
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Marketplace.Persistence.MarketplaceSettlementLegRow", b =>
-                {
-                    b.Property<Guid>("SettlementId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("Currency")
-                        .HasColumnType("integer");
-
-                    b.Property<long>("PlatformFeeUnits")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("RefundedUnits")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("SellerUnits")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("Units")
-                        .HasColumnType("bigint");
-
-                    b.HasKey("SettlementId", "Currency");
-
-                    b.ToTable("economy_marketplace_settlement_legs", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_economy_marketplace_settlement_legs_conservation", "\"Units\" > 0 AND \"SellerUnits\" >= 0 AND \"PlatformFeeUnits\" >= 0 AND \"SellerUnits\" + \"PlatformFeeUnits\" = \"Units\"");
-
-                            t.HasCheckConstraint("ck_economy_marketplace_settlement_legs_refund", "\"RefundedUnits\" BETWEEN 0 AND \"Units\"");
-                        });
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Marketplace.Persistence.MarketplaceSettlementRow", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("BuyerId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("BuyerWalletId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("CapabilityReceiptHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<Guid>("CapabilityReceiptId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("CurrencyMode")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("EntitlementId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("EntitlementStatus")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("EvidenceHashes")
-                        .IsRequired()
-                        .HasColumnType("jsonb");
-
-                    b.Property<string>("FiatCurrencySnapshot")
-                        .IsRequired()
-                        .HasMaxLength(3)
-                        .HasColumnType("character varying(3)");
-
-                    b.Property<string>("IdempotencyKey")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<string>("JournalHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<long>("JournalSequence")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("JurisdictionCode")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("character varying(16)");
-
-                    b.Property<long>("KillSwitchEpoch")
-                        .HasColumnType("bigint");
-
-                    b.Property<Guid>("OrderId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("OrderLineItemId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("OrderSnapshotHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<Guid>("PlatformFeeWalletId")
-                        .HasColumnType("uuid");
-
-                    b.Property<long>("PolicyVersion")
-                        .HasColumnType("bigint");
-
-                    b.Property<Guid>("PostingId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("PriceVersionSnapshot")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("ProductId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("ProductPricingVersionId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("Quantity")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTimeOffset>("RefundHoldUntil")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("RefundedQuantity")
-                        .HasColumnType("integer");
-
-                    b.Property<long>("ReserveVersion")
-                        .HasColumnType("bigint");
-
-                    b.Property<Guid>("RiskDecisionId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("SellerId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("SellerWalletId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset>("SettledAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
-
-                    b.Property<decimal>("UnitPriceSnapshot")
-                        .HasColumnType("numeric");
-
-                    b.Property<DateTimeOffset>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<long>("Version")
-                        .HasColumnType("bigint");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TenantId", "IdempotencyKey")
-                        .IsUnique();
-
-                    b.HasIndex("TenantId", "OrderId")
-                        .IsUnique();
-
-                    b.HasIndex("TenantId", "BuyerId", "SettledAt");
-
-                    b.HasIndex("TenantId", "SellerId", "SettledAt");
-
-                    b.ToTable("economy_marketplace_settlements", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_economy_marketplace_settlements_hold", "\"RefundHoldUntil\" > \"SettledAt\"");
-
-                            t.HasCheckConstraint("ck_economy_marketplace_settlements_order_snapshot", "\"Quantity\" > 0 AND \"RefundedQuantity\" BETWEEN 0 AND \"Quantity\" AND \"UnitPriceSnapshot\" >= 0 AND \"PriceVersionSnapshot\" > 0");
-
-                            t.HasCheckConstraint("ck_economy_marketplace_settlements_receipt", "\"ReserveVersion\" > 0 AND \"JournalSequence\" > 0");
-
-                            t.HasCheckConstraint("ck_economy_marketplace_settlements_state", "\"Status\" BETWEEN 1 AND 3");
-
-                            t.HasCheckConstraint("ck_economy_marketplace_settlements_version", "\"PolicyVersion\" > 0 AND \"Version\" > 0");
-
-                            t.HasCheckConstraint("ck_economy_marketplace_settlements_wallets", "\"BuyerWalletId\" <> \"SellerWalletId\" AND \"BuyerWalletId\" <> \"PlatformFeeWalletId\" AND \"SellerWalletId\" <> \"PlatformFeeWalletId\"");
-                        });
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Payouts.PayoutAuthorizationEvidenceRow", b =>
-                {
-                    b.Property<Guid>("OperationId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("Phase")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("ActorId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("CapabilityReceiptHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<Guid>("CapabilityReceiptId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("OperationFingerprintHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<string>("ReauthenticationEvidenceHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<DateTimeOffset>("RecordedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("RiskDecisionId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("OperationId", "Phase");
-
-                    b.HasIndex("CapabilityReceiptId")
-                        .IsUnique();
-
-                    b.HasIndex("TenantId", "RecordedAt");
-
-                    b.ToTable("economy_payout_authorization_evidence", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_economy_payout_authorization_evidence_phase", "\"Phase\" BETWEEN 1 AND 2");
-                        });
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Payouts.PayoutConnectAccountRow", b =>
-                {
-                    b.Property<Guid>("PayeeId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<bool>("ChargesEnabled")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("DestinationHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<string>("Environment")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.Property<string>("EvidenceHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<DateTimeOffset>("ExpiresAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTimeOffset>("ObservedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<bool>("PayoutsEnabled")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("Provider")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.Property<string>("ProviderAccountId")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<int>("State")
-                        .HasColumnType("integer");
-
-                    b.Property<long>("Version")
-                        .HasColumnType("bigint");
-
-                    b.HasKey("PayeeId");
-
-                    b.HasIndex("State", "ExpiresAt");
-
-                    b.HasIndex("Provider", "Environment", "ProviderAccountId")
-                        .IsUnique();
-
-                    b.ToTable("economy_payout_connect_accounts", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_economy_payout_connect_accounts_state", "\"State\" BETWEEN 1 AND 4");
-
-                            t.HasCheckConstraint("ck_economy_payout_connect_accounts_version", "\"Version\" > 0");
-
-                            t.HasCheckConstraint("ck_economy_payout_connect_accounts_window", "\"ExpiresAt\" > \"ObservedAt\"");
-                        });
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Payouts.PayoutDispatchOutboxRow", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("AttemptCount")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTimeOffset>("AvailableAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTimeOffset?>("CompletedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("IdempotencyKey")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<string>("LastErrorCode")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<DateTimeOffset?>("LeaseExpiresAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("LeaseOwner")
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.Property<Guid>("OperationId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Payload")
-                        .IsRequired()
-                        .HasColumnType("jsonb");
-
-                    b.Property<string>("PayloadHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("OperationId")
-                        .IsUnique();
-
-                    b.HasIndex("CompletedAt", "AvailableAt", "LeaseExpiresAt");
-
-                    b.ToTable("economy_payout_dispatch_outbox", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_economy_payout_dispatch_outbox_attempts", "\"AttemptCount\" >= 0");
-                        });
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Payouts.PayoutOperationRow", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("ActorId")
-                        .HasColumnType("uuid");
-
-                    b.Property<long>("AmountUnits")
-                        .HasColumnType("bigint");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("DestinationHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<string>("DispatchSnapshotHash")
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<string>("EligibilityHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<long>("FencingToken")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("IdempotencyKey")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<long>("KillSwitchEpoch")
-                        .HasColumnType("bigint");
-
-                    b.Property<Guid>("PayeeId")
-                        .HasColumnType("uuid");
-
-                    b.Property<long>("PolicyVersion")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("ProviderAccountId")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<string>("ProviderBindingHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<string>("ProviderPayoutId")
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<string>("RequestHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<long>("ReserveAuthorizationEpoch")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("ReserveVersion")
-                        .HasColumnType("bigint");
-
-                    b.Property<Guid>("RiskDecisionId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("State")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<long>("Version")
-                        .IsConcurrencyToken()
-                        .HasColumnType("bigint");
-
-                    b.Property<Guid>("WalletId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("State", "UpdatedAt")
-                        .HasDatabaseName("ix_economy_payout_operations_state_updated");
-
-                    b.HasIndex("TenantId", "IdempotencyKey")
-                        .IsUnique()
-                        .HasDatabaseName("ux_economy_payout_operations_tenant_idempotency");
-
-                    b.HasIndex("TenantId", "State", "UpdatedAt")
-                        .HasDatabaseName("ix_economy_payout_operations_tenant_state_updated");
-
-                    b.ToTable("economy_payout_operations", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_economy_payout_operations_dispatch", "(\"State\" = 1 AND \"DispatchSnapshotHash\" IS NULL) OR (\"State\" BETWEEN 2 AND 6 AND \"DispatchSnapshotHash\" IS NOT NULL)");
-
-                            t.HasCheckConstraint("ck_economy_payout_operations_positive_values", "\"AmountUnits\" > 0 AND \"Version\" > 0 AND \"FencingToken\" > 0 AND \"KillSwitchEpoch\" >= 0 AND \"ReserveVersion\" > 0 AND \"ReserveAuthorizationEpoch\" > 0 AND \"PolicyVersion\" > 0");
-
-                            t.HasCheckConstraint("ck_economy_payout_operations_state", "\"State\" BETWEEN 1 AND 6");
-
-                            t.HasCheckConstraint("ck_economy_payout_operations_timestamps", "\"UpdatedAt\" >= \"CreatedAt\"");
-                        });
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Payouts.PayoutProviderEventRow", b =>
-                {
-                    b.Property<string>("EventId")
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<string>("EventHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<Guid>("OperationId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset>("RecordedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("ResultingState")
-                        .HasColumnType("integer");
-
-                    b.HasKey("EventId");
-
-                    b.HasIndex("OperationId", "RecordedAt")
-                        .HasDatabaseName("ix_economy_payout_provider_events_operation_recorded");
-
-                    b.ToTable("economy_payout_provider_events", (string)null);
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyAccountRow", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("Code")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("Currency")
-                        .HasColumnType("integer");
-
-                    b.Property<int?>("Provenance")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid?>("WalletId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("WalletId", "Code", "Currency", "Provenance")
-                        .IsUnique();
-
-                    b.ToTable("economy_accounts", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_economy_accounts_wallet_partition", "(\"WalletId\" IS NULL AND \"Code\" NOT IN (2, 3, 4)) OR (\"WalletId\" IS NOT NULL AND \"Code\" IN (2, 3, 4))");
-                        });
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyAnchorVerificationRow", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("ETag")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<Guid>("ExternalAnchorId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("KeyId")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<string>("ObjectHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<bool>("ObjectMatches")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("ObjectVersion")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<DateTimeOffset>("RetainUntil")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<bool>("SignatureValid")
-                        .HasColumnType("boolean");
-
-                    b.Property<DateTimeOffset>("VerifiedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ExternalAnchorId", "VerifiedAt");
-
-                    b.ToTable("economy_anchor_verifications", (string)null);
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyCapabilityPolicyApprovalRow", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("ActorId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset>("ApprovedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("PolicyId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("ReauthenticationHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("PolicyId", "ActorId")
-                        .IsUnique()
-                        .HasDatabaseName("ux_economy_capability_policy_approvals_policy_actor");
-
-                    b.ToTable("economy_capability_policy_approvals", (string)null);
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyCapabilityPolicyRow", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset?>("ApprovedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid?>("ApprovedBy")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("CanonicalPayload")
-                        .IsRequired()
-                        .HasColumnType("jsonb");
-
-                    b.Property<int>("Capability")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTimeOffset>("EffectiveAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTimeOffset>("ExpiresAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("JurisdictionCode")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("character varying(16)");
-
-                    b.Property<string>("KeyId")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<string>("PayloadHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<DateTimeOffset>("ProposedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("ProposedBy")
-                        .HasColumnType("uuid");
-
-                    b.Property<bool>("ProviderReady")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("RequestHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<string>("ScopeKey")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<string>("Signature")
-                        .IsRequired()
-                        .HasMaxLength(2048)
-                        .HasColumnType("character varying(2048)");
-
-                    b.Property<Guid?>("TenantId")
-                        .HasColumnType("uuid");
-
-                    b.Property<long>("Version")
-                        .HasColumnType("bigint");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("RequestHash")
-                        .IsUnique()
-                        .HasDatabaseName("ux_economy_capability_policies_request_hash");
-
-                    b.HasIndex("ScopeKey")
-                        .IsUnique()
-                        .HasDatabaseName("ux_economy_capability_policies_active_scope")
-                        .HasFilter("\"IsActive\"");
-
-                    b.HasIndex("ScopeKey", "Version")
-                        .IsUnique()
-                        .HasDatabaseName("ux_economy_capability_policies_scope_version");
-
-                    b.ToTable("economy_capability_policies", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_economy_capability_policies_dual_control", "(\"ApprovedBy\" IS NULL AND \"ApprovedAt\" IS NULL AND NOT \"IsActive\") OR (\"ApprovedBy\" IS NOT NULL AND \"ApprovedBy\" <> \"ProposedBy\" AND \"ApprovedAt\" >= \"ProposedAt\")");
-
-                            t.HasCheckConstraint("ck_economy_capability_policies_version", "\"Version\" > 0");
-
-                            t.HasCheckConstraint("ck_economy_capability_policies_window", "\"ExpiresAt\" > \"EffectiveAt\" AND (\"ApprovedAt\" IS NULL OR \"EffectiveAt\" >= \"ApprovedAt\")");
-                        });
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyCapabilityReceiptConsumptionRow", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("ActorId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset>("ConsumedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<long>("KillSwitchEpoch")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("OperationFingerprint")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<Guid>("ReceiptId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ReceiptId")
-                        .IsUnique()
-                        .HasDatabaseName("ux_economy_capability_receipt_consumptions_receipt");
-
-                    b.ToTable("economy_capability_receipt_consumptions", (string)null);
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyCapabilityReceiptRow", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("ActorId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("Capability")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("DestinationHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<string>("EvidenceHashes")
-                        .IsRequired()
-                        .HasColumnType("jsonb");
-
-                    b.Property<DateTimeOffset>("ExpiresAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTimeOffset>("IssuedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("JurisdictionCode")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("character varying(16)");
-
-                    b.Property<string>("KeyId")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<long>("KillSwitchEpoch")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("OperationFingerprint")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<long>("PolicyVersion")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("ProviderHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<string>("ReceiptHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<long>("ReserveVersion")
-                        .HasColumnType("bigint");
-
-                    b.Property<Guid>("RiskDecisionId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Signature")
-                        .IsRequired()
-                        .HasMaxLength(2048)
-                        .HasColumnType("character varying(2048)");
-
-                    b.Property<string>("SourceRootHashes")
-                        .IsRequired()
-                        .HasColumnType("jsonb");
-
-                    b.Property<string>("SubjectReference")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ReceiptHash")
-                        .IsUnique()
-                        .HasDatabaseName("ux_economy_capability_receipts_hash");
-
-                    b.HasIndex("RiskDecisionId");
-
-                    b.HasIndex("TenantId", "OperationFingerprint")
-                        .IsUnique()
-                        .HasDatabaseName("ux_economy_capability_receipts_tenant_operation");
-
-                    b.ToTable("economy_capability_receipts", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_economy_capability_receipts_lifetime", "\"ExpiresAt\" > \"IssuedAt\"");
-
-                            t.HasCheckConstraint("ck_economy_capability_receipts_versions", "\"PolicyVersion\" > 0 AND \"ReserveVersion\" > 0 AND \"KillSwitchEpoch\" >= 0");
-                        });
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyChainHeadRow", b =>
-                {
-                    b.Property<short>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("smallint");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<short>("Id"));
-
-                    b.Property<string>("Hash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<long>("Sequence")
-                        .HasColumnType("bigint");
-
-                    b.Property<DateTimeOffset>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("economy_chain_head", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_economy_chain_head_singleton", "\"Id\" = 1");
-                        });
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyComplianceEvidenceRow", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Environment")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.Property<string>("EvidenceHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<string>("EvidenceKind")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<DateTimeOffset>("ExpiresAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTimeOffset>("IssuedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("JurisdictionCode")
-                        .HasMaxLength(3)
-                        .HasColumnType("character(3)")
-                        .IsFixedLength();
-
-                    b.Property<string>("PayloadHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<long>("PolicyVersion")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("Provider")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("ProviderEventId")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<string>("RawObjectReference")
-                        .IsRequired()
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)");
-
-                    b.Property<DateTimeOffset>("ReceivedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Result")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<bool>("SignatureVerified")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("SubjectHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
-
-                    b.Property<long>("Version")
-                        .HasColumnType("bigint");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Provider", "Environment", "ProviderEventId")
-                        .IsUnique()
-                        .HasDatabaseName("ux_economy_compliance_evidence_provider_event");
-
-                    b.HasIndex("TenantId", "SubjectHash", "EvidenceKind", "Version")
-                        .IsUnique()
-                        .HasDatabaseName("ux_economy_compliance_evidence_subject_version");
-
-                    b.ToTable("economy_compliance_evidence", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_economy_compliance_evidence_jurisdiction", "\"JurisdictionCode\" IS NULL OR \"JurisdictionCode\" ~ '^[A-Z]{3}$'");
-
-                            t.HasCheckConstraint("ck_economy_compliance_evidence_lifetime", "\"ExpiresAt\" > \"IssuedAt\" AND \"ReceivedAt\" >= \"IssuedAt\"");
-
-                            t.HasCheckConstraint("ck_economy_compliance_evidence_versions", "\"Version\" > 0 AND \"PolicyVersion\" > 0 AND length(btrim(\"EvidenceKind\")) > 0");
-                        });
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyComplianceHoldEventRow", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("ActorId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("EvidenceHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<Guid>("HoldId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Kind")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.Property<DateTimeOffset>("OccurredAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("Sequence")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("HoldId", "Sequence")
-                        .IsUnique();
-
-                    b.HasIndex("HoldId", "Kind", "ActorId")
-                        .IsUnique();
-
-                    b.ToTable("economy_compliance_hold_events", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_economy_compliance_hold_events_sequence", "\"Sequence\" > 0");
-                        });
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyComplianceHoldRow", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset>("ActivatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("ActivatedBy")
-                        .HasColumnType("uuid");
-
-                    b.Property<int?>("Capability")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("CaseReferenceHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<string>("EvidenceHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<DateTimeOffset>("ExpiresAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("IdempotencyKeyHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<string>("ReasonCode")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("ReleasePolicyEvidenceHash")
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<DateTimeOffset?>("ReleaseProposedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid?>("ReleaseProposedBy")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset?>("ReleasedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid?>("ReleasedBy")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("RequestHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<int?>("RequiredReleaseApprovals")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("ScopeKey")
-                        .IsRequired()
-                        .HasMaxLength(512)
-                        .HasColumnType("character varying(512)");
-
-                    b.Property<string>("SubjectHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("IdempotencyKeyHash")
-                        .IsUnique()
-                        .HasDatabaseName("ux_economy_compliance_holds_idempotency");
-
-                    b.HasIndex("ScopeKey", "ReleasedAt", "ExpiresAt")
-                        .HasDatabaseName("ix_economy_compliance_holds_active_scope");
-
-                    b.HasIndex("TenantId", "SubjectHash", "ExpiresAt");
-
-                    b.ToTable("economy_compliance_holds", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_economy_compliance_holds_lifetime", "\"ExpiresAt\" > \"ActivatedAt\"");
-
-                            t.HasCheckConstraint("ck_economy_compliance_holds_release", "(\"ReleasedAt\" IS NULL AND \"ReleasedBy\" IS NULL) OR (\"ReleasedAt\" >= \"ActivatedAt\" AND \"ReleasedBy\" IS NOT NULL)");
-
-                            t.HasCheckConstraint("ck_economy_compliance_holds_release_proposal", "(\"ReleaseProposedAt\" IS NULL AND \"ReleaseProposedBy\" IS NULL AND \"RequiredReleaseApprovals\" IS NULL AND \"ReleasePolicyEvidenceHash\" IS NULL) OR (\"ReleaseProposedAt\" >= \"ActivatedAt\" AND \"ReleaseProposedBy\" IS NOT NULL AND \"RequiredReleaseApprovals\" BETWEEN 1 AND 2 AND length(btrim(\"ReleasePolicyEvidenceHash\")) > 0)");
-                        });
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyComplianceInboxRow", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Environment")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.Property<string>("PayloadHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<DateTimeOffset?>("ProcessedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("ProcessingError")
-                        .HasMaxLength(2000)
-                        .HasColumnType("character varying(2000)");
-
-                    b.Property<string>("Provider")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("ProviderEventId")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<string>("RawObjectReference")
-                        .IsRequired()
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)");
-
-                    b.Property<DateTimeOffset>("ReceivedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Provider", "Environment", "ProviderEventId")
-                        .IsUnique()
-                        .HasDatabaseName("ux_economy_compliance_inbox_provider_event");
-
-                    b.ToTable("economy_compliance_inbox", (string)null);
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyComplianceOutboxRow", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset?>("DispatchedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("EvidenceId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset>("OccurredAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Payload")
-                        .IsRequired()
-                        .HasColumnType("jsonb");
-
-                    b.Property<string>("PayloadHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<string>("Type")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("EvidenceId")
-                        .IsUnique()
-                        .HasDatabaseName("ux_economy_compliance_outbox_evidence");
-
-                    b.ToTable("economy_compliance_outbox", (string)null);
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyCreditLotRow", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<long>("AmountUnits")
-                        .HasColumnType("bigint");
-
-                    b.Property<bool>("CashOutEligible")
-                        .HasColumnType("boolean");
-
-                    b.Property<DateTimeOffset>("ConfirmedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTimeOffset>("CreditedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("Currency")
-                        .HasColumnType("integer");
-
-                    b.Property<long>("JournalSequence")
-                        .HasColumnType("bigint");
-
-                    b.Property<DateTimeOffset>("OriginalMaturesAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("Provenance")
-                        .HasColumnType("integer");
-
-                    b.Property<long>("ReversalEpoch")
-                        .HasColumnType("bigint");
-
-                    b.Property<Guid>("RootSourceStampId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("State")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("WalletId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("RootSourceStampId")
-                        .HasDatabaseName("ix_economy_credit_lots_root_source");
-
-                    b.HasIndex("WalletId");
-
-                    b.ToTable("economy_credit_lots", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_economy_credit_lots_amount_positive", "\"AmountUnits\" > 0");
-
-                            t.HasCheckConstraint("ck_economy_credit_lots_maturity_order", "\"OriginalMaturesAt\" >= \"ConfirmedAt\"");
-
-                            t.HasCheckConstraint("ck_economy_credit_lots_maturity_policy", "(\"Provenance\" = 2 AND \"Currency\" = 1 AND \"CashOutEligible\" AND \"OriginalMaturesAt\" = \"ConfirmedAt\" + INTERVAL '120 days') OR (\"Provenance\" <> 2 AND NOT \"CashOutEligible\")");
-                        });
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyCustodyObservationRow", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("AssetKey")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<long>("EligibleUsdNanos")
-                        .HasColumnType("bigint");
-
-                    b.Property<DateTimeOffset>("ExpiresAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("KeyId")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<DateTimeOffset>("ObservedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("PayloadHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<string>("Provider")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<int>("Purpose")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Signature")
-                        .IsRequired()
-                        .HasMaxLength(2048)
-                        .HasColumnType("character varying(2048)");
-
-                    b.Property<long>("Version")
-                        .HasColumnType("bigint");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Provider", "AssetKey", "Version")
-                        .IsUnique()
-                        .HasDatabaseName("ux_economy_custody_observations_provider_asset_version");
-
-                    b.ToTable("economy_custody_observations", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_economy_custody_observations_lifetime", "\"ExpiresAt\" > \"ObservedAt\"");
-
-                            t.HasCheckConstraint("ck_economy_custody_observations_values", "\"Version\" > 0 AND \"EligibleUsdNanos\" >= 0");
-                        });
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyCustodyReconciliationRow", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<long>("EligibleAssetUsdNanos")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("EvidenceHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<bool>("IsReconciled")
-                        .HasColumnType("boolean");
-
-                    b.Property<long>("LiabilityUsdNanos")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("ObservationIds")
-                        .IsRequired()
-                        .HasColumnType("jsonb");
-
-                    b.Property<DateTimeOffset>("ReconciledAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("ReconciledBy")
-                        .HasColumnType("uuid");
-
-                    b.Property<long>("ReserveVersion")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("VarianceUsdNanos")
-                        .HasColumnType("bigint");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ReserveVersion")
-                        .IsUnique()
-                        .HasDatabaseName("ux_economy_custody_reconciliations_reserve");
-
-                    b.ToTable("economy_custody_reconciliations", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_economy_custody_reconciliations_values", "\"ReserveVersion\" > 0 AND \"LiabilityUsdNanos\" >= 0 AND \"EligibleAssetUsdNanos\" >= 0");
-                        });
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyDispatchSnapshotRow", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<long>("AmountUnits")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("ChainHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<long>("ChainSequence")
-                        .HasColumnType("bigint");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("Currency")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Destination")
-                        .IsRequired()
-                        .HasMaxLength(512)
-                        .HasColumnType("character varying(512)");
-
-                    b.Property<string>("EligibilityPayload")
-                        .IsRequired()
-                        .HasColumnType("jsonb");
-
-                    b.Property<long>("FencingToken")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("KillSwitchEpoch")
-                        .HasColumnType("bigint");
-
-                    b.Property<Guid>("PostingGroupId")
-                        .HasColumnType("uuid");
-
-                    b.Property<long>("ReserveAuthorizationEpoch")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("ReserveVersion")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("SnapshotHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("PostingGroupId");
-
-                    b.HasIndex("SnapshotHash")
-                        .IsUnique()
-                        .HasDatabaseName("ux_economy_dispatch_snapshots_hash");
-
-                    b.ToTable("economy_dispatch_snapshots", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_economy_dispatch_snapshots_amount_positive", "\"AmountUnits\" > 0");
-
-                            t.HasCheckConstraint("ck_economy_dispatch_snapshots_reserve_authorization", "\"ReserveVersion\" > 0 AND \"ReserveAuthorizationEpoch\" > 0");
-                        });
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyDisputeFragmentFreezeRow", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<long>("AmountUnits")
-                        .HasColumnType("bigint");
-
-                    b.Property<Guid>("CreditLotId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("Currency")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTimeOffset>("PlacedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("ProviderDisputeReference")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<Guid>("RootSourceStampId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTimeOffset?>("TerminalAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("WalletId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CreditLotId");
-
-                    b.HasIndex("ProviderDisputeReference");
-
-                    b.HasIndex("WalletId");
-
-                    b.HasIndex("RootSourceStampId", "Status")
-                        .HasDatabaseName("ix_economy_dispute_fragment_freezes_root_status");
-
-                    b.ToTable("economy_dispute_fragment_freezes", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_economy_dispute_fragment_freezes_amount_positive", "\"AmountUnits\" > 0");
-
-                            t.HasCheckConstraint("ck_economy_dispute_fragment_freezes_state_timestamp", "(\"Status\" = 1 AND \"TerminalAt\" IS NULL) OR (\"Status\" IN (2, 3) AND \"TerminalAt\" >= \"PlacedAt\")");
-                        });
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyDisputeFragmentRangeRow", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("DisputeFragmentFreezeId")
-                        .HasColumnType("uuid");
-
-                    b.Property<long>("EndExclusive")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("ReversalEpoch")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("StartInclusive")
-                        .HasColumnType("bigint");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("DisputeFragmentFreezeId", "StartInclusive", "EndExclusive")
-                        .IsUnique()
-                        .HasDatabaseName("ux_economy_dispute_fragment_ranges_freeze_interval");
-
-                    b.ToTable("economy_dispute_fragment_ranges", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_economy_dispute_fragment_ranges_half_open", "\"StartInclusive\" >= 0 AND \"EndExclusive\" > \"StartInclusive\" AND \"ReversalEpoch\" >= 0");
-                        });
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyEntityGraphEdgeRow", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("EvidenceHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<Guid>("LeftNodeId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset>("RecordedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Relationship")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<Guid>("RightNodeId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset?>("SupersededAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
-
-                    b.Property<long>("Version")
-                        .HasColumnType("bigint");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("LeftNodeId");
-
-                    b.HasIndex("RightNodeId");
-
-                    b.HasIndex("TenantId", "LeftNodeId", "RightNodeId", "Version")
-                        .IsUnique()
-                        .HasDatabaseName("ux_economy_entity_graph_edges_pair_version");
-
-                    b.ToTable("economy_entity_graph_edges", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_economy_entity_graph_edges_distinct_nodes", "\"LeftNodeId\" <> \"RightNodeId\"");
-
-                            t.HasCheckConstraint("ck_economy_entity_graph_edges_version", "\"Version\" > 0");
-                        });
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyEntityGraphNodeRow", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("EvidenceHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<string>("IdentityHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<DateTimeOffset>("RecordedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTimeOffset?>("SupersededAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("Type")
-                        .HasColumnType("integer");
-
-                    b.Property<long>("Version")
-                        .HasColumnType("bigint");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TenantId", "Type", "IdentityHash", "Version")
-                        .IsUnique()
-                        .HasDatabaseName("ux_economy_entity_graph_nodes_identity_version");
-
-                    b.ToTable("economy_entity_graph_nodes", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_economy_entity_graph_nodes_version", "\"Version\" > 0");
-                        });
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyEntryAllocationRow", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<long>("AmountUnits")
-                        .HasColumnType("bigint");
-
-                    b.Property<Guid>("JournalLineId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("ParentLotId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ParentLotId")
-                        .HasDatabaseName("ix_economy_entry_allocations_parent_lot");
-
-                    b.HasIndex("JournalLineId", "ParentLotId")
-                        .IsUnique()
-                        .HasDatabaseName("ux_economy_entry_allocations_line_parent");
-
-                    b.ToTable("economy_entry_allocations", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_economy_entry_allocations_amount_positive", "\"AmountUnits\" > 0");
-                        });
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyExternalAnchorRow", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset>("AnchoredAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("DispatchSnapshotHash")
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<string>("JournalHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<long>("JournalSequence")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("Provider")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("ProviderReference")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<string>("Signature")
-                        .IsRequired()
-                        .HasMaxLength(1024)
-                        .HasColumnType("character varying(1024)");
-
-                    b.Property<string>("WormReference")
-                        .IsRequired()
-                        .HasMaxLength(1024)
-                        .HasColumnType("character varying(1024)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("JournalSequence")
-                        .HasDatabaseName("ix_economy_external_anchors_chain_sequence");
-
-                    b.ToTable("economy_external_anchors", (string)null);
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyFragmentRootRangeRow", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("CreditLotId")
-                        .HasColumnType("uuid");
-
-                    b.Property<long>("EndExclusive")
-                        .HasColumnType("bigint");
-
-                    b.Property<Guid?>("EntryAllocationId")
-                        .HasColumnType("uuid");
-
-                    b.Property<long>("ReversalEpoch")
-                        .HasColumnType("bigint");
-
-                    b.Property<Guid>("RootSourceStampId")
-                        .HasColumnType("uuid");
-
-                    b.Property<long>("StartInclusive")
-                        .HasColumnType("bigint");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CreditLotId");
-
-                    b.HasIndex("EntryAllocationId");
-
-                    b.HasIndex("RootSourceStampId", "ReversalEpoch")
-                        .HasDatabaseName("ix_economy_fragment_root_ranges_root_epoch");
-
-                    b.ToTable("economy_fragment_root_ranges", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_economy_fragment_root_ranges_half_open", "\"StartInclusive\" >= 0 AND \"EndExclusive\" > \"StartInclusive\"");
-
-                            t.HasCheckConstraint("ck_economy_fragment_root_ranges_single_owner", "(\"CreditLotId\" IS NULL) <> (\"EntryAllocationId\" IS NULL)");
-                        });
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyFundingClaimRow", b =>
-                {
-                    b.Property<Guid>("SourceStampId")
-                        .HasColumnType("uuid");
-
-                    b.Property<long>("AuthoritativeUsdMinorUnits")
-                        .HasColumnType("bigint");
-
-                    b.Property<DateTimeOffset?>("ConfirmedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("ConnectedAccount")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<long>("CumulativeProviderReversalUnits")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("Environment")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.Property<DateTimeOffset>("ObservedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid?>("PostingGroupId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Provider")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("ProviderMonetaryLeg")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<string>("ProviderObject")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<Guid?>("RootCreditLotId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("State")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTimeOffset>("StateChangedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<long>("Version")
-                        .IsConcurrencyToken()
-                        .HasColumnType("bigint");
-
-                    b.Property<Guid>("WalletId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("SourceStampId");
-
-                    b.HasIndex("PostingGroupId")
-                        .IsUnique()
-                        .HasDatabaseName("ux_economy_funding_claims_posting_group")
-                        .HasFilter("\"PostingGroupId\" IS NOT NULL");
-
-                    b.HasIndex("RootCreditLotId")
-                        .IsUnique()
-                        .HasDatabaseName("ux_economy_funding_claims_root_lot")
-                        .HasFilter("\"RootCreditLotId\" IS NOT NULL");
-
-                    b.HasIndex("WalletId");
-
-                    b.HasIndex("Provider", "Environment", "ConnectedAccount", "ProviderObject", "ProviderMonetaryLeg")
-                        .IsUnique()
-                        .HasDatabaseName("ux_economy_funding_claims_provider_leg");
-
-                    b.ToTable("economy_funding_claims", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_economy_funding_claims_amount_positive", "\"AuthoritativeUsdMinorUnits\" > 0");
-
-                            t.HasCheckConstraint("ck_economy_funding_claims_lifecycle", "(\"State\" = 1 AND \"ConfirmedAt\" IS NULL AND \"StateChangedAt\" = \"ObservedAt\" AND \"PostingGroupId\" IS NULL AND \"RootCreditLotId\" IS NULL AND \"CumulativeProviderReversalUnits\" = 0) OR (\"State\" = 2 AND \"ConfirmedAt\" >= \"ObservedAt\" AND \"StateChangedAt\" >= \"ConfirmedAt\" AND \"PostingGroupId\" IS NOT NULL AND \"RootCreditLotId\" IS NOT NULL) OR (\"State\" IN (3, 4) AND \"ConfirmedAt\" IS NULL AND \"StateChangedAt\" >= \"ObservedAt\" AND \"PostingGroupId\" IS NULL AND \"RootCreditLotId\" IS NULL AND \"CumulativeProviderReversalUnits\" = 0) OR (\"State\" IN (5, 6) AND \"ConfirmedAt\" >= \"ObservedAt\" AND \"StateChangedAt\" >= \"ConfirmedAt\" AND \"PostingGroupId\" IS NOT NULL AND \"RootCreditLotId\" IS NOT NULL AND \"CumulativeProviderReversalUnits\" > 0)");
-
-                            t.HasCheckConstraint("ck_economy_funding_claims_provider_reversal_bounds", "\"CumulativeProviderReversalUnits\" >= 0 AND \"CumulativeProviderReversalUnits\" <= \"AuthoritativeUsdMinorUnits\"");
-
-                            t.HasCheckConstraint("ck_economy_funding_claims_version_positive", "\"Version\" > 0");
-                        });
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyHoldEventRow", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("ActorId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("EvidenceHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<Guid>("HoldId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("Kind")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTimeOffset>("OccurredAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<long>("Sequence")
-                        .HasColumnType("bigint");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("HoldId", "Sequence")
-                        .IsUnique()
-                        .HasDatabaseName("ux_economy_hold_events_hold_sequence");
-
-                    b.ToTable("economy_hold_events", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_economy_hold_events_sequence_positive", "\"Sequence\" > 0");
-                        });
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyHoldRow", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<long>("AmountUnits")
-                        .HasColumnType("bigint");
-
-                    b.Property<int>("Currency")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTimeOffset>("EffectiveAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("Reason")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTimeOffset?>("ReleasedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("WalletId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("WalletId", "Status")
-                        .HasDatabaseName("ix_economy_holds_wallet_status");
-
-                    b.ToTable("economy_holds", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_economy_holds_amount_positive", "\"AmountUnits\" > 0");
-
-                            t.HasCheckConstraint("ck_economy_holds_state_timestamp", "(\"Status\" = 1 AND \"ReleasedAt\" IS NULL) OR (\"Status\" <> 1 AND \"ReleasedAt\" >= \"EffectiveAt\")");
-                        });
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyIdempotencyRecordRow", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Key")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<Guid>("PostingGroupId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("RequestHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Key")
-                        .IsUnique()
-                        .HasDatabaseName("ux_economy_idempotency_records_key");
-
-                    b.HasIndex("PostingGroupId");
-
-                    b.ToTable("economy_idempotency_records", (string)null);
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyJournalEntryRow", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("CanonicalPayloadHash")
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<string>("Hash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<int>("HashAlgorithmVersion")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("PostingGroupId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("PreviousHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<DateTimeOffset>("RecordedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<long>("Sequence")
-                        .HasColumnType("bigint");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("PostingGroupId")
-                        .IsUnique()
-                        .HasDatabaseName("ux_economy_journal_entries_posting_group_id");
-
-                    b.HasIndex("Sequence")
-                        .IsUnique()
-                        .HasDatabaseName("ux_economy_journal_entries_sequence");
-
-                    b.ToTable("economy_journal_entries", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_economy_journal_entries_hash_algorithm", "(\"HashAlgorithmVersion\" = 0 AND \"CanonicalPayloadHash\" IS NULL) OR (\"HashAlgorithmVersion\" IN (1, 2) AND length(btrim(\"CanonicalPayloadHash\")) > 0)");
-                        });
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyJournalLineRow", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("AccountId")
-                        .HasColumnType("uuid");
-
-                    b.Property<long>("AmountUnits")
-                        .HasColumnType("bigint");
-
-                    b.Property<Guid?>("CreditLotId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("Currency")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("JournalEntryId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int?>("Provenance")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("Sequence")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("Side")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid?>("WalletId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AccountId");
-
-                    b.HasIndex("CreditLotId");
-
-                    b.HasIndex("WalletId");
-
-                    b.HasIndex("JournalEntryId", "Sequence")
-                        .IsUnique();
-
-                    b.ToTable("economy_journal_lines", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_economy_journal_lines_amount_positive", "\"AmountUnits\" > 0");
-                        });
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyJournalVerificationCheckpointRow", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset>("CompletedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("CurrentHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<string>("FailureCode")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<long>("FencingToken")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("FromSequence")
-                        .HasColumnType("bigint");
-
-                    b.Property<bool>("IsValid")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("PreviousHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<DateTimeOffset>("StartedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<long>("ToSequence")
-                        .HasColumnType("bigint");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ToSequence", "CompletedAt")
-                        .HasDatabaseName("ix_economy_journal_verification_checkpoints_sequence");
-
-                    b.ToTable("economy_journal_verification_checkpoints", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_economy_journal_verification_checkpoints_range", "\"FromSequence\" >= 0 AND \"ToSequence\" >= \"FromSequence\"");
-
-                            t.HasCheckConstraint("ck_economy_journal_verification_checkpoints_time", "\"CompletedAt\" >= \"StartedAt\"");
-                        });
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyKillSwitchReleaseApprovalRow", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("ActorId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset>("ApprovedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("KillSwitchId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("ReauthenticationHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("KillSwitchId", "ActorId")
-                        .IsUnique()
-                        .HasDatabaseName("ux_economy_kill_switch_release_approvals_switch_actor");
-
-                    b.ToTable("economy_kill_switch_release_approvals", (string)null);
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyKillSwitchRow", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset>("ActivatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("ActivatedBy")
-                        .HasColumnType("uuid");
-
-                    b.Property<int?>("Capability")
-                        .HasColumnType("integer");
-
-                    b.Property<long>("Epoch")
-                        .HasColumnType("bigint");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("Reason")
-                        .IsRequired()
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)");
-
-                    b.Property<string>("ReleaseProposalReauthenticationHash")
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<DateTimeOffset?>("ReleaseProposedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid?>("ReleaseProposedBy")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset?>("ReleasedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("RequestHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<string>("ScopeKey")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<Guid?>("TenantId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("RequestHash")
-                        .IsUnique()
-                        .HasDatabaseName("ux_economy_kill_switches_request_hash");
-
-                    b.HasIndex("ScopeKey")
-                        .IsUnique()
-                        .HasDatabaseName("ux_economy_kill_switches_active_scope")
-                        .HasFilter("\"IsActive\"");
-
-                    b.HasIndex("ScopeKey", "Epoch")
-                        .IsUnique()
-                        .HasDatabaseName("ux_economy_kill_switches_scope_epoch");
-
-                    b.ToTable("economy_kill_switches", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_economy_kill_switches_epoch", "\"Epoch\" > 0");
-
-                            t.HasCheckConstraint("ck_economy_kill_switches_release_proposal", "(\"ReleaseProposedBy\" IS NULL AND \"ReleaseProposedAt\" IS NULL AND \"ReleaseProposalReauthenticationHash\" IS NULL) OR (\"ReleaseProposedBy\" IS NOT NULL AND \"ReleaseProposedAt\" >= \"ActivatedAt\" AND length(btrim(\"ReleaseProposalReauthenticationHash\")) > 0)");
-
-                            t.HasCheckConstraint("ck_economy_kill_switches_state", "(\"IsActive\" AND \"ReleasedAt\" IS NULL) OR (NOT \"IsActive\" AND \"ReleasedAt\" >= \"ActivatedAt\")");
-                        });
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyLegacyCutoverAuditRow", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("ActorId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("BatchId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("EvidenceHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<string>("Reason")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<string>("ReauthenticationHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<DateTimeOffset>("RecordedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<long>("Sequence")
-                        .HasColumnType("bigint");
-
-                    b.Property<int>("State")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TenantId", "Sequence")
-                        .IsUnique();
-
-                    b.ToTable("economy_legacy_cutover_audit", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_economy_legacy_cutover_audit_sequence", "\"Sequence\" > 0");
-
-                            t.HasCheckConstraint("ck_economy_legacy_cutover_audit_state", "\"State\" BETWEEN 1 AND 4");
-                        });
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyLegacyCutoverRow", b =>
-                {
-                    b.Property<Guid>("TenantId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset?>("ActivatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("BatchId")
-                        .HasColumnType("uuid");
-
-                    b.Property<long>("Epoch")
-                        .HasColumnType("bigint");
-
-                    b.Property<DateTimeOffset?>("FirstApprovedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid?>("FirstApprovedBy")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset>("ProposedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("ProposedBy")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Reason")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<string>("ReauthenticationHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<DateTimeOffset?>("RolledBackAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid?>("RolledBackBy")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("SecondApprovedBy")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("State")
-                        .HasColumnType("integer");
-
-                    b.Property<long>("Version")
-                        .IsConcurrencyToken()
-                        .HasColumnType("bigint");
-
-                    b.HasKey("TenantId");
-
-                    b.HasIndex("BatchId")
-                        .IsUnique();
-
-                    b.ToTable("economy_legacy_cutovers", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_economy_legacy_cutovers_epoch", "\"Epoch\" > 0 AND \"Version\" > 0");
-
-                            t.HasCheckConstraint("ck_economy_legacy_cutovers_state", "\"State\" BETWEEN 1 AND 4");
-                        });
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyLegacyShadowBatchRow", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<long>("BackfilledHardUnits")
-                        .HasColumnType("bigint");
-
-                    b.Property<DateTimeOffset>("CapturedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<long>("ExpectedHardUnits")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("FailureCode")
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<int>("FinancialLedgerEntryCount")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("FinancialLedgerSnapshotHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<string>("JurisdictionCode")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("character varying(16)");
-
-                    b.Property<long>("PolicyVersion")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("ReconciledHardUnits")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("RequestHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<Guid>("RequestedBy")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("State")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("TransactionCount")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("TransactionSnapshotHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<DateTimeOffset>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<long>("Version")
-                        .IsConcurrencyToken()
-                        .HasColumnType("bigint");
-
-                    b.Property<int>("WalletCount")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("WalletSnapshotHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("RequestHash")
-                        .IsUnique();
-
-                    b.HasIndex("TenantId", "State");
-
-                    b.ToTable("economy_legacy_shadow_batches", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_economy_legacy_shadow_batches_counts", "\"WalletCount\" >= 0 AND \"TransactionCount\" >= 0 AND \"FinancialLedgerEntryCount\" >= 0");
-
-                            t.HasCheckConstraint("ck_economy_legacy_shadow_batches_state", "\"State\" BETWEEN 1 AND 8");
-
-                            t.HasCheckConstraint("ck_economy_legacy_shadow_batches_units", "\"ExpectedHardUnits\" >= 0 AND \"BackfilledHardUnits\" >= 0 AND \"ReconciledHardUnits\" >= 0");
-
-                            t.HasCheckConstraint("ck_economy_legacy_shadow_batches_version", "\"Version\" > 0");
-                        });
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyLegacyShadowWalletRow", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("BatchId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset>("CapturedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<long>("CompletedCreditsMinorUnits")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("CompletedDebitsMinorUnits")
-                        .HasColumnType("bigint");
-
-                    b.Property<Guid>("CreditLotId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("EconomyWalletId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("FailureCode")
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<string>("JournalHash")
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<long?>("JournalSequence")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("LegacyBalanceMinorUnits")
-                        .HasColumnType("bigint");
-
-                    b.Property<Guid>("LegacyWalletId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset?>("ObservedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("OwnerId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset?>("PostedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("PostingId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset?>("ReconciledAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("ReconciliationHash")
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<string>("SnapshotHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<Guid>("SourceStampId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("State")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("TransactionCount")
-                        .HasColumnType("integer");
-
-                    b.Property<long>("Version")
-                        .IsConcurrencyToken()
-                        .HasColumnType("bigint");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CreditLotId")
-                        .IsUnique();
-
-                    b.HasIndex("EconomyWalletId");
-
-                    b.HasIndex("PostingId")
-                        .IsUnique();
-
-                    b.HasIndex("SourceStampId")
-                        .IsUnique();
-
-                    b.HasIndex("BatchId", "LegacyWalletId")
-                        .IsUnique();
-
-                    b.ToTable("economy_legacy_shadow_wallets", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_economy_legacy_shadow_wallets_state", "\"State\" BETWEEN 1 AND 5");
-
-                            t.HasCheckConstraint("ck_economy_legacy_shadow_wallets_transactions", "\"TransactionCount\" >= 0");
-
-                            t.HasCheckConstraint("ck_economy_legacy_shadow_wallets_units", "\"LegacyBalanceMinorUnits\" >= 0 AND \"CompletedCreditsMinorUnits\" >= 0 AND \"CompletedDebitsMinorUnits\" >= 0");
-
-                            t.HasCheckConstraint("ck_economy_legacy_shadow_wallets_version", "\"Version\" > 0");
-                        });
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyLotLineageEdgeRow", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<long>("AmountUnits")
-                        .HasColumnType("bigint");
-
-                    b.Property<Guid>("ChildLotId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("Currency")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("ParentLotId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChildLotId");
-
-                    b.HasIndex("ParentLotId")
-                        .HasDatabaseName("ix_economy_lot_lineage_edges_parent_lot");
-
-                    b.HasIndex("ParentLotId", "ChildLotId")
-                        .IsUnique()
-                        .HasDatabaseName("ux_economy_lot_lineage_edges_parent_child");
-
-                    b.ToTable("economy_lot_lineage_edges", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_economy_lot_lineage_edges_amount_positive", "\"AmountUnits\" > 0");
-                        });
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyOutboxMessageRow", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset>("OccurredAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Payload")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("PayloadHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<Guid>("PostingGroupId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Type")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("PayloadHash")
-                        .IsUnique()
-                        .HasDatabaseName("ux_economy_outbox_messages_payload_hash");
-
-                    b.HasIndex("PostingGroupId");
-
-                    b.ToTable("economy_outbox_messages", (string)null);
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyPostingGroupRow", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("ActorId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("Authority")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("CapabilityId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("IdempotencyKey")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<long>("PolicyVersion")
-                        .HasColumnType("bigint");
-
-                    b.Property<DateTimeOffset>("RecordedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<long>("ReserveAuthorizationEpoch")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("ReserveVersion")
-                        .HasColumnType("bigint");
-
-                    b.Property<Guid?>("RiskDecisionId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("SourceStampId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("TemplateKind")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("TemplateVersion")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("IdempotencyKey")
-                        .IsUnique()
-                        .HasDatabaseName("ux_economy_posting_groups_idempotency_key");
-
-                    b.HasIndex("SourceStampId")
-                        .IsUnique()
-                        .HasDatabaseName("ux_economy_posting_groups_source_stamp")
-                        .HasFilter("\"SourceStampId\" IS NOT NULL AND \"TemplateKind\" = 1");
-
-                    b.ToTable("economy_posting_groups", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_economy_posting_groups_authority_template", "(\"TemplateKind\" IN (1, 2, 3, 18, 19, 20) AND \"Authority\" = 1) OR (\"TemplateKind\" IN (4, 5, 7, 8, 17, 22) AND \"Authority\" = 2) OR (\"TemplateKind\" IN (6, 21) AND \"Authority\" = 3) OR (\"TemplateKind\" IN (9, 10, 23, 24) AND \"Authority\" = 4) OR (\"TemplateKind\" IN (11, 12, 13) AND \"Authority\" = 5) OR (\"TemplateKind\" IN (14, 15, 16) AND \"Authority\" = 6) OR (\"TemplateKind\" IN (25, 26) AND \"Authority\" = 7)");
-
-                            t.HasCheckConstraint("ck_economy_posting_groups_reserve_authorization", "\"ReserveVersion\" > 0 AND \"ReserveAuthorizationEpoch\" > 0 AND \"RiskDecisionId\" IS NOT NULL");
-
-                            t.HasCheckConstraint("ck_economy_posting_groups_source_requirement", "\"TemplateKind\" NOT IN (1, 2, 3, 18, 19, 20) OR \"SourceStampId\" IS NOT NULL");
-
-                            t.HasCheckConstraint("ck_economy_posting_groups_template_state", "\"TemplateKind\" BETWEEN 1 AND 26 AND \"TemplateVersion\" = 1 AND \"Status\" = 1");
-                        });
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyProjectionGenerationApprovalRow", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("ActorId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset>("ApprovedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<long>("Generation")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("ReauthenticationHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Generation", "ActorId")
-                        .IsUnique();
-
-                    b.ToTable("economy_projection_generation_approvals", (string)null);
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyProjectionGenerationRow", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset?>("ActivatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid?>("ApprovedBy")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset?>("CompletedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<long>("FromSequence")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("Generation")
-                        .HasColumnType("bigint");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("JournalHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<int>("MismatchCount")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("ProjectionHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<Guid>("ProposedBy")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("SecondApprovedBy")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset>("StartedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("State")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.Property<long>("ToSequence")
-                        .HasColumnType("bigint");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Generation")
-                        .IsUnique();
-
-                    b.HasIndex("IsActive")
-                        .IsUnique()
-                        .HasDatabaseName("ux_economy_projection_generations_active")
-                        .HasFilter("\"IsActive\"");
-
-                    b.ToTable("economy_projection_generations", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_economy_projection_generations_dual_control", "(\"ApprovedBy\" IS NULL OR \"ApprovedBy\" <> \"ProposedBy\") AND (\"SecondApprovedBy\" IS NULL OR (\"SecondApprovedBy\" <> \"ProposedBy\" AND \"SecondApprovedBy\" <> \"ApprovedBy\"))");
-
-                            t.HasCheckConstraint("ck_economy_projection_generations_range", "\"Generation\" > 0 AND \"FromSequence\" >= 0 AND \"ToSequence\" >= \"FromSequence\"");
-                        });
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyProjectionReconciliationEventRow", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset>("DetectedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("PreviousHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<string>("RebuiltHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<long>("SourceJournalSequence")
-                        .HasColumnType("bigint");
-
-                    b.Property<Guid>("WalletId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("WalletId", "DetectedAt")
-                        .HasDatabaseName("ix_economy_projection_reconciliation_events_wallet_detected");
-
-                    b.ToTable("economy_projection_reconciliation_events", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_economy_projection_events_sequence_nonnegative", "\"SourceJournalSequence\" >= 0");
-                        });
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyProtectedChangeCooldownRow", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset>("AvailableAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTimeOffset>("ChangedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("Kind")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("SubjectId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("ValueHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<long>("Version")
-                        .HasColumnType("bigint");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TenantId", "SubjectId", "Kind", "Version")
-                        .IsUnique()
-                        .HasDatabaseName("ux_economy_protected_change_cooldowns_subject_kind_version");
-
-                    b.ToTable("economy_protected_change_cooldowns", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_economy_protected_change_cooldowns_version", "\"Version\" > 0");
-
-                            t.HasCheckConstraint("ck_economy_protected_change_cooldowns_window", "\"AvailableAt\" > \"ChangedAt\"");
-                        });
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyProviderDisputeEventRow", b =>
-                {
-                    b.Property<string>("ProviderEventId")
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<long>("CumulativeDisputedHardUnits")
-                        .HasColumnType("bigint");
-
-                    b.Property<DateTimeOffset>("OccurredAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("ProviderDisputeReference")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<long>("ProviderSequence")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("RequestHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<Guid>("SourceStampId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("integer");
-
-                    b.HasKey("ProviderEventId");
-
-                    b.HasIndex("SourceStampId");
-
-                    b.HasIndex("ProviderDisputeReference", "ProviderSequence")
-                        .IsUnique()
-                        .HasDatabaseName("ux_economy_provider_dispute_events_dispute_sequence");
-
-                    b.ToTable("economy_provider_dispute_events", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_economy_provider_dispute_events_amount_positive", "\"CumulativeDisputedHardUnits\" > 0");
-
-                            t.HasCheckConstraint("ck_economy_provider_dispute_events_sequence_positive", "\"ProviderSequence\" > 0");
-                        });
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyProviderDisputeRow", b =>
-                {
-                    b.Property<string>("ProviderDisputeReference")
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<long>("BaselineReversedHardUnits")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("CumulativeDisputedHardUnits")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("FrozenHardEquivalentUnits")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("LatestProviderSequence")
-                        .HasColumnType("bigint");
-
-                    b.Property<Guid>("ResponsibleWalletId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("ReversalIdempotencyKey")
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<Guid>("SourceStampId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTimeOffset>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<long>("Version")
-                        .IsConcurrencyToken()
-                        .HasColumnType("bigint");
-
-                    b.HasKey("ProviderDisputeReference");
-
-                    b.HasIndex("ResponsibleWalletId");
-
-                    b.HasIndex("SourceStampId")
-                        .IsUnique()
-                        .HasDatabaseName("ux_economy_provider_disputes_active_source")
-                        .HasFilter("\"Status\" = 1");
-
-                    b.ToTable("economy_provider_disputes", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_economy_provider_disputes_amount_partition", "\"CumulativeDisputedHardUnits\" > 0 AND \"BaselineReversedHardUnits\" >= 0 AND \"BaselineReversedHardUnits\" <= \"CumulativeDisputedHardUnits\" AND \"FrozenHardEquivalentUnits\" >= 0 AND \"FrozenHardEquivalentUnits\" <= (\"CumulativeDisputedHardUnits\" - \"BaselineReversedHardUnits\")");
-
-                            t.HasCheckConstraint("ck_economy_provider_disputes_lifecycle", "(\"Status\" = 1 AND \"ReversalIdempotencyKey\" IS NULL) OR (\"Status\" = 2 AND \"FrozenHardEquivalentUnits\" = 0 AND \"ReversalIdempotencyKey\" IS NULL) OR (\"Status\" = 3 AND \"FrozenHardEquivalentUnits\" = 0 AND \"ReversalIdempotencyKey\" IS NOT NULL)");
-
-                            t.HasCheckConstraint("ck_economy_provider_disputes_sequence_positive", "\"LatestProviderSequence\" > 0");
-
-                            t.HasCheckConstraint("ck_economy_provider_disputes_version_positive", "\"Version\" > 0");
-                        });
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyProviderFactAllocationRow", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<long>("AllocatedUnits")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("AuthoritativeUnits")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("ConnectedAccount")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<long>("CumulativeCreditedUnits")
-                        .HasColumnType("bigint");
-
-                    b.Property<int>("Currency")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Environment")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.Property<Guid>("JournalLineId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Provider")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("ProviderMonetaryLeg")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<string>("ProviderObject")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<Guid>("SourceStampId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("JournalLineId");
-
-                    b.HasIndex("SourceStampId");
-
-                    b.HasIndex("Provider", "Environment", "ConnectedAccount", "ProviderObject", "ProviderMonetaryLeg")
-                        .IsUnique()
-                        .HasDatabaseName("ux_economy_provider_fact_allocations_provider_leg");
-
-                    b.ToTable("economy_provider_fact_allocations", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_economy_provider_fact_allocations_cumulative_bounds", "\"AllocatedUnits\" > 0 AND \"CumulativeCreditedUnits\" >= \"AllocatedUnits\" AND \"CumulativeCreditedUnits\" <= \"AuthoritativeUnits\"");
-                        });
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyRegisteredCapabilityRow", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("AllowedTemplateKinds")
-                        .IsRequired()
-                        .HasColumnType("jsonb");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<bool>("IsEnabled")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<DateTimeOffset?>("RevokedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Name")
-                        .IsUnique()
-                        .HasDatabaseName("ux_economy_registered_capabilities_name");
-
-                    b.ToTable("economy_registered_capabilities", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_economy_registered_capabilities_state", "(\"IsEnabled\" AND \"RevokedAt\" IS NULL) OR (NOT \"IsEnabled\" AND \"RevokedAt\" IS NOT NULL)");
-                        });
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyReserveAssetAllocationRow", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("AssetKey")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<long>("EligibleUsdNanos")
-                        .HasColumnType("bigint");
-
-                    b.Property<int>("Purpose")
-                        .HasColumnType("integer");
-
-                    b.Property<long>("ReserveVersion")
-                        .HasColumnType("bigint");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ReserveVersion", "AssetKey")
-                        .IsUnique()
-                        .HasDatabaseName("ux_economy_reserve_asset_allocations_version_asset");
-
-                    b.ToTable("economy_reserve_asset_allocations", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_economy_reserve_asset_allocations_value_positive", "\"EligibleUsdNanos\" > 0");
-
-                            t.HasCheckConstraint("ck_economy_reserve_asset_allocations_values_valid", "\"Purpose\" IN (1, 2) AND length(btrim(\"AssetKey\")) > 0");
-                        });
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyReserveHeadRow", b =>
-                {
-                    b.Property<long>("Version")
-                        .HasColumnType("bigint");
-
-                    b.Property<DateTimeOffset>("ActivatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<long>("AuthorizationEpoch")
-                        .HasColumnType("bigint");
-
-                    b.Property<int>("Coverage")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("EvidenceHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<DateTimeOffset>("ExpiresAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<long>("HardBackingUsdNanos")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("HardFaceValueUsdMinor")
-                        .HasColumnType("bigint");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("boolean");
-
-                    b.Property<DateTimeOffset>("ObservedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<long>("PolicyVersion")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("RequiredHardReserveUsdMinor")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("RequiredSoftReserveUsdNanos")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("SoftBackingUsdNanos")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("SoftFaceValueUsdNanos")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("StressedExpectedRedemptionCostUsdNanos")
-                        .HasColumnType("bigint");
-
-                    b.HasKey("Version");
-
-                    b.HasIndex("AuthorizationEpoch")
-                        .IsUnique()
-                        .HasDatabaseName("ux_economy_reserve_heads_authorization_epoch");
-
-                    b.HasIndex("IsActive")
-                        .IsUnique()
-                        .HasDatabaseName("ux_economy_reserve_heads_active")
-                        .HasFilter("\"IsActive\" = TRUE");
-
-                    b.ToTable("economy_reserve_heads", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_economy_reserve_heads_amounts_nonnegative", "\"HardFaceValueUsdMinor\" >= 0 AND \"RequiredHardReserveUsdMinor\" >= 0 AND \"SoftFaceValueUsdNanos\" >= 0 AND \"StressedExpectedRedemptionCostUsdNanos\" >= 0 AND \"RequiredSoftReserveUsdNanos\" >= 0 AND \"HardBackingUsdNanos\" >= 0 AND \"SoftBackingUsdNanos\" >= 0");
-
-                            t.HasCheckConstraint("ck_economy_reserve_heads_values_valid", "\"Coverage\" IN (1, 2) AND length(btrim(\"EvidenceHash\")) > 0");
-
-                            t.HasCheckConstraint("ck_economy_reserve_heads_versions_positive", "\"Version\" > 0 AND \"PolicyVersion\" > 0 AND \"AuthorizationEpoch\" > 0");
-
-                            t.HasCheckConstraint("ck_economy_reserve_heads_window", "\"ExpiresAt\" > \"ObservedAt\" AND \"ActivatedAt\" >= \"ObservedAt\"");
-                        });
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyReserveProposalRow", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("ApprovalReauthenticationHash")
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<DateTimeOffset?>("ApprovedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid?>("ApprovedBy")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("AssetAllocations")
-                        .IsRequired()
-                        .HasColumnType("jsonb");
-
-                    b.Property<long>("AuthorizationEpoch")
-                        .HasColumnType("bigint");
-
-                    b.Property<int>("Coverage")
-                        .HasColumnType("integer");
-
-                    b.Property<long>("EligibleAssetUsdNanos")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("EvidenceHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<long?>("ExpectedActiveVersion")
-                        .HasColumnType("bigint");
-
-                    b.Property<DateTimeOffset>("ExpiresAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<long>("HardBackingUsdNanos")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("HardFaceValueUsdMinor")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("LiabilityUsdNanos")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("ObservationIds")
-                        .IsRequired()
-                        .HasColumnType("jsonb");
-
-                    b.Property<DateTimeOffset>("ObservedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<long>("PolicyVersion")
-                        .HasColumnType("bigint");
-
-                    b.Property<DateTimeOffset>("ProposedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("ProposedBy")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("RequestHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<long>("RequiredHardReserveUsdMinor")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("RequiredSoftReserveUsdNanos")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("SnapshotHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<long>("SoftBackingUsdNanos")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("SoftFaceValueUsdNanos")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.Property<long>("StressedExpectedRedemptionCostUsdNanos")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("Version")
-                        .HasColumnType("bigint");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Version")
-                        .IsUnique()
-                        .HasDatabaseName("ux_economy_reserve_proposals_version");
-
-                    b.ToTable("economy_reserve_proposals", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_economy_reserve_proposals_dual_control", "\"ApprovedBy\" IS NULL OR \"ApprovedBy\" <> \"ProposedBy\"");
-
-                            t.HasCheckConstraint("ck_economy_reserve_proposals_values", "\"Version\" > 0 AND \"PolicyVersion\" > 0 AND \"AuthorizationEpoch\" > 0 AND \"LiabilityUsdNanos\" >= 0 AND \"EligibleAssetUsdNanos\" >= 0 AND \"HardFaceValueUsdMinor\" >= 0 AND \"RequiredHardReserveUsdMinor\" >= 0 AND \"SoftFaceValueUsdNanos\" >= 0 AND \"RequiredSoftReserveUsdNanos\" >= 0 AND \"HardBackingUsdNanos\" >= 0 AND \"SoftBackingUsdNanos\" >= 0");
-
-                            t.HasCheckConstraint("ck_economy_reserve_proposals_window", "\"ExpiresAt\" > \"ObservedAt\" AND \"ProposedAt\" >= \"ObservedAt\"");
-                        });
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyRiskAuditEvidenceRow", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("EventKind")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("EvidenceHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<string>("OperationFingerprint")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<string>("Payload")
-                        .IsRequired()
-                        .HasColumnType("jsonb");
-
-                    b.Property<DateTimeOffset>("RecordedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("RiskDecisionId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("RiskDecisionId", "EvidenceHash")
-                        .IsUnique()
-                        .HasDatabaseName("ux_economy_risk_audit_evidence_decision_hash");
-
-                    b.ToTable("economy_risk_audit_evidence", (string)null);
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyRiskCounterReservationRow", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<long>("AmountUnits")
-                        .HasColumnType("bigint");
-
-                    b.Property<DateTimeOffset?>("ConsumedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTimeOffset>("ExpiresAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("InputFingerprint")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<DateTimeOffset?>("ReleasedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("ReservationGroupId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset>("ReservedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("RiskCounterId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("RiskDecisionId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("RiskCounterId");
-
-                    b.HasIndex("ReservationGroupId", "RiskCounterId")
-                        .IsUnique()
-                        .HasDatabaseName("ux_economy_risk_counter_reservations_group_counter");
-
-                    b.HasIndex("RiskDecisionId", "RiskCounterId")
-                        .IsUnique()
-                        .HasDatabaseName("ux_economy_risk_counter_reservations_decision_counter");
-
-                    b.ToTable("economy_risk_counter_reservations", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_economy_risk_counter_reservations_amount_positive", "\"AmountUnits\" > 0");
-
-                            t.HasCheckConstraint("ck_economy_risk_counter_reservations_lifetime", "\"ExpiresAt\" > \"ReservedAt\"");
-
-                            t.HasCheckConstraint("ck_economy_risk_counter_reservations_state", "(\"Status\" = 1 AND \"ConsumedAt\" IS NULL AND \"ReleasedAt\" IS NULL) OR (\"Status\" = 2 AND \"ConsumedAt\" >= \"ReservedAt\" AND \"ReleasedAt\" IS NULL) OR (\"Status\" = 3 AND \"ReleasedAt\" >= \"ReservedAt\" AND \"ConsumedAt\" IS NULL) OR (\"Status\" = 4 AND \"ReleasedAt\" >= \"ExpiresAt\" AND \"ConsumedAt\" IS NULL)");
-                        });
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyRiskCounterRow", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<long>("CounterVersion")
-                        .HasColumnType("bigint");
-
-                    b.Property<int>("Currency")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("Dimension")
-                        .HasColumnType("integer");
-
-                    b.Property<long>("MaxUnits")
-                        .HasColumnType("bigint");
-
-                    b.Property<int>("Operation")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("SubjectHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<long>("UsedUnits")
-                        .HasColumnType("bigint");
-
-                    b.Property<DateTimeOffset>("WindowEndsAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTimeOffset>("WindowStartedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TenantId", "Dimension", "SubjectHash", "Operation", "Currency", "WindowStartedAt")
-                        .IsUnique()
-                        .HasDatabaseName("ux_economy_risk_counters_scope_window");
-
-                    b.ToTable("economy_risk_counters", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_economy_risk_counters_bounds", "\"CounterVersion\" > 0 AND \"MaxUnits\" > 0 AND \"UsedUnits\" >= 0 AND \"UsedUnits\" <= \"MaxUnits\"");
-
-                            t.HasCheckConstraint("ck_economy_risk_counters_window", "\"WindowEndsAt\" > \"WindowStartedAt\"");
-                        });
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyRiskDecisionConsumptionRow", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset>("ConsumedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("OperationFingerprint")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<Guid>("PostingGroupId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("RiskDecisionId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("PostingGroupId")
-                        .IsUnique()
-                        .HasDatabaseName("ux_economy_risk_decision_consumptions_posting");
-
-                    b.HasIndex("RiskDecisionId")
-                        .IsUnique()
-                        .HasDatabaseName("ux_economy_risk_decision_consumptions_decision");
-
-                    b.ToTable("economy_risk_decision_consumptions", (string)null);
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyRiskDecisionRow", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("ActorHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<long>("AmountUnits")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("CounterVersion")
-                        .HasColumnType("bigint");
-
-                    b.Property<int>("Currency")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("CurrencyLegs")
-                        .IsRequired()
-                        .HasColumnType("jsonb");
-
-                    b.Property<Guid>("DestinationWalletId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("EntityGraphEvidenceHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<long>("EntityGraphVersion")
-                        .HasColumnType("bigint");
-
-                    b.Property<DateTimeOffset>("ExpiresAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<long>("FeatureVersion")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("IdempotencyKey")
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<DateTimeOffset>("IssuedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<long>("KillSwitchEpoch")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("OperationFingerprint")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<int>("Outcome")
-                        .HasColumnType("integer");
-
-                    b.Property<long>("PolicyVersion")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("ProviderReferenceHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<string>("ReasonCodes")
-                        .IsRequired()
-                        .HasColumnType("jsonb");
-
-                    b.Property<long>("ReserveAuthorizationEpoch")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("ReserveVersion")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("SourceRoots")
-                        .IsRequired()
-                        .HasColumnType("jsonb");
-
-                    b.Property<Guid>("SourceWalletId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("TemplateKind")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("DestinationWalletId");
-
-                    b.HasIndex("OperationFingerprint")
-                        .IsUnique()
-                        .HasDatabaseName("ix_economy_risk_decisions_operation_fingerprint");
-
-                    b.HasIndex("SourceWalletId");
-
-                    b.ToTable("economy_risk_decisions", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_economy_risk_decisions_amount_positive", "\"AmountUnits\" > 0");
-
-                            t.HasCheckConstraint("ck_economy_risk_decisions_lifetime", "\"ExpiresAt\" > \"IssuedAt\"");
-
-                            t.HasCheckConstraint("ck_economy_risk_decisions_versions_positive", "\"PolicyVersion\" > 0 AND \"ReserveVersion\" > 0 AND \"ReserveAuthorizationEpoch\" > 0 AND \"FeatureVersion\" > 0 AND \"CounterVersion\" > 0 AND \"EntityGraphVersion\" >= 0");
-                        });
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyRiskReviewCaseRow", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("AppealOf")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("RequiredApprovals")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Resolution")
-                        .HasColumnType("text");
-
-                    b.Property<DateTimeOffset?>("ResolvedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid?>("ResolvedBy")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("RiskDecisionId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTimeOffset>("SubmittedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("SubmittedBy")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AppealOf");
-
-                    b.HasIndex("RiskDecisionId");
-
-                    b.HasIndex("TenantId", "RiskDecisionId")
-                        .IsUnique()
-                        .HasDatabaseName("ux_economy_risk_review_cases_tenant_decision");
-
-                    b.ToTable("economy_risk_review_cases", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_economy_risk_review_cases_approvals", "\"RequiredApprovals\" BETWEEN 1 AND 2");
-
-                            t.HasCheckConstraint("ck_economy_risk_review_cases_state", "(\"Status\" = 1 AND \"ResolvedAt\" IS NULL AND \"ResolvedBy\" IS NULL AND \"Resolution\" IS NULL) OR (\"Status\" IN (2, 3) AND \"ResolvedAt\" >= \"SubmittedAt\" AND \"ResolvedBy\" IS NOT NULL AND length(btrim(\"Resolution\")) > 0)");
-                        });
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyRiskReviewEventRow", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("ActorId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int?>("DecisionCode")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("EvidenceHashes")
-                        .IsRequired()
-                        .HasColumnType("jsonb");
-
-                    b.Property<int>("Kind")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTimeOffset>("OccurredAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Resolution")
-                        .HasColumnType("text");
-
-                    b.Property<Guid>("RiskReviewCaseId")
-                        .HasColumnType("uuid");
-
-                    b.Property<long>("Sequence")
-                        .HasColumnType("bigint");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("RiskReviewCaseId", "Sequence")
-                        .IsUnique()
-                        .HasDatabaseName("ux_economy_risk_review_events_case_sequence");
-
-                    b.ToTable("economy_risk_review_events", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_economy_risk_review_events_sequence_positive", "\"Sequence\" > 0");
-                        });
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyRootReversalStateRow", b =>
-                {
-                    b.Property<Guid>("RootSourceStampId")
-                        .HasColumnType("uuid");
-
-                    b.Property<long>("CumulativeProviderUnits")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("Epoch")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("ReversedUnits")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("State")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.Property<string>("TargetedRanges")
-                        .IsRequired()
-                        .HasColumnType("jsonb");
-
-                    b.Property<DateTimeOffset>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("RootSourceStampId");
-
-                    b.HasIndex("RootSourceStampId", "Epoch")
-                        .IsUnique()
-                        .HasDatabaseName("ux_economy_root_reversal_states_root_epoch");
-
-                    b.ToTable("economy_root_reversal_states", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_economy_root_reversal_states_cumulative_bounds", "\"CumulativeProviderUnits\" >= 0 AND \"ReversedUnits\" >= 0 AND \"ReversedUnits\" <= \"CumulativeProviderUnits\"");
-
-                            t.HasCheckConstraint("ck_economy_root_reversal_states_epoch_nonnegative", "\"Epoch\" >= 0");
-                        });
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomySelfServiceTransferIntentRow", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("ActorId")
-                        .HasColumnType("uuid");
-
-                    b.Property<long>("AmountUnits")
-                        .HasColumnType("bigint");
-
-                    b.Property<int>("Currency")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("DestinationHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<string>("IdempotencyKey")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<int>("Provenance")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("ProviderReferenceHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<Guid>("RecipientUserId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("RequestHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<DateTimeOffset>("RequestedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("TransferType")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TenantId", "ActorId", "IdempotencyKey")
-                        .IsUnique()
-                        .HasDatabaseName("ux_economy_self_service_transfer_intents_actor_key");
-
-                    b.HasIndex("TenantId", "RecipientUserId", "RequestedAt")
-                        .HasDatabaseName("ix_economy_self_service_transfer_intents_recipient_time");
-
-                    b.ToTable("economy_self_service_transfer_intents", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_economy_self_service_transfer_intents_amount_positive", "\"AmountUnits\" > 0");
-
-                            t.HasCheckConstraint("ck_economy_self_service_transfer_intents_currency_provenance", "(\"Currency\" = 1 AND \"Provenance\" = 1) OR (\"Currency\" = 2 AND \"Provenance\" = 3)");
-
-                            t.HasCheckConstraint("ck_economy_self_service_transfer_intents_parties_distinct", "\"ActorId\" <> \"RecipientUserId\"");
-
-                            t.HasCheckConstraint("ck_economy_self_service_transfer_intents_type_valid", "\"TransferType\" IN (1, 2, 3)");
-                        });
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomySourceStampEventRow", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("EvidenceHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<DateTimeOffset>("OccurredAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<long>("Sequence")
-                        .HasColumnType("bigint");
-
-                    b.Property<Guid>("SourceStampId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("State")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("SourceStampId", "Sequence")
-                        .IsUnique()
-                        .HasDatabaseName("ux_economy_source_stamp_events_source_sequence");
-
-                    b.ToTable("economy_source_stamp_events", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_economy_source_stamp_events_sequence_positive", "\"Sequence\" > 0");
-                        });
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomySourceStampRow", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("ActorId")
-                        .HasColumnType("uuid");
-
-                    b.Property<long>("AuthoritativeUnits")
-                        .HasColumnType("bigint");
-
-                    b.Property<DateTimeOffset?>("ConfirmedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("EvidenceHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<string>("InternalSourceId")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<DateTimeOffset>("ObservedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<long>("PolicyVersion")
-                        .HasColumnType("bigint");
-
-                    b.Property<Guid?>("PostingReferenceId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("Provenance")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Provider")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("ProviderReference")
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<string>("SourceKind")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("SourceLegId")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<int>("State")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Provider", "ProviderReference")
-                        .IsUnique()
-                        .HasDatabaseName("ux_economy_source_stamps_provider_reference")
-                        .HasFilter("\"Provider\" IS NOT NULL AND \"ProviderReference\" IS NOT NULL");
-
-                    b.HasIndex("SourceKind", "InternalSourceId", "SourceLegId")
-                        .IsUnique()
-                        .HasDatabaseName("ux_economy_source_stamps_internal_leg");
-
-                    b.ToTable("economy_source_stamps", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_economy_source_stamps_confirmation", "(\"State\" IN (2, 5, 6) AND \"ConfirmedAt\" IS NOT NULL AND \"ConfirmedAt\" >= \"ObservedAt\") OR (\"State\" IN (1, 3, 4) AND \"ConfirmedAt\" IS NULL)");
-
-                            t.HasCheckConstraint("ck_economy_source_stamps_units_nonnegative", "\"AuthoritativeUnits\" >= 0");
-                        });
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyTopUpIntentRow", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("ActorId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("FailureCode")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<long>("HardCoinUnits")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("IdempotencyKey")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<string>("JurisdictionCode")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("character varying(16)");
-
-                    b.Property<DateTimeOffset?>("LastProviderEventAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("LastProviderEventId")
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
-
-                    b.Property<string>("LastProviderEvidenceHash")
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<Guid>("PaymentId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("PolicyHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<long>("PolicyVersion")
-                        .HasColumnType("bigint");
-
-                    b.Property<Guid?>("PostingGroupId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Provider")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)");
-
-                    b.Property<string>("ProviderAccountId")
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
-
-                    b.Property<DateTimeOffset?>("ProviderBoundAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("ProviderEnvironment")
-                        .HasMaxLength(32)
-                        .HasColumnType("character varying(32)");
-
-                    b.Property<string>("ProviderMonetaryLeg")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("ProviderObjectId")
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
-
-                    b.Property<string>("ProviderObjectType")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("RequestHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<DateTimeOffset>("RequestedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset>("UpdatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-                    b.Property<long>("UsdMinorUnits")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("Version")
-                        .IsConcurrencyToken()
-                        .HasColumnType("bigint");
-
-                    b.Property<Guid>("WalletId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("PaymentId")
-                        .IsUnique()
-                        .HasDatabaseName("ux_economy_top_up_intents_payment");
-
-                    b.HasIndex("PostingGroupId");
-
-                    b.HasIndex("WalletId");
-
-                    b.HasIndex("TenantId", "ActorId", "IdempotencyKey")
-                        .IsUnique()
-                        .HasDatabaseName("ux_economy_top_up_intents_actor_key");
-
-                    b.HasIndex("Provider", "ProviderEnvironment", "ProviderAccountId", "ProviderObjectId", "ProviderObjectType", "ProviderMonetaryLeg")
-                        .IsUnique()
-                        .HasDatabaseName("ux_economy_top_up_intents_provider_object")
-                        .HasFilter("\"ProviderObjectId\" IS NOT NULL");
-
-                    b.ToTable("economy_top_up_intents", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_economy_top_up_intents_amount_positive", "\"HardCoinUnits\" > 0 AND \"UsdMinorUnits\" > 0");
-
-                            t.HasCheckConstraint("ck_economy_top_up_intents_event_state", "(\"LastProviderEventId\" IS NULL AND \"LastProviderEventAt\" IS NULL AND \"LastProviderEvidenceHash\" IS NULL) OR (\"LastProviderEventId\" IS NOT NULL AND \"LastProviderEventAt\" IS NOT NULL AND \"LastProviderEvidenceHash\" IS NOT NULL)");
-
-                            t.HasCheckConstraint("ck_economy_top_up_intents_posting_state", "(\"Status\" = 5 AND \"PostingGroupId\" IS NOT NULL) OR (\"Status\" <> 5 AND \"PostingGroupId\" IS NULL)");
-
-                            t.HasCheckConstraint("ck_economy_top_up_intents_provider_binding", "(\"Status\" = 1 AND \"ProviderEnvironment\" IS NULL AND \"ProviderAccountId\" IS NULL AND \"ProviderObjectId\" IS NULL AND \"ProviderObjectType\" IS NULL AND \"ProviderMonetaryLeg\" IS NULL AND \"ProviderBoundAt\" IS NULL) OR (\"Status\" <> 1 AND \"ProviderEnvironment\" IS NOT NULL AND \"ProviderAccountId\" IS NOT NULL AND \"ProviderObjectId\" IS NOT NULL AND \"ProviderObjectType\" IS NOT NULL AND \"ProviderMonetaryLeg\" IS NOT NULL AND \"ProviderBoundAt\" IS NOT NULL)");
-
-                            t.HasCheckConstraint("ck_economy_top_up_intents_version_positive", "\"Version\" > 0");
-                        });
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyWalletBalanceProjectionRow", b =>
-                {
-                    b.Property<Guid>("WalletId")
-                        .HasColumnType("uuid");
-
-                    b.Property<long>("AvailableHardToSpend")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("AvailableSoftToSpend")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("EarnedHard")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("HeldHard")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("HeldSoft")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("ImmatureEarnedHard")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("PendingHard")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("PendingSoft")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("ProjectionHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<long>("PurchasedHard")
-                        .HasColumnType("bigint");
-
-                    b.Property<DateTimeOffset>("RebuiltAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<long>("RestrictedHard")
-                        .HasColumnType("bigint");
-
-                    b.Property<int>("ReviewState")
-                        .HasColumnType("integer");
-
-                    b.Property<long>("Soft")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("SourceJournalSequence")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("WithdrawableHard")
-                        .HasColumnType("bigint");
-
-                    b.HasKey("WalletId");
-
-                    b.HasIndex("ReviewState")
-                        .HasDatabaseName("ix_economy_wallet_balance_projections_review_state");
-
-                    b.ToTable("economy_wallet_balance_projections", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_economy_wallet_balance_projections_amounts_nonnegative", "\"PendingHard\" >= 0 AND \"PendingSoft\" >= 0 AND \"PurchasedHard\" >= 0 AND \"EarnedHard\" >= 0 AND \"RestrictedHard\" >= 0 AND \"Soft\" >= 0 AND \"ImmatureEarnedHard\" >= 0 AND \"HeldHard\" >= 0 AND \"HeldSoft\" >= 0 AND \"AvailableHardToSpend\" >= 0 AND \"AvailableSoftToSpend\" >= 0 AND \"WithdrawableHard\" >= 0");
-
-                            t.HasCheckConstraint("ck_economy_wallet_balance_projections_sequence_nonnegative", "\"SourceJournalSequence\" >= 0");
-                        });
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyWalletDebtEventRow", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<long>("DeltaHardUnits")
-                        .HasColumnType("bigint");
-
-                    b.Property<DateTimeOffset>("OccurredAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<long>("OutstandingHardUnits")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("Sequence")
-                        .HasColumnType("bigint");
-
-                    b.Property<Guid>("SourceStampId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("WalletId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("SourceStampId");
-
-                    b.HasIndex("WalletId", "Sequence")
-                        .IsUnique()
-                        .HasDatabaseName("ux_economy_wallet_debt_events_wallet_sequence");
-
-                    b.ToTable("economy_wallet_debt_events", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_economy_wallet_debt_events_delta_nonzero", "\"DeltaHardUnits\" <> 0 AND \"OutstandingHardUnits\" >= 0");
-
-                            t.HasCheckConstraint("ck_economy_wallet_debt_events_sequence_positive", "\"Sequence\" > 0");
-                        });
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyWalletDebtRow", b =>
-                {
-                    b.Property<Guid>("WalletId")
-                        .HasColumnType("uuid");
-
-                    b.Property<long>("OutstandingHardUnits")
-                        .HasColumnType("bigint");
-
-                    b.Property<DateTimeOffset>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<long>("Version")
-                        .IsConcurrencyToken()
-                        .HasColumnType("bigint");
-
-                    b.HasKey("WalletId");
-
-                    b.ToTable("economy_wallet_debts", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_economy_wallet_debts_nonnegative", "\"OutstandingHardUnits\" >= 0");
-
-                            t.HasCheckConstraint("ck_economy_wallet_debts_version_positive", "\"Version\" > 0");
-                        });
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyWalletProjectionGenerationRow", b =>
-                {
-                    b.Property<long>("Generation")
-                        .HasColumnType("bigint");
-
-                    b.Property<Guid>("WalletId")
-                        .HasColumnType("uuid");
-
-                    b.Property<long>("AvailableHardToSpend")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("AvailableSoftToSpend")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("EarnedHard")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("HeldHard")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("HeldSoft")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("ImmatureEarnedHard")
-                        .HasColumnType("bigint");
-
-                    b.Property<bool>("MatchesLive")
-                        .HasColumnType("boolean");
-
-                    b.Property<long>("PendingHard")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("PendingSoft")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("ProjectionHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<long>("PurchasedHard")
-                        .HasColumnType("bigint");
-
-                    b.Property<DateTimeOffset>("RebuiltAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<long>("RestrictedHard")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("Soft")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("SourceJournalSequence")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("WithdrawableHard")
-                        .HasColumnType("bigint");
-
-                    b.HasKey("Generation", "WalletId");
-
-                    b.HasIndex("WalletId");
-
-                    b.HasIndex("Generation", "MatchesLive");
-
-                    b.ToTable("economy_wallet_projection_generations", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_economy_wallet_projection_generations_amounts", "\"Generation\" > 0 AND \"PendingHard\" >= 0 AND \"PendingSoft\" >= 0 AND \"PurchasedHard\" >= 0 AND \"EarnedHard\" >= 0 AND \"RestrictedHard\" >= 0 AND \"Soft\" >= 0 AND \"ImmatureEarnedHard\" >= 0 AND \"HeldHard\" >= 0 AND \"HeldSoft\" >= 0 AND \"AvailableHardToSpend\" >= 0 AND \"AvailableSoftToSpend\" >= 0 AND \"WithdrawableHard\" >= 0");
-                        });
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyWalletRow", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("OwnerId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("State")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TenantId", "OwnerId")
-                        .IsUnique();
-
-                    b.ToTable("economy_wallets", (string)null);
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyWorkerLeaseRow", b =>
-                {
-                    b.Property<string>("Name")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<DateTimeOffset>("AcquiredAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTimeOffset>("ExpiresAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<long>("FencingToken")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("Owner")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.HasKey("Name");
-
-                    b.HasIndex("Name")
-                        .IsUnique()
-                        .HasDatabaseName("ux_economy_worker_leases_name");
-
-                    b.ToTable("economy_worker_leases", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_economy_worker_leases_fencing", "\"FencingToken\" > 0");
-
-                            t.HasCheckConstraint("ck_economy_worker_leases_lifetime", "\"ExpiresAt\" > \"AcquiredAt\"");
-                        });
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.FifoFragmentReservationReceiptRow", b =>
-                {
-                    b.Property<long>("AmountUnits")
-                        .HasColumnType("bigint")
-                        .HasColumnName("amount_units");
-
-                    b.Property<long>("EndExclusive")
-                        .HasColumnType("bigint")
-                        .HasColumnName("end_exclusive");
-
-                    b.Property<Guid>("ParentLotId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("parent_lot_id");
-
-                    b.Property<Guid>("ReservationId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("reservation_id");
-
-                    b.Property<long>("ReversalEpoch")
-                        .HasColumnType("bigint")
-                        .HasColumnName("reversal_epoch");
-
-                    b.Property<Guid>("RootSourceStampId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("root_source_stamp_id");
-
-                    b.Property<long>("StartInclusive")
-                        .HasColumnType("bigint")
-                        .HasColumnName("start_inclusive");
-
-                    b.ToTable((string)null);
-
-                    b.ToView(null, (string)null);
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.HardToSoftConversionRiskDecisionReceiptRow", b =>
-                {
-                    b.Property<Guid>("RiskDecisionId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("risk_decision_id");
-
-                    b.Property<string>("SourceRoots")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("source_roots");
-
-                    b.ToTable((string)null);
-
-                    b.ToView(null, (string)null);
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.MarketplaceFifoReservationReceiptRow", b =>
-                {
-                    b.Property<long>("AmountUnits")
-                        .HasColumnType("bigint")
-                        .HasColumnName("amount_units");
-
-                    b.Property<int>("Currency")
-                        .HasColumnType("integer")
-                        .HasColumnName("currency");
-
-                    b.Property<long>("EndExclusive")
-                        .HasColumnType("bigint")
-                        .HasColumnName("end_exclusive");
-
-                    b.Property<Guid>("ParentLotId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("parent_lot_id");
-
-                    b.Property<Guid>("ReservationId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("reservation_id");
-
-                    b.Property<long>("ReversalEpoch")
-                        .HasColumnType("bigint")
-                        .HasColumnName("reversal_epoch");
-
-                    b.Property<Guid>("RootSourceStampId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("root_source_stamp_id");
-
-                    b.Property<long>("StartInclusive")
-                        .HasColumnType("bigint")
-                        .HasColumnName("start_inclusive");
-
-                    b.ToTable((string)null);
-
-                    b.ToView(null, (string)null);
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.ProviderReversalReceiptRow", b =>
-                {
-                    b.Property<bool>("Duplicate")
-                        .HasColumnType("boolean")
-                        .HasColumnName("duplicate");
-
-                    b.Property<Guid>("OperationId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("operation_id");
-
-                    b.Property<long>("PlatformLossHardUnits")
-                        .HasColumnType("bigint")
-                        .HasColumnName("platform_loss_hard_units");
-
-                    b.Property<long>("RecoveredConvertedSoftUnits")
-                        .HasColumnType("bigint")
-                        .HasColumnName("recovered_converted_soft_units");
-
-                    b.Property<long>("RecoveredHardUnits")
-                        .HasColumnType("bigint")
-                        .HasColumnName("recovered_hard_units");
-
-                    b.Property<long>("ResponsibleDebtHardUnits")
-                        .HasColumnType("bigint")
-                        .HasColumnName("responsible_debt_hard_units");
-
-                    b.ToTable((string)null);
-
-                    b.ToView(null, (string)null);
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.RegisteredPostingReceiptRow", b =>
-                {
-                    b.Property<bool>("Duplicate")
-                        .HasColumnType("boolean")
-                        .HasColumnName("duplicate");
-
-                    b.Property<string>("JournalHash")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("journal_hash");
-
-                    b.Property<long>("JournalSequence")
-                        .HasColumnType("bigint")
-                        .HasColumnName("journal_sequence");
-
-                    b.Property<Guid>("PostingId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("posting_id");
-
-                    b.ToTable((string)null);
-
-                    b.ToView(null, (string)null);
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Treasury.AdminWithdrawalAuditEventRow", b =>
-                {
-                    b.Property<Guid>("RunId")
-                        .HasColumnType("uuid");
-
-                    b.Property<long>("Sequence")
-                        .HasColumnType("bigint");
-
-                    b.Property<Guid?>("ActorId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Evidence")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("Hash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<string>("Kind")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<DateTimeOffset>("OccurredAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("PreviousHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("RunId", "Sequence");
-
-                    b.HasIndex("Hash")
-                        .IsUnique()
-                        .HasDatabaseName("ux_economy_admin_withdrawal_audit_events_hash");
-
-                    b.ToTable("economy_admin_withdrawal_audit_events", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_economy_admin_withdrawal_audit_events_sequence", "\"Sequence\" > 0");
-                        });
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Treasury.AdminWithdrawalDispatchOutboxRow", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("AttemptCount")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTimeOffset>("AvailableAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTimeOffset?>("CompletedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("IdempotencyKey")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<string>("LastErrorCode")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<DateTimeOffset?>("LeaseExpiresAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("LeaseOwner")
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.Property<string>("Payload")
-                        .IsRequired()
-                        .HasColumnType("jsonb");
-
-                    b.Property<string>("PayloadHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<Guid>("RunId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("RunId")
-                        .IsUnique();
-
-                    b.HasIndex("TenantId", "RunId")
-                        .IsUnique();
-
-                    b.HasIndex("CompletedAt", "AvailableAt", "LeaseExpiresAt");
-
-                    b.ToTable("economy_admin_withdrawal_dispatch_outbox", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_economy_admin_withdrawal_dispatch_outbox_attempts", "\"AttemptCount\" >= 0");
-                        });
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Treasury.AdminWithdrawalProviderEventRow", b =>
-                {
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("EventId")
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<string>("EventHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<DateTimeOffset>("RecordedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("RunId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("TenantId", "EventId");
-
-                    b.HasIndex("RunId", "RecordedAt")
-                        .HasDatabaseName("ix_economy_admin_withdrawal_provider_events_run_recorded");
-
-                    b.ToTable("economy_admin_withdrawal_provider_events", (string)null);
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Treasury.AdminWithdrawalRunRow", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
-
-                    b.Property<long>("AmountUnits")
-                        .HasColumnType("bigint");
-
-                    b.Property<Guid?>("ApprovedBy")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("DestinationHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<string>("DispatchSnapshotHash")
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<long>("ExecutionEpoch")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("FencingToken")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("IdempotencyKey")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<DateOnly>("PeriodStart")
-                        .HasColumnType("date");
-
-                    b.Property<Guid>("PlatformFeeWalletId")
-                        .HasColumnType("uuid");
-
-                    b.Property<long>("PolicyVersion")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("ProviderTransferId")
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<string>("RequestHash")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<Guid>("RequestedBy")
-                        .HasColumnType("uuid");
-
-                    b.Property<long>("ReserveAuthorizationEpoch")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("ReserveVersion")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("SourceAssetKey")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<int>("State")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<long>("Version")
-                        .IsConcurrencyToken()
-                        .HasColumnType("bigint");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("State", "UpdatedAt")
-                        .HasDatabaseName("ix_economy_admin_withdrawal_runs_state_updated");
-
-                    b.HasIndex("TenantId", "IdempotencyKey")
-                        .IsUnique()
-                        .HasDatabaseName("ux_economy_admin_withdrawal_runs_idempotency");
-
-                    b.HasIndex("TenantId", "PeriodStart")
-                        .IsUnique()
-                        .HasDatabaseName("ux_economy_admin_withdrawal_runs_active_period")
-                        .HasFilter("\"State\" NOT IN (6, 7)");
-
-                    b.ToTable("economy_admin_withdrawal_runs", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_economy_admin_withdrawal_runs_amount_positive", "\"AmountUnits\" > 0");
-
-                            t.HasCheckConstraint("ck_economy_admin_withdrawal_runs_approval", "(\"State\" = 1 AND \"ApprovedBy\" IS NULL) OR (\"State\" BETWEEN 2 AND 7 AND \"ApprovedBy\" IS NOT NULL)");
-
-                            t.HasCheckConstraint("ck_economy_admin_withdrawal_runs_dispatch_snapshot", "(\"State\" IN (1, 2) AND \"DispatchSnapshotHash\" IS NULL) OR (\"State\" BETWEEN 3 AND 7 AND \"DispatchSnapshotHash\" IS NOT NULL)");
-
-                            t.HasCheckConstraint("ck_economy_admin_withdrawal_runs_positive_versions", "\"Version\" > 0 AND \"FencingToken\" > 0 AND \"ExecutionEpoch\" > 0 AND \"ReserveVersion\" > 0 AND \"ReserveAuthorizationEpoch\" > 0 AND \"PolicyVersion\" > 0");
-
-                            t.HasCheckConstraint("ck_economy_admin_withdrawal_runs_state", "\"State\" BETWEEN 1 AND 7");
-
-                            t.HasCheckConstraint("ck_economy_admin_withdrawal_runs_timestamps", "\"UpdatedAt\" >= \"CreatedAt\"");
-                        });
-                });
-
             modelBuilder.Entity("GameGuild.Features.CapabilityAuditLog", b =>
                 {
                     b.Property<Guid>("Id")
@@ -12076,6 +5725,6357 @@ namespace GameGuild.API.Database.Migrations
                         .HasDatabaseName("ix_tenant_capabilities_tenant_capability");
 
                     b.ToTable("tenant_capabilities", (string)null);
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.AdRewards.Persistence.AdNetworkPolicyVersionRow", b =>
+                {
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Network")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<long>("Version")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid>("ApprovedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("BudgetWindowTicks")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("CanonicalPayload")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("ContractedRevenueSharePpm")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("EffectiveAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("EstimatedNetEcpmUsdNanos")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("FundedLossBudgetUsdNanos")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("IssuanceMode")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("KeyId")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<long>("MaximumAsnSoftUnits")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("MaximumDeviceSoftUnits")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("MaximumFocusLossTicks")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("MaximumGlobalSoftUnits")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("MaximumIpSoftUnits")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("MaximumNetworkSoftUnits")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("MaximumRewardSoftUnits")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("MaximumUserSoftUnits")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("MinimumVisiblePpm")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("PayloadHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<Guid>("ProposedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("ProviderCertified")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("ProviderHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<DateTimeOffset>("PublishedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Ranking")
+                        .HasColumnType("integer");
+
+                    b.Property<long>("ReportStaleAfterTicks")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTimeOffset>("ReportsCurrentThrough")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("SafetyBufferPpm")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Signature")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("YieldState")
+                        .HasColumnType("integer");
+
+                    b.HasKey("TenantId", "Network", "Version");
+
+                    b.HasIndex("TenantId", "Network", "EffectiveAt", "ExpiresAt");
+
+                    b.ToTable("economy_ad_network_policy_versions", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_economy_ad_network_policy_versions_caps", "\"MaximumUserSoftUnits\" > 0 AND \"MaximumDeviceSoftUnits\" > 0 AND \"MaximumIpSoftUnits\" > 0 AND \"MaximumAsnSoftUnits\" > 0 AND \"MaximumNetworkSoftUnits\" > 0 AND \"MaximumGlobalSoftUnits\" > 0 AND \"FundedLossBudgetUsdNanos\" > 0");
+
+                            t.HasCheckConstraint("ck_economy_ad_network_policy_versions_dual_control", "\"ProposedBy\" <> \"ApprovedBy\"");
+
+                            t.HasCheckConstraint("ck_economy_ad_network_policy_versions_ppm", "\"ContractedRevenueSharePpm\" BETWEEN 0 AND 1000000 AND \"SafetyBufferPpm\" BETWEEN 0 AND 999999 AND \"MinimumVisiblePpm\" BETWEEN 0 AND 1000000");
+
+                            t.HasCheckConstraint("ck_economy_ad_network_policy_versions_values", "\"Version\" > 0 AND \"EstimatedNetEcpmUsdNanos\" > 0 AND \"MaximumRewardSoftUnits\" > 0 AND \"MaximumFocusLossTicks\" >= 0 AND \"ReportStaleAfterTicks\" > 0 AND \"Ranking\" >= 0 AND \"BudgetWindowTicks\" > 0");
+
+                            t.HasCheckConstraint("ck_economy_ad_network_policy_versions_window", "\"ExpiresAt\" > \"EffectiveAt\"");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.AdRewards.Persistence.AdProviderReportRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("ActualRevenueUsdNanos")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("BatchId")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("EvidenceHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<DateTimeOffset>("ImportedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Network")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("PayloadHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<DateTimeOffset>("PeriodEnd")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("PeriodStart")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("ProcessedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ProcessingError")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<DateTimeOffset>("ReceivedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ReportId")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("Signature")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<bool>("SignatureVerified")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("VerifiedSessionIds")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId", "Network", "BatchId", "Version")
+                        .IsUnique();
+
+                    b.HasIndex("TenantId", "Network", "ReportId", "Version")
+                        .IsUnique();
+
+                    b.ToTable("economy_ad_provider_reports", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_economy_ad_provider_reports_revenue", "\"ActualRevenueUsdNanos\" >= 0");
+
+                            t.HasCheckConstraint("ck_economy_ad_provider_reports_version", "\"Version\" > 0");
+
+                            t.HasCheckConstraint("ck_economy_ad_provider_reports_window", "\"PeriodEnd\" > \"PeriodStart\" AND \"ImportedAt\" >= \"PeriodEnd\"");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.AdRewards.Persistence.AdRewardAccumulatorRow", b =>
+                {
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("WalletId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Network")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("CanonicalDenominator")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<long>("PolicyVersion")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("RemainderNumerator")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("Version")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("TenantId", "WalletId", "Network");
+
+                    b.ToTable("economy_ad_reward_accumulators", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_economy_ad_reward_accumulators_numbers", "\"RemainderNumerator\" ~ '^[0-9]+$' AND \"CanonicalDenominator\" ~ '^[1-9][0-9]*$'");
+
+                            t.HasCheckConstraint("ck_economy_ad_reward_accumulators_version", "\"PolicyVersion\" > 0 AND \"Version\" > 0");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.AdRewards.Persistence.AdRewardAttributionRow", b =>
+                {
+                    b.Property<Guid>("SessionId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CompletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("EstimatedRevenueUsdNanos")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Network")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<long>("PolicyVersion")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("ProviderBatchId")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<long>("RewardSoftUnits")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("SessionId");
+
+                    b.HasIndex("Network", "ProviderBatchId", "CompletedAt");
+
+                    b.ToTable("economy_ad_reward_attributions", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_economy_ad_reward_attributions_nonnegative", "\"EstimatedRevenueUsdNanos\" >= 0 AND \"RewardSoftUnits\" >= 0");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.AdRewards.Persistence.AdRewardBudgetConsumptionRow", b =>
+                {
+                    b.Property<Guid>("SessionId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("ConsumedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DeviceRiskHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<long>("LossBudgetUsdNanos")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Network")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<long>("SoftUnits")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("SessionId");
+
+                    b.HasIndex("DeviceRiskHash", "ConsumedAt");
+
+                    b.HasIndex("Network", "ConsumedAt");
+
+                    b.HasIndex("UserId", "ConsumedAt");
+
+                    b.ToTable("economy_ad_reward_budget_consumptions", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_economy_ad_reward_budget_consumptions_positive", "\"SoftUnits\" > 0 AND \"LossBudgetUsdNanos\" > 0");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.AdRewards.Persistence.AdRewardCapConsumptionRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("ConsumedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("LossBudgetUsdNanos")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("Scope")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("SessionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("SoftUnits")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("SubjectHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("WindowEndsAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("WindowStartedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SessionId", "Scope")
+                        .IsUnique();
+
+                    b.HasIndex("TenantId", "Scope", "SubjectHash", "ConsumedAt");
+
+                    b.ToTable("economy_ad_reward_cap_consumptions", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_economy_ad_reward_cap_consumptions_positive", "\"SoftUnits\" > 0 AND \"LossBudgetUsdNanos\" >= 0");
+
+                            t.HasCheckConstraint("ck_economy_ad_reward_cap_consumptions_scope", "\"Scope\" BETWEEN 1 AND 6");
+
+                            t.HasCheckConstraint("ck_economy_ad_reward_cap_consumptions_window", "\"WindowEndsAt\" > \"WindowStartedAt\" AND \"ConsumedAt\" >= \"WindowStartedAt\" AND \"ConsumedAt\" < \"WindowEndsAt\"");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.AdRewards.Persistence.AdRewardCompletionRow", b =>
+                {
+                    b.Property<Guid>("SessionId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("CapabilityReceiptHash")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<Guid?>("CapabilityReceiptId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CompletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DestinationHash")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("EvidenceHashes")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("IdempotencyKey")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("JurisdictionCode")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<long?>("KillSwitchEpoch")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Network")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<Guid?>("OutputLotId")
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("PolicyVersion")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid?>("PostingId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ProviderEventId")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("ProviderHash")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<long?>("ReserveVersion")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("RewardSoftUnits")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid?>("RiskDecisionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("SourceStampId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("State")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid>("WalletId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("SessionId");
+
+                    b.HasIndex("IdempotencyKey")
+                        .IsUnique();
+
+                    b.HasIndex("ProviderEventId")
+                        .IsUnique()
+                        .HasFilter("\"ProviderEventId\" IS NOT NULL");
+
+                    b.HasIndex("Network", "PolicyVersion");
+
+                    b.HasIndex("UserId", "CompletedAt");
+
+                    b.ToTable("economy_ad_reward_completions", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_economy_ad_reward_completions_issued_binding", "\"State\" <> 1 OR (\"RewardSoftUnits\" > 0 AND \"SourceStampId\" IS NOT NULL AND \"PostingId\" IS NOT NULL AND \"OutputLotId\" IS NOT NULL)");
+
+                            t.HasCheckConstraint("ck_economy_ad_reward_completions_reward_nonnegative", "\"RewardSoftUnits\" >= 0");
+
+                            t.HasCheckConstraint("ck_economy_ad_reward_completions_state", "\"State\" BETWEEN 1 AND 3");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.AdRewards.Persistence.AdRewardPendingClaimRow", b =>
+                {
+                    b.Property<Guid>("SessionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("CompletionIdempotencyKeyHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("CompletionRequestHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("ConfirmationIdempotencyKeyHash")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("ConfirmationRequestHash")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<DateTimeOffset?>("ConfirmedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("DeferredAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("ProviderReportId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("SourceStampId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("SessionId");
+
+                    b.HasIndex("ProviderReportId");
+
+                    b.HasIndex("TenantId", "CompletionIdempotencyKeyHash")
+                        .IsUnique();
+
+                    b.HasIndex("TenantId", "ConfirmationIdempotencyKeyHash")
+                        .IsUnique()
+                        .HasFilter("\"ConfirmationIdempotencyKeyHash\" IS NOT NULL");
+
+                    b.ToTable("economy_ad_reward_pending_claims", (string)null);
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.AdRewards.Persistence.AdRewardPlaybackMilestoneRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("EvidenceHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<DateTimeOffset>("ObservedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Percentage")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Sequence")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("SessionId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SessionId", "Sequence")
+                        .IsUnique();
+
+                    b.ToTable("economy_ad_reward_playback_milestones", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_economy_ad_reward_playback_milestones_percentage", "\"Percentage\" BETWEEN 0 AND 100 AND \"Sequence\" > 0");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.AdRewards.Persistence.AdRewardProviderBatchClaimRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("BatchId")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<DateTimeOffset>("ClaimedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("ProviderReportId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("SessionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SessionId");
+
+                    b.HasIndex("ProviderReportId", "SessionId")
+                        .IsUnique();
+
+                    b.ToTable("economy_ad_reward_provider_batch_claims", (string)null);
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.AdRewards.Persistence.AdRewardProviderProofInboxRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("EvidenceHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("Network")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("PayloadHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<DateTimeOffset?>("ProcessedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ProcessingError")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("ProviderEventId")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<DateTimeOffset>("ReceivedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("SessionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("SignatureVerified")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SessionId");
+
+                    b.HasIndex("TenantId", "Network", "ProviderEventId")
+                        .IsUnique();
+
+                    b.ToTable("economy_ad_reward_provider_proof_inbox", (string)null);
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.AdRewards.Persistence.AdRewardReconciliationRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("ActualDeltaUsdNanos")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("ActualRevenueUsdNanos")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("BatchId")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<long>("EstimatedRevenueUsdNanos")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("HistoricalRewardSoftUnits")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Network")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<long>("PreviousActualRevenueUsdNanos")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid>("ProviderReportId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("ReconciledAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ReportId")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("VarianceUsdNanos")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProviderReportId")
+                        .IsUnique();
+
+                    b.HasIndex("TenantId", "Network", "ReportId", "Version")
+                        .IsUnique();
+
+                    b.ToTable("economy_ad_reward_reconciliations", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_economy_ad_reward_reconciliations_conservation", "\"ActualDeltaUsdNanos\" = \"ActualRevenueUsdNanos\" - \"PreviousActualRevenueUsdNanos\" AND \"VarianceUsdNanos\" = \"ActualRevenueUsdNanos\" - \"EstimatedRevenueUsdNanos\"");
+
+                            t.HasCheckConstraint("ck_economy_ad_reward_reconciliations_nonnegative", "\"EstimatedRevenueUsdNanos\" >= 0 AND \"PreviousActualRevenueUsdNanos\" >= 0 AND \"ActualRevenueUsdNanos\" >= 0 AND \"HistoricalRewardSoftUnits\" >= 0");
+
+                            t.HasCheckConstraint("ck_economy_ad_reward_reconciliations_version", "\"Version\" > 0");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.AdRewards.Persistence.AdRewardSessionEventRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("EvidenceHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<DateTimeOffset>("OccurredAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("Sequence")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid>("SessionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("State")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SessionId", "Sequence")
+                        .IsUnique();
+
+                    b.ToTable("economy_ad_reward_session_events", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_economy_ad_reward_session_events_sequence", "\"Sequence\" > 0");
+
+                            t.HasCheckConstraint("ck_economy_ad_reward_session_events_state", "\"State\" BETWEEN 1 AND 7");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.AdRewards.Persistence.AdRewardSessionRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("AsnRiskHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("CreativeId")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("DeviceRiskHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("IpRiskHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<DateTimeOffset>("IssuedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Network")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("NonceHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<long>("PolicyVersion")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("RequiredDurationTicks")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("StartIdempotencyKeyHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("StartRequestHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<int>("State")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("TokenKeyId")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid>("WalletId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId", "NonceHash")
+                        .IsUnique();
+
+                    b.HasIndex("TenantId", "StartIdempotencyKeyHash")
+                        .IsUnique();
+
+                    b.HasIndex("TenantId", "UserId", "IssuedAt");
+
+                    b.ToTable("economy_ad_reward_sessions", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_economy_ad_reward_sessions_state", "\"State\" BETWEEN 1 AND 7");
+
+                            t.HasCheckConstraint("ck_economy_ad_reward_sessions_values", "\"PolicyVersion\" > 0 AND \"RequiredDurationTicks\" > 0 AND \"Version\" > 0");
+
+                            t.HasCheckConstraint("ck_economy_ad_reward_sessions_window", "\"ExpiresAt\" > \"IssuedAt\" AND \"UpdatedAt\" >= \"IssuedAt\"");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Bounties.Persistence.BountyEscrowFragmentRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("AmountUnits")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid>("BountyId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Currency")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid?>("EscrowLotId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ParentLotId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Provenance")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("SelectedRootRanges")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<long>("TraceUnitsPerCoinUnit")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BountyId", "EscrowLotId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_economy_bounty_escrow_fragments_bounty_escrow_lot")
+                        .HasFilter("\"EscrowLotId\" IS NOT NULL");
+
+                    b.HasIndex("BountyId", "ParentLotId")
+                        .IsUnique();
+
+                    b.ToTable("economy_bounty_escrow_fragments", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_economy_bounty_escrow_fragments_amount_positive", "\"AmountUnits\" > 0");
+
+                            t.HasCheckConstraint("ck_economy_bounty_escrow_fragments_provenance", "\"Provenance\" BETWEEN 1 AND 7");
+
+                            t.HasCheckConstraint("ck_economy_bounty_escrow_fragments_scale_positive", "\"TraceUnitsPerCoinUnit\" > 0");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Bounties.Persistence.BountyExpirationEventRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("BountyId")
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("BountyVersion")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("RecordedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BountyId")
+                        .IsUnique();
+
+                    b.HasIndex("RecordedAt", "Id");
+
+                    b.ToTable("economy_bounty_expiration_events", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_economy_bounty_expiration_events_time", "\"RecordedAt\" >= \"ExpiresAt\"");
+
+                            t.HasCheckConstraint("ck_economy_bounty_expiration_events_version", "\"BountyVersion\" > 1");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Bounties.Persistence.BountyRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("AmountUnits")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("Currency")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("EscrowWalletId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("IdempotencyKey")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<int>("MinimumReputation")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("PostedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("PosterId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("PosterWalletId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("ReclaimFeePpm")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("RequestHash")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<bool>("RequiresInstructorVerification")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("RequiresPrerequisite")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("Version")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IdempotencyKey")
+                        .IsUnique();
+
+                    b.HasIndex("TenantId", "Status", "ExpiresAt");
+
+                    b.HasIndex("TenantId", "PosterId", "Status", "ExpiresAt");
+
+                    b.ToTable("economy_bounties", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_economy_bounties_amount_positive", "\"AmountUnits\" > 0");
+
+                            t.HasCheckConstraint("ck_economy_bounties_fee", "\"ReclaimFeePpm\" BETWEEN 0 AND 999999");
+
+                            t.HasCheckConstraint("ck_economy_bounties_reputation", "\"MinimumReputation\" >= 0");
+
+                            t.HasCheckConstraint("ck_economy_bounties_state", "\"Status\" BETWEEN 1 AND 4");
+
+                            t.HasCheckConstraint("ck_economy_bounties_version", "\"Version\" > 0");
+
+                            t.HasCheckConstraint("ck_economy_bounties_window", "\"ExpiresAt\" > \"PostedAt\"");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Bounties.Persistence.BountyTerminalEventRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ActorId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("BountyId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("DestinationWalletId")
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("FeeUnits")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("FirstJournalSequence")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("IdempotencyKey")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<DateTimeOffset>("OccurredAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("OutputLots")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<Guid?>("ProceedsLotId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("ProceedsSourceStampId")
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("ReturnedUnits")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid?>("RiskDecisionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BountyId")
+                        .IsUnique();
+
+                    b.HasIndex("IdempotencyKey")
+                        .IsUnique();
+
+                    b.ToTable("economy_bounty_terminal_events", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_economy_bounty_terminal_events_claim_binding", "\"Status\" <> 3 OR (\"RiskDecisionId\" IS NOT NULL AND \"ProceedsSourceStampId\" IS NOT NULL AND \"ProceedsLotId\" IS NOT NULL)");
+
+                            t.HasCheckConstraint("ck_economy_bounty_terminal_events_state", "\"Status\" IN (3, 4)");
+
+                            t.HasCheckConstraint("ck_economy_bounty_terminal_events_units", "\"ReturnedUnits\" >= 0 AND \"FeeUnits\" >= 0 AND \"FirstJournalSequence\" > 0");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Integrations.AI.AiProviderCostFactEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ActorId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("AuthorizationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("ChargedSoftUnits")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTimeOffset>("CompletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("ExactProviderCostUsdNanos")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("InputCostUsdNanos")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("InputTokens")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Model")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<long>("OutputCostUsdNanos")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("OutputTokens")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Provider")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ProviderUsageId")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("RateCardVersion")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<Guid>("RequestId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ServiceCode")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("TotalTokens")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AuthorizationId")
+                        .IsUnique();
+
+                    b.HasIndex("Provider", "ProviderUsageId")
+                        .IsUnique();
+
+                    b.HasIndex("ServiceCode", "CompletedAt");
+
+                    b.HasIndex("TenantId", "CompletedAt");
+
+                    b.ToTable("ai_provider_cost_facts", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_ai_provider_cost_facts_charge_positive", "\"ChargedSoftUnits\" > 0");
+
+                            t.HasCheckConstraint("ck_ai_provider_cost_facts_cost_conservation", "\"InputCostUsdNanos\" >= 0 AND \"OutputCostUsdNanos\" >= 0 AND \"ExactProviderCostUsdNanos\" = \"InputCostUsdNanos\" + \"OutputCostUsdNanos\"");
+
+                            t.HasCheckConstraint("ck_ai_provider_cost_facts_token_conservation", "\"InputTokens\" >= 0 AND \"OutputTokens\" >= 0 AND \"TotalTokens\" = \"InputTokens\" + \"OutputTokens\"");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Ledger.EconomyWalletProvisioningReceiptRow", b =>
+                {
+                    b.Property<bool>("Created")
+                        .HasColumnType("boolean")
+                        .HasColumnName("created");
+
+                    b.Property<Guid>("WalletId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("wallet_id");
+
+                    b.ToTable((string)null);
+
+                    b.ToView(null, (string)null);
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Marketplace.Persistence.MarketplaceCurrencyPolicyVersionRow", b =>
+                {
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("Version")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid>("ApprovedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("CanonicalPayload")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset>("EffectiveAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("HardPriceUnits")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("KeyId")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<int>("Mode")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("PayloadHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<int>("PlatformFeePpm")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("PlatformFeeWalletId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ProposedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("PublishedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("RefundHoldTicks")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid>("SellerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Signature")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<long>("SoftPriceUnits")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("TenantId", "ProductId", "Version");
+
+                    b.HasIndex("TenantId", "ProductId", "EffectiveAt", "ExpiresAt");
+
+                    b.ToTable("economy_marketplace_currency_policy_versions", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_economy_marketplace_currency_policy_versions_dual_control", "\"ProposedBy\" <> \"ApprovedBy\"");
+
+                            t.HasCheckConstraint("ck_economy_marketplace_currency_policy_versions_fee", "\"PlatformFeePpm\" BETWEEN 0 AND 999999");
+
+                            t.HasCheckConstraint("ck_economy_marketplace_currency_policy_versions_prices", "(\"Mode\" = 1 AND \"HardPriceUnits\" > 0 AND \"SoftPriceUnits\" = 0) OR (\"Mode\" = 2 AND \"HardPriceUnits\" = 0 AND \"SoftPriceUnits\" > 0) OR (\"Mode\" IN (3, 4) AND \"HardPriceUnits\" > 0 AND \"SoftPriceUnits\" > 0)");
+
+                            t.HasCheckConstraint("ck_economy_marketplace_currency_policy_versions_version", "\"Version\" > 0");
+
+                            t.HasCheckConstraint("ck_economy_marketplace_currency_policy_versions_window", "\"ExpiresAt\" > \"EffectiveAt\" AND \"RefundHoldTicks\" > 0");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Marketplace.Persistence.MarketplaceEventRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("EventKind")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("EvidenceHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<DateTimeOffset>("OccurredAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("Sequence")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid>("SettlementId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SettlementId", "Sequence")
+                        .IsUnique();
+
+                    b.ToTable("economy_marketplace_events", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_economy_marketplace_events_sequence", "\"Sequence\" > 0");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Marketplace.Persistence.MarketplaceFundingFragmentRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("AmountUnits")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("Currency")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("ParentLotId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ReservationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("SelectedRootRanges")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<Guid>("SettlementId")
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("TraceUnitsPerCoinUnit")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ReservationId")
+                        .IsUnique();
+
+                    b.HasIndex("SettlementId", "ParentLotId", "Currency");
+
+                    b.ToTable("economy_marketplace_funding_fragments", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_economy_marketplace_funding_fragments_amount", "\"AmountUnits\" > 0");
+
+                            t.HasCheckConstraint("ck_economy_marketplace_funding_fragments_scale", "\"TraceUnitsPerCoinUnit\" > 0");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Marketplace.Persistence.MarketplaceOutboxRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("AttemptCount")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("LastError")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<DateTimeOffset?>("LeaseExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("LeaseOwner")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("MessageType")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.Property<DateTimeOffset>("OccurredAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Payload")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("PayloadHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<DateTimeOffset?>("PublishedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("SettlementId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SettlementId");
+
+                    b.HasIndex("PublishedAt", "OccurredAt");
+
+                    b.HasIndex("PublishedAt", "LeaseExpiresAt", "OccurredAt");
+
+                    b.ToTable("economy_marketplace_outbox", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_economy_marketplace_outbox_attempts", "\"AttemptCount\" >= 0");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Marketplace.Persistence.MarketplaceRefundDebtRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("AmountUnits")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("Currency")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("EvidenceHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<DateTimeOffset>("RecordedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("RefundId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ResponsibleWalletId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("SettlementId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RefundId");
+
+                    b.HasIndex("SettlementId");
+
+                    b.HasIndex("TenantId", "ResponsibleWalletId", "RecordedAt");
+
+                    b.ToTable("economy_marketplace_refund_debts", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_economy_marketplace_refund_debts_amount", "\"AmountUnits\" > 0");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Marketplace.Persistence.MarketplaceRefundLegRow", b =>
+                {
+                    b.Property<Guid>("RefundId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Currency")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("SettlementId")
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("Units")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("RefundId", "Currency");
+
+                    b.HasIndex("SettlementId", "Currency");
+
+                    b.ToTable("economy_marketplace_refund_legs", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_economy_marketplace_refund_legs_amount", "\"Units\" > 0");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Marketplace.Persistence.MarketplaceRefundRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("BuyerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("CapabilityReceiptHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<Guid>("CapabilityReceiptId")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("EntitlementRevoked")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("EvidenceHashes")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<long>("FirstJournalSequence")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("IdempotencyKey")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<bool>("IsFullRefund")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("JournalHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("JurisdictionCode")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<long>("KillSwitchEpoch")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("MarketplacePolicyVersion")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("PolicyVersion")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid>("PostingId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ReasonCode")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("ReasonHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<DateTimeOffset>("RefundedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("RefundedQuantity")
+                        .HasColumnType("integer");
+
+                    b.Property<long>("ReserveVersion")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid>("RiskDecisionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("SettlementId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SettlementId");
+
+                    b.HasIndex("TenantId", "IdempotencyKey")
+                        .IsUnique();
+
+                    b.HasIndex("TenantId", "SettlementId", "RefundedAt");
+
+                    b.ToTable("economy_marketplace_refunds", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_economy_marketplace_refunds_quantity", "\"Quantity\" > 0 AND \"RefundedQuantity\" >= \"Quantity\"");
+
+                            t.HasCheckConstraint("ck_economy_marketplace_refunds_sequence", "\"FirstJournalSequence\" > 0");
+
+                            t.HasCheckConstraint("ck_economy_marketplace_refunds_versions", "\"MarketplacePolicyVersion\" > 0 AND \"PolicyVersion\" > 0 AND \"ReserveVersion\" > 0");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Marketplace.Persistence.MarketplaceSettlementCreditRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("AmountUnits")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid>("CreditLotId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Currency")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ParentLineage")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<int>("Purpose")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("RefundHoldId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("RefundHoldUntil")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("RemainingUnits")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid>("SettlementId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("SourceStampId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("WalletId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreditLotId")
+                        .IsUnique();
+
+                    b.HasIndex("SettlementId");
+
+                    b.HasIndex("SourceStampId")
+                        .IsUnique()
+                        .HasFilter("\"SourceStampId\" IS NOT NULL");
+
+                    b.ToTable("economy_marketplace_settlement_credits", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_economy_marketplace_settlement_credits_amount", "\"AmountUnits\" > 0");
+
+                            t.HasCheckConstraint("ck_economy_marketplace_settlement_credits_purpose", "\"Purpose\" BETWEEN 1 AND 2");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Marketplace.Persistence.MarketplaceSettlementLegRow", b =>
+                {
+                    b.Property<Guid>("SettlementId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Currency")
+                        .HasColumnType("integer");
+
+                    b.Property<long>("PlatformFeeUnits")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("RefundedUnits")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("SellerUnits")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("Units")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("SettlementId", "Currency");
+
+                    b.ToTable("economy_marketplace_settlement_legs", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_economy_marketplace_settlement_legs_conservation", "\"Units\" > 0 AND \"SellerUnits\" >= 0 AND \"PlatformFeeUnits\" >= 0 AND \"SellerUnits\" + \"PlatformFeeUnits\" = \"Units\"");
+
+                            t.HasCheckConstraint("ck_economy_marketplace_settlement_legs_refund", "\"RefundedUnits\" BETWEEN 0 AND \"Units\"");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Marketplace.Persistence.MarketplaceSettlementRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("BuyerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("BuyerWalletId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("CapabilityReceiptHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<Guid>("CapabilityReceiptId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("CurrencyMode")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("EntitlementId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("EntitlementStatus")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("EvidenceHashes")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("FiatCurrencySnapshot")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)");
+
+                    b.Property<string>("IdempotencyKey")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("JournalHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<long>("JournalSequence")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("JurisdictionCode")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<long>("KillSwitchEpoch")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid>("OrderId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("OrderLineItemId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("OrderSnapshotHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<Guid>("PlatformFeeWalletId")
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("PolicyVersion")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid>("PostingId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("PriceVersionSnapshot")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ProductPricingVersionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("RefundHoldUntil")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("RefundedQuantity")
+                        .HasColumnType("integer");
+
+                    b.Property<long>("ReserveVersion")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid>("RiskDecisionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("SellerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("SellerWalletId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("SettledAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("UnitPriceSnapshot")
+                        .HasColumnType("numeric");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("Version")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId", "IdempotencyKey")
+                        .IsUnique();
+
+                    b.HasIndex("TenantId", "OrderId")
+                        .IsUnique();
+
+                    b.HasIndex("TenantId", "BuyerId", "SettledAt");
+
+                    b.HasIndex("TenantId", "SellerId", "SettledAt");
+
+                    b.ToTable("economy_marketplace_settlements", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_economy_marketplace_settlements_hold", "\"RefundHoldUntil\" > \"SettledAt\"");
+
+                            t.HasCheckConstraint("ck_economy_marketplace_settlements_order_snapshot", "\"Quantity\" > 0 AND \"RefundedQuantity\" BETWEEN 0 AND \"Quantity\" AND \"UnitPriceSnapshot\" >= 0 AND \"PriceVersionSnapshot\" > 0");
+
+                            t.HasCheckConstraint("ck_economy_marketplace_settlements_receipt", "\"ReserveVersion\" > 0 AND \"JournalSequence\" > 0");
+
+                            t.HasCheckConstraint("ck_economy_marketplace_settlements_state", "\"Status\" BETWEEN 1 AND 3");
+
+                            t.HasCheckConstraint("ck_economy_marketplace_settlements_version", "\"PolicyVersion\" > 0 AND \"Version\" > 0");
+
+                            t.HasCheckConstraint("ck_economy_marketplace_settlements_wallets", "\"BuyerWalletId\" <> \"SellerWalletId\" AND \"BuyerWalletId\" <> \"PlatformFeeWalletId\" AND \"SellerWalletId\" <> \"PlatformFeeWalletId\"");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Payouts.PayoutAuthorizationEvidenceRow", b =>
+                {
+                    b.Property<Guid>("OperationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Phase")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("ActorId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("CapabilityReceiptHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<Guid>("CapabilityReceiptId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("OperationFingerprintHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("ReauthenticationEvidenceHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<DateTimeOffset>("RecordedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("RiskDecisionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("OperationId", "Phase");
+
+                    b.HasIndex("CapabilityReceiptId")
+                        .IsUnique();
+
+                    b.HasIndex("TenantId", "RecordedAt");
+
+                    b.ToTable("economy_payout_authorization_evidence", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_economy_payout_authorization_evidence_phase", "\"Phase\" BETWEEN 1 AND 2");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Payouts.PayoutConnectAccountRow", b =>
+                {
+                    b.Property<Guid>("PayeeId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("ChargesEnabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("DestinationHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("Environment")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("EvidenceHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("ObservedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("PayoutsEnabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Provider")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("ProviderAccountId")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<int>("State")
+                        .HasColumnType("integer");
+
+                    b.Property<long>("Version")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("PayeeId");
+
+                    b.HasIndex("State", "ExpiresAt");
+
+                    b.HasIndex("Provider", "Environment", "ProviderAccountId")
+                        .IsUnique();
+
+                    b.ToTable("economy_payout_connect_accounts", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_economy_payout_connect_accounts_state", "\"State\" BETWEEN 1 AND 4");
+
+                            t.HasCheckConstraint("ck_economy_payout_connect_accounts_version", "\"Version\" > 0");
+
+                            t.HasCheckConstraint("ck_economy_payout_connect_accounts_window", "\"ExpiresAt\" > \"ObservedAt\"");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Payouts.PayoutDispatchOutboxRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("AttemptCount")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("AvailableAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("CompletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("IdempotencyKey")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("LastErrorCode")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTimeOffset?>("LeaseExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("LeaseOwner")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<Guid>("OperationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Payload")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("PayloadHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OperationId")
+                        .IsUnique();
+
+                    b.HasIndex("CompletedAt", "AvailableAt", "LeaseExpiresAt");
+
+                    b.ToTable("economy_payout_dispatch_outbox", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_economy_payout_dispatch_outbox_attempts", "\"AttemptCount\" >= 0");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Payouts.PayoutOperationRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ActorId")
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("AmountUnits")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DestinationHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("DispatchSnapshotHash")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("EligibilityHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<long>("FencingToken")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("IdempotencyKey")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<long>("KillSwitchEpoch")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid>("PayeeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("PolicyVersion")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("ProviderAccountId")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("ProviderBindingHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("ProviderPayoutId")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("RequestHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<long>("ReserveAuthorizationEpoch")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("ReserveVersion")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid>("RiskDecisionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("State")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid>("WalletId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("State", "UpdatedAt")
+                        .HasDatabaseName("ix_economy_payout_operations_state_updated");
+
+                    b.HasIndex("TenantId", "IdempotencyKey")
+                        .IsUnique()
+                        .HasDatabaseName("ux_economy_payout_operations_tenant_idempotency");
+
+                    b.HasIndex("TenantId", "State", "UpdatedAt")
+                        .HasDatabaseName("ix_economy_payout_operations_tenant_state_updated");
+
+                    b.ToTable("economy_payout_operations", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_economy_payout_operations_dispatch", "(\"State\" = 1 AND \"DispatchSnapshotHash\" IS NULL) OR (\"State\" BETWEEN 2 AND 6 AND \"DispatchSnapshotHash\" IS NOT NULL)");
+
+                            t.HasCheckConstraint("ck_economy_payout_operations_positive_values", "\"AmountUnits\" > 0 AND \"Version\" > 0 AND \"FencingToken\" > 0 AND \"KillSwitchEpoch\" >= 0 AND \"ReserveVersion\" > 0 AND \"ReserveAuthorizationEpoch\" > 0 AND \"PolicyVersion\" > 0");
+
+                            t.HasCheckConstraint("ck_economy_payout_operations_state", "\"State\" BETWEEN 1 AND 6");
+
+                            t.HasCheckConstraint("ck_economy_payout_operations_timestamps", "\"UpdatedAt\" >= \"CreatedAt\"");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Payouts.PayoutProviderEventRow", b =>
+                {
+                    b.Property<string>("EventId")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("EventHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<Guid>("OperationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("RecordedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("ResultingState")
+                        .HasColumnType("integer");
+
+                    b.HasKey("EventId");
+
+                    b.HasIndex("OperationId", "RecordedAt")
+                        .HasDatabaseName("ix_economy_payout_provider_events_operation_recorded");
+
+                    b.ToTable("economy_payout_provider_events", (string)null);
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyAccountRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Code")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Currency")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("Provenance")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid?>("WalletId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("WalletId", "Code", "Currency", "Provenance")
+                        .IsUnique();
+
+                    b.ToTable("economy_accounts", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_economy_accounts_wallet_partition", "(\"WalletId\" IS NULL AND \"Code\" NOT IN (2, 3, 4)) OR (\"WalletId\" IS NOT NULL AND \"Code\" IN (2, 3, 4))");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyAnchorVerificationRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ETag")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<Guid>("ExternalAnchorId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("KeyId")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("ObjectHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<bool>("ObjectMatches")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("ObjectVersion")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<DateTimeOffset>("RetainUntil")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("SignatureValid")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTimeOffset>("VerifiedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExternalAnchorId", "VerifiedAt");
+
+                    b.ToTable("economy_anchor_verifications", (string)null);
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyCapabilityPolicyApprovalRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ActorId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("ApprovedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("PolicyId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ReauthenticationHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PolicyId", "ActorId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_economy_capability_policy_approvals_policy_actor");
+
+                    b.ToTable("economy_capability_policy_approvals", (string)null);
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyCapabilityPolicyRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("ApprovedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("ApprovedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("CanonicalPayload")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<int>("Capability")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("EffectiveAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("JurisdictionCode")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<string>("KeyId")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("PayloadHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<DateTimeOffset>("ProposedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("ProposedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("ProviderReady")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("RequestHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("ScopeKey")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("Signature")
+                        .IsRequired()
+                        .HasMaxLength(2048)
+                        .HasColumnType("character varying(2048)");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("Version")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RequestHash")
+                        .IsUnique()
+                        .HasDatabaseName("ux_economy_capability_policies_request_hash");
+
+                    b.HasIndex("ScopeKey")
+                        .IsUnique()
+                        .HasDatabaseName("ux_economy_capability_policies_active_scope")
+                        .HasFilter("\"IsActive\"");
+
+                    b.HasIndex("ScopeKey", "Version")
+                        .IsUnique()
+                        .HasDatabaseName("ux_economy_capability_policies_scope_version");
+
+                    b.ToTable("economy_capability_policies", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_economy_capability_policies_dual_control", "(\"ApprovedBy\" IS NULL AND \"ApprovedAt\" IS NULL AND NOT \"IsActive\") OR (\"ApprovedBy\" IS NOT NULL AND \"ApprovedBy\" <> \"ProposedBy\" AND \"ApprovedAt\" >= \"ProposedAt\")");
+
+                            t.HasCheckConstraint("ck_economy_capability_policies_version", "\"Version\" > 0");
+
+                            t.HasCheckConstraint("ck_economy_capability_policies_window", "\"ExpiresAt\" > \"EffectiveAt\" AND (\"ApprovedAt\" IS NULL OR \"EffectiveAt\" >= \"ApprovedAt\")");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyCapabilityReceiptConsumptionRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ActorId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("ConsumedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("KillSwitchEpoch")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("OperationFingerprint")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<Guid>("ReceiptId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ReceiptId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_economy_capability_receipt_consumptions_receipt");
+
+                    b.ToTable("economy_capability_receipt_consumptions", (string)null);
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyCapabilityReceiptRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ActorId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Capability")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("DestinationHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("EvidenceHashes")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("IssuedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("JurisdictionCode")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<string>("KeyId")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<long>("KillSwitchEpoch")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("OperationFingerprint")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<long>("PolicyVersion")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("ProviderHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("ReceiptHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<long>("ReserveVersion")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid>("RiskDecisionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Signature")
+                        .IsRequired()
+                        .HasMaxLength(2048)
+                        .HasColumnType("character varying(2048)");
+
+                    b.Property<string>("SourceRootHashes")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("SubjectReference")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ReceiptHash")
+                        .IsUnique()
+                        .HasDatabaseName("ux_economy_capability_receipts_hash");
+
+                    b.HasIndex("RiskDecisionId");
+
+                    b.HasIndex("TenantId", "OperationFingerprint")
+                        .IsUnique()
+                        .HasDatabaseName("ux_economy_capability_receipts_tenant_operation");
+
+                    b.ToTable("economy_capability_receipts", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_economy_capability_receipts_lifetime", "\"ExpiresAt\" > \"IssuedAt\"");
+
+                            t.HasCheckConstraint("ck_economy_capability_receipts_versions", "\"PolicyVersion\" > 0 AND \"ReserveVersion\" > 0 AND \"KillSwitchEpoch\" >= 0");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyChainHeadRow", b =>
+                {
+                    b.Property<short>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("smallint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<short>("Id"));
+
+                    b.Property<string>("Hash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<long>("Sequence")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("economy_chain_head", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_economy_chain_head_singleton", "\"Id\" = 1");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyComplianceEvidenceRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Environment")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("EvidenceHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("EvidenceKind")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("IssuedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("JurisdictionCode")
+                        .HasMaxLength(3)
+                        .HasColumnType("character(3)")
+                        .IsFixedLength();
+
+                    b.Property<string>("PayloadHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<long>("PolicyVersion")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Provider")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("ProviderEventId")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("RawObjectReference")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<DateTimeOffset>("ReceivedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Result")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<bool>("SignatureVerified")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("SubjectHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("Version")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Provider", "Environment", "ProviderEventId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_economy_compliance_evidence_provider_event");
+
+                    b.HasIndex("TenantId", "SubjectHash", "EvidenceKind", "Version")
+                        .IsUnique()
+                        .HasDatabaseName("ux_economy_compliance_evidence_subject_version");
+
+                    b.ToTable("economy_compliance_evidence", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_economy_compliance_evidence_jurisdiction", "\"JurisdictionCode\" IS NULL OR \"JurisdictionCode\" ~ '^[A-Z]{3}$'");
+
+                            t.HasCheckConstraint("ck_economy_compliance_evidence_lifetime", "\"ExpiresAt\" > \"IssuedAt\" AND \"ReceivedAt\" >= \"IssuedAt\"");
+
+                            t.HasCheckConstraint("ck_economy_compliance_evidence_versions", "\"Version\" > 0 AND \"PolicyVersion\" > 0 AND length(btrim(\"EvidenceKind\")) > 0");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyComplianceHoldEventRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ActorId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("EvidenceHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<Guid>("HoldId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<DateTimeOffset>("OccurredAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Sequence")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("HoldId", "Sequence")
+                        .IsUnique();
+
+                    b.HasIndex("HoldId", "Kind", "ActorId")
+                        .IsUnique();
+
+                    b.ToTable("economy_compliance_hold_events", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_economy_compliance_hold_events_sequence", "\"Sequence\" > 0");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyComplianceHoldRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("ActivatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("ActivatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<int?>("Capability")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("CaseReferenceHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("EvidenceHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("IdempotencyKeyHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("ReasonCode")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("ReleasePolicyEvidenceHash")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<DateTimeOffset?>("ReleaseProposedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("ReleaseProposedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("ReleasedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("ReleasedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("RequestHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<int?>("RequiredReleaseApprovals")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ScopeKey")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
+
+                    b.Property<string>("SubjectHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IdempotencyKeyHash")
+                        .IsUnique()
+                        .HasDatabaseName("ux_economy_compliance_holds_idempotency");
+
+                    b.HasIndex("ScopeKey", "ReleasedAt", "ExpiresAt")
+                        .HasDatabaseName("ix_economy_compliance_holds_active_scope");
+
+                    b.HasIndex("TenantId", "SubjectHash", "ExpiresAt");
+
+                    b.ToTable("economy_compliance_holds", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_economy_compliance_holds_lifetime", "\"ExpiresAt\" > \"ActivatedAt\"");
+
+                            t.HasCheckConstraint("ck_economy_compliance_holds_release", "(\"ReleasedAt\" IS NULL AND \"ReleasedBy\" IS NULL) OR (\"ReleasedAt\" >= \"ActivatedAt\" AND \"ReleasedBy\" IS NOT NULL)");
+
+                            t.HasCheckConstraint("ck_economy_compliance_holds_release_proposal", "(\"ReleaseProposedAt\" IS NULL AND \"ReleaseProposedBy\" IS NULL AND \"RequiredReleaseApprovals\" IS NULL AND \"ReleasePolicyEvidenceHash\" IS NULL) OR (\"ReleaseProposedAt\" >= \"ActivatedAt\" AND \"ReleaseProposedBy\" IS NOT NULL AND \"RequiredReleaseApprovals\" BETWEEN 1 AND 2 AND length(btrim(\"ReleasePolicyEvidenceHash\")) > 0)");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyComplianceInboxRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Environment")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("PayloadHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<DateTimeOffset?>("ProcessedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ProcessingError")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<string>("Provider")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("ProviderEventId")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("RawObjectReference")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<DateTimeOffset>("ReceivedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Provider", "Environment", "ProviderEventId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_economy_compliance_inbox_provider_event");
+
+                    b.ToTable("economy_compliance_inbox", (string)null);
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyComplianceOutboxRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("DispatchedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("EvidenceId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("OccurredAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Payload")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("PayloadHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EvidenceId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_economy_compliance_outbox_evidence");
+
+                    b.ToTable("economy_compliance_outbox", (string)null);
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyCreditLotRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("AmountUnits")
+                        .HasColumnType("bigint");
+
+                    b.Property<bool>("CashOutEligible")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTimeOffset>("ConfirmedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("CreditedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Currency")
+                        .HasColumnType("integer");
+
+                    b.Property<long>("JournalSequence")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTimeOffset>("OriginalMaturesAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Provenance")
+                        .HasColumnType("integer");
+
+                    b.Property<long>("ReversalEpoch")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid>("RootSourceStampId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("State")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("WalletId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RootSourceStampId")
+                        .HasDatabaseName("ix_economy_credit_lots_root_source");
+
+                    b.HasIndex("WalletId");
+
+                    b.ToTable("economy_credit_lots", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_economy_credit_lots_amount_positive", "\"AmountUnits\" > 0");
+
+                            t.HasCheckConstraint("ck_economy_credit_lots_maturity_order", "\"OriginalMaturesAt\" >= \"ConfirmedAt\"");
+
+                            t.HasCheckConstraint("ck_economy_credit_lots_maturity_policy", "(\"Provenance\" = 2 AND \"Currency\" = 1 AND \"CashOutEligible\" AND \"OriginalMaturesAt\" = \"ConfirmedAt\" + INTERVAL '120 days') OR (\"Provenance\" <> 2 AND NOT \"CashOutEligible\")");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyCustodyObservationRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("AssetKey")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<long>("EligibleUsdNanos")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("KeyId")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<DateTimeOffset>("ObservedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("PayloadHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("Provider")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<int>("Purpose")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Signature")
+                        .IsRequired()
+                        .HasMaxLength(2048)
+                        .HasColumnType("character varying(2048)");
+
+                    b.Property<long>("Version")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Provider", "AssetKey", "Version")
+                        .IsUnique()
+                        .HasDatabaseName("ux_economy_custody_observations_provider_asset_version");
+
+                    b.ToTable("economy_custody_observations", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_economy_custody_observations_lifetime", "\"ExpiresAt\" > \"ObservedAt\"");
+
+                            t.HasCheckConstraint("ck_economy_custody_observations_values", "\"Version\" > 0 AND \"EligibleUsdNanos\" >= 0");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyCustodyReconciliationRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("EligibleAssetUsdNanos")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("EvidenceHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<bool>("IsReconciled")
+                        .HasColumnType("boolean");
+
+                    b.Property<long>("LiabilityUsdNanos")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("ObservationIds")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<DateTimeOffset>("ReconciledAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("ReconciledBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("ReserveVersion")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("VarianceUsdNanos")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ReserveVersion")
+                        .IsUnique()
+                        .HasDatabaseName("ux_economy_custody_reconciliations_reserve");
+
+                    b.ToTable("economy_custody_reconciliations", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_economy_custody_reconciliations_values", "\"ReserveVersion\" > 0 AND \"LiabilityUsdNanos\" >= 0 AND \"EligibleAssetUsdNanos\" >= 0");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyDispatchSnapshotRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("AmountUnits")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("ChainHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<long>("ChainSequence")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Currency")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Destination")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
+
+                    b.Property<string>("EligibilityPayload")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<long>("FencingToken")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("KillSwitchEpoch")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid>("PostingGroupId")
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("ReserveAuthorizationEpoch")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("ReserveVersion")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("SnapshotHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PostingGroupId");
+
+                    b.HasIndex("SnapshotHash")
+                        .IsUnique()
+                        .HasDatabaseName("ux_economy_dispatch_snapshots_hash");
+
+                    b.ToTable("economy_dispatch_snapshots", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_economy_dispatch_snapshots_amount_positive", "\"AmountUnits\" > 0");
+
+                            t.HasCheckConstraint("ck_economy_dispatch_snapshots_reserve_authorization", "\"ReserveVersion\" > 0 AND \"ReserveAuthorizationEpoch\" > 0");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyDisputeFragmentFreezeRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("AmountUnits")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid>("CreditLotId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Currency")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("PlacedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ProviderDisputeReference")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<Guid>("RootSourceStampId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset?>("TerminalAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("WalletId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreditLotId");
+
+                    b.HasIndex("ProviderDisputeReference");
+
+                    b.HasIndex("WalletId");
+
+                    b.HasIndex("RootSourceStampId", "Status")
+                        .HasDatabaseName("ix_economy_dispute_fragment_freezes_root_status");
+
+                    b.ToTable("economy_dispute_fragment_freezes", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_economy_dispute_fragment_freezes_amount_positive", "\"AmountUnits\" > 0");
+
+                            t.HasCheckConstraint("ck_economy_dispute_fragment_freezes_state_timestamp", "(\"Status\" = 1 AND \"TerminalAt\" IS NULL) OR (\"Status\" IN (2, 3) AND \"TerminalAt\" >= \"PlacedAt\")");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyDisputeFragmentRangeRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("DisputeFragmentFreezeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("EndExclusive")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("ReversalEpoch")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("StartInclusive")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DisputeFragmentFreezeId", "StartInclusive", "EndExclusive")
+                        .IsUnique()
+                        .HasDatabaseName("ux_economy_dispute_fragment_ranges_freeze_interval");
+
+                    b.ToTable("economy_dispute_fragment_ranges", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_economy_dispute_fragment_ranges_half_open", "\"StartInclusive\" >= 0 AND \"EndExclusive\" > \"StartInclusive\" AND \"ReversalEpoch\" >= 0");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyEntityGraphEdgeRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("EvidenceHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<Guid>("LeftNodeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("RecordedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Relationship")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<Guid>("RightNodeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("SupersededAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("Version")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LeftNodeId");
+
+                    b.HasIndex("RightNodeId");
+
+                    b.HasIndex("TenantId", "LeftNodeId", "RightNodeId", "Version")
+                        .IsUnique()
+                        .HasDatabaseName("ux_economy_entity_graph_edges_pair_version");
+
+                    b.ToTable("economy_entity_graph_edges", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_economy_entity_graph_edges_distinct_nodes", "\"LeftNodeId\" <> \"RightNodeId\"");
+
+                            t.HasCheckConstraint("ck_economy_entity_graph_edges_version", "\"Version\" > 0");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyEntityGraphNodeRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("EvidenceHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("IdentityHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<DateTimeOffset>("RecordedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("SupersededAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("integer");
+
+                    b.Property<long>("Version")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId", "Type", "IdentityHash", "Version")
+                        .IsUnique()
+                        .HasDatabaseName("ux_economy_entity_graph_nodes_identity_version");
+
+                    b.ToTable("economy_entity_graph_nodes", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_economy_entity_graph_nodes_version", "\"Version\" > 0");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyEntryAllocationRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("AmountUnits")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid>("JournalLineId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ParentLotId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ParentLotId")
+                        .HasDatabaseName("ix_economy_entry_allocations_parent_lot");
+
+                    b.HasIndex("JournalLineId", "ParentLotId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_economy_entry_allocations_line_parent");
+
+                    b.ToTable("economy_entry_allocations", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_economy_entry_allocations_amount_positive", "\"AmountUnits\" > 0");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyExternalAnchorRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("AnchoredAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DispatchSnapshotHash")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("JournalHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<long>("JournalSequence")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Provider")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("ProviderReference")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("Signature")
+                        .IsRequired()
+                        .HasMaxLength(1024)
+                        .HasColumnType("character varying(1024)");
+
+                    b.Property<string>("WormReference")
+                        .IsRequired()
+                        .HasMaxLength(1024)
+                        .HasColumnType("character varying(1024)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("JournalSequence")
+                        .HasDatabaseName("ix_economy_external_anchors_chain_sequence");
+
+                    b.ToTable("economy_external_anchors", (string)null);
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyFragmentRootRangeRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("CreditLotId")
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("EndExclusive")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid?>("EntryAllocationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("ReversalEpoch")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid>("RootSourceStampId")
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("StartInclusive")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreditLotId");
+
+                    b.HasIndex("EntryAllocationId");
+
+                    b.HasIndex("RootSourceStampId", "ReversalEpoch")
+                        .HasDatabaseName("ix_economy_fragment_root_ranges_root_epoch");
+
+                    b.ToTable("economy_fragment_root_ranges", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_economy_fragment_root_ranges_half_open", "\"StartInclusive\" >= 0 AND \"EndExclusive\" > \"StartInclusive\"");
+
+                            t.HasCheckConstraint("ck_economy_fragment_root_ranges_single_owner", "(\"CreditLotId\" IS NULL) <> (\"EntryAllocationId\" IS NULL)");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyFundingClaimRow", b =>
+                {
+                    b.Property<Guid>("SourceStampId")
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("AuthoritativeUsdMinorUnits")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTimeOffset?>("ConfirmedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ConnectedAccount")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<long>("CumulativeProviderReversalUnits")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Environment")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<DateTimeOffset>("ObservedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("PostingGroupId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Provider")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("ProviderMonetaryLeg")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("ProviderObject")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<Guid?>("RootCreditLotId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("State")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("StateChangedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid>("WalletId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("SourceStampId");
+
+                    b.HasIndex("PostingGroupId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_economy_funding_claims_posting_group")
+                        .HasFilter("\"PostingGroupId\" IS NOT NULL");
+
+                    b.HasIndex("RootCreditLotId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_economy_funding_claims_root_lot")
+                        .HasFilter("\"RootCreditLotId\" IS NOT NULL");
+
+                    b.HasIndex("WalletId");
+
+                    b.HasIndex("Provider", "Environment", "ConnectedAccount", "ProviderObject", "ProviderMonetaryLeg")
+                        .IsUnique()
+                        .HasDatabaseName("ux_economy_funding_claims_provider_leg");
+
+                    b.ToTable("economy_funding_claims", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_economy_funding_claims_amount_positive", "\"AuthoritativeUsdMinorUnits\" > 0");
+
+                            t.HasCheckConstraint("ck_economy_funding_claims_lifecycle", "(\"State\" = 1 AND \"ConfirmedAt\" IS NULL AND \"StateChangedAt\" = \"ObservedAt\" AND \"PostingGroupId\" IS NULL AND \"RootCreditLotId\" IS NULL AND \"CumulativeProviderReversalUnits\" = 0) OR (\"State\" = 2 AND \"ConfirmedAt\" >= \"ObservedAt\" AND \"StateChangedAt\" >= \"ConfirmedAt\" AND \"PostingGroupId\" IS NOT NULL AND \"RootCreditLotId\" IS NOT NULL) OR (\"State\" IN (3, 4) AND \"ConfirmedAt\" IS NULL AND \"StateChangedAt\" >= \"ObservedAt\" AND \"PostingGroupId\" IS NULL AND \"RootCreditLotId\" IS NULL AND \"CumulativeProviderReversalUnits\" = 0) OR (\"State\" IN (5, 6) AND \"ConfirmedAt\" >= \"ObservedAt\" AND \"StateChangedAt\" >= \"ConfirmedAt\" AND \"PostingGroupId\" IS NOT NULL AND \"RootCreditLotId\" IS NOT NULL AND \"CumulativeProviderReversalUnits\" > 0)");
+
+                            t.HasCheckConstraint("ck_economy_funding_claims_provider_reversal_bounds", "\"CumulativeProviderReversalUnits\" >= 0 AND \"CumulativeProviderReversalUnits\" <= \"AuthoritativeUsdMinorUnits\"");
+
+                            t.HasCheckConstraint("ck_economy_funding_claims_version_positive", "\"Version\" > 0");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyHoldEventRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ActorId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("EvidenceHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<Guid>("HoldId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Kind")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("OccurredAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("Sequence")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("HoldId", "Sequence")
+                        .IsUnique()
+                        .HasDatabaseName("ux_economy_hold_events_hold_sequence");
+
+                    b.ToTable("economy_hold_events", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_economy_hold_events_sequence_positive", "\"Sequence\" > 0");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyHoldRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("AmountUnits")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("Currency")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("EffectiveAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Reason")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset?>("ReleasedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("WalletId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("WalletId", "Status")
+                        .HasDatabaseName("ix_economy_holds_wallet_status");
+
+                    b.ToTable("economy_holds", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_economy_holds_amount_positive", "\"AmountUnits\" > 0");
+
+                            t.HasCheckConstraint("ck_economy_holds_state_timestamp", "(\"Status\" = 1 AND \"ReleasedAt\" IS NULL) OR (\"Status\" <> 1 AND \"ReleasedAt\" >= \"EffectiveAt\")");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyIdempotencyRecordRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Key")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<Guid>("PostingGroupId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("RequestHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Key")
+                        .IsUnique()
+                        .HasDatabaseName("ux_economy_idempotency_records_key");
+
+                    b.HasIndex("PostingGroupId");
+
+                    b.ToTable("economy_idempotency_records", (string)null);
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyJournalEntryRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("CanonicalPayloadHash")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("Hash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<int>("HashAlgorithmVersion")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("PostingGroupId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("PreviousHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<DateTimeOffset>("RecordedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("Sequence")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PostingGroupId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_economy_journal_entries_posting_group_id");
+
+                    b.HasIndex("Sequence")
+                        .IsUnique()
+                        .HasDatabaseName("ux_economy_journal_entries_sequence");
+
+                    b.ToTable("economy_journal_entries", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_economy_journal_entries_hash_algorithm", "(\"HashAlgorithmVersion\" = 0 AND \"CanonicalPayloadHash\" IS NULL) OR (\"HashAlgorithmVersion\" IN (1, 2) AND length(btrim(\"CanonicalPayloadHash\")) > 0)");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyJournalLineRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("AccountId")
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("AmountUnits")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid?>("CreditLotId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Currency")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("JournalEntryId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int?>("Provenance")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Sequence")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Side")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid?>("WalletId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AccountId");
+
+                    b.HasIndex("CreditLotId");
+
+                    b.HasIndex("WalletId");
+
+                    b.HasIndex("JournalEntryId", "Sequence")
+                        .IsUnique();
+
+                    b.ToTable("economy_journal_lines", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_economy_journal_lines_amount_positive", "\"AmountUnits\" > 0");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyJournalVerificationCheckpointRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CompletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CurrentHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("FailureCode")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<long>("FencingToken")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("FromSequence")
+                        .HasColumnType("bigint");
+
+                    b.Property<bool>("IsValid")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("PreviousHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<DateTimeOffset>("StartedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("ToSequence")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ToSequence", "CompletedAt")
+                        .HasDatabaseName("ix_economy_journal_verification_checkpoints_sequence");
+
+                    b.ToTable("economy_journal_verification_checkpoints", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_economy_journal_verification_checkpoints_range", "\"FromSequence\" >= 0 AND \"ToSequence\" >= \"FromSequence\"");
+
+                            t.HasCheckConstraint("ck_economy_journal_verification_checkpoints_time", "\"CompletedAt\" >= \"StartedAt\"");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyKillSwitchReleaseApprovalRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ActorId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("ApprovedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("KillSwitchId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ReauthenticationHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("KillSwitchId", "ActorId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_economy_kill_switch_release_approvals_switch_actor");
+
+                    b.ToTable("economy_kill_switch_release_approvals", (string)null);
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyKillSwitchRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("ActivatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("ActivatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<int?>("Capability")
+                        .HasColumnType("integer");
+
+                    b.Property<long>("Epoch")
+                        .HasColumnType("bigint");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<string>("ReleaseProposalReauthenticationHash")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<DateTimeOffset?>("ReleaseProposedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("ReleaseProposedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("ReleasedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("RequestHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("ScopeKey")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RequestHash")
+                        .IsUnique()
+                        .HasDatabaseName("ux_economy_kill_switches_request_hash");
+
+                    b.HasIndex("ScopeKey")
+                        .IsUnique()
+                        .HasDatabaseName("ux_economy_kill_switches_active_scope")
+                        .HasFilter("\"IsActive\"");
+
+                    b.HasIndex("ScopeKey", "Epoch")
+                        .IsUnique()
+                        .HasDatabaseName("ux_economy_kill_switches_scope_epoch");
+
+                    b.ToTable("economy_kill_switches", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_economy_kill_switches_epoch", "\"Epoch\" > 0");
+
+                            t.HasCheckConstraint("ck_economy_kill_switches_release_proposal", "(\"ReleaseProposedBy\" IS NULL AND \"ReleaseProposedAt\" IS NULL AND \"ReleaseProposalReauthenticationHash\" IS NULL) OR (\"ReleaseProposedBy\" IS NOT NULL AND \"ReleaseProposedAt\" >= \"ActivatedAt\" AND length(btrim(\"ReleaseProposalReauthenticationHash\")) > 0)");
+
+                            t.HasCheckConstraint("ck_economy_kill_switches_state", "(\"IsActive\" AND \"ReleasedAt\" IS NULL) OR (NOT \"IsActive\" AND \"ReleasedAt\" >= \"ActivatedAt\")");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyLegacyCutoverAuditRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ActorId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("BatchId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("EvidenceHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("ReauthenticationHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<DateTimeOffset>("RecordedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("Sequence")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("State")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId", "Sequence")
+                        .IsUnique();
+
+                    b.ToTable("economy_legacy_cutover_audit", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_economy_legacy_cutover_audit_sequence", "\"Sequence\" > 0");
+
+                            t.HasCheckConstraint("ck_economy_legacy_cutover_audit_state", "\"State\" BETWEEN 1 AND 4");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyLegacyCutoverRow", b =>
+                {
+                    b.Property<Guid>("TenantId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("ActivatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("BatchId")
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("Epoch")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTimeOffset?>("FirstApprovedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("FirstApprovedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("ProposedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("ProposedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("ReauthenticationHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<DateTimeOffset?>("RolledBackAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("RolledBackBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("SecondApprovedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("State")
+                        .HasColumnType("integer");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint");
+
+                    b.HasKey("TenantId");
+
+                    b.HasIndex("BatchId")
+                        .IsUnique();
+
+                    b.ToTable("economy_legacy_cutovers", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_economy_legacy_cutovers_epoch", "\"Epoch\" > 0 AND \"Version\" > 0");
+
+                            t.HasCheckConstraint("ck_economy_legacy_cutovers_state", "\"State\" BETWEEN 1 AND 4");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyLegacyShadowBatchRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("BackfilledHardUnits")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTimeOffset>("CapturedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("ExpectedHardUnits")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("FailureCode")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<int>("FinancialLedgerEntryCount")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("FinancialLedgerSnapshotHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("JurisdictionCode")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<long>("PolicyVersion")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("ReconciledHardUnits")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("RequestHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<Guid>("RequestedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("State")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("TransactionCount")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("TransactionSnapshotHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("WalletCount")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("WalletSnapshotHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RequestHash")
+                        .IsUnique();
+
+                    b.HasIndex("TenantId", "State");
+
+                    b.ToTable("economy_legacy_shadow_batches", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_economy_legacy_shadow_batches_counts", "\"WalletCount\" >= 0 AND \"TransactionCount\" >= 0 AND \"FinancialLedgerEntryCount\" >= 0");
+
+                            t.HasCheckConstraint("ck_economy_legacy_shadow_batches_state", "\"State\" BETWEEN 1 AND 8");
+
+                            t.HasCheckConstraint("ck_economy_legacy_shadow_batches_units", "\"ExpectedHardUnits\" >= 0 AND \"BackfilledHardUnits\" >= 0 AND \"ReconciledHardUnits\" >= 0");
+
+                            t.HasCheckConstraint("ck_economy_legacy_shadow_batches_version", "\"Version\" > 0");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyLegacyShadowWalletRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("BatchId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CapturedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("CompletedCreditsMinorUnits")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("CompletedDebitsMinorUnits")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid>("CreditLotId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("EconomyWalletId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("FailureCode")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("JournalHash")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<long?>("JournalSequence")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("LegacyBalanceMinorUnits")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid>("LegacyWalletId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("ObservedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("OwnerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("PostedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("PostingId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("ReconciledAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ReconciliationHash")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("SnapshotHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<Guid>("SourceStampId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("State")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("TransactionCount")
+                        .HasColumnType("integer");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreditLotId")
+                        .IsUnique();
+
+                    b.HasIndex("EconomyWalletId");
+
+                    b.HasIndex("PostingId")
+                        .IsUnique();
+
+                    b.HasIndex("SourceStampId")
+                        .IsUnique();
+
+                    b.HasIndex("BatchId", "LegacyWalletId")
+                        .IsUnique();
+
+                    b.ToTable("economy_legacy_shadow_wallets", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_economy_legacy_shadow_wallets_state", "\"State\" BETWEEN 1 AND 5");
+
+                            t.HasCheckConstraint("ck_economy_legacy_shadow_wallets_transactions", "\"TransactionCount\" >= 0");
+
+                            t.HasCheckConstraint("ck_economy_legacy_shadow_wallets_units", "\"LegacyBalanceMinorUnits\" >= 0 AND \"CompletedCreditsMinorUnits\" >= 0 AND \"CompletedDebitsMinorUnits\" >= 0");
+
+                            t.HasCheckConstraint("ck_economy_legacy_shadow_wallets_version", "\"Version\" > 0");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyLotLineageEdgeRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("AmountUnits")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid>("ChildLotId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Currency")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("ParentLotId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ChildLotId");
+
+                    b.HasIndex("ParentLotId")
+                        .HasDatabaseName("ix_economy_lot_lineage_edges_parent_lot");
+
+                    b.HasIndex("ParentLotId", "ChildLotId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_economy_lot_lineage_edges_parent_child");
+
+                    b.ToTable("economy_lot_lineage_edges", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_economy_lot_lineage_edges_amount_positive", "\"AmountUnits\" > 0");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyOutboxMessageRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("OccurredAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Payload")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("PayloadHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<Guid>("PostingGroupId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PayloadHash")
+                        .IsUnique()
+                        .HasDatabaseName("ux_economy_outbox_messages_payload_hash");
+
+                    b.HasIndex("PostingGroupId");
+
+                    b.ToTable("economy_outbox_messages", (string)null);
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyPostingGroupRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ActorId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Authority")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("CapabilityId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("IdempotencyKey")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<long>("PolicyVersion")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTimeOffset>("RecordedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("ReserveAuthorizationEpoch")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("ReserveVersion")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid?>("RiskDecisionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("SourceStampId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("TemplateKind")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("TemplateVersion")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IdempotencyKey")
+                        .IsUnique()
+                        .HasDatabaseName("ux_economy_posting_groups_idempotency_key");
+
+                    b.HasIndex("SourceStampId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_economy_posting_groups_source_stamp")
+                        .HasFilter("\"SourceStampId\" IS NOT NULL AND \"TemplateKind\" = 1");
+
+                    b.ToTable("economy_posting_groups", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_economy_posting_groups_authority_template", "(\"TemplateKind\" IN (1, 2, 3, 18, 19, 20) AND \"Authority\" = 1) OR (\"TemplateKind\" IN (4, 5, 7, 8, 17, 22) AND \"Authority\" = 2) OR (\"TemplateKind\" IN (6, 21) AND \"Authority\" = 3) OR (\"TemplateKind\" IN (9, 10, 23, 24) AND \"Authority\" = 4) OR (\"TemplateKind\" IN (11, 12, 13) AND \"Authority\" = 5) OR (\"TemplateKind\" IN (14, 15, 16) AND \"Authority\" = 6) OR (\"TemplateKind\" IN (25, 26) AND \"Authority\" = 7)");
+
+                            t.HasCheckConstraint("ck_economy_posting_groups_reserve_authorization", "\"ReserveVersion\" > 0 AND \"ReserveAuthorizationEpoch\" > 0 AND \"RiskDecisionId\" IS NOT NULL");
+
+                            t.HasCheckConstraint("ck_economy_posting_groups_source_requirement", "\"TemplateKind\" NOT IN (1, 2, 3, 18, 19, 20) OR \"SourceStampId\" IS NOT NULL");
+
+                            t.HasCheckConstraint("ck_economy_posting_groups_template_state", "\"TemplateKind\" BETWEEN 1 AND 26 AND \"TemplateVersion\" = 1 AND \"Status\" = 1");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyProjectionGenerationApprovalRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ActorId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("ApprovedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("Generation")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("ReauthenticationHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Generation", "ActorId")
+                        .IsUnique();
+
+                    b.ToTable("economy_projection_generation_approvals", (string)null);
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyProjectionGenerationRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("ActivatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("ApprovedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("CompletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("FromSequence")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("Generation")
+                        .HasColumnType("bigint");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("JournalHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<int>("MismatchCount")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ProjectionHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<Guid>("ProposedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("SecondApprovedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("StartedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("State")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<long>("ToSequence")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Generation")
+                        .IsUnique();
+
+                    b.HasIndex("IsActive")
+                        .IsUnique()
+                        .HasDatabaseName("ux_economy_projection_generations_active")
+                        .HasFilter("\"IsActive\"");
+
+                    b.ToTable("economy_projection_generations", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_economy_projection_generations_dual_control", "(\"ApprovedBy\" IS NULL OR \"ApprovedBy\" <> \"ProposedBy\") AND (\"SecondApprovedBy\" IS NULL OR (\"SecondApprovedBy\" <> \"ProposedBy\" AND \"SecondApprovedBy\" <> \"ApprovedBy\"))");
+
+                            t.HasCheckConstraint("ck_economy_projection_generations_range", "\"Generation\" > 0 AND \"FromSequence\" >= 0 AND \"ToSequence\" >= \"FromSequence\"");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyProjectionReconciliationEventRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("DetectedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("PreviousHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("RebuiltHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<long>("SourceJournalSequence")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid>("WalletId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("WalletId", "DetectedAt")
+                        .HasDatabaseName("ix_economy_projection_reconciliation_events_wallet_detected");
+
+                    b.ToTable("economy_projection_reconciliation_events", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_economy_projection_events_sequence_nonnegative", "\"SourceJournalSequence\" >= 0");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyProtectedChangeCooldownRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("AvailableAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("ChangedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Kind")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("SubjectId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ValueHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<long>("Version")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId", "SubjectId", "Kind", "Version")
+                        .IsUnique()
+                        .HasDatabaseName("ux_economy_protected_change_cooldowns_subject_kind_version");
+
+                    b.ToTable("economy_protected_change_cooldowns", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_economy_protected_change_cooldowns_version", "\"Version\" > 0");
+
+                            t.HasCheckConstraint("ck_economy_protected_change_cooldowns_window", "\"AvailableAt\" > \"ChangedAt\"");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyProviderDisputeEventRow", b =>
+                {
+                    b.Property<string>("ProviderEventId")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<long>("CumulativeDisputedHardUnits")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTimeOffset>("OccurredAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ProviderDisputeReference")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<long>("ProviderSequence")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("RequestHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<Guid>("SourceStampId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.HasKey("ProviderEventId");
+
+                    b.HasIndex("SourceStampId");
+
+                    b.HasIndex("ProviderDisputeReference", "ProviderSequence")
+                        .IsUnique()
+                        .HasDatabaseName("ux_economy_provider_dispute_events_dispute_sequence");
+
+                    b.ToTable("economy_provider_dispute_events", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_economy_provider_dispute_events_amount_positive", "\"CumulativeDisputedHardUnits\" > 0");
+
+                            t.HasCheckConstraint("ck_economy_provider_dispute_events_sequence_positive", "\"ProviderSequence\" > 0");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyProviderDisputeRow", b =>
+                {
+                    b.Property<string>("ProviderDisputeReference")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<long>("BaselineReversedHardUnits")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("CumulativeDisputedHardUnits")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("FrozenHardEquivalentUnits")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("LatestProviderSequence")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid>("ResponsibleWalletId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ReversalIdempotencyKey")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<Guid>("SourceStampId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint");
+
+                    b.HasKey("ProviderDisputeReference");
+
+                    b.HasIndex("ResponsibleWalletId");
+
+                    b.HasIndex("SourceStampId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_economy_provider_disputes_active_source")
+                        .HasFilter("\"Status\" = 1");
+
+                    b.ToTable("economy_provider_disputes", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_economy_provider_disputes_amount_partition", "\"CumulativeDisputedHardUnits\" > 0 AND \"BaselineReversedHardUnits\" >= 0 AND \"BaselineReversedHardUnits\" <= \"CumulativeDisputedHardUnits\" AND \"FrozenHardEquivalentUnits\" >= 0 AND \"FrozenHardEquivalentUnits\" <= (\"CumulativeDisputedHardUnits\" - \"BaselineReversedHardUnits\")");
+
+                            t.HasCheckConstraint("ck_economy_provider_disputes_lifecycle", "(\"Status\" = 1 AND \"ReversalIdempotencyKey\" IS NULL) OR (\"Status\" = 2 AND \"FrozenHardEquivalentUnits\" = 0 AND \"ReversalIdempotencyKey\" IS NULL) OR (\"Status\" = 3 AND \"FrozenHardEquivalentUnits\" = 0 AND \"ReversalIdempotencyKey\" IS NOT NULL)");
+
+                            t.HasCheckConstraint("ck_economy_provider_disputes_sequence_positive", "\"LatestProviderSequence\" > 0");
+
+                            t.HasCheckConstraint("ck_economy_provider_disputes_version_positive", "\"Version\" > 0");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyProviderFactAllocationRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("AllocatedUnits")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("AuthoritativeUnits")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("ConnectedAccount")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<long>("CumulativeCreditedUnits")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("Currency")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Environment")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<Guid>("JournalLineId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Provider")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("ProviderMonetaryLeg")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("ProviderObject")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<Guid>("SourceStampId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("JournalLineId");
+
+                    b.HasIndex("SourceStampId");
+
+                    b.HasIndex("Provider", "Environment", "ConnectedAccount", "ProviderObject", "ProviderMonetaryLeg")
+                        .IsUnique()
+                        .HasDatabaseName("ux_economy_provider_fact_allocations_provider_leg");
+
+                    b.ToTable("economy_provider_fact_allocations", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_economy_provider_fact_allocations_cumulative_bounds", "\"AllocatedUnits\" > 0 AND \"CumulativeCreditedUnits\" >= \"AllocatedUnits\" AND \"CumulativeCreditedUnits\" <= \"AuthoritativeUnits\"");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyRegisteredCapabilityRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("AllowedTemplateKinds")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsEnabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTimeOffset?>("RevokedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique()
+                        .HasDatabaseName("ux_economy_registered_capabilities_name");
+
+                    b.ToTable("economy_registered_capabilities", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_economy_registered_capabilities_state", "(\"IsEnabled\" AND \"RevokedAt\" IS NULL) OR (NOT \"IsEnabled\" AND \"RevokedAt\" IS NOT NULL)");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyReserveAssetAllocationRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("AssetKey")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<long>("EligibleUsdNanos")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("Purpose")
+                        .HasColumnType("integer");
+
+                    b.Property<long>("ReserveVersion")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ReserveVersion", "AssetKey")
+                        .IsUnique()
+                        .HasDatabaseName("ux_economy_reserve_asset_allocations_version_asset");
+
+                    b.ToTable("economy_reserve_asset_allocations", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_economy_reserve_asset_allocations_value_positive", "\"EligibleUsdNanos\" > 0");
+
+                            t.HasCheckConstraint("ck_economy_reserve_asset_allocations_values_valid", "\"Purpose\" IN (1, 2) AND length(btrim(\"AssetKey\")) > 0");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyReserveHeadRow", b =>
+                {
+                    b.Property<long>("Version")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTimeOffset>("ActivatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("AuthorizationEpoch")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("Coverage")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("EvidenceHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("HardBackingUsdNanos")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("HardFaceValueUsdMinor")
+                        .HasColumnType("bigint");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTimeOffset>("ObservedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("PolicyVersion")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("RequiredHardReserveUsdMinor")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("RequiredSoftReserveUsdNanos")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("SoftBackingUsdNanos")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("SoftFaceValueUsdNanos")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("StressedExpectedRedemptionCostUsdNanos")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Version");
+
+                    b.HasIndex("AuthorizationEpoch")
+                        .IsUnique()
+                        .HasDatabaseName("ux_economy_reserve_heads_authorization_epoch");
+
+                    b.HasIndex("IsActive")
+                        .IsUnique()
+                        .HasDatabaseName("ux_economy_reserve_heads_active")
+                        .HasFilter("\"IsActive\" = TRUE");
+
+                    b.ToTable("economy_reserve_heads", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_economy_reserve_heads_amounts_nonnegative", "\"HardFaceValueUsdMinor\" >= 0 AND \"RequiredHardReserveUsdMinor\" >= 0 AND \"SoftFaceValueUsdNanos\" >= 0 AND \"StressedExpectedRedemptionCostUsdNanos\" >= 0 AND \"RequiredSoftReserveUsdNanos\" >= 0 AND \"HardBackingUsdNanos\" >= 0 AND \"SoftBackingUsdNanos\" >= 0");
+
+                            t.HasCheckConstraint("ck_economy_reserve_heads_values_valid", "\"Coverage\" IN (1, 2) AND length(btrim(\"EvidenceHash\")) > 0");
+
+                            t.HasCheckConstraint("ck_economy_reserve_heads_versions_positive", "\"Version\" > 0 AND \"PolicyVersion\" > 0 AND \"AuthorizationEpoch\" > 0");
+
+                            t.HasCheckConstraint("ck_economy_reserve_heads_window", "\"ExpiresAt\" > \"ObservedAt\" AND \"ActivatedAt\" >= \"ObservedAt\"");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyReserveProposalRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ApprovalReauthenticationHash")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<DateTimeOffset?>("ApprovedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("ApprovedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("AssetAllocations")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<long>("AuthorizationEpoch")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("Coverage")
+                        .HasColumnType("integer");
+
+                    b.Property<long>("EligibleAssetUsdNanos")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("EvidenceHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<long?>("ExpectedActiveVersion")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("HardBackingUsdNanos")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("HardFaceValueUsdMinor")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("LiabilityUsdNanos")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("ObservationIds")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<DateTimeOffset>("ObservedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("PolicyVersion")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTimeOffset>("ProposedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("ProposedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("RequestHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<long>("RequiredHardReserveUsdMinor")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("RequiredSoftReserveUsdNanos")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("SnapshotHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<long>("SoftBackingUsdNanos")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("SoftFaceValueUsdNanos")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<long>("StressedExpectedRedemptionCostUsdNanos")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("Version")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Version")
+                        .IsUnique()
+                        .HasDatabaseName("ux_economy_reserve_proposals_version");
+
+                    b.ToTable("economy_reserve_proposals", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_economy_reserve_proposals_dual_control", "\"ApprovedBy\" IS NULL OR \"ApprovedBy\" <> \"ProposedBy\"");
+
+                            t.HasCheckConstraint("ck_economy_reserve_proposals_values", "\"Version\" > 0 AND \"PolicyVersion\" > 0 AND \"AuthorizationEpoch\" > 0 AND \"LiabilityUsdNanos\" >= 0 AND \"EligibleAssetUsdNanos\" >= 0 AND \"HardFaceValueUsdMinor\" >= 0 AND \"RequiredHardReserveUsdMinor\" >= 0 AND \"SoftFaceValueUsdNanos\" >= 0 AND \"RequiredSoftReserveUsdNanos\" >= 0 AND \"HardBackingUsdNanos\" >= 0 AND \"SoftBackingUsdNanos\" >= 0");
+
+                            t.HasCheckConstraint("ck_economy_reserve_proposals_window", "\"ExpiresAt\" > \"ObservedAt\" AND \"ProposedAt\" >= \"ObservedAt\"");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyRiskAuditEvidenceRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("EventKind")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("EvidenceHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("OperationFingerprint")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("Payload")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<DateTimeOffset>("RecordedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("RiskDecisionId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RiskDecisionId", "EvidenceHash")
+                        .IsUnique()
+                        .HasDatabaseName("ux_economy_risk_audit_evidence_decision_hash");
+
+                    b.ToTable("economy_risk_audit_evidence", (string)null);
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyRiskCounterReservationRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("AmountUnits")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTimeOffset?>("ConsumedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("InputFingerprint")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<DateTimeOffset?>("ReleasedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("ReservationGroupId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("ReservedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("RiskCounterId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("RiskDecisionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RiskCounterId");
+
+                    b.HasIndex("ReservationGroupId", "RiskCounterId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_economy_risk_counter_reservations_group_counter");
+
+                    b.HasIndex("RiskDecisionId", "RiskCounterId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_economy_risk_counter_reservations_decision_counter");
+
+                    b.ToTable("economy_risk_counter_reservations", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_economy_risk_counter_reservations_amount_positive", "\"AmountUnits\" > 0");
+
+                            t.HasCheckConstraint("ck_economy_risk_counter_reservations_lifetime", "\"ExpiresAt\" > \"ReservedAt\"");
+
+                            t.HasCheckConstraint("ck_economy_risk_counter_reservations_state", "(\"Status\" = 1 AND \"ConsumedAt\" IS NULL AND \"ReleasedAt\" IS NULL) OR (\"Status\" = 2 AND \"ConsumedAt\" >= \"ReservedAt\" AND \"ReleasedAt\" IS NULL) OR (\"Status\" = 3 AND \"ReleasedAt\" >= \"ReservedAt\" AND \"ConsumedAt\" IS NULL) OR (\"Status\" = 4 AND \"ReleasedAt\" >= \"ExpiresAt\" AND \"ConsumedAt\" IS NULL)");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyRiskCounterRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("CounterVersion")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("Currency")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Dimension")
+                        .HasColumnType("integer");
+
+                    b.Property<long>("MaxUnits")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("Operation")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("SubjectHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("UsedUnits")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTimeOffset>("WindowEndsAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("WindowStartedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId", "Dimension", "SubjectHash", "Operation", "Currency", "WindowStartedAt")
+                        .IsUnique()
+                        .HasDatabaseName("ux_economy_risk_counters_scope_window");
+
+                    b.ToTable("economy_risk_counters", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_economy_risk_counters_bounds", "\"CounterVersion\" > 0 AND \"MaxUnits\" > 0 AND \"UsedUnits\" >= 0 AND \"UsedUnits\" <= \"MaxUnits\"");
+
+                            t.HasCheckConstraint("ck_economy_risk_counters_window", "\"WindowEndsAt\" > \"WindowStartedAt\"");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyRiskDecisionConsumptionRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("ConsumedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("OperationFingerprint")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<Guid>("PostingGroupId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("RiskDecisionId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PostingGroupId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_economy_risk_decision_consumptions_posting");
+
+                    b.HasIndex("RiskDecisionId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_economy_risk_decision_consumptions_decision");
+
+                    b.ToTable("economy_risk_decision_consumptions", (string)null);
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyRiskDecisionRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ActorHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<long>("AmountUnits")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("CounterVersion")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("Currency")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("CurrencyLegs")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<Guid>("DestinationWalletId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("EntityGraphEvidenceHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<long>("EntityGraphVersion")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("FeatureVersion")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("IdempotencyKey")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<DateTimeOffset>("IssuedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("KillSwitchEpoch")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("OperationFingerprint")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<int>("Outcome")
+                        .HasColumnType("integer");
+
+                    b.Property<long>("PolicyVersion")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("ProviderReferenceHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("ReasonCodes")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<long>("ReserveAuthorizationEpoch")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("ReserveVersion")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("SourceRoots")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<Guid>("SourceWalletId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("TemplateKind")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DestinationWalletId");
+
+                    b.HasIndex("OperationFingerprint")
+                        .IsUnique()
+                        .HasDatabaseName("ix_economy_risk_decisions_operation_fingerprint");
+
+                    b.HasIndex("SourceWalletId");
+
+                    b.ToTable("economy_risk_decisions", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_economy_risk_decisions_amount_positive", "\"AmountUnits\" > 0");
+
+                            t.HasCheckConstraint("ck_economy_risk_decisions_lifetime", "\"ExpiresAt\" > \"IssuedAt\"");
+
+                            t.HasCheckConstraint("ck_economy_risk_decisions_versions_positive", "\"PolicyVersion\" > 0 AND \"ReserveVersion\" > 0 AND \"ReserveAuthorizationEpoch\" > 0 AND \"FeatureVersion\" > 0 AND \"CounterVersion\" > 0 AND \"EntityGraphVersion\" >= 0");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyRiskReviewCaseRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("AppealOf")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("RequiredApprovals")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Resolution")
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset?>("ResolvedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("ResolvedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("RiskDecisionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("SubmittedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("SubmittedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AppealOf");
+
+                    b.HasIndex("RiskDecisionId");
+
+                    b.HasIndex("TenantId", "RiskDecisionId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_economy_risk_review_cases_tenant_decision");
+
+                    b.ToTable("economy_risk_review_cases", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_economy_risk_review_cases_approvals", "\"RequiredApprovals\" BETWEEN 1 AND 2");
+
+                            t.HasCheckConstraint("ck_economy_risk_review_cases_state", "(\"Status\" = 1 AND \"ResolvedAt\" IS NULL AND \"ResolvedBy\" IS NULL AND \"Resolution\" IS NULL) OR (\"Status\" IN (2, 3) AND \"ResolvedAt\" >= \"SubmittedAt\" AND \"ResolvedBy\" IS NOT NULL AND length(btrim(\"Resolution\")) > 0)");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyRiskReviewEventRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ActorId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int?>("DecisionCode")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("EvidenceHashes")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<int>("Kind")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("OccurredAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Resolution")
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("RiskReviewCaseId")
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("Sequence")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RiskReviewCaseId", "Sequence")
+                        .IsUnique()
+                        .HasDatabaseName("ux_economy_risk_review_events_case_sequence");
+
+                    b.ToTable("economy_risk_review_events", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_economy_risk_review_events_sequence_positive", "\"Sequence\" > 0");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyRootReversalStateRow", b =>
+                {
+                    b.Property<Guid>("RootSourceStampId")
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("CumulativeProviderUnits")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("Epoch")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("ReversedUnits")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("State")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("TargetedRanges")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("RootSourceStampId");
+
+                    b.HasIndex("RootSourceStampId", "Epoch")
+                        .IsUnique()
+                        .HasDatabaseName("ux_economy_root_reversal_states_root_epoch");
+
+                    b.ToTable("economy_root_reversal_states", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_economy_root_reversal_states_cumulative_bounds", "\"CumulativeProviderUnits\" >= 0 AND \"ReversedUnits\" >= 0 AND \"ReversedUnits\" <= \"CumulativeProviderUnits\"");
+
+                            t.HasCheckConstraint("ck_economy_root_reversal_states_epoch_nonnegative", "\"Epoch\" >= 0");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomySelfServiceTransferIntentRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ActorId")
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("AmountUnits")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("Currency")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("DestinationHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("IdempotencyKey")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<int>("Provenance")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ProviderReferenceHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<Guid>("RecipientUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("RequestHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<DateTimeOffset>("RequestedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("TransferType")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId", "ActorId", "IdempotencyKey")
+                        .IsUnique()
+                        .HasDatabaseName("ux_economy_self_service_transfer_intents_actor_key");
+
+                    b.HasIndex("TenantId", "RecipientUserId", "RequestedAt")
+                        .HasDatabaseName("ix_economy_self_service_transfer_intents_recipient_time");
+
+                    b.ToTable("economy_self_service_transfer_intents", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_economy_self_service_transfer_intents_amount_positive", "\"AmountUnits\" > 0");
+
+                            t.HasCheckConstraint("ck_economy_self_service_transfer_intents_currency_provenance", "(\"Currency\" = 1 AND \"Provenance\" = 1) OR (\"Currency\" = 2 AND \"Provenance\" = 3)");
+
+                            t.HasCheckConstraint("ck_economy_self_service_transfer_intents_parties_distinct", "\"ActorId\" <> \"RecipientUserId\"");
+
+                            t.HasCheckConstraint("ck_economy_self_service_transfer_intents_type_valid", "\"TransferType\" IN (1, 2, 3)");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomySourceStampEventRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("EvidenceHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<DateTimeOffset>("OccurredAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("Sequence")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid>("SourceStampId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("State")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SourceStampId", "Sequence")
+                        .IsUnique()
+                        .HasDatabaseName("ux_economy_source_stamp_events_source_sequence");
+
+                    b.ToTable("economy_source_stamp_events", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_economy_source_stamp_events_sequence_positive", "\"Sequence\" > 0");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomySourceStampRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ActorId")
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("AuthoritativeUnits")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTimeOffset?>("ConfirmedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("EvidenceHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("InternalSourceId")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<DateTimeOffset>("ObservedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("PolicyVersion")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid?>("PostingReferenceId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Provenance")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Provider")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("ProviderReference")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("SourceKind")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("SourceLegId")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<int>("State")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Provider", "ProviderReference")
+                        .IsUnique()
+                        .HasDatabaseName("ux_economy_source_stamps_provider_reference")
+                        .HasFilter("\"Provider\" IS NOT NULL AND \"ProviderReference\" IS NOT NULL");
+
+                    b.HasIndex("SourceKind", "InternalSourceId", "SourceLegId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_economy_source_stamps_internal_leg");
+
+                    b.ToTable("economy_source_stamps", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_economy_source_stamps_confirmation", "(\"State\" IN (2, 5, 6) AND \"ConfirmedAt\" IS NOT NULL AND \"ConfirmedAt\" >= \"ObservedAt\") OR (\"State\" IN (1, 3, 4) AND \"ConfirmedAt\" IS NULL)");
+
+                            t.HasCheckConstraint("ck_economy_source_stamps_units_nonnegative", "\"AuthoritativeUnits\" >= 0");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyTopUpIntentRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ActorId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("FailureCode")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<long>("HardCoinUnits")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("IdempotencyKey")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("JurisdictionCode")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<DateTimeOffset?>("LastProviderEventAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("LastProviderEventId")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<string>("LastProviderEvidenceHash")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<Guid>("PaymentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("PolicyHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<long>("PolicyVersion")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid?>("PostingGroupId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Provider")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("ProviderAccountId")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTimeOffset?>("ProviderBoundAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ProviderEnvironment")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<string>("ProviderMonetaryLeg")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("ProviderObjectId")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<string>("ProviderObjectType")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("RequestHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<DateTimeOffset>("RequestedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<long>("UsdMinorUnits")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid>("WalletId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PaymentId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_economy_top_up_intents_payment");
+
+                    b.HasIndex("PostingGroupId");
+
+                    b.HasIndex("WalletId");
+
+                    b.HasIndex("TenantId", "ActorId", "IdempotencyKey")
+                        .IsUnique()
+                        .HasDatabaseName("ux_economy_top_up_intents_actor_key");
+
+                    b.HasIndex("Provider", "ProviderEnvironment", "ProviderAccountId", "ProviderObjectId", "ProviderObjectType", "ProviderMonetaryLeg")
+                        .IsUnique()
+                        .HasDatabaseName("ux_economy_top_up_intents_provider_object")
+                        .HasFilter("\"ProviderObjectId\" IS NOT NULL");
+
+                    b.ToTable("economy_top_up_intents", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_economy_top_up_intents_amount_positive", "\"HardCoinUnits\" > 0 AND \"UsdMinorUnits\" > 0");
+
+                            t.HasCheckConstraint("ck_economy_top_up_intents_event_state", "(\"LastProviderEventId\" IS NULL AND \"LastProviderEventAt\" IS NULL AND \"LastProviderEvidenceHash\" IS NULL) OR (\"LastProviderEventId\" IS NOT NULL AND \"LastProviderEventAt\" IS NOT NULL AND \"LastProviderEvidenceHash\" IS NOT NULL)");
+
+                            t.HasCheckConstraint("ck_economy_top_up_intents_posting_state", "(\"Status\" = 5 AND \"PostingGroupId\" IS NOT NULL) OR (\"Status\" <> 5 AND \"PostingGroupId\" IS NULL)");
+
+                            t.HasCheckConstraint("ck_economy_top_up_intents_provider_binding", "(\"Status\" = 1 AND \"ProviderEnvironment\" IS NULL AND \"ProviderAccountId\" IS NULL AND \"ProviderObjectId\" IS NULL AND \"ProviderObjectType\" IS NULL AND \"ProviderMonetaryLeg\" IS NULL AND \"ProviderBoundAt\" IS NULL) OR (\"Status\" <> 1 AND \"ProviderEnvironment\" IS NOT NULL AND \"ProviderAccountId\" IS NOT NULL AND \"ProviderObjectId\" IS NOT NULL AND \"ProviderObjectType\" IS NOT NULL AND \"ProviderMonetaryLeg\" IS NOT NULL AND \"ProviderBoundAt\" IS NOT NULL)");
+
+                            t.HasCheckConstraint("ck_economy_top_up_intents_version_positive", "\"Version\" > 0");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyWalletBalanceProjectionRow", b =>
+                {
+                    b.Property<Guid>("WalletId")
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("AvailableHardToSpend")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("AvailableSoftToSpend")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("EarnedHard")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("HeldHard")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("HeldSoft")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("ImmatureEarnedHard")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("PendingHard")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("PendingSoft")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("ProjectionHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<long>("PurchasedHard")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTimeOffset>("RebuiltAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("RestrictedHard")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("ReviewState")
+                        .HasColumnType("integer");
+
+                    b.Property<long>("Soft")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("SourceJournalSequence")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("WithdrawableHard")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("WalletId");
+
+                    b.HasIndex("ReviewState")
+                        .HasDatabaseName("ix_economy_wallet_balance_projections_review_state");
+
+                    b.ToTable("economy_wallet_balance_projections", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_economy_wallet_balance_projections_amounts_nonnegative", "\"PendingHard\" >= 0 AND \"PendingSoft\" >= 0 AND \"PurchasedHard\" >= 0 AND \"EarnedHard\" >= 0 AND \"RestrictedHard\" >= 0 AND \"Soft\" >= 0 AND \"ImmatureEarnedHard\" >= 0 AND \"HeldHard\" >= 0 AND \"HeldSoft\" >= 0 AND \"AvailableHardToSpend\" >= 0 AND \"AvailableSoftToSpend\" >= 0 AND \"WithdrawableHard\" >= 0");
+
+                            t.HasCheckConstraint("ck_economy_wallet_balance_projections_sequence_nonnegative", "\"SourceJournalSequence\" >= 0");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyWalletDebtEventRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("DeltaHardUnits")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTimeOffset>("OccurredAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("OutstandingHardUnits")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("Sequence")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid>("SourceStampId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("WalletId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SourceStampId");
+
+                    b.HasIndex("WalletId", "Sequence")
+                        .IsUnique()
+                        .HasDatabaseName("ux_economy_wallet_debt_events_wallet_sequence");
+
+                    b.ToTable("economy_wallet_debt_events", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_economy_wallet_debt_events_delta_nonzero", "\"DeltaHardUnits\" <> 0 AND \"OutstandingHardUnits\" >= 0");
+
+                            t.HasCheckConstraint("ck_economy_wallet_debt_events_sequence_positive", "\"Sequence\" > 0");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyWalletDebtRow", b =>
+                {
+                    b.Property<Guid>("WalletId")
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("OutstandingHardUnits")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint");
+
+                    b.HasKey("WalletId");
+
+                    b.ToTable("economy_wallet_debts", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_economy_wallet_debts_nonnegative", "\"OutstandingHardUnits\" >= 0");
+
+                            t.HasCheckConstraint("ck_economy_wallet_debts_version_positive", "\"Version\" > 0");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyWalletProjectionGenerationRow", b =>
+                {
+                    b.Property<long>("Generation")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid>("WalletId")
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("AvailableHardToSpend")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("AvailableSoftToSpend")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("EarnedHard")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("HeldHard")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("HeldSoft")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("ImmatureEarnedHard")
+                        .HasColumnType("bigint");
+
+                    b.Property<bool>("MatchesLive")
+                        .HasColumnType("boolean");
+
+                    b.Property<long>("PendingHard")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("PendingSoft")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("ProjectionHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<long>("PurchasedHard")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTimeOffset>("RebuiltAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("RestrictedHard")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("Soft")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("SourceJournalSequence")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("WithdrawableHard")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Generation", "WalletId");
+
+                    b.HasIndex("WalletId");
+
+                    b.HasIndex("Generation", "MatchesLive");
+
+                    b.ToTable("economy_wallet_projection_generations", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_economy_wallet_projection_generations_amounts", "\"Generation\" > 0 AND \"PendingHard\" >= 0 AND \"PendingSoft\" >= 0 AND \"PurchasedHard\" >= 0 AND \"EarnedHard\" >= 0 AND \"RestrictedHard\" >= 0 AND \"Soft\" >= 0 AND \"ImmatureEarnedHard\" >= 0 AND \"HeldHard\" >= 0 AND \"HeldSoft\" >= 0 AND \"AvailableHardToSpend\" >= 0 AND \"AvailableSoftToSpend\" >= 0 AND \"WithdrawableHard\" >= 0");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyWalletRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("OwnerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("State")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId", "OwnerId")
+                        .IsUnique();
+
+                    b.ToTable("economy_wallets", (string)null);
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyWorkerLeaseRow", b =>
+                {
+                    b.Property<string>("Name")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTimeOffset>("AcquiredAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("FencingToken")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Owner")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.HasKey("Name");
+
+                    b.HasIndex("Name")
+                        .IsUnique()
+                        .HasDatabaseName("ux_economy_worker_leases_name");
+
+                    b.ToTable("economy_worker_leases", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_economy_worker_leases_fencing", "\"FencingToken\" > 0");
+
+                            t.HasCheckConstraint("ck_economy_worker_leases_lifetime", "\"ExpiresAt\" > \"AcquiredAt\"");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.FifoFragmentReservationReceiptRow", b =>
+                {
+                    b.Property<long>("AmountUnits")
+                        .HasColumnType("bigint")
+                        .HasColumnName("amount_units");
+
+                    b.Property<long>("EndExclusive")
+                        .HasColumnType("bigint")
+                        .HasColumnName("end_exclusive");
+
+                    b.Property<Guid>("ParentLotId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("parent_lot_id");
+
+                    b.Property<Guid>("ReservationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("reservation_id");
+
+                    b.Property<long>("ReversalEpoch")
+                        .HasColumnType("bigint")
+                        .HasColumnName("reversal_epoch");
+
+                    b.Property<Guid>("RootSourceStampId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("root_source_stamp_id");
+
+                    b.Property<long>("StartInclusive")
+                        .HasColumnType("bigint")
+                        .HasColumnName("start_inclusive");
+
+                    b.ToTable((string)null);
+
+                    b.ToView(null, (string)null);
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.HardToSoftConversionRiskDecisionReceiptRow", b =>
+                {
+                    b.Property<Guid>("RiskDecisionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("risk_decision_id");
+
+                    b.Property<string>("SourceRoots")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("source_roots");
+
+                    b.ToTable((string)null);
+
+                    b.ToView(null, (string)null);
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.MarketplaceFifoReservationReceiptRow", b =>
+                {
+                    b.Property<long>("AmountUnits")
+                        .HasColumnType("bigint")
+                        .HasColumnName("amount_units");
+
+                    b.Property<int>("Currency")
+                        .HasColumnType("integer")
+                        .HasColumnName("currency");
+
+                    b.Property<long>("EndExclusive")
+                        .HasColumnType("bigint")
+                        .HasColumnName("end_exclusive");
+
+                    b.Property<Guid>("ParentLotId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("parent_lot_id");
+
+                    b.Property<Guid>("ReservationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("reservation_id");
+
+                    b.Property<long>("ReversalEpoch")
+                        .HasColumnType("bigint")
+                        .HasColumnName("reversal_epoch");
+
+                    b.Property<Guid>("RootSourceStampId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("root_source_stamp_id");
+
+                    b.Property<long>("StartInclusive")
+                        .HasColumnType("bigint")
+                        .HasColumnName("start_inclusive");
+
+                    b.ToTable((string)null);
+
+                    b.ToView(null, (string)null);
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.ProviderReversalReceiptRow", b =>
+                {
+                    b.Property<bool>("Duplicate")
+                        .HasColumnType("boolean")
+                        .HasColumnName("duplicate");
+
+                    b.Property<Guid>("OperationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("operation_id");
+
+                    b.Property<long>("PlatformLossHardUnits")
+                        .HasColumnType("bigint")
+                        .HasColumnName("platform_loss_hard_units");
+
+                    b.Property<long>("RecoveredConvertedSoftUnits")
+                        .HasColumnType("bigint")
+                        .HasColumnName("recovered_converted_soft_units");
+
+                    b.Property<long>("RecoveredHardUnits")
+                        .HasColumnType("bigint")
+                        .HasColumnName("recovered_hard_units");
+
+                    b.Property<long>("ResponsibleDebtHardUnits")
+                        .HasColumnType("bigint")
+                        .HasColumnName("responsible_debt_hard_units");
+
+                    b.ToTable((string)null);
+
+                    b.ToView(null, (string)null);
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.RegisteredPostingReceiptRow", b =>
+                {
+                    b.Property<bool>("Duplicate")
+                        .HasColumnType("boolean")
+                        .HasColumnName("duplicate");
+
+                    b.Property<string>("JournalHash")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("journal_hash");
+
+                    b.Property<long>("JournalSequence")
+                        .HasColumnType("bigint")
+                        .HasColumnName("journal_sequence");
+
+                    b.Property<Guid>("PostingId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("posting_id");
+
+                    b.ToTable((string)null);
+
+                    b.ToView(null, (string)null);
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Treasury.AdminWithdrawalAuditEventRow", b =>
+                {
+                    b.Property<Guid>("RunId")
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("Sequence")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid?>("ActorId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Evidence")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Hash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTimeOffset>("OccurredAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("PreviousHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("RunId", "Sequence");
+
+                    b.HasIndex("Hash")
+                        .IsUnique()
+                        .HasDatabaseName("ux_economy_admin_withdrawal_audit_events_hash");
+
+                    b.ToTable("economy_admin_withdrawal_audit_events", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_economy_admin_withdrawal_audit_events_sequence", "\"Sequence\" > 0");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Treasury.AdminWithdrawalDispatchOutboxRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("AttemptCount")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("AvailableAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("CompletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("IdempotencyKey")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("LastErrorCode")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTimeOffset?>("LeaseExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("LeaseOwner")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Payload")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("PayloadHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<Guid>("RunId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RunId")
+                        .IsUnique();
+
+                    b.HasIndex("TenantId", "RunId")
+                        .IsUnique();
+
+                    b.HasIndex("CompletedAt", "AvailableAt", "LeaseExpiresAt");
+
+                    b.ToTable("economy_admin_withdrawal_dispatch_outbox", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_economy_admin_withdrawal_dispatch_outbox_attempts", "\"AttemptCount\" >= 0");
+                        });
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Treasury.AdminWithdrawalProviderEventRow", b =>
+                {
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("EventId")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("EventHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<DateTimeOffset>("RecordedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("RunId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("TenantId", "EventId");
+
+                    b.HasIndex("RunId", "RecordedAt")
+                        .HasDatabaseName("ix_economy_admin_withdrawal_provider_events_run_recorded");
+
+                    b.ToTable("economy_admin_withdrawal_provider_events", (string)null);
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Treasury.AdminWithdrawalRunRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("AmountUnits")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid?>("ApprovedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DestinationHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("DispatchSnapshotHash")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<long>("ExecutionEpoch")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("FencingToken")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("IdempotencyKey")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<DateOnly>("PeriodStart")
+                        .HasColumnType("date");
+
+                    b.Property<Guid>("PlatformFeeWalletId")
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("PolicyVersion")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("ProviderTransferId")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("RequestHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<Guid>("RequestedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("ReserveAuthorizationEpoch")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("ReserveVersion")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("SourceAssetKey")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<int>("State")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("State", "UpdatedAt")
+                        .HasDatabaseName("ix_economy_admin_withdrawal_runs_state_updated");
+
+                    b.HasIndex("TenantId", "IdempotencyKey")
+                        .IsUnique()
+                        .HasDatabaseName("ux_economy_admin_withdrawal_runs_idempotency");
+
+                    b.HasIndex("TenantId", "PeriodStart")
+                        .IsUnique()
+                        .HasDatabaseName("ux_economy_admin_withdrawal_runs_active_period")
+                        .HasFilter("\"State\" NOT IN (6, 7)");
+
+                    b.ToTable("economy_admin_withdrawal_runs", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_economy_admin_withdrawal_runs_amount_positive", "\"AmountUnits\" > 0");
+
+                            t.HasCheckConstraint("ck_economy_admin_withdrawal_runs_approval", "(\"State\" = 1 AND \"ApprovedBy\" IS NULL) OR (\"State\" BETWEEN 2 AND 7 AND \"ApprovedBy\" IS NOT NULL)");
+
+                            t.HasCheckConstraint("ck_economy_admin_withdrawal_runs_dispatch_snapshot", "(\"State\" IN (1, 2) AND \"DispatchSnapshotHash\" IS NULL) OR (\"State\" BETWEEN 3 AND 7 AND \"DispatchSnapshotHash\" IS NOT NULL)");
+
+                            t.HasCheckConstraint("ck_economy_admin_withdrawal_runs_positive_versions", "\"Version\" > 0 AND \"FencingToken\" > 0 AND \"ExecutionEpoch\" > 0 AND \"ReserveVersion\" > 0 AND \"ReserveAuthorizationEpoch\" > 0 AND \"PolicyVersion\" > 0");
+
+                            t.HasCheckConstraint("ck_economy_admin_withdrawal_runs_state", "\"State\" BETWEEN 1 AND 7");
+
+                            t.HasCheckConstraint("ck_economy_admin_withdrawal_runs_timestamps", "\"UpdatedAt\" >= \"CreatedAt\"");
+                        });
                 });
 
             modelBuilder.Entity("GameGuild.GameJams.Jam", b =>
@@ -19212,6 +19212,174 @@ namespace GameGuild.API.Database.Migrations
                     b.ToTable("personalized_feed_items", (string)null);
                 });
 
+            modelBuilder.Entity("GameGuild.Learning.Lti.LtiDeployment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("Active")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("AuthTokenUrl")
+                        .IsRequired()
+                        .HasMaxLength(1024)
+                        .HasColumnType("character varying(1024)");
+
+                    b.Property<string>("AuthorizationUrl")
+                        .IsRequired()
+                        .HasMaxLength(1024)
+                        .HasColumnType("character varying(1024)");
+
+                    b.Property<string>("ClientId")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DeploymentId")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("Issuer")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
+
+                    b.Property<string>("KeyId")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("PlatformJwksUrl")
+                        .IsRequired()
+                        .HasMaxLength(1024)
+                        .HasColumnType("character varying(1024)");
+
+                    b.Property<string>("PrivateKeyPem")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Issuer", "ClientId", "DeploymentId")
+                        .IsUnique()
+                        .HasDatabaseName("UX_LtiDeployments_Issuer_Client_Deployment");
+
+                    b.ToTable("LtiDeployments", (string)null);
+                });
+
+            modelBuilder.Entity("GameGuild.Learning.Lti.LtiLineItemMapping", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("AssessmentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("DeploymentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("LineItemId")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
+
+                    b.Property<string>("LineItemUrl")
+                        .IsRequired()
+                        .HasMaxLength(1024)
+                        .HasColumnType("character varying(1024)");
+
+                    b.Property<int>("MaxScore")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AssessmentId")
+                        .IsUnique();
+
+                    b.HasIndex("DeploymentId");
+
+                    b.ToTable("LtiLineItemMappings", (string)null);
+                });
+
+            modelBuilder.Entity("GameGuild.Learning.Lti.LtiUserMapping", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("DeploymentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Sub")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("DeploymentId", "Sub")
+                        .IsUnique()
+                        .HasDatabaseName("UX_LtiUserMappings_Deployment_Sub");
+
+                    b.ToTable("LtiUserMappings", (string)null);
+                });
+
             modelBuilder.Entity("GameGuild.Learning.TestingLab.TestingLabLearningEvidenceReceipt", b =>
                 {
                     b.Property<Guid>("Id")
@@ -19394,174 +19562,6 @@ namespace GameGuild.API.Database.Migrations
                         .IsUnique();
 
                     b.ToTable("resource_localizations");
-                });
-
-            modelBuilder.Entity("GameGuild.Lti.LtiDeployment", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<bool>("Active")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("AuthTokenUrl")
-                        .IsRequired()
-                        .HasMaxLength(1024)
-                        .HasColumnType("character varying(1024)");
-
-                    b.Property<string>("AuthorizationUrl")
-                        .IsRequired()
-                        .HasMaxLength(1024)
-                        .HasColumnType("character varying(1024)");
-
-                    b.Property<string>("ClientId")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("DeploymentId")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<string>("Issuer")
-                        .IsRequired()
-                        .HasMaxLength(512)
-                        .HasColumnType("character varying(512)");
-
-                    b.Property<string>("KeyId")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<string>("PlatformJwksUrl")
-                        .IsRequired()
-                        .HasMaxLength(1024)
-                        .HasColumnType("character varying(1024)");
-
-                    b.Property<string>("PrivateKeyPem")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<Guid?>("TenantId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("Version")
-                        .IsConcurrencyToken()
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Issuer", "ClientId", "DeploymentId")
-                        .IsUnique()
-                        .HasDatabaseName("UX_LtiDeployments_Issuer_Client_Deployment");
-
-                    b.ToTable("LtiDeployments", (string)null);
-                });
-
-            modelBuilder.Entity("GameGuild.Lti.LtiLineItemMapping", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("AssessmentId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("DeploymentId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("LineItemId")
-                        .IsRequired()
-                        .HasMaxLength(512)
-                        .HasColumnType("character varying(512)");
-
-                    b.Property<string>("LineItemUrl")
-                        .IsRequired()
-                        .HasMaxLength(1024)
-                        .HasColumnType("character varying(1024)");
-
-                    b.Property<int>("MaxScore")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid?>("TenantId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("Version")
-                        .IsConcurrencyToken()
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AssessmentId")
-                        .IsUnique();
-
-                    b.HasIndex("DeploymentId");
-
-                    b.ToTable("LtiLineItemMappings", (string)null);
-                });
-
-            modelBuilder.Entity("GameGuild.Lti.LtiUserMapping", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("DeploymentId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Sub")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<Guid?>("TenantId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("Version")
-                        .IsConcurrencyToken()
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId");
-
-                    b.HasIndex("DeploymentId", "Sub")
-                        .IsUnique()
-                        .HasDatabaseName("UX_LtiUserMappings_Deployment_Sub");
-
-                    b.ToTable("LtiUserMappings", (string)null);
                 });
 
             modelBuilder.Entity("GameGuild.Monitoring.SLA.ServiceLevelIndicator", b =>
@@ -23339,6 +23339,129 @@ namespace GameGuild.API.Database.Migrations
                     b.ToTable("social_feed_items", (string)null);
                 });
 
+            modelBuilder.Entity("GameGuild.Social.Feed.SavedPost", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("PostId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "CreatedAt");
+
+                    b.HasIndex("UserId", "PostId")
+                        .IsUnique();
+
+                    b.ToTable("social_saved_posts", (string)null);
+                });
+
+            modelBuilder.Entity("GameGuild.Social.Feed.Story", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("AssetReferenceId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("AuthorId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Caption")
+                        .HasMaxLength(280)
+                        .HasColumnType("character varying(280)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AssetReferenceId");
+
+                    b.HasIndex("AuthorId", "ExpiresAt");
+
+                    b.ToTable("social_stories", (string)null);
+                });
+
+            modelBuilder.Entity("GameGuild.Social.Feed.StoryView", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("StoryId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("ViewedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("ViewerId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("StoryId", "ViewerId")
+                        .IsUnique();
+
+                    b.HasIndex("ViewerId", "ViewedAt");
+
+                    b.ToTable("social_story_views", (string)null);
+                });
+
             modelBuilder.Entity("GameGuild.Social.Follows.Block", b =>
                 {
                     b.Property<Guid>("Id")
@@ -23763,6 +23886,10 @@ namespace GameGuild.API.Database.Migrations
                     b.HasIndex("TenantId");
 
                     b.HasIndex("Visibility");
+
+                    b.HasIndex("AuthorId", "RepostOfPostId")
+                        .IsUnique()
+                        .HasFilter("\"RepostOfPostId\" IS NOT NULL AND \"DeletedAt\" IS NULL");
 
                     b.ToTable("posts", (string)null);
                 });
@@ -27179,806 +27306,6 @@ namespace GameGuild.API.Database.Migrations
                     b.Navigation("Page");
                 });
 
-            modelBuilder.Entity("GameGuild.Economy.AdRewards.Persistence.AdRewardCapConsumptionRow", b =>
-                {
-                    b.HasOne("GameGuild.Economy.AdRewards.Persistence.AdRewardSessionRow", null)
-                        .WithMany()
-                        .HasForeignKey("SessionId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.AdRewards.Persistence.AdRewardPendingClaimRow", b =>
-                {
-                    b.HasOne("GameGuild.Economy.AdRewards.Persistence.AdProviderReportRow", null)
-                        .WithMany()
-                        .HasForeignKey("ProviderReportId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("GameGuild.Economy.AdRewards.Persistence.AdRewardSessionRow", null)
-                        .WithOne()
-                        .HasForeignKey("GameGuild.Economy.AdRewards.Persistence.AdRewardPendingClaimRow", "SessionId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.AdRewards.Persistence.AdRewardPlaybackMilestoneRow", b =>
-                {
-                    b.HasOne("GameGuild.Economy.AdRewards.Persistence.AdRewardSessionRow", null)
-                        .WithMany()
-                        .HasForeignKey("SessionId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.AdRewards.Persistence.AdRewardProviderBatchClaimRow", b =>
-                {
-                    b.HasOne("GameGuild.Economy.AdRewards.Persistence.AdProviderReportRow", null)
-                        .WithMany()
-                        .HasForeignKey("ProviderReportId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("GameGuild.Economy.AdRewards.Persistence.AdRewardSessionRow", null)
-                        .WithMany()
-                        .HasForeignKey("SessionId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.AdRewards.Persistence.AdRewardProviderProofInboxRow", b =>
-                {
-                    b.HasOne("GameGuild.Economy.AdRewards.Persistence.AdRewardSessionRow", null)
-                        .WithMany()
-                        .HasForeignKey("SessionId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.AdRewards.Persistence.AdRewardReconciliationRow", b =>
-                {
-                    b.HasOne("GameGuild.Economy.AdRewards.Persistence.AdProviderReportRow", null)
-                        .WithOne()
-                        .HasForeignKey("GameGuild.Economy.AdRewards.Persistence.AdRewardReconciliationRow", "ProviderReportId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.AdRewards.Persistence.AdRewardSessionEventRow", b =>
-                {
-                    b.HasOne("GameGuild.Economy.AdRewards.Persistence.AdRewardSessionRow", null)
-                        .WithMany()
-                        .HasForeignKey("SessionId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Bounties.Persistence.BountyEscrowFragmentRow", b =>
-                {
-                    b.HasOne("GameGuild.Economy.Bounties.Persistence.BountyRow", null)
-                        .WithMany()
-                        .HasForeignKey("BountyId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Bounties.Persistence.BountyExpirationEventRow", b =>
-                {
-                    b.HasOne("GameGuild.Economy.Bounties.Persistence.BountyRow", null)
-                        .WithOne()
-                        .HasForeignKey("GameGuild.Economy.Bounties.Persistence.BountyExpirationEventRow", "BountyId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Bounties.Persistence.BountyTerminalEventRow", b =>
-                {
-                    b.HasOne("GameGuild.Economy.Bounties.Persistence.BountyRow", null)
-                        .WithOne()
-                        .HasForeignKey("GameGuild.Economy.Bounties.Persistence.BountyTerminalEventRow", "BountyId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Marketplace.Persistence.MarketplaceEventRow", b =>
-                {
-                    b.HasOne("GameGuild.Economy.Marketplace.Persistence.MarketplaceSettlementRow", null)
-                        .WithMany()
-                        .HasForeignKey("SettlementId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Marketplace.Persistence.MarketplaceFundingFragmentRow", b =>
-                {
-                    b.HasOne("GameGuild.Economy.Marketplace.Persistence.MarketplaceSettlementRow", null)
-                        .WithMany()
-                        .HasForeignKey("SettlementId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Marketplace.Persistence.MarketplaceOutboxRow", b =>
-                {
-                    b.HasOne("GameGuild.Economy.Marketplace.Persistence.MarketplaceSettlementRow", null)
-                        .WithMany()
-                        .HasForeignKey("SettlementId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Marketplace.Persistence.MarketplaceRefundDebtRow", b =>
-                {
-                    b.HasOne("GameGuild.Economy.Marketplace.Persistence.MarketplaceRefundRow", null)
-                        .WithMany()
-                        .HasForeignKey("RefundId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("GameGuild.Economy.Marketplace.Persistence.MarketplaceSettlementRow", null)
-                        .WithMany()
-                        .HasForeignKey("SettlementId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Marketplace.Persistence.MarketplaceRefundLegRow", b =>
-                {
-                    b.HasOne("GameGuild.Economy.Marketplace.Persistence.MarketplaceRefundRow", null)
-                        .WithMany()
-                        .HasForeignKey("RefundId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("GameGuild.Economy.Marketplace.Persistence.MarketplaceSettlementRow", null)
-                        .WithMany()
-                        .HasForeignKey("SettlementId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Marketplace.Persistence.MarketplaceRefundRow", b =>
-                {
-                    b.HasOne("GameGuild.Economy.Marketplace.Persistence.MarketplaceSettlementRow", null)
-                        .WithMany()
-                        .HasForeignKey("SettlementId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Marketplace.Persistence.MarketplaceSettlementCreditRow", b =>
-                {
-                    b.HasOne("GameGuild.Economy.Marketplace.Persistence.MarketplaceSettlementRow", null)
-                        .WithMany()
-                        .HasForeignKey("SettlementId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Marketplace.Persistence.MarketplaceSettlementLegRow", b =>
-                {
-                    b.HasOne("GameGuild.Economy.Marketplace.Persistence.MarketplaceSettlementRow", null)
-                        .WithMany()
-                        .HasForeignKey("SettlementId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Payouts.PayoutAuthorizationEvidenceRow", b =>
-                {
-                    b.HasOne("GameGuild.Economy.Payouts.PayoutOperationRow", null)
-                        .WithMany()
-                        .HasForeignKey("OperationId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Payouts.PayoutDispatchOutboxRow", b =>
-                {
-                    b.HasOne("GameGuild.Economy.Payouts.PayoutOperationRow", null)
-                        .WithMany()
-                        .HasForeignKey("OperationId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Payouts.PayoutProviderEventRow", b =>
-                {
-                    b.HasOne("GameGuild.Economy.Payouts.PayoutOperationRow", null)
-                        .WithMany()
-                        .HasForeignKey("OperationId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyAccountRow", b =>
-                {
-                    b.HasOne("GameGuild.Economy.Persistence.EconomyWalletRow", null)
-                        .WithMany()
-                        .HasForeignKey("WalletId")
-                        .OnDelete(DeleteBehavior.Restrict);
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyAnchorVerificationRow", b =>
-                {
-                    b.HasOne("GameGuild.Economy.Persistence.EconomyExternalAnchorRow", null)
-                        .WithMany()
-                        .HasForeignKey("ExternalAnchorId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyCapabilityPolicyApprovalRow", b =>
-                {
-                    b.HasOne("GameGuild.Economy.Persistence.EconomyCapabilityPolicyRow", null)
-                        .WithMany()
-                        .HasForeignKey("PolicyId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyCapabilityReceiptConsumptionRow", b =>
-                {
-                    b.HasOne("GameGuild.Economy.Persistence.EconomyCapabilityReceiptRow", null)
-                        .WithMany()
-                        .HasForeignKey("ReceiptId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyCapabilityReceiptRow", b =>
-                {
-                    b.HasOne("GameGuild.Economy.Persistence.EconomyRiskDecisionRow", null)
-                        .WithMany()
-                        .HasForeignKey("RiskDecisionId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyComplianceHoldEventRow", b =>
-                {
-                    b.HasOne("GameGuild.Economy.Persistence.EconomyComplianceHoldRow", null)
-                        .WithMany()
-                        .HasForeignKey("HoldId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyComplianceOutboxRow", b =>
-                {
-                    b.HasOne("GameGuild.Economy.Persistence.EconomyComplianceEvidenceRow", null)
-                        .WithMany()
-                        .HasForeignKey("EvidenceId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyCreditLotRow", b =>
-                {
-                    b.HasOne("GameGuild.Economy.Persistence.EconomySourceStampRow", null)
-                        .WithMany()
-                        .HasForeignKey("RootSourceStampId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("GameGuild.Economy.Persistence.EconomyWalletRow", null)
-                        .WithMany()
-                        .HasForeignKey("WalletId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyDispatchSnapshotRow", b =>
-                {
-                    b.HasOne("GameGuild.Economy.Persistence.EconomyPostingGroupRow", null)
-                        .WithMany()
-                        .HasForeignKey("PostingGroupId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyDisputeFragmentFreezeRow", b =>
-                {
-                    b.HasOne("GameGuild.Economy.Persistence.EconomyCreditLotRow", null)
-                        .WithMany()
-                        .HasForeignKey("CreditLotId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("GameGuild.Economy.Persistence.EconomyProviderDisputeRow", null)
-                        .WithMany()
-                        .HasForeignKey("ProviderDisputeReference")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("GameGuild.Economy.Persistence.EconomySourceStampRow", null)
-                        .WithMany()
-                        .HasForeignKey("RootSourceStampId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("GameGuild.Economy.Persistence.EconomyWalletRow", null)
-                        .WithMany()
-                        .HasForeignKey("WalletId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyDisputeFragmentRangeRow", b =>
-                {
-                    b.HasOne("GameGuild.Economy.Persistence.EconomyDisputeFragmentFreezeRow", null)
-                        .WithMany()
-                        .HasForeignKey("DisputeFragmentFreezeId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyEntityGraphEdgeRow", b =>
-                {
-                    b.HasOne("GameGuild.Economy.Persistence.EconomyEntityGraphNodeRow", null)
-                        .WithMany()
-                        .HasForeignKey("LeftNodeId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("GameGuild.Economy.Persistence.EconomyEntityGraphNodeRow", null)
-                        .WithMany()
-                        .HasForeignKey("RightNodeId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyEntryAllocationRow", b =>
-                {
-                    b.HasOne("GameGuild.Economy.Persistence.EconomyJournalLineRow", null)
-                        .WithMany()
-                        .HasForeignKey("JournalLineId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("GameGuild.Economy.Persistence.EconomyCreditLotRow", null)
-                        .WithMany()
-                        .HasForeignKey("ParentLotId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyFragmentRootRangeRow", b =>
-                {
-                    b.HasOne("GameGuild.Economy.Persistence.EconomyCreditLotRow", null)
-                        .WithMany()
-                        .HasForeignKey("CreditLotId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("GameGuild.Economy.Persistence.EconomyEntryAllocationRow", null)
-                        .WithMany()
-                        .HasForeignKey("EntryAllocationId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("GameGuild.Economy.Persistence.EconomySourceStampRow", null)
-                        .WithMany()
-                        .HasForeignKey("RootSourceStampId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyFundingClaimRow", b =>
-                {
-                    b.HasOne("GameGuild.Economy.Persistence.EconomyPostingGroupRow", null)
-                        .WithOne()
-                        .HasForeignKey("GameGuild.Economy.Persistence.EconomyFundingClaimRow", "PostingGroupId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("GameGuild.Economy.Persistence.EconomyCreditLotRow", null)
-                        .WithOne()
-                        .HasForeignKey("GameGuild.Economy.Persistence.EconomyFundingClaimRow", "RootCreditLotId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("GameGuild.Economy.Persistence.EconomySourceStampRow", null)
-                        .WithOne()
-                        .HasForeignKey("GameGuild.Economy.Persistence.EconomyFundingClaimRow", "SourceStampId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("GameGuild.Economy.Persistence.EconomyWalletRow", null)
-                        .WithMany()
-                        .HasForeignKey("WalletId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyHoldEventRow", b =>
-                {
-                    b.HasOne("GameGuild.Economy.Persistence.EconomyHoldRow", null)
-                        .WithMany()
-                        .HasForeignKey("HoldId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyHoldRow", b =>
-                {
-                    b.HasOne("GameGuild.Economy.Persistence.EconomyWalletRow", null)
-                        .WithMany()
-                        .HasForeignKey("WalletId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyIdempotencyRecordRow", b =>
-                {
-                    b.HasOne("GameGuild.Economy.Persistence.EconomyPostingGroupRow", null)
-                        .WithMany()
-                        .HasForeignKey("PostingGroupId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyJournalEntryRow", b =>
-                {
-                    b.HasOne("GameGuild.Economy.Persistence.EconomyPostingGroupRow", null)
-                        .WithMany()
-                        .HasForeignKey("PostingGroupId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyJournalLineRow", b =>
-                {
-                    b.HasOne("GameGuild.Economy.Persistence.EconomyAccountRow", null)
-                        .WithMany()
-                        .HasForeignKey("AccountId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("GameGuild.Economy.Persistence.EconomyCreditLotRow", null)
-                        .WithMany()
-                        .HasForeignKey("CreditLotId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("GameGuild.Economy.Persistence.EconomyJournalEntryRow", null)
-                        .WithMany()
-                        .HasForeignKey("JournalEntryId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("GameGuild.Economy.Persistence.EconomyWalletRow", null)
-                        .WithMany()
-                        .HasForeignKey("WalletId")
-                        .OnDelete(DeleteBehavior.Restrict);
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyKillSwitchReleaseApprovalRow", b =>
-                {
-                    b.HasOne("GameGuild.Economy.Persistence.EconomyKillSwitchRow", null)
-                        .WithMany()
-                        .HasForeignKey("KillSwitchId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyLegacyCutoverAuditRow", b =>
-                {
-                    b.HasOne("GameGuild.Economy.Persistence.EconomyLegacyCutoverRow", null)
-                        .WithMany()
-                        .HasForeignKey("TenantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyLegacyCutoverRow", b =>
-                {
-                    b.HasOne("GameGuild.Economy.Persistence.EconomyLegacyShadowBatchRow", null)
-                        .WithOne()
-                        .HasForeignKey("GameGuild.Economy.Persistence.EconomyLegacyCutoverRow", "BatchId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyLegacyShadowWalletRow", b =>
-                {
-                    b.HasOne("GameGuild.Economy.Persistence.EconomyLegacyShadowBatchRow", null)
-                        .WithMany()
-                        .HasForeignKey("BatchId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("GameGuild.Economy.Persistence.EconomyWalletRow", null)
-                        .WithMany()
-                        .HasForeignKey("EconomyWalletId")
-                        .OnDelete(DeleteBehavior.Restrict);
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyLotLineageEdgeRow", b =>
-                {
-                    b.HasOne("GameGuild.Economy.Persistence.EconomyCreditLotRow", null)
-                        .WithMany()
-                        .HasForeignKey("ChildLotId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("GameGuild.Economy.Persistence.EconomyCreditLotRow", null)
-                        .WithMany()
-                        .HasForeignKey("ParentLotId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyOutboxMessageRow", b =>
-                {
-                    b.HasOne("GameGuild.Economy.Persistence.EconomyPostingGroupRow", null)
-                        .WithMany()
-                        .HasForeignKey("PostingGroupId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyPostingGroupRow", b =>
-                {
-                    b.HasOne("GameGuild.Economy.Persistence.EconomySourceStampRow", null)
-                        .WithMany()
-                        .HasForeignKey("SourceStampId")
-                        .OnDelete(DeleteBehavior.Restrict);
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyProjectionGenerationApprovalRow", b =>
-                {
-                    b.HasOne("GameGuild.Economy.Persistence.EconomyProjectionGenerationRow", null)
-                        .WithMany()
-                        .HasForeignKey("Generation")
-                        .HasPrincipalKey("Generation")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyProjectionReconciliationEventRow", b =>
-                {
-                    b.HasOne("GameGuild.Economy.Persistence.EconomyWalletRow", null)
-                        .WithMany()
-                        .HasForeignKey("WalletId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyProviderDisputeEventRow", b =>
-                {
-                    b.HasOne("GameGuild.Economy.Persistence.EconomyProviderDisputeRow", null)
-                        .WithMany()
-                        .HasForeignKey("ProviderDisputeReference")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("GameGuild.Economy.Persistence.EconomySourceStampRow", null)
-                        .WithMany()
-                        .HasForeignKey("SourceStampId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyProviderDisputeRow", b =>
-                {
-                    b.HasOne("GameGuild.Economy.Persistence.EconomyWalletRow", null)
-                        .WithMany()
-                        .HasForeignKey("ResponsibleWalletId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("GameGuild.Economy.Persistence.EconomySourceStampRow", null)
-                        .WithMany()
-                        .HasForeignKey("SourceStampId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyProviderFactAllocationRow", b =>
-                {
-                    b.HasOne("GameGuild.Economy.Persistence.EconomyJournalLineRow", null)
-                        .WithMany()
-                        .HasForeignKey("JournalLineId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("GameGuild.Economy.Persistence.EconomySourceStampRow", null)
-                        .WithMany()
-                        .HasForeignKey("SourceStampId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyReserveAssetAllocationRow", b =>
-                {
-                    b.HasOne("GameGuild.Economy.Persistence.EconomyReserveHeadRow", null)
-                        .WithMany()
-                        .HasForeignKey("ReserveVersion")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyRiskAuditEvidenceRow", b =>
-                {
-                    b.HasOne("GameGuild.Economy.Persistence.EconomyRiskDecisionRow", null)
-                        .WithMany()
-                        .HasForeignKey("RiskDecisionId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyRiskCounterReservationRow", b =>
-                {
-                    b.HasOne("GameGuild.Economy.Persistence.EconomyRiskCounterRow", null)
-                        .WithMany()
-                        .HasForeignKey("RiskCounterId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("GameGuild.Economy.Persistence.EconomyRiskDecisionRow", null)
-                        .WithMany()
-                        .HasForeignKey("RiskDecisionId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyRiskDecisionConsumptionRow", b =>
-                {
-                    b.HasOne("GameGuild.Economy.Persistence.EconomyPostingGroupRow", null)
-                        .WithMany()
-                        .HasForeignKey("PostingGroupId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("GameGuild.Economy.Persistence.EconomyRiskDecisionRow", null)
-                        .WithMany()
-                        .HasForeignKey("RiskDecisionId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyRiskDecisionRow", b =>
-                {
-                    b.HasOne("GameGuild.Economy.Persistence.EconomyWalletRow", null)
-                        .WithMany()
-                        .HasForeignKey("DestinationWalletId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("GameGuild.Economy.Persistence.EconomyWalletRow", null)
-                        .WithMany()
-                        .HasForeignKey("SourceWalletId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyRiskReviewCaseRow", b =>
-                {
-                    b.HasOne("GameGuild.Economy.Persistence.EconomyRiskReviewCaseRow", null)
-                        .WithMany()
-                        .HasForeignKey("AppealOf")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("GameGuild.Economy.Persistence.EconomyRiskDecisionRow", null)
-                        .WithMany()
-                        .HasForeignKey("RiskDecisionId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyRiskReviewEventRow", b =>
-                {
-                    b.HasOne("GameGuild.Economy.Persistence.EconomyRiskReviewCaseRow", null)
-                        .WithMany()
-                        .HasForeignKey("RiskReviewCaseId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyRootReversalStateRow", b =>
-                {
-                    b.HasOne("GameGuild.Economy.Persistence.EconomySourceStampRow", null)
-                        .WithMany()
-                        .HasForeignKey("RootSourceStampId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomySourceStampEventRow", b =>
-                {
-                    b.HasOne("GameGuild.Economy.Persistence.EconomySourceStampRow", null)
-                        .WithMany()
-                        .HasForeignKey("SourceStampId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyTopUpIntentRow", b =>
-                {
-                    b.HasOne("GameGuild.Economy.Persistence.EconomyPostingGroupRow", null)
-                        .WithMany()
-                        .HasForeignKey("PostingGroupId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("GameGuild.Economy.Persistence.EconomyWalletRow", null)
-                        .WithMany()
-                        .HasForeignKey("WalletId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyWalletBalanceProjectionRow", b =>
-                {
-                    b.HasOne("GameGuild.Economy.Persistence.EconomyWalletRow", null)
-                        .WithOne()
-                        .HasForeignKey("GameGuild.Economy.Persistence.EconomyWalletBalanceProjectionRow", "WalletId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyWalletDebtEventRow", b =>
-                {
-                    b.HasOne("GameGuild.Economy.Persistence.EconomySourceStampRow", null)
-                        .WithMany()
-                        .HasForeignKey("SourceStampId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("GameGuild.Economy.Persistence.EconomyWalletDebtRow", null)
-                        .WithMany()
-                        .HasForeignKey("WalletId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyWalletDebtRow", b =>
-                {
-                    b.HasOne("GameGuild.Economy.Persistence.EconomyWalletRow", null)
-                        .WithOne()
-                        .HasForeignKey("GameGuild.Economy.Persistence.EconomyWalletDebtRow", "WalletId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Persistence.EconomyWalletProjectionGenerationRow", b =>
-                {
-                    b.HasOne("GameGuild.Economy.Persistence.EconomyProjectionGenerationRow", null)
-                        .WithMany()
-                        .HasForeignKey("Generation")
-                        .HasPrincipalKey("Generation")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("GameGuild.Economy.Persistence.EconomyWalletRow", null)
-                        .WithMany()
-                        .HasForeignKey("WalletId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Treasury.AdminWithdrawalAuditEventRow", b =>
-                {
-                    b.HasOne("GameGuild.Economy.Treasury.AdminWithdrawalRunRow", null)
-                        .WithMany()
-                        .HasForeignKey("RunId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Treasury.AdminWithdrawalDispatchOutboxRow", b =>
-                {
-                    b.HasOne("GameGuild.Economy.Treasury.AdminWithdrawalRunRow", null)
-                        .WithMany()
-                        .HasForeignKey("RunId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("GameGuild.Economy.Treasury.AdminWithdrawalProviderEventRow", b =>
-                {
-                    b.HasOne("GameGuild.Economy.Treasury.AdminWithdrawalRunRow", null)
-                        .WithMany()
-                        .HasForeignKey("RunId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
             modelBuilder.Entity("GameGuild.Features.FeatureFlagDependencyLink", b =>
                 {
                     b.HasOne("GameGuild.Features.FeatureFlag", "DependsOnFeatureFlag")
@@ -28018,6 +27345,806 @@ namespace GameGuild.API.Database.Migrations
                         .IsRequired();
 
                     b.Navigation("FeatureFlag");
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.AdRewards.Persistence.AdRewardCapConsumptionRow", b =>
+                {
+                    b.HasOne("GameGuild.Finance.Economy.AdRewards.Persistence.AdRewardSessionRow", null)
+                        .WithMany()
+                        .HasForeignKey("SessionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.AdRewards.Persistence.AdRewardPendingClaimRow", b =>
+                {
+                    b.HasOne("GameGuild.Finance.Economy.AdRewards.Persistence.AdProviderReportRow", null)
+                        .WithMany()
+                        .HasForeignKey("ProviderReportId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("GameGuild.Finance.Economy.AdRewards.Persistence.AdRewardSessionRow", null)
+                        .WithOne()
+                        .HasForeignKey("GameGuild.Finance.Economy.AdRewards.Persistence.AdRewardPendingClaimRow", "SessionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.AdRewards.Persistence.AdRewardPlaybackMilestoneRow", b =>
+                {
+                    b.HasOne("GameGuild.Finance.Economy.AdRewards.Persistence.AdRewardSessionRow", null)
+                        .WithMany()
+                        .HasForeignKey("SessionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.AdRewards.Persistence.AdRewardProviderBatchClaimRow", b =>
+                {
+                    b.HasOne("GameGuild.Finance.Economy.AdRewards.Persistence.AdProviderReportRow", null)
+                        .WithMany()
+                        .HasForeignKey("ProviderReportId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("GameGuild.Finance.Economy.AdRewards.Persistence.AdRewardSessionRow", null)
+                        .WithMany()
+                        .HasForeignKey("SessionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.AdRewards.Persistence.AdRewardProviderProofInboxRow", b =>
+                {
+                    b.HasOne("GameGuild.Finance.Economy.AdRewards.Persistence.AdRewardSessionRow", null)
+                        .WithMany()
+                        .HasForeignKey("SessionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.AdRewards.Persistence.AdRewardReconciliationRow", b =>
+                {
+                    b.HasOne("GameGuild.Finance.Economy.AdRewards.Persistence.AdProviderReportRow", null)
+                        .WithOne()
+                        .HasForeignKey("GameGuild.Finance.Economy.AdRewards.Persistence.AdRewardReconciliationRow", "ProviderReportId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.AdRewards.Persistence.AdRewardSessionEventRow", b =>
+                {
+                    b.HasOne("GameGuild.Finance.Economy.AdRewards.Persistence.AdRewardSessionRow", null)
+                        .WithMany()
+                        .HasForeignKey("SessionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Bounties.Persistence.BountyEscrowFragmentRow", b =>
+                {
+                    b.HasOne("GameGuild.Finance.Economy.Bounties.Persistence.BountyRow", null)
+                        .WithMany()
+                        .HasForeignKey("BountyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Bounties.Persistence.BountyExpirationEventRow", b =>
+                {
+                    b.HasOne("GameGuild.Finance.Economy.Bounties.Persistence.BountyRow", null)
+                        .WithOne()
+                        .HasForeignKey("GameGuild.Finance.Economy.Bounties.Persistence.BountyExpirationEventRow", "BountyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Bounties.Persistence.BountyTerminalEventRow", b =>
+                {
+                    b.HasOne("GameGuild.Finance.Economy.Bounties.Persistence.BountyRow", null)
+                        .WithOne()
+                        .HasForeignKey("GameGuild.Finance.Economy.Bounties.Persistence.BountyTerminalEventRow", "BountyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Marketplace.Persistence.MarketplaceEventRow", b =>
+                {
+                    b.HasOne("GameGuild.Finance.Economy.Marketplace.Persistence.MarketplaceSettlementRow", null)
+                        .WithMany()
+                        .HasForeignKey("SettlementId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Marketplace.Persistence.MarketplaceFundingFragmentRow", b =>
+                {
+                    b.HasOne("GameGuild.Finance.Economy.Marketplace.Persistence.MarketplaceSettlementRow", null)
+                        .WithMany()
+                        .HasForeignKey("SettlementId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Marketplace.Persistence.MarketplaceOutboxRow", b =>
+                {
+                    b.HasOne("GameGuild.Finance.Economy.Marketplace.Persistence.MarketplaceSettlementRow", null)
+                        .WithMany()
+                        .HasForeignKey("SettlementId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Marketplace.Persistence.MarketplaceRefundDebtRow", b =>
+                {
+                    b.HasOne("GameGuild.Finance.Economy.Marketplace.Persistence.MarketplaceRefundRow", null)
+                        .WithMany()
+                        .HasForeignKey("RefundId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("GameGuild.Finance.Economy.Marketplace.Persistence.MarketplaceSettlementRow", null)
+                        .WithMany()
+                        .HasForeignKey("SettlementId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Marketplace.Persistence.MarketplaceRefundLegRow", b =>
+                {
+                    b.HasOne("GameGuild.Finance.Economy.Marketplace.Persistence.MarketplaceRefundRow", null)
+                        .WithMany()
+                        .HasForeignKey("RefundId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("GameGuild.Finance.Economy.Marketplace.Persistence.MarketplaceSettlementRow", null)
+                        .WithMany()
+                        .HasForeignKey("SettlementId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Marketplace.Persistence.MarketplaceRefundRow", b =>
+                {
+                    b.HasOne("GameGuild.Finance.Economy.Marketplace.Persistence.MarketplaceSettlementRow", null)
+                        .WithMany()
+                        .HasForeignKey("SettlementId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Marketplace.Persistence.MarketplaceSettlementCreditRow", b =>
+                {
+                    b.HasOne("GameGuild.Finance.Economy.Marketplace.Persistence.MarketplaceSettlementRow", null)
+                        .WithMany()
+                        .HasForeignKey("SettlementId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Marketplace.Persistence.MarketplaceSettlementLegRow", b =>
+                {
+                    b.HasOne("GameGuild.Finance.Economy.Marketplace.Persistence.MarketplaceSettlementRow", null)
+                        .WithMany()
+                        .HasForeignKey("SettlementId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Payouts.PayoutAuthorizationEvidenceRow", b =>
+                {
+                    b.HasOne("GameGuild.Finance.Economy.Payouts.PayoutOperationRow", null)
+                        .WithMany()
+                        .HasForeignKey("OperationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Payouts.PayoutDispatchOutboxRow", b =>
+                {
+                    b.HasOne("GameGuild.Finance.Economy.Payouts.PayoutOperationRow", null)
+                        .WithMany()
+                        .HasForeignKey("OperationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Payouts.PayoutProviderEventRow", b =>
+                {
+                    b.HasOne("GameGuild.Finance.Economy.Payouts.PayoutOperationRow", null)
+                        .WithMany()
+                        .HasForeignKey("OperationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyAccountRow", b =>
+                {
+                    b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyWalletRow", null)
+                        .WithMany()
+                        .HasForeignKey("WalletId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyAnchorVerificationRow", b =>
+                {
+                    b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyExternalAnchorRow", null)
+                        .WithMany()
+                        .HasForeignKey("ExternalAnchorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyCapabilityPolicyApprovalRow", b =>
+                {
+                    b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyCapabilityPolicyRow", null)
+                        .WithMany()
+                        .HasForeignKey("PolicyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyCapabilityReceiptConsumptionRow", b =>
+                {
+                    b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyCapabilityReceiptRow", null)
+                        .WithMany()
+                        .HasForeignKey("ReceiptId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyCapabilityReceiptRow", b =>
+                {
+                    b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyRiskDecisionRow", null)
+                        .WithMany()
+                        .HasForeignKey("RiskDecisionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyComplianceHoldEventRow", b =>
+                {
+                    b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyComplianceHoldRow", null)
+                        .WithMany()
+                        .HasForeignKey("HoldId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyComplianceOutboxRow", b =>
+                {
+                    b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyComplianceEvidenceRow", null)
+                        .WithMany()
+                        .HasForeignKey("EvidenceId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyCreditLotRow", b =>
+                {
+                    b.HasOne("GameGuild.Finance.Economy.Persistence.EconomySourceStampRow", null)
+                        .WithMany()
+                        .HasForeignKey("RootSourceStampId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyWalletRow", null)
+                        .WithMany()
+                        .HasForeignKey("WalletId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyDispatchSnapshotRow", b =>
+                {
+                    b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyPostingGroupRow", null)
+                        .WithMany()
+                        .HasForeignKey("PostingGroupId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyDisputeFragmentFreezeRow", b =>
+                {
+                    b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyCreditLotRow", null)
+                        .WithMany()
+                        .HasForeignKey("CreditLotId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyProviderDisputeRow", null)
+                        .WithMany()
+                        .HasForeignKey("ProviderDisputeReference")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("GameGuild.Finance.Economy.Persistence.EconomySourceStampRow", null)
+                        .WithMany()
+                        .HasForeignKey("RootSourceStampId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyWalletRow", null)
+                        .WithMany()
+                        .HasForeignKey("WalletId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyDisputeFragmentRangeRow", b =>
+                {
+                    b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyDisputeFragmentFreezeRow", null)
+                        .WithMany()
+                        .HasForeignKey("DisputeFragmentFreezeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyEntityGraphEdgeRow", b =>
+                {
+                    b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyEntityGraphNodeRow", null)
+                        .WithMany()
+                        .HasForeignKey("LeftNodeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyEntityGraphNodeRow", null)
+                        .WithMany()
+                        .HasForeignKey("RightNodeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyEntryAllocationRow", b =>
+                {
+                    b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyJournalLineRow", null)
+                        .WithMany()
+                        .HasForeignKey("JournalLineId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyCreditLotRow", null)
+                        .WithMany()
+                        .HasForeignKey("ParentLotId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyFragmentRootRangeRow", b =>
+                {
+                    b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyCreditLotRow", null)
+                        .WithMany()
+                        .HasForeignKey("CreditLotId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyEntryAllocationRow", null)
+                        .WithMany()
+                        .HasForeignKey("EntryAllocationId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("GameGuild.Finance.Economy.Persistence.EconomySourceStampRow", null)
+                        .WithMany()
+                        .HasForeignKey("RootSourceStampId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyFundingClaimRow", b =>
+                {
+                    b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyPostingGroupRow", null)
+                        .WithOne()
+                        .HasForeignKey("GameGuild.Finance.Economy.Persistence.EconomyFundingClaimRow", "PostingGroupId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyCreditLotRow", null)
+                        .WithOne()
+                        .HasForeignKey("GameGuild.Finance.Economy.Persistence.EconomyFundingClaimRow", "RootCreditLotId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("GameGuild.Finance.Economy.Persistence.EconomySourceStampRow", null)
+                        .WithOne()
+                        .HasForeignKey("GameGuild.Finance.Economy.Persistence.EconomyFundingClaimRow", "SourceStampId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyWalletRow", null)
+                        .WithMany()
+                        .HasForeignKey("WalletId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyHoldEventRow", b =>
+                {
+                    b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyHoldRow", null)
+                        .WithMany()
+                        .HasForeignKey("HoldId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyHoldRow", b =>
+                {
+                    b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyWalletRow", null)
+                        .WithMany()
+                        .HasForeignKey("WalletId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyIdempotencyRecordRow", b =>
+                {
+                    b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyPostingGroupRow", null)
+                        .WithMany()
+                        .HasForeignKey("PostingGroupId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyJournalEntryRow", b =>
+                {
+                    b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyPostingGroupRow", null)
+                        .WithMany()
+                        .HasForeignKey("PostingGroupId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyJournalLineRow", b =>
+                {
+                    b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyAccountRow", null)
+                        .WithMany()
+                        .HasForeignKey("AccountId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyCreditLotRow", null)
+                        .WithMany()
+                        .HasForeignKey("CreditLotId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyJournalEntryRow", null)
+                        .WithMany()
+                        .HasForeignKey("JournalEntryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyWalletRow", null)
+                        .WithMany()
+                        .HasForeignKey("WalletId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyKillSwitchReleaseApprovalRow", b =>
+                {
+                    b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyKillSwitchRow", null)
+                        .WithMany()
+                        .HasForeignKey("KillSwitchId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyLegacyCutoverAuditRow", b =>
+                {
+                    b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyLegacyCutoverRow", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyLegacyCutoverRow", b =>
+                {
+                    b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyLegacyShadowBatchRow", null)
+                        .WithOne()
+                        .HasForeignKey("GameGuild.Finance.Economy.Persistence.EconomyLegacyCutoverRow", "BatchId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyLegacyShadowWalletRow", b =>
+                {
+                    b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyLegacyShadowBatchRow", null)
+                        .WithMany()
+                        .HasForeignKey("BatchId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyWalletRow", null)
+                        .WithMany()
+                        .HasForeignKey("EconomyWalletId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyLotLineageEdgeRow", b =>
+                {
+                    b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyCreditLotRow", null)
+                        .WithMany()
+                        .HasForeignKey("ChildLotId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyCreditLotRow", null)
+                        .WithMany()
+                        .HasForeignKey("ParentLotId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyOutboxMessageRow", b =>
+                {
+                    b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyPostingGroupRow", null)
+                        .WithMany()
+                        .HasForeignKey("PostingGroupId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyPostingGroupRow", b =>
+                {
+                    b.HasOne("GameGuild.Finance.Economy.Persistence.EconomySourceStampRow", null)
+                        .WithMany()
+                        .HasForeignKey("SourceStampId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyProjectionGenerationApprovalRow", b =>
+                {
+                    b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyProjectionGenerationRow", null)
+                        .WithMany()
+                        .HasForeignKey("Generation")
+                        .HasPrincipalKey("Generation")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyProjectionReconciliationEventRow", b =>
+                {
+                    b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyWalletRow", null)
+                        .WithMany()
+                        .HasForeignKey("WalletId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyProviderDisputeEventRow", b =>
+                {
+                    b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyProviderDisputeRow", null)
+                        .WithMany()
+                        .HasForeignKey("ProviderDisputeReference")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("GameGuild.Finance.Economy.Persistence.EconomySourceStampRow", null)
+                        .WithMany()
+                        .HasForeignKey("SourceStampId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyProviderDisputeRow", b =>
+                {
+                    b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyWalletRow", null)
+                        .WithMany()
+                        .HasForeignKey("ResponsibleWalletId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("GameGuild.Finance.Economy.Persistence.EconomySourceStampRow", null)
+                        .WithMany()
+                        .HasForeignKey("SourceStampId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyProviderFactAllocationRow", b =>
+                {
+                    b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyJournalLineRow", null)
+                        .WithMany()
+                        .HasForeignKey("JournalLineId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("GameGuild.Finance.Economy.Persistence.EconomySourceStampRow", null)
+                        .WithMany()
+                        .HasForeignKey("SourceStampId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyReserveAssetAllocationRow", b =>
+                {
+                    b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyReserveHeadRow", null)
+                        .WithMany()
+                        .HasForeignKey("ReserveVersion")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyRiskAuditEvidenceRow", b =>
+                {
+                    b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyRiskDecisionRow", null)
+                        .WithMany()
+                        .HasForeignKey("RiskDecisionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyRiskCounterReservationRow", b =>
+                {
+                    b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyRiskCounterRow", null)
+                        .WithMany()
+                        .HasForeignKey("RiskCounterId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyRiskDecisionRow", null)
+                        .WithMany()
+                        .HasForeignKey("RiskDecisionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyRiskDecisionConsumptionRow", b =>
+                {
+                    b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyPostingGroupRow", null)
+                        .WithMany()
+                        .HasForeignKey("PostingGroupId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyRiskDecisionRow", null)
+                        .WithMany()
+                        .HasForeignKey("RiskDecisionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyRiskDecisionRow", b =>
+                {
+                    b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyWalletRow", null)
+                        .WithMany()
+                        .HasForeignKey("DestinationWalletId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyWalletRow", null)
+                        .WithMany()
+                        .HasForeignKey("SourceWalletId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyRiskReviewCaseRow", b =>
+                {
+                    b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyRiskReviewCaseRow", null)
+                        .WithMany()
+                        .HasForeignKey("AppealOf")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyRiskDecisionRow", null)
+                        .WithMany()
+                        .HasForeignKey("RiskDecisionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyRiskReviewEventRow", b =>
+                {
+                    b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyRiskReviewCaseRow", null)
+                        .WithMany()
+                        .HasForeignKey("RiskReviewCaseId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyRootReversalStateRow", b =>
+                {
+                    b.HasOne("GameGuild.Finance.Economy.Persistence.EconomySourceStampRow", null)
+                        .WithMany()
+                        .HasForeignKey("RootSourceStampId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomySourceStampEventRow", b =>
+                {
+                    b.HasOne("GameGuild.Finance.Economy.Persistence.EconomySourceStampRow", null)
+                        .WithMany()
+                        .HasForeignKey("SourceStampId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyTopUpIntentRow", b =>
+                {
+                    b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyPostingGroupRow", null)
+                        .WithMany()
+                        .HasForeignKey("PostingGroupId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyWalletRow", null)
+                        .WithMany()
+                        .HasForeignKey("WalletId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyWalletBalanceProjectionRow", b =>
+                {
+                    b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyWalletRow", null)
+                        .WithOne()
+                        .HasForeignKey("GameGuild.Finance.Economy.Persistence.EconomyWalletBalanceProjectionRow", "WalletId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyWalletDebtEventRow", b =>
+                {
+                    b.HasOne("GameGuild.Finance.Economy.Persistence.EconomySourceStampRow", null)
+                        .WithMany()
+                        .HasForeignKey("SourceStampId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyWalletDebtRow", null)
+                        .WithMany()
+                        .HasForeignKey("WalletId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyWalletDebtRow", b =>
+                {
+                    b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyWalletRow", null)
+                        .WithOne()
+                        .HasForeignKey("GameGuild.Finance.Economy.Persistence.EconomyWalletDebtRow", "WalletId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Persistence.EconomyWalletProjectionGenerationRow", b =>
+                {
+                    b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyProjectionGenerationRow", null)
+                        .WithMany()
+                        .HasForeignKey("Generation")
+                        .HasPrincipalKey("Generation")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("GameGuild.Finance.Economy.Persistence.EconomyWalletRow", null)
+                        .WithMany()
+                        .HasForeignKey("WalletId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Treasury.AdminWithdrawalAuditEventRow", b =>
+                {
+                    b.HasOne("GameGuild.Finance.Economy.Treasury.AdminWithdrawalRunRow", null)
+                        .WithMany()
+                        .HasForeignKey("RunId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Treasury.AdminWithdrawalDispatchOutboxRow", b =>
+                {
+                    b.HasOne("GameGuild.Finance.Economy.Treasury.AdminWithdrawalRunRow", null)
+                        .WithMany()
+                        .HasForeignKey("RunId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("GameGuild.Finance.Economy.Treasury.AdminWithdrawalProviderEventRow", b =>
+                {
+                    b.HasOne("GameGuild.Finance.Economy.Treasury.AdminWithdrawalRunRow", null)
+                        .WithMany()
+                        .HasForeignKey("RunId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("GameGuild.GameJams.JamScore", b =>

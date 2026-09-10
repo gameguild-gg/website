@@ -1,7 +1,9 @@
-import { requireDashboardCapability } from '@/lib/require-dashboard-capability';
-import type { ReactNode } from 'react';
+import type { ReactNode } from "react";
 
-export default async function ProjectsManagementLayout({ children }: { children: ReactNode }) {
-  await requireDashboardCapability('TestingLab.ReviewApplications');
+export default function LegacyTestingProjectsLayout({
+  children,
+}: {
+  children: ReactNode;
+}) {
   return children;
 }

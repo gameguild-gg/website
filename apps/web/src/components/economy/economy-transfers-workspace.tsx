@@ -1,7 +1,7 @@
 'use client';
 
 import { createTransferAction, type EconomyActionResult } from '@/lib/economy/actions';
-import type { EconomyContractsEconomyWalletTransaction } from '@game-guild/client';
+import type { FinanceEconomyContractsEconomyWalletTransaction as EconomyContractsEconomyWalletTransaction } from '@game-guild/client';
 import { Badge } from '@game-guild/ui/components/badge';
 import { Button } from '@game-guild/ui/components/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@game-guild/ui/components/card';

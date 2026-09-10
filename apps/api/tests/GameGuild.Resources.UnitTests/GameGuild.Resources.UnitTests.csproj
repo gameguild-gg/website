@@ -48,6 +48,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\Source\Modules\GameGuild.Resources\GameGuild.Resources.csproj" />
+        <ProjectReference Include="..\..\Source\Modules\GameGuild.Finance.Contracts\GameGuild.Finance.Contracts.csproj" />
         <ProjectReference Include="..\..\Source\Modules\GameGuild.SharedKernel\GameGuild.SharedKernel.csproj" />
         <ProjectReference Include="..\..\Source\GameGuild.API\GameGuild.API.csproj" />
     </ItemGroup>

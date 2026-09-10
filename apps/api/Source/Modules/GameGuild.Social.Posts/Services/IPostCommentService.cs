@@ -9,10 +9,10 @@ public interface IPostCommentService
     Task<Result<PostComment>> AddCommentAsync(Guid postId, Guid authorId, string content, Guid? parentCommentId = null, CancellationToken cancellationToken = default);
 
     /// <summary>Updates a comment</summary>
-    Task<Result<PostComment>> UpdateCommentAsync(Guid commentId, string content, CancellationToken cancellationToken = default);
+    Task<Result<PostComment>> UpdateCommentAsync(Guid commentId, Guid actorId, string content, CancellationToken cancellationToken = default);
 
     /// <summary>Deletes a comment</summary>
-    Task<Result> DeleteCommentAsync(Guid commentId, CancellationToken cancellationToken = default);
+    Task<Result> DeleteCommentAsync(Guid commentId, Guid actorId, CancellationToken cancellationToken = default);
 
     /// <summary>Gets comments for a post</summary>
     Task<Result<IEnumerable<PostComment>>> GetPostCommentsAsync(Guid postId, int skip = 0, int take = 50, CancellationToken cancellationToken = default);

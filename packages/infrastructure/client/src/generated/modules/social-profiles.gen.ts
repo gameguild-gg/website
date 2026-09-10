@@ -232,33 +232,6 @@ export class SocialProfilesModule {
 
     return result;
   }
-
-  /**
-   */
-  async putApiSocialProfilesUsersStats(
-    userId: string,
-    body: Types.SocialProfilesUpdateProfileStatsBody,
-  ): Promise<Result<Types.SocialProfilesSocialProfileDto, ApiError>> {
-    const url = `/api/social/profiles/users/${userId}/stats`;
-
-    // Validate request body
-    const validatedBody = safeParse(Types.SocialProfilesUpdateProfileStatsBodySchema, body, 'request');
-
-    const result = await this.client.request({
-      method: 'PUT',
-      path: url,
-      body: validatedBody,
-      requiresAuth: true,
-    });
-
-    // Validate response
-    if (result.ok) {
-      const validatedData = safeParse(Types.SocialProfilesSocialProfileDtoSchema, result.data, 'response');
-      return { ok: true, data: validatedData };
-    }
-
-    return result;
-  }
 }
 
 export function createSocialProfilesModule(client: ApiClient): SocialProfilesModule {

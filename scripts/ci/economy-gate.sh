@@ -54,7 +54,7 @@ def discover_projects(relative_directory):
     projects = set()
     base_directory = root / relative_directory
     scope_prefixes = (
-        "GameGuild.Economy",
+        "GameGuild.Finance.Economy",
         "GameGuild.Compliance.KYC",
         "GameGuild.Compliance.FinancialCrime",
         "GameGuild.TrustSafety",

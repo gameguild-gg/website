@@ -16,7 +16,11 @@ export default async function Page({ params, searchParams }: PageProps<'/[locale
   const [{ locale }, query, session] = await Promise.all([params, searchParams, auth()]);
   if (session && typeof session !== 'function') {
     const rawTab = typeof query?.tab === 'string' && isSocialFeedTab(query.tab) ? query.tab : undefined;
-    redirect({ href: rawTab ? `/social?tab=${rawTab}` : '/social', locale });
+    const rawTag = typeof query?.tag === 'string' ? query.tag : undefined;
+    const feedQuery = new URLSearchParams();
+    if (rawTab) feedQuery.set('tab', rawTab);
+    if (rawTag) feedQuery.set('tag', rawTag);
+    redirect({ href: feedQuery.size > 0 ? `/social?${feedQuery}` : '/social', locale });
     throw new Error('Authenticated home redirect');
   }
 

@@ -1,7 +1,7 @@
 using GameGuild.CQRS;
-using GameGuild.Economy.AdRewards;
-using GameGuild.Economy.Bounties;
-using GameGuild.Economy.Marketplace;
+using GameGuild.Finance.Economy.AdRewards;
+using GameGuild.Finance.Economy.Bounties;
+using GameGuild.Finance.Economy.Marketplace;
 
 namespace GameGuild.API.Controllers;
 

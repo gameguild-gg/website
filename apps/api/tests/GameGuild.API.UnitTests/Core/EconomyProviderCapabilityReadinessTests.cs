@@ -1,7 +1,7 @@
 using GameGuild.API.Setup;
 using GameGuild.Commerce.Billing;
 using GameGuild.Commerce.Payments;
-using GameGuild.Economy.Risk;
+using GameGuild.Finance.Economy.Risk;
 using FluentAssertions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;

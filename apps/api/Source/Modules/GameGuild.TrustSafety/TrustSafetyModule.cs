@@ -1,4 +1,4 @@
-using GameGuild.Economy.Risk;
+using GameGuild.Finance.Economy.Risk;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;

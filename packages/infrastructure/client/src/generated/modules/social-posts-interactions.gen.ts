@@ -92,6 +92,24 @@ export class SocialPostsInteractionsModule {
 
   /**
    */
+  async postPostsReposts(postId: string, body: Types.SocialPostsControllersCreateRepostInput): Promise<Result<void, ApiError>> {
+    const url = `/api/v1/posts/${postId}/reposts`;
+
+    // Validate request body
+    const validatedBody = safeParse(Types.SocialPostsControllersCreateRepostInputSchema, body, 'request');
+
+    const result = await this.client.request({
+      method: 'POST',
+      path: url,
+      body: validatedBody,
+      requiresAuth: true,
+    });
+
+    return result as Result<void, ApiError>;
+  }
+
+  /**
+   */
   async postPostsShare(postId: string): Promise<Result<void, ApiError>> {
     const url = `/api/v1/posts/${postId}/share`;
 

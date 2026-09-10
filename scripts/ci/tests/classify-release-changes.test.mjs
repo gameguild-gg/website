@@ -107,7 +107,7 @@ test("a shared UI package deploys each JavaScript consumer", () => {
 test("Economy changes always require the complete Economy release gate", () => {
   assert.deepEqual(
     classifyReleaseChanges([
-      "apps/api/Source/Modules/GameGuild.Economy/Wallets/Wallet.cs",
+      "apps/api/Source/Modules/GameGuild.Finance.Economy/Wallets/Wallet.cs",
     ]),
     {
       ...expectedEmptyClassification,

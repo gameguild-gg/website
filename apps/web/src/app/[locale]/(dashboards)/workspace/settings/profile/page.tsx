@@ -2,6 +2,7 @@ import { auth } from '@/auth';
 import { ProfileForm } from '@/components/settings/profile-form';
 import { getProfile } from '@/lib/user-settings/queries';
 import { getTranslations } from 'next-intl/server';
+import { loadSocialProfile } from '@/lib/feed/queries';
 import React from 'react';
 
 export default async function ProfileSettingsPage({
@@ -21,6 +22,13 @@ export default async function ProfileSettingsPage({
   const accountEmail = session && typeof session !== 'function'
     ? session.user.email ?? t('fallbackEmail')
     : t('fallbackEmail');
+  const currentUserId = session && typeof session !== 'function' ? session.user.id : null;
+  const socialProfile = currentUserId
+    ? await loadSocialProfile(currentUserId).catch(() => null)
+    : null;
+  const fallbackHandle = `${accountEmail.split('@')[0] ?? 'creator'}-${currentUserId?.slice(0, 6) ?? 'profile'}`
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]/g, '-');
 
   return (
     <div className="space-y-6">
@@ -32,6 +40,7 @@ export default async function ProfileSettingsPage({
         accountName={accountName}
         accountEmail={accountEmail}
         defaultValues={{
+          handle: socialProfile?.handle ?? fallbackHandle,
           displayName: profile?.displayName ?? accountName,
           bio: profile?.bio ?? '',
           location: profile?.location ?? '',

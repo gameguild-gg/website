@@ -69,12 +69,12 @@
         <ProjectReference Include="..\Modules\GameGuild.Identity.Context\GameGuild.Identity.Context.csproj" />
         <ProjectReference Include="..\Modules\GameGuild.Commerce.Billing\GameGuild.Commerce.Billing.csproj" />
         <ProjectReference Include="..\Modules\GameGuild.Commerce.Orders\GameGuild.Commerce.Orders.csproj" />
-        <ProjectReference Include="..\Modules\GameGuild.Economy\GameGuild.Economy.csproj" />
-        <ProjectReference Include="..\Modules\GameGuild.Economy.AdRewards\GameGuild.Economy.AdRewards.csproj" />
-        <ProjectReference Include="..\Modules\GameGuild.Economy.Bounties\GameGuild.Economy.Bounties.csproj" />
-        <ProjectReference Include="..\Modules\GameGuild.Economy.Marketplace\GameGuild.Economy.Marketplace.csproj" />
-        <ProjectReference Include="..\Modules\GameGuild.Economy.Payouts\GameGuild.Economy.Payouts.csproj" />
-        <ProjectReference Include="..\Modules\GameGuild.Economy.Treasury\GameGuild.Economy.Treasury.csproj" />
+        <ProjectReference Include="..\Modules\GameGuild.Finance.Economy\GameGuild.Finance.Economy.csproj" />
+        <ProjectReference Include="..\Modules\GameGuild.Finance.Economy.AdRewards\GameGuild.Finance.Economy.AdRewards.csproj" />
+        <ProjectReference Include="..\Modules\GameGuild.Finance.Economy.Bounties\GameGuild.Finance.Economy.Bounties.csproj" />
+        <ProjectReference Include="..\Modules\GameGuild.Finance.Economy.Marketplace\GameGuild.Finance.Economy.Marketplace.csproj" />
+        <ProjectReference Include="..\Modules\GameGuild.Finance.Economy.Payouts\GameGuild.Finance.Economy.Payouts.csproj" />
+        <ProjectReference Include="..\Modules\GameGuild.Finance.Economy.Treasury\GameGuild.Finance.Economy.Treasury.csproj" />
         <ProjectReference Include="..\Modules\GameGuild.Features\GameGuild.Features.csproj" />
         <ProjectReference Include="..\Modules\GameGuild.Localization\GameGuild.Localization.csproj" />
         <ProjectReference Include="..\Modules\GameGuild.Monitoring.SLA\GameGuild.Monitoring.SLA.csproj" />
@@ -86,7 +86,7 @@
         <ProjectReference Include="..\Modules\GameGuild.Learning.TestingLab\GameGuild.Learning.TestingLab.csproj" />
         <ProjectReference Include="..\Modules\GameGuild.Learning.Cohorts\GameGuild.Learning.Cohorts.csproj" />
         <ProjectReference Include="..\Modules\GameGuild.Learning.Assessments\GameGuild.Learning.Assessments.csproj" />
-        <ProjectReference Include="..\Modules\GameGuild.Lti\GameGuild.Lti.csproj" />
+        <ProjectReference Include="..\Modules\GameGuild.Learning.Lti\GameGuild.Learning.Lti.csproj" />
         <ProjectReference Include="..\Modules\GameGuild.Learning.Certificates\GameGuild.Learning.Certificates.csproj" />
         <ProjectReference Include="..\Modules\GameGuild.Learning.Workspaces\GameGuild.Learning.Workspaces.csproj" />
         <ProjectReference Include="..\Modules\GameGuild.Learning.Experience.Discovery\GameGuild.Learning.Experience.Discovery.csproj" />
@@ -99,8 +99,7 @@
         <ProjectReference Include="..\Modules\GameGuild.Social.Posts\GameGuild.Social.Posts.csproj" />
         <ProjectReference Include="..\Modules\GameGuild.Social.Reactions\GameGuild.Social.Reactions.csproj" />
         <ProjectReference Include="..\Modules\GameGuild.Social.Feed\GameGuild.Social.Feed.csproj" />
-        <!-- Social Modules — remaining modules are not in EnabledModules and do not have API bootstrap registration yet -->
-        <!-- <ProjectReference Include="..\Modules\GameGuild.Social.Follows\GameGuild.Social.Follows.csproj" /> -->
+        <ProjectReference Include="..\Modules\GameGuild.Social.Follows\GameGuild.Social.Follows.csproj" />
         <ProjectReference Include="..\Modules\GameGuild.GameJams\GameGuild.GameJams.csproj" />
         <ProjectReference Include="..\Modules\GameGuild.Projects\GameGuild.Projects.csproj" />
         <ProjectReference Include="..\Modules\GameGuild.ProjectWork\GameGuild.ProjectWork.csproj" />

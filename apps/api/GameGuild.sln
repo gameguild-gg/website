@@ -228,29 +228,29 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameGuild.Social.Groups", "
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameGuild.Social.Groups.UnitTests", "tests\GameGuild.Social.Groups.UnitTests\GameGuild.Social.Groups.UnitTests.csproj", "{EFEC1991-3F4A-4573-810A-7950A5737DF7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameGuild.Economy", "Source\Modules\GameGuild.Economy\GameGuild.Economy.csproj", "{26D62A4C-5E8A-48E1-9081-949FA27842C6}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameGuild.Finance.Economy", "Source\Modules\GameGuild.Finance.Economy\GameGuild.Finance.Economy.csproj", "{26D62A4C-5E8A-48E1-9081-949FA27842C6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameGuild.Economy.UnitTests", "tests\GameGuild.Economy.UnitTests\GameGuild.Economy.UnitTests.csproj", "{8DC61780-E35C-412C-B4C1-DB82859A6E81}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameGuild.Finance.Economy.UnitTests", "tests\GameGuild.Finance.Economy.UnitTests\GameGuild.Finance.Economy.UnitTests.csproj", "{8DC61780-E35C-412C-B4C1-DB82859A6E81}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameGuild.Economy.AdRewards", "Source\Modules\GameGuild.Economy.AdRewards\GameGuild.Economy.AdRewards.csproj", "{D582A062-5880-410D-AEB0-6DD1DE2C1831}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameGuild.Finance.Economy.AdRewards", "Source\Modules\GameGuild.Finance.Economy.AdRewards\GameGuild.Finance.Economy.AdRewards.csproj", "{D582A062-5880-410D-AEB0-6DD1DE2C1831}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameGuild.Economy.Bounties", "Source\Modules\GameGuild.Economy.Bounties\GameGuild.Economy.Bounties.csproj", "{52FA72DC-287D-4262-9ED8-2167C7ECE23D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameGuild.Finance.Economy.Bounties", "Source\Modules\GameGuild.Finance.Economy.Bounties\GameGuild.Finance.Economy.Bounties.csproj", "{52FA72DC-287D-4262-9ED8-2167C7ECE23D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameGuild.Economy.Payouts", "Source\Modules\GameGuild.Economy.Payouts\GameGuild.Economy.Payouts.csproj", "{7CF21119-9973-4FAE-A40C-69DCD9E40E65}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameGuild.Finance.Economy.Payouts", "Source\Modules\GameGuild.Finance.Economy.Payouts\GameGuild.Finance.Economy.Payouts.csproj", "{7CF21119-9973-4FAE-A40C-69DCD9E40E65}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameGuild.Economy.Treasury", "Source\Modules\GameGuild.Economy.Treasury\GameGuild.Economy.Treasury.csproj", "{22EAD164-52CC-4C35-908C-C543BB66D637}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameGuild.Finance.Economy.Treasury", "Source\Modules\GameGuild.Finance.Economy.Treasury\GameGuild.Finance.Economy.Treasury.csproj", "{22EAD164-52CC-4C35-908C-C543BB66D637}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameGuild.Compliance.FinancialCrime", "Source\Modules\GameGuild.Compliance.FinancialCrime\GameGuild.Compliance.FinancialCrime.csproj", "{A0C972A6-E416-4B55-AC85-805AFCF6F627}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameGuild.TrustSafety", "Source\Modules\GameGuild.TrustSafety\GameGuild.TrustSafety.csproj", "{80DE797B-A51F-44CB-86C9-3CEE42B24C7F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameGuild.Economy.AdRewards.UnitTests", "tests\GameGuild.Economy.AdRewards.UnitTests\GameGuild.Economy.AdRewards.UnitTests.csproj", "{C19E9CA6-CFEA-437C-BAC2-2EC440942DD4}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameGuild.Finance.Economy.AdRewards.UnitTests", "tests\GameGuild.Finance.Economy.AdRewards.UnitTests\GameGuild.Finance.Economy.AdRewards.UnitTests.csproj", "{C19E9CA6-CFEA-437C-BAC2-2EC440942DD4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameGuild.Economy.Bounties.UnitTests", "tests\GameGuild.Economy.Bounties.UnitTests\GameGuild.Economy.Bounties.UnitTests.csproj", "{B3033827-2A44-44D1-A3C3-5F70B56A29E2}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameGuild.Finance.Economy.Bounties.UnitTests", "tests\GameGuild.Finance.Economy.Bounties.UnitTests\GameGuild.Finance.Economy.Bounties.UnitTests.csproj", "{B3033827-2A44-44D1-A3C3-5F70B56A29E2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameGuild.Economy.Payouts.UnitTests", "tests\GameGuild.Economy.Payouts.UnitTests\GameGuild.Economy.Payouts.UnitTests.csproj", "{8BAC31AF-A956-4B76-955A-8C44E66B1043}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameGuild.Finance.Economy.Payouts.UnitTests", "tests\GameGuild.Finance.Economy.Payouts.UnitTests\GameGuild.Finance.Economy.Payouts.UnitTests.csproj", "{8BAC31AF-A956-4B76-955A-8C44E66B1043}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameGuild.Economy.Treasury.UnitTests", "tests\GameGuild.Economy.Treasury.UnitTests\GameGuild.Economy.Treasury.UnitTests.csproj", "{C9FE2B5D-277B-4061-9E43-5717E2D8587E}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameGuild.Finance.Economy.Treasury.UnitTests", "tests\GameGuild.Finance.Economy.Treasury.UnitTests\GameGuild.Finance.Economy.Treasury.UnitTests.csproj", "{C9FE2B5D-277B-4061-9E43-5717E2D8587E}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameGuild.Compliance.FinancialCrime.UnitTests", "tests\GameGuild.Compliance.FinancialCrime.UnitTests\GameGuild.Compliance.FinancialCrime.UnitTests.csproj", "{A817D69E-FE0D-433A-BCE6-8E07895C19AD}"
 EndProject
@@ -262,9 +262,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameGuild.Learning", "Sourc
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameGuild.Learning.Workspaces.UnitTests", "tests\GameGuild.Learning.Workspaces.UnitTests\GameGuild.Learning.Workspaces.UnitTests.csproj", "{FB3036B3-3C75-4D1E-B22A-CF5190D4CFB1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameGuild.Economy.Marketplace", "Source\Modules\GameGuild.Economy.Marketplace\GameGuild.Economy.Marketplace.csproj", "{EFEE4235-C829-4B9B-8388-6F8E43549051}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameGuild.Finance.Economy.Marketplace", "Source\Modules\GameGuild.Finance.Economy.Marketplace\GameGuild.Finance.Economy.Marketplace.csproj", "{EFEE4235-C829-4B9B-8388-6F8E43549051}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameGuild.Economy.Marketplace.UnitTests", "tests\GameGuild.Economy.Marketplace.UnitTests\GameGuild.Economy.Marketplace.UnitTests.csproj", "{CD34349C-8422-4939-9A82-1AEECD29C8C9}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameGuild.Finance.Economy.Marketplace.UnitTests", "tests\GameGuild.Finance.Economy.Marketplace.UnitTests\GameGuild.Finance.Economy.Marketplace.UnitTests.csproj", "{CD34349C-8422-4939-9A82-1AEECD29C8C9}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameGuild.Analytics.UnitTests", "tests\GameGuild.Analytics.UnitTests\GameGuild.Analytics.UnitTests.csproj", "{86CEB3E2-52F5-4FF5-B1F4-3ED6A315A574}"
 EndProject
@@ -297,6 +297,22 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameGuild.TestingLab", "Source\Modules\GameGuild.TestingLab\GameGuild.TestingLab.csproj", "{270FA3C6-7BF7-4363-989B-3BC7B297A8FA}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameGuild.UserProfiles.UnitTests", "tests\GameGuild.UserProfiles.UnitTests\GameGuild.UserProfiles.UnitTests.csproj", "{96D4BE85-FB76-4C52-9136-26D913DEB6A1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameGuild.Finance.Contracts", "Source\Modules\GameGuild.Finance.Contracts\GameGuild.Finance.Contracts.csproj", "{EA3254AC-81CF-4C00-BDFB-C5AFB302EF60}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameGuild.ArchitectureAnalyzers", "Source\GameGuild.ArchitectureAnalyzers\GameGuild.ArchitectureAnalyzers.csproj", "{3C14160A-B757-4E09-A055-78F825652A99}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameGuild.Finance.Ledgers", "Source\Modules\GameGuild.Finance.Ledgers\GameGuild.Finance.Ledgers.csproj", "{3E0250B5-A125-42D6-8CD1-AEE4725B2B7C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameGuild.Finance.Contracts.UnitTests", "tests\GameGuild.Finance.Contracts.UnitTests\GameGuild.Finance.Contracts.UnitTests.csproj", "{A4AF30A9-234F-4842-91EB-843B70B3AACD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameGuild.Learning.Lti", "Source\Modules\GameGuild.Learning.Lti\GameGuild.Learning.Lti.csproj", "{A3BF1381-1904-45BB-BCBB-E8C1AC30EE92}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameGuild.Learning.Lti.UnitTests", "tests\GameGuild.Learning.Lti.UnitTests\GameGuild.Learning.Lti.UnitTests.csproj", "{AD924B21-C14F-4244-9F58-7FDF984ADA9C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameGuild.TestSupport.Finance.Economy", "tests\GameGuild.TestSupport.Finance.Economy\GameGuild.TestSupport.Finance.Economy.csproj", "{EE207B52-1260-4BB5-BF21-60B180A8B3EB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameGuild.Finance.Ledgers.UnitTests", "tests\GameGuild.Finance.Ledgers.UnitTests\GameGuild.Finance.Ledgers.UnitTests.csproj", "{5A741EDB-E2AF-4B16-AC01-2F7FD3EDF051}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -1956,6 +1972,102 @@ Global
 		{96D4BE85-FB76-4C52-9136-26D913DEB6A1}.Release|x64.Build.0 = Release|Any CPU
 		{96D4BE85-FB76-4C52-9136-26D913DEB6A1}.Release|x86.ActiveCfg = Release|Any CPU
 		{96D4BE85-FB76-4C52-9136-26D913DEB6A1}.Release|x86.Build.0 = Release|Any CPU
+		{EA3254AC-81CF-4C00-BDFB-C5AFB302EF60}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EA3254AC-81CF-4C00-BDFB-C5AFB302EF60}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EA3254AC-81CF-4C00-BDFB-C5AFB302EF60}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{EA3254AC-81CF-4C00-BDFB-C5AFB302EF60}.Debug|x64.Build.0 = Debug|Any CPU
+		{EA3254AC-81CF-4C00-BDFB-C5AFB302EF60}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{EA3254AC-81CF-4C00-BDFB-C5AFB302EF60}.Debug|x86.Build.0 = Debug|Any CPU
+		{EA3254AC-81CF-4C00-BDFB-C5AFB302EF60}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EA3254AC-81CF-4C00-BDFB-C5AFB302EF60}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EA3254AC-81CF-4C00-BDFB-C5AFB302EF60}.Release|x64.ActiveCfg = Release|Any CPU
+		{EA3254AC-81CF-4C00-BDFB-C5AFB302EF60}.Release|x64.Build.0 = Release|Any CPU
+		{EA3254AC-81CF-4C00-BDFB-C5AFB302EF60}.Release|x86.ActiveCfg = Release|Any CPU
+		{EA3254AC-81CF-4C00-BDFB-C5AFB302EF60}.Release|x86.Build.0 = Release|Any CPU
+		{3C14160A-B757-4E09-A055-78F825652A99}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3C14160A-B757-4E09-A055-78F825652A99}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3C14160A-B757-4E09-A055-78F825652A99}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{3C14160A-B757-4E09-A055-78F825652A99}.Debug|x64.Build.0 = Debug|Any CPU
+		{3C14160A-B757-4E09-A055-78F825652A99}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{3C14160A-B757-4E09-A055-78F825652A99}.Debug|x86.Build.0 = Debug|Any CPU
+		{3C14160A-B757-4E09-A055-78F825652A99}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3C14160A-B757-4E09-A055-78F825652A99}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3C14160A-B757-4E09-A055-78F825652A99}.Release|x64.ActiveCfg = Release|Any CPU
+		{3C14160A-B757-4E09-A055-78F825652A99}.Release|x64.Build.0 = Release|Any CPU
+		{3C14160A-B757-4E09-A055-78F825652A99}.Release|x86.ActiveCfg = Release|Any CPU
+		{3C14160A-B757-4E09-A055-78F825652A99}.Release|x86.Build.0 = Release|Any CPU
+		{3E0250B5-A125-42D6-8CD1-AEE4725B2B7C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3E0250B5-A125-42D6-8CD1-AEE4725B2B7C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3E0250B5-A125-42D6-8CD1-AEE4725B2B7C}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{3E0250B5-A125-42D6-8CD1-AEE4725B2B7C}.Debug|x64.Build.0 = Debug|Any CPU
+		{3E0250B5-A125-42D6-8CD1-AEE4725B2B7C}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{3E0250B5-A125-42D6-8CD1-AEE4725B2B7C}.Debug|x86.Build.0 = Debug|Any CPU
+		{3E0250B5-A125-42D6-8CD1-AEE4725B2B7C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3E0250B5-A125-42D6-8CD1-AEE4725B2B7C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3E0250B5-A125-42D6-8CD1-AEE4725B2B7C}.Release|x64.ActiveCfg = Release|Any CPU
+		{3E0250B5-A125-42D6-8CD1-AEE4725B2B7C}.Release|x64.Build.0 = Release|Any CPU
+		{3E0250B5-A125-42D6-8CD1-AEE4725B2B7C}.Release|x86.ActiveCfg = Release|Any CPU
+		{3E0250B5-A125-42D6-8CD1-AEE4725B2B7C}.Release|x86.Build.0 = Release|Any CPU
+		{A4AF30A9-234F-4842-91EB-843B70B3AACD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A4AF30A9-234F-4842-91EB-843B70B3AACD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A4AF30A9-234F-4842-91EB-843B70B3AACD}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{A4AF30A9-234F-4842-91EB-843B70B3AACD}.Debug|x64.Build.0 = Debug|Any CPU
+		{A4AF30A9-234F-4842-91EB-843B70B3AACD}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{A4AF30A9-234F-4842-91EB-843B70B3AACD}.Debug|x86.Build.0 = Debug|Any CPU
+		{A4AF30A9-234F-4842-91EB-843B70B3AACD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A4AF30A9-234F-4842-91EB-843B70B3AACD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A4AF30A9-234F-4842-91EB-843B70B3AACD}.Release|x64.ActiveCfg = Release|Any CPU
+		{A4AF30A9-234F-4842-91EB-843B70B3AACD}.Release|x64.Build.0 = Release|Any CPU
+		{A4AF30A9-234F-4842-91EB-843B70B3AACD}.Release|x86.ActiveCfg = Release|Any CPU
+		{A4AF30A9-234F-4842-91EB-843B70B3AACD}.Release|x86.Build.0 = Release|Any CPU
+		{A3BF1381-1904-45BB-BCBB-E8C1AC30EE92}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A3BF1381-1904-45BB-BCBB-E8C1AC30EE92}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A3BF1381-1904-45BB-BCBB-E8C1AC30EE92}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{A3BF1381-1904-45BB-BCBB-E8C1AC30EE92}.Debug|x64.Build.0 = Debug|Any CPU
+		{A3BF1381-1904-45BB-BCBB-E8C1AC30EE92}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{A3BF1381-1904-45BB-BCBB-E8C1AC30EE92}.Debug|x86.Build.0 = Debug|Any CPU
+		{A3BF1381-1904-45BB-BCBB-E8C1AC30EE92}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A3BF1381-1904-45BB-BCBB-E8C1AC30EE92}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A3BF1381-1904-45BB-BCBB-E8C1AC30EE92}.Release|x64.ActiveCfg = Release|Any CPU
+		{A3BF1381-1904-45BB-BCBB-E8C1AC30EE92}.Release|x64.Build.0 = Release|Any CPU
+		{A3BF1381-1904-45BB-BCBB-E8C1AC30EE92}.Release|x86.ActiveCfg = Release|Any CPU
+		{A3BF1381-1904-45BB-BCBB-E8C1AC30EE92}.Release|x86.Build.0 = Release|Any CPU
+		{AD924B21-C14F-4244-9F58-7FDF984ADA9C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AD924B21-C14F-4244-9F58-7FDF984ADA9C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AD924B21-C14F-4244-9F58-7FDF984ADA9C}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{AD924B21-C14F-4244-9F58-7FDF984ADA9C}.Debug|x64.Build.0 = Debug|Any CPU
+		{AD924B21-C14F-4244-9F58-7FDF984ADA9C}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{AD924B21-C14F-4244-9F58-7FDF984ADA9C}.Debug|x86.Build.0 = Debug|Any CPU
+		{AD924B21-C14F-4244-9F58-7FDF984ADA9C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AD924B21-C14F-4244-9F58-7FDF984ADA9C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AD924B21-C14F-4244-9F58-7FDF984ADA9C}.Release|x64.ActiveCfg = Release|Any CPU
+		{AD924B21-C14F-4244-9F58-7FDF984ADA9C}.Release|x64.Build.0 = Release|Any CPU
+		{AD924B21-C14F-4244-9F58-7FDF984ADA9C}.Release|x86.ActiveCfg = Release|Any CPU
+		{AD924B21-C14F-4244-9F58-7FDF984ADA9C}.Release|x86.Build.0 = Release|Any CPU
+		{EE207B52-1260-4BB5-BF21-60B180A8B3EB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EE207B52-1260-4BB5-BF21-60B180A8B3EB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EE207B52-1260-4BB5-BF21-60B180A8B3EB}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{EE207B52-1260-4BB5-BF21-60B180A8B3EB}.Debug|x64.Build.0 = Debug|Any CPU
+		{EE207B52-1260-4BB5-BF21-60B180A8B3EB}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{EE207B52-1260-4BB5-BF21-60B180A8B3EB}.Debug|x86.Build.0 = Debug|Any CPU
+		{EE207B52-1260-4BB5-BF21-60B180A8B3EB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EE207B52-1260-4BB5-BF21-60B180A8B3EB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EE207B52-1260-4BB5-BF21-60B180A8B3EB}.Release|x64.ActiveCfg = Release|Any CPU
+		{EE207B52-1260-4BB5-BF21-60B180A8B3EB}.Release|x64.Build.0 = Release|Any CPU
+		{EE207B52-1260-4BB5-BF21-60B180A8B3EB}.Release|x86.ActiveCfg = Release|Any CPU
+		{EE207B52-1260-4BB5-BF21-60B180A8B3EB}.Release|x86.Build.0 = Release|Any CPU
+		{5A741EDB-E2AF-4B16-AC01-2F7FD3EDF051}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5A741EDB-E2AF-4B16-AC01-2F7FD3EDF051}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5A741EDB-E2AF-4B16-AC01-2F7FD3EDF051}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{5A741EDB-E2AF-4B16-AC01-2F7FD3EDF051}.Debug|x64.Build.0 = Debug|Any CPU
+		{5A741EDB-E2AF-4B16-AC01-2F7FD3EDF051}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{5A741EDB-E2AF-4B16-AC01-2F7FD3EDF051}.Debug|x86.Build.0 = Debug|Any CPU
+		{5A741EDB-E2AF-4B16-AC01-2F7FD3EDF051}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5A741EDB-E2AF-4B16-AC01-2F7FD3EDF051}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5A741EDB-E2AF-4B16-AC01-2F7FD3EDF051}.Release|x64.ActiveCfg = Release|Any CPU
+		{5A741EDB-E2AF-4B16-AC01-2F7FD3EDF051}.Release|x64.Build.0 = Release|Any CPU
+		{5A741EDB-E2AF-4B16-AC01-2F7FD3EDF051}.Release|x86.ActiveCfg = Release|Any CPU
+		{5A741EDB-E2AF-4B16-AC01-2F7FD3EDF051}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -2108,5 +2220,6 @@ Global
 		{13A4018E-06B6-43B6-BA74-EFD271A3A8BD} = {3E5E3798-9DEC-4CDB-86F7-0722667D13C5}
 		{270FA3C6-7BF7-4363-989B-3BC7B297A8FA} = {94462590-D4AF-4FE8-BA8F-111A28B4D121}
 		{96D4BE85-FB76-4C52-9136-26D913DEB6A1} = {3E5E3798-9DEC-4CDB-86F7-0722667D13C5}
+		{5A741EDB-E2AF-4B16-AC01-2F7FD3EDF051} = {3E5E3798-9DEC-4CDB-86F7-0722667D13C5}
 	EndGlobalSection
 EndGlobal

@@ -14,6 +14,7 @@ public class PostCrudService : IPostCrudService
     private static class PostErrors
     {
         public static Error NotFound => Error.NotFound("Post.NotFound", "Post not found");
+        public static Error Forbidden => Error.Forbidden("Post.Forbidden", "Only the post author can perform this action");
     }
 
     public PostCrudService(IApplicationDbContext context, ILogger<PostCrudService> logger)
@@ -78,13 +79,16 @@ public class PostCrudService : IPostCrudService
         return Result.Success(post);
     }
 
-    public async Task<Result<Post>> UpdatePostAsync(Guid postId, string content, CancellationToken cancellationToken = default)
+    public async Task<Result<Post>> UpdatePostAsync(Guid postId, Guid actorId, string content, CancellationToken cancellationToken = default)
     {
         var post = await _context.Set<Post>()
             .FirstOrDefaultAsync(p => p.Id == postId && p.DeletedAt == null, cancellationToken).ConfigureAwait(false);
 
         if (post is null)
             return Result.Failure<Post>(PostErrors.NotFound);
+
+        if (post.AuthorId != actorId)
+            return Result.Failure<Post>(PostErrors.Forbidden);
 
         post.Edit(content);
         await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
@@ -94,13 +98,24 @@ public class PostCrudService : IPostCrudService
         return Result.Success(post);
     }
 
-    public async Task<Result> DeletePostAsync(Guid postId, CancellationToken cancellationToken = default)
+    public async Task<Result> DeletePostAsync(Guid postId, Guid actorId, CancellationToken cancellationToken = default)
     {
         var post = await _context.Set<Post>()
-            .FirstOrDefaultAsync(p => p.Id == postId, cancellationToken).ConfigureAwait(false);
+            .FirstOrDefaultAsync(p => p.Id == postId && p.DeletedAt == null, cancellationToken).ConfigureAwait(false);
 
         if (post is null)
             return Result.Failure(PostErrors.NotFound);
+
+        if (post.AuthorId != actorId)
+            return Result.Failure(PostErrors.Forbidden);
+
+        if (post.RepostOfPostId is Guid sourcePostId)
+        {
+            var source = await _context.Set<Post>()
+                .FirstOrDefaultAsync(p => p.Id == sourcePostId && p.DeletedAt == null, cancellationToken)
+                .ConfigureAwait(false);
+            source?.DecrementShares();
+        }
 
         post.Delete();
         await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);

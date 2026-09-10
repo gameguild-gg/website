@@ -1,1 +1,1 @@
-global using GameGuild.TestSupport.Economy;
+global using GameGuild.TestSupport.Finance.Economy;

@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "areas": [
+    {
+      "kind": "module",
+      "name": "Finance.Ledgers",
+      "prefer": "GameGuild",
+      "reason": "Reviewed durable ledger-entry event production and use-case contracts."
+    },
+    {
+      "kind": "test",
+      "name": "Finance.Ledgers.UnitTests",
+      "prefer": "GameGuild",
+      "reason": "Mirror the reviewed durable ledger-entry event tests."
+    },
+    {
+      "kind": "module",
+      "name": "Resources",
+      "prefer": "GameGuild",
+      "reason": "Reviewed idempotent economy posting internal-cost listener."
+    },
+    {
+      "kind": "test",
+      "name": "Resources.UnitTests",
+      "prefer": "GameGuild",
+      "reason": "Mirror the reviewed economy posting cost-accounting test."
+    },
+    {
+      "kind": "shared-host-test",
+      "name": "Database/EconomyPostingIntegrationOutboxMigrationTests.cs",
+      "prefer": "GameGuild",
+      "reason": "Mirror the reviewed Economy-to-global-outbox bridge contract test."
+    }
+  ]
+}

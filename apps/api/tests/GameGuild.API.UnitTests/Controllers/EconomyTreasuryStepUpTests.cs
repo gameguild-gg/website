@@ -1,7 +1,7 @@
 using FluentAssertions;
 using GameGuild.API.Controllers;
-using GameGuild.Economy.Risk;
-using GameGuild.Economy.Treasury;
+using GameGuild.Finance.Economy.Risk;
+using GameGuild.Finance.Economy.Treasury;
 using GameGuild.Identity.Authorization;
 using GameGuild.Identity.Context.Actors;
 using Microsoft.AspNetCore.Http;

@@ -136,6 +136,7 @@ public class SecureUploadService : ISecureUploadService
 
         // Update content with scan status
         var assetContent = await _contentRepository.GetByIdAsync(assetContentId, ct).ConfigureAwait(false);
+        ModerationResult? moderationResult = null;
         if (assetContent != null)
         {
             // Mark scan status
@@ -158,19 +159,30 @@ public class SecureUploadService : ISecureUploadService
                 assetContent.SetVirusScanStatus(VirusScanStatus.Clean, "Scanning disabled");
             }
 
-            // Threat #8: Handle moderation
+            // Persist the scan decision before moderation loads the content again.
+            await _contentRepository.UpdateAsync(assetContent, ct).ConfigureAwait(false);
+
+            // Threat #8: media that requires synchronous moderation must actually be
+            // inspected here. Merely marking it NeedsReview leaves every image/video
+            // permanently stuck in Processing when no human review was requested.
             if (requiresSyncModeration)
             {
-                // High-risk content types need review before serving
-                assetContent.SetModerationStatus(ModerationStatus.NeedsReview);
+                if (content.CanSeek)
+                    content.Position = 0;
+
+                moderationResult = await _moderationService
+                    .ModerateAsync(assetContentId, content, mimeType, ct)
+                    .ConfigureAwait(false);
+
+                if (content.CanSeek)
+                    content.Position = 0;
             }
             else
             {
                 // Queue for async moderation
                 assetContent.SetModerationStatus(ModerationStatus.Pending);
+                await _contentRepository.UpdateAsync(assetContent, ct).ConfigureAwait(false);
             }
-
-            await _contentRepository.UpdateAsync(assetContent, ct).ConfigureAwait(false);
         }
 
         // Determine final status
@@ -182,8 +194,23 @@ public class SecureUploadService : ISecureUploadService
             status = SecureUploadStatus.PendingVirusScan;
         }
 
-        if (requiresSyncModeration || assetContent?.ModerationStatus == ModerationStatus.NeedsReview)
+        if (requiresSyncModeration && moderationResult is null)
         {
+            status = SecureUploadStatus.PendingModeration;
+            requiresReview = true;
+        }
+        else if (moderationResult is { IsApproved: false })
+        {
+            if (moderationResult.Status is ModerationStatus.Blocked or ModerationStatus.Rejected)
+            {
+                return new SecureUploadResult(
+                    false,
+                    assetReferenceId,
+                    assetContentId,
+                    moderationResult.DetectedIssue ?? moderationResult.Error ?? "Content moderation rejected the upload.",
+                    SecureUploadStatus.Rejected);
+            }
+
             status = SecureUploadStatus.PendingModeration;
             requiresReview = true;
         }

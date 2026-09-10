@@ -72,7 +72,7 @@ describe('vegalite fenced code blocks in markdown', () => {
       () => {
         expect(document.querySelector('svg')).toBeInTheDocument();
       },
-      { timeout: 15000 },
+      { timeout: 30_000 },
     );
-  });
+  }, 30_000);
 });

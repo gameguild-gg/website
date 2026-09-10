@@ -1,8 +1,10 @@
 using GameGuild.CQRS;
+using GameGuild.Assets.SocialMedia;
 using GameGuild.Identity.Context.Actors;
 using GameGuild.Social.Posts.Commands;
 using GameGuild.Social.Posts.Services;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace GameGuild.Social.Posts.Controllers;
@@ -15,7 +17,8 @@ namespace GameGuild.Social.Posts.Controllers;
 public class PostsCrudController(
     IPostService postService,
     IActorContextAccessor actorContextAccessor,
-    ISender sender)
+    ISender sender,
+    ISocialMediaAssetService socialMediaAssets)
     : BaseApiController
 {
     private Guid GetCurrentUserId()
@@ -124,13 +127,30 @@ public class PostsCrudController(
         if (userId == Guid.Empty)
             return Unauthorized();
 
+        SocialMediaAssetDescriptor? media = null;
+        if (request.AssetReferenceId.HasValue)
+        {
+            media = await socialMediaAssets.ResolveReadyOwnedAsync(
+                request.AssetReferenceId.Value,
+                userId,
+                cancellationToken).ConfigureAwait(false);
+            if (media is null)
+                return BadRequest(new ProblemDetails
+                {
+                    Title = "Media is unavailable",
+                    Detail = "The asset must belong to the current user and finish security processing before it can be attached."
+                });
+        }
+
         var result = await sender.Send(new CreatePostEndpointCommand(
             userId,
             request.Content,
             request.Visibility,
-            request.MediaUrl,
-            request.MediaType,
-            request.TenantId,
+            media?.DeliveryUrl,
+            media is null ? null : media.MimeType.StartsWith("video/", StringComparison.OrdinalIgnoreCase)
+                ? MediaType.Video
+                : MediaType.Image,
+            actorContextAccessor.ActorContext.TenantId,
             request.Tags), cancellationToken).ConfigureAwait(false);
 
         return result.IsSuccess
@@ -146,17 +166,12 @@ public class PostsCrudController(
         if (userId == Guid.Empty)
             return Unauthorized();
 
-        // Check ownership
-        var canPerform = await postService.CanUserPerformActionAsync(postId, userId, "edit", cancellationToken).ConfigureAwait(false);
-        if (!canPerform.IsSuccess || !canPerform.Value)
-            return Forbid();
-
         var result = await sender.Send(
-            new UpdatePostEndpointCommand(postId, request.Content),
+            new UpdatePostEndpointCommand(postId, userId, request.Content),
             cancellationToken).ConfigureAwait(false);
         return result.IsSuccess
             ? Ok(PostMappings.MapToDto(result.Value!))
-            : BadRequest(result.Error);
+            : MapMutationFailure(result.Error);
     }
 
     /// <summary>Delete a post</summary>
@@ -167,20 +182,22 @@ public class PostsCrudController(
         if (userId == Guid.Empty)
             return Unauthorized();
 
-        // Check ownership
-        var canPerform = await postService.CanUserPerformActionAsync(postId, userId, "delete", cancellationToken).ConfigureAwait(false);
-        if (!canPerform.IsSuccess || !canPerform.Value)
-            return Forbid();
-
         var result = await sender.Send(
-            new DeletePostEndpointCommand(postId),
+            new DeletePostEndpointCommand(postId, userId),
             cancellationToken).ConfigureAwait(false);
         return result.IsSuccess
             ? NoContent()
-            : BadRequest(result.Error);
+            : MapMutationFailure(result.Error);
     }
 
     #endregion
+
+    private IActionResult MapMutationFailure(Error error) => error.Type switch
+    {
+        ErrorType.NotFound => NotFound(error),
+        ErrorType.Forbidden => StatusCode(StatusCodes.Status403Forbidden, error),
+        _ => BadRequest(error)
+    };
 }
 
 #region Request DTOs
@@ -189,9 +206,7 @@ public sealed record CreatePostRequest
 {
     public string Content { get; init; } = string.Empty;
     public PostVisibility Visibility { get; init; } = PostVisibility.Public;
-    public string? MediaUrl { get; init; }
-    public MediaType? MediaType { get; init; }
-    public Guid? TenantId { get; init; }
+    public Guid? AssetReferenceId { get; init; }
     public string[]? Tags { get; init; }
 }
 

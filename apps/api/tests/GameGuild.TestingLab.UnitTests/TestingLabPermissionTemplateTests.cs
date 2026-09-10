@@ -86,9 +86,17 @@ public sealed class TestingLabPermissionTemplateTests
             .SetupGet(accessor => accessor.ActorContext)
             .Returns(ActorContextBuilder.ForUser(Guid.NewGuid()).WithRole("SystemAdmin").Build());
 
+        var sender = new Mock<GameGuild.CQRS.ISender>();
+        sender
+            .Setup(candidate => candidate.Send(
+                It.IsAny<CreateTestingLabRoleTemplateEndpointCommand>(),
+                It.IsAny<CancellationToken>()))
+            .Returns((CreateTestingLabRoleTemplateEndpointCommand command, CancellationToken _) =>
+                service.CreateRoleTemplateAsync(command.Name, command.Description, command.Permissions));
         var controller = new TestingLabPermissionController(
             service,
             actorContextAccessor.Object,
+            sender.Object,
             NullLogger<TestingLabPermissionController>.Instance);
 
         var created = await controller.CreateTestingLabRoleTemplate(new CreateTestingLabRoleRequest
@@ -151,9 +159,11 @@ public sealed class TestingLabPermissionTemplateTests
                 .WithTenantId(contextTenantId)
                 .WithRole("SystemAdmin")
                 .Build());
+        var sender = new Mock<GameGuild.CQRS.ISender>();
         var controller = new TestingLabPermissionController(
             permissionService.Object,
             actorContextAccessor.Object,
+            sender.Object,
             NullLogger<TestingLabPermissionController>.Instance);
 
         var result = await controller.AssignTestingLabRole(userId, new AssignTestingLabRoleRequest
@@ -163,11 +173,13 @@ public sealed class TestingLabPermissionTemplateTests
         });
 
         result.Should().BeOfType<OkResult>();
-        permissionService.Verify(service => service.AssignRoleToUserAsync(
-            userId,
-            requestedTenantId,
-            "TestingLab Reviewer",
-            null), Times.Once);
+        sender.Verify(candidate => candidate.Send(
+            It.Is<AssignTestingLabRoleEndpointCommand>(command =>
+                command.UserId == userId &&
+                command.TenantId == requestedTenantId &&
+                command.RoleName == "TestingLab Reviewer" &&
+                command.ExpiresAt == null),
+            It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -184,6 +196,7 @@ public sealed class TestingLabPermissionTemplateTests
         var controller = new TestingLabPermissionController(
             permissionService.Object,
             actorContextAccessor.Object,
+            Mock.Of<GameGuild.CQRS.ISender>(),
             NullLogger<TestingLabPermissionController>.Instance);
 
         var result = await controller.AssignTestingLabRole(Guid.NewGuid(), new AssignTestingLabRoleRequest

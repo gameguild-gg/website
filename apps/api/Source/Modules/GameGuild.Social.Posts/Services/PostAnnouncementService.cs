@@ -43,7 +43,7 @@ public class PostAnnouncementService : IPostAnnouncementService
             // Pin high-priority announcements
             if (priority == "high" || priority == "urgent")
             {
-                await _postService.TogglePostPinAsync(result.Value.Id, cancellationToken).ConfigureAwait(false);
+                await _postService.TogglePostPinAsync(result.Value.Id, result.Value.AuthorId, cancellationToken).ConfigureAwait(false);
             }
 
             // Add system tag

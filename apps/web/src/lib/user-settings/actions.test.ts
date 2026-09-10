@@ -34,6 +34,7 @@ describe('user settings actions', () => {
 
   it('updates a profile through the configured ApiClient request pipeline', async () => {
     await expect(updateProfileAction({
+      handle: 'ari-games',
       displayName: 'Ari',
       bio: 'Designs games.',
       location: 'São Paulo',
@@ -42,7 +43,7 @@ describe('user settings actions', () => {
       company: 'GameGuild',
     })).resolves.toEqual({ success: true, data: undefined });
 
-    expect(mocks.request).toHaveBeenCalledWith({
+    expect(mocks.request).toHaveBeenNthCalledWith(1, {
       method: 'PATCH',
       path: '/v1/users/user-1/profile',
       body: {
@@ -52,6 +53,20 @@ describe('user settings actions', () => {
         website: 'https://example.com',
         jobTitle: 'Designer',
         company: 'GameGuild',
+      },
+      requiresAuth: true,
+    });
+    expect(mocks.request).toHaveBeenNthCalledWith(2, {
+      method: 'PUT',
+      path: '/api/social/profiles/users/user-1',
+      body: {
+        handle: 'ari-games',
+        displayName: 'Ari',
+        bio: 'Designs games.',
+        headline: 'Designer at GameGuild',
+        location: 'São Paulo',
+        websiteUrl: 'https://example.com',
+        socialLinksJson: '{}',
       },
       requiresAuth: true,
     });
@@ -83,6 +98,7 @@ describe('user settings actions', () => {
 
     mocks.request.mockResolvedValueOnce({ ok: false, error: { message: 'Not allowed' } });
     await expect(updateProfileAction({
+      handle: 'ari',
       displayName: '',
       bio: '',
       location: '',
@@ -96,5 +112,21 @@ describe('user settings actions', () => {
     mocks.getGeneralPreferences.mockRejectedValue(new Error('Unauthorized'));
 
     await expect(getThemePreferenceAction()).resolves.toEqual({ success: false, error: 'Unauthorized' });
+  });
+
+  it('rejects invalid community handles before writing either profile', async () => {
+    await expect(updateProfileAction({
+      handle: 'bad handle',
+      displayName: 'Ari',
+      bio: '',
+      location: '',
+      website: '',
+      jobTitle: '',
+      company: '',
+    })).resolves.toEqual({
+      success: false,
+      error: 'Community handle must use 3–80 letters, numbers, underscores, or hyphens.',
+    });
+    expect(mocks.request).not.toHaveBeenCalled();
   });
 });

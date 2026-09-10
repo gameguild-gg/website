@@ -3,6 +3,7 @@ using GameGuild.Identity.Context.Actors;
 using GameGuild.Social.Posts.Commands;
 using GameGuild.Social.Posts.Services;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace GameGuild.Social.Posts.Controllers;
@@ -61,19 +62,12 @@ public class PostCommentsController(
         if (userId == Guid.Empty)
             return Unauthorized();
 
-        // Verify comment ownership before allowing update
-        var commentResult = await postService.GetCommentByIdAsync(commentId, cancellationToken).ConfigureAwait(false);
-        if (!commentResult.IsSuccess)
-            return NotFound(commentResult.Error);
-        if (commentResult.Value!.AuthorId != userId)
-            return Forbid();
-
         var result = await sender.Send(
-            new UpdatePostCommentEndpointCommand(commentId, request.Content),
+            new UpdatePostCommentEndpointCommand(commentId, userId, request.Content),
             cancellationToken).ConfigureAwait(false);
         return result.IsSuccess
             ? Ok(PostMappings.MapCommentToDto(result.Value!))
-            : BadRequest(result.Error);
+            : MapMutationFailure(result.Error);
     }
 
     /// <summary>Delete a comment</summary>
@@ -84,19 +78,12 @@ public class PostCommentsController(
         if (userId == Guid.Empty)
             return Unauthorized();
 
-        // Verify comment ownership before allowing delete
-        var commentResult = await postService.GetCommentByIdAsync(commentId, cancellationToken).ConfigureAwait(false);
-        if (!commentResult.IsSuccess)
-            return NotFound(commentResult.Error);
-        if (commentResult.Value!.AuthorId != userId)
-            return Forbid();
-
         var result = await sender.Send(
-            new DeletePostCommentEndpointCommand(commentId),
+            new DeletePostCommentEndpointCommand(commentId, userId),
             cancellationToken).ConfigureAwait(false);
         return result.IsSuccess
             ? NoContent()
-            : BadRequest(result.Error);
+            : MapMutationFailure(result.Error);
     }
 
     #endregion
@@ -137,6 +124,13 @@ public class PostCommentsController(
     }
 
     #endregion
+
+    private IActionResult MapMutationFailure(Error error) => error.Type switch
+    {
+        ErrorType.NotFound => NotFound(error),
+        ErrorType.Forbidden => StatusCode(StatusCodes.Status403Forbidden, error),
+        _ => BadRequest(error)
+    };
 }
 
 #region Request DTOs

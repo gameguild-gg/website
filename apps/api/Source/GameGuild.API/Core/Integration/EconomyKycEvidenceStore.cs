@@ -1,5 +1,5 @@
 using GameGuild.Compliance.KYC;
-using GameGuild.Economy.Risk;
+using GameGuild.Finance.Economy.Risk;
 
 namespace GameGuild.API.Core.Integration;
 

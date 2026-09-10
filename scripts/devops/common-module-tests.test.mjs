@@ -1,4 +1,6 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
 import test from 'node:test';
 import { testPlan, counters, assertSameSourceSnapshot } from './common-module-tests.mjs';
 
@@ -56,4 +58,27 @@ test('groups shared host tests into one filtered API project per repository', ()
   assert.equal(testPlan(withHost, { kind: 'integration' }).length, 2);
   withHost.areas.at(-1).roots.GameGuild = '../../outside/Core/StartupTests.cs';
   assert.throws(() => testPlan(withHost), /escapes|inconsistent/i);
+});
+
+test('treats the complete finance family and trust safety as common modules', () => {
+  const policy = JSON.parse(fs.readFileSync(path.join(import.meta.dirname, 'common-module-policy.json'), 'utf8'));
+  const expected = [
+    'Finance.Contracts',
+    'Finance.Economy',
+    'Finance.Economy.AdRewards',
+    'Finance.Economy.Bounties',
+    'Finance.Economy.Marketplace',
+    'Finance.Economy.Payouts',
+    'Finance.Economy.Treasury',
+    'Finance.Ledgers',
+    'TrustSafety',
+  ];
+
+  for (const module of expected)
+    assert.ok(policy.requiredCommonModules.includes(module), `${module} must be common`);
+
+  assert.equal(policy.productModules.GameGuild.ProjectWork, 'GameGuild game-development project work.');
+  assert.equal(policy.productModules.GameGuild['Learning.Lti'], 'GameGuild learning-tools interoperability.');
+  assert.equal(policy.productModules.GameGuild.Learning.Lti, undefined);
+  assert.equal(policy.productModules.ModuEstate['Finance.Ledgers'], undefined);
 });

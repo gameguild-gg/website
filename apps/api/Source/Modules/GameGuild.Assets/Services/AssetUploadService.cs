@@ -27,6 +27,7 @@ public class AssetUploadService : IAssetUploadService
     private readonly IAssetStorageService _storageService;
     private readonly Microsoft.Extensions.Options.IOptions<AssetUploadConfiguration> _options;
     private readonly ILogger<AssetUploadService> _logger;
+    private readonly IUseCaseOperationContextAccessor? _operationContextAccessor;
     
     // In-memory store for chunked uploads (should be replaced with distributed cache in production)
     private static readonly Dictionary<string, ChunkedUploadSession> _chunkedSessions = new();
@@ -37,13 +38,15 @@ public class AssetUploadService : IAssetUploadService
         IAssetReferenceRepository referenceRepository,
         IAssetStorageService storageService,
         Microsoft.Extensions.Options.IOptions<AssetUploadConfiguration> options,
-        ILogger<AssetUploadService> logger)
+        ILogger<AssetUploadService> logger,
+        IUseCaseOperationContextAccessor? operationContextAccessor = null)
     {
         _contentRepository = contentRepository;
         _referenceRepository = referenceRepository;
         _storageService = storageService;
         _options = options;
         _logger = logger;
+        _operationContextAccessor = operationContextAccessor;
     }
 
     public async Task<AssetUploadResult> UploadAsync(
@@ -312,7 +315,7 @@ public class AssetUploadService : IAssetUploadService
         return Convert.ToHexString(hashBytes).ToLowerInvariant();
     }
 
-    private static AssetObjectStoredEvent CreateObjectStoredEvent(
+    private AssetObjectStoredEvent CreateObjectStoredEvent(
         AssetContent content,
         Guid actorId,
         Guid? tenantId) => new(content.Id, content.ContentHash, content.SizeBytes, "object-storage")
@@ -321,10 +324,11 @@ public class AssetUploadService : IAssetUploadService
         ActorId = actorId,
         AggregateType = nameof(AssetContent),
         AggregateId = content.Id.ToString(),
-        CorrelationId = Guid.NewGuid()
+        CorrelationId = _operationContextAccessor?.Current?.CorrelationId ?? Guid.NewGuid(),
+        CausationId = _operationContextAccessor?.Current?.CausationId
     };
 
-    private static AssetReferenceCreatedEvent CreateReferenceCreatedEvent(
+    private AssetReferenceCreatedEvent CreateReferenceCreatedEvent(
         AssetReference reference,
         AssetContent content,
         Guid actorId,
@@ -334,7 +338,8 @@ public class AssetUploadService : IAssetUploadService
         ActorId = actorId,
         AggregateType = nameof(AssetReference),
         AggregateId = reference.Id.ToString(),
-        CorrelationId = Guid.NewGuid()
+        CorrelationId = _operationContextAccessor?.Current?.CorrelationId ?? Guid.NewGuid(),
+        CausationId = _operationContextAccessor?.Current?.CausationId
     };
 
     private static async Task<(int? Width, int? Height)> ExtractImageDimensionsAsync(

@@ -4,17 +4,15 @@ import { TestingLabAccessIssues } from "@/components/testing-lab/testing-lab-sta
 import { Link } from "@/i18n/navigation";
 import {
   getTestingLabAnalytics,
-  getTestingLabDashboard,
   getTestingLabSettings,
-  normalizeTestingSessionStatus,
 } from "@/lib/testing-lab";
 import {
   getTestingApplicationsDirectory,
+  getTestingEventTemplates,
   getTestingEventsDirectory,
 } from "@/lib/testing-lab/events-queries";
-import { buttonVariants } from "@game-guild/ui/components/button";
+import { Button } from "@game-guild/ui/components/button";
 import {
-  CalendarClock,
   ClipboardCheck,
   ExternalLink,
   FlaskConical,
@@ -22,38 +20,35 @@ import {
 } from "lucide-react";
 
 export default async function TestingLabPage() {
-  const [directory, analytics, events, pendingApplications, labSettings] =
+  const [
+    analytics,
+    events,
+    pendingApplications,
+    labSettings,
+    templates,
+  ] =
     await Promise.all([
-      getTestingLabDashboard(),
       getTestingLabAnalytics(),
       getTestingEventsDirectory({ take: 100 }),
       getTestingApplicationsDirectory({ status: "Pending" }),
       getTestingLabSettings(),
+      getTestingEventTemplates(),
     ]);
   const issues = [
-    ...directory.accessIssues,
     ...analytics.accessIssues,
     ...events.accessIssues,
     ...pendingApplications.accessIssues,
     ...labSettings.accessIssues,
+    ...templates.accessIssues,
   ];
   const draftEvents = events.events.filter(
     (event) => event.status === "Draft",
-  ).length;
-  const incompleteSessions = directory.sessions.filter(
-    (session) =>
-      !session.isDeleted &&
-      normalizeTestingSessionStatus(session.status) === "Scheduled" &&
-      (!session.sessionDate ||
-        !session.startTime ||
-        !session.endTime ||
-        !session.location),
   ).length;
   const attentionItems = [
     {
       count: pendingApplications.entries.length,
       label: `${pendingApplications.entries.length} pending application${pendingApplications.entries.length === 1 ? "" : "s"}`,
-      href: "/workspace/testing-lab/applications?status=Pending",
+      href: "/workspace/testing-lab/events",
       Icon: ClipboardCheck,
     },
     {
@@ -61,12 +56,6 @@ export default async function TestingLabPage() {
       label: `${draftEvents} draft event${draftEvents === 1 ? "" : "s"}`,
       href: "/workspace/testing-lab/events?status=Draft",
       Icon: FlaskConical,
-    },
-    {
-      count: incompleteSessions,
-      label: `${incompleteSessions} incomplete session${incompleteSessions === 1 ? "" : "s"}`,
-      href: "/workspace/testing-lab/sessions",
-      Icon: CalendarClock,
     },
   ].filter((item) => item.count > 0);
 
@@ -109,6 +98,7 @@ export default async function TestingLabPage() {
         <TestingLabCalendar
           events={events.events}
           eventAnalytics={analytics.events}
+          templates={templates.templates}
           defaultTimeZone={labSettings.settings?.timezone ?? "UTC"}
           toolbarStart={
             <div className="flex items-center gap-2">
@@ -120,16 +110,18 @@ export default async function TestingLabPage() {
           }
           toolbarEnd={
             <>
-              <Link
+              <Button asChild variant="outline" size="icon">
+                <Link
                 href="/testing-lab"
                 aria-label="Open public Testing Lab"
-                className={buttonVariants({ variant: "outline", size: "sm" })}
+                title="Open public Testing Lab"
               >
-                <ExternalLink data-icon="inline-start" aria-hidden="true" />
-                Public page
-              </Link>
+                  <ExternalLink aria-hidden="true" />
+                </Link>
+              </Button>
               <CreateTestingEventDialog
                 defaultTimeZone={labSettings.settings?.timezone ?? "UTC"}
+                templates={templates.templates}
               />
             </>
           }

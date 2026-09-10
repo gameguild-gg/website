@@ -105,7 +105,6 @@ export class TenantsResourcesModule {
         Programs?: boolean;
         Projects?: boolean;
         PromoCodes?: boolean;
-        Properties?: boolean;
         Roles?: boolean;
         SLOs?: boolean;
         SoDRules?: boolean;
@@ -151,7 +150,6 @@ export class TenantsResourcesModule {
         Programs?: boolean;
         Projects?: boolean;
         PromoCodes?: boolean;
-        Properties?: boolean;
         Roles?: boolean;
         SLOs?: boolean;
         SoDRules?: boolean;
@@ -218,7 +216,6 @@ export class TenantsResourcesModule {
         Programs?: number;
         Projects?: number;
         PromoCodes?: number;
-        Properties?: number;
         Roles?: number;
         SLOs?: number;
         SoDRules?: number;
@@ -263,7 +260,6 @@ export class TenantsResourcesModule {
         Programs?: number;
         Projects?: number;
         PromoCodes?: number;
-        Properties?: number;
         Roles?: number;
         SLOs?: number;
         SoDRules?: number;

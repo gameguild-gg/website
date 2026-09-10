@@ -1,5 +1,5 @@
 using FluentAssertions;
-using GameGuild.Economy.Risk;
+using GameGuild.Finance.Economy.Risk;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 

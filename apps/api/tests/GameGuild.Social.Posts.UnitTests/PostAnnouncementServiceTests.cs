@@ -56,7 +56,7 @@ public class PostAnnouncementServiceTests
             Times.Once);
         // Normal priority should not pin
         _postServiceMock.Verify(
-            x => x.TogglePostPinAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
+            x => x.TogglePostPinAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -97,7 +97,7 @@ public class PostAnnouncementServiceTests
             .ReturnsAsync(Result.Success(post));
 
         _postServiceMock
-            .Setup(x => x.TogglePostPinAsync(post.Id, It.IsAny<CancellationToken>()))
+            .Setup(x => x.TogglePostPinAsync(post.Id, post.AuthorId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Success(true));
 
         _postServiceMock
@@ -108,7 +108,7 @@ public class PostAnnouncementServiceTests
             Guid.NewGuid(), Guid.NewGuid(), "Alert", "Urgent msg", priority);
 
         _postServiceMock.Verify(
-            x => x.TogglePostPinAsync(post.Id, It.IsAny<CancellationToken>()),
+            x => x.TogglePostPinAsync(post.Id, post.AuthorId, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 

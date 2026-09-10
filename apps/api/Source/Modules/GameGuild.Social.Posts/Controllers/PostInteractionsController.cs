@@ -3,6 +3,7 @@ using GameGuild.Identity.Context.Actors;
 using GameGuild.Social.Posts.Commands;
 using GameGuild.Social.Posts.Services;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace GameGuild.Social.Posts.Controllers;
@@ -50,16 +51,32 @@ public class PostInteractionsController(
         if (userId == Guid.Empty)
             return Unauthorized();
 
-        var canPerform = await postService.CanUserPerformActionAsync(postId, userId, "pin", cancellationToken).ConfigureAwait(false);
-        if (!canPerform.IsSuccess || !canPerform.Value)
-            return Forbid();
-
         var result = await sender.Send(
-            new TogglePostPinEndpointCommand(postId),
+            new TogglePostPinEndpointCommand(postId, userId),
             cancellationToken).ConfigureAwait(false);
         return result.IsSuccess
             ? Ok(new { Pinned = result.Value })
-            : BadRequest(result.Error);
+            : MapMutationFailure(result.Error);
+    }
+
+    /// <summary>Repost a public post once for the current user</summary>
+    [HttpPost("{postId:guid}/reposts")]
+    public async Task<IActionResult> CreateRepost(
+        Guid postId,
+        [FromBody] CreateRepostRequest? request = null,
+        CancellationToken cancellationToken = default)
+    {
+        var userId = GetCurrentUserId();
+        if (userId == Guid.Empty)
+            return Unauthorized();
+
+        var result = await sender.Send(
+            new CreateRepostEndpointCommand(postId, userId, request?.Content),
+            cancellationToken).ConfigureAwait(false);
+
+        return result.IsSuccess
+            ? Created($"/api/v1/posts/{result.Value!.Id}", PostMappings.MapToDto(result.Value))
+            : MapMutationFailure(result.Error);
     }
 
     /// <summary>Record a share of the post</summary>
@@ -165,6 +182,13 @@ public class PostInteractionsController(
     }
 
     #endregion
+
+    private IActionResult MapMutationFailure(Error error) => error.Type switch
+    {
+        ErrorType.NotFound => NotFound(error),
+        ErrorType.Forbidden => StatusCode(StatusCodes.Status403Forbidden, error),
+        _ => BadRequest(error)
+    };
 }
 
 #region Request DTOs
@@ -176,5 +200,7 @@ public sealed record FollowPostRequest
     public bool NotifyOnShares { get; init; } = false;
     public bool NotifyOnUpdates { get; init; } = true;
 }
+
+public sealed record CreateRepostRequest(string? Content);
 
 #endregion

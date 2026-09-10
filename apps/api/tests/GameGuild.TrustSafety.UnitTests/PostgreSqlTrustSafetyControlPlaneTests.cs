@@ -1,7 +1,7 @@
 using FluentAssertions;
-using GameGuild.Economy.Persistence;
-using GameGuild.Economy.Risk;
-using GameGuild.TestSupport.Economy;
+using GameGuild.Finance.Economy.Persistence;
+using GameGuild.Finance.Economy.Risk;
+using GameGuild.TestSupport.Finance.Economy;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 

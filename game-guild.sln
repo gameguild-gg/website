@@ -1,4 +1,4 @@
-﻿
+
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.5.2.0
@@ -261,13 +261,13 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameGuild.Social.Groups", "
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameGuild.Social.Groups.UnitTests", "apps\api\tests\GameGuild.Social.Groups.UnitTests\GameGuild.Social.Groups.UnitTests.csproj", "{49CDEAFB-0CC3-4140-AA05-E4EEA0D69AA5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameGuild.Economy", "apps\api\Source\Modules\GameGuild.Economy\GameGuild.Economy.csproj", "{70FC34E8-3C49-4522-ADAD-DF0E5728810C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameGuild.Finance.Economy", "apps\api\Source\Modules\GameGuild.Finance.Economy\GameGuild.Finance.Economy.csproj", "{70FC34E8-3C49-4522-ADAD-DF0E5728810C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameGuild.Economy.UnitTests", "apps\api\tests\GameGuild.Economy.UnitTests\GameGuild.Economy.UnitTests.csproj", "{79722226-BA42-4E20-82FA-D2C59413F42D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameGuild.Finance.Economy.UnitTests", "apps\api\tests\GameGuild.Finance.Economy.UnitTests\GameGuild.Finance.Economy.UnitTests.csproj", "{79722226-BA42-4E20-82FA-D2C59413F42D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameGuild.Lti", "apps\api\Source\Modules\GameGuild.Lti\GameGuild.Lti.csproj", "{6E1D822C-C75B-4E2D-B920-4C2B64AD684B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameGuild.Learning.Lti", "apps\api\Source\Modules\GameGuild.Learning.Lti\GameGuild.Learning.Lti.csproj", "{6E1D822C-C75B-4E2D-B920-4C2B64AD684B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameGuild.Lti.UnitTests", "apps\api\tests\GameGuild.Lti.UnitTests\GameGuild.Lti.UnitTests.csproj", "{A50162D2-7E41-4D7F-81EE-699DD24FA71A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameGuild.Learning.Lti.UnitTests", "apps\api\tests\GameGuild.Learning.Lti.UnitTests\GameGuild.Learning.Lti.UnitTests.csproj", "{A50162D2-7E41-4D7F-81EE-699DD24FA71A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

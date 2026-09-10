@@ -20,7 +20,7 @@ export class EconomyMarketplaceModule {
   async postEconomyMarketplaceOrdersSettle(
     orderId: string,
     body: Types.APIControllersSettleMyMarketplaceOrderInput,
-  ): Promise<Result<Types.EconomyMarketplaceDurableMarketplaceSettlementResult, ApiError>> {
+  ): Promise<Result<Types.FinanceEconomyMarketplaceDurableMarketplaceSettlementResult, ApiError>> {
     const url = `/api/v1/economy/marketplace/orders/${orderId}:settle`;
 
     // Validate request body
@@ -35,7 +35,7 @@ export class EconomyMarketplaceModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.EconomyMarketplaceDurableMarketplaceSettlementResultSchema, result.data, 'response');
+      const validatedData = safeParse(Types.FinanceEconomyMarketplaceDurableMarketplaceSettlementResultSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 
@@ -47,7 +47,7 @@ export class EconomyMarketplaceModule {
   async postEconomyMarketplaceSettlementsRefund(
     settlementId: string,
     body: Types.APIControllersRefundMarketplaceSettlementInput,
-  ): Promise<Result<Types.EconomyMarketplaceDurableMarketplaceRefundResult, ApiError>> {
+  ): Promise<Result<Types.FinanceEconomyMarketplaceDurableMarketplaceRefundResult, ApiError>> {
     const url = `/api/v1/economy/marketplace/settlements/${settlementId}:refund`;
 
     // Validate request body
@@ -62,7 +62,7 @@ export class EconomyMarketplaceModule {
 
     // Validate response
     if (result.ok) {
-      const validatedData = safeParse(Types.EconomyMarketplaceDurableMarketplaceRefundResultSchema, result.data, 'response');
+      const validatedData = safeParse(Types.FinanceEconomyMarketplaceDurableMarketplaceRefundResultSchema, result.data, 'response');
       return { ok: true, data: validatedData };
     }
 

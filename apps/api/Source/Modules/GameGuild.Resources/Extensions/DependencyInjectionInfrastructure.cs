@@ -1,5 +1,6 @@
 using GameGuild.CQRS;
 using GameGuild.Configuration;
+using GameGuild.Finance.Contracts;
 using GameGuild.Resources.Handlers;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -154,6 +155,7 @@ public static class DependencyInjection
         services.AddScoped<IIntegrationEventHandler<AssetObjectDeletedEvent>>(provider => provider.GetRequiredService<CostAccountingEventHandler>());
         services.AddScoped<IIntegrationEventHandler<AssetTransformedEvent>>(provider => provider.GetRequiredService<CostAccountingEventHandler>());
         services.AddScoped<IIntegrationEventHandler<AssetServedEvent>>(provider => provider.GetRequiredService<CostAccountingEventHandler>());
+        services.AddScoped<IIntegrationEventHandler<EconomyPostingAcceptedEventV1>>(provider => provider.GetRequiredService<CostAccountingEventHandler>());
         services.AddScoped<IIntegrationEventHandler<ApiRequestMeasuredEventV1>>(provider => provider.GetRequiredService<CostAccountingEventHandler>());
 
         // SLA Incident Escalation Services

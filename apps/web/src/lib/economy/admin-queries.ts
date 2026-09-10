@@ -2,8 +2,8 @@ import { auth, getToken } from '@/auth';
 import {
   createServerClient,
   GeneratedApi,
-  type EconomyPayoutsQueriesEconomyPayoutRequestReview,
-  type EconomyPayoutsQueriesEconomyPayoutRequestReviewAudit,
+  type FinanceEconomyPayoutsQueriesEconomyPayoutRequestReview as EconomyPayoutsQueriesEconomyPayoutRequestReview,
+  type FinanceEconomyPayoutsQueriesEconomyPayoutRequestReviewAudit as EconomyPayoutsQueriesEconomyPayoutRequestReviewAudit,
 } from '@game-guild/client';
 import { cache } from 'react';
 

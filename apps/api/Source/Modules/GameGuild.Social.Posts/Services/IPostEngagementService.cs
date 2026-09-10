@@ -9,7 +9,10 @@ public interface IPostEngagementService
     Task<Result<bool>> TogglePostLikeAsync(Guid postId, Guid userId, string reactionType = "like", CancellationToken cancellationToken = default);
 
     /// <summary>Toggles pin status on a post</summary>
-    Task<Result<bool>> TogglePostPinAsync(Guid postId, CancellationToken cancellationToken = default);
+    Task<Result<bool>> TogglePostPinAsync(Guid postId, Guid actorId, CancellationToken cancellationToken = default);
+
+    /// <summary>Creates one idempotent repost per user and source post</summary>
+    Task<Result<Post>> CreateRepostAsync(Guid sourcePostId, Guid actorId, string? content = null, CancellationToken cancellationToken = default);
 
     /// <summary>Records a share of the post</summary>
     Task<Result> SharePostAsync(Guid postId, CancellationToken cancellationToken = default);

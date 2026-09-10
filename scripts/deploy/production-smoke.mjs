@@ -73,6 +73,12 @@ const authenticatedHeaders = {
 await request('Testing Lab authenticated event list', apiUrl, '/v1/testing/events?skip=0&take=1', {
   headers: authenticatedHeaders,
 });
+await request('Authenticated social feed', apiUrl, '/api/social/feed?scope=for-you&take=1', {
+  headers: authenticatedHeaders,
+});
+await request('Authenticated social stories', apiUrl, '/api/social/stories', {
+  headers: authenticatedHeaders,
+});
 await request(
   'Authenticated project access',
   apiUrl,
